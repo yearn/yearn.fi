@@ -1,9 +1,10 @@
 import {useMemo} from 'react';
+import {Cell, Label, Pie, PieChart, Tooltip} from 'recharts';
 import {cl, formatCounterValue, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
-import {AllocationPercentage} from '@common/components/AllocationPercentage';
+import {AllocationTooltip} from '@common/components/AllocationTooltip';
 import {VaultsListStrategy} from '@common/components/VaultsListStrategy';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
@@ -46,6 +47,29 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	const sortedVaultsToDisplay = useSortVaults(filteredStrategyList, sortBy, sortDirection) as (TYDaemonVault & {
 		details: TYDaemonVaultStrategy['details'];
 	})[];
+
+	const unallocatedPercentage =
+		100 * 100 - filteredStrategyList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0);
+
+	const allocationChartData = [
+		...filteredStrategyList.map(strategy => ({
+			id: strategy.address,
+			name: strategy.name,
+			value: (strategy.details?.debtRatio || 0) / 100,
+			amount: formatCounterValue(
+				toNormalizedBN(strategy.details?.totalDebt || 0, strategy.token?.decimals).display,
+				tokenPrice
+			)
+		})),
+		unallocatedPercentage > 0
+			? {
+					id: '0x0',
+					name: 'Unallocated',
+					value: unallocatedPercentage / 100,
+					amount: null
+				}
+			: null
+	].filter(Boolean);
 
 	const isVaultListEmpty = strategyList.length === 0;
 	const isFilteredVaultListEmpty = filteredStrategyList.length === 0;
@@ -114,7 +138,48 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 						</div>
 					</div>
 					<div className={'col-span-9 flex size-full lg:col-span-3'}>
-						<AllocationPercentage allocationList={strategyList} />
+						<div className={'flex size-full flex-col items-center justify-start'}>
+							<PieChart
+								width={200}
+								height={200}>
+								<Pie
+									data={allocationChartData}
+									dataKey={'value'}
+									nameKey={'name'}
+									cx={'50%'}
+									cy={'50%'}
+									innerRadius={80}
+									outerRadius={100}
+									paddingAngle={5}
+									className={'fill-[#000838] dark:fill-white'}
+									startAngle={90}
+									endAngle={-270}>
+									{allocationChartData.map((_, index) => (
+										<Cell key={`cell-${index}`} />
+									))}
+									<Label
+										content={() => (
+											<text
+												x={100}
+												y={100}
+												textAnchor={'middle'}
+												dominantBaseline={'middle'}
+												className={'fill-neutral-900 text-sm font-medium'}>
+												{'allocation %'}
+											</text>
+										)}
+									/>
+								</Pie>
+								<Tooltip
+									content={({active, payload}) => (
+										<AllocationTooltip
+											active={active || false}
+											payload={payload}
+										/>
+									)}
+								/>
+							</PieChart>
+						</div>
 					</div>
 				</div>
 			</div>

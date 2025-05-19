@@ -1,10 +1,11 @@
 import {useMemo} from 'react';
+import {Cell, Label, Pie, PieChart, Tooltip} from 'recharts';
 import {cl, formatCounterValue, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
-import {AllocationPercentage} from '@common/components/AllocationPercentage';
+import {AllocationTooltip} from '@common/components/AllocationTooltip';
 import {VaultsListStrategy} from '@common/components/VaultsListStrategy';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
@@ -45,7 +46,9 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	const filteredVaultList = useMemo(() => {
 		return [...vaultList, ...strategyList].filter(
 			vault => (vault as TYDaemonVault & {details: TYDaemonVaultStrategy['details']}).details?.totalDebt !== '0'
-		);
+		) as (TYDaemonVault & {
+			details: TYDaemonVaultStrategy['details'];
+		})[];
 	}, [vaultList, strategyList]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -53,15 +56,32 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	 **	is done via a custom method that will sort the vaults based on the sortBy and
 	 **	sortDirection values.
 	 **********************************************************************************************/
-	const sortedVaultsToDisplay = useSortVaults(
-		filteredVaultList as (TYDaemonVault & {
-			details: TYDaemonVaultStrategy['details'];
-		})[],
-		sortBy,
-		sortDirection
-	) as (TYDaemonVault & {
+	const sortedVaultsToDisplay = useSortVaults(filteredVaultList, sortBy, sortDirection) as (TYDaemonVault & {
 		details: TYDaemonVaultStrategy['details'];
 	})[];
+
+	const unallocatedPercentage =
+		100 * 100 - filteredVaultList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0);
+
+	const allocationChartData = [
+		...filteredVaultList.map(strategy => ({
+			id: strategy.address,
+			name: strategy.name,
+			value: (strategy.details?.debtRatio || 0) / 100,
+			amount: formatCounterValue(
+				toNormalizedBN(strategy.details?.totalDebt || 0, strategy.token?.decimals).display,
+				tokenPrice
+			)
+		})),
+		unallocatedPercentage > 0
+			? {
+					id: '0x0',
+					name: 'Unallocated',
+					value: unallocatedPercentage / 100,
+					amount: null
+				}
+			: null
+	].filter(Boolean);
 
 	const isVaultListEmpty = [...vaultList, ...strategyList].length === 0;
 	const isFilteredVaultListEmpty = filteredVaultList.length === 0;
@@ -123,8 +143,51 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							)}
 						</div>
 					</div>
-					<div className={'col-span-9 flex size-full lg:col-span-3'}>
-						<AllocationPercentage allocationList={filteredVaultList} />
+					<div className={'col-span-9 mt-4 flex size-full lg:col-span-3'}>
+						<div className={'flex size-full flex-col items-center justify-start'}>
+							<PieChart
+								width={200}
+								height={200}>
+								<Pie
+									data={allocationChartData}
+									dataKey={'value'}
+									nameKey={'name'}
+									cx={'50%'}
+									cy={'50%'}
+									innerRadius={80}
+									outerRadius={100}
+									paddingAngle={5}
+									fill={'white'}
+									stroke={'hsl(231, 100%, 11%)'}
+									startAngle={90}
+									endAngle={-270}>
+									{allocationChartData.map((_, index) => (
+										<Cell key={`cell-${index}`} />
+									))}
+									<Label
+										content={() => (
+											<text
+												x={100}
+												y={100}
+												textAnchor={'middle'}
+												dominantBaseline={'middle'}
+												className={'fill-white text-sm font-medium'}>
+												{'allocation %'}
+											</text>
+										)}
+									/>
+								</Pie>
+								<Tooltip
+									content={({active, payload}) => (
+										<AllocationTooltip
+											active={active || false}
+											payload={payload}
+										/>
+									)}
+								/>
+							</PieChart>
+						</div>
+						{/* <AllocationPercentage allocationList={filteredVaultList} /> */}
 					</div>
 				</div>
 			</div>

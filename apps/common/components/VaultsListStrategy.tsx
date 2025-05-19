@@ -158,7 +158,7 @@ export function VaultsListStrategy({
 					<div
 						className={'mr-[-20px] flex-row md:col-span-4 md:flex-col md:text-right'}
 						datatype={'number'}>
-						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Allocation $'}</p>
 						<p>{allocation}</p>
 					</div>
 					<div
