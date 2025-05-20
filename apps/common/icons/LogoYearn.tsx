@@ -1,20 +1,41 @@
 import type {ReactElement} from 'react';
 
-export function LogoYearn(props: React.SVGProps<SVGSVGElement> & {back?: string; front?: string}): ReactElement {
+export function LogoYearn(
+	props: React.SVGProps<SVGSVGElement> & {back?: string; front?: string; gradient?: {start: string; end: string}}
+): ReactElement {
 	return (
 		<svg
-			{...props}
 			width={'32'}
 			height={'32'}
 			viewBox={'0 0 32 32'}
 			fill={'none'}
+			{...props}
 			xmlns={'http://www.w3.org/2000/svg'}>
+			{props?.gradient && (
+				<defs>
+					<linearGradient
+						id={'yearn-gradient'}
+						x1={'100%'}
+						y1={'0%'}
+						x2={'100%'}
+						y2={'100%'}>
+						<stop
+							offset={'0%'}
+							stopColor={props?.gradient?.start}
+						/>
+						<stop
+							offset={'100%'}
+							stopColor={props?.gradient?.end}
+						/>
+					</linearGradient>
+				</defs>
+			)}
 			<circle
 				cx={'16'}
 				cy={'16'}
 				r={'16'}
-				fill={'currentColor'}
-				className={props?.back || 'text-neutral-900'}
+				fill={props?.gradient ? 'url(#yearn-gradient)' : 'currentColor'}
+				className={!props?.gradient ? props?.back || 'text-neutral-900' : undefined}
 			/>
 			<path
 				fillRule={'evenodd'}

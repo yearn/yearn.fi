@@ -9,6 +9,7 @@ import {useSolverJuicedStakingBooster} from '@vaults/hooks/solvers/useSolverJuic
 import {useSolverOptimismBooster} from '@vaults/hooks/solvers/useSolverOptimismBooster';
 import {useSolverPartnerContract} from '@vaults/hooks/solvers/useSolverPartnerContract';
 import {useSolverPortals} from '@vaults/hooks/solvers/useSolverPortals';
+import { useSolverV3Router } from '@vaults/hooks/solvers/useSolverV3Router';
 import {useSolverV3StakingBooster} from '@vaults/hooks/solvers/useSolverV3StakingBooster';
 import {useSolverVanilla} from '@vaults/hooks/solvers/useSolverVanilla';
 import {Solver} from '@vaults/types/solvers';
@@ -69,6 +70,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 	const veYFIGaugeStakingBooster = useSolverGaugeStakingBooster();
 	const juicedStakingBooster = useSolverJuicedStakingBooster();
 	const v3StakingBooster = useSolverV3StakingBooster();
+	const v3Router = useSolverV3Router();
 	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & {hash?: string}>(vanilla);
 	const [isLoading, set_isLoading] = useState(false);
 
@@ -302,13 +304,15 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				}
 				case Solver.enum.InternalMigration: {
 					request.migrator = currentVault.migration.contract;
-					const [quote] = await Promise.allSettled([internalMigration.init(request)]);
+					request.asset = currentVault.token.address;
+					const ctx = currentVault.version.startsWith('3') ? v3Router : internalMigration;
+					const [quote] = await Promise.allSettled([ctx.init(request)]);
 					await handleUpdateSolver({
 						currentNonce,
 						request,
 						quote,
 						solver: Solver.enum.InternalMigration,
-						ctx: internalMigration
+						ctx
 					});
 					break;
 				}
@@ -334,6 +338,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			currentVault.staking.source,
 			currentVault.staking.address,
 			currentVault.migration.contract,
+			currentVault.token.address,
 			address,
 			isDepositing,
 			currentSolver,
@@ -346,7 +351,8 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			juicedStakingBooster,
 			v3StakingBooster,
 			partnerContract,
-			internalMigration
+			internalMigration,
+			v3Router
 		]
 	);
 
@@ -363,6 +369,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			hash: currentSolverState?.hash,
 			isLoadingExpectedOut: isLoading,
 			onRetrieveAllowance: currentSolverState.onRetrieveAllowance,
+			onRetrieveRouterAllowance: currentSolverState.onRetrieveRouterAllowance,
 			onApprove: currentSolverState.onApprove,
 			onExecuteDeposit: currentSolverState.onExecuteDeposit,
 			onExecuteWithdraw: currentSolverState.onExecuteWithdraw
