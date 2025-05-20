@@ -1,4 +1,4 @@
-import React, {memo, useState} from 'react';
+import React, {memo} from 'react';
 import {Toaster} from 'react-hot-toast';
 import {usePathname} from 'next/navigation';
 import PlausibleProvider from 'next-plausible';
