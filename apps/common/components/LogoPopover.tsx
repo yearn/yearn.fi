@@ -8,6 +8,7 @@ import {motion} from 'framer-motion';
 import {cl} from '@builtbymom/web3/utils';
 import {Popover, Transition} from '@headlessui/react';
 
+import {LogoYearn} from '../icons/LogoYearn';
 import {APPS} from './YearnApps';
 
 import type {AnimationProps} from 'framer-motion';
@@ -55,6 +56,13 @@ function useIsMounted(): () => boolean {
 function Logo({currentHost}: {currentHost: string; isVaultPage: boolean}): ReactElement {
 	const router = useRouter();
 	const {pathname} = router;
+	const appsIcon = (
+		<LogoYearn
+			className={'!size-8 !max-h-8 !max-w-8'}
+			back={'text-primary'}
+			front={'text-white'}
+		/>
+	);
 	return (
 		<>
 			{Object.values(APPS).map(({name, host, icon, pathname: appPathname}): ReactElement => {
@@ -68,6 +76,14 @@ function Logo({currentHost}: {currentHost: string; isVaultPage: boolean}): React
 					</MotionDiv>
 				);
 			})}
+			{(pathname === '/apps' || pathname.startsWith('/apps/')) && (
+				<MotionDiv
+					key={'Apps'}
+					name={'Apps'}
+					animate={'enter'}>
+					{appsIcon}
+				</MotionDiv>
+			)}
 		</>
 	);
 }
@@ -145,7 +161,7 @@ export function LogoPopover(): ReactElement {
 						className={'relative z-[9999999]'}>
 						<Popover.Panel
 							className={
-								'absolute left-1/2 z-20 w-[345px] -translate-x-1/2 scale-[115%] bg-transparent px-4 pt-10 sm:px-0'
+								'absolute left-0 top-10 z-20 w-[345px] scale-[115%] bg-transparent px-4 sm:px-0'
 							}>
 							<div className={cl('overflow-hidden shadow-xl', isVaultPage ? 'pt-4' : 'pt-0')}>
 								<div
