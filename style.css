@@ -44,6 +44,10 @@
 	font-display: swap;
 }
 
+p {
+	font-weight: 300;
+}
+
 #main {
 	@apply flex flex-col w-full h-full min-h-screen bg-neutral-0;
 }

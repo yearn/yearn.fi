@@ -53,25 +53,26 @@ export function LandingAppHeader(): ReactElement {
 			className={'inset-x-0 top-0 z-50 mt-4 w-full md:mt-7'}>
 			<div className={'w-full'}>
 				<header className={'flex max-w-[1232px] items-center justify-between py-1 md:!px-10 md:py-4'}>
+					<div className={'flex flex-row items-center gap-x-3'}>
+						<Link href={'/'}>
+							<LogoYearn
+								className={'size-6'}
+								front={'text-black'}
+								back={'text-white'}
+							/>
+						</Link>
+						<span>{'Yearn'}</span>
+					</div>
+					<Navbar
+						currentPathName={pathname || ''}
+						nav={menu}
+					/>
 					<div className={'flex md:hidden'}>
 						<button onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
 							<span className={'sr-only'}>{'Open menu'}</span>
 							<IconBurger />
 						</button>
 					</div>
-					<div className={'flex justify-center'}>
-						<Link href={'/'}>
-							<LogoYearn
-								className={'size-10'}
-								front={'text-black'}
-								back={'text-white'}
-							/>
-						</Link>
-					</div>
-					<Navbar
-						currentPathName={pathname || ''}
-						nav={menu}
-					/>
 				</header>
 			</div>
 			<ModalMobileMenu

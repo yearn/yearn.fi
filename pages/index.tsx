@@ -11,14 +11,18 @@ import type {ReactElement} from 'react';
 function Index(): ReactElement {
 	return (
 		<div>
-			<main className={'flex w-full flex-col items-center bg-[#080A0C]'}>
-				<Hero />
-				<WaysToEarn />
-				<About />
-				<Partners />
-				<Contribute />
-				<div id={'form'}>
-					<Form />
+			<main className={'flex w-full flex-col items-center gap-y-[64px] bg-[#080A0C]'}>
+				<div className={'flex w-full flex-col items-center gap-y-[64px] md:gap-y-0'}>
+					<Hero />
+					<Partners />
+				</div>
+				<div className={'flex w-full flex-col items-center gap-y-[128px]'}>
+					<WaysToEarn />
+					<About />
+					<Contribute />
+					<div id={'form'}>
+						<Form />
+					</div>
 				</div>
 			</main>
 			<footer className={'flex w-full flex-col items-center bg-[#080A0C] pt-[104px] md:pt-[160px]'}>
