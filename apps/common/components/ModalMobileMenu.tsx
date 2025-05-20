@@ -36,7 +36,7 @@ export function FooterNav(): ReactElement {
 				{menu.map(link => (
 					<Link
 						className={
-							'flex items-center justify-between gap-x-4 text-3xl text-white transition-colors hover:text-primary md:justify-start'
+							'flex items-center justify-between gap-x-4 text-2xl text-white transition-colors hover:text-primary md:justify-start'
 						}
 						key={link.path}
 						target={link.target}
@@ -123,17 +123,17 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-full'}>
 						<div className={`yearn--modal fixed bottom-0 mb-0 h-full max-w-full`}>
-							<div className={'flex items-center justify-between border-b border-[#292929] p-6'}>
-								<button onClick={onClose}>
-									<IconClose />
-								</button>
+							<div className={'flex items-center justify-between border-b border-[#292929] p-4'}>
 								<Link href={'/'}>
 									<LogoYearn
-										className={'size-10'}
+										className={'size-6'}
 										front={'text-black'}
 										back={'text-white'}
 									/>
 								</Link>
+								<button onClick={onClose}>
+									<IconClose />
+								</button>
 							</div>
 							<div
 								style={{

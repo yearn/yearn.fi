@@ -1,7 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import {scrollToHash} from 'apps/landing/utils/scrollToHash';
+import {z} from 'zod';
 import {motion} from 'framer-motion';
+import {useFetch} from '@builtbymom/web3/hooks/useFetch';
+import {TvlStat} from '@common/components/TvlStat';
 
 import {Button} from '../common/Button';
 
@@ -111,6 +113,12 @@ function AnimatedLogos(): ReactElement {
 }
 
 export function Hero(): ReactElement {
+	// TODO: do we have an alt TVL API endpoint?
+	const {data: tvl} = useFetch<number>({
+		endpoint: `https://api.llama.fi/tvl/yearn`,
+		schema: z.number()
+	});
+
 	return (
 		<>
 			<div className={'hidden w-full justify-center overflow-hidden md:flex'}>
@@ -123,26 +131,25 @@ export function Hero(): ReactElement {
 						overflow: 'hidden'
 					}}
 					className={
-						'relative mx-6 mt-6 flex h-[568px] w-[2365px] max-w-[2352px] flex-col items-center self-center rounded-lg border border-[#292929]'
+						'relative mx-6 mt-6 flex h-[500px] w-[2365px] max-w-[2352px] flex-col items-center self-center rounded-lg border border-[#292929]'
 					}>
 					<AnimatedLogos />
-					<div className={'z-20 mt-[88px] text-center md:mt-[160px]'}>
-						<p className={'text-[80px] font-bold leading-[80px] text-white'}>{'THE DEFI WAY'}</p>
-						<p className={'text-[80px] font-bold leading-[80px] text-white'}>{'TO EARN ON CRYPTO'}</p>
-						<p className={'mt-4 text-gray-400'}>
-							{'Yearn is DeFi’s longest running, most battle tested, and most trusted yield protocol.'}
-						</p>
-					</div>
-					<div className={'mt-[72px] flex gap-2 md:mt-[48px] lg:mt-[72px]'}>
-						<Link href={'/apps'}>
-							<Button className={'w-[192px] px-[15px]'}>{'DISCOVER PRODUCTS'}</Button>
-						</Link>
-						<Button
-							onClick={() => scrollToHash('form')}
-							variant={'secondary'}
-							className={'w-[192px]'}>
-							{'SUBMIT YOUR APP'}
-						</Button>
+					<div
+						className={
+							'z-20 mt-[88px] flex flex-col items-center justify-center gap-4 text-center md:mt-[160px]'
+						}>
+						<TvlStat tvl={tvl ?? 0} />
+						<div className={'z-20 flex flex-col items-center justify-center pt-2 text-center'}>
+							<p className={'text-[56px] font-medium text-white'}>{'Earn on your Crypto'}</p>
+							<p className={'mt-1 text-[20px] text-gray-400'}>
+								{"DeFi's longest running, most battle tested protocol"}
+							</p>
+						</div>
+						<div className={'mt-[72px] md:mt-[24px] lg:mt-[24px]'}>
+							<Link href={'/apps'}>
+								<Button>{'Explore Vaults'}</Button>
+							</Link>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -158,28 +165,23 @@ export function Hero(): ReactElement {
 					className={'mt-[88px]'}
 					src={'/landing/yfi-top-right.png'}
 					alt={'hero'}
-					width={277}
-					height={277}
+					width={250}
+					height={250}
 				/>
-				<div className={'z-20 mt-4 text-center'}>
-					<p className={'text-center text-[40px] font-bold leading-[48px] text-white'}>
-						{'THE DEFI WAY TO EARN ON CRYPTO'}
+				<div className={'z-20 mt-4 flex flex-col items-center text-center'}>
+					<p className={'text-center text-[38px] font-medium leading-[42px] text-white'}>
+						{'Earn on your Crypto'}
 					</p>
-					<p className={'mt-4 text-gray-400'}>
-						{'Yearn is DeFi’s longest running, most battle tested, and most trusted yield protocol.'}
+					<p
+						className={'mt-4 text-center text-gray-400'}
+						style={{maxWidth: '30ch'}}>
+						{"DeFi's longest running, most battle tested protocol"}
 					</p>
 				</div>
-				<div className={'mt-10 flex w-full flex-col gap-2'}>
-					<Link
-						className={'w-full'}
-						href={'/apps'}>
-						<Button className={'w-full px-[15px]'}>{'DISCOVER PRODUCTS'}</Button>
+				<div className={'mt-10 flex w-full flex-col items-center gap-2'}>
+					<Link href={'/apps'}>
+						<Button>{'Explore Vaults'}</Button>
 					</Link>
-					<Button
-						variant={'secondary'}
-						onClick={() => scrollToHash('form')}>
-						{'SUBMIT YOUR APP'}
-					</Button>
 				</div>
 			</div>
 		</>

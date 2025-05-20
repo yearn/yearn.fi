@@ -1,7 +1,6 @@
 import {type ReactElement, useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {IconArrow} from '@common/icons/IconArrow';
 
 import {Button} from '../common/Button';
 import {EarnCard} from '../common/EarnCard';
@@ -10,11 +9,8 @@ export function WaysToEarn(): ReactElement {
 	const [isHovering, set_isHovering] = useState(false);
 
 	return (
-		<div className={'max-w-6xl pt-[160px]'}>
-			<p className={'text-left font-aeonikFono text-3xl font-light text-white md:text-center md:text-5xl'}>
-				{'THERE ARE LOADS OF WAYS TO EARN, WITH YEARN!'}
-			</p>
-			<div className={'mt-10 grid grid-flow-row grid-cols-12 grid-rows-10 gap-6 md:h-[480px] md:grid-flow-col'}>
+		<div className={'max-w-6xl'}>
+			<div className={'grid grid-flow-row grid-cols-12 grid-rows-10 gap-6 md:h-[480px] md:grid-flow-col'}>
 				<Link
 					href={'/apps'}
 					className={
@@ -31,7 +27,7 @@ export function WaysToEarn(): ReactElement {
 						<div className={'flex h-full flex-col justify-between'}>
 							<div>
 								<p className={'text-md mb-4 text-white md:text-[32px] md:group-hover:text-gray-900'}>
-									{'VAULTS PUT YOUR CRYPTO TO WORK, SO YOU DONT HAVE TO.'}
+									{'Yield optimized, risk optimized.'}
 								</p>
 								<p className={'z-20 text-gray-400 md:group-hover:text-gray-900'}>
 									{
@@ -61,22 +57,16 @@ export function WaysToEarn(): ReactElement {
 							</div>
 							<Button
 								className={
-									'absolute bottom-10 right-10 z-20 hidden w-[160px] hover:!bg-gray-700 group-hover:bg-gray-900 md:block'
+									'absolute bottom-10 right-10 z-20 hidden hover:!bg-gray-700 group-hover:bg-gray-900 md:block'
 								}>
-								<div className={'flex items-center justify-between'}>
-									<p>{'DISCOVER'}</p>
-									<IconArrow className={'size-4'} />
-								</div>
+								{'Start Earning'}
 							</Button>
-							<IconArrow
-								className={'absolute bottom-6 right-6 size-6 group-hover:text-gray-900 md:hidden'}
-							/>
 						</div>
 					</div>
 				</Link>
 				<div className={'col-span-12 row-span-3 md:col-span-5 md:row-span-6'}>
 					<EarnCard
-						title={'YEARN APPS.'}
+						title={'Yearn Apps'}
 						info={'Apps built on Yearn vaults by contributors and the wider community!'}
 						logoSrc={'/landing/yearn-apps-logo.png'}
 						href={'/apps/yearn-apps'}
@@ -85,7 +75,7 @@ export function WaysToEarn(): ReactElement {
 				</div>
 				<div className={'col-span-12 row-span-3 md:col-span-5 md:row-span-6'}>
 					<EarnCard
-						title={'INTEGRATIONS.'}
+						title={'Integrations'}
 						info={
 							'Yearn Vaults are a core part of DeFi, and you can access them through many popular apps and UIs.'
 						}

@@ -5,7 +5,7 @@ export function About(): ReactElement {
 	const [isReadMore, set_isReadMore] = useState(false);
 	return (
 		<div
-			className={'mt-[160px] flex w-full max-w-[1920px] justify-center px-6 pb-10 md:h-[430px] md:pb-0'}
+			className={'flex w-full max-w-[1920px] justify-center px-6 md:h-[430px] '}
 			style={{
 				backgroundImage: "url('/landing/about_bg.png')",
 				backgroundRepeat: 'no-repeat',
@@ -13,8 +13,8 @@ export function About(): ReactElement {
 				backgroundPosition: 'center'
 			}}>
 			<div className={'relative lg:mr-[400px]'}>
-				<p className={'font-aeonikFono mb-10 text-left text-3xl font-light text-white md:text-5xl'}>
-					{'WTF IS A YEARN VAULT?'}
+				<p className={'mb-10 text-left text-2xl font-medium text-white md:text-4xl'}>
+					{'What is a Yearn Vault?'}
 				</p>
 				<div
 					className={cl(
@@ -51,7 +51,7 @@ export function About(): ReactElement {
 				</div>
 				{isReadMore ? null : (
 					<button
-						className={'text-primary mt-6 text-lg font-light md:hidden'}
+						className={'mt-6 text-lg font-light text-primary md:hidden'}
 						onClick={() => set_isReadMore(true)}>
 						{'Read more'}
 					</button>
