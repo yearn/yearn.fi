@@ -28,7 +28,8 @@ export function VaultsListStrategy({
 	address,
 	variant = 'v3',
 	apr,
-	fees
+	fees,
+	isUnallocated = false
 }: {
 	details: TYDaemonVaultStrategy['details'];
 	chainId: number;
@@ -39,6 +40,7 @@ export function VaultsListStrategy({
 	variant: 'v2' | 'v3';
 	apr: number | undefined;
 	fees: TYDaemonVault['apr']['fees'];
+	isUnallocated?: boolean;
 }): ReactElement {
 	const [isExpanded, set_isExpanded] = useState(false);
 
@@ -101,7 +103,7 @@ export function VaultsListStrategy({
 				isExpanded ? 'rounded-b-none' : '',
 				variant === 'v2' ? '' : 'rounded-3xl',
 				isExpanded && variant === 'v2' ? 'bg-[#97979724] bg-opacity-[14]' : '',
-				details?.debtRatio === 0 || details?.totalDebt === '0' ? 'opacity-50' : ''
+				isUnallocated ? 'opacity-50' : ''
 			)}>
 			{variant === 'v3' && (
 				<div

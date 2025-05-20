@@ -265,6 +265,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 														ease: 'easeOut'
 													}}>
 													<VaultsListStrategy
+														isUnallocated={true}
 														details={strategy.details}
 														chainId={currentVault.chainID || currentVault.chainID}
 														address={strategy.address}

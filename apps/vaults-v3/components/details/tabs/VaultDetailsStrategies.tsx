@@ -262,6 +262,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 										{unallocatedVaults.map((vault): ReactElement => {
 											return (
 												<VaultsListStrategy
+													isUnallocated={true}
 													key={`${vault?.chainID || currentVault.chainID}_${vault.address}`}
 													details={vault.details}
 													chainId={vault.chainID || currentVault.chainID}
