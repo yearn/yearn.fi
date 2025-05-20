@@ -126,6 +126,15 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	const isVaultListEmpty = strategyList.length === 0;
 	const isFilteredVaultListEmpty = filteredStrategyList.length === 0;
 
+	const pieColors = [
+		'fill-neutral-700',
+		'fill-neutral-600',
+		'fill-neutral-500',
+		'fill-neutral-400',
+		'fill-neutral-300',
+		'fill-neutral-200'
+	];
+
 	return (
 		<>
 			<div className={cl(isFilteredVaultListEmpty ? 'hidden ' : '')}>
@@ -220,12 +229,15 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 									innerRadius={80}
 									outerRadius={100}
 									paddingAngle={5}
-									className={'fill-[#000838] dark:fill-white'}
 									startAngle={90}
 									minAngle={3}
 									endAngle={-270}>
 									{allocationChartData.map((_, index) => (
-										<Cell key={`cell-${index}`} />
+										<Cell
+											key={`cell-${index}`}
+											stroke={pieColors[index % pieColors.length]}
+											className={pieColors[index % pieColors.length]}
+										/>
 									))}
 									<Label
 										content={() => (

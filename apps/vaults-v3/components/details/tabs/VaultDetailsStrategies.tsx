@@ -160,6 +160,8 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		[filteredVaultList, tokenPrice]
 	);
 
+	const pieColors = ['#ff6ba5', '#ffb3d1', '#ff8fbb', '#ffd6e7', '#d21162', '#ff4d94'];
+
 	const isVaultListEmpty = [...vaultList, ...strategyList].length === 0;
 	const isFilteredVaultListEmpty = filteredVaultList.length === 0;
 
@@ -254,7 +256,10 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 									minAngle={3}
 									endAngle={-270}>
 									{allocationChartData.map((_, index) => (
-										<Cell key={`cell-${index}`} />
+										<Cell
+											key={`cell-${index}`}
+											fill={pieColors[index % pieColors.length]}
+										/>
 									))}
 									<Label
 										content={() => (
