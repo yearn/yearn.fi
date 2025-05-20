@@ -1,11 +1,13 @@
-import {useMemo} from 'react';
+import {useMemo, useState} from 'react';
 import {Cell, Label, Pie, PieChart, Tooltip} from 'recharts';
 import {zeroAddress} from 'viem';
+import {AnimatePresence, motion} from 'framer-motion';
 import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
+import {Button} from '@yearn-finance/web-lib/components/Button';
 import {AllocationTooltip} from '@common/components/AllocationTooltip';
 import {VaultsListStrategy} from '@common/components/VaultsListStrategy';
 import {useYearn} from '@common/contexts/useYearn';
@@ -84,6 +86,8 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		defaultPathname: '/v3/[chainID]/[address]'
 	});
 
+	const [shouldShowUnallocated, set_shouldShowUnallocated] = useState(false);
+
 	const tokenPrice = useYearnTokenPrice({address: currentVault.token.address, chainID: currentVault.chainID});
 
 	const vaultList = useMemo((): TYDaemonVault[] => {
@@ -160,6 +164,10 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		[filteredVaultList, tokenPrice]
 	);
 
+	const unallocatedVaults = useMemo(() => {
+		return mergedList.filter(vault => !vault.details?.debtRatio || vault.details?.totalDebt === '0');
+	}, [mergedList]);
+
 	const pieColors = ['#ff6ba5', '#ffb3d1', '#ff8fbb', '#ffd6e7', '#d21162', '#ff4d94'];
 
 	const isVaultListEmpty = [...vaultList, ...strategyList].length === 0;
@@ -234,6 +242,48 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 									/>
 								);
 							})}
+							{unallocatedVaults.length > 0 && (
+								<Button
+									variant={'v3'}
+									className={'w-full md:w-[184px]'}
+									onClick={() => set_shouldShowUnallocated(!shouldShowUnallocated)}>
+									{shouldShowUnallocated ? '- Hide unallocated' : '+ Show unallocated'}
+								</Button>
+							)}
+
+							<AnimatePresence>
+								{shouldShowUnallocated && (
+									<motion.div
+										initial={{opacity: 0, y: 20}}
+										animate={{opacity: 1, y: 0}}
+										exit={{opacity: 0, y: -20}}
+										transition={{duration: 0.3, ease: 'easeInOut'}}
+										className={'grid grid-cols-1 gap-4'}>
+										{unallocatedVaults.map((vault): ReactElement => {
+											return (
+												<VaultsListStrategy
+													key={`${vault?.chainID || currentVault.chainID}_${vault.address}`}
+													details={vault.details}
+													chainId={vault.chainID || currentVault.chainID}
+													variant={'v3'}
+													address={vault.address}
+													name={vault.name}
+													tokenAddress={vault.token?.address || currentVault.token.address}
+													allocation={formatCounterValue(
+														toNormalizedBN(
+															vault.details?.totalDebt || 0,
+															vault.token?.decimals || currentVault.token?.decimals
+														).display,
+														tokenPrice
+													)}
+													apr={vault.apr?.forwardAPR.netAPR || vault.apr?.netAPR}
+													fees={vault.apr?.fees}
+												/>
+											);
+										})}
+									</motion.div>
+								)}
+							</AnimatePresence>
 						</div>
 					</div>
 					<div className={'col-span-9 mt-4 flex size-full lg:col-span-3'}>

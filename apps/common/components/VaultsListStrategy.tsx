@@ -86,7 +86,6 @@ export function VaultsListStrategy({
 			}
 		}
 	};
-
 	const chainBgColor = getChainBgColor(chainId);
 	const lastReportTime = details?.lastReport
 		? formatDuration(details.lastReport * 1000 - new Date().valueOf(), true)
@@ -101,7 +100,8 @@ export function VaultsListStrategy({
 				'text-white',
 				isExpanded ? 'rounded-b-none' : '',
 				variant === 'v2' ? '' : 'rounded-3xl',
-				isExpanded && variant === 'v2' ? 'bg-[#97979724] bg-opacity-[14]' : ''
+				isExpanded && variant === 'v2' ? 'bg-[#97979724] bg-opacity-[14]' : '',
+				details?.debtRatio === 0 || details?.totalDebt === '0' ? 'opacity-50' : ''
 			)}>
 			{variant === 'v3' && (
 				<div
