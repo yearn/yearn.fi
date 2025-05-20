@@ -12,15 +12,13 @@ import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
 import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';
 import AppHeader from '@common/components/Header';
 import {Meta} from '@common/components/Meta';
-import {MobileNavbar} from '@common/components/MobileNavbar';
-import {MobileTopNav} from '@common/components/MobileTopNav';
-import {Sidebar} from '@common/components/Sidebar';
+// import {MobileNavbar} from '@common/components/MobileNavbar';
+// import {MobileTopNav} from '@common/components/MobileTopNav';
 import {WithFonts} from '@common/components/WithFonts';
-import {SearchContextApp} from '@common/contexts/useSearch';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
-import {MENU_TABS, SUPPORTED_NETWORKS} from '@common/utils/constants';
+import {SUPPORTED_NETWORKS} from '@common/utils/constants';
 
 import type {AppProps} from 'next/app';
 import type {NextRouter} from 'next/router';
@@ -48,19 +46,23 @@ const WithLayout = memo(function WithLayout(
 ): ReactElement {
 	const {Component, pageProps} = props;
 	const {name} = useCurrentApp(props.router);
-	const [isSearchOpen, set_isSearchOpen] = useState(false);
-	const [isNavbarOpen, set_isNavbarOpen] = useState(false);
 	const isAppsPage = props.router.asPath?.startsWith('/apps');
 	const pathName = usePathname();
 
 	if (isAppsPage) {
 		return (
-			<SearchContextApp>
+			<>
+				<div
+					className={cl(
+						'mx-auto mb-0 flex z-[60] font-aeonik max-w-6xl absolute top-0 inset-x-0 bg-neutral-0'
+					)}>
+					<AppHeader supportedNetworks={props.supportedNetworks} />
+				</div>
 				<div
 					id={'app'}
-					className={'mb-0 flex min-h-screen justify-center bg-gray-900 font-aeonik'}>
+					className={'mb-0 flex min-h-screen justify-center bg-neutral-0 font-aeonik'}>
 					<div className={'flex w-full max-w-[1230px] justify-start'}>
-						<motion.nav className={'fixed z-50 w-full md:hidden'}>
+						{/* <motion.nav className={'fixed z-50 w-full md:hidden'}>
 							<MobileTopNav
 								isNavbarOpen={isNavbarOpen}
 								isSearchOpen={isSearchOpen}
@@ -83,10 +85,10 @@ const WithLayout = memo(function WithLayout(
 									}}
 								/>
 							</motion.nav>
-						)}
-						<motion.nav className={'top-0 z-20 hidden h-screen py-4 pl-4 md:fixed md:block'}>
+						)} */}
+						{/* <motion.nav className={'top-0 z-20 hidden h-screen py-4 pl-4 md:fixed md:block'}>
 							<Sidebar tabs={MENU_TABS} />
-						</motion.nav>
+						</motion.nav> */}
 						<LazyMotion features={domAnimation}>
 							<AnimatePresence mode={'wait'}>
 								<motion.div
@@ -96,8 +98,8 @@ const WithLayout = memo(function WithLayout(
 									exit={'exit'}
 									variants={variants}
 									className={cl(
-										'w-full overflow-x-hidden md:ml-[305px]',
-										isSearchOpen ? 'mt-16' : ''
+										// 'w-full overflow-x-hidden md:ml-[305px]',
+										'w-full overflow-x-hidden md:mt-[64px]'
 									)}>
 									<Component
 										router={props.router}
@@ -108,7 +110,7 @@ const WithLayout = memo(function WithLayout(
 						</LazyMotion>
 					</div>
 				</div>
-			</SearchContextApp>
+			</>
 		);
 	}
 

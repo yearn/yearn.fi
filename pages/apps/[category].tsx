@@ -27,15 +27,25 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 		set_shuffledApps(currentCategory?.apps.toSorted(() => 0.5 - Math.random()));
 	});
 
+	useMountEffect(() => {
+		if (currentCategory?.apps.length < 1) {
+			return;
+		}
+		if (currentCategory.categoryName === 'Integrations') {
+			set_shuffledApps(currentCategory.apps.toSorted(() => 0.5 - Math.random()));
+		}
+		set_shuffledApps(currentCategory.apps);
+	});
+
 	return (
-		<div className={'mt-24 flex w-full justify-start px-4 !pl-8 pb-14 md:mt-10'}>
+		<div className={'mt-24 flex w-full justify-start px-8 !pl-8 pb-14 md:mt-10'}>
 			<div className={'flex w-full max-w-4xl flex-col'}>
 				<div className={'mb-10 flex w-full flex-col justify-start'}>
-					<p className={'text-3xl font-bold text-white md:text-[64px] md:leading-[64px]'}>
+					<p className={'text-3xl font-bold text-neutral-800 md:text-[64px] md:leading-[64px]'}>
 						{currentCategory?.categoryName}
 					</p>
 
-					<p className={'mt-4 max-w-[610px] text-base text-gray-400'}>
+					<p className={'mt-4 max-w-[610px] text-base text-neutral-600'}>
 						{currentCategory?.categoryDescription}
 					</p>
 				</div>

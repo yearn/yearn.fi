@@ -34,13 +34,7 @@ export const VAULTS_APPS: TApp[] = [
 		appURI: '/vaults'
 	},
 	{
-		name: 'Gimme',
-		description: 'DeFi yields, designed for everyone.',
-		logoURI: 'https://gimme.mom/favicons/favicon-96x96.png',
-		appURI: 'https://gimme.mom/'
-	},
-	{
-		name: 'Factory',
+		name: 'Vault Factory',
 		description: 'Permissionlessly deploy Curve Vaults with the Yearn Factory.',
 		logoURI: '/factory-icon.svg',
 		appURI: 'https://factory.yearn.fi'
@@ -49,10 +43,10 @@ export const VAULTS_APPS: TApp[] = [
 
 export const YEARN_APPS: TApp[] = [
 	{
-		name: 'yETH',
-		description: 'A basket of LSTs in a single token.',
-		logoURI: 'https://yeth.yearn.fi/favicons/favicon-96x96.png',
-		appURI: 'https://yeth.yearn.fi/'
+		name: 'yCRV',
+		description: 'Put your yCRV to work.',
+		logoURI: 'https://ycrv.yearn.fi/ycrv-logo.svg',
+		appURI: 'https://ycrv.yearn.fi'
 	},
 	{
 		name: 'veYFI',
@@ -61,10 +55,10 @@ export const YEARN_APPS: TApp[] = [
 		appURI: 'https://veyfi.yearn.fi'
 	},
 	{
-		name: 'yCRV',
-		description: 'Put your yCRV to work.',
-		logoURI: 'https://ycrv.yearn.fi/ycrv-logo.svg',
-		appURI: 'https://ycrv.yearn.fi'
+		name: 'yETH',
+		description: 'A basket of LSTs in a single token.',
+		logoURI: 'https://yeth.yearn.fi/favicons/favicon-96x96.png',
+		appURI: 'https://yeth.yearn.fi/'
 	},
 	{
 		name: 'Bearn',
@@ -76,46 +70,34 @@ export const YEARN_APPS: TApp[] = [
 
 export const YEARN_X_APPS: TApp[] = [
 	{
-		name: 'PoolTogether',
-		description: 'Get the best risk adjusted PoolTogether yields, with Yearn.',
-		logoURI: 'https://pooltogether.yearn.space/favicons/favicon-512x512.png',
-		appURI: 'https://pooltogether.yearn.space'
-	},
-	{
-		name: 'Pendle',
-		description: 'The best Pendle yields, with auto-rolling functionality.',
-		logoURI: 'https://pendle.yearn.space/favicons/favicon-512x512.png',
-		appURI: 'https://pendle.yearn.space'
-	},
-	{
-		name: 'AJNA',
-		description: 'Get the best risk adjusted Ajna yields, with Yearn.',
-		logoURI: 'https://ajna.yearn.space/favicons/favicon-512x512.png',
-		appURI: 'https://ajna.yearn.space'
+		name: 'Curve',
+		description: 'Auto-compound and boost your Curve deposits, with Yearn.',
+		logoURI: 'https://curve.yearn.space/favicons/favicon-512x512.png',
+		appURI: 'https://curve.yearn.space/'
 	},
 	{
 		name: 'Velodrome',
-		description: 'Get the best risk adjusted Velodrome yields, with Yearn.',
+		description: 'Auto-compound your Velodrome deposits, with Yearn.',
 		logoURI: 'https://velodrome.yearn.space/favicons/favicon-512x512.png',
 		appURI: 'https://velodrome.yearn.space/'
 	},
 	{
 		name: 'Aerodrome',
-		description: 'Get the best risk adjusted Aerodrome yields, with Yearn.',
+		description: 'Auto-compound your Aerodrome deposits, with Yearn.',
 		logoURI: 'https://aerodrome.yearn.space/favicons/favicon-512x512.png',
 		appURI: 'https://aerodrome.yearn.space/'
-	},
-	{
-		name: 'Curve',
-		description: 'Get the best risk adjusted Curve yields, with Yearn.',
-		logoURI: 'https://curve.yearn.space/favicons/favicon-512x512.png',
-		appURI: 'https://curve.yearn.space/'
 	},
 	{
 		name: 'Morpho',
 		description: 'Time to feel the 🦋 effect!',
 		logoURI: 'https://morpho.yearn.space/favicons/favicon-512x512.png',
 		appURI: 'https://morpho.yearn.space'
+	},
+	{
+		name: 'PoolTogether',
+		description: 'Get the best risk adjusted PoolTogether yields, with Yearn.',
+		logoURI: 'https://pooltogether.yearn.space/favicons/favicon-512x512.png',
+		appURI: 'https://pooltogether.yearn.space'
 	}
 ];
 
@@ -185,6 +167,24 @@ export const FEATURED_APPS = [
 
 export const OLD_APPS: TApp[] = [
 	{
+		name: 'Gimme',
+		description: 'DeFi yields, designed for everyone.',
+		logoURI: 'https://gimme.mom/favicons/favicon-96x96.png',
+		appURI: 'https://gimme.mom/'
+	},
+	{
+		name: 'Pendle',
+		description: 'The best Pendle yields, with auto-rolling functionality.',
+		logoURI: 'https://pendle.yearn.space/favicons/favicon-512x512.png',
+		appURI: 'https://pendle.yearn.space'
+	},
+	{
+		name: 'AJNA',
+		description: 'Get the best risk adjusted Ajna yields, with Yearn.',
+		logoURI: 'https://ajna.yearn.space/favicons/favicon-512x512.png',
+		appURI: 'https://ajna.yearn.space'
+	},
+	{
 		name: 'Juiced',
 		description: 'Discover yields juiced with extra token rewards.',
 		logoURI: '/juiced-featured.jpg',
@@ -243,11 +243,11 @@ export const CATEGORIES_DICT = {
 		categorySlug: 'integrations',
 		apps: INTEGRATIONS_APPS
 	},
-	'old-apps': {
-		categoryName: 'Old Products',
+	'retired-apps': {
+		categoryName: 'Retired Products',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		categorySlug: 'old-stuff',
+		categorySlug: 'Retired Products',
 		apps: OLD_APPS
 	}
 };
@@ -268,7 +268,7 @@ export const MENU_TABS = [
 	{title: 'Yearn Apps', route: 'yearn-apps'},
 	{title: 'Yearn X Projects', route: 'yearn-x'},
 	{title: 'Integrations', route: 'integrations'},
-	{title: 'Old Apps', route: 'old-apps'}
+	{title: 'Retired Apps', route: 'retired-apps'}
 	// {title: 'About', route: 'about'}
 ];
 

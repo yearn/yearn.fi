@@ -1,6 +1,6 @@
 import {type ReactElement, useRef, useState} from 'react';
 import {useMountEffect} from '@react-hookz/web';
-import {CarouselControls} from '@common/CarouselControls';
+// import {CarouselControls} from '@common/CarouselControls';
 import {CarouselSlideArrows} from '@common/CarouselSlideArrows';
 import {IconShare} from '@common/icons/IconShare';
 
@@ -16,7 +16,7 @@ type TAppSectionProps = {
 
 export const CategorySection = ({title, onExpandClick, apps}: TAppSectionProps): ReactElement => {
 	const [shuffledApps, set_shuffledApps] = useState<TApp[]>([]);
-	const [currentPage, set_currentPage] = useState(1);
+	const [, set_currentPage] = useState(1);
 	const carouselRef = useRef<HTMLDivElement | null>(null);
 	const [isProgrammaticScroll, set_isProgrammaticScroll] = useState(false);
 
@@ -79,20 +79,20 @@ export const CategorySection = ({title, onExpandClick, apps}: TAppSectionProps):
 	 ** It updates the scroll position, current page, and sets a flag to indicate programmatic
 	 ** scrolling. The flag is reset after a delay to allow for smooth scrolling.
 	 *********************************************************************************************/
-	const onDotsClick = (destination: number): void => {
-		if (!carouselRef.current) return;
-		const itemWidth = getItemWidth();
-		if (itemWidth === 0) return;
+	// const onDotsClick = (destination: number): void => {
+	// 	if (!carouselRef.current) return;
+	// 	const itemWidth = getItemWidth();
+	// 	if (itemWidth === 0) return;
 
-		set_isProgrammaticScroll(true);
+	// 	set_isProgrammaticScroll(true);
 
-		carouselRef.current.scrollLeft = itemWidth * (destination - 1) * 4; // 4 items per page
-		set_currentPage(destination);
+	// 	carouselRef.current.scrollLeft = itemWidth * (destination - 1) * 4; // 4 items per page
+	// 	set_currentPage(destination);
 
-		setTimeout(() => {
-			set_isProgrammaticScroll(false);
-		}, 300);
-	};
+	// 	setTimeout(() => {
+	// 		set_isProgrammaticScroll(false);
+	// 	}, 300);
+	// };
 
 	/**********************************************************************************************
 	 ** Handles the scroll event of the carousel.
@@ -115,24 +115,27 @@ export const CategorySection = ({title, onExpandClick, apps}: TAppSectionProps):
 		if (apps?.length < 1) {
 			return;
 		}
-		set_shuffledApps(apps?.toSorted(() => 0.5 - Math.random()));
+		if (title === 'Integrations') {
+			set_shuffledApps(apps?.toSorted(() => 0.5 - Math.random()));
+		}
+		set_shuffledApps(apps);
 	});
 
 	return (
 		<div className={'flex flex-col overflow-hidden'}>
 			<div className={'mb-6 flex h-10 w-full items-center justify-between pr-1'}>
 				<div className={'flex gap-x-4'}>
-					<div className={'whitespace-nowrap text-lg font-bold text-white'}>{title}</div>
+					<div className={'whitespace-nowrap text-lg font-bold text-neutral-800'}>{title}</div>
 					<button
 						onClick={onExpandClick}
 						className={
-							'flex items-center rounded-[4px] px-4 py-2 outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
+							'flex items-center rounded-[4px] px-4 py-2 outline !outline-1 outline-neutral-600/50 hover:bg-neutral-600/40'
 						}>
-						<span className={'mr-2 whitespace-nowrap text-xs text-white'}>{'View all'}</span>
-						<IconShare className={'size-3 text-white'} />
+						<span className={'mr-2 whitespace-nowrap text-xs text-neutral-800'}>{'View all'}</span>
+						<IconShare className={'size-3'} />
 					</button>
 				</div>
-				{apps?.length > 4 && (
+				{apps?.length > 5 && (
 					<CarouselSlideArrows
 						onScrollBack={onScrollBack}
 						onScrollForward={onScrollForward}
@@ -144,11 +147,11 @@ export const CategorySection = ({title, onExpandClick, apps}: TAppSectionProps):
 				ref={carouselRef}
 				onScroll={onScroll}
 			/>
-			<CarouselControls
+			{/* <CarouselControls
 				carouselLength={apps.length}
 				onDotsClick={onDotsClick}
 				currentPage={currentPage}
-			/>
+			/> */}
 		</div>
 	);
 };
