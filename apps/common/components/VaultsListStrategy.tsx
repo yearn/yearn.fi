@@ -53,7 +53,7 @@ export function VaultsListStrategy({
 	});
 	const latestApr = useMemo((): number => findLatestAPY(reports), [reports]);
 
-	const finalApt = apr || latestApr;
+	const finalApr = apr || latestApr;
 
 	const expandAnimation = {
 		initial: {
@@ -168,7 +168,7 @@ export function VaultsListStrategy({
 						<p>
 							<RenderAmount
 								shouldHideTooltip
-								value={finalApt}
+								value={finalApr}
 								symbol={'percent'}
 								decimals={6}
 							/>
