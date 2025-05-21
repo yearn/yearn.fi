@@ -176,8 +176,8 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	return (
 		<>
 			<div className={cl(isVaultListEmpty ? 'hidden' : '')}>
-				<div className={'grid grid-cols-1 px-8 pb-6 pt-8 md:gap-6 lg:grid-cols-12'}>
-					<div className={'col-span-9 flex min-h-[240px] w-full flex-col'}>
+				<div className={'grid grid-cols-1 gap-y-6 p-4 md:gap-x-6 md:p-8 lg:grid-cols-12 lg:gap-y-4'}>
+					<div className={'col-span-9 flex w-full flex-col'}>
 						<VaultsV3ListHead
 							sortBy={sortBy}
 							sortDirection={sortDirection}
@@ -242,52 +242,54 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 									/>
 								);
 							})}
-							{unallocatedVaults.length > 0 && (
-								<Button
-									variant={'v3'}
-									className={'w-full md:w-[184px]'}
-									onClick={() => set_shouldShowUnallocated(!shouldShowUnallocated)}>
-									{shouldShowUnallocated ? '- Hide unallocated' : '+ Show unallocated'}
-								</Button>
-							)}
-
-							<AnimatePresence>
-								{shouldShowUnallocated && (
-									<motion.div
-										initial={{opacity: 0, y: 20}}
-										animate={{opacity: 1, y: 0}}
-										exit={{opacity: 0, y: -20}}
-										transition={{duration: 0.3, ease: 'easeInOut'}}
-										className={'grid grid-cols-1 gap-4'}>
-										{unallocatedVaults.map((vault): ReactElement => {
-											return (
-												<VaultsListStrategy
-													isUnallocated={true}
-													key={`${vault?.chainID || currentVault.chainID}_${vault.address}`}
-													details={vault.details}
-													chainId={vault.chainID || currentVault.chainID}
-													variant={'v3'}
-													address={vault.address}
-													name={vault.name}
-													tokenAddress={vault.token?.address || currentVault.token.address}
-													allocation={formatCounterValue(
-														toNormalizedBN(
-															vault.details?.totalDebt || 0,
-															vault.token?.decimals || currentVault.token?.decimals
-														).display,
-														tokenPrice
-													)}
-													apr={vault.apr?.forwardAPR.netAPR || vault.apr?.netAPR}
-													fees={vault.apr?.fees}
-												/>
-											);
-										})}
-									</motion.div>
-								)}
-							</AnimatePresence>
 						</div>
 					</div>
-					<div className={'col-span-9 mt-4 flex size-full lg:col-span-3'}>
+					<div className={'col-span-9 row-start-3 flex w-full flex-col gap-4 lg:row-start-2'}>
+						{unallocatedVaults.length > 0 && (
+							<Button
+								className={
+									'w-full !bg-[#2C3DA6] !bg-opacity-20 !text-white hover:!bg-opacity-100 md:w-[264px]'
+								}
+								onClick={() => set_shouldShowUnallocated(!shouldShowUnallocated)}>
+								{shouldShowUnallocated ? '- Hide inactive strategies' : '+ Show inactive strategies'}
+							</Button>
+						)}
+						<AnimatePresence>
+							{shouldShowUnallocated && (
+								<motion.div
+									initial={{opacity: 0, y: 20}}
+									animate={{opacity: 1, y: 0}}
+									exit={{opacity: 0, y: -20}}
+									transition={{duration: 0.3, ease: 'easeInOut'}}
+									className={'grid grid-cols-1 gap-4'}>
+									{unallocatedVaults.map((vault): ReactElement => {
+										return (
+											<VaultsListStrategy
+												isUnallocated={true}
+												key={`${vault?.chainID || currentVault.chainID}_${vault.address}`}
+												details={vault.details}
+												chainId={vault.chainID || currentVault.chainID}
+												variant={'v3'}
+												address={vault.address}
+												name={vault.name}
+												tokenAddress={vault.token?.address || currentVault.token.address}
+												allocation={formatCounterValue(
+													toNormalizedBN(
+														vault.details?.totalDebt || 0,
+														vault.token?.decimals || currentVault.token?.decimals
+													).display,
+													tokenPrice
+												)}
+												apr={vault.apr?.forwardAPR.netAPR || vault.apr?.netAPR}
+												fees={vault.apr?.fees}
+											/>
+										);
+									})}
+								</motion.div>
+							)}
+						</AnimatePresence>
+					</div>
+					<div className={'col-span-9 col-start-1 flex size-full lg:col-span-3 lg:mt-4'}>
 						<div className={'flex size-full flex-col items-center justify-start'}>
 							<PieChart
 								width={200}
