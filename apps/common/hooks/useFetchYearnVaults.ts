@@ -47,14 +47,17 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 	const {data: vaultsMigrations} = useFetch<TYDaemonVaults>({
 		endpoint: `${yDaemonBaseUriWithoutChain}/vaults?${new URLSearchParams({
 			chainIDs: chainIDs ? chainIDs.join(',') : [1, 10, 137, 250, 8453, 42161].join(','),
-			migratable: 'nodust'
+			migratable: 'nodust',
+			limit: '2500'
 		})}`,
 		schema: yDaemonVaultsSchema
 	});
 
 	// const vaultsRetired: TYDaemonVaults = useMemo(() => [], []);
 	const {data: vaultsRetired} = useFetch<TYDaemonVaults>({
-		endpoint: `${yDaemonBaseUriWithoutChain}/vaults/retired`,
+		endpoint: `${yDaemonBaseUriWithoutChain}/vaults/retired?${new URLSearchParams({
+			limit: '2500'
+		})}`,
 		schema: yDaemonVaultsSchema
 	});
 

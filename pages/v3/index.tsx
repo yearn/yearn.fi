@@ -209,20 +209,9 @@ function ListOfVaults(): ReactElement {
 		// Add migratable vaults to holdings (guaranteed to have balance)
 		for (const vault of migratableVaults) {
 			const key = `${vault.chainID}_${vault.address}`;
-			holdings.push(
-				<VaultsV3ListRow
-					key={key}
-					currentVault={vault}
-				/>
-			);
-			processedForHoldings.add(key);
-		}
-
-		// Add retired vaults to holdings (guaranteed to have balance)
-		for (const vault of retiredVaults) {
-			const key = `${vault.chainID}_${vault.address}`;
-			if (!processedForHoldings.has(key)) {
-				// Avoid duplicates
+			const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
+			const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
+			if (hasBalance || hasStakingBalance) {
 				holdings.push(
 					<VaultsV3ListRow
 						key={key}
@@ -230,6 +219,25 @@ function ListOfVaults(): ReactElement {
 					/>
 				);
 				processedForHoldings.add(key);
+			}
+		}
+
+		// Add retired vaults to holdings (guaranteed to have balance)
+		for (const vault of retiredVaults) {
+			const key = `${vault.chainID}_${vault.address}`;
+			if (!processedForHoldings.has(key)) {
+				// Avoid duplicates
+				const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
+				const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
+				if (hasBalance || hasStakingBalance) {
+					holdings.push(
+						<VaultsV3ListRow
+							key={key}
+							currentVault={vault}
+						/>
+					);
+					processedForHoldings.add(key);
+				}
 			}
 		}
 
