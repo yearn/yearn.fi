@@ -75,7 +75,7 @@ function UnallocatedStrategy({
 							'items-right flex flex-row justify-between sm:flex-col md:col-span-4 md:mr-[-20px] md:text-right'
 						}
 						datatype={'number'}>
-						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Amount $'}</p>
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Amount'}</p>
 						<p>{unallocatedValue}</p>
 					</div>
 				</div>
