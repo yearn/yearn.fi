@@ -120,7 +120,7 @@ export function VaultsListStrategy({
 			<div
 				className={cl(
 					'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 px-4 md:px-8 cursor-pointer justify-between',
-					variant === 'v3' ? '' : 'border-t border-[#606770]'
+					variant === 'v3' ? '' : 'md:border-t border-[#606770]'
 				)}
 				onClick={() => set_isExpanded(!isExpanded)}>
 				<div className={cl('col-span-5 flex flex-row items-center gap-4 z-10')}>

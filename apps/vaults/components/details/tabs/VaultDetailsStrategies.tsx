@@ -1,5 +1,4 @@
 import {useMemo, useState} from 'react';
-import {zeroAddress} from 'viem';
 import {AnimatePresence, motion} from 'framer-motion';
 import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
@@ -13,6 +12,7 @@ import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
+import type {TAllocationChartData} from '@common/components/AllocationChart';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function UnallocatedStrategy({
@@ -25,7 +25,7 @@ function UnallocatedStrategy({
 	return (
 		<div
 			className={cl(
-				'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 px-8 justify-between',
+				'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 px-4 md:px-8 justify-between',
 				'border-t border-[#606770]'
 			)}>
 			<div className={cl('col-span-5 flex flex-row items-center gap-4 z-10')}>
@@ -36,15 +36,22 @@ function UnallocatedStrategy({
 				<strong className={'block truncate font-bold '}>{'Unallocated'}</strong>
 			</div>
 
-			<div className={cl('md:col-span-7 z-10', 'grid grid-cols-3 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
+			<div
+				className={cl(
+					'md:col-span-7 z-10',
+					'grid grid-cols-1 sm:grid-cols-3 md:grid-cols-12 md:gap-4',
+					'mt-4 md:mt-0'
+				)}>
 				<div
-					className={'flex-row md:col-span-3 md:flex-col md:text-right'}
+					className={'items-right flex flex-row justify-between sm:flex-col md:col-span-3 md:text-right'}
 					datatype={'number'}>
 					<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Allocation %'}</p>
 					<p>{formatPercent(unallocatedPercentage / 100, 0)}</p>
 				</div>
 				<div
-					className={'mr-[-20px] flex-row md:col-span-4 md:flex-col md:text-right'}
+					className={
+						'items-right flex flex-row justify-between sm:flex-col md:col-span-4 md:mr-[-20px] md:text-right'
+					}
 					datatype={'number'}>
 					<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Allocation $'}</p>
 					<p>{unallocatedValue}</p>
@@ -75,31 +82,27 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		return _stratList;
 	}, [vaults, currentVault]);
 
+	/* 🔵 - Yearn Finance **************************************************************************
+	 **	Source of truth for the unallocated percentage and value.
+	 **********************************************************************************************/
 	const unallocatedPercentage =
 		100 * 100 - strategyList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0);
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	 **	True when the unallocated percentage is greater than 0. Might be a non-zero value due to
+	 **	price precision.
+	 **********************************************************************************************/
+	const unallocatedValue =
+		Number(currentVault.tvl.totalAssets) -
+		strategyList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0);
 
 	const filteredStrategyList = useMemo(() => {
 		const strategies = strategyList.filter(vault => vault.details?.totalDebt !== '0') as (TYDaemonVault & {
 			details: TYDaemonVaultStrategy['details'];
 		})[];
 
-		const unallocatedValue =
-			Number(currentVault.tvl.totalAssets) -
-			strategyList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0);
-
-		if (unallocatedPercentage > 0) {
-			strategies.push({
-				address: zeroAddress,
-				name: 'Unallocated',
-				details: {
-					debtRatio: unallocatedPercentage,
-					totalDebt: unallocatedValue
-				}
-			} as unknown as TYDaemonVault & {details: TYDaemonVaultStrategy['details']});
-		}
-
 		return strategies;
-	}, [currentVault.tvl.totalAssets, strategyList, unallocatedPercentage]);
+	}, [strategyList]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
@@ -121,9 +124,17 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 						toNormalizedBN(strategy.details?.totalDebt || 0, strategy.token?.decimals).display,
 						tokenPrice
 					)
-				}))
-			].filter(Boolean),
-		[filteredStrategyList, tokenPrice]
+				})),
+				unallocatedPercentage > 0
+					? {
+							id: 'unallocated',
+							name: 'Unallocated',
+							value: unallocatedPercentage / 100,
+							amount: formatCounterValue(unallocatedValue, currentVault.token?.decimals)
+						}
+					: null
+			].filter(Boolean) as TAllocationChartData[],
+		[currentVault.token?.decimals, filteredStrategyList, tokenPrice, unallocatedPercentage, unallocatedValue]
 	);
 
 	const unallocatedVaults = useMemo(() => {
@@ -186,47 +197,44 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 						/>
 						<div className={'grid'}>
 							{(sortedVaultsToDisplay || []).map(
-								(strategy): ReactElement =>
-									strategy.address === zeroAddress ? (
-										<UnallocatedStrategy
-											key={'unallocated'}
-											unallocatedPercentage={unallocatedPercentage}
-											unallocatedValue={formatCounterValue(
-												toNormalizedBN(
-													strategy.details?.totalDebt || 0,
-													strategy.token?.decimals || currentVault.token?.decimals
-												).display,
-												tokenPrice
-											)}
-										/>
-									) : (
-										<VaultsListStrategy
-											key={`${currentVault?.chainID || currentVault.chainID}_${strategy.address}`}
-											details={strategy.details}
-											chainId={currentVault.chainID || currentVault.chainID}
-											address={strategy.address}
-											variant={'v2'}
-											name={strategy.name}
-											tokenAddress={strategy.token?.address || currentVault.token.address}
-											allocation={formatCounterValue(
-												toNormalizedBN(
-													strategy.details?.totalDebt || 0,
-													strategy.token?.decimals || currentVault.token?.decimals
-												).display,
-												tokenPrice
-											)}
-											apr={
-												strategy.apr?.forwardAPR?.netAPR ||
-												strategy.apr?.netAPR ||
-												(strategy as {netAPR?: number}).netAPR
-											}
-											fees={{
-												performance: strategy.details?.performanceFee || 0,
-												withdrawal: 0,
-												management: 0
-											}}
-										/>
-									)
+								(strategy): ReactElement => (
+									<VaultsListStrategy
+										key={`${currentVault?.chainID || currentVault.chainID}_${strategy.address}`}
+										details={strategy.details}
+										chainId={currentVault.chainID || currentVault.chainID}
+										address={strategy.address}
+										variant={'v2'}
+										name={strategy.name}
+										tokenAddress={strategy.token?.address || currentVault.token.address}
+										allocation={formatCounterValue(
+											toNormalizedBN(
+												strategy.details?.totalDebt || 0,
+												strategy.token?.decimals || currentVault.token?.decimals
+											).display,
+											tokenPrice
+										)}
+										apr={
+											strategy.apr?.forwardAPR?.netAPR ||
+											strategy.apr?.netAPR ||
+											(strategy as {netAPR?: number}).netAPR
+										}
+										fees={{
+											performance: strategy.details?.performanceFee || 0,
+											withdrawal: 0,
+											management: 0
+										}}
+									/>
+								)
+							)}
+							{unallocatedPercentage > 0 && (
+								<UnallocatedStrategy
+									key={'unallocated'}
+									unallocatedPercentage={unallocatedPercentage}
+									unallocatedValue={formatCounterValue(
+										toNormalizedBN(unallocatedValue, currentVault.token?.decimals).display,
+										tokenPrice
+									)}
+								/>
 							)}
 						</div>
 					</div>

@@ -4,7 +4,7 @@ import {AllocationTooltip} from './AllocationTooltip';
 
 import type {ReactElement} from 'react';
 
-type TAllocationChartData = {
+export type TAllocationChartData = {
 	id: string;
 	name: string;
 	value: number;
