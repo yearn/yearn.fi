@@ -209,8 +209,10 @@ function ListOfVaults(): ReactElement {
 		// Add migratable vaults to holdings (guaranteed to have balance)
 		for (const vault of migratableVaults) {
 			const key = `${vault.chainID}_${vault.address}`;
-			const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
-			const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
+			const balance = getBalance({address: vault.address, chainID: vault.chainID});
+			const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID});
+			const hasBalance = balance.raw > 0n;
+			const hasStakingBalance = stakingBalance.raw > 0n;
 			if (hasBalance || hasStakingBalance) {
 				holdings.push(
 					<VaultsV3ListRow
