@@ -1,5 +1,4 @@
 import {useMemo, useState} from 'react';
-import {Cell, Label, Pie, PieChart, Tooltip} from 'recharts';
 import {zeroAddress} from 'viem';
 import {AnimatePresence, motion} from 'framer-motion';
 import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@builtbymom/web3/utils';
@@ -8,7 +7,7 @@ import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {AllocationTooltip} from '@common/components/AllocationTooltip';
+import {AllocationChart} from '@common/components/AllocationChart';
 import {VaultsListStrategy} from '@common/components/VaultsListStrategy';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
@@ -138,7 +137,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 
 		return strategies;
 	}, [currentVault.tvl.totalAssets, mergedList, unallocatedPercentage]);
-
+	console.log(filteredVaultList);
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
 	 **	is done via a custom method that will sort the vaults based on the sortBy and
@@ -168,15 +167,16 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		return mergedList.filter(vault => !vault.details?.debtRatio || vault.details?.totalDebt === '0');
 	}, [mergedList]);
 
-	const pieColors = ['#ff6ba5', '#ffb3d1', '#ff8fbb', '#ffd6e7', '#d21162', '#ff4d94'];
-
 	const isVaultListEmpty = [...vaultList, ...strategyList].length === 0;
 	const isFilteredVaultListEmpty = filteredVaultList.length === 0;
 
 	return (
 		<>
-			<div className={cl(isVaultListEmpty ? 'hidden' : '')}>
-				<div className={'grid grid-cols-1 gap-y-6 p-4 md:gap-x-6 md:p-8 lg:grid-cols-12 lg:gap-y-4'}>
+			<div className={cl(isVaultListEmpty ? 'hidden' : 'flex p-4 md:p-8 lg:pr-0')}>
+				<div
+					className={
+						'grid w-full grid-cols-1 place-content-start gap-y-6 md:gap-x-6 lg:max-w-[846px] lg:grid-cols-9 lg:gap-y-4'
+					}>
 					<div className={'col-span-9 flex w-full flex-col'}>
 						<VaultsV3ListHead
 							sortBy={sortBy}
@@ -244,6 +244,15 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							})}
 						</div>
 					</div>
+					<div className={'col-span-9 flex lg:mt-4 lg:hidden'}>
+						<div className={'flex size-full items-start justify-center'}>
+							<AllocationChart
+								allocationChartData={allocationChartData}
+								colors={['#ff6ba5', '#ffb3d1', '#ff8fbb', '#ffd6e7', '#d21162', '#ff4d94']}
+								textColor={'fill-white'}
+							/>
+						</div>
+					</div>
 					<div className={'col-span-9 row-start-3 flex w-full flex-col gap-4 lg:row-start-2'}>
 						{unallocatedVaults.length > 0 && (
 							<Button
@@ -289,54 +298,14 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							)}
 						</AnimatePresence>
 					</div>
-					<div className={'col-span-9 col-start-1 flex size-full lg:col-span-3 lg:mt-4'}>
-						<div className={'flex size-full flex-col items-center justify-start'}>
-							<PieChart
-								width={200}
-								height={200}>
-								<Pie
-									data={allocationChartData}
-									dataKey={'value'}
-									nameKey={'name'}
-									cx={'50%'}
-									cy={'50%'}
-									innerRadius={80}
-									outerRadius={100}
-									paddingAngle={5}
-									fill={'white'}
-									stroke={'hsl(231, 100%, 11%)'}
-									startAngle={90}
-									minAngle={3}
-									endAngle={-270}>
-									{allocationChartData.map((_, index) => (
-										<Cell
-											key={`cell-${index}`}
-											fill={pieColors[index % pieColors.length]}
-										/>
-									))}
-									<Label
-										content={() => (
-											<text
-												x={100}
-												y={100}
-												textAnchor={'middle'}
-												dominantBaseline={'middle'}
-												className={'fill-white text-sm font-medium'}>
-												{'allocation %'}
-											</text>
-										)}
-									/>
-								</Pie>
-								<Tooltip
-									content={({active, payload}) => (
-										<AllocationTooltip
-											active={active || false}
-											payload={payload}
-										/>
-									)}
-								/>
-							</PieChart>
-						</div>
+				</div>
+				<div className={'mx-auto flex max-lg:hidden lg:mt-4'}>
+					<div className={'flex size-full items-start justify-center'}>
+						<AllocationChart
+							allocationChartData={allocationChartData}
+							colors={['#ff6ba5', '#ffb3d1', '#ff8fbb', '#ffd6e7', '#d21162', '#ff4d94']}
+							textColor={'fill-white'}
+						/>
 					</div>
 				</div>
 			</div>

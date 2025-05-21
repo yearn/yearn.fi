@@ -1,12 +1,11 @@
 import {useMemo, useState} from 'react';
-import {Cell, Label, Pie, PieChart, Tooltip} from 'recharts';
 import {zeroAddress} from 'viem';
 import {AnimatePresence, motion} from 'framer-motion';
 import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
-import {AllocationTooltip} from '@common/components/AllocationTooltip';
+import {AllocationChart} from '@common/components/AllocationChart';
 import {VaultsListStrategy} from '@common/components/VaultsListStrategy';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
@@ -126,14 +125,15 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 			].filter(Boolean),
 		[filteredStrategyList, tokenPrice]
 	);
-	const isVaultListEmpty = strategyList.length === 0;
-	const isFilteredVaultListEmpty = filteredStrategyList.length === 0;
 
 	const unallocatedVaults = useMemo(() => {
 		return strategyList.filter(vault => !vault.details?.debtRatio || vault.details?.totalDebt === '0');
 	}, [strategyList]);
 
-	const pieColors = [
+	const isVaultListEmpty = strategyList.length === 0;
+	const isFilteredVaultListEmpty = filteredStrategyList.length === 0;
+
+	const chartColors = [
 		'fill-neutral-700',
 		'fill-neutral-600',
 		'fill-neutral-500',
@@ -144,109 +144,122 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 
 	return (
 		<>
-			<div className={cl(isFilteredVaultListEmpty ? 'hidden ' : '')}>
-				<div className={'grid grid-cols-1 px-8 pb-6 pt-8 md:gap-6 lg:grid-cols-12 '}>
-					<div className={'col-span-9 h-fit w-full border border-fallback'}>
-						<div>
-							<VaultsV3ListHead
-								sortBy={sortBy}
-								sortDirection={sortDirection}
-								onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-									if (newSortDirection === '') {
-										onChangeSortBy('featuringScore');
-										onChangeSortDirection('');
-										return;
-									}
-									onChangeSortBy(newSortBy as TPossibleSortBy);
-									onChangeSortDirection(newSortDirection as TSortDirection);
-								}}
-								items={[
-									{label: 'Vault', value: 'name', sortable: false, className: 'ml-20'},
-									{
-										label: 'Allocation %',
-										value: 'allocationPercentage',
-										sortable: true,
-										className: 'col-span-4'
-									},
-									{
-										label: 'Allocation $',
-										value: 'allocation',
-										sortable: true,
-										className: 'col-span-4'
-									},
-									{
-										label: 'Est. APY',
-										value: 'estAPY',
-										sortable: true,
-										className: 'col-span-4 justify-end'
-									}
-								]}
-							/>
-							<div className={'grid'}>
-								{(sortedVaultsToDisplay || []).map(
-									(strategy): ReactElement =>
-										strategy.address === zeroAddress ? (
-											<UnallocatedStrategy
-												key={'unallocated'}
-												unallocatedPercentage={unallocatedPercentage}
-												unallocatedValue={formatCounterValue(
-													toNormalizedBN(
-														strategy.details?.totalDebt || 0,
-														strategy.token?.decimals || currentVault.token?.decimals
-													).display,
-													tokenPrice
-												)}
-											/>
-										) : (
-											<VaultsListStrategy
-												key={`${currentVault?.chainID || currentVault.chainID}_${strategy.address}`}
-												details={strategy.details}
-												chainId={currentVault.chainID || currentVault.chainID}
-												address={strategy.address}
-												variant={'v2'}
-												name={strategy.name}
-												tokenAddress={strategy.token?.address || currentVault.token.address}
-												allocation={formatCounterValue(
-													toNormalizedBN(
-														strategy.details?.totalDebt || 0,
-														strategy.token?.decimals || currentVault.token?.decimals
-													).display,
-													tokenPrice
-												)}
-												apr={
-													strategy.apr?.forwardAPR?.netAPR ||
-													strategy.apr?.netAPR ||
-													(strategy as {netAPR?: number}).netAPR
-												}
-												fees={{
-													performance: strategy.details?.performanceFee || 0,
-													withdrawal: 0,
-													management: 0
-												}}
-											/>
-										)
-								)}
-							</div>
+			<div className={cl(isVaultListEmpty ? 'hidden ' : 'flex md:p-8 lg:pr-0 p-4 ')}>
+				<div
+					className={
+						'grid w-full grid-cols-1 place-content-start md:gap-x-6 lg:max-w-[846px] lg:grid-cols-9'
+					}>
+					<div className={'col-span-9 w-full border border-fallback'}>
+						<VaultsV3ListHead
+							sortBy={sortBy}
+							sortDirection={sortDirection}
+							onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+								if (newSortDirection === '') {
+									onChangeSortBy('featuringScore');
+									onChangeSortDirection('');
+									return;
+								}
+								onChangeSortBy(newSortBy as TPossibleSortBy);
+								onChangeSortDirection(newSortDirection as TSortDirection);
+							}}
+							items={[
+								{label: 'Vault', value: 'name', sortable: false, className: 'ml-20'},
+								{
+									label: 'Allocation %',
+									value: 'allocationPercentage',
+									sortable: true,
+									className: 'col-span-4'
+								},
+								{
+									label: 'Allocation $',
+									value: 'allocation',
+									sortable: true,
+									className: 'col-span-4'
+								},
+								{
+									label: 'Est. APY',
+									value: 'estAPY',
+									sortable: true,
+									className: 'col-span-4 justify-end'
+								}
+							]}
+						/>
+						<div className={'grid'}>
+							{(sortedVaultsToDisplay || []).map(
+								(strategy): ReactElement =>
+									strategy.address === zeroAddress ? (
+										<UnallocatedStrategy
+											key={'unallocated'}
+											unallocatedPercentage={unallocatedPercentage}
+											unallocatedValue={formatCounterValue(
+												toNormalizedBN(
+													strategy.details?.totalDebt || 0,
+													strategy.token?.decimals || currentVault.token?.decimals
+												).display,
+												tokenPrice
+											)}
+										/>
+									) : (
+										<VaultsListStrategy
+											key={`${currentVault?.chainID || currentVault.chainID}_${strategy.address}`}
+											details={strategy.details}
+											chainId={currentVault.chainID || currentVault.chainID}
+											address={strategy.address}
+											variant={'v2'}
+											name={strategy.name}
+											tokenAddress={strategy.token?.address || currentVault.token.address}
+											allocation={formatCounterValue(
+												toNormalizedBN(
+													strategy.details?.totalDebt || 0,
+													strategy.token?.decimals || currentVault.token?.decimals
+												).display,
+												tokenPrice
+											)}
+											apr={
+												strategy.apr?.forwardAPR?.netAPR ||
+												strategy.apr?.netAPR ||
+												(strategy as {netAPR?: number}).netAPR
+											}
+											fees={{
+												performance: strategy.details?.performanceFee || 0,
+												withdrawal: 0,
+												management: 0
+											}}
+										/>
+									)
+							)}
 						</div>
-						{unallocatedVaults.length > 0 && (
-							<div className={'col-span-9 w-full border-t border-fallback'}>
-								<button
-									className={'flex w-full items-center justify-start'}
-									onClick={() => set_shouldShowUnallocated(!shouldShowUnallocated)}>
-									<div className={'flex items-center px-8 py-3 text-left text-sm font-bold'}>
-										<p
-											className={cl(
-												'transition-all duration-300 ease-in-out mr-4',
-												shouldShowUnallocated ? '' : 'rotate-[-90deg]'
-											)}>
-											{'▼'}
-										</p>
-										{shouldShowUnallocated ? 'Hide' : 'Show'} {'unallocated'}
-									</div>
-								</button>
-							</div>
-						)}
-						{unallocatedVaults.length > 0 && (
+					</div>
+					{!isVaultListEmpty && (
+						<div className={'col-span-9 mt-4 flex items-center justify-center lg:hidden'}>
+							<AllocationChart
+								allocationChartData={allocationChartData}
+								colors={chartColors}
+								textColor={'fill-neutral-900'}
+							/>
+						</div>
+					)}
+					{unallocatedVaults.length > 0 && (
+						<div
+							className={cl(
+								'col-span-9 border border-fallback max-lg:row-start-3 lg:border-t-0',
+								isFilteredVaultListEmpty ? 'border-t-0' : 'max-lg:mt-4'
+							)}>
+							<button
+								className={'flex w-full items-center justify-start'}
+								onClick={() => set_shouldShowUnallocated(!shouldShowUnallocated)}>
+								<div className={'flex items-center px-4 py-3 text-left text-sm font-bold md:px-8'}>
+									<p
+										className={cl(
+											'transition-all duration-300 ease-in-out mr-4',
+											shouldShowUnallocated ? '' : 'rotate-[-90deg]'
+										)}>
+										{'▼'}
+									</p>
+									{shouldShowUnallocated ? 'Hide' : 'Show'} {'inactive strategies'}
+								</div>
+							</button>
+
 							<AnimatePresence>
 								{shouldShowUnallocated && (
 									<motion.div
@@ -292,60 +305,23 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 									</motion.div>
 								)}
 							</AnimatePresence>
-						)}
-					</div>
-					<div className={'col-span-9 mt-4 flex size-full lg:col-span-3'}>
-						<div className={'flex size-full flex-col items-center justify-start'}>
-							<PieChart
-								width={200}
-								height={200}>
-								<Pie
-									data={allocationChartData}
-									dataKey={'value'}
-									nameKey={'name'}
-									cx={'50%'}
-									cy={'50%'}
-									innerRadius={80}
-									outerRadius={100}
-									paddingAngle={5}
-									startAngle={90}
-									minAngle={3}
-									endAngle={-270}>
-									{allocationChartData.map((_, index) => (
-										<Cell
-											key={`cell-${index}`}
-											stroke={pieColors[index % pieColors.length]}
-											className={pieColors[index % pieColors.length]}
-										/>
-									))}
-									<Label
-										content={() => (
-											<text
-												x={100}
-												y={100}
-												textAnchor={'middle'}
-												dominantBaseline={'middle'}
-												className={'fill-neutral-900 text-sm font-medium'}>
-												{'allocation %'}
-											</text>
-										)}
-									/>
-								</Pie>
-								<Tooltip
-									content={({active, payload}) => (
-										<AllocationTooltip
-											active={active || false}
-											payload={payload}
-										/>
-									)}
-								/>
-							</PieChart>
 						</div>
-					</div>
+					)}
 				</div>
+
+				{!isVaultListEmpty && (
+					<div className={'mx-auto flex items-start justify-center max-lg:hidden'}>
+						<AllocationChart
+							allocationChartData={allocationChartData}
+							colors={chartColors}
+							textColor={'fill-neutral-900'}
+							strokeColor={'fill-neutral-900'}
+						/>
+					</div>
+				)}
 			</div>
 
-			<div className={cl(isFilteredVaultListEmpty ? '' : 'hidden')}>
+			<div className={cl(isVaultListEmpty ? '' : 'hidden')}>
 				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 					<b className={'text-center text-lg'}>
 						{isVaultListEmpty ? 'This vault IS the strategy' : 'No strategies found'}
