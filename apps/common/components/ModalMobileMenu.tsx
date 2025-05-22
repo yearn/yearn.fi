@@ -1,5 +1,5 @@
 'use client';
-import React, {Fragment, useMemo} from 'react';
+import React, {Fragment} from 'react';
 import Link from 'next/link';
 import {Dialog, Transition, TransitionChild} from '@headlessui/react';
 import {IconArrow} from '@common/icons/IconArrow';
@@ -13,57 +13,60 @@ import type {ReactElement, ReactNode} from 'react';
 import type {Chain} from 'viem';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 
+const menu: TMenu[] = [
+	{path: '/apps', label: 'Apps'},
+	{
+		path: 'https://gov.yearn.fi/',
+		label: 'Governance',
+		target: '_blank'
+	},
+	{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
+	{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
+	{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'}
+];
+
 export function FooterNav(): ReactElement {
-	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/apps', label: 'Apps'};
-
-		return [
-			HOME_MENU,
-			{
-				path: 'https://gov.yearn.fi/',
-				label: 'Governance',
-				target: '_blank'
-			},
-			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
-			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
-			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'}
-		];
-	}, []);
-
 	return (
-		<div className={'flex flex-col justify-between gap-y-20 md:flex-row md:items-end'}>
-			<div className={'flex flex-col gap-y-4'}>
+		<div
+			className={`flex flex-col md:flex-row space-y-14 md:space-y-0 md:space-x-14 w-full md:bg-gray-500 p-0 md:p-[12px] rounded-[24px]`}>
+			<div className={'flex flex-col space-y-8 w-full bg-gray-800 p-[24px] rounded-[12px]'}>
 				{menu.map(link => (
 					<Link
 						className={
-							'flex items-center justify-between gap-x-4 text-2xl text-white transition-colors hover:text-primary md:justify-start'
+							'flex items-center justify-between text-2xl text-white transition-colors hover:text-primary'
 						}
 						key={link.path}
 						target={link.target}
 						href={link.path}>
 						<span>{link.label}</span>
-						<IconArrow className={'size-4'} />
+						<IconArrow className={'size-6'} />
 					</Link>
 				))}
 			</div>
-			<div className={'flex items-center gap-6'}>
+			<div className={'flex justify-center items-center gap-6 w-full'}>
 				<Link
 					href={'https://paragraph.xyz/@yearn'}
 					target={'_blank'}
-					className={'flex items-center gap-x-4'}>
-					<IconParagraph className={'size-8 text-white transition-colors hover:text-primary'} />
+					className={
+						'rounded-full bg-white/10 p-3 flex items-center justify-center hover:bg-white/20 transition-colors'
+					}>
+					<IconParagraph className={'size-7 text-white'} />
 				</Link>
 				<Link
 					href={'https://discord.com/invite/yearn'}
 					target={'_blank'}
-					className={'flex items-center gap-x-4'}>
-					<IconDiscord className={'size-8 text-white transition-colors hover:text-primary'} />
+					className={
+						'rounded-full bg-white/10 p-3 flex items-center justify-center hover:bg-white/20 transition-colors'
+					}>
+					<IconDiscord className={'size-7 text-white'} />
 				</Link>
 				<Link
 					href={'https://x.com/yearnfi'}
 					target={'_blank'}
-					className={'flex items-center gap-x-4'}>
-					<IconTwitter className={'size-8 text-white transition-colors hover:text-primary'} />
+					className={
+						'rounded-full bg-white/10 p-3 flex items-center justify-center hover:bg-white/20 transition-colors'
+					}>
+					<IconTwitter className={'size-7 text-white'} />
 				</Link>
 			</div>
 		</div>
@@ -140,7 +143,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 									background:
 										'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
 								}}
-								className={'flex h-[calc(100vh-88px)] w-full flex-col justify-end px-6 pb-[104px]'}>
+								className={'flex h-[calc(100vh-88px)] w-full flex-col justify-end px-8 pb-20'}>
 								<FooterNav />
 							</div>
 						</div>
