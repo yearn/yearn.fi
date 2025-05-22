@@ -1,96 +1,85 @@
 import {FC} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
 
-export const Security: FC = () => {
+enum SecurityCardType {
+	Audits = 'audits',
+	BugBounties = 'bug-bounties'
+}
+
+const Cards: Record<
+	SecurityCardType,
+	{
+		title: string;
+		description: string;
+		href: string;
+		imageSrc: string;
+		gradientA: string;
+		gradientB: string;
+	}
+> = {
+	[SecurityCardType.Audits]: {
+		title: 'Audits',
+		description: 'Yearn Contracts are audited thoroughly by a variety of auditors.',
+		href: '#',
+		imageSrc: '/landing/yearn-apps-logo.png',
+		gradientA: 'radial-gradient(circle_at_center,#5141CAaa_0%,transparent_100%)',
+		gradientB: 'from-[#333761]/60 to-[#1A1C30]/60'
+	},
+	[SecurityCardType.BugBounties]: {
+		title: 'Bug Bounties',
+		description: 'Security is our top priority. Report vulnerabilities and get rewarded.',
+		href: '#',
+		imageSrc: '/landing/integrations.png',
+		gradientA: 'radial-gradient(circle_at_center,#0066FFaa_0%,transparent_100%)',
+		gradientB: 'from-[#1A3E68]/60 to-[#0A1E38]/60'
+	}
+};
+
+const SecurityCard: FC<{
+	type: SecurityCardType;
+}> = ({type}) => {
+	const {title, description, href, imageSrc, gradientA, gradientB} = Cards[type];
 	return (
-		<section className="flex justify-center w-full bg-gray-500">
-			<div className="w-[1180px] bg-gray-600 flex flex-col md:flex-row items-center justify-between py-16">
-				<div className="max-w-7xl w-full px-4">
-					<SectionHeader
-						align="center"
-						tagline="Audited, secure"
-						title="Security First"
-					/>
-
-					<div className="grid md:grid-cols-2 gap-6 pt-8">
-						{/* Audits Card */}
-						<div className="rounded-2xl overflow-hidden bg-[#2a2c4a]">
-							<div className="p-12 flex justify-center">
-								<Image
-									src="/landing/yearn-apps-logo.png"
-									width={180}
-									height={180}
-									alt="Yearn Audits"
-									className="w-auto h-auto"
-								/>
-							</div>
-							<div className="bg-[#333761] p-8">
-								<h3 className="text-3xl mb-4">Audits</h3>
-								<p className="text-gray-300 mb-4">
-									Yearn Contracts are audited thoroughly by a variety of auditors.
-								</p>
-								<Link
-									href="#"
-									className="text-[#4a5aef] flex items-center">
-									Learn More
-									<svg
-										className="ml-2 w-4 h-4"
-										viewBox="0 0 24 24"
-										fill="none"
-										xmlns="http://www.w3.org/2000/svg">
-										<path
-											d="M5 12H19M19 12L12 5M19 12L12 19"
-											stroke="currentColor"
-											strokeWidth="2"
-											strokeLinecap="round"
-											strokeLinejoin="round"
-										/>
-									</svg>
-								</Link>
-							</div>
-						</div>
-
-						{/* Bug Bounties Card */}
-						<div className="rounded-2xl overflow-hidden bg-[#103042]">
-							<div className="p-12 flex justify-center">
-								<Image
-									src="/landing/integrations.png"
-									width={180}
-									height={180}
-									alt="Bug Bounties"
-									className="w-auto h-auto"
-								/>
-							</div>
-							<div className="bg-[#164156] p-8">
-								<h3 className="text-3xl mb-4">Bug Bounties</h3>
-								<p className="text-gray-300 mb-4">
-									Security is our top priority. Report vulnerabilities and get rewarded.
-								</p>
-								<Link
-									href="#"
-									className="text-[#4a5aef] flex items-center">
-									Learn More
-									<svg
-										className="ml-2 w-4 h-4"
-										viewBox="0 0 24 24"
-										fill="none"
-										xmlns="http://www.w3.org/2000/svg">
-										<path
-											d="M5 12H19M19 12L12 5M19 12L12 19"
-											stroke="currentColor"
-											strokeWidth="2"
-											strokeLinecap="round"
-											strokeLinejoin="round"
-										/>
-									</svg>
-								</Link>
-							</div>
-						</div>
-					</div>
-				</div>
+		<div className="rounded-2xl overflow-hidden border-[1px] border-[#ffffff]/5 ">
+			<div className={`p-6 flex justify-center bg-[${gradientA}]`}>
+				<Image
+					src={imageSrc}
+					width={180}
+					height={180}
+					alt={title}
+					className="w-auto h-auto"
+				/>
 			</div>
-		</section>
+			<div className={`bg-gradient-to-t ${gradientB} p-8`}>
+				<h3 className="text-3xl mb-4 ">{title}</h3>
+				<p className="text-gray-300 mb-4 text-white/80">{description}</p>
+				<Link
+					href={href}
+					className="text-white flex items-center">
+					Learn More →
+				</Link>
+			</div>
+		</div>
 	);
 };
+
+export const Security: FC = () => (
+	<section className="flex justify-center w-full bg-white/5">
+		<div className="w-[1180px] flex flex-col md:flex-row items-center justify-between py-20">
+			<div className="max-w-7xl w-full px-4">
+				<SectionHeader
+					align="center"
+					tagline="Audited, secure"
+					title="Security First"
+				/>
+				<div className="grid md:grid-cols-2 gap-6 pt-16">
+					<SecurityCard type={SecurityCardType.Audits} />
+					<SecurityCard type={SecurityCardType.BugBounties} />
+				</div>
+			</div>
+		</div>
+	</section>
+);

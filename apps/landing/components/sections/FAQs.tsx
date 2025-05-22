@@ -33,9 +33,9 @@ const FAQItem: FC<FAQItemProps> = ({title, children, initialOpen = false}) => {
 
 export const FAQs: FC = () => {
 	return (
-		<section className="flex justify-center w-full bg-gray-400">
-			<div className="w-[1180px] bg-gray-500 flex flex-col md:flex-row items-center justify-between py-16">
-				<div className="w-full max-w-[2352px] px-8 md:px-14 py-12">
+		<section className="flex justify-center w-full ">
+			<div className="w-[1180px] flex flex-col md:flex-row items-center justify-between py-16">
+				<div className="w-full px-4">
 					<div className="mb-10 flex flex-col justify-between gap-y-6 md:flex-row">
 						<SectionHeader
 							tagline="Education"

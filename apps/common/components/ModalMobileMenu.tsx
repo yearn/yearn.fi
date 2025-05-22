@@ -28,8 +28,8 @@ const menu: TMenu[] = [
 export function FooterNav(): ReactElement {
 	return (
 		<div
-			className={`flex flex-col md:flex-row space-y-14 md:space-y-0 md:space-x-14 w-full md:bg-gray-500 p-0 md:p-[12px] rounded-[24px]`}>
-			<div className={'flex flex-col space-y-8 w-full bg-gray-800 p-[24px] rounded-[12px]'}>
+			className={`flex flex-col md:flex-row space-y-14 md:space-y-0 md:space-x-14 w-full md:bg-[#222222]/50 p-0 md:p-[12px] rounded-[24px] `}>
+			<div className={'flex flex-col space-y-8 w-full bg-black/30 p-[24px] rounded-[12px]'}>
 				{menu.map(link => (
 					<Link
 						className={

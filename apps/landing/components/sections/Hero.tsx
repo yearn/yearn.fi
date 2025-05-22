@@ -133,20 +133,16 @@ export function Hero(): ReactElement {
 					}>
 					<AnimatedLogos />
 					<div className="h-[100%] flex items-center justify-center">
-						<div className={'z-20  flex flex-col items-center justify-center gap-4 text-center'}>
+						<div className={'z-20 flex flex-col items-center justify-center gap-12 text-center'}>
 							<TvlStat tvl={tvl ?? 0} />
-
 							<SectionHeader
 								isH1
 								title="Earn on your Crypto"
 								description="DeFi's longest running, most battle tested protocol"
 							/>
-
-							<div className={'mt-[72px] md:mt-[24px] lg:mt-[24px]'}>
-								<Link href={'/apps'}>
-									<Button>{'Explore Vaults'}</Button>
-								</Link>
-							</div>
+							<Link href={'/apps'}>
+								<Button>{'Explore Vaults'}</Button>
+							</Link>
 						</div>
 					</div>
 				</div>
@@ -166,7 +162,6 @@ export function Hero(): ReactElement {
 					width={250}
 					height={250}
 				/>
-
 				<SectionHeader
 					isH1
 					tagline="Earn on your Crypto"

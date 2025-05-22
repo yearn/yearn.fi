@@ -45,7 +45,7 @@ const IntegrationItem: FC<{
 }> = ({name, imageSrc, description, index}) => {
 	return (
 		<div
-			className={`flex flex-col md:flex-row justify-between items-center p-[16px] ${index % 2 === 0 ? 'bg-gray-900' : 'bg-gray-800'}`}>
+			className={`flex flex-col md:flex-row justify-between items-center p-[16px] ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}>
 			<div className="flex items-center">
 				<div className="w-12 h-12 relative mr-4">
 					<Image
@@ -68,9 +68,9 @@ const IntegrationItem: FC<{
 };
 
 export const Integrations: FC = () => (
-	<section className="flex justify-center w-full bg-gray-500">
-		<div className="w-[1180px] bg-gray-600 flex flex-col md:flex-row items-center justify-between py-16">
-			<div className="max-w-7xl w-full px-4">
+	<section className="flex justify-center w-full bg-white/5">
+		<div className="w-[1180px] flex flex-col md:flex-row items-center justify-between py-16">
+			<div className="w-full px-4">
 				<SectionHeader
 					tagline="Partners"
 					title="Integrations"
@@ -80,7 +80,7 @@ export const Integrations: FC = () => (
 						href: '#'
 					}}
 				/>
-				<div className="mt-8 grid gap-px bg-gray-800 rounded-lg overflow-hidden">
+				<div className="mt-8 grid rounded-lg overflow-hidden">
 					{integrations.map((integration, index) => (
 						<IntegrationItem
 							index={index}
