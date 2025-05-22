@@ -1,13 +1,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import {z} from 'zod';
 import {motion} from 'framer-motion';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {TvlStat} from '@common/components/TvlStat';
-
 import {Button} from '../common/Button';
-
 import type {ReactElement} from 'react';
+import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
 
 function AnimatedLogos(): ReactElement {
 	return (
@@ -113,11 +110,12 @@ function AnimatedLogos(): ReactElement {
 }
 
 export function Hero(): ReactElement {
-	// TODO: do we have an alt TVL API endpoint?
-	const {data: tvl} = useFetch<number>({
-		endpoint: `https://api.llama.fi/tvl/yearn`,
-		schema: z.number()
-	});
+	// Restore: once I've stopped dev-ing
+	// const {data: tvl} = useFetch<number>({
+	// 	endpoint: `https://api.llama.fi/tvl/yearn`,
+	// 	schema: z.number()
+	// });
+	const tvl = 12310232;
 
 	return (
 		<>
@@ -131,24 +129,24 @@ export function Hero(): ReactElement {
 						overflow: 'hidden'
 					}}
 					className={
-						'relative mx-6 mt-6 flex h-[500px] w-[2365px] max-w-[2352px] flex-col items-center self-center rounded-lg border border-[#292929]'
+						'relative mx-6 mt-6 flex h-[700px] w-[2365px] max-w-[2352px] flex-col items-center self-center rounded-lg border border-[#292929] '
 					}>
 					<AnimatedLogos />
-					<div
-						className={
-							'z-20 mt-[88px] flex flex-col items-center justify-center gap-4 text-center md:mt-[160px]'
-						}>
-						<TvlStat tvl={tvl ?? 0} />
-						<div className={'z-20 flex flex-col items-center justify-center pt-2 text-center'}>
-							<p className={'text-[56px] font-medium text-white'}>{'Earn on your Crypto'}</p>
-							<p className={'mt-1 text-[20px] text-gray-400'}>
-								{"DeFi's longest running, most battle tested protocol"}
-							</p>
-						</div>
-						<div className={'mt-[72px] md:mt-[24px] lg:mt-[24px]'}>
-							<Link href={'/apps'}>
-								<Button>{'Explore Vaults'}</Button>
-							</Link>
+					<div className="h-[100%] flex items-center justify-center">
+						<div className={'z-20  flex flex-col items-center justify-center gap-4 text-center'}>
+							<TvlStat tvl={tvl ?? 0} />
+
+							<SectionHeader
+								isH1
+								title="Earn on your Crypto"
+								description="DeFi's longest running, most battle tested protocol"
+							/>
+
+							<div className={'mt-[72px] md:mt-[24px] lg:mt-[24px]'}>
+								<Link href={'/apps'}>
+									<Button>{'Explore Vaults'}</Button>
+								</Link>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -168,16 +166,12 @@ export function Hero(): ReactElement {
 					width={250}
 					height={250}
 				/>
-				<div className={'z-20 mt-4 flex flex-col items-center text-center'}>
-					<p className={'text-center text-[38px] font-medium leading-[42px] text-white'}>
-						{'Earn on your Crypto'}
-					</p>
-					<p
-						className={'mt-4 text-center text-gray-400'}
-						style={{maxWidth: '30ch'}}>
-						{"DeFi's longest running, most battle tested protocol"}
-					</p>
-				</div>
+
+				<SectionHeader
+					isH1
+					tagline="Earn on your Crypto"
+					title="DeFi's longest running, most battle tested protocol"
+				/>
 				<div className={'mt-10 flex w-full flex-col items-center gap-2'}>
 					<Link href={'/apps'}>
 						<Button>{'Explore Vaults'}</Button>
