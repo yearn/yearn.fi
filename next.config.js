@@ -1,6 +1,7 @@
 // eslint-disable-next-line unused-imports/no-unused-vars, @typescript-eslint/no-unused-vars
 const {withPlausibleProxy} = require('next-plausible');
 const withTM = require('next-transpile-modules')(['@yearn-finance/web-lib']);
+const path = require('path');
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 // const withPWA = require('next-pwa')({
 // 	dest: 'public',
@@ -13,13 +14,14 @@ module.exports = withPlausibleProxy({
 })(
 	withTM({
 		webpack: config => {
+			const webLibPath = path.join(__dirname, 'node_modules', '@yearn-finance', 'web-lib', 'src');
 			config.resolve.alias = {
 				...config.resolve.alias,
-				'@yearn-finance/web-lib/utils': require.resolve('@yearn-finance/web-lib/src/utils'),
-				'@yearn-finance/web-lib/hooks': require.resolve('@yearn-finance/web-lib/src/hooks'),
-				'@yearn-finance/web-lib/components': require.resolve('@yearn-finance/web-lib/src/components'),
-				'@yearn-finance/web-lib/icons': require.resolve('@yearn-finance/web-lib/src/icons'),
-				'@yearn-finance/web-lib/types': require.resolve('@yearn-finance/web-lib/src/types')
+				'@yearn-finance/web-lib/utils': path.join(webLibPath, 'utils'),
+				'@yearn-finance/web-lib/hooks': path.join(webLibPath, 'hooks'),
+				'@yearn-finance/web-lib/components': path.join(webLibPath, 'components'),
+				'@yearn-finance/web-lib/icons': path.join(webLibPath, 'icons'),
+				'@yearn-finance/web-lib/types': path.join(webLibPath, 'types')
 			};
 			return config;
 		},
