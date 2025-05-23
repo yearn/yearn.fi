@@ -148,29 +148,56 @@ export function Hero(): ReactElement {
 				</div>
 			</div>
 			<div
-				className={'flex w-full flex-col items-center px-8 md:hidden'}
+				className={'flex w-full flex-col items-center px-4 py-8 md:hidden bg-white/25'}
 				style={{
 					backgroundImage: "url('/landing/hero-background-mobile.png')",
 					backgroundRepeat: 'no-repeat',
 					backgroundSize: '100% 100%',
 					backgroundPosition: 'center'
 				}}>
-				<Image
-					className={'mt-[88px]'}
-					src={'/landing/yfi-top-right.png'}
-					alt={'hero'}
-					width={250}
-					height={250}
-				/>
-				<SectionHeader
-					isH1
-					tagline="Earn on your Crypto"
-					title="DeFi's longest running, most battle tested protocol"
-				/>
-				<div className={'mt-10 flex w-full flex-col items-center gap-2'}>
-					<Link href={'/apps'}>
-						<Button>{'Explore Vaults'}</Button>
-					</Link>
+				<div className={'flex w-full max-w-sm flex-col items-center text-center'}>
+					<div className={'mb-8 mt-12'}>
+						<TvlStat tvl={tvl ?? 0} />
+					</div>
+
+					<motion.div
+						initial={{opacity: 0, y: 20}}
+						animate={{opacity: 1, y: 0}}
+						transition={{duration: 0.6, delay: 0.2}}
+						className={'mb-8'}>
+						<Image
+							src={'/landing/yfi-top-right.png'}
+							alt={'Yearn Finance Logo'}
+							width={180}
+							height={180}
+							className={'h-auto w-auto max-w-[180px] sm:max-w-[200px]'}
+							priority
+						/>
+					</motion.div>
+
+					<motion.div
+						initial={{opacity: 0, y: 20}}
+						animate={{opacity: 1, y: 0}}
+						transition={{duration: 0.6, delay: 0.4}}
+						className={'mb-10'}>
+						<SectionHeader
+							isH1
+							title="Earn on your Crypto"
+							description="DeFi's longest running, most battle tested protocol"
+						/>
+					</motion.div>
+
+					<motion.div
+						initial={{opacity: 0, y: 20}}
+						animate={{opacity: 1, y: 0}}
+						transition={{duration: 0.6, delay: 0.6}}
+						className={'w-full'}>
+						<Link
+							href={'/apps'}
+							className={'block w-full'}>
+							<Button className={'w-full max-w-xs'}>{'Explore Vaults'}</Button>
+						</Link>
+					</motion.div>
 				</div>
 			</div>
 		</>
