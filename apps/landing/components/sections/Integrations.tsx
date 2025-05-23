@@ -66,15 +66,14 @@ const IntegrationItem: FC<Integration & {index: number}> = ({name, imageSrc, des
 						className="rounded-full transition-transform duration-300 ease-in-out group-hover:scale-110"
 					/>
 				</div>
-
 				<div className="flex flex-col md:flex-row md:justify-between md:items-center flex-1 min-w-0">
-					<div className="text-[24px] text-white flex items-center mb-1 md:mb-0">
+					<div className="text-[20px] text-white flex items-center mb-1 md:mb-0">
 						{name}{' '}
 						<span className="ml-2 text-neutral-700 transition-all duration-300 ease-in-out hover:text-neutral-500">
 							↗
 						</span>
 					</div>
-					<div className="text-neutral-400 text-[18px] transition-colors duration-300 ease-in-out hover:text-neutral-300 md:text-right md:max-w-[60%]">
+					<div className="text-neutral-400 text-base transition-colors duration-300 ease-in-out hover:text-neutral-300 md:text-right md:max-w-[60%]">
 						{description}
 					</div>
 				</div>
