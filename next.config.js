@@ -23,6 +23,28 @@ module.exports = withPlausibleProxy({
 				'@yearn-finance/web-lib/icons': path.join(webLibPath, 'icons'),
 				'@yearn-finance/web-lib/types': path.join(webLibPath, 'types')
 			};
+
+			// Add rule to handle TypeScript files in node_modules
+			config.module.rules.push({
+				test: /\.tsx?$/,
+				include: [path.join(__dirname, 'node_modules', '@yearn-finance', 'web-lib')],
+				use: [
+					{
+						loader: 'ts-loader',
+						options: {
+							transpileOnly: true,
+							configFile: path.join(
+								__dirname,
+								'node_modules',
+								'@yearn-finance',
+								'web-lib',
+								'tsconfig.json'
+							)
+						}
+					}
+				]
+			});
+
 			return config;
 		},
 		images: {
