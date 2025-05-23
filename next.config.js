@@ -16,7 +16,10 @@ module.exports = withPlausibleProxy({
 			config.resolve.alias = {
 				...config.resolve.alias,
 				'@yearn-finance/web-lib/utils': require.resolve('@yearn-finance/web-lib/src/utils'),
-				'@yearn-finance/web-lib/hooks': require.resolve('@yearn-finance/web-lib/src/hooks')
+				'@yearn-finance/web-lib/hooks': require.resolve('@yearn-finance/web-lib/src/hooks'),
+				'@yearn-finance/web-lib/components': require.resolve('@yearn-finance/web-lib/src/components'),
+				'@yearn-finance/web-lib/icons': require.resolve('@yearn-finance/web-lib/src/icons'),
+				'@yearn-finance/web-lib/types': require.resolve('@yearn-finance/web-lib/src/types')
 			};
 			return config;
 		},

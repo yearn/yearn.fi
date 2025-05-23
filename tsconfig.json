@@ -9,7 +9,10 @@
 			"@yearn-finance/web-lib/*": ["./node_modules/@yearn-finance/web-lib/*"],
 			"@yearn-finance/web-lib/src/*": ["./node_modules/@yearn-finance/web-lib/src/*"],
 			"@yearn-finance/web-lib/utils/*": ["./node_modules/@yearn-finance/web-lib/src/utils/*"],
-			"@yearn-finance/web-lib/hooks/*": ["./node_modules/@yearn-finance/web-lib/src/hooks/*"]
+			"@yearn-finance/web-lib/hooks/*": ["./node_modules/@yearn-finance/web-lib/src/hooks/*"],
+			"@yearn-finance/web-lib/components/*": ["./node_modules/@yearn-finance/web-lib/src/components/*"],
+			"@yearn-finance/web-lib/icons/*": ["./node_modules/@yearn-finance/web-lib/src/icons/*"],
+			"@yearn-finance/web-lib/types": ["./node_modules/@yearn-finance/web-lib/src/types"]
 		},
 		/* Basic Options */
 		"target": "esnext",
