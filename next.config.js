@@ -12,6 +12,14 @@ module.exports = withPlausibleProxy({
 	customDomain: 'https://yearn.fi'
 })(
 	withTM({
+		webpack: config => {
+			config.resolve.alias = {
+				...config.resolve.alias,
+				'@yearn-finance/web-lib/utils': require.resolve('@yearn-finance/web-lib/src/utils'),
+				'@yearn-finance/web-lib/hooks': require.resolve('@yearn-finance/web-lib/src/hooks')
+			};
+			return config;
+		},
 		images: {
 			remotePatterns: [
 				{
