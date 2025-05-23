@@ -4,48 +4,56 @@ import Image from 'next/image';
 
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
 
-const integrations = [
+interface Integration {
+	name: string;
+	imageSrc: string;
+	description: string;
+	href: string;
+}
+
+const integrations: Integration[] = [
 	{
 		name: 'Cove',
 		imageSrc: '/landing/integrations-cove.png',
-		description: 'Earn the best yields on-chain without the hassle of managing a portfolio.'
+		description: 'Earn the best yields on-chain without the hassle of managing a portfolio.',
+		href: 'https://cove.finance'
 	},
 	{
 		name: '1UP',
 		imageSrc: '/landing/integrations-1up.png',
-		description: '1UP is a public good liquid locker for YFI.'
+		description: '1UP is a public good liquid locker for YFI.',
+		href: 'https://1up.tokyo/'
 	},
 	{
 		name: 'Stakedao',
 		imageSrc: '/landing/integrations-stakedao.png',
-		description: 'A non-custodial liquid staking platform focused on governance tokens.'
+		description: 'A non-custodial liquid staking platform focused on governance tokens.',
+		href: 'https://stakedao.org'
 	},
 	{
 		name: 'Sturdy',
 		imageSrc: '/landing/integrations-sturdy.png',
-		description: 'Isolated lending with shared liquidity.'
+		description: 'Isolated lending with shared liquidity.',
+		href: 'https://sturdy.finance'
 	},
 	{
 		name: 'PWN',
 		imageSrc: '/landing/integrations-pwn.png',
-		description: 'PWN is a hub for peer-to-peer (P2P) loans backed by digital assets'
+		description: 'PWN is a hub for peer-to-peer (P2P) loans backed by digital assets',
+		href: 'https://pwn.finance'
 	},
 	{
 		name: 'Superform',
 		imageSrc: '/landing/integrations-super.png',
-		description: 'Superform grows your onchain wealth. Earn the best returns on your crypto.'
+		description: 'Superform grows your onchain wealth. Earn the best returns on your crypto.',
+		href: 'https://superform.xyz'
 	}
 ];
 
-const IntegrationItem: FC<{
-	name: string;
-	index: number;
-	imageSrc: string;
-	description: string;
-}> = ({name, imageSrc, description, index}) => {
+const IntegrationItem: FC<Integration & {index: number}> = ({name, imageSrc, description, href, index}) => {
 	return (
 		<Link
-			href="#"
+			href={href}
 			className="block cursor-pointer">
 			<div
 				className={`flex flex-col md:flex-row justify-between items-center p-[16px] transition-all duration-300 ease-in-out hover:bg-[#2a2b2c] hover:scale-[1.01] hover:shadow-lg ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}>
@@ -95,6 +103,7 @@ export const Integrations: FC = () => (
 							name={integration.name}
 							imageSrc={integration.imageSrc}
 							description={integration.description}
+							href={integration.href}
 						/>
 					))}
 				</div>

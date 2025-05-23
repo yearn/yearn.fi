@@ -23,7 +23,7 @@ const Cards: Record<
 	[SecurityCardType.Audits]: {
 		title: 'Audits',
 		description: 'Yearn Contracts are audited thoroughly by a variety of auditors.',
-		href: '#',
+		href: 'https://docs.yearn.fi/developers/security/',
 		imageSrc: '/landing/yearn-apps-logo.png',
 		gradientA: 'radial-gradient(circle_at_center,#5141CAaa_0%,transparent_100%)',
 		gradientB: 'from-[#333761]/60 to-[#1A1C30]/60'
@@ -31,7 +31,7 @@ const Cards: Record<
 	[SecurityCardType.BugBounties]: {
 		title: 'Bug Bounties',
 		description: 'Security is our top priority. Report vulnerabilities and get rewarded.',
-		href: '#',
+		href: 'https://immunefi.com/bug-bounty/yearnfinance',
 		imageSrc: '/landing/integrations.png',
 		gradientA: 'radial-gradient(circle_at_center,#0066FFaa_0%,transparent_100%)',
 		gradientB: 'from-[#1A3E68]/60 to-[#0A1E38]/60'
