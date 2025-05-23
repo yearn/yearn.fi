@@ -97,11 +97,12 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		strategyList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0);
 
 	const filteredStrategyList = useMemo(() => {
-		const strategies = strategyList.filter(vault => vault.details?.totalDebt !== '0') as (TYDaemonVault & {
-			details: TYDaemonVaultStrategy['details'];
-		})[];
+		const strategies = strategyList.filter(vault => vault.details?.totalDebt !== '0');
 
-		return strategies;
+		return strategies as (TYDaemonVault & {
+			details: TYDaemonVaultStrategy['details'];
+			status: TYDaemonVaultStrategy['status'];
+		})[];
 	}, [strategyList]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
