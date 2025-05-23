@@ -1,25 +1,25 @@
-import {FC, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
+
+import type {FC} from 'react';
 
 enum SecurityCardType {
 	Audits = 'audits',
 	BugBounties = 'bug-bounties'
 }
 
-const Cards: Record<
-	SecurityCardType,
-	{
+const Cards: {
+	[key in SecurityCardType]: {
 		title: string;
 		description: string;
 		href: string;
 		imageSrc: string;
 		gradientA: string;
 		gradientB: string;
-	}
-> = {
+	};
+} = {
 	[SecurityCardType.Audits]: {
 		title: 'Audits',
 		description: 'Yearn Contracts are audited thoroughly by a variety of auditors.',
@@ -43,36 +43,38 @@ const SecurityCard: FC<{
 }> = ({type}) => {
 	const {title, description, href, imageSrc, gradientA, gradientB} = Cards[type];
 	const cardRef = useRef<HTMLDivElement>(null);
-	const [mousePosition, setMousePosition] = useState({x: 0, y: 0});
-	const [isHovered, setIsHovered] = useState(false);
+	const [mousePosition, set_mousePosition] = useState({x: 0, y: 0});
+	const [isHovered, set_isHovered] = useState(false);
 
-	const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+	const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
 		if (!cardRef.current) return;
 
 		const rect = cardRef.current.getBoundingClientRect();
 		const x = e.clientX - rect.left;
 		const y = e.clientY - rect.top;
 
-		setMousePosition({x, y});
+		set_mousePosition({x, y});
 	};
 
-	const handleMouseEnter = () => setIsHovered(true);
+	const handleMouseEnter = (): void => set_isHovered(true);
 
-	const handleMouseLeave = () => {
-		setIsHovered(false);
-		setMousePosition({x: 0, y: 0});
+	const handleMouseLeave = (): void => {
+		set_isHovered(false);
+		set_mousePosition({x: 0, y: 0});
 	};
 
 	return (
 		<div
 			ref={cardRef}
-			className="rounded-2xl overflow-hidden border-[1px] border-[#ffffff]/5 transition-all duration-300  group relative"
+			className={
+				'group relative overflow-hidden rounded-2xl border border-[#ffffff]/5  transition-all duration-300'
+			}
 			onMouseMove={handleMouseMove}
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={handleMouseLeave}>
 			{isHovered && (
 				<div
-					className="absolute inset-0 pointer-events-none opacity-60 transition-opacity duration-300"
+					className={'pointer-events-none absolute inset-0 opacity-60 transition-opacity duration-300'}
 					style={{
 						background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.1) 0%, transparent 50%)`
 					}}
@@ -80,25 +82,25 @@ const SecurityCard: FC<{
 			)}
 
 			<div
-				className={`p-6 justify-center bg-[${gradientA}] hidden md:flex transition-all duration-300 group-hover:bg-opacity-80 relative z-10`}>
+				className={`bg-[ justify-center p-6${gradientA}] group-hover:bg/80 relative z-10 hidden transition-all duration-300 md:flex`}>
 				<Image
 					src={imageSrc}
 					width={180}
 					height={180}
 					alt={title}
-					className="w-auto h-auto transition-transform duration-300 group-hover:scale-105"
+					className={'size-auto transition-transform duration-300 group-hover:scale-105'}
 				/>
 			</div>
 			<div
-				className={`bg-gradient-to-t ${gradientB} p-8 transition-all duration-300 group-hover:bg-opacity-80 relative z-10`}>
-				<h3 className="text-3xl mb-4 transition-colors duration-300 group-hover:text-white">{title}</h3>
-				<p className="text-gray-300 mb-4 text-white/80 transition-colors duration-300 group-hover:text-white/90">
+				className={`bg-gradient-to-t ${gradientB} group-hover:bg/80 relative z-10 p-8 transition-all duration-300`}>
+				<h3 className={'mb-4 text-3xl transition-colors duration-300 group-hover:text-white'}>{title}</h3>
+				<p className={'mb-4  text-white/80 transition-colors duration-300 group-hover:text-white/90'}>
 					{description}
 				</p>
 				<Link
 					href={href}
-					className="text-white flex items-center transition-colors duration-300 group-hover:text-blue-200">
-					Learn More →
+					className={'group-hover:text-blue-200 flex items-center text-white transition-colors duration-300'}>
+					{'Learn More →'}
 				</Link>
 			</div>
 		</div>
@@ -106,15 +108,15 @@ const SecurityCard: FC<{
 };
 
 export const Security: FC = () => (
-	<section className="flex justify-center w-full bg-white/5">
-		<div className="w-[1180px] flex flex-col md:flex-row items-center justify-between py-20">
-			<div className="max-w-7xl w-full px-4">
+	<section className={'flex w-full justify-center bg-white/5'}>
+		<div className={'flex w-[1180px] flex-col items-center justify-between py-20 md:flex-row'}>
+			<div className={'w-full max-w-7xl px-4'}>
 				<SectionHeader
-					align="center"
-					tagline="Audited, secure"
-					title="Security First"
+					align={'center'}
+					tagline={'Audited, secure'}
+					title={'Security First'}
 				/>
-				<div className="grid md:grid-cols-2 gap-6 pt-16">
+				<div className={'grid gap-6 pt-16 md:grid-cols-2'}>
 					<SecurityCard type={SecurityCardType.Audits} />
 					<SecurityCard type={SecurityCardType.BugBounties} />
 				</div>

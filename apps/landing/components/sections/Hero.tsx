@@ -1,12 +1,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import {motion} from 'framer-motion';
-import {TvlStat} from '@common/components/TvlStat';
-import {Button} from '../common/Button';
-import type {ReactElement} from 'react';
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {z} from 'zod';
+import {motion} from 'framer-motion';
+import {useFetch} from '@builtbymom/web3/hooks/useFetch';
+import {TvlStat} from '@common/components/TvlStat';
+
+import {Button} from '../common/Button';
+
+import type {ReactElement} from 'react';
 
 function AnimatedLogos(): ReactElement {
 	return (
@@ -132,13 +134,13 @@ export function Hero(): ReactElement {
 						'relative mx-6 mt-6 flex h-[700px] w-[2365px] max-w-[2352px] flex-col items-center self-center rounded-lg border border-[#292929] '
 					}>
 					<AnimatedLogos />
-					<div className="h-[100%] flex items-center justify-center">
+					<div className={"flex h-full items-center justify-center"}>
 						<div className={'z-20 flex flex-col items-center justify-center gap-12 text-center'}>
 							<TvlStat tvl={tvl ?? 0} />
 							<SectionHeader
 								isH1
-								title="Earn on your Crypto"
-								description="DeFi's longest running, most battle tested protocol"
+								title={"Earn on your Crypto"}
+								description={"DeFi's longest running, most battle tested protocol"}
 							/>
 							<Link href={'/apps'}>
 								<Button>{'Explore Vaults'}</Button>
@@ -148,7 +150,7 @@ export function Hero(): ReactElement {
 				</div>
 			</div>
 			<div
-				className={'flex w-full flex-col items-center px-4 py-8 md:hidden bg-white/25'}
+				className={'flex w-full flex-col items-center bg-white/25 px-4 py-8 md:hidden'}
 				style={{
 					backgroundImage: "url('/landing/hero-background-mobile.png')",
 					backgroundRepeat: 'no-repeat',
@@ -170,7 +172,7 @@ export function Hero(): ReactElement {
 							alt={'Yearn Finance Logo'}
 							width={180}
 							height={180}
-							className={'h-auto w-auto max-w-[180px] sm:max-w-[200px]'}
+							className={'size-auto max-w-[180px] sm:max-w-[200px]'}
 							priority
 						/>
 					</motion.div>
@@ -182,8 +184,8 @@ export function Hero(): ReactElement {
 						className={'mb-10'}>
 						<SectionHeader
 							isH1
-							title="Earn on your Crypto"
-							description="DeFi's longest running, most battle tested protocol"
+							title={"Earn on your Crypto"}
+							description={"DeFi's longest running, most battle tested protocol"}
 						/>
 					</motion.div>
 

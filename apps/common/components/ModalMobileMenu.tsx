@@ -28,8 +28,8 @@ const menu: TMenu[] = [
 export function FooterNav(): ReactElement {
 	return (
 		<div
-			className={`flex flex-col md:flex-row space-y-14 md:space-y-0 md:space-x-14 w-full md:bg-[#222222]/50 p-0 md:p-[12px] rounded-[24px]`}>
-			<div className={'flex flex-col space-y-8 w-full md:bg-black/30 p-[24px] rounded-[12px]'}>
+			className={`flex w-full flex-col space-y-14 rounded-[24px] p-0 md:flex-row md:space-x-14 md:space-y-0 md:bg-[#222222]/50 md:p-[12px]`}>
+			<div className={'flex w-full flex-col space-y-8 rounded-[12px] p-[24px] md:bg-black/30'}>
 				{menu.map(link => (
 					<Link
 						className={
@@ -43,12 +43,12 @@ export function FooterNav(): ReactElement {
 					</Link>
 				))}
 			</div>
-			<div className={'flex justify-center items-center gap-6 w-full'}>
+			<div className={'flex w-full items-center justify-center gap-6'}>
 				<Link
 					href={'https://paragraph.xyz/@yearn'}
 					target={'_blank'}
 					className={
-						'rounded-full bg-white/10 p-3 flex items-center justify-center hover:bg-white/20 transition-colors'
+						'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
 					}>
 					<IconParagraph className={'size-7 text-white'} />
 				</Link>
@@ -56,7 +56,7 @@ export function FooterNav(): ReactElement {
 					href={'https://discord.com/invite/yearn'}
 					target={'_blank'}
 					className={
-						'rounded-full bg-white/10 p-3 flex items-center justify-center hover:bg-white/20 transition-colors'
+						'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
 					}>
 					<IconDiscord className={'size-7 text-white'} />
 				</Link>
@@ -64,7 +64,7 @@ export function FooterNav(): ReactElement {
 					href={'https://x.com/yearnfi'}
 					target={'_blank'}
 					className={
-						'rounded-full bg-white/10 p-3 flex items-center justify-center hover:bg-white/20 transition-colors'
+						'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
 					}>
 					<IconTwitter className={'size-7 text-white'} />
 				</Link>

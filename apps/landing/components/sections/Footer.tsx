@@ -3,7 +3,7 @@ import {FooterNav} from '@common/components/ModalMobileMenu';
 
 export function Footer(): ReactElement {
 	return (
-		<div className="w-full max-w-[1180px] px-4 flex flex-col md:flex-row items-center justify-between pb-16">
+		<div className={"flex w-full max-w-[1180px] flex-col items-center justify-between px-4 pb-16 md:flex-row"}>
 			<FooterNav />
 		</div>
 	);
