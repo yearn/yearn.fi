@@ -1,19 +1,21 @@
-import {FC, useState, useEffect, useCallback, useMemo} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import Image from 'next/image';
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
-import {useYearn} from '@common/contexts/useYearn';
 import {formatPercent} from '@builtbymom/web3/utils/format';
+import {useYearn} from '@common/contexts/useYearn';
 
-interface Row {
+import type {FC} from 'react';
+
+type TRow = {
 	bgClass: string;
 	icon: string;
 	text: string;
 	description?: string;
 	href: string;
 	address?: string;
-}
+};
 
-interface Vault {
+type TVault = {
 	background: string;
 	image: string;
 	size: number;
@@ -21,9 +23,9 @@ interface Vault {
 	title: string;
 	description: string;
 	cta?: {label: string; href: string};
-}
+};
 
-const slides: Vault[] = [
+const slides: TVault[] = [
 	{
 		background: '/landing/vault-background-x.png',
 		image: '/landing/safe.png',
@@ -68,7 +70,7 @@ const vaultsRows = [
 	}
 ];
 
-const appRows: Row[] = [
+const appRows: TRow[] = [
 	{
 		bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
 		icon: '/landing/apps/veyfi.png',
@@ -101,10 +103,10 @@ const appRows: Row[] = [
 
 export const Vaults: FC = () => {
 	const {vaults, isLoadingVaultList} = useYearn();
-	const [activeSlide, setActiveSlide] = useState(0);
-	const [isAnimating, setIsAnimating] = useState(false);
+	const [activeSlide, set_activeSlide] = useState(0);
+	const [isAnimating, set_isAnimating] = useState(false);
 
-	const rows: Row[][] = useMemo(() => {
+	const rows: TRow[][] = useMemo(() => {
 		return [
 			vaultsRows.map((vault, index) => {
 				const apr = vaults[vault.address]?.apr.forwardAPR.netAPR;
@@ -120,27 +122,27 @@ export const Vaults: FC = () => {
 					href: `/v3/1/${vault.address}`,
 					address: vault.address
 				};
-			}) as Row[],
+			}) as TRow[],
 			appRows
 		];
-	}, [vaults, vaultsRows]);
+	}, [vaults]);
 
 	const totalSlides = slides.length;
 
 	const nextSlide = useCallback(() => {
 		if (!isAnimating) {
-			setIsAnimating(true);
-			setActiveSlide(prev => (prev + 1) % totalSlides);
-			setTimeout(() => setIsAnimating(false), 500);
+			set_isAnimating(true);
+			set_activeSlide(prev => (prev + 1) % totalSlides);
+			setTimeout(() => set_isAnimating(false), 500);
 		}
-	}, [activeSlide, isAnimating, totalSlides]);
+	}, [isAnimating, totalSlides]);
 
 	const goToSlide = useCallback(
 		(index: number) => {
 			if (!isAnimating && index !== activeSlide) {
-				setIsAnimating(true);
-				setActiveSlide(index);
-				setTimeout(() => setIsAnimating(false), 500);
+				set_isAnimating(true);
+				set_activeSlide(index);
+				setTimeout(() => set_isAnimating(false), 500);
 			}
 		},
 		[activeSlide, isAnimating]
@@ -155,20 +157,24 @@ export const Vaults: FC = () => {
 	}, [nextSlide]);
 
 	return (
-		<section className="flex justify-center w-full px-4 md:px-8 ">
-			<div className="w-full max-w-[1180px] py-12 md:py-36">
+		<section className={'flex w-full justify-center px-4 md:px-8 '}>
+			<div className={'w-full max-w-[1180px] py-12 md:py-36'}>
 				{/* Slides */}
-				<div className="relative mb-8 md:mb-12 overflow-hidden">
+				<div className={'relative mb-8 overflow-hidden md:mb-12'}>
 					<div
-						className="flex transition-transform duration-500 ease-in-out"
+						className={'flex transition-transform duration-500 ease-in-out'}
 						style={{transform: `translateX(-${activeSlide * 100}%)`}}>
 						{slides.map((slide, index) => (
 							<div
 								key={index}
-								className="w-full flex-shrink-0 flex flex-col md:flex-row items-stretch justify-between gap-6 md:gap-8">
-								<div className="flex w-full md:w-2/5 relative min-h-[300px] md:min-h-auto">
+								className={
+									'flex w-full shrink-0 flex-col items-stretch justify-between gap-6 md:flex-row md:gap-8'
+								}>
+								<div className={'md:min-h-auto relative flex min-h-[300px] w-full md:w-2/5'}>
 									<div
-										className="flex h-full w-full border-[1px] border-[#ffffff]/10 rounded-[24px] items-center justify-center relative overflow-hidden"
+										className={
+											'relative flex size-full items-center justify-center overflow-hidden rounded-[24px] border border-[#ffffff]/10'
+										}
 										style={{
 											backgroundImage: `url(${slide.background})`,
 											backgroundRepeat: 'no-repeat',
@@ -177,7 +183,7 @@ export const Vaults: FC = () => {
 										}}>
 										<Image
 											className={
-												'z-10 md:opacity-100 transition-opacity group-hover:opacity-0 block'
+												'z-10 block transition-opacity group-hover:opacity-0 md:opacity-100'
 											}
 											src={slide.image}
 											width={slide.size}
@@ -187,8 +193,11 @@ export const Vaults: FC = () => {
 									</div>
 								</div>
 
-								<div className="flex flex-col w-full md:w-3/5 justify-between relative h-full gap-4 md:gap-4">
-									<div className="relative">
+								<div
+									className={
+										'relative flex size-full flex-col justify-between gap-4 md:w-3/5 md:gap-4'
+									}>
+									<div className={'relative'}>
 										<SectionHeader
 											tagline={slide.tagline}
 											title={slide.title}
@@ -197,8 +206,9 @@ export const Vaults: FC = () => {
 										/>
 									</div>
 
-									<div className="relative p-1 bg-white/5 rounded-[24px] overflow-hidden p-[8px] w-full">
-										<div className="space-y-1">
+									<div
+										className={'relative w-full overflow-hidden rounded-[24px] bg-white/5 p-[8px]'}>
+										<div className={'space-y-1'}>
 											{rows[activeSlide].map((row, vaultIndex) => {
 												const isVaultLoading = row?.address && isLoadingVaultList;
 
@@ -206,10 +216,13 @@ export const Vaults: FC = () => {
 													<a
 														key={vaultIndex}
 														href={row.href}
-														className={`${row.bgClass} rounded-[16px] flex items-center justify-between p-2 md:p-[8px] cursor-pointer hover:opacity-50 transition-opacity duration-200`}>
-														<div className="flex items-center">
-															<div className=" rounded-2xl p-1 mr-2 md:mr-3">
-																<div className="w-5 h-5 md:w-6 md:h-6 bg-gray-900 rounded-2xl flex items-center justify-center">
+														className={`${row.bgClass} flex cursor-pointer items-center justify-between rounded-[16px] p-2 transition-opacity duration-200 hover:opacity-50 md:p-[8px]`}>
+														<div className={'flex items-center'}>
+															<div className={' mr-2 rounded-2xl p-1 md:mr-3'}>
+																<div
+																	className={
+																		'flex size-5 items-center justify-center rounded-2xl bg-gray-900 md:size-6'
+																	}>
 																	<Image
 																		src={row.icon}
 																		alt={row.text}
@@ -218,35 +231,41 @@ export const Vaults: FC = () => {
 																	/>
 																</div>
 															</div>
-															<div className="flex flex-col md:flex-row gap-1 md:gap-2">
+															<div className={'flex flex-col gap-1 md:flex-row md:gap-2'}>
 																{isVaultLoading ? (
-																	<div className="flex items-center space-x-2">
-																		<div className="animate-pulse bg-gray-600 h-4 w-24 rounded"></div>
+																	<div className={'flex items-center space-x-2'}>
+																		<div
+																			className={
+																				'h-4 w-24 animate-pulse rounded bg-gray-600'
+																			}></div>
 																	</div>
 																) : (
-																	<span className=":text-base font-medium">
+																	<span className={':text-base font-medium'}>
 																		{row.text}
 																	</span>
 																)}
 																{row.description && (
-																	<span className="md:text-base font-light text-gray-400">
+																	<span
+																		className={
+																			'font-light text-gray-400 md:text-base'
+																		}>
 																		{row.description}
 																	</span>
 																)}
 															</div>
 														</div>
-														<div className="bg-transparent p-1 md:p-2 rounded-2xl">
+														<div className={'rounded-2xl bg-transparent p-1 md:p-2'}>
 															<svg
-																xmlns="http://www.w3.org/2000/svg"
-																className="h-5 w-5 md:h-6 md:w-6"
-																fill="none"
-																viewBox="0 0 24 24"
-																stroke="currentColor">
+																xmlns={'http://www.w3.org/2000/svg'}
+																className={'size-5 md:size-6'}
+																fill={'none'}
+																viewBox={'0 0 24 24'}
+																stroke={'currentColor'}>
 																<path
-																	strokeLinecap="round"
-																	strokeLinejoin="round"
+																	strokeLinecap={'round'}
+																	strokeLinejoin={'round'}
 																	strokeWidth={2}
-																	d="M14 5l7 7m0 0l-7 7m7-7H3"
+																	d={'M14 5l7 7m0 0l-7 7m7-7H3'}
 																/>
 															</svg>
 														</div>
@@ -262,14 +281,14 @@ export const Vaults: FC = () => {
 				</div>
 
 				{/* Pagination */}
-				<div className="flex justify-center w-full">
-					<div className="flex space-x-3 items-center">
+				<div className={'flex w-full justify-center'}>
+					<div className={'flex items-center space-x-3'}>
 						{Array.from({length: totalSlides}).map((_, index) => (
 							<button
 								key={index}
 								onClick={() => goToSlide(index)}
-								className={`w-2 h-2 rounded-full transition-all duration-300 ${
-									index === activeSlide ? 'bg-white scale-125' : 'bg-gray-600'
+								className={`size-2 rounded-full transition-all duration-300 ${
+									index === activeSlide ? 'scale-125 bg-white' : 'bg-gray-600'
 								}`}
 								aria-label={`Go to slide ${index + 1}`}
 							/>

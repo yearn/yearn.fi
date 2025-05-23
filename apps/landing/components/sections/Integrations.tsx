@@ -1,17 +1,17 @@
-import {FC} from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-
+import Link from 'next/link';
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
 
-interface Integration {
+import type {FC} from 'react';
+
+type TIntegration = {
 	name: string;
 	imageSrc: string;
 	description: string;
 	href: string;
-}
+};
 
-const integrations: Integration[] = [
+const integrations: TIntegration[] = [
 	{
 		name: 'Cove',
 		imageSrc: '/landing/integrations-cove.png',
@@ -50,30 +50,36 @@ const integrations: Integration[] = [
 	}
 ];
 
-const IntegrationItem: FC<Integration & {index: number}> = ({name, imageSrc, description, href, index}) => {
+const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, description, href, index}) => {
 	return (
 		<Link
 			href={href}
-			className="block cursor-pointer">
+			className={'block cursor-pointer'}>
 			<div
-				className={`flex flex-row items-start md:items-center p-[16px] transition-all duration-300 ease-in-out hover:bg-[#2a2b2c] hover:scale-[1.01] hover:shadow-lg ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}>
-				<div className="w-12 h-12 relative mr-4 flex-shrink-0 self-center">
+				className={`flex flex-row items-start p-[16px] transition-all duration-300 ease-in-out hover:scale-[1.01] hover:bg-[#2a2b2c] hover:shadow-lg md:items-center ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}>
+				<div className={'relative mr-4 size-12 shrink-0 self-center'}>
 					<Image
 						src={imageSrc}
 						alt={name}
 						width={48}
 						height={48}
-						className="rounded-full transition-transform duration-300 ease-in-out group-hover:scale-110"
+						className={'rounded-full transition-transform duration-300 ease-in-out group-hover:scale-110'}
 					/>
 				</div>
-				<div className="flex flex-col md:flex-row md:justify-between md:items-center flex-1 min-w-0">
-					<div className="text-[20px] text-white flex items-center mb-1 md:mb-0">
+				<div className={'flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:justify-between'}>
+					<div className={'mb-1 flex items-center text-[20px] text-white md:mb-0'}>
 						{name}{' '}
-						<span className="ml-2 text-neutral-700 transition-all duration-300 ease-in-out hover:text-neutral-500">
-							↗
+						<span
+							className={
+								'ml-2 text-neutral-700 transition-all duration-300 ease-in-out hover:text-neutral-500'
+							}>
+							{'↗'}
 						</span>
 					</div>
-					<div className="text-neutral-400 text-base transition-colors duration-300 ease-in-out hover:text-neutral-300 md:text-right md:max-w-[60%]">
+					<div
+						className={
+							'text-base text-neutral-400 transition-colors duration-300 ease-in-out hover:text-neutral-300 md:max-w-[60%] md:text-right'
+						}>
 						{description}
 					</div>
 				</div>
@@ -83,19 +89,19 @@ const IntegrationItem: FC<Integration & {index: number}> = ({name, imageSrc, des
 };
 
 export const Integrations: FC = () => (
-	<section className="flex justify-center w-full bg-white/5">
-		<div className="w-[1180px] flex flex-col md:flex-row items-center justify-between py-16">
-			<div className="w-full px-4">
+	<section className={'flex w-full justify-center bg-white/5'}>
+		<div className={'flex w-[1180px] flex-col items-center justify-between py-16 md:flex-row'}>
+			<div className={'w-full px-4'}>
 				<SectionHeader
-					tagline="Partners"
-					title="Integrations"
+					tagline={'Partners'}
+					title={'Integrations'}
 					description={'External Yearn vaults available through our partners'}
 					cta={{
 						label: 'Learn More',
 						href: '#'
 					}}
 				/>
-				<div className="mt-8 grid rounded-lg overflow-hidden">
+				<div className={'mt-8 grid overflow-hidden rounded-lg'}>
 					{integrations.map((integration, index) => (
 						<IntegrationItem
 							index={index}

@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import {FC, ReactElement} from 'react';
+
+import type {FC, ReactElement} from 'react';
 
 export const SectionHeader: FC<{
 	tagline?: string;
@@ -14,12 +15,12 @@ export const SectionHeader: FC<{
 			className={`flex flex-col ${align === 'right' ? 'items-end' : align === 'center' ? 'items-center' : ''} gap-y-4`}>
 			<div
 				className={`flex flex-col ${align === 'right' ? 'items-end' : align === 'center' ? 'items-center' : ''}`}>
-				{!!tagline && <p className="text-lightBlue-500 mb-2 font-medium">{tagline}</p>}
+				{!!tagline && <p className={"mb-2 font-medium text-lightBlue-500"}>{tagline}</p>}
 				{!!title &&
 					(isH1 ? (
-						<h1 className="text-5xl md:text-6xl font-medium">{title}</h1>
+						<h1 className={"text-5xl font-medium md:text-6xl"}>{title}</h1>
 					) : (
-						<h2 className="text-4xl md:text-5xl font-medium">{title}</h2>
+						<h2 className={"text-4xl font-medium md:text-5xl"}>{title}</h2>
 					))}
 			</div>
 			{!!description && (
@@ -29,8 +30,8 @@ export const SectionHeader: FC<{
 						{!!cta && (
 							<Link
 								href={cta.href}
-								className="text-white ml-2">
-								{cta.label} →
+								className={"ml-2 text-white"}>
+								{cta.label} {"→"}
 							</Link>
 						)}
 					</p>

@@ -1,16 +1,18 @@
-import {FC, useState} from 'react';
+import {useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
 
-interface Partner {
+import type {FC} from 'react';
+
+type TPartner = {
 	image: string;
 	alt: string;
 	href: string;
 	size?: number;
-}
+};
 
-const partners: Partner[] = [
+const partners: TPartner[] = [
 	{
 		image: '/landing/x-curve.png',
 		alt: 'Curve',
@@ -44,20 +46,28 @@ const partners: Partner[] = [
 	}
 ];
 
-const PartnerLogo: FC<Partner> = ({image, alt, href, size = 50}) => {
-	const [isHovered, setIsHovered] = useState(false);
+const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 50}) => {
+	const [isHovered, set_isHovered] = useState(false);
 	return (
 		<Link
 			href={href}
-			className="flex-1 block">
+			className={'block flex-1'}>
 			<div
-				className="bg-gray-800 hover:bg-blue-500 rounded-lg p-4 lg:p-6 flex items-center justify-center h-20 lg:h-full transition-colors duration-200 cursor-pointer relative"
-				onMouseEnter={() => setIsHovered(true)}
-				onMouseLeave={() => setIsHovered(false)}>
+				className={
+					'relative flex h-20 cursor-pointer items-center justify-center rounded-lg bg-gray-800 p-4 transition-colors duration-200 hover:bg-blue-500 lg:h-full lg:p-6'
+				}
+				onMouseEnter={() => set_isHovered(true)}
+				onMouseLeave={() => set_isHovered(false)}>
 				{isHovered && (
-					<div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-700 text-white px-3 py-2 rounded-full text-sm whitespace-nowrap z-10 hidden lg:block">
+					<div
+						className={
+							'absolute -top-12 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-700 px-3 py-2 text-sm text-white lg:block'
+						}>
 						{alt}
-						<div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-700"></div>
+						<div
+							className={
+								'absolute left-1/2 top-full size-0 -translate-x-1/2 border-x-4 border-t-4 border-transparent border-t-gray-700'
+							}></div>
 					</div>
 				)}
 				<Image
@@ -65,7 +75,7 @@ const PartnerLogo: FC<Partner> = ({image, alt, href, size = 50}) => {
 					alt={alt}
 					width={size}
 					height={size}
-					className="w-8 h-8 lg:w-auto lg:h-auto object-contain"
+					className={'size-8 object-contain lg:size-auto'}
 				/>
 			</div>
 		</Link>
@@ -73,12 +83,12 @@ const PartnerLogo: FC<Partner> = ({image, alt, href, size = 50}) => {
 };
 
 export const Partners: FC = () => (
-	<section className="flex justify-center w-full">
-		<div className="w-full max-w-[1180px] flex flex-col lg:flex-row items-center justify-between py-8 lg:py-16">
-			<div className="w-full px-4">
+	<section className={'flex w-full justify-center'}>
+		<div className={'flex w-full max-w-[1180px] flex-col items-center justify-between py-8 lg:flex-row lg:py-16'}>
+			<div className={'w-full px-4'}>
 				<SectionHeader
-					tagline="Partners"
-					title="Yearn X"
+					tagline={'Partners'}
+					title={'Yearn X'}
 					description={'Collaborations exploring yield opportunities with our partners'}
 					cta={{
 						label: 'Learn More',
@@ -87,33 +97,41 @@ export const Partners: FC = () => (
 				/>
 
 				{/* Mobile */}
-				<div className="flex flex-col gap-4 pt-8 lg:hidden">
-					<div className="bg-gray-800 hover:bg-blue-500 rounded-lg flex items-center justify-center relative w-full h-48 transition-colors duration-200 cursor-pointer group">
-						<div className="absolute inset-0 overflow-hidden z-0">
-							<div className="absolute inset-0 opacity-20">
-								<div className="grid grid-cols-8 grid-rows-6 h-full w-full gap-2 p-4">
+				<div className={'flex flex-col gap-4 pt-8 lg:hidden'}>
+					<div
+						className={
+							'group relative flex h-48 w-full cursor-pointer items-center justify-center rounded-lg bg-gray-800 transition-colors duration-200 hover:bg-blue-500'
+						}>
+						<div className={'absolute inset-0 z-0 overflow-hidden'}>
+							<div className={'absolute inset-0 opacity-20'}>
+								<div className={'grid size-full grid-cols-8 grid-rows-6 gap-2 p-4'}>
 									{Array(48)
 										.fill(0)
 										.map((_, i) => (
 											<div
 												key={i}
-												className="w-1 h-1 bg-white rounded-full justify-self-center self-center"
+												className={
+													'size-1 self-center justify-self-center rounded-full bg-white'
+												}
 											/>
 										))}
 								</div>
 							</div>
 						</div>
-						<div className="bg-gray-800 group-hover:bg-blue-500 rounded-full p-4 h-[100px] w-[100px] z-10 flex items-center justify-center transition-colors duration-200">
+						<div
+							className={
+								'z-10 flex size-[100px] items-center justify-center rounded-full bg-gray-800 p-4 transition-colors duration-200 group-hover:bg-blue-500'
+							}>
 							<Image
-								src="/landing/x-yearn.png"
-								alt="Yearn"
+								src={'/landing/x-yearn.png'}
+								alt={'Yearn'}
 								width={75}
 								height={75}
-								className="relative z-10"
+								className={'relative z-10'}
 							/>
 						</div>
 					</div>
-					<div className="grid grid-cols-2 gap-2">
+					<div className={'grid grid-cols-2 gap-2'}>
 						{partners.map((partner, index) => (
 							<PartnerLogo
 								key={index}
@@ -127,9 +145,9 @@ export const Partners: FC = () => (
 				</div>
 
 				{/* Desktop */}
-				<div className="hidden lg:flex lg:flex-row gap-4 pt-8 h-80">
-					<div className="flex flex-col w-1/2 gap-2 h-full">
-						<div className="flex-1 flex flex-row gap-2">
+				<div className={'hidden h-80 gap-4 pt-8 lg:flex lg:flex-row'}>
+					<div className={'flex h-full w-1/2 flex-col gap-2'}>
+						<div className={'flex flex-1 flex-row gap-2'}>
 							{partners.slice(0, 3).map((partner, index) => (
 								<PartnerLogo
 									key={index}
@@ -139,7 +157,7 @@ export const Partners: FC = () => (
 								/>
 							))}
 						</div>
-						<div className="flex-1 flex flex-row gap-2">
+						<div className={'flex flex-1 flex-row gap-2'}>
 							{partners.slice(3).map((partner, index) => (
 								<PartnerLogo
 									key={index}
@@ -151,28 +169,36 @@ export const Partners: FC = () => (
 							))}
 						</div>
 					</div>
-					<div className="bg-gray-800 hover:bg-blue-500 rounded-lg flex items-center justify-center aspect-auto relative w-1/2 transition-colors duration-200 cursor-pointer group">
-						<div className="absolute inset-0 overflow-hidden z-0">
-							<div className="absolute inset-0 opacity-20">
-								<div className="grid grid-cols-12 grid-rows-10 h-full w-full gap-4 p-8">
+					<div
+						className={
+							'group relative flex aspect-auto w-1/2 cursor-pointer items-center justify-center rounded-lg bg-gray-800 transition-colors duration-200 hover:bg-blue-500'
+						}>
+						<div className={'absolute inset-0 z-0 overflow-hidden'}>
+							<div className={'absolute inset-0 opacity-20'}>
+								<div className={'grid size-full grid-cols-12 grid-rows-10 gap-4 p-8'}>
 									{Array(120)
 										.fill(0)
 										.map((_, i) => (
 											<div
 												key={i}
-												className="w-1 h-1 bg-white rounded-full justify-self-center self-center"
+												className={
+													'size-1 self-center justify-self-center rounded-full bg-white'
+												}
 											/>
 										))}
 								</div>
 							</div>
 						</div>
-						<div className="bg-gray-800 group-hover:bg-blue-500 rounded-full p-8 h-[150px] w-[150px] z-10 flex items-center justify-center transition-colors duration-200">
+						<div
+							className={
+								'z-10 flex size-[150px] items-center justify-center rounded-full bg-gray-800 p-8 transition-colors duration-200 group-hover:bg-blue-500'
+							}>
 							<Image
-								src="/landing/x-yearn.png"
-								alt="Yearn"
+								src={'/landing/x-yearn.png'}
+								alt={'Yearn'}
 								width={125}
 								height={125}
-								className="relative z-10"
+								className={'relative z-10'}
 							/>
 						</div>
 					</div>
