@@ -5,6 +5,8 @@ import {TvlStat} from '@common/components/TvlStat';
 import {Button} from '../common/Button';
 import type {ReactElement} from 'react';
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
+import {useFetch} from '@builtbymom/web3/hooks/useFetch';
+import {z} from 'zod';
 
 function AnimatedLogos(): ReactElement {
 	return (
@@ -110,12 +112,10 @@ function AnimatedLogos(): ReactElement {
 }
 
 export function Hero(): ReactElement {
-	// Restore: once I've stopped dev-ing
-	// const {data: tvl} = useFetch<number>({
-	// 	endpoint: `https://api.llama.fi/tvl/yearn`,
-	// 	schema: z.number()
-	// });
-	const tvl = 12310232;
+	const {data: tvl} = useFetch<number>({
+		endpoint: `https://api.llama.fi/tvl/yearn`,
+		schema: z.number()
+	});
 
 	return (
 		<>
@@ -195,7 +195,7 @@ export function Hero(): ReactElement {
 						<Link
 							href={'/apps'}
 							className={'block w-full'}>
-							<Button className={'w-full max-w-xs'}>{'Explore Vaults'}</Button>
+							<Button className={'max-w-xs'}>{'Explore Vaults'}</Button>
 						</Link>
 					</motion.div>
 				</div>

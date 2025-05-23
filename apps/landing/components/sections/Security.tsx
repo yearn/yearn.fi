@@ -1,4 +1,4 @@
-import {FC} from 'react';
+import {FC, useRef, useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -42,23 +42,62 @@ const SecurityCard: FC<{
 	type: SecurityCardType;
 }> = ({type}) => {
 	const {title, description, href, imageSrc, gradientA, gradientB} = Cards[type];
+	const cardRef = useRef<HTMLDivElement>(null);
+	const [mousePosition, setMousePosition] = useState({x: 0, y: 0});
+	const [isHovered, setIsHovered] = useState(false);
+
+	const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+		if (!cardRef.current) return;
+
+		const rect = cardRef.current.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+
+		setMousePosition({x, y});
+	};
+
+	const handleMouseEnter = () => setIsHovered(true);
+
+	const handleMouseLeave = () => {
+		setIsHovered(false);
+		setMousePosition({x: 0, y: 0});
+	};
+
 	return (
-		<div className="rounded-2xl overflow-hidden border-[1px] border-[#ffffff]/5 ">
-			<div className={`p-6 flex justify-center bg-[${gradientA}]`}>
+		<div
+			ref={cardRef}
+			className="rounded-2xl overflow-hidden border-[1px] border-[#ffffff]/5 transition-all duration-300  group relative"
+			onMouseMove={handleMouseMove}
+			onMouseEnter={handleMouseEnter}
+			onMouseLeave={handleMouseLeave}>
+			{isHovered && (
+				<div
+					className="absolute inset-0 pointer-events-none opacity-60 transition-opacity duration-300"
+					style={{
+						background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.1) 0%, transparent 50%)`
+					}}
+				/>
+			)}
+
+			<div
+				className={`p-6 justify-center bg-[${gradientA}] hidden md:flex transition-all duration-300 group-hover:bg-opacity-80 relative z-10`}>
 				<Image
 					src={imageSrc}
 					width={180}
 					height={180}
 					alt={title}
-					className="w-auto h-auto"
+					className="w-auto h-auto transition-transform duration-300 group-hover:scale-105"
 				/>
 			</div>
-			<div className={`bg-gradient-to-t ${gradientB} p-8`}>
-				<h3 className="text-3xl mb-4 ">{title}</h3>
-				<p className="text-gray-300 mb-4 text-white/80">{description}</p>
+			<div
+				className={`bg-gradient-to-t ${gradientB} p-8 transition-all duration-300 group-hover:bg-opacity-80 relative z-10`}>
+				<h3 className="text-3xl mb-4 transition-colors duration-300 group-hover:text-white">{title}</h3>
+				<p className="text-gray-300 mb-4 text-white/80 transition-colors duration-300 group-hover:text-white/90">
+					{description}
+				</p>
 				<Link
 					href={href}
-					className="text-white flex items-center">
+					className="text-white flex items-center transition-colors duration-300 group-hover:text-blue-200">
 					Learn More →
 				</Link>
 			</div>
