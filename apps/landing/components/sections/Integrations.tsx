@@ -44,26 +44,33 @@ const IntegrationItem: FC<{
 	description: string;
 }> = ({name, imageSrc, description, index}) => {
 	return (
-		<div
-			className={`flex flex-col md:flex-row justify-between items-center p-[16px] ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}>
-			<div className="flex items-center">
-				<div className="w-12 h-12 relative mr-4">
-					<Image
-						src={imageSrc}
-						alt={name}
-						width={48}
-						height={48}
-						className="rounded-full"
-					/>
+		<Link
+			href="#"
+			className="block cursor-pointer">
+			<div
+				className={`flex flex-col md:flex-row justify-between items-center p-[16px] transition-all duration-300 ease-in-out hover:bg-[#2a2b2c] hover:scale-[1.01] hover:shadow-lg ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}>
+				<div className="flex items-center">
+					<div className="w-12 h-12 relative mr-4">
+						<Image
+							src={imageSrc}
+							alt={name}
+							width={48}
+							height={48}
+							className="rounded-full transition-transform duration-300 ease-in-out group-hover:scale-110"
+						/>
+					</div>
+					<div className="text-[24px] text-white flex items-center">
+						{name}{' '}
+						<span className="ml-2 text-neutral-700 transition-all duration-300 ease-in-out hover:text-neutral-500">
+							↗
+						</span>
+					</div>
 				</div>
-				<Link
-					href="#"
-					className="text-[24px] text-white flex items-center">
-					{name} <span className="ml-2 text-neutral-700">↗</span>
-				</Link>
+				<div className="text-neutral-400 text-[18px] transition-colors duration-300 ease-in-out hover:text-neutral-300">
+					{description}
+				</div>
 			</div>
-			<div className="text-neutral-400 text-[18px]">{description}</div>
-		</div>
+		</Link>
 	);
 };
 

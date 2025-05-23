@@ -179,7 +179,7 @@ export const Vaults: FC = () => {
 												key={index}
 												onClick={() => goToSlide(index)}
 												className={`w-2 h-2 rounded-full transition-all duration-300 ${
-													index === activeSlide ? 'bg-white w-3' : 'bg-gray-600'
+													index === activeSlide ? 'bg-white scale-125' : 'bg-gray-600'
 												}`}
 												aria-label={`Go to slide ${index + 1}`}
 											/>
