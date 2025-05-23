@@ -46,19 +46,18 @@ const partners: Partner[] = [
 
 const PartnerLogo: FC<Partner> = ({image, alt, href, size = 50}) => {
 	const [isHovered, setIsHovered] = useState(false);
-
 	return (
 		<Link
 			href={href}
 			className="flex-1 block">
 			<div
-				className="bg-gray-800 hover:bg-blue-500 rounded-lg p-6 flex items-center justify-center h-full transition-colors duration-200 cursor-pointer relative"
+				className="bg-gray-800 hover:bg-blue-500 rounded-lg p-4 lg:p-6 flex items-center justify-center h-20 lg:h-full transition-colors duration-200 cursor-pointer relative"
 				onMouseEnter={() => setIsHovered(true)}
 				onMouseLeave={() => setIsHovered(false)}>
 				{isHovered && (
-					<div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-700 text-white px-3 py-2 rounded-full text-sm whitespace-nowrap z-10">
+					<div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-700 text-white px-3 py-2 rounded-full text-sm whitespace-nowrap z-10 hidden lg:block">
 						{alt}
-						<div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black"></div>
+						<div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-700"></div>
 					</div>
 				)}
 				<Image
@@ -66,79 +65,119 @@ const PartnerLogo: FC<Partner> = ({image, alt, href, size = 50}) => {
 					alt={alt}
 					width={size}
 					height={size}
+					className="w-8 h-8 lg:w-auto lg:h-auto object-contain"
 				/>
 			</div>
 		</Link>
 	);
 };
 
-export const Partners: FC = () => {
-	return (
-		<section className="flex justify-center w-full">
-			<div className="w-[1180px] flex flex-row items-center justify-between py-16">
-				<div className="max-w-7xl w-full px-4">
-					<SectionHeader
-						tagline="Partners"
-						title="Yearn X"
-						description={'Collaborations exploring yield opportunities with our partners'}
-						cta={{
-							label: 'Learn More',
-							href: '#'
-						}}
-					/>
+export const Partners: FC = () => (
+	<section className="flex justify-center w-full">
+		<div className="w-full max-w-[1180px] flex flex-col lg:flex-row items-center justify-between py-8 lg:py-16">
+			<div className="w-full px-4">
+				<SectionHeader
+					tagline="Partners"
+					title="Yearn X"
+					description={'Collaborations exploring yield opportunities with our partners'}
+					cta={{
+						label: 'Learn More',
+						href: '#'
+					}}
+				/>
 
-					<div className="flex flex-row gap-4 pt-8 h-80">
-						<div className="flex flex-col w-1/2 gap-2 h-full">
-							<div className="flex-1 flex flex-row gap-2">
-								{partners.slice(0, 3).map((partner, index) => (
-									<PartnerLogo
-										key={index}
-										image={partner.image}
-										alt={partner.alt}
-										href={partner.href}
-									/>
-								))}
-							</div>
-							<div className="flex-1 flex flex-row gap-2">
-								{partners.slice(3).map((partner, index) => (
-									<PartnerLogo
-										key={index}
-										image={partner.image}
-										alt={partner.alt}
-										href={partner.href}
-										size={partner.size}
-									/>
-								))}
-							</div>
-						</div>
-						<div className="bg-gray-800 hover:bg-blue-500 rounded-lg flex items-center justify-center aspect-auto relative w-1/2 transition-colors duration-200 cursor-pointer group">
-							<div className="absolute inset-0 overflow-hidden z-0">
-								<div className="absolute inset-0 opacity-20">
-									<div className="grid grid-cols-12 grid-rows-10 h-full w-full gap-4 p-8">
-										{Array(120)
-											.fill(0)
-											.map((_, i) => (
-												<div
-													key={i}
-													className="w-1 h-1 bg-white rounded-full justify-self-center self-center"
-												/>
-											))}
-									</div>
+				{/* Mobile */}
+				<div className="flex flex-col gap-4 pt-8 lg:hidden">
+					<div className="bg-gray-800 hover:bg-blue-500 rounded-lg flex items-center justify-center relative w-full h-48 transition-colors duration-200 cursor-pointer group">
+						<div className="absolute inset-0 overflow-hidden z-0">
+							<div className="absolute inset-0 opacity-20">
+								<div className="grid grid-cols-8 grid-rows-6 h-full w-full gap-2 p-4">
+									{Array(48)
+										.fill(0)
+										.map((_, i) => (
+											<div
+												key={i}
+												className="w-1 h-1 bg-white rounded-full justify-self-center self-center"
+											/>
+										))}
 								</div>
 							</div>
-							<div className="bg-gray-800 group-hover:bg-blue-500 rounded-full p-8 h-[150px] w-[150px] z-10 flex items-center justify-center transition-colors duration-200">
-								<Image
-									src="/landing/x-yearn.png"
-									alt="Yearn"
-									width={125}
-									height={125}
-									className="relative z-10"
+						</div>
+						<div className="bg-gray-800 group-hover:bg-blue-500 rounded-full p-4 h-[100px] w-[100px] z-10 flex items-center justify-center transition-colors duration-200">
+							<Image
+								src="/landing/x-yearn.png"
+								alt="Yearn"
+								width={75}
+								height={75}
+								className="relative z-10"
+							/>
+						</div>
+					</div>
+					<div className="grid grid-cols-2 gap-2">
+						{partners.map((partner, index) => (
+							<PartnerLogo
+								key={index}
+								image={partner.image}
+								alt={partner.alt}
+								href={partner.href}
+								size={partner.size}
+							/>
+						))}
+					</div>
+				</div>
+
+				{/* Desktop */}
+				<div className="hidden lg:flex lg:flex-row gap-4 pt-8 h-80">
+					<div className="flex flex-col w-1/2 gap-2 h-full">
+						<div className="flex-1 flex flex-row gap-2">
+							{partners.slice(0, 3).map((partner, index) => (
+								<PartnerLogo
+									key={index}
+									image={partner.image}
+									alt={partner.alt}
+									href={partner.href}
 								/>
+							))}
+						</div>
+						<div className="flex-1 flex flex-row gap-2">
+							{partners.slice(3).map((partner, index) => (
+								<PartnerLogo
+									key={index}
+									image={partner.image}
+									alt={partner.alt}
+									href={partner.href}
+									size={partner.size}
+								/>
+							))}
+						</div>
+					</div>
+					<div className="bg-gray-800 hover:bg-blue-500 rounded-lg flex items-center justify-center aspect-auto relative w-1/2 transition-colors duration-200 cursor-pointer group">
+						<div className="absolute inset-0 overflow-hidden z-0">
+							<div className="absolute inset-0 opacity-20">
+								<div className="grid grid-cols-12 grid-rows-10 h-full w-full gap-4 p-8">
+									{Array(120)
+										.fill(0)
+										.map((_, i) => (
+											<div
+												key={i}
+												className="w-1 h-1 bg-white rounded-full justify-self-center self-center"
+											/>
+										))}
+								</div>
 							</div>
+						</div>
+						<div className="bg-gray-800 group-hover:bg-blue-500 rounded-full p-8 h-[150px] w-[150px] z-10 flex items-center justify-center transition-colors duration-200">
+							<Image
+								src="/landing/x-yearn.png"
+								alt="Yearn"
+								width={125}
+								height={125}
+								className="relative z-10"
+							/>
 						</div>
 					</div>
 				</div>
 			</div>
-		</section>
-	);
-};
+		</div>
+	</section>
+);

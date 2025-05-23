@@ -103,30 +103,28 @@ export const Vaults: FC = () => {
 	};
 
 	return (
-		<section className="flex justify-center w-full">
-			<div className="w-[1180px] flex flex-col md:flex-row items-center justify-between py-24 gap-[48px]">
-				<div className="flex w-2/5 h-full items-center justify-center ">
+		<section className="flex justify-center w-full px-4 md:px-8">
+			<div className="w-full max-w-[1180px] flex flex-col md:flex-row items-center justify-between py-12 md:py-24 gap-6 md:gap-[48px]">
+				<div className="flex w-full md:w-2/5 h-[250px] md:h-full items-center justify-center">
 					<div
-						className="flex h-full w-full mb-8 md:mb-0 border-[1px] border-[#ffffff]/10 rounded-[24px] items-center justify-center"
+						className="flex h-full w-full mb-4 md:mb-0 border-[1px] border-[#ffffff]/10 rounded-[24px] items-center justify-center"
 						style={{
 							backgroundImage: "url('/landing/vault-background.png')",
 							backgroundRepeat: 'no-repeat',
 							backgroundSize: 'cover',
-							backgroundPosition: 'right'
+							backgroundPosition: 'center'
 						}}>
 						<Image
-							className={
-								' z-10 hidden opacity-0 transition-opacity group-hover:opacity-0 md:block md:opacity-100'
-							}
+							className={'z-10 md:opacity-100 transition-opacity group-hover:opacity-0 block'}
 							src={'/landing/safe.png'}
-							width={275}
-							height={275}
+							width={250}
+							height={250}
 							alt={'safe'}
 						/>
 					</div>
 				</div>
 
-				<div className="w-3/5 items-center justify-center">
+				<div className="w-full md:w-3/5 items-center justify-center">
 					<div>
 						<SectionHeader
 							tagline="Growing every day"
@@ -135,7 +133,7 @@ export const Vaults: FC = () => {
 							cta={{label: 'View All', href: '#'}}
 						/>
 
-						<div className="relative p-1 bg-white/5 rounded-[24px] overflow-hidden p-[8px] mt-8">
+						<div className="relative p-1 bg-white/5 rounded-[24px] overflow-hidden p-[8px] mt-6 md:mt-8">
 							<div className="relative">
 								{slides.map((row, rowIndex) => (
 									<div
@@ -144,19 +142,21 @@ export const Vaults: FC = () => {
 										{row.map((slide, index) => (
 											<div
 												key={index}
-												className={`${slide.bgClass} h-[48px] rounded-[16px] flex items-center justify-between p-[8px]`}>
+												className={`${slide.bgClass} h-[48px] md:h-[48px] rounded-[16px] flex items-center justify-between p-2 md:p-[8px]`}>
 												<div className="flex items-center">
-													<div className="bg-white rounded-2xl p-1 mr-3">
-														<div className="w-6 h-6 bg-gray-900 rounded-2xl flex items-center justify-center">
-															<span className="text-white">{slide.icon}</span>
+													<div className="bg-white rounded-2xl p-1 mr-2 md:mr-3">
+														<div className="w-5 h-5 md:w-6 md:h-6 bg-gray-900 rounded-2xl flex items-center justify-center">
+															<span className="text-white text-sm md:text-base">
+																{slide.icon}
+															</span>
 														</div>
 													</div>
-													<span>{slide.text}</span>
+													<span className="text-sm md:text-base">{slide.text}</span>
 												</div>
-												<div className="bg-transparent p-2 rounded-2xl">
+												<div className="bg-transparent p-1 md:p-2 rounded-2xl">
 													<svg
 														xmlns="http://www.w3.org/2000/svg"
-														className="h-6 w-6"
+														className="h-5 w-5 md:h-6 md:w-6"
 														fill="none"
 														viewBox="0 0 24 24"
 														stroke="currentColor">
@@ -172,8 +172,8 @@ export const Vaults: FC = () => {
 										))}
 									</div>
 								))}
-								<div className="flex justify-center h-[24px] mt-[4px] items-center">
-									<div className="flex space-x-3 ">
+								<div className="flex justify-center h-[20px] md:h-[24px] mt-[4px] items-center">
+									<div className="flex space-x-2 md:space-x-3">
 										{Array.from({length: totalSlides}).map((_, index) => (
 											<button
 												key={index}

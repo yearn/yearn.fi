@@ -95,7 +95,6 @@ export const FAQs: FC = () => {
 							}}
 						/>
 					</div>
-
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 						<div className="h-[400px]">
 							<Image

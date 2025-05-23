@@ -17,14 +17,14 @@ export const SectionHeader: FC<{
 				{!!tagline && <p className="text-lightBlue-500 mb-2 font-medium">{tagline}</p>}
 				{!!title &&
 					(isH1 ? (
-						<h1 className="text-6xl font-medium">{title}</h1>
+						<h1 className="text-5xl md:text-6xl font-medium">{title}</h1>
 					) : (
-						<h2 className="text-5xl font-medium">{title}</h2>
+						<h2 className="text-4xl md:text-5xl font-medium">{title}</h2>
 					))}
 			</div>
 			{!!description && (
 				<div>
-					<p className={`text-steelGray-500 ${isH1 ? 'text-[24px]' : 'text-[18px]'}`}>
+					<p className={`text-steelGray-500 ${isH1 ? 'text-[18px] md:text-[24px]' : 'text-[18px]'}`}>
 						{description}
 						{!!cta && (
 							<Link
