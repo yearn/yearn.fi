@@ -5,7 +5,11 @@
 		"paths": {
 			"@common/*": ["apps/common/*"],
 			"@vaults/*": ["apps/vaults/*"],
-			"@vaults-v3/*": ["apps/vaults-v3/*"]
+			"@vaults-v3/*": ["apps/vaults-v3/*"],
+			"@yearn-finance/web-lib/*": ["./node_modules/@yearn-finance/web-lib/*"],
+			"@yearn-finance/web-lib/src/*": ["./node_modules/@yearn-finance/web-lib/src/*"],
+			"@yearn-finance/web-lib/utils/*": ["./node_modules/@yearn-finance/web-lib/src/utils/*"],
+			"@yearn-finance/web-lib/hooks/*": ["./node_modules/@yearn-finance/web-lib/src/hooks/*"]
 		},
 		/* Basic Options */
 		"target": "esnext",
