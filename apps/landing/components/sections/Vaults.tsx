@@ -61,28 +61,28 @@ const slides: Vault[] = [
 		description: 'Apps built on Yearn vaults by contributors and the wider community',
 		vaultRows: [
 			{
-				bgClass: 'bg-gradient-to-r from-gray-800 to-blue-900',
+				bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
 				icon: '/landing/apps/veyfi.png',
 				text: 'veYFI',
 				description: 'Earn yield, boost gauges, and take part in governance',
 				href: 'https://veyfi.yearn.fi/'
 			},
 			{
-				bgClass: 'bg-gradient-to-r from-gray-800 to-blue-800',
+				bgClass: 'bg-gradient-to-r from-gray-900 to-gray-800',
 				icon: '/landing/apps/ycrv.png',
 				text: 'yCRV',
 				description: 'Put your yCRV to work',
 				href: 'https://ycrv.yearn.fi/'
 			},
 			{
-				bgClass: 'bg-gradient-to-r from-gray-900 to-blue-700',
+				bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
 				icon: '/landing/apps/yprisma.png',
 				text: 'yPRISMA',
 				description: 'Put your yPRISMA to work',
 				href: 'https://yprisma.yearn.fi/'
 			},
 			{
-				bgClass: 'bg-gradient-to-r from-gray-900 to-blue-700',
+				bgClass: 'bg-gradient-to-r from-gray-900 to-gray-800',
 				icon: '/landing/apps/yeth.png',
 				text: 'yETH',
 				description: 'A basket of LSTs in a single token',
@@ -138,7 +138,7 @@ export const Vaults: FC = () => {
 								key={index}
 								className="w-full flex-shrink-0 flex flex-col md:flex-row items-stretch justify-between gap-6 md:gap-8">
 								{/* Image Container */}
-								<div className="flex w-full md:w-2/5 relative min-h-[200px] md:min-h-auto">
+								<div className="flex w-full md:w-2/5 relative min-h-[300px] md:min-h-auto">
 									<div
 										className="flex h-full w-full border-[1px] border-[#ffffff]/10 rounded-[24px] items-center justify-center relative overflow-hidden"
 										style={{
