@@ -5,7 +5,6 @@ import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {cl, formatPercent, truncateHex} from '@builtbymom/web3/utils';
 import {findLatestAPY} from '@vaults/components/details/tabs/findLatestAPY';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
-import {VaultChainTag} from '@vaults-v3/components/VaultChainTag';
 import {getChainBgColor} from '@vaults-v3/utils';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
@@ -28,7 +27,8 @@ export function VaultsListStrategy({
 	address,
 	variant = 'v3',
 	apr,
-	fees
+	fees,
+	isUnallocated = false
 }: {
 	details: TYDaemonVaultStrategy['details'];
 	chainId: number;
@@ -39,6 +39,7 @@ export function VaultsListStrategy({
 	variant: 'v2' | 'v3';
 	apr: number | undefined;
 	fees: TYDaemonVault['apr']['fees'];
+	isUnallocated?: boolean;
 }): ReactElement {
 	const [isExpanded, set_isExpanded] = useState(false);
 
@@ -53,7 +54,7 @@ export function VaultsListStrategy({
 	});
 	const latestApr = useMemo((): number => findLatestAPY(reports), [reports]);
 
-	const finalApt = apr || latestApr;
+	const finalApr = apr || latestApr;
 
 	const expandAnimation = {
 		initial: {
@@ -86,7 +87,6 @@ export function VaultsListStrategy({
 			}
 		}
 	};
-
 	const chainBgColor = getChainBgColor(chainId);
 	const lastReportTime = details?.lastReport
 		? formatDuration(details.lastReport * 1000 - new Date().valueOf(), true)
@@ -101,7 +101,8 @@ export function VaultsListStrategy({
 				'text-white',
 				isExpanded ? 'rounded-b-none' : '',
 				variant === 'v2' ? '' : 'rounded-3xl',
-				isExpanded && variant === 'v2' ? 'bg-[#97979724] bg-opacity-[14]' : ''
+				isExpanded && variant === 'v2' ? 'bg-[#97979724] bg-opacity-[14]' : '',
+				isUnallocated ? 'opacity-50' : ''
 			)}>
 			{variant === 'v3' && (
 				<div
@@ -118,8 +119,8 @@ export function VaultsListStrategy({
 			{/* Collapsible header - always visible */}
 			<div
 				className={cl(
-					'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 px-8 cursor-pointer justify-between',
-					variant === 'v3' ? '' : 'border-t border-[#606770]'
+					'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 px-4 md:px-8 cursor-pointer justify-between',
+					variant === 'v3' ? '' : 'md:border-t border-[#606770]'
 				)}
 				onClick={() => set_isExpanded(!isExpanded)}>
 				<div className={cl('col-span-5 flex flex-row items-center gap-4 z-10')}>
@@ -148,27 +149,36 @@ export function VaultsListStrategy({
 					</strong>
 				</div>
 
-				<div className={cl('md:col-span-7 z-10', 'grid grid-cols-3 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
+				<div
+					className={cl(
+						'md:col-span-7 z-10',
+						'grid grid-cols-1 sm:grid-cols-3 md:grid-cols-12 md:gap-4',
+						'mt-4 md:mt-0'
+					)}>
 					<div
-						className={'flex-row md:col-span-3 md:flex-col md:text-right'}
+						className={'items-right flex flex-row justify-between sm:flex-col md:col-span-3 md:text-right'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Allocation %'}</p>
 						<p>{formatPercent((details?.debtRatio || 0) / 100, 0)}</p>
 					</div>
 					<div
-						className={'mr-[-20px] flex-row md:col-span-4 md:flex-col md:text-right'}
+						className={
+							'items-right flex flex-row justify-between sm:flex-col md:col-span-4 md:mr-[-20px] md:text-right'
+						}
 						datatype={'number'}>
-						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Allocation $'}</p>
 						<p>{allocation}</p>
 					</div>
 					<div
-						className={'mr-[3px] flex-row md:col-span-5 md:flex-col md:text-right'}
+						className={
+							'items-right flex flex-row justify-between sm:flex-col md:col-span-5 md:mr-[3px] md:text-right'
+						}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
 						<p>
 							<RenderAmount
 								shouldHideTooltip
-								value={finalApt}
+								value={finalApr}
 								symbol={'percent'}
 								decimals={6}
 							/>
@@ -185,7 +195,7 @@ export function VaultsListStrategy({
 					animate={'enter'}
 					exit={'exit'}>
 					<div className={'h-px w-full bg-[#606770]'} />
-					<div className={cl('w-full py-4 md:pl-20 pl-8 rounded-b-3xl text-neutral-900')}>
+					<div className={cl('w-full py-4 md:pl-16 pl-4 rounded-b-3xl text-neutral-900')}>
 						<motion.div
 							className={'grid grid-cols-1 gap-6 md:grid-cols-2'}
 							variants={{
@@ -195,10 +205,7 @@ export function VaultsListStrategy({
 							}}>
 							{/* First column */}
 							<div className={'flex flex-col gap-4'}>
-								<div className={'flex items-center gap-4'}>
-									<div className={'shrink-0'}>
-										<VaultChainTag chainID={chainId} />
-									</div>
+								<div className={'flex flex-wrap items-center gap-4'}>
 									{variant === 'v3' ? (
 										<Link
 											href={`/v3/${chainId}/${address}`}
@@ -229,7 +236,7 @@ export function VaultsListStrategy({
 								<div className={'flex flex-col gap-2'}>
 									<div className={'flex flex-row gap-2'}>
 										<span className={''}>{'Management Fee:'}</span>
-										<span>{formatPercent((fees.management || 0) * 100, 0)}</span>
+										<span>{formatPercent((fees?.management || 0) * 100, 0)}</span>
 									</div>
 									<div className={'flex flex-row gap-2'}>
 										<span className={''}>{'Performance Fee:'}</span>
