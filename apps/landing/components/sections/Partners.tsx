@@ -3,7 +3,48 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
 
-const PartnerLogo: FC<{image: string; alt: string; href: string; size?: number}> = ({image, alt, href, size = 50}) => {
+interface Partner {
+	image: string;
+	alt: string;
+	href: string;
+	size?: number;
+}
+
+const partners: Partner[] = [
+	{
+		image: '/landing/x-curve.png',
+		alt: 'Curve',
+		href: 'https://curve.yearn.space/'
+	},
+	{
+		image: '/landing/x-morpho.png',
+		alt: 'Morpho',
+		href: 'https://morpho.yearn.space/'
+	},
+	{
+		image: '/landing/x-katana.png',
+		alt: 'Katana',
+		href: 'https://katana.yearn.space/'
+	},
+	{
+		image: '/landing/x-aerodrome.png',
+		alt: 'Aerodrome',
+		href: 'https://aerodrome.yearn.space/'
+	},
+	{
+		image: '/landing/x-velodrome.png',
+		alt: 'Velodrome',
+		href: 'https://velodrome.yearn.space/'
+	},
+	{
+		image: '/landing/x-pooltogether.png',
+		alt: 'PoolTogether',
+		href: 'https://pooltogether.yearn.space/',
+		size: 35
+	}
+];
+
+const PartnerLogo: FC<Partner> = ({image, alt, href, size = 50}) => {
 	const [isHovered, setIsHovered] = useState(false);
 
 	return (
@@ -49,39 +90,25 @@ export const Partners: FC = () => {
 					<div className="flex flex-row gap-4 pt-8 h-80">
 						<div className="flex flex-col w-1/2 gap-2 h-full">
 							<div className="flex-1 flex flex-row gap-2">
-								<PartnerLogo
-									image="/landing/x-curve.png"
-									alt="Curve"
-									href="#"
-								/>
-								<PartnerLogo
-									image="/landing/x-morpho.png"
-									alt="Morpho"
-									href="#"
-								/>
-								<PartnerLogo
-									image="/landing/x-katana.png"
-									alt="Katana"
-									href="#"
-								/>
+								{partners.slice(0, 3).map((partner, index) => (
+									<PartnerLogo
+										key={index}
+										image={partner.image}
+										alt={partner.alt}
+										href={partner.href}
+									/>
+								))}
 							</div>
 							<div className="flex-1 flex flex-row gap-2">
-								<PartnerLogo
-									image="/landing/x-aerodrome.png"
-									alt="Aerodrome"
-									href="#"
-								/>
-								<PartnerLogo
-									image="/landing/x-velodrome.png"
-									alt="Velodrome"
-									href="#"
-								/>
-								<PartnerLogo
-									image="/landing/x-pooltogether.png"
-									alt="PoolTogether"
-									size={35}
-									href="#"
-								/>
+								{partners.slice(3).map((partner, index) => (
+									<PartnerLogo
+										key={index}
+										image={partner.image}
+										alt={partner.alt}
+										href={partner.href}
+										size={partner.size}
+									/>
+								))}
 							</div>
 						</div>
 						<div className="bg-gray-800 hover:bg-blue-500 rounded-lg flex items-center justify-center aspect-auto relative w-1/2 transition-colors duration-200 cursor-pointer group">
