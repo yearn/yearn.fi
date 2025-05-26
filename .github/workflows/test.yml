@@ -20,7 +20,7 @@ jobs:
                   node-version: 20
 
             - name: Install project dependencies
-              run: bun install
+              run: yarn --prefer-offline
 
             - name: Test project
-              run: bun run test
+              run: yarn test

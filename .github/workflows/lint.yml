@@ -26,7 +26,7 @@ jobs:
                   node-version: 20
 
             - name: Install project dependencies
-              run: bun install
+              run: yarn --prefer-offline
               id: install
 
             - name: Run linters

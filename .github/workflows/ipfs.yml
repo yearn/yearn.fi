@@ -24,7 +24,7 @@ jobs:
                   node-version: ${{ matrix.node-version }}
 
             - name: Install project dependencies
-              run: bun install
+              run: yarn --prefer-offline
               id: install
 
             - run: IPFS_BUILD=true bun run export
