@@ -99,6 +99,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	const filteredStrategyList = useMemo(() => {
 		const strategies = strategyList.filter(vault => vault.details?.totalDebt !== '0') as (TYDaemonVault & {
 			details: TYDaemonVaultStrategy['details'];
+			status: TYDaemonVaultStrategy['status'];
 		})[];
 
 		return strategies;

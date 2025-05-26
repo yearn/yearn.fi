@@ -5,7 +5,8 @@
 		"paths": {
 			"@common/*": ["apps/common/*"],
 			"@vaults/*": ["apps/vaults/*"],
-			"@vaults-v3/*": ["apps/vaults-v3/*"]
+			"@vaults-v3/*": ["apps/vaults-v3/*"],
+			"@yearn-finance/web-lib/*": ["node_modules/@w84april/web-lib/src/*"]
 		},
 		/* Basic Options */
 		"target": "esnext",

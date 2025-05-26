@@ -46,7 +46,7 @@ export function AmountInput({
 					aria-label={label}
 					value={amount.normalized}
 					onChange={onAmountChange ? (e): void => onAmountChange(e.target.value) : undefined}
-					placeholder={loading ? '' : placeholder ?? '0'}
+					placeholder={loading ? '' : (placeholder ?? '0')}
 					disabled={disabled}
 				/>
 				<Renderable shouldRender={!!maxAmount && !disabled}>
