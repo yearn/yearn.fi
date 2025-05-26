@@ -27,7 +27,7 @@ jobs:
               run: yarn --prefer-offline
               id: install
 
-            - run: IPFS_BUILD=true bun run export
+            - run: IPFS_BUILD=true yarn export
 
             - name: Upload to IPFS
               uses: aquiladev/ipfs-action@v0.3.0-alpha.1
