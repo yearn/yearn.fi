@@ -163,7 +163,6 @@ export function VaultDetailsQuickActionsTo(props: {
 		address: toAddress(actionParams?.selectedOptionTo?.value),
 		chainID: Number(actionParams?.selectedOptionTo?.chainID)
 	});
-	console.log(currentVault);
 	const selectedOptionToSymbol = useMemo(() => {
 		if (isAutoStakingEnabled) {
 			return props.vaultData.stakedGaugeSymbol;
