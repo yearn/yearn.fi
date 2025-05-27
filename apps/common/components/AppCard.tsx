@@ -25,7 +25,18 @@ export function AppCard(props: TAppCardProps): ReactElement {
 						}>
 						<IconShare className={'size-[10px]'} />
 					</div>
-					{props.app.logoURI ? (
+					{props.app.name === 'Resupply' ? (
+						<div className={'flex size-[80px] items-center justify-center rounded-full bg-gray-900'}>
+							<Image
+								src={props.app.logoURI}
+								alt={props.app.name}
+								unoptimized
+								width={240}
+								height={240}
+								className={'size-[80px] max-w-[60%] rounded-full border object-contain'}
+							/>
+						</div>
+					) : (
 						<Image
 							src={props.app.logoURI}
 							alt={props.app.name}
@@ -34,8 +45,6 @@ export function AppCard(props: TAppCardProps): ReactElement {
 							height={240}
 							className={'size-[80px] rounded-full border object-contain'}
 						/>
-					) : (
-						<div className={'size-[80px] rounded-full bg-fallback'} />
 					)}
 				</div>
 				<div className={'mb-1 text-lg font-bold text-neutral-700'}>{props.app.name}</div>
@@ -65,7 +74,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 
 				<div className={'ml-4'}>
 					<div className={'mb-1 text-base font-bold text-neutral-700'}>{props.app.name}</div>
-					<p className={'line-clamp-2 h-12 text-xs text-neutral-600 md:text-base'}>{props.app.description}</p>
+					<p className={'line-clamp-2 text-xs text-neutral-600 md:text-base'}>{props.app.description}</p>
 				</div>
 			</Link>
 		</>
