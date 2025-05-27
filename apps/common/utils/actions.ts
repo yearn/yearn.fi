@@ -2,6 +2,7 @@ import {erc20Abi} from 'viem';
 import {assert, assertAddress, toAddress} from '@builtbymom/web3/utils';
 import {handleTx, retrieveConfig, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
 import {getEthZapperContract} from '@vaults/utils';
+import { ERC_4626_ROUTER_ABI } from '@vaults/utils/abi/erc4626Router.abi';
 import {VAULT_MIGRATOR_ABI} from '@vaults/utils/abi/vaultMigrator.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {ZAP_OPT_ETH_TO_YVETH_ABI} from '@vaults/utils/abi/zapOptEthToYvEth';
@@ -273,5 +274,30 @@ export async function migrateShares(props: TMigrateShares): Promise<TTxResponse>
 		abi: VAULT_MIGRATOR_ABI,
 		functionName: 'migrateAll',
 		args: [props.fromVault, props.toVault]
+	});
+}
+
+
+type TMigrateSharesViaRouter = TWriteTransaction & {
+	router: TAddress | undefined;
+	fromVault: TAddress | undefined;
+	toVault: TAddress | undefined;
+	amount: bigint;
+	maxLoss: bigint;
+};
+export async function migrateSharesViaRouter(props: TMigrateSharesViaRouter): Promise<TTxResponse> {
+	assertAddress(props.router, 'router');
+	assertAddress(props.fromVault, 'fromVault');
+	assertAddress(props.toVault, 'toVault');
+	assertAddress(props.contractAddress);
+	assert(props.amount > 0n, 'Amount is 0');
+	assert(props.maxLoss > 0n && props.maxLoss <= 10000n, 'Max loss is invalid');
+	const minAmount = props.amount - (props.amount * props.maxLoss / 10000n);
+
+	return await handleTx(props, {
+		address: props.router,
+		abi: ERC_4626_ROUTER_ABI,
+		functionName: 'migrate',
+		args: [props.fromVault, props.toVault, props.amount, minAmount]
 	});
 }
