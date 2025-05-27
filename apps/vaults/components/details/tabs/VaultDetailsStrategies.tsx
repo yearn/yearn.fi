@@ -1,5 +1,4 @@
-import {useMemo, useState} from 'react';
-import {AnimatePresence, motion} from 'framer-motion';
+import {useMemo} from 'react';
 import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
@@ -68,8 +67,6 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		defaultPathname: '/vaults/[chainID]/[address]'
 	});
 
-	const [shouldShowUnallocated, set_shouldShowUnallocated] = useState(false);
-
 	const tokenPrice = useYearnTokenPrice({address: currentVault.token.address, chainID: currentVault.chainID});
 
 	const strategyList = useMemo((): TYDaemonVaultStrategy[] => {
@@ -97,7 +94,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		strategyList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0);
 
 	const filteredStrategyList = useMemo(() => {
-		const strategies = strategyList.filter(vault => vault.details?.totalDebt !== '0') as (TYDaemonVault & {
+		const strategies = strategyList.filter(vault => vault.status !== 'not_active') as (TYDaemonVault & {
 			details: TYDaemonVaultStrategy['details'];
 			status: TYDaemonVaultStrategy['status'];
 		})[];
@@ -112,6 +109,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	 **********************************************************************************************/
 	const sortedVaultsToDisplay = useSortVaults(filteredStrategyList, sortBy, sortDirection) as (TYDaemonVault & {
 		details: TYDaemonVaultStrategy['details'];
+		status: TYDaemonVaultStrategy['status'];
 	})[];
 
 	const allocationChartData = useMemo(
@@ -138,10 +136,6 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		[currentVault.token?.decimals, filteredStrategyList, tokenPrice, unallocatedPercentage, unallocatedValue]
 	);
 
-	const unallocatedVaults = useMemo(() => {
-		return strategyList.filter(vault => !vault.details?.debtRatio || vault.details?.totalDebt === '0');
-	}, [strategyList]);
-
 	const isVaultListEmpty = strategyList.length === 0;
 	const isFilteredVaultListEmpty = filteredStrategyList.length === 0;
 
@@ -156,7 +150,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 
 	return (
 		<>
-			<div className={cl(isVaultListEmpty ? 'hidden ' : 'flex md:p-8 lg:pr-0 p-4 ')}>
+			<div className={cl(isFilteredVaultListEmpty ? 'hidden ' : 'flex md:p-8 lg:pr-0 p-4 ')}>
 				<div
 					className={
 						'grid w-full grid-cols-1 place-content-start md:gap-x-6 lg:max-w-[846px] lg:grid-cols-9'
@@ -201,6 +195,11 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								(strategy): ReactElement => (
 									<VaultsListStrategy
 										key={`${currentVault?.chainID || currentVault.chainID}_${strategy.address}`}
+										isUnallocated={
+											strategy.status === 'unallocated' ||
+											strategy.details?.totalDebt === '0' ||
+											!strategy.details?.debtRatio
+										}
 										details={strategy.details}
 										chainId={currentVault.chainID || currentVault.chainID}
 										address={strategy.address}
@@ -248,74 +247,6 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							/>
 						</div>
 					)}
-					{unallocatedVaults.length > 0 && (
-						<div
-							className={cl(
-								'col-span-9 border border-fallback max-lg:row-start-3 lg:border-t-0',
-								isFilteredVaultListEmpty ? 'border-t-0' : 'max-lg:mt-4'
-							)}>
-							<button
-								className={'flex w-full items-center justify-start'}
-								onClick={() => set_shouldShowUnallocated(!shouldShowUnallocated)}>
-								<div className={'flex items-center px-4 py-3 text-left text-sm font-bold md:px-8'}>
-									<p
-										className={cl(
-											'transition-all duration-300 ease-in-out mr-4',
-											shouldShowUnallocated ? '' : 'rotate-[-90deg]'
-										)}>
-										{'▼'}
-									</p>
-									{shouldShowUnallocated ? 'Hide' : 'Show'} {'inactive strategies'}
-								</div>
-							</button>
-
-							<AnimatePresence>
-								{shouldShowUnallocated && (
-									<motion.div
-										initial={{opacity: 0}}
-										animate={{opacity: 1}}
-										transition={{duration: 0.2}}>
-										{unallocatedVaults.map((strategy, index): ReactElement => {
-											return (
-												<motion.div
-													key={`${currentVault?.chainID || currentVault.chainID}_${strategy.address}`}
-													initial={{opacity: 0, x: -20}}
-													animate={{opacity: 1, x: 0}}
-													transition={{
-														duration: 0.2,
-														delay: index * 0.05,
-														ease: 'easeOut'
-													}}>
-													<VaultsListStrategy
-														isUnallocated={true}
-														details={strategy.details}
-														chainId={currentVault.chainID || currentVault.chainID}
-														address={strategy.address}
-														variant={'v2'}
-														name={strategy.name}
-														tokenAddress={currentVault.token.address}
-														allocation={formatCounterValue(
-															toNormalizedBN(
-																strategy.details?.totalDebt || 0,
-																currentVault.token?.decimals
-															).display,
-															tokenPrice
-														)}
-														apr={undefined}
-														fees={{
-															performance: strategy.details?.performanceFee || 0,
-															withdrawal: 0,
-															management: 0
-														}}
-													/>
-												</motion.div>
-											);
-										})}
-									</motion.div>
-								)}
-							</AnimatePresence>
-						</div>
-					)}
 				</div>
 
 				{!isVaultListEmpty && (
@@ -330,7 +261,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 				)}
 			</div>
 
-			<div className={cl(isVaultListEmpty ? '' : 'hidden')}>
+			<div className={cl(isFilteredVaultListEmpty ? '' : 'hidden')}>
 				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 					<b className={'text-center text-lg'}>
 						{isVaultListEmpty ? 'This vault IS the strategy' : 'No strategies found'}

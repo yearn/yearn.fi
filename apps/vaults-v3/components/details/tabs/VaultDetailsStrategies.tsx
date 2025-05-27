@@ -1,11 +1,9 @@
-import {useMemo, useState} from 'react';
-import {AnimatePresence, motion} from 'framer-motion';
+import {useMemo} from 'react';
 import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
-import {Button} from '@yearn-finance/web-lib/components/Button';
 import {AllocationChart} from '@common/components/AllocationChart';
 import {VaultsListStrategy} from '@common/components/VaultsListStrategy';
 import {useYearn} from '@common/contexts/useYearn';
@@ -92,14 +90,12 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		defaultPathname: '/v3/[chainID]/[address]'
 	});
 
-	const [shouldShowUnallocated, set_shouldShowUnallocated] = useState(false);
-
 	const tokenPrice = useYearnTokenPrice({address: currentVault.token.address, chainID: currentVault.chainID});
 
 	const vaultList = useMemo((): TYDaemonVault[] => {
 		const _vaultList = [];
 		for (const strategy of currentVault?.strategies || []) {
-			_vaultList.push({...vaults[strategy.address], details: strategy.details});
+			_vaultList.push({...vaults[strategy.address], details: strategy.details, status: strategy.status});
 		}
 		return _vaultList.filter(vault => !!vault.address);
 	}, [vaults, currentVault]);
@@ -115,7 +111,11 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	}, [vaults, currentVault]);
 
 	const mergedList = useMemo(
-		() => [...vaultList, ...strategyList] as (TYDaemonVault & {details: TYDaemonVaultStrategy['details']})[],
+		() =>
+			[...vaultList, ...strategyList] as (TYDaemonVault & {
+				details: TYDaemonVaultStrategy['details'];
+				status: TYDaemonVaultStrategy['status'];
+			})[],
 		[vaultList, strategyList]
 	);
 
@@ -134,10 +134,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		mergedList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0);
 
 	const filteredVaultList = useMemo(() => {
-		const strategies = mergedList.filter(vault => vault.details?.totalDebt !== '0') as (TYDaemonVault & {
-			details: TYDaemonVaultStrategy['details'];
-		})[];
-
+		const strategies = mergedList.filter(vault => vault.status !== 'not_active');
 		return strategies;
 	}, [mergedList]);
 
@@ -148,6 +145,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	 **********************************************************************************************/
 	const sortedVaultsToDisplay = useSortVaults(filteredVaultList, sortBy, sortDirection) as (TYDaemonVault & {
 		details: TYDaemonVaultStrategy['details'];
+		status: TYDaemonVaultStrategy['status'];
 	})[];
 
 	const allocationChartData = useMemo(() => {
@@ -177,16 +175,12 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		return [...strategyData, unallocatedData].filter(Boolean) as TAllocationChartData[];
 	}, [currentVault.token?.decimals, filteredVaultList, tokenPrice, unallocatedPercentage, unallocatedValue]);
 
-	const unallocatedVaults = useMemo(() => {
-		return mergedList.filter(vault => !vault.details?.debtRatio || vault.details?.totalDebt === '0');
-	}, [mergedList]);
-
-	const isVaultListEmpty = [...vaultList, ...strategyList].length === 0;
+	const isVaultListEmpty = mergedList.length === 0;
 	const isFilteredVaultListEmpty = filteredVaultList.length === 0;
 
 	return (
 		<>
-			<div className={cl(isVaultListEmpty ? 'hidden' : 'flex p-4 md:p-8 lg:pr-0')}>
+			<div className={cl(isFilteredVaultListEmpty ? 'hidden' : 'flex p-4 md:p-8 lg:pr-0')}>
 				<div
 					className={
 						'grid w-full grid-cols-1 place-content-start gap-y-6 md:gap-x-6 lg:max-w-[846px] lg:grid-cols-9 lg:gap-y-4'
@@ -225,6 +219,11 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							{sortedVaultsToDisplay.map(vault => (
 								<VaultsListStrategy
 									key={`${vault?.chainID || currentVault.chainID}_${vault.address}`}
+									isUnallocated={
+										vault.status === 'unallocated' ||
+										vault.details?.totalDebt === '0' ||
+										!vault.details?.debtRatio
+									}
 									details={vault.details}
 									chainId={vault.chainID || currentVault.chainID}
 									variant={'v3'}
@@ -262,51 +261,6 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								textColor={'fill-white'}
 							/>
 						</div>
-					</div>
-					<div className={'col-span-9 row-start-3 flex w-full flex-col gap-4 lg:row-start-2'}>
-						{unallocatedVaults.length > 0 && (
-							<Button
-								className={
-									'w-full !bg-[#2C3DA6] !bg-opacity-20 !text-white hover:!bg-opacity-100 md:w-[264px]'
-								}
-								onClick={() => set_shouldShowUnallocated(!shouldShowUnallocated)}>
-								{shouldShowUnallocated ? '- Hide inactive strategies' : '+ Show inactive strategies'}
-							</Button>
-						)}
-						<AnimatePresence>
-							{shouldShowUnallocated && (
-								<motion.div
-									initial={{opacity: 0, y: 20}}
-									animate={{opacity: 1, y: 0}}
-									exit={{opacity: 0, y: -20}}
-									transition={{duration: 0.3, ease: 'easeInOut'}}
-									className={'grid grid-cols-1 gap-4'}>
-									{unallocatedVaults.map((vault): ReactElement => {
-										return (
-											<VaultsListStrategy
-												isUnallocated={true}
-												key={`${vault?.chainID || currentVault.chainID}_${vault.address}`}
-												details={vault.details}
-												chainId={vault.chainID || currentVault.chainID}
-												variant={'v3'}
-												address={vault.address}
-												name={vault.name}
-												tokenAddress={vault.token?.address || currentVault.token.address}
-												allocation={formatCounterValue(
-													toNormalizedBN(
-														vault.details?.totalDebt || 0,
-														vault.token?.decimals || currentVault.token?.decimals
-													).display,
-													tokenPrice
-												)}
-												apr={vault.apr?.forwardAPR.netAPR || vault.apr?.netAPR}
-												fees={vault.apr?.fees}
-											/>
-										);
-									})}
-								</motion.div>
-							)}
-						</AnimatePresence>
 					</div>
 				</div>
 				<div className={'mx-auto flex max-lg:hidden lg:mt-4'}>
