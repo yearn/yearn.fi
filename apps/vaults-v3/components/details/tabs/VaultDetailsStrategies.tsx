@@ -89,7 +89,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
 		defaultPathname: '/v3/[chainID]/[address]'
 	});
-
+	console.log(currentVault);
 	const tokenPrice = useYearnTokenPrice({address: currentVault.token.address, chainID: currentVault.chainID});
 
 	const vaultList = useMemo((): TYDaemonVault[] => {
@@ -146,6 +146,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	const sortedVaultsToDisplay = useSortVaults(filteredVaultList, sortBy, sortDirection) as (TYDaemonVault & {
 		details: TYDaemonVaultStrategy['details'];
 		status: TYDaemonVaultStrategy['status'];
+		netAPR: TYDaemonVaultStrategy['netAPR'];
 	})[];
 
 	const allocationChartData = useMemo(() => {
@@ -237,7 +238,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 										).display,
 										tokenPrice
 									)}
-									apr={vault.apr?.forwardAPR.netAPR || vault.apr?.netAPR}
+									apr={vault.netAPR || vault.apr?.forwardAPR.netAPR || vault.apr?.netAPR}
 									fees={vault.apr?.fees}
 								/>
 							))}

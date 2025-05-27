@@ -97,6 +97,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		const strategies = strategyList.filter(vault => vault.status !== 'not_active') as (TYDaemonVault & {
 			details: TYDaemonVaultStrategy['details'];
 			status: TYDaemonVaultStrategy['status'];
+			netAPR: TYDaemonVaultStrategy['netAPR'];
 		})[];
 
 		return strategies;
@@ -110,6 +111,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	const sortedVaultsToDisplay = useSortVaults(filteredStrategyList, sortBy, sortDirection) as (TYDaemonVault & {
 		details: TYDaemonVaultStrategy['details'];
 		status: TYDaemonVaultStrategy['status'];
+		netAPR: TYDaemonVaultStrategy['netAPR'];
 	})[];
 
 	const allocationChartData = useMemo(
@@ -214,9 +216,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 											tokenPrice
 										)}
 										apr={
-											strategy.apr?.forwardAPR?.netAPR ||
-											strategy.apr?.netAPR ||
-											(strategy as {netAPR?: number}).netAPR
+											strategy.netAPR || strategy.apr?.forwardAPR?.netAPR || strategy.apr?.netAPR
 										}
 										fees={{
 											performance: strategy.details?.performanceFee || 0,
