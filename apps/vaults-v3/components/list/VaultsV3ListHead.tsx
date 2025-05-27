@@ -61,8 +61,7 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 			<div
 				className={cl(
 					'grid w-full grid-cols-1 md:grid-cols-12 px-4 py-2 md:px-8',
-					'border-t border-neutral-200 md:border-none',
-					'cursor-pointer'
+					'border-t border-neutral-200 md:border-none'
 				)}>
 				<div
 					className={cl(
@@ -73,6 +72,7 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 					)}>
 					<button
 						onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
+						disabled={!token.sortable}
 						className={cl('yearn--table-head-label-wrapper group hover:text-white')}>
 						<p
 							className={cl(
@@ -80,11 +80,11 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 								'transition-colors',
 								sortBy === token.value
 									? 'text-neutral-800'
-									: 'text-neutral-800/60 group-hover:text-neutral-800'
+									: `text-neutral-800/60 ${token.sortable ? 'group-hover:text-neutral-800' : ''}`
 							)}>
 							{token.label}
 						</p>
-						{renderChevron(sortBy === token.value)}
+						{token.sortable ? renderChevron(sortBy === token.value) : null}
 					</button>
 				</div>
 
