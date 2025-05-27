@@ -16,7 +16,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 				href={props.app.appURI ?? ''}
 				target={props.app.appURI.startsWith('/') ? '_self' : '_blank'}
 				className={
-					'group relative hidden min-w-[208px] max-w-[208px] overflow-hidden rounded-lg border border-neutral-200 bg-neutral-0 p-6 hover:bg-neutral-200 md:block'
+					'group relative hidden min-w-[208px] max-w-[208px] overflow-hidden rounded-lg border border-neutral-100 bg-neutral-0 p-6 hover:bg-neutral-100 md:block'
 				}>
 				<div className={'mb-4'}>
 					<div
@@ -45,7 +45,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 			<Link
 				href={props.app.appURI}
 				target={props.app.appURI.startsWith('/') ? '_self' : '_blank'}
-				className={'flex items-center md:hidden rounded-lg border border-neutral-200 p-1'}>
+				className={'flex items-center rounded-lg p-1 md:hidden'}>
 				<div>
 					{props.app.logoURI ? (
 						<div className={'size-16 rounded-[32px]'}>
