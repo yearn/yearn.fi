@@ -65,7 +65,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 
 				<div className={'ml-4'}>
 					<div className={'mb-1 text-base font-bold text-gray-300'}>{props.app.name}</div>
-					<p className={'line-clamp-2 h-12 text-xs text-gray-400 md:text-base'}>{props.app.description}</p>
+					<p className={'line-clamp-2 text-xs text-gray-400 md:text-base'}>{props.app.description}</p>
 				</div>
 			</Link>
 		</>
