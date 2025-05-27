@@ -228,6 +228,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 									details={vault.details}
 									chainId={vault.chainID || currentVault.chainID}
 									variant={'v3'}
+									isVault={!!vault.token}
 									address={vault.address}
 									name={vault.name}
 									tokenAddress={vault.token?.address || currentVault.token.address}
