@@ -97,7 +97,7 @@ const SecurityCard: FC<{
 
 export const Security: FC = () => (
 	<section className={'flex w-full justify-center bg-white/5'}>
-		<div className={'flex w-[1180px] flex-col items-center justify-between py-20 md:flex-row'}>
+		<div className={'flex w-[1180px] flex-col items-center justify-between py-8 md:flex-row md:py-32'}>
 			<div className={'w-full max-w-7xl px-4'}>
 				<SectionHeader
 					align={'center'}

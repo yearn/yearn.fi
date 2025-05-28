@@ -99,39 +99,6 @@ export const Partners: FC = () => (
 
 				{/* Mobile */}
 				<div className={'flex flex-col gap-4 pt-8 lg:hidden'}>
-					<div
-						className={
-							'group relative flex h-48 w-full cursor-pointer items-center justify-center rounded-lg bg-gray-800 transition-colors duration-200 hover:bg-blue-500'
-						}>
-						<div className={'absolute inset-0 z-0 overflow-hidden'}>
-							<div className={'absolute inset-0 opacity-20'}>
-								<div className={'grid size-full grid-cols-8 grid-rows-6 gap-2 p-4'}>
-									{Array(48)
-										.fill(0)
-										.map((_, i) => (
-											<div
-												key={i}
-												className={
-													'size-1 self-center justify-self-center rounded-full bg-white'
-												}
-											/>
-										))}
-								</div>
-							</div>
-						</div>
-						<div
-							className={
-								'z-10 flex size-[100px] items-center justify-center rounded-full bg-blue-500 p-4 transition-colors duration-200 '
-							}>
-							<Image
-								src={'/landing/x-yearn.png'}
-								alt={'Yearn'}
-								width={75}
-								height={75}
-								className={'relative z-10'}
-							/>
-						</div>
-					</div>
 					<div className={'grid grid-cols-2 gap-2'}>
 						{partners.map((partner, index) => (
 							<PartnerLogo
@@ -147,9 +114,9 @@ export const Partners: FC = () => (
 
 				{/* Desktop */}
 				<div className={'hidden gap-4 pt-8 md:pt-14 lg:flex lg:flex-row'}>
-					<div className={'flex h-full w-1/2 flex-col gap-2'}>
+					<div className={'flex size-full flex-col gap-2'}>
 						<div className={'flex flex-1 flex-row gap-2'}>
-							{partners.slice(0, 3).map((partner, index) => (
+							{partners.map((partner, index) => (
 								<PartnerLogo
 									key={index}
 									image={partner.image}
@@ -157,50 +124,6 @@ export const Partners: FC = () => (
 									href={partner.href}
 								/>
 							))}
-						</div>
-						<div className={'flex flex-1 flex-row gap-2'}>
-							{partners.slice(3).map((partner, index) => (
-								<PartnerLogo
-									key={index}
-									image={partner.image}
-									alt={partner.alt}
-									href={partner.href}
-									size={partner.size}
-								/>
-							))}
-						</div>
-					</div>
-					<div
-						className={
-							'group relative flex aspect-auto w-1/2 items-center justify-center rounded-lg  bg-blue-500 transition-colors duration-200'
-						}>
-						<div className={'absolute inset-0 z-0 overflow-hidden'}>
-							<div className={'absolute inset-0 opacity-20'}>
-								<div className={'grid size-full grid-cols-12 grid-rows-10 gap-4 p-8'}>
-									{Array(120)
-										.fill(0)
-										.map((_, i) => (
-											<div
-												key={i}
-												className={
-													'size-1 self-center justify-self-center rounded-full bg-white'
-												}
-											/>
-										))}
-								</div>
-							</div>
-						</div>
-						<div
-							className={
-								'z-10 flex size-[150px] items-center justify-center rounded-full bg-blue-500 p-8 transition-colors duration-200 group-hover:bg-blue-500'
-							}>
-							<Image
-								src={'/landing/x-yearn.png'}
-								alt={'Yearn'}
-								width={125}
-								height={125}
-								className={'relative z-10'}
-							/>
 						</div>
 					</div>
 				</div>

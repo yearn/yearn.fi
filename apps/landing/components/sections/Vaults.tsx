@@ -32,8 +32,7 @@ const slides: TVault[] = [
 		size: 250,
 		tagline: 'Growing every day',
 		title: 'Compounding Vaults',
-		description:
-			'Yearn Vaults take advantage of DeFi opportunities to give you the best risk-adjusted yields without you having to lift a finger',
+		description: 'Vaults utilize DeFi opportunities to give you the best risk-adjusted yields',
 		cta: {label: 'View All', href: 'https://yearn.fi/apps/vaults'}
 	},
 	{
@@ -60,6 +59,13 @@ const vaultsRows = [
 		icon: '/landing/vaults/usds.png',
 		href: '/v3/1/0x182863131F9a4630fF9E27830d945B1413e347E8',
 		address: '0x182863131F9a4630fF9E27830d945B1413e347E8'
+	},
+	{
+		bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
+		symbol: 'USDT',
+		icon: '/landing/vaults/usdt.png',
+		href: '/v3/1/0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa',
+		address: '0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa'
 	},
 	{
 		bgClass: 'bg-gradient-to-r from-gray-900 to-gray-700',
@@ -263,7 +269,7 @@ export const Vaults: FC = () => {
 														<div className={'rounded-2xl bg-transparent p-1 md:p-2'}>
 															<svg
 																xmlns={'http://www.w3.org/2000/svg'}
-																className={'size-5 md:size-6'}
+																className={'size-4 md:size-5'}
 																fill={'none'}
 																viewBox={'0 0 24 24'}
 																stroke={'currentColor'}>
