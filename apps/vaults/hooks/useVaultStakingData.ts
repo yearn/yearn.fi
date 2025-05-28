@@ -22,7 +22,7 @@ import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
 import {readContract, readContracts} from '@wagmi/core';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
 
 export type TStakingInfo = {

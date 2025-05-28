@@ -9,7 +9,7 @@ import {ZAP_CRV_ABI} from '@vaults/utils/abi/zapCRV.abi';
 import {zapCRV} from '@vaults/utils/actions';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {readContract} from '@wagmi/core';
-import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ZAP_YEARN_VE_CRV_ADDRESS} from '@web-lib/utils/constants';
 import {allowanceKey} from '@common/utils';
 import {migrateShares} from '@common/utils/actions';
 

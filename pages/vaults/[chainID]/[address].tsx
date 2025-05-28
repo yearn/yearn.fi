@@ -9,16 +9,16 @@ import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTa
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {yDaemonVaultSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import {useYDaemonBaseURI} from '@web-lib/hooks/useYDaemonBaseURI';
+import {yDaemonVaultSchema} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 import {variants} from '@common/utils/animations';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
+import type {TYDaemonVault} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();

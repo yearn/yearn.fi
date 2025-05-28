@@ -9,16 +9,16 @@ import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbo
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
 import {getConnectorClient} from '@wagmi/core';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
-import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
-import {yDaemonVaultHarvestsSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
+import {Renderable} from '@web-lib/components/Renderable';
+import {useYDaemonBaseURI} from '@web-lib/hooks/useYDaemonBaseURI';
+import {IconAddToMetamask} from '@web-lib/icons/IconAddToMetamask';
+import {IconLinkOut} from '@web-lib/icons/IconLinkOut';
+import {formatDate} from '@web-lib/utils/format.time';
+import {yDaemonVaultHarvestsSchema} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
+import {getNetwork} from '@web-lib/utils/wagmi/utils';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault, TYDaemonVaultHarvests} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultHarvests} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TTabsOptions = {
 	value: number;

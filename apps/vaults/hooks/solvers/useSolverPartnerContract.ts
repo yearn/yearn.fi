@@ -6,7 +6,7 @@ import {allowanceOf, approveERC20, getNetwork} from '@builtbymom/web3/utils/wagm
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
+import {allowanceKey} from '@web-lib/utils/helpers';
 import {useYearn} from '@common/contexts/useYearn';
 import {depositViaPartner, withdrawShares} from '@common/utils/actions';
 

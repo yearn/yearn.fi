@@ -8,7 +8,7 @@ import {
 	ZAP_ETH_WETH_OPT_CONTRACT,
 	ZAP_FTM_WFTM_CONTRACT,
 	ZERO_ADDRESS
-} from '@yearn-finance/web-lib/utils/constants';
+} from '@web-lib/utils/constants';
 
 import type {TAddress} from '@builtbymom/web3/types';
 

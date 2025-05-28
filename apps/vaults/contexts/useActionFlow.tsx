@@ -21,7 +21,7 @@ import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {VEYFI_ABI} from '@vaults/utils/abi/veYFI.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {readContracts, serialize, simulateContract} from '@wagmi/core';
-import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
+import {VAULT_ABI} from '@web-lib/utils/abi/vault.abi';
 import {
 	ETH_TOKEN_ADDRESS,
 	LPYCRV_TOKEN_ADDRESS,
@@ -32,16 +32,16 @@ import {
 	YVWETH_ADDRESS,
 	YVWETH_OPT_ADDRESS,
 	YVWFTM_ADDRESS
-} from '@yearn-finance/web-lib/utils/constants';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
+} from '@web-lib/utils/constants';
+import {getNetwork} from '@web-lib/utils/wagmi/utils';
 import {createUniqueID} from '@common/contexts/useBalances.multichains';
 import {useYearn} from '@common/contexts/useYearn';
 
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
 import type {ReactNode} from 'react';
-import type {TDropdownOption} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TDropdownOption} from '@web-lib/types';
+import type {TYDaemonVault} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TSolver} from '@vaults/types/solvers';
 

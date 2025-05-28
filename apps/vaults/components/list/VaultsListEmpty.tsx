@@ -1,9 +1,9 @@
 import {isZero} from '@builtbymom/web3/utils';
 import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
-import {Button} from '@yearn-finance/web-lib/components/Button';
+import {Button} from '@web-lib/components/Button';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVaults} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TVaultListEmpty = {
 	sortedVaultsToDisplay: TYDaemonVaults;

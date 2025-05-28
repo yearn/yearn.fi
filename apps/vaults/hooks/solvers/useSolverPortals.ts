@@ -25,8 +25,8 @@ import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErr
 import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
 import {Solver} from '@vaults/types/solvers';
 import {sendTransaction, switchChain, waitForTransactionReceipt} from '@wagmi/core';
-import {toast} from '@yearn-finance/web-lib/components/yToast';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
+import {toast} from '@web-lib/components/yToast';
+import {allowanceKey} from '@web-lib/utils/helpers';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';

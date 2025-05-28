@@ -6,7 +6,7 @@ import {useYearnBalance} from '@common/hooks/useYearnBalance';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);

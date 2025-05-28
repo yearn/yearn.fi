@@ -1,16 +1,12 @@
 import {useCallback, useMemo} from 'react';
 import {isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {deserialize, serialize} from '@wagmi/core';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@web-lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
 import {numberSort, stringSort} from '@common/utils/sort';
 
-import type {
-	TYDaemonVault,
-	TYDaemonVaults,
-	TYDaemonVaultStrategy
-} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaults, TYDaemonVaultStrategy} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
 
 export type TPossibleSortBy =

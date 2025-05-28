@@ -10,13 +10,13 @@ import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
-import {Button} from '@yearn-finance/web-lib/components/Button';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {Button} from '@web-lib/components/Button';
+import {ETH_TOKEN_ADDRESS} from '@web-lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
 import {PLAUSIBLE_EVENTS} from '@common/utils/plausible';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 export function VaultDetailsQuickActionsButtons({
@@ -184,9 +184,14 @@ export function VaultDetailsQuickActionsButtons({
 	 *********************************************************************************************/
 	const isAboveAllowance = toBigInt(actionParams.amount?.raw) > toBigInt(allowanceFrom?.raw);
 
-	if (currentVault.version.startsWith('3') && currentVault.migration.available && allowanceRouter?.raw === 0n && (actionParams.amount?.raw ?? 0n) > 0n) {
+	if (
+		currentVault.version.startsWith('3') &&
+		currentVault.migration.available &&
+		allowanceRouter?.raw === 0n &&
+		(actionParams.amount?.raw ?? 0n) > 0n
+	) {
 		return (
-			<div className={"rounded-md bg-white p-2 text-xs text-black"}>
+			<div className={'rounded-md bg-white p-2 text-xs text-black'}>
 				{'To enable migrations out of this vault, please ask Yearn to approve the 4626 router!'}
 			</div>
 		);

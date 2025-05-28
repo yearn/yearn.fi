@@ -20,7 +20,7 @@ import {
 	unstake as unstakeAction,
 	unstakeVeYFIGauge as unstakeVeYFIAction
 } from '@vaults/utils/actions';
-import {Button} from '@yearn-finance/web-lib/components/Button';
+import {Button} from '@web-lib/components/Button';
 import {Counter} from '@common/components/Counter';
 import {FakeInput} from '@common/components/Input';
 import {useYearn} from '@common/contexts/useYearn';
@@ -28,7 +28,7 @@ import {useYearnToken} from '@common/hooks/useYearnToken';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
 import type {ChangeEvent, ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
 /**************************************************************************************************

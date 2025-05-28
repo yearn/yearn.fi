@@ -2,15 +2,15 @@ import {useMemo} from 'react';
 import Link from 'next/link';
 import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {getNetwork} from '@builtbymom/web3/utils/wagmi';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {Renderable} from '@web-lib/components/Renderable';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnBalance} from '@common/hooks/useYearnBalance';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 export function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {

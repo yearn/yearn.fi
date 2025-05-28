@@ -2,15 +2,15 @@ import {erc20Abi} from 'viem';
 import {assert, assertAddress, toAddress} from '@builtbymom/web3/utils';
 import {handleTx, retrieveConfig, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
 import {getEthZapperContract} from '@vaults/utils';
-import { ERC_4626_ROUTER_ABI } from '@vaults/utils/abi/erc4626Router.abi';
+import {ERC_4626_ROUTER_ABI} from '@vaults/utils/abi/erc4626Router.abi';
 import {VAULT_MIGRATOR_ABI} from '@vaults/utils/abi/vaultMigrator.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {ZAP_OPT_ETH_TO_YVETH_ABI} from '@vaults/utils/abi/zapOptEthToYvEth';
 import {readContract} from '@wagmi/core';
-import {PARTNER_VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
-import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
-import {ZAP_ETH_TO_YVETH_ABI} from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
-import {ZAP_FTM_TO_YVFTM_ABI} from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
+import {PARTNER_VAULT_ABI} from '@web-lib/utils/abi/partner.vault.abi';
+import {VAULT_ABI} from '@web-lib/utils/abi/vault.abi';
+import {ZAP_ETH_TO_YVETH_ABI} from '@web-lib/utils/abi/zapEthToYvEth.abi';
+import {ZAP_FTM_TO_YVFTM_ABI} from '@web-lib/utils/abi/zapFtmToYvFTM.abi';
 
 import type {Connector} from 'wagmi';
 import type {TAddress} from '@builtbymom/web3/types';
@@ -277,7 +277,6 @@ export async function migrateShares(props: TMigrateShares): Promise<TTxResponse>
 	});
 }
 
-
 type TMigrateSharesViaRouter = TWriteTransaction & {
 	router: TAddress | undefined;
 	fromVault: TAddress | undefined;
@@ -292,7 +291,7 @@ export async function migrateSharesViaRouter(props: TMigrateSharesViaRouter): Pr
 	assertAddress(props.contractAddress);
 	assert(props.amount > 0n, 'Amount is 0');
 	assert(props.maxLoss > 0n && props.maxLoss <= 10000n, 'Max loss is invalid');
-	const minAmount = props.amount - (props.amount * props.maxLoss / 10000n);
+	const minAmount = props.amount - (props.amount * props.maxLoss) / 10000n;
 
 	return await handleTx(props, {
 		address: props.router,

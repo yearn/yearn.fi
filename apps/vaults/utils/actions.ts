@@ -3,7 +3,7 @@ import {handleTx, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {STAKING_REWARDS_ZAP_ABI} from '@vaults/utils/abi/stakingRewardsZap.abi';
 import {YGAUGE_ZAP_ABI} from '@vaults-v3/utils/abi/yGaugeZap.abi';
-import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {STAKING_REWARDS_ZAP_ADDRESS} from '@web-lib/utils/constants';
 import {V3_STAKING_ZAP_ADDRESS, YGAUGES_ZAP_ADDRESS} from '@common/utils/constants';
 
 import {V3_REWARDS_ZAP_ABI} from './abi/V3RewardsZap.abi';

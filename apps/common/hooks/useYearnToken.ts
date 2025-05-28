@@ -3,7 +3,7 @@ import {toAddress} from '@builtbymom/web3/utils';
 
 import {useYearn} from '../contexts/useYearn';
 
-import type {TYToken} from '@yearn-finance/web-lib/types';
+import type {TYToken} from '@web-lib/types';
 import type {TAddress} from '@builtbymom/web3/types';
 
 /******************************************************************************

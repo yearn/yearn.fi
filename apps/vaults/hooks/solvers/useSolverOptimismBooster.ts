@@ -7,7 +7,7 @@ import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {depositAndStake} from '@vaults/utils/actions';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {STAKING_REWARDS_ZAP_ADDRESS} from '@web-lib/utils/constants';
 import {allowanceKey} from '@common/utils';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';

@@ -4,18 +4,18 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {isZeroAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {useLocalStorageValue} from '@react-hookz/web';
 import {Solver, type TSolver} from '@vaults/types/solvers';
-import {useFetchYearnEarnedForUser} from '@yearn-finance/web-lib/hooks/useFetchYearnEarnedForUser';
-import {useFetchYearnPrices} from '@yearn-finance/web-lib/hooks/useFetchYearnPrices';
+import {useFetchYearnEarnedForUser} from '@web-lib/hooks/useFetchYearnEarnedForUser';
+import {useFetchYearnPrices} from '@web-lib/hooks/useFetchYearnPrices';
 import {useFetchYearnVaults} from '@common/hooks/useFetchYearnVaults';
 
 import {useYearnBalances} from './useYearn.helper';
 
 import type {ReactElement} from 'react';
 import type {KeyedMutator} from 'swr';
-import type {TYChainTokens, TYToken} from '@yearn-finance/web-lib/types';
-import type {TYDaemonEarned} from '@yearn-finance/web-lib/utils/schemas/yDaemonEarnedSchema';
-import type {TYDaemonPricesChain} from '@yearn-finance/web-lib/utils/schemas/yDaemonPricesSchema';
-import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYChainTokens, TYToken} from '@web-lib/types';
+import type {TYDaemonEarned} from '@web-lib/utils/schemas/yDaemonEarnedSchema';
+import type {TYDaemonPricesChain} from '@web-lib/utils/schemas/yDaemonPricesSchema';
+import type {TYDaemonVault, TYDaemonVaults} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
 import type {TAddress, TDict, TNormalizedBN} from '@builtbymom/web3/types';
 

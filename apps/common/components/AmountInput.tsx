@@ -1,4 +1,4 @@
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@web-lib/components/Renderable';
 
 import type {ReactElement} from 'react';
 import type {TNormalizedBN} from '@builtbymom/web3/types';

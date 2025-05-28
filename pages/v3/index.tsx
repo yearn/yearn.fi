@@ -15,9 +15,9 @@ import {Counter} from '@common/components/Counter';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement, ReactNode} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
+import type {TYDaemonVault} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 function Background(): ReactElement {
 	return (

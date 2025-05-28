@@ -9,10 +9,10 @@ import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TAllocationChartData} from '@common/components/AllocationChart';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 function UnallocatedStrategy({
 	unallocatedPercentage,
@@ -97,7 +97,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		const strategies = strategyList.filter(vault => vault.status !== 'not_active') as (TYDaemonVault & {
 			details: TYDaemonVaultStrategy['details'];
 			status: TYDaemonVaultStrategy['status'];
-			netAPR: TYDaemonVaultStrategy['netAPR'];
+			netAPR: TYDaemonVault['apr']['netAPR'];
 		})[];
 
 		return strategies;
@@ -111,7 +111,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	const sortedVaultsToDisplay = useSortVaults(filteredStrategyList, sortBy, sortDirection) as (TYDaemonVault & {
 		details: TYDaemonVaultStrategy['details'];
 		status: TYDaemonVaultStrategy['status'];
-		netAPR: TYDaemonVaultStrategy['netAPR'];
+		netAPR: TYDaemonVault['apr']['netAPR'];
 	})[];
 
 	const allocationChartData = useMemo(

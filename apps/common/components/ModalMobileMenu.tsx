@@ -11,7 +11,7 @@ import {LogoYearn} from '@common/icons/LogoYearn';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {Chain} from 'viem';
-import type {TMenu} from '@yearn-finance/web-lib/components/Header';
+import type {TMenu} from '@web-lib/components/Header';
 
 export function FooterNav(): ReactElement {
 	const menu = useMemo((): TMenu[] => {

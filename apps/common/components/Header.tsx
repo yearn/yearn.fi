@@ -4,7 +4,7 @@ import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {truncateHex} from '@builtbymom/web3/utils/tools.address';
 import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit';
-import {IconWallet} from '@yearn-finance/web-lib/icons/IconWallet';
+import {IconWallet} from '@web-lib/icons/IconWallet';
 import {IconBurger} from '@common/icons/IconBurger';
 
 import {AppName, APPS} from './Apps';
