@@ -6,7 +6,6 @@ import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
-import {Filters} from '@vaults-v3/components/Filters';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
@@ -141,25 +140,12 @@ function PortfolioCard(): ReactElement {
 function ListOfVaults(): ReactElement {
 	const {getBalance} = useYearn();
 	const {isLoadingVaultList} = useYearn();
-	const {
-		search,
-		types,
-		chains,
-		categories,
-		sortDirection,
-		sortBy,
-		onSearch,
-		onChangeTypes,
-		onChangeCategories,
-		onChangeChains,
-		onChangeSortDirection,
-		onChangeSortBy,
-		onReset
-	} = useQueryArguments({
-		defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
-		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
-		defaultPathname: `/v3`
-	});
+	const {search, types, chains, categories, sortDirection, sortBy, onChangeSortDirection, onChangeSortBy, onReset} =
+		useQueryArguments({
+			defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
+			defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
+			defaultPathname: `/v3`
+		});
 	const {activeVaults, retiredVaults, migratableVaults} = useVaultFilter(types, chains, true);
 
 	/**********************************************************************************************
@@ -362,7 +348,7 @@ function ListOfVaults(): ReactElement {
 
 	return (
 		<Fragment>
-			<Filters
+			{/* <Filters
 				types={types}
 				categories={categories}
 				searchValue={search || ''}
@@ -371,8 +357,7 @@ function ListOfVaults(): ReactElement {
 				onChangeTypes={onChangeTypes}
 				onChangeCategories={onChangeCategories}
 				onSearch={onSearch}
-			/>
-
+			/> */}
 			<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
 				<VaultsV3ListHead
 					sortBy={sortBy}

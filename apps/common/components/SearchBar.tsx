@@ -21,7 +21,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
 			<div
 				className={cl(
 					props.className,
-					'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'
+					'flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'
 				)}>
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
 					<input
@@ -29,7 +29,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
 						suppressHydrationWarning
 						className={cl(
 							props.inputClassName,
-							'h-10 w-full overflow-x-scroll border-none bg-transparent pl-2 px-0 py-2 text-base outline-none scrollbar-none placeholder:text-neutral-400'
+							'text-[14px] h-10 w-full overflow-x-scroll border-none bg-transparent pl-2 px-0 py-2 text-base outline-none scrollbar-none placeholder:text-neutral-400'
 						)}
 						type={'text'}
 						placeholder={props.searchPlaceholder}
@@ -47,13 +47,13 @@ export function SearchBar(props: TSearchBar): ReactElement {
 					<div
 						role={props.shouldSearchByClick ? 'button' : 'div'}
 						onClick={() => props.onSearchClick?.()}
-						className={cl(props.iconClassName, 'absolute right-0 text-neutral-400')}>
+						className={cl(props.iconClassName, 'absolute right-[10px] top-[12px] text-neutral-400')}>
 						{props.shouldSearchByClick && props.searchValue ? (
 							<div className={'rounded-md border border-gray-500 p-[6px]'}>
 								<IconEnter className={'size-3'} />
 							</div>
 						) : (
-							<IconSearch />
+							<IconSearch className={'size-4'} />
 						)}
 					</div>
 				</div>

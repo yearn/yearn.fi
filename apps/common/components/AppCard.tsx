@@ -25,20 +25,22 @@ export function AppCard(props: TAppCardProps): ReactElement {
 						}>
 						<IconShare className={'size-[10px]'} />
 					</div>
-					{props.app.logoURI ? (
-						<Image
-							src={props.app.logoURI}
-							alt={props.app.name}
-							unoptimized
-							width={240}
-							height={240}
-							className={'size-[80px] rounded-full border border-[#292929]/80 object-contain'}
-						/>
-					) : (
-						<div className={'size-[80px] rounded-full bg-fallback'} />
-					)}
+					<div className={'flex items-center gap-x-2'}>
+						{props.app.logoURI ? (
+							<Image
+								src={props.app.logoURI}
+								alt={props.app.name}
+								unoptimized
+								width={32}
+								height={32}
+								className={'size-[32px] rounded-full border border-[#292929]/80 object-contain'}
+							/>
+						) : (
+							<div className={'size-[32px] rounded-full bg-fallback'} />
+						)}
+						<div className={'text-lg font-bold text-white'}>{props.app.name}</div>
+					</div>
 				</div>
-				<div className={'mb-1 text-lg font-bold text-white'}>{props.app.name}</div>
 
 				<p className={'whitespace-normal text-sm text-gray-400'}>{props.app.description}</p>
 			</Link>
@@ -52,10 +54,10 @@ export function AppCard(props: TAppCardProps): ReactElement {
 							<Image
 								src={props.app.logoURI}
 								alt={props.app.name}
-								width={300}
-								height={300}
+								width={64}
+								height={64}
 								unoptimized
-								className={'size-full rounded-2xl bg-center object-cover md:rounded-[32px]'}
+								className={'size-[48px] rounded-2xl bg-center object-cover md:rounded-[24px]'}
 							/>
 						</div>
 					) : (

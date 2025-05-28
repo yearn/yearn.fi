@@ -1,14 +1,11 @@
-import {type ReactElement, useCallback} from 'react';
+import {type ReactElement} from 'react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {useRouter} from 'next/router';
 import {cl} from '@builtbymom/web3/utils';
-import {useSearch} from '@common/contexts/useSearch';
 import {LogoYearn} from '@common/icons/LogoYearn';
 import {iconsDict, LANDING_SIDEBAR_LINKS} from '@common/utils/constants';
 
 import {PromoPoster} from './PromoPoster';
-import {SearchBar} from './SearchBar';
 
 type TSidebarProps = {
 	tabs: {route: string; title: string; isAcitve?: boolean}[];
@@ -16,50 +13,28 @@ type TSidebarProps = {
 
 export function Sidebar(props: TSidebarProps): ReactElement {
 	const pathName = usePathname();
-	const router = useRouter();
-	const {configuration, dispatch} = useSearch();
-
 	const currentTab = pathName?.startsWith('/apps/') ? pathName?.split('/')[2] : 'apps';
-
-	const onSearchClick = useCallback(() => {
-		if (!configuration.searchValue) {
-			router.push('/apps');
-			return;
-		}
-		router.push(`/apps/search/${encodeURIComponent(configuration.searchValue)}`);
-	}, [configuration.searchValue, router]);
 
 	return (
 		<div
 			className={
-				'flex h-full w-72 flex-col justify-between rounded-lg border border-gray-700/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] py-6 text-white'
+				'flex h-full w-72 flex-col justify-between rounded-lg  from-gray-900 to-[#1A1A1A] py-6 text-white'
 			}>
-			<div>
-				<div className={'px-4'}>
-					<div className={'mb-4 ml-2'}>
-						<Link
-							href={'/'}
-							className={'flex w-fit'}>
-							<LogoYearn
-								className={'size-10'}
-								back={'text-blue-500'}
-								front={'text-white'}
-							/>
-						</Link>
-					</div>
-					<div className={'mb-4'}>
-						<PromoPoster />
-					</div>
-					<SearchBar
-						className={cl('!w-full !border-0 rounded-lg !border-white !bg-gray-600/40')}
-						searchPlaceholder={'Search App'}
-						searchValue={configuration.searchValue}
-						onSearch={(value: string) => dispatch({searchValue: value})}
-						shouldSearchByClick
-						onSearchClick={onSearchClick}
-					/>
+			<div className={'flex flex-col gap-y-4 '}>
+				<div className={'mb-4 ml-2 flex flex-row items-center gap-x-3 px-4'}>
+					<Link href={'/'}>
+						<LogoYearn
+							className={'size-6'}
+							back={'text-blue-500'}
+							front={'text-white'}
+						/>
+					</Link>
+					<span>{'Yearn'}</span>
 				</div>
-				<div className={'mt-6 flex flex-col'}>
+				<div className={'px-4'}>
+					<PromoPoster />
+				</div>
+				<div className={'mt-4 flex flex-col '}>
 					{props.tabs.map(tab => {
 						const href = tab.route === 'apps' ? `/${tab.route}` : `/apps/${tab.route}`;
 						return (
