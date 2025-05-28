@@ -11,7 +11,7 @@ export function FeaturedApp(props: {app: TApp}): ReactElement {
 			href={props.app.appURI}
 			target={props.app.appURI.startsWith('/') ? '_self' : '_blank'}
 			className={cl(
-				'group relative flex cursor-pointer flex-col justify-end px-6 py-10 rounded-lg z-20 overflow-hidden outline outline-1 outline-gray-700/50 h-[272px] min-w-[272px]'
+				'group relative flex cursor-pointer flex-col justify-end px-6 py-10 rounded-[12px] z-20 overflow-hidden outline outline-1 outline-gray-700/50 h-[272px] min-w-[272px]'
 			)}>
 			<div
 				className={

@@ -2,7 +2,6 @@ import {useMemo} from 'react';
 import {cl} from '@builtbymom/web3/utils';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
-import {useChainOptions} from '@common/hooks/useChains';
 
 import type {ReactElement} from 'react';
 import type {TDict} from '@builtbymom/web3/types';
@@ -17,6 +16,7 @@ type TListHero = {
 	onChangeChains: (chains: number[] | null) => void;
 	onSearch: (searchValue: string) => void;
 	shouldHideChainSelector?: boolean;
+	chainOptions?: TMultiSelectOptionProps[];
 };
 
 export function ListHero({
@@ -24,12 +24,11 @@ export function ListHero({
 	onChangeCategories,
 	possibleCategories,
 	searchValue,
-	chains,
 	onSearch,
 	onChangeChains,
-	shouldHideChainSelector
+	shouldHideChainSelector,
+	chainOptions = []
 }: TListHero): ReactElement {
-	const chainOptions = useChainOptions(chains).filter((option): boolean => option.value !== 137);
 	const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
 		const options: TMultiSelectOptionProps[] = Object.entries(possibleCategories).map(
 			([key, value]): TMultiSelectOptionProps => ({

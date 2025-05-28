@@ -272,8 +272,6 @@ export const LANDING_SIDEBAR_LINKS = [
 
 export const MENU_TABS = [
 	{title: 'Home', route: 'apps'},
-	{title: 'Vaults', route: 'vaults'},
-	{title: 'Yearn Apps', route: 'yearn-apps'},
 	{title: 'Yearn X Projects', route: 'yearn-x'},
 	{title: 'Integrations', route: 'integrations'}
 	// {title: 'About', route: 'about'}

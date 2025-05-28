@@ -464,3 +464,11 @@ input:-webkit-autofill:active {
 	-webkit-text-fill-color: white !important;
 	caret-color: white !important;
 }
+
+p {
+	font-weight: 300;
+}
+
+.font-number {
+	font-weight: 400;
+}
