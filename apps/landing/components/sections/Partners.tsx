@@ -43,7 +43,7 @@ const partners: TPartner[] = [
 		image: '/landing/x/pooltogether.png',
 		alt: 'PoolTogether',
 		href: 'https://pooltogether.yearn.space/',
-		size: 30
+		size: 40
 	}
 ];
 
@@ -76,7 +76,11 @@ const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 40}) => {
 					alt={alt}
 					width={size}
 					height={size}
-					className={`lg:max-h-[ object-contain${size}px] lg:max-w-[${size}px]`}
+					className={'object-contain'}
+					style={{
+						maxWidth: `${size}px`,
+						maxHeight: `${size}px`
+					}}
 				/>
 			</div>
 		</Link>
@@ -122,6 +126,7 @@ export const Partners: FC = () => (
 									image={partner.image}
 									alt={partner.alt}
 									href={partner.href}
+									size={partner.size}
 								/>
 							))}
 						</div>
