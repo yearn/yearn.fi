@@ -1,9 +1,9 @@
 import {Children, Fragment, useMemo, useState} from 'react';
 import {motion} from 'framer-motion';
-import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
-import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
-import {useSortVaults} from '@vaults/hooks/useSortVaults';
-import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
+import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
+import {useVaultFilter} from '@vaults-v2/hooks/useFilteredVaults';
+import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
+import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
 import {Filters} from '@vaults-v3/components/Filters';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
@@ -17,7 +17,7 @@ import {cl, isZero} from '@lib/utils';
 import type {ReactElement, ReactNode} from 'react';
 import type {TSortDirection} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
+import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
 
 function Background(): ReactElement {
 	return (

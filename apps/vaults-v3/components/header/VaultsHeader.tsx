@@ -9,7 +9,7 @@ type TProps = {
 };
 
 export function VaultsV3Header({pathname}: TProps): ReactElement {
-	const {name, icon} = APPS[AppName.VAULTSV3];
+	const {name, icon} = APPS[AppName.VAULTS];
 	const isVaultPage = pathname === '/v3/[chainID]/[address]';
 
 	return (

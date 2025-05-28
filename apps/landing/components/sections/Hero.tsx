@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
+import {SectionHeader} from '@lib/components/SectionHeader';
 import {z} from 'zod';
 import {TvlStat} from '@lib/components/TvlStat';
 import {useFetch} from '@lib/hooks/useFetch';

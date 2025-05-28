@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
+import {SectionHeader} from '@lib/components/SectionHeader';
 
 import type {FC} from 'react';
 
@@ -63,7 +63,7 @@ const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, de
 			className={'block cursor-pointer'}>
 			<div
 				className={`flex flex-row items-center p-[12px] transition-all duration-300 ease-in-out hover:scale-[1.005] hover:bg-[#2a2b2c] hover:shadow-lg md:p-[16px] ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}>
-				<div className={`relative mr-4 shrink-0 self-center`}>
+				<div className={'relative mr-4 shrink-0 self-center'}>
 					<Image
 						src={imageSrc}
 						alt={name}
@@ -72,7 +72,7 @@ const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, de
 						className={'rounded-full transition-transform duration-300 ease-in-out group-hover:scale-110'}
 					/>
 				</div>
-				<div className={`flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:justify-between`}>
+				<div className={'flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:justify-between'}>
 					<div className={'flex items-center text-[20px] text-white '}>
 						{name}{' '}
 						<span

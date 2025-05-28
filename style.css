@@ -66,6 +66,30 @@ p {
 	--color-neutral-0: 231 100% 6%;
 }
 
+:root {
+	--color-blue-500: 220 95% 50%;
+	--color-blue-800: 230 93% 38%;
+	--color-blue-900: 231 100% 11%;
+	--color-lightBlue-500: 220 100% 67%;
+	--color-steelGray-500: 218 14% 71%;
+}
+
+:root.dark {
+	--color-blue-500: 220 95% 50%;
+	--color-blue-800: 230 93% 38%;
+	--color-blue-900: 231 100% 11%;
+	--color-lightBlue-500: 220 100% 67%;
+	--color-steelGray-500: 218 14% 71%;
+}
+
+:root.light {
+	--color-blue-500: 220 95% 35%;
+	--color-blue-800: 230 93% 25%;
+	--color-blue-900: 218 100% 95%;
+	--color-lightBlue-500: 220 100% 45%;
+	--color-steelGray-500: 218 14% 45%;
+}
+
 @layer base {
 	/* This is to prevent the horizontal scrollbar from appearing on the page. Breaks the scroll. */
 	/* html,
@@ -471,4 +495,12 @@ input:-webkit-autofill:active {
 	color: white !important;
 	-webkit-text-fill-color: white !important;
 	caret-color: white !important;
+}
+
+p {
+	font-weight: 300;
+}
+
+.font-number {
+	font-weight: 400;
 }

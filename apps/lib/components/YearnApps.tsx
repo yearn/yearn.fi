@@ -8,32 +8,6 @@ const YCRV_TOKEN_ADDRESS = toAddress('0xFCc5c47bE19d06BF83eB04298b026F81069ff65b
 const VEYFI_DYFI_ADDRESS = toAddress('0x41252E8691e964f7DE35156B68493bAb6797a275');
 
 export const APPS = {
-	V3: {
-		name: 'V3 Vaults',
-		href: 'https://yearn.fi/v3',
-		host: ['yearn.fi'],
-		pathname: '/v3',
-		icon: (
-			<LogoYearn
-				className={'size-8'}
-				gradient={{start: '#FB245A', end: '#0657F9'}}
-				front={'text-white'}
-			/>
-		)
-	},
-	Vaults: {
-		name: 'Vaults',
-		href: 'https://yearn.fi/vaults',
-		host: ['localhost:3000/vaults', 'https://yearn.fi/vaults'],
-		pathname: '/vaults',
-		icon: (
-			<LogoYearn
-				className={'size-8'}
-				back={'text-[#f472b6]'}
-				front={'text-white'}
-			/>
-		)
-	},
 	yCRV: {
 		name: 'yCRV',
 		href: 'https://ycrv.yearn.fi',
@@ -89,21 +63,8 @@ export const APPS = {
 		icon: (
 			<LogoYearn
 				className={'!size-6 !max-h-6 !max-w-6'}
-				back={'text-white'}
+				back={'text-neutral-900'}
 				front={'text-black'}
-			/>
-		)
-	},
-	docs: {
-		name: 'Docs',
-		href: 'https://docs.yearn.fi',
-		host: ['docs.yearn.fi'],
-		pathname: 'unused',
-		icon: (
-			<LogoYearn
-				className={'!size-6 !max-h-6 !max-w-6'}
-				back={'text-primary'}
-				front={'text-white'}
 			/>
 		)
 	},

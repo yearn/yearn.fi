@@ -9,13 +9,14 @@ export const TvlStat: FC<{tvl: number}> = ({tvl}) => {
 				<div
 					className={
 						'absolute size-2 animate-[ping_3s_ease-in-out_infinite] rounded-full bg-[#ffffff] opacity-75'
-					}></div>
+					}>
+    </div>
 				<div className={'relative size-2 rounded-full bg-[#ccc]'}></div>
 			</div>
-			<p className={'text-[14px] text-white'}>
-				<span className={'text-[14px] text-white opacity-75'}>{'$'}</span>
+			<p className={'text-[14px] text-neutral-900'}>
+				<span className={'text-[14px] text-neutral-900 opacity-75'}>{'$'}</span>
 				{formatAmount(tvl ?? 0, 0, 0)}
-				<span className={'text-[14px] text-white opacity-75'}>{' deposited in Yearn Vaults'}</span>
+				<span className={'text-[14px] text-neutral-900 opacity-75'}>{' deposited in Yearn Vaults'}</span>
 			</p>
 		</div>
 	);

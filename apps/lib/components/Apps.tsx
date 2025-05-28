@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import vaultsManifest from 'public/apps/vaults-manifest.json';
-import {VAULTS_MENU} from '@vaults/constants/menu';
+import {VAULTS_MENU} from '@vaults-v2/constants/menu';
 import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {LogoYearn} from '@lib/icons/LogoYearn';
