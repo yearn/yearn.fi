@@ -70,7 +70,6 @@ module.exports = withPlausibleProxy({
 				destination: 'https://yearn.fi/veyfi/:path*',
 				permanent: true
 			},
-			//
 			{
 				source: '/twitter',
 				destination: 'https://twitter.com/yearnfi',
@@ -189,6 +188,5 @@ module.exports = withPlausibleProxy({
 		BASE_YEARN_ASSETS_URI: 'https://assets.smold.app/api/token',
 		BASE_YEARN_CHAIN_URI: 'https://assets.smold.app/api/chain',
 		SMOL_ASSETS_URL: 'https://assets.smold.app/api'
-	},
-	transpilePackages: ['@w84april/web-lib']
+	}
 });

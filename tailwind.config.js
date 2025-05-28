@@ -3,7 +3,7 @@ const {join} = require('path');
 const defaultTheme = require('tailwindcss/defaultTheme');
 
 module.exports = {
-	presets: [require('@w84april/web-lib/tailwind.config.cjs')],
+	presets: [require('./apps/web-lib/tailwind.config.cjs')],
 	content: [
 		'./app/**/*.{js,ts,jsx,tsx}',
 		'./pages/**/*.{js,ts,jsx,tsx}',

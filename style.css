@@ -1,5 +1,5 @@
 /* This will load Tailwindcss + all the overwrite from Yearn lib */
-@import 'style-webLib.css';
+@import './apps/web-lib/style-webLib.css';
 @import '@rainbow-me/rainbowkit/styles.css';
 
 @font-face {

@@ -15,8 +15,6 @@ export default {
 	test: {
 		globals: true,
 		environment: 'node',
-		deps: {
-			inline: ['@w84april/web-lib']
-		}
+		deps: {inline: ['@web-lib/utils']}
 	}
 };
