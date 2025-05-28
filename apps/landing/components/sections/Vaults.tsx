@@ -87,17 +87,17 @@ const appRows: TRow[] = [
 	},
 	{
 		bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
-		icon: '/landing/apps/yprisma.png',
-		text: 'yPRISMA',
-		description: 'Put your yPRISMA to work',
-		href: 'https://yprisma.yearn.fi/'
-	},
-	{
-		bgClass: 'bg-gradient-to-r from-gray-900 to-gray-800',
 		icon: '/landing/apps/yeth.png',
 		text: 'yETH',
 		description: 'A basket of LSTs in a single token',
 		href: 'https://yeth.yearn.fi/'
+	},
+	{
+		bgClass: 'bg-gradient-to-r from-gray-900 to-gray-800',
+		icon: '/landing/apps/bearn.png',
+		text: 'Bearn',
+		description: 'Liquid locker for Berachain',
+		href: 'https://bearn.sucks'
 	}
 ];
 
@@ -105,6 +105,7 @@ export const Vaults: FC = () => {
 	const {vaults, isLoadingVaultList} = useYearn();
 	const [activeSlide, set_activeSlide] = useState(0);
 	const [isAnimating, set_isAnimating] = useState(false);
+	const [isHovering, set_isHovering] = useState(false);
 
 	const rows: TRow[][] = useMemo(() => {
 		return [
@@ -150,17 +151,22 @@ export const Vaults: FC = () => {
 
 	useEffect(() => {
 		const interval = setInterval(() => {
-			nextSlide();
+			if (!isHovering) {
+				nextSlide();
+			}
 		}, 10_000);
 
 		return () => clearInterval(interval);
-	}, [nextSlide]);
+	}, [nextSlide, isHovering]);
 
 	return (
 		<section className={'flex w-full justify-center px-4 md:px-8 '}>
-			<div className={'w-full max-w-[1180px] py-12 md:py-36'}>
+			<div className={'w-full max-w-[1180px] py-12 md:py-24'}>
 				{/* Slides */}
-				<div className={'relative mb-8 overflow-hidden md:mb-12'}>
+				<div
+					className={'relative mb-8 overflow-hidden md:mb-12'}
+					onMouseEnter={() => set_isHovering(true)}
+					onMouseLeave={() => set_isHovering(false)}>
 					<div
 						className={'flex transition-transform duration-500 ease-in-out'}
 						style={{transform: `translateX(-${activeSlide * 100}%)`}}>
@@ -170,7 +176,7 @@ export const Vaults: FC = () => {
 								className={
 									'flex w-full shrink-0 flex-col items-stretch justify-between gap-6 md:flex-row md:gap-8'
 								}>
-								<div className={'md:min-h-auto relative flex min-h-[300px] w-full md:w-2/5'}>
+								<div className={'md:min-h-auto relative hidden min-h-[300px] w-full md:flex md:w-2/5'}>
 									<div
 										className={
 											'relative flex size-full items-center justify-center overflow-hidden rounded-[24px] border border-[#ffffff]/10'

@@ -2,7 +2,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
 import {z} from 'zod';
-import {motion} from 'framer-motion';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {TvlStat} from '@common/components/TvlStat';
 
@@ -13,101 +12,61 @@ import type {ReactElement} from 'react';
 function AnimatedLogos(): ReactElement {
 	return (
 		<>
-			<motion.div
+			<div
 				className={'absolute'}
 				style={{
 					backgroundImage: "url('/landing/yfi-bottom-right.png')",
 					backgroundRepeat: 'no-repeat',
 					width: '480px',
-					height: '160px'
+					height: '160px',
+					left: '70%',
+					bottom: '0px'
 				}}
-				animate={{
-					y: ['0px', '30px', '0px']
-				}}
-				transition={{
-					duration: 4,
-					ease: 'easeInOut',
-					repeat: Infinity,
-					repeatType: 'loop'
-				}}
-				initial={{left: '70%', bottom: '0px'}}
 			/>
-			<motion.div
+			<div
 				className={'absolute'}
 				style={{
 					backgroundImage: "url('/landing/yfi-top-right.png')",
 					backgroundRepeat: 'no-repeat',
 					backgroundSize: '100% 100%',
 					width: '240px',
-					height: '240px'
+					height: '240px',
+					left: '76%',
+					top: '104px'
 				}}
-				animate={{
-					y: ['0px', '-40px', '0px']
-				}}
-				transition={{
-					duration: 4,
-					ease: 'easeInOut',
-					repeat: Infinity,
-					repeatType: 'loop'
-				}}
-				initial={{left: '76%', top: '104px'}}
 			/>
-			<motion.div
+			<div
 				className={'absolute'}
 				style={{
 					backgroundImage: "url('/landing/yfi-top-left.png')",
 					backgroundRepeat: 'no-repeat',
 					width: '240px',
-					height: '240px'
+					height: '240px',
+					right: '70%',
+					top: '32px'
 				}}
-				animate={{
-					y: ['0px', '-40px', '0px']
-				}}
-				transition={{
-					duration: 4,
-					ease: 'easeInOut',
-					repeat: Infinity,
-					repeatType: 'loop'
-				}}
-				initial={{right: '70%', top: '32px'}}
 			/>
-			<motion.div
+			<div
 				className={'absolute'}
 				style={{
 					backgroundImage: "url('/landing/yfi-left-center.png')",
 					backgroundRepeat: 'no-repeat',
 					width: '200px',
-					height: '290px'
+					height: '290px',
+					right: '78%',
+					top: '200px'
 				}}
-				animate={{
-					y: ['0px', '-50px', '0px']
-				}}
-				transition={{
-					duration: 4,
-					ease: 'easeInOut',
-					repeat: Infinity,
-					repeatType: 'loop'
-				}}
-				initial={{right: '78%', top: '200px'}}
 			/>
-			<motion.div
+			<div
 				className={'absolute'}
 				style={{
 					backgroundImage: "url('/landing/yfi-bottom-left.png')",
 					backgroundRepeat: 'no-repeat',
 					width: '440px',
-					height: '160px'
+					height: '160px',
+					right: '60%',
+					bottom: '0px'
 				}}
-				animate={{
-					y: ['0px', '20px', '0px']
-				}}
-				transition={{
-					duration: 4,
-					ease: 'easeInOut',
-					repeat: Infinity,
-					repeatType: 'loop'
-				}}
-				initial={{right: '60%', bottom: '0px'}}
 			/>
 		</>
 	);
@@ -130,20 +89,21 @@ export function Hero(): ReactElement {
 						backgroundPosition: 'center',
 						overflow: 'hidden'
 					}}
-					className={
-						'relative mx-6 mt-6 flex h-[700px] w-[2365px] max-w-[2352px] flex-col items-center self-center rounded-lg border border-[#292929] '
-					}>
+					className={'relative flex h-[600px] w-[2365px] max-w-[2352px] flex-col items-center self-center'}>
 					<AnimatedLogos />
-					<div className={"flex h-full items-center justify-center"}>
+					<div className={'flex h-full items-center justify-center'}>
 						<div className={'z-20 flex flex-col items-center justify-center gap-12 text-center'}>
-							<TvlStat tvl={tvl ?? 0} />
+							<div className={'mb-8 mt-12'}>
+								<TvlStat tvl={tvl ?? 0} />
+							</div>
 							<SectionHeader
 								isH1
-								title={"Earn on your Crypto"}
+								align={'center'}
+								title={'Earn on your Crypto'}
 								description={"DeFi's longest running, most battle tested protocol"}
 							/>
 							<Link href={'/apps'}>
-								<Button>{'Explore Vaults'}</Button>
+								<Button className={'md:text-[18px]'}>{'Explore Vaults'}</Button>
 							</Link>
 						</div>
 					</div>
@@ -162,11 +122,7 @@ export function Hero(): ReactElement {
 						<TvlStat tvl={tvl ?? 0} />
 					</div>
 
-					<motion.div
-						initial={{opacity: 0, y: 20}}
-						animate={{opacity: 1, y: 0}}
-						transition={{duration: 0.6, delay: 0.2}}
-						className={'mb-8'}>
+					<div className={'mb-8'}>
 						<Image
 							src={'/landing/yfi-top-right.png'}
 							alt={'Yearn Finance Logo'}
@@ -175,31 +131,24 @@ export function Hero(): ReactElement {
 							className={'size-auto max-w-[180px] sm:max-w-[200px]'}
 							priority
 						/>
-					</motion.div>
+					</div>
 
-					<motion.div
-						initial={{opacity: 0, y: 20}}
-						animate={{opacity: 1, y: 0}}
-						transition={{duration: 0.6, delay: 0.4}}
-						className={'mb-10'}>
+					<div className={'mb-10'}>
 						<SectionHeader
 							isH1
-							title={"Earn on your Crypto"}
+							align={'center'}
+							title={'Earn on your Crypto'}
 							description={"DeFi's longest running, most battle tested protocol"}
 						/>
-					</motion.div>
+					</div>
 
-					<motion.div
-						initial={{opacity: 0, y: 20}}
-						animate={{opacity: 1, y: 0}}
-						transition={{duration: 0.6, delay: 0.6}}
-						className={'w-full'}>
+					<div className={'w-full'}>
 						<Link
 							href={'/apps'}
 							className={'block w-full'}>
 							<Button className={'max-w-xs'}>{'Explore Vaults'}</Button>
 						</Link>
-					</motion.div>
+					</div>
 				</div>
 			</div>
 		</>

@@ -1,9 +1,6 @@
-import {useRef, useState} from 'react';
-import Image from 'next/image';
+import {type FC, useRef, useState} from 'react';
 import Link from 'next/link';
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
-
-import type {FC} from 'react';
 
 enum SecurityCardType {
 	Audits = 'audits',
@@ -16,8 +13,7 @@ const Cards: {
 		description: string;
 		href: string;
 		imageSrc: string;
-		gradientA: string;
-		gradientB: string;
+		bgColor: string;
 	};
 } = {
 	[SecurityCardType.Audits]: {
@@ -25,23 +21,21 @@ const Cards: {
 		description: 'Yearn Contracts are audited thoroughly by a variety of auditors.',
 		href: 'https://docs.yearn.fi/developers/security/',
 		imageSrc: '/landing/yearn-apps-logo.png',
-		gradientA: 'radial-gradient(circle_at_center,#5141CAaa_0%,transparent_100%)',
-		gradientB: 'from-[#333761]/60 to-[#1A1C30]/60'
+		bgColor: 'bg-[#6B2FEC]'
 	},
 	[SecurityCardType.BugBounties]: {
 		title: 'Bug Bounties',
 		description: 'Security is our top priority. Report vulnerabilities and get rewarded.',
 		href: 'https://immunefi.com/bug-bounty/yearnfinance',
 		imageSrc: '/landing/integrations.png',
-		gradientA: 'radial-gradient(circle_at_center,#0066FFaa_0%,transparent_100%)',
-		gradientB: 'from-[#1A3E68]/60 to-[#0A1E38]/60'
+		bgColor: 'bg-[#0B5DD0]'
 	}
 };
 
 const SecurityCard: FC<{
 	type: SecurityCardType;
 }> = ({type}) => {
-	const {title, description, href, imageSrc, gradientA, gradientB} = Cards[type];
+	const {title, description, href, bgColor} = Cards[type];
 	const cardRef = useRef<HTMLDivElement>(null);
 	const [mousePosition, set_mousePosition] = useState({x: 0, y: 0});
 	const [isHovered, set_isHovered] = useState(false);
@@ -64,46 +58,40 @@ const SecurityCard: FC<{
 	};
 
 	return (
-		<div
-			ref={cardRef}
-			className={
-				'group relative overflow-hidden rounded-2xl border border-[#ffffff]/5  transition-all duration-300'
-			}
-			onMouseMove={handleMouseMove}
-			onMouseEnter={handleMouseEnter}
-			onMouseLeave={handleMouseLeave}>
-			{isHovered && (
-				<div
-					className={'pointer-events-none absolute inset-0 opacity-60 transition-opacity duration-300'}
-					style={{
-						background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.1) 0%, transparent 50%)`
-					}}
-				/>
-			)}
-
+		<Link
+			href={href}
+			className={'flex'}>
 			<div
-				className={`bg-[ justify-center p-6${gradientA}] group-hover:bg/80 relative z-10 hidden transition-all duration-300 md:flex`}>
-				<Image
-					src={imageSrc}
-					width={180}
-					height={180}
-					alt={title}
-					className={'size-auto transition-transform duration-300 group-hover:scale-105'}
-				/>
+				ref={cardRef}
+				className={`${bgColor} group relative cursor-pointer overflow-hidden rounded-2xl transition-all duration-300`}
+				onMouseMove={handleMouseMove}
+				onMouseEnter={handleMouseEnter}
+				onMouseLeave={handleMouseLeave}>
+				{isHovered && (
+					<div
+						className={'pointer-events-none absolute inset-0 opacity-60 transition-opacity duration-300'}
+						style={{
+							background: `radial-gradient(200px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.25) 0%, transparent 100%)`
+						}}
+					/>
+				)}
+				<div className={`group-hover:bg/80 relative z-10  p-8 transition-all duration-300`}>
+					<h3 className={'mb-4 text-3xl transition-colors duration-300 group-hover:text-white'}>{title}</h3>
+					<p
+						className={
+							'mb-4 text-[18px] text-white/70 transition-colors duration-300 group-hover:text-white/90 '
+						}>
+						{description}
+					</p>
+					<div
+						className={
+							'group-hover:text-blue-200 flex items-center text-white transition-colors duration-300'
+						}>
+						{'Learn More →'}
+					</div>
+				</div>
 			</div>
-			<div
-				className={`bg-gradient-to-t ${gradientB} group-hover:bg/80 relative z-10 p-8 transition-all duration-300`}>
-				<h3 className={'mb-4 text-3xl transition-colors duration-300 group-hover:text-white'}>{title}</h3>
-				<p className={'mb-4  text-white/80 transition-colors duration-300 group-hover:text-white/90'}>
-					{description}
-				</p>
-				<Link
-					href={href}
-					className={'group-hover:text-blue-200 flex items-center text-white transition-colors duration-300'}>
-					{'Learn More →'}
-				</Link>
-			</div>
-		</div>
+		</Link>
 	);
 };
 
@@ -115,6 +103,7 @@ export const Security: FC = () => (
 					align={'center'}
 					tagline={'Audited, secure'}
 					title={'Security First'}
+					description={'Yearn prioritizes security to protect your assets.'}
 				/>
 				<div className={'grid gap-6 pt-16 md:grid-cols-2'}>
 					<SecurityCard type={SecurityCardType.Audits} />

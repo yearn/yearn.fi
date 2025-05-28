@@ -1,12 +1,12 @@
-import {FAQs,Footer, Hero, Integrations, Partners, Security, Vaults} from 'apps/landing/components/sections';
+import {FAQs, Footer, Hero, Integrations, Partners, Security, Vaults} from 'apps/landing/components/sections';
 
 import type {ReactElement} from 'react';
 
 function Index(): ReactElement {
 	return (
 		<div>
-			<main className={'flex w-full flex-col items-center gap-y-[64px] bg-[#080A0C]'}>
-				<div className={'flex w-full flex-col items-center gap-y-[64px] md:gap-y-0'}>
+			<main className={'flex w-full flex-col items-center'}>
+				<div className={'flex w-full flex-col items-center'}>
 					<Hero />
 					<Vaults />
 					<Security />
@@ -15,7 +15,7 @@ function Index(): ReactElement {
 					<FAQs />
 				</div>
 			</main>
-			<footer className={'flex w-full flex-col items-center bg-[#080A0C]'}>
+			<footer className={'flex w-full flex-col items-center'}>
 				<Footer />
 			</footer>
 		</div>

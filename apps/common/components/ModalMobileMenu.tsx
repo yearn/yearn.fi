@@ -2,7 +2,6 @@
 import React, {Fragment} from 'react';
 import Link from 'next/link';
 import {Dialog, Transition, TransitionChild} from '@headlessui/react';
-import {IconArrow} from '@common/icons/IconArrow';
 import {IconClose} from '@common/icons/IconClose';
 import {IconDiscord} from '@common/icons/IconDiscord';
 import {IconParagraph} from '@common/icons/IconParagraph';
@@ -32,14 +31,12 @@ export function FooterNav(): ReactElement {
 			<div className={'flex w-full flex-col space-y-8 rounded-[12px] p-[24px] md:bg-black/30'}>
 				{menu.map(link => (
 					<Link
-						className={
-							'flex items-center justify-between text-2xl text-white transition-colors hover:text-primary'
-						}
+						className={'flex items-center  gap-2 text-white transition-colors hover:text-primary'}
 						key={link.path}
 						target={link.target}
 						href={link.path}>
-						<span>{link.label}</span>
-						<IconArrow className={'size-6'} />
+						<span className={'text-1xl'}>{link.label}</span>
+						<span className={'size-3 h-full'}>{'↗'}</span>
 					</Link>
 				))}
 			</div>

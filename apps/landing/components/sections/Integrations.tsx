@@ -14,39 +14,45 @@ type TIntegration = {
 const integrations: TIntegration[] = [
 	{
 		name: 'Cove',
-		imageSrc: '/landing/integrations-cove.png',
+		imageSrc: '/landing/integrations/cove.png',
 		description: 'Earn the best yields on-chain without the hassle of managing a portfolio.',
 		href: 'https://cove.finance'
 	},
 	{
 		name: '1UP',
-		imageSrc: '/landing/integrations-1up.png',
+		imageSrc: '/landing/integrations/1up.png',
 		description: '1UP is a public good liquid locker for YFI.',
 		href: 'https://1up.tokyo/'
 	},
 	{
 		name: 'Stakedao',
-		imageSrc: '/landing/integrations-stakedao.png',
+		imageSrc: '/landing/integrations/stakedao.png',
 		description: 'A non-custodial liquid staking platform focused on governance tokens.',
 		href: 'https://stakedao.org'
 	},
 	{
 		name: 'Sturdy',
-		imageSrc: '/landing/integrations-sturdy.png',
+		imageSrc: '/landing/integrations/sturdy.png',
 		description: 'Isolated lending with shared liquidity.',
 		href: 'https://sturdy.finance'
 	},
 	{
 		name: 'PWN',
-		imageSrc: '/landing/integrations-pwn.png',
+		imageSrc: '/landing/integrations/pwn.png',
 		description: 'PWN is a hub for peer-to-peer (P2P) loans backed by digital assets',
 		href: 'https://pwn.finance'
 	},
 	{
 		name: 'Superform',
-		imageSrc: '/landing/integrations-super.png',
+		imageSrc: '/landing/integrations/super.png',
 		description: 'Superform grows your onchain wealth. Earn the best returns on your crypto.',
 		href: 'https://superform.xyz'
+	},
+	{
+		name: 'Resupply',
+		imageSrc: '/landing/integrations/resupply.png',
+		description: 'A decentralized stablecoin protocol, leveraging the liquidity and stability of lending markets.',
+		href: 'https://resupply.fi/'
 	}
 ];
 

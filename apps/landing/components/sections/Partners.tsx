@@ -14,39 +14,40 @@ type TPartner = {
 
 const partners: TPartner[] = [
 	{
-		image: '/landing/x-curve.png',
+		image: '/landing/x/curve.png',
 		alt: 'Curve',
 		href: 'https://curve.yearn.space/'
 	},
 	{
-		image: '/landing/x-morpho.png',
+		image: '/landing/x/morpho.png',
 		alt: 'Morpho',
 		href: 'https://morpho.yearn.space/'
 	},
 	{
-		image: '/landing/x-katana.png',
+		image: '/landing/x/katana.png',
 		alt: 'Katana',
-		href: 'https://katana.yearn.space/'
+		href: 'https://katana.yearn.space/',
+		size: 40
 	},
 	{
-		image: '/landing/x-aerodrome.png',
+		image: '/landing/x/aerodrome.png',
 		alt: 'Aerodrome',
 		href: 'https://aerodrome.yearn.space/'
 	},
 	{
-		image: '/landing/x-velodrome.png',
+		image: '/landing/x/velodrome.png',
 		alt: 'Velodrome',
 		href: 'https://velodrome.yearn.space/'
 	},
 	{
-		image: '/landing/x-pooltogether.png',
+		image: '/landing/x/pooltogether.png',
 		alt: 'PoolTogether',
 		href: 'https://pooltogether.yearn.space/',
-		size: 35
+		size: 30
 	}
 ];
 
-const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 50}) => {
+const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 40}) => {
 	const [isHovered, set_isHovered] = useState(false);
 	return (
 		<Link
@@ -75,7 +76,7 @@ const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 50}) => {
 					alt={alt}
 					width={size}
 					height={size}
-					className={'size-8 object-contain lg:size-auto'}
+					className={`lg:max-h-[ object-contain${size}px] lg:max-w-[${size}px]`}
 				/>
 			</div>
 		</Link>
@@ -84,8 +85,8 @@ const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 50}) => {
 
 export const Partners: FC = () => (
 	<section className={'flex w-full justify-center'}>
-		<div className={'flex w-full max-w-[1180px] flex-col items-center justify-between py-8 lg:flex-row lg:py-16'}>
-			<div className={'w-full px-4'}>
+		<div className={'flex w-full max-w-[1180px] flex-col items-center justify-between py-8 lg:flex-row lg:py-20'}>
+			<div className={'flex w-full flex-col gap-4 px-4'}>
 				<SectionHeader
 					tagline={'Partners'}
 					title={'Yearn X'}
@@ -120,7 +121,7 @@ export const Partners: FC = () => (
 						</div>
 						<div
 							className={
-								'z-10 flex size-[100px] items-center justify-center rounded-full bg-gray-800 p-4 transition-colors duration-200 group-hover:bg-blue-500'
+								'z-10 flex size-[100px] items-center justify-center rounded-full bg-blue-500 p-4 transition-colors duration-200 '
 							}>
 							<Image
 								src={'/landing/x-yearn.png'}
@@ -145,7 +146,7 @@ export const Partners: FC = () => (
 				</div>
 
 				{/* Desktop */}
-				<div className={'hidden h-80 gap-4 pt-8 lg:flex lg:flex-row'}>
+				<div className={'hidden gap-4 pt-8 md:pt-14 lg:flex lg:flex-row'}>
 					<div className={'flex h-full w-1/2 flex-col gap-2'}>
 						<div className={'flex flex-1 flex-row gap-2'}>
 							{partners.slice(0, 3).map((partner, index) => (
@@ -171,7 +172,7 @@ export const Partners: FC = () => (
 					</div>
 					<div
 						className={
-							'group relative flex aspect-auto w-1/2 cursor-pointer items-center justify-center rounded-lg bg-gray-800 transition-colors duration-200 hover:bg-blue-500'
+							'group relative flex aspect-auto w-1/2 items-center justify-center rounded-lg  bg-blue-500 transition-colors duration-200'
 						}>
 						<div className={'absolute inset-0 z-0 overflow-hidden'}>
 							<div className={'absolute inset-0 opacity-20'}>
@@ -191,7 +192,7 @@ export const Partners: FC = () => (
 						</div>
 						<div
 							className={
-								'z-10 flex size-[150px] items-center justify-center rounded-full bg-gray-800 p-8 transition-colors duration-200 group-hover:bg-blue-500'
+								'z-10 flex size-[150px] items-center justify-center rounded-full bg-blue-500 p-8 transition-colors duration-200 group-hover:bg-blue-500'
 							}>
 							<Image
 								src={'/landing/x-yearn.png'}
