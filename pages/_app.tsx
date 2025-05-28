@@ -10,6 +10,7 @@ import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import {IconAlertCritical} from '@yearn-finance/web-lib/icons/IconAlertCritical';
 import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
 import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';
+import ErrorBoundary from '@common/components/ErrorBoundary';
 import AppHeader from '@common/components/Header';
 import {Meta} from '@common/components/Meta';
 import {MobileNavbar} from '@common/components/MobileNavbar';
@@ -99,10 +100,12 @@ const WithLayout = memo(function WithLayout(
 										'w-full overflow-x-hidden md:ml-[305px]',
 										isSearchOpen ? 'mt-16' : ''
 									)}>
-									<Component
-										router={props.router}
-										{...pageProps}
-									/>
+									<ErrorBoundary>
+										<Component
+											router={props.router}
+											{...pageProps}
+										/>
+									</ErrorBoundary>
 								</motion.div>
 							</AnimatePresence>
 						</LazyMotion>
