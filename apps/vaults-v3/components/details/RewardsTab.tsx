@@ -2,7 +2,6 @@ import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {useReadContract} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {
 	cl,
@@ -14,7 +13,6 @@ import {
 	toBigInt
 } from '@builtbymom/web3/utils';
 import {approveERC20, defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
-import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
 import {
 	claim as claimAction,
 	stake as stakeAction,
@@ -343,12 +341,6 @@ export function RewardsTab(props: {
 	const shouldForceUnstake = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
 		vault => vault.address === props.currentVault.address
 	);
-	const {data: symbol} = useReadContract({
-		address: vaultData.address,
-		abi: VEYFI_GAUGE_ABI,
-		functionName: 'symbol',
-		chainId: props.currentVault.chainID
-	});
 
 	/**********************************************************************************************
 	 ** The refreshData function will be called when the user interacts with the stake, unstake, or
@@ -537,7 +529,7 @@ export function RewardsTab(props: {
 								className={'w-full'}
 								legend={
 									<div className={'flex items-center justify-between'}>
-										<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${symbol || props.currentVault.symbol} staked`}</p>
+										<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${vaultData.stakedGaugeSymbol || props.currentVault.symbol} staked`}</p>
 										<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
 									</div>
 								}
@@ -659,7 +651,7 @@ export function RewardsTab(props: {
 								className={`mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0`}
 								suppressHydrationWarning>
 								<div className={'flex items-center justify-between'}>
-									<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${symbol || props.currentVault.symbol} staked`}</p>
+									<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${vaultData.stakedGaugeSymbol || props.currentVault.symbol} staked`}</p>
 									<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
 								</div>
 							</legend>
