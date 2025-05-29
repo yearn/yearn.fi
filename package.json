@@ -40,7 +40,7 @@
 		"recharts": "^2.12.7",
 		"swr": "^2.2.5",
 		"tailwind-gradient-mask-image": "^1.2.0",
-		"viem": "2.22.2",
+		"viem": "^2.22.2",
 		"vite": "^5.2.13",
 		"wagmi": "^2.14.6",
 		"xxhashjs": "^0.2.2",
