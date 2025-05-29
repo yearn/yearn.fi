@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
@@ -48,14 +48,17 @@ function mapToCombinedVaultList(sortedVaults: TYDaemonVault[], isLoadingVaultLis
 		};
 	}
 
-	const allVaults = sortedVaults.map((vault, index) => (
-		<VaultsListRow
-			key={`${vault.chainID}_${vault.address}`}
-			index={index}
-			currentVault={vault}
-			isV2={vault.version === '0.4.6' || vault.version === '0.4.5' || vault.version === '0.4.3'}
-		/>
-	));
+	const allVaults = sortedVaults.map((vault, index) => {
+		const isV3 = vault.version.startsWith('3') || vault.version.startsWith('~3');
+		return (
+			<VaultsListRow
+				key={`${vault.chainID}_${vault.address}`}
+				index={index}
+				currentVault={vault}
+				isV2={!isV3}
+			/>
+		);
+	});
 
 	return {
 		isLoading: false,
@@ -84,7 +87,8 @@ function CombinedVaultsTable(): ReactElement {
 		sortDirection: sortDirectionV3,
 		sortBy: sortByV3,
 		onChangeSortDirection: onChangeSortDirectionV3,
-		onChangeSortBy: onChangeSortByV3
+		onChangeSortBy: onChangeSortByV3,
+		onSearch
 	} = useQueryArguments({
 		defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
 		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
@@ -106,16 +110,42 @@ function CombinedVaultsTable(): ReactElement {
 	// Filter by chains and combine vaults
 	const filteredV2ByChains = activeVaultsV2.filter(({chainID}) => chains?.includes(chainID));
 	const filteredV3ByChains = activeVaultsV3.filter(({chainID}) => chains?.includes(chainID));
-	const combinedVaults = [...filteredV3ByChains, ...filteredV2ByChains];
+
+	const combinedVaults = useMemo(() => {
+		return [...filteredV3ByChains, ...filteredV2ByChains];
+	}, [filteredV3ByChains, filteredV2ByChains]);
+
+	const searchedVaults = useMemo((): TYDaemonVault[] => {
+		if (!search) return combinedVaults;
+		const filtered = combinedVaults.filter((vault: TYDaemonVault): boolean => {
+			const lowercaseSearch = search.toLowerCase();
+			const searchableFields =
+				`${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
+					.toLowerCase()
+					.split(' ');
+			return searchableFields.some((word): boolean => word.includes(lowercaseSearch));
+		});
+		return filtered;
+	}, [combinedVaults, search]);
 
 	// Apply filtering & sorting based on active filter button
 	const filteredVaults =
 		activeFilter === TFilter.Popular
-			? [...combinedVaults].sort((a, b) => (b.tvl.tvl || 0) - (a.tvl.tvl || 0)).slice(0, 30)
-			: combinedVaults;
+			? [...searchedVaults].sort((a, b) => (b.tvl.tvl || 0) - (a.tvl.tvl || 0)).slice(0, 30)
+			: searchedVaults;
 
-	const actualSortBy = activeFilter === TFilter.All && !hasUserSelectedSort ? 'featuringScore' : sortBy;
-	const actualSortDirection = activeFilter === TFilter.All && !hasUserSelectedSort ? 'desc' : sortDirection;
+	const actualSortBy =
+		activeFilter === TFilter.All && !hasUserSelectedSort
+			? 'featuringScore'
+			: activeFilter === TFilter.Popular
+				? 'tvl'
+				: sortBy;
+	const actualSortDirection =
+		activeFilter === TFilter.All && !hasUserSelectedSort
+			? 'desc'
+			: activeFilter === TFilter.Popular
+				? 'desc'
+				: sortDirection;
 	const sortedVaults = useSortVaults(filteredVaults, actualSortBy, actualSortDirection);
 
 	// Setup pagination
@@ -142,8 +172,20 @@ function CombinedVaultsTable(): ReactElement {
 		return (
 			<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
 				<VaultsListHead
-					sortBy={activeFilter === TFilter.All && !hasUserSelectedSort ? 'name' : sortBy}
-					sortDirection={activeFilter === TFilter.All && !hasUserSelectedSort ? 'desc' : sortDirection}
+					sortBy={
+						activeFilter === TFilter.All && !hasUserSelectedSort
+							? 'name'
+							: activeFilter === TFilter.Popular
+								? 'tvl'
+								: sortBy
+					}
+					sortDirection={
+						activeFilter === TFilter.All && !hasUserSelectedSort
+							? 'desc'
+							: activeFilter === TFilter.Popular
+								? 'desc'
+								: sortDirection
+					}
 					onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
 						set_hasUserSelectedSort(true);
 						if (newSortDirection === '') {
@@ -191,15 +233,27 @@ function CombinedVaultsTable(): ReactElement {
 						iconClassName={'text-neutral-900 font-[12px]'}
 						searchPlaceholder={'Search'}
 						searchValue={search}
-						onSearch={() => {}}
+						onSearch={onSearch}
 					/>
 				</div>
 			</div>
 
 			<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
 				<VaultsListHead
-					sortBy={activeFilter === TFilter.All && !hasUserSelectedSort ? 'name' : sortBy}
-					sortDirection={activeFilter === TFilter.All && !hasUserSelectedSort ? 'desc' : sortDirection}
+					sortBy={
+						activeFilter === TFilter.All && !hasUserSelectedSort
+							? 'name'
+							: activeFilter === TFilter.Popular
+								? 'tvl'
+								: sortBy
+					}
+					sortDirection={
+						activeFilter === TFilter.All && !hasUserSelectedSort
+							? 'desc'
+							: activeFilter === TFilter.Popular
+								? 'desc'
+								: sortDirection
+					}
 					onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
 						set_hasUserSelectedSort(true);
 						if (newSortDirection === '') {
