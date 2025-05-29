@@ -157,65 +157,162 @@ const WithLayout = memo(function WithLayout(
 function MyApp(props: AppProps): ReactElement {
 	const {manifest} = useCurrentApp(props.router);
 
+	// Global error handler for Vercel preview and other external script errors
+	React.useEffect(() => {
+		const handleError = (event: ErrorEvent): boolean => {
+			// Suppress Vercel preview feedback system errors
+			if (
+				event.message?.includes('previewOrigin not set yet') ||
+				event.message?.includes('Failed to load static props') ||
+				event.filename?.includes('feedback.html')
+			) {
+				console.warn('Vercel preview system error suppressed:', event.message);
+				event.preventDefault();
+				return false;
+			}
+			return true;
+		};
+
+		const handleUnhandledRejection = (event: PromiseRejectionEvent): void => {
+			// Suppress promise rejections related to Vercel preview system
+			if (
+				event.reason?.message?.includes('previewOrigin not set yet') ||
+				event.reason?.message?.includes('Failed to load static props')
+			) {
+				console.warn('Vercel preview promise rejection suppressed:', event.reason);
+				event.preventDefault();
+			}
+		};
+
+		window.addEventListener('error', handleError);
+		window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+		return () => {
+			window.removeEventListener('error', handleError);
+			window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+		};
+	}, []);
+
 	return (
-		<WithFonts>
-			<Meta
-				title={manifest.name || 'Yearn'}
-				description={manifest.description || 'The yield protocol for digital assets'}
-				titleColor={'#ffffff'}
-				themeColor={'#000000'}
-				og={manifest.og || 'https://yearn.fi/og.png'}
-				uri={manifest.uri || 'https://yearn.fi'}
-			/>
-			<main className={'size-full min-h-screen font-aeonik'}>
-				<PlausibleProvider
-					domain={'yearn.fi'}
-					enabled={true}>
-					<WithMom
-						supportedChains={SUPPORTED_NETWORKS}
-						tokenLists={[
-							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
-							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/popular.json'
-						]}>
-						<AppSettingsContextApp>
-							<YearnContextApp>
-								<WithLayout
-									supportedNetworks={SUPPORTED_NETWORKS}
-									{...props}
-								/>
-							</YearnContextApp>
-						</AppSettingsContextApp>
-					</WithMom>
-				</PlausibleProvider>
-				<Toaster
-					toastOptions={{
-						duration: 5000,
-						className: 'toast',
-						error: {
-							icon: <IconAlertCritical className={'ml-3'} />,
-							style: {
-								backgroundColor: '#C73203',
-								color: 'white'
-							}
-						},
-						success: {
-							icon: <IconCheckmark className={'ml-3'} />,
-							style: {
-								backgroundColor: '#00796D',
-								color: 'white'
-							}
-						},
-						icon: <IconAlertError className={'ml-3'} />,
-						style: {
-							backgroundColor: '#0657F9',
-							color: 'white'
-						}
-					}}
-					position={'bottom-right'}
+		<ErrorBoundary>
+			<WithFonts>
+				<Meta
+					title={manifest.name || 'Yearn'}
+					description={manifest.description || 'The yield protocol for digital assets'}
+					titleColor={'#ffffff'}
+					themeColor={'#000000'}
+					og={manifest.og || 'https://yearn.fi/og.png'}
+					uri={manifest.uri || 'https://yearn.fi'}
 				/>
-			</main>
-		</WithFonts>
+				<main className={'size-full min-h-screen font-aeonik'}>
+					<PlausibleProvider
+						domain={'yearn.fi'}
+						enabled={true}>
+						<WithMom
+							supportedChains={SUPPORTED_NETWORKS}
+							tokenLists={[
+								'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
+								'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/popular.json'
+							]}>
+							<AppSettingsContextApp>
+								<YearnContextApp>
+									<WithLayout
+										supportedNetworks={SUPPORTED_NETWORKS}
+										{...props}
+									/>
+								</YearnContextApp>
+							</AppSettingsContextApp>
+						</WithMom>
+					</PlausibleProvider>
+					<Toaster
+						toastOptions={{
+							duration: 5000,
+							className: 'toast',
+							error: {
+								icon: <IconAlertCritical className={'ml-3'} />,
+								style: {
+									backgroundColor: '#C73203',
+									color: 'white'
+								}
+							},
+							success: {
+								icon: <IconCheckmark className={'ml-3'} />,
+								style: {
+									backgroundColor: '#00796D',
+									color: 'white'
+								}
+							},
+							icon: <IconAlertError className={'ml-3'} />,
+							style: {
+								backgroundColor: '#0657F9',
+								color: 'white'
+							}
+						}}
+						position={'bottom-right'}
+					/>
+				</main>
+			</WithFonts>
+		</ErrorBoundary>
 	);
+}
+
+/************************************************************************************************
+ ** ErrorBoundary component to catch and handle JavaScript errors gracefully, including those
+ ** from external scripts like Vercel's feedback system that might interfere with the app.
+ ************************************************************************************************/
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean; error?: Error}> {
+	constructor(props: {children: React.ReactNode}) {
+		super(props);
+		this.state = {hasError: false};
+	}
+
+	static getDerivedStateFromError(error: Error): {hasError: boolean; error: Error} {
+		return {hasError: true, error};
+	}
+
+	componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+		// Log error but don't let it crash the app
+		console.error('Application error caught by boundary:', error, errorInfo);
+
+		// Suppress specific Vercel preview errors
+		if (
+			error.message?.includes('previewOrigin not set yet') ||
+			error.message?.includes('Failed to load static props')
+		) {
+			console.warn('Vercel preview system error suppressed:', error.message);
+		}
+	}
+
+	render(): React.ReactNode {
+		if (this.state.hasError) {
+			// Don't show error UI for Vercel preview errors, just log and continue
+			if (
+				this.state.error?.message?.includes('previewOrigin not set yet') ||
+				this.state.error?.message?.includes('Failed to load static props')
+			) {
+				// Reset error state and continue rendering
+				this.setState({hasError: false, error: undefined});
+				return this.props.children;
+			}
+
+			return (
+				<div className={'flex min-h-screen items-center justify-center bg-neutral-100'}>
+					<div className={'text-center'}>
+						<h2 className={'mb-4 text-xl font-bold text-neutral-900'}>{'Something went wrong'}</h2>
+						<button
+							onClick={() => this.setState({hasError: false})}
+							className={
+								'rounded-lg bg-neutral-900 px-4 py-2 text-white transition-colors hover:bg-neutral-700'
+							}>
+							{'Try again'}
+						</button>
+					</div>
+				</div>
+			);
+		}
+
+		return this.props.children;
+	}
 }
 
 export default MyApp;

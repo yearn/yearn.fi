@@ -25,7 +25,13 @@ function Index(): ReactElement | null {
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
 	const [isInit, set_isInit] = useState(false);
-	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
+	const [hasError, set_hasError] = useState(false);
+
+	const {
+		data: vault,
+		isLoading: isLoadingVault,
+		error
+	} = useFetch<TYDaemonVault>({
 		endpoint: router.query.address
 			? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
 					strategiesDetails: 'withDetails',
@@ -35,10 +41,19 @@ function Index(): ReactElement | null {
 		schema: yDaemonVaultSchema
 	});
 
+	// Handle any errors that might occur during data fetching
+	useEffect((): void => {
+		if (error) {
+			console.error('Error loading vault data:', error);
+			set_hasError(true);
+		}
+	}, [error]);
+
 	useEffect((): void => {
 		if (vault && !currentVault) {
 			set_currentVault(vault);
 			set_isInit(true);
+			set_hasError(false);
 		}
 	}, [currentVault, vault]);
 
@@ -54,6 +69,27 @@ function Index(): ReactElement | null {
 			onRefresh(tokensToRefresh);
 		}
 	}, [currentVault?.address, currentVault?.token?.address, address, isActive, onRefresh, currentVault?.chainID]);
+
+	// Show error state if there's an error
+	if (hasError) {
+		return (
+			<div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
+				<div className={'mt-[20%] flex flex-col items-center justify-center'}>
+					<p className={'mb-4 text-lg text-neutral-900'}>{'Unable to load vault data'}</p>
+					<button
+						onClick={() => {
+							set_hasError(false);
+							router.reload();
+						}}
+						className={
+							'rounded-lg bg-neutral-900 px-4 py-2 text-white transition-colors hover:bg-neutral-700'
+						}>
+						{'Try Again'}
+					</button>
+				</div>
+			</div>
+		);
+	}
 
 	if (isLoadingVault || !router.query.address || !isInit) {
 		return (
