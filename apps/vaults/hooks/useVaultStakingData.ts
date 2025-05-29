@@ -400,7 +400,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 				]
 			});
 			rewardDecimals = 18;
-			stakingDecimals = decodeAsNumber(decimalsResult[1]);
+			stakingDecimals = decodeAsNumber(decimalsResult[0]);
 		} else {
 			decimalsResult = await readContracts(retrieveConfig(), {
 				contracts: [

@@ -401,7 +401,7 @@ export function RewardsTab(props: {
 				connector: provider,
 				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
-				amount: vaultData.vaultBalanceOf.raw,
+				amount: fromNormalized(stakeAmount, vaultData.stakingDecimals || 18),
 				statusHandler: set_stakeStatus
 			});
 			if (result.isSuccessful) {
@@ -427,8 +427,10 @@ export function RewardsTab(props: {
 		provider,
 		vaultData?.address,
 		vaultData.vaultBalanceOf.raw,
+		vaultData.stakingDecimals,
 		refreshData,
-		updateVaultData
+		updateVaultData,
+		stakeAmount
 	]);
 
 	/**********************************************************************************************
@@ -626,7 +628,7 @@ export function RewardsTab(props: {
 											pattern={'^((?:0|[1-9]+)(?:.(?:d+?[1-9]|[1-9]))?)$'}
 											autoComplete={'off'}
 											disabled={!isActive}
-											value={vaultData.vaultBalanceOf.display}
+											value={stakeAmount}
 											onChange={(e: ChangeEvent<HTMLInputElement>): void => {
 												set_stakeAmount(e.target.value);
 												set_isStakeAmountDirty(true);
@@ -635,8 +637,8 @@ export function RewardsTab(props: {
 
 										<button
 											onClick={(): void => {
-												set_unstakeAmount(vaultData.vaultBalanceOf.display);
-												set_isUnstakeAmountDirty(true);
+												set_stakeAmount(vaultData.vaultBalanceOf.display);
+												set_isStakeAmountDirty(true);
 											}}
 											className={
 												'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
@@ -649,21 +651,21 @@ export function RewardsTab(props: {
 									className={`mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0`}
 									suppressHydrationWarning>
 									<div className={'flex items-center justify-between'}>
-										<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} st-yBOLD staked`}</p>
+										<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} yBOLD available`}</p>
 										<p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
 									</div>
 								</legend>
 							</div>
 							<Button
 								className={'w-full md:w-[180px] md:min-w-[180px]'}
-								onClick={onStake}
-								isBusy={stakeStatus.pending}
+								onClick={(): unknown => (isApproved ? onStake() : onApprove())}
+								isBusy={stakeStatus.pending || approveStakeStatus.pending}
 								isDisabled={
 									!isActive ||
 									Number(vaultData.vaultBalanceOf.display) <= 0 ||
 									isLargerThanVaultBalance
 								}>
-								{'Stake'}
+								{isApproved ? 'Stake' : 'Approve'}
 							</Button>
 						</div>
 					</div>
