@@ -15,6 +15,9 @@
 		"bump": "bump",
 		"test": "vitest run"
 	},
+	"engines": {
+		"node": "20.18.0"
+	},
 	"dependencies": {
 		"@w84april/web3": "0.0.222",
 		"@cowprotocol/cow-sdk": "2.1.0",
