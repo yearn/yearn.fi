@@ -8,9 +8,7 @@ import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useYearn} from '@common/contexts/useYearn';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';
@@ -20,9 +18,7 @@ import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVa
 function Index(): ReactElement | null {
 	// const {address, isActive} = useWeb3();
 	const router = useRouter();
-	const {onRefresh} = useYearn();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
-	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
+	const [currentVault] = useState<TYDaemonVault | undefined>(undefined);
 	// const [isInit, set_isInit] = useState(false);
 	// const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
 	// 	endpoint: router.query.address
@@ -92,12 +88,13 @@ function Index(): ReactElement | null {
 				</button>
 			</nav>
 			<header
-				className={cl(
-					'h-full rounded-3xl',
-					'pt-6 pb-6 md:pb-10 px-4 md:px-8',
-					'bg-[linear-gradient(73deg,_#D21162_24.91%,_#2C3DA6_99.66%)]',
-					'relative flex flex-col items-center justify-center'
-				)}>
+			// className={cl(
+			// 	'h-full rounded-3xl',
+			// 	'pt-6 pb-6 md:pb-10 px-4 md:px-8',
+			// 	'bg-[linear-gradient(73deg,_#D21162_24.91%,_#2C3DA6_99.66%)]',
+			// 	'relative flex flex-col items-center justify-center'
+			// )}
+			>
 				<nav className={`mb-4 hidden self-start md:mb-2 md:block`}>
 					<button
 						className={'w-fit'}
@@ -113,10 +110,11 @@ function Index(): ReactElement | null {
 				</nav>
 				<div className={'absolute -top-10 md:-top-6'}>
 					<div
-						className={cl(
-							'h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-[#FAD1ED7A] backdrop-blur',
-							'flex justify-center items-center'
-						)}>
+					// className={cl(
+					// 	'h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-[#FAD1ED7A] backdrop-blur',
+					// 	'flex justify-center items-center'
+					// )}
+					>
 						<ImageWithFallback
 							className={'size-10 md:size-12'}
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
