@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
+import {SectionHeader} from '@common/components/SectionHeader';
 import {z} from 'zod';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {TvlStat} from '@common/components/TvlStat';
