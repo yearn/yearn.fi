@@ -19,25 +19,42 @@ import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVa
 import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
 
 function Index(): ReactElement | null {
-	const {address, isActive} = useWeb3();
 	const router = useRouter();
-	const {onRefresh} = useYearn();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
 	const [isInit, set_isInit] = useState(false);
 	const [hasError, set_hasError] = useState(false);
+	const [isClient, set_isClient] = useState(false);
+
+	// Always call hooks, but conditionally use their values
+	const Web3Context = useWeb3();
+	const YearnContext = useYearn();
+
+	// Ensure we're on the client side before using client-side values
+	useEffect(() => {
+		set_isClient(true);
+	}, []);
+
+	// Safe access to context values
+	const address = isClient ? Web3Context.address : undefined;
+	const isActive = isClient ? Web3Context.isActive : false;
+	const onRefresh = isClient ? YearnContext.onRefresh : () => {};
+
+	// Safe chainID parsing with fallback
+	const chainID = router.query.chainID ? Number(router.query.chainID) : 1;
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID});
 
 	const {
 		data: vault,
 		isLoading: isLoadingVault,
 		error
 	} = useFetch<TYDaemonVault>({
-		endpoint: router.query.address
-			? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
-					strategiesDetails: 'withDetails',
-					strategiesCondition: 'inQueue'
-				})}`
-			: null,
+		endpoint:
+			router.query.address && isClient
+				? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
+						strategiesDetails: 'withDetails',
+						strategiesCondition: 'inQueue'
+					})}`
+				: null,
 		schema: yDaemonVaultSchema
 	});
 
@@ -58,7 +75,7 @@ function Index(): ReactElement | null {
 	}, [currentVault, vault]);
 
 	useEffect((): void => {
-		if (address && isActive) {
+		if (address && isActive && isClient) {
 			const tokensToRefresh: TUseBalancesTokens[] = [];
 			if (currentVault?.address) {
 				tokensToRefresh.push({address: currentVault.address, chainID: currentVault.chainID});
@@ -68,7 +85,26 @@ function Index(): ReactElement | null {
 			}
 			onRefresh(tokensToRefresh);
 		}
-	}, [currentVault?.address, currentVault?.token?.address, address, isActive, onRefresh, currentVault?.chainID]);
+	}, [
+		currentVault?.address,
+		currentVault?.token?.address,
+		address,
+		isActive,
+		onRefresh,
+		currentVault?.chainID,
+		isClient
+	]);
+
+	// Show loading state during SSR and initial client hydration
+	if (!isClient || !router.isReady) {
+		return (
+			<div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
+				<div className={'mt-[20%] flex h-10 items-center justify-center'}>
+					<span className={'loader'} />
+				</div>
+			</div>
+		);
+	}
 
 	// Show error state if there's an error
 	if (hasError) {
@@ -187,10 +223,42 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const getStaticProps: GetStaticProps = async () => {
-	return {
-		props: {}
-	};
+export const getStaticProps: GetStaticProps = async context => {
+	try {
+		// Validate that we have the required parameters
+		const {chainID, address} = context.params || {};
+
+		if (!chainID || !address) {
+			return {
+				notFound: true
+			};
+		}
+
+		// Validate chainID is a number
+		const parsedChainID = Number(chainID);
+		if (isNaN(parsedChainID)) {
+			return {
+				notFound: true
+			};
+		}
+
+		// Return empty props - data will be fetched client-side
+		return {
+			props: {
+				chainID: parsedChainID,
+				address: address as string
+			},
+			// Revalidate every 5 minutes
+			revalidate: 300
+		};
+	} catch (error) {
+		console.error('Error in getStaticProps:', error);
+		return {
+			props: {},
+			// Retry after 1 minute if there's an error
+			revalidate: 60
+		};
+	}
 };
 
 export default Index;

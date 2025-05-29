@@ -1,0 +1,16 @@
+{
+	"functions": {
+		"pages/**/*.js": {
+			"runtime": "nodejs20.x"
+		}
+	},
+	"github": {
+		"silent": true
+	},
+	"preview": {
+		"feedback": false
+	},
+	"buildCommand": "npm run build",
+	"outputDirectory": ".next",
+	"framework": "nextjs"
+}
