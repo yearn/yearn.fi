@@ -373,7 +373,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		if (currentVault.staking.source === 'V3 Staking') {
 			return 'Staking BOOST';
 		}
-		return 'Boost';
+		return 'Staking';
 	}, [currentVault.staking.source]);
 
 	const {data: blockNumber} = useBlockNumber({watch: true});

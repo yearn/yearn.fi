@@ -184,9 +184,14 @@ export function VaultDetailsQuickActionsButtons({
 	 *********************************************************************************************/
 	const isAboveAllowance = toBigInt(actionParams.amount?.raw) > toBigInt(allowanceFrom?.raw);
 
-	if (currentVault.version.startsWith('3') && currentVault.migration.available && allowanceRouter?.raw === 0n && (actionParams.amount?.raw ?? 0n) > 0n) {
+	if (
+		currentVault.version.startsWith('3') &&
+		currentVault.migration.available &&
+		allowanceRouter?.raw === 0n &&
+		(actionParams.amount?.raw ?? 0n) > 0n
+	) {
 		return (
-			<div className={"rounded-md bg-white p-2 text-xs text-black"}>
+			<div className={'rounded-md bg-white p-2 text-xs text-black'}>
 				{'To enable migrations out of this vault, please ask Yearn to approve the 4626 router!'}
 			</div>
 		);
