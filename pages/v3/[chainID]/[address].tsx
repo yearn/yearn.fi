@@ -1,3 +1,5 @@
+'use client';
+
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';

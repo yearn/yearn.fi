@@ -1,3 +1,5 @@
+'use client';
+
 import {Children, Fragment, useMemo, useState} from 'react';
 import {motion} from 'framer-motion';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
