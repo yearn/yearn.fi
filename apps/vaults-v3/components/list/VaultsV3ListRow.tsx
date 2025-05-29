@@ -13,8 +13,8 @@ import {useYearnBalance} from '@common/hooks/useYearnBalance';
 import {VaultChainTag} from '../VaultChainTag';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TYDaemonVault} from '@web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TAPYSublineProps = {
 	hasPendleArbRewards: boolean;
