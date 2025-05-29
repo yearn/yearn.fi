@@ -20,6 +20,7 @@ import {
 	unstake as unstakeAction,
 	unstakeVeYFIGauge as unstakeVeYFIAction
 } from '@vaults/utils/actions';
+import {stakeYBold, unstakeYBold} from '@vaults-v3/utils/actions';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Counter} from '@common/components/Counter';
 import {FakeInput} from '@common/components/Input';
@@ -325,12 +326,16 @@ export function RewardsTab(props: {
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
 	const [unstakeAmount, set_unstakeAmount] = useState<string>(vaultData.stakedBalanceOf.display);
+	const [stakeAmount, set_stakeAmount] = useState<string>(vaultData.vaultBalanceOf.display);
 	const [isUnstakeAmountDirty, set_isUnstakeAmountDirty] = useState(false);
+	const [isStakeAmountDirty, set_isStakeAmountDirty] = useState(false);
 
 	const isUnstakingMax =
 		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) === vaultData.stakedBalanceOf.raw;
 	const isLargerThanStakedBalance =
 		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) > vaultData.stakedBalanceOf.raw;
+	const isLargerThanVaultBalance =
+		fromNormalized(stakeAmount, props.currentVault.decimals || 18) > vaultData.vaultBalanceOf.raw;
 
 	const isApproved = vaultData.vaultAllowance.raw >= vaultData.vaultBalanceOf.raw;
 
@@ -391,6 +396,18 @@ export function RewardsTab(props: {
 				refreshData();
 				updateVaultData();
 			}
+		} else if (props.currentVault.staking.source === 'yBOLD') {
+			const result = await stakeYBold({
+				connector: provider,
+				chainID: props.currentVault.chainID,
+				contractAddress: toAddress(vaultData?.address),
+				amount: vaultData.vaultBalanceOf.raw,
+				statusHandler: set_stakeStatus
+			});
+			if (result.isSuccessful) {
+				refreshData();
+				updateVaultData();
+			}
 		} else {
 			const result = await stakeAction({
 				connector: provider,
@@ -431,6 +448,18 @@ export function RewardsTab(props: {
 				contractAddress: toAddress(vaultData?.address),
 				amount: fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
 				willClaim: isUnstakingMax,
+				statusHandler: set_unstakeStatus
+			});
+			if (result.isSuccessful) {
+				refreshData();
+				updateVaultData();
+			}
+		} else if (props.currentVault.staking.source === 'yBOLD') {
+			const result = await unstakeYBold({
+				connector: provider,
+				chainID: props.currentVault.chainID,
+				contractAddress: toAddress(vaultData?.address),
+				amount: fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
 				statusHandler: set_unstakeStatus
 			});
 			if (result.isSuccessful) {
@@ -499,6 +528,12 @@ export function RewardsTab(props: {
 			set_unstakeAmount(vaultData.stakedBalanceOf.display);
 		}
 	}, [vaultData.stakedBalanceOf.display, unstakeAmount, isUnstakeAmountDirty]);
+
+	useEffect(() => {
+		if (!isStakeAmountDirty) {
+			set_stakeAmount(vaultData.stakedBalanceOf.display);
+		}
+	}, [stakeAmount, isStakeAmountDirty, vaultData.stakedBalanceOf.display]);
 
 	if (props.currentVault.staking.rewards?.length === 0) {
 		return (
@@ -576,36 +611,60 @@ export function RewardsTab(props: {
 						</div>
 
 						<div className={'flex flex-col gap-4 md:flex-row'}>
-							<FakeInput
-								className={'w-full'}
-								legend={
+							<div className={'w-full'}>
+								<div className={cl('flex h-10 items-center rounded-lg p-2 w-full', 'bg-neutral-300')}>
+									<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
+										<input
+											id={'stakeAmount'}
+											className={cl(
+												'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
+												isActive ? '' : 'cursor-not-allowed'
+											)}
+											type={'number'}
+											inputMode={'numeric'}
+											min={0}
+											pattern={'^((?:0|[1-9]+)(?:.(?:d+?[1-9]|[1-9]))?)$'}
+											autoComplete={'off'}
+											disabled={!isActive}
+											value={vaultData.vaultBalanceOf.display}
+											onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+												set_stakeAmount(e.target.value);
+												set_isStakeAmountDirty(true);
+											}}
+										/>
+
+										<button
+											onClick={(): void => {
+												set_unstakeAmount(vaultData.vaultBalanceOf.display);
+												set_isUnstakeAmountDirty(true);
+											}}
+											className={
+												'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
+											}>
+											{'Max'}
+										</button>
+									</div>
+								</div>
+								<legend
+									className={`mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0`}
+									suppressHydrationWarning>
 									<div className={'flex items-center justify-between'}>
-										<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} yBold available to stake`}</p>
+										<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} st-yBOLD staked`}</p>
 										<p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
 									</div>
-								}
-								value={
-									toBigInt(vaultData.vaultBalanceOf.raw) === 0n ? undefined : (
-										<Counter
-											value={Number(vaultData.vaultBalanceOf.normalized)}
-											decimals={18}
-										/>
-									)
-								}
-							/>
-							<div>
-								<Button
-									className={'w-full md:w-[180px] md:min-w-[180px]'}
-									onClick={(): unknown => (isApproved ? onStake() : onApprove())}
-									isBusy={stakeStatus.pending || approveStakeStatus.pending}
-									isDisabled={
-										!isActive ||
-										toBigInt(vaultData.vaultBalanceOf.raw) <= 0n ||
-										(!props.hasStakingRewardsLive && props.currentVault.staking.source !== 'VeYFI')
-									}>
-									{isApproved ? 'Stake' : 'Approve & Stake'}
-								</Button>
+								</legend>
 							</div>
+							<Button
+								className={'w-full md:w-[180px] md:min-w-[180px]'}
+								onClick={onStake}
+								isBusy={stakeStatus.pending}
+								isDisabled={
+									!isActive ||
+									Number(vaultData.vaultBalanceOf.display) <= 0 ||
+									isLargerThanVaultBalance
+								}>
+								{'Stake'}
+							</Button>
 						</div>
 					</div>
 					<div className={'flex flex-col gap-2'}>
@@ -617,7 +676,7 @@ export function RewardsTab(props: {
 								<div className={cl('flex h-10 items-center rounded-lg p-2 w-full', 'bg-neutral-300')}>
 									<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 										<input
-											id={'fromAmount'}
+											id={'unstakeAmount'}
 											className={cl(
 												'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
 												isActive ? '' : 'cursor-not-allowed'
