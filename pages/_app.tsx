@@ -4,7 +4,6 @@ import {usePathname} from 'next/navigation';
 import PlausibleProvider from 'next-plausible';
 import {LandingAppHeader} from 'apps/landing/components/common/Header';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
-import {WithMom} from '@builtbymom/web3/contexts/WithMom';
 import {cl} from '@builtbymom/web3/utils';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import {IconAlertCritical} from '@yearn-finance/web-lib/icons/IconAlertCritical';
@@ -171,21 +170,21 @@ function MyApp(props: AppProps): ReactElement {
 				<PlausibleProvider
 					domain={'yearn.fi'}
 					enabled={true}>
-					<WithMom
+					{/* <WithMom
 						supportedChains={SUPPORTED_NETWORKS}
 						tokenLists={[
 							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
 							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/popular.json'
-						]}>
-						<AppSettingsContextApp>
-							<YearnContextApp>
-								<WithLayout
-									supportedNetworks={SUPPORTED_NETWORKS}
-									{...props}
-								/>
-							</YearnContextApp>
-						</AppSettingsContextApp>
-					</WithMom>
+						]}> */}
+					<AppSettingsContextApp>
+						<YearnContextApp>
+							<WithLayout
+								supportedNetworks={SUPPORTED_NETWORKS}
+								{...props}
+							/>
+						</YearnContextApp>
+					</AppSettingsContextApp>
+					{/* </WithMom> */}
 				</PlausibleProvider>
 				<Toaster
 					toastOptions={{
