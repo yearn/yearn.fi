@@ -8,10 +8,16 @@ import {RenderAmount} from '@common/components/RenderAmount';
 
 import {VaultForwardAPY, VaultRiskScoreTag} from './table';
 
-import type {ReactElement} from 'react';
+import type {FC} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
-export function VaultsListRow({currentVault, isV2}: {currentVault: TYDaemonVault; isV2: boolean}): ReactElement {
+type TVaultsListRowProps = {
+	currentVault: TYDaemonVault;
+	isV2: boolean;
+	index?: number;
+};
+
+export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, index = 0}) => {
 	const href = isV2
 		? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
 		: `/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`;
@@ -25,10 +31,14 @@ export function VaultsListRow({currentVault, isV2}: {currentVault: TYDaemonVault
 				<div
 					className={cl(
 						'absolute inset-0 rounded-[12px]',
-						'opacity-20 transition-opacity group-hover:opacity-100 pointer-events-none',
-						isV2
-							? 'bg-[linear-gradient(80deg,_#7C3DA6,_#221162)]'
-							: 'bg-[linear-gradient(80deg,_#2C3DA6,_#D21162)]'
+						index % 2 === 0 ? 'bg-white/[0.05]' : 'bg-white/[0.08]'
+					)}
+				/>
+				<div
+					className={cl(
+						'absolute inset-0 rounded-[12px]',
+						'opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none',
+						'bg-white/10'
 					)}
 				/>
 
@@ -125,4 +135,4 @@ export function VaultsListRow({currentVault, isV2}: {currentVault: TYDaemonVault
 			</div>
 		</Link>
 	);
-}
+};

@@ -37,7 +37,7 @@ function useQueryArguments(props: {
 	const [chains, set_chains] = useState<number[] | null>(allChains || []);
 	const [sortDirection, set_sortDirection] = useState<string | null>(null);
 
-	const defaultSortBy = props.defaultSortBy || 'deposited';
+	const defaultSortBy = props.defaultSortBy || 'tvl';
 	const [sortBy, set_sortBy] = useState<string | null>(defaultSortBy);
 
 	const handleQuery = useCallback(
@@ -157,7 +157,7 @@ function useQueryArguments(props: {
 		categories: (categories || []) as string[],
 		chains: (chains || []) as number[],
 		sortDirection: (sortDirection || 'desc') as TSortDirection,
-		sortBy: (sortBy || 'featuringScore') as TPossibleSortBy,
+		sortBy: (sortBy || 'tvl') as TPossibleSortBy,
 		onSearch: (value): void => {
 			set_search(value);
 			const queryArgs: TDict<string | string[] | undefined> = {};

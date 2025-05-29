@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
+import {SectionHeader} from '@common/components/SectionHeader';
 
 import type {FC} from 'react';
 

@@ -1,6 +1,6 @@
 import {type FC, useRef, useState} from 'react';
 import Link from 'next/link';
-import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
+import {SectionHeader} from '@common/components/SectionHeader';
 
 enum SecurityCardType {
 	Audits = 'audits',

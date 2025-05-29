@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
+import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {Pagination} from '@common/components/Pagination';
@@ -16,24 +17,19 @@ import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVa
 import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
+enum TFilter {
+	Popular = 'Popular',
+	All = 'All Vaults'
+}
+
 type TCombinedVaultList = {
 	isLoading: boolean;
 	isEmpty: boolean;
 	allVaults: ReactNode[];
 };
 
-function mapToCombinedVaultList(
-	v2Vaults: TYDaemonVault[],
-	v3Vaults: TYDaemonVault[],
-	chains: number[],
-	search: string,
-	typesV3: string[],
-	isLoadingVaultList: boolean
-): TCombinedVaultList {
-	const filteredV2ByChains = v2Vaults.filter(({chainID}) => chains?.includes(chainID));
-	const filteredV3ByChains = v3Vaults.filter(({chainID}) => chains?.includes(chainID));
-
-	if (isLoadingVaultList || !chains?.length) {
+function mapToCombinedVaultList(sortedVaults: TYDaemonVault[], isLoadingVaultList: boolean): TCombinedVaultList {
+	if (isLoadingVaultList || !sortedVaults?.length) {
 		return {
 			isLoading: true,
 			isEmpty: true,
@@ -41,10 +37,10 @@ function mapToCombinedVaultList(
 				<VaultsListEmpty
 					key={'empty-list'}
 					isLoading={isLoadingVaultList}
-					sortedVaultsToDisplay={[...filteredV2ByChains, ...filteredV3ByChains]}
-					currentSearch={search || ''}
-					currentCategories={typesV3}
-					currentChains={chains}
+					sortedVaultsToDisplay={sortedVaults}
+					currentSearch={''}
+					currentCategories={[]}
+					currentChains={[]}
 					onReset={() => {}}
 					defaultCategories={ALL_VAULTSV3_KINDS_KEYS}
 				/>
@@ -52,32 +48,27 @@ function mapToCombinedVaultList(
 		};
 	}
 
-	const processedV2Vaults = filteredV2ByChains.map(vault => (
+	const allVaults = sortedVaults.map((vault, index) => (
 		<VaultsListRow
+			key={`${vault.chainID}_${vault.address}`}
+			index={index}
 			currentVault={vault}
-			isV2={true}
+			isV2={vault.version === '0.4.6' || vault.version === '0.4.5' || vault.version === '0.4.3'}
 		/>
 	));
-	const processedV3Vaults = filteredV3ByChains.map(vault => (
-		<VaultsListRow
-			currentVault={vault}
-			isV2={false}
-		/>
-	));
-
-	const combined = [...processedV3Vaults, ...processedV2Vaults];
 
 	return {
 		isLoading: false,
-		isEmpty: combined.length === 0,
-		allVaults: combined
+		isEmpty: sortedVaults.length === 0,
+		allVaults
 	};
 }
 
 function CombinedVaultsTable(): ReactElement {
 	const {isLoadingVaultList} = useYearn();
 	const [page, set_page] = useState(0);
-	const [activeFilter, set_activeFilter] = useState('Popular');
+	const [activeFilter, set_activeFilter] = useState(TFilter.Popular);
+	const [hasUserSelectedSort, set_hasUserSelectedSort] = useState(false);
 
 	// v2
 	const {types: typesV2} = useQueryArguments({
@@ -97,13 +88,14 @@ function CombinedVaultsTable(): ReactElement {
 	} = useQueryArguments({
 		defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
 		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
+		defaultSortBy: 'tvl',
 		defaultPathname: `/v3`
 	});
 
 	const search = searchV3 ?? '';
 	const chains = chainsV3 ?? [];
-	const sortDirection = sortDirectionV3;
-	const sortBy = sortByV3;
+	const sortDirection = sortDirectionV3 || 'desc';
+	const sortBy = sortByV3 || 'tvl';
 	const onChangeSortDirection = onChangeSortDirectionV3;
 	const onChangeSortBy = onChangeSortByV3;
 
@@ -111,16 +103,24 @@ function CombinedVaultsTable(): ReactElement {
 	const {activeVaults: activeVaultsV2} = useVaultFilter(typesV2, chains);
 	const {activeVaults: activeVaultsV3} = useVaultFilter(typesV3, chains, true);
 
+	// Filter by chains and combine vaults
+	const filteredV2ByChains = activeVaultsV2.filter(({chainID}) => chains?.includes(chainID));
+	const filteredV3ByChains = activeVaultsV3.filter(({chainID}) => chains?.includes(chainID));
+	const combinedVaults = [...filteredV3ByChains, ...filteredV2ByChains];
+
+	// Apply filtering & sorting based on active filter button
+	const filteredVaults =
+		activeFilter === TFilter.Popular
+			? [...combinedVaults].sort((a, b) => (b.tvl.tvl || 0) - (a.tvl.tvl || 0)).slice(0, 30)
+			: combinedVaults;
+
+	const actualSortBy = activeFilter === TFilter.All && !hasUserSelectedSort ? 'featuringScore' : sortBy;
+	const actualSortDirection = activeFilter === TFilter.All && !hasUserSelectedSort ? 'desc' : sortDirection;
+	const sortedVaults = useSortVaults(filteredVaults, actualSortBy, actualSortDirection);
+
 	// Setup pagination
-	const combinedVaults = mapToCombinedVaultList(
-		activeVaultsV2,
-		activeVaultsV3,
-		chains,
-		search,
-		typesV3 ?? [],
-		isLoadingVaultList
-	);
-	const totalVaults = combinedVaults.allVaults.length;
+	const vaultList = mapToCombinedVaultList(sortedVaults, isLoadingVaultList);
+	const totalVaults = vaultList.allVaults.length;
 	const pageSize = 10;
 
 	// Reset pagination when search results change
@@ -131,33 +131,24 @@ function CombinedVaultsTable(): ReactElement {
 		}
 	}, [totalVaults, page]);
 
-	// Handle filter click
-	const handleFilterClick = (filter: string): void => {
+	const handleFilterClick = (filter: TFilter): void => {
 		set_activeFilter(filter);
 		set_page(0);
+		// Reset user sort selection when changing filters
+		set_hasUserSelectedSort(false);
 	};
 
-	if (combinedVaults.isLoading || combinedVaults.isEmpty) {
+	if (vaultList.isLoading || vaultList.isEmpty) {
 		return (
 			<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
-				<div className={'my-4 flex flex-wrap items-center gap-2'}>
-					{['All', 'Stables', 'ETH', 'Curve', 'Balancer'].map(filter => (
-						<button
-							key={filter}
-							onClick={() => handleFilterClick(filter)}
-							className={`rounded-full px-4 py-2 text-sm `}>
-							{filter}
-						</button>
-					))}
-				</div>
-
 				<VaultsListHead
-					sortBy={sortBy}
-					sortDirection={sortDirection}
+					sortBy={activeFilter === TFilter.All && !hasUserSelectedSort ? 'name' : sortBy}
+					sortDirection={activeFilter === TFilter.All && !hasUserSelectedSort ? 'desc' : sortDirection}
 					onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+						set_hasUserSelectedSort(true);
 						if (newSortDirection === '') {
-							onChangeSortBy('featuringScore');
-							onChangeSortDirection('');
+							onChangeSortBy('tvl');
+							onChangeSortDirection('desc');
 							return;
 						}
 						onChangeSortBy(newSortBy as TPossibleSortBy);
@@ -176,7 +167,7 @@ function CombinedVaultsTable(): ReactElement {
 						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-3 justify-end'}
 					]}
 				/>
-				<div className={'grid gap-1'}>{combinedVaults.allVaults}</div>
+				<div className={'grid gap-1'}>{vaultList.allVaults}</div>
 			</div>
 		);
 	}
@@ -185,7 +176,7 @@ function CombinedVaultsTable(): ReactElement {
 		<div>
 			<div className={'mb-4 flex w-full flex-row items-center justify-between gap-2'}>
 				<div className={'flex w-full flex-row flex-wrap items-center gap-2'}>
-					{['Popular', 'New', 'Inactive'].map(filter => (
+					{Object.values(TFilter).map(filter => (
 						<button
 							key={filter}
 							onClick={() => handleFilterClick(filter)}
@@ -207,12 +198,13 @@ function CombinedVaultsTable(): ReactElement {
 
 			<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
 				<VaultsListHead
-					sortBy={sortBy}
-					sortDirection={sortDirection}
+					sortBy={activeFilter === TFilter.All && !hasUserSelectedSort ? 'name' : sortBy}
+					sortDirection={activeFilter === TFilter.All && !hasUserSelectedSort ? 'desc' : sortDirection}
 					onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+						set_hasUserSelectedSort(true);
 						if (newSortDirection === '') {
-							onChangeSortBy('featuringScore');
-							onChangeSortDirection('');
+							onChangeSortBy('tvl');
+							onChangeSortDirection('desc');
 							return;
 						}
 						onChangeSortBy(newSortBy as TPossibleSortBy);
@@ -231,9 +223,7 @@ function CombinedVaultsTable(): ReactElement {
 						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-3 justify-end'}
 					]}
 				/>
-				<div className={'grid gap-1'}>
-					{combinedVaults.allVaults.slice(page * pageSize, (page + 1) * pageSize)}
-				</div>
+				<div className={'grid gap-1'}>{vaultList.allVaults.slice(page * pageSize, (page + 1) * pageSize)}</div>
 				{totalVaults > 0 && (
 					<div className={'mt-4'}>
 						<div className={'border-t border-neutral-200/60 p-4'}>
