@@ -6,7 +6,8 @@
 			"@common/*": ["apps/common/*"],
 			"@vaults/*": ["apps/vaults/*"],
 			"@vaults-v3/*": ["apps/vaults-v3/*"],
-			"@yearn-finance/web-lib/*": ["node_modules/@w84april/web-lib/*"]
+			"@yearn-finance/web-lib/*": ["node_modules/@w84april/web-lib/*"],
+			"@builtbymom/web3/*": ["node_modules/@w84april/web3/*"]
 		},
 		/* Basic Options */
 		"target": "esnext",
