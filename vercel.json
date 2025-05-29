@@ -1,0 +1,13 @@
+{
+	"functions": {
+		"pages/api/**/*.js": {
+			"runtime": "nodejs20.x"
+		}
+	},
+	"github": {
+		"silent": true
+	},
+	"preview": {
+		"feedback": false
+	}
+}
