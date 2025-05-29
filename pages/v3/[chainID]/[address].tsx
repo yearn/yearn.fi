@@ -34,8 +34,31 @@ function Index(): ReactElement | null {
 			: null,
 		schema: yDaemonVaultSchema
 	});
+	console.log('vault', vault);
+	if (vault?.address === '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8') {
+		console.log('yBold vault detected');
+		vault.staking = {
+			address: '0x23346B04a7f55b8760E5860AA5A77383D63491cD',
+			available: true,
+			source: 'yBOLD',
+			rewards: [
+				{
+					address: '0x0000000000000000000000000000000000000000',
+					name: 'null',
+					symbol: 'null',
+					decimals: 18,
+					price: 0,
+					isFinished: false,
+					finishedAt: 9748476800,
+					apr: null,
+					perWeek: 0
+				}
+			]
+		};
+	}
 
 	useEffect((): void => {
+		console.log('set currentVault');
 		if (vault && !currentVault) {
 			set_currentVault(vault);
 			set_isInit(true);

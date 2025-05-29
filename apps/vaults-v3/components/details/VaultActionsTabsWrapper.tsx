@@ -373,6 +373,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		if (currentVault.staking.source === 'V3 Staking') {
 			return 'Staking BOOST';
 		}
+		if (currentVault.staking.source === 'yBOLD') {
+			return 'yBOLD Staking';
+		}
 		return 'Staking';
 	}, [currentVault.staking.source]);
 

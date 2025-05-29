@@ -661,7 +661,7 @@ export function RewardsTab(props: {
 								onClick={onUnstake}
 								isBusy={unstakeStatus.pending}
 								isDisabled={!isActive || Number(unstakeAmount) <= 0 || isLargerThanStakedBalance}>
-								{isUnstakingMax ? 'Claim & Exit' : 'Unstake'}
+								{'Unstake'}
 							</Button>
 						</div>
 					</div>
