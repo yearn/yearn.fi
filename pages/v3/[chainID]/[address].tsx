@@ -1,143 +1,68 @@
-'use client';
-
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {useRouter} from 'next/router';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {cl, toAddress} from '@builtbymom/web3/utils';
+// import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+// import {useFetch} from '@builtbymom/web3/hooks/useFetch';
+// import {cl, toAddress} from '@builtbymom/web3/utils';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {yDaemonVaultSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
+// import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
 
 function Index(): ReactElement | null {
+	// const {address, isActive} = useWeb3();
 	const router = useRouter();
+	const {onRefresh} = useYearn();
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
-	const [isInit, set_isInit] = useState(false);
-	const [hasError, set_hasError] = useState(false);
-	const [isClient, set_isClient] = useState(false);
+	// const [isInit, set_isInit] = useState(false);
+	// const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
+	// 	endpoint: router.query.address
+	// 		? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
+	// 				strategiesDetails: 'withDetails',
+	// 				strategiesCondition: 'inQueue'
+	// 			})}`
+	// 		: null,
+	// 	schema: yDaemonVaultSchema
+	// });
 
-	// Always call hooks, but conditionally use their values
-	const Web3Context = useWeb3();
-	const YearnContext = useYearn();
+	// useEffect((): void => {
+	// 	if (vault && !currentVault) {
+	// 		set_currentVault(vault);
+	// 		set_isInit(true);
+	// 	}
+	// }, [currentVault, vault]);
 
-	// Ensure we're on the client side before using client-side values
-	useEffect(() => {
-		set_isClient(true);
-	}, []);
+	// useEffect((): void => {
+	// 	if (address && isActive) {
+	// 		const tokensToRefresh: TUseBalancesTokens[] = [];
+	// 		if (currentVault?.address) {
+	// 			tokensToRefresh.push({address: currentVault.address, chainID: currentVault.chainID});
+	// 		}
+	// 		if (currentVault?.token?.address) {
+	// 			tokensToRefresh.push({address: currentVault.token.address, chainID: currentVault.chainID});
+	// 		}
+	// 		onRefresh(tokensToRefresh);
+	// 	}
+	// }, [currentVault?.address, currentVault?.token?.address, address, isActive, onRefresh, currentVault?.chainID]);
 
-	// Safe access to context values
-	const address = isClient ? Web3Context.address : undefined;
-	const isActive = isClient ? Web3Context.isActive : false;
-	const onRefresh = isClient ? YearnContext.onRefresh : () => {};
-
-	// Safe chainID parsing with fallback
-	const chainID = router.query.chainID ? Number(router.query.chainID) : 1;
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID});
-
-	const {
-		data: vault,
-		isLoading: isLoadingVault,
-		error
-	} = useFetch<TYDaemonVault>({
-		endpoint:
-			router.query.address && isClient
-				? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
-						strategiesDetails: 'withDetails',
-						strategiesCondition: 'inQueue'
-					})}`
-				: null,
-		schema: yDaemonVaultSchema
-	});
-
-	// Handle any errors that might occur during data fetching
-	useEffect((): void => {
-		if (error) {
-			console.error('Error loading vault data:', error);
-			set_hasError(true);
-		}
-	}, [error]);
-
-	useEffect((): void => {
-		if (vault && !currentVault) {
-			set_currentVault(vault);
-			set_isInit(true);
-			set_hasError(false);
-		}
-	}, [currentVault, vault]);
-
-	useEffect((): void => {
-		if (address && isActive && isClient) {
-			const tokensToRefresh: TUseBalancesTokens[] = [];
-			if (currentVault?.address) {
-				tokensToRefresh.push({address: currentVault.address, chainID: currentVault.chainID});
-			}
-			if (currentVault?.token?.address) {
-				tokensToRefresh.push({address: currentVault.token.address, chainID: currentVault.chainID});
-			}
-			onRefresh(tokensToRefresh);
-		}
-	}, [
-		currentVault?.address,
-		currentVault?.token?.address,
-		address,
-		isActive,
-		onRefresh,
-		currentVault?.chainID,
-		isClient
-	]);
-
-	// Show loading state during SSR and initial client hydration
-	if (!isClient || !router.isReady) {
-		return (
-			<div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
-				<div className={'mt-[20%] flex h-10 items-center justify-center'}>
-					<span className={'loader'} />
-				</div>
-			</div>
-		);
-	}
-
-	// Show error state if there's an error
-	if (hasError) {
-		return (
-			<div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
-				<div className={'mt-[20%] flex flex-col items-center justify-center'}>
-					<p className={'mb-4 text-lg text-neutral-900'}>{'Unable to load vault data'}</p>
-					<button
-						onClick={() => {
-							set_hasError(false);
-							router.reload();
-						}}
-						className={
-							'rounded-lg bg-neutral-900 px-4 py-2 text-white transition-colors hover:bg-neutral-700'
-						}>
-						{'Try Again'}
-					</button>
-				</div>
-			</div>
-		);
-	}
-
-	if (isLoadingVault || !router.query.address || !isInit) {
-		return (
-			<div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
-				<div className={'mt-[20%] flex h-10 items-center justify-center'}>
-					<span className={'loader'} />
-				</div>
-			</div>
-		);
-	}
+	// if (isLoadingVault || !router.query.address || !isInit) {
+	// 	return (
+	// 		<div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
+	// 			<div className={'mt-[20%] flex h-10 items-center justify-center'}>
+	// 				<span className={'loader'} />
+	// 			</div>
+	// 		</div>
+	// 	);
+	// }
 
 	if (!currentVault) {
 		return (
@@ -225,42 +150,10 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const getStaticProps: GetStaticProps = async context => {
-	try {
-		// Validate that we have the required parameters
-		const {chainID, address} = context.params || {};
-
-		if (!chainID || !address) {
-			return {
-				notFound: true
-			};
-		}
-
-		// Validate chainID is a number
-		const parsedChainID = Number(chainID);
-		if (isNaN(parsedChainID)) {
-			return {
-				notFound: true
-			};
-		}
-
-		// Return empty props - data will be fetched client-side
-		return {
-			props: {
-				chainID: parsedChainID,
-				address: address as string
-			},
-			// Revalidate every 5 minutes
-			revalidate: 300
-		};
-	} catch (error) {
-		console.error('Error in getStaticProps:', error);
-		return {
-			props: {},
-			// Retry after 1 minute if there's an error
-			revalidate: 60
-		};
-	}
+export const getStaticProps: GetStaticProps = async () => {
+	return {
+		props: {}
+	};
 };
 
 export default Index;
