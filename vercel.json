@@ -1,0 +1,27 @@
+{
+	"functions": {
+		"pages/**/*.js": {
+			"runtime": "nodejs20.x",
+			"maxDuration": 30
+		}
+	},
+	"github": {
+		"silent": true
+	},
+	"preview": {
+		"feedback": false
+	},
+	"buildCommand": "npm run build",
+	"outputDirectory": ".next",
+	"framework": "nextjs",
+	"regions": ["iad1"],
+	"builds": [
+		{
+			"src": "package.json",
+			"use": "@vercel/next",
+			"config": {
+				"includeFiles": "public/**"
+			}
+		}
+	]
+}
