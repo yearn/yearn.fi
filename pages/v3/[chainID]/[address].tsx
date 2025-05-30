@@ -1,22 +1,22 @@
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {cl, toAddress} from '@builtbymom/web3/utils';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useFetch} from '@lib/hooks/useFetch';
+import {cl, toAddress} from '@lib/utils';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {yDaemonVaultSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
 
 function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();

@@ -1,6 +1,6 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {toAddress, toBigInt, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {toAddress, toBigInt, zeroNormalizedBN} from '@lib/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverCowswap} from '@vaults/hooks/solvers/useSolverCowswap';
 import {useSolverGaugeStakingBooster} from '@vaults/hooks/solvers/useSolverGaugeStakingBooster';
@@ -13,10 +13,10 @@ import { useSolverV3Router } from '@vaults/hooks/solvers/useSolverV3Router';
 import {useSolverV3StakingBooster} from '@vaults/hooks/solvers/useSolverV3StakingBooster';
 import {useSolverVanilla} from '@vaults/hooks/solvers/useSolverVanilla';
 import {Solver} from '@vaults/types/solvers';
-import {serialize} from '@wagmi/core';
+import {serialize} from 'wagmi';
 import {hash} from '@common/utils';
 
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TNormalizedBN} from '@lib/types';
 import type {TInitSolverArgs, TSolver, TSolverContext, TWithSolver} from '@vaults/types/solvers';
 
 export const isSolverDisabled = (key: TSolver): boolean => {

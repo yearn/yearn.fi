@@ -1,14 +1,14 @@
 import {cloneElement, Fragment, useState} from 'react';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {cl, formatAmount} from '@builtbymom/web3/utils';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {cl, formatAmount} from '@lib/utils';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@lib/components/Renderable';
 import {useYearn} from '@common/contexts/useYearn';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
-import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@yearn-finance/web-lib/types';
+import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@lib/types';
 
 function DropdownItem({option}: TDropdownItemProps): ReactElement {
 	const {getBalance} = useYearn();

@@ -1,9 +1,9 @@
 import {Fragment} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {formatAmount, formatPercent, isZero} from '@builtbymom/web3/utils';
+import {formatAmount, formatPercent, isZero} from '@lib/utils';
 
 import type {ReactElement} from 'react';
-import type {TMessariGraphData} from '@yearn-finance/web-lib/types';
+import type {TMessariGraphData} from '@lib/types';
 
 export type TGraphForVaultPPSGrowthProps = {
 	messariData: TMessariGraphData[];

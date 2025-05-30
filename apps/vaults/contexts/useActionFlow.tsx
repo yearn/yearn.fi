@@ -1,9 +1,9 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useReadContract} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useTokenList} from '@builtbymom/web3/contexts/WithTokenList';
-import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useTokenList} from '@lib/contexts/WithTokenList';
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
 import {
 	decodeAsBigInt,
 	isEthAddress,
@@ -13,15 +13,16 @@ import {
 	toBigInt,
 	toNormalizedBN,
 	zeroNormalizedBN
-} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+} from '@lib/utils';
+import {retrieveConfig} from '@lib/utils/wagmi';
 import {useMountEffect} from '@react-hookz/web';
 import {Solver} from '@vaults/types/solvers';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {VEYFI_ABI} from '@vaults/utils/abi/veYFI.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
-import {readContracts, serialize, simulateContract} from '@wagmi/core';
-import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
+import {readContracts, simulateContract} from 'wagmi/actions';
+import {serialize} from 'wagmi';
+import {VAULT_ABI} from '@lib/utils/abi/vault.abi';
 import {
 	ETH_TOKEN_ADDRESS,
 	LPYCRV_TOKEN_ADDRESS,
@@ -32,17 +33,17 @@ import {
 	YVWETH_ADDRESS,
 	YVWETH_OPT_ADDRESS,
 	YVWFTM_ADDRESS
-} from '@yearn-finance/web-lib/utils/constants';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
+} from '@lib/utils/constants';
+import {getNetwork} from '@lib/utils/wagmi/utils';
 import {createUniqueID} from '@common/contexts/useBalances.multichains';
 import {useYearn} from '@common/contexts/useYearn';
 
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
 import type {ReactNode} from 'react';
-import type {TDropdownOption} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
+import type {TDropdownOption} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TAddress, TNormalizedBN} from '@lib/types';
 import type {TSolver} from '@vaults/types/solvers';
 
 export enum Flow {

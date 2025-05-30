@@ -1,4 +1,4 @@
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from '@lib/utils';
 import {IconEnter} from '@common/icons/IconEnter';
 import {IconSearch} from '@common/icons/IconSearch';
 

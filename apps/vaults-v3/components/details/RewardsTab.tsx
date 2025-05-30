@@ -2,7 +2,7 @@ import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useWeb3} from '@lib/contexts/useWeb3';
 import {
 	cl,
 	formatAmount,
@@ -11,8 +11,8 @@ import {
 	isZero,
 	toAddress,
 	toBigInt
-} from '@builtbymom/web3/utils';
-import {approveERC20, defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
+} from '@lib/utils';
+import {approveERC20, defaultTxStatus} from '@lib/utils/wagmi';
 import {
 	claim as claimAction,
 	stake as stakeAction,
@@ -20,7 +20,7 @@ import {
 	unstake as unstakeAction,
 	unstakeVeYFIGauge as unstakeVeYFIAction
 } from '@vaults/utils/actions';
-import {Button} from '@yearn-finance/web-lib/components/Button';
+import {Button} from '@lib/components/Button';
 import {Counter} from '@common/components/Counter';
 import {FakeInput} from '@common/components/Input';
 import {useYearn} from '@common/contexts/useYearn';
@@ -28,7 +28,7 @@ import {useYearnToken} from '@common/hooks/useYearnToken';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
 import type {ChangeEvent, ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
 /**************************************************************************************************

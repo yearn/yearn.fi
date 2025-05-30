@@ -1,18 +1,18 @@
 import {useCallback, useMemo, useState} from 'react';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useTokenList} from '@builtbymom/web3/contexts/WithTokenList';
-import {useChainID} from '@builtbymom/web3/hooks/useChainID';
-import {toAddress} from '@builtbymom/web3/utils';
-import {getNetwork} from '@builtbymom/web3/utils/wagmi';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useTokenList} from '@lib/contexts/WithTokenList';
+import {useChainID} from '@lib/hooks/useChainID';
+import {toAddress} from '@lib/utils';
+import {getNetwork} from '@lib/utils/wagmi';
 import {useDeepCompareMemo} from '@react-hookz/web';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
 
 import {useBalances} from './useBalances.multichains';
 
-import type {TYChainTokens, TYToken} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
-import type {TDict, TToken} from '@builtbymom/web3/types';
+import type {TYChainTokens, TYToken} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
+import type {TDict, TToken} from '@lib/types';
 
 export function useYearnTokens({
 	vaults,

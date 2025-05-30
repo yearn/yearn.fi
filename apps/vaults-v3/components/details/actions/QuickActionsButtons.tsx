@@ -3,21 +3,21 @@ import {useRouter} from 'next/router';
 import {usePlausible} from 'next-plausible';
 import {maxUint256} from 'viem';
 import {motion} from 'framer-motion';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
-import {isZero, toAddress, toBigInt, zeroNormalizedBN} from '@builtbymom/web3/utils';
-import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
+import {isZero, toAddress, toBigInt, zeroNormalizedBN} from '@lib/utils';
+import {defaultTxStatus} from '@lib/utils/wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
-import {Button} from '@yearn-finance/web-lib/components/Button';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {Button} from '@lib/components/Button';
+import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
 import {PLAUSIBLE_EVENTS} from '@common/utils/plausible';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TNormalizedBN} from '@lib/types';
 
 export function VaultDetailsQuickActionsButtons({
 	currentVault,

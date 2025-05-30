@@ -1,8 +1,8 @@
-import {toAddress} from '@builtbymom/web3/utils';
+import {toAddress} from '@lib/utils';
 
 import {useYearn} from '../contexts/useYearn';
 
-import type {TAddress, TDict, TNormalizedBN} from '@builtbymom/web3/types';
+import type {TAddress, TDict, TNormalizedBN} from '@lib/types';
 
 /******************************************************************************
  ** The useYearnBalance hook is used to retrieve the balance of a token from

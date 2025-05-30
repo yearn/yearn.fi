@@ -1,9 +1,9 @@
 import {Fragment} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {formatAmount, formatWithUnit, isZero} from '@builtbymom/web3/utils';
+import {formatAmount, formatWithUnit, isZero} from '@lib/utils';
 
 import type {ReactElement} from 'react';
-import type {TMessariGraphData} from '@yearn-finance/web-lib/types';
+import type {TMessariGraphData} from '@lib/types';
 
 export type TGraphForVaultTVLProps = {
 	messariData: TMessariGraphData[];

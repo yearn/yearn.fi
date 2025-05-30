@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import {toAddress} from '@builtbymom/web3/utils';
+import {toAddress} from '@lib/utils';
 import {LogoGimme} from '@common/icons/LogoGimme';
 
 import {LogoYearn} from '../icons/LogoYearn';

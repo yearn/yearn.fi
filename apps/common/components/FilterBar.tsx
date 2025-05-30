@@ -1,4 +1,4 @@
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from '@lib/utils';
 import {CATEGORY_PAGE_FILTERS} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';

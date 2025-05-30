@@ -1,7 +1,7 @@
 import {type ReactElement, useMemo} from 'react';
-import {cl, formatTAmount, isZero} from '@builtbymom/web3/utils';
+import {cl, formatTAmount, isZero} from '@lib/utils';
 
-import type {TAmount} from '@builtbymom/web3/utils';
+import type {TAmount} from '@lib/utils';
 
 export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean; shouldFormatDust?: boolean}): ReactElement {
 	const normalizedRawValue = useMemo((): string => {

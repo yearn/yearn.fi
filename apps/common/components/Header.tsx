@@ -1,10 +1,10 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {truncateHex} from '@builtbymom/web3/utils/tools.address';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {truncateHex} from '@lib/utils/tools.address';
 import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit';
-import {IconWallet} from '@yearn-finance/web-lib/icons/IconWallet';
+import {IconWallet} from '@lib/icons/IconWallet';
 import {IconBurger} from '@common/icons/IconBurger';
 
 import {AppName, APPS} from './Apps';

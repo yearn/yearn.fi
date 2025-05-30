@@ -1,10 +1,10 @@
 import {Fragment, useMemo} from 'react';
 import Link from 'next/link';
-import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
+import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils';
+import {Renderable} from '@lib/components/Renderable';
+import {IconLinkOut} from '@lib/icons/IconLinkOut';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants';
+import {getNetwork} from '@lib/utils/wagmi/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useYearn} from '@common/contexts/useYearn';
@@ -13,8 +13,8 @@ import {useYearnBalance} from '@common/hooks/useYearnBalance';
 import {VaultChainTag} from '../VaultChainTag';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TNormalizedBN} from '@lib/types';
 
 type TAPYSublineProps = {
 	hasPendleArbRewards: boolean;

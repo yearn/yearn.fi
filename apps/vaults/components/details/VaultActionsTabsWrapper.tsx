@@ -2,10 +2,10 @@ import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useBlockNumber, useReadContract} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
-import {cl, decodeAsBigInt, toAddress, toNormalizedBN, toNormalizedValue} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
+import {cl, decodeAsBigInt, toAddress, toNormalizedBN, toNormalizedValue} from '@lib/utils';
+import {retrieveConfig} from '@lib/utils/wagmi';
 import {useUpdateEffect} from '@react-hookz/web';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
@@ -19,16 +19,16 @@ import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/acti
 import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {getCurrentTab, tabs, VaultDetailsTab} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
-import {readContracts} from '@wagmi/core';
-import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
+import {readContracts} from 'wagmi/actions';
+import {parseMarkdown} from '@lib/utils/helpers';
 import {InfoTooltip} from '@common/components/InfoTooltip';
 import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
 import {VEYFI_ADDRESS} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TNormalizedBN} from '@lib/types';
 import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 
 /**************************************************************************************************

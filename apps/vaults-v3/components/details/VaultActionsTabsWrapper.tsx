@@ -1,8 +1,8 @@
 import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useBlockNumber, useReadContract} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
 import {
 	cl,
 	decodeAsBigInt,
@@ -12,8 +12,8 @@ import {
 	toBigInt,
 	toNormalizedBN,
 	toNormalizedValue
-} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+} from '@lib/utils';
+import {retrieveConfig} from '@lib/utils/wagmi';
 import {useUpdateEffect} from '@react-hookz/web';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
@@ -26,16 +26,16 @@ import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/acti
 import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
-import {readContracts} from '@wagmi/core';
-import {VEYFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {readContracts} from 'wagmi/actions';
+import {VEYFI_ADDRESS} from '@lib/utils/constants';
 import {InfoTooltip} from '@common/components/InfoTooltip';
 import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TNormalizedBN} from '@lib/types';
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug

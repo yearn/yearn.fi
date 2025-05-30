@@ -1,5 +1,5 @@
 import {usePathname} from 'next/navigation';
-import {cl} from '@builtbymom/web3/utils/cl';
+import {cl} from '@lib/utils/cl';
 
 import type {ReactNode} from 'react';
 import type {NameType, Payload, ValueType} from 'recharts/types/component/DefaultTooltipContent';

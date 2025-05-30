@@ -1,7 +1,7 @@
 import {type ReactElement, useMemo} from 'react';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from '@lib/utils';
 
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function VaultRiskInfo({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const hasRiskScore = useMemo(() => {

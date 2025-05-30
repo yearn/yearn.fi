@@ -1,6 +1,6 @@
 import {Children, Fragment, useEffect, useMemo, useState} from 'react';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {toAddress} from '@builtbymom/web3/utils';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {toAddress} from '@lib/utils';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
@@ -11,17 +11,17 @@ import {ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constan
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
-import {Button} from '@yearn-finance/web-lib/components/Button';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
+import {Button} from '@lib/components/Button';
+import {Renderable} from '@lib/components/Renderable';
+import {IconChain} from '@lib/icons/IconChain';
 import {Counter} from '@common/components/Counter';
 import {ListHead} from '@common/components/ListHead';
 import {Pagination} from '@common/components/Pagination';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement, ReactNode} from 'react';
-import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TSortDirection} from '@builtbymom/web3/types';
+import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TSortDirection} from '@lib/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function HeaderUserPosition(): ReactElement {
