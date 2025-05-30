@@ -625,7 +625,7 @@ export function RewardsTab(props: {
 											type={'number'}
 											inputMode={'numeric'}
 											min={0}
-											pattern={'^((?:0|[1-9]+)(?:.(?:d+?[1-9]|[1-9]))?)$'}
+											pattern={'^((?:0|[1-9]+)(?:.(?:\\d+?[1-9]|[1-9]))?)$'}
 											autoComplete={'off'}
 											disabled={!isActive}
 											value={stakeAmount}
