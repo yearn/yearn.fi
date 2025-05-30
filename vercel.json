@@ -8,10 +8,7 @@
 	"github": {
 		"silent": true
 	},
-	"preview": {
-		"feedback": false
-	},
-	"buildCommand": "npm run build",
+	"buildCommand": "bun run build",
 	"outputDirectory": ".next",
 	"framework": "nextjs",
 	"regions": ["iad1"],
