@@ -20,6 +20,7 @@ import {
 	unstake as unstakeAction,
 	unstakeVeYFIGauge as unstakeVeYFIAction
 } from '@vaults/utils/actions';
+import {stakeYBold, unstakeYBold} from '@vaults-v3/utils/actions';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Counter} from '@common/components/Counter';
 import {FakeInput} from '@common/components/Input';
@@ -325,12 +326,16 @@ export function RewardsTab(props: {
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
 	const [unstakeAmount, set_unstakeAmount] = useState<string>(vaultData.stakedBalanceOf.display);
+	const [stakeAmount, set_stakeAmount] = useState<string>(vaultData.vaultBalanceOf.display);
 	const [isUnstakeAmountDirty, set_isUnstakeAmountDirty] = useState(false);
+	const [isStakeAmountDirty, set_isStakeAmountDirty] = useState(false);
 
 	const isUnstakingMax =
 		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) === vaultData.stakedBalanceOf.raw;
 	const isLargerThanStakedBalance =
 		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) > vaultData.stakedBalanceOf.raw;
+	const isLargerThanVaultBalance =
+		fromNormalized(stakeAmount, props.currentVault.decimals || 18) > vaultData.vaultBalanceOf.raw;
 
 	const isApproved = vaultData.vaultAllowance.raw >= vaultData.vaultBalanceOf.raw;
 
@@ -391,6 +396,18 @@ export function RewardsTab(props: {
 				refreshData();
 				updateVaultData();
 			}
+		} else if (props.currentVault.staking.source === 'yBOLD') {
+			const result = await stakeYBold({
+				connector: provider,
+				chainID: props.currentVault.chainID,
+				contractAddress: toAddress(vaultData?.address),
+				amount: fromNormalized(stakeAmount, vaultData.stakingDecimals || 18),
+				statusHandler: set_stakeStatus
+			});
+			if (result.isSuccessful) {
+				refreshData();
+				updateVaultData();
+			}
 		} else {
 			const result = await stakeAction({
 				connector: provider,
@@ -410,8 +427,10 @@ export function RewardsTab(props: {
 		provider,
 		vaultData?.address,
 		vaultData.vaultBalanceOf.raw,
+		vaultData.stakingDecimals,
 		refreshData,
-		updateVaultData
+		updateVaultData,
+		stakeAmount
 	]);
 
 	/**********************************************************************************************
@@ -431,6 +450,18 @@ export function RewardsTab(props: {
 				contractAddress: toAddress(vaultData?.address),
 				amount: fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
 				willClaim: isUnstakingMax,
+				statusHandler: set_unstakeStatus
+			});
+			if (result.isSuccessful) {
+				refreshData();
+				updateVaultData();
+			}
+		} else if (props.currentVault.staking.source === 'yBOLD') {
+			const result = await unstakeYBold({
+				connector: provider,
+				chainID: props.currentVault.chainID,
+				contractAddress: toAddress(vaultData?.address),
+				amount: fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
 				statusHandler: set_unstakeStatus
 			});
 			if (result.isSuccessful) {
@@ -500,6 +531,12 @@ export function RewardsTab(props: {
 		}
 	}, [vaultData.stakedBalanceOf.display, unstakeAmount, isUnstakeAmountDirty]);
 
+	useEffect(() => {
+		if (!isStakeAmountDirty) {
+			set_stakeAmount(vaultData.stakedBalanceOf.display);
+		}
+	}, [stakeAmount, isStakeAmountDirty, vaultData.stakedBalanceOf.display]);
+
 	if (props.currentVault.staking.rewards?.length === 0) {
 		return (
 			<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
@@ -562,6 +599,175 @@ export function RewardsTab(props: {
 				</div>
 			</div>
 		);
+
+	/**********************************************************************************************
+	 ** Special case for yBold.
+	 *********************************************************************************************/
+	if (props.currentVault.address === toAddress('0x9F4330700a36B29952869fac9b33f45EEdd8A3d8')) {
+		return (
+			<div className={'grid grid-cols-1 md:grid-cols-2'}>
+				<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8 md:pr-0'}>
+					<div className={'flex flex-col gap-2'}>
+						<div>
+							<div className={'font-bold'}>{'Stake'}</div>
+						</div>
+
+						<div className={'flex flex-col gap-4 md:flex-row'}>
+							<div className={'w-full'}>
+								<div className={cl('flex h-10 items-center rounded-lg p-2 w-full', 'bg-neutral-300')}>
+									<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
+										<input
+											id={'stakeAmount'}
+											className={cl(
+												'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
+												isActive ? '' : 'cursor-not-allowed'
+											)}
+											type={'number'}
+											inputMode={'numeric'}
+											min={0}
+											pattern={'^((?:0|[1-9]+)(?:.(?:\\d+?[1-9]|[1-9]))?)$'}
+											autoComplete={'off'}
+											disabled={!isActive}
+											value={stakeAmount}
+											onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+												set_stakeAmount(e.target.value);
+												set_isStakeAmountDirty(true);
+											}}
+										/>
+
+										<button
+											onClick={(): void => {
+												set_stakeAmount(vaultData.vaultBalanceOf.display);
+												set_isStakeAmountDirty(true);
+											}}
+											className={
+												'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
+											}>
+											{'Max'}
+										</button>
+									</div>
+								</div>
+								<legend
+									className={`mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0`}
+									suppressHydrationWarning>
+									<div className={'flex items-center justify-between'}>
+										<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} yBOLD available`}</p>
+										<p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
+									</div>
+								</legend>
+							</div>
+							<Button
+								className={'w-full md:w-[180px] md:min-w-[180px]'}
+								onClick={(): unknown => (isApproved ? onStake() : onApprove())}
+								isBusy={stakeStatus.pending || approveStakeStatus.pending}
+								isDisabled={
+									!isActive ||
+									Number(vaultData.vaultBalanceOf.display) <= 0 ||
+									isLargerThanVaultBalance
+								}>
+								{isApproved ? 'Stake' : 'Approve'}
+							</Button>
+						</div>
+					</div>
+					<div className={'flex flex-col gap-2'}>
+						<div>
+							<div className={'font-bold'}>{'Unstake'}</div>
+						</div>
+						<div className={'flex flex-col gap-4 md:flex-row'}>
+							<div className={'w-full'}>
+								<div className={cl('flex h-10 items-center rounded-lg p-2 w-full', 'bg-neutral-300')}>
+									<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
+										<input
+											id={'unstakeAmount'}
+											className={cl(
+												'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
+												isActive ? '' : 'cursor-not-allowed'
+											)}
+											type={'number'}
+											inputMode={'numeric'}
+											min={0}
+											pattern={'^((?:0|[1-9]+)(?:.(?:d+?[1-9]|[1-9]))?)$'}
+											autoComplete={'off'}
+											disabled={!isActive}
+											value={unstakeAmount}
+											onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+												set_unstakeAmount(e.target.value);
+												set_isUnstakeAmountDirty(true);
+											}}
+										/>
+
+										<button
+											onClick={(): void => {
+												set_unstakeAmount(vaultData.stakedBalanceOf.display);
+												set_isUnstakeAmountDirty(true);
+											}}
+											className={
+												'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
+											}>
+											{'Max'}
+										</button>
+									</div>
+								</div>
+								<legend
+									className={`mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0`}
+									suppressHydrationWarning>
+									<div className={'flex items-center justify-between'}>
+										<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} st-yBOLD staked`}</p>
+										<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
+									</div>
+								</legend>
+							</div>
+							<Button
+								className={'w-full md:w-[180px] md:min-w-[180px]'}
+								onClick={onUnstake}
+								isBusy={unstakeStatus.pending}
+								isDisabled={!isActive || Number(unstakeAmount) <= 0 || isLargerThanStakedBalance}>
+								{'Unstake'}
+							</Button>
+						</div>
+					</div>
+				</div>
+				<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
+					<div className={cl('flex w-full flex-col rounded-2xl p-6', 'bg-neutral-900')}>
+						<b className={cl('text-lg text-neutral-100')}>
+							{'Meet yBOLD: Tokenized Stability Pool Rewards'}
+						</b>
+						<div className={cl(`flex flex-col gap-2 py-4`, 'text-[#908FB4]')}>
+							<p>
+								{
+									'yBOLD represents BOLD deposited in Liquity V2 Stability Pools, earning liquidation fees and protocol interest. '
+								}
+								{
+									'When you stake yBOLD, you receive st-yBOLD that auto-compounds rewards and optimizes allocations across pools every 30 minutes.'
+								}
+							</p>
+							<p>
+								<span className={cl('font-bold text-neutral-100')}>
+									{'TLDR: Highest rewards, lowest risk. '}
+								</span>
+							</p>
+							<p>
+								<span>
+									{
+										'Benefits include auto-compounding rewards, optimized MEV-resistant reward selling, '
+									}
+									{'and full composability. '}
+								</span>
+								<a
+									className={'underline'}
+									href={'https://docs.yearn.fi/getting-started/products/yvaults/yBold#how-it-works'}
+									target={'_blank'}
+									rel={'noreferrer'}>
+									{'Learn more about yBOLD'}
+								</a>
+								{'.'}
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className={'grid grid-cols-1 md:grid-cols-2'}>

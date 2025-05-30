@@ -19,6 +19,7 @@ import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
 import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
+import {TOKENIZED_STRATEGY_ABI} from '@vaults-v3/utils/abi/tokenizedStrategy.abi';
 import {readContract, readContracts} from '@wagmi/core';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
@@ -53,7 +54,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		vault => vault.address === props.currentVault.address
 	)?.staking;
 
-	const stakingType = props.currentVault.staking.source as 'OP Boost' | 'VeYFI' | 'Juiced' | 'V3 Staking';
+	const stakingType = props.currentVault.staking.source as 'OP Boost' | 'VeYFI' | 'Juiced' | 'V3 Staking' | 'yBOLD';
 	const [vaultData, set_vaultData] = useState<TStakingInfo>({
 		address: isZeroAddress(props.currentVault.staking.address)
 			? props.currentVault.staking.address
@@ -332,6 +333,51 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 				args: [toAddress(address), rewardsToken]
 			});
 			earned = isZeroAddress(address) ? 0n : earnedRaw;
+		} else if (stakingType === 'yBOLD') {
+			const data = await readContracts(retrieveConfig(), {
+				contracts: [
+					{
+						address: toAddress(props.currentVault.staking.address),
+						chainId: props.currentVault.chainID,
+						abi: TOKENIZED_STRATEGY_ABI,
+						functionName: 'asset'
+					},
+					{
+						address: toAddress(props.currentVault.staking.address),
+						abi: TOKENIZED_STRATEGY_ABI,
+						chainId: props.currentVault.chainID,
+						functionName: 'totalSupply'
+					},
+					{
+						address: toAddress(props.currentVault.staking.address),
+						abi: TOKENIZED_STRATEGY_ABI,
+						chainId: props.currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					},
+					{
+						address: toAddress(props.currentVault.address),
+						abi: erc20Abi,
+						chainId: props.currentVault.chainID,
+						functionName: 'allowance',
+						args: [toAddress(address), toAddress(props.currentVault.staking.address)]
+					},
+					{
+						address: toAddress(props.currentVault.address),
+						abi: erc20Abi,
+						chainId: props.currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					}
+				]
+			});
+			stakingToken = decodeAsAddress(data[0]);
+			rewardsToken = zeroAddress; // yBOLD does not have a rewards token
+			totalStaked = decodeAsBigInt(data[1]);
+			balanceOf = isZeroAddress(address) ? 0n : decodeAsBigInt(data[2]);
+			allowance = isZeroAddress(address) ? 0n : decodeAsBigInt(data[3]);
+			vaultBalanceOf = isZeroAddress(address) ? 0n : decodeAsBigInt(data[4]);
+			earned = 0n;
 		}
 
 		/******************************************************************************************
@@ -339,24 +385,42 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		 ** view of the user's holdings in the vault: we need to know what is the reward token. This
 		 ** means we need to retrieve the token's symbol and decimals.
 		 ******************************************************************************************/
-		const decimalsResult = await readContracts(retrieveConfig(), {
-			contracts: [
-				{
-					address: rewardsToken,
-					abi: erc20Abi,
-					chainId: props.currentVault.chainID,
-					functionName: 'decimals'
-				},
-				{
-					address: stakingToken,
-					abi: erc20Abi,
-					chainId: props.currentVault.chainID,
-					functionName: 'decimals'
-				}
-			]
-		});
-		const rewardDecimals = decodeAsNumber(decimalsResult[0]);
-		const stakingDecimals = decodeAsNumber(decimalsResult[1]);
+		let decimalsResult: any;
+		let rewardDecimals: number;
+		let stakingDecimals: number;
+		if (stakingType === 'yBOLD') {
+			decimalsResult = await readContracts(retrieveConfig(), {
+				contracts: [
+					{
+						address: stakingToken,
+						abi: erc20Abi,
+						chainId: props.currentVault.chainID,
+						functionName: 'decimals'
+					}
+				]
+			});
+			rewardDecimals = 18;
+			stakingDecimals = decodeAsNumber(decimalsResult[0]);
+		} else {
+			decimalsResult = await readContracts(retrieveConfig(), {
+				contracts: [
+					{
+						address: rewardsToken,
+						abi: erc20Abi,
+						chainId: props.currentVault.chainID,
+						functionName: 'decimals'
+					},
+					{
+						address: stakingToken,
+						abi: erc20Abi,
+						chainId: props.currentVault.chainID,
+						functionName: 'decimals'
+					}
+				]
+			});
+			rewardDecimals = decodeAsNumber(decimalsResult[0]);
+			stakingDecimals = decodeAsNumber(decimalsResult[1]);
+		}
 
 		set_vaultData({
 			address: toAddress(stakingAddress),
