@@ -330,7 +330,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		})
 	);
 	const hasStakingRewards = Boolean(currentVault.staking.available);
-
+	console.log('test log');
 	const shouldForceDisplayBoostTab = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
 		vault => vault.address === currentVault.address
 	);

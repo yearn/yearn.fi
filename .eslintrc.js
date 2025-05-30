@@ -1,6 +1,6 @@
 module.exports = {
 	extends: [
-		'./node_modules/@yearn-finance/web-lib/.eslintrc.cjs',
+		'./node_modules/@w84april/web-lib/.eslintrc.cjs',
 		'plugin:@next/next/recommended',
 		'prettier',
 		'plugin:react-hooks/recommended'

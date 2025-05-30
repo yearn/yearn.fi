@@ -16,7 +16,7 @@ export default {
 		globals: true,
 		environment: 'node',
 		deps: {
-			inline: ['@yearn-finance/web-lib']
+			inline: ['@w84april/web-lib']
 		}
 	}
 };
