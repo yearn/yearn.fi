@@ -15,5 +15,5 @@ export function findLatestAPY(reports?: TYDaemonReports): number {
 		return 0;
 	}
 
-	return latestReport.results[0].APR * 100;
+	return latestReport.results[0].APR;
 }

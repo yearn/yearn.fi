@@ -2,8 +2,6 @@
 
 ![](./public/og.png)
 
-Why?
-
 ### Initial Setup
 
 -   Fork the [original repo](https://github.com/yearn/yearn.fi) into your GitHub account

@@ -4,7 +4,7 @@ import {watchAsset} from 'viem/actions';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {assert, cl, toAddress} from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
-import {Listbox, Transition} from '@headlessui/react';
+import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react';
 import {VaultInfo} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
@@ -103,19 +103,19 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutT
 					onChange={(value): void => set_selectedAboutTabIndex(value)}>
 					{({open}): ReactElement => (
 						<>
-							<Listbox.Button
+							<ListboxButton
 								className={
-									'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
+									'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 pl-4 font-bold focus:border-neutral-900 md:hidden'
 								}>
 								<div className={'relative flex flex-row items-center'}>
 									{tabs[selectedAboutTabIndex]?.label || 'Menu'}
 								</div>
-								<div className={'absolute right-0'}>
+								<div className={'absolute right-2'}>
 									<IconChevron
-										className={`size-6 transition-transform${open ? '-rotate-180' : 'rotate-0'}`}
+										className={`size-4 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`}
 									/>
 								</div>
-							</Listbox.Button>
+							</ListboxButton>
 							<Transition
 								as={Fragment}
 								show={open}
@@ -125,18 +125,18 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutT
 								leave={'transition duration-75 ease-out'}
 								leaveFrom={'transform scale-100 opacity-100'}
 								leaveTo={'transform scale-95 opacity-0'}>
-								<Listbox.Options className={'yearn--listbox-menu'}>
+								<ListboxOptions className={'yearn--listbox-menu'}>
 									{tabs.map(
 										(tab): ReactElement => (
-											<Listbox.Option
+											<ListboxOption
 												className={'yearn--listbox-menu-item'}
 												key={tab.value}
 												value={tab.value}>
 												{tab.label}
-											</Listbox.Option>
+											</ListboxOption>
 										)
 									)}
-								</Listbox.Options>
+								</ListboxOptions>
 							</Transition>
 						</>
 					)}
