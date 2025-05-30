@@ -31,6 +31,12 @@ module.exports = {
 					800: '#181818',
 					900: '#0C0C0C'
 				},
+				steelGray: {
+					500: '#AFB6C3'
+				},
+				lightBlue: {
+					500: '#558DFF'
+				},
 				blue: {
 					500: '#0657F9'
 				},

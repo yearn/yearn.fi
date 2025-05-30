@@ -1,8 +1,7 @@
 'use client';
-import React, {Fragment, useMemo} from 'react';
+import React, {Fragment} from 'react';
 import Link from 'next/link';
 import {Dialog, Transition, TransitionChild} from '@headlessui/react';
-import {IconArrow} from '@common/icons/IconArrow';
 import {IconClose} from '@common/icons/IconClose';
 import {IconDiscord} from '@common/icons/IconDiscord';
 import {IconParagraph} from '@common/icons/IconParagraph';
@@ -13,57 +12,58 @@ import type {ReactElement, ReactNode} from 'react';
 import type {Chain} from 'viem';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 
+const menu: TMenu[] = [
+	{path: '/apps', label: 'Apps'},
+	{
+		path: 'https://gov.yearn.fi/',
+		label: 'Governance',
+		target: '_blank'
+	},
+	{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
+	{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
+	{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'}
+];
+
 export function FooterNav(): ReactElement {
-	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/apps', label: 'Apps'};
-
-		return [
-			HOME_MENU,
-			{
-				path: 'https://gov.yearn.fi/',
-				label: 'Governance',
-				target: '_blank'
-			},
-			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
-			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
-			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'}
-		];
-	}, []);
-
 	return (
-		<div className={'flex flex-col justify-between gap-y-20 md:flex-row md:items-end'}>
-			<div className={'flex flex-col gap-y-4'}>
+		<div
+			className={`flex w-full flex-col space-y-14 rounded-[24px] p-0 md:flex-row md:space-x-14 md:space-y-0 md:bg-[#222222]/50 md:p-[12px]`}>
+			<div className={'flex w-full flex-col space-y-4 rounded-[12px] p-[24px] md:bg-black/30'}>
 				{menu.map(link => (
 					<Link
-						className={
-							'flex items-center justify-between gap-x-4 text-3xl text-white transition-colors hover:text-primary md:justify-start'
-						}
+						className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
 						key={link.path}
 						target={link.target}
 						href={link.path}>
-						<span>{link.label}</span>
-						<IconArrow className={'size-4'} />
+						<span className={'text-[20px]'}>{link.label}</span>
+						<span className={'size-6'}>{'↗'}</span>
 					</Link>
 				))}
 			</div>
-			<div className={'flex items-center gap-6'}>
+			<div className={'flex w-full items-center justify-center gap-6'}>
 				<Link
 					href={'https://paragraph.xyz/@yearn'}
 					target={'_blank'}
-					className={'flex items-center gap-x-4'}>
-					<IconParagraph className={'size-8 text-white transition-colors hover:text-primary'} />
+					className={
+						'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
+					}>
+					<IconParagraph className={'size-7 text-white'} />
 				</Link>
 				<Link
 					href={'https://discord.com/invite/yearn'}
 					target={'_blank'}
-					className={'flex items-center gap-x-4'}>
-					<IconDiscord className={'size-8 text-white transition-colors hover:text-primary'} />
+					className={
+						'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
+					}>
+					<IconDiscord className={'size-7 text-white'} />
 				</Link>
 				<Link
 					href={'https://x.com/yearnfi'}
 					target={'_blank'}
-					className={'flex items-center gap-x-4'}>
-					<IconTwitter className={'size-8 text-white transition-colors hover:text-primary'} />
+					className={
+						'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
+					}>
+					<IconTwitter className={'size-7 text-white'} />
 				</Link>
 			</div>
 		</div>
@@ -123,24 +123,24 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-full'}>
 						<div className={`yearn--modal fixed bottom-0 mb-0 h-full max-w-full`}>
-							<div className={'flex items-center justify-between border-b border-[#292929] p-6'}>
-								<button onClick={onClose}>
-									<IconClose />
-								</button>
+							<div className={'flex items-center justify-between border-b border-[#292929] p-4'}>
 								<Link href={'/'}>
 									<LogoYearn
-										className={'size-10'}
+										className={'size-6'}
 										front={'text-black'}
 										back={'text-white'}
 									/>
 								</Link>
+								<button onClick={onClose}>
+									<IconClose />
+								</button>
 							</div>
 							<div
 								style={{
 									background:
 										'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
 								}}
-								className={'flex h-[calc(100vh-88px)] w-full flex-col justify-end px-6 pb-[104px]'}>
+								className={'flex h-[calc(100vh-88px)] w-full flex-col justify-end px-8 pb-20'}>
 								<FooterNav />
 							</div>
 						</div>
