@@ -38,8 +38,9 @@ const faqData = [
 		title: 'What is a Yearn Vault?',
 		content: (
 			<p>
-				{"Yearn Vaults are DeFi's yield-optimizing asset management platform. You deposit tokens, and our"}
-				{'strategies automatically maximize your yields across various protocols.'}
+				{
+					"Yearn Vaults are DeFi's yield-optimizing asset management platform. You deposit tokens, and our strategies automatically maximize your yields across various protocols."
+				}
 			</p>
 		)
 	},
@@ -48,9 +49,8 @@ const faqData = [
 		content: (
 			<p>
 				{
-					'As with any DeFi protocol, there are smart contract risks. Yearn goes to great lengths to minimize these'
+					'As with any DeFi protocol, there are smart contract risks. Yearn goes to great lengths to minimize these risks through thorough auditing and testing of all code before deployment.'
 				}
-				{'risks through thorough auditing and testing of all code before deployment.'}
 			</p>
 		)
 	},
@@ -59,9 +59,8 @@ const faqData = [
 		content: (
 			<p>
 				{
-					"YFI is Yearn's governance token. YFI holders can vote on proposals and shape the future of the protocol."
+					"YFI is Yearn's governance token. YFI holders can vote on proposals and shape the future of the protocol. It was launched with a fair distribution with no founder, investor or VC allocation."
 				}
-				{'It was launched with a fair distribution with no founder, investor or VC allocation.'}
 			</p>
 		)
 	},
@@ -91,8 +90,8 @@ export const FAQs: FC = () => {
 	};
 
 	return (
-		<section className={'flex w-full justify-center '}>
-			<div className={'flex w-[1180px] flex-col items-center justify-between py-16 md:flex-row'}>
+		<section className={'flex w-full justify-center pb-8 pt-16 lg:pt-32'}>
+			<div className={'flex w-full max-w-[1180px] flex-col items-center justify-between md:flex-row'}>
 				<div className={'w-full px-4'}>
 					<div className={'mb-10 flex flex-col justify-between gap-y-6 md:flex-row'}>
 						<SectionHeader

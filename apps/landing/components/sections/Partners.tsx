@@ -88,8 +88,8 @@ const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 40}) => {
 };
 
 export const Partners: FC = () => (
-	<section className={'flex w-full justify-center'}>
-		<div className={'flex w-full max-w-[1180px] flex-col items-center justify-between py-8 lg:flex-row lg:py-20'}>
+	<section className={'flex w-full justify-center  py-16 lg:py-32'}>
+		<div className={'flex w-full max-w-[1180px] flex-col items-center justify-between  lg:flex-row '}>
 			<div className={'flex w-full flex-col gap-4 px-4'}>
 				<SectionHeader
 					tagline={'Partners'}
@@ -118,7 +118,7 @@ export const Partners: FC = () => (
 
 				{/* Desktop */}
 				<div className={'hidden gap-4 pt-8 md:pt-14 lg:flex lg:flex-row'}>
-					<div className={'flex size-full flex-col gap-2'}>
+					<div className={'flex size-full h-[128px] flex-col gap-2'}>
 						<div className={'flex flex-1 flex-row gap-2'}>
 							{partners.map((partner, index) => (
 								<PartnerLogo

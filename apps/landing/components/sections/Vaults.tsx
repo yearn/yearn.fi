@@ -160,14 +160,14 @@ export const Vaults: FC = () => {
 			if (!isHovering) {
 				nextSlide();
 			}
-		}, 10_000);
+		}, 15_000);
 
 		return () => clearInterval(interval);
 	}, [nextSlide, isHovering]);
 
 	return (
-		<section className={'flex w-full justify-center px-4 md:px-8 '}>
-			<div className={'w-full max-w-[1180px] py-12 md:py-24'}>
+		<section className={'flex w-full justify-center border-t border-white/10 px-4 py-16 md:px-8 lg:py-32'}>
+			<div className={'w-full max-w-[1180px]'}>
 				{/* Slides */}
 				<div
 					className={'relative mb-8 overflow-hidden md:mb-12'}
@@ -209,7 +209,7 @@ export const Vaults: FC = () => {
 									className={
 										'relative flex size-full flex-col justify-between gap-4 md:w-3/5 md:gap-4'
 									}>
-									<div className={'relative'}>
+									<div className={'relative p-4 md:p-0'}>
 										<SectionHeader
 											tagline={slide.tagline}
 											title={slide.title}
@@ -217,74 +217,73 @@ export const Vaults: FC = () => {
 											cta={slide.cta}
 										/>
 									</div>
-
 									<div
-										className={'relative w-full overflow-hidden rounded-[24px] bg-white/5 p-[8px]'}>
-										<div className={'space-y-1'}>
-											{rows[activeSlide].map((row, vaultIndex) => {
-												const isVaultLoading = row?.address && isLoadingVaultList;
-
-												return (
-													<a
-														key={vaultIndex}
-														href={row.href}
-														className={`${row.bgClass} flex cursor-pointer items-center justify-between rounded-[16px] p-2 transition-opacity duration-200 hover:opacity-50 md:p-[8px]`}>
-														<div className={'flex items-center'}>
-															<div className={' mr-2 rounded-2xl p-1 md:mr-3'}>
-																<div
-																	className={
-																		'flex size-5 items-center justify-center rounded-2xl bg-gray-900 md:size-6'
-																	}>
-																	<Image
-																		src={row.icon}
-																		alt={row.text}
-																		width={24}
-																		height={24}
+										className={
+											'flex w-full flex-col gap-2 overflow-hidden md:flex-col md:rounded-[24px] md:bg-white/5 md:p-[8px]'
+										}>
+										{rows[activeSlide].map((row, vaultIndex) => {
+											const isVaultLoading = row?.address && isLoadingVaultList;
+											return (
+												<a
+													key={vaultIndex}
+													href={row.href}
+													className={`${row.bgClass} flex cursor-pointer items-center justify-between rounded-[12px] p-2 transition-opacity duration-200 hover:opacity-50 md:rounded-[16px] md:p-[8px]`}>
+													<div className={'flex items-center'}>
+														<div className={' mr-2 rounded-2xl p-1 md:mr-3'}>
+															<div
+																className={
+																	'flex size-5 items-center justify-center rounded-2xl bg-gray-900 md:size-6'
+																}>
+																<Image
+																	src={row.icon}
+																	alt={row.text}
+																	width={24}
+																	height={24}
+																/>
+															</div>
+														</div>
+														<div className={'flex flex-col gap-1 md:flex-row md:gap-2'}>
+															{isVaultLoading ? (
+																<div className={'flex items-center space-x-2'}>
+																	<div
+																		className={
+																			'h-6 w-48 animate-pulse rounded bg-gray-600'
+																		}
 																	/>
 																</div>
-															</div>
-															<div className={'flex flex-col gap-1 md:flex-row md:gap-2'}>
-																{isVaultLoading ? (
-																	<div className={'flex items-center space-x-2'}>
-																		<div
-																			className={
-																				'h-4 w-24 animate-pulse rounded bg-gray-600'
-																			}></div>
-																	</div>
-																) : (
-																	<span className={':text-base font-medium'}>
-																		{row.text}
-																	</span>
-																)}
-																{row.description && (
-																	<span
-																		className={
-																			'font-light text-gray-400 md:text-base'
-																		}>
-																		{row.description}
-																	</span>
-																)}
-															</div>
+															) : (
+																<span className={':text-base font-medium'}>
+																	{row.text}
+																</span>
+															)}
+															{row.description && (
+																<span
+																	className={
+																		'hidden font-light text-gray-400 md:block md:text-base'
+																	}>
+																	{row.description}
+																</span>
+															)}
 														</div>
-														<div className={'rounded-2xl bg-transparent p-1 md:p-2'}>
-															<svg
-																xmlns={'http://www.w3.org/2000/svg'}
-																className={'size-4 md:size-5'}
-																fill={'none'}
-																viewBox={'0 0 24 24'}
-																stroke={'currentColor'}>
-																<path
-																	strokeLinecap={'round'}
-																	strokeLinejoin={'round'}
-																	strokeWidth={2}
-																	d={'M14 5l7 7m0 0l-7 7m7-7H3'}
-																/>
-															</svg>
-														</div>
-													</a>
-												);
-											})}
-										</div>
+													</div>
+													<div className={'rounded-2xl bg-transparent p-1 md:p-2'}>
+														<svg
+															xmlns={'http://www.w3.org/2000/svg'}
+															className={'size-4 md:size-5'}
+															fill={'none'}
+															viewBox={'0 0 24 24'}
+															stroke={'currentColor'}>
+															<path
+																strokeLinecap={'round'}
+																strokeLinejoin={'round'}
+																strokeWidth={2}
+																d={'M14 5l7 7m0 0l-7 7m7-7H3'}
+															/>
+														</svg>
+													</div>
+												</a>
+											);
+										})}
 									</div>
 								</div>
 							</div>

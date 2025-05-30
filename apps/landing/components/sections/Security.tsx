@@ -96,15 +96,17 @@ const SecurityCard: FC<{
 };
 
 export const Security: FC = () => (
-	<section className={'flex w-full justify-center bg-white/5'}>
-		<div className={'flex w-[1180px] flex-col items-center justify-between py-8 md:flex-row md:py-32'}>
+	<section className={'flex w-full justify-center bg-white/5 py-16 lg:py-32'}>
+		<div className={'flex w-full max-w-[1180px] flex-col items-center justify-between  lg:flex-row '}>
 			<div className={'w-full max-w-7xl px-4'}>
-				<SectionHeader
-					align={'center'}
-					tagline={'Audited, secure'}
-					title={'Security First'}
-					description={'Yearn prioritizes security to protect your assets.'}
-				/>
+				<div className={'px-2'}>
+					<SectionHeader
+						align={'center'}
+						tagline={'Audited, secure'}
+						title={'Security First'}
+						description={'Yearn prioritizes security to protect your assets.'}
+					/>
+				</div>
 				<div className={'grid gap-6 pt-16 md:grid-cols-2'}>
 					<SecurityCard type={SecurityCardType.Audits} />
 					<SecurityCard type={SecurityCardType.BugBounties} />

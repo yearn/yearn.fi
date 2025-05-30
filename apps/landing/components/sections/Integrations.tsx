@@ -62,7 +62,7 @@ const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, de
 			href={href}
 			className={'block cursor-pointer'}>
 			<div
-				className={`flex flex-row items-start px-[12px] py-[8px] transition-all duration-300 ease-in-out hover:scale-[1.005] hover:bg-[#2a2b2c] hover:shadow-lg md:items-center ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}>
+				className={`flex flex-row items-center p-[12px] transition-all duration-300 ease-in-out hover:scale-[1.005] hover:bg-[#2a2b2c] hover:shadow-lg md:p-[16px] ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}>
 				<div className={`relative mr-4 shrink-0 self-center`}>
 					<Image
 						src={imageSrc}
@@ -73,7 +73,7 @@ const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, de
 					/>
 				</div>
 				<div className={`flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:justify-between`}>
-					<div className={'mb-1 flex items-center text-[20px] text-white md:mb-0'}>
+					<div className={'flex items-center text-[20px] text-white '}>
 						{name}{' '}
 						<span
 							className={
@@ -84,7 +84,7 @@ const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, de
 					</div>
 					<div
 						className={
-							'text-base text-neutral-400 transition-colors duration-300 ease-in-out hover:text-neutral-300 md:max-w-[60%] md:text-right'
+							'hidden text-base text-neutral-400 transition-colors duration-300 ease-in-out hover:text-neutral-300 md:block md:max-w-[60%] md:text-right'
 						}>
 						{description}
 					</div>
@@ -95,8 +95,8 @@ const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, de
 };
 
 export const Integrations: FC = () => (
-	<section className={'flex w-full justify-center bg-white/5'}>
-		<div className={'flex w-[1180px] flex-col items-center justify-between py-16 md:flex-row'}>
+	<section className={'flex w-full justify-center bg-white/5 py-16 lg:py-32'}>
+		<div className={'flex w-[1180px] flex-col items-center justify-between md:flex-row'}>
 			<div className={'w-full px-4'}>
 				<SectionHeader
 					tagline={'Partners'}
