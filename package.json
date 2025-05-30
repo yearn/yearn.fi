@@ -43,7 +43,7 @@
 		"tailwind-gradient-mask-image": "^1.2.0",
 		"@tailwindcss/forms": "^0.5.7",
 		"@tailwindcss/typography": "^0.5.13",
-		"viem": "^2.15.4",
+		"viem": "2.30.5",
 		"wagmi": "^2.10.10",
 		"xxhashjs": "^0.2.2",
 		"zod": "^3.23.8"
