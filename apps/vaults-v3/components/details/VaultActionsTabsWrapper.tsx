@@ -532,7 +532,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					</div>
 				)}
 
-			{currentVault?.info.uiNotice && !currentVault?.migration.available && (
+			{currentVault?.info.uiNotice && !currentVault?.migration.available && currentVault.info.isRetired && (
 				<div
 					aria-label={'Migration Warning'}
 					className={'col-span-12 mt-10'}>
@@ -549,6 +549,26 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					</div>
 				</div>
 			)}
+
+			{currentVault?.info.uiNotice &&
+				!currentVault?.migration.available &&
+				!currentVault.info.isRetired &&
+				!isSonneRetiredVault && (
+					<div
+						aria-label={'Migration Warning'}
+						className={'col-span-12 mt-10'}>
+						<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+							<p
+								className={'mt-2'}
+								dangerouslySetInnerHTML={{
+									__html: parseMarkdown(
+										currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol)
+									)
+								}}
+							/>
+						</div>
+					</div>
+				)}
 
 			<div className={'col-span-12 mt-6 flex flex-col rounded-3xl bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
