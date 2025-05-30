@@ -23,10 +23,10 @@ import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
-import {readContract, readContracts} from '@wagmi/core';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
+import {readContract, readContracts} from 'wagmi/actions';
+import {Renderable} from '@lib/components/Renderable';
+import {copyToClipboard} from '@lib/utils/helpers';
+import {getNetwork} from '@lib/utils/wagmi/utils';
 import {Counter} from '@common/components/Counter';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useYearn} from '@common/contexts/useYearn';
@@ -35,7 +35,7 @@ import {IconQuestion} from '@common/icons/IconQuestion';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TNormalizedBN} from '@lib/types';
 
 type TVaultHeaderLineItemProps = {

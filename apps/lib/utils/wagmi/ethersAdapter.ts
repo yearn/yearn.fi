@@ -1,7 +1,8 @@
 import {useMemo} from 'react';
 import {providers} from 'ethers';
 import {useConnectorClient} from 'wagmi';
-import {type Config, getClient, getConnectorClient} from '@wagmi/core';
+import {getClient, getConnectorClient} from 'wagmi/actions';
+import {type Config} from 'wagmi';
 
 import type {Account, Chain, Client, Transport} from 'viem';
 

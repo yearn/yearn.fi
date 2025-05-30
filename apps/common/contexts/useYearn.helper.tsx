@@ -5,12 +5,12 @@ import {useChainID} from '@lib/hooks/useChainID';
 import {toAddress} from '@lib/utils';
 import {getNetwork} from '@lib/utils/wagmi';
 import {useDeepCompareMemo} from '@react-hookz/web';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
 
 import {useBalances} from './useBalances.multichains';
 
-import type {TYChainTokens, TYToken} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYChainTokens, TYToken} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
 import type {TDict, TToken} from '@lib/types';
 

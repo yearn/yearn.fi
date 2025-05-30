@@ -4,14 +4,14 @@ import {useWeb3} from '@lib/contexts/useWeb3';
 import {cl, formatCounterValue, formatPercent, toAddress} from '@lib/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@lib/components/Renderable';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@lib/types';
 import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 

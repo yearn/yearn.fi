@@ -19,10 +19,10 @@ import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
 import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
-import {readContract, readContracts} from '@wagmi/core';
+import {readContract, readContracts} from 'wagmi/actions';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TNormalizedBN} from '@lib/types';
 
 export type TStakingInfo = {

@@ -1,8 +1,8 @@
 import {cl, formatAmount, formatPercent} from '@lib/utils';
-import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
+import {parseMarkdown} from '@lib/utils/helpers';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function YearnFeesLineItem({children, label, tooltip}: any): ReactElement {
 	return (

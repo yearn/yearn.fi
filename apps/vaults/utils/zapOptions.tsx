@@ -1,6 +1,6 @@
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
-import type {TDropdownOption} from '@yearn-finance/web-lib/types';
+import type {TDropdownOption} from '@lib/types';
 import type {TAddress} from '@lib/types';
 import type {TSolver} from '@vaults/types/solvers';
 

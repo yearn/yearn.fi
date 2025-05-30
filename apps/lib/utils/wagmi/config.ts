@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {type Chain} from 'viem/chains';
-import {safe} from 'wagmi/connectors';
+import {cookieStorage, createStorage, custom, fallback, http, unstable_connector, webSocket} from 'wagmi';
+import {injected, safe} from 'wagmi/connectors';
 import {getDefaultConfig} from '@rainbow-me/rainbowkit';
 import {
 	coinbaseWallet,
@@ -12,21 +13,11 @@ import {
 	safeWallet,
 	walletConnectWallet
 } from '@rainbow-me/rainbowkit/wallets';
-import {
-	cookieStorage,
-	createStorage,
-	custom,
-	fallback,
-	http,
-	injected,
-	unstable_connector,
-	webSocket
-} from '@wagmi/core';
-import {type Config} from '@wagmi/core';
 
 import {getNetwork} from './utils';
 
 import type {Transport} from 'viem';
+import type {Config, ResolvedRegister} from 'wagmi';
 import type {_chains} from '@rainbow-me/rainbowkit/dist/config/getDefaultConfig';
 
 let CONFIG: Config | undefined = undefined;
@@ -34,7 +25,7 @@ let CONFIG_CHAINS: Chain[] = [];
 let CONFIG_WITH_WINDOW: boolean = true;
 
 type TTransport = {[key: number]: Transport};
-export function getConfig({chains}: {chains: Chain[]}): Config {
+export function getConfig({chains}: {chains: Chain[]}): ResolvedRegister['config'] {
 	const transports: TTransport = {};
 	for (const chain of chains) {
 		/**************************************************************************************
@@ -182,7 +173,7 @@ export function getConfig({chains}: {chains: Chain[]}): Config {
 	return config;
 }
 
-export function retrieveConfig(): Config {
+export function retrieveConfig(): ResolvedRegister['config'] {
 	if (CONFIG && CONFIG_WITH_WINDOW) {
 		return CONFIG;
 	}

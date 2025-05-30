@@ -1,7 +1,7 @@
 import {useCallback, useMemo} from 'react';
 import {isZero, toAddress, toNormalizedBN} from '@lib/utils';
-import {deserialize, serialize} from '@wagmi/core';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {deserialize, serialize} from 'wagmi';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
 import {numberSort, stringSort} from '@common/utils/sort';
@@ -10,7 +10,7 @@ import type {
 	TYDaemonVault,
 	TYDaemonVaults,
 	TYDaemonVaultStrategy
-} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@lib/types';
 
 export type TPossibleSortBy =

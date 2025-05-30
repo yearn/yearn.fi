@@ -3,11 +3,11 @@ import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recha
 import {useFetch} from '@lib/hooks/useFetch';
 import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@lib/utils';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {formatDate} from '@lib/utils/format.time';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TYDaemonReport, TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
 export type TGraphForStrategyReportsProps = {

@@ -5,8 +5,8 @@ import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {allowanceOf, approveERC20, retrieveConfig,toWagmiProvider} from '@lib/utils/wagmi';
 import {Solver} from '@vaults/types/solvers';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import { readContract } from '@wagmi/core';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
+import {readContract} from 'wagmi/actions';
+import {allowanceKey} from '@lib/utils/helpers';
 import {useYearn} from '@common/contexts/useYearn';
 import { migrateSharesViaRouter} from '@common/utils/actions';
 

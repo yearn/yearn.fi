@@ -1,8 +1,9 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {erc20Abi} from 'viem';
+import {erc20Abi, type MulticallParameters} from 'viem';
+import {deserialize, serialize} from 'wagmi';
+import {type Connector} from 'wagmi';
+import {multicall} from 'wagmi/actions';
 import {useDeepCompareMemo} from '@react-hookz/web';
-import {deserialize, multicall, serialize} from '@wagmi/core';
-import {type MulticallParameters} from '@wagmi/core';
 
 import {useWeb3} from '../contexts/useWeb3';
 import {AGGREGATE3_ABI} from '../utils/abi/aggregate.abi';
@@ -17,7 +18,6 @@ import {getNetwork} from '../utils/wagmi/utils';
 import {useAsyncTrigger} from './useAsyncTrigger';
 
 import type {DependencyList} from 'react';
-import type {Connector} from 'wagmi';
 import type {TAddress} from '../types/address';
 import type {TChainTokens, TDefaultStatus, TDict, TNDict, TToken} from '../types/mixed';
 

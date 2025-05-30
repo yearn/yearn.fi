@@ -1,11 +1,11 @@
 import {useFetch} from '@lib/hooks/useFetch';
 import {toAddress} from '@lib/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {yDaemonVaultsSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {yDaemonVaultsSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 import type {KeyedMutator} from 'swr';
-import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TDict} from '@lib/types';
 
 /******************************************************************************

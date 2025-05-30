@@ -22,7 +22,7 @@ import {
 import {AGGREGATE3_ABI} from '@lib/utils/abi/aggregate.abi';
 import {getNetwork} from '@lib/utils/wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@lib/components/Renderable';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnBalance} from '@common/hooks/useYearnBalance';
@@ -30,7 +30,7 @@ import {IconQuestion} from '@common/icons/IconQuestion';
 import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 
 import type {ChangeEvent, ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@lib/types';
 import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 

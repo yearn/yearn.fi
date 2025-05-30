@@ -6,6 +6,7 @@ import {isObject} from './tools.is';
 import type {EncodeFunctionDataParameters, Hex} from 'viem';
 import type {TAddress} from '../types';
 import type {TSortDirection} from '../types/mixed';
+import {yToast} from '@lib/components/yToast';
 
 /***************************************************************************
  ** Parse some markdown to get the associated rich content. Instead of using
@@ -20,19 +21,10 @@ export function parseMarkdown(markdownText: string): string {
 	return htmlText.trim();
 }
 
-/***************************************************************************
- ** We use the clipboard API in order to copy some data to the user's
- ** clipboard.
- ** A toast is displayed to inform the user that the address has been
- ** copied.
- **************************************************************************/
-export function copyToClipboard(value: string, callback: VoidFunction): void {
-	try {
-		navigator.clipboard.writeText(value);
-		callback();
-	} catch (error) {
-		console.error(error);
-	}
+export function copyToClipboard(value: string): void {
+	const {toast} = yToast();
+	navigator.clipboard.writeText(value);
+	toast({content: 'Copied to clipboard!', type: 'info'});
 }
 
 /***************************************************************************
@@ -139,4 +131,12 @@ export function encodeFunctionCall(args: TEncodeFunctionCallArgs): TEncodeFuncti
 		value: toHex(value ?? 0n),
 		data: encodeFunctionData(rest)
 	};
+}
+
+/* 🔵 - Yearn Finance ******************************************************
+ ** allowanceKey is used to access the unique allowance key matching one
+ ** token with one spender
+ **************************************************************************/
+export function allowanceKey(chainID: number, token: TAddress, spender: TAddress, owner: TAddress): string {
+	return `${chainID}_${token}_${spender}_${owner}`;
 }

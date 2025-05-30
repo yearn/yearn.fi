@@ -6,15 +6,15 @@ import {cl, formatPercent, truncateHex} from '@lib/utils';
 import {findLatestAPY} from '@vaults/components/details/tabs/findLatestAPY';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {getChainBgColor} from '@vaults-v3/utils';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {IconLinkOut} from '@lib/icons/IconLinkOut';
+import {formatDuration} from '@lib/utils/format.time';
+import {getNetwork} from '@lib/utils/wagmi/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress} from '@lib/types';
 import type {TYDaemonReports} from '@vaults/schemas/reportsSchema';
 

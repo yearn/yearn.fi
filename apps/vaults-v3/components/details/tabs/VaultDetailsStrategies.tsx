@@ -5,14 +5,14 @@ import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
-import {Button} from '@yearn-finance/web-lib/components/Button';
+import {Button} from '@lib/components/Button';
 import {AllocationChart} from '@common/components/AllocationChart';
 import {VaultsListStrategy} from '@common/components/VaultsListStrategy';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@lib/types';
 import type {TAllocationChartData} from '@common/components/AllocationChart';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';

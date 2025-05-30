@@ -122,3 +122,19 @@ export type TTokenList = {
 		logoURI?: string;
 	}[];
 };
+
+export type TGraphData = {
+	name: string;
+	value: number;
+};
+
+export type TMessariGraphData = {
+	name: string;
+	tvl: number;
+	pps: number;
+};
+
+export type TYToken = TToken & {
+	stakingValue: number;
+};
+export type TYChainTokens = TNDict<TDict<TYToken>>;

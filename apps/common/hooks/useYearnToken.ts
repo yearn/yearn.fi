@@ -3,7 +3,7 @@ import {toAddress} from '@lib/utils';
 
 import {useYearn} from '../contexts/useYearn';
 
-import type {TYToken} from '@yearn-finance/web-lib/types';
+import type {TYToken} from '@lib/types';
 import type {TAddress} from '@lib/types';
 
 /******************************************************************************

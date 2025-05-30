@@ -1,6 +1,6 @@
 import {toast} from 'react-hot-toast';
 import {BaseError} from 'viem';
-import {getConnectorClient, simulateContract, switchChain, waitForTransactionReceipt, writeContract} from '@wagmi/core';
+import {getConnectorClient, simulateContract, switchChain, waitForTransactionReceipt, writeContract} from 'wagmi/actions';
 
 import {assert, assertAddress} from '../assert';
 import {toBigInt} from '../format';

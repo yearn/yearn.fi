@@ -7,8 +7,8 @@ import {IconVaults} from '@common/icons/IconVaults';
 import {IconYearn} from '@common/icons/IconYearn';
 import {IconYearnXApps} from '@common/icons/IconYearnXApps';
 
-import type {TAddress, TNDict} from '@lib/types';
 import type {TApp} from '@common/types/category';
+import type {TAddress, TNDict} from '@lib/types';
 
 export const DEFAULT_SLIPPAGE = 0.5;
 export const DEFAULT_MAX_LOSS = 1n;

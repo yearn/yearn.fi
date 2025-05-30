@@ -3,13 +3,13 @@ import {cl} from '@lib/utils';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
+import {Renderable} from '@lib/components/Renderable';
+import {IconSettings} from '@lib/icons/IconSettings';
 import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSolver} from '@vaults/types/solvers';
 
 type TSettingPopover = {

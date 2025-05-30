@@ -10,7 +10,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@lib/types';
 import type {TAllocationChartData} from '@common/components/AllocationChart';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
@@ -99,6 +99,8 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	const filteredStrategyList = useMemo(() => {
 		const strategies = strategyList.filter(vault => vault.details?.totalDebt !== '0') as (TYDaemonVault & {
 			details: TYDaemonVaultStrategy['details'];
+			status: TYDaemonVaultStrategy['status'];
+			netAPR: TYDaemonVaultStrategy['netAPR'];
 		})[];
 
 		return strategies;

@@ -8,17 +8,17 @@ import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from 
 import {VaultInfo} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
-import {getConnectorClient} from '@wagmi/core';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
-import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
+import {getConnectorClient} from 'wagmi/actions';
+import {Renderable} from '@lib/components/Renderable';
+import {IconAddToMetamask} from '@lib/icons/IconAddToMetamask';
+import {IconLinkOut} from '@lib/icons/IconLinkOut';
+import {getNetwork} from '@lib/utils/wagmi/utils';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import {VaultRiskInfo} from './tabs/VaultRiskInfo';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TTabsOptions = {
 	value: number;

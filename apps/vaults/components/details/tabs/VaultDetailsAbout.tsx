@@ -1,13 +1,13 @@
 import {cl, formatAmount, formatPercent, isZero} from '@lib/utils';
 import {useIsMounted} from '@react-hookz/web';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
+import {Renderable} from '@lib/components/Renderable';
+import {parseMarkdown} from '@lib/utils/helpers';
 import {RenderAmount} from '@common/components/RenderAmount';
 
 import type {ReactElement} from 'react';
-import type {TGraphData} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TGraphData} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TAPYLineItemProps = {
 	currentVault: TYDaemonVault;

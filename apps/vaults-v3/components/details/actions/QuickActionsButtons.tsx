@@ -10,13 +10,13 @@ import {defaultTxStatus} from '@lib/utils/wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
-import {Button} from '@yearn-finance/web-lib/components/Button';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {Button} from '@lib/components/Button';
+import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
 import {PLAUSIBLE_EVENTS} from '@common/utils/plausible';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@lib/types';
 
 export function VaultDetailsQuickActionsButtons({

@@ -26,15 +26,15 @@ import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/acti
 import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
-import {readContracts} from '@wagmi/core';
-import {VEYFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {readContracts} from 'wagmi/actions';
+import {VEYFI_ADDRESS} from '@lib/utils/constants';
 import {InfoTooltip} from '@common/components/InfoTooltip';
 import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@lib/types';
 
 /**************************************************************************************************

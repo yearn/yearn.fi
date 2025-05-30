@@ -1,8 +1,8 @@
 import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@lib/utils';
 import {getNetwork} from '@lib/utils/wagmi';
 import {truncateHexTx} from '@vaults/utils';
-import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {IconLinkOut} from '@lib/icons/IconLinkOut';
+import {formatDate} from '@lib/utils/format.time';
 import {IconSpinner} from '@common/icons/IconSpinner';
 
 import type {ReactElement} from 'react';
@@ -10,7 +10,7 @@ import type {
 	TYDaemonVault,
 	TYDaemonVaultHarvest,
 	TYDaemonVaultHarvests
-} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 function HarvestListHead(): ReactElement {
 	return (

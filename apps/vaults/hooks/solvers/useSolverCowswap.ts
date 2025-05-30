@@ -15,9 +15,9 @@ import {getEthersSigner} from '@lib/utils/wagmi/ethersAdapter';
 import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
-import {toast} from '@yearn-finance/web-lib/components/yToast';
-import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
+import {toast} from '@lib/components/yToast';
+import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@lib/utils/constants';
+import {allowanceKey} from '@lib/utils/helpers';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {TDict, TNormalizedBN} from '@lib/types';

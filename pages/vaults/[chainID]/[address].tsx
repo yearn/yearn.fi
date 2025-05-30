@@ -9,15 +9,15 @@ import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTa
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {yDaemonVaultSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 import {variants} from '@common/utils/animations';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
 
 function Index(): ReactElement | null {

@@ -2,10 +2,10 @@ import {useCallback} from 'react';
 import {toAddress} from '@lib/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
-import {isAutomatedVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import {isAutomatedVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TDict} from '@lib/types';
 
 export function useFilteredVaults(

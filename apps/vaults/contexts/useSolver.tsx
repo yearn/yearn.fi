@@ -13,7 +13,7 @@ import { useSolverV3Router } from '@vaults/hooks/solvers/useSolverV3Router';
 import {useSolverV3StakingBooster} from '@vaults/hooks/solvers/useSolverV3StakingBooster';
 import {useSolverVanilla} from '@vaults/hooks/solvers/useSolverVanilla';
 import {Solver} from '@vaults/types/solvers';
-import {serialize} from '@wagmi/core';
+import {serialize} from 'wagmi';
 import {hash} from '@common/utils';
 
 import type {TNormalizedBN} from '@lib/types';

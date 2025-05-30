@@ -1,4 +1,5 @@
 import {Fragment, useMemo} from 'react';
+import {type Chain} from 'viem/chains';
 import {WagmiProvider} from 'wagmi';
 import {RainbowKitProvider} from '@rainbow-me/rainbowkit';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
@@ -9,7 +10,6 @@ import {Web3ContextApp} from './useWeb3';
 import {WithTokenList} from './WithTokenList';
 
 import type {ReactElement} from 'react';
-import type {Chain} from 'viem';
 import type {Config, State} from 'wagmi';
 import type {AvatarComponent, DisclaimerComponent, Theme} from '@rainbow-me/rainbowkit';
 
@@ -44,11 +44,11 @@ function WithMom({
 	rainbowConfig,
 	initialState
 }: TWithMom): ReactElement {
-	const config = useMemo((): Config => getConfig({chains: supportedChains}), [supportedChains]);
+	const config = useMemo(() => getConfig({chains: supportedChains}), [supportedChains]);
 
 	return (
 		<WagmiProvider
-			config={config}
+			config={config as Config}
 			reconnectOnMount={!isIframe()}
 			initialState={initialState}>
 			<QueryClientProvider client={queryClient}>
