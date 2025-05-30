@@ -36,6 +36,8 @@ function Index(): ReactElement | null {
 			: null,
 		schema: yDaemonVaultSchema
 	});
+	// TODO: remove this workaround when possible
+	// <WORKAROUND>
 	const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8';
 	if (vault?.address === YBOLD_VAULT_ADDRESS) {
 		console.log('yBold vault detected');
@@ -58,6 +60,7 @@ function Index(): ReactElement | null {
 			]
 		};
 	}
+	// </WORKAROUND>
 
 	useEffect((): void => {
 		console.log('set currentVault');
