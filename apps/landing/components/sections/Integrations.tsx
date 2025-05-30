@@ -102,10 +102,6 @@ export const Integrations: FC = () => (
 					tagline={'Partners'}
 					title={'Integrations'}
 					description={'External Yearn vaults available through our partners'}
-					cta={{
-						label: 'Learn More',
-						href: '#'
-					}}
 				/>
 				<div className={'mt-8 grid overflow-hidden rounded-lg'}>
 					{integrations.map((integration, index) => (

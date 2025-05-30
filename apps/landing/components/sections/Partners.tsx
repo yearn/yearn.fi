@@ -95,10 +95,6 @@ export const Partners: FC = () => (
 					tagline={'Partners'}
 					title={'Yearn X'}
 					description={'Collaborations exploring yield opportunities with our partners'}
-					cta={{
-						label: 'Learn More',
-						href: '#'
-					}}
 				/>
 
 				{/* Mobile */}

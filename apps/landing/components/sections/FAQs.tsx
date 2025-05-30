@@ -98,10 +98,6 @@ export const FAQs: FC = () => {
 							tagline={'Education'}
 							title={'FAQs'}
 							description={'Frequently asked questions about Yearn'}
-							cta={{
-								label: 'Learn More',
-								href: '#'
-							}}
 						/>
 					</div>
 					<div className={'grid grid-cols-1 gap-8 md:grid-cols-2'}>
