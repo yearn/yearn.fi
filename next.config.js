@@ -10,6 +10,17 @@ module.exports = withPlausibleProxy({
 	scriptName: 'script',
 	customDomain: 'https://yearn.fi'
 })({
+	experimental: {
+		esmExternals: 'loose'
+	},
+	transpilePackages: ['@rainbow-me/rainbowkit', '@vanilla-extract/css', '@vanilla-extract/sprinkles'],
+	webpack: config => {
+		config.resolve.fallback = {
+			...config.resolve.fallback,
+			fs: false
+		};
+		return config;
+	},
 	images: {
 		remotePatterns: [
 			{

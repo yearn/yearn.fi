@@ -1,0 +1,16 @@
+{
+	"functions": {
+		"pages/**/*.js": {
+			"runtime": "nodejs20.x"
+		},
+		"pages/api/**/*.js": {
+			"runtime": "nodejs20.x"
+		}
+	},
+	"builds": [
+		{
+			"src": "package.json",
+			"use": "@vercel/next"
+		}
+	]
+}
