@@ -10,7 +10,7 @@ import {
 	ZERO_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
 
-import type {TAddress} from '@builtbymom/web3/types';
+import type {TAddress} from '@lib/types';
 
 export function getMessariSubgraphEndpoint(chainID: number): string {
 	switch (chainID) {

@@ -1,11 +1,11 @@
 import {useMemo} from 'react';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from '@lib/utils';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
 import {useChainOptions} from '@common/hooks/useChains';
 
 import type {ReactElement} from 'react';
-import type {TDict} from '@builtbymom/web3/types';
+import type {TDict} from '@lib/types';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 
 type TListHero = {

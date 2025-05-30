@@ -1,8 +1,8 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {maxUint256} from 'viem';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, assertAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
-import {allowanceOf, approveERC20, getNetwork} from '@builtbymom/web3/utils/wagmi';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {assert, assertAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
+import {allowanceOf, approveERC20, getNetwork} from '@lib/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
@@ -10,8 +10,8 @@ import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
 import {useYearn} from '@common/contexts/useYearn';
 import {depositViaPartner, withdrawShares} from '@common/utils/actions';
 
-import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
-import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
+import type {TDict, TNormalizedBN} from '@lib/types';
+import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export function useSolverPartnerContract(): TSolverContext {

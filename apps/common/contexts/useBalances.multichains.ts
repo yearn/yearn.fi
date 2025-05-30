@@ -1,24 +1,24 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {erc20Abi} from 'viem';
 import XXH from 'xxhashjs';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
-import {AGGREGATE3_ABI} from '@builtbymom/web3/utils/abi/aggregate.abi';
-import {ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS} from '@builtbymom/web3/utils/constants';
-import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@builtbymom/web3/utils/decoder';
-import {toNormalizedBN} from '@builtbymom/web3/utils/format';
-import {toAddress} from '@builtbymom/web3/utils/tools.address';
-import {isEthAddress, isZero, isZeroAddress} from '@builtbymom/web3/utils/tools.is';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
-import {getNetwork} from '@builtbymom/web3/utils/wagmi/utils';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
+import {AGGREGATE3_ABI} from '@lib/utils/abi/aggregate.abi';
+import {ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS} from '@lib/utils/constants';
+import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@lib/utils/decoder';
+import {toNormalizedBN} from '@lib/utils/format';
+import {toAddress} from '@lib/utils/tools.address';
+import {isEthAddress, isZero, isZeroAddress} from '@lib/utils/tools.is';
+import {retrieveConfig} from '@lib/utils/wagmi';
+import {getNetwork} from '@lib/utils/wagmi/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {deserialize, multicall, serialize} from '@wagmi/core';
 import {type MulticallParameters} from '@wagmi/core';
 
 import type {DependencyList} from 'react';
 import type {Connector} from 'wagmi';
-import type {TAddress} from '@builtbymom/web3/types/address';
-import type {TChainTokens, TDefaultStatus, TDict, TNDict, TToken} from '@builtbymom/web3/types/mixed';
+import type {TAddress} from '@lib/types/address';
+import type {TChainTokens, TDefaultStatus, TDict, TNDict, TToken} from '@lib/types/mixed';
 
 export function createUniqueID(msg: string): string {
 	const hash = XXH.h32(0x536d6f6c).update(msg).digest().toString(16);

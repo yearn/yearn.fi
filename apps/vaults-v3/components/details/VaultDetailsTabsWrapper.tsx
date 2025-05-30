@@ -1,9 +1,9 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {watchAsset} from 'viem/actions';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, cl, toAddress} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {assert, cl, toAddress} from '@lib/utils';
+import {retrieveConfig} from '@lib/utils/wagmi';
 import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react';
 import {VaultInfo} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';

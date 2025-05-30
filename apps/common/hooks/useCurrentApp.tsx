@@ -7,7 +7,7 @@ import {AppName, APPS} from '@common/components/Apps';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
-import type {TDict} from '@builtbymom/web3/types';
+import type {TDict} from '@lib/types';
 
 type TCurrentApp = {
 	name: AppName | 'Home' | string;

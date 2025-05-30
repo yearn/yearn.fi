@@ -1,4 +1,4 @@
-import {isZero} from '@builtbymom/web3/utils';
+import {isZero} from '@lib/utils';
 import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 

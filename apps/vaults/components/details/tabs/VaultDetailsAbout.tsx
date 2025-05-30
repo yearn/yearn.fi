@@ -1,4 +1,4 @@
-import {cl, formatAmount, formatPercent, isZero} from '@builtbymom/web3/utils';
+import {cl, formatAmount, formatPercent, isZero} from '@lib/utils';
 import {useIsMounted} from '@react-hookz/web';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';

@@ -1,7 +1,7 @@
 import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {deserialize, serialize} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {isZeroAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {isZeroAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {useLocalStorageValue} from '@react-hookz/web';
 import {Solver, type TSolver} from '@vaults/types/solvers';
 import {useFetchYearnEarnedForUser} from '@yearn-finance/web-lib/hooks/useFetchYearnEarnedForUser';
@@ -16,8 +16,8 @@ import type {TYChainTokens, TYToken} from '@yearn-finance/web-lib/types';
 import type {TYDaemonEarned} from '@yearn-finance/web-lib/utils/schemas/yDaemonEarnedSchema';
 import type {TYDaemonPricesChain} from '@yearn-finance/web-lib/utils/schemas/yDaemonPricesSchema';
 import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
-import type {TAddress, TDict, TNormalizedBN} from '@builtbymom/web3/types';
+import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
+import type {TAddress, TDict, TNormalizedBN} from '@lib/types';
 
 export const DEFAULT_SLIPPAGE = 0.5;
 export const DEFAULT_MAX_LOSS = 1n;

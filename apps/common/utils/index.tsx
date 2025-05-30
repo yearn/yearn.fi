@@ -1,5 +1,5 @@
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TAddress, TDict} from '@builtbymom/web3/types';
+import type {TAddress, TDict} from '@lib/types';
 
 export function max(input: bigint, balance: bigint): bigint {
 	if (input > balance) {

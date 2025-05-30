@@ -1,12 +1,12 @@
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {toAddress} from '@builtbymom/web3/utils';
+import {useFetch} from '@lib/hooks/useFetch';
+import {toAddress} from '@lib/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {yDaemonVaultsSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 import type {KeyedMutator} from 'swr';
 import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TDict} from '@builtbymom/web3/types';
+import type {TDict} from '@lib/types';
 
 /******************************************************************************
  ** The useFetchYearnVaults hook is used to fetch the vaults from the yDaemon

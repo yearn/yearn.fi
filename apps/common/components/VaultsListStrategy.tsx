@@ -1,8 +1,8 @@
 import {useMemo, useState} from 'react';
 import Link from 'next/link';
 import {motion} from 'framer-motion';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {cl, formatPercent, truncateHex} from '@builtbymom/web3/utils';
+import {useFetch} from '@lib/hooks/useFetch';
+import {cl, formatPercent, truncateHex} from '@lib/utils';
 import {findLatestAPY} from '@vaults/components/details/tabs/findLatestAPY';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {getChainBgColor} from '@vaults-v3/utils';
@@ -15,7 +15,7 @@ import {RenderAmount} from '@common/components/RenderAmount';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TAddress} from '@builtbymom/web3/types';
+import type {TAddress} from '@lib/types';
 import type {TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
 export function VaultsListStrategy({

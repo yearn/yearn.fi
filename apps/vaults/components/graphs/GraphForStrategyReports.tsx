@@ -1,7 +1,7 @@
 import {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
+import {useFetch} from '@lib/hooks/useFetch';
+import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@lib/utils';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';

@@ -1,6 +1,6 @@
 import {erc20Abi} from 'viem';
-import {assert, assertAddress, toAddress} from '@builtbymom/web3/utils';
-import {handleTx, retrieveConfig, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
+import {assert, assertAddress, toAddress} from '@lib/utils';
+import {handleTx, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
 import {getEthZapperContract} from '@vaults/utils';
 import { ERC_4626_ROUTER_ABI } from '@vaults/utils/abi/erc4626Router.abi';
 import {VAULT_MIGRATOR_ABI} from '@vaults/utils/abi/vaultMigrator.abi';
@@ -13,8 +13,8 @@ import {ZAP_ETH_TO_YVETH_ABI} from '@yearn-finance/web-lib/utils/abi/zapEthToYvE
 import {ZAP_FTM_TO_YVFTM_ABI} from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
 
 import type {Connector} from 'wagmi';
-import type {TAddress} from '@builtbymom/web3/types';
-import type {TTxResponse, TWriteTransaction} from '@builtbymom/web3/utils/wagmi';
+import type {TAddress} from '@lib/types';
+import type {TTxResponse, TWriteTransaction} from '@lib/utils/wagmi';
 
 function getChainID(chainID: number): number {
 	if (typeof window !== 'undefined' && (window as any)?.ethereum?.useForknetForMainnet) {

@@ -1,6 +1,6 @@
 import {Children, Fragment, useEffect, useMemo, useState} from 'react';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {toAddress} from '@builtbymom/web3/utils';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {toAddress} from '@lib/utils';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
@@ -21,7 +21,7 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TSortDirection} from '@builtbymom/web3/types';
+import type {TSortDirection} from '@lib/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function HeaderUserPosition(): ReactElement {

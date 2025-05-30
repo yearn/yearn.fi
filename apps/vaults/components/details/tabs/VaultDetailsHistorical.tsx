@@ -1,5 +1,5 @@
-import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
-import {getNetwork} from '@builtbymom/web3/utils/wagmi';
+import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@lib/utils';
+import {getNetwork} from '@lib/utils/wagmi';
 import {truncateHexTx} from '@vaults/utils';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';

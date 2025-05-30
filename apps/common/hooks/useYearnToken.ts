@@ -1,10 +1,10 @@
 import {useMemo} from 'react';
-import {toAddress} from '@builtbymom/web3/utils';
+import {toAddress} from '@lib/utils';
 
 import {useYearn} from '../contexts/useYearn';
 
 import type {TYToken} from '@yearn-finance/web-lib/types';
-import type {TAddress} from '@builtbymom/web3/types';
+import type {TAddress} from '@lib/types';
 
 /******************************************************************************
  ** The useYearnToken hook is used to retrieve the token from the useWallet

@@ -1,5 +1,5 @@
 import {useMemo, useState} from 'react';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from '@lib/utils';
 import {ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS} from '@vaults-v3/constants';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';

@@ -1,7 +1,7 @@
 import {Children, Fragment, useMemo, useState} from 'react';
 import {motion} from 'framer-motion';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {cl, isZero} from '@builtbymom/web3/utils';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {cl, isZero} from '@lib/utils';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
@@ -16,7 +16,7 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TSortDirection} from '@builtbymom/web3/types';
+import type {TSortDirection} from '@lib/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function Background(): ReactElement {

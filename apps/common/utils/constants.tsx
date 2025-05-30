@@ -1,5 +1,5 @@
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from 'viem/chains';
-import {toAddress} from '@builtbymom/web3/utils';
+import {toAddress} from '@lib/utils';
 import {IconAbout} from '@common/icons/IconAbout';
 import {IconFrontends} from '@common/icons/IconFrontends';
 import {IconIntegrations} from '@common/icons/IconIntegrations';
@@ -7,7 +7,7 @@ import {IconVaults} from '@common/icons/IconVaults';
 import {IconYearn} from '@common/icons/IconYearn';
 import {IconYearnXApps} from '@common/icons/IconYearnXApps';
 
-import type {TAddress, TNDict} from '@builtbymom/web3/types';
+import type {TAddress, TNDict} from '@lib/types';
 import type {TApp} from '@common/types/category';
 
 export const DEFAULT_SLIPPAGE = 0.5;

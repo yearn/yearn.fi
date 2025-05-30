@@ -1,5 +1,5 @@
 import {useConnect} from 'wagmi';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+import {retrieveConfig} from '@lib/utils/wagmi';
 import {useCustomCompareMemo, useDeepCompareMemo} from '@react-hookz/web';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
