@@ -20,13 +20,19 @@ module.exports = withPlausibleProxy({
 		'@rainbow-me/rainbowkit',
 		'@rainbow-me/rainbowkit/wallets',
 		'@headlessui/react',
+		'@tanstack/react-query',
 		'recharts',
 		'framer-motion'
 	],
 	experimental: {
 		esmExternals: 'loose'
 	},
-	transpilePackages: ['@rainbow-me/rainbowkit', '@vanilla-extract/css', '@vanilla-extract/sprinkles'],
+	transpilePackages: [
+		'@rainbow-me/rainbowkit',
+		'@vanilla-extract/css',
+		'@vanilla-extract/sprinkles',
+		'@tanstack/react-query'
+	],
 	webpack: config => {
 		config.resolve.fallback = {
 			...config.resolve.fallback,
