@@ -10,6 +10,19 @@ module.exports = withPlausibleProxy({
 	scriptName: 'script',
 	customDomain: 'https://yearn.fi'
 })({
+	optimizePackageImports: [
+		'viem',
+		'viem/chains',
+		'viem/actions',
+		'wagmi',
+		'wagmi/actions',
+		'wagmi/connectors',
+		'@rainbow-me/rainbowkit',
+		'@rainbow-me/rainbowkit/wallets',
+		'@headlessui/react',
+		'recharts',
+		'framer-motion'
+	],
 	experimental: {
 		esmExternals: 'loose'
 	},
