@@ -22,7 +22,8 @@ module.exports = withPlausibleProxy({
 		'@headlessui/react',
 		'@tanstack/react-query',
 		'recharts',
-		'framer-motion'
+		'framer-motion',
+		'@react-hookz/web'
 	],
 	experimental: {
 		esmExternals: 'loose'
@@ -31,7 +32,8 @@ module.exports = withPlausibleProxy({
 		'@rainbow-me/rainbowkit',
 		'@vanilla-extract/css',
 		'@vanilla-extract/sprinkles',
-		'@tanstack/react-query'
+		'@tanstack/react-query',
+		'@react-hookz/web'
 	],
 	webpack: config => {
 		config.resolve.fallback = {
