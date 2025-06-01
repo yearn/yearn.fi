@@ -10,23 +10,22 @@ module.exports = withPlausibleProxy({
 	scriptName: 'script',
 	customDomain: 'https://yearn.fi'
 })({
-	optimizePackageImports: [
-		'viem',
-		'viem/chains',
-		'viem/actions',
-		'wagmi',
-		'wagmi/actions',
-		'wagmi/connectors',
-		'@rainbow-me/rainbowkit',
-		'@rainbow-me/rainbowkit/wallets',
-		'@headlessui/react',
-		'@tanstack/react-query',
-		'recharts',
-		'framer-motion',
-		'@react-hookz/web'
-	],
 	experimental: {
-		esmExternals: 'loose'
+		esmExternals: 'loose',
+		optimizePackageImports: [
+			'viem/chains',
+			'viem/actions',
+			'wagmi',
+			'wagmi/actions',
+			'@rainbow-me/rainbowkit',
+			'@rainbow-me/rainbowkit/wallets',
+			'@headlessui/react',
+			'@tanstack/react-query',
+			'recharts',
+			// '@safe-global/safe-apps-sdk',
+			'framer-motion',
+			'@react-hookz/web'
+		]
 	},
 	transpilePackages: [
 		'@rainbow-me/rainbowkit',
