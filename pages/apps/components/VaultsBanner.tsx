@@ -1,10 +1,17 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {SectionHeader} from '@common/components/SectionHeader';
 
 import type {ReactElement} from 'react';
 
 export function VaultsBanner(): ReactElement {
+	const {address} = useWeb3();
+
+	if (address) {
+		return <></>;
+	}
+
 	return (
 		<div
 			className={

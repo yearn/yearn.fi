@@ -1,7 +1,7 @@
 import {useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {formatAmount, formatPercent, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
+import {cl, formatAmount, formatPercent, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 import {IconExpand} from '@common/icons/IconExpand';
@@ -16,9 +16,9 @@ import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVa
 import type {TNormalizedBN, TSortDirection} from '@builtbymom/web3/types';
 
 enum TVaultsPositionsView {
-	Empty,
-	Card,
-	Table
+	Empty = 'Empty',
+	Card = 'Card',
+	Table = 'Table'
 }
 
 const getVaultsPositionsView = (userPositions: TYDaemonVault[]): TVaultsPositionsView => {
@@ -36,19 +36,29 @@ const BalanceCard: FC<{
 		<div className={'flex h-[120px] flex-col justify-center p-6'}>
 			<div className={'flex items-center gap-2'}>
 				<p className={'text-[12px] font-medium text-white/75'}>{'Your Deposits'}</p>
-
-				<div
-					className={
-						'flex size-5 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20'
-					}
-					onClick={onExpansionClick}>
-					{view === TVaultsPositionsView.Card ? <IconExpand /> : <IconMinimize />}
-				</div>
+				{view !== TVaultsPositionsView.Empty && (
+					<div
+						className={
+							'flex size-5 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20'
+						}
+						onClick={onExpansionClick}>
+						{view === TVaultsPositionsView.Card ? <IconExpand /> : <IconMinimize />}
+					</div>
+				)}
 			</div>
 			<p className={'text-[28px] font-medium text-white'}>
 				<span className={'font-medium text-white/50'}>{'$'}</span>
 				{formatAmount(balance)}
 			</p>
+		</div>
+	);
+};
+
+const VaultEmptyCard: FC = () => {
+	return (
+		<div className={'flex flex-1 flex-col justify-center rounded-lg bg-neutral-100 p-6'}>
+			<p className={'text-[18px] font-medium text-white/75'}>{'No positions found'}</p>
+			<p className={'text-[14px] font-medium text-white/50'}>{'Your vault positions will show here'}</p>
 		</div>
 	);
 };
@@ -71,8 +81,8 @@ const VaultPositionCard: FC<{
 				className={
 					'relative flex cursor-pointer items-center justify-between overflow-hidden rounded-lg bg-neutral-100 transition-all hover:bg-neutral-200'
 				}>
-				<div className={'flex h-full flex-row items-center'}>
-					<div className={'flex flex-col gap-3 p-4'}>
+				<div className={'flex size-full flex-row items-center '}>
+					<div className={'flex w-full flex-col gap-3 p-4'}>
 						<div className={'flex items-center gap-2'}>
 							<div className={'rounded-full'}>
 								<ImageWithFallback
@@ -189,24 +199,43 @@ export const VaultsPositions: FC = () => {
 		}
 	};
 
-	const VaultView = useMemo(() => {
+	const VaultView: TVaultsPositionsView = useMemo(() => {
 		if (viewOverride) return viewOverride;
 		return getVaultsPositionsView(userPositions);
 	}, [userPositions, viewOverride]);
 
+	// Adjust
+	const styles = useMemo(() => {
+		const cards = 'flex flex-col md:flex-row gap-2 md:p-0 p-2';
+		if ([TVaultsPositionsView.Card, TVaultsPositionsView.Empty].includes(VaultView)) {
+			return {
+				divider: 'w-full h-px md:h-[100px] md:w-px',
+				content: 'flex-col md:flex-row md:items-center md:gap-8',
+				cards
+			};
+		}
+		return {
+			divider: 'h-px w-full',
+			content: 'flex-col',
+			cards
+		};
+	}, [VaultView]);
+
 	return (
-		<div
-			className={`flex rounded-[16px] border border-dashed border-white/10 bg-white/5 ${VaultView === TVaultsPositionsView.Card ? 'flex-row items-center gap-8 ' : 'flex-col'}`}>
+		<div className={`flex rounded-[16px] border border-dashed border-white/10 bg-white/5 ${styles.content}`}>
 			<BalanceCard
 				view={VaultView}
 				balance={totalDeposited}
 				onExpansionClick={handleExpansionClick}
 			/>
-			<div
-				className={` bg-white/10 ${VaultView === TVaultsPositionsView.Card ? 'h-[100px] w-px' : VaultView === TVaultsPositionsView.Empty ? 'hidden' : 'h-px w-full'}`}
-			/>
+			<div className={`bg-white/10 ${styles.divider}`} />
+			{VaultView === TVaultsPositionsView.Empty && (
+				<div className={styles.cards}>
+					<VaultEmptyCard />
+				</div>
+			)}
 			{VaultView === TVaultsPositionsView.Card && (
-				<div className={'flex flex-row gap-4'}>
+				<div className={styles.cards}>
 					{userPositions.map((vault, index) => (
 						<VaultPositionCard
 							key={index}
@@ -216,35 +245,45 @@ export const VaultsPositions: FC = () => {
 				</div>
 			)}
 			{VaultView === TVaultsPositionsView.Table && (
-				<div className={'space-y-6 p-4 pt-2'}>
-					<div className={'col-span-12 flex w-full flex-col'}>
-						<VaultsListHead
-							sortBy={sortBy}
-							sortDirection={sortDirection}
-							onSort={handleSort}
-							items={[
-								{label: 'Vault', value: 'name', sortable: true, className: 'col-span-6'},
-								{label: 'Est. APY', value: 'estAPY', sortable: false, className: 'col-span-3'},
-								{
-									label: 'Position Value',
-									value: 'totalValue',
-									sortable: true,
-									className: 'col-span-3 justify-end'
-								}
-							]}
-						/>
-						<div className={'grid gap-1'}>
-							{userPositions.map((vault, index) => {
-								const isV3 = vault.version.startsWith('3') || vault.version.startsWith('~3');
-								return (
-									<VaultsListRow
-										key={`${vault.chainID}_${vault.address}`}
-										currentVault={vault}
-										isV2={!isV3}
-										index={index}
-									/>
-								);
-							})}
+				<div className={'space-y-6'}>
+					<div className={cl(styles.cards, 'block md:hidden')}>
+						{userPositions.map((vault, index) => (
+							<VaultPositionCard
+								key={index}
+								vault={vault}
+							/>
+						))}
+					</div>
+					<div className={'hidden md:block'}>
+						<div className={'col-span-12 flex w-full flex-col'}>
+							<VaultsListHead
+								sortBy={sortBy}
+								sortDirection={sortDirection}
+								onSort={handleSort}
+								items={[
+									{label: 'Vault', value: 'name', sortable: true, className: 'col-span-6'},
+									{label: 'Est. APY', value: 'estAPY', sortable: false, className: 'col-span-3'},
+									{
+										label: 'Position Value',
+										value: 'totalValue',
+										sortable: true,
+										className: 'col-span-3 justify-end'
+									}
+								]}
+							/>
+							<div className={'grid gap-1'}>
+								{userPositions.map((vault, index) => {
+									const isV3 = vault.version.startsWith('3') || vault.version.startsWith('~3');
+									return (
+										<VaultsListRow
+											key={`${vault.chainID}_${vault.address}`}
+											currentVault={vault}
+											isV2={!isV3}
+											index={index}
+										/>
+									);
+								})}
+							</div>
 						</div>
 					</div>
 				</div>
