@@ -165,7 +165,7 @@ export function VaultDetailsQuickActionsTo(props: {
 	});
 	const selectedOptionToSymbol = useMemo(() => {
 		if (isAutoStakingEnabled) {
-			return props.vaultData.stakedGaugeSymbol;
+			return props.vaultData.stakedGaugeSymbol || actionParams?.selectedOptionTo?.symbol;
 		}
 
 		return actionParams?.selectedOptionTo?.symbol;
