@@ -1,5 +1,8 @@
 import {Children, Fragment, useEffect, useMemo, useState} from 'react';
+import {Button} from '@lib/components/Button';
+import {Renderable} from '@lib/components/Renderable';
 import {useWeb3} from '@lib/contexts/useWeb3';
+import {IconChain} from '@lib/icons/IconChain';
 import {toAddress} from '@lib/utils';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
@@ -11,17 +14,14 @@ import {ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constan
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
-import {Button} from '@lib/components/Button';
-import {Renderable} from '@lib/components/Renderable';
-import {IconChain} from '@lib/icons/IconChain';
 import {Counter} from '@common/components/Counter';
 import {ListHead} from '@common/components/ListHead';
 import {Pagination} from '@common/components/Pagination';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement, ReactNode} from 'react';
-import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@lib/types';
+import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function HeaderUserPosition(): ReactElement {

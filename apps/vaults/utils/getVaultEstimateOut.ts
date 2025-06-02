@@ -1,7 +1,7 @@
 import {readContract} from 'wagmi/actions';
 import {assert, assertAddress, toBigInt, toNormalizedBN} from '@lib/utils';
-import {retrieveConfig} from '@lib/utils/wagmi';
 import {VAULT_ABI} from '@lib/utils/abi/vault.abi';
+import {retrieveConfig} from '@lib/utils/wagmi';
 
 import {VAULT_V3_ABI} from './abi/vaultV3.abi';
 

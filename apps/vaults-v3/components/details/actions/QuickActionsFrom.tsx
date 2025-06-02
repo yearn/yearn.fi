@@ -2,6 +2,7 @@ import {useCallback, useEffect, useMemo} from 'react';
 import {useRouter} from 'next/router';
 import {erc20Abi} from 'viem';
 import {useBlockNumber, useReadContracts} from 'wagmi';
+import {Renderable} from '@lib/components/Renderable';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {
 	cl,
@@ -22,7 +23,6 @@ import {
 import {AGGREGATE3_ABI} from '@lib/utils/abi/aggregate.abi';
 import {getNetwork} from '@lib/utils/wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import {Renderable} from '@lib/components/Renderable';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnBalance} from '@common/hooks/useYearnBalance';
@@ -30,8 +30,8 @@ import {IconQuestion} from '@common/icons/IconQuestion';
 import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 
 import type {ChangeEvent, ReactElement} from 'react';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
 function AmountWithOptionalTooltip(props: {
