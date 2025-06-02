@@ -3,8 +3,7 @@ import {toAddress} from '@lib/utils';
 
 import {useYearn} from '../contexts/useYearn';
 
-import type {TYToken} from '@lib/types';
-import type {TAddress} from '@lib/types';
+import type {TAddress, TYToken} from '@lib/types';
 
 /******************************************************************************
  ** The useYearnToken hook is used to retrieve the token from the useWallet

@@ -1,6 +1,6 @@
 import {useState} from 'react';
-import {cl} from '@lib/utils';
 import {Switch as HeadlessSwitch} from '@headlessui/react';
+import {cl} from '@lib/utils';
 
 import type {KeyboardEvent, ReactElement} from 'react';
 

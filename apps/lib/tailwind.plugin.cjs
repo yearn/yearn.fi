@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 const plugin = require('tailwindcss/plugin');
 const defaultTheme = require('tailwindcss/defaultTheme');
 const {paddings} = require('./tailwind.theme.cjs');
@@ -23,14 +24,14 @@ module.exports = {
 			mono: ['Aeonik Mono', 'Roboto Mono', ...defaultTheme.fontFamily.mono]
 		},
 		colors: {
-			'black': 'hsl(0, 0%, 0%)',
-			'white': 'rgb(255, 255, 255)',
-			'transparent': 'transparent',
-			'inherit': 'inherit',
+			black: 'hsl(0, 0%, 0%)',
+			white: 'rgb(255, 255, 255)',
+			transparent: 'transparent',
+			inherit: 'inherit',
 
 			/* 🔵 - Yearn Finance ******************************************************
-			** Colors for the legacy Yearn design system
-			**************************************************************************/
+			 ** Colors for the legacy Yearn design system
+			 **************************************************************************/
 			'primary-100': withOpacityValue('--color-primary-100'),
 			'primary-200': withOpacityValue('--color-primary-200'),
 			'primary-500': withOpacityValue('--color-primary-500'),
@@ -47,10 +48,9 @@ module.exports = {
 			'red-300': withOpacityValue('--color-red-300'),
 			'red-200': withOpacityValue('--color-red-200'),
 
-
 			/* 🔵 - Yearn Finance ******************************************************
-			** Colors for the next Yearn design system
-			**************************************************************************/
+			 ** Colors for the next Yearn design system
+			 **************************************************************************/
 			primary: withOpacityValue('--color-primary'),
 			'yearn-blue': withOpacityValue('--color-primary'),
 
@@ -65,7 +65,7 @@ module.exports = {
 				600: withOpacityValue('--color-neutral-600'),
 				700: withOpacityValue('--color-neutral-700'),
 				800: withOpacityValue('--color-neutral-800'),
-				900: withOpacityValue('--color-neutral-900'),
+				900: withOpacityValue('--color-neutral-900')
 			},
 			'good-ol-grey': {
 				0: withOpacityValue('--color-neutral-0'),
@@ -77,7 +77,7 @@ module.exports = {
 				600: withOpacityValue('--color-neutral-600'),
 				700: withOpacityValue('--color-neutral-700'),
 				800: withOpacityValue('--color-neutral-800'),
-				900: withOpacityValue('--color-neutral-900'),
+				900: withOpacityValue('--color-neutral-900')
 			},
 
 			/* Up Only Green */
@@ -91,7 +91,7 @@ module.exports = {
 				600: withOpacityValue('--color-green-600'),
 				700: withOpacityValue('--color-green-700'),
 				800: withOpacityValue('--color-green-800'),
-				900: withOpacityValue('--color-green-900'),
+				900: withOpacityValue('--color-green-900')
 			},
 			'up-only-green': {
 				50: withOpacityValue('--color-green-50'),
@@ -103,7 +103,7 @@ module.exports = {
 				600: withOpacityValue('--color-green-600'),
 				700: withOpacityValue('--color-green-700'),
 				800: withOpacityValue('--color-green-800'),
-				900: withOpacityValue('--color-green-900'),
+				900: withOpacityValue('--color-green-900')
 			},
 
 			/* Tokyo Party */
@@ -117,7 +117,7 @@ module.exports = {
 				600: withOpacityValue('--color-purple-600'),
 				700: withOpacityValue('--color-purple-700'),
 				800: withOpacityValue('--color-purple-800'),
-				900: withOpacityValue('--color-purple-900'),
+				900: withOpacityValue('--color-purple-900')
 			},
 			'tokyo-party': {
 				50: withOpacityValue('--color-purple-50'),
@@ -129,7 +129,7 @@ module.exports = {
 				600: withOpacityValue('--color-purple-600'),
 				700: withOpacityValue('--color-purple-700'),
 				800: withOpacityValue('--color-purple-800'),
-				900: withOpacityValue('--color-purple-900'),
+				900: withOpacityValue('--color-purple-900')
 			},
 
 			/* Disco Salmon */
@@ -143,7 +143,7 @@ module.exports = {
 				600: withOpacityValue('--color-pink-600'),
 				700: withOpacityValue('--color-pink-700'),
 				800: withOpacityValue('--color-pink-800'),
-				900: withOpacityValue('--color-pink-900'),
+				900: withOpacityValue('--color-pink-900')
 			},
 			'disco-salmon': {
 				50: withOpacityValue('--color-pink-50'),
@@ -155,7 +155,7 @@ module.exports = {
 				600: withOpacityValue('--color-pink-600'),
 				700: withOpacityValue('--color-pink-700'),
 				800: withOpacityValue('--color-pink-800'),
-				900: withOpacityValue('--color-pink-900'),
+				900: withOpacityValue('--color-pink-900')
 			},
 
 			/* Metaverse Sunset */
@@ -169,7 +169,7 @@ module.exports = {
 				600: withOpacityValue('--color-orange-600'),
 				700: withOpacityValue('--color-orange-700'),
 				800: withOpacityValue('--color-orange-800'),
-				900: withOpacityValue('--color-orange-900'),
+				900: withOpacityValue('--color-orange-900')
 			},
 			'metaverse-sunset': {
 				50: withOpacityValue('--color-orange-50'),
@@ -181,38 +181,38 @@ module.exports = {
 				600: withOpacityValue('--color-orange-600'),
 				700: withOpacityValue('--color-orange-700'),
 				800: withOpacityValue('--color-orange-800'),
-				900: withOpacityValue('--color-orange-900'),
-			},
+				900: withOpacityValue('--color-orange-900')
+			}
 		},
 		extend: {
 			gridTemplateColumns: {
-				'22': 'repeat(22, minmax(0, 1fr))'
+				22: 'repeat(22, minmax(0, 1fr))'
 			},
 			spacing: {
-				'none': 'var(--padding-none)',
-				'tightest': 'var(--padding-tightest)',
-				'tighter': 'var(--padding-tighter)',
-				'tight': 'var(--padding-tight)',
-				'normal': 'var(--padding-normal)',
-				'wide': 'var(--padding-wide)',
-				'wider': 'var(--padding-wider)',
-				'widest': 'var(--padding-widest)'
+				none: 'var(--padding-none)',
+				tightest: 'var(--padding-tightest)',
+				tighter: 'var(--padding-tighter)',
+				tight: 'var(--padding-tight)',
+				normal: 'var(--padding-normal)',
+				wide: 'var(--padding-wide)',
+				wider: 'var(--padding-wider)',
+				widest: 'var(--padding-widest)'
 			},
 			width: {
-				'inherit': 'inherit'
+				inherit: 'inherit'
 			},
 			maxWidth: {
-				'xl': '552px',
+				xl: '552px',
 				'4xl': '904px',
 				'6xl': '1200px'
 			},
 			fontSize: {
-				'xs': ['12px', '16px'],
-				'sm': ['14px', '20px'],
-				'base': ['16px', '24px'],
-				'intermediate': ['18px', '24px'],
-				'lg': ['20px', '32px'],
-				'xl': ['24px', '32px'],
+				xs: ['12px', '16px'],
+				sm: ['14px', '20px'],
+				base: ['16px', '24px'],
+				intermediate: ['18px', '24px'],
+				lg: ['20px', '32px'],
+				xl: ['24px', '32px'],
 				'3xl': ['32px', '40px'],
 				'4xl': ['40px', '56px'],
 				'7xl': ['80px', '96px']
@@ -225,7 +225,7 @@ module.exports = {
 	plugins: [
 		require('@tailwindcss/typography'),
 		require('@tailwindcss/forms'),
-		plugin(function ({addBase, addUtilities, theme}) {
+		plugin(function ({addBase, addUtilities}) {
 			addBase({
 				':root': {
 					...paddings

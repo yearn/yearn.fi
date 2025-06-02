@@ -3,16 +3,15 @@ import {useWeb3} from '@lib/contexts/useWeb3';
 import {useTokenList} from '@lib/contexts/WithTokenList';
 import {useChainID} from '@lib/hooks/useChainID';
 import {toAddress} from '@lib/utils';
+import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {getNetwork} from '@lib/utils/wagmi';
 import {useDeepCompareMemo} from '@react-hookz/web';
-import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
 
 import {useBalances} from './useBalances.multichains';
 
-import type {TYChainTokens, TYToken} from '@lib/types';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
-import type {TDict, TToken} from '@lib/types';
+import type {TDict, TToken, TYChainTokens, TYToken} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function useYearnTokens({
 	vaults,

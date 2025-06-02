@@ -18,7 +18,7 @@ module.exports = {
 		ecmaVersion: 2022,
 		sourceType: 'module',
 		tsconfigRootDir: __dirname,
-		project: ['./tsconfig.json']
+		project: '../../tsconfig.json'
 	},
 	plugins: ['@typescript-eslint', 'react', 'tailwindcss', 'unused-imports', 'simple-import-sort', 'import'],
 	settings: {

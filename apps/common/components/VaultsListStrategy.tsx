@@ -2,20 +2,20 @@ import {useMemo, useState} from 'react';
 import Link from 'next/link';
 import {motion} from 'framer-motion';
 import {useFetch} from '@lib/hooks/useFetch';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {IconLinkOut} from '@lib/icons/IconLinkOut';
 import {cl, formatPercent, truncateHex} from '@lib/utils';
+import {formatDuration} from '@lib/utils/format.time';
+import {getNetwork} from '@lib/utils/wagmi/utils';
 import {findLatestAPY} from '@vaults/components/details/tabs/findLatestAPY';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {getChainBgColor} from '@vaults-v3/utils';
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
-import {IconLinkOut} from '@lib/icons/IconLinkOut';
-import {formatDuration} from '@lib/utils/format.time';
-import {getNetwork} from '@lib/utils/wagmi/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress} from '@lib/types';
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
 export function VaultsListStrategy({

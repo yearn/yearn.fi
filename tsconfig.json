@@ -52,6 +52,7 @@
 		"theme.config.js",
 		".eslintrc.js",
 		".next/types/**/*.ts",
+		"./apps/lib/.eslintrc.cjs",
 		"jest.config.js",
 		"vitest.config.ts",
 		"worker/index.js",

@@ -1,4 +1,5 @@
 import {encodeFunctionData, toHex} from 'viem';
+import {yToast} from '@lib/components/yToast';
 
 import {toNormalizedBN} from './format';
 import {isObject} from './tools.is';
@@ -6,7 +7,6 @@ import {isObject} from './tools.is';
 import type {EncodeFunctionDataParameters, Hex} from 'viem';
 import type {TAddress} from '../types';
 import type {TSortDirection} from '../types/mixed';
-import {yToast} from '@lib/components/yToast';
 
 /***************************************************************************
  ** Parse some markdown to get the associated rich content. Instead of using

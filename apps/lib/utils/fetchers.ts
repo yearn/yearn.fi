@@ -1,5 +1,5 @@
-import axios from 'axios';
 import {serialize} from 'wagmi';
+import axios from 'axios';
 
 import type {AxiosRequestConfig} from 'axios';
 import type {z} from 'zod';

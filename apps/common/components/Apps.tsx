@@ -1,8 +1,8 @@
 import Image from 'next/image';
 import vaultsManifest from 'public/apps/vaults-manifest.json';
+import {VEYFI_DYFI_ADDRESS, YCRV_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {VAULTS_MENU} from '@vaults/constants/menu';
 import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
-import {VEYFI_DYFI_ADDRESS, YCRV_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {LogoYearn} from '@common/icons/LogoYearn';
 

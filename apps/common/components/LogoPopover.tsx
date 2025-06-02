@@ -5,8 +5,8 @@ import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
-import {cl} from '@lib/utils';
 import {Popover, Transition} from '@headlessui/react';
+import {cl} from '@lib/utils';
 
 import {APPS} from './YearnApps';
 

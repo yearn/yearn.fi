@@ -1,9 +1,9 @@
 import {cloneElement, Fragment, useState} from 'react';
+import {Combobox, Transition} from '@headlessui/react';
+import {Renderable} from '@lib/components/Renderable';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {cl, formatAmount} from '@lib/utils';
-import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
-import {Renderable} from '@lib/components/Renderable';
 import {useYearn} from '@common/contexts/useYearn';
 import {IconChevron} from '@common/icons/IconChevron';
 

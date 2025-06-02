@@ -1,16 +1,16 @@
 import {cloneElement, Fragment, useEffect, useMemo, useState} from 'react';
 import {useConnect, usePublicClient} from 'wagmi';
-import {useWeb3} from '../contexts/useWeb3';
-import {toSafeChainID} from '../hooks/useChainID';
-import {cl} from '../utils/cl';
-import {truncateHex} from '../utils/tools.address';
-import {retrieveConfig} from '../utils/wagmi';
 import {Listbox, Transition} from '@headlessui/react';
 import {useAccountModal, useChainModal, useConnectModal} from '@rainbow-me/rainbowkit';
 import {useIsMounted} from '@react-hookz/web';
 
+import {useWeb3} from '../contexts/useWeb3';
+import {toSafeChainID} from '../hooks/useChainID';
 import {IconChevronBottom} from '../icons/IconChevronBottom';
 import {IconWallet} from '../icons/IconWallet';
+import {cl} from '../utils/cl';
+import {truncateHex} from '../utils/tools.address';
+import {retrieveConfig} from '../utils/wagmi';
 import {Button} from './Button';
 
 import type {AnchorHTMLAttributes, DetailedHTMLProps, ReactElement} from 'react';
@@ -182,7 +182,7 @@ function NetworkSelector({networks}: {networks: number[]}): ReactElement {
 										}>
 										<div
 											className={
-												'text-xxs w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-neutral-900'
+												'w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
 											}>
 											{supportedNetworks.map(
 												(network): ReactElement => (
