@@ -13,7 +13,7 @@ module.exports = withPlausibleProxy({
 	experimental: {
 		esmExternals: 'loose',
 		optimizePackageImports: [
-			// 'viem',
+			'viem',
 			'viem/chains',
 			'viem/actions',
 			'wagmi',
@@ -36,6 +36,10 @@ module.exports = withPlausibleProxy({
 		'@react-hookz/web'
 	],
 	webpack: config => {
+		config.resolve.alias = {
+			...config.resolve.alias,
+			'@safe-global/safe-apps-sdk': require.resolve('@safe-global/safe-apps-sdk/dist/esm/index.js')
+		};
 		config.resolve.fallback = {
 			...config.resolve.fallback,
 			fs: false
