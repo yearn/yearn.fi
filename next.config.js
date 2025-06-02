@@ -5,6 +5,7 @@ const {withPlausibleProxy} = require('next-plausible');
 // 	dest: 'public',
 // 	disable: process.env.NODE_ENV !== 'production'
 // });
+const path = require('path');
 
 module.exports = withPlausibleProxy({
 	scriptName: 'script',
@@ -35,15 +36,23 @@ module.exports = withPlausibleProxy({
 		'@tanstack/react-query',
 		'@react-hookz/web'
 	],
+
 	webpack: config => {
-		config.resolve.alias = {
-			...config.resolve.alias,
-			'@safe-global/safe-apps-sdk': require.resolve('@safe-global/safe-apps-sdk/dist/esm/index.js')
+		config.resolve = {
+			...config.resolve,
+			alias: {
+				...config.resolve.alias,
+				'@safe-global/safe-apps-sdk': path.resolve(
+					__dirname,
+					'node_modules/@safe-global/safe-apps-sdk/dist/esm'
+				)
+			},
+			fallback: {
+				...config.resolve.fallback,
+				fs: false
+			}
 		};
-		config.resolve.fallback = {
-			...config.resolve.fallback,
-			fs: false
-		};
+
 		return config;
 	},
 	images: {
