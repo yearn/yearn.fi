@@ -29,7 +29,7 @@ export function VaultsListEmpty({
 				className={
 					'mt-2 flex h-96 w-full animate-pulse flex-col items-center justify-center gap-2 rounded-[12px] bg-white/5 px-10 py-2'
 				}>
-				<b className={'text-lg'}>{'Fetching Vaults…'}</b>
+				<b className={'text-lg font-medium'}>{'Fetching Vaults…'}</b>
 				<div className={'flex h-10 items-center justify-center'}>
 					<span className={'loader'} />
 				</div>

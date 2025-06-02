@@ -76,7 +76,7 @@ function Logo({currentHost}: {currentHost: string; isVaultPage: boolean}): React
 					</MotionDiv>
 				);
 			})}
-			{(pathname === '/vaults' || pathname.startsWith('/v2/') || pathname.startsWith('/v3/')) && (
+			{(pathname === '/vaults' || pathname.startsWith('/v2') || pathname.startsWith('/v3')) && (
 				<MotionDiv
 					key={'Vaults'}
 					name={'Vaults'}

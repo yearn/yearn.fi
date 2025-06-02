@@ -18,6 +18,7 @@ export const V3_STAKING_ZAP_ADDRESS: TNDict<TAddress> = {
 	[mainnet.id]: toAddress('0x5435cA9b6D9468A6e0404a4819D39ebbF036DB1E'),
 	[arbitrum.id]: toAddress('0x1E789A49902370E5858Fae67518aF49d8deA299c')
 }; //Address of the zap to deposit & stake for the v3 staking
+
 export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum];
 
 export const VAULTS_APPS: TApp[] = [

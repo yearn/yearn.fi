@@ -120,8 +120,8 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 	return (
 		<div
 			id={'head'}
-			className={'inset-x-0 top-0 z-50 w-full'}>
-			<div className={'w-full border-b border-white/10'}>
+			className={'inset-x-0 top-0 z-50 w-full border-b border-white/10 py-2'}>
+			<div className={'w-full '}>
 				<header className={'yearn--header mx-auto max-w-6xl !px-0'}>
 					<div className={'direction-row flex items-center justify-start gap-x-6 py-2 md:py-1'}>
 						<div className={'flex justify-center'}>

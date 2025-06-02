@@ -72,7 +72,7 @@ const WithLayout = memo(function WithLayout(
 									variants={variants}
 									className={cl(
 										// 'w-full overflow-x-hidden md:ml-[305px]',
-										'w-full overflow-x-hidden md:mt-[64px]'
+										'w-full overflow-x-hidden md:mt-[72px]'
 									)}>
 									<Component
 										router={props.router}

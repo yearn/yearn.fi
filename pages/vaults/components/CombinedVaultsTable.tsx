@@ -9,6 +9,7 @@ import {Pagination} from '@common/components/Pagination';
 import {SearchBar} from '@common/components/SearchBar';
 import {useYearn} from '@common/contexts/useYearn';
 
+import {ChainFilterDropdown} from './ChainFilterDropdown';
 import {VaultsListHead} from './VaultsListHead';
 import {VaultsListRow} from './VaultsListRow';
 
@@ -88,7 +89,8 @@ function CombinedVaultsTable(): ReactElement {
 		sortBy: sortByV3,
 		onChangeSortDirection: onChangeSortDirectionV3,
 		onChangeSortBy: onChangeSortByV3,
-		onSearch
+		onSearch,
+		onChangeChains
 	} = useQueryArguments({
 		defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
 		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
@@ -164,72 +166,30 @@ function CombinedVaultsTable(): ReactElement {
 	const handleFilterClick = (filter: TFilter): void => {
 		set_activeFilter(filter);
 		set_page(0);
-		// Reset user sort selection when changing filters
 		set_hasUserSelectedSort(false);
 	};
 
-	if (vaultList.isLoading || vaultList.isEmpty) {
-		return (
-			<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
-				<VaultsListHead
-					sortBy={
-						activeFilter === TFilter.All && !hasUserSelectedSort
-							? 'name'
-							: activeFilter === TFilter.Popular
-								? 'tvl'
-								: sortBy
-					}
-					sortDirection={
-						activeFilter === TFilter.All && !hasUserSelectedSort
-							? 'desc'
-							: activeFilter === TFilter.Popular
-								? 'desc'
-								: sortDirection
-					}
-					onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-						set_hasUserSelectedSort(true);
-						if (newSortDirection === '') {
-							onChangeSortBy('tvl');
-							onChangeSortDirection('desc');
-							return;
-						}
-						onChangeSortBy(newSortBy as TPossibleSortBy);
-						onChangeSortDirection(newSortDirection as TSortDirection);
-					}}
-					items={[
-						{label: 'Vault', value: 'name', sortable: true, className: 'col-span-6'},
-						{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-3'},
-						{
-							label: 'Risk',
-							value: 'score',
-							sortable: true,
-							className: 'col-span-3 whitespace-nowrap'
-						},
-						{label: 'Vault Type', value: 'vaultType', sortable: true, className: 'col-span-3'},
-						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-3 justify-end'}
-					]}
-				/>
-				<div className={'grid gap-1'}>{vaultList.allVaults}</div>
-			</div>
-		);
-	}
-
 	return (
 		<div>
-			<div className={'mb-4 flex w-full flex-row items-center justify-between gap-2'}>
-				<div className={'flex w-full flex-row flex-wrap items-center gap-2'}>
+			<div className={'mb-4 flex h-10 w-full flex-row items-stretch justify-between '}>
+				<div className={'flex size-full flex-row gap-2'}>
 					{Object.values(TFilter).map(filter => (
 						<button
 							key={filter}
 							onClick={() => handleFilterClick(filter)}
-							className={`rounded-full ${activeFilter === filter ? 'bg-white/10' : ''} px-3 py-2 text-sm`}>
+							className={`h-full rounded-full ${activeFilter === filter ? 'bg-white/10' : 'text-white/75'} mb-0 flex items-center justify-center px-3 py-2 text-[14px]`}>
 							{filter}
 						</button>
 					))}
+					<ChainFilterDropdown
+						className={'border-l border-white/10 pl-4'}
+						chains={chains}
+						onChangeChains={onChangeChains}
+					/>
 				</div>
 				<div>
 					<SearchBar
-						className={'max-w-none rounded-lg border-none bg-white/5 text-neutral-900 md:w-full'}
+						className={'h-full max-w-none rounded-full border-none bg-white/10 text-neutral-900 md:w-full'}
 						iconClassName={'text-neutral-900 font-[12px]'}
 						searchPlaceholder={'Search'}
 						searchValue={search}
@@ -237,60 +197,105 @@ function CombinedVaultsTable(): ReactElement {
 					/>
 				</div>
 			</div>
-
-			<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
-				<VaultsListHead
-					sortBy={
-						activeFilter === TFilter.All && !hasUserSelectedSort
-							? 'name'
-							: activeFilter === TFilter.Popular
-								? 'tvl'
-								: sortBy
-					}
-					sortDirection={
-						activeFilter === TFilter.All && !hasUserSelectedSort
-							? 'desc'
-							: activeFilter === TFilter.Popular
-								? 'desc'
-								: sortDirection
-					}
-					onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-						set_hasUserSelectedSort(true);
-						if (newSortDirection === '') {
-							onChangeSortBy('tvl');
-							onChangeSortDirection('desc');
-							return;
+			{vaultList.isLoading || vaultList.isEmpty ? (
+				<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
+					<VaultsListHead
+						sortBy={
+							activeFilter === TFilter.All && !hasUserSelectedSort
+								? 'name'
+								: activeFilter === TFilter.Popular
+									? 'tvl'
+									: sortBy
 						}
-						onChangeSortBy(newSortBy as TPossibleSortBy);
-						onChangeSortDirection(newSortDirection as TSortDirection);
-					}}
-					items={[
-						{label: 'Vault', value: 'name', sortable: true, className: 'col-span-6'},
-						{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-3'},
-						{
-							label: 'Risk',
-							value: 'score',
-							sortable: true,
-							className: 'col-span-3 whitespace-nowrap'
-						},
-						{label: 'Vault Type', value: 'vaultType', sortable: true, className: 'col-span-3'},
-						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-3 justify-end'}
-					]}
-				/>
-				<div className={'grid gap-1'}>{vaultList.allVaults.slice(page * pageSize, (page + 1) * pageSize)}</div>
-				{totalVaults > 0 && (
-					<div className={'mt-4'}>
-						<div className={'border-t border-neutral-200/60 p-4'}>
-							<Pagination
-								range={[0, totalVaults]}
-								pageCount={totalVaults / pageSize}
-								numberOfItems={totalVaults}
-								onPageChange={(newPage): void => set_page(newPage.selected)}
-							/>
-						</div>
+						sortDirection={
+							activeFilter === TFilter.All && !hasUserSelectedSort
+								? 'desc'
+								: activeFilter === TFilter.Popular
+									? 'desc'
+									: sortDirection
+						}
+						onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+							set_hasUserSelectedSort(true);
+							if (newSortDirection === '') {
+								onChangeSortBy('tvl');
+								onChangeSortDirection('desc');
+								return;
+							}
+							onChangeSortBy(newSortBy as TPossibleSortBy);
+							onChangeSortDirection(newSortDirection as TSortDirection);
+						}}
+						items={[
+							{label: 'Vault', value: 'name', sortable: true, className: 'col-span-6'},
+							{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-3'},
+							{
+								label: 'Risk',
+								value: 'score',
+								sortable: true,
+								className: 'col-span-3 whitespace-nowrap'
+							},
+							{label: 'Vault Type', value: 'vaultType', sortable: true, className: 'col-span-3'},
+							{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-3 justify-end'}
+						]}
+					/>
+					<div className={'grid gap-1'}>{vaultList.allVaults}</div>
+				</div>
+			) : (
+				<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
+					<VaultsListHead
+						sortBy={
+							activeFilter === TFilter.All && !hasUserSelectedSort
+								? 'name'
+								: activeFilter === TFilter.Popular
+									? 'tvl'
+									: sortBy
+						}
+						sortDirection={
+							activeFilter === TFilter.All && !hasUserSelectedSort
+								? 'desc'
+								: activeFilter === TFilter.Popular
+									? 'desc'
+									: sortDirection
+						}
+						onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+							set_hasUserSelectedSort(true);
+							if (newSortDirection === '') {
+								onChangeSortBy('tvl');
+								onChangeSortDirection('desc');
+								return;
+							}
+							onChangeSortBy(newSortBy as TPossibleSortBy);
+							onChangeSortDirection(newSortDirection as TSortDirection);
+						}}
+						items={[
+							{label: 'Vault', value: 'name', sortable: true, className: 'col-span-6'},
+							{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-3'},
+							{
+								label: 'Risk',
+								value: 'score',
+								sortable: true,
+								className: 'col-span-3 whitespace-nowrap'
+							},
+							{label: 'Vault Type', value: 'vaultType', sortable: true, className: 'col-span-3'},
+							{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-3 justify-end'}
+						]}
+					/>
+					<div className={'grid gap-1'}>
+						{vaultList.allVaults.slice(page * pageSize, (page + 1) * pageSize)}
 					</div>
-				)}
-			</div>
+					{totalVaults > 0 && (
+						<div className={'mt-4'}>
+							<div className={'border-t border-neutral-200/60 p-4'}>
+								<Pagination
+									range={[0, totalVaults]}
+									pageCount={totalVaults / pageSize}
+									numberOfItems={totalVaults}
+									onPageChange={(newPage): void => set_page(newPage.selected)}
+								/>
+							</div>
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }
