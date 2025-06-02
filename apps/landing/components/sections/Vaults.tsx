@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import Image from 'next/image';
-import {SectionHeader} from '@common/components/SectionHeader';
 import {formatPercent} from '@builtbymom/web3/utils/format';
+import {SectionHeader} from '@common/components/SectionHeader';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {FC} from 'react';
