@@ -2,7 +2,7 @@
 	"version": 2,
 	"functions": {
 		"pages/**/*.js": {
-			"runtime": "nodejs20.x",
+			"runtime": "nodejs@20.18.0",
 			"maxDuration": 60,
 			"memory": 2048
 		}
