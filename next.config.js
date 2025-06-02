@@ -13,7 +13,7 @@ module.exports = withPlausibleProxy({
 	experimental: {
 		esmExternals: 'loose',
 		optimizePackageImports: [
-			'viem',
+			// 'viem',
 			'viem/chains',
 			'viem/actions',
 			'wagmi',
