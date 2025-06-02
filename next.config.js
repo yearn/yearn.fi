@@ -5,20 +5,54 @@ const {withPlausibleProxy} = require('next-plausible');
 // 	dest: 'public',
 // 	disable: process.env.NODE_ENV !== 'production'
 // });
+const path = require('path');
 
 module.exports = withPlausibleProxy({
 	scriptName: 'script',
 	customDomain: 'https://yearn.fi'
 })({
 	experimental: {
-		esmExternals: 'loose'
+		esmExternals: 'loose',
+		optimizePackageImports: [
+			'viem',
+			'viem/chains',
+			'viem/actions',
+			'wagmi',
+			'wagmi/actions',
+			'@rainbow-me/rainbowkit',
+			'@rainbow-me/rainbowkit/wallets',
+			'@headlessui/react',
+			'@tanstack/react-query',
+			'recharts',
+			// '@safe-global/safe-apps-sdk',
+			'framer-motion',
+			'@react-hookz/web'
+		]
 	},
-	transpilePackages: ['@rainbow-me/rainbowkit', '@vanilla-extract/css', '@vanilla-extract/sprinkles'],
+	transpilePackages: [
+		'@rainbow-me/rainbowkit',
+		'@vanilla-extract/css',
+		'@vanilla-extract/sprinkles',
+		'@tanstack/react-query',
+		'@react-hookz/web'
+	],
+
 	webpack: config => {
-		config.resolve.fallback = {
-			...config.resolve.fallback,
-			fs: false
+		config.resolve = {
+			...config.resolve,
+			alias: {
+				...config.resolve.alias,
+				'@safe-global/safe-apps-sdk': path.resolve(
+					__dirname,
+					'node_modules/@safe-global/safe-apps-sdk/dist/esm'
+				)
+			},
+			fallback: {
+				...config.resolve.fallback,
+				fs: false
+			}
 		};
+
 		return config;
 	},
 	images: {

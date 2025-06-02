@@ -2,21 +2,21 @@ import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useFetch} from '@lib/hooks/useFetch';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
 import {cl, toAddress} from '@lib/utils';
+import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper';
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
-import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();

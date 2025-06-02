@@ -3,21 +3,21 @@ import {useRouter} from 'next/router';
 import {usePlausible} from 'next-plausible';
 import {maxUint256} from 'viem';
 import {motion} from 'framer-motion';
+import {Button} from '@lib/components/Button';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
 import {isZero, toAddress, toBigInt, zeroNormalizedBN} from '@lib/utils';
+import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {defaultTxStatus} from '@lib/utils/wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
-import {Button} from '@lib/components/Button';
-import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
 import {PLAUSIBLE_EVENTS} from '@common/utils/plausible';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function VaultDetailsQuickActionsButtons({
 	currentVault,
@@ -184,9 +184,14 @@ export function VaultDetailsQuickActionsButtons({
 	 *********************************************************************************************/
 	const isAboveAllowance = toBigInt(actionParams.amount?.raw) > toBigInt(allowanceFrom?.raw);
 
-	if (currentVault.version.startsWith('3') && currentVault.migration.available && allowanceRouter?.raw === 0n && (actionParams.amount?.raw ?? 0n) > 0n) {
+	if (
+		currentVault.version.startsWith('3') &&
+		currentVault.migration.available &&
+		allowanceRouter?.raw === 0n &&
+		(actionParams.amount?.raw ?? 0n) > 0n
+	) {
 		return (
-			<div className={"rounded-md bg-white p-2 text-xs text-black"}>
+			<div className={'rounded-md bg-white p-2 text-xs text-black'}>
 				{'To enable migrations out of this vault, please ask Yearn to approve the 4626 router!'}
 			</div>
 		);
