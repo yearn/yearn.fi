@@ -1,16 +1,11 @@
 import Image from 'next/image';
-import vaultsManifest from 'public/apps/vaults-manifest.json';
-import {VAULTS_MENU} from '@vaults/constants/menu';
-import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
 import {VEYFI_DYFI_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {LogoYearn} from '@common/icons/LogoYearn';
 
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 
 export enum AppName {
-	VAULTSV3 = 'V3',
 	VAULTS = 'Vaults',
 	YCRV = 'yCRV',
 	VEYFI = 'veYFI',
@@ -30,17 +25,20 @@ type TApp = {
 };
 
 export const APPS: {[key in AppName]: TApp} = {
-	V3: {
-		name: AppName.VAULTSV3,
-		href: '/v3',
-		menu: VAULTS_V3_MENU,
-		manifest: vaultsManifest,
-		isDisabled: false,
+	Vaults: {
+		name: AppName.VAULTS,
+		href: 'https://yearn.fi/vaults',
+		menu: [],
+		manifest: {},
 		icon: (
-			<LogoYearn
+			<ImageWithFallback
+				alt={'Vaults'}
 				className={'size-8'}
-				back={'text-pink-400'}
-				front={'text-white'}
+				src={'/v2.png'}
+				width={64}
+				height={64}
+				loading={'eager'}
+				priority
 			/>
 		)
 	},
@@ -75,19 +73,6 @@ export const APPS: {[key in AppName]: TApp} = {
 				alt={'gimme'}
 				loading={'eager'}
 				priority
-			/>
-		)
-	},
-	Vaults: {
-		name: `${AppName.VAULTS} V2`,
-		href: '/vaults',
-		menu: VAULTS_MENU,
-		manifest: vaultsManifest,
-		icon: (
-			<LogoYearn
-				className={'size-8'}
-				back={'text-pink-400'}
-				front={'text-white'}
 			/>
 		)
 	},

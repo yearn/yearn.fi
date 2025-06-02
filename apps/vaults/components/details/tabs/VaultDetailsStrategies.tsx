@@ -65,7 +65,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	const {vaults} = useYearn();
 	const {sortDirection, sortBy, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
 		defaultSortBy: 'allocationPercentage',
-		defaultPathname: '/vaults/[chainID]/[address]'
+		defaultPathname: '/v2/[chainID]/[address]'
 	});
 
 	const [shouldShowUnallocated, set_shouldShowUnallocated] = useState(false);

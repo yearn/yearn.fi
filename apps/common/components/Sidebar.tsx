@@ -13,7 +13,7 @@ type TSidebarProps = {
 
 export function Sidebar(props: TSidebarProps): ReactElement {
 	const pathName = usePathname();
-	const currentTab = pathName?.startsWith('/apps/') ? pathName?.split('/')[2] : 'apps';
+	const currentTab = pathName?.startsWith('/vaults/') ? pathName?.split('/')[2] : 'vaults';
 
 	return (
 		<div

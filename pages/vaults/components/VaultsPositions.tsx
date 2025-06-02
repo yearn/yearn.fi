@@ -56,7 +56,7 @@ const BalanceCard: FC<{
 
 const VaultEmptyCard: FC = () => {
 	return (
-		<div className={'flex flex-1 flex-col justify-center rounded-lg bg-neutral-100 p-6'}>
+		<div className={'flex flex-1 flex-col justify-center rounded-lg bg-black/20 p-6'}>
 			<p className={'text-[18px] font-medium text-white/75'}>{'No positions found'}</p>
 			<p className={'text-[14px] font-medium text-white/50'}>{'Your vault positions will show here'}</p>
 		</div>
@@ -73,13 +73,13 @@ const VaultPositionCard: FC<{
 	const isV3 = vault.version.startsWith('3') || vault.version.startsWith('~3');
 	const href = isV3
 		? `/v3/${vault.chainID}/${toAddress(vault.address)}`
-		: `/vaults/${vault.chainID}/${toAddress(vault.address)}`;
+		: `/v2/${vault.chainID}/${toAddress(vault.address)}`;
 
 	return (
 		<Link href={href}>
 			<div
 				className={
-					'relative flex cursor-pointer items-center justify-between overflow-hidden rounded-lg bg-neutral-100 transition-all hover:bg-neutral-200'
+					'group relative flex cursor-pointer items-center justify-between overflow-hidden rounded-lg bg-black/20 transition-all hover:bg-white/5'
 				}>
 				<div className={'flex size-full flex-row items-center '}>
 					<div className={'flex w-full flex-col gap-3 p-4'}>
@@ -105,7 +105,10 @@ const VaultPositionCard: FC<{
 							)}
 						</div>
 					</div>
-					<div className={'flex w-[40px] items-center justify-center self-stretch bg-white/5'}>
+					<div
+						className={
+							'flex w-[40px] items-center justify-center self-stretch bg-black/20 group-hover:bg-white/5'
+						}>
 						<svg
 							className={'size-4 text-neutral-600'}
 							fill={'none'}
@@ -222,7 +225,7 @@ export const VaultsPositions: FC = () => {
 	}, [VaultView]);
 
 	return (
-		<div className={`flex rounded-[16px] border border-dashed border-white/10 bg-white/5 ${styles.content}`}>
+		<div className={`flex rounded-[16px] border border-dashed border-white/10 bg-white/10 ${styles.content}`}>
 			<BalanceCard
 				view={VaultView}
 				balance={totalDeposited}
@@ -245,7 +248,7 @@ export const VaultsPositions: FC = () => {
 				</div>
 			)}
 			{VaultView === TVaultsPositionsView.Table && (
-				<div className={'space-y-6'}>
+				<div className={''}>
 					<div className={cl(styles.cards, 'block md:hidden')}>
 						{userPositions.map((vault, index) => (
 							<VaultPositionCard
@@ -254,7 +257,7 @@ export const VaultsPositions: FC = () => {
 							/>
 						))}
 					</div>
-					<div className={'hidden md:block'}>
+					<div className={'hidden bg-black/30 p-4 md:block'}>
 						<div className={'col-span-12 flex w-full flex-col'}>
 							<VaultsListHead
 								sortBy={sortBy}

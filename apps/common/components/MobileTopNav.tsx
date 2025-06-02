@@ -21,10 +21,10 @@ export function MobileTopNav({
 
 	const onSearchClick = useCallback(() => {
 		if (!configuration.searchValue) {
-			router.push('/apps');
+			router.push('/vaults');
 			return;
 		}
-		router.push(`/apps/search/${encodeURIComponent(configuration.searchValue)}`);
+		router.push(`/vaults/search/${encodeURIComponent(configuration.searchValue)}`);
 	}, [configuration.searchValue, router]);
 
 	return (

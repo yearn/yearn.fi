@@ -1,13 +1,12 @@
 import {useMemo} from 'react';
 import landingManifest from 'public/apps/landing-manifest.json';
 import homeManifest from 'public/manifest.json';
-import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
-import {AppName, APPS} from '@common/components/Apps';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 import type {TDict} from '@builtbymom/web3/types';
+import type {AppName} from '@common/components/Apps';
 
 type TCurrentApp = {
 	name: AppName | 'Home' | string;
@@ -19,14 +18,14 @@ type TCurrentApp = {
 export function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 	return useMemo((): TCurrentApp => {
 		const appMapping: TDict<TCurrentApp> = {
-			'/v3': {
-				...APPS[AppName.VAULTSV3],
-				header: <VaultsHeader pathname={pathname} />
-			},
-			'/vaults': {
-				...APPS[AppName.VAULTS],
-				header: <VaultsHeader pathname={pathname} />
-			},
+			// '/v3': {
+			// 	...APPS[AppName.VAULTSV3],
+			// 	header: <VaultsHeader pathname={pathname} />
+			// },
+			// '/vaults': {
+			// 	...APPS[AppName.VAULTS],
+			// 	header: <VaultsHeader pathname={pathname} />
+			// },
 			'/landing': {
 				name: 'Home',
 				manifest: landingManifest,

@@ -46,21 +46,23 @@ const WithLayout = memo(function WithLayout(
 ): ReactElement {
 	const {Component, pageProps} = props;
 	const {name} = useCurrentApp(props.router);
-	const isAppsPage = props.router.asPath?.startsWith('/apps');
+	const isVaultsPage = props.router.asPath?.startsWith('/vaults');
 	const pathName = usePathname();
 
-	if (isAppsPage) {
+	if (isVaultsPage) {
 		return (
 			<>
-				<div
-					className={cl(
-						'mx-auto mb-0 flex z-[60] font-aeonik max-w-6xl absolute top-0 inset-x-0 bg-neutral-0'
-					)}>
+				<div className={cl('mx-auto mb-0 flex z-[60] font-aeonik max-w-6xl absolute top-0 inset-x-0')}>
 					<AppHeader supportedNetworks={props.supportedNetworks} />
 				</div>
 				<div
 					id={'app'}
-					className={'mb-0 flex min-h-screen justify-center bg-neutral-0 font-aeonik'}>
+					className={'relative mb-0 flex min-h-screen justify-center font-aeonik'}>
+					<div
+						className={
+							'absolute left-0 top-0 h-[200px] w-full bg-gradient-to-b from-[#000F3A] to-neutral-0'
+						}
+					/>
 					<div className={'flex w-full max-w-[1230px] justify-start'}>
 						<LazyMotion features={domAnimation}>
 							<AnimatePresence mode={'wait'}>

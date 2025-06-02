@@ -76,10 +76,10 @@ function Logo({currentHost}: {currentHost: string; isVaultPage: boolean}): React
 					</MotionDiv>
 				);
 			})}
-			{(pathname === '/apps' || pathname.startsWith('/apps/')) && (
+			{(pathname === '/vaults' || pathname.startsWith('/v2/') || pathname.startsWith('/v3/')) && (
 				<MotionDiv
-					key={'Apps'}
-					name={'Apps'}
+					key={'Vaults'}
+					name={'Vaults'}
 					animate={'enter'}>
 					{appsIcon}
 				</MotionDiv>
@@ -141,7 +141,7 @@ export function LogoPopover(): ReactElement {
 				/>
 				<Popover.Button className={'z-20 flex size-8'}>
 					<Link href={'/'}>
-						<span className={'sr-only'}>{'Back to home'}</span>
+						<span className={'sr-only'}>{'Back to Homepage'}</span>
 						<Logo
 							currentHost={currentHost}
 							isVaultPage={isVaultPage}
@@ -212,7 +212,7 @@ export function LogoPopover(): ReactElement {
 												);
 											})}
 									</div>
-									<div className={'mt-2 grid grid-cols-4 gap-2'}>
+									<div className={'mt-2 grid grid-cols-3 gap-2'}>
 										{[...Object.values(APPS)]
 											.slice(4, isShowingMore ? 10 : 7)
 											.map(({name, href, icon}): ReactElement => {
@@ -225,7 +225,7 @@ export function LogoPopover(): ReactElement {
 														<div
 															onClick={(): void => set_isShowing(false)}
 															className={cl(
-																'flex cursor-pointer flex-col items-center justify-center transition-colors p-4 rounded-sm',
+																'flex w-full cursor-pointer flex-col items-center justify-start transition-colors p-4 rounded-sm',
 																isV3
 																	? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
 																	: 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
@@ -251,7 +251,7 @@ export function LogoPopover(): ReactElement {
 													</Link>
 												);
 											})}
-										{!isShowingMore && (
+										{!isShowingMore && [...Object.values(APPS)].length > 7 && (
 											<button
 												onClick={(): void => set_isShowingMore(true)}
 												className={cl(

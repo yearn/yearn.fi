@@ -2,6 +2,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {cl} from '@builtbymom/web3/utils';
 import {truncateHex} from '@builtbymom/web3/utils/tools.address';
 import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit';
 import {IconWallet} from '@yearn-finance/web-lib/icons/IconWallet';
@@ -26,7 +27,7 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 						key={option.path}
 						target={option.target}
 						href={option.path}>
-						<p className={`yearn--header-nav-item ${currentPathName === option.path ? 'active' : ''}`}>
+						<p className={`yearn--header-nav-item ${currentPathName === option.path ? 'active' : ''} `}>
 							{option?.label || 'Unknown'}
 						</p>
 					</Link>
@@ -35,6 +36,9 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 		</nav>
 	);
 }
+
+const addressStyle =
+	'text-s relative hidden h-8 cursor-pointer items-center justify-center rounded-full border border-white/10 px-3 font-normal text-white transition-all hover:opacity-80 md:flex';
 
 function WalletSelector(): ReactElement {
 	const {openAccountModal} = useAccountModal();
@@ -73,16 +77,11 @@ function WalletSelector(): ReactElement {
 				suppressHydrationWarning
 				className={'yearn--header-nav-item !text-xs md:!text-sm'}>
 				{walletIdentity ? (
-					walletIdentity
+					<span className={cl(addressStyle, 'border border-white/10')}>{walletIdentity}</span>
 				) : (
 					<span>
 						<IconWallet className={'yearn--header-nav-item mt-0.5 block size-4 md:hidden'} />
-						<span
-							className={
-								'relative hidden h-8 cursor-pointer items-center justify-center rounded border border-transparent bg-neutral-900 px-2 text-xs font-normal text-neutral-0 transition-all hover:bg-neutral-800 md:flex'
-							}>
-							{'Connect wallet'}
-						</span>
+						<span className={cl(addressStyle, 'bg-blue-500')}>{'Connect Wallet'}</span>
 					</span>
 				)}
 			</p>
@@ -95,18 +94,10 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 	const [isMenuOpen, set_isMenuOpen] = useState<boolean>(false);
 
 	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/apps', label: 'Apps'};
+		const HOME_MENU = {path: '/vaults', label: 'Vaults'};
 
 		if (pathname.startsWith('/ycrv')) {
 			return [...APPS[AppName.YCRV].menu];
-		}
-
-		if (pathname.startsWith('/v3')) {
-			return [...APPS[AppName.VAULTSV3].menu];
-		}
-
-		if (pathname.startsWith('/vaults')) {
-			return [...APPS[AppName.VAULTS].menu];
 		}
 
 		if (pathname.startsWith('/veyfi')) {
@@ -130,9 +121,9 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 		<div
 			id={'head'}
 			className={'inset-x-0 top-0 z-50 w-full'}>
-			<div className={'w-full'}>
+			<div className={'w-full border-b border-white/10'}>
 				<header className={'yearn--header mx-auto max-w-6xl !px-0'}>
-					<div className={'direction-row flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'}>
+					<div className={'direction-row flex items-center justify-start gap-x-6 py-2 md:py-1'}>
 						<div className={'flex justify-center'}>
 							<LogoPopover />
 						</div>

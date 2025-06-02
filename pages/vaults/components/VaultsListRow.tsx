@@ -19,7 +19,7 @@ type TVaultsListRowProps = {
 
 export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, index = 0}) => {
 	const href = isV2
-		? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
+		? `/v2/${currentVault.chainID}/${toAddress(currentVault.address)}`
 		: `/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`;
 
 	return (

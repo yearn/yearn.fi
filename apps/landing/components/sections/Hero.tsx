@@ -1,8 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import {SectionHeader} from '@common/components/SectionHeader';
 import {z} from 'zod';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
+import {SectionHeader} from '@common/components/SectionHeader';
 import {TvlStat} from '@common/components/TvlStat';
 
 import {Button} from '../common/Button';
@@ -102,7 +102,7 @@ export function Hero(): ReactElement {
 								title={'Earn on your Crypto'}
 								description={"DeFi's most battle tested yield aggregator"}
 							/>
-							<Link href={'/apps'}>
+							<Link href={'/vaults'}>
 								<Button className={'md:text-[18px]'}>{'Explore Vaults'}</Button>
 							</Link>
 						</div>
@@ -134,7 +134,7 @@ export function Hero(): ReactElement {
 							description={"DeFi's most battle tested yield aggregator"}
 						/>
 						<Link
-							href={'/apps'}
+							href={'/vaults'}
 							className={'block w-full'}>
 							<Button className={'max-w-xs'}>{'Explore Vaults'}</Button>
 						</Link>

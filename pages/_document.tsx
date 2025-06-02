@@ -58,7 +58,7 @@ class MyDocument extends Document {
 
 	render(): ReactElement {
 		const {route} = this.props as any;
-		const isLanding = route.startsWith('/apps');
+		const isLanding = route.startsWith('/vaults');
 		return (
 			<Html
 				lang={'en'}

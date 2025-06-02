@@ -12,7 +12,7 @@ import type {Chain} from 'viem';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 
 const menu: TMenu[] = [
-	{path: '/apps', label: 'Apps'},
+	{path: '/vaults', label: 'Vaults'},
 	{
 		path: 'https://gov.yearn.fi/',
 		label: 'Governance',

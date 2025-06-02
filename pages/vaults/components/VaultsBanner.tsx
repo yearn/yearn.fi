@@ -37,7 +37,7 @@ export function VaultsBanner(): ReactElement {
 			</div>
 			<div
 				className={
-					'border-inner hidden w-1/2 border-l border-white/10 bg-gradient-to-b from-[#180832] to-[#281B9A] md:flex md:shrink-0 md:items-center md:justify-center'
+					'border-inner hidden w-1/2 border-l border-white/10 bg-gradient-to-b from-[#281B9A] to-[#340F70] md:flex md:shrink-0 md:items-center md:justify-center'
 				}>
 				<div className={'relative size-48'}>
 					<Image
