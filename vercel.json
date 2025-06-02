@@ -1,5 +1,6 @@
 {
 	"functions": {
+		"version": "1.0.0",
 		"pages/**/*.js": {
 			"runtime": "nodejs20.x",
 			"maxDuration": 60,
