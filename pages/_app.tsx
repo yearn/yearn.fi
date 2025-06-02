@@ -59,9 +59,7 @@ const WithLayout = memo(function WithLayout(
 					id={'app'}
 					className={'relative mb-0 flex min-h-screen justify-center font-aeonik'}>
 					<div
-						className={
-							'absolute left-0 top-0 h-[200px] w-full bg-gradient-to-b from-[#000F3A] to-neutral-0'
-						}
+						className={'absolute left-0 top-0 h-[200px] w-full bg-gradient-to-b from-blue-900 to-neutral-0'}
 					/>
 					<div className={'flex w-full max-w-[1230px] justify-start'}>
 						<LazyMotion features={domAnimation}>
