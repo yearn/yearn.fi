@@ -1,8 +1,8 @@
 import {Fragment, useMemo} from 'react';
 import {cl} from '@builtbymom/web3/utils';
 import {Popover, Transition} from '@headlessui/react';
-import {isSolverDisabled} from '@vaults/contexts/useSolver';
-import {Solver} from '@vaults/types/solvers';
+import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
+import {Solver} from '@vaults-v2/types/solvers';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
 import {Switch} from '@common/components/Switch';
@@ -10,7 +10,7 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TSolver} from '@vaults/types/solvers';
+import type {TSolver} from '@vaults-v2/types/solvers';
 
 type TSettingPopover = {
 	vault: TYDaemonVault;

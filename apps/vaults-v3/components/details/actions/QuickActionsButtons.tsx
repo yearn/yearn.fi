@@ -7,9 +7,9 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {isZero, toAddress, toBigInt, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
-import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import {useSolver} from '@vaults/contexts/useSolver';
-import {Solver} from '@vaults/types/solvers';
+import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
+import {useSolver} from '@vaults-v2/contexts/useSolver';
+import {Solver} from '@vaults-v2/types/solvers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
@@ -184,9 +184,14 @@ export function VaultDetailsQuickActionsButtons({
 	 *********************************************************************************************/
 	const isAboveAllowance = toBigInt(actionParams.amount?.raw) > toBigInt(allowanceFrom?.raw);
 
-	if (currentVault.version.startsWith('3') && currentVault.migration.available && allowanceRouter?.raw === 0n && (actionParams.amount?.raw ?? 0n) > 0n) {
+	if (
+		currentVault.version.startsWith('3') &&
+		currentVault.migration.available &&
+		allowanceRouter?.raw === 0n &&
+		(actionParams.amount?.raw ?? 0n) > 0n
+	) {
 		return (
-			<div className={"rounded-md bg-white p-2 text-xs text-black"}>
+			<div className={'rounded-md bg-white p-2 text-xs text-black'}>
 				{'To enable migrations out of this vault, please ask Yearn to approve the 4626 router!'}
 			</div>
 		);

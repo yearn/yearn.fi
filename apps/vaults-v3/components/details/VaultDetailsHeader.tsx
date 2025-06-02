@@ -18,11 +18,11 @@ import {
 	zeroNormalizedBN
 } from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
-import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards.abi';
-import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
-import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
-import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
-import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
+import {JUICED_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/juicedStakingRewards.abi';
+import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi';
+import {V3_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/V3StakingRewards.abi';
+import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi';
+import {VEYFI_GAUGE_ABI} from '@vaults-v2/utils/abi/veYFIGauge.abi';
 import {readContract, readContracts} from '@wagmi/core';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';

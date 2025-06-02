@@ -2,10 +2,10 @@ import {Children, Fragment, useMemo, useState} from 'react';
 import {motion} from 'framer-motion';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {cl, isZero} from '@builtbymom/web3/utils';
-import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
-import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
-import {useSortVaults} from '@vaults/hooks/useSortVaults';
-import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
+import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
+import {useVaultFilter} from '@vaults-v2/hooks/useFilteredVaults';
+import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
+import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
@@ -16,7 +16,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
-import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
+import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
 
 function Background(): ReactElement {
 	return (

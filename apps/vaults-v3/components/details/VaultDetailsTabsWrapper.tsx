@@ -5,7 +5,7 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {assert, cl, toAddress} from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react';
-import {VaultInfo} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
+import {VaultInfo} from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
 import {getConnectorClient} from '@wagmi/core';

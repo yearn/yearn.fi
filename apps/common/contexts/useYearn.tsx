@@ -3,7 +3,7 @@ import {deserialize, serialize} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {isZeroAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {useLocalStorageValue} from '@react-hookz/web';
-import {Solver, type TSolver} from '@vaults/types/solvers';
+import {Solver, type TSolver} from '@vaults-v2/types/solvers';
 import {useFetchYearnEarnedForUser} from '@yearn-finance/web-lib/hooks/useFetchYearnEarnedForUser';
 import {useFetchYearnPrices} from '@yearn-finance/web-lib/hooks/useFetchYearnPrices';
 import {useFetchYearnVaults} from '@common/hooks/useFetchYearnVaults';

@@ -6,7 +6,7 @@ import {LandingAppHeader} from 'apps/landing/components/common/Header';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
 import {cl} from '@builtbymom/web3/utils';
-import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
+import {AppSettingsContextApp} from '@vaults-v2/contexts/useAppSettings';
 import {IconAlertCritical} from '@yearn-finance/web-lib/icons/IconAlertCritical';
 import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
 import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';

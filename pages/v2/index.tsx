@@ -1,16 +1,16 @@
 import {Children, Fragment, useEffect, useMemo, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {toAddress} from '@builtbymom/web3/utils';
-import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
-import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
-import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
-import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
-import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
-import {ListHero} from '@vaults/components/ListHero';
-import {ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
-import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
-import {useSortVaults} from '@vaults/hooks/useSortVaults';
-import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
+import {VaultListOptions} from '@vaults-v2/components/list/VaultListOptions';
+import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
+import {VaultsListInternalMigrationRow} from '@vaults-v2/components/list/VaultsListInternalMigrationRow';
+import {VaultsListRetired} from '@vaults-v2/components/list/VaultsListRetired';
+import {VaultsListRow} from '@vaults-v2/components/list/VaultsListRow';
+import {ListHero} from '@vaults-v2/components/ListHero';
+import {ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants';
+import {useVaultFilter} from '@vaults-v2/hooks/useFilteredVaults';
+import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
+import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
@@ -22,7 +22,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
-import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
+import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
 
 function HeaderUserPosition(): ReactElement {
 	const {cumulatedValueInV2Vaults} = useYearn();

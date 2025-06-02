@@ -21,7 +21,7 @@ import {
 } from '@builtbymom/web3/utils';
 import {AGGREGATE3_ABI} from '@builtbymom/web3/utils/abi/aggregate.abi';
 import {getNetwork} from '@builtbymom/web3/utils/wagmi';
-import {useActionFlow} from '@vaults/contexts/useActionFlow';
+import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
@@ -32,7 +32,7 @@ import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
-import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
+import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData';
 
 function AmountWithOptionalTooltip(props: {
 	canOnlyWithdrawSome: boolean;

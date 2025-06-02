@@ -1,3 +1,5 @@
+export const OPT_STAKING_REWARD_SUPPORTED_NETWORK = 10;
+
 export const ALL_VAULTS_CATEGORIES = {
 	holdings: 'Holdings',
 	crypto: 'Crypto Vaults',
@@ -9,12 +11,6 @@ export const ALL_VAULTS_CATEGORIES = {
 	velodrome: 'Velodrome Vaults',
 	aerodrome: 'Aerodrome Vaults'
 };
+export const ALL_VAULTS_CATEGORIES_KEYS = Object.keys(ALL_VAULTS_CATEGORIES);
 
-export const VAULT_NAME_REPLACEMENTS = ['Curve', 'Factory', 'yVault'];
-
-export enum TFilter {
-	Popular = 'Popular',
-	All = 'All Vaults'
-}
-
-export const VAULT_PAGE_SIZE = 10;
+export const ALL_CHAINS = [1, 10, 137, 250, 8453, 42161];

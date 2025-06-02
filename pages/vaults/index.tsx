@@ -1,11 +1,10 @@
 import {type ReactElement} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useMountEffect} from '@react-hookz/web';
+import CombinedVaultsTable from '@vaults/components/CombinedVaultsTable';
+import {VaultsBanner} from '@vaults/components/VaultsBanner';
+import {VaultsPositions} from '@vaults/components/VaultsPositions';
 import {useSearch} from '@common/contexts/useSearch';
-
-import CombinedVaultsTable from './components/CombinedVaultsTable';
-import {VaultsBanner} from './components/VaultsBanner';
-import {VaultsPositions} from './components/VaultsPositions';
 
 export default function Home(): ReactElement {
 	const {dispatch} = useSearch();
