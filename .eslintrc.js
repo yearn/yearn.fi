@@ -1,6 +1,6 @@
 module.exports = {
 	extends: [
-		'./node_modules/@lib/.eslintrc.cjs',
+		'./apps/lib/.eslintrc.cjs',
 		'plugin:@next/next/recommended',
 		'prettier',
 		'plugin:react-hooks/recommended'
