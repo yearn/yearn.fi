@@ -32,8 +32,10 @@ function updateMode() {
 	if (isV3) {
 		document.documentElement.classList.add('v3');
 		document.documentElement.classList.remove('dark');
+		document.documentElement.classList.remove('light');
 	} else if (isDarkMode || isHomePage) {
 		document.documentElement.classList.add('dark');
+		document.documentElement.classList.remove('light');
 		document.documentElement.classList.remove('v3');
 	} else {
 		document.documentElement.classList.remove('v3');

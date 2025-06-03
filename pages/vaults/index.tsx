@@ -21,7 +21,10 @@ export default function Home(): ReactElement {
 					<VaultsBanner />
 					{isActive && <VaultsPositions />}
 					<div className={'flex flex-col gap-7'}>
-						<div className={'flex flex-col gap-4 rounded-[16px] border border-white/5 bg-white/5 p-4'}>
+						<div
+							className={
+								'flex flex-col gap-4 rounded-[16px] border border-neutral-900/5 bg-neutral-900/5 p-4'
+							}>
 							<CombinedVaultsTable />
 						</div>
 					</div>

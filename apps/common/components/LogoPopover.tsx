@@ -199,10 +199,7 @@ export function LogoPopover(): ReactElement {
 															<div className={'pt-2 text-center'}>
 																<b
 																	className={cl(
-																		'text-base',
-																		isV3
-																			? 'text-neutral-900'
-																			: 'text-black dark:text-white'
+																		'text-base text-neutral-900  font-medium'
 																	)}>
 																	{name}
 																</b>
@@ -239,10 +236,7 @@ export function LogoPopover(): ReactElement {
 															<div className={'text-center'}>
 																<b
 																	className={cl(
-																		'text-xs',
-																		isV3
-																			? 'text-neutral-900'
-																			: 'text-black dark:text-white'
+																		'text-xs text-neutral-900 font-medium'
 																	)}>
 																	{name}
 																</b>

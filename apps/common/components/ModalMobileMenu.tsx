@@ -27,7 +27,7 @@ export function FooterNav(): ReactElement {
 	return (
 		<div
 			className={`flex w-full flex-col space-y-14 rounded-[24px] p-0 md:flex-row md:space-x-14 md:space-y-0 md:bg-[#222222]/50 md:p-[12px]`}>
-			<div className={'flex w-full flex-col space-y-4 rounded-[12px] p-[24px] md:bg-black/30'}>
+			<div className={'flex w-full flex-col space-y-4 rounded-[12px] p-[24px] md:bg-neutral-50/30'}>
 				{menu.map(link => (
 					<Link
 						className={'flex items-center gap-2 text-neutral-900 transition-colors hover:text-primary'}

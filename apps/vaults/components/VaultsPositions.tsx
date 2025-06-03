@@ -122,7 +122,8 @@ export const VaultsPositions: FC = () => {
 	}, [VaultView]);
 
 	return (
-		<div className={`flex rounded-[16px] border border-dashed border-white/10 bg-white/10 ${styles.content}`}>
+		<div
+			className={`flex rounded-[16px] border border-dashed border-neutral-900/10 bg-neutral-900/10 ${styles.content}`}>
 			<VaultBalanceCard
 				showExpandButton={VaultView !== TVaultsPositionsView.Empty}
 				isExpanded={VaultView === TVaultsPositionsView.Table}
@@ -155,7 +156,7 @@ export const VaultsPositions: FC = () => {
 							/>
 						))}
 					</div>
-					<div className={'hidden bg-black/30 p-4 md:block'}>
+					<div className={'hidden p-4 md:block dark:bg-black/20'}>
 						<div className={'col-span-12 flex w-full flex-col'}>
 							<VaultsListHead
 								sortBy={sortBy}
