@@ -319,6 +319,7 @@ function ListOfVaults(): ReactElement {
 						range={[0, totalVaults]}
 						pageCount={totalVaults / pageSize}
 						numberOfItems={totalVaults}
+						currentPage={page}
 						onPageChange={(newPage): void => set_page(newPage.selected)}
 					/>
 				</div>

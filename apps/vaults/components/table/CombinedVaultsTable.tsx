@@ -10,9 +10,10 @@ import {Pagination} from '@common/components/Pagination';
 import {SearchBar} from '@common/components/SearchBar';
 import {useYearn} from '@common/contexts/useYearn';
 
-import {ChainFilterDropdown} from './ChainFilterDropdown';
-import {VaultsListHead} from './VaultsListHead';
-import {VaultsListRow} from './VaultsListRow';
+import {ChainFilterDropdown} from '../filters/ChainFilterDropdown';
+import {VersionFilterDropdown} from '../filters/VersionFilterDropdown';
+import {VaultsListHead} from '../VaultsListHead';
+import {VaultsListRow} from '../VaultsListRow';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -73,6 +74,7 @@ function CombinedVaultsTable(): ReactElement {
 	const [page, set_page] = useState(0);
 	const [activeFilter, set_activeFilter] = useState(TFilter.Popular);
 	const [hasUserSelectedSort, set_hasUserSelectedSort] = useState(false);
+	const [selectedVersion, set_selectedVersion] = useState<string>('All Versions');
 
 	// v2
 	const {types: typesV2} = useQueryArguments({
@@ -115,8 +117,17 @@ function CombinedVaultsTable(): ReactElement {
 	const filteredV3ByChains = activeVaultsV3.filter(({chainID}) => chains?.includes(chainID));
 
 	const combinedVaults = useMemo(() => {
-		return [...filteredV3ByChains, ...filteredV2ByChains];
-	}, [filteredV3ByChains, filteredV2ByChains]);
+		let vaults = [...filteredV3ByChains, ...filteredV2ByChains];
+
+		// Apply version filter
+		if (selectedVersion === 'V2') {
+			vaults = filteredV2ByChains;
+		} else if (selectedVersion === 'V3') {
+			vaults = filteredV3ByChains;
+		}
+
+		return vaults;
+	}, [filteredV3ByChains, filteredV2ByChains, selectedVersion]);
 
 	const searchedVaults = useMemo((): TYDaemonVault[] => {
 		if (!search) return combinedVaults;
@@ -140,13 +151,13 @@ function CombinedVaultsTable(): ReactElement {
 	const actualSortBy =
 		activeFilter === TFilter.All && !hasUserSelectedSort
 			? 'featuringScore'
-			: activeFilter === TFilter.Popular
+			: activeFilter === TFilter.Popular && !hasUserSelectedSort
 				? 'tvl'
 				: sortBy;
 	const actualSortDirection =
 		activeFilter === TFilter.All && !hasUserSelectedSort
 			? 'desc'
-			: activeFilter === TFilter.Popular
+			: activeFilter === TFilter.Popular && !hasUserSelectedSort
 				? 'desc'
 				: sortDirection;
 	const sortedVaults = useSortVaults(filteredVaults, actualSortBy, actualSortDirection);
@@ -169,6 +180,12 @@ function CombinedVaultsTable(): ReactElement {
 		set_hasUserSelectedSort(false);
 	};
 
+	const handleVersionChange = (version: string): void => {
+		set_selectedVersion(version);
+		set_page(0);
+		set_hasUserSelectedSort(false);
+	};
+
 	return (
 		<div>
 			<div className={'mb-4 flex h-10 w-full flex-row items-stretch justify-between '}>
@@ -177,7 +194,7 @@ function CombinedVaultsTable(): ReactElement {
 						<button
 							key={filter}
 							onClick={() => handleFilterClick(filter)}
-							className={`h-full rounded-full ${activeFilter === filter ? 'bg-white/10' : 'text-neutral-900/75'} mb-0 flex items-center justify-center px-3 py-2 text-[14px]`}>
+							className={`h-full rounded-full ${activeFilter === filter ? 'bg-white/10' : 'text-neutral-900/75'} mb-0 flex items-center justify-center px-3 py-2 text-[16px]`}>
 							{filter}
 						</button>
 					))}
@@ -185,6 +202,11 @@ function CombinedVaultsTable(): ReactElement {
 						className={'border-l border-white/10 pl-4'}
 						chains={chains}
 						onChangeChains={onChangeChains}
+					/>
+					<VersionFilterDropdown
+						selectedVersion={selectedVersion}
+						onVersionChange={handleVersionChange}
+						className={'border-l border-white/10 pl-4'}
 					/>
 				</div>
 				<div>
@@ -279,7 +301,7 @@ function CombinedVaultsTable(): ReactElement {
 							{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-3 justify-end'}
 						]}
 					/>
-					<div className={'grid gap-1'}>
+					<div className={'grid gap-4 md:gap-1'}>
 						{vaultList.allVaults.slice(page * VAULT_PAGE_SIZE, (page + 1) * VAULT_PAGE_SIZE)}
 					</div>
 					{totalVaults > 0 && (
@@ -289,6 +311,7 @@ function CombinedVaultsTable(): ReactElement {
 									range={[0, totalVaults]}
 									pageCount={totalVaults / VAULT_PAGE_SIZE}
 									numberOfItems={totalVaults}
+									currentPage={page}
 									onPageChange={(newPage): void => set_page(newPage.selected)}
 								/>
 							</div>

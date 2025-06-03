@@ -32,7 +32,12 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, inde
 		<div
 			key={`${currentVault.address}-${currentVault.chainID}`}
 			onClick={handleRowClick}
-			className={cl('grid w-full grid-cols-1 md:grid-cols-12 ', 'md:px-4', 'cursor-pointer relative group')}>
+			className={cl(
+				'grid w-full grid-cols-1 md:grid-cols-12',
+				'px-4 py-3 md:px-4 md:py-0',
+				'min-h-[200px] md:min-h-0',
+				'cursor-pointer relative group'
+			)}>
 			<div
 				className={cl(
 					'absolute inset-0 rounded-[12px]',
@@ -119,7 +124,7 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, inde
 				</div>
 			</div>
 
-			<div className={'mt-4 flex flex-row items-center border-t border-neutral-900/20 pt-4 md:hidden'}>
+			<div className={'mt-4 flex flex-row items-center gap-1 border-t border-neutral-900/20 pt-4 md:hidden'}>
 				<VaultChainTag chainID={currentVault.chainID} />
 				<Link
 					href={`${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${currentVault.address}`}
@@ -127,9 +132,7 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, inde
 					className={'text-neutral-900/50 transition-opacity hover:text-neutral-900'}
 					target={'_blank'}
 					rel={'noopener noreferrer'}>
-					<div className={'px-2'}>
-						<IconLinkOut className={'inline-block size-4'} />
-					</div>
+					<IconLinkOut className={' size-4'} />
 				</Link>
 			</div>
 		</div>

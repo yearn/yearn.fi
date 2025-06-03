@@ -163,7 +163,7 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 							shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 							/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
 							fallback={'NEW'}>
-							<div className={'flex flex-col items-end'}>
+							<div className={'flex items-baseline gap-x-2 md:flex-col md:items-end md:gap-x-0'}>
 								{estAPYRange ? (
 									<Fragment>
 										<RenderAmount

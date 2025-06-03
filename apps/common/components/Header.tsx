@@ -6,7 +6,7 @@ import {cl} from '@builtbymom/web3/utils';
 import {truncateHex} from '@builtbymom/web3/utils/tools.address';
 import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit';
 import {IconWallet} from '@yearn-finance/web-lib/icons/IconWallet';
-import {IconBurger} from '@common/icons/IconBurger';
+import {IconBurgerPlain} from '@common/icons/IconBurgerPlain';
 
 import {AppName, APPS} from './Apps';
 import {LogoPopover} from './LogoPopover';
@@ -38,7 +38,7 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 }
 
 const addressStyle =
-	'text-s relative hidden h-8 cursor-pointer items-center justify-center rounded-full border border-white/10 px-3 font-normal text-neutral-900 transition-all hover:opacity-80 md:flex';
+	'text-s relative h-8 cursor-pointer items-center justify-center rounded-full border border-white/10 px-3 font-normal text-neutral-900 transition-all hover:opacity-80 flex';
 
 function WalletSelector(): ReactElement {
 	const {openAccountModal} = useAccountModal();
@@ -75,13 +75,16 @@ function WalletSelector(): ReactElement {
 			}}>
 			<p
 				suppressHydrationWarning
-				className={'yearn--header-nav-item !text-xs md:!text-sm'}>
+				className={'yearn--header-nav-item  md:!text-sm'}>
 				{walletIdentity ? (
-					<span className={cl(addressStyle, 'border border-white/10')}>{walletIdentity}</span>
+					<span className={cl(addressStyle, 'border border-white/10')}>
+						<span className={'hidden md:inline'}>{walletIdentity}</span>
+						<span className={'md:hidden'}>{truncateHex(address || '', 3)}</span>
+					</span>
 				) : (
-					<span>
+					<span className={'flex items-center gap-2'}>
 						<IconWallet className={'yearn--header-nav-item mt-0.5 block size-4 md:hidden'} />
-						<span className={cl(addressStyle, 'bg-blue-500')}>{'Connect Wallet'}</span>
+						<span className={cl(addressStyle, 'bg-blue-500 hidden md:flex')}>{'Connect Wallet'}</span>
 					</span>
 				)}
 			</p>
@@ -131,15 +134,15 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 							currentPathName={pathname || ''}
 							nav={menu}
 						/>
+					</div>
+					<div className={'flex w-1/3 items-center justify-end gap-4'}>
+						<WalletSelector />
 						<div className={'flex md:hidden'}>
 							<button onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
 								<span className={'sr-only'}>{'Open menu'}</span>
-								<IconBurger />
+								<IconBurgerPlain />
 							</button>
 						</div>
-					</div>
-					<div className={'flex w-1/3 items-center justify-end'}>
-						<WalletSelector />
 					</div>
 				</header>
 			</div>
