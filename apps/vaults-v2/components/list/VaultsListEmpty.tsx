@@ -44,10 +44,10 @@ export function VaultsListEmpty({
 		currentCategories?.includes('holdings')
 	) {
 		return (
-			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
-				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
-				<p className={'text-center text-neutral-600'}>
-					{"You don't appear to have any deposits in our Vaults"}
+			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
+				<b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
+				<p className={'text-center text-sm text-neutral-600'}>
+					{"You don't appear to have any Yearn Vaults deposits."}
 				</p>
 			</div>
 		);
@@ -55,8 +55,8 @@ export function VaultsListEmpty({
 
 	if (!isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
-			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
-				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
+			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
+				<b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
 				{(currentCategories?.length || 0) >= defaultCategories.length && currentSearch !== '' ? (
 					<p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
 				) : (currentCategories?.length || 0) < defaultCategories.length && currentSearch !== '' ? (
@@ -64,22 +64,24 @@ export function VaultsListEmpty({
 						<p className={'text-center text-neutral-600'}>
 							{`The vault "${currentSearch}" does not exist.`}
 						</p>
-						<p className={'text-center text-neutral-600'}>
-							{`It might be because you of your filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?`}
-						</p>
+						<p
+							className={
+								'text-center font-normal text-neutral-600'
+							}>{`No vaults found that match your filters.`}</p>
 						<Button
-							className={'w-full md:w-48'}
+							className={'mt-4 w-full md:w-48'}
 							onClick={onReset}>
 							{'Search all vaults'}
 						</Button>
 					</>
 				) : (
 					<>
-						<p className={'text-center text-neutral-600'}>
-							{`There doesn’t seem to be anything here. It might be because you of your filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?`}
-						</p>
+						<p
+							className={
+								'text-center font-normal text-neutral-600'
+							}>{`No vaults found that match your filters.`}</p>
 						<Button
-							className={'w-full md:w-48'}
+							className={'mt-4 w-full md:w-48'}
 							onClick={onReset}>
 							{'Search all vaults'}
 						</Button>

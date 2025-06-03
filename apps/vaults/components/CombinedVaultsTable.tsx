@@ -25,7 +25,11 @@ type TCombinedVaultList = {
 	allVaults: ReactNode[];
 };
 
-function mapToCombinedVaultList(sortedVaults: TYDaemonVault[], isLoadingVaultList: boolean): TCombinedVaultList {
+function mapToCombinedVaultList(
+	sortedVaults: TYDaemonVault[],
+	isLoadingVaultList: boolean,
+	onReset: () => void
+): TCombinedVaultList {
 	if (isLoadingVaultList || !sortedVaults?.length) {
 		return {
 			isLoading: true,
@@ -38,7 +42,7 @@ function mapToCombinedVaultList(sortedVaults: TYDaemonVault[], isLoadingVaultLis
 					currentSearch={''}
 					currentCategories={[]}
 					currentChains={[]}
-					onReset={() => {}}
+					onReset={onReset}
 					defaultCategories={ALL_VAULTSV3_KINDS_KEYS}
 				/>
 			]
@@ -86,7 +90,8 @@ function CombinedVaultsTable(): ReactElement {
 		onChangeSortDirection: onChangeSortDirectionV3,
 		onChangeSortBy: onChangeSortByV3,
 		onSearch,
-		onChangeChains
+		onChangeChains,
+		onReset
 	} = useQueryArguments({
 		defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
 		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
@@ -147,7 +152,7 @@ function CombinedVaultsTable(): ReactElement {
 	const sortedVaults = useSortVaults(filteredVaults, actualSortBy, actualSortDirection);
 
 	// Setup pagination
-	const vaultList = mapToCombinedVaultList(sortedVaults, isLoadingVaultList);
+	const vaultList = mapToCombinedVaultList(sortedVaults, isLoadingVaultList, onReset);
 	const totalVaults = vaultList.allVaults.length;
 
 	// Reset pagination when search results change
