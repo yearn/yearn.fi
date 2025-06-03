@@ -76,16 +76,18 @@ const SecurityCard: FC<{
 					/>
 				)}
 				<div className={`group-hover:bg/80 relative z-10  p-8 transition-all duration-300`}>
-					<h3 className={'mb-4 text-3xl transition-colors duration-300 group-hover:text-white'}>{title}</h3>
+					<h3 className={'mb-4 text-3xl transition-colors duration-300 group-hover:text-neutral-900'}>
+						{title}
+					</h3>
 					<p
 						className={
-							'mb-4 text-[18px] text-white/70 transition-colors duration-300 group-hover:text-white/90 '
+							'mb-4 text-[18px] text-neutral-900/70 transition-colors duration-300 group-hover:text-neutral-900/90 '
 						}>
 						{description}
 					</p>
 					<div
 						className={
-							'group-hover:text-blue-200 flex items-center text-white transition-colors duration-300'
+							'group-hover:text-blue-200 flex items-center text-neutral-900 transition-colors duration-300'
 						}>
 						{'Learn More →'}
 					</div>

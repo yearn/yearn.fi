@@ -38,6 +38,7 @@ function updateMode() {
 	} else {
 		document.documentElement.classList.remove('v3');
 		document.documentElement.classList.remove('dark');
+		document.documentElement.classList.add('light');
 	}
 
 	if (isDarkMode === isSystemDarkMode && !isHomePage) {

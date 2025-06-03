@@ -46,7 +46,7 @@ export function MobileTopNav({
 						<LogoYearn
 							className={'size-8'}
 							back={'text-blue-500'}
-							front={'text-white'}
+							front={'text-neutral-900'}
 						/>
 					</button>
 				</div>
@@ -55,7 +55,7 @@ export function MobileTopNav({
 						set_isNavbarOpen(false);
 						set_isSearchOpen(prev => !prev);
 					}}>
-					<IconSearch className={'text-white'} />
+					<IconSearch className={'text-neutral-900'} />
 				</button>
 			</div>
 
@@ -63,7 +63,7 @@ export function MobileTopNav({
 				<div className={'!w-full bg-gray-900 pb-6 pl-8 pr-6'}>
 					<SearchBar
 						className={
-							'!max-w-none !rounded-lg !border-0 !border-none !bg-gray-600/40 text-white !outline-none '
+							'!max-w-none !rounded-lg !border-0 !border-none !bg-gray-600/40 text-neutral-900 !outline-none '
 						}
 						searchValue={configuration.searchValue}
 						onSearch={(value: string) => dispatch({searchValue: value})}

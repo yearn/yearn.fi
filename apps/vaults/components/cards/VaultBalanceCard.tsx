@@ -13,7 +13,7 @@ export const VaultBalanceCard: FC<{
 	return (
 		<div className={'flex h-[120px] flex-col justify-center p-6'}>
 			<div className={'flex items-center gap-2'}>
-				<p className={'text-[12px] font-medium text-white/75'}>{'Your Deposits'}</p>
+				<p className={'text-[12px] font-medium text-neutral-900/75'}>{'Your Deposits'}</p>
 				{showExpandButton && (
 					<div
 						className={
@@ -24,8 +24,8 @@ export const VaultBalanceCard: FC<{
 					</div>
 				)}
 			</div>
-			<p className={'text-[28px] font-medium text-white'}>
-				<span className={'font-medium text-white/50'}>{'$'}</span>
+			<p className={'text-[28px] font-medium text-neutral-900'}>
+				<span className={'font-medium text-neutral-900/50'}>{'$'}</span>
 				{formatAmount(balance)}
 			</p>
 		</div>

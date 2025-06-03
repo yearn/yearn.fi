@@ -30,7 +30,7 @@ export function FooterNav(): ReactElement {
 			<div className={'flex w-full flex-col space-y-4 rounded-[12px] p-[24px] md:bg-black/30'}>
 				{menu.map(link => (
 					<Link
-						className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
+						className={'flex items-center gap-2 text-neutral-900 transition-colors hover:text-primary'}
 						key={link.path}
 						target={link.target}
 						href={link.path}>
@@ -46,7 +46,7 @@ export function FooterNav(): ReactElement {
 					className={
 						'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
 					}>
-					<IconParagraph className={'size-7 text-white'} />
+					<IconParagraph className={'size-7 text-neutral-900'} />
 				</Link>
 				<Link
 					href={'https://discord.com/invite/yearn'}
@@ -54,7 +54,7 @@ export function FooterNav(): ReactElement {
 					className={
 						'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
 					}>
-					<IconDiscord className={'size-7 text-white'} />
+					<IconDiscord className={'size-7 text-neutral-900'} />
 				</Link>
 				<Link
 					href={'https://x.com/yearnfi'}
@@ -62,7 +62,7 @@ export function FooterNav(): ReactElement {
 					className={
 						'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
 					}>
-					<IconTwitter className={'size-7 text-white'} />
+					<IconTwitter className={'size-7 text-neutral-900'} />
 				</Link>
 			</div>
 		</div>

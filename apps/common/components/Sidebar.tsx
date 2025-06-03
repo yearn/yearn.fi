@@ -18,7 +18,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 	return (
 		<div
 			className={
-				'flex h-full w-72 flex-col justify-between rounded-lg  from-gray-900 to-[#1A1A1A] py-6 text-white'
+				'flex h-full w-72 flex-col justify-between rounded-lg  from-gray-900 to-[#1A1A1A] py-6 text-neutral-900'
 			}>
 			<div className={'flex flex-col gap-y-4 '}>
 				<div className={'mb-4 ml-2 flex flex-row items-center gap-x-3 px-4'}>
@@ -26,7 +26,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 						<LogoYearn
 							className={'size-6'}
 							back={'text-blue-500'}
-							front={'text-white'}
+							front={'text-neutral-900'}
 						/>
 					</Link>
 					<span>{'Yearn'}</span>
@@ -41,7 +41,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 							<Link
 								className={cl(
 									'py-2 px-[28px] flex gap-4 text-base hover:bg-gray-600/40',
-									currentTab === tab.route ? 'text-white font-bold' : 'text-gray-400'
+									currentTab === tab.route ? 'text-neutral-900 font-bold' : 'text-gray-400'
 								)}
 								shallow
 								href={href}
@@ -59,7 +59,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 			<div className={'flex flex-wrap gap-x-3 gap-y-4 px-6'}>
 				{LANDING_SIDEBAR_LINKS.map(link => (
 					<Link
-						className={'text-xs text-gray-400 hover:text-white'}
+						className={'text-xs text-gray-400 hover:text-neutral-900'}
 						target={'_blank'}
 						href={link.href}
 						key={link.title}>

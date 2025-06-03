@@ -60,7 +60,7 @@ function Logo({currentHost}: {currentHost: string; isVaultPage: boolean}): React
 		<LogoYearn
 			className={'!size-8 !max-h-8 !max-w-8'}
 			back={'text-primary'}
-			front={'text-white'}
+			front={'text-neutral-900'}
 		/>
 	);
 	return (
@@ -201,7 +201,7 @@ export function LogoPopover(): ReactElement {
 																	className={cl(
 																		'text-base',
 																		isV3
-																			? 'text-white'
+																			? 'text-neutral-900'
 																			: 'text-black dark:text-white'
 																	)}>
 																	{name}
@@ -241,7 +241,7 @@ export function LogoPopover(): ReactElement {
 																	className={cl(
 																		'text-xs',
 																		isV3
-																			? 'text-white'
+																			? 'text-neutral-900'
 																			: 'text-black dark:text-white'
 																	)}>
 																	{name}

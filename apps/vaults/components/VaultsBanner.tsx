@@ -30,7 +30,7 @@ export function VaultsBanner(): ReactElement {
 					</p>
 					<Link
 						href={'/vaults'}
-						className={'text-white'}>
+						className={'text-neutral-900 dark:text-white'}>
 						{'Learn More'} {'→'}
 					</Link>
 				</div>

@@ -32,7 +32,7 @@ const SelectAllOption: React.FC<{
 				onChange={onToggle}
 				className={'mr-2 accent-blue-500'}
 			/>
-			<span className={'text-sm font-medium text-white'}>{'All chains'}</span>
+			<span className={'text-sm font-medium text-neutral-900'}>{'All chains'}</span>
 		</label>
 	</div>
 );
@@ -53,7 +53,7 @@ const ChainOption: React.FC<{
 			{option.icon && (
 				<div className={'mr-2 size-6 shrink-0'}>{React.cloneElement(option.icon, {width: 24, height: 24})}</div>
 			)}
-			<span className={'text-sm text-white'}>{option.label}</span>
+			<span className={'text-sm text-neutral-900'}>{option.label}</span>
 		</div>
 	</label>
 );
@@ -96,7 +96,7 @@ export const ChainFilterDropdown: React.FC<TChainFilterDropdownProps> = ({chains
 			<button
 				onClick={() => set_isDropdownOpen(!isDropdownOpen)}
 				className={
-					'mb-0 flex h-full items-center justify-center gap-1 rounded-full bg-white/10 px-3 py-2 text-[14px] text-white'
+					'mb-0 flex h-full items-center justify-center gap-1 rounded-full bg-white/10 px-3 py-2 text-[14px] text-neutral-900'
 				}>
 				{getChainDisplayText(chains, chainOptions)}
 				<IconChevron className={`size-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />

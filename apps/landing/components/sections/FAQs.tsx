@@ -17,7 +17,7 @@ const FAQItem: FC<TFAQItem> = ({title, children, isOpen, onToggle}) => {
 			<button
 				onClick={onToggle}
 				className={
-					'flex w-full items-center justify-between rounded-lg bg-[#191919] px-6 py-5 text-white transition-colors hover:bg-[#2a2a2a]'
+					'flex w-full items-center justify-between rounded-lg bg-[#191919] px-6 py-5 text-neutral-900 transition-colors hover:bg-[#2a2a2a]'
 				}>
 				<span className={'text-lg'}>{title}</span>
 				<span

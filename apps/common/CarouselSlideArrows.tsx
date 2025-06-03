@@ -22,14 +22,14 @@ export function CarouselSlideArrows({
 				<button
 					onClick={onScrollBack}
 					className={
-						'flex !h-8 items-center rounded-[4px] px-4 text-white outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
+						'flex !h-8 items-center rounded-[4px] px-4 text-neutral-900 outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
 					}>
 					<IconChevron className={'size-3 rotate-90'} />
 				</button>
 				<button
 					onClick={onScrollForward}
 					className={
-						'flex !h-8 items-center rounded-[4px] px-4 text-white outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
+						'flex !h-8 items-center rounded-[4px] px-4 text-neutral-900 outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
 					}>
 					<IconChevron className={'size-3 -rotate-90'} />
 				</button>

@@ -174,7 +174,7 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 										/>
 										<span
 											className={
-												'text-xs font-normal text-white/50 underline decoration-neutral-600/30 decoration-dotted underline-offset-4'
+												'text-xs font-normal text-neutral-900/50 underline decoration-neutral-600/30 decoration-dotted underline-offset-4'
 											}>
 											{'proj. '}
 											<RenderAmount

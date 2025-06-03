@@ -38,7 +38,7 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 }
 
 const addressStyle =
-	'text-s relative hidden h-8 cursor-pointer items-center justify-center rounded-full border border-white/10 px-3 font-normal text-white transition-all hover:opacity-80 md:flex';
+	'text-s relative hidden h-8 cursor-pointer items-center justify-center rounded-full border border-white/10 px-3 font-normal text-neutral-900 transition-all hover:opacity-80 md:flex';
 
 function WalletSelector(): ReactElement {
 	const {openAccountModal} = useAccountModal();

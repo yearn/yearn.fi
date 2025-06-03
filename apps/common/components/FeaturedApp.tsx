@@ -29,7 +29,7 @@ export function FeaturedApp(props: {app: TApp}): ReactElement {
 
 			<div
 				className={
-					'pointer-events-none absolute bottom-0 left-0 z-30 h-[120px] w-full bg-gray-800 p-6 text-white transition-all md:bottom-[-120px] md:group-hover:bottom-0'
+					'pointer-events-none absolute bottom-0 left-0 z-30 h-[120px] w-full bg-gray-800 p-6 text-neutral-900 transition-all md:bottom-[-120px] md:group-hover:bottom-0'
 				}>
 				{props.app.description}
 			</div>

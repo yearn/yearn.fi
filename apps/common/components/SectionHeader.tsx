@@ -44,7 +44,7 @@ export const SectionHeader: FC<{
 				<span className={'block md:hidden'}>
 					<Link
 						href={cta.href}
-						className={'ml-2 text-white'}>
+						className={'ml-2 text-neutral-900'}>
 						{cta.label} {'→'}
 					</Link>
 				</span>

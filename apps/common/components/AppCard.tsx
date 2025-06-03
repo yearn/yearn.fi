@@ -38,7 +38,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 						) : (
 							<div className={'size-[32px] rounded-full bg-fallback'} />
 						)}
-						<div className={'text-lg font-bold text-white'}>{props.app.name}</div>
+						<div className={'text-lg font-bold text-neutral-900'}>{props.app.name}</div>
 					</div>
 				</div>
 

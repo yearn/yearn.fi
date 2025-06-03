@@ -62,7 +62,7 @@ const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 40}) => {
 				{isHovered && (
 					<div
 						className={
-							'absolute -top-12 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-700 px-3 py-2 text-sm text-white lg:block'
+							'absolute -top-12 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-700 px-3 py-2 text-sm text-neutral-900 lg:block'
 						}>
 						{alt}
 						<div

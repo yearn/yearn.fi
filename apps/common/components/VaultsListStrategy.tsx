@@ -98,7 +98,7 @@ export function VaultsListStrategy({
 				'w-full group',
 				'relative transition-all duration-300 ease-in-out',
 
-				'text-white',
+				'text-neutral-900',
 				isExpanded ? 'rounded-b-none' : '',
 				variant === 'v2' ? '' : 'rounded-3xl',
 				isExpanded && variant === 'v2' ? 'bg-[#97979724] bg-opacity-[14]' : '',

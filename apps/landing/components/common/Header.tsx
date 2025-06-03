@@ -58,7 +58,7 @@ export function LandingAppHeader(): ReactElement {
 							<LogoYearn
 								className={'size-7'}
 								front={'text-black'}
-								back={'text-white'}
+								back={'text-neutral-900'}
 							/>
 						</Link>
 						<span>{'Yearn'}</span>

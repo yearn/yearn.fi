@@ -29,7 +29,7 @@ function UnallocatedStrategy({
 			className={cl(
 				'w-full group',
 				'relative transition-all duration-300 ease-in-out',
-				'text-white',
+				'text-neutral-900',
 				'rounded-3xl'
 			)}>
 			<div
@@ -267,7 +267,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 						{unallocatedVaults.length > 0 && (
 							<Button
 								className={
-									'w-full !bg-[#2C3DA6] !bg-opacity-20 !text-white hover:!bg-opacity-100 md:w-[264px]'
+									'w-full !bg-[#2C3DA6] !bg-opacity-20 !text-neutral-900 hover:!bg-opacity-100 md:w-[264px]'
 								}
 								onClick={() => set_shouldShowUnallocated(!shouldShowUnallocated)}>
 								{shouldShowUnallocated ? '- Hide inactive strategies' : '+ Show inactive strategies'}

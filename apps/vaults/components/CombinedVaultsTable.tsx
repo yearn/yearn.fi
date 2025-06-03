@@ -172,7 +172,7 @@ function CombinedVaultsTable(): ReactElement {
 						<button
 							key={filter}
 							onClick={() => handleFilterClick(filter)}
-							className={`h-full rounded-full ${activeFilter === filter ? 'bg-white/10' : 'text-white/75'} mb-0 flex items-center justify-center px-3 py-2 text-[14px]`}>
+							className={`h-full rounded-full ${activeFilter === filter ? 'bg-white/10' : 'text-neutral-900/75'} mb-0 flex items-center justify-center px-3 py-2 text-[14px]`}>
 							{filter}
 						</button>
 					))}

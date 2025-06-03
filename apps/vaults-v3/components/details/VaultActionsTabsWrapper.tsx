@@ -114,7 +114,7 @@ export function BoostMessage(props: {
 			return (
 				<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 					<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
-						<b className={'text-base text-white'}>
+						<b className={'text-base text-neutral-900'}>
 							{
 								'Great news! This Vault is receiving an Optimism Boost. Deposit and stake your tokens to receive OP rewards. Nice!'
 							}
@@ -126,7 +126,7 @@ export function BoostMessage(props: {
 		return (
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 				<div className={'w-full rounded-lg bg-[#F8A908] p-2 md:px-6 md:py-4'}>
-					<b className={'text-base text-white'}>
+					<b className={'text-base text-neutral-900'}>
 						{
 							"This Vault is receiving an Optimism Boost. To zap into it for additional OP rewards, you'll have to stake your yVault tokens manually on the $OP BOOST tab after you deposit. Sorry anon, it's just how it works."
 						}
@@ -139,10 +139,10 @@ export function BoostMessage(props: {
 		return (
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 				<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
-					<b className={'text-base text-white'}>
+					<b className={'text-base text-neutral-900'}>
 						{`This Vault has an active veYFI gauge which boosts your APY from ${formatAmount(extraAPY * 10)}% to ${formatAmount(extraAPY * 100)}% depending on the veYFI you have locked. Simply deposit and stake to start earning.`}
 					</b>
-					<b className={'block text-white'}>
+					<b className={'block text-neutral-900'}>
 						{'Learn more about veYFI rewards in the '}
 						<a
 							className={'underline'}
@@ -161,10 +161,10 @@ export function BoostMessage(props: {
 		return (
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 				<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
-					<b className={'text-base text-white'}>
+					<b className={'text-base text-neutral-900'}>
 						{`This Vault can be juiced for even more yield. Simply deposit and stake to receive juiced APYs of ${formatAmount(extraAPY * 100)}%.`}
 					</b>
-					<b className={'block text-white'}>
+					<b className={'block text-neutral-900'}>
 						{'Visit '}
 						<a
 							className={'underline'}
@@ -184,7 +184,7 @@ export function BoostMessage(props: {
 			return (
 				<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 					<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
-						<b className={'text-base text-white'}>
+						<b className={'text-base text-neutral-900'}>
 							{
 								'Great news! This Vault is receiving a Staking Boost. Deposit and stake your tokens to receive extra rewards. Nice!'
 							}
@@ -196,7 +196,7 @@ export function BoostMessage(props: {
 		return (
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 				<div className={'w-full rounded-lg bg-[#F8A908] p-2 md:px-6 md:py-4'}>
-					<b className={'text-base text-white'}>
+					<b className={'text-base text-neutral-900'}>
 						{
 							"This Vault is receiving a Staking Boost. To zap into it for additional rewards, you'll have to stake your yVault tokens manually on the BOOST tab after you deposit. Sorry anon, it's just how it works."
 						}

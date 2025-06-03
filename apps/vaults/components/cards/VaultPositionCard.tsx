@@ -42,11 +42,14 @@ export const VaultPositionCard: FC<{
 						<div className={'h-px w-full bg-white/10'} />
 						<div className={'flex w-full flex-row items-center justify-between gap-4'}>
 							<p className={'text-[14px] font-medium text-neutral-900'}>
-								<span className={'text-white/50'}>{'$'}</span>
+								<span className={'text-neutral-400 dark:text-white/50'}>{'$'}</span>
 								{formatAmount(vault.totalValue)}
 							</p>
 							{apr > 0 && (
-								<p className={'text-[14px] text-white/50'}>{`${formatPercent(apr * 100, 2, 2)} APY`}</p>
+								<p
+									className={
+										'text-[14px] text-neutral-400 dark:text-white/50'
+									}>{`${formatPercent(apr * 100, 2, 2)} APY`}</p>
 							)}
 						</div>
 					</div>
