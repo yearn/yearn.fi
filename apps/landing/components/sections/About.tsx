@@ -13,7 +13,7 @@ export function About(): ReactElement {
 				backgroundPosition: 'center'
 			}}>
 			<div className={'relative lg:mr-[400px]'}>
-				<p className={'font-aeonikFono mb-10 text-left text-3xl font-light text-white md:text-5xl'}>
+				<p className={'mb-10 text-left font-aeonikFono text-3xl font-light text-white md:text-5xl'}>
 					{'WTF IS A YEARN VAULT?'}
 				</p>
 				<div
@@ -51,7 +51,7 @@ export function About(): ReactElement {
 				</div>
 				{isReadMore ? null : (
 					<button
-						className={'text-primary mt-6 text-lg font-light md:hidden'}
+						className={'mt-6 text-lg font-light text-primary md:hidden'}
 						onClick={() => set_isReadMore(true)}>
 						{'Read more'}
 					</button>
