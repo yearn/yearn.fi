@@ -1,18 +1,18 @@
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
 import {zeroAddress} from 'viem';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useFetch} from '@lib/hooks/useFetch';
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
-import {cl, toAddress} from '@lib/utils';
-import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useYearn} from '@common/contexts/useYearn';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useFetch} from '@lib/hooks/useFetch';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {cl, toAddress} from '@lib/utils';
+import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';
@@ -107,7 +107,7 @@ function Index(): ReactElement | null {
 
 	return (
 		<div className={'mx-auto w-full max-w-6xl pt-20 md:pt-32'}>
-			<nav className={`mb-4 self-start md:mb-2 md:hidden`}>
+			<nav className={'mb-4 self-start md:mb-2 md:hidden'}>
 				<button
 					className={'z-50 w-fit'}
 					onClick={() => router.back()}>
@@ -127,7 +127,7 @@ function Index(): ReactElement | null {
 					'bg-[linear-gradient(73deg,_#D21162_24.91%,_#2C3DA6_99.66%)]',
 					'relative flex flex-col items-center justify-center'
 				)}>
-				<nav className={`mb-4 hidden self-start md:mb-2 md:block`}>
+				<nav className={'mb-4 hidden self-start md:mb-2 md:block'}>
 					<button
 						className={'w-fit'}
 						onClick={() => router.back()}>

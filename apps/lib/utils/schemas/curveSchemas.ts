@@ -1,4 +1,5 @@
 import {z} from 'zod';
+
 import {toAddress} from '../';
 
 export const curveWeeklyFeesSchema = z.object({

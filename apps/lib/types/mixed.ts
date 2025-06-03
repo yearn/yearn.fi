@@ -138,3 +138,10 @@ export type TYToken = TToken & {
 	stakingValue: number;
 };
 export type TYChainTokens = TNDict<TDict<TYToken>>;
+
+export type TApp = {
+	name: string;
+	description?: string;
+	logoURI: string;
+	appURI: string;
+};

@@ -1,8 +1,7 @@
 import {Solver} from '@lib/utils/schemas/yDaemonTokenListBalances';
 
-import type {TDropdownOption} from '@lib/types';
+import type {TAddress, TDropdownOption,TNormalizedBN} from '@lib/types';
 import type {TSolver} from '@lib/utils/schemas/yDaemonTokenListBalances';
-import type {TAddress, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 
 export {Solver, TSolver};

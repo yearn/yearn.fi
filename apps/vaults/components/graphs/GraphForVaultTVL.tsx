@@ -76,7 +76,8 @@ export function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLP
 										<b
 											className={
 												'font-number text-xs font-bold text-neutral-900'
-											}>{`${formatAmount(Number(value))} $`}</b>
+											}>{`${formatAmount(Number(value))} $`}
+          </b>
 									</div>
 								</div>
 							);

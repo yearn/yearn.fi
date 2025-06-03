@@ -1,12 +1,12 @@
 import {useCallback} from 'react';
-import {toAddress} from '@lib/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
+import {useYearn} from '@lib/contexts/useYearn';
+import {toAddress} from '@lib/utils';
 import {isAutomatedVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {useYearn} from '@common/contexts/useYearn';
 
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TDict} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function useFilteredVaults(
 	vaultMap: TDict<TYDaemonVault>,

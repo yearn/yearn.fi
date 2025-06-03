@@ -1,7 +1,7 @@
 import Link from 'next/link';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import {useYearnBalance} from '@lib/hooks/useYearnBalance';
 import {cl, formatAmount, toAddress} from '@lib/utils';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useYearnBalance} from '@common/hooks/useYearnBalance';
 
 import {VaultChainTag} from '../VaultChainTag';
 

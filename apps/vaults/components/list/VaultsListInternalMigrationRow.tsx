@@ -1,9 +1,9 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import {useYearnBalance} from '@lib/hooks/useYearnBalance';
 import {formatAmount, toAddress} from '@lib/utils';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useYearnBalance} from '@common/hooks/useYearnBalance';
-import {getVaultName} from '@common/utils';
+import {getVaultName} from '@lib/utils/helpers';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
@@ -32,9 +32,9 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 						</div>
 						<div className={'text-left'}>
 							<p>{vaultName}</p>
-							<p className={'font-number text-xs'}>{`${formatAmount(balanceToMigrate.normalized)} ${
-								currentVault.token.symbol
-							}`}</p>
+							<p className={'font-number text-xs'}>
+								{`${formatAmount(balanceToMigrate.normalized)} ${currentVault.token.symbol}`}
+							</p>
 						</div>
 					</div>
 				</div>

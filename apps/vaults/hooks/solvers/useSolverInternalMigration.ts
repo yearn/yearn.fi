@@ -1,17 +1,17 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {maxUint256} from 'viem';
 import {readContract} from 'wagmi/actions';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {ZAP_YEARN_VE_CRV_ADDRESS} from '@lib/utils/constants';
-import {allowanceOf, approveERC20, retrieveConfig} from '@lib/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {ZAP_CRV_ABI} from '@vaults/utils/abi/zapCRV.abi';
 import {zapCRV} from '@vaults/utils/actions';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {allowanceKey} from '@common/utils';
-import {migrateShares} from '@common/utils/actions';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
+import {ZAP_YEARN_VE_CRV_ADDRESS} from '@lib/utils/constants';
+import {allowanceKey} from '@lib/utils/helpers';
+import {allowanceOf, approveERC20, retrieveConfig} from '@lib/utils/wagmi';
+import {migrateShares} from '@lib/utils/wagmi/actions';
 
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';

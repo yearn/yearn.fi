@@ -1,19 +1,19 @@
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useFetch} from '@lib/hooks/useFetch';
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
-import {toAddress} from '@lib/utils';
-import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {VaultDetailsTabsWrapper} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useYearn} from '@common/contexts/useYearn';
-import {variants} from '@common/utils/animations';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useFetch} from '@lib/hooks/useFetch';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {toAddress} from '@lib/utils';
+import {variants} from '@lib/utils/animations';
+import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';

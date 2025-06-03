@@ -1,6 +1,5 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {toAddress, toBigInt, zeroNormalizedBN} from '@lib/utils';
+import {serialize} from 'wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverCowswap} from '@vaults/hooks/solvers/useSolverCowswap';
 import {useSolverGaugeStakingBooster} from '@vaults/hooks/solvers/useSolverGaugeStakingBooster';
@@ -9,12 +8,13 @@ import {useSolverJuicedStakingBooster} from '@vaults/hooks/solvers/useSolverJuic
 import {useSolverOptimismBooster} from '@vaults/hooks/solvers/useSolverOptimismBooster';
 import {useSolverPartnerContract} from '@vaults/hooks/solvers/useSolverPartnerContract';
 import {useSolverPortals} from '@vaults/hooks/solvers/useSolverPortals';
-import { useSolverV3Router } from '@vaults/hooks/solvers/useSolverV3Router';
+import {useSolverV3Router} from '@vaults/hooks/solvers/useSolverV3Router';
 import {useSolverV3StakingBooster} from '@vaults/hooks/solvers/useSolverV3StakingBooster';
 import {useSolverVanilla} from '@vaults/hooks/solvers/useSolverVanilla';
 import {Solver} from '@vaults/types/solvers';
-import {serialize} from 'wagmi';
-import {hash} from '@common/utils';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {toAddress, toBigInt, zeroNormalizedBN} from '@lib/utils';
+import {hash} from '@lib/utils/helpers';
 
 import type {TNormalizedBN} from '@lib/types';
 import type {TInitSolverArgs, TSolver, TSolverContext, TWithSolver} from '@vaults/types/solvers';
@@ -138,9 +138,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 
 			switch (currentSolver) {
 				case Solver.enum.Portals: {
-					const [portalsQuote] = await Promise.allSettled([
-						portals.init(request, currentSolver === Solver.enum.Portals)
-					]);
+					const [portalsQuote] = await Promise.allSettled([portals.init(request, currentSolver === Solver.enum.Portals)]);
 
 					const solvers: {
 						[key in TSolver]?: {
@@ -193,9 +191,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 					break;
 				}
 				case Solver.enum.Cowswap: {
-					const [cowswapQuote] = await Promise.allSettled([
-						cowswap.init(request, currentSolver === Solver.enum.Cowswap)
-					]);
+					const [cowswapQuote] = await Promise.allSettled([cowswap.init(request, currentSolver === Solver.enum.Cowswap)]);
 
 					const solvers: {
 						[key in TSolver]?: {

@@ -1,12 +1,12 @@
 import {Fragment, useMemo} from 'react';
-import {cl} from '@lib/utils';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {Renderable} from '@lib/components/Renderable';
+import {Switch} from '@lib/components/Switch';
+import {useYearn} from '@lib/contexts/useYearn';
 import {IconSettings} from '@lib/icons/IconSettings';
-import {Switch} from '@common/components/Switch';
-import {useYearn} from '@common/contexts/useYearn';
+import {cl} from '@lib/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';

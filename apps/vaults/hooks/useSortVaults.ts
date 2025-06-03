@@ -1,17 +1,12 @@
 import {useCallback, useMemo} from 'react';
-import {isZero, toAddress, toNormalizedBN} from '@lib/utils';
 import {deserialize, serialize} from 'wagmi';
+import {useYearn} from '@lib/contexts/useYearn';
+import {isZero, toAddress, toNormalizedBN} from '@lib/utils';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants';
-import {useYearn} from '@common/contexts/useYearn';
-import {getVaultName} from '@common/utils';
-import {numberSort, stringSort} from '@common/utils/sort';
+import {getVaultName, numberSort, stringSort} from '@lib/utils/helpers';
 
-import type {
-	TYDaemonVault,
-	TYDaemonVaults,
-	TYDaemonVaultStrategy
-} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@lib/types';
+import type {TYDaemonVault, TYDaemonVaults, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export type TPossibleSortBy =
 	| 'APY'

@@ -1,20 +1,20 @@
 import {Fragment, useMemo} from 'react';
 import Link from 'next/link';
-import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {Renderable} from '@lib/components/Renderable';
+import {RenderAmount} from '@lib/components/RenderAmount';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useYearnBalance} from '@lib/hooks/useYearnBalance';
 import {IconLinkOut} from '@lib/icons/IconLinkOut';
+import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {getNetwork} from '@lib/utils/wagmi/utils';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {RenderAmount} from '@common/components/RenderAmount';
-import {useYearn} from '@common/contexts/useYearn';
-import {useYearnBalance} from '@common/hooks/useYearnBalance';
 
 import {VaultChainTag} from '../VaultChainTag';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TAPYSublineProps = {
 	hasPendleArbRewards: boolean;
@@ -26,7 +26,7 @@ function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer, hasKelp}: TAPYSubl
 	if (hasKelpNEngenlayer) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
-				{`+1x Kelp Miles`}
+				{'+1x Kelp Miles'}
 				<br />
 				{'+1x EigenLayer Points'}
 			</small>
@@ -35,14 +35,14 @@ function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer, hasKelp}: TAPYSubl
 	if (hasKelp) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
-				{`+ 1x Kelp Miles`}
+				{'+ 1x Kelp Miles'}
 			</small>
 		);
 	}
 	if (hasPendleArbRewards) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
-				{`+ 2500 ARB/week`}
+				{'+ 2500 ARB/week'}
 			</small>
 		);
 	}
@@ -133,7 +133,7 @@ function APYTooltip(props: {
 								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 							}>
 							<p>{'• Extra ARB '}</p>
-							<p>{`2 500/week`}</p>
+							<p>{'2 500/week'}</p>
 						</div>
 					) : null}
 
@@ -143,7 +143,7 @@ function APYTooltip(props: {
 								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 							}>
 							<p>{'• Extra Kelp Miles '}</p>
-							<p>{`1x`}</p>
+							<p>{'1x'}</p>
 						</div>
 					) : null}
 
@@ -154,14 +154,14 @@ function APYTooltip(props: {
 									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 								}>
 								<p>{'• Extra Kelp Miles '}</p>
-								<p>{`1x`}</p>
+								<p>{'1x'}</p>
 							</div>
 							<div
 								className={
 									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 								}>
 								<p>{'• Extra EigenLayer Points '}</p>
-								<p>{`1x`}</p>
+								<p>{'1x'}</p>
 							</div>
 						</>
 					) : null}
@@ -524,7 +524,7 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 
 function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel;
-	const riskColor = [`transparent`, `#63C532`, `#F8A908`, `#F8A908`, `#C73203`, `#C73203`];
+	const riskColor = ['transparent', '#63C532', '#F8A908', '#F8A908', '#C73203', '#C73203'];
 	return (
 		<div className={'md:justify-centere col-span-2 flex flex-row items-end justify-between md:flex-col md:pt-4'}>
 			<p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>
@@ -554,7 +554,9 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 						}>
 						<p>
 							<b className={'text-xs font-semibold'}>{`${level} / 5 :`}</b>
-							{` This reflects the vault's security, with 1 being most secure and 5 least secure, based on strategy complexity, loss exposure, and external dependencies.`}
+							{
+								" This reflects the vault's security, with 1 being most secure and 5 least secure, based on strategy complexity, loss exposure, and external dependencies."
+							}
 						</p>
 					</div>
 				</span>
@@ -654,7 +656,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 						<div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
-								alt={``}
+								alt={''}
 								width={32}
 								height={32}
 							/>

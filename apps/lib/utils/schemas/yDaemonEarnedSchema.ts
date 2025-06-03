@@ -1,4 +1,5 @@
 import {z} from 'zod';
+
 import {addressSchema} from '../../types';
 
 export const yDaemonSingleEarnedSchema = z.object({

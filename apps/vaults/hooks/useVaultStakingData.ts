@@ -2,6 +2,11 @@ import {useEffect, useState} from 'react';
 import {erc20Abi, zeroAddress} from 'viem';
 import {useBlockNumber} from 'wagmi';
 import {readContract, readContracts} from 'wagmi/actions';
+import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards.abi';
+import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
+import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
+import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
+import {TOKENIZED_STRATEGY_ABI} from '@vaults-v3/utils/abi/tokenizedStrategy.abi';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
 import {
@@ -15,13 +20,8 @@ import {
 	toNormalizedBN,
 	zeroNormalizedBN
 } from '@lib/utils';
+import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@lib/utils/constants';
 import {retrieveConfig} from '@lib/utils/wagmi';
-import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards.abi';
-import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
-import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
-import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
-import {TOKENIZED_STRATEGY_ABI} from '@vaults-v3/utils/abi/tokenizedStrategy.abi';
-import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
 import type {TAddress, TNormalizedBN} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';

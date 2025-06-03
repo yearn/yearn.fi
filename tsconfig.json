@@ -4,7 +4,6 @@
 		"baseUrl": ".",
 		"paths": {
 			"@lib/*": ["apps/lib/*"],
-			"@common/*": ["apps/common/*"],
 			"@vaults/*": ["apps/vaults/*"],
 			"@vaults-v3/*": ["apps/vaults-v3/*"]
 		},

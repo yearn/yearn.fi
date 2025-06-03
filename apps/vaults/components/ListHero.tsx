@@ -1,12 +1,12 @@
 import {useMemo} from 'react';
+import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown';
+import {SearchBar} from '@lib/components/SearchBar';
+import {useChainOptions} from '@lib/hooks/useChains';
 import {cl} from '@lib/utils';
-import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
-import {SearchBar} from '@common/components/SearchBar';
-import {useChainOptions} from '@common/hooks/useChains';
 
 import type {ReactElement} from 'react';
+import type {TMultiSelectOptionProps} from '@lib/components/MultiSelectDropdown';
 import type {TDict} from '@lib/types';
-import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 
 type TListHero = {
 	categories: string[] | null;

@@ -2,8 +2,13 @@ import {useCallback, useMemo, useRef} from 'react';
 import {BaseError, isHex, maxUint256, zeroAddress} from 'viem';
 import {sendTransaction, switchChain, waitForTransactionReceipt} from 'wagmi/actions';
 import axios from 'axios';
+import {isSolverDisabled} from '@vaults/contexts/useSolver';
+import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErrorObject';
+import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
+import {Solver} from '@vaults/types/solvers';
 import {toast} from '@lib/components/yToast';
 import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
 import {
 	assert,
 	assertAddress,
@@ -17,11 +22,6 @@ import {
 } from '@lib/utils';
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, defaultTxStatus, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
-import {isSolverDisabled} from '@vaults/contexts/useSolver';
-import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErrorObject';
-import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
-import {Solver} from '@vaults/types/solvers';
-import {useYearn} from '@common/contexts/useYearn';
 
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi';

@@ -1,8 +1,8 @@
-import {useWeb3} from '../contexts/useWeb3';
-import {useFetch} from './useFetch';
 import {useDeepCompareMemo} from '@react-hookz/web';
 
+import {useWeb3} from '../contexts/useWeb3';
 import {yDaemonEarnedSchema} from '../utils/schemas/yDaemonEarnedSchema';
+import {useFetch} from './useFetch';
 import {useYDaemonBaseURI} from './useYDaemonBaseURI';
 
 import type {TYDaemonEarned} from '../utils/schemas/yDaemonEarnedSchema';

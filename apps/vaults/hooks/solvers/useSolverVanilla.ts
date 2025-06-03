@@ -1,14 +1,14 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {maxUint256} from 'viem';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {allowanceKey} from '@lib/utils/helpers';
-import {useYearn} from '@common/contexts/useYearn';
-import {deposit, redeemV3Shares, withdrawShares} from '@common/utils/actions';
+import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
+import {deposit, redeemV3Shares, withdrawShares} from '@lib/utils/wagmi/actions';
 
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';

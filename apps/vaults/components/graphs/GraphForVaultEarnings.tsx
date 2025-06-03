@@ -97,7 +97,8 @@ export function GraphForVaultEarnings({
 										<b
 											className={
 												'font-number text-xs font-bold text-neutral-900'
-											}>{`${formatAmount(Number(value))} ${currentVault.token.symbol}`}</b>
+											}>{`${formatAmount(Number(value))} ${currentVault.token.symbol}`}
+          </b>
 									</div>
 								</div>
 							);

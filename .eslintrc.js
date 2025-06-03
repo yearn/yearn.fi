@@ -190,8 +190,7 @@ module.exports = {
 								'^framer-motion',
 								'^nprogress',
 								'^@?\\w',
-								'^(@yearn-finance/.*)?\\w',
-								'^(@common/.*)?\\w',
+								'^(@lib/.*)?\\w',
 								'^(@y.*)?\\w'
 							],
 							// Parent imports.
@@ -207,7 +206,7 @@ module.exports = {
 							[
 								'^node:.*\\u0000$',
 								'^(@yearn-finance)?\\w.*\\u0000$',
-								'^(@common)?\\w.*\\u0000$',
+								'^(@lib)?\\w.*\\u0000$',
 								'^(@y.*)?\\w.*\\u0000$',
 								'^@?\\w.*\\u0000$',
 								'^[^.].*\\u0000$',

@@ -1,9 +1,9 @@
 import {Fragment} from 'react';
-import {cl} from '@lib/utils';
 import {Popover, Transition} from '@headlessui/react';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
+import {Switch} from '@lib/components/Switch';
 import {IconSettings} from '@lib/icons/IconSettings';
-import {Switch} from '@common/components/Switch';
+import {cl} from '@lib/utils';
 
 import type {ReactElement} from 'react';
 

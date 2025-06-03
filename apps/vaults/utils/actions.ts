@@ -1,10 +1,9 @@
-import {assert, assertAddress, toAddress} from '@lib/utils';
-import {STAKING_REWARDS_ZAP_ADDRESS} from '@lib/utils/constants';
-import {handleTx, toWagmiProvider} from '@lib/utils/wagmi';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {STAKING_REWARDS_ZAP_ABI} from '@vaults/utils/abi/stakingRewardsZap.abi';
 import {YGAUGE_ZAP_ABI} from '@vaults-v3/utils/abi/yGaugeZap.abi';
-import {V3_STAKING_ZAP_ADDRESS, YGAUGES_ZAP_ADDRESS} from '@common/utils/constants';
+import {assert, assertAddress, toAddress} from '@lib/utils';
+import {STAKING_REWARDS_ZAP_ADDRESS,V3_STAKING_ZAP_ADDRESS, YGAUGES_ZAP_ADDRESS} from '@lib/utils/constants';
+import {handleTx, toWagmiProvider} from '@lib/utils/wagmi';
 
 import {V3_REWARDS_ZAP_ABI} from './abi/V3RewardsZap.abi';
 import {VEYFI_GAUGE_ABI} from './abi/veYFIGauge.abi';

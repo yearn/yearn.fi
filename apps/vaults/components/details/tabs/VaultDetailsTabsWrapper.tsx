@@ -1,20 +1,20 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {watchAsset} from 'viem/actions';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useFetch} from '@lib/hooks/useFetch';
-import {assert, cl, isZero, toAddress, toBigInt, toNormalizedValue} from '@lib/utils';
-import {retrieveConfig} from '@lib/utils/wagmi';
+import {getConnectorClient} from 'wagmi/actions';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
-import {getConnectorClient} from 'wagmi/actions';
 import {Renderable} from '@lib/components/Renderable';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useFetch} from '@lib/hooks/useFetch';
 import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
 import {IconAddToMetamask} from '@lib/icons/IconAddToMetamask';
 import {IconLinkOut} from '@lib/icons/IconLinkOut';
+import {assert, cl, isZero, toAddress, toBigInt, toNormalizedValue} from '@lib/utils';
 import {formatDate} from '@lib/utils/format.time';
 import {yDaemonVaultHarvestsSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {retrieveConfig} from '@lib/utils/wagmi';
 import {getNetwork} from '@lib/utils/wagmi/utils';
 
 import type {ReactElement} from 'react';

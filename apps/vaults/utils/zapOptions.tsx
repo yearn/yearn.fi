@@ -1,7 +1,6 @@
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 
-import type {TDropdownOption} from '@lib/types';
-import type {TAddress} from '@lib/types';
+import type {TAddress, TDropdownOption} from '@lib/types';
 import type {TSolver} from '@vaults/types/solvers';
 
 type TSetZapOptionProps = {

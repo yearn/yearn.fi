@@ -1,6 +1,6 @@
-import {isZero} from '@lib/utils';
 import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
 import {Button} from '@lib/components/Button';
+import {isZero} from '@lib/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
@@ -63,7 +63,9 @@ export function VaultsListEmpty({
 							{`The vault "${currentSearch}" does not exist.`}
 						</p>
 						<p className={'text-center text-neutral-600'}>
-							{`It might be because you of your filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?`}
+							{
+								'It might be because you of your filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?'
+							}
 						</p>
 						<Button
 							className={'w-full md:w-48'}
@@ -74,7 +76,9 @@ export function VaultsListEmpty({
 				) : (
 					<>
 						<p className={'text-center text-neutral-600'}>
-							{`There doesn’t seem to be anything here. It might be because you of your filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?`}
+							{
+								'There doesn’t seem to be anything here. It might be because you of your filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?'
+							}
 						</p>
 						<Button
 							className={'w-full md:w-48'}
@@ -91,10 +95,9 @@ export function VaultsListEmpty({
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
 				<>
-					<p
-						className={
-							'text-center text-neutral-600'
-						}>{`Please, select a chain. At least one, just one.`}</p>
+					<p className={'text-center text-neutral-600'}>
+						{'Please, select a chain. At least one, just one.'}
+					</p>
 					<Button
 						className={'w-full md:w-48'}
 						onClick={onReset}>

@@ -1,10 +1,10 @@
 import {type ReactElement, useMemo} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import {AppCard} from '@lib/components/AppCard';
+import {useInitialQueryParam} from '@lib/hooks/useInitialQueryParam';
 import {cl} from '@lib/utils';
-import {AppCard} from '@common/components/AppCard';
-import {useInitialQueryParam} from '@common/hooks/useInitialQueryParam';
-import {ALL_APPS} from '@common/utils/constants';
+import {ALL_APPS} from '@lib/utils/constants';
 
 import type {GetServerSidePropsContext} from 'next';
 
@@ -31,7 +31,9 @@ export default function SeachResults(): ReactElement {
 					{searchFilteredApps.length < 1 ? (
 						<div>
 							<p className={'text-base text-gray-400'}>
-								{`Hmm, we couldn't find what you're looking for, did you spell it right? Try again or go`}{' '}
+								{
+									"Hmm, we couldn't find what you're looking for, did you spell it right? Try again or go"
+								}{' '}
 								<Link
 									className={'text-white hover:underline'}
 									href={'/apps'}>

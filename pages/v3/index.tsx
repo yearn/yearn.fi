@@ -1,7 +1,5 @@
 import {Children, Fragment, useMemo, useState} from 'react';
 import {motion} from 'framer-motion';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {cl, isZero} from '@lib/utils';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
@@ -11,8 +9,10 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
-import {Counter} from '@common/components/Counter';
-import {useYearn} from '@common/contexts/useYearn';
+import {Counter} from '@lib/components/Counter';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {cl, isZero} from '@lib/utils';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TSortDirection} from '@lib/types';
@@ -25,8 +25,8 @@ function Background(): ReactElement {
 			transition={{duration: 10, delay: 0, repeat: Infinity, ease: 'linear'}}
 			animate={{
 				background: [
-					`linear-gradient(0deg, #D21162 24.91%, #2C3DA6 99.66%)`,
-					`linear-gradient(360deg, #D21162 24.91%, #2C3DA6 99.66%)`
+					'linear-gradient(0deg, #D21162 24.91%, #2C3DA6 99.66%)',
+					'linear-gradient(360deg, #D21162 24.91%, #2C3DA6 99.66%)'
 				]
 			}}
 			className={cl('absolute inset-0', 'pointer-events-none')}
@@ -158,7 +158,7 @@ function ListOfVaults(): ReactElement {
 	} = useQueryArguments({
 		defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
 		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
-		defaultPathname: `/v3`
+		defaultPathname: '/v3'
 	});
 	const {activeVaults, retiredVaults, migratableVaults} = useVaultFilter(types, chains, true);
 

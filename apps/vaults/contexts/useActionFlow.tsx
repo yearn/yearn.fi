@@ -1,7 +1,15 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
-import {useReadContract} from 'wagmi';
+import {serialize, useReadContract} from 'wagmi';
+import {readContracts, simulateContract} from 'wagmi/actions';
+import {useMountEffect} from '@react-hookz/web';
+import {Solver} from '@vaults/types/solvers';
+import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
+import {VEYFI_ABI} from '@vaults/utils/abi/veYFI.abi';
+import {setZapOption} from '@vaults/utils/zapOptions';
+import {createUniqueID} from '@lib/contexts/useBalances.multichains';
 import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
 import {useTokenList} from '@lib/contexts/WithTokenList';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
 import {
@@ -14,14 +22,6 @@ import {
 	toNormalizedBN,
 	zeroNormalizedBN
 } from '@lib/utils';
-import {retrieveConfig} from '@lib/utils/wagmi';
-import {useMountEffect} from '@react-hookz/web';
-import {Solver} from '@vaults/types/solvers';
-import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
-import {VEYFI_ABI} from '@vaults/utils/abi/veYFI.abi';
-import {setZapOption} from '@vaults/utils/zapOptions';
-import {readContracts, simulateContract} from 'wagmi/actions';
-import {serialize} from 'wagmi';
 import {VAULT_ABI} from '@lib/utils/abi/vault.abi';
 import {
 	ETH_TOKEN_ADDRESS,
@@ -34,16 +34,13 @@ import {
 	YVWETH_OPT_ADDRESS,
 	YVWFTM_ADDRESS
 } from '@lib/utils/constants';
+import externalzapOutTokenList from '@lib/utils/externalZapOutTokenList.json';
+import {retrieveConfig} from '@lib/utils/wagmi';
 import {getNetwork} from '@lib/utils/wagmi/utils';
-import {createUniqueID} from '@common/contexts/useBalances.multichains';
-import {useYearn} from '@common/contexts/useYearn';
-
-import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
 import type {ReactNode} from 'react';
-import type {TDropdownOption} from '@lib/types';
+import type {TAddress, TDropdownOption, TNormalizedBN} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TAddress, TNormalizedBN} from '@lib/types';
 import type {TSolver} from '@vaults/types/solvers';
 
 export enum Flow {

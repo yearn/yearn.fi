@@ -1,16 +1,12 @@
-import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@lib/utils';
-import {getNetwork} from '@lib/utils/wagmi';
 import {truncateHexTx} from '@vaults/utils';
 import {IconLinkOut} from '@lib/icons/IconLinkOut';
+import {IconSpinner} from '@lib/icons/IconSpinner';
+import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@lib/utils';
 import {formatDate} from '@lib/utils/format.time';
-import {IconSpinner} from '@common/icons/IconSpinner';
+import {getNetwork} from '@lib/utils/wagmi';
 
 import type {ReactElement} from 'react';
-import type {
-	TYDaemonVault,
-	TYDaemonVaultHarvest,
-	TYDaemonVaultHarvests
-} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultHarvest, TYDaemonVaultHarvests} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 function HarvestListHead(): ReactElement {
 	return (

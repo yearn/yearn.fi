@@ -61,7 +61,7 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
 			{children}
 			{isBusy ? (
 				<div className={'absolute inset-0 flex items-center justify-center'}>
-					<IconLoader className={'h-6 w-6 animate-spin text-neutral-0'} />
+					<IconLoader className={'size-6 animate-spin text-neutral-0'} />
 				</div>
 			) : null}
 		</button>

@@ -1,7 +1,7 @@
 import {type ReactElement, useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {IconArrow} from '@common/icons/IconArrow';
+import {IconArrow} from '@lib/icons/IconArrow';
 
 export function EarnCard(props: {
 	title: string;

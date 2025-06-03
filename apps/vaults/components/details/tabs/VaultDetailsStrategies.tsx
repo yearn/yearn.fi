@@ -1,18 +1,18 @@
 import {useMemo, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
-import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@lib/utils';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
-import {AllocationChart} from '@common/components/AllocationChart';
-import {VaultsListStrategy} from '@common/components/VaultsListStrategy';
-import {useYearn} from '@common/contexts/useYearn';
-import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
+import {AllocationChart} from '@lib/components/AllocationChart';
+import {VaultsListStrategy} from '@lib/components/VaultsListStrategy';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice';
+import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@lib/utils';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TAllocationChartData} from '@lib/components/AllocationChart';
 import type {TSortDirection} from '@lib/types';
-import type {TAllocationChartData} from '@common/components/AllocationChart';
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function UnallocatedStrategy({

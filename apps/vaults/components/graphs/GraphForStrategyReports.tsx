@@ -1,9 +1,9 @@
 import {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {useFetch} from '@lib/hooks/useFetch';
-import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@lib/utils';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
+import {useFetch} from '@lib/hooks/useFetch';
 import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@lib/utils';
 import {formatDate} from '@lib/utils/format.time';
 
 import type {ReactElement} from 'react';
@@ -135,7 +135,8 @@ export function GraphForStrategyReports({
 												<b
 													className={
 														'font-number text-xs font-bold text-neutral-900'
-													}>{`${formatAmount(normalizedDiff)} ${vaultTicker}`}</b>
+													}>{`${formatAmount(normalizedDiff)} ${vaultTicker}`}
+            </b>
 											</div>
 										</div>
 									);

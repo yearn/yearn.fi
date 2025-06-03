@@ -1,6 +1,6 @@
 import {type ReactElement} from 'react';
-import {FooterNav} from '@common/components/ModalMobileMenu';
-import {LogoYearn} from '@common/icons/LogoYearn';
+import {FooterNav} from '@lib/components/ModalMobileMenu';
+import {LogoYearn} from '@lib/icons/LogoYearn';
 
 function FooterContent(): ReactElement {
 	return (

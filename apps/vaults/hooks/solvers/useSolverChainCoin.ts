@@ -1,14 +1,14 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {maxUint256} from 'viem';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults/utils';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {allowanceKey} from '@common/utils';
-import {depositETH, withdrawETH} from '@common/utils/actions';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
+import {allowanceKey} from '@lib/utils/helpers';
+import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
+import {depositETH, withdrawETH} from '@lib/utils/wagmi/actions';
 
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';

@@ -1,7 +1,7 @@
-import {useFetch} from './useFetch';
 import {useDeepCompareMemo} from '@react-hookz/web';
 
 import {yDaemonPricesChainSchema} from '../utils/schemas/yDaemonPricesSchema';
+import {useFetch} from './useFetch';
 import {useYDaemonBaseURI} from './useYDaemonBaseURI';
 
 import type {TYDaemonPricesChain} from '../utils/schemas/yDaemonPricesSchema';

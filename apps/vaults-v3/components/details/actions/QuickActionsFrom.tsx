@@ -2,8 +2,13 @@ import {useCallback, useEffect, useMemo} from 'react';
 import {useRouter} from 'next/router';
 import {erc20Abi} from 'viem';
 import {useBlockNumber, useReadContracts} from 'wagmi';
+import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Renderable} from '@lib/components/Renderable';
+import {Dropdown} from '@lib/components/TokenDropdown';
 import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useYearnBalance} from '@lib/hooks/useYearnBalance';
+import {IconQuestion} from '@lib/icons/IconQuestion';
 import {
 	cl,
 	decodeAsBigInt,
@@ -21,13 +26,8 @@ import {
 	zeroNormalizedBN
 } from '@lib/utils';
 import {AGGREGATE3_ABI} from '@lib/utils/abi/aggregate.abi';
+import {calculateBoostFromVeYFI} from '@lib/utils/calculations';
 import {getNetwork} from '@lib/utils/wagmi';
-import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import {Dropdown} from '@common/components/TokenDropdown';
-import {useYearn} from '@common/contexts/useYearn';
-import {useYearnBalance} from '@common/hooks/useYearnBalance';
-import {IconQuestion} from '@common/icons/IconQuestion';
-import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TNormalizedBN} from '@lib/types';
@@ -112,7 +112,7 @@ export function VaultDetailsQuickActionsFrom(props: {
 	const {getToken, getPrice} = useYearn();
 	const {data: blockNumber} = useBlockNumber({watch: true});
 	const {pathname} = useRouter();
-	const isV3Page = pathname.startsWith(`/v3`);
+	const isV3Page = pathname.startsWith('/v3');
 	const {
 		possibleOptionsFrom,
 		actionParams,
@@ -275,17 +275,15 @@ export function VaultDetailsQuickActionsFrom(props: {
 						className={'hidden text-xs text-neutral-900/50 md:inline'}
 						suppressHydrationWarning>
 						<div>
-							<p
-								className={
-									'font-number'
-								}>{`You have ${formatAmount((userBalance || zeroNormalizedBN).normalized)} ${
-								actionParams?.selectedOptionFrom?.symbol || 'tokens'
-							}`}</p>
+							<p className={'font-number'}>
+								{`You have ${formatAmount((userBalance || zeroNormalizedBN).normalized)} ${
+									actionParams?.selectedOptionFrom?.symbol || 'tokens'
+								}`}
+							</p>
 							{props.vaultData?.stakedBalanceOf.raw > 0n && (
-								<p
-									className={
-										'font-number'
-									}>{`(+${formatAmount(props.vaultData.stakedBalanceOf.normalized, 6)} ${actionParams?.selectedOptionFrom?.symbol} staked earning ${formatPercent(currentStakedAPR * 100, 2, 2, 500)} APR)`}</p>
+								<p className={'font-number'}>
+									{`(+${formatAmount(props.vaultData.stakedBalanceOf.normalized, 6)} ${actionParams?.selectedOptionFrom?.symbol} staked earning ${formatPercent(currentStakedAPR * 100, 2, 2, 500)} APR)`}
+								</p>
 							)}
 						</div>
 					</legend>

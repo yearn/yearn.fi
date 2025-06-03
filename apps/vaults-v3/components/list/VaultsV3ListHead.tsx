@@ -1,6 +1,6 @@
 import {useCallback} from 'react';
+import {IconChevronPlain} from '@lib/icons/IconChevronPlain';
 import {cl} from '@lib/utils';
-import {IconChevronPlain} from '@common/icons/IconChevronPlain';
 
 import type {ReactElement} from 'react';
 import type {TSortDirection} from '@lib/types';

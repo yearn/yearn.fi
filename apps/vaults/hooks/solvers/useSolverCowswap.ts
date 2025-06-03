@@ -2,26 +2,18 @@ import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
 import {BaseError, maxUint256} from 'viem';
 import axios from 'axios';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {
-	allowanceOf,
-	approveERC20,
-	defaultTxStatus,
-	isApprovedERC20,
-	retrieveConfig
-} from '@lib/utils/wagmi';
-import {getEthersSigner} from '@lib/utils/wagmi/ethersAdapter';
 import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {toast} from '@lib/components/yToast';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@lib/utils/constants';
 import {allowanceKey} from '@lib/utils/helpers';
-import {useYearn} from '@common/contexts/useYearn';
+import {allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20, retrieveConfig} from '@lib/utils/wagmi';
+import {getEthersSigner} from '@lib/utils/wagmi/ethersAdapter';
 
-import type {TDict, TNormalizedBN} from '@lib/types';
-import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi';
 import type {
 	Order,
 	OrderCreation,
@@ -30,6 +22,8 @@ import type {
 	SigningScheme,
 	UnsignedOrder
 } from '@cowprotocol/cow-sdk';
+import type {TDict, TNormalizedBN} from '@lib/types';
+import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 const orderBookApi = new OrderBookApi({chainId: 1});
