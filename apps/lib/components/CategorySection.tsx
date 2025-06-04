@@ -8,7 +8,6 @@ import type {TApp} from '@lib/types/mixed';
 
 type TAppSectionProps = {
 	title: string;
-	onExpandClick: () => void;
 	apps: TApp[];
 };
 
@@ -125,14 +124,6 @@ export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement =
 			<div className={'mb-6 flex h-10 w-full items-center justify-between pr-1'}>
 				<div className={'flex gap-x-4'}>
 					<div className={'whitespace-nowrap text-lg font-bold text-neutral-800'}>{title}</div>
-					{/* <button
-						onClick={onExpandClick}
-						className={
-							'flex items-center rounded-[4px] px-4 py-2 outline !outline-1 outline-neutral-600/50 hover:bg-neutral-600/40'
-						}>
-						<span className={'mr-2 whitespace-nowrap text-xs text-neutral-800'}>{'View all'}</span>
-						<IconShare className={'size-3'} />
-					</button> */}
 				</div>
 				{apps?.length > 5 && (
 					<CarouselSlideArrows
