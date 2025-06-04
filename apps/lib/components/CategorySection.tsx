@@ -1,7 +1,6 @@
 import {type ReactElement, useRef, useState} from 'react';
 import {useMountEffect} from '@react-hookz/web';
 import {CarouselSlideArrows} from '@lib/components/CarouselSlideArrows';
-import {IconShare} from '@lib/icons/IconShare';
 
 import {AppsCarousel} from './AppsCarousel';
 
@@ -13,7 +12,7 @@ type TAppSectionProps = {
 	apps: TApp[];
 };
 
-export const CategorySection = ({title, onExpandClick, apps}: TAppSectionProps): ReactElement => {
+export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement => {
 	const [shuffledApps, set_shuffledApps] = useState<TApp[]>([]);
 	const [, set_currentPage] = useState(1);
 	const carouselRef = useRef<HTMLDivElement | null>(null);
@@ -108,10 +107,17 @@ export const CategorySection = ({title, onExpandClick, apps}: TAppSectionProps):
 		if (apps?.length < 1) {
 			return;
 		}
+		let orderedApps = apps;
 		if (title === 'Integrations') {
-			set_shuffledApps(apps?.toSorted(() => 0.5 - Math.random()));
+			orderedApps = apps.slice().sort(() => 0.5 - Math.random());
 		}
-		set_shuffledApps(apps);
+		// Move 'Resupply' app to the front if it exists
+		const resupplyIndex = orderedApps.findIndex(app => app.name === 'Resupply');
+		if (resupplyIndex > 0) {
+			const [resupplyApp] = orderedApps.splice(resupplyIndex, 1);
+			orderedApps = [resupplyApp, ...orderedApps];
+		}
+		set_shuffledApps(orderedApps);
 	});
 
 	return (
@@ -119,14 +125,14 @@ export const CategorySection = ({title, onExpandClick, apps}: TAppSectionProps):
 			<div className={'mb-6 flex h-10 w-full items-center justify-between pr-1'}>
 				<div className={'flex gap-x-4'}>
 					<div className={'whitespace-nowrap text-lg font-bold text-neutral-800'}>{title}</div>
-					<button
+					{/* <button
 						onClick={onExpandClick}
 						className={
 							'flex items-center rounded-[4px] px-4 py-2 outline !outline-1 outline-neutral-600/50 hover:bg-neutral-600/40'
 						}>
 						<span className={'mr-2 whitespace-nowrap text-xs text-neutral-800'}>{'View all'}</span>
 						<IconShare className={'size-3'} />
-					</button>
+					</button> */}
 				</div>
 				{apps?.length > 5 && (
 					<CarouselSlideArrows

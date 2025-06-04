@@ -13,10 +13,10 @@ import type {Chain} from 'viem';
 import type {TMenu} from './Header';
 
 type TFooterNavProps = {
-	onCloseAction: () => void;
+	onClose: () => void;
 };
 
-export function FooterNav({onCloseAction}: TFooterNavProps): ReactElement {
+export function FooterNav({onClose}: TFooterNavProps): ReactElement {
 	const menu = useMemo((): TMenu[] => {
 		const HOME_MENU = {path: '/apps', label: 'Apps'};
 
@@ -40,7 +40,7 @@ export function FooterNav({onCloseAction}: TFooterNavProps): ReactElement {
 						key={link.path}
 						target={link.target}
 						href={link.path}
-						onClick={onCloseAction}>
+						onClick={onClose}>
 						<span>{link.label}</span>
 						<IconArrow className={'size-4'} />
 					</Link>
@@ -137,7 +137,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 										'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
 								}}
 								className={'flex h-[calc(100vh-88px)] w-full flex-col justify-end px-6 pb-[104px]'}>
-								<FooterNav onCloseAction={onClose} />
+								<FooterNav onClose={onClose} />
 							</div>
 						</div>
 					</TransitionChild>

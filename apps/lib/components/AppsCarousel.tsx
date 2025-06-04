@@ -25,6 +25,7 @@ export const AppsCarousel = forwardRef(
 							'pointer-events-none absolute right-0 top-0 z-30 h-[272px] w-1/5 bg-gradient-to-l from-gray-900/0 to-transparent md:h-full'
 						}
 					/>
+					{/* Desktop view */}
 					<div
 						ref={ref}
 						onScroll={props.onScroll}
@@ -50,6 +51,8 @@ export const AppsCarousel = forwardRef(
 							);
 						})}
 					</div>
+
+					{/* Mobile view */}
 					<div
 						onScroll={props.onScroll}
 						className={cl(

@@ -24,7 +24,7 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 		if (currentCategory?.apps.length < 1) {
 			return;
 		}
-		set_shuffledApps(currentCategory?.apps.toSorted(() => 0.5 - Math.random()));
+		set_shuffledApps(currentCategory?.apps.slice().sort(() => 0.5 - Math.random()));
 	});
 
 	useMountEffect(() => {
@@ -32,7 +32,7 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 			return;
 		}
 		if (currentCategory.categoryName === 'Integrations') {
-			set_shuffledApps(currentCategory.apps.toSorted(() => 0.5 - Math.random()));
+			set_shuffledApps(currentCategory.apps.slice().sort(() => 0.5 - Math.random()));
 		}
 		set_shuffledApps(currentCategory.apps);
 	});
