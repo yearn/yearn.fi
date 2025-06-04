@@ -1,8 +1,14 @@
 import {useEffect, useState} from 'react';
 import {erc20Abi, zeroAddress} from 'viem';
 import {useBlockNumber} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {readContract, readContracts} from 'wagmi/actions';
+import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards.abi';
+import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
+import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
+import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
+import {TOKENIZED_STRATEGY_ABI} from '@vaults-v3/utils/abi/tokenizedStrategy.abi';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
 import {
 	decodeAsAddress,
 	decodeAsBigInt,
@@ -13,18 +19,12 @@ import {
 	toBigInt,
 	toNormalizedBN,
 	zeroNormalizedBN
-} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
-import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards.abi';
-import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
-import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
-import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
-import {TOKENIZED_STRATEGY_ABI} from '@vaults-v3/utils/abi/tokenizedStrategy.abi';
-import {readContract, readContracts} from '@wagmi/core';
-import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
+} from '@lib/utils';
+import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@lib/utils/constants';
+import {retrieveConfig} from '@lib/utils/wagmi';
 
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
+import type {TAddress, TNormalizedBN} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export type TStakingInfo = {
 	address: TAddress;

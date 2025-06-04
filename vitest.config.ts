@@ -9,14 +9,14 @@ export default {
 	resolve: {
 		alias: {
 			'@vaults': path.resolve(__dirname, './apps/vaults'),
-			'@common': path.resolve(__dirname, './apps/common')
+			'@lib': path.resolve(__dirname, './apps/lib')
 		}
 	},
 	test: {
 		globals: true,
 		environment: 'node',
 		deps: {
-			inline: ['@yearn-finance/web-lib']
+			inline: ['@lib']
 		}
 	}
 };

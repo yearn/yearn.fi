@@ -1,5 +1,5 @@
-import {AppName, APPS} from '@common/components/Apps';
-import {MotionDiv} from '@common/components/MotionDiv';
+import {AppName, APPS} from '@lib/components/Apps';
+import {MotionDiv} from '@lib/components/MotionDiv';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';

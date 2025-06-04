@@ -2,17 +2,6 @@ import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {
-	cl,
-	formatAmount,
-	formatCounterValue,
-	fromNormalized,
-	isZero,
-	toAddress,
-	toBigInt
-} from '@builtbymom/web3/utils';
-import {approveERC20, defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {
 	claim as claimAction,
 	stake as stakeAction,
@@ -21,15 +10,18 @@ import {
 	unstakeVeYFIGauge as unstakeVeYFIAction
 } from '@vaults/utils/actions';
 import {stakeYBold, unstakeYBold} from '@vaults-v3/utils/actions';
-import {Button} from '@yearn-finance/web-lib/components/Button';
-import {Counter} from '@common/components/Counter';
-import {FakeInput} from '@common/components/Input';
-import {useYearn} from '@common/contexts/useYearn';
-import {useYearnToken} from '@common/hooks/useYearnToken';
-import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
+import {Button} from '@lib/components/Button';
+import {Counter} from '@lib/components/Counter';
+import {FakeInput} from '@lib/components/Input';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useYearnToken} from '@lib/hooks/useYearnToken';
+import {cl, formatAmount, formatCounterValue, fromNormalized, isZero, toAddress, toBigInt} from '@lib/utils';
+import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@lib/utils/constants';
+import {approveERC20, defaultTxStatus} from '@lib/utils/wagmi';
 
 import type {ChangeEvent, ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
 /**************************************************************************************************
@@ -44,7 +36,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 	const vaultDataource = props.currentVault.staking.source;
 	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR;
 	const {pathname} = useRouter();
-	const isV3Page = pathname.startsWith(`/v3`);
+	const isV3Page = pathname.startsWith('/v3');
 
 	if (hasVaultData && !props.hasStakingRewardsLive && vaultDataource !== 'VeYFI') {
 		return (
@@ -176,7 +168,7 @@ function VeYFIBoostMessage(props: {
 	const vaultDataource = props.currentVault.staking.source;
 	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR;
 	const {pathname} = useRouter();
-	const isV3Page = pathname.startsWith(`/v3`);
+	const isV3Page = pathname.startsWith('/v3');
 
 	const OneUp = (
 		<Link
@@ -265,8 +257,8 @@ function VeYFIBoostMessage(props: {
 		return (
 			<div className={cl('flex w-full flex-col rounded-2xl p-6 my-auto', 'bg-neutral-900')}>
 				<b className={cl('text-lg text-neutral-100')}>{'This gauge is no longer active'}</b>
-				<div className={cl(`flex flex-col gap-2 py-4`, isV3Page ? 'text-[#908FB4]' : 'text-neutral-400')}>
-					<p>{`This gauge has been removed and no longer brings any benefits. Please withdraw from it`}</p>
+				<div className={cl('flex flex-col gap-2 py-4', isV3Page ? 'text-[#908FB4]' : 'text-neutral-400')}>
+					<p>{'This gauge has been removed and no longer brings any benefits. Please withdraw from it'}</p>
 				</div>
 			</div>
 		);
@@ -279,13 +271,13 @@ function VeYFIBoostMessage(props: {
 	return (
 		<div className={cl('flex w-full flex-col rounded-2xl p-6', 'bg-neutral-900')}>
 			<b className={cl('text-lg text-neutral-100')}>{'Yield is good, but more yield is good-er!'}</b>
-			<div className={cl(`flex flex-col gap-2 py-4`, isV3Page ? 'text-[#908FB4]' : 'text-neutral-400')}>
+			<div className={cl('flex flex-col gap-2 py-4', isV3Page ? 'text-[#908FB4]' : 'text-neutral-400')}>
 				<p>
-					{`This Vault has an active veYFI gauge which boosts your APY from `}
+					{'This Vault has an active veYFI gauge which boosts your APY from '}
 					<span className={cl('font-bold text-neutral-100')}>{`${formatAmount(extraAPY * 10)}%`}</span>
-					{` to `}
+					{' to '}
 					<span className={cl('font-bold text-neutral-100')}>{`${formatAmount(extraAPY * 100)}%`}</span>
-					{` depending on the veYFI you have locked. Simply deposit and stake to start earning. `}
+					{' depending on the veYFI you have locked. Simply deposit and stake to start earning. '}
 					<a
 						className={'underline'}
 						href={'https://docs.yearn.fi/contributing/governance/veyfi-intro'}
@@ -548,7 +540,7 @@ export function RewardsTab(props: {
 		);
 	}
 
-	if (shouldForceUnstake)
+	if (shouldForceUnstake) {
 		return (
 			<div className={'grid grid-cols-1 md:grid-cols-2'}>
 				<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8 md:pr-0'}>
@@ -599,6 +591,7 @@ export function RewardsTab(props: {
 				</div>
 			</div>
 		);
+	}
 
 	/**********************************************************************************************
 	 ** Special case for yBold.
@@ -648,7 +641,7 @@ export function RewardsTab(props: {
 									</div>
 								</div>
 								<legend
-									className={`mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0`}
+									className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'}
 									suppressHydrationWarning>
 									<div className={'flex items-center justify-between'}>
 										<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} yBOLD available`}</p>
@@ -709,7 +702,7 @@ export function RewardsTab(props: {
 									</div>
 								</div>
 								<legend
-									className={`mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0`}
+									className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'}
 									suppressHydrationWarning>
 									<div className={'flex items-center justify-between'}>
 										<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} st-yBOLD staked`}</p>
@@ -732,7 +725,7 @@ export function RewardsTab(props: {
 						<b className={cl('text-lg text-neutral-100')}>
 							{'Meet yBOLD: Tokenized Stability Pool Rewards'}
 						</b>
-						<div className={cl(`flex flex-col gap-2 py-4`, 'text-[#908FB4]')}>
+						<div className={cl('flex flex-col gap-2 py-4', 'text-[#908FB4]')}>
 							<p>
 								{
 									'yBOLD represents BOLD deposited in Liquity V2 Stability Pools, earning liquidation fees and protocol interest. '
@@ -854,7 +847,7 @@ export function RewardsTab(props: {
 								</div>
 							</div>
 							<legend
-								className={`mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0`}
+								className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'}
 								suppressHydrationWarning>
 								<div className={'flex items-center justify-between'}>
 									<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${vaultData.stakedGaugeSymbol || props.currentVault.symbol} staked`}</p>

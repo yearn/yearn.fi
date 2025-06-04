@@ -2,10 +2,7 @@ import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useBlockNumber, useReadContract} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
-import {cl, decodeAsBigInt, toAddress, toNormalizedBN, toNormalizedValue} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+import {readContracts} from 'wagmi/actions';
 import {useUpdateEffect} from '@react-hookz/web';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
@@ -19,16 +16,19 @@ import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/acti
 import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {getCurrentTab, tabs, VaultDetailsTab} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
-import {readContracts} from '@wagmi/core';
-import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
-import {InfoTooltip} from '@common/components/InfoTooltip';
-import {Switch} from '@common/components/Switch';
-import {useYearn} from '@common/contexts/useYearn';
-import {VEYFI_ADDRESS} from '@common/utils/constants';
+import {InfoTooltip} from '@lib/components/InfoTooltip';
+import {Switch} from '@lib/components/Switch';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
+import {cl, decodeAsBigInt, toAddress, toNormalizedBN, toNormalizedValue} from '@lib/utils';
+import {VEYFI_ADDRESS} from '@lib/utils/constants';
+import {parseMarkdown} from '@lib/utils/helpers';
+import {retrieveConfig} from '@lib/utils/wagmi';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TNormalizedBN} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 
 /**************************************************************************************************
@@ -207,10 +207,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	}, [currentVault.staking.rewards, hasStakingRewards, hasStakingRewardsLive, set_isAutoStakingEnabled]);
 
 	const isSonneRetiredVault =
-		toAddress(currentVault.address) === toAddress(`0x5b977577eb8a480f63e11fc615d6753adb8652ae`) ||
-		toAddress(currentVault.address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`) ||
-		toAddress(currentVault.address) === toAddress(`0x65343f414ffd6c97b0f6add33d16f6845ac22bac`) ||
-		toAddress(currentVault.address) === toAddress(`0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de`);
+		toAddress(currentVault.address) === toAddress('0x5b977577eb8a480f63e11fc615d6753adb8652ae') ||
+		toAddress(currentVault.address) === toAddress('0xad17a225074191d5c8a37b50fda1ae278a2ee6a2') ||
+		toAddress(currentVault.address) === toAddress('0x65343f414ffd6c97b0f6add33d16f6845ac22bac') ||
+		toAddress(currentVault.address) === toAddress('0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de');
 
 	const getTabLabel = useCallback((): string => {
 		if (currentVault.staking.source === 'VeYFI') {
@@ -287,7 +287,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 
 			<nav
 				className={cl(
-					`mb-2 w-full`,
+					'mb-2 w-full',
 					currentVault?.info?.isRetired
 						? 'mt-1 md:mt-4'
 						: currentVault?.info.uiNotice

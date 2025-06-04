@@ -1,8 +1,20 @@
 import {Fragment, useEffect, useState} from 'react';
 import {erc20Abi, zeroAddress} from 'viem';
 import {useBlockNumber} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {readContract, readContracts} from 'wagmi/actions';
+import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards.abi';
+import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
+import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
+import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
+import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
+import {Counter} from '@lib/components/Counter';
+import {Renderable} from '@lib/components/Renderable';
+import {RenderAmount} from '@lib/components/RenderAmount';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
+import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice';
+import {IconQuestion} from '@lib/icons/IconQuestion';
 import {
 	cl,
 	decodeAsAddress,
@@ -16,27 +28,14 @@ import {
 	toBigInt,
 	toNormalizedBN,
 	zeroNormalizedBN
-} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
-import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards.abi';
-import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
-import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
-import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
-import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
-import {readContract, readContracts} from '@wagmi/core';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {Counter} from '@common/components/Counter';
-import {RenderAmount} from '@common/components/RenderAmount';
-import {useYearn} from '@common/contexts/useYearn';
-import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
-import {IconQuestion} from '@common/icons/IconQuestion';
-import {getVaultName} from '@common/utils';
+} from '@lib/utils';
+import {copyToClipboard, getVaultName} from '@lib/utils/helpers';
+import {retrieveConfig} from '@lib/utils/wagmi';
+import {getNetwork} from '@lib/utils/wagmi/utils';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
+import type {TAddress, TNormalizedBN} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TVaultHeaderLineItemProps = {
 	label: string;
@@ -353,7 +352,7 @@ function ValueInVaultAsToken(props: {
 				<span className={'tooltip'}>
 					<div className={'flex flex-row items-center space-x-2'}>
 						<div>
-							{`$`}
+							{'$'}
 							<Counter
 								value={props.valueInToken.normalized * props.vaultPrice}
 								decimals={2}
@@ -371,7 +370,7 @@ function ValueInVaultAsToken(props: {
 								className={
 									'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'
 								}>
-								{`Your yield is accruing every single block. Go you!`}
+								{'Your yield is accruing every single block. Go you!'}
 							</p>
 						</div>
 					</span>
@@ -406,7 +405,7 @@ function ValueEarned(props: {
 				<span className={'tooltip'}>
 					<div className={'flex flex-row items-center space-x-2'}>
 						<div>
-							{`$`}
+							{'$'}
 							<Counter
 								value={props.earnedValue}
 								decimals={2}
@@ -424,7 +423,7 @@ function ValueEarned(props: {
 								className={
 									'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'
 								}>
-								{`Your yield is accruing every single block. Go you!`}
+								{'Your yield is accruing every single block. Go you!'}
 							</p>
 						</div>
 					</span>
@@ -744,8 +743,9 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					</div>
 					{currentVault?.info?.isBoosted ? (
 						<div className={'w-full rounded-lg bg-neutral-900/30 px-4 py-2 text-center md:w-fit'}>
-							<strong
-								className={'text-sm font-black text-neutral-900 md:text-xl'}>{`⚡️ Boosted`}</strong>
+							<strong className={'text-sm font-black text-neutral-900 md:text-xl'}>
+								{'⚡️ Boosted'}
+							</strong>
 						</div>
 					) : null}
 				</div>

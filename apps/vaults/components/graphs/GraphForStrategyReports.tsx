@@ -1,13 +1,13 @@
 import {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {useFetch} from '@lib/hooks/useFetch';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@lib/utils';
+import {formatDate} from '@lib/utils/format.time';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TYDaemonReport, TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
 export type TGraphForStrategyReportsProps = {
@@ -135,7 +135,8 @@ export function GraphForStrategyReports({
 												<b
 													className={
 														'font-number text-xs font-bold text-neutral-900'
-													}>{`${formatAmount(normalizedDiff)} ${vaultTicker}`}</b>
+													}>{`${formatAmount(normalizedDiff)} ${vaultTicker}`}
+            </b>
 											</div>
 										</div>
 									);

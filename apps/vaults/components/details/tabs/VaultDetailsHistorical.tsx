@@ -1,16 +1,12 @@
-import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
-import {getNetwork} from '@builtbymom/web3/utils/wagmi';
 import {truncateHexTx} from '@vaults/utils';
-import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
-import {IconSpinner} from '@common/icons/IconSpinner';
+import {IconLinkOut} from '@lib/icons/IconLinkOut';
+import {IconSpinner} from '@lib/icons/IconSpinner';
+import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@lib/utils';
+import {formatDate} from '@lib/utils/format.time';
+import {getNetwork} from '@lib/utils/wagmi';
 
 import type {ReactElement} from 'react';
-import type {
-	TYDaemonVault,
-	TYDaemonVaultHarvest,
-	TYDaemonVaultHarvests
-} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultHarvest, TYDaemonVaultHarvests} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 function HarvestListHead(): ReactElement {
 	return (

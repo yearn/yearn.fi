@@ -1,8 +1,8 @@
-import {cl, formatAmount, formatPercent} from '@builtbymom/web3/utils';
-import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
+import {cl, formatAmount, formatPercent} from '@lib/utils';
+import {parseMarkdown} from '@lib/utils/helpers';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function YearnFeesLineItem({children, label, tooltip}: any): ReactElement {
 	return (
@@ -42,7 +42,7 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 		if (token.description) {
 			return parseMarkdown(token.description.replaceAll('{{token}}', currentVault.token.symbol));
 		}
-		return `Sorry, we don't have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a "nurdle". Fascinating! We'll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.`;
+		return 'Sorry, we don\'t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a "nurdle". Fascinating! We\'ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.';
 	}
 
 	return (

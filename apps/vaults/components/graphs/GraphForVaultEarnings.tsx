@@ -1,10 +1,10 @@
 import {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {formatAmount, formatWithUnit, isZero} from '@builtbymom/web3/utils';
+import {formatAmount, formatWithUnit, isZero} from '@lib/utils';
 
 import type {ReactElement} from 'react';
-import type {TGraphData} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TGraphData} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export type TGraphForVaultEarningsProps = {
 	currentVault: TYDaemonVault;
@@ -97,7 +97,8 @@ export function GraphForVaultEarnings({
 										<b
 											className={
 												'font-number text-xs font-bold text-neutral-900'
-											}>{`${formatAmount(Number(value))} ${currentVault.token.symbol}`}</b>
+											}>{`${formatAmount(Number(value))} ${currentVault.token.symbol}`}
+          </b>
 									</div>
 								</div>
 							);

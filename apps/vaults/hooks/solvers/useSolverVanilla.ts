@@ -1,17 +1,17 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {maxUint256} from 'viem';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
-import {allowanceOf, approveERC20} from '@builtbymom/web3/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
-import {useYearn} from '@common/contexts/useYearn';
-import {deposit, redeemV3Shares, withdrawShares} from '@common/utils/actions';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
+import {allowanceKey} from '@lib/utils/helpers';
+import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
+import {deposit, redeemV3Shares, withdrawShares} from '@lib/utils/wagmi/actions';
 
-import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
-import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
+import type {TDict, TNormalizedBN} from '@lib/types';
+import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export function useSolverVanilla(): TSolverContext {

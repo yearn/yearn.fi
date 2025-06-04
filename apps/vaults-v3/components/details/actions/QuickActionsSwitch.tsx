@@ -1,4 +1,4 @@
-import {IconArrowRight} from '@common/icons/IconArrowRight';
+import {IconArrowRight} from '@lib/icons/IconArrowRight';
 
 import type {ReactElement} from 'react';
 

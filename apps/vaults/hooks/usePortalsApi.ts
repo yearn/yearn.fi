@@ -1,8 +1,8 @@
 import {z} from 'zod';
-import {addressSchema, type TAddress} from '@builtbymom/web3/types';
-import {fetch} from '@common/utils/fetch';
+import {addressSchema, type TAddress} from '@lib/types';
+import {fetch} from '@lib/utils/fetchers';
 
-import type {TFetchReturn} from '@common/utils/fetch';
+import type {TFetchReturn} from '@lib/utils/fetchers';
 
 export const portalsEstimateResponseSchema = z.object({
 	outputToken: z.string(),

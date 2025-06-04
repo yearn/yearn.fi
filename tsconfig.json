@@ -3,7 +3,7 @@
 		"rootDirs": ["."],
 		"baseUrl": ".",
 		"paths": {
-			"@common/*": ["apps/common/*"],
+			"@lib/*": ["apps/lib/*"],
 			"@vaults/*": ["apps/vaults/*"],
 			"@vaults-v3/*": ["apps/vaults-v3/*"]
 		},
@@ -51,6 +51,7 @@
 		"theme.config.js",
 		".eslintrc.js",
 		".next/types/**/*.ts",
+		"./apps/lib/.eslintrc.cjs",
 		"jest.config.js",
 		"vitest.config.ts",
 		"worker/index.js",
