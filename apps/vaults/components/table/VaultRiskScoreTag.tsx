@@ -1,3 +1,5 @@
+import {useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
 import {cl} from '@builtbymom/web3/utils';
 
 import type {FC} from 'react';
@@ -6,18 +8,37 @@ export const VAULT_RISK_COLORS = ['transparent', '#63C532', '#F8A908', '#F8A908'
 
 export const VaultRiskScoreTag: FC<{riskLevel: number}> = ({riskLevel}) => {
 	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel;
+	const [isHovered, set_isHovered] = useState(false);
+	const [tooltipPosition, set_tooltipPosition] = useState({x: 0, y: 0});
+	const triggerRef = useRef<HTMLDivElement>(null);
+
+	const handleMouseEnter = (): void => {
+		if (triggerRef.current) {
+			const rect = triggerRef.current.getBoundingClientRect();
+			set_tooltipPosition({
+				x: rect.left + rect.width / 2,
+				y: rect.bottom + 8
+			});
+			set_isHovered(true);
+		}
+	};
+
+	const handleMouseLeave = (): void => {
+		set_isHovered(false);
+	};
+
 	return (
-		<div className={'md:justify-centere col-span-3 flex flex-row items-end justify-between md:flex-col md:pt-4'}>
+		<div className={'col-span-3 flex flex-row items-end justify-between md:flex-col md:justify-center md:pt-4'}>
 			<p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>
 				{'Risk Score'}
 			</p>
 			<div
-				className={cl(
-					'flex w-fit items-center justify-end gap-4 md:justify-center',
-					'tooltip relative z-50 h-6'
-				)}>
+				ref={triggerRef}
+				onMouseEnter={handleMouseEnter}
+				onMouseLeave={handleMouseLeave}
+				className={cl('flex w-fit items-center justify-end gap-4 md:justify-center ', 'relative h-6')}>
 				<div
-					className={'h-3 w-10 min-w-10 rounded-sm border border-neutral-300 p-[2px]'}
+					className={'h-3 w-10 min-w-10 rounded-sm border border-neutral-300 p-[2px] '}
 					style={{borderWidth: '1px'}}>
 					<div
 						className={'h-1.5 rounded-[1px]'}
@@ -28,20 +49,29 @@ export const VaultRiskScoreTag: FC<{riskLevel: number}> = ({riskLevel}) => {
 						}}
 					/>
 				</div>
-				<span
-					suppressHydrationWarning
-					className={'tooltiptext top-full mt-1'}
-					style={{marginRight: 'calc(-94px + 50%)'}}>
-					<div
-						className={
-							'font-number relative border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-						}>
-						<p>
-							<b className={'text-xs font-semibold'}>{`${level} / 5 :`}</b>
-							{` This reflects the vault's security, with 1 being most secure and 5 least secure, based on strategy complexity, loss exposure, and external dependencies.`}
-						</p>
-					</div>
-				</span>
+				{isHovered &&
+					typeof window !== 'undefined' &&
+					createPortal(
+						<div
+							className={'pointer-events-none fixed z-[9999]'}
+							style={{
+								left: tooltipPosition.x,
+								top: tooltipPosition.y,
+								transform: 'translateX(-50%)',
+								width: '15rem'
+							}}>
+							<div
+								className={
+									'font-number relative rounded border border-neutral-300 bg-neutral-200 p-1 px-2 text-center text-xxs text-neutral-900 shadow-lg'
+								}>
+								<p>
+									<b className={'text-xs font-semibold'}>{`${level} / 5 :`}</b>
+									{` This reflects the vault's security, with 1 being most secure and 5 least secure, based on strategy complexity, loss exposure, and external dependencies.`}
+								</p>
+							</div>
+						</div>,
+						document.body
+					)}
 			</div>
 		</div>
 	);
