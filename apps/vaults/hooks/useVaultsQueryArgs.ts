@@ -1,10 +1,10 @@
 import {useCallback, useState} from 'react';
 import {useSearchParams} from 'next/navigation';
 import {useRouter} from 'next/router';
-import {useSupportedChains} from '@builtbymom/web3/hooks/useSupportedChains';
 import {useDeepCompareEffect, useMountEffect} from '@react-hookz/web';
+import {useSupportedChains} from '@lib/hooks/useSupportedChains';
 
-import type {TDict, TSortDirection} from '@builtbymom/web3/types';
+import type {TDict, TSortDirection} from '@lib/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 type TQueryArgs = {

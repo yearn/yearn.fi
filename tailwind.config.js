@@ -3,15 +3,15 @@ const {join} = require('path');
 const defaultTheme = require('tailwindcss/defaultTheme');
 
 module.exports = {
-	presets: [require('@yearn-finance/web-lib/tailwind.config.cjs')],
+	presets: [require('./apps/lib/tailwind.config.cjs')],
 	content: [
 		'./app/**/*.{js,ts,jsx,tsx}',
 		'./pages/**/*.{js,ts,jsx,tsx}',
 		'./apps/**/*.{js,ts,jsx,tsx}',
-		join(__dirname, 'node_modules', '@yearn-finance', 'web-lib', 'components', '**', '*.{js,ts,jsx,tsx}'),
-		join(__dirname, 'node_modules', '@yearn-finance', 'web-lib', 'contexts', '**', '*.{js,ts,jsx,tsx}'),
-		join(__dirname, 'node_modules', '@yearn-finance', 'web-lib', 'icons', '**', '*.{js,ts,jsx,tsx}'),
-		join(__dirname, 'node_modules', '@yearn-finance', 'web-lib', 'utils', '**', '*.{js,ts,jsx,tsx}')
+		join(__dirname, 'apps', 'lib', 'components', '**', '*.{js,ts,jsx,tsx}'),
+		join(__dirname, 'apps', 'lib', 'contexts', '**', '*.{js,ts,jsx,tsx}'),
+		join(__dirname, 'apps', 'lib', 'icons', '**', '*.{js,ts,jsx,tsx}'),
+		join(__dirname, 'apps', 'lib', 'utils', '**', '*.{js,ts,jsx,tsx}')
 	],
 	theme: {
 		extend: {

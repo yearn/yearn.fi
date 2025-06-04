@@ -1,6 +1,6 @@
 import {type ReactElement, useState} from 'react';
 import Link from 'next/link';
-import {IconArrow} from '@common/icons/IconArrow';
+import {IconArrow} from '@lib/icons/IconArrow';
 
 const CARDS = [
 	{

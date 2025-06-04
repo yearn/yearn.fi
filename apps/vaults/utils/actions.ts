@@ -1,17 +1,16 @@
-import {assert, assertAddress, toAddress} from '@builtbymom/web3/utils';
-import {handleTx, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {STAKING_REWARDS_ZAP_ABI} from '@vaults/utils/abi/stakingRewardsZap.abi';
 import {YGAUGE_ZAP_ABI} from '@vaults-v3/utils/abi/yGaugeZap.abi';
-import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {V3_STAKING_ZAP_ADDRESS, YGAUGES_ZAP_ADDRESS} from '@common/utils/constants';
+import {assert, assertAddress, toAddress} from '@lib/utils';
+import {STAKING_REWARDS_ZAP_ADDRESS,V3_STAKING_ZAP_ADDRESS, YGAUGES_ZAP_ADDRESS} from '@lib/utils/constants';
+import {handleTx, toWagmiProvider} from '@lib/utils/wagmi';
 
 import {V3_REWARDS_ZAP_ABI} from './abi/V3RewardsZap.abi';
 import {VEYFI_GAUGE_ABI} from './abi/veYFIGauge.abi';
 import {ZAP_CRV_ABI} from './abi/zapCRV.abi';
 
-import type {TAddress} from '@builtbymom/web3/types';
-import type {TTxResponse, TWriteTransaction} from '@builtbymom/web3/utils/wagmi';
+import type {TAddress} from '@lib/types';
+import type {TTxResponse, TWriteTransaction} from '@lib/utils/wagmi';
 
 /* 🔵 - Yearn Finance **********************************************************
  ** depositAndStake is a _WRITE_ function that deposit the underlying asset into

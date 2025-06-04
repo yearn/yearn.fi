@@ -1,12 +1,12 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
-import {formatAmount, toAddress} from '@builtbymom/web3/utils';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useYearnBalance} from '@common/hooks/useYearnBalance';
-import {getVaultName} from '@common/utils';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import {useYearnBalance} from '@lib/hooks/useYearnBalance';
+import {formatAmount, toAddress} from '@lib/utils';
+import {getVaultName} from '@lib/utils/helpers';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
@@ -32,9 +32,9 @@ export function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault})
 						</div>
 						<div className={'text-left'}>
 							<p>{vaultName}</p>
-							<p className={'font-number text-xs'}>{`${formatAmount(balanceToMigrate.normalized)} ${
-								currentVault.token.symbol
-							}`}</p>
+							<p className={'font-number text-xs'}>
+								{`${formatAmount(balanceToMigrate.normalized)} ${currentVault.token.symbol}`}
+							</p>
 						</div>
 					</div>
 				</div>

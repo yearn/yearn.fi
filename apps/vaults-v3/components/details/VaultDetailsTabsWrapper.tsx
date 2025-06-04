@@ -1,24 +1,24 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {watchAsset} from 'viem/actions';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, cl, toAddress} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+import {getConnectorClient} from 'wagmi/actions';
 import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react';
 import {VaultInfo} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
-import {getConnectorClient} from '@wagmi/core';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
-import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {IconChevron} from '@common/icons/IconChevron';
+import {Renderable} from '@lib/components/Renderable';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {IconAddToMetamask} from '@lib/icons/IconAddToMetamask';
+import {IconChevron} from '@lib/icons/IconChevron';
+import {IconLinkOut} from '@lib/icons/IconLinkOut';
+import {assert, cl, toAddress} from '@lib/utils';
+import {retrieveConfig} from '@lib/utils/wagmi';
+import {getNetwork} from '@lib/utils/wagmi/utils';
 
 import {VaultRiskInfo} from './tabs/VaultRiskInfo';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TTabsOptions = {
 	value: number;

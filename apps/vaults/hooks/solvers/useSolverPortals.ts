@@ -1,7 +1,14 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {BaseError, isHex, maxUint256, zeroAddress} from 'viem';
+import {sendTransaction, switchChain, waitForTransactionReceipt} from 'wagmi/actions';
 import axios from 'axios';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {isSolverDisabled} from '@vaults/contexts/useSolver';
+import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErrorObject';
+import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
+import {Solver} from '@vaults/types/solvers';
+import {toast} from '@lib/components/yToast';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
 import {
 	assert,
 	assertAddress,
@@ -12,25 +19,12 @@ import {
 	toBigInt,
 	toNormalizedBN,
 	zeroNormalizedBN
-} from '@builtbymom/web3/utils';
-import {
-	allowanceOf,
-	approveERC20,
-	defaultTxStatus,
-	retrieveConfig,
-	toWagmiProvider
-} from '@builtbymom/web3/utils/wagmi';
-import {isSolverDisabled} from '@vaults/contexts/useSolver';
-import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErrorObject';
-import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
-import {Solver} from '@vaults/types/solvers';
-import {sendTransaction, switchChain, waitForTransactionReceipt} from '@wagmi/core';
-import {toast} from '@yearn-finance/web-lib/components/yToast';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
-import {useYearn} from '@common/contexts/useYearn';
+} from '@lib/utils';
+import {allowanceKey} from '@lib/utils/helpers';
+import {allowanceOf, approveERC20, defaultTxStatus, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
 
-import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
-import type {TTxResponse, TTxStatus} from '@builtbymom/web3/utils/wagmi';
+import type {TDict, TNormalizedBN} from '@lib/types';
+import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi';
 import type {TPortalsEstimate} from '@vaults/hooks/usePortalsApi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
