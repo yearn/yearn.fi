@@ -2,7 +2,7 @@ import {type ReactElement, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {ModalMobileMenu} from '@common/components/ModalMobileMenu';
-import {IconBurger} from '@common/icons/IconBurger';
+import {IconBurgerPlain} from '@common/icons/IconBurgerPlain';
 import {LogoYearn} from '@common/icons/LogoYearn';
 
 type TMenu = {path: string; label: string | ReactElement; target?: string};
@@ -52,11 +52,11 @@ export function LandingAppHeader(): ReactElement {
 			id={'head'}
 			className={'inset-x-0 top-0 z-50 mt-4 w-full md:mt-7'}>
 			<div className={'w-full'}>
-				<header className={'flex max-w-[1232px] items-center justify-between py-1 md:!px-10 md:py-4'}>
-					<div className={'flex flex-row items-center gap-x-3'}>
+				<header className={'flex max-w-[1232px] items-center gap-4 py-1 md:justify-between md:!px-10 md:py-4'}>
+					<div className={'hidden flex-row items-center gap-x-3 md:flex'}>
 						<Link href={'/'}>
 							<LogoYearn
-								className={'size-6'}
+								className={'size-7'}
 								front={'text-black'}
 								back={'text-white'}
 							/>
@@ -68,9 +68,11 @@ export function LandingAppHeader(): ReactElement {
 						nav={menu}
 					/>
 					<div className={'flex md:hidden'}>
-						<button onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
+						<button
+							className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
+							onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
 							<span className={'sr-only'}>{'Open menu'}</span>
-							<IconBurger />
+							<IconBurgerPlain />
 						</button>
 					</div>
 				</header>

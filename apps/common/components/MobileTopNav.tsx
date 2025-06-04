@@ -2,7 +2,6 @@ import {type ReactElement, useCallback} from 'react';
 import {useRouter} from 'next/router';
 import {useSearch} from '@common/contexts/useSearch';
 import {IconBurgerPlain} from '@common/icons/IconBurgerPlain';
-import {IconCross} from '@common/icons/IconCross';
 import {IconSearch} from '@common/icons/IconSearch';
 import {LogoYearn} from '@common/icons/LogoYearn';
 
@@ -33,13 +32,15 @@ export function MobileTopNav({
 	return (
 		<div className={'z-50 bg-gray-900'}>
 			<div className={'flex w-full items-center justify-between bg-gray-900 p-4'}>
-				<div className={'flex items-center'}>
+				<div className={'flex items-center gap-4'}>
 					<button
-						className={'mr-4 flex size-6 items-center justify-center'}
+						className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
 						onClick={() => set_isNavbarOpen(prev => !prev)}>
-						{isNavbarOpen ? <IconCross /> : <IconBurgerPlain />}
+						<span className={'sr-only'}>{'Open menu'}</span>
+						<IconBurgerPlain />
 					</button>
 					<button
+						className={'hidden md:block'}
 						onClick={() => {
 							router.push('/');
 							set_isSearchOpen(false);
