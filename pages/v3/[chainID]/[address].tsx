@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
+import {zeroAddress} from 'viem';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {cl, toAddress} from '@builtbymom/web3/utils';
@@ -15,6 +16,7 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';
+import type {Address} from 'viem';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
 
@@ -34,8 +36,34 @@ function Index(): ReactElement | null {
 			: null,
 		schema: yDaemonVaultSchema
 	});
+	// TODO: remove this workaround when possible
+	// <WORKAROUND>
+	const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8';
+	if (vault?.address === YBOLD_VAULT_ADDRESS) {
+		console.log('yBold vault detected');
+		vault.staking = {
+			address: '0x23346B04a7f55b8760E5860AA5A77383D63491cD',
+			available: true,
+			source: 'yBOLD',
+			rewards: [
+				{
+					address: zeroAddress,
+					name: 'null',
+					symbol: 'null',
+					decimals: 18,
+					price: 0,
+					isFinished: false,
+					finishedAt: 9748476800,
+					apr: null,
+					perWeek: 0
+				}
+			]
+		};
+	}
+	// </WORKAROUND>
 
 	useEffect((): void => {
+		console.log('set currentVault');
 		if (vault && !currentVault) {
 			set_currentVault(vault);
 			set_isInit(true);
