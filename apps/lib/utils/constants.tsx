@@ -388,5 +388,6 @@ export const iconsDict = {
  ** exit.
  *************************************************************************************************/
 export const DISABLED_VEYFI_GAUGES_VAULTS_LIST = [
-	{address: '0x42842754aBce504E12C20E434Af8960FDf85C833', staking: '0xb98343536e584cf686427a54574567ba5bda8070'}
+	{address: '0x42842754aBce504E12C20E434Af8960FDf85C833', staking: '0xb98343536e584cf686427a54574567ba5bda8070'}, //GOLD-yETH,
+	{address: '0xbA61BaA1D96c2F4E25205B331306507BcAeA4677', staking: '0x6130E6cD924a40b24703407F246966D7435D4998'} //lp-yPRISMA
 ];
