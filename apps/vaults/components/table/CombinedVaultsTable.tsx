@@ -188,35 +188,42 @@ function CombinedVaultsTable(): ReactElement {
 
 	return (
 		<div>
-			<div className={'mb-4 flex h-10 w-full flex-row items-stretch justify-between '}>
-				<div className={'flex size-full flex-row gap-2'}>
-					{Object.values(TFilter).map(filter => (
-						<button
-							key={filter}
-							onClick={() => handleFilterClick(filter)}
-							className={`h-full rounded-full ${activeFilter === filter ? 'bg-white/10' : 'text-neutral-900/75'} mb-0 flex items-center justify-center px-3 py-2 text-[16px]`}>
-							{filter}
-						</button>
-					))}
-					<ChainFilterDropdown
-						className={'border-l border-white/10 pl-4'}
-						chains={chains}
-						onChangeChains={onChangeChains}
-					/>
-					<VersionFilterDropdown
-						selectedVersion={selectedVersion}
-						onVersionChange={handleVersionChange}
-						className={'border-l border-white/10 pl-4'}
-					/>
-				</div>
-				<div>
-					<SearchBar
-						className={'h-full max-w-none rounded-full border-none bg-white/10 text-neutral-900 md:w-full'}
-						iconClassName={'text-neutral-900 font-[12px]'}
-						searchPlaceholder={'Search'}
-						searchValue={search}
-						onSearch={onSearch}
-					/>
+			<div className={'mb-4 flex w-full flex-row items-stretch justify-between '}>
+				<div className={'flex size-full flex-col gap-2 md:flex-row'}>
+					<div className={'flex w-full flex-row justify-between gap-2 md:justify-start'}>
+						<div className={'flex flex-row  gap-2'}>
+							{Object.values(TFilter).map(filter => (
+								<button
+									key={filter}
+									onClick={() => handleFilterClick(filter)}
+									className={`h-full rounded-full ${activeFilter === filter ? 'bg-white/10' : 'text-neutral-900/75'} mb-0 flex items-center justify-center px-3 py-2 text-[16px]`}>
+									{filter}
+								</button>
+							))}
+						</div>
+						<ChainFilterDropdown
+							className={'md:border-l md:border-white/10 md:pl-2'}
+							chains={chains}
+							onChangeChains={onChangeChains}
+						/>
+					</div>
+					<div className={'align-center flex h-10 flex-row justify-between gap-2'}>
+						<VersionFilterDropdown
+							selectedVersion={selectedVersion}
+							onVersionChange={handleVersionChange}
+						/>
+						<div>
+							<SearchBar
+								className={
+									'h-full max-w-none rounded-full border-none bg-white/10 text-neutral-900 md:w-full'
+								}
+								iconClassName={'text-neutral-900 font-[12px]'}
+								searchPlaceholder={'Search'}
+								searchValue={search}
+								onSearch={onSearch}
+							/>
+						</div>
+					</div>
 				</div>
 			</div>
 			{vaultList.isLoading || vaultList.isEmpty ? (
