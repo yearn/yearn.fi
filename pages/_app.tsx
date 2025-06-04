@@ -62,7 +62,6 @@ const WithLayout = memo(function WithLayout(
 					<div className={'flex w-full max-w-[1230px] justify-start'}>
 						<motion.nav className={'fixed z-50 w-full md:hidden'}>
 							<MobileTopNav
-								isNavbarOpen={isNavbarOpen}
 								isSearchOpen={isSearchOpen}
 								set_isSearchOpen={set_isSearchOpen}
 								set_isNavbarOpen={set_isNavbarOpen}

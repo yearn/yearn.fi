@@ -9,12 +9,10 @@ import {SearchBar} from './SearchBar';
 
 export function MobileTopNav({
 	isSearchOpen,
-	isNavbarOpen,
 	set_isSearchOpen,
 	set_isNavbarOpen
 }: {
 	isSearchOpen: boolean;
-	isNavbarOpen: boolean;
 	set_isSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	set_isNavbarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }): ReactElement {
