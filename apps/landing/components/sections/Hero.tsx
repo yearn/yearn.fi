@@ -103,7 +103,7 @@ export function Hero(): ReactElement {
 								description={"DeFi's most battle tested yield aggregator"}
 							/>
 							<Link href={'/apps'}>
-								<Button className={'md:text-[18px]'}>{'Explore Vaults'}</Button>
+								<Button className={'md:text-[18px]'}>{'Explore Apps'}</Button>
 							</Link>
 						</div>
 					</div>
@@ -136,7 +136,7 @@ export function Hero(): ReactElement {
 						<Link
 							href={'/apps'}
 							className={'block w-full'}>
-							<Button className={'max-w-xs'}>{'Explore Vaults'}</Button>
+							<Button className={'max-w-xs'}>{'Explore Apps'}</Button>
 						</Link>
 					</div>
 				</div>
