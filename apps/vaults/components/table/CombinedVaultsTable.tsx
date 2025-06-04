@@ -191,7 +191,7 @@ function CombinedVaultsTable(): ReactElement {
 			<div className={'mb-4 flex w-full flex-row items-stretch justify-between '}>
 				<div className={'flex size-full flex-col gap-2 md:flex-row'}>
 					<div className={'flex w-full flex-row justify-between gap-2 md:justify-start'}>
-						<div className={'flex flex-row  gap-2'}>
+						<div className={'flex flex-row gap-2'}>
 							{Object.values(TFilter).map(filter => (
 								<button
 									key={filter}
