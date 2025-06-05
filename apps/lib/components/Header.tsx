@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit';
 import {useWeb3} from '@lib/contexts/useWeb3';
-import {IconBurger} from '@lib/icons/IconBurger';
+import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
 import {IconWallet} from '@lib/icons/IconWallet';
 import {truncateHex} from '@lib/utils/tools.address';
 
@@ -143,7 +143,7 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 						<div className={'flex md:hidden'}>
 							<button onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
 								<span className={'sr-only'}>{'Open menu'}</span>
-								<IconBurger />
+								<IconBurgerPlain />
 							</button>
 						</div>
 					</div>
