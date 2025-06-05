@@ -9,22 +9,18 @@ import {IconTwitter} from '@lib/icons/IconTwitter';
 import type {ReactElement, ReactNode} from 'react';
 import type {Chain} from 'viem';
 import type {TMenu} from './Header';
-type TFooterNavProps = {
-	onClose: () => void;
-};
 
-export function FooterNav({onClose}: TFooterNavProps): ReactElement {
-	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/apps', label: 'Apps'};
-
-		return [
-			HOME_MENU,
-			{path: 'https://docs.yearn.fi', label: 'Docs'},
-			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'},
-			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
-			{path: 'https://gov.yearn.fi/', label: 'Discourse', target: '_blank'}
-		];
-	}, []);
+const menu: TMenu[] = [
+	{path: '/apps', label: 'Apps'},
+	{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
+	{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'},
+	{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
+	{
+		path: 'https://gov.yearn.fi/',
+		label: 'Discourse',
+		target: '_blank'
+	}
+];
 
 export function FooterNav(): ReactElement {
 	return (
