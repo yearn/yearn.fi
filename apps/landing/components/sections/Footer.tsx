@@ -17,7 +17,7 @@ function FooterContent(): ReactElement {
 					/>
 				</div>
 			</div>
-			<FooterNav />
+			<FooterNav onClose={() => {}} />
 		</>
 	);
 }
