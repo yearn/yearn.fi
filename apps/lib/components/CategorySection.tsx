@@ -1,8 +1,6 @@
 import {type ReactElement, useRef, useState} from 'react';
 import {useMountEffect} from '@react-hookz/web';
-import {CarouselControls} from '@lib/components/CarouselControls';
 import {CarouselSlideArrows} from '@lib/components/CarouselSlideArrows';
-import {IconShare} from '@lib/icons/IconShare';
 
 import {AppsCarousel} from './AppsCarousel';
 
@@ -10,74 +8,77 @@ import type {TApp} from '@lib/types/mixed';
 
 type TAppSectionProps = {
 	title: string;
-	onExpandClick: () => void;
 	apps: TApp[];
 };
 
-export const CategorySection = ({title, onExpandClick, apps}: TAppSectionProps): ReactElement => {
+export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement => {
 	const [shuffledApps, set_shuffledApps] = useState<TApp[]>([]);
-	const [currentPage, set_currentPage] = useState(1);
+	const [, set_currentPage] = useState(1);
 	const carouselRef = useRef<HTMLDivElement | null>(null);
 	const [isProgrammaticScroll, set_isProgrammaticScroll] = useState(false);
 
 	/**********************************************************************************************
-	 ** Handles scrolling back to the previous page in the carousel.
-	 ** It updates the scroll position, current page, and sets a flag to indicate programmatic
-	 ** scrolling. The flag is reset after a delay to allow for smooth scrolling.
+	 ** Helper to get the width of a single carousel item.
+	 *********************************************************************************************/
+	const getItemWidth = (): number => {
+		if (!carouselRef.current) {
+			return 0;
+		}
+		const firstChild = carouselRef.current.querySelector(':scope > *');
+		return firstChild instanceof HTMLElement ? firstChild.offsetWidth : 0;
+	};
+
+	/**********************************************************************************************
+	 ** Handles scrolling back by one item in the carousel, wrapping to the end if at the start.
 	 *********************************************************************************************/
 	const onScrollBack = (): void => {
-		if (!carouselRef.current || currentPage === 1) {
-return;
-}
+		if (!carouselRef.current) {
+			return;
+		}
+		const itemWidth = getItemWidth();
+		if (itemWidth === 0) {
+			return;
+		}
+
 		set_isProgrammaticScroll(true);
-		carouselRef.current.scrollLeft -= 880;
-		set_currentPage(prev => prev - 1);
+
+		if (carouselRef.current.scrollLeft <= 0) {
+			// Wrap to end
+			carouselRef.current.scrollLeft = carouselRef.current.scrollWidth - carouselRef.current.clientWidth;
+		} else {
+			carouselRef.current.scrollLeft -= itemWidth;
+		}
 
 		setTimeout(() => {
 			set_isProgrammaticScroll(false);
-		}, 3000);
+		}, 300);
 	};
 
 	/**********************************************************************************************
-	 ** Handles scrolling forward to the next page in the carousel.
-	 ** It updates the scroll position, current page, and sets a flag to indicate programmatic
-	 ** scrolling. The flag is reset after a delay to allow for smooth scrolling.
+	 ** Handles scrolling forward by one item in the carousel, wrapping to the start if at the end.
 	 *********************************************************************************************/
 	const onScrollForward = (): void => {
-		if (!carouselRef.current || currentPage === Math.ceil(apps.length / 4)) {
-return;
-}
+		if (!carouselRef.current) {
+			return;
+		}
+		const itemWidth = getItemWidth();
+		if (itemWidth === 0) {
+			return;
+		}
+
 		set_isProgrammaticScroll(true);
-		carouselRef.current.scrollLeft += 880;
-		set_currentPage(prev => prev + 1);
+
+		const maxScrollLeft = carouselRef.current.scrollWidth - carouselRef.current.clientWidth;
+		if (carouselRef.current.scrollLeft >= maxScrollLeft) {
+			// Wrap to start
+			carouselRef.current.scrollLeft = 0;
+		} else {
+			carouselRef.current.scrollLeft += itemWidth;
+		}
 
 		setTimeout(() => {
 			set_isProgrammaticScroll(false);
-		}, 3000);
-	};
-
-	/**********************************************************************************************
-	 ** Handles clicking on the carousel dots to navigate to a specific page.
-	 ** It updates the scroll position, current page, and sets a flag to indicate programmatic
-	 ** scrolling. The flag is reset after a delay to allow for smooth scrolling.
-	 *********************************************************************************************/
-	const onDotsClick = (destination: number): void => {
-		if (!carouselRef.current || destination === currentPage) {
-return;
-}
-		set_isProgrammaticScroll(true);
-		if (destination > currentPage) {
-			carouselRef.current.scrollLeft += 1000 * (destination - currentPage);
-			setTimeout(() => {
-				set_isProgrammaticScroll(false);
-			}, 3000);
-		} else {
-			carouselRef.current.scrollLeft -= 1000 * (currentPage - destination);
-			setTimeout(() => {
-				set_isProgrammaticScroll(false);
-			}, 3000);
-		}
-		set_currentPage(destination);
+		}, 300);
 	};
 
 	/**********************************************************************************************
@@ -87,10 +88,14 @@ return;
 	 *********************************************************************************************/
 	const onScroll = (): void => {
 		if (!carouselRef.current || isProgrammaticScroll) {
-return;
-}
+			return;
+		}
+		const itemWidth = getItemWidth();
+		if (itemWidth === 0) {
+			return;
+		}
 		const {scrollLeft} = carouselRef.current;
-		const page = Math.ceil(scrollLeft / 1000) + 1;
+		const page = Math.ceil(scrollLeft / (itemWidth * 4)) + 1; // 4 items per page
 		set_currentPage(page);
 	};
 
@@ -101,23 +106,26 @@ return;
 		if (apps?.length < 1) {
 			return;
 		}
-		set_shuffledApps(apps?.toSorted(() => 0.5 - Math.random()));
+		let orderedApps = apps;
+		if (title === 'Integrations') {
+			orderedApps = apps.slice().sort(() => 0.5 - Math.random());
+		}
+		// Move 'Resupply' app to the front if it exists
+		const resupplyIndex = orderedApps.findIndex(app => app.name === 'Resupply');
+		if (resupplyIndex > 0) {
+			const [resupplyApp] = orderedApps.splice(resupplyIndex, 1);
+			orderedApps = [resupplyApp, ...orderedApps];
+		}
+		set_shuffledApps(orderedApps);
 	});
+
 	return (
 		<div className={'flex flex-col overflow-hidden'}>
 			<div className={'mb-6 flex h-10 w-full items-center justify-between pr-1'}>
 				<div className={'flex gap-x-4'}>
-					<div className={'whitespace-nowrap text-lg font-bold text-white'}>{title}</div>
-					<button
-						onClick={onExpandClick}
-						className={
-							'flex items-center rounded-[4px] px-4 py-2 outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
-						}>
-						<span className={'mr-2 whitespace-nowrap text-xs text-white'}>{'View all'}</span>
-						<IconShare className={'size-3 text-white'} />
-					</button>
+					<div className={'whitespace-nowrap text-lg font-bold text-neutral-800'}>{title}</div>
 				</div>
-				{apps?.length > 4 && (
+				{apps?.length > 5 && (
 					<CarouselSlideArrows
 						onScrollBack={onScrollBack}
 						onScrollForward={onScrollForward}
@@ -129,11 +137,11 @@ return;
 				ref={carouselRef}
 				onScroll={onScroll}
 			/>
-			<CarouselControls
+			{/* <CarouselControls
 				carouselLength={apps.length}
 				onDotsClick={onDotsClick}
 				currentPage={currentPage}
-			/>
+			/> */}
 		</div>
 	);
 };

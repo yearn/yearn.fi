@@ -392,6 +392,14 @@ p {
 	}
 }
 
+/* 🔵 - Yearn Finance ******************************************************************************
+	** Override for default navbar and header items
+	**
+	***************************************************************************************************/
+.yearn--nav {
+	@apply hidden w-auto flex-row items-center space-x-3 md:flex md:space-x-6;
+}
+
 .yearn--tab {
 	@apply mx-5 flex h-full flex-col justify-center text-base cursor-pointer font-normal;
 	&.selected {

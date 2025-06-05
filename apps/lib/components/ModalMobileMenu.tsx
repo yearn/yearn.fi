@@ -4,7 +4,6 @@ import Link from 'next/link';
 import {Dialog, Transition, TransitionChild} from '@headlessui/react';
 import {IconClose} from '@lib/icons/IconClose';
 import {IconDiscord} from '@lib/icons/IconDiscord';
-import {IconParagraph} from '@lib/icons/IconParagraph';
 import {IconTwitter} from '@lib/icons/IconTwitter';
 
 import type {ReactElement, ReactNode} from 'react';
@@ -42,14 +41,6 @@ export function FooterNav(): ReactElement {
 				))}
 			</div>
 			<div className={'flex w-full items-center justify-center gap-6'}>
-				<Link
-					href={'https://paragraph.xyz/@yearn'}
-					target={'_blank'}
-					className={
-						'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
-					}>
-					<IconParagraph className={'size-7 text-white'} />
-				</Link>
 				<Link
 					href={'https://discord.com/invite/yearn'}
 					target={'_blank'}
