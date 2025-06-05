@@ -93,7 +93,7 @@ export function LogoPopover(): ReactElement {
 	const isMounted = useIsMounted();
 	const pathname = usePathname();
 
-	const isV3 = isMounted() && pathname.includes('/v3');
+	const isV3 = isMounted() && pathname?.includes('/v3');
 
 	const [isShowingMore, set_isShowingMore] = useState(false);
 
