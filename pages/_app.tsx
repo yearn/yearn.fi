@@ -3,7 +3,6 @@ import {Toaster} from 'react-hot-toast';
 import {usePathname} from 'next/navigation';
 import PlausibleProvider from 'next-plausible';
 import {LandingAppHeader} from 'apps/landing/components/common/Header';
-import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import AppHeader from '@lib/components/Header';
 import {Meta} from '@lib/components/Meta';
@@ -15,7 +14,6 @@ import {IconAlertCritical} from '@lib/icons/IconAlertCritical';
 import {IconAlertError} from '@lib/icons/IconAlertError';
 import {IconCheckmark} from '@lib/icons/IconCheckmark';
 import {cl} from '@lib/utils';
-import {variants} from '@lib/utils/animations';
 import {SUPPORTED_NETWORKS} from '@lib/utils/constants';
 
 import type {AppProps} from 'next/app';
@@ -43,7 +41,6 @@ const WithLayout = memo(function WithLayout(
 	props: {router: NextRouter; supportedNetworks: Chain[]} & AppProps
 ): ReactElement {
 	const {Component, pageProps} = props;
-	const {name} = useCurrentApp(props.router);
 	const isAppsPage = props.router.asPath?.startsWith('/apps');
 	const pathName = usePathname();
 
@@ -60,52 +57,10 @@ const WithLayout = memo(function WithLayout(
 					id={'app'}
 					className={'mb-0 flex min-h-screen justify-center bg-neutral-0 font-aeonik'}>
 					<div className={'flex w-full max-w-[1230px] justify-start'}>
-						{/* <motion.nav className={'fixed z-50 w-full md:hidden'}>
-							<MobileTopNav
-								isNavbarOpen={isNavbarOpen}
-								isSearchOpen={isSearchOpen}
-								set_isSearchOpen={set_isSearchOpen}
-								set_isNavbarOpen={set_isNavbarOpen}
-							/>
-						</motion.nav>
-						{isNavbarOpen && (
-							<motion.nav
-								className={'sticky top-16 z-50 h-[calc(100vh-64px)] w-screen md:hidden'}
-								initial={{y: '100%'}} // Start from below the screen
-								animate={{y: 0}} // Animate to the original position
-								exit={{y: '100%'}} // Exit back to below the screen
-								transition={{type: 'tween', stiffness: 300, damping: 30}} // Add transition for smooth animation
-							>
-								<MobileNavbar
-									onClose={() => {
-										set_isNavbarOpen(false);
-										set_isSearchOpen(false);
-									}}
-								/>
-							</motion.nav>
-						)} */}
-						{/* <motion.nav className={'top-0 z-20 hidden h-screen py-4 pl-4 md:fixed md:block'}>
-							<Sidebar tabs={MENU_TABS} />
-						</motion.nav> */}
-						<LazyMotion features={domAnimation}>
-							<AnimatePresence mode={'wait'}>
-								<motion.div
-									key={`${props.router.asPath}-${props.router.query.query}`}
-									initial={'initial'}
-									animate={'enter'}
-									exit={'exit'}
-									variants={variants}
-									className={cl(
-										// 'w-full overflow-x-hidden md:ml-[305px]',
-										'w-full overflow-x-hidden md:mt-[64px]'
-									)}>
-									<Component
-										router={props.router}
-										{...pageProps}
-									/>
-								</motion.div>
-							</AnimatePresence>
-						</LazyMotion>
+						<Component
+							router={props.router}
+							{...pageProps}
+						/>
 					</div>
 				</div>
 			</>
@@ -121,21 +76,10 @@ const WithLayout = memo(function WithLayout(
 				id={'app'}
 				className={cl('mx-auto mb-0 flex font-aeonik')}>
 				<div className={'block size-full min-h-max'}>
-					<LazyMotion features={domAnimation}>
-						<AnimatePresence mode={'wait'}>
-							<motion.div
-								key={`${name}_${props.router.asPath}`}
-								initial={'initial'}
-								animate={'enter'}
-								exit={'exit'}
-								variants={variants}>
-								<Component
-									router={props.router}
-									{...pageProps}
-								/>
-							</motion.div>
-						</AnimatePresence>
-					</LazyMotion>
+					<Component
+						router={props.router}
+						{...pageProps}
+					/>
 				</div>
 			</div>
 		</>
