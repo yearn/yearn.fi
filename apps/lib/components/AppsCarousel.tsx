@@ -25,6 +25,7 @@ export const AppsCarousel = forwardRef(
 							'pointer-events-none absolute right-0 top-0 z-30 h-[272px] w-1/5 bg-gradient-to-l from-gray-900/0 to-transparent md:h-full'
 						}
 					/>
+					{/* Desktop view */}
 					<div
 						ref={ref}
 						onScroll={props.onScroll}
@@ -50,13 +51,15 @@ export const AppsCarousel = forwardRef(
 							);
 						})}
 					</div>
+
+					{/* Mobile view */}
 					<div
 						onScroll={props.onScroll}
 						className={cl(
-							'flex md:hidden overflow-x-auto pb-1 pl-[38px] scrollbar-none max-sm:pr-6',
-							props.isUsingFeatured ? 'gap-x-8' : 'flex-col md:flex-row gap-y-6 overflow-y-hidden'
+							'flex md:hidden overflow-x-auto pb-1 pl-1 scrollbar-none',
+							props.isUsingFeatured ? 'gap-x-8' : 'flex-col md:flex-row gap-y-4 overflow-y-hidden'
 						)}>
-						{props.apps?.slice(0, 4).map((app, i) => {
+						{props.apps?.slice(0, 10).map((app, i) => {
 							return (
 								<React.Fragment key={app.appURI + i}>
 									{props.isUsingFeatured ? (
