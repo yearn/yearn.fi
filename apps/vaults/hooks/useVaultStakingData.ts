@@ -151,7 +151,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 				},
 				{
 					key: 'allowance',
-					address: toAddress(stakingAddress),
+					address: toAddress(props.currentVault.address),
 					abi: erc20Abi,
 					chainId: props.currentVault.chainID,
 					functionName: 'allowance',
