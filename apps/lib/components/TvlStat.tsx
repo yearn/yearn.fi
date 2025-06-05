@@ -1,4 +1,4 @@
-import {formatAmount} from '@builtbymom/web3/utils';
+import {formatAmount} from '@lib/utils';
 
 import type {FC} from 'react';
 

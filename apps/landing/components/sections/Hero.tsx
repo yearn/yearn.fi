@@ -2,8 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
 import {z} from 'zod';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {TvlStat} from '@common/components/TvlStat';
+import {TvlStat} from '@lib/components/TvlStat';
+import {useFetch} from '@lib/hooks/useFetch';
 
 import {Button} from '../common/Button';
 
@@ -74,7 +74,7 @@ function AnimatedLogos(): ReactElement {
 
 export function Hero(): ReactElement {
 	const {data: tvl} = useFetch<number>({
-		endpoint: `https://api.llama.fi/tvl/yearn`,
+		endpoint: 'https://api.llama.fi/tvl/yearn',
 		schema: z.number()
 	});
 
@@ -102,9 +102,18 @@ export function Hero(): ReactElement {
 								title={'Earn on your Crypto'}
 								description={"DeFi's most battle tested yield aggregator"}
 							/>
-							<Link href={'/apps'}>
-								<Button className={'md:text-[18px]'}>{'Explore Apps'}</Button>
-							</Link>
+							<div className={'flex flex-row items-center justify-center gap-4'}>
+								<Link href={'/v3'}>
+									<Button className={'md:text-[18px]'}>{'Explore Vaults'}</Button>
+								</Link>
+								<Link href={'/apps'}>
+									<Button
+										className={'md:text-[18px]'}
+										variant={'secondary'}>
+										{'View Apps'}
+									</Button>
+								</Link>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -133,11 +142,26 @@ export function Hero(): ReactElement {
 							title={'Earn on your Crypto'}
 							description={"DeFi's most battle tested yield aggregator"}
 						/>
-						<Link
-							href={'/apps'}
-							className={'block w-full'}>
-							<Button className={'max-w-xs'}>{'Explore Apps'}</Button>
-						</Link>
+						<div className={'flex flex-col items-center justify-center gap-4'}>
+							<Link
+								href={'/v3'}
+								className={'block w-full'}>
+								<Button
+									className={'max-w-xs'}
+									variant={'primary'}>
+									{'Explore Vaults'}
+								</Button>
+							</Link>
+							<Link
+								href={'/apps'}
+								className={'block w-full'}>
+								<Button
+									className={'max-w-xs'}
+									variant={'secondary'}>
+									{'View Apps'}
+								</Button>
+							</Link>
+						</div>
 					</div>
 				</div>
 			</div>
