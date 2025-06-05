@@ -5,7 +5,6 @@ import {Dialog, Transition, TransitionChild} from '@headlessui/react';
 import {IconArrow} from '@lib/icons/IconArrow';
 import {IconClose} from '@lib/icons/IconClose';
 import {IconDiscord} from '@lib/icons/IconDiscord';
-import {IconParagraph} from '@lib/icons/IconParagraph';
 import {IconTwitter} from '@lib/icons/IconTwitter';
 import {LogoYearn} from '@lib/icons/LogoYearn';
 
@@ -13,20 +12,20 @@ import type {ReactElement, ReactNode} from 'react';
 import type {Chain} from 'viem';
 import type {TMenu} from './Header';
 
-export function FooterNav(): ReactElement {
+type TFooterNavProps = {
+	onClose: () => void;
+};
+
+export function FooterNav({onClose}: TFooterNavProps): ReactElement {
 	const menu = useMemo((): TMenu[] => {
 		const HOME_MENU = {path: '/apps', label: 'Apps'};
 
 		return [
 			HOME_MENU,
-			{
-				path: 'https://gov.yearn.fi/',
-				label: 'Governance',
-				target: '_blank'
-			},
+			{path: 'https://docs.yearn.fi', label: 'Docs'},
+			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'},
 			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
-			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
-			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'}
+			{path: 'https://gov.yearn.fi/', label: 'Discourse', target: '_blank'}
 		];
 	}, []);
 
@@ -40,19 +39,14 @@ export function FooterNav(): ReactElement {
 						}
 						key={link.path}
 						target={link.target}
-						href={link.path}>
+						href={link.path}
+						onClick={onClose}>
 						<span>{link.label}</span>
 						<IconArrow className={'size-4'} />
 					</Link>
 				))}
 			</div>
 			<div className={'flex items-center gap-6'}>
-				<Link
-					href={'https://paragraph.xyz/@yearn'}
-					target={'_blank'}
-					className={'flex items-center gap-x-4'}>
-					<IconParagraph className={'size-8 text-white transition-colors hover:text-primary'} />
-				</Link>
 				<Link
 					href={'https://discord.com/invite/yearn'}
 					target={'_blank'}
@@ -124,7 +118,9 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 						leaveTo={'opacity-0 translate-y-full'}>
 						<div className={'yearn--modal fixed bottom-0 mb-0 h-full max-w-full'}>
 							<div className={'flex items-center justify-between border-b border-[#292929] p-6'}>
-								<button onClick={onClose}>
+								<button
+									className={'text-neutral-700'}
+									onClick={onClose}>
 									<IconClose />
 								</button>
 								<Link href={'/'}>
@@ -141,7 +137,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 										'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
 								}}
 								className={'flex h-[calc(100vh-88px)] w-full flex-col justify-end px-6 pb-[104px]'}>
-								<FooterNav />
+								<FooterNav onClose={onClose} />
 							</div>
 						</div>
 					</TransitionChild>

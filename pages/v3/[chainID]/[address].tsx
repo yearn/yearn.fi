@@ -98,7 +98,7 @@ function Index(): ReactElement | null {
 			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
 				<div className={'mt-[20%] flex h-10 items-center justify-center'}>
 					<p className={'text-sm text-neutral-900'}>
-						{"We couln't find this vault on the connected network."}
+						{"We couldn't find this vault on the connected network."}
 					</p>
 				</div>
 			</div>
@@ -107,10 +107,11 @@ function Index(): ReactElement | null {
 
 	return (
 		<div className={'mx-auto w-full max-w-6xl pt-20 md:pt-32'}>
+			{/* Mobile Back Button */}
 			<nav className={'mb-4 self-start md:mb-2 md:hidden'}>
 				<button
 					className={'z-50 w-fit'}
-					onClick={() => router.back()}>
+					onClick={async () => await router.push('/v3')}>
 					<p
 						className={
 							'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'
@@ -120,6 +121,7 @@ function Index(): ReactElement | null {
 					</p>
 				</button>
 			</nav>
+			{/* Header with gradient background and vault logo */}
 			<header
 				className={cl(
 					'h-full rounded-3xl',
@@ -130,7 +132,7 @@ function Index(): ReactElement | null {
 				<nav className={'mb-4 hidden self-start md:mb-2 md:block'}>
 					<button
 						className={'w-fit'}
-						onClick={() => router.back()}>
+						onClick={async () => await router.push('/v3')}>
 						<p
 							className={
 								'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'
