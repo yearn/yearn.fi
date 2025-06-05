@@ -50,8 +50,8 @@ const vaultsRows = [
 		bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
 		symbol: 'ETH',
 		icon: '/landing/vaults/eth.png',
-		href: '/v3/1/0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0',
-		address: '0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0'
+		href: '/v3/1/0xAc37729B76db6438CE62042AE1270ee574CA7571',
+		address: '0xAc37729B76db6438CE62042AE1270ee574CA7571'
 	},
 	{
 		bgClass: 'bg-gradient-to-r from-gray-900 to-gray-800',
@@ -61,18 +61,18 @@ const vaultsRows = [
 		address: '0x182863131F9a4630fF9E27830d945B1413e347E8'
 	},
 	{
-		bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
-		symbol: 'USDT',
-		icon: '/landing/vaults/usdt.png',
-		href: '/v3/1/0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa',
-		address: '0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa'
-	},
-	{
 		bgClass: 'bg-gradient-to-r from-gray-900 to-gray-700',
 		symbol: 'USDC',
 		icon: '/landing/vaults/usdc.png',
 		href: '/v3/1/0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
 		address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204'
+	},
+	{
+		bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
+		symbol: 'crvUSD',
+		icon: '/landing/vaults/crvusd.png',
+		href: '/v3/1/0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F',
+		address: '0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F'
 	}
 ];
 
@@ -116,7 +116,10 @@ export const Vaults: FC = () => {
 	const rows: TRow[][] = useMemo(() => {
 		return [
 			vaultsRows.map((vault, index) => {
-				const apr = vaults[vault.address]?.apr.forwardAPR.netAPR;
+				const vaultAddress = vault.address;
+				const apr = vaults[vaultAddress].apr.extra
+					? vaults[vaultAddress].apr.extra.stakingRewardsAPR + vaults[vaultAddress].apr.forwardAPR.netAPR
+					: vaults[vaultAddress].apr.forwardAPR.netAPR;
 				return {
 					bgClass:
 						index % 2 === 0
@@ -124,7 +127,7 @@ export const Vaults: FC = () => {
 							: 'bg-gradient-to-r from-gray-900 to-gray-800',
 					icon: vaultsRows[index].icon,
 					text: apr
-						? `Earn ${formatPercent(apr * 100, 2, 2)} on ${vaultsRows[index].symbol}`
+						? `Earn up to ${formatPercent(apr * 100, 2, 2)} on ${vaultsRows[index].symbol}`
 						: `Earn on ${vaultsRows[index].symbol}`,
 					href: `/v3/1/${vault.address}`,
 					address: vault.address
