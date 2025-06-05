@@ -15,7 +15,7 @@ export function Button(
 	return (
 		<button
 			{...rest}
-			className={cl('py-3 px-4 text-white rounded-[4px] transition-colors', STYLE[variant], rest.className)}>
+			className={cl('py-2 px-4 text-white rounded-[24px] transition-colors', STYLE[variant], rest.className)}>
 			{rest.children}
 		</button>
 	);
