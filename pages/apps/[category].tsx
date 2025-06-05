@@ -1,12 +1,12 @@
 import {type ReactElement, useMemo, useState} from 'react';
 import {useMountEffect} from '@react-hookz/web';
-import {AppCard} from '@common/components/AppCard';
-import {FilterBar} from '@common/components/FilterBar';
-import {SortingBar} from '@common/components/SortingBar';
-import {CATEGORIES_DICT} from '@common/utils/constants';
+import {AppCard} from '@lib/components/AppCard';
+import {FilterBar} from '@lib/components/FilterBar';
+import {SortingBar} from '@lib/components/SortingBar';
+import {CATEGORIES_DICT} from '@lib/utils/constants';
 
 import type {NextRouter} from 'next/router';
-import type {TApp} from '@common/types/category';
+import type {TApp} from '@lib/types/mixed';
 
 export default function Index(props: {router: NextRouter}): ReactElement {
 	const [shuffledApps, set_shuffledApps] = useState<TApp[]>();

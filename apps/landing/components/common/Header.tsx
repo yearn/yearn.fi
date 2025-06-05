@@ -1,9 +1,9 @@
 import {type ReactElement, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {ModalMobileMenu} from '@common/components/ModalMobileMenu';
-import {IconBurgerPlain} from '@common/icons/IconBurgerPlain';
-import {LogoYearn} from '@common/icons/LogoYearn';
+import {ModalMobileMenu} from '@lib/components/ModalMobileMenu';
+import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
+import {LogoYearn} from '@lib/icons/LogoYearn';
 
 type TMenu = {path: string; label: string | ReactElement; target?: string};
 type TNavbar = {nav: TMenu[]; currentPathName: string};

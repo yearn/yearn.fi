@@ -1,17 +1,17 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
-import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
-import {getNetwork} from '@builtbymom/web3/utils/wagmi';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {RenderAmount} from '@common/components/RenderAmount';
-import {useYearn} from '@common/contexts/useYearn';
-import {useYearnBalance} from '@common/hooks/useYearnBalance';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import {Renderable} from '@lib/components/Renderable';
+import {RenderAmount} from '@lib/components/RenderAmount';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useYearnBalance} from '@lib/hooks/useYearnBalance';
+import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants';
+import {getNetwork} from '@lib/utils/wagmi';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TNormalizedBN} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
@@ -408,7 +408,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 						<div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
-								alt={``}
+								alt={''}
 								width={32}
 								height={32}
 							/>

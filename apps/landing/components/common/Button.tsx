@@ -1,4 +1,4 @@
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from '@lib/utils';
 
 import type {ButtonHTMLAttributes, ReactElement} from 'react';
 

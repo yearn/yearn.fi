@@ -1,9 +1,8 @@
-import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
+import {Solver} from '@lib/utils/schemas/yDaemonTokenListBalances';
 
-import type {TDropdownOption} from '@yearn-finance/web-lib/types';
-import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
-import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
-import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
+import type {TAddress, TDropdownOption,TNormalizedBN} from '@lib/types';
+import type {TSolver} from '@lib/utils/schemas/yDaemonTokenListBalances';
+import type {TTxStatus} from '@lib/utils/wagmi';
 
 export {Solver, TSolver};
 

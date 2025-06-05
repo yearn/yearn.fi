@@ -57,7 +57,7 @@ class MyDocument extends Document {
 	}
 
 	render(): ReactElement {
-		const {route} = this.props as any;
+		const {route} = this.props as unknown as {route: string};
 		const isLanding = route.startsWith('/apps');
 		return (
 			<Html

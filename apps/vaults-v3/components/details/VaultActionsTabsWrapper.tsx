@@ -1,19 +1,7 @@
 import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useBlockNumber, useReadContract} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
-import {
-	cl,
-	decodeAsBigInt,
-	formatAmount,
-	parseMarkdown,
-	toAddress,
-	toBigInt,
-	toNormalizedBN,
-	toNormalizedValue
-} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+import {readContracts} from 'wagmi/actions';
 import {useUpdateEffect} from '@react-hookz/web';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
@@ -26,16 +14,27 @@ import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/acti
 import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
-import {readContracts} from '@wagmi/core';
-import {VEYFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {InfoTooltip} from '@common/components/InfoTooltip';
-import {Switch} from '@common/components/Switch';
-import {useYearn} from '@common/contexts/useYearn';
-import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
+import {InfoTooltip} from '@lib/components/InfoTooltip';
+import {Switch} from '@lib/components/Switch';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
+import {
+	cl,
+	decodeAsBigInt,
+	formatAmount,
+	parseMarkdown,
+	toAddress,
+	toBigInt,
+	toNormalizedBN,
+	toNormalizedValue
+} from '@lib/utils';
+import {DISABLED_VEYFI_GAUGES_VAULTS_LIST, VEYFI_ADDRESS} from '@lib/utils/constants';
+import {retrieveConfig} from '@lib/utils/wagmi';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TNormalizedBN} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug
@@ -249,7 +248,7 @@ export function VaultDetailsTab(props: {
 	onSwitchTab: (tab: TTabsOptions) => void;
 }): ReactElement {
 	const router = useRouter();
-	const isV3Page = router.pathname.startsWith(`/v3`);
+	const isV3Page = router.pathname.startsWith('/v3');
 	const stakingRewardSource = props.currentVault.staking.source;
 	const tabLabel = useMemo(() => {
 		if (props.tab.label === 'Boost' && stakingRewardSource === 'VeYFI') {
@@ -373,7 +372,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		if (currentVault.staking.source === 'V3 Staking') {
 			return 'Staking BOOST';
 		}
-		return 'Boost';
+		if (currentVault.staking.source === 'yBOLD') {
+			return 'yBOLD Staking';
+		}
+		return 'Staking';
 	}, [currentVault.staking.source]);
 
 	const {data: blockNumber} = useBlockNumber({watch: true});
@@ -482,10 +484,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	}, [currentVault.staking.rewards, hasStakingRewards, hasStakingRewardsLive, set_isAutoStakingEnabled]);
 
 	const isSonneRetiredVault =
-		toAddress(currentVault.address) === toAddress(`0x5b977577eb8a480f63e11fc615d6753adb8652ae`) ||
-		toAddress(currentVault.address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`) ||
-		toAddress(currentVault.address) === toAddress(`0x65343f414ffd6c97b0f6add33d16f6845ac22bac`) ||
-		toAddress(currentVault.address) === toAddress(`0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de`);
+		toAddress(currentVault.address) === toAddress('0x5b977577eb8a480f63e11fc615d6753adb8652ae') ||
+		toAddress(currentVault.address) === toAddress('0xad17a225074191d5c8a37b50fda1ae278a2ee6a2') ||
+		toAddress(currentVault.address) === toAddress('0x65343f414ffd6c97b0f6add33d16f6845ac22bac') ||
+		toAddress(currentVault.address) === toAddress('0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de');
 
 	const tooltipText = useMemo(() => {
 		if (isAutoStakingEnabled) {
@@ -529,7 +531,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					</div>
 				)}
 
-			{currentVault?.info.uiNotice && !currentVault?.migration.available && (
+			{currentVault?.info.uiNotice && !currentVault?.migration.available && currentVault.info.isRetired && (
 				<div
 					aria-label={'Migration Warning'}
 					className={'col-span-12 mt-10'}>
@@ -546,6 +548,26 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					</div>
 				</div>
 			)}
+
+			{currentVault?.info.uiNotice &&
+				!currentVault?.migration.available &&
+				!currentVault.info.isRetired &&
+				!isSonneRetiredVault && (
+					<div
+						aria-label={'Migration Warning'}
+						className={'col-span-12 mt-10'}>
+						<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+							<p
+								className={'mt-2'}
+								dangerouslySetInnerHTML={{
+									__html: parseMarkdown(
+										currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol)
+									)
+								}}
+							/>
+						</div>
+					</div>
+				)}
 
 			<div className={'col-span-12 mt-6 flex flex-col rounded-3xl bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>

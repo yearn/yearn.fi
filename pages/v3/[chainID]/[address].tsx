@@ -1,22 +1,24 @@
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {cl, toAddress} from '@builtbymom/web3/utils';
+import {zeroAddress} from 'viem';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {yDaemonVaultSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useYearn} from '@common/contexts/useYearn';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useFetch} from '@lib/hooks/useFetch';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {cl, toAddress} from '@lib/utils';
+import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
+import type {Address} from 'viem';
+import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();
@@ -34,8 +36,34 @@ function Index(): ReactElement | null {
 			: null,
 		schema: yDaemonVaultSchema
 	});
+	// TODO: remove this workaround when possible
+	// <WORKAROUND>
+	const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8';
+	if (vault?.address === YBOLD_VAULT_ADDRESS) {
+		console.log('yBold vault detected');
+		vault.staking = {
+			address: '0x23346B04a7f55b8760E5860AA5A77383D63491cD',
+			available: true,
+			source: 'yBOLD',
+			rewards: [
+				{
+					address: zeroAddress,
+					name: 'null',
+					symbol: 'null',
+					decimals: 18,
+					price: 0,
+					isFinished: false,
+					finishedAt: 9748476800,
+					apr: null,
+					perWeek: 0
+				}
+			]
+		};
+	}
+	// </WORKAROUND>
 
 	useEffect((): void => {
+		console.log('set currentVault');
 		if (vault && !currentVault) {
 			set_currentVault(vault);
 			set_isInit(true);
@@ -79,7 +107,7 @@ function Index(): ReactElement | null {
 
 	return (
 		<div className={'mx-auto w-full max-w-6xl pt-20 md:pt-32'}>
-			<nav className={`mb-4 self-start md:mb-2 md:hidden`}>
+			<nav className={'mb-4 self-start md:mb-2 md:hidden'}>
 				<button
 					className={'z-50 w-fit'}
 					onClick={() => router.back()}>
@@ -99,7 +127,7 @@ function Index(): ReactElement | null {
 					'bg-[linear-gradient(73deg,_#D21162_24.91%,_#2C3DA6_99.66%)]',
 					'relative flex flex-col items-center justify-center'
 				)}>
-				<nav className={`mb-4 hidden self-start md:mb-2 md:block`}>
+				<nav className={'mb-4 hidden self-start md:mb-2 md:block'}>
 					<button
 						className={'w-fit'}
 						onClick={() => router.back()}>

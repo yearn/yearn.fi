@@ -1,4 +1,4 @@
-import {isZero} from '@builtbymom/web3/utils';
+import {isZero} from '@lib/utils';
 
 import type {TYDaemonReport, TYDaemonReports} from '@vaults/schemas/reportsSchema';
 

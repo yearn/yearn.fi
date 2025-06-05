@@ -1,24 +1,24 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {erc20Abi, maxUint256, zeroAddress} from 'viem';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
-import {allowanceOf, approveERC20, retrieveConfig,toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
+import {readContract} from 'wagmi/actions';
 import {Solver} from '@vaults/types/solvers';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import { readContract } from '@wagmi/core';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
-import {useYearn} from '@common/contexts/useYearn';
-import { migrateSharesViaRouter} from '@common/utils/actions';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
+import {allowanceKey} from '@lib/utils/helpers';
+import {allowanceOf, approveERC20, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
+import {migrateSharesViaRouter} from '@lib/utils/wagmi/actions';
 
 import type {Connector} from 'wagmi';
-import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
-import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
+import type {TDict, TNormalizedBN} from '@lib/types';
+import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 async function allowanceOfRouter(request: TInitSolverArgs, provider: Connector | undefined): Promise<bigint> {
-  if (!request || !provider) {
-    return 0n;
-  }
+	if (!request || !provider) {
+		return 0n;
+	}
 
 	const wagmiProvider = await toWagmiProvider(provider);
 	const result = await readContract(retrieveConfig(), {
@@ -88,7 +88,7 @@ export function useSolverV3Router(): TSolverContext {
 		[request, provider]
 	);
 
-  const onRetrieveRouterAllowance = useCallback(
+	const onRetrieveRouterAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 			if (!request?.current || !provider || !request.current.asset || !request.current.migrator) {
 				return zeroNormalizedBN;
@@ -108,8 +108,8 @@ export function useSolverV3Router(): TSolverContext {
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
 		},
-    [request, provider]
-  );
+		[request, provider]
+	);
 
 	const onApprove = useCallback(
 		async (
@@ -145,28 +145,28 @@ export function useSolverV3Router(): TSolverContext {
 			assert(request.current.inputToken, 'Output token is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
 
-      const result = await migrateSharesViaRouter({
-        connector: provider,
-        chainID: request.current.chainID,
-        contractAddress: request.current.inputToken.value,
-        router: request.current.migrator,
-        fromVault: request.current.inputToken.value,
-        toVault: request.current.outputToken.value,
-        amount: request.current.inputAmount,
-        maxLoss,
-        statusHandler: txStatusSetter
-      });
-      if (result.isSuccessful) {
-        onSuccess();
-      }
-      return;
+			const result = await migrateSharesViaRouter({
+				connector: provider,
+				chainID: request.current.chainID,
+				contractAddress: request.current.inputToken.value,
+				router: request.current.migrator,
+				fromVault: request.current.inputToken.value,
+				toVault: request.current.outputToken.value,
+				amount: request.current.inputAmount,
+				maxLoss,
+				statusHandler: txStatusSetter
+			});
+			if (result.isSuccessful) {
+				onSuccess();
+			}
+			return;
 		},
 		[provider, maxLoss]
 	);
 
 	const onExecuteWithdraw = useCallback(async (): Promise<void> => {
-    throw new Error('Not implemented');
-  }, [] );
+		throw new Error('Not implemented');
+	}, []);
 
 	return useMemo(
 		(): TSolverContext => ({
@@ -174,11 +174,19 @@ export function useSolverV3Router(): TSolverContext {
 			quote: latestQuote?.current || zeroNormalizedBN,
 			init,
 			onRetrieveAllowance,
-      onRetrieveRouterAllowance,
+			onRetrieveRouterAllowance,
 			onApprove,
 			onExecuteDeposit,
 			onExecuteWithdraw
 		}),
-		[latestQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, onRetrieveRouterAllowance]
+		[
+			latestQuote,
+			init,
+			onApprove,
+			onExecuteDeposit,
+			onExecuteWithdraw,
+			onRetrieveAllowance,
+			onRetrieveRouterAllowance
+		]
 	);
 }
