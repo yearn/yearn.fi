@@ -44,6 +44,10 @@
 	font-display: swap;
 }
 
+p {
+	font-weight: 300;
+}
+
 #main {
 	@apply flex flex-col w-full h-full min-h-screen bg-neutral-0;
 }
@@ -386,6 +390,14 @@
 				-12px 0 #fff2;
 		}
 	}
+}
+
+/* 🔵 - Yearn Finance ******************************************************************************
+	** Override for default navbar and header items
+	**
+	***************************************************************************************************/
+.yearn--nav {
+	@apply hidden w-auto flex-row items-center space-x-3 md:flex md:space-x-6;
 }
 
 .yearn--tab {

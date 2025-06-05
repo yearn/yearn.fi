@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit';
 import {useWeb3} from '@lib/contexts/useWeb3';
-import {IconBurger} from '@lib/icons/IconBurger';
+import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
 import {IconWallet} from '@lib/icons/IconWallet';
 import {truncateHex} from '@lib/utils/tools.address';
 
@@ -98,31 +98,31 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 		const HOME_MENU = {path: '/apps', label: 'Apps'};
 
 		if (pathname.startsWith('/ycrv')) {
-			return [HOME_MENU, ...APPS[AppName.YCRV].menu];
+			return [...APPS[AppName.YCRV].menu];
 		}
 
 		if (pathname.startsWith('/v3')) {
-			return [HOME_MENU, ...APPS[AppName.VAULTSV3].menu];
+			return [...APPS[AppName.VAULTSV3].menu];
 		}
 
 		if (pathname.startsWith('/vaults')) {
-			return [HOME_MENU, ...APPS[AppName.VAULTS].menu];
+			return [...APPS[AppName.VAULTS].menu];
 		}
 
 		if (pathname.startsWith('/veyfi')) {
-			return [HOME_MENU, ...APPS[AppName.VEYFI].menu];
+			return [...APPS[AppName.VEYFI].menu];
 		}
 
 		return [
 			HOME_MENU,
+			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
+			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'},
+			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
 			{
 				path: 'https://gov.yearn.fi/',
-				label: 'Governance',
+				label: 'Discourse',
 				target: '_blank'
-			},
-			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
-			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
-			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'}
+			}
 		];
 	}, [pathname]);
 
@@ -132,18 +132,20 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 			className={'inset-x-0 top-0 z-50 w-full'}>
 			<div className={'w-full'}>
 				<header className={'yearn--header mx-auto max-w-6xl !px-0'}>
-					<Navbar
-						currentPathName={pathname || ''}
-						nav={menu}
-					/>
-					<div className={'flex w-1/3 md:hidden'}>
-						<button onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
-							<span className={'sr-only'}>{'Open menu'}</span>
-							<IconBurger />
-						</button>
-					</div>
-					<div className={'flex w-1/3 justify-center'}>
-						<LogoPopover />
+					<div className={'direction-row flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'}>
+						<div className={'flex justify-center'}>
+							<LogoPopover />
+						</div>
+						<Navbar
+							currentPathName={pathname || ''}
+							nav={menu}
+						/>
+						<div className={'flex md:hidden'}>
+							<button onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
+								<span className={'sr-only'}>{'Open menu'}</span>
+								<IconBurgerPlain />
+							</button>
+						</div>
 					</div>
 					<div className={'flex w-1/3 items-center justify-end'}>
 						<WalletSelector />
