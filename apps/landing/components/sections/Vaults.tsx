@@ -116,23 +116,39 @@ export const Vaults: FC = () => {
 	const rows: TRow[][] = useMemo(() => {
 		return [
 			vaultsRows.map((vault, index) => {
-				const vaultAddress = vault.address;
-				const apr = vaults[vaultAddress].apr.extra
-					? vaults[vaultAddress].apr.extra.stakingRewardsAPR + vaults[vaultAddress].apr.forwardAPR.netAPR
-					: vaults[vaultAddress].apr.forwardAPR.netAPR;
+				const vaultData = vaults?.[vault.address];
+				// no data? skip or default APR to 0
+				if (!vaultData) {
+					return {
+						bgClass:
+							index % 2 === 0
+								? 'bg-gradient-to-r from-gray-800 to-gray-700'
+								: 'bg-gradient-to-r from-gray-900 to-gray-800',
+						icon: vault.icon,
+						text: `Earn on ${vault.symbol}`,
+						href: vault.href,
+						address: vault.address
+					};
+				}
+				// safely pull out APR parts
+				const forward = vaultData.apr.forwardAPR?.netAPR ?? 0;
+				const extra = vaultData.apr.extra?.stakingRewardsAPR ?? 0;
+				const apr = extra > 0 ? forward + extra : forward;
+
 				return {
 					bgClass:
 						index % 2 === 0
 							? 'bg-gradient-to-r from-gray-800 to-gray-700'
 							: 'bg-gradient-to-r from-gray-900 to-gray-800',
-					icon: vaultsRows[index].icon,
-					text: apr
-						? `Earn up to ${formatPercent(apr * 100, 2, 2)} on ${vaultsRows[index].symbol}`
-						: `Earn on ${vaultsRows[index].symbol}`,
-					href: `/v3/1/${vault.address}`,
+					icon: vault.icon,
+					text:
+						apr > 0
+							? `Earn up to ${formatPercent(apr * 100, 2, 2)} on ${vault.symbol}`
+							: `Earn on ${vault.symbol}`,
+					href: vault.href,
 					address: vault.address
 				};
-			}) as TRow[],
+			}),
 			appRows
 		];
 	}, [vaults]);
