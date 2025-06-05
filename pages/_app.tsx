@@ -3,6 +3,7 @@ import {Toaster} from 'react-hot-toast';
 import {usePathname} from 'next/navigation';
 import PlausibleProvider from 'next-plausible';
 import {LandingAppHeader} from 'apps/landing/components/common/Header';
+import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import AppHeader from '@lib/components/Header';
 import {Meta} from '@lib/components/Meta';
@@ -14,6 +15,7 @@ import {IconAlertCritical} from '@lib/icons/IconAlertCritical';
 import {IconAlertError} from '@lib/icons/IconAlertError';
 import {IconCheckmark} from '@lib/icons/IconCheckmark';
 import {cl} from '@lib/utils';
+import {variants} from '@lib/utils/animations';
 import {SUPPORTED_NETWORKS} from '@lib/utils/constants';
 
 import type {AppProps} from 'next/app';
@@ -76,10 +78,21 @@ const WithLayout = memo(function WithLayout(
 				id={'app'}
 				className={cl('mx-auto mb-0 flex font-aeonik')}>
 				<div className={'block size-full min-h-max'}>
-					<Component
-						router={props.router}
-						{...pageProps}
-					/>
+					<LazyMotion features={domAnimation}>
+						<AnimatePresence mode={'wait'}>
+							<motion.div
+								key={props.router.asPath}
+								initial={'initial'}
+								animate={'enter'}
+								exit={'exit'}
+								variants={variants}>
+								<Component
+									router={props.router}
+									{...pageProps}
+								/>
+							</motion.div>
+						</AnimatePresence>
+					</LazyMotion>
 				</div>
 			</div>
 		</>
