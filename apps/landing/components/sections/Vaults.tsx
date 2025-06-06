@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import Image from 'next/image';
-import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
+import {SectionHeader} from '@lib/components/SectionHeader';
 import {useYearn} from '@lib/contexts/useYearn';
 import {formatPercent} from '@lib/utils/format';
 

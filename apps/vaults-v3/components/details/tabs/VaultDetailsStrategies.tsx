@@ -1,6 +1,6 @@
 import {useMemo} from 'react';
-import {useSortVaults} from '@vaults/hooks/useSortVaults';
-import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
+import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
+import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {AllocationChart} from '@lib/components/AllocationChart';
@@ -13,7 +13,7 @@ import type {ReactElement} from 'react';
 import type {TAllocationChartData} from '@lib/components/AllocationChart';
 import type {TSortDirection} from '@lib/types';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
+import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
 
 function UnallocatedStrategy({
 	unallocatedPercentage,

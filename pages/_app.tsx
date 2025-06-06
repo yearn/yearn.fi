@@ -4,7 +4,7 @@ import {usePathname} from 'next/navigation';
 import PlausibleProvider from 'next-plausible';
 import {LandingAppHeader} from 'apps/landing/components/common/Header';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
-import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
+import {AppSettingsContextApp} from '@vaults-v2/contexts/useAppSettings';
 import AppHeader from '@lib/components/Header';
 import {Meta} from '@lib/components/Meta';
 import {WithFonts} from '@lib/components/WithFonts';
