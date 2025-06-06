@@ -1,4 +1,4 @@
-import {arbitrum, base, fantom, mainnet, optimism, polygon} from 'viem/chains';
+import {arbitrum, base, fantom, mainnet, optimism, polygon, sonic} from 'viem/chains';
 import {IconAbout} from '@lib/icons/IconAbout';
 import {IconFrontends} from '@lib/icons/IconFrontends';
 import {IconIntegrations} from '@lib/icons/IconIntegrations';
@@ -10,6 +10,8 @@ import {toAddress} from './tools.address';
 
 import type {TAddress, TNDict, TToken} from '@lib/types';
 import type {TApp} from '@lib/types/mixed';
+
+export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic];
 
 export const MULTICALL3_ADDRESS = toAddress('0xcA11bde05977b3631167028862bE2a173976CA11');
 
@@ -106,7 +108,6 @@ export const V3_STAKING_ZAP_ADDRESS: TNDict<TAddress> = {
 	[mainnet.id]: toAddress('0x5435cA9b6D9468A6e0404a4819D39ebbF036DB1E'),
 	[arbitrum.id]: toAddress('0x1E789A49902370E5858Fae67518aF49d8deA299c')
 }; //Address of the zap to deposit & stake for the v3 staking
-export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum];
 
 export const VAULTS_APPS: TApp[] = [
 	{
