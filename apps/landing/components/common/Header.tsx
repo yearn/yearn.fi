@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {ModalMobileMenu} from '@lib/components/ModalMobileMenu';
 import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
-import {LogoYearn} from '@lib/icons/LogoYearn';
+import {TypeMarkYearn} from '@lib/icons/TypeMarkYearn';
 
 type TMenu = {path: string; label: string | ReactElement; target?: string};
 type TNavbar = {nav: TMenu[]; currentPathName: string};
@@ -55,13 +55,17 @@ export function LandingAppHeader(): ReactElement {
 				<header className={'flex max-w-[1232px] items-center gap-4 py-1 md:justify-between md:!px-10 md:py-4'}>
 					<div className={'hidden flex-row items-center gap-x-3 md:flex'}>
 						<Link href={'/'}>
-							<LogoYearn
+							<TypeMarkYearn
+								className={'h-6 w-auto'}
+								color={'#E1E1E1'}
+							/>
+						</Link>
+						{/* <LogoYearn
 								className={'size-7'}
 								front={'text-black'}
 								back={'text-neutral-900'}
 							/>
-						</Link>
-						<span>{'Yearn'}</span>
+						<span>{'Yearn'}</span> */}
 					</div>
 					<Navbar
 						currentPathName={pathname || ''}
