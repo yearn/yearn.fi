@@ -1,8 +1,8 @@
 import {useMemo, useState} from 'react';
 import Link from 'next/link';
 import {motion} from 'framer-motion';
-import {findLatestAPY} from '@vaults/components/details/tabs/findLatestAPY';
-import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
+import {findLatestAPY} from '@vaults-v2/components/details/tabs/findLatestAPY';
+import {yDaemonReportsSchema} from '@vaults-v2/schemas/reportsSchema';
 import {getChainBgColor} from '@vaults-v3/utils';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {RenderAmount} from '@lib/components/RenderAmount';
@@ -16,7 +16,7 @@ import {getNetwork} from '@lib/utils/wagmi/utils';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@lib/types';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TYDaemonReports} from '@vaults/schemas/reportsSchema';
+import type {TYDaemonReports} from '@vaults-v2/schemas/reportsSchema';
 
 export function VaultsListStrategy({
 	details,
@@ -100,7 +100,7 @@ export function VaultsListStrategy({
 				'w-full group',
 				'relative transition-all duration-300 ease-in-out',
 
-				'text-white',
+				'text-neutral-900',
 				isExpanded ? 'rounded-b-none' : '',
 				variant === 'v2' ? '' : 'rounded-3xl',
 				isExpanded && variant === 'v2' ? 'bg-[#97979724] bg-opacity-[14]' : '',

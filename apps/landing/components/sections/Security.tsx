@@ -1,6 +1,6 @@
 import {type FC, useRef, useState} from 'react';
 import Link from 'next/link';
-import {SectionHeader} from 'apps/landing/components/common/SectionHeader';
+import {SectionHeader} from '@lib/components/SectionHeader';
 
 enum SecurityCardType {
 	Audits = 'audits',
@@ -41,7 +41,9 @@ const SecurityCard: FC<{
 	const [isHovered, set_isHovered] = useState(false);
 
 	const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
-		if (!cardRef.current) return;
+		if (!cardRef.current) {
+return;
+}
 
 		const rect = cardRef.current.getBoundingClientRect();
 		const x = e.clientX - rect.left;
@@ -75,17 +77,19 @@ const SecurityCard: FC<{
 						}}
 					/>
 				)}
-				<div className={`group-hover:bg/80 relative z-10  p-8 transition-all duration-300`}>
-					<h3 className={'mb-4 text-3xl transition-colors duration-300 group-hover:text-white'}>{title}</h3>
+				<div className={'group-hover:bg/80 relative z-10  p-8 transition-all duration-300'}>
+					<h3 className={'mb-4 text-3xl transition-colors duration-300 group-hover:text-neutral-900'}>
+						{title}
+					</h3>
 					<p
 						className={
-							'mb-4 text-[18px] text-white/70 transition-colors duration-300 group-hover:text-white/90 '
+							'mb-4 text-[18px] text-neutral-900/70 transition-colors duration-300 group-hover:text-neutral-900/90 '
 						}>
 						{description}
 					</p>
 					<div
 						className={
-							'group-hover:text-blue-200 flex items-center text-white transition-colors duration-300'
+							'group-hover:text-blue-200 flex items-center text-neutral-900 transition-colors duration-300'
 						}>
 						{'Learn More →'}
 					</div>

@@ -1,8 +1,8 @@
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
 import {zeroAddress} from 'viem';
-import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
-import {WithSolverContextApp} from '@vaults/contexts/useSolver';
+import {ActionFlowContextApp} from '@vaults-v2/contexts/useActionFlow';
+import {WithSolverContextApp} from '@vaults-v2/contexts/useSolver';
 import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper';

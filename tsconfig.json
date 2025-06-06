@@ -5,6 +5,7 @@
 		"paths": {
 			"@lib/*": ["apps/lib/*"],
 			"@vaults/*": ["apps/vaults/*"],
+			"@vaults-v2/*": ["apps/vaults-v2/*"],
 			"@vaults-v3/*": ["apps/vaults-v3/*"]
 		},
 		/* Basic Options */

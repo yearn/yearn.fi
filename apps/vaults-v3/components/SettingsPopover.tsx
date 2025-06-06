@@ -1,7 +1,7 @@
 import {Fragment, useMemo} from 'react';
 import {Popover, Transition} from '@headlessui/react';
-import {isSolverDisabled} from '@vaults/contexts/useSolver';
-import {Solver} from '@vaults/types/solvers';
+import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
+import {Solver} from '@vaults-v2/types/solvers';
 import {Renderable} from '@lib/components/Renderable';
 import {Switch} from '@lib/components/Switch';
 import {useYearn} from '@lib/contexts/useYearn';
@@ -10,7 +10,7 @@ import {cl} from '@lib/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TSolver} from '@vaults/types/solvers';
+import type {TSolver} from '@vaults-v2/types/solvers';
 
 type TSettingPopover = {
 	vault: TYDaemonVault;
