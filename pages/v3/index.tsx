@@ -364,6 +364,7 @@ function ListOfVaults(): ReactElement {
 		<Fragment>
 			<Filters
 				types={types}
+				shouldDebounce={true}
 				categories={categories}
 				searchValue={search || ''}
 				chains={chains}
