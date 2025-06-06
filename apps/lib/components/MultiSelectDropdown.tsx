@@ -57,7 +57,7 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 				onMouseLeave={() => set_isHovered(false)}>
 				<div className={'flex items-center'}>
 					{option?.icon ? (
-						<div className={'size-8 overflow-hidden rounded-full bg-white'}>{option.icon}</div>
+						<div className={'size-8 overflow-hidden rounded-full icon-bg-white'}>{option.icon}</div>
 					) : null}
 					<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
 						{option.label}{' '}
