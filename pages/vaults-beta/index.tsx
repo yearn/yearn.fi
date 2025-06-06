@@ -15,7 +15,7 @@ export default function Home(): ReactElement {
 	});
 
 	return (
-		<div className={'relative mb-4 mt-24 flex w-full justify-start rounded-lg p-4 md:mt-10'}>
+		<div className={'relative mb-4 mt-24 mx-auto flex w-full max-w-6xl justify-start rounded-lg p-4 md:mt-16'}>
 			<div className={'w-full pb-24'}>
 				<div className={'flex flex-col gap-y-10'}>
 					<VaultsBanner />

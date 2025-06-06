@@ -10,7 +10,7 @@ const VEYFI_DYFI_ADDRESS = toAddress('0x41252E8691e964f7DE35156B68493bAb6797a275
 export const APPS = {
 	V3: {
 		name: 'V3 Vaults',
-		href: 'https://yearn.fi/v3',
+		href: '/v3',
 		host: ['yearn.fi'],
 		pathname: '/v3',
 		icon: (
@@ -23,7 +23,7 @@ export const APPS = {
 	},
 	Vaults: {
 		name: 'Vaults',
-		href: 'https://yearn.fi/vaults',
+		href: '/vaults',
 		host: ['localhost:3000/vaults', 'https://yearn.fi/vaults'],
 		pathname: '/vaults',
 		icon: (
@@ -133,5 +133,18 @@ export const APPS = {
 		host: ['gimme.mom'],
 		pathname: 'unused',
 		icon: <LogoGimme className={'size-8'} />
+	},
+	Vaults_Beta: {
+		name: 'Vaults_Beta',
+		href: '/vaults-beta',
+		host: ['localhost:3000/vaults-beta', 'https://yearn.fi/vaults-beta'],
+		pathname: '/vaults-beta',
+		icon: (
+			<LogoYearn
+				className={'size-8'}
+				back={'text-white'}
+				front={'text-blue-500'}
+			/>
+		)
 	}
 };

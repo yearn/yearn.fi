@@ -106,6 +106,10 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 			return [...APPS[AppName.VAULTSV3].menu];
 		}
 
+		if (pathname.startsWith('/vaults-beta')) {
+			return [...APPS[AppName.BETA].menu];
+		}
+
 		if (pathname.startsWith('/vaults')) {
 			return [...APPS[AppName.VAULTS].menu];
 		}

@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import vaultsManifest from 'public/apps/vaults-manifest.json';
+import {VAULTS_BETA_MENU} from '@vaults/constants/menu';
 import {VAULTS_MENU} from '@vaults-v2/constants/menu';
 import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
@@ -12,6 +13,7 @@ import type {TMenu} from './Header';
 export enum AppName {
 	VAULTSV3 = 'V3',
 	VAULTS = 'Vaults',
+	BETA = 'Beta',
 	YCRV = 'yCRV',
 	VEYFI = 'veYFI',
 	YETH = 'yETH',
@@ -87,6 +89,19 @@ export const APPS: {[key in AppName]: TApp} = {
 			<LogoYearn
 				className={'size-8'}
 				back={'text-pink-400'}
+				front={'text-white'}
+			/>
+		)
+	},
+	Beta: {
+		name: `${AppName.BETA} Vaults`,
+		href: '/vaults-beta',
+		menu: VAULTS_BETA_MENU,
+		manifest: vaultsManifest,
+		icon: (
+			<LogoYearn
+				className={'size-8'}
+				back={'text-primary'}
 				front={'text-white'}
 			/>
 		)
