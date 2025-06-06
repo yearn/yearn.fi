@@ -32,7 +32,7 @@ export function LandingAppHeader(): ReactElement {
 	const [isMenuOpen, set_isMenuOpen] = useState<boolean>(false);
 
 	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/vaults', label: 'Vaults'};
+		const HOME_MENU = {path: '/apps', label: 'Apps'};
 
 		return [
 			HOME_MENU,

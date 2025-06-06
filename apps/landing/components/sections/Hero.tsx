@@ -80,6 +80,7 @@ export function Hero(): ReactElement {
 
 	return (
 		<>
+			{/* Desktop Hero Section */}
 			<div className={'hidden w-full justify-center overflow-hidden border-b border-white/10 md:flex'}>
 				<div
 					style={{
@@ -106,18 +107,19 @@ export function Hero(): ReactElement {
 								<Link href={'/v3'}>
 									<Button className={'md:text-[18px]'}>{'Explore Vaults'}</Button>
 								</Link>
-								<Link href={'/apps'}>
+								{/* <Link href={'/apps'}>
 									<Button
 										className={'md:text-[18px]'}
 										variant={'secondary'}>
 										{'View Apps'}
 									</Button>
-								</Link>
+								</Link> */}
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
+			{/* Mobile Hero Section */}
 			<div
 				className={'flex w-full flex-col items-center bg-white/5 px-4 py-16 md:hidden'}
 				style={{
@@ -152,7 +154,7 @@ export function Hero(): ReactElement {
 									{'Explore Vaults'}
 								</Button>
 							</Link>
-							<Link
+							{/* <Link
 								href={'/apps'}
 								className={'block w-full'}>
 								<Button
@@ -160,7 +162,7 @@ export function Hero(): ReactElement {
 									variant={'secondary'}>
 									{'View Apps'}
 								</Button>
-							</Link>
+							</Link> */}
 						</div>
 					</div>
 				</div>
