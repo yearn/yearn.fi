@@ -1,22 +1,22 @@
 import {useMemo, useState} from 'react';
 import Link from 'next/link';
 import {motion} from 'framer-motion';
-import {findLatestAPY} from '@vaults/components/details/tabs/findLatestAPY';
-import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
+import {findLatestAPY} from '@vaults-v2/components/details/tabs/findLatestAPY';
+import {yDaemonReportsSchema} from '@vaults-v2/schemas/reportsSchema';
 import {getChainBgColor} from '@vaults-v3/utils';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {RenderAmount} from '@lib/components/RenderAmount';
 import {useFetch} from '@lib/hooks/useFetch';
 import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
 import {IconLinkOut} from '@lib/icons/IconLinkOut';
-import {cl, formatPercent, truncateHex} from '@lib/utils';
+import {cl, formatPercent, toAddress, truncateHex} from '@lib/utils';
 import {formatDuration} from '@lib/utils/format.time';
 import {getNetwork} from '@lib/utils/wagmi/utils';
 
 import type {ReactElement} from 'react';
 import type {TAddress} from '@lib/types';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TYDaemonReports} from '@vaults/schemas/reportsSchema';
+import type {TYDaemonReports} from '@vaults-v2/schemas/reportsSchema';
 
 export function VaultsListStrategy({
 	details,
@@ -25,6 +25,7 @@ export function VaultsListStrategy({
 	name,
 	tokenAddress,
 	address,
+	isVault = false,
 	variant = 'v3',
 	apr,
 	fees,
@@ -36,6 +37,7 @@ export function VaultsListStrategy({
 	name: string;
 	tokenAddress: TAddress;
 	address: TAddress;
+	isVault?: boolean;
 	variant: 'v2' | 'v3';
 	apr: number | undefined;
 	fees: TYDaemonVault['apr']['fees'];
@@ -98,7 +100,7 @@ export function VaultsListStrategy({
 				'w-full group',
 				'relative transition-all duration-300 ease-in-out',
 
-				'text-white',
+				'text-neutral-900',
 				isExpanded ? 'rounded-b-none' : '',
 				variant === 'v2' ? '' : 'rounded-3xl',
 				isExpanded && variant === 'v2' ? 'bg-[#97979724] bg-opacity-[14]' : '',
@@ -206,15 +208,15 @@ export function VaultsListStrategy({
 							{/* First column */}
 							<div className={'flex flex-col gap-4'}>
 								<div className={'flex flex-wrap items-center gap-4'}>
-									{variant === 'v3' ? (
+									{variant === 'v3' && isVault ? (
 										<Link
-											href={`/v3/${chainId}/${address}`}
-											onClick={(event): void => event.stopPropagation()}
+											href={`/v3/${chainId}/${toAddress(address)}`}
+											target={'_blank'}
+											// onClick={(event): void => event.stopPropagation()}
 											style={{background: chainBgColor}} // needed for polygon vaults
 											className={cl(
 												'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80 '
-											)}
-											rel={'noopener noreferrer'}>
+											)}>
 											{'Vault'}
 											<IconLinkOut className={'inline-block size-4'} />
 										</Link>

@@ -1,17 +1,13 @@
-import React, {memo, useState} from 'react';
+import React, {memo} from 'react';
 import {Toaster} from 'react-hot-toast';
 import {usePathname} from 'next/navigation';
 import PlausibleProvider from 'next-plausible';
 import {LandingAppHeader} from 'apps/landing/components/common/Header';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
-import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
+import {AppSettingsContextApp} from '@vaults-v2/contexts/useAppSettings';
 import AppHeader from '@lib/components/Header';
 import {Meta} from '@lib/components/Meta';
-import {MobileNavbar} from '@lib/components/MobileNavbar';
-import {MobileTopNav} from '@lib/components/MobileTopNav';
-import {Sidebar} from '@lib/components/Sidebar';
 import {WithFonts} from '@lib/components/WithFonts';
-import {SearchContextApp} from '@lib/contexts/useSearch';
 import {YearnContextApp} from '@lib/contexts/useYearn';
 import {WithMom} from '@lib/contexts/WithMom';
 import {useCurrentApp} from '@lib/hooks/useCurrentApp';
@@ -20,7 +16,7 @@ import {IconAlertError} from '@lib/icons/IconAlertError';
 import {IconCheckmark} from '@lib/icons/IconCheckmark';
 import {cl} from '@lib/utils';
 import {variants} from '@lib/utils/animations';
-import {MENU_TABS, SUPPORTED_NETWORKS} from '@lib/utils/constants';
+import {SUPPORTED_NETWORKS} from '@lib/utils/constants';
 
 import type {AppProps} from 'next/app';
 import type {NextRouter} from 'next/router';
@@ -47,68 +43,29 @@ const WithLayout = memo(function WithLayout(
 	props: {router: NextRouter; supportedNetworks: Chain[]} & AppProps
 ): ReactElement {
 	const {Component, pageProps} = props;
-	const {name} = useCurrentApp(props.router);
-	const [isSearchOpen, set_isSearchOpen] = useState(false);
-	const [isNavbarOpen, set_isNavbarOpen] = useState(false);
 	const isAppsPage = props.router.asPath?.startsWith('/apps');
 	const pathName = usePathname();
 
 	if (isAppsPage) {
 		return (
-			<SearchContextApp>
+			<>
+				<div
+					className={cl(
+						'mx-auto mb-0 flex z-[60] font-aeonik max-w-6xl absolute top-0 inset-x-0 bg-neutral-0'
+					)}>
+					<AppHeader supportedNetworks={props.supportedNetworks} />
+				</div>
 				<div
 					id={'app'}
-					className={'mb-0 flex min-h-screen justify-center bg-gray-900 font-aeonik'}>
+					className={'mb-0 flex min-h-screen justify-center bg-neutral-0 font-aeonik'}>
 					<div className={'flex w-full max-w-[1230px] justify-start'}>
-						<motion.nav className={'fixed z-50 w-full md:hidden'}>
-							<MobileTopNav
-								isNavbarOpen={isNavbarOpen}
-								isSearchOpen={isSearchOpen}
-								set_isSearchOpen={set_isSearchOpen}
-								set_isNavbarOpen={set_isNavbarOpen}
-							/>
-						</motion.nav>
-						{isNavbarOpen && (
-							<motion.nav
-								className={'sticky top-16 z-50 h-[calc(100vh-64px)] w-screen md:hidden'}
-								initial={{y: '100%'}} // Start from below the screen
-								animate={{y: 0}} // Animate to the original position
-								exit={{y: '100%'}} // Exit back to below the screen
-								transition={{type: 'tween', stiffness: 300, damping: 30}} // Add transition for smooth animation
-							>
-								<MobileNavbar
-									onClose={() => {
-										set_isNavbarOpen(false);
-										set_isSearchOpen(false);
-									}}
-								/>
-							</motion.nav>
-						)}
-						<motion.nav className={'top-0 z-20 hidden h-screen py-4 pl-4 md:fixed md:block'}>
-							<Sidebar tabs={MENU_TABS} />
-						</motion.nav>
-						<LazyMotion features={domAnimation}>
-							<AnimatePresence mode={'wait'}>
-								<motion.div
-									key={`${props.router.asPath}-${props.router.query.query}`}
-									initial={'initial'}
-									animate={'enter'}
-									exit={'exit'}
-									variants={variants}
-									className={cl(
-										'w-full overflow-x-hidden md:ml-[305px]',
-										isSearchOpen ? 'mt-16' : ''
-									)}>
-									<Component
-										router={props.router}
-										{...pageProps}
-									/>
-								</motion.div>
-							</AnimatePresence>
-						</LazyMotion>
+						<Component
+							router={props.router}
+							{...pageProps}
+						/>
 					</div>
 				</div>
-			</SearchContextApp>
+			</>
 		);
 	}
 
@@ -124,7 +81,7 @@ const WithLayout = memo(function WithLayout(
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
 							<motion.div
-								key={`${name}_${props.router.asPath}`}
+								key={props.router.asPath}
 								initial={'initial'}
 								animate={'enter'}
 								exit={'exit'}

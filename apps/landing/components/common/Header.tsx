@@ -2,8 +2,8 @@ import {type ReactElement, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {ModalMobileMenu} from '@lib/components/ModalMobileMenu';
-import {IconBurger} from '@lib/icons/IconBurger';
-import {LogoYearn} from '@lib/icons/LogoYearn';
+import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
+import {TypeMarkYearn} from '@lib/icons/TypeMarkYearn';
 
 type TMenu = {path: string; label: string | ReactElement; target?: string};
 type TNavbar = {nav: TMenu[]; currentPathName: string};
@@ -36,14 +36,14 @@ export function LandingAppHeader(): ReactElement {
 
 		return [
 			HOME_MENU,
+			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
+			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'},
+			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
 			{
 				path: 'https://gov.yearn.fi/',
-				label: 'Governance',
+				label: 'Discourse',
 				target: '_blank'
-			},
-			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
-			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
-			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'}
+			}
 		];
 	}, []);
 
@@ -52,26 +52,33 @@ export function LandingAppHeader(): ReactElement {
 			id={'head'}
 			className={'inset-x-0 top-0 z-50 mt-4 w-full md:mt-7'}>
 			<div className={'w-full'}>
-				<header className={'flex max-w-[1232px] items-center justify-between py-1 md:!px-10 md:py-4'}>
-					<div className={'flex md:hidden'}>
-						<button onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
-							<span className={'sr-only'}>{'Open menu'}</span>
-							<IconBurger />
-						</button>
-					</div>
-					<div className={'flex justify-center'}>
+				<header className={'flex max-w-[1232px] items-center gap-4 py-1 md:justify-between md:!px-10 md:py-4'}>
+					<div className={'hidden flex-row items-center gap-x-3 md:flex'}>
 						<Link href={'/'}>
-							<LogoYearn
-								className={'size-10'}
-								front={'text-black'}
-								back={'text-white'}
+							<TypeMarkYearn
+								className={'h-6 w-auto'}
+								color={'#E1E1E1'}
 							/>
 						</Link>
+						{/* <LogoYearn
+								className={'size-7'}
+								front={'text-black'}
+								back={'text-neutral-900'}
+							/>
+						<span>{'Yearn'}</span> */}
 					</div>
 					<Navbar
 						currentPathName={pathname || ''}
 						nav={menu}
 					/>
+					<div className={'flex md:hidden'}>
+						<button
+							className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
+							onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
+							<span className={'sr-only'}>{'Open menu'}</span>
+							<IconBurgerPlain />
+						</button>
+					</div>
 				</header>
 			</div>
 			<ModalMobileMenu

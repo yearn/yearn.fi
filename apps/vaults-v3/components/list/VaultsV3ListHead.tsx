@@ -73,7 +73,7 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 					<button
 						onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
 						disabled={!token.sortable}
-						className={cl('yearn--table-head-label-wrapper group hover:text-white')}>
+						className={cl('yearn--table-head-label-wrapper group hover:text-neutral-900')}>
 						<p
 							className={cl(
 								'yearn--table-head-label',

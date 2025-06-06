@@ -31,8 +31,16 @@ module.exports = {
 					800: '#181818',
 					900: '#0C0C0C'
 				},
+				steelGray: {
+					500: 'hsl(var(--color-steelGray-500))'
+				},
+				lightBlue: {
+					500: 'hsl(var(--color-lightBlue-500))'
+				},
 				blue: {
-					500: '#0657F9'
+					500: 'hsl(var(--color-blue-500))',
+					800: 'hsl(var(--color-blue-800))',
+					900: 'hsl(var(--color-blue-900))'
 				},
 				fallback: '#808080'
 			},

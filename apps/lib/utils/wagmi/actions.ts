@@ -1,10 +1,10 @@
 import {erc20Abi} from 'viem';
 import {readContract} from 'wagmi/actions';
-import {getEthZapperContract} from '@vaults/utils';
-import {ERC_4626_ROUTER_ABI} from '@vaults/utils/abi/erc4626Router.abi';
-import {VAULT_MIGRATOR_ABI} from '@vaults/utils/abi/vaultMigrator.abi';
-import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
-import {ZAP_OPT_ETH_TO_YVETH_ABI} from '@vaults/utils/abi/zapOptEthToYvEth';
+import {getEthZapperContract} from '@vaults-v2/utils';
+import {ERC_4626_ROUTER_ABI} from '@vaults-v2/utils/abi/erc4626Router.abi';
+import {VAULT_MIGRATOR_ABI} from '@vaults-v2/utils/abi/vaultMigrator.abi';
+import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi';
+import {ZAP_OPT_ETH_TO_YVETH_ABI} from '@vaults-v2/utils/abi/zapOptEthToYvEth';
 import {assert, assertAddress, MAX_UINT_256, toAddress} from '@lib/utils';
 import {PARTNER_VAULT_ABI} from '@lib/utils/abi/partner.vault.abi';
 import {VAULT_ABI} from '@lib/utils/abi/vault.abi';

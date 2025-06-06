@@ -8,35 +8,49 @@ type TProps = {
 	pageCount: number;
 	numberOfItems: number;
 	onPageChange: (selectedItem: {selected: number}) => void;
+	currentPage?: number;
 };
 
-export function Pagination(props: TProps): ReactElement {
-	const {
-		range: [from, to],
-		pageCount,
-		numberOfItems,
-		onPageChange
-	} = props;
+export function Pagination({
+	range: [from, to],
+	pageCount,
+	numberOfItems,
+	onPageChange,
+	currentPage = 0
+}: TProps): ReactElement {
+	const handlePrevious = (): void => {
+		if (currentPage === 0) {
+return;
+}
+		onPageChange({selected: currentPage - 1});
+	};
+
+	const handleNext = (): void => {
+		if (currentPage >= pageCount - 1) {
+return;
+}
+		onPageChange({selected: currentPage + 1});
+	};
 
 	return (
 		<>
 			<div className={'flex flex-1 justify-between md:hidden'}>
-				<a
-					role={'button'}
-					href={'#'}
+				<button
+					onClick={handlePrevious}
+					disabled={currentPage <= 0}
 					className={
-						'hover:bg-gray-50 relative inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-500'
+						'hover:bg-gray-50 relative inline-flex items-center rounded-md bg-neutral-200 px-4 py-2 text-sm text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40'
 					}>
 					{'Previous'}
-				</a>
-				<a
-					role={'button'}
-					href={'#'}
+				</button>
+				<button
+					onClick={handleNext}
+					disabled={currentPage >= pageCount - 1}
 					className={
-						'hover:bg-gray-50 relative ml-3 inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-500'
+						'hover:bg-gray-50 relative inline-flex items-center rounded-md bg-neutral-200 px-4 py-2 text-sm text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40'
 					}>
 					{'Next'}
-				</a>
+				</button>
 			</div>
 			<div className={'hidden md:flex md:items-center md:justify-center'}>
 				<div className={'ml-3 flex-1'}>
@@ -65,6 +79,7 @@ export function Pagination(props: TProps): ReactElement {
 					onPageChange={onPageChange}
 					pageRangeDisplayed={3}
 					pageCount={pageCount}
+					forcePage={currentPage}
 					previousLabel={
 						<IconPaginationArrow
 							className={'mt-1 size-3 opacity-10 transition-opacity hover:opacity-100'}

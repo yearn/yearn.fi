@@ -1,43 +1,135 @@
-import Marquee from 'react-fast-marquee';
+import {useState} from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import {SectionHeader} from '@lib/components/SectionHeader';
 
-import type {ReactElement} from 'react';
+import type {FC} from 'react';
 
-const PARTNERS = [
-	{src: '/landing/partners/aave.png', width: 220},
-	{src: '/landing/partners/ajna.png', width: 173},
-	{src: '/landing/partners/compound.png', width: 246},
-	{src: '/landing/partners/curve.png', width: 175},
-	{src: '/landing/partners/lido.png', width: 182},
-	{src: '/landing/partners/pendle.png', width: 257},
-	{src: '/landing/partners/sky.png', width: 130},
-	{src: '/landing/partners/spark.png', width: 194},
-	{src: '/landing/partners/swell.png', width: 142}
+type TPartner = {
+	image: string;
+	alt: string;
+	href: string;
+	size?: number;
+};
+
+const partners: TPartner[] = [
+	{
+		image: '/landing/x/curve.png',
+		alt: 'Curve',
+		href: 'https://curve.yearn.space/'
+	},
+	{
+		image: '/landing/x/morpho.png',
+		alt: 'Morpho',
+		href: 'https://morpho.yearn.space/'
+	},
+	{
+		image: '/landing/x/katana.png',
+		alt: 'Katana',
+		href: 'https://katana.yearn.space/',
+		size: 40
+	},
+	{
+		image: '/landing/x/aerodrome.png',
+		alt: 'Aerodrome',
+		href: 'https://aerodrome.yearn.space/'
+	},
+	{
+		image: '/landing/x/velodrome.png',
+		alt: 'Velodrome',
+		href: 'https://velodrome.yearn.space/'
+	},
+	{
+		image: '/landing/x/pooltogether.png',
+		alt: 'PoolTogether',
+		href: 'https://pooltogether.yearn.space/',
+		size: 40
+	}
 ];
 
-export function Partners(): ReactElement {
+const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 40}) => {
+	const [isHovered, set_isHovered] = useState(false);
 	return (
-		<div className={'flex w-full justify-center'}>
-			<div className={'h-20 w-full'}>
-				<Marquee
-					gradient
-					gradientColor={'#080A0C'}
-					pauseOnHover={true}
-					className={'grid h-full overflow-hidden'}>
-					{PARTNERS.map(partner => (
+		<Link
+			href={href}
+			className={'block flex-1'}>
+			<div
+				className={
+					'relative flex h-20 cursor-pointer items-center justify-center rounded-lg bg-gray-800 p-4 transition-colors duration-200 hover:bg-blue-500 lg:h-full lg:p-6'
+				}
+				onMouseEnter={() => set_isHovered(true)}
+				onMouseLeave={() => set_isHovered(false)}>
+				{isHovered && (
+					<div
+						className={
+							'absolute -top-12 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-700 px-3 py-2 text-sm text-neutral-900 lg:block'
+						}>
+						{alt}
 						<div
-							className={'mx-5 flex h-full max-h-[32px] flex-col items-center justify-center pr-10'}
-							key={partner.src}>
-							<Image
-								src={partner.src}
-								alt={'partner'}
-								width={partner.width}
-								height={32}
+							className={
+								'absolute left-1/2 top-full size-0 -translate-x-1/2 border-x-4 border-t-4 border-transparent border-t-gray-700'
+							}>
+      </div>
+					</div>
+				)}
+				<Image
+					src={image}
+					alt={alt}
+					width={size}
+					height={size}
+					className={'object-contain'}
+					style={{
+						maxWidth: `${size}px`,
+						maxHeight: `${size}px`
+					}}
+				/>
+			</div>
+		</Link>
+	);
+};
+
+export const Partners: FC = () => (
+	<section className={'flex w-full justify-center  py-16 lg:py-32'}>
+		<div className={'flex w-full max-w-[1180px] flex-col items-center justify-between  lg:flex-row '}>
+			<div className={'flex w-full flex-col gap-4 px-4'}>
+				<SectionHeader
+					tagline={'Partners'}
+					title={'Yearn X'}
+					description={'Collaborations exploring yield opportunities with our partners'}
+				/>
+
+				{/* Mobile */}
+				<div className={'flex flex-col gap-4 pt-8 lg:hidden'}>
+					<div className={'grid grid-cols-2 gap-2'}>
+						{partners.map((partner, index) => (
+							<PartnerLogo
+								key={index}
+								image={partner.image}
+								alt={partner.alt}
+								href={partner.href}
+								size={partner.size}
 							/>
+						))}
+					</div>
+				</div>
+
+				{/* Desktop */}
+				<div className={'hidden gap-4 pt-8 md:pt-14 lg:flex lg:flex-row'}>
+					<div className={'flex size-full h-[128px] flex-col gap-2'}>
+						<div className={'flex flex-1 flex-row gap-2'}>
+							{partners.map((partner, index) => (
+								<PartnerLogo
+									key={index}
+									image={partner.image}
+									alt={partner.alt}
+									href={partner.href}
+									size={partner.size}
+								/>
+							))}
 						</div>
-					))}
-				</Marquee>
+					</div>
+				</div>
 			</div>
 		</div>
-	);
-}
+	</section>
+);

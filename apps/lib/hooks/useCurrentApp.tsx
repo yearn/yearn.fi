@@ -1,7 +1,7 @@
 import {useMemo} from 'react';
 import landingManifest from 'public/apps/landing-manifest.json';
 import homeManifest from 'public/manifest.json';
-import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
+import {VaultsHeader} from '@vaults-v2/components/header/VaultsHeader';
 import {AppName, APPS} from '@lib/components/Apps';
 
 import type {NextRouter} from 'next/router';

@@ -49,7 +49,7 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 				<div className={'mt-6 flex w-full items-center md:ml-auto md:mt-0 md:justify-end'}>
 					<Link
 						className={'w-full'}
-						href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
+						href={`/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 						<button
 							className={cl(
 								'rounded-lg overflow-hidden flex',

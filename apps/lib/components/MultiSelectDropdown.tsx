@@ -23,6 +23,8 @@ type TMultiSelectProps = {
 	onSelect: (options: TMultiSelectOptionProps[]) => void;
 	buttonClassName?: string;
 	comboboxOptionsClassName?: string;
+	customRender?: ReactElement;
+	customDefaultLabel?: string;
 };
 
 function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
@@ -56,7 +58,9 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 				onMouseEnter={() => set_isHovered(true)}
 				onMouseLeave={() => set_isHovered(false)}>
 				<div className={'flex items-center'}>
-					{option?.icon ? <div className={'size-8 overflow-hidden rounded-full'}>{option.icon}</div> : null}
+					{option?.icon ? (
+						<div className={'size-8 overflow-hidden rounded-full bg-white'}>{option.icon}</div>
+					) : null}
 					<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
 						{option.label}{' '}
 						<span
@@ -131,7 +135,14 @@ const getFilteredOptions = ({
 	});
 };
 
-export function MultiSelectDropdown({options, onSelect, placeholder = '', ...props}: TMultiSelectProps): ReactElement {
+export function MultiSelectDropdown({
+	options,
+	onSelect,
+	placeholder = '',
+	customDefaultLabel = 'All',
+	customRender,
+	...props
+}: TMultiSelectProps): ReactElement {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [query, set_query] = useState('');
 	const areAllSelected = useMemo((): boolean => options.every(({isSelected}): boolean => isSelected), [options]);
@@ -149,7 +160,7 @@ export function MultiSelectDropdown({options, onSelect, placeholder = '', ...pro
 	const getDisplayName = useCallback(
 		(options: TMultiSelectOptionProps[]): string => {
 			if (areAllSelected) {
-				return 'All';
+				return customDefaultLabel;
 			}
 
 			const selectedOptions = options.filter(({isSelected}): boolean => isSelected);
@@ -164,7 +175,7 @@ export function MultiSelectDropdown({options, onSelect, placeholder = '', ...pro
 
 			return 'Multiple';
 		},
-		[areAllSelected, placeholder]
+		[areAllSelected, placeholder, customDefaultLabel]
 	);
 
 	const handleOnCheckboxClick = useCallback(
@@ -212,29 +223,37 @@ export function MultiSelectDropdown({options, onSelect, placeholder = '', ...pro
 			}}
 			multiple>
 			<div className={'relative w-full'}>
-				<Combobox.Button
-					onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
-					className={cl(
-						props.buttonClassName,
-						'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
-					)}>
-					<Combobox.Input
+				{customRender ? (
+					<Combobox.Button
+						className={'flex items-center justify-between'}
+						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}>
+						{customRender}
+					</Combobox.Button>
+				) : (
+					<Combobox.Button
+						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
 						className={cl(
-							'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none',
-							options.every(({isSelected}): boolean => !isSelected)
-								? 'text-neutral-400'
-								: 'text-neutral-900'
-						)}
-						displayValue={getDisplayName}
-						placeholder={placeholder}
-						spellCheck={false}
-						onChange={(event): void => set_query(event.target.value)}
-					/>
-					<IconChevron
-						aria-hidden={'true'}
-						className={`size-6 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
-					/>
-				</Combobox.Button>
+							props.buttonClassName,
+							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
+						)}>
+						<Combobox.Input
+							className={cl(
+								'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none',
+								options.every(({isSelected}): boolean => !isSelected)
+									? 'text-neutral-400'
+									: 'text-neutral-900'
+							)}
+							displayValue={getDisplayName}
+							placeholder={placeholder}
+							spellCheck={false}
+							onChange={(event): void => set_query(event.target.value)}
+						/>
+						<IconChevron
+							aria-hidden={'true'}
+							className={`size-6 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
+						/>
+					</Combobox.Button>
+				)}
 				<Transition
 					as={Fragment}
 					show={isOpen}
@@ -248,7 +267,7 @@ export function MultiSelectDropdown({options, onSelect, placeholder = '', ...pro
 					<Combobox.Options
 						className={cl(
 							props.comboboxOptionsClassName,
-							'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'
+							'absolute top-12 z-50 flex w-full min-w-[256px] cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'
 						)}>
 						<SelectAllOption
 							key={'select-all'}

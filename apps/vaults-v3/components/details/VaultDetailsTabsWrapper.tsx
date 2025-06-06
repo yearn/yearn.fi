@@ -3,7 +3,7 @@ import {useRouter} from 'next/router';
 import {watchAsset} from 'viem/actions';
 import {getConnectorClient} from 'wagmi/actions';
 import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react';
-import {VaultInfo} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
+import {VaultInfo} from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
 import {Renderable} from '@lib/components/Renderable';
