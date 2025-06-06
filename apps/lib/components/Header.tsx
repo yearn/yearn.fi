@@ -26,7 +26,8 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 						key={option.path}
 						target={option.target}
 						href={option.path}>
-						<p className={`yearn--header-nav-item ${currentPathName === option.path ? 'active' : ''}`}>
+						<p
+							className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}>
 							{option?.label || 'Unknown'}
 						</p>
 					</Link>

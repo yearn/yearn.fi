@@ -22,9 +22,9 @@ type TMotionDiv = {
 
 const transition = {duration: 0.4, ease: 'easeInOut'};
 const variants = {
-	initial: {y: -80, opacity: 0, transition},
-	enter: {y: 0, opacity: 1, transition},
-	exit: {y: -80, opacity: 0, transition}
+	initial: {opacity: 0, transition},
+	enter: {opacity: 1, transition},
+	exit: {opacity: 0, transition}
 };
 function MotionDiv({animate, name, children}: TMotionDiv): ReactElement {
 	return (

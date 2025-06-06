@@ -15,7 +15,7 @@ export function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault})
 	return (
 		<Link
 			prefetch={false}
-			href={`/v2/${currentVault.chainID}/${toAddress(currentVault.address)}?action=withdraw`}
+			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}?action=withdraw`}
 			className={'w-full'}>
 			<div className={'yearn--table-wrapper bg-neutral-900 text-neutral-0'}>
 				<div className={'yearn--table-token-section'}>

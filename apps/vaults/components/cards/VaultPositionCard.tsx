@@ -20,7 +20,7 @@ export const VaultPositionCard: FC<{
 	const isV3 = vault.version.startsWith('3') || vault.version.startsWith('~3');
 	const href = isV3
 		? `/v3/${vault.chainID}/${toAddress(vault.address)}`
-		: `/v2/${vault.chainID}/${toAddress(vault.address)}`;
+		: `/vaults/${vault.chainID}/${toAddress(vault.address)}`;
 
 	return (
 		<Link href={href}>

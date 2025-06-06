@@ -44,10 +44,6 @@
 	font-display: swap;
 }
 
-p {
-	font-weight: 300;
-}
-
 #main {
 	@apply flex flex-col w-full h-full min-h-screen bg-neutral-0;
 }
@@ -495,12 +491,4 @@ input:-webkit-autofill:active {
 	color: white !important;
 	-webkit-text-fill-color: white !important;
 	caret-color: white !important;
-}
-
-p {
-	font-weight: 300;
-}
-
-.font-number {
-	font-weight: 400;
 }
