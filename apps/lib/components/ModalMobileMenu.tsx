@@ -125,7 +125,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 						<div className={'yearn--modal fixed bottom-0 mb-0 h-full max-w-full'}>
 							<div className={'flex items-center justify-between border-b border-[#292929] p-6'}>
 								<button onClick={onClose}>
-									<IconClose className={'text-neutral-900'} />
+									<IconClose />
 								</button>
 								<Link href={'/'}>
 									<LogoYearn
