@@ -170,13 +170,29 @@ function ListOfVaults(): ReactElement {
 		if (!search) {
 			return activeVaults;
 		}
-		const filtered = activeVaults.filter((vault: TYDaemonVault): boolean => {
+
+		/**********************************************************************************************
+		 * Create a regex pattern from the search term, escaping special regex characters to prevent
+		 * errors and enabling case-insensitive matching for better user experience
+		 *********************************************************************************************/
+		let searchRegex: RegExp;
+		try {
+			// Escape special regex characters but allow basic wildcard functionality
+			const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			searchRegex = new RegExp(escapedSearch, 'i'); // 'i' flag for case-insensitive
+		} catch (error) {
+			// Fallback to simple case-insensitive search if regex creation fails
 			const lowercaseSearch = search.toLowerCase();
-			const searchableFields =
-				`${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
-					.toLowerCase()
-					.split(' ');
-			return searchableFields.some((word): boolean => word.includes(lowercaseSearch));
+			return activeVaults.filter((vault: TYDaemonVault): boolean => {
+				const searchableText =
+					`${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase();
+				return searchableText.includes(lowercaseSearch);
+			});
+		}
+
+		const filtered = activeVaults.filter((vault: TYDaemonVault): boolean => {
+			const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`;
+			return searchRegex.test(searchableText);
 		});
 		return filtered;
 	}, [activeVaults, search]);
@@ -374,6 +390,7 @@ function ListOfVaults(): ReactElement {
 		<Fragment>
 			<Filters
 				types={types}
+				shouldDebounce={true}
 				categories={categories}
 				searchValue={search || ''}
 				chains={chains}
