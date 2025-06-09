@@ -1,7 +1,7 @@
 import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {deserialize, serialize} from 'wagmi';
 import {useLocalStorageValue} from '@react-hookz/web';
-import {Solver, type TSolver} from '@vaults/types/solvers';
+import {Solver, type TSolver} from '@vaults-v2/types/solvers';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useFetchYearnEarnedForUser} from '@lib/hooks/useFetchYearnEarnedForUser';
 import {useFetchYearnPrices} from '@lib/hooks/useFetchYearnPrices';

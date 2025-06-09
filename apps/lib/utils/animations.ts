@@ -1,13 +1,13 @@
 export const transition = {duration: 0.4, ease: 'easeInOut'};
 
 export const variants = {
-	initial: {y: -80, opacity: 0, transition},
+	initial: {y: 0, opacity: 0, transition},
 	enter: {y: 0, opacity: 1, transition},
-	exit: {y: -80, opacity: 0, transition}
+	exit: {y: 0, opacity: 0, transition}
 };
 
 export const TABS_VARIANTS = {
-	initial: {y: 10, opacity: 0},
-	enter: {y: 0, opacity: 1},
-	exit: {y: -10, opacity: 0}
+	initial: {y: 0, opacity: 0, transition},
+	enter: {y: 0, opacity: 1, transition},
+	exit: {y: 0, opacity: 0, transition}
 };

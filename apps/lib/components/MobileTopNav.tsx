@@ -2,7 +2,6 @@ import {type ReactElement, useCallback} from 'react';
 import {useRouter} from 'next/router';
 import {useSearch} from '@lib/contexts/useSearch';
 import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
-import {IconCross} from '@lib/icons/IconCross';
 import {IconSearch} from '@lib/icons/IconSearch';
 import {LogoYearn} from '@lib/icons/LogoYearn';
 
@@ -10,12 +9,10 @@ import {SearchBar} from './SearchBar';
 
 export function MobileTopNav({
 	isSearchOpen,
-	isNavbarOpen,
 	set_isSearchOpen,
 	set_isNavbarOpen
 }: {
 	isSearchOpen: boolean;
-	isNavbarOpen: boolean;
 	set_isSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	set_isNavbarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }): ReactElement {
@@ -33,13 +30,15 @@ export function MobileTopNav({
 	return (
 		<div className={'z-50 bg-gray-900'}>
 			<div className={'flex w-full items-center justify-between bg-gray-900 p-4'}>
-				<div className={'flex items-center'}>
+				<div className={'flex items-center gap-4'}>
 					<button
-						className={'mr-4 flex size-6 items-center justify-center'}
+						className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
 						onClick={() => set_isNavbarOpen(prev => !prev)}>
-						{isNavbarOpen ? <IconCross /> : <IconBurgerPlain />}
+						<span className={'sr-only'}>{'Open menu'}</span>
+						<IconBurgerPlain />
 					</button>
 					<button
+						className={'hidden md:block'}
 						onClick={() => {
 							router.push('/');
 							set_isSearchOpen(false);

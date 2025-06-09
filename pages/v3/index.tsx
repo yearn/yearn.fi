@@ -1,9 +1,9 @@
 import {Children, Fragment, useMemo, useState} from 'react';
 import {motion} from 'framer-motion';
-import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
-import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
-import {useSortVaults} from '@vaults/hooks/useSortVaults';
-import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
+import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
+import {useVaultFilter} from '@vaults-v2/hooks/useFilteredVaults';
+import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
+import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
 import {Filters} from '@vaults-v3/components/Filters';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
@@ -17,7 +17,7 @@ import {cl, isZero} from '@lib/utils';
 import type {ReactElement, ReactNode} from 'react';
 import type {TSortDirection} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
+import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
 
 function Background(): ReactElement {
 	return (
@@ -209,20 +209,11 @@ function ListOfVaults(): ReactElement {
 		// Add migratable vaults to holdings (guaranteed to have balance)
 		for (const vault of migratableVaults) {
 			const key = `${vault.chainID}_${vault.address}`;
-			holdings.push(
-				<VaultsV3ListRow
-					key={key}
-					currentVault={vault}
-				/>
-			);
-			processedForHoldings.add(key);
-		}
-
-		// Add retired vaults to holdings (guaranteed to have balance)
-		for (const vault of retiredVaults) {
-			const key = `${vault.chainID}_${vault.address}`;
-			if (!processedForHoldings.has(key)) {
-				// Avoid duplicates
+			const balance = getBalance({address: vault.address, chainID: vault.chainID});
+			const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID});
+			const hasBalance = balance.raw > 0n;
+			const hasStakingBalance = stakingBalance.raw > 0n;
+			if (hasBalance || hasStakingBalance) {
 				holdings.push(
 					<VaultsV3ListRow
 						key={key}
@@ -230,6 +221,25 @@ function ListOfVaults(): ReactElement {
 					/>
 				);
 				processedForHoldings.add(key);
+			}
+		}
+
+		// Add retired vaults to holdings (guaranteed to have balance)
+		for (const vault of retiredVaults) {
+			const key = `${vault.chainID}_${vault.address}`;
+			if (!processedForHoldings.has(key)) {
+				// Avoid duplicates
+				const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
+				const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
+				if (hasBalance || hasStakingBalance) {
+					holdings.push(
+						<VaultsV3ListRow
+							key={key}
+							currentVault={vault}
+						/>
+					);
+					processedForHoldings.add(key);
+				}
 			}
 		}
 

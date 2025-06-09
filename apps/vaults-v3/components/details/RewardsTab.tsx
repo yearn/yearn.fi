@@ -8,7 +8,7 @@ import {
 	stakeVeYFIGauge as stakeVeYFIAction,
 	unstake as unstakeAction,
 	unstakeVeYFIGauge as unstakeVeYFIAction
-} from '@vaults/utils/actions';
+} from '@vaults-v2/utils/actions';
 import {stakeYBold, unstakeYBold} from '@vaults-v3/utils/actions';
 import {Button} from '@lib/components/Button';
 import {Counter} from '@lib/components/Counter';
@@ -22,7 +22,7 @@ import {approveERC20, defaultTxStatus} from '@lib/utils/wagmi';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
+import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData';
 
 /**************************************************************************************************
  ** The BoostMessage component will display a message to the user if the current vault has staking
