@@ -157,3 +157,16 @@ export function encodeFunctionCall(args: TEncodeFunctionCallArgs): TEncodeFuncti
 export function allowanceKey(chainID: number, token: TAddress, spender: TAddress, owner: TAddress): string {
 	return `${chainID}_${token}_${spender}_${owner}`;
 }
+/**
+ * Replace multiple string instances in a single string
+ * @param inputString
+ * @param stringsToReplace
+ * @param replacement
+ */
+ 
+export const replaceStrings = (inputString: string, stringsToReplace: string[], replacement: string): string => {
+	return stringsToReplace.reduce((outputString, stringToReplace) => {
+		const regex = new RegExp(stringToReplace, 'g');
+		return outputString.replace(regex, replacement);
+	}, inputString);
+};
