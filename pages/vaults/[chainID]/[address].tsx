@@ -79,15 +79,16 @@ function Index(): ReactElement | null {
 	}
 
 	return (
-		<div className={'mx-auto my-0 max-w-6xl pt-4 md:mb-0 md:mt-24'}>
+		<div className={'mx-auto my-0 mt-24 max-w-6xl md:mb-0'}>
 			<header className={'pointer-events-none flex w-full items-center justify-center'}>
 				<motion.div
 					key={'Vaults'}
 					initial={'initial'}
 					animate={'enter'}
 					variants={variants}
-					className={'pointer-events-none -mt-16 size-12 cursor-pointer md:-mt-0 md:size-[72px]'}>
+					className={'pointer-events-none cursor-pointer md:-mt-0 '}>
 					<ImageWithFallback
+						className={'size-12 md:size-[72px]'}
 						src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
 							currentVault.token.address
 						)}/logo-128.png`}

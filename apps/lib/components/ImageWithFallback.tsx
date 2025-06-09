@@ -1,12 +1,13 @@
 import React, {useState} from 'react';
 import Image from 'next/image';
 import {useUpdateEffect} from '@react-hookz/web';
+import {cl} from '@lib/utils';
 
 import type {ImageProps} from 'next/image';
 import type {CSSProperties, ReactElement} from 'react';
 
 function ImageWithFallback(props: ImageProps & {altSrc?: string}): ReactElement {
-	const {alt, src, altSrc, ...rest} = props;
+	const {alt, src, altSrc, className, ...rest} = props;
 	const [imageSrc, set_imageSrc] = useState(altSrc ? src : `${src}?fallback=true`);
 	const [imageStyle, set_imageStyle] = useState<CSSProperties>({});
 
@@ -15,17 +16,24 @@ function ImageWithFallback(props: ImageProps & {altSrc?: string}): ReactElement 
 		set_imageStyle({});
 	}, [src]);
 
+	// Check if className contains size classes that should override width/height
+	const hasSizeClasses = className && /\b(size-|w-|h-)/i.test(className);
+
 	return (
 		<Image
 			alt={alt}
 			src={imageSrc}
 			loading={'eager'}
-			className={'animate-fadeIn'}
+			className={cl('animate-fadeIn', className)}
 			style={{
-				minWidth: props.width,
-				minHeight: props.height,
-				maxWidth: props.width,
-				maxHeight: props.height,
+				...(hasSizeClasses
+					? {}
+					: {
+							minWidth: props.width,
+							minHeight: props.height,
+							maxWidth: props.width,
+							maxHeight: props.height
+						}),
 				...imageStyle
 			}}
 			onError={(): void => {

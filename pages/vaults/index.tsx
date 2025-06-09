@@ -335,7 +335,7 @@ function ListOfVaults(): ReactElement {
 function Index(): ReactElement {
 	return (
 		<div className={'mx-auto my-0 max-w-6xl pt-4 md:mb-0 md:mt-16'}>
-			<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
+			<section className={'mt-16 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
 				<HeaderUserPosition />
 				<ListOfVaults />
 			</section>
