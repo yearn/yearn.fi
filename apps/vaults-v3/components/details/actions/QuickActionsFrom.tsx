@@ -2,7 +2,7 @@ import {useCallback, useEffect, useMemo} from 'react';
 import {useRouter} from 'next/router';
 import {erc20Abi} from 'viem';
 import {useBlockNumber, useReadContracts} from 'wagmi';
-import {useActionFlow} from '@vaults/contexts/useActionFlow';
+import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
 import {Renderable} from '@lib/components/Renderable';
 import {Dropdown} from '@lib/components/TokenDropdown';
 import {useWeb3} from '@lib/contexts/useWeb3';
@@ -32,7 +32,7 @@ import {getNetwork} from '@lib/utils/wagmi';
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TNormalizedBN} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
+import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData';
 
 function AmountWithOptionalTooltip(props: {
 	canOnlyWithdrawSome: boolean;

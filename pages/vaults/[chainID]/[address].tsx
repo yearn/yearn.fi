@@ -1,10 +1,10 @@
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
-import {VaultDetailsTabsWrapper} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
-import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
-import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
-import {WithSolverContextApp} from '@vaults/contexts/useSolver';
+import {VaultDetailsTabsWrapper} from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper';
+import {VaultActionsTabsWrapper} from '@vaults-v2/components/details/VaultActionsTabsWrapper';
+import {ActionFlowContextApp} from '@vaults-v2/contexts/useActionFlow';
+import {WithSolverContextApp} from '@vaults-v2/contexts/useSolver';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {useWeb3} from '@lib/contexts/useWeb3';

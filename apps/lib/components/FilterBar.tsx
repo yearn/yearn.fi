@@ -7,7 +7,7 @@ function FilterItem({isActive, title}: {isActive: boolean; title: string}): Reac
 	return (
 		<div
 			className={cl(
-				'border-1 whitespace-nowrap max-h-10 px-6 py-2 text-base text-white border',
+				'border-1 whitespace-nowrap max-h-10 px-6 py-2 text-base text-neutral-900 border',
 				isActive ? 'border-white' : 'border-white/15'
 			)}>
 			{title}
