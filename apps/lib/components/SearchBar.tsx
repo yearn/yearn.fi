@@ -1,8 +1,8 @@
+import {type ChangeEvent, type ReactElement, useEffect, useState} from 'react';
+import {useDebouncedCallback} from '@react-hookz/web';
 import {IconEnter} from '@lib/icons/IconEnter';
 import {IconSearch} from '@lib/icons/IconSearch';
 import {cl} from '@lib/utils';
-
-import type {ChangeEvent, ReactElement} from 'react';
 
 type TSearchBar = {
 	searchPlaceholder: string;
@@ -12,10 +12,52 @@ type TSearchBar = {
 	iconClassName?: string;
 	inputClassName?: string;
 	shouldSearchByClick?: boolean;
+	shouldDebounce?: boolean;
 	onSearchClick?: () => void;
 };
 
 export function SearchBar(props: TSearchBar): ReactElement {
+	/**********************************************************************************************
+	 ** Create local search state for immediate UI feedback while debouncing the actual search
+	 ** functionality. This provides a responsive user experience while preventing excessive
+	 ** filtering operations and URL updates that could degrade performance.
+	 *********************************************************************************************/
+	const [localSearchValue, set_localSearchValue] = useState<string>(props.searchValue || '');
+
+	/**********************************************************************************************
+	 ** Create a debounced search handler that delays the actual search operation by 300ms.
+	 ** This prevents excessive filtering and URL updates while the user is actively typing,
+	 ** improving both performance and user experience.
+	 *********************************************************************************************/
+	const debouncedSearch = useDebouncedCallback(
+		(searchValue: string) => {
+			props.onSearch(searchValue);
+		},
+		[props.onSearch],
+		1000
+	);
+
+	/**********************************************************************************************
+	 ** Handle search input changes by immediately updating the local state for UI responsiveness
+	 ** and triggering the debounced search operation for the actual filtering.
+	 *********************************************************************************************/
+	const handleSearchChange = (searchValue: string): void => {
+		set_localSearchValue(searchValue);
+		if (props.shouldDebounce) {
+			debouncedSearch(searchValue);
+			return;
+		}
+		props.onSearch(searchValue);
+	};
+
+	/**********************************************************************************************
+	 ** Synchronize local search state when the search prop changes from external sources
+	 ** such as URL navigation, browser back/forward, or programmatic updates.
+	 *********************************************************************************************/
+	useEffect(() => {
+		set_localSearchValue(props.searchValue || '');
+	}, [props.searchValue]);
+
 	return (
 		<>
 			<div
@@ -33,14 +75,14 @@ export function SearchBar(props: TSearchBar): ReactElement {
 						)}
 						type={'text'}
 						placeholder={props.searchPlaceholder}
-						value={props.searchValue || ''}
+						value={localSearchValue || ''}
 						onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-							props.onSearch(e.target.value);
+							handleSearchChange(e.target.value);
 						}}
 						onKeyDown={e => {
 							if (!props.shouldSearchByClick) {
-return;
-}
+								return;
+							}
 							if (e.key === 'Enter') {
 								return props.onSearchClick?.();
 							}

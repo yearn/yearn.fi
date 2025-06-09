@@ -14,6 +14,7 @@ type TListHero = {
 	categories: string[] | null;
 	chains: number[] | null;
 	searchValue: string;
+	shouldDebounce: boolean;
 	onChangeTypes: (newType: string[] | null) => void;
 	onChangeChains: (chains: number[] | null) => void;
 	onChangeCategories: (categories: string[] | null) => void;
@@ -28,6 +29,7 @@ export function Filters({
 	searchValue,
 	chains,
 	onSearch,
+	shouldDebounce,
 	onChangeChains
 }: TListHero): ReactElement {
 	const [shouldExpandFilters, set_shouldExpandFilters] = useState(false);
@@ -86,6 +88,7 @@ export function Filters({
 					searchPlaceholder={'YFI Vault'}
 					searchValue={searchValue}
 					onSearch={onSearch}
+					shouldDebounce={shouldDebounce || false}
 				/>
 			</div>
 			<div
