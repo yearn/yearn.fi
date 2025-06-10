@@ -576,8 +576,9 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address});
 		if (currentVault.staking.available) {
 			const stakingToken = getToken({chainID: currentVault.chainID, address: currentVault.staking.address});
-			return toNormalizedBN(vaultToken.balance.raw + stakingToken.balance.raw, vaultToken.decimals);
+			return toNormalizedBN(vaultToken.balance.raw + stakingToken.balance.raw, stakingToken.decimals);
 		}
+
 		return toNormalizedBN(vaultToken.balance.raw, vaultToken.decimals);
 	}, [
 		currentVault.address,
@@ -586,6 +587,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 		currentVault.staking.available,
 		getToken
 	]);
+
 	return (
 		<div className={'flex flex-col pt-0 text-right'}>
 			<p
