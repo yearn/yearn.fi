@@ -10,7 +10,7 @@ import {getNetwork} from '@lib/utils/wagmi';
 import {useBalances} from './useBalances.multichains';
 
 import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
-import type {TDict, TToken, TYChainTokens, TYToken} from '@lib/types';
+import type {TDict, TNDict, TToken, TYChainTokens} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function useYearnTokens({
@@ -219,7 +219,7 @@ export function useYearnBalances({
 	vaultsRetired: TDict<TYDaemonVault>;
 	isLoadingVaultList: boolean;
 }): {
-	balances: TYChainTokens;
+	balances: TNDict<TDict<TToken>>;
 	isLoadingBalances: boolean;
 	onRefresh: (tokenToUpdate?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
 } {
@@ -234,89 +234,31 @@ export function useYearnBalances({
 		tokens: allTokens,
 		priorityChainID: chainID
 	});
-	const balances = useDeepCompareMemo((): TYChainTokens => {
-		const filteredTokens: TYChainTokens = {};
+	const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
+		const filteredTokens: TNDict<TDict<TToken>> = {};
 		for (const chainID in tokensRaw) {
-			if (Object.prototype.hasOwnProperty.call(tokensRaw, chainID)) {
-				const chainTokens = tokensRaw[chainID];
-				const intermediateFilteredChainTokens: TDict<TToken> = {};
-				for (const address in chainTokens) {
-					if (Object.prototype.hasOwnProperty.call(chainTokens, address)) {
-						const tokenData = chainTokens[address];
-						// Only include if tokenData and its balance exists, and raw balance is greater than 0
-						if (
-							tokenData?.balance &&
-							typeof tokenData.balance.raw === 'bigint' &&
-							tokenData.balance.raw > 0n
-						) {
-							intermediateFilteredChainTokens[address] = tokenData;
-						}
-					}
-				}
-
-				if (Object.keys(intermediateFilteredChainTokens).length > 0) {
-					const transformedChainTokens: TDict<TYToken> = {};
-					for (const address in intermediateFilteredChainTokens) {
-						if (Object.prototype.hasOwnProperty.call(intermediateFilteredChainTokens, address)) {
-							const token = intermediateFilteredChainTokens[address];
-							// YOU NEED TO DEFINE HOW TO GET stakingValue
-							// This is a placeholder. Replace with your actual logic.
-							const stakingValue = 0; // Example: calculate or fetch staking value
-							transformedChainTokens[address] = {
-								...token,
-								stakingValue
-							};
-						}
-					}
-					filteredTokens[Number(chainID)] = transformedChainTokens;
+			const chainTokens = tokensRaw[chainID];
+			const intermediateFilteredChainTokens: TDict<TToken> = {};
+			for (const address in chainTokens) {
+				const tokenData = chainTokens[address];
+				// Only include if raw balance is greater than 0 or staking is available (staking balance will be checked in the next step)
+				if (tokenData.balance.raw > 0n || vaults[toAddress(address)]?.staking) {
+					intermediateFilteredChainTokens[address] = tokenData;
 				}
 			}
+			filteredTokens[Number(chainID)] = intermediateFilteredChainTokens;
 		}
 		return filteredTokens;
-	}, [tokensRaw]);
+	}, [tokensRaw, vaults]);
 
 	const onRefresh = useCallback(
 		async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
-			const updatedRawBalances = tokenToUpdate ? await onUpdateSome(tokenToUpdate) : await onUpdate();
-
-			const filteredRefreshedTokens: TYChainTokens = {};
-			for (const chainID in updatedRawBalances) {
-				if (Object.prototype.hasOwnProperty.call(updatedRawBalances, chainID)) {
-					const chainTokens = updatedRawBalances[chainID];
-					const intermediateFilteredChainTokens: TDict<TToken> = {};
-					for (const address in chainTokens) {
-						if (Object.prototype.hasOwnProperty.call(chainTokens, address)) {
-							const tokenData = chainTokens[address];
-							// Only include if tokenData and its balance exists, and raw balance is greater than 0
-							if (
-								tokenData?.balance &&
-								typeof tokenData.balance.raw === 'bigint' &&
-								tokenData.balance.raw > 0n
-							) {
-								intermediateFilteredChainTokens[address] = tokenData;
-							}
-						}
-					}
-
-					if (Object.keys(intermediateFilteredChainTokens).length > 0) {
-						const transformedChainTokens: TDict<TYToken> = {};
-						for (const address in intermediateFilteredChainTokens) {
-							if (Object.prototype.hasOwnProperty.call(intermediateFilteredChainTokens, address)) {
-								const token = intermediateFilteredChainTokens[address];
-								// YOU NEED TO DEFINE HOW TO GET stakingValue
-								// This is a placeholder. Replace with your actual logic.
-								const stakingValue = 0; // Example: calculate or fetch staking value
-								transformedChainTokens[address] = {
-									...token,
-									stakingValue
-								};
-							}
-						}
-						filteredRefreshedTokens[Number(chainID)] = transformedChainTokens;
-					}
-				}
+			if (tokenToUpdate) {
+				const updatedBalances = await onUpdateSome(tokenToUpdate);
+				return updatedBalances as TYChainTokens;
 			}
-			return filteredRefreshedTokens;
+			const updatedBalances = await onUpdate();
+			return updatedBalances as TYChainTokens;
 		},
 		[onUpdate, onUpdateSome]
 	);

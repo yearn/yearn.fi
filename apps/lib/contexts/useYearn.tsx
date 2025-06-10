@@ -13,7 +13,7 @@ import {useYearnBalances} from './useYearn.helper';
 import type {ReactElement} from 'react';
 import type {KeyedMutator} from 'swr';
 import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
-import type {TAddress, TDict, TNormalizedBN, TYChainTokens, TYToken} from '@lib/types';
+import type {TAddress, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens} from '@lib/types';
 import type {TYDaemonEarned} from '@lib/utils/schemas/yDaemonEarnedSchema';
 import type {TYDaemonPricesChain} from '@lib/utils/schemas/yDaemonPricesSchema';
 import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
@@ -41,24 +41,23 @@ export type TYearnContext = {
 	set_isAutoStakingEnabled: (value: boolean) => void;
 	//
 	//Yearn wallet context
-	getToken: ({address, chainID}: TTokenAndChain) => TYToken;
+	getToken: ({address, chainID}: TTokenAndChain) => TToken;
 	getBalance: ({address, chainID}: TTokenAndChain) => TNormalizedBN;
 	getPrice: ({address, chainID}: TTokenAndChain) => TNormalizedBN;
-	balances: TYChainTokens;
+	balances: TNDict<TDict<TToken>>;
 	cumulatedValueInV2Vaults: number;
 	cumulatedValueInV3Vaults: number;
 	isLoading: boolean;
 	onRefresh: (tokenList?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
 };
 
-const defaultToken: TYToken = {
+const defaultToken: TToken = {
 	address: toAddress(''),
 	name: '',
 	symbol: '',
 	decimals: 18,
 	chainID: 1,
 	value: 0,
-	stakingValue: 0,
 	balance: zeroNormalizedBN
 };
 
@@ -86,7 +85,7 @@ const YearnContext = createContext<TYearnContext>({
 	set_isAutoStakingEnabled: (): void => undefined,
 	//
 	//Yearn wallet context
-	getToken: (): TYToken => defaultToken,
+	getToken: (): TToken => defaultToken,
 	getBalance: (): TNormalizedBN => zeroNormalizedBN,
 	getPrice: (): TNormalizedBN => zeroNormalizedBN,
 	balances: {},
@@ -136,7 +135,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	});
 
 	const getToken = useCallback(
-		({address, chainID}: TTokenAndChain): TYToken => balances?.[chainID || 1]?.[address] || defaultToken,
+		({address, chainID}: TTokenAndChain): TToken => balances?.[chainID || 1]?.[address] || defaultToken,
 		[balances]
 	);
 
@@ -170,6 +169,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 				) {
 					continue;
 				}
+
 				const tokenBalance = tokenData.balance;
 				const tokenPrice = getPrice({address: tokenData.address, chainID: tokenData.chainID});
 				const tokenValue = tokenBalance.normalized * tokenPrice.normalized;
