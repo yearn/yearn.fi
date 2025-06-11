@@ -157,16 +157,18 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	);
 
 	const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
+		const allVaults = {
+			...vaults,
+			...vaultsMigrations,
+			...vaultsRetired
+		};
+
 		let cumulatedValueInV2Vaults = 0;
 		let cumulatedValueInV3Vaults = 0;
 
 		for (const perChain of Object.values(balances)) {
 			for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
-				if (
-					!vaults?.[toAddress(tokenData.address)] &&
-					!vaultsMigrations?.[toAddress(tokenData.address)] &&
-					!vaultsRetired?.[toAddress(tokenData.address)]
-				) {
+				if (!allVaults?.[toAddress(tokenData.address)]) {
 					continue;
 				}
 
@@ -175,7 +177,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 				const tokenValue = tokenBalance.normalized * tokenPrice.normalized;
 
 				let stakingValue = 0;
-				const vaultDetails = vaults[toAddress(tokenData.address)]; // Attempt to get the vault from the main 'vaults' collection
+				const vaultDetails = allVaults[toAddress(tokenAddress)];
 
 				if (vaultDetails?.staking) {
 					// Check if vaultDetails and its staking property exist
@@ -185,27 +187,13 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 						// Ensure staking.address is also valid
 						const stakingAddress = staking.address;
 						const stakingBalance = getBalance({address: stakingAddress, chainID: tokenData.chainID});
+
 						stakingValue = stakingBalance.normalized * tokenPrice.normalized;
 					}
 				}
 
-				if (vaults?.[toAddress(tokenAddress)]) {
-					const vaultDetail = vaults[toAddress(tokenAddress)];
-					if (vaultDetail.version.split('.')?.[0] === '3' || vaultDetail.version.split('.')?.[0] === '~3') {
-						cumulatedValueInV3Vaults += tokenValue + stakingValue;
-					} else {
-						cumulatedValueInV2Vaults += tokenValue + stakingValue;
-					}
-				} else if (vaultsMigrations?.[toAddress(tokenAddress)]) {
-					const vaultDetail = vaultsMigrations[toAddress(tokenAddress)];
-					if (vaultDetail.version.split('.')?.[0] === '3' || vaultDetail.version.split('.')?.[0] === '~3') {
-						cumulatedValueInV3Vaults += tokenValue + stakingValue;
-					} else {
-						cumulatedValueInV2Vaults += tokenValue + stakingValue;
-					}
-				} else if (vaultsRetired?.[toAddress(tokenAddress)]) {
-					const vaultDetail = vaultsRetired[toAddress(tokenAddress)];
-					if (vaultDetail.version.split('.')?.[0] === '3' || vaultDetail.version.split('.')?.[0] === '~3') {
+				if (allVaults?.[toAddress(tokenAddress)]) {
+					if (vaultDetails.version.split('.')?.[0] === '3' || vaultDetails.version.split('.')?.[0] === '~3') {
 						cumulatedValueInV3Vaults += tokenValue + stakingValue;
 					} else {
 						cumulatedValueInV2Vaults += tokenValue + stakingValue;
