@@ -168,7 +168,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 
 		for (const perChain of Object.values(balances)) {
 			for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
-				if (!allVaults?.[toAddress(tokenData.address)]) {
+				if (!allVaults?.[toAddress(tokenAddress)]) {
 					continue;
 				}
 
