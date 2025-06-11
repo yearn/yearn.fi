@@ -33,12 +33,12 @@ import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData';
  *************************************************************************************************/
 function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive: boolean}): ReactElement {
 	const hasVaultData = Boolean(props.currentVault.staking.available);
-	const vaultDataource = props.currentVault.staking.source;
+	const vaultDataSource = props.currentVault.staking.source;
 	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR;
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith('/v3');
 
-	if (hasVaultData && !props.hasStakingRewardsLive && vaultDataource !== 'VeYFI') {
+	if (hasVaultData && !props.hasStakingRewardsLive && vaultDataSource !== 'VeYFI') {
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
@@ -55,7 +55,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		);
 	}
 
-	if (hasVaultData && vaultDataource === 'OP Boost') {
+	if (hasVaultData && vaultDataSource === 'OP Boost') {
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
@@ -76,7 +76,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		);
 	}
 
-	if (hasVaultData && vaultDataource === 'VeYFI') {
+	if (hasVaultData && vaultDataSource === 'VeYFI') {
 		return (
 			<div className={'col-span-12 mt-0 hidden'}>
 				<div
@@ -106,7 +106,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		);
 	}
 
-	if (hasVaultData && vaultDataource === 'Juiced') {
+	if (hasVaultData && vaultDataSource === 'Juiced') {
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
@@ -136,7 +136,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		);
 	}
 
-	if (hasVaultData && vaultDataource === 'V3 Staking') {
+	if (hasVaultData && vaultDataSource === 'V3 Staking') {
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
