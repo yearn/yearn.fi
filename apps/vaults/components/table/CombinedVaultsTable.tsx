@@ -2,13 +2,13 @@ import {useEffect, useMemo, useState} from 'react';
 import {TFilter, VAULT_PAGE_SIZE} from '@vaults/constants';
 import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
 import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants';
-import {useVaultFilter} from '@vaults-v2/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
 import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {Pagination} from '@lib/components/Pagination';
 import {SearchBar} from '@lib/components/SearchBar';
 import {useYearn} from '@lib/contexts/useYearn';
+import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
 
 import {ChainFilterDropdown} from '../filters/ChainFilterDropdown';
 import {VersionFilterDropdown} from '../filters/VersionFilterDropdown';

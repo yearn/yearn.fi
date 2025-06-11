@@ -1,7 +1,6 @@
 import {Children, Fragment, useMemo, useState} from 'react';
 import {motion} from 'framer-motion';
 import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
-import {useVaultFilter} from '@vaults-v2/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
 import {Filters} from '@vaults-v3/components/Filters';
@@ -12,6 +11,7 @@ import {V3Mask} from '@vaults-v3/Mark';
 import {Counter} from '@lib/components/Counter';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
+import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
 import {cl, isZero} from '@lib/utils';
 
 import type {ReactElement, ReactNode} from 'react';
