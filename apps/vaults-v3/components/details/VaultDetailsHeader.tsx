@@ -754,7 +754,9 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 			<div
 				className={cl(
 					'grid grid-cols-2 gap-6 w-full md:px-10',
-					currentVault.staking.available ? 'md:grid-cols-4' : 'md:grid-cols-3'
+					currentVault.staking.available && currentVault.staking.source !== 'yBOLD'
+						? 'md:grid-cols-4'
+						: 'md:grid-cols-3'
 				)}>
 				<div className={'w-full'}>
 					<TVLInVault
@@ -780,7 +782,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					/>
 				</div>
 
-				{currentVault.staking.available ? (
+				{currentVault.staking.available && currentVault.staking.source !== 'yBOLD' ? (
 					<div className={'w-full'}>
 						<ValueEarned
 							currentVault={currentVault}
