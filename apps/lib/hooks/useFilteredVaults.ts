@@ -73,10 +73,8 @@ export function useVaultFilter(
 
 	const filterMigrationCallback = useCallback(
 		(vault: TYDaemonVault): boolean => {
-			if (v3 && !vault.version?.startsWith('3') && !vault.version?.startsWith('~3')) {
-				return false;
-			}
-			if (!v3 && vault.version?.startsWith('3') && !vault.version?.startsWith('~3')) {
+			const isV3Vault = vault.version?.startsWith('3') || vault.version?.startsWith('~3');
+			if ((v3 && !isV3Vault) || (!v3 && isV3Vault)) {
 				return false;
 			}
 
