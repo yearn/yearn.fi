@@ -234,24 +234,11 @@ export function useYearnBalances({
 		tokens: allTokens,
 		priorityChainID: chainID
 	});
-	const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
-		const filteredTokens: TNDict<TDict<TToken>> = {};
-		const allVaults = {...vaults, ...vaultsMigrations, ...vaultsRetired};
-		for (const chainID in tokensRaw) {
-			const chainTokens = tokensRaw[chainID];
-			const intermediateFilteredChainTokens: TDict<TToken> = {};
-			for (const address in chainTokens) {
-				const tokenData = chainTokens[address];
 
-				// Only include if raw balance is greater than 0 or staking is available (staking balance will be checked in the next step)
-				if (tokenData.balance.raw > 0n || allVaults[toAddress(address)]?.staking) {
-					intermediateFilteredChainTokens[address] = tokenData;
-				}
-			}
-			filteredTokens[Number(chainID)] = intermediateFilteredChainTokens;
-		}
-		return filteredTokens;
-	}, [tokensRaw, vaults, vaultsMigrations, vaultsRetired]);
+	const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
+		const _tokens = {...tokensRaw};
+		return _tokens as TYChainTokens;
+	}, [tokensRaw]);
 
 	const onRefresh = useCallback(
 		async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
