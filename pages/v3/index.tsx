@@ -12,7 +12,7 @@ import {Counter} from '@lib/components/Counter';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
-import {cl, isZero} from '@lib/utils';
+import {cl, isZero, toNormalizedBN} from '@lib/utils';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TSortDirection} from '@lib/types';
@@ -139,7 +139,7 @@ function PortfolioCard(): ReactElement {
 	);
 }
 function ListOfVaults(): ReactElement {
-	const {getBalance} = useYearn();
+	const {getBalance, getPrice} = useYearn();
 	const {isLoadingVaultList} = useYearn();
 	const {
 		search,
@@ -269,9 +269,14 @@ function ListOfVaults(): ReactElement {
 				continue;
 			}
 
-			const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
-			const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
-			if (hasBalance || hasStakingBalance) {
+			const balance = getBalance({address: vault.address, chainID: vault.chainID});
+			const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID});
+			const price = getPrice({address: vault.address, chainID: vault.chainID});
+
+			const holdingsValue =
+				toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized;
+
+			if (holdingsValue > 0.001) {
 				holdings.push(
 					<VaultsV3ListRow
 						key={key}
@@ -327,16 +332,17 @@ function ListOfVaults(): ReactElement {
 
 		return [holdings, multi, single, all];
 	}, [
-		types,
-		categories,
-		chains,
-		getBalance,
-		isLoadingVaultList,
-		onReset,
-		search,
 		sortedVaultsToDisplay,
+		isLoadingVaultList,
+		chains,
+		categories,
 		migratableVaults,
-		retiredVaults
+		getBalance,
+		retiredVaults,
+		getPrice,
+		search,
+		types,
+		onReset
 	]);
 
 	function renderVaultList(): ReactNode {

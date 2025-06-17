@@ -17,7 +17,7 @@ import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
 import {IconChain} from '@lib/icons/IconChain';
-import {toAddress} from '@lib/utils';
+import {toAddress, toNormalizedBN} from '@lib/utils';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TSortDirection} from '@lib/types';
@@ -107,7 +107,7 @@ function ListOfMigratableVaults({migratableVaults}: {migratableVaults: TYDaemonV
 }
 
 function ListOfVaults(): ReactElement {
-	const {getBalance, isLoadingVaultList} = useYearn();
+	const {getBalance, isLoadingVaultList, getPrice} = useYearn();
 	const {
 		search,
 		types,
@@ -218,9 +218,14 @@ function ListOfVaults(): ReactElement {
 		const holdings: ReactNode[] = [];
 		const all: ReactNode[] = [];
 		for (const vault of filteredByChains) {
-			const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
-			const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
-			if (hasBalance || hasStakingBalance) {
+			const balance = getBalance({address: vault.address, chainID: vault.chainID});
+			const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID});
+			const price = getPrice({address: vault.address, chainID: vault.chainID});
+
+			const holdingsValue =
+				toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized;
+
+			if (holdingsValue > 0.001) {
 				holdings.push(
 					<VaultsListRow
 						key={`${vault.chainID}_${vault.address}`}
@@ -239,7 +244,7 @@ function ListOfVaults(): ReactElement {
 		}
 
 		return [holdings, all];
-	}, [sortedVaultsToDisplay, isLoadingVaultList, chains, search, types, onReset, getBalance]);
+	}, [sortedVaultsToDisplay, isLoadingVaultList, chains, search, types, onReset, getBalance, getPrice]);
 
 	const possibleLists = VaultList as [ReactNode, ReactNode];
 	const hasHoldings = Children.count(possibleLists[0]) > 0;
