@@ -38,33 +38,65 @@ function Index(): ReactElement | null {
 	});
 	// TODO: remove this workaround when possible
 	// <WORKAROUND>
+	const [isLoadingYBold, set_isLoadingYBold] = useState<boolean>(false);
 	const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8';
-	if (vault?.address === YBOLD_VAULT_ADDRESS) {
-		console.log('yBold vault detected');
-		vault.staking = {
-			address: '0x23346B04a7f55b8760E5860AA5A77383D63491cD',
-			available: true,
-			source: 'yBOLD',
-			rewards: [
-				{
-					address: zeroAddress,
-					name: 'null',
-					symbol: 'null',
-					decimals: 18,
-					price: 0,
-					isFinished: false,
-					finishedAt: 9748476800,
-					apr: null,
-					perWeek: 0
+
+	useEffect(() => {
+		if (vault && !currentVault && vault?.address === YBOLD_VAULT_ADDRESS) {
+			console.log('yBold vault detected');
+			// patch staking
+			vault.staking = {
+				address: '0x23346B04a7f55b8760E5860AA5A77383D63491cD',
+				available: true,
+				source: 'yBOLD',
+				rewards: [
+					{
+						address: zeroAddress,
+						name: 'null',
+						symbol: 'null',
+						decimals: 18,
+						price: 0,
+						isFinished: false,
+						finishedAt: 9748476800,
+						apr: null,
+						perWeek: 0
+					}
+				]
+			};
+
+			set_isLoadingYBold(true);
+			const params = new URLSearchParams({
+				strategiesDetails: 'withDetails',
+				strategiesCondition: 'inQueue'
+			});
+			let _stYBoldVault: TYDaemonVault = vault;
+
+			(async () => {
+				try {
+					const res = await fetch(`${yDaemonBaseUri}/vaults/${toAddress(vault.staking.address)}?${params}`);
+					const json = await res.json();
+					const parsed = yDaemonVaultSchema.parse(json);
+					_stYBoldVault = parsed;
+				} catch (error) {
+					console.error(error);
+				} finally {
+					// replace yBOLD apr data with stYBoldVault apr data
+					if (vault?.apr) {
+						vault.apr.netAPR = _stYBoldVault?.apr?.netAPR || vault.apr.netAPR || 0;
+						vault.apr.points = _stYBoldVault?.apr?.points || vault.apr.points || {};
+						vault.apr.pricePerShare = _stYBoldVault?.apr?.pricePerShare || vault.apr.pricePerShare || {};
+						// vault.apr.forwardAPR = _stYBoldVault?.apr?.forwardAPR || vault.apr.forwardAPR || {};
+					}
+					set_isLoadingYBold(false);
 				}
-			]
-		};
-	}
+			})();
+		}
+	}, [currentVault, vault, yDaemonBaseUri]);
 	// </WORKAROUND>
 
 	useEffect((): void => {
-		console.log('set currentVault');
 		if (vault && !currentVault) {
+			console.log('set currentVault');
 			set_currentVault(vault);
 			set_isInit(true);
 		}
@@ -83,7 +115,7 @@ function Index(): ReactElement | null {
 		}
 	}, [currentVault?.address, currentVault?.token?.address, address, isActive, onRefresh, currentVault?.chainID]);
 
-	if (isLoadingVault || !router.query.address || !isInit) {
+	if (isLoadingVault || isLoadingYBold || !router.query.address || !isInit) {
 		return (
 			<div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
 				<div className={'mt-[20%] flex h-10 items-center justify-center'}>
