@@ -6,7 +6,6 @@ import {VaultsListRetired} from '@vaults-v2/components/list/VaultsListRetired';
 import {VaultsListRow} from '@vaults-v2/components/list/VaultsListRow';
 import {ListHero} from '@vaults-v2/components/ListHero';
 import {ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants';
-import {useVaultFilter} from '@vaults-v2/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
 import {Button} from '@lib/components/Button';
@@ -16,6 +15,7 @@ import {Pagination} from '@lib/components/Pagination';
 import {Renderable} from '@lib/components/Renderable';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
+import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
 import {IconChain} from '@lib/icons/IconChain';
 import {toAddress} from '@lib/utils';
 
