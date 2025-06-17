@@ -73,6 +73,11 @@ export function useVaultFilter(
 
 	const filterMigrationCallback = useCallback(
 		(vault: TYDaemonVault): boolean => {
+			const isV3Vault = vault.version?.startsWith('3') || vault.version?.startsWith('~3');
+			if ((v3 && !isV3Vault) || (!v3 && isV3Vault)) {
+				return false;
+			}
+
 			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
 			if (vault.staking.available) {
 				const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID});
@@ -88,7 +93,7 @@ export function useVaultFilter(
 			}
 			return false;
 		},
-		[getBalance]
+		[getBalance, v3]
 	);
 
 	// Specific filter
