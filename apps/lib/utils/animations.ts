@@ -1,4 +1,4 @@
-export const transition = {duration: 0.4, ease: 'easeInOut'};
+export const transition = {duration: 0.2, ease: 'easeInOut'};
 
 export const variants = {
 	initial: {y: 0, opacity: 0, transition},
