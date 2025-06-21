@@ -2,18 +2,16 @@ import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {deserialize, serialize} from 'wagmi';
 import {useLocalStorageValue} from '@react-hookz/web';
 import {Solver, type TSolver} from '@vaults-v2/types/solvers';
-import {useWeb3} from '@lib/contexts/useWeb3';
 import {useFetchYearnEarnedForUser} from '@lib/hooks/useFetchYearnEarnedForUser';
 import {useFetchYearnPrices} from '@lib/hooks/useFetchYearnPrices';
 import {useFetchYearnVaults} from '@lib/hooks/useFetchYearnVaults';
-import {isZeroAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
+import {toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 
-import {useYearnBalances} from './useYearn.helper';
+import useWallet from './useWallet';
 
 import type {ReactElement} from 'react';
 import type {KeyedMutator} from 'swr';
-import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
-import type {TAddress, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens} from '@lib/types';
+import type {TAddress, TDict, TNormalizedBN} from '@lib/types';
 import type {TYDaemonEarned} from '@lib/utils/schemas/yDaemonEarnedSchema';
 import type {TYDaemonPricesChain} from '@lib/utils/schemas/yDaemonPricesSchema';
 import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
@@ -40,25 +38,10 @@ export type TYearnContext = {
 	set_zapProvider: (value: TSolver) => void;
 	set_isAutoStakingEnabled: (value: boolean) => void;
 	//
-	//Yearn wallet context
-	getToken: ({address, chainID}: TTokenAndChain) => TToken;
-	getBalance: ({address, chainID}: TTokenAndChain) => TNormalizedBN;
+	//Price context
 	getPrice: ({address, chainID}: TTokenAndChain) => TNormalizedBN;
-	balances: TNDict<TDict<TToken>>;
 	cumulatedValueInV2Vaults: number;
 	cumulatedValueInV3Vaults: number;
-	isLoading: boolean;
-	onRefresh: (tokenList?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
-};
-
-const defaultToken: TToken = {
-	address: toAddress(''),
-	name: '',
-	symbol: '',
-	decimals: 18,
-	chainID: 1,
-	value: 0,
-	balance: zeroNormalizedBN
 };
 
 const YearnContext = createContext<TYearnContext>({
@@ -83,20 +66,14 @@ const YearnContext = createContext<TYearnContext>({
 	set_zapSlippage: (): void => undefined,
 	set_zapProvider: (): void => undefined,
 	set_isAutoStakingEnabled: (): void => undefined,
-	//
-	//Yearn wallet context
-	getToken: (): TToken => defaultToken,
-	getBalance: (): TNormalizedBN => zeroNormalizedBN,
+
+	//Price context
 	getPrice: (): TNormalizedBN => zeroNormalizedBN,
-	balances: {},
 	cumulatedValueInV2Vaults: 0,
-	cumulatedValueInV3Vaults: 0,
-	isLoading: true,
-	onRefresh: async (): Promise<TYChainTokens> => ({})
+	cumulatedValueInV3Vaults: 0
 });
 
 export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
-	const {address: userAddress} = useWeb3();
 	const {value: maxLoss, set: set_maxLoss} = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
 		defaultValue: DEFAULT_MAX_LOSS,
 		parse: (str, fallback): bigint => (str ? deserialize(str) : (fallback ?? DEFAULT_MAX_LOSS)),
@@ -127,27 +104,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		return vaults;
 	}, [rawVaults]);
 
-	const {balances, isLoadingBalances, onRefresh} = useYearnBalances({
-		vaults,
-		vaultsMigrations,
-		vaultsRetired,
-		isLoadingVaultList: isLoading
-	});
-
-	const getToken = useCallback(
-		({address, chainID}: TTokenAndChain): TToken => balances?.[chainID || 1]?.[address] || defaultToken,
-		[balances]
-	);
-
-	const getBalance = useCallback(
-		({address, chainID}: TTokenAndChain): TNormalizedBN => {
-			if (isZeroAddress(userAddress)) {
-				return zeroNormalizedBN;
-			}
-			return balances?.[chainID || 1]?.[address]?.balance || zeroNormalizedBN;
-		},
-		[balances, userAddress]
-	);
+	const {balances, getBalance} = useWallet();
 
 	const getPrice = useCallback(
 		({address, chainID}: TTokenAndChain): TNormalizedBN => {
@@ -223,14 +180,9 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 				vaultsRetired,
 				isLoadingVaultList: isLoading,
 				mutateVaultList: mutate,
-				getToken,
-				getBalance,
 				getPrice,
-				balances: balances,
 				cumulatedValueInV2Vaults,
-				cumulatedValueInV3Vaults,
-				isLoading: isLoadingBalances || false,
-				onRefresh
+				cumulatedValueInV3Vaults
 			}}>
 			{children}
 		</YearnContext.Provider>

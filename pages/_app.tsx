@@ -8,6 +8,7 @@ import {AppSettingsContextApp} from '@vaults-v2/contexts/useAppSettings';
 import AppHeader from '@lib/components/Header';
 import {Meta} from '@lib/components/Meta';
 import {WithFonts} from '@lib/components/WithFonts';
+import {WalletContextApp} from '@lib/contexts/useWallet';
 import {YearnContextApp} from '@lib/contexts/useYearn';
 import {WithMom} from '@lib/contexts/WithMom';
 import {useCurrentApp} from '@lib/hooks/useCurrentApp';
@@ -135,12 +136,14 @@ function MyApp(props: AppProps): ReactElement {
 							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/popular.json'
 						]}>
 						<AppSettingsContextApp>
-							<YearnContextApp>
-								<WithLayout
-									supportedNetworks={SUPPORTED_NETWORKS}
-									{...props}
-								/>
-							</YearnContextApp>
+							<WalletContextApp>
+								<YearnContextApp>
+									<WithLayout
+										supportedNetworks={SUPPORTED_NETWORKS}
+										{...props}
+									/>
+								</YearnContextApp>
+							</WalletContextApp>
 						</AppSettingsContextApp>
 					</WithMom>
 				</PlausibleProvider>

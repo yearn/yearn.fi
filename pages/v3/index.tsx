@@ -10,6 +10,7 @@ import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/
 import {V3Mask} from '@vaults-v3/Mark';
 import {Counter} from '@lib/components/Counter';
 import {useWeb3} from '@lib/contexts/useWeb3';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
 import {cl, isZero, toNormalizedBN} from '@lib/utils';
@@ -139,8 +140,8 @@ function PortfolioCard(): ReactElement {
 	);
 }
 function ListOfVaults(): ReactElement {
-	const {getBalance, getPrice} = useYearn();
-	const {isLoadingVaultList} = useYearn();
+	const {getBalance} = useWallet();
+	const {getPrice, isLoadingVaultList} = useYearn();
 	const {
 		search,
 		types,

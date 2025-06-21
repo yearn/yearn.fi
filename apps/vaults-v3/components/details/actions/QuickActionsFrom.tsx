@@ -5,6 +5,7 @@ import {useBlockNumber, useReadContracts} from 'wagmi';
 import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
 import {Renderable} from '@lib/components/Renderable';
 import {Dropdown} from '@lib/components/TokenDropdown';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useYearnBalance} from '@lib/hooks/useYearnBalance';
@@ -109,7 +110,8 @@ export function VaultDetailsQuickActionsFrom(props: {
 	gaugeTotalSupply: number;
 }): ReactElement {
 	const {address, isActive, chainID} = useWeb3();
-	const {getToken, getPrice} = useYearn();
+	const {getToken} = useWallet();
+	const {getPrice} = useYearn();
 	const {data: blockNumber} = useBlockNumber({watch: true});
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith('/v3');

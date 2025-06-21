@@ -14,6 +14,7 @@ import {ListHead} from '@lib/components/ListHead';
 import {Pagination} from '@lib/components/Pagination';
 import {Renderable} from '@lib/components/Renderable';
 import {useWeb3} from '@lib/contexts/useWeb3';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
 import {IconChain} from '@lib/icons/IconChain';
@@ -107,7 +108,8 @@ function ListOfMigratableVaults({migratableVaults}: {migratableVaults: TYDaemonV
 }
 
 function ListOfVaults(): ReactElement {
-	const {getBalance, isLoadingVaultList, getPrice} = useYearn();
+	const {getBalance} = useWallet();
+	const {isLoadingVaultList, getPrice} = useYearn();
 	const {
 		search,
 		types,

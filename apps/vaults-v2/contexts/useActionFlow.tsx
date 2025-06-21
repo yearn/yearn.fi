@@ -9,6 +9,7 @@ import {VEYFI_ABI} from '@vaults-v2/utils/abi/veYFI.abi';
 import {setZapOption} from '@vaults-v2/utils/zapOptions';
 import {createUniqueID} from '@lib/contexts/useBalances.multichains';
 import {useWeb3} from '@lib/contexts/useWeb3';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useTokenList} from '@lib/contexts/WithTokenList';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
@@ -182,7 +183,8 @@ function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext);
 export function ActionFlowContextApp(props: {children: ReactNode; currentVault: TYDaemonVault}): React.ReactElement {
 	const {address} = useWeb3();
-	const {getBalance, maxLoss} = useYearn();
+	const {getBalance} = useWallet();
+	const {maxLoss} = useYearn();
 	const {tokenLists} = useTokenList();
 	const {zapProvider, isAutoStakingEnabled} = useYearn();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
