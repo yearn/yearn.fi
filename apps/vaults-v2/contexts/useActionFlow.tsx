@@ -7,9 +7,8 @@ import {Solver} from '@vaults-v2/types/solvers';
 import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi';
 import {VEYFI_ABI} from '@vaults-v2/utils/abi/veYFI.abi';
 import {setZapOption} from '@vaults-v2/utils/zapOptions';
-import {createUniqueID} from '@lib/contexts/useBalances.multichains';
-import {useWeb3} from '@lib/contexts/useWeb3';
 import {useWallet} from '@lib/contexts/useWallet';
+import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useTokenList} from '@lib/contexts/WithTokenList';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
@@ -36,6 +35,7 @@ import {
 	YVWFTM_ADDRESS
 } from '@lib/utils/constants';
 import externalzapOutTokenList from '@lib/utils/externalZapOutTokenList.json';
+import {createUniqueID} from '@lib/utils/tools.identifier';
 import {retrieveConfig} from '@lib/utils/wagmi';
 import {getNetwork} from '@lib/utils/wagmi/utils';
 
