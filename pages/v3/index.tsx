@@ -8,12 +8,11 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
-import {Counter} from '@lib/components/Counter';
 import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
-import {cl, isZero, toNormalizedBN} from '@lib/utils';
+import {cl, formatAmount, isZero, toNormalizedBN} from '@lib/utils';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TSortDirection} from '@lib/types';
@@ -132,10 +131,9 @@ function PortfolioCard(): ReactElement {
 					) : (
 						<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
 							{'$'}
-							<Counter
-								value={cumulatedValueInV3Vaults}
-								decimals={2}
-							/>
+							<span suppressHydrationWarning>
+								{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}
+							</span>
 						</b>
 					)}
 				</div>
