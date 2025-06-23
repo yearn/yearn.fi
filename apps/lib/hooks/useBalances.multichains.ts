@@ -677,6 +677,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			set_status({...defaultStatus, isSuccess: true});
 		}
 	}, [stringifiedTokens, userAddress, updateBalancesCall, props?.priorityChainID, startTransition]);
+
 	const contextValue = useDeepCompareMemo(
 		(): TUseBalancesRes => ({
 			data: isPending || isAccumulatingUpdates.current ? {} : balances || {},
