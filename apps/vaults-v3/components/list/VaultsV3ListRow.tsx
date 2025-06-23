@@ -625,7 +625,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 	const router = useRouter();
 	const prefetchTimeoutRef = useRef<NodeJS.Timeout>();
 	const hasPrefetchedRef = useRef(false);
-	const {getBalance} = useYearn();
+	const {getBalance} = useWallet();
 
 	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address});
 	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
