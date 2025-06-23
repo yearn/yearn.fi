@@ -136,14 +136,14 @@ function MyApp(props: AppProps): ReactElement {
 							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/popular.json'
 						]}>
 						<AppSettingsContextApp>
-							<WalletContextApp>
-								<YearnContextApp>
+							<YearnContextApp>
+								<WalletContextApp>
 									<WithLayout
 										supportedNetworks={SUPPORTED_NETWORKS}
 										{...props}
 									/>
-								</YearnContextApp>
-							</WalletContextApp>
+								</WalletContextApp>
+							</YearnContextApp>
 						</AppSettingsContextApp>
 					</WithMom>
 				</PlausibleProvider>

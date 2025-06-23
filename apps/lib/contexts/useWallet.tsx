@@ -2,19 +2,18 @@
 
 import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {serialize} from 'wagmi';
-import {useDeepCompareMemo, useLocalStorageValue} from '@react-hookz/web';
+import {useDeepCompareMemo} from '@react-hookz/web';
 
 import {useWeb3} from '../contexts/useWeb3';
-import {useAsyncTrigger} from '../hooks/useAsyncTrigger';
 import {useBalances} from '../hooks/useBalances.multichains';
-import {DEFAULT_ERC20, ETH_TOKEN_ADDRESS, isZeroAddress, toAddress, zeroNormalizedBN} from '../utils';
+import {DEFAULT_ERC20, toAddress, zeroNormalizedBN} from '../utils';
 import {createUniqueID} from '../utils/tools.identifier';
-import {retrieveConfig} from '../utils/wagmi';
-import {toTokenListToken, toTToken, useTokenList} from './WithTokenList';
+import {useYearn} from './useYearn';
+import {useYearnTokens} from './useYearn.helper';
 
 import type {ReactElement} from 'react';
 import type {TUseBalancesTokens} from '../hooks/useBalances.multichains';
-import type {TAddress, TChainTokens, TDict, TNormalizedBN, TToken, TTokenList} from '../types';
+import type {TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens} from '../types';
 
 type TTokenAndChain = {address: TAddress; chainID: number};
 type TWalletContext = {
@@ -23,14 +22,13 @@ type TWalletContext = {
 	balances: TChainTokens;
 	balanceHash: string;
 	isLoading: boolean;
-	isLoadingOnCurrentChain: boolean;
-	isLoadingOnChain: (chainID?: number) => boolean;
+	cumulatedValueInV2Vaults: number;
+	cumulatedValueInV3Vaults: number;
 	onRefresh: (
 		tokenList?: TUseBalancesTokens[],
 		shouldSaveInStorage?: boolean,
 		shouldForceFetch?: boolean
 	) => Promise<TChainTokens>;
-	onRefreshWithList: (tokenList: TDict<TToken>) => Promise<TChainTokens>;
 };
 
 const defaultProps = {
@@ -39,10 +37,9 @@ const defaultProps = {
 	balances: {},
 	balanceHash: '',
 	isLoading: true,
-	isLoadingOnCurrentChain: true,
-	isLoadingOnChain: (): boolean => true,
-	onRefresh: async (): Promise<TChainTokens> => ({}),
-	onRefreshWithList: async (): Promise<TChainTokens> => ({})
+	cumulatedValueInV2Vaults: 0,
+	cumulatedValueInV3Vaults: 0,
+	onRefresh: async (): Promise<TChainTokens> => ({})
 };
 
 /*******************************************************************************
@@ -54,146 +51,35 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 	children: ReactElement;
 	shouldWorkOnTestnet?: boolean;
 }): ReactElement {
-	const {isInitialized, tokenLists} = useTokenList();
-	const {chainID, address} = useWeb3();
-	const {value: extraTokens, set: saveExtraTokens} = useLocalStorageValue<TTokenList['tokens']>('extraTokens', {
-		defaultValue: []
-	});
-
-	/**************************************************************************
-	 ** Define the list of available tokens. This list is retrieved from the
-	 ** tokenList context and filtered to only keep the tokens of the current
-	 ** network.
-	 **************************************************************************/
-	const availableTokens = useMemo((): TUseBalancesTokens[] => {
-		if (!isInitialized) {
-			return [];
-		}
-		const tokens: TUseBalancesTokens[] = [];
-		for (const forChainID of Object.values(tokenLists)) {
-			for (const token of Object.values(forChainID)) {
-				tokens.push({
-					address: toAddress(token.address),
-					chainID: token.chainID,
-					decimals: Number(token.decimals),
-					name: token.name,
-					symbol: token.symbol
-				});
-				if (chainID === 1337) {
-					tokens.push({
-						address: toAddress(token.address),
-						chainID: 1337,
-						decimals: Number(token.decimals),
-						name: token.name,
-						symbol: token.symbol
-					});
-				}
-			}
-		}
-
-		const config = retrieveConfig();
-		for (const chain of config.chains) {
-			if (chain.testnet && !props.shouldWorkOnTestnet) {
-				continue;
-			}
-			if (chain.id === 1337 && !props.shouldWorkOnTestnet) {
-				continue;
-			}
-			tokens.push({
-				address: toAddress(ETH_TOKEN_ADDRESS),
-				chainID: chain.id,
-				decimals: chain.nativeCurrency.decimals,
-				name: chain.nativeCurrency.name,
-				symbol: chain.nativeCurrency.symbol
-			});
-		}
-		return tokens;
-	}, [tokenLists, chainID, isInitialized, props.shouldWorkOnTestnet]);
-
-	/**************************************************************************
-	 ** This hook triggers the fetching of the balances of the available tokens
-	 ** and stores them in a state. It also provides a function to refresh the
-	 ** balances of the tokens.
-	 **************************************************************************/
+	const {chainID} = useWeb3();
+	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, getPrice} = useYearn();
+	const allTokens = useYearnTokens({vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList});
 	const {
-		data: balances,
+		data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
 		onUpdate,
 		onUpdateSome,
-		isLoading,
-		chainLoadingStatus
+		isLoading
 	} = useBalances({
-		tokens: availableTokens,
+		tokens: allTokens,
 		priorityChainID: chainID
 	});
+	const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
+		const _tokens = {...tokensRaw};
+		return _tokens as TYChainTokens;
+	}, [tokensRaw]);
+	console.log(allTokens, balances);
 
-	/**************************************************************************
-	 ** onRefresh is a function that allows to refresh the balances of the
-	 ** tokens. It takes an optional list of tokens to refresh, and a boolean
-	 ** to indicate if the list of tokens should be saved in the local storage.
-	 ** This can also be used to add new tokens to the list of available tokens.
-	 **************************************************************************/
 	const onRefresh = useCallback(
-		async (
-			tokenToUpdate?: TUseBalancesTokens[],
-			shouldSaveInStorage?: boolean,
-			shouldForceFetch = false
-		): Promise<TChainTokens> => {
-			if (tokenToUpdate && tokenToUpdate.length > 0) {
-				const updatedBalances = await onUpdateSome(tokenToUpdate, shouldForceFetch);
-				if (shouldSaveInStorage) {
-					saveExtraTokens([...(extraTokens || []), ...tokenToUpdate.map(t => toTokenListToken(t as TToken))]);
-				}
-				return updatedBalances;
+		async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
+			if (tokenToUpdate) {
+				const updatedBalances = await onUpdateSome(tokenToUpdate);
+				return updatedBalances as TYChainTokens;
 			}
-			const updatedBalances = await onUpdate(shouldForceFetch);
-			return updatedBalances;
+			const updatedBalances = await onUpdate();
+			return updatedBalances as TYChainTokens;
 		},
-		[extraTokens, onUpdate, onUpdateSome, saveExtraTokens]
+		[onUpdate, onUpdateSome]
 	);
-
-	/**************************************************************************
-	 ** onRefreshWithList is a function that allows to refresh the balances of
-	 ** the tokens matching the tokenlist structure. It takes a list of tokens
-	 ** to refresh and triggers the fetching of the balances of the tokens.
-	 **************************************************************************/
-	const onRefreshWithList = useCallback(
-		async (newTokenList: TDict<TToken>): Promise<TChainTokens> => {
-			const withDefaultTokens = [...Object.values(newTokenList)];
-			const tokens: TUseBalancesTokens[] = [];
-			withDefaultTokens.forEach((token): void => {
-				tokens.push({
-					address: toAddress(token.address),
-					chainID: token.chainID,
-					decimals: Number(token.decimals),
-					name: token.name,
-					symbol: token.symbol
-				});
-			});
-			const tokensToFetch = tokens.filter((token): boolean => {
-				return !availableTokens.find((availableToken): boolean => availableToken.address === token.address);
-			});
-			if (tokensToFetch.length > 0) {
-				return await onRefresh(tokensToFetch);
-			}
-			return balances;
-		},
-		[balances, onRefresh, availableTokens]
-	);
-
-	/**************************************************************************
-	 ** This useAsyncTrigger function is used to refresh the balances of the
-	 ** tokens that are saved in the local storage. It is triggered when the
-	 ** wallet is active.
-	 **************************************************************************/
-	useAsyncTrigger(async (): Promise<void> => {
-		if (extraTokens && !isZeroAddress(address)) {
-			await onUpdateSome(extraTokens.map(t => toTToken(t)));
-		}
-	}, [address, extraTokens, onUpdateSome]);
-
-	/**************************************************************************
-	 ** getToken is a safe retrieval of a token from the balances state
-	 **************************************************************************/
 	const getToken = useCallback(
 		({address, chainID}: TTokenAndChain): TToken => balances?.[chainID || 1]?.[address] || DEFAULT_ERC20,
 		[balances]
@@ -208,19 +94,6 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 		[balances]
 	);
 
-	/**************************************************************************
-	 ** isLoadingOnChain is a safe retrieval of the loading status of a chain
-	 **************************************************************************/
-	const isLoadingOnChain = useCallback(
-		(_chainID?: number): boolean => {
-			if (!_chainID) {
-				return chainLoadingStatus?.[chainID] || false;
-			}
-			return chainLoadingStatus?.[_chainID] || false;
-		},
-		[chainID, chainLoadingStatus]
-	);
-
 	/**********************************************************************************************
 	 ** Balances is an object with multiple level of depth. We want to create a unique hash from
 	 ** it to know when it changes. This new hash will be used to trigger the useEffect hook.
@@ -230,6 +103,54 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 		const hash = createUniqueID(serialize(balances));
 		return hash;
 	}, [balances]);
+
+	const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
+		const allVaults = {
+			...vaults,
+			...vaultsMigrations,
+			...vaultsRetired
+		};
+
+		let cumulatedValueInV2Vaults = 0;
+		let cumulatedValueInV3Vaults = 0;
+
+		for (const perChain of Object.values(balances)) {
+			for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
+				if (!allVaults?.[toAddress(tokenAddress)]) {
+					continue;
+				}
+
+				const tokenBalance = tokenData.balance;
+				const tokenPrice = getPrice({address: tokenData.address, chainID: tokenData.chainID});
+				const tokenValue = tokenBalance.normalized * tokenPrice.normalized;
+
+				let stakingValue = 0;
+				const vaultDetails = allVaults[toAddress(tokenAddress)];
+
+				if (vaultDetails?.staking) {
+					// Check if vaultDetails and its staking property exist
+					const {staking} = vaultDetails; // Safe to destructure now
+					const hasStaking = staking.available ?? false;
+					if (hasStaking && staking.address) {
+						// Ensure staking.address is also valid
+						const stakingAddress = staking.address;
+						const stakingBalance = getBalance({address: stakingAddress, chainID: tokenData.chainID});
+
+						stakingValue = stakingBalance.normalized * tokenPrice.normalized;
+					}
+				}
+
+				if (allVaults?.[toAddress(tokenAddress)]) {
+					if (vaultDetails.version.split('.')?.[0] === '3' || vaultDetails.version.split('.')?.[0] === '~3') {
+						cumulatedValueInV3Vaults += tokenValue + stakingValue;
+					} else {
+						cumulatedValueInV2Vaults += tokenValue + stakingValue;
+					}
+				}
+			}
+		}
+		return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults];
+	}, [balances, getBalance, getPrice, vaults, vaultsMigrations, vaultsRetired]);
 
 	/***************************************************************************
 	 **	Setup and render the Context provider to use in the app.
@@ -241,10 +162,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 			balances,
 			balanceHash,
 			isLoading: isLoading || false,
-			isLoadingOnCurrentChain: chainLoadingStatus?.[chainID] || false,
-			isLoadingOnChain,
 			onRefresh,
-			onRefreshWithList
+			cumulatedValueInV2Vaults,
+			cumulatedValueInV3Vaults
 		}),
 		[
 			getToken,
@@ -252,11 +172,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 			balances,
 			balanceHash,
 			isLoading,
-			chainLoadingStatus,
-			chainID,
-			isLoadingOnChain,
 			onRefresh,
-			onRefreshWithList
+			cumulatedValueInV2Vaults,
+			cumulatedValueInV3Vaults
 		]
 	);
 

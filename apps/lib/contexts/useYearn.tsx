@@ -7,8 +7,6 @@ import {useFetchYearnPrices} from '@lib/hooks/useFetchYearnPrices';
 import {useFetchYearnVaults} from '@lib/hooks/useFetchYearnVaults';
 import {toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 
-import useWallet from './useWallet';
-
 import type {ReactElement} from 'react';
 import type {KeyedMutator} from 'swr';
 import type {TAddress, TDict, TNormalizedBN} from '@lib/types';
@@ -40,8 +38,6 @@ export type TYearnContext = {
 	//
 	//Price context
 	getPrice: ({address, chainID}: TTokenAndChain) => TNormalizedBN;
-	cumulatedValueInV2Vaults: number;
-	cumulatedValueInV3Vaults: number;
 };
 
 const YearnContext = createContext<TYearnContext>({
@@ -68,9 +64,7 @@ const YearnContext = createContext<TYearnContext>({
 	set_isAutoStakingEnabled: (): void => undefined,
 
 	//Price context
-	getPrice: (): TNormalizedBN => zeroNormalizedBN,
-	cumulatedValueInV2Vaults: 0,
-	cumulatedValueInV3Vaults: 0
+	getPrice: (): TNormalizedBN => zeroNormalizedBN
 });
 
 export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
@@ -104,62 +98,12 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		return vaults;
 	}, [rawVaults]);
 
-	const {balances, getBalance} = useWallet();
-
 	const getPrice = useCallback(
 		({address, chainID}: TTokenAndChain): TNormalizedBN => {
 			return toNormalizedBN(prices?.[chainID]?.[address] || 0, 6) || zeroNormalizedBN;
 		},
 		[prices]
 	);
-
-	const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
-		const allVaults = {
-			...vaults,
-			...vaultsMigrations,
-			...vaultsRetired
-		};
-
-		let cumulatedValueInV2Vaults = 0;
-		let cumulatedValueInV3Vaults = 0;
-
-		for (const perChain of Object.values(balances)) {
-			for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
-				if (!allVaults?.[toAddress(tokenAddress)]) {
-					continue;
-				}
-
-				const tokenBalance = tokenData.balance;
-				const tokenPrice = getPrice({address: tokenData.address, chainID: tokenData.chainID});
-				const tokenValue = tokenBalance.normalized * tokenPrice.normalized;
-
-				let stakingValue = 0;
-				const vaultDetails = allVaults[toAddress(tokenAddress)];
-
-				if (vaultDetails?.staking) {
-					// Check if vaultDetails and its staking property exist
-					const {staking} = vaultDetails; // Safe to destructure now
-					const hasStaking = staking.available ?? false;
-					if (hasStaking && staking.address) {
-						// Ensure staking.address is also valid
-						const stakingAddress = staking.address;
-						const stakingBalance = getBalance({address: stakingAddress, chainID: tokenData.chainID});
-
-						stakingValue = stakingBalance.normalized * tokenPrice.normalized;
-					}
-				}
-
-				if (allVaults?.[toAddress(tokenAddress)]) {
-					if (vaultDetails.version.split('.')?.[0] === '3' || vaultDetails.version.split('.')?.[0] === '~3') {
-						cumulatedValueInV3Vaults += tokenValue + stakingValue;
-					} else {
-						cumulatedValueInV2Vaults += tokenValue + stakingValue;
-					}
-				}
-			}
-		}
-		return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults];
-	}, [balances, getBalance, getPrice, vaults, vaultsMigrations, vaultsRetired]);
 
 	return (
 		<YearnContext.Provider
@@ -180,9 +124,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 				vaultsRetired,
 				isLoadingVaultList: isLoading,
 				mutateVaultList: mutate,
-				getPrice,
-				cumulatedValueInV2Vaults,
-				cumulatedValueInV3Vaults
+				getPrice
 			}}>
 			{children}
 		</YearnContext.Provider>

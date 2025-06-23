@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState, useTransition} from 'react';
 import {erc20Abi, type MulticallParameters} from 'viem';
 import {deserialize, serialize} from 'wagmi';
 import {type Connector} from 'wagmi';
@@ -269,6 +269,7 @@ export async function getBalances(
 
 	try {
 		const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress));
+		console.log('callResult', callResult);
 		result = {...result, ...callResult};
 		return [result, undefined];
 	} catch (_error) {
@@ -293,11 +294,16 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const stringifiedTokens = useMemo((): string => serialize(props?.tokens || []), [props?.tokens]);
 	const currentlyConnectedAddress = useRef<TAddress | undefined>(undefined);
 	const currentIdentifier = useRef<string | undefined>();
+	const pendingUpdates = useRef<TChainTokens>({});
+	const isAccumulatingUpdates = useRef<boolean>(false);
+
+	const [isPending, startTransition] = useTransition();
 
 	useEffect(() => {
 		if (toAddress(userAddress) !== toAddress(currentlyConnectedAddress.current)) {
 			currentlyConnectedAddress.current = toAddress(userAddress);
 			set_balances({});
+			pendingUpdates.current = {};
 			data.current = {
 				address: toAddress(userAddress),
 				balances: {},
@@ -314,7 +320,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			set_chainStatus(resetChainStatus);
 		}
 	}, [userAddress]);
-
+	console.log(balances);
 	const updateBalancesCall = useCallback(
 		(currentUserAddress: TAddress, chainID: number, newRawData: TDict<TToken>): TChainTokens => {
 			if (currentlyConnectedAddress.current !== currentUserAddress) {
@@ -341,15 +347,15 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			}
 			data.current.nonce += 1;
 
-			set_balances((b): TChainTokens => {
-				return {
-					...b,
-					[chainID]: {
-						...(b[chainID] || {}),
-						...data.current.balances[chainID]
-					}
-				};
-			});
+			// Accumulate updates instead of applying immediately
+			if (!pendingUpdates.current[chainID]) {
+				pendingUpdates.current[chainID] = {};
+			}
+			pendingUpdates.current[chainID] = {
+				...pendingUpdates.current[chainID],
+				...data.current.balances[chainID]
+			};
+
 			return data.current.balances;
 		},
 		[]
@@ -435,15 +441,13 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					data.current.nonce += 1;
 				}
 
-				set_balances(
-					(b): TChainTokens => ({
-						...b,
-						[chainID]: {
-							...(b[chainID] || {}),
-							...data.current.balances[chainID]
-						}
-					})
-				);
+				// Don't update state here, just accumulate in data.current and pendingUpdates
+				for (const [address, element] of Object.entries(updated[chainID] || {})) {
+					if (!pendingUpdates.current[chainID]) {
+						pendingUpdates.current[chainID] = {};
+					}
+					pendingUpdates.current[chainID][address] = element;
+				}
 				set_updateStatus({...defaultStatus, isSuccess: true});
 			}
 
@@ -532,13 +536,13 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				}
 			}
 
-			set_balances(previous => {
-				const updated = {...previous};
-				for (const [chainID, chainData] of Object.entries(data.current.balances)) {
-					updated[Number(chainID)] = {...updated[Number(chainID)], ...chainData};
+			// Don't update state here, just accumulate and return
+			for (const [chainID, chainData] of Object.entries(updated)) {
+				if (!pendingUpdates.current[Number(chainID)]) {
+					pendingUpdates.current[Number(chainID)] = {};
 				}
-				return updated;
-			});
+				Object.assign(pendingUpdates.current[Number(chainID)], chainData);
+			}
 			set_someStatus({...defaultStatus, isSuccess: true});
 			return updated;
 		},
@@ -552,6 +556,8 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 **************************************************************************/
 	useAsyncTrigger(async (): Promise<void> => {
 		set_status({...defaultStatus, isLoading: true});
+		pendingUpdates.current = {};
+		isAccumulatingUpdates.current = true;
 
 		/******************************************************************************************
 		 ** Everytime this function is re-triggered, we will create a unique identifier based on
@@ -655,20 +661,29 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		/******************************************************************************************
 		 ** If the current identifier is the same as the one we created, we can set the status to
 		 ** success and fetched. This will prevent the UI to jump if the user changes the tokens
-		 ** or the address.
+		 ** or the address. Apply all accumulated updates at once.
 		 *****************************************************************************************/
 		if (currentIdentifier.current === identifier) {
+			isAccumulatingUpdates.current = false;
+			// Apply all accumulated updates in a single batch
+			if (Object.keys(pendingUpdates.current).length > 0) {
+				const finalUpdates = {...pendingUpdates.current};
+				pendingUpdates.current = {};
+
+				startTransition(() => {
+					set_balances(() => finalUpdates);
+				});
+			}
 			set_status({...defaultStatus, isSuccess: true});
 		}
-	}, [stringifiedTokens, userAddress, updateBalancesCall, props?.priorityChainID]);
-
+	}, [stringifiedTokens, userAddress, updateBalancesCall, props?.priorityChainID, startTransition]);
 	const contextValue = useDeepCompareMemo(
 		(): TUseBalancesRes => ({
-			data: balances || {},
+			data: isPending || isAccumulatingUpdates.current ? {} : balances || {},
 			onUpdate: onUpdate,
 			onUpdateSome: onUpdateSome,
 			error,
-			isLoading: status.isLoading || someStatus.isLoading || updateStatus.isLoading,
+			isLoading: status.isLoading || someStatus.isLoading || updateStatus.isLoading || isPending,
 			isSuccess: status.isSuccess && someStatus.isSuccess && updateStatus.isSuccess,
 			isError: status.isError || someStatus.isError || updateStatus.isError,
 			chainErrorStatus: chainStatus.chainErrorStatus,
@@ -677,7 +692,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			status:
 				status.isError || someStatus.isError || updateStatus.isError
 					? 'error'
-					: status.isLoading || someStatus.isLoading || updateStatus.isLoading
+					: status.isLoading || someStatus.isLoading || updateStatus.isLoading || isPending
 						? 'loading'
 						: status.isSuccess && someStatus.isSuccess && updateStatus.isSuccess
 							? 'success'
@@ -685,21 +700,22 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		}),
 		[
 			balances,
-			error,
 			onUpdate,
 			onUpdateSome,
-			someStatus.isError,
-			someStatus.isLoading,
-			someStatus.isSuccess,
-			status.isError,
+			error,
 			status.isLoading,
 			status.isSuccess,
-			updateStatus.isError,
+			status.isError,
+			someStatus.isLoading,
+			someStatus.isSuccess,
+			someStatus.isError,
 			updateStatus.isLoading,
 			updateStatus.isSuccess,
+			updateStatus.isError,
 			chainStatus.chainErrorStatus,
 			chainStatus.chainLoadingStatus,
-			chainStatus.chainSuccessStatus
+			chainStatus.chainSuccessStatus,
+			isPending
 		]
 	);
 

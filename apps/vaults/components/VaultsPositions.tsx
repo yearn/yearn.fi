@@ -32,15 +32,8 @@ const getVaultsPositionsView = (userPositions: TYDaemonVault[]): TVaultsPosition
 
 export const VaultsPositions: FC = () => {
 	const {address, isActive} = useWeb3();
-	const {getBalance} = useWallet();
-	const {
-		vaults,
-		vaultsMigrations,
-		vaultsRetired,
-		getPrice,
-		cumulatedValueInV2Vaults,
-		cumulatedValueInV3Vaults
-	} = useYearn();
+	const {getBalance, cumulatedValueInV2Vaults, cumulatedValueInV3Vaults} = useWallet();
+	const {vaults, vaultsMigrations, vaultsRetired, getPrice} = useYearn();
 
 	const [sortBy, set_sortBy] = useState<string>('totalValue');
 	const [sortDirection, set_sortDirection] = useState<TSortDirection>('desc');
