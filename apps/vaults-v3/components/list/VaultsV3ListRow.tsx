@@ -1,6 +1,5 @@
-import {Fragment, useEffect, useMemo, useRef} from 'react';
+import {Fragment, useMemo} from 'react';
 import Link from 'next/link';
-import {useRouter} from 'next/router';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {Renderable} from '@lib/components/Renderable';
 import {RenderAmount} from '@lib/components/RenderAmount';
@@ -8,7 +7,7 @@ import {useWallet} from '@lib/contexts/useWallet';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useYearnBalance} from '@lib/hooks/useYearnBalance';
 import {IconLinkOut} from '@lib/icons/IconLinkOut';
-import {cl, formatAmount, isZero, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
+import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {getNetwork} from '@lib/utils/wagmi/utils';
 
@@ -622,11 +621,6 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 }
 
 export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const router = useRouter();
-	const prefetchTimeoutRef = useRef<NodeJS.Timeout>();
-	const hasPrefetchedRef = useRef(false);
-	const {getBalance} = useWallet();
-
 	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address});
 	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
 	const balanceOfWrappedCoin = useYearnBalance({
@@ -643,49 +637,11 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 		return balanceOfWant.raw;
 	}, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address]);
 
-	// Check if user has holdings in this vault
-	const hasHoldings = useMemo(() => {
-		const vaultBalance = getBalance({address: currentVault.address, chainID: currentVault.chainID});
-		const stakingBalance = currentVault.staking.available
-			? getBalance({address: currentVault.staking.address, chainID: currentVault.chainID})
-			: zeroNormalizedBN;
-		return !isZero(vaultBalance.raw) || !isZero(stakingBalance.raw);
-	}, [currentVault, getBalance]);
-
-	// Prefetch on mount if user has holdings
-	useEffect(() => {
-		if (hasHoldings && !hasPrefetchedRef.current) {
-			hasPrefetchedRef.current = true;
-			router.prefetch(`/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`);
-		}
-	}, [hasHoldings, currentVault.chainID, currentVault.address, router]);
-
-	const handleMouseEnter = (): void => {
-		console.log(hasPrefetchedRef.current);
-		// Only prefetch on hover if we haven't already prefetched
-		if (!hasPrefetchedRef.current) {
-			// Delay prefetch slightly to avoid excessive requests on quick hovers
-			prefetchTimeoutRef.current = setTimeout(() => {
-				hasPrefetchedRef.current = true;
-				router.prefetch(`/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`);
-			}, 100);
-		}
-	};
-
-	const handleMouseLeave = (): void => {
-		// Clear timeout if user leaves before prefetch happens
-		if (prefetchTimeoutRef.current) {
-			clearTimeout(prefetchTimeoutRef.current);
-		}
-	};
-
 	return (
 		<Link
 			href={`/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`}
 			scroll={false}>
 			<div
-				onMouseEnter={handleMouseEnter}
-				onMouseLeave={handleMouseLeave}
 				className={cl(
 					'grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl',
 					'p-6 pt-2 md:pr-10',
