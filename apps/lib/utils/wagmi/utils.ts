@@ -41,6 +41,32 @@ const rari = defineChain({
 	}
 });
 
+export const katana = defineChain({
+	id: 747474,
+	name: 'Katana',
+	nativeCurrency: {
+		decimals: 18,
+		name: 'Ether',
+		symbol: 'ETH'
+	},
+	rpcUrls: {
+		default: {http: ['https://rpc.katanarpc.com']}
+	},
+	blockExplorers: {
+		default: {
+			name: 'Katana Explorer',
+			url: 'https://explorer.katanarpc.com'
+		}
+	},
+	contracts: {
+		multicall3: {
+			address: '0xcA11bde05977b3631167028862bE2a173976CA11',
+			blockCreated: 1898013
+		}
+	},
+	testnet: false
+});
+
 /***************************************************************************************************
  ** Extended Chain type is used to add additional properties to the basic wagmi Chain type.
  ** Ee need to add:
@@ -102,7 +128,7 @@ function getInfuraBaseURL(chainID: number): string {
 
 function initIndexedWagmiChains(): TNDict<TExtendedChain> {
 	const _indexedWagmiChains: TNDict<TExtendedChain> = {};
-	for (const chain of Object.values({...wagmiChains, rari})) {
+	for (const chain of Object.values({...wagmiChains, rari, katana})) {
 		if (isChain(chain)) {
 			let extendedChain = chain as unknown as TExtendedChain;
 			if (extendedChain.id === 1337) {

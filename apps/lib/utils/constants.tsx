@@ -7,11 +7,12 @@ import {IconYearn} from '@lib/icons/IconYearn';
 import {IconYearnXApps} from '@lib/icons/IconYearnXApps';
 
 import {toAddress} from './tools.address';
+import {katana} from './wagmi';
 
 import type {TAddress, TNDict, TToken} from '@lib/types';
 import type {TApp} from '@lib/types/mixed';
 
-export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic];
+export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic, katana];
 
 export const MULTICALL3_ADDRESS = toAddress('0xcA11bde05977b3631167028862bE2a173976CA11');
 
