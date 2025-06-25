@@ -361,8 +361,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	/***************************************************************************
 	 ** onUpdate will take the stringified tokens and fetch the balances for each
 	 ** token. It will then update the balances state with the new balances.
-	 ** This takes the whole list and is not optimized for performance, aka not
-	 ** send in a worker.
+	 ** This takes the whole list and is not optimized for performance.
 	 **************************************************************************/
 	const onUpdate = useCallback(
 		async (shouldForceFetch?: boolean): Promise<TChainTokens> => {
@@ -548,8 +547,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 
 	/***************************************************************************
 	 ** Everytime the stringifiedTokens change, we need to update the balances.
-	 ** This is the main hook and is optimized for performance, using a worker
-	 ** to fetch the balances, preventing the UI to freeze.
 	 **************************************************************************/
 	useAsyncTrigger(async (): Promise<void> => {
 		set_status({...defaultStatus, isLoading: true});
