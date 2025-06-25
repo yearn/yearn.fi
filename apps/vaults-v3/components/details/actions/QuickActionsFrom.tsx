@@ -1,7 +1,5 @@
-import {useCallback, useEffect, useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 import {useRouter} from 'next/router';
-import {erc20Abi} from 'viem';
-import {useBlockNumber, useReadContracts} from 'wagmi';
 import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
 import {Renderable} from '@lib/components/Renderable';
 import {Dropdown} from '@lib/components/TokenDropdown';
@@ -12,23 +10,15 @@ import {useYearnBalance} from '@lib/hooks/useYearnBalance';
 import {IconQuestion} from '@lib/icons/IconQuestion';
 import {
 	cl,
-	decodeAsBigInt,
-	decodeAsNumber,
 	formatAmount,
 	formatCounterValue,
 	formatPercent,
 	handleInputChangeEventValue,
 	isAddress,
-	isEthAddress,
-	isZeroAddress,
-	MULTICALL3_ADDRESS,
 	toAddress,
-	toNormalizedBN,
 	zeroNormalizedBN
 } from '@lib/utils';
-import {AGGREGATE3_ABI} from '@lib/utils/abi/aggregate.abi';
 import {calculateBoostFromVeYFI} from '@lib/utils/calculations';
-import {getNetwork} from '@lib/utils/wagmi';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TNormalizedBN} from '@lib/types';
@@ -109,10 +99,9 @@ export function VaultDetailsQuickActionsFrom(props: {
 	veYFITotalSupply: number;
 	gaugeTotalSupply: number;
 }): ReactElement {
-	const {address, isActive, chainID} = useWeb3();
+	const {address, isActive} = useWeb3();
 	const {getToken} = useWallet();
 	const {getPrice} = useYearn();
-	const {data: blockNumber} = useBlockNumber({watch: true});
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith('/v3');
 	const {
@@ -146,57 +135,17 @@ export function VaultDetailsQuickActionsFrom(props: {
 		currentVaultBoost * (props.currentVault.apr.extra.stakingRewardsAPR / 10) +
 		props.currentVault.apr.forwardAPR.netAPR;
 
-	/**********************************************************************************************
-	 ** In order to be sure we have the user's balance, we fetch it from the blockchain. Most of
-	 ** the time this is faster than waiting for the whole wallet multicall to be performed.
-	 ** However, if the user is navigating between pages, the data might be already cached. In
-	 ** order to get the data available the fastest, we should use the cached data if available.
-	 *********************************************************************************************/
-	const {data: onChainBalance, refetch} = useReadContracts({
-		contracts: [
-			{
-				abi: isEthAddress(actionParams?.selectedOptionFrom?.value) ? AGGREGATE3_ABI : erc20Abi,
-				functionName: isEthAddress(actionParams?.selectedOptionFrom?.value) ? 'getEthBalance' : 'balanceOf',
-				address: isEthAddress(actionParams?.selectedOptionFrom?.value)
-					? getNetwork(chainID).contracts.multicall3?.address || MULTICALL3_ADDRESS
-					: toAddress(actionParams?.selectedOptionFrom?.value),
-				args: [toAddress(address)],
-				chainId: Number(actionParams?.selectedOptionFrom?.chainID)
-			},
-			{
-				abi: erc20Abi,
-				functionName: 'decimals',
-				address: toAddress(actionParams?.selectedOptionFrom?.value),
-				chainId: Number(actionParams?.selectedOptionFrom?.chainID)
-			}
-		],
-		query: {
-			enabled: !isZeroAddress(address) && !isZeroAddress(actionParams?.selectedOptionFrom?.value),
-			select(
-				data: (
-					| {error: Error; result?: undefined; status: 'failure'}
-					| {error?: undefined; result: unknown; status: 'success'}
-				)[]
-			) {
-				const balanceOf = decodeAsBigInt(data[0]);
-				const decimals = isEthAddress(actionParams?.selectedOptionFrom?.value) ? 18 : decodeAsNumber(data[1]);
-				return toNormalizedBN(balanceOf, decimals);
-			}
-		}
-	});
-	const cachedBalance = useYearnBalance({
+	const balance = useYearnBalance({
 		address: toAddress(actionParams?.selectedOptionFrom?.value),
 		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
 	});
+
 	const userBalance = useMemo(() => {
 		if (!isAddress(address)) {
 			return zeroNormalizedBN;
 		}
-		return !onChainBalance ? cachedBalance : onChainBalance;
-	}, [address, cachedBalance, onChainBalance]);
-	useEffect(() => {
-		refetch();
-	}, [blockNumber, refetch]);
+		return balance;
+	}, [address, balance]);
 
 	/**********************************************************************************************
 	 ** Fallback component to render a dropdown if the user has multiple options to choose from.
