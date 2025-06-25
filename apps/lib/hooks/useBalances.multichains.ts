@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useRef, useState, useTransition} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {erc20Abi, type MulticallParameters} from 'viem';
 import {deserialize, serialize} from 'wagmi';
 import {type Connector} from 'wagmi';
@@ -269,7 +269,6 @@ export async function getBalances(
 
 	try {
 		const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress));
-		console.log('callResult', callResult);
 		result = {...result, ...callResult};
 		return [result, undefined];
 	} catch (_error) {
@@ -297,8 +296,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const pendingUpdates = useRef<TChainTokens>({});
 	const isAccumulatingUpdates = useRef<boolean>(false);
 
-	const [isPending, startTransition] = useTransition();
-
 	useEffect(() => {
 		if (toAddress(userAddress) !== toAddress(currentlyConnectedAddress.current)) {
 			currentlyConnectedAddress.current = toAddress(userAddress);
@@ -320,7 +317,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			set_chainStatus(resetChainStatus);
 		}
 	}, [userAddress]);
-	console.log(balances);
+
 	const updateBalancesCall = useCallback(
 		(currentUserAddress: TAddress, chainID: number, newRawData: TDict<TToken>): TChainTokens => {
 			if (currentlyConnectedAddress.current !== currentUserAddress) {
@@ -669,22 +666,19 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			if (Object.keys(pendingUpdates.current).length > 0) {
 				const finalUpdates = {...pendingUpdates.current};
 				pendingUpdates.current = {};
-
-				startTransition(() => {
-					set_balances(() => finalUpdates);
-				});
+				set_balances(finalUpdates);
 			}
 			set_status({...defaultStatus, isSuccess: true});
 		}
-	}, [stringifiedTokens, userAddress, updateBalancesCall, props?.priorityChainID, startTransition]);
+	}, [stringifiedTokens, userAddress, updateBalancesCall, props?.priorityChainID]);
 
 	const contextValue = useDeepCompareMemo(
 		(): TUseBalancesRes => ({
-			data: isPending || isAccumulatingUpdates.current ? {} : balances || {},
+			data: isAccumulatingUpdates.current ? {} : balances || {},
 			onUpdate: onUpdate,
 			onUpdateSome: onUpdateSome,
 			error,
-			isLoading: status.isLoading || someStatus.isLoading || updateStatus.isLoading || isPending,
+			isLoading: status.isLoading || someStatus.isLoading || updateStatus.isLoading,
 			isSuccess: status.isSuccess && someStatus.isSuccess && updateStatus.isSuccess,
 			isError: status.isError || someStatus.isError || updateStatus.isError,
 			chainErrorStatus: chainStatus.chainErrorStatus,
@@ -693,7 +687,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			status:
 				status.isError || someStatus.isError || updateStatus.isError
 					? 'error'
-					: status.isLoading || someStatus.isLoading || updateStatus.isLoading || isPending
+					: status.isLoading || someStatus.isLoading || updateStatus.isLoading
 						? 'loading'
 						: status.isSuccess && someStatus.isSuccess && updateStatus.isSuccess
 							? 'success'
@@ -715,8 +709,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			updateStatus.isError,
 			chainStatus.chainErrorStatus,
 			chainStatus.chainLoadingStatus,
-			chainStatus.chainSuccessStatus,
-			isPending
+			chainStatus.chainSuccessStatus
 		]
 	);
 
