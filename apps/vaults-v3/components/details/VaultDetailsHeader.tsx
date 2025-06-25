@@ -730,7 +730,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 				) : (
 					<p className={'text-xxs md:text-xs'}>&nbsp;</p>
 				)}
-				<div className={'mt-4 flex flex-col gap-2 md:flex-row'}>
+				<div className={'mt-4 flex flex-col gap-2 md:flex-row md:justify-center'}>
 					<div className={'w-full rounded-lg bg-neutral-900/30 px-4 py-2 text-center md:w-fit'}>
 						<strong className={'text-sm font-black text-neutral-900 md:text-xl'}>
 							{currentVault.token.name}
