@@ -86,6 +86,8 @@ function Index(): ReactElement | null {
 						vault.apr.points = _stYBoldVault?.apr?.points || vault.apr.points || {};
 						vault.apr.pricePerShare = _stYBoldVault?.apr?.pricePerShare || vault.apr.pricePerShare || {};
 						// vault.apr.forwardAPR = _stYBoldVault?.apr?.forwardAPR || vault.apr.forwardAPR || {};
+						vault.apr.fees.performance =
+							_stYBoldVault?.apr?.fees?.performance || vault.apr.fees.performance || 0;
 					}
 					set_isLoadingYBold(false);
 				}
