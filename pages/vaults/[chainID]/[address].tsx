@@ -52,9 +52,21 @@ function Index(): ReactElement | null {
 			if (currentVault?.token?.address) {
 				tokensToRefresh.push({address: currentVault.token.address, chainID: currentVault.chainID});
 			}
+			if (currentVault?.staking.available) {
+				tokensToRefresh.push({address: currentVault.staking.address, chainID: currentVault.chainID});
+			}
 			onRefresh(tokensToRefresh);
 		}
-	}, [currentVault?.address, currentVault?.token.address, address, isActive, onRefresh, currentVault?.chainID]);
+	}, [
+		currentVault?.address,
+		currentVault?.token.address,
+		address,
+		isActive,
+		onRefresh,
+		currentVault?.chainID,
+		currentVault?.staking.available,
+		currentVault?.staking.address
+	]);
 
 	if (isLoadingVault || !router.query.address) {
 		return (
