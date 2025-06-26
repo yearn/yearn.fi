@@ -7,6 +7,7 @@ import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
 import {useSolver} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {Button} from '@lib/components/Button';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
@@ -27,7 +28,8 @@ export function VaultDetailsQuickActionsButtons({
 	hasStakingRewardsLive: boolean;
 }): ReactElement {
 	const plausible = usePlausible();
-	const {onRefresh, isAutoStakingEnabled} = useYearn();
+	const {onRefresh} = useWallet();
+	const {isAutoStakingEnabled} = useYearn();
 	const {address, provider} = useWeb3();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);

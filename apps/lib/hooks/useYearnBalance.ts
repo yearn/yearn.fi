@@ -1,6 +1,6 @@
 import {toAddress} from '@lib/utils';
 
-import {useYearn} from '../contexts/useYearn';
+import {useWallet} from '../contexts/useWallet';
 
 import type {TAddress, TDict, TNormalizedBN} from '@lib/types';
 
@@ -16,7 +16,7 @@ export function useYearnBalance({
 	chainID: number;
 	source?: TDict<TNormalizedBN>;
 }): TNormalizedBN {
-	const {getBalance} = useYearn();
+	const {getBalance} = useWallet();
 
 	return getBalance({address: toAddress(address), chainID: chainID});
 }

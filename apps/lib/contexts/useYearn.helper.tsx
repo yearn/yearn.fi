@@ -1,16 +1,12 @@
-import {useCallback, useMemo, useState} from 'react';
-import {useDeepCompareMemo} from '@react-hookz/web';
-import {useWeb3} from '@lib/contexts/useWeb3';
+import {useMemo, useState} from 'react';
 import {useTokenList} from '@lib/contexts/WithTokenList';
 import {useChainID} from '@lib/hooks/useChainID';
 import {toAddress} from '@lib/utils';
 import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {getNetwork} from '@lib/utils/wagmi';
 
-import {useBalances} from './useBalances.multichains';
-
 import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
-import type {TDict, TNDict, TToken, TYChainTokens} from '@lib/types';
+import type {TDict} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function useYearnTokens({
@@ -206,51 +202,4 @@ export function useYearnTokens({
 	}
 
 	return allTokens;
-}
-
-export function useYearnBalances({
-	vaults,
-	vaultsMigrations,
-	vaultsRetired,
-	isLoadingVaultList
-}: {
-	vaults: TDict<TYDaemonVault>;
-	vaultsMigrations: TDict<TYDaemonVault>;
-	vaultsRetired: TDict<TYDaemonVault>;
-	isLoadingVaultList: boolean;
-}): {
-	balances: TNDict<TDict<TToken>>;
-	isLoadingBalances: boolean;
-	onRefresh: (tokenToUpdate?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
-} {
-	const {chainID} = useWeb3();
-	const allTokens = useYearnTokens({vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList});
-	const {
-		data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
-		onUpdate,
-		onUpdateSome,
-		isLoading
-	} = useBalances({
-		tokens: allTokens,
-		priorityChainID: chainID
-	});
-
-	const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
-		const _tokens = {...tokensRaw};
-		return _tokens as TYChainTokens;
-	}, [tokensRaw]);
-
-	const onRefresh = useCallback(
-		async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
-			if (tokenToUpdate) {
-				const updatedBalances = await onUpdateSome(tokenToUpdate);
-				return updatedBalances as TYChainTokens;
-			}
-			const updatedBalances = await onUpdate();
-			return updatedBalances as TYChainTokens;
-		},
-		[onUpdate, onUpdateSome]
-	);
-
-	return {balances, isLoadingBalances: isLoading, onRefresh};
 }

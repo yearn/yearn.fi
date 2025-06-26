@@ -1,4 +1,5 @@
 import {useMemo, useState} from 'react';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {cl, toNormalizedBN} from '@lib/utils';
@@ -31,15 +32,8 @@ const getVaultsPositionsView = (userPositions: TYDaemonVault[]): TVaultsPosition
 
 export const VaultsPositions: FC = () => {
 	const {address, isActive} = useWeb3();
-	const {
-		vaults,
-		vaultsMigrations,
-		vaultsRetired,
-		getBalance,
-		getPrice,
-		cumulatedValueInV2Vaults,
-		cumulatedValueInV3Vaults
-	} = useYearn();
+	const {getBalance, cumulatedValueInV2Vaults, cumulatedValueInV3Vaults} = useWallet();
+	const {vaults, vaultsMigrations, vaultsRetired, getPrice} = useYearn();
 
 	const [sortBy, set_sortBy] = useState<string>('totalValue');
 	const [sortDirection, set_sortDirection] = useState<TSortDirection>('desc');

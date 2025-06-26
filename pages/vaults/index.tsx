@@ -13,6 +13,7 @@ import {Counter} from '@lib/components/Counter';
 import {ListHead} from '@lib/components/ListHead';
 import {Pagination} from '@lib/components/Pagination';
 import {Renderable} from '@lib/components/Renderable';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
@@ -25,7 +26,7 @@ import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaul
 import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
 
 function HeaderUserPosition(): ReactElement {
-	const {cumulatedValueInV2Vaults} = useYearn();
+	const {cumulatedValueInV2Vaults} = useWallet();
 	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
 	if (!isActive) {
@@ -107,7 +108,8 @@ function ListOfMigratableVaults({migratableVaults}: {migratableVaults: TYDaemonV
 }
 
 function ListOfVaults(): ReactElement {
-	const {getBalance, isLoadingVaultList, getPrice} = useYearn();
+	const {getBalance} = useWallet();
+	const {isLoadingVaultList, getPrice} = useYearn();
 	const {
 		search,
 		types,

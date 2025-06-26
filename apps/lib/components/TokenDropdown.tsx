@@ -2,8 +2,8 @@ import {cloneElement, Fragment, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@lib/components/Renderable';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
 import {IconChevron} from '@lib/icons/IconChevron';
 import {cl, formatAmount} from '@lib/utils';
 
@@ -11,7 +11,7 @@ import type {ReactElement} from 'react';
 import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@lib/types';
 
 function DropdownItem({option}: TDropdownItemProps): ReactElement {
-	const {getBalance} = useYearn();
+	const {getBalance} = useWallet();
 	const balance = getBalance({address: option.value, chainID: option.chainID});
 
 	return (
