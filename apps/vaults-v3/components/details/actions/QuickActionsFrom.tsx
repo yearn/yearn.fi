@@ -1,24 +1,33 @@
 import {useCallback, useMemo} from 'react';
 import {useRouter} from 'next/router';
+import {erc20Abi} from 'viem';
+import {useReadContracts} from 'wagmi';
 import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
 import {Renderable} from '@lib/components/Renderable';
 import {Dropdown} from '@lib/components/TokenDropdown';
 import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
-import {useYearnBalance} from '@lib/hooks/useYearnBalance';
 import {IconQuestion} from '@lib/icons/IconQuestion';
 import {
 	cl,
+	decodeAsBigInt,
+	decodeAsNumber,
 	formatAmount,
 	formatCounterValue,
 	formatPercent,
 	handleInputChangeEventValue,
 	isAddress,
+	isEthAddress,
+	isZeroAddress,
+	MULTICALL3_ADDRESS,
 	toAddress,
+	toNormalizedBN,
 	zeroNormalizedBN
 } from '@lib/utils';
+import {AGGREGATE3_ABI} from '@lib/utils/abi/aggregate.abi';
 import {calculateBoostFromVeYFI} from '@lib/utils/calculations';
+import {getNetwork} from '@lib/utils/wagmi';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TNormalizedBN} from '@lib/types';
@@ -99,10 +108,11 @@ export function VaultDetailsQuickActionsFrom(props: {
 	veYFITotalSupply: number;
 	gaugeTotalSupply: number;
 }): ReactElement {
-	const {address, isActive} = useWeb3();
-	const {getToken} = useWallet();
+	const {address, chainID, isActive} = useWeb3();
+	const {getToken, getBalance, isLoading: isLoadingBalances} = useWallet();
 	const {getPrice} = useYearn();
 	const {pathname} = useRouter();
+
 	const isV3Page = pathname.startsWith('/v3');
 	const {
 		possibleOptionsFrom,
@@ -135,17 +145,70 @@ export function VaultDetailsQuickActionsFrom(props: {
 		currentVaultBoost * (props.currentVault.apr.extra.stakingRewardsAPR / 10) +
 		props.currentVault.apr.forwardAPR.netAPR;
 
-	const balance = useYearnBalance({
-		address: toAddress(actionParams?.selectedOptionFrom?.value),
-		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
+	/**********************************************************************************************
+	 ** If underlying token is not present in token lists, useWallet.getBalance will return
+	 ** zeroNormalizedBN. This hook is a fallback for this case.
+	 *********************************************************************************************/
+	const {data: onChainBalance} = useReadContracts({
+		contracts: [
+			{
+				abi: isEthAddress(actionParams?.selectedOptionFrom?.value) ? AGGREGATE3_ABI : erc20Abi,
+				functionName: isEthAddress(actionParams?.selectedOptionFrom?.value) ? 'getEthBalance' : 'balanceOf',
+				address: isEthAddress(actionParams?.selectedOptionFrom?.value)
+					? getNetwork(chainID).contracts.multicall3?.address || MULTICALL3_ADDRESS
+					: toAddress(actionParams?.selectedOptionFrom?.value),
+				args: [toAddress(address)],
+				chainId: Number(actionParams?.selectedOptionFrom?.chainID)
+			},
+			{
+				abi: erc20Abi,
+				functionName: 'decimals',
+				address: toAddress(actionParams?.selectedOptionFrom?.value),
+				chainId: Number(actionParams?.selectedOptionFrom?.chainID)
+			}
+		],
+		query: {
+			enabled:
+				!isLoadingBalances &&
+				!isZeroAddress(address) &&
+				!isZeroAddress(actionParams?.selectedOptionFrom?.value) &&
+				isZeroAddress(
+					getToken({
+						address: toAddress(actionParams?.selectedOptionFrom?.value),
+						chainID: Number(actionParams?.selectedOptionFrom?.chainID)
+					}).address
+				),
+			select(
+				data: (
+					| {error: Error; result?: undefined; status: 'failure'}
+					| {error?: undefined; result: unknown; status: 'success'}
+				)[]
+			) {
+				const balanceOf = decodeAsBigInt(data[0]);
+				const decimals = isEthAddress(actionParams?.selectedOptionFrom?.value) ? 18 : decodeAsNumber(data[1]);
+				return toNormalizedBN(balanceOf, decimals);
+			}
+		}
 	});
 
 	const userBalance = useMemo(() => {
 		if (!isAddress(address)) {
 			return zeroNormalizedBN;
 		}
-		return balance;
-	}, [address, balance]);
+		return (
+			onChainBalance ||
+			getBalance({
+				address: toAddress(actionParams?.selectedOptionFrom?.value),
+				chainID: Number(actionParams?.selectedOptionFrom?.chainID)
+			})
+		);
+	}, [
+		address,
+		onChainBalance,
+		getBalance,
+		actionParams?.selectedOptionFrom?.value,
+		actionParams?.selectedOptionFrom?.chainID
+	]);
 
 	/**********************************************************************************************
 	 ** Fallback component to render a dropdown if the user has multiple options to choose from.
