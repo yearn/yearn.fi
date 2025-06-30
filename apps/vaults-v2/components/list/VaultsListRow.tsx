@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {Renderable} from '@lib/components/Renderable';
 import {RenderAmount} from '@lib/components/RenderAmount';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useYearnBalance} from '@lib/hooks/useYearnBalance';
 import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils';
@@ -326,7 +327,8 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 }
 
 export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {getToken, getPrice} = useYearn();
+	const {getToken} = useWallet();
+	const {getPrice} = useYearn();
 
 	const tokenPrice = useMemo(
 		() => getPrice({address: currentVault.address, chainID: currentVault.chainID}),

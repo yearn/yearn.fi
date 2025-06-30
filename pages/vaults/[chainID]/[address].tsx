@@ -7,8 +7,8 @@ import {ActionFlowContextApp} from '@vaults-v2/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults-v2/contexts/useSolver';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
 import {useFetch} from '@lib/hooks/useFetch';
 import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
 import {toAddress} from '@lib/utils';
@@ -24,7 +24,7 @@ function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();
 	const router = useRouter();
 
-	const {onRefresh} = useYearn();
+	const {onRefresh} = useWallet();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
@@ -52,9 +52,21 @@ function Index(): ReactElement | null {
 			if (currentVault?.token?.address) {
 				tokensToRefresh.push({address: currentVault.token.address, chainID: currentVault.chainID});
 			}
+			if (currentVault?.staking.available) {
+				tokensToRefresh.push({address: currentVault.staking.address, chainID: currentVault.chainID});
+			}
 			onRefresh(tokensToRefresh);
 		}
-	}, [currentVault?.address, currentVault?.token.address, address, isActive, onRefresh, currentVault?.chainID]);
+	}, [
+		currentVault?.address,
+		currentVault?.token.address,
+		address,
+		isActive,
+		onRefresh,
+		currentVault?.chainID,
+		currentVault?.staking.available,
+		currentVault?.staking.address
+	]);
 
 	if (isLoadingVault || !router.query.address) {
 		return (

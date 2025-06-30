@@ -8,11 +8,11 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
-import {Counter} from '@lib/components/Counter';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
-import {cl, isZero, toNormalizedBN} from '@lib/utils';
+import {cl, formatAmount, isZero, toNormalizedBN} from '@lib/utils';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TSortDirection} from '@lib/types';
@@ -75,7 +75,7 @@ function V3Card(): ReactElement {
 }
 
 function PortfolioCard(): ReactElement {
-	const {cumulatedValueInV3Vaults} = useYearn();
+	const {cumulatedValueInV3Vaults, isLoading} = useWallet();
 	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
 	if (!isActive) {
@@ -126,21 +126,24 @@ function PortfolioCard(): ReactElement {
 			<div className={'flex flex-col gap-4 md:flex-row md:gap-32'}>
 				<div>
 					<p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Deposited'}</p>
-					<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
-						{'$'}
-						<Counter
-							value={cumulatedValueInV3Vaults}
-							decimals={2}
-						/>
-					</b>
+					{isLoading ? (
+						<div className={'h-[36.5px] w-32 animate-pulse rounded bg-[#757CA6]'} />
+					) : (
+						<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
+							{'$'}
+							<span suppressHydrationWarning>
+								{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}
+							</span>
+						</b>
+					)}
 				</div>
 			</div>
 		</div>
 	);
 }
 function ListOfVaults(): ReactElement {
-	const {getBalance, getPrice} = useYearn();
-	const {isLoadingVaultList} = useYearn();
+	const {getBalance} = useWallet();
+	const {getPrice, isLoadingVaultList} = useYearn();
 	const {
 		search,
 		types,

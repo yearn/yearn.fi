@@ -1,5 +1,6 @@
 import {useMemo} from 'react';
 import {RenderAmount} from '@lib/components/RenderAmount';
+import {useWallet} from '@lib/contexts/useWallet';
 import {useYearn} from '@lib/contexts/useYearn';
 import {cl, isZero, toNormalizedBN} from '@lib/utils';
 
@@ -8,7 +9,8 @@ import type {TNormalizedBN} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export const VaultStakedAmount: FC<{currentVault: TYDaemonVault}> = ({currentVault}) => {
-	const {getToken, getPrice} = useYearn();
+	const {getToken} = useWallet();
+	const {getPrice} = useYearn();
 
 	const tokenPrice = useMemo(
 		() => getPrice({address: currentVault.address, chainID: currentVault.chainID}),
