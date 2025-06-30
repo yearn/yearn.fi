@@ -8,7 +8,12 @@ const ChainColors: {[key: number]: string} = {
 	137: '#A726C1',
 	250: '#1969FF',
 	8453: '#1C55F5',
-	42161: '#2F3749'
+	42161: '#2F3749',
+	747474: '#f6ff0d'
+};
+
+const ChainTextColors: {[key: number]: string} = {
+	747474: '#000000'
 };
 
 const ChainNames: {[key: number]: string} = {
@@ -17,7 +22,8 @@ const ChainNames: {[key: number]: string} = {
 	137: 'Polygon PoS',
 	250: 'Fantom',
 	8453: 'Base',
-	42161: 'Arbitrum'
+	42161: 'Arbitrum',
+	747474: 'Katana'
 };
 
 export const VaultChainTag: FC<{
@@ -30,7 +36,7 @@ export const VaultChainTag: FC<{
 			className={'rounded-2xl px-2 py-0.5 text-xs text-neutral-900'}
 			style={{
 				backgroundColor: `${ChainColors[chainID]}${opacityToHex(backgroundOpacity)}`,
-				color: `#ffffff${opacityToHex(textOpacity)}`
+				color: `${ChainTextColors[chainID] || '#ffffff'}${opacityToHex(textOpacity)}`
 			}}>
 			{ChainNames[chainID]}
 		</div>
