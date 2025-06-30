@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
 import {AnimatePresence, motion} from 'framer-motion';
-import {Listbox, Transition} from '@headlessui/react';
+import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react';
 import {IconChevron} from '@lib/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -84,7 +84,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 					onChange={(value): void => set_selectedTabId(value)}>
 					{({open}): ReactElement => (
 						<>
-							<Listbox.Button
+							<ListboxButton
 								className={
 									'flex h-10 w-full flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
 								}>
@@ -96,7 +96,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 										className={`size-6 transition-transform${open ? '-rotate-180' : 'rotate-0'}`}
 									/>
 								</div>
-							</Listbox.Button>
+							</ListboxButton>
 							<Transition
 								show={open}
 								enter={'transition duration-100 ease-out'}
@@ -105,18 +105,18 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 								leave={'transition duration-75 ease-out'}
 								leaveFrom={'transform scale-100 opacity-100'}
 								leaveTo={'transform scale-95 opacity-0'}>
-								<Listbox.Options className={'yearn--listbox-menu'}>
+								<ListboxOptions className={'yearn--listbox-menu'}>
 									{items.map(
 										({id, label}): ReactElement => (
-											<Listbox.Option
+											<ListboxOption
 												className={'yearn--listbox-menu-item'}
 												key={id}
 												value={id}>
 												{label}
-											</Listbox.Option>
+											</ListboxOption>
 										)
 									)}
-								</Listbox.Options>
+								</ListboxOptions>
 							</Transition>
 						</>
 					)}

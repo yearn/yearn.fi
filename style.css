@@ -87,12 +87,14 @@
 }
 
 @layer base {
-	/* This is to prevent the horizontal scrollbar from appearing on the page. Breaks the scroll. */
-	/* html,
+	/* This is to prevent the horizontal scrollbar from appearing on the page and to make it possible to scroll while the dropdown is open. */
+	html {
+		overflow: auto !important;
+	}
+
 	body {
-		overflow-x: hidden;
-		width: 100%;
-	} */
+		overflow: hidden;
+	}
 
 	#swap {
 		@apply scroll-mt-12 mb-0 md:mb-44;
