@@ -8,6 +8,8 @@ import {AppSettingsContextApp} from '@vaults-v2/contexts/useAppSettings';
 import AppHeader from '@lib/components/Header';
 import {Meta} from '@lib/components/Meta';
 import {WithFonts} from '@lib/components/WithFonts';
+import {IndexedDB} from '@lib/contexts/useIndexeddb';
+import {WithNotifications} from '@lib/contexts/useNotifications';
 import {WalletContextApp} from '@lib/contexts/useWallet';
 import {YearnContextApp} from '@lib/contexts/useYearn';
 import {WithMom} from '@lib/contexts/WithMom';
@@ -138,10 +140,14 @@ function MyApp(props: AppProps): ReactElement {
 						<AppSettingsContextApp>
 							<YearnContextApp>
 								<WalletContextApp>
-									<WithLayout
-										supportedNetworks={SUPPORTED_NETWORKS}
-										{...props}
-									/>
+									<IndexedDB>
+										<WithNotifications>
+											<WithLayout
+												supportedNetworks={SUPPORTED_NETWORKS}
+												{...props}
+											/>
+										</WithNotifications>
+									</IndexedDB>
 								</WalletContextApp>
 							</YearnContextApp>
 						</AppSettingsContextApp>
