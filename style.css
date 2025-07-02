@@ -90,6 +90,7 @@
 	/* This is to prevent the horizontal scrollbar from appearing on the page and to make it possible to scroll while the dropdown is open. */
 	html {
 		overflow: auto !important;
+		padding-right: 0 !important;
 	}
 
 	#swap {
