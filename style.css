@@ -91,6 +91,7 @@
 	html {
 		overflow: auto !important;
 		padding-right: 0 !important;
+		scrollbar-gutter: stable;
 	}
 
 	#swap {
