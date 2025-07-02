@@ -91,11 +91,11 @@
 	html {
 		overflow: auto !important;
 		padding-right: 0 !important;
-		scrollbar-gutter: stable;
 	}
 
-	body[data-scroll-locked] {
-		margin-right: 0 !important;
+	/* Override RainbowKit's scroll lock styles to prevent gutter on windows */
+	html body[data-scroll-locked] {
+		margin-right: 0px !important;
 	}
 
 	#swap {
