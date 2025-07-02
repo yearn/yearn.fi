@@ -94,6 +94,10 @@
 		scrollbar-gutter: stable;
 	}
 
+	body[data-scroll-locked] {
+		margin-right: 0 !important;
+	}
+
 	#swap {
 		@apply scroll-mt-12 mb-0 md:mb-44;
 	}
