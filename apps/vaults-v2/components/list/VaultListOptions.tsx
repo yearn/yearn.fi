@@ -1,5 +1,5 @@
 import {Fragment} from 'react';
-import {Popover, Transition} from '@headlessui/react';
+import {Popover, PopoverButton, PopoverPanel, Transition} from '@headlessui/react';
 import {useAppSettings} from '@vaults-v2/contexts/useAppSettings';
 import {Switch} from '@lib/components/Switch';
 import {IconSettings} from '@lib/icons/IconSettings';
@@ -17,9 +17,9 @@ export function VaultListOptions(props: TVautListOptions): ReactElement {
 		<Popover className={'relative flex'}>
 			{(): ReactElement => (
 				<>
-					<Popover.Button>
+					<PopoverButton>
 						<IconSettings className={'transition-color size-4 text-neutral-400 hover:text-neutral-900'} />
-					</Popover.Button>
+					</PopoverButton>
 					<Transition
 						as={Fragment}
 						enter={'transition ease-out duration-200'}
@@ -28,7 +28,7 @@ export function VaultListOptions(props: TVautListOptions): ReactElement {
 						leave={'transition ease-in duration-150'}
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-1'}>
-						<Popover.Panel
+						<PopoverPanel
 							className={
 								'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-[180px] md:-right-4 md:top-4'
 							}>
@@ -46,7 +46,7 @@ export function VaultListOptions(props: TVautListOptions): ReactElement {
 									</div>
 								</div>
 							</div>
-						</Popover.Panel>
+						</PopoverPanel>
 					</Transition>
 				</>
 			)}
