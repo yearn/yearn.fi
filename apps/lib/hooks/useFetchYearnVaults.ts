@@ -67,6 +67,16 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 		}
 		const _vaultsObject = (vaults || []).reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
 			if (!vault.migration.available) {
+				// Override isHighlighted for Katana vaults
+				if (vault.chainID === 747474 && !vault.token.symbol.includes('WOOFY')) {
+					vault = {
+						...vault,
+						info: {
+							...vault.info,
+							isHighlighted: true
+						}
+					};
+				}
 				acc[toAddress(vault.address)] = vault;
 			}
 			return acc;
