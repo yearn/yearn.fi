@@ -114,7 +114,7 @@ const WithLayout = memo(function WithLayout(
  **************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
 	const {manifest} = useCurrentApp(props.router);
-
+	console.log('am i worthy?');
 	return (
 		<WithFonts>
 			<Meta
