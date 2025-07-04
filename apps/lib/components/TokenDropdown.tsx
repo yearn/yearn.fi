@@ -1,5 +1,5 @@
 import {cloneElement, Fragment, useState} from 'react';
-import {Combobox, Transition} from '@headlessui/react';
+import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@lib/components/Renderable';
 import {useWallet} from '@lib/contexts/useWallet';
@@ -15,7 +15,7 @@ function DropdownItem({option}: TDropdownItemProps): ReactElement {
 	const balance = getBalance({address: option.value, chainID: option.chainID});
 
 	return (
-		<Combobox.Option value={option}>
+		<ComboboxOption value={option}>
 			{({active}): ReactElement => (
 				<div
 					data-active={active}
@@ -31,7 +31,7 @@ function DropdownItem({option}: TDropdownItemProps): ReactElement {
 					</div>
 				</div>
 			)}
-		</Combobox.Option>
+		</ComboboxOption>
 	);
 }
 
@@ -98,7 +98,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 					set_isOpen(false);
 				}}>
 				<>
-					<Combobox.Button
+					<ComboboxButton
 						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
 						className={cl(
 							props.className,
@@ -119,7 +119,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 									className={
 										'whitespace-nowrap px-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'
 									}>
-									<Combobox.Input
+									<ComboboxInput
 										className={
 											'w-full cursor-default text-ellipsis border-none bg-transparent p-0 outline-none scrollbar-none'
 										}
@@ -140,7 +140,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 								</div>
 							</div>
 						</div>
-					</Combobox.Button>
+					</ComboboxButton>
 					<Transition
 						as={Fragment}
 						show={isOpen}
@@ -154,7 +154,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 							set_isOpen(false);
 							set_query('');
 						}}>
-						<Combobox.Options className={cl(props.comboboxOptionsClassName, 'yearn--dropdown-menu z-50')}>
+						<ComboboxOptions className={cl(props.comboboxOptionsClassName, 'yearn--dropdown-menu z-50')}>
 							<Renderable
 								shouldRender={filteredOptions.length > 0}
 								fallback={<DropdownEmpty query={query} />}>
@@ -167,7 +167,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 									)
 								)}
 							</Renderable>
-						</Combobox.Options>
+						</ComboboxOptions>
 					</Transition>
 				</>
 			</Combobox>

@@ -1,5 +1,5 @@
 import {Fragment, useCallback, useMemo, useRef, useState} from 'react';
-import {Combobox, Transition} from '@headlessui/react';
+import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react';
 import {useClickOutside, useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@lib/components/Renderable';
 import {useWeb3} from '@lib/contexts/useWeb3';
@@ -29,7 +29,7 @@ type TMultiSelectProps = {
 
 function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
 	return (
-		<Combobox.Option
+		<ComboboxOption
 			value={option}
 			className={'mb-2 border-b border-neutral-100 pb-2'}>
 			<div className={'flex w-full items-center justify-between p-2 transition-colors hover:bg-neutral-100'}>
@@ -41,7 +41,7 @@ function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
 					className={'checkbox hidden'}
 				/>
 			</div>
-		</Combobox.Option>
+		</ComboboxOption>
 	);
 }
 
@@ -49,7 +49,7 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 	const [isHovered, set_isHovered] = useState(false);
 
 	return (
-		<Combobox.Option
+		<ComboboxOption
 			onClick={option.onContainerClick}
 			value={option}
 			className={'transition-colors hover:bg-neutral-100'}>
@@ -83,7 +83,7 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 					readOnly
 				/>
 			</div>
-		</Combobox.Option>
+		</ComboboxOption>
 	);
 }
 
@@ -224,19 +224,19 @@ export function MultiSelectDropdown({
 			multiple>
 			<div className={'relative w-full'}>
 				{customRender ? (
-					<Combobox.Button
+					<ComboboxButton
 						className={'flex items-center justify-between'}
 						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}>
 						{customRender}
-					</Combobox.Button>
+					</ComboboxButton>
 				) : (
-					<Combobox.Button
+					<ComboboxButton
 						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
 						className={cl(
 							props.buttonClassName,
 							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
 						)}>
-						<Combobox.Input
+						<ComboboxInput
 							className={cl(
 								'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none',
 								options.every(({isSelected}): boolean => !isSelected)
@@ -252,7 +252,7 @@ export function MultiSelectDropdown({
 							aria-hidden={'true'}
 							className={`size-6 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
 						/>
-					</Combobox.Button>
+					</ComboboxButton>
 				)}
 				<Transition
 					as={Fragment}
@@ -264,7 +264,7 @@ export function MultiSelectDropdown({
 					leaveFrom={'transform scale-100 opacity-100'}
 					leaveTo={'transform scale-95 opacity-0'}
 					afterLeave={(): void => set_query('')}>
-					<Combobox.Options
+					<ComboboxOptions
 						className={cl(
 							props.comboboxOptionsClassName,
 							'absolute top-12 z-50 flex w-full min-w-[256px] cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'
@@ -289,7 +289,7 @@ export function MultiSelectDropdown({
 								)
 							)}
 						</Renderable>
-					</Combobox.Options>
+					</ComboboxOptions>
 				</Transition>
 			</div>
 		</Combobox>
