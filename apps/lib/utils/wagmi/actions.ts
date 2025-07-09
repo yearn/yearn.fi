@@ -84,6 +84,7 @@ export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
 		functionName: 'allowance',
 		args: [wagmiProvider.address, props.spenderAddress]
 	});
+
 	return result || 0n;
 }
 

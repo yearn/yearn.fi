@@ -77,6 +77,7 @@ export function useSolverVanilla(): TSolverContext {
 				tokenAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: toAddress(request.current.outputToken.value)
 			});
+
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
 		},

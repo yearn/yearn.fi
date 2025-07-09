@@ -53,7 +53,7 @@ export enum Flow {
 	None = 'none'
 }
 
-type TActionParams = {
+export type TActionParams = {
 	isReady: boolean;
 	amount: undefined | TNormalizedBN;
 	selectedOptionFrom: TDropdownOption | undefined;

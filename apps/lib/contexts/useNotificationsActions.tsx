@@ -1,5 +1,5 @@
 import React, {createContext, useCallback, useContext, useMemo} from 'react';
-import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
+import {TActionParams} from '@vaults-v2/contexts/useActionFlow';
 import {toAddress} from '@lib/utils';
 
 import {useNotifications} from './useNotifications';
@@ -14,13 +14,13 @@ const NotificationsActionsContext = createContext<TNotificationsActionsContext>(
 export const WithNotificationsActions = ({children}: {children: React.ReactElement}): React.ReactElement => {
 	const {addNotification} = useNotifications();
 	const {address} = useWeb3();
-	const {currentVault, actionParams} = useActionFlow();
 
 	const handleApproveNotification = useCallback(
-		async (receipt: TransactionReceipt): Promise<void> => {
+		async (actionParams: TActionParams, receipt: TransactionReceipt): Promise<void> => {
+			console.log('in handleApproveNotification', actionParams);
 			await addNotification({
 				fromAddress: toAddress(address),
-				chainId: currentVault.chainID,
+				chainId: actionParams.selectedOptionFrom?.chainID || 1,
 				txHash: receipt.transactionHash,
 				timeFinished: Date.now() / 1000,
 				blockNumber: receipt.blockNumber,
@@ -33,16 +33,7 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 				amount: actionParams.amount?.raw.toString() || '0'
 			});
 		},
-		[
-			actionParams.amount?.raw,
-			actionParams.selectedOptionFrom?.value,
-			actionParams.selectedOptionFrom?.label,
-			actionParams.selectedOptionTo?.value,
-			actionParams.selectedOptionTo?.label,
-			addNotification,
-			address,
-			currentVault.chainID
-		]
+		[addNotification, address]
 	);
 
 	/**************************************************************************

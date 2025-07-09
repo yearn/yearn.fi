@@ -32,8 +32,8 @@ export function NotificationsCurtain(props: {
 			open={props.isOpen}
 			onOpenChange={props.set_shouldOpenCurtain}>
 			<Drawer.Portal>
-				<Drawer.Content className={'fixed inset-y-0 right-0 z-[999999] flex w-full outline-none md:w-[420px]'}>
-					<div className={'flex w-full grow flex-col bg-neutral-300 p-5 md:my-2 md:mr-2 md:rounded-3xl'}>
+				<Drawer.Content className={'fixed inset-y-0 right-0 z-[999999] flex w-full outline-none md:w-[380px]'}>
+					<div className={'flex w-full grow flex-col bg-neutral-100 p-5 md:my-2 md:mr-2 md:rounded-3xl'}>
 						<div className={'h-full'}>
 							<div className={'mb-4 flex items-center justify-between'}>
 								<Drawer.Title className={'font-bold text-neutral-900'}>{'Notifications'}</Drawer.Title>
@@ -54,7 +54,8 @@ export function NotificationsCurtain(props: {
 										{sortedEntries.map(entry => (
 											<Notification
 												key={entry.id}
-												{...entry}
+												notification={entry}
+												variant={'v3'}
 											/>
 										))}
 									</div>

@@ -161,12 +161,11 @@ export function VaultDetailsQuickActionsButtons({
 			currentSolver === Solver.enum.PartnerContract ||
 			// currentSolver === Solver.enum.Vanilla || TODO: Maybe remove this?
 			currentSolver === Solver.enum.InternalMigration;
-		console.log(shouldApproveInfinite);
 		onApprove(
 			shouldApproveInfinite ? maxUint256 : toBigInt(actionParams.amount?.raw),
 			set_txStatusApprove,
 			async (receipt: TransactionReceipt): Promise<void> => {
-				handleApproveNotification(receipt);
+				handleApproveNotification(actionParams, receipt);
 				await triggerRetrieveAllowance();
 			}
 		);

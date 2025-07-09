@@ -34,8 +34,8 @@ function ApproveNotificationContent({notification}: {notification: TNotification
 	const chainName = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)?.name;
 
 	return (
-		<div className={'flex gap-8'}>
-			<div className={'flex flex-col items-center gap-2'}>
+		<div className={'flex gap-4'}>
+			<div className={'flex items-start'}>
 				<div className={'relative'}>
 					<ImageWithFallback
 						alt={notification.tokenName}
@@ -43,12 +43,12 @@ function ApproveNotificationContent({notification}: {notification: TNotification
 						src={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.tokenAddress}/logo-128.png`}
 						altSrc={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.tokenAddress}/logo-128.png`}
 						quality={90}
-						width={32}
-						height={32}
+						width={48}
+						height={48}
 					/>
 					<div
 						className={
-							'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'
+							'absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-white'
 						}>
 						<Image
 							width={14}
@@ -60,17 +60,19 @@ function ApproveNotificationContent({notification}: {notification: TNotification
 				</div>
 			</div>
 			<div className={'flex-1'}>
-				<div className={'grid grid-cols-2 gap-x-8 text-xs text-neutral-800'}>
+				<div className={'grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-neutral-800'}>
 					<p>{'From:'}</p>
-					<p className={'font-bold'}>{truncateHex(notification.fromAddress, 5)}</p>
+					<p className={'font-bold text-right'}>{truncateHex(notification.fromAddress, 5)}</p>
 					<p>{'Token:'}</p>
-					<p className={'font-bold'}>{notification.tokenName}</p>
+					<p className={'font-bold text-right'}>{notification.tokenName}</p>
 					<p>{'Amount:'}</p>
-					<p className={'font-bold'}>{notification.amount}</p>
+					<p className={'font-bold text-right'}>{notification.amount}</p>
 					<p>{'Spender:'}</p>
-					<p className={'font-bold'}>{notification.spenderName}</p>
+					<p className={'font-bold text-right'}>
+						{notification.spenderName || truncateHex(notification.spenderAddress || '0x', 5)}
+					</p>
 					<p>{'Chain:'}</p>
-					<p className={'font-bold'}>{chainName}</p>
+					<p className={'font-bold text-right'}>{chainName}</p>
 				</div>
 			</div>
 		</div>
@@ -153,7 +155,13 @@ function DepositNotificationContent({notification}: {notification: TNotification
 	);
 }
 
-export function Notification(notification: TNotification): ReactElement {
+export function Notification({
+	notification,
+	variant = 'v3'
+}: {
+	notification: TNotification;
+	variant: 'v2' | 'v3';
+}): ReactElement {
 	const date = new Date((notification.timeFinished || 0) * 1000);
 	const formattedDate = date.toLocaleDateString('en-US', {
 		year: 'numeric',
@@ -177,39 +185,64 @@ export function Notification(notification: TNotification): ReactElement {
 		switch (notification.type) {
 			case 'approve':
 				return 'Approve';
-
 			case 'deposit':
 				return 'Deposit';
-
+			case 'zap':
+				return 'Zap';
+			case 'deposit and stake':
+				return 'Deposit & Stake';
+			case 'stake':
+				return 'Stake';
+			case 'claim':
+				return 'Claim';
+			case 'claim and exit':
+				return 'Claim & Exit';
 			default:
 				return 'Transaction';
 		}
 	}, [notification.type]);
 
 	return (
-		<div className={'rounded-xl border border-neutral-200 p-4'}>
-			<div className={'mb-4 flex items-center justify-between'}>
-				<p className={'font-medium text-neutral-900'}>{notificationTitle}</p>
-				<NotificationStatus status={notification.status} />
-			</div>
-
-			{notification.type === 'approve' ? (
-				<ApproveNotificationContent notification={notification} />
-			) : (
-				<DepositNotificationContent notification={notification} />
+		<div className={'rounded-xl border border-neutral-200 p-4 bg-neutral-200 relative'}>
+			{variant === 'v3' && (
+				<div
+					className={cl(
+						'absolute inset-0 rounded-xl',
+						'opacity-20 transition-opacity  pointer-events-none',
+						'bg-[linear-gradient(80deg,_#2C3DA6,_#D21162)] group-hover:opacity-100'
+					)}
+				/>
 			)}
-
-			<div className={'mt-4 flex justify-between text-xs text-neutral-800'}>
-				<div>
-					<p>{notification.status === 'success' ? 'Finalized:' : 'Finalizes:'}</p>
-					<p className={'font-bold'}>{formattedDate}</p>
+			<div className={'relative z-20'}>
+				<div className={'mb-4 flex items-center justify-between'}>
+					<p className={'font-medium text-neutral-900'}>{notificationTitle}</p>
+					<NotificationStatus status={notification.status} />
 				</div>
-				{explorerLink ? (
-					<Link
-						href={explorerLink}
-						target={'_blank'}>
-						<button className={'font-bold hover:underline'}>{'View transaction'}</button>
-					</Link>
+
+				{notification.type === 'approve' ? (
+					<ApproveNotificationContent notification={notification} />
+				) : (
+					<DepositNotificationContent notification={notification} />
+				)}
+
+				{notification.status === 'success' ? (
+					<div
+						className={
+							'mt-4 flex items-center justify-between border-t border-neutral-100 pt-3 text-xs text-neutral-800'
+						}>
+						<div className={'flex gap-4'}>
+							<span className={'text-neutral-600'}>{'Arrived at'}</span>
+							<span className={'font-bold'}>{formattedDate}</span>
+						</div>
+						{explorerLink ? (
+							<Link
+								href={explorerLink}
+								target={'_blank'}
+								className={'text-neutral-900 hover:text-neutral-600'}>
+								<button className={'text-xs font-medium underline'}>{'View tx'}</button>
+							</Link>
+						) : null}
+					</div>
 				) : null}
 			</div>
 		</div>
