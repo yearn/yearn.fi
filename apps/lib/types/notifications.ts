@@ -1,22 +1,33 @@
-import type {Hex} from 'viem';
+import type {Hex, TransactionReceipt} from 'viem';
 import type {TAddress} from './address';
 
 export type TNotificationStatus = 'pending' | 'success' | 'error';
 
+export type TNotificationType =
+	| 'approve'
+	| 'deposit'
+	| 'zap'
+	| 'deposit and stake'
+	| 'stake'
+	| 'claim'
+	| 'claim and exit';
+
 export type TNotification = {
 	id?: number;
-	from: TAddress;
+	type: TNotificationType;
 	fromAddress: TAddress;
-	fromChainId: number;
-	fromTokenName: string;
-	fromAmount: string;
-	toAddress: TAddress;
-	toChainId: number;
-	toTokenName: string;
-	type: 'vanila' | 'portals' | 'portals gnosis';
+	chainId: number;
+	tokenAddress: TAddress;
+	tokenName: string;
+	spenderAddress?: TAddress;
+	spenderName?: string;
+	amount: string;
+	fromTokenName?: string;
+	fromAmount?: string;
+	toAddress?: TAddress;
+	toTokenName?: string;
 	txHash: Hex | undefined;
 	timeFinished?: number;
-	safeTxHash: Hex | undefined;
 	blockNumber: bigint;
 	status: TNotificationStatus;
 };
@@ -32,4 +43,8 @@ export type TNotificationsContext = {
 	updateEntry: (value: Partial<TNotification>, id: number) => Promise<void>;
 	addNotification: (value: TNotification) => Promise<void>;
 	set_shouldOpenCurtain: (value: boolean) => void;
+};
+
+export type TNotificationsActionsContext = {
+	handleApproveNotification: (receipt: TransactionReceipt) => Promise<void>;
 };

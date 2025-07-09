@@ -1,6 +1,7 @@
 import {Solver} from '@lib/utils/schemas/yDaemonTokenListBalances';
 
-import type {TAddress, TDropdownOption,TNormalizedBN} from '@lib/types';
+import type {TransactionReceipt} from 'viem';
+import type {TAddress, TDropdownOption, TNormalizedBN} from '@lib/types';
 import type {TSolver} from '@lib/utils/schemas/yDaemonTokenListBalances';
 import type {TTxStatus} from '@lib/utils/wagmi';
 
@@ -21,7 +22,7 @@ export type TWithSolver = {
 	onApprove: (
 		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		onSuccess: () => Promise<void>
+		onSuccess: (receipt: TransactionReceipt) => Promise<void>
 	) => Promise<void>;
 	onExecuteDeposit: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
@@ -55,7 +56,7 @@ export type TSolverContext = {
 	onApprove: (
 		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		onSuccess: () => Promise<void>
+		onSuccess: (receipt: TransactionReceipt) => Promise<void>
 	) => Promise<void>;
 	onExecuteDeposit: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,

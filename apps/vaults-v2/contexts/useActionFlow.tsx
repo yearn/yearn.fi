@@ -656,7 +656,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			getBalance
 		]
 	);
-
+	console.log(actionParams);
 	/**********************************************************************************************
 	 ** FLOW: Update From/To/Amount in one unique re-render
 	 **

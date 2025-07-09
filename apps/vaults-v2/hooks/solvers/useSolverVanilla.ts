@@ -10,6 +10,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
 import {deposit, redeemV3Shares, withdrawShares} from '@lib/utils/wagmi/actions';
 
+import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -92,7 +93,7 @@ export function useSolverVanilla(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt: TransactionReceipt) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not set');
@@ -106,8 +107,8 @@ export function useSolverVanilla(): TSolverContext {
 				amount: amount,
 				statusHandler: txStatusSetter
 			});
-			if (result.isSuccessful) {
-				onSuccess();
+			if (result.isSuccessful && result.receipt) {
+				onSuccess(result.receipt);
 			}
 		},
 		[provider]

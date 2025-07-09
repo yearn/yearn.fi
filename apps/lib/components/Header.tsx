@@ -174,7 +174,9 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 					</div>
 					<div className={'flex w-1/3 items-center justify-end'}>
 						<button
-							className={'hover:bg-grey-200 relative rounded-full p-2 transition-colors'}
+							className={
+								'yearn--header-nav-item hover:bg-grey-200 relative rounded-full p-2 transition-colors'
+							}
 							onClick={(): void => set_shouldOpenCurtain(true)}>
 							<IconBell className={'text-grey-900 size-4 font-bold transition-colors'} />
 

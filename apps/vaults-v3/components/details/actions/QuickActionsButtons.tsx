@@ -7,6 +7,7 @@ import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
 import {useSolver} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {Button} from '@lib/components/Button';
+import {useNotificationsActions} from '@lib/contexts/useNotificationsActions';
 import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
@@ -17,6 +18,7 @@ import {PLAUSIBLE_EVENTS} from '@lib/utils/plausible';
 import {defaultTxStatus} from '@lib/utils/wagmi';
 
 import type {ReactElement} from 'react';
+import type {TransactionReceipt} from 'viem';
 import type {TNormalizedBN} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
@@ -50,6 +52,8 @@ export function VaultDetailsQuickActionsButtons({
 		isLoadingExpectedOut,
 		hash
 	} = useSolver();
+
+	const {handleApproveNotification} = useNotificationsActions();
 
 	/**********************************************************************************************
 	 ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook
@@ -155,16 +159,18 @@ export function VaultDetailsQuickActionsButtons({
 	const onApproveFrom = useCallback(async (): Promise<void> => {
 		const shouldApproveInfinite =
 			currentSolver === Solver.enum.PartnerContract ||
-			currentSolver === Solver.enum.Vanilla ||
+			// currentSolver === Solver.enum.Vanilla || TODO: Maybe remove this?
 			currentSolver === Solver.enum.InternalMigration;
+		console.log(shouldApproveInfinite);
 		onApprove(
 			shouldApproveInfinite ? maxUint256 : toBigInt(actionParams.amount?.raw),
 			set_txStatusApprove,
-			async (): Promise<void> => {
+			async (receipt: TransactionReceipt): Promise<void> => {
+				handleApproveNotification(receipt);
 				await triggerRetrieveAllowance();
 			}
 		);
-	}, [actionParams.amount, triggerRetrieveAllowance, currentSolver, onApprove]);
+	}, [currentSolver, onApprove, actionParams.amount?.raw, handleApproveNotification, triggerRetrieveAllowance]);
 
 	/**********************************************************************************************
 	 ** Define the condition for the button to be disabled. The button is disabled if the user is
