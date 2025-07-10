@@ -12,7 +12,7 @@ const defaultProps: TNotificationsContext = {
 	set_notificationStatus: (): void => undefined,
 	deleteByID: async (): Promise<void> => undefined,
 	updateEntry: async (): Promise<void> => undefined,
-	addNotification: async (): Promise<void> => undefined,
+	addNotification: async (): Promise<number> => 0,
 	set_shouldOpenCurtain: (): void => undefined
 };
 
@@ -70,10 +70,11 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 	);
 
 	const addNotification = useCallback(
-		async (notification: TNotification) => {
-			await add(notification);
+		async (notification: TNotification): Promise<number> => {
+			const id = await add(notification);
 			set_entryNonce(nonce => nonce + 1);
 			set_notificationStatus(notification.status);
+			return id;
 		},
 		[add]
 	);

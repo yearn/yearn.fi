@@ -53,7 +53,7 @@ export function VaultDetailsQuickActionsButtons({
 		hash
 	} = useSolver();
 
-	const {handleApproveNotification} = useNotificationsActions();
+	const {handleApproveNotification, handleDepositNotification} = useNotificationsActions();
 
 	/**********************************************************************************************
 	 ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook
@@ -71,8 +71,13 @@ export function VaultDetailsQuickActionsButtons({
 	 ** on the from and to tokens.
 	 *********************************************************************************************/
 	const onSuccess = useCallback(
-		async (isDeposit: boolean): Promise<void> => {
+		async (isDeposit: boolean, receipt?: TransactionReceipt, notificationIdToUpdate?: number): Promise<void> => {
 			const {chainID} = currentVault;
+
+			if (notificationIdToUpdate) {
+				await handleDepositNotification(actionParams, receipt, 'success', notificationIdToUpdate);
+			}
+
 			if (isDeposit) {
 				plausible(PLAUSIBLE_EVENTS.DEPOSIT, {
 					props: {
@@ -161,12 +166,17 @@ export function VaultDetailsQuickActionsButtons({
 			currentSolver === Solver.enum.PartnerContract ||
 			// currentSolver === Solver.enum.Vanilla || TODO: Maybe remove this?
 			currentSolver === Solver.enum.InternalMigration;
+
+		const id = await handleApproveNotification(actionParams);
 		onApprove(
 			shouldApproveInfinite ? maxUint256 : toBigInt(actionParams.amount?.raw),
 			set_txStatusApprove,
 			async (receipt: TransactionReceipt): Promise<void> => {
-				handleApproveNotification(actionParams, receipt);
+				await handleApproveNotification(actionParams, receipt, 'success', id);
 				await triggerRetrieveAllowance();
+			},
+			async (): Promise<void> => {
+				await handleApproveNotification(actionParams, undefined, 'error', id);
 			}
 		);
 	}, [currentSolver, onApprove, actionParams.amount?.raw, handleApproveNotification, triggerRetrieveAllowance]);
@@ -242,9 +252,16 @@ export function VaultDetailsQuickActionsButtons({
 			return (
 				<Button
 					variant={isV3Page ? 'v3' : undefined}
-					onClick={async (): Promise<void> =>
-						onExecuteDeposit(set_txStatusExecuteDeposit, async () => onSuccess(true))
-					}
+					onClick={async (): Promise<void> => {
+						const id = await handleDepositNotification(actionParams);
+						onExecuteDeposit(
+							set_txStatusExecuteDeposit,
+							async (receipt: TransactionReceipt) => onSuccess(true, receipt, id),
+							async () => {
+								await handleDepositNotification(actionParams, undefined, 'error', id);
+							}
+						);
+					}}
 					className={'w-full whitespace-nowrap'}
 					isBusy={txStatusExecuteDeposit.pending}
 					isDisabled={
@@ -267,9 +284,16 @@ export function VaultDetailsQuickActionsButtons({
 		return (
 			<Button
 				variant={isV3Page ? 'v3' : undefined}
-				onClick={async (): Promise<void> =>
-					onExecuteDeposit(set_txStatusExecuteDeposit, async () => onSuccess(true))
-				}
+				onClick={async (): Promise<void> => {
+					const id = await handleDepositNotification(actionParams);
+					onExecuteDeposit(
+						set_txStatusExecuteDeposit,
+						async (receipt: TransactionReceipt) => onSuccess(true, receipt, id),
+						async () => {
+							await handleDepositNotification(actionParams, undefined, 'error', id);
+						}
+					);
+				}}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
 				isDisabled={isButtonDisabled}>

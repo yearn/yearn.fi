@@ -16,20 +16,19 @@ export type TNotificationType =
 export type TNotification = {
 	id?: number;
 	type: TNotificationType;
-	fromAddress: TAddress;
+	address: TAddress;
 	chainId: number;
-	tokenAddress: TAddress;
-	tokenName: string;
 	spenderAddress?: TAddress;
 	spenderName?: string;
 	amount: string;
+	fromAddress?: TAddress; // Token to deposit
 	fromTokenName?: string;
 	fromAmount?: string;
-	toAddress?: TAddress;
+	toAddress?: TAddress; // Vault token to receive
 	toTokenName?: string;
 	txHash: Hex | undefined;
 	timeFinished?: number;
-	blockNumber: bigint;
+	blockNumber?: bigint;
 	status: TNotificationStatus;
 };
 
@@ -42,10 +41,21 @@ export type TNotificationsContext = {
 	set_notificationStatus: (value: TNotificationStatus | null) => void;
 	deleteByID: (id: number) => Promise<void>;
 	updateEntry: (value: Partial<TNotification>, id: number) => Promise<void>;
-	addNotification: (value: TNotification) => Promise<void>;
+	addNotification: (value: TNotification) => Promise<number>;
 	set_shouldOpenCurtain: (value: boolean) => void;
 };
 
 export type TNotificationsActionsContext = {
-	handleApproveNotification: (actionParams: TActionParams, receipt: TransactionReceipt) => Promise<void>;
+	handleApproveNotification: (
+		actionParams: Partial<TActionParams>,
+		receipt?: TransactionReceipt,
+		status?: TNotificationStatus,
+		idToUpdate?: number
+	) => Promise<number>;
+	handleDepositNotification: (
+		actionParams: Partial<TActionParams>,
+		receipt?: TransactionReceipt,
+		status?: TNotificationStatus,
+		idToUpdate?: number
+	) => Promise<number>;
 };

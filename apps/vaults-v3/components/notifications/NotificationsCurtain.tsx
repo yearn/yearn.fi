@@ -12,11 +12,6 @@ export function NotificationsCurtain(props: {
 	const {cachedEntries, set_notificationStatus} = useNotifications();
 	const isEmpty = cachedEntries.length === 0;
 
-	const sortedEntries = useMemo(
-		() => cachedEntries.slice().sort((a, b) => Number((b.timeFinished || 0) - (a.timeFinished || 0))),
-		[cachedEntries]
-	);
-
 	/*************************************************************************************
 	 * Clear top bar notification status when drawer is triggered
 	 *******************************************************************/
@@ -44,14 +39,14 @@ export function NotificationsCurtain(props: {
 									<IconCross className={'size-4'} />
 								</Drawer.Close>
 							</div>
-							<div className={'h-[94.5%] overflow-y-auto overflow-x-hidden'}>
+							<div className={'h-[94.5%] overflow-y-auto overflow-x-hidden scrollbar-none'}>
 								{isEmpty ? (
 									<p className={'mx-auto mt-40 text-center text-neutral-800'}>
 										{'Nothing here yet!'}
 									</p>
 								) : (
 									<div className={'flex h-full flex-col gap-4'}>
-										{sortedEntries.map(entry => (
+										{cachedEntries.toReversed().map(entry => (
 											<Notification
 												key={entry.id}
 												notification={entry}

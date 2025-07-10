@@ -94,22 +94,29 @@ export function useSolverVanilla(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: (receipt: TransactionReceipt) => Promise<void>
+			onSuccess: (receipt: TransactionReceipt) => Promise<void>,
+			onError: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not set');
 			assert(request.current.outputToken, 'Output token is not set');
 
-			const result = await approveERC20({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				spenderAddress: request.current.outputToken.value,
-				amount: amount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful && result.receipt) {
-				onSuccess(result.receipt);
+			try {
+				const result = await approveERC20({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					spenderAddress: request.current.outputToken.value,
+					amount: amount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError(result.error as Error);
+				}
+			} catch (error) {
+				onError(error as Error);
 			}
 		},
 		[provider]
@@ -122,21 +129,28 @@ export function useSolverVanilla(): TSolverContext {
 	const onExecuteDeposit = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt: TransactionReceipt) => Promise<void>,
+			onError: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.outputToken, 'Output token is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
 
-			const result = await deposit({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.outputToken.value,
-				amount: request.current.inputAmount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await deposit({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.outputToken.value,
+					amount: request.current.inputAmount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError(result.error as Error);
+				}
+			} catch (error) {
+				onError(error as Error);
 			}
 		},
 		[provider]

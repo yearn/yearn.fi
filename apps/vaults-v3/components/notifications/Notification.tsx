@@ -12,16 +12,16 @@ import type {ReactElement} from 'react';
 import type {TNotification, TNotificationStatus} from '@lib/types/notifications';
 
 const STATUS: {[key: string]: [string, string, ReactElement]} = {
-	success: ['Success', 'text-green-600 bg-green-100', <IconCheck className={'size-4'} />],
-	pending: ['Pending', 'text-neutral-800 bg-neutral-100', <IconLoader className={'size-4 animate-spin'} />],
-	error: ['Error', 'text-red-600 bg-red-100', <IconCross className={'size-4'} />]
+	success: ['Success', 'text-green-800 bg-green-100', <IconCheck className={'size-4'} />],
+	pending: ['Pending', 'text-neutral-800 bg-neutral-300', <IconLoader className={'size-4 animate-spin'} />],
+	error: ['Error', 'text-white  bg-[#ef4444] bg-opacity-90', <IconCross className={'size-3'} />]
 };
 
 function NotificationStatus(props: {status: TNotificationStatus}): ReactElement {
 	return (
 		<div
 			className={cl(
-				'flex gap-1 justify-center self-start py-2 px-4 items-center rounded-lg text-xs',
+				'flex gap-2 justify-center self-start py-2 px-4 items-center rounded-lg text-xs',
 				STATUS[props.status][1]
 			)}>
 			{STATUS[props.status][2]}
@@ -30,25 +30,29 @@ function NotificationStatus(props: {status: TNotificationStatus}): ReactElement 
 	);
 }
 
-function ApproveNotificationContent({notification}: {notification: TNotification}): ReactElement {
+function NotificationContent({notification}: {notification: TNotification}): ReactElement {
 	const chainName = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)?.name;
+	const explorerBaseURI = useMemo(() => {
+		const chain = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId);
+		return chain?.blockExplorers?.default?.url || 'https://etherscan.io';
+	}, [notification.chainId, notification.spenderAddress]);
 
 	return (
 		<div className={'flex gap-4'}>
-			<div className={'flex items-start'}>
+			<div className={'flex flex-col items-center gap-2'}>
 				<div className={'relative'}>
 					<ImageWithFallback
-						alt={notification.tokenName}
+						alt={notification.fromTokenName || ''}
 						unoptimized
-						src={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.tokenAddress}/logo-128.png`}
-						altSrc={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.tokenAddress}/logo-128.png`}
+						src={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.fromAddress}/logo-128.png`}
+						altSrc={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.fromAddress}/logo-128.png`}
 						quality={90}
-						width={48}
-						height={48}
+						width={32}
+						height={32}
 					/>
 					<div
 						className={
-							'absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-white'
+							'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'
 						}>
 						<Image
 							width={14}
@@ -58,19 +62,88 @@ function ApproveNotificationContent({notification}: {notification: TNotification
 						/>
 					</div>
 				</div>
+
+				{notification.toTokenName && <IconArrow className={'rotate-90'} />}
+
+				{notification.toTokenName && (
+					<div className={'relative'}>
+						<ImageWithFallback
+							alt={notification.toTokenName || ''}
+							unoptimized
+							src={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.toAddress}/logo-128.png`}
+							altSrc={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.toAddress}/logo-128.png`}
+							quality={90}
+							width={32}
+							height={32}
+						/>
+						<div
+							className={
+								'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'
+							}>
+							<Image
+								width={14}
+								height={14}
+								alt={'chain'}
+								src={`${process.env.SMOL_ASSETS_URL}/chain/${notification.chainId}/logo.svg`}
+							/>
+						</div>
+					</div>
+				)}
 			</div>
 			<div className={'flex-1'}>
 				<div className={'grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-neutral-800'}>
-					<p>{'From:'}</p>
-					<p className={'font-bold text-right'}>{truncateHex(notification.fromAddress, 5)}</p>
-					<p>{'Token:'}</p>
-					<p className={'font-bold text-right'}>{notification.tokenName}</p>
+					<p>{'Address:'}</p>
+					<p className={'font-bold text-right'}>
+						<Link
+							href={`${explorerBaseURI}/address/${notification.address}`}
+							target={'_blank'}
+							className={'text-neutral-900 hover:text-neutral-600'}>
+							<button className={'text-xs font-medium underline'}>
+								{truncateHex(notification.address, 5)}
+							</button>
+						</Link>
+					</p>
+					<p>{notification.type === 'approve' ? 'Token: ' : 'From token: '}</p>
+					<p className={'font-bold text-right'}>
+						<Link
+							href={`${explorerBaseURI}/address/${notification.fromAddress}`}
+							target={'_blank'}
+							className={'text-neutral-900 hover:text-neutral-600'}>
+							<button className={'text-xs font-medium underline'}>{notification.fromTokenName}</button>
+						</Link>
+					</p>
 					<p>{'Amount:'}</p>
 					<p className={'font-bold text-right'}>{notification.amount}</p>
-					<p>{'Spender:'}</p>
-					<p className={'font-bold text-right'}>
-						{notification.spenderName || truncateHex(notification.spenderAddress || '0x', 5)}
-					</p>
+					{notification.toTokenName && (
+						<>
+							<p>{'To vault:'}</p>
+							<p className={'font-bold text-right'}>
+								<Link
+									href={`${explorerBaseURI}/address/${notification.toAddress}`}
+									target={'_blank'}
+									className={'text-neutral-900 hover:text-neutral-600'}>
+									<button className={'text-xs font-medium underline'}>
+										{notification.toTokenName}
+									</button>
+								</Link>
+							</p>
+						</>
+					)}
+					{notification.spenderAddress && (
+						<>
+							<p>{'Spender:'}</p>
+							<p className={'font-bold text-right'}>
+								<Link
+									href={`${explorerBaseURI}/address/${notification.spenderAddress}`}
+									target={'_blank'}
+									className={'text-neutral-900 hover:text-neutral-600'}>
+									<button className={'text-xs font-medium underline'}>
+										{truncateHex(notification.spenderAddress, 5)}
+									</button>
+								</Link>
+							</p>
+						</>
+					)}
 					<p>{'Chain:'}</p>
 					<p className={'font-bold text-right'}>{chainName}</p>
 				</div>
@@ -135,7 +208,7 @@ function DepositNotificationContent({notification}: {notification: TNotification
 				</div>
 			</div>
 			<div>
-				<div className={'grid grid-cols-2 grid-rows-7 gap-x-8 text-xs text-neutral-800'}>
+				<div className={'grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-neutral-800'}>
 					<p>{'From:'}</p>
 					<p className={'font-bold'}>{truncateHex(notification.fromAddress, 5)}</p>
 					<p>{'Amount:'}</p>
@@ -219,11 +292,7 @@ export function Notification({
 					<NotificationStatus status={notification.status} />
 				</div>
 
-				{notification.type === 'approve' ? (
-					<ApproveNotificationContent notification={notification} />
-				) : (
-					<DepositNotificationContent notification={notification} />
-				)}
+				<NotificationContent notification={notification} />
 
 				{notification.status === 'success' ? (
 					<div
