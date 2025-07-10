@@ -1,4 +1,4 @@
-import {type ReactElement, useEffect, useMemo} from 'react';
+import {type ReactElement, useEffect} from 'react';
 import {Drawer} from 'vaul';
 import {useNotifications} from '@lib/contexts/useNotifications';
 import {IconCross} from '@lib/icons/IconCross';
