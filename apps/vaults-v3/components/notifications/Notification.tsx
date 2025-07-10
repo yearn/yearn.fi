@@ -39,7 +39,7 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 
 	return (
 		<div className={'flex gap-4'}>
-			<div className={'flex flex-col items-center gap-2'}>
+			<div className={'flex flex-col items-center gap-3'}>
 				<div className={'relative'}>
 					<ImageWithFallback
 						alt={notification.fromTokenName || ''}
@@ -63,7 +63,7 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 					</div>
 				</div>
 
-				{notification.toTokenName && <IconArrow className={'rotate-90'} />}
+				{notification.toTokenName && <IconArrow className={'rotate-[135deg] size-4'} />}
 
 				{notification.toTokenName && (
 					<div className={'relative'}>
