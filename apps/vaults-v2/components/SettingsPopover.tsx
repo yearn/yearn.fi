@@ -1,5 +1,5 @@
 import {Fragment, useMemo} from 'react';
-import {Popover, Transition} from '@headlessui/react';
+import {Popover, PopoverButton, PopoverPanel, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {Renderable} from '@lib/components/Renderable';
@@ -41,10 +41,10 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 		<Popover className={'relative flex'}>
 			{(): ReactElement => (
 				<>
-					<Popover.Button>
+					<PopoverButton>
 						<span className={'sr-only'}>{'Settings'}</span>
 						<IconSettings className={'transition-color size-4 text-neutral-400 hover:text-neutral-900'} />
-					</Popover.Button>
+					</PopoverButton>
 					<Transition
 						as={Fragment}
 						enter={'transition ease-out duration-200'}
@@ -53,7 +53,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 						leave={'transition ease-in duration-150'}
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-1'}>
-						<Popover.Panel
+						<PopoverPanel
 							className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
 							<div className={'yearn--shadow'}>
 								<div className={'relative bg-neutral-0 p-4'}>
@@ -174,7 +174,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 									) : null}
 								</div>
 							</div>
-						</Popover.Panel>
+						</PopoverPanel>
 					</Transition>
 				</>
 			)}

@@ -1,5 +1,5 @@
 import React, {Fragment, useState} from 'react';
-import {Combobox, Transition} from '@headlessui/react';
+import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import {IconChevron} from '@lib/icons/IconChevron';
 import {cl} from '@lib/utils';
@@ -11,7 +11,7 @@ import type {ReactElement} from 'react';
 const DropdownOption = (option: TDropdownOption): ReactElement => {
 	const {label, description, icon} = option;
 	return (
-		<Combobox.Option value={option}>
+		<ComboboxOption value={option}>
 			{({active}): ReactElement => (
 				<div
 					data-active={active}
@@ -36,7 +36,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
 					</div>
 				</div>
 			)}
-		</Combobox.Option>
+		</ComboboxOption>
 	);
 };
 
@@ -119,7 +119,7 @@ export const Dropdown = ({
 						}}
 						disabled={isDisabled}>
 						<>
-							<Combobox.Button
+							<ComboboxButton
 								onClick={(): void => set_isOpen((state: boolean): boolean => !state)}
 								className={cl(
 									'flex h-10 w-full items-center justify-between p-2 text-base md:px-3',
@@ -142,7 +142,7 @@ export const Dropdown = ({
 											selected?.icon ? 'pl-2' : 'pl-0',
 											isDisabled ? 'text-neutral-600' : 'text-neutral-900'
 										)}>
-										<Combobox.Input
+										<ComboboxInput
 											className={
 												'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'
 											}
@@ -161,7 +161,7 @@ export const Dropdown = ({
 										className={`size-6 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
 									/>
 								</div>
-							</Combobox.Button>
+							</ComboboxButton>
 							<Transition
 								as={Fragment}
 								show={isOpen}
@@ -175,7 +175,7 @@ export const Dropdown = ({
 									set_isOpen(false);
 									set_search('');
 								}}>
-								<Combobox.Options className={'yearn--dropdown-menu z-50'}>
+								<ComboboxOptions className={'yearn--dropdown-menu z-50'}>
 									{filteredOptions.length === 0 ? (
 										<DropdownEmpty isSearching={isSearching} />
 									) : (
@@ -191,7 +191,7 @@ export const Dropdown = ({
 											)
 										)
 									)}
-								</Combobox.Options>
+								</ComboboxOptions>
 							</Transition>
 						</>
 					</Combobox>

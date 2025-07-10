@@ -87,12 +87,16 @@
 }
 
 @layer base {
-	/* This is to prevent the horizontal scrollbar from appearing on the page. Breaks the scroll. */
-	/* html,
-	body {
-		overflow-x: hidden;
-		width: 100%;
-	} */
+	/* This is to prevent the horizontal scrollbar from appearing on the page and to make it possible to scroll while the dropdown is open. */
+	html {
+		overflow: auto !important;
+		padding-right: 0 !important;
+	}
+
+	/* Override RainbowKit's scroll lock styles to prevent gutter on windows */
+	html body[data-scroll-locked] {
+		margin-right: 0px !important;
+	}
 
 	#swap {
 		@apply scroll-mt-12 mb-0 md:mb-44;
