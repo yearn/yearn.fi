@@ -22,13 +22,13 @@ export type TWithSolver = {
 	onApprove: (
 		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		onSuccess: (receipt: TransactionReceipt) => Promise<void>,
-		onError: (error: Error) => Promise<void>
+		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		onError?: (error?: Error) => Promise<void>
 	) => Promise<void>;
 	onExecuteDeposit: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		onSuccess: (receipt: TransactionReceipt) => Promise<void>,
-		onError: (error: Error) => Promise<void>
+		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		onError?: (error?: Error) => Promise<void>
 	) => Promise<void>;
 	onExecuteWithdraw: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
@@ -58,13 +58,13 @@ export type TSolverContext = {
 	onApprove: (
 		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		onSuccess: (receipt: TransactionReceipt) => Promise<void>,
-		onError: (error: Error) => Promise<void>
+		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 	onExecuteDeposit: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		onSuccess: (receipt: TransactionReceipt) => Promise<void>,
-		onError: (error: Error) => Promise<void>
+		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 	onExecuteWithdraw: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,

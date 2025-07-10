@@ -94,8 +94,8 @@ export function useSolverVanilla(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: (receipt: TransactionReceipt) => Promise<void>,
-			onError: (error: Error) => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not set');
@@ -113,10 +113,10 @@ export function useSolverVanilla(): TSolverContext {
 				if (result.isSuccessful && result.receipt) {
 					onSuccess(result.receipt);
 				} else {
-					onError(result.error as Error);
+					onError?.(result.error as Error);
 				}
 			} catch (error) {
-				onError(error as Error);
+				onError?.(error as Error);
 			}
 		},
 		[provider]
@@ -129,8 +129,8 @@ export function useSolverVanilla(): TSolverContext {
 	const onExecuteDeposit = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: (receipt: TransactionReceipt) => Promise<void>,
-			onError: (error: Error) => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.outputToken, 'Output token is not set');
@@ -147,10 +147,10 @@ export function useSolverVanilla(): TSolverContext {
 				if (result.isSuccessful && result.receipt) {
 					onSuccess(result.receipt);
 				} else {
-					onError(result.error as Error);
+					onError?.(result.error as Error);
 				}
 			} catch (error) {
-				onError(error as Error);
+				onError?.(error as Error);
 			}
 		},
 		[provider]

@@ -25,12 +25,12 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			status?: TNotificationStatus,
 			idToUpdate?: number
 		): Promise<number> => {
-			if (idToUpdate) {
+			if (idToUpdate && receipt) {
 				await updateEntry(
 					{
-						txHash: receipt?.transactionHash,
+						txHash: receipt.transactionHash,
 						timeFinished: Date.now() / 1000,
-						blockNumber: receipt?.blockNumber,
+						blockNumber: receipt.blockNumber,
 						status
 					},
 					idToUpdate
@@ -63,12 +63,12 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			status?: TNotificationStatus,
 			idToUpdate?: number
 		): Promise<number> => {
-			if (idToUpdate) {
+			if (idToUpdate && receipt) {
 				await updateEntry(
 					{
-						txHash: receipt?.transactionHash,
+						txHash: receipt.transactionHash,
 						timeFinished: Date.now() / 1000,
-						blockNumber: receipt?.blockNumber,
+						blockNumber: receipt.blockNumber,
 						status
 					},
 					idToUpdate

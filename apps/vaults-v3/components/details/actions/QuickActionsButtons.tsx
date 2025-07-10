@@ -171,7 +171,7 @@ export function VaultDetailsQuickActionsButtons({
 		onApprove(
 			shouldApproveInfinite ? maxUint256 : toBigInt(actionParams.amount?.raw),
 			set_txStatusApprove,
-			async (receipt: TransactionReceipt): Promise<void> => {
+			async (receipt?: TransactionReceipt): Promise<void> => {
 				await handleApproveNotification(actionParams, receipt, 'success', id);
 				await triggerRetrieveAllowance();
 			},
@@ -256,7 +256,7 @@ export function VaultDetailsQuickActionsButtons({
 						const id = await handleDepositNotification(actionParams);
 						onExecuteDeposit(
 							set_txStatusExecuteDeposit,
-							async (receipt: TransactionReceipt) => onSuccess(true, receipt, id),
+							async (receipt?: TransactionReceipt) => onSuccess(true, receipt, id),
 							async () => {
 								await handleDepositNotification(actionParams, undefined, 'error', id);
 							}
@@ -288,7 +288,7 @@ export function VaultDetailsQuickActionsButtons({
 					const id = await handleDepositNotification(actionParams);
 					onExecuteDeposit(
 						set_txStatusExecuteDeposit,
-						async (receipt: TransactionReceipt) => onSuccess(true, receipt, id),
+						async (receipt?: TransactionReceipt) => onSuccess(true, receipt, id),
 						async () => {
 							await handleDepositNotification(actionParams, undefined, 'error', id);
 						}
