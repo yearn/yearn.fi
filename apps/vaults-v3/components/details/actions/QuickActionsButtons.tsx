@@ -21,6 +21,7 @@ import type {ReactElement} from 'react';
 import type {TransactionReceipt} from 'viem';
 import type {TNormalizedBN} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {TNotificationType} from '@lib/types/notifications';
 
 export function VaultDetailsQuickActionsButtons({
 	currentVault,
@@ -71,11 +72,22 @@ export function VaultDetailsQuickActionsButtons({
 	 ** on the from and to tokens.
 	 *********************************************************************************************/
 	const onSuccess = useCallback(
-		async (isDeposit: boolean, receipt?: TransactionReceipt, notificationIdToUpdate?: number): Promise<void> => {
+		async (
+			isDeposit: boolean,
+			type?: TNotificationType,
+			receipt?: TransactionReceipt,
+			notificationIdToUpdate?: number
+		): Promise<void> => {
 			const {chainID} = currentVault;
 
 			if (notificationIdToUpdate) {
-				await handleDepositNotification(actionParams, receipt, 'success', notificationIdToUpdate);
+				await handleDepositNotification({
+					actionParams,
+					type,
+					receipt,
+					status: 'success',
+					idToUpdate: notificationIdToUpdate
+				});
 			}
 
 			if (isDeposit) {
@@ -167,16 +179,16 @@ export function VaultDetailsQuickActionsButtons({
 			// currentSolver === Solver.enum.Vanilla || TODO: Maybe remove this?
 			currentSolver === Solver.enum.InternalMigration;
 
-		const id = await handleApproveNotification(actionParams);
+		const id = await handleApproveNotification({actionParams});
 		onApprove(
 			shouldApproveInfinite ? maxUint256 : toBigInt(actionParams.amount?.raw),
 			set_txStatusApprove,
 			async (receipt?: TransactionReceipt): Promise<void> => {
-				await handleApproveNotification(actionParams, receipt, 'success', id);
+				await handleApproveNotification({actionParams, receipt, status: 'success', idToUpdate: id});
 				await triggerRetrieveAllowance();
 			},
 			async (): Promise<void> => {
-				await handleApproveNotification(actionParams, undefined, 'error', id);
+				await handleApproveNotification({actionParams, status: 'error', idToUpdate: id});
 			}
 		);
 	}, [currentSolver, onApprove, actionParams.amount?.raw, handleApproveNotification, triggerRetrieveAllowance]);
@@ -253,12 +265,12 @@ export function VaultDetailsQuickActionsButtons({
 				<Button
 					variant={isV3Page ? 'v3' : undefined}
 					onClick={async (): Promise<void> => {
-						const id = await handleDepositNotification(actionParams);
+						const id = await handleDepositNotification({actionParams});
 						onExecuteDeposit(
 							set_txStatusExecuteDeposit,
-							async (receipt?: TransactionReceipt) => onSuccess(true, receipt, id),
+							async (receipt?: TransactionReceipt) => onSuccess(true, 'deposit and stake', receipt, id),
 							async () => {
-								await handleDepositNotification(actionParams, undefined, 'error', id);
+								await handleDepositNotification({actionParams, status: 'error', idToUpdate: id});
 							}
 						);
 					}}
@@ -285,12 +297,12 @@ export function VaultDetailsQuickActionsButtons({
 			<Button
 				variant={isV3Page ? 'v3' : undefined}
 				onClick={async (): Promise<void> => {
-					const id = await handleDepositNotification(actionParams);
+					const id = await handleDepositNotification({actionParams});
 					onExecuteDeposit(
 						set_txStatusExecuteDeposit,
-						async (receipt?: TransactionReceipt) => onSuccess(true, receipt, id),
+						async (receipt?: TransactionReceipt) => onSuccess(true, 'deposit', receipt, id),
 						async () => {
-							await handleDepositNotification(actionParams, undefined, 'error', id);
+							await handleDepositNotification({actionParams, status: 'error', idToUpdate: id});
 						}
 					);
 				}}

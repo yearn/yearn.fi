@@ -1,12 +1,12 @@
 import React, {createContext, useCallback, useContext, useMemo} from 'react';
 import {TActionParams} from '@vaults-v2/contexts/useActionFlow';
-import {toAddress} from '@lib/utils';
+import {formatAmount, toAddress} from '@lib/utils';
 
 import {useNotifications} from './useNotifications';
 import {useWeb3} from './useWeb3';
 
 import type {TransactionReceipt} from 'viem';
-import type {TNotificationsActionsContext, TNotificationStatus} from '@lib/types/notifications';
+import type {TNotificationsActionsContext, TNotificationStatus, TNotificationType} from '@lib/types/notifications';
 
 const defaultProps: TNotificationsActionsContext = {
 	handleApproveNotification: async (): Promise<number> => 0,
@@ -19,18 +19,23 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 	const {address} = useWeb3();
 
 	const handleApproveNotification = useCallback(
-		async (
-			actionParams: Partial<TActionParams>,
-			receipt?: TransactionReceipt,
-			status?: TNotificationStatus,
-			idToUpdate?: number
-		): Promise<number> => {
-			if (idToUpdate && receipt) {
+		async ({
+			actionParams,
+			receipt,
+			status,
+			idToUpdate
+		}: {
+			actionParams: Partial<TActionParams>;
+			receipt?: TransactionReceipt;
+			status?: TNotificationStatus;
+			idToUpdate?: number;
+		}): Promise<number> => {
+			if (idToUpdate) {
 				await updateEntry(
 					{
-						txHash: receipt.transactionHash,
+						txHash: receipt?.transactionHash,
 						timeFinished: Date.now() / 1000,
-						blockNumber: receipt.blockNumber,
+						blockNumber: receipt?.blockNumber,
 						status
 					},
 					idToUpdate
@@ -46,10 +51,10 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 				status: 'pending',
 				type: 'approve',
 				fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
-				fromTokenName: actionParams.selectedOptionFrom?.label || '',
+				fromTokenName: actionParams.selectedOptionFrom?.symbol || '',
 				spenderAddress: toAddress(actionParams.selectedOptionTo?.value),
-				spenderName: actionParams.selectedOptionTo?.label || '',
-				amount: actionParams.amount?.display || '0'
+				spenderName: actionParams.selectedOptionTo?.symbol || '',
+				amount: formatAmount(actionParams.amount?.normalized || 0)
 			});
 			return createdId;
 		},
@@ -57,18 +62,25 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 	);
 
 	const handleDepositNotification = useCallback(
-		async (
-			actionParams: Partial<TActionParams>,
-			receipt?: TransactionReceipt,
-			status?: TNotificationStatus,
-			idToUpdate?: number
-		): Promise<number> => {
-			if (idToUpdate && receipt) {
+		async ({
+			actionParams,
+			type,
+			receipt,
+			status,
+			idToUpdate
+		}: {
+			actionParams: Partial<TActionParams>;
+			type?: TNotificationType;
+			receipt?: TransactionReceipt;
+			status?: TNotificationStatus;
+			idToUpdate?: number;
+		}): Promise<number> => {
+			if (idToUpdate) {
 				await updateEntry(
 					{
-						txHash: receipt.transactionHash,
+						txHash: receipt?.transactionHash,
 						timeFinished: Date.now() / 1000,
-						blockNumber: receipt.blockNumber,
+						blockNumber: receipt?.blockNumber,
 						status
 					},
 					idToUpdate
@@ -79,16 +91,16 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			const createdId = await addNotification({
 				address: toAddress(address),
 				fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
-				fromTokenName: actionParams.selectedOptionFrom?.label || '',
+				fromTokenName: actionParams.selectedOptionFrom?.symbol || '',
 				toAddress: toAddress(actionParams.selectedOptionTo?.value),
-				toTokenName: actionParams.selectedOptionTo?.label || '',
+				toTokenName: actionParams.selectedOptionTo?.symbol || '',
 				chainId: actionParams.selectedOptionFrom?.chainID || 1,
 				txHash: undefined,
 				timeFinished: undefined,
 				blockNumber: undefined,
 				status: 'pending',
-				type: 'deposit',
-				amount: actionParams.amount?.display || '0'
+				type: type || 'deposit',
+				amount: formatAmount(actionParams.amount?.normalized || 0)
 			});
 			return createdId;
 		},

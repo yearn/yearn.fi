@@ -21,12 +21,14 @@ import type {TTxResponse, TWriteTransaction} from '@lib/utils/wagmi';
  ** @param amount - The amount of the underlying asset to deposit.
  ** @param vaultVersion - The version of the vault to deposit into.
  ** @param stakingPoolAddress - The address of the staking pool to stake into.
+ ** @param confirmation - The number of confirmations to wait for.
  **		For VeYFI vaults only, ignored for Optimism.
  ******************************************************************************/
 type TDepositAndStake = TWriteTransaction & {
 	vaultAddress: TAddress | undefined;
 	stakingPoolAddress?: TAddress | undefined;
 	vaultVersion?: string | undefined;
+	confirmation?: number | undefined;
 	amount: bigint;
 };
 export async function depositAndStake(props: TDepositAndStake): Promise<TTxResponse> {
@@ -40,7 +42,8 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 			address: props.contractAddress,
 			abi: STAKING_REWARDS_ZAP_ABI,
 			functionName: 'zapIn',
-			args: [props.vaultAddress, props.amount]
+			args: [props.vaultAddress, props.amount],
+			confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 		});
 	}
 	// If we are depositing into the V3 Staking
@@ -52,7 +55,8 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 			address: props.contractAddress,
 			abi: V3_REWARDS_ZAP_ABI,
 			functionName: 'zapIn',
-			args: [props.vaultAddress, props.amount, false]
+			args: [props.vaultAddress, props.amount, false],
+			confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 		});
 	}
 
@@ -64,7 +68,8 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 				address: props.contractAddress,
 				abi: YGAUGE_ZAP_ABI,
 				functionName: 'zapIn',
-				args: [props.vaultAddress, props.amount, props.stakingPoolAddress]
+				args: [props.vaultAddress, props.amount, props.stakingPoolAddress],
+				confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 			});
 		}
 
@@ -72,7 +77,8 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 			address: props.contractAddress,
 			abi: YGAUGE_ZAP_ABI,
 			functionName: 'zapInLegacy',
-			args: [props.vaultAddress, props.amount, props.stakingPoolAddress]
+			args: [props.vaultAddress, props.amount, props.stakingPoolAddress],
+			confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 		});
 	}
 	throw new Error('Invalid contract address');

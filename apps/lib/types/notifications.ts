@@ -46,16 +46,28 @@ export type TNotificationsContext = {
 };
 
 export type TNotificationsActionsContext = {
-	handleApproveNotification: (
-		actionParams: Partial<TActionParams>,
-		receipt?: TransactionReceipt,
-		status?: TNotificationStatus,
-		idToUpdate?: number
-	) => Promise<number>;
-	handleDepositNotification: (
-		actionParams: Partial<TActionParams>,
-		receipt?: TransactionReceipt,
-		status?: TNotificationStatus,
-		idToUpdate?: number
-	) => Promise<number>;
+	handleApproveNotification: ({
+		actionParams,
+		receipt,
+		status,
+		idToUpdate
+	}: {
+		actionParams: Partial<TActionParams>;
+		receipt?: TransactionReceipt;
+		status?: TNotificationStatus;
+		idToUpdate?: number;
+	}) => Promise<number>;
+	handleDepositNotification: ({
+		actionParams,
+		type,
+		receipt,
+		status,
+		idToUpdate
+	}: {
+		actionParams: Partial<TActionParams>;
+		type?: TNotificationType;
+		receipt?: TransactionReceipt;
+		status?: TNotificationStatus;
+		idToUpdate?: number;
+	}) => Promise<number>;
 };

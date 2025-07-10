@@ -1,5 +1,5 @@
 import {useCallback, useMemo, useRef} from 'react';
-import {maxUint256} from 'viem';
+import {maxUint256, TransactionReceipt} from 'viem';
 import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {depositAndStake} from '@vaults-v2/utils/actions';
@@ -86,21 +86,27 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not set');
-
-			const result = await approveERC20({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				spenderAddress: YGAUGES_ZAP_ADDRESS,
-				amount: amount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await approveERC20({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					spenderAddress: YGAUGES_ZAP_ADDRESS,
+					amount: amount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
 		[provider]
@@ -113,23 +119,29 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 	const onExecuteDeposit = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
-
-			const result = await depositAndStake({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: YGAUGES_ZAP_ADDRESS,
-				vaultAddress: request.current.outputToken.value,
-				vaultVersion: request.current.version,
-				stakingPoolAddress: request.current.stakingPoolAddress,
-				amount: request.current.inputAmount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await depositAndStake({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: YGAUGES_ZAP_ADDRESS,
+					vaultAddress: request.current.outputToken.value,
+					vaultVersion: request.current.version,
+					stakingPoolAddress: request.current.stakingPoolAddress,
+					amount: request.current.inputAmount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
 		[provider]
