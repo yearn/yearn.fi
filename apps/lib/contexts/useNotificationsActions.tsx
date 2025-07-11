@@ -10,7 +10,8 @@ import type {TNotificationsActionsContext, TNotificationStatus, TNotificationTyp
 
 const defaultProps: TNotificationsActionsContext = {
 	handleApproveNotification: async (): Promise<number> => 0,
-	handleDepositNotification: async (): Promise<number> => 0
+	handleDepositNotification: async (): Promise<number> => 0,
+	handleWithdrawNotification: async (): Promise<number> => 0
 };
 
 const NotificationsActionsContext = createContext<TNotificationsActionsContext>(defaultProps);
@@ -40,6 +41,7 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 					},
 					idToUpdate
 				);
+
 				return idToUpdate;
 			}
 			const createdId = await addNotification({
@@ -85,6 +87,7 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 					},
 					idToUpdate
 				);
+
 				return idToUpdate;
 			}
 
@@ -107,15 +110,63 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 		[addNotification, updateEntry, address]
 	);
 
+	const handleWithdrawNotification = useCallback(
+		async ({
+			actionParams,
+			type,
+			receipt,
+			status,
+			idToUpdate
+		}: {
+			actionParams: Partial<TActionParams>;
+			type?: TNotificationType;
+			receipt?: TransactionReceipt;
+			status?: TNotificationStatus;
+			idToUpdate?: number;
+		}): Promise<number> => {
+			if (idToUpdate) {
+				await updateEntry(
+					{
+						txHash: receipt?.transactionHash,
+						timeFinished: Date.now() / 1000,
+						blockNumber: receipt?.blockNumber,
+						status
+					},
+					idToUpdate
+				);
+
+				return idToUpdate;
+			}
+
+			const createdId = await addNotification({
+				address: toAddress(address),
+				fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
+				fromTokenName: actionParams.selectedOptionFrom?.symbol || '',
+				toAddress: toAddress(actionParams.selectedOptionTo?.value),
+				toTokenName: actionParams.selectedOptionTo?.symbol || '',
+				chainId: actionParams.selectedOptionFrom?.chainID || 1,
+				txHash: undefined,
+				timeFinished: undefined,
+				blockNumber: undefined,
+				status: 'pending',
+				type: type || 'withdraw',
+				amount: formatAmount(actionParams.amount?.normalized || 0)
+			});
+			return createdId;
+		},
+		[addNotification, updateEntry, address]
+	);
+
 	/**************************************************************************
 	 * Context value that is passed to all children of this component.
 	 *************************************************************************/
 	const contextValue = useMemo(
 		(): TNotificationsActionsContext => ({
 			handleApproveNotification,
-			handleDepositNotification
+			handleDepositNotification,
+			handleWithdrawNotification
 		}),
-		[handleApproveNotification]
+		[handleApproveNotification, handleDepositNotification, handleWithdrawNotification]
 	);
 
 	return <NotificationsActionsContext.Provider value={contextValue}>{children}</NotificationsActionsContext.Provider>;

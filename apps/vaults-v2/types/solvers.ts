@@ -32,7 +32,8 @@ export type TWithSolver = {
 	) => Promise<void>;
 	onExecuteWithdraw: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		onSuccess: () => Promise<void>
+		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		onError?: (error?: Error) => Promise<void>
 	) => Promise<void>;
 };
 
@@ -68,7 +69,8 @@ export type TSolverContext = {
 	) => Promise<void>;
 	onExecuteWithdraw: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		onSuccess: () => Promise<void>
+		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		onError?: (error?: Error) => Promise<void>
 	) => Promise<void>;
 };
 

@@ -23,7 +23,9 @@ function NotificationStatus(props: {status: TNotificationStatus}): ReactElement 
 			className={cl(
 				'flex gap-2 justify-center self-start py-2 px-4 items-center rounded-lg text-xs',
 				STATUS[props.status][1]
-			)}>
+			)}
+			aria-label={`Status: ${STATUS[props.status][0]}`}
+			role={'status'}>
 			{STATUS[props.status][2]}
 			{STATUS[props.status][0]}
 		</div>
@@ -31,21 +33,41 @@ function NotificationStatus(props: {status: TNotificationStatus}): ReactElement 
 }
 
 function NotificationContent({notification}: {notification: TNotification}): ReactElement {
-	const chainName = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)?.name;
+	const chainName = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)?.name || 'Unknown';
 	const explorerBaseURI = useMemo(() => {
 		const chain = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId);
 		return chain?.blockExplorers?.default?.url || 'https://etherscan.io';
-	}, [notification.chainId, notification.spenderAddress]);
+	}, [notification.chainId]);
+
+	const fromTokenLabel = useMemo(() => {
+		switch (notification.type) {
+			case 'approve':
+				return 'Token:';
+			case 'withdraw':
+				return 'From vault:';
+			default:
+				return 'From token:';
+		}
+	}, [notification.type]);
+
+	const toTokenLabel = useMemo(() => {
+		switch (notification.type) {
+			case 'withdraw':
+				return 'To token:';
+			default:
+				return 'To vault:';
+		}
+	}, [notification.type]);
 
 	return (
 		<div className={'flex gap-4'}>
 			<div className={'flex flex-col items-center gap-3'}>
 				<div className={'relative'}>
 					<ImageWithFallback
-						alt={notification.fromTokenName || ''}
+						alt={notification.fromTokenName || 'Token'}
 						unoptimized
-						src={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.fromAddress}/logo-128.png`}
-						altSrc={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.fromAddress}/logo-128.png`}
+						src={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.fromAddress || '0x0'}/logo-128.png`}
+						altSrc={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.fromAddress || '0x0'}/logo-128.png`}
 						quality={90}
 						width={32}
 						height={32}
@@ -65,10 +87,10 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 
 				{notification.toTokenName && <IconArrow className={'rotate-[135deg] size-4'} />}
 
-				{notification.toTokenName && (
+				{notification.toTokenName && notification.toAddress && (
 					<div className={'relative'}>
 						<ImageWithFallback
-							alt={notification.toTokenName || ''}
+							alt={notification.toTokenName || 'Token'}
 							unoptimized
 							src={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.toAddress}/logo-128.png`}
 							altSrc={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.toAddress}/logo-128.png`}
@@ -97,33 +119,41 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 						<Link
 							href={`${explorerBaseURI}/address/${notification.address}`}
 							target={'_blank'}
+							rel={'noopener noreferrer'}
+							aria-label={`View address ${notification.address} on explorer`}
 							className={'text-neutral-900 hover:text-neutral-600'}>
 							<button className={'text-xs font-medium underline'}>
 								{truncateHex(notification.address, 5)}
 							</button>
 						</Link>
 					</p>
-					<p>{notification.type === 'approve' ? 'Token: ' : 'From token: '}</p>
+					<p>{fromTokenLabel}</p>
 					<p className={'font-bold text-right'}>
 						<Link
-							href={`${explorerBaseURI}/address/${notification.fromAddress}`}
+							href={`${explorerBaseURI}/address/${notification.fromAddress || '0x0'}`}
 							target={'_blank'}
+							rel={'noopener noreferrer'}
+							aria-label={`View token ${notification.fromTokenName || 'Unknown'} on explorer`}
 							className={'text-neutral-900 hover:text-neutral-600'}>
-							<button className={'text-xs font-medium underline'}>{notification.fromTokenName}</button>
+							<button className={'text-xs font-medium underline'}>
+								{notification.fromTokenName || 'Unknown'}
+							</button>
 						</Link>
 					</p>
 					<p>{'Amount:'}</p>
 					<p className={'font-bold text-right'}>{notification.amount}</p>
 					{notification.toTokenName && (
 						<>
-							<p>{'To vault:'}</p>
+							<p>{toTokenLabel}</p>
 							<p className={'font-bold text-right'}>
 								<Link
-									href={`${explorerBaseURI}/address/${notification.toAddress}`}
+									href={`${explorerBaseURI}/address/${notification.toAddress || '0x0'}`}
 									target={'_blank'}
+									rel={'noopener noreferrer'}
+									aria-label={`View vault ${notification.toTokenName || 'Unknown'} on explorer`}
 									className={'text-neutral-900 hover:text-neutral-600'}>
 									<button className={'text-xs font-medium underline'}>
-										{notification.toTokenName}
+										{notification.toTokenName || 'Unknown'}
 									</button>
 								</Link>
 							</p>
@@ -136,9 +166,11 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 								<Link
 									href={`${explorerBaseURI}/address/${notification.spenderAddress}`}
 									target={'_blank'}
+									rel={'noopener noreferrer'}
+									aria-label={`View spender ${notification.spenderAddress} on explorer`}
 									className={'text-neutral-900 hover:text-neutral-600'}>
 									<button className={'text-xs font-medium underline'}>
-										{truncateHex(notification.spenderAddress, 5)}
+										{truncateHex(notification.spenderAddress || '0x0', 5)}
 									</button>
 								</Link>
 							</p>
@@ -159,14 +191,19 @@ export function Notification({
 	notification: TNotification;
 	variant: 'v2' | 'v3';
 }): ReactElement {
-	const date = new Date((notification.timeFinished || 0) * 1000);
-	const formattedDate = date.toLocaleDateString('en-US', {
-		year: 'numeric',
-		month: 'short',
-		day: 'numeric',
-		hour: 'numeric',
-		minute: 'numeric'
-	});
+	const formattedDate = useMemo(() => {
+		if (!notification.timeFinished || notification.status === 'pending') {
+			return null;
+		}
+		const date = new Date(notification.timeFinished * 1000);
+		return date.toLocaleDateString('en-US', {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: 'numeric'
+		});
+	}, [notification.timeFinished, notification.status]);
 
 	const explorerLink = useMemo(() => {
 		if (!notification.txHash) {
@@ -184,23 +221,32 @@ export function Notification({
 				return 'Approve';
 			case 'deposit':
 				return 'Deposit';
+			case 'withdraw':
+				return 'Withdraw';
 			case 'zap':
 				return 'Zap';
 			case 'deposit and stake':
 				return 'Deposit & Stake';
 			case 'stake':
 				return 'Stake';
+			case 'unstake':
+				return 'Unstake';
 			case 'claim':
 				return 'Claim';
 			case 'claim and exit':
 				return 'Claim & Exit';
+			case 'migrate':
+				return 'Migrate';
 			default:
 				return 'Transaction';
 		}
 	}, [notification.type]);
 
 	return (
-		<div className={'rounded-xl border border-neutral-200 p-4 bg-neutral-200 relative'}>
+		<div
+			className={'rounded-xl border border-neutral-200 p-4 bg-neutral-200 relative'}
+			role={'article'}
+			aria-label={`${notificationTitle} notification`}>
 			{variant === 'v3' && (
 				<div
 					className={cl(
@@ -231,6 +277,8 @@ export function Notification({
 							<Link
 								href={explorerLink}
 								target={'_blank'}
+								rel={'noopener noreferrer'}
+								aria-label={`View transaction ${notification.txHash} on explorer`}
 								className={'text-neutral-900 hover:text-neutral-600'}>
 								<button className={'text-xs font-medium underline'}>{'View tx'}</button>
 							</Link>

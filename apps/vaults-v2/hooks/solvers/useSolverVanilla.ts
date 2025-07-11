@@ -163,37 +163,48 @@ export function useSolverVanilla(): TSolverContext {
 	const onExecuteWithdraw = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current.inputToken, 'Output token is not set');
-			assert(request.current.inputAmount, 'Input amount is not set');
-			const isV3 =
-				request.current?.version.split('.')?.[0] === '3' || request.current?.version.split('.')?.[0] === '~3';
+			try {
+				assert(request.current, 'Request is not set');
+				assert(request.current.inputToken, 'Output token is not set');
+				assert(request.current.inputAmount, 'Input amount is not set');
+				const isV3 =
+					request.current?.version.split('.')?.[0] === '3' || request.current?.version.split('.')?.[0] === '~3';
 
-			if (isV3) {
-				const result = await redeemV3Shares({
+				if (isV3) {
+					const result = await redeemV3Shares({
+						connector: provider,
+						chainID: request.current.chainID,
+						contractAddress: request.current.inputToken.value,
+						amount: request.current.inputAmount,
+						maxLoss: maxLoss,
+						statusHandler: txStatusSetter
+					});
+					if (result.isSuccessful) {
+						await onSuccess(result.receipt);
+					} else if (onError) {
+						await onError(new Error('Withdrawal failed'));
+					}
+					return;
+				}
+				const result = await withdrawShares({
 					connector: provider,
 					chainID: request.current.chainID,
 					contractAddress: request.current.inputToken.value,
 					amount: request.current.inputAmount,
-					maxLoss: maxLoss,
 					statusHandler: txStatusSetter
 				});
 				if (result.isSuccessful) {
-					onSuccess();
+					await onSuccess(result.receipt);
+				} else if (onError) {
+					await onError(new Error('Withdrawal failed'));
 				}
-				return;
-			}
-			const result = await withdrawShares({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				amount: request.current.inputAmount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			} catch (error) {
+				if (onError) {
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+				}
 			}
 		},
 		[maxLoss, provider]

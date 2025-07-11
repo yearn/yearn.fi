@@ -54,7 +54,7 @@ export function VaultDetailsQuickActionsButtons({
 		hash
 	} = useSolver();
 
-	const {handleApproveNotification, handleDepositNotification} = useNotificationsActions();
+	const {handleApproveNotification, handleDepositNotification, handleWithdrawNotification} = useNotificationsActions();
 
 	/**********************************************************************************************
 	 ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook
@@ -324,9 +324,19 @@ export function VaultDetailsQuickActionsButtons({
 	return (
 		<Button
 			variant={isV3Page ? 'v3' : undefined}
-			onClick={async (): Promise<void> =>
-				onExecuteWithdraw(set_txStatusExecuteWithdraw, async () => onSuccess(false))
-			}
+			onClick={async (): Promise<void> => {
+				const id = await handleWithdrawNotification({actionParams});
+				onExecuteWithdraw(
+					set_txStatusExecuteWithdraw,
+					async (receipt?: TransactionReceipt) => {
+						await handleWithdrawNotification({actionParams, receipt, status: 'success', idToUpdate: id});
+						await onSuccess(false);
+					},
+					async () => {
+						await handleWithdrawNotification({actionParams, status: 'error', idToUpdate: id});
+					}
+				);
+			}}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
 			isDisabled={isButtonDisabled}>

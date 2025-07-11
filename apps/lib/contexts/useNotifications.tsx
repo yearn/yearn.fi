@@ -9,6 +9,8 @@ const defaultProps: TNotificationsContext = {
 	shouldOpenCurtain: false,
 	cachedEntries: [],
 	notificationStatus: null,
+	isLoading: true,
+	error: null,
 	set_notificationStatus: (): void => undefined,
 	deleteByID: async (): Promise<void> => undefined,
 	updateEntry: async (): Promise<void> => undefined,
@@ -20,6 +22,8 @@ const NotificationsContext = createContext<TNotificationsContext>(defaultProps);
 export const WithNotifications = ({children}: {children: React.ReactElement}): React.ReactElement => {
 	const [cachedEntries, set_cachedEntries] = useState<TNotification[]>([]);
 	const [entryNonce, set_entryNonce] = useState<number>(0);
+	const [isLoading, set_isLoading] = useState<boolean>(true);
+	const [error, set_error] = useState<string | null>(null);
 
 	/**************************************************************************
 	 * State that is used to store latest added/updated notification status
@@ -39,8 +43,18 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 	 ************************************************************************************************/
 	useAsyncTrigger(async (): Promise<void> => {
 		entryNonce;
-		const entriesFromDB = await getAll();
-		set_cachedEntries(entriesFromDB);
+		set_isLoading(true);
+		set_error(null);
+		try {
+			const entriesFromDB = await getAll();
+			set_cachedEntries(entriesFromDB || []);
+		} catch (error) {
+			console.error('Failed to fetch notifications from IndexedDB:', error);
+			set_cachedEntries([]);
+			set_error('Failed to load notifications');
+		} finally {
+			set_isLoading(false);
+		}
 	}, [getAll, entryNonce]);
 
 	/************************************************************************************************
@@ -58,12 +72,18 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 	 ************************************************************************************************/
 	const updateEntry = useCallback(
 		async (entry: Partial<TNotification>, id: number) => {
-			const notification = await getByID(id);
+			try {
+				const notification = await getByID(id);
 
-			if (notification) {
-				await update({...notification, ...entry});
-				set_entryNonce(nonce => nonce + 1);
-				set_notificationStatus(entry?.status || null);
+				if (notification) {
+					await update({...notification, ...entry});
+					set_entryNonce(nonce => nonce + 1);
+					set_notificationStatus(entry?.status || null);
+				} else {
+					console.warn(`Notification with id ${id} not found`);
+				}
+			} catch (error) {
+				console.error('Failed to update notification:', error);
 			}
 		},
 		[getByID, update]
@@ -71,12 +91,31 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 
 	const addNotification = useCallback(
 		async (notification: TNotification): Promise<number> => {
-			const id = await add(notification);
-			set_entryNonce(nonce => nonce + 1);
-			set_notificationStatus(notification.status);
-			return id;
+			try {
+				const id = await add(notification);
+				set_entryNonce(nonce => nonce + 1);
+				set_notificationStatus(notification.status);
+				return id;
+			} catch (error) {
+				console.error('Failed to add notification:', error);
+
+				return -1;
+			}
 		},
 		[add]
+	);
+
+	const deleteByIDWithErrorHandling = useCallback(
+		async (id: number): Promise<void> => {
+			try {
+				await deleteByID(id);
+				set_entryNonce(nonce => nonce + 1);
+			} catch (error) {
+				console.error('Failed to delete notification:', error);
+				set_error('Failed to delete notification');
+			}
+		},
+		[deleteByID]
 	);
 
 	/**************************************************************************
@@ -86,14 +125,25 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 		(): TNotificationsContext => ({
 			shouldOpenCurtain,
 			cachedEntries,
-			deleteByID,
+			isLoading,
+			error,
+			deleteByID: deleteByIDWithErrorHandling,
 			updateEntry,
 			addNotification,
 			notificationStatus,
 			set_notificationStatus,
 			set_shouldOpenCurtain
 		}),
-		[shouldOpenCurtain, cachedEntries, deleteByID, updateEntry, addNotification, notificationStatus]
+		[
+			shouldOpenCurtain,
+			cachedEntries,
+			isLoading,
+			error,
+			deleteByIDWithErrorHandling,
+			updateEntry,
+			addNotification,
+			notificationStatus
+		]
 	);
 
 	return (

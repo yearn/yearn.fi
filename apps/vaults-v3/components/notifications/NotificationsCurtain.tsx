@@ -9,7 +9,7 @@ export function NotificationsCurtain(props: {
 	set_shouldOpenCurtain: (value: boolean) => void;
 	isOpen: boolean;
 }): ReactElement {
-	const {cachedEntries, set_notificationStatus} = useNotifications();
+	const {cachedEntries, set_notificationStatus, isLoading, error} = useNotifications();
 	const isEmpty = cachedEntries.length === 0;
 
 	/*************************************************************************************
@@ -40,7 +40,23 @@ export function NotificationsCurtain(props: {
 								</Drawer.Close>
 							</div>
 							<div className={'h-[94.5%] overflow-y-auto overflow-x-hidden scrollbar-none'}>
-								{isEmpty ? (
+								{isLoading ? (
+									<div className={'flex h-full items-center justify-center'}>
+										<div className={'flex flex-col items-center gap-2'}>
+											<div
+												className={
+													'size-8 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900'
+												}
+											/>
+											<p className={'text-sm text-neutral-600'}>{'Loading notifications...'}</p>
+										</div>
+									</div>
+								) : error ? (
+									<div className={'mx-auto mt-40 text-center'}>
+										<p className={'text-red-600 font-medium'}>{'Error loading notifications'}</p>
+										<p className={'text-sm text-neutral-600 mt-2'}>{error}</p>
+									</div>
+								) : isEmpty ? (
 									<p className={'mx-auto mt-40 text-center text-neutral-800'}>
 										{'Nothing here yet!'}
 									</p>
