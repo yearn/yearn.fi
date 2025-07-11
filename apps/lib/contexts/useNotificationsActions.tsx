@@ -1,6 +1,6 @@
 import React, {createContext, useCallback, useContext, useMemo} from 'react';
 import {TActionParams} from '@vaults-v2/contexts/useActionFlow';
-import {formatAmount, formatTAmount, toAddress} from '@lib/utils';
+import {formatTAmount, toAddress} from '@lib/utils';
 
 import {useNotifications} from './useNotifications';
 import {useWeb3} from './useWeb3';
