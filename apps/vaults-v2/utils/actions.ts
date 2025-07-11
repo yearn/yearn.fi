@@ -93,6 +93,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
  ******************************************************************************/
 type TStake = TWriteTransaction & {
 	amount: bigint;
+	confirmation?: number | undefined;
 };
 export async function stake(props: TStake): Promise<TTxResponse> {
 	assert(props.amount > 0n, 'Amount is 0');
@@ -102,7 +103,8 @@ export async function stake(props: TStake): Promise<TTxResponse> {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,
 		functionName: 'stake',
-		args: [props.amount]
+		args: [props.amount],
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 
@@ -121,7 +123,8 @@ export async function stakeVeYFIGauge(props: TStake): Promise<TTxResponse> {
 		address: props.contractAddress,
 		abi: VEYFI_GAUGE_ABI,
 		functionName: 'deposit',
-		args: [props.amount]
+		args: [props.amount],
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 
@@ -131,14 +134,17 @@ export async function stakeVeYFIGauge(props: TStake): Promise<TTxResponse> {
  **
  ** @app - Vaults (optimism)
  ******************************************************************************/
-type TUnstake = TWriteTransaction;
+type TUnstake = TWriteTransaction & {
+	confirmation?: number | undefined;
+};
 export async function unstake(props: TUnstake): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
 
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,
-		functionName: 'exit'
+		functionName: 'exit',
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 
@@ -151,6 +157,7 @@ export async function unstake(props: TUnstake): Promise<TTxResponse> {
 type TUnstakeVeYFIGauge = TWriteTransaction & {
 	amount: bigint;
 	willClaim: boolean;
+	confirmation?: number | undefined;
 };
 export async function unstakeVeYFIGauge(props: TUnstakeVeYFIGauge): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
@@ -163,7 +170,8 @@ export async function unstakeVeYFIGauge(props: TUnstakeVeYFIGauge): Promise<TTxR
 		address: props.contractAddress,
 		abi: VEYFI_GAUGE_ABI,
 		functionName: 'withdraw',
-		args: [props.amount, wagmiProvider.address, wagmiProvider.address, props.willClaim]
+		args: [props.amount, wagmiProvider.address, wagmiProvider.address, props.willClaim],
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 
@@ -173,14 +181,17 @@ export async function unstakeVeYFIGauge(props: TUnstakeVeYFIGauge): Promise<TTxR
  **
  ** @app - Vaults (optimism)
  ******************************************************************************/
-type TClaim = TWriteTransaction;
+type TClaim = TWriteTransaction & {
+	confirmation?: number | undefined;
+};
 export async function claim(props: TClaim): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
 
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,
-		functionName: 'getReward'
+		functionName: 'getReward',
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 

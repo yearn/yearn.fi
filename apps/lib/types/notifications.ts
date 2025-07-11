@@ -88,4 +88,30 @@ export type TNotificationsActionsContext = {
 		status?: TNotificationStatus;
 		idToUpdate?: number;
 	}) => Promise<number>;
+	handleStakeNotification: ({
+		actionParams,
+		type,
+		receipt,
+		status,
+		idToUpdate
+	}: {
+		actionParams: Partial<TActionParams>;
+		type?: TNotificationType;
+		receipt?: TransactionReceipt;
+		status?: TNotificationStatus;
+		idToUpdate?: number;
+	}) => Promise<number>;
+	handleUnstakeNotification: ({
+		actionParams,
+		type,
+		receipt,
+		status,
+		idToUpdate
+	}: {
+		actionParams: Partial<TActionParams>;
+		type?: TNotificationType;
+		receipt?: TransactionReceipt;
+		status?: TNotificationStatus;
+		idToUpdate?: number;
+	}) => Promise<number>;
 };

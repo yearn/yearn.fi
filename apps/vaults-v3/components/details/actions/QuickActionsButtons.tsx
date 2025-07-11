@@ -3,7 +3,7 @@ import {useRouter} from 'next/router';
 import {usePlausible} from 'next-plausible';
 import {maxUint256} from 'viem';
 import {motion} from 'framer-motion';
-import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
+import {TActionParams, useActionFlow} from '@vaults-v2/contexts/useActionFlow';
 import {useSolver} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {Button} from '@lib/components/Button';
@@ -22,6 +22,7 @@ import type {TransactionReceipt} from 'viem';
 import type {TNormalizedBN} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {TNotificationType} from '@lib/types/notifications';
+import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData';
 
 export function VaultDetailsQuickActionsButtons({
 	currentVault,
@@ -53,8 +54,9 @@ export function VaultDetailsQuickActionsButtons({
 		isLoadingExpectedOut,
 		hash
 	} = useSolver();
-
-	const {handleApproveNotification, handleDepositNotification, handleWithdrawNotification} = useNotificationsActions();
+	const {vaultData} = useVaultStakingData({currentVault});
+	const {handleApproveNotification, handleDepositNotification, handleWithdrawNotification} =
+		useNotificationsActions();
 
 	/**********************************************************************************************
 	 ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook
@@ -265,12 +267,27 @@ export function VaultDetailsQuickActionsButtons({
 				<Button
 					variant={isV3Page ? 'v3' : undefined}
 					onClick={async (): Promise<void> => {
-						const id = await handleDepositNotification({actionParams});
+						const correctActionParams: TActionParams = {
+							...actionParams,
+							selectedOptionTo: {
+								...actionParams.selectedOptionTo,
+								symbol: vaultData.stakedGaugeSymbol || 'Staked yVault',
+								label: vaultData.stakedGaugeSymbol || 'Staked yVault',
+								decimals: vaultData.stakingDecimals || 18,
+								chainID: currentVault.chainID,
+								value: vaultData.address
+							}
+						};
+						const id = await handleDepositNotification({actionParams: correctActionParams});
 						onExecuteDeposit(
 							set_txStatusExecuteDeposit,
 							async (receipt?: TransactionReceipt) => onSuccess(true, 'deposit and stake', receipt, id),
 							async () => {
-								await handleDepositNotification({actionParams, status: 'error', idToUpdate: id});
+								await handleDepositNotification({
+									actionParams: correctActionParams,
+									status: 'error',
+									idToUpdate: id
+								});
 							}
 						);
 					}}
