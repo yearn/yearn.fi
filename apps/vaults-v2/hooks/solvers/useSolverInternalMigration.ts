@@ -13,6 +13,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, retrieveConfig} from '@lib/utils/wagmi';
 import {migrateShares} from '@lib/utils/wagmi/actions';
 
+import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -106,22 +107,31 @@ export function useSolverInternalMigration(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current.inputToken, 'Input token is not defined');
-			assert(request.current.migrator, 'Input token is not defined');
+			try {
+				assert(request.current, 'Request is not set');
+				assert(request.current.inputToken, 'Input token is not defined');
+				assert(request.current.migrator, 'Migrator is not defined');
 
-			const result = await approveERC20({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: toAddress(request.current.inputToken.value),
-				spenderAddress: request.current.migrator,
-				amount: amount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+				const result = await approveERC20({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: toAddress(request.current.inputToken.value),
+					spenderAddress: request.current.migrator,
+					amount: amount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful) {
+					await onSuccess(result.receipt);
+				} else if (onError) {
+					await onError(new Error('Approval failed'));
+				}
+			} catch (error) {
+				if (onError) {
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+				}
 			}
 		},
 		[provider]
@@ -134,49 +144,60 @@ export function useSolverInternalMigration(): TSolverContext {
 	const onExecuteMigration = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
+			try {
+				assert(request.current, 'Request is not set');
 
-			if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
-				const _expectedOut = await readContract(retrieveConfig(), {
-					address: request.current.migrator,
-					abi: ZAP_CRV_ABI,
-					chainId: request.current.chainID,
-					functionName: 'calc_expected_out',
-					args: [
-						request.current.inputToken.value,
-						request.current.outputToken.value,
-						request.current.inputAmount
-					]
-				});
-				const result = await zapCRV({
+				if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
+					const _expectedOut = await readContract(retrieveConfig(), {
+						address: request.current.migrator,
+						abi: ZAP_CRV_ABI,
+						chainId: request.current.chainID,
+						functionName: 'calc_expected_out',
+						args: [
+							request.current.inputToken.value,
+							request.current.outputToken.value,
+							request.current.inputAmount
+						]
+					});
+					const result = await zapCRV({
+						connector: provider,
+						chainID: request.current.chainID,
+						contractAddress: request.current.migrator,
+						inputToken: request.current.inputToken.value, //_input_token
+						outputToken: request.current.outputToken.value, //_output_token
+						amount: request.current.inputAmount, //_amount
+						minAmount: toBigInt(_expectedOut), //_min_out
+						slippage: toBigInt(0.06 * 100),
+						statusHandler: txStatusSetter
+					});
+					if (result.isSuccessful) {
+						await onSuccess(result.receipt);
+					} else if (onError) {
+						await onError(new Error('Migration failed'));
+					}
+					return;
+				}
+
+				const result = await migrateShares({
 					connector: provider,
 					chainID: request.current.chainID,
 					contractAddress: request.current.migrator,
-					inputToken: request.current.inputToken.value, //_input_token
-					outputToken: request.current.outputToken.value, //_output_token
-					amount: request.current.inputAmount, //_amount
-					minAmount: toBigInt(_expectedOut), //_min_out
-					slippage: toBigInt(0.06 * 100),
+					fromVault: request.current.inputToken.value,
+					toVault: request.current.outputToken.value,
 					statusHandler: txStatusSetter
 				});
 				if (result.isSuccessful) {
-					onSuccess();
+					await onSuccess(result.receipt);
+				} else if (onError) {
+					await onError(new Error('Migration failed'));
 				}
-				return;
-			}
-
-			const result = await migrateShares({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.migrator,
-				fromVault: request.current.inputToken.value,
-				toVault: request.current.outputToken.value,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			} catch (error) {
+				if (onError) {
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+				}
 			}
 		},
 		[provider]

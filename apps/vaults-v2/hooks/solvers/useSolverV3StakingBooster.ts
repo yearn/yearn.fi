@@ -10,6 +10,7 @@ import {V3_STAKING_ZAP_ADDRESS} from '@lib/utils/constants';
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
 
+import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -86,22 +87,29 @@ export function useSolverV3StakingBooster(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not set');
 			assert(isAddress(V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]), 'Invalid zap contract');
 
-			const result = await approveERC20({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				spenderAddress: V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID],
-				amount: amount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await approveERC20({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					spenderAddress: V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID],
+					amount: amount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
 		[provider]
@@ -114,22 +122,29 @@ export function useSolverV3StakingBooster(): TSolverContext {
 	const onExecuteDeposit = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
 			assert(isAddress(V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]), 'Invalid zap contract');
 
-			const result = await depositAndStake({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID],
-				vaultAddress: request.current.outputToken.value,
-				amount: request.current.inputAmount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await depositAndStake({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID],
+					vaultAddress: request.current.outputToken.value,
+					amount: request.current.inputAmount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
 		[provider]

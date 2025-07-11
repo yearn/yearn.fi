@@ -4,8 +4,8 @@ import {useMountEffect} from '@react-hookz/web';
 
 import type {IndexedDBConfig} from 'use-indexeddb/dist/interfaces';
 
-const gimmeIDBConfig: IndexedDBConfig = {
-	databaseName: 'gimme',
+const yearnIDBConfig: IndexedDBConfig = {
+	databaseName: 'yearn-notifications',
 	version: 1,
 	stores: [
 		{
@@ -26,14 +26,14 @@ const gimmeIDBConfig: IndexedDBConfig = {
 	]
 };
 
-const defaultProps = gimmeIDBConfig;
+const defaultProps = yearnIDBConfig;
 const IndexDBContext = createContext<IndexedDBConfig>(defaultProps);
 export const IndexedDB = ({children}: {children: React.ReactElement}): React.ReactElement => {
 	useMountEffect(async () => {
-		setupIndexedDB(gimmeIDBConfig);
+		setupIndexedDB(yearnIDBConfig);
 	});
 
-	return <IndexDBContext.Provider value={gimmeIDBConfig}>{children}</IndexDBContext.Provider>;
+	return <IndexDBContext.Provider value={yearnIDBConfig}>{children}</IndexDBContext.Provider>;
 };
 
 export const useIndexDB = (): IndexedDBConfig => {

@@ -1,6 +1,6 @@
 import React, {createContext, useCallback, useContext, useMemo} from 'react';
 import {TActionParams} from '@vaults-v2/contexts/useActionFlow';
-import {formatAmount, toAddress} from '@lib/utils';
+import {formatAmount, formatTAmount, toAddress} from '@lib/utils';
 
 import {useNotifications} from './useNotifications';
 import {useWeb3} from './useWeb3';
@@ -31,6 +31,7 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			status?: TNotificationStatus;
 			idToUpdate?: number;
 		}): Promise<number> => {
+			console.log('approve', actionParams, receipt, status, idToUpdate);
 			if (idToUpdate) {
 				await updateEntry(
 					{
@@ -56,7 +57,10 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 				fromTokenName: actionParams.selectedOptionFrom?.symbol || '',
 				spenderAddress: toAddress(actionParams.selectedOptionTo?.value),
 				spenderName: actionParams.selectedOptionTo?.symbol || '',
-				amount: formatAmount(actionParams.amount?.normalized || 0)
+				amount: formatTAmount({
+					value: actionParams.amount?.normalized || 0,
+					decimals: actionParams.selectedOptionFrom?.decimals || 18
+				})
 			});
 			return createdId;
 		},
@@ -77,6 +81,7 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			status?: TNotificationStatus;
 			idToUpdate?: number;
 		}): Promise<number> => {
+			console.log('deposit', actionParams, type, receipt, status, idToUpdate);
 			if (idToUpdate) {
 				await updateEntry(
 					{
@@ -103,7 +108,10 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 				blockNumber: undefined,
 				status: 'pending',
 				type: type || 'deposit',
-				amount: formatAmount(actionParams.amount?.normalized || 0)
+				amount: formatTAmount({
+					value: actionParams.amount?.normalized || 0,
+					decimals: actionParams.selectedOptionFrom?.decimals || 18
+				})
 			});
 			return createdId;
 		},
@@ -150,7 +158,10 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 				blockNumber: undefined,
 				status: 'pending',
 				type: type || 'withdraw',
-				amount: formatAmount(actionParams.amount?.normalized || 0)
+				amount: formatTAmount({
+					value: actionParams.amount?.normalized || 0,
+					decimals: actionParams.selectedOptionFrom?.decimals || 18
+				})
 			});
 			return createdId;
 		},

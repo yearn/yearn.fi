@@ -23,6 +23,7 @@ import {
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, defaultTxStatus, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
 
+import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi';
 import type {TPortalsEstimate} from '@vaults-v2/hooks/usePortalsApi';
@@ -311,9 +312,11 @@ export function useSolverPortals(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			if (!request.current || isSolverDisabled(Solver.enum.Portals) || !provider) {
+				onError?.(new Error('Request, provider not set or solver disabled'));
 				return;
 			}
 			assert(request.current, 'Request is not set');
@@ -331,6 +334,7 @@ export function useSolverPortals(): TSolverContext {
 				});
 
 				if (!approval) {
+					onError?.(new Error('Portals approval not found'));
 					return;
 				}
 
@@ -350,8 +354,10 @@ export function useSolverPortals(): TSolverContext {
 						amount: amount,
 						statusHandler: txStatusSetter
 					});
-					if (result.isSuccessful) {
-						await onSuccess();
+					if (result.isSuccessful && result.receipt) {
+						await onSuccess(result.receipt);
+					} else {
+						onError?.(result.error as Error);
 					}
 					return;
 				}
@@ -359,6 +365,7 @@ export function useSolverPortals(): TSolverContext {
 				return;
 			} catch (error) {
 				console.error(error);
+				onError?.(error as Error);
 				return;
 			}
 		},
@@ -373,21 +380,24 @@ export function useSolverPortals(): TSolverContext {
 	const onExecute = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(provider, 'Provider is not set');
 
 			txStatusSetter({...defaultTxStatus, pending: true});
 			try {
 				const status = await execute();
-				if (status.isSuccessful) {
+				if (status.isSuccessful && status.receipt) {
 					txStatusSetter({...defaultTxStatus, success: true});
-					await onSuccess();
+					await onSuccess(status.receipt);
 				} else {
 					txStatusSetter({...defaultTxStatus, error: true});
+					onError?.(new Error('Transaction failed'));
 				}
 			} catch (error) {
 				txStatusSetter({...defaultTxStatus, error: true});
+				onError?.(error as Error);
 			} finally {
 				setTimeout((): void => txStatusSetter(defaultTxStatus), 3000);
 			}

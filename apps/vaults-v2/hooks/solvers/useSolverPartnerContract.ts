@@ -10,6 +10,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, getNetwork} from '@lib/utils/wagmi';
 import {depositViaPartner, withdrawShares} from '@lib/utils/wagmi/actions';
 
+import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -89,23 +90,30 @@ export function useSolverPartnerContract(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current?.inputToken, 'Input token is not set');
 			const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract?.address;
 			assertAddress(partnerContract, 'partnerContract');
 
-			const result = await approveERC20({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				spenderAddress: partnerContract,
-				amount: amount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await approveERC20({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					spenderAddress: partnerContract,
+					amount: amount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
 		[provider]
@@ -118,24 +126,31 @@ export function useSolverPartnerContract(): TSolverContext {
 	const onExecuteDeposit = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
 			const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract?.address;
 			assertAddress(partnerContract, 'partnerContract');
 
-			const result = await depositViaPartner({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: partnerContract,
-				vaultAddress: request.current.outputToken.value,
-				partnerAddress: currentPartner ? currentPartner : undefined,
-				amount: request.current.inputAmount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await depositViaPartner({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: partnerContract,
+					vaultAddress: request.current.outputToken.value,
+					partnerAddress: currentPartner ? currentPartner : undefined,
+					amount: request.current.inputAmount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
 		[currentPartner, provider]
@@ -148,21 +163,28 @@ export function useSolverPartnerContract(): TSolverContext {
 	const onExecuteWithdraw = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
 
-			const result = await withdrawShares({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				amount: request.current.inputAmount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await withdrawShares({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					amount: request.current.inputAmount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
 		[provider]

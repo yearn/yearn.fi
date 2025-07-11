@@ -1,5 +1,6 @@
 import {useCallback, useMemo, useRef} from 'react';
-import {maxUint256, TransactionReceipt} from 'viem';
+import {maxUint256} from 'viem';
+import type {TransactionReceipt} from 'viem';
 import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {depositAndStake} from '@vaults-v2/utils/actions';

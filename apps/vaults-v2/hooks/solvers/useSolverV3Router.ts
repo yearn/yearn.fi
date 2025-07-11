@@ -11,6 +11,7 @@ import {allowanceOf, approveERC20, retrieveConfig, toWagmiProvider} from '@lib/u
 import {migrateSharesViaRouter} from '@lib/utils/wagmi/actions';
 
 import type {Connector} from 'wagmi';
+import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -115,22 +116,29 @@ export function useSolverV3Router(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not set');
 			assert(request.current.outputToken, 'Output token is not set');
 
-			const result = await approveERC20({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				spenderAddress: request.current.migrator,
-				amount: amount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await approveERC20({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					spenderAddress: request.current.migrator,
+					amount: amount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
 		[provider]
@@ -139,25 +147,32 @@ export function useSolverV3Router(): TSolverContext {
 	const onExecuteDeposit = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Output token is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
 
-			const result = await migrateSharesViaRouter({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				router: request.current.migrator,
-				fromVault: request.current.inputToken.value,
-				toVault: request.current.outputToken.value,
-				amount: request.current.inputAmount,
-				maxLoss,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await migrateSharesViaRouter({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					router: request.current.migrator,
+					fromVault: request.current.inputToken.value,
+					toVault: request.current.outputToken.value,
+					amount: request.current.inputAmount,
+					maxLoss,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 			return;
 		},

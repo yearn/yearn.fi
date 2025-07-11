@@ -22,6 +22,7 @@ import type {
 	SigningScheme,
 	UnsignedOrder
 } from '@cowprotocol/cow-sdk';
+import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -358,37 +359,49 @@ export function useSolverCowswap(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			if (!request?.current || request.current.chainID !== 1) {
-				return;
-			}
-			assert(request.current, 'Request is not defined');
-			assert(
-				request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap),
-				'Input token is not supported by Cowswap'
-			);
+			try {
+				if (!request?.current || request.current.chainID !== 1) {
+					if (onError) {
+						await onError(new Error('Cowswap only supports Ethereum mainnet'));
+					}
+					return;
+				}
+				assert(request.current, 'Request is not defined');
+				assert(
+					request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap),
+					'Input token is not supported by Cowswap'
+				);
 
-			const isApproved = await isApprovedERC20(
-				provider,
-				request.current.inputToken.chainID,
-				request.current.inputToken.value, //token to approve
-				SOLVER_COW_VAULT_RELAYER_ADDRESS, //Cowswap relayer
-				toBigInt(amount)
-			);
-			if (isApproved) {
-				return onSuccess();
-			}
-			const result = await approveERC20({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS,
-				amount: toBigInt(amount),
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+				const isApproved = await isApprovedERC20(
+					provider,
+					request.current.inputToken.chainID,
+					request.current.inputToken.value, //token to approve
+					SOLVER_COW_VAULT_RELAYER_ADDRESS, //Cowswap relayer
+					toBigInt(amount)
+				);
+				if (isApproved) {
+					return await onSuccess();
+				}
+				const result = await approveERC20({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS,
+					amount: toBigInt(amount),
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful) {
+					await onSuccess(result.receipt);
+				} else if (onError) {
+					await onError(new Error('Approval failed'));
+				}
+			} catch (error) {
+				if (onError) {
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+				}
 			}
 		},
 		[provider]
@@ -402,7 +415,8 @@ export function useSolverCowswap(): TSolverContext {
 	const onExecute = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(provider, 'Provider is not defined');
 			txStatusSetter({...defaultTxStatus, pending: true});
@@ -411,20 +425,28 @@ export function useSolverCowswap(): TSolverContext {
 				const result = await execute();
 				if (result.isSuccessful) {
 					txStatusSetter({...defaultTxStatus, success: true});
-					onSuccess();
+					await onSuccess(result.receipt);
 				} else {
+					const errorMessage = (result.error as BaseError)?.message || 'Transaction failed';
 					txStatusSetter({
 						...defaultTxStatus,
 						error: true,
-						errorMessage: (result.error as BaseError)?.message || 'Transaction failed'
+						errorMessage
 					});
+					if (onError) {
+						await onError(new Error(errorMessage));
+					}
 				}
 			} catch (error) {
+				const errorMessage = 'Transaction rejected';
 				txStatusSetter({
 					...defaultTxStatus,
 					error: true,
-					errorMessage: 'Transaction rejected'
+					errorMessage
 				});
+				if (onError) {
+					await onError(error instanceof Error ? error : new Error(errorMessage));
+				}
 			} finally {
 				setTimeout((): void => txStatusSetter(defaultTxStatus), 3000);
 			}

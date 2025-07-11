@@ -23,17 +23,17 @@ export type TWithSolver = {
 		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
-		onError?: (error?: Error) => Promise<void>
+		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 	onExecuteDeposit: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
-		onError?: (error?: Error) => Promise<void>
+		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 	onExecuteWithdraw: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
-		onError?: (error?: Error) => Promise<void>
+		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 };
 
@@ -70,7 +70,7 @@ export type TSolverContext = {
 	onExecuteWithdraw: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
-		onError?: (error?: Error) => Promise<void>
+		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 };
 
