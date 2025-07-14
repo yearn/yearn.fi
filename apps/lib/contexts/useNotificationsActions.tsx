@@ -13,7 +13,8 @@ const defaultProps: TNotificationsActionsContext = {
 	handleDepositNotification: async (): Promise<number> => 0,
 	handleWithdrawNotification: async (): Promise<number> => 0,
 	handleStakeNotification: async (): Promise<number> => 0,
-	handleUnstakeNotification: async (): Promise<number> => 0
+	handleUnstakeNotification: async (): Promise<number> => 0,
+	handleClaimNotification: async (): Promise<number> => 0
 };
 
 const NotificationsActionsContext = createContext<TNotificationsActionsContext>(defaultProps);
@@ -270,6 +271,54 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 		[addNotification, updateEntry, address]
 	);
 
+	const handleClaimNotification = useCallback(
+		async ({
+			actionParams,
+			type,
+			receipt,
+			status,
+			idToUpdate
+		}: {
+			actionParams: Partial<TActionParams>;
+			type?: TNotificationType;
+			receipt?: TransactionReceipt;
+			status?: TNotificationStatus;
+			idToUpdate?: number;
+		}): Promise<number> => {
+			if (idToUpdate) {
+				await updateEntry(
+					{
+						txHash: receipt?.transactionHash,
+						timeFinished: Date.now() / 1000,
+						blockNumber: receipt?.blockNumber,
+						status
+					},
+					idToUpdate
+				);
+
+				return idToUpdate;
+			}
+
+			const createdId = await addNotification({
+				address: toAddress(address),
+				fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
+				fromTokenName: actionParams.selectedOptionFrom?.symbol || '',
+				chainId: actionParams.selectedOptionFrom?.chainID || 1,
+				txHash: undefined,
+				timeFinished: undefined,
+				blockNumber: undefined,
+				status: 'pending',
+				type: type || 'claim',
+				amount: formatTAmount({
+					value: actionParams.amount?.normalized || 0,
+					decimals: actionParams.selectedOptionFrom?.decimals || 18
+				})
+			});
+			return createdId;
+		},
+		[addNotification, updateEntry, address]
+	);
+
 	/**************************************************************************
 	 * Context value that is passed to all children of this component.
 	 *************************************************************************/
@@ -279,9 +328,17 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			handleDepositNotification,
 			handleWithdrawNotification,
 			handleStakeNotification,
-			handleUnstakeNotification
+			handleUnstakeNotification,
+			handleClaimNotification
 		}),
-		[handleApproveNotification, handleDepositNotification, handleWithdrawNotification, handleStakeNotification, handleUnstakeNotification]
+		[
+			handleApproveNotification,
+			handleDepositNotification,
+			handleWithdrawNotification,
+			handleStakeNotification,
+			handleUnstakeNotification,
+			handleClaimNotification
+		]
 	);
 
 	return <NotificationsActionsContext.Provider value={contextValue}>{children}</NotificationsActionsContext.Provider>;

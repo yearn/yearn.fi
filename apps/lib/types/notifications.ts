@@ -114,4 +114,17 @@ export type TNotificationsActionsContext = {
 		status?: TNotificationStatus;
 		idToUpdate?: number;
 	}) => Promise<number>;
+	handleClaimNotification: ({
+		actionParams,
+		type,
+		receipt,
+		status,
+		idToUpdate
+	}: {
+		actionParams: Partial<TActionParams>;
+		type?: TNotificationType;
+		receipt?: TransactionReceipt;
+		status?: TNotificationStatus;
+		idToUpdate?: number;
+	}) => Promise<number>;
 };

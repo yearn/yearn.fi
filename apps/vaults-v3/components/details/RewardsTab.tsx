@@ -17,7 +17,16 @@ import {useNotificationsActions} from '@lib/contexts/useNotificationsActions';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useYearnToken} from '@lib/hooks/useYearnToken';
-import {cl, formatAmount, formatCounterValue, fromNormalized, isZero, toAddress, toBigInt} from '@lib/utils';
+import {
+	cl,
+	formatAmount,
+	formatCounterValue,
+	fromNormalized,
+	isZero,
+	toAddress,
+	toBigInt,
+	toNormalizedBN
+} from '@lib/utils';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@lib/utils/constants';
 import {approveERC20, defaultTxStatus} from '@lib/utils/wagmi';
 
@@ -313,7 +322,8 @@ export function RewardsTab(props: {
 	const {provider, isActive} = useWeb3();
 	const {getPrice} = useYearn();
 	const {vaultData, updateVaultData} = props;
-	const {handleApproveNotification, handleStakeNotification} = useNotificationsActions();
+	const {handleApproveNotification, handleStakeNotification, handleUnstakeNotification, handleClaimNotification} =
+		useNotificationsActions();
 	const rewardTokenBalance = useYearnToken({address: vaultData.rewardsToken, chainID: props.currentVault.chainID});
 	const [approveStakeStatus, set_approveStakeStatus] = useState(defaultTxStatus);
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
@@ -396,6 +406,60 @@ export function RewardsTab(props: {
 		]
 	);
 
+	/**************************************************************************************************
+	 ** Create action parameters for unstake operations to integrate with the notification system.
+	 *************************************************************************************************/
+	const unstakeActionParams = useMemo(
+		() => ({
+			amount: toNormalizedBN(
+				fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
+				vaultData.stakingDecimals || 18
+			),
+			selectedOptionFrom: {
+				label: vaultData.stakedGaugeSymbol || `Staked ${props.currentVault.symbol}`,
+				value: vaultData.address,
+				symbol: vaultData.stakedGaugeSymbol || `Staked ${props.currentVault.symbol}`,
+				decimals: vaultData.stakingDecimals || 18,
+				chainID: props.currentVault.chainID
+			},
+			selectedOptionTo: {
+				label: props.currentVault.symbol,
+				value: props.currentVault.address,
+				symbol: props.currentVault.symbol,
+				decimals: props.currentVault.decimals,
+				chainID: props.currentVault.chainID
+			}
+		}),
+		[unstakeAmount, vaultData.stakingDecimals, props.currentVault, vaultData.address, vaultData.stakedGaugeSymbol]
+	);
+	console.log(unstakeActionParams);
+	/**************************************************************************************************
+	 ** Create action parameters for claim operations to integrate with the notification system.
+	 *************************************************************************************************/
+	const claimActionParams = useMemo(
+		() => ({
+			amount: vaultData.stakedEarned,
+			selectedOptionFrom: {
+				label: rewardTokenBalance.symbol || 'Reward Token',
+				value: vaultData.rewardsToken,
+				symbol: rewardTokenBalance.symbol || 'Reward Token',
+				decimals: vaultData.rewardDecimals || 18,
+				chainID: props.currentVault.chainID
+			},
+			selectedOptionTo: undefined
+		}),
+		[
+			vaultData.stakedEarned,
+			vaultData.stakingDecimals,
+			props.currentVault,
+			vaultData.address,
+			vaultData.stakedGaugeSymbol,
+			rewardTokenBalance.symbol,
+			vaultData.rewardsToken,
+			vaultData.rewardDecimals
+		]
+	);
+	console.log(claimActionParams);
 	/**********************************************************************************************
 	 ** The refreshData function will be called when the user interacts with the stake, unstake, or
 	 ** claim buttons. It will refresh the user's balances and the staking rewards data so the app
@@ -555,6 +619,9 @@ export function RewardsTab(props: {
 	 ** unstakeVeYFIGauge function.
 	 *********************************************************************************************/
 	const onUnstake = useCallback(async (): Promise<void> => {
+		const notificationType = isUnstakingMax ? 'claim and exit' : 'unstake';
+		const id = await handleUnstakeNotification({actionParams: unstakeActionParams, type: notificationType});
+
 		if (props.currentVault.staking.source === 'VeYFI' || shouldForceUnstake) {
 			const result = await unstakeVeYFIAction({
 				connector: provider,
@@ -565,8 +632,22 @@ export function RewardsTab(props: {
 				statusHandler: set_unstakeStatus
 			});
 			if (result.isSuccessful) {
+				await handleUnstakeNotification({
+					actionParams: unstakeActionParams,
+					type: notificationType,
+					receipt: result.receipt,
+					status: 'success',
+					idToUpdate: id
+				});
 				refreshData();
 				updateVaultData();
+			} else {
+				await handleUnstakeNotification({
+					actionParams: unstakeActionParams,
+					type: notificationType,
+					status: 'error',
+					idToUpdate: id
+				});
 			}
 		} else if (props.currentVault.staking.source === 'yBOLD') {
 			const result = await unstakeYBold({
@@ -577,8 +658,22 @@ export function RewardsTab(props: {
 				statusHandler: set_unstakeStatus
 			});
 			if (result.isSuccessful) {
+				await handleUnstakeNotification({
+					actionParams: unstakeActionParams,
+					type: notificationType,
+					receipt: result.receipt,
+					status: 'success',
+					idToUpdate: id
+				});
 				refreshData();
 				updateVaultData();
+			} else {
+				await handleUnstakeNotification({
+					actionParams: unstakeActionParams,
+					type: notificationType,
+					status: 'error',
+					idToUpdate: id
+				});
 			}
 		} else {
 			const result = await unstakeAction({
@@ -588,8 +683,22 @@ export function RewardsTab(props: {
 				statusHandler: set_unstakeStatus
 			});
 			if (result.isSuccessful) {
+				await handleUnstakeNotification({
+					actionParams: unstakeActionParams,
+					type: notificationType,
+					receipt: result.receipt,
+					status: 'success',
+					idToUpdate: id
+				});
 				refreshData();
 				updateVaultData();
+			} else {
+				await handleUnstakeNotification({
+					actionParams: unstakeActionParams,
+					type: notificationType,
+					status: 'error',
+					idToUpdate: id
+				});
 			}
 		}
 	}, [
@@ -602,7 +711,9 @@ export function RewardsTab(props: {
 		provider,
 		isUnstakingMax,
 		refreshData,
-		updateVaultData
+		updateVaultData,
+		handleUnstakeNotification,
+		unstakeActionParams
 	]);
 
 	/**********************************************************************************************
@@ -612,6 +723,7 @@ export function RewardsTab(props: {
 	 ** refreshed.
 	 *********************************************************************************************/
 	const onClaim = useCallback(async (): Promise<void> => {
+		const id = await handleClaimNotification({actionParams: claimActionParams, type: 'claim'});
 		const result = await claimAction({
 			connector: provider,
 			chainID: props.currentVault.chainID,
@@ -619,9 +731,30 @@ export function RewardsTab(props: {
 			statusHandler: set_claimStatus
 		});
 		if (result.isSuccessful) {
+			await handleClaimNotification({
+				actionParams: claimActionParams,
+				type: 'claim',
+				receipt: result.receipt,
+				status: 'success',
+				idToUpdate: id
+			});
 			refreshData();
+		} else {
+			await handleClaimNotification({
+				actionParams: claimActionParams,
+				type: 'claim',
+				status: 'error',
+				idToUpdate: id
+			});
 		}
-	}, [provider, refreshData, vaultData?.address, props.currentVault.chainID]);
+	}, [
+		provider,
+		refreshData,
+		vaultData?.address,
+		props.currentVault.chainID,
+		handleClaimNotification,
+		claimActionParams
+	]);
 
 	/**********************************************************************************************
 	 ** In order to display the counter value of the user's staking rewards and yVault tokens, we

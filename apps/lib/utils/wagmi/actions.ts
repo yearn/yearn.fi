@@ -133,6 +133,7 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
  ******************************************************************************/
 type TDeposit = TWriteTransaction & {
 	amount: bigint;
+	confirmation?: number;
 };
 export async function deposit(props: TDeposit): Promise<TTxResponse> {
 	assert(props.amount > 0n, 'Amount is 0');
@@ -144,7 +145,8 @@ export async function deposit(props: TDeposit): Promise<TTxResponse> {
 		address: props.contractAddress,
 		abi: VAULT_ABI,
 		functionName: 'deposit',
-		args: [props.amount, wagmiProvider.address]
+		args: [props.amount, wagmiProvider.address],
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 

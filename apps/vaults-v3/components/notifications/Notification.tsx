@@ -43,7 +43,11 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 		switch (notification.type) {
 			case 'approve':
 				return 'Token:';
+			case 'claim':
+				return 'Token:';
 			case 'withdraw':
+				return 'From vault:';
+			case 'unstake':
 				return 'From vault:';
 			default:
 				return 'From token:';
