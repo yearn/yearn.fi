@@ -2,7 +2,7 @@ import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
 import {BaseError, maxUint256} from 'viem';
 import axios from 'axios';
-import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
+import {OrderBookApi, OrderQuoteSideKindSell, OrderSigningUtils} from '@cowprotocol/cow-sdk';
 import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {toast} from '@lib/components/yToast';
@@ -39,7 +39,7 @@ async function getQuote(
 		buyToken: request.outputToken.value, // token to receive
 		receiver: request.from, // always the same as from
 		appData: YEARN_APP_DATA, // Always this
-		kind: OrderQuoteSide.kind.SELL, // always sell
+		kind: OrderQuoteSideKindSell.SELL, // always sell
 		partiallyFillable: false, // always false
 		validTo: 0,
 		sellAmountBeforeFee: toBigInt(request?.inputAmount).toString() // amount to sell, in wei
@@ -263,6 +263,7 @@ export function useSolverCowswap(): TSolverContext {
 		assert(request?.current, 'No request available');
 
 		const {quote, from, id} = latestQuote.current;
+
 		const buyAmountWithSlippage = getBuyAmountWithSlippage(
 			latestQuote.current,
 			request.current.outputToken.decimals
@@ -273,6 +274,7 @@ export function useSolverCowswap(): TSolverContext {
 			quote as Order,
 			buyAmountWithSlippage
 		);
+
 		const orderCreation: OrderCreation = {
 			...quote,
 			buyAmount: buyAmountWithSlippage.toString(),

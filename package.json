@@ -17,7 +17,7 @@
 	},
 	"dependencies": {
 		"@clustersxyz/sdk": "^0.2.1",
-		"@cowprotocol/cow-sdk": "2.1.0",
+		"@cowprotocol/cow-sdk": "5.10.3",
 		"@headlessui/react": "^2.0.4",
 		"@rainbow-me/rainbowkit": "2.2.5",
 		"@react-hookz/web": "^24.0.4",
