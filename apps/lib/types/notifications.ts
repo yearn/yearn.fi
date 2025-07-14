@@ -50,81 +50,26 @@ export type TNotificationsContext = {
 	set_shouldOpenCurtain: (value: boolean) => void;
 };
 
+// Base interface for notification handler parameters
+export type TNotificationHandlerParams = {
+	actionParams: Partial<TActionParams>;
+	type?: TNotificationType;
+	receipt?: TransactionReceipt;
+	status?: TNotificationStatus;
+	idToUpdate?: number;
+};
+
+// Specific parameters for approve notification (no type field)
+export type TApproveNotificationParams = Omit<TNotificationHandlerParams, 'type'>;
+
+// Generic notification handler type
+export type TNotificationHandler<T = TNotificationHandlerParams> = (params: T) => Promise<number>;
+
 export type TNotificationsActionsContext = {
-	handleApproveNotification: ({
-		actionParams,
-		receipt,
-		status,
-		idToUpdate
-	}: {
-		actionParams: Partial<TActionParams>;
-		receipt?: TransactionReceipt;
-		status?: TNotificationStatus;
-		idToUpdate?: number;
-	}) => Promise<number>;
-	handleDepositNotification: ({
-		actionParams,
-		type,
-		receipt,
-		status,
-		idToUpdate
-	}: {
-		actionParams: Partial<TActionParams>;
-		type?: TNotificationType;
-		receipt?: TransactionReceipt;
-		status?: TNotificationStatus;
-		idToUpdate?: number;
-	}) => Promise<number>;
-	handleWithdrawNotification: ({
-		actionParams,
-		type,
-		receipt,
-		status,
-		idToUpdate
-	}: {
-		actionParams: Partial<TActionParams>;
-		type?: TNotificationType;
-		receipt?: TransactionReceipt;
-		status?: TNotificationStatus;
-		idToUpdate?: number;
-	}) => Promise<number>;
-	handleStakeNotification: ({
-		actionParams,
-		type,
-		receipt,
-		status,
-		idToUpdate
-	}: {
-		actionParams: Partial<TActionParams>;
-		type?: TNotificationType;
-		receipt?: TransactionReceipt;
-		status?: TNotificationStatus;
-		idToUpdate?: number;
-	}) => Promise<number>;
-	handleUnstakeNotification: ({
-		actionParams,
-		type,
-		receipt,
-		status,
-		idToUpdate
-	}: {
-		actionParams: Partial<TActionParams>;
-		type?: TNotificationType;
-		receipt?: TransactionReceipt;
-		status?: TNotificationStatus;
-		idToUpdate?: number;
-	}) => Promise<number>;
-	handleClaimNotification: ({
-		actionParams,
-		type,
-		receipt,
-		status,
-		idToUpdate
-	}: {
-		actionParams: Partial<TActionParams>;
-		type?: TNotificationType;
-		receipt?: TransactionReceipt;
-		status?: TNotificationStatus;
-		idToUpdate?: number;
-	}) => Promise<number>;
+	handleApproveNotification: TNotificationHandler<TApproveNotificationParams>;
+	handleDepositNotification: TNotificationHandler;
+	handleWithdrawNotification: TNotificationHandler;
+	handleStakeNotification: TNotificationHandler;
+	handleUnstakeNotification: TNotificationHandler;
+	handleClaimNotification: TNotificationHandler;
 };
