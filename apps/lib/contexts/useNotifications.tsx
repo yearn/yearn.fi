@@ -108,11 +108,19 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 	const deleteByIDWithErrorHandling = useCallback(
 		async (id: number): Promise<void> => {
 			try {
+				// Optimistically update the local state first
+				set_cachedEntries(currentEntries => currentEntries.filter(entry => entry.id !== id));
+				
+				// Then delete from IndexedDB
 				await deleteByID(id);
-				set_entryNonce(nonce => nonce + 1);
+				
+				// No need to increment entryNonce since we already updated the state
 			} catch (error) {
 				console.error('Failed to delete notification:', error);
 				set_error('Failed to delete notification');
+				
+				// Revert the optimistic update by refetching from DB
+				set_entryNonce(nonce => nonce + 1);
 			}
 		},
 		[deleteByID]

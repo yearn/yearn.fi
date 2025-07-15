@@ -1,9 +1,12 @@
-import React, {useMemo} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import {motion} from 'framer-motion';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {IconArrow} from '@lib/icons/IconArrow';
 import {IconCheck} from '@lib/icons/IconCheck';
+import {IconClose} from '@lib/icons/IconClose';
 import {IconCross} from '@lib/icons/IconCross';
 import {IconLoader} from '@lib/icons/IconLoader';
 import {cl, SUPPORTED_NETWORKS, truncateHex} from '@lib/utils';
@@ -188,13 +191,16 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 	);
 }
 
-export function Notification({
+export const Notification = React.memo(function Notification({
 	notification,
 	variant = 'v3'
 }: {
 	notification: TNotification;
 	variant: 'v2' | 'v3';
 }): ReactElement {
+	const {deleteByID} = useNotifications();
+	const [isDeleting, setIsDeleting] = useState(false);
+
 	const formattedDate = useMemo(() => {
 		if (!notification.timeFinished || notification.status === 'pending') {
 			return null;
@@ -246,9 +252,38 @@ export function Notification({
 		}
 	}, [notification.type]);
 
+	const handleDelete = useCallback(async () => {
+		if (!notification.id || isDeleting) return;
+
+		setIsDeleting(true);
+
+		try {
+			await deleteByID(notification.id!);
+		} catch (error) {
+			console.error('Failed to delete notification:', error);
+			setIsDeleting(false);
+		}
+	}, [deleteByID, notification.id, isDeleting]);
+
 	return (
-		<div
-			className={'rounded-xl border border-neutral-200 p-4 bg-neutral-200 relative'}
+		<motion.div
+			layout
+			layoutId={`notification-${notification.id}`}
+			initial={{opacity: 0, scale: 0.95, y: 20, height: 0}}
+			animate={{opacity: 1, scale: 1, y: 0, height: 'auto'}}
+			exit={{
+				opacity: 0,
+				scale: 0.9,
+				y: -20,
+				height: 0,
+				marginBottom: 0,
+				transition: {
+					duration: 0.25,
+					ease: 'easeInOut'
+				}
+			}}
+			transition={{duration: 0.3, ease: 'easeInOut', layout: { duration: 0.3, ease: 'easeInOut' }}}
+			className={'rounded-xl border border-neutral-200 p-4 bg-neutral-200 relative mb-4 overflow-hidden'}
 			role={'article'}
 			aria-label={`${notificationTitle} notification`}>
 			{variant === 'v3' && (
@@ -260,6 +295,23 @@ export function Notification({
 					)}
 				/>
 			)}
+
+			{/* Close button */}
+			<button
+				onClick={handleDelete}
+				disabled={isDeleting}
+				className={cl(
+					'absolute right-[-8px] top-[-8px] z-[999999] flex items-center justify-center',
+					'w-6 h-6 rounded-full bg-neutral-400/20 hover:bg-neutral-400/40',
+					'transition-all duration-200 opacity-60 hover:opacity-100',
+					'focus:outline-none focus:ring-2 focus:ring-neutral-500/50',
+					isDeleting ? 'cursor-not-allowed opacity-30' : ''
+				)}
+				aria-label={'Delete notification'}
+				title={'Delete notification'}>
+				<IconClose className={'w-3 h-3 text-neutral-700'} />
+			</button>
+
 			<div className={'relative z-20'}>
 				<div className={'mb-4 flex items-center justify-between'}>
 					<p className={'font-medium text-neutral-900'}>{notificationTitle}</p>
@@ -290,6 +342,6 @@ export function Notification({
 					</div>
 				) : null}
 			</div>
-		</div>
+		</motion.div>
 	);
-}
+});
