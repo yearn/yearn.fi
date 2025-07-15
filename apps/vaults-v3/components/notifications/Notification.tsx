@@ -269,21 +269,27 @@ export const Notification = React.memo(function Notification({
 		<motion.div
 			layout
 			layoutId={`notification-${notification.id}`}
-			initial={{opacity: 0, scale: 0.95, y: 20, height: 0}}
-			animate={{opacity: 1, scale: 1, y: 0, height: 'auto'}}
+			initial={{opacity: 0, y: 20, scaleY: 0.8}}
+			animate={{opacity: 1, y: 0, scaleY: 1}}
 			exit={{
 				opacity: 0,
-				scale: 0.9,
-				y: -20,
-				height: 0,
-				marginBottom: 0,
+				y: -10,
+				scaleY: 0.3,
 				transition: {
-					duration: 0.25,
-					ease: 'easeInOut'
+					duration: 0.2,
+					ease: [0.4, 0.0, 0.2, 1] // easeOut
 				}
 			}}
-			transition={{duration: 0.3, ease: 'easeInOut', layout: { duration: 0.3, ease: 'easeInOut' }}}
-			className={'rounded-xl border border-neutral-200 p-4 bg-neutral-200 relative mb-4 overflow-hidden'}
+			transition={{
+				duration: 0.25,
+				ease: [0.4, 0.0, 0.2, 1], // easeOut
+				layout: { 
+					duration: 0.2, 
+					ease: [0.4, 0.0, 0.2, 1] // easeOut
+				}
+			}}
+			className={'rounded-xl border border-neutral-200 p-4 bg-neutral-200 relative mb-4 overflow-hidden origin-top'}
+			style={{transformOrigin: 'top center'}}
 			role={'article'}
 			aria-label={`${notificationTitle} notification`}>
 			{variant === 'v3' && (
