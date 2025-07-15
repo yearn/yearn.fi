@@ -3,10 +3,13 @@ import Link from 'next/link';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {Renderable} from '@lib/components/Renderable';
 import {RenderAmount} from '@lib/components/RenderAmount';
+import {Tooltip} from '@lib/components/Tooltip';
 import {useWallet} from '@lib/contexts/useWallet';
 import {useYearn} from '@lib/contexts/useYearn';
+import {useKatanaAprs} from '@lib/hooks/useKatanaAprs';
 import {useYearnBalance} from '@lib/hooks/useYearnBalance';
 import {IconLinkOut} from '@lib/icons/IconLinkOut';
+import {IconQuestion} from '@lib/icons/IconQuestion';
 import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {getNetwork} from '@lib/utils/wagmi/utils';
@@ -21,9 +24,34 @@ type TAPYSublineProps = {
 	hasPendleArbRewards: boolean;
 	hasKelpNEngenlayer: boolean;
 	hasKelp: boolean;
+	hasKatanaRewards: boolean;
 };
 
-function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer, hasKelp}: TAPYSublineProps): ReactElement {
+function APYSubline(props: TAPYSublineProps): ReactElement {
+	const {hasPendleArbRewards, hasKelpNEngenlayer, hasKelp, hasKatanaRewards} = props;
+	if (hasKatanaRewards) {
+		return (
+			<div className={'absolute top-6 -mb-4 self-end'}>
+				<Tooltip
+					tooltip={
+						<div
+							className={
+								'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+							}>
+							<ul className={'list-disc pl-4 text-left text-xs'}>
+								<li>{'KAT tokens are locked until no later than Feb. 20 2026.'}</li>
+								<li>{'KAT APR is calculated using an assumed $1B Fully Diluted Valuation.'}</li>
+							</ul>
+						</div>
+					}>
+					<div className={'relative flex items-center gap-1'}>
+						<small className={'whitespace-nowrap text-xs text-neutral-400'}>{'Incl. vested rewards'}</small>
+						<IconQuestion className={cl('absolute h-3 w-3 md:-right-4 -right-3 text-neutral-400')} />
+					</div>
+				</Tooltip>
+			</div>
+		);
+	}
 	if (hasKelpNEngenlayer) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
@@ -50,6 +78,16 @@ function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer, hasKelp}: TAPYSubl
 	return <Fragment />;
 }
 
+const getEmojiDisplay = (hasKatanaRewards: boolean, hasBoost: boolean): string => {
+	if (hasKatanaRewards) {
+		return '✨ ';
+	}
+	if (hasBoost) {
+		return '⚡️ ';
+	}
+	return '';
+};
+
 function APYTooltip(props: {
 	baseAPY: number;
 	rewardsAPY?: number;
@@ -58,6 +96,7 @@ function APYTooltip(props: {
 	hasPendleArbRewards?: boolean;
 	hasKelpNEngenlayer?: boolean;
 	hasKelp?: boolean;
+	katanaRewardsAPY?: number;
 }): ReactElement {
 	return (
 		<span className={'tooltipLight bottom-full mb-1'}>
@@ -166,6 +205,21 @@ function APYTooltip(props: {
 							</div>
 						</>
 					) : null}
+
+					{props.katanaRewardsAPY ? (
+						<div
+							className={
+								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+							}>
+							<p>{'• KAT APR (Vested)'}</p>
+							<RenderAmount
+								shouldHideTooltip
+								value={props.katanaRewardsAPY}
+								symbol={'percent'}
+								decimals={6}
+							/>
+						</div>
+					) : null}
 				</div>
 			</div>
 		</span>
@@ -173,20 +227,27 @@ function APYTooltip(props: {
 }
 
 function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const {data: katanaAprs} = useKatanaAprs();
 	const isEthMainnet = currentVault.chainID === 1;
+	const isKatanaChain = currentVault.chainID === 747474;
 	const hasPendleArbRewards = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544');
 	const hasKelpNEngenlayer = currentVault.address === toAddress('0xDDa02A2FA0bb0ee45Ba9179a3fd7e65E5D3B2C90');
 	const hasKelp = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544');
+
+	const katanaVaultData = katanaAprs?.[toAddress(currentVault.address)];
+	const katanaRewardsAPR =
+		((isKatanaChain || currentVault.category === 'Katana') && katanaVaultData?.apr?.extra?.katanaRewardsAPR) || 0;
+	const hasKatanaRewards = katanaRewardsAPR > 0;
 
 	/**********************************************************************************************
 	 ** If there is no forwardAPY, we only have the historical APY to display.
 	 **********************************************************************************************/
 	if (currentVault.apr.forwardAPR.type === '') {
 		const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
-		const boostedAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR;
+		const boostedAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR + katanaRewardsAPR;
 		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
 
-		if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
+		if (currentVault.apr?.extra.stakingRewardsAPR > 0 || hasKatanaRewards) {
 			return (
 				<div className={'relative flex flex-col items-end md:text-right'}>
 					<span className={'tooltip'}>
@@ -195,7 +256,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 								shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 								/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
 								fallback={'NEW'}>
-								{'⚡️ '}
+								{getEmojiDisplay(hasKatanaRewards, currentVault?.info?.isBoosted)}
 								<span
 									className={
 										'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
@@ -215,12 +276,14 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							hasKelp={hasKelp}
 							hasKelpNEngenlayer={hasKelpNEngenlayer}
 							rewardsAPY={currentVault.apr.extra.stakingRewardsAPR}
+							katanaRewardsAPY={katanaRewardsAPR}
 						/>
 					</span>
 					<APYSubline
 						hasPendleArbRewards={hasPendleArbRewards}
 						hasKelpNEngenlayer={hasKelpNEngenlayer}
 						hasKelp={hasKelp}
+						hasKatanaRewards={hasKatanaRewards}
 					/>
 				</div>
 			);
@@ -244,6 +307,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					hasPendleArbRewards={hasPendleArbRewards}
 					hasKelpNEngenlayer={hasKelpNEngenlayer}
 					hasKelp={hasKelp}
+					hasKatanaRewards={hasKatanaRewards}
 				/>
 			</div>
 		);
@@ -289,6 +353,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						hasKelpNEngenlayer={hasKelpNEngenlayer}
 						hasKelp={hasKelp}
 						boost={currentVault.apr.forwardAPR.composite.boost}
+						katanaRewardsAPY={katanaRewardsAPR}
 					/>
 				</div>
 			</span>
@@ -298,7 +363,8 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	/**********************************************************************************************
 	 ** Display the APY including the rewards APY if the rewards APY is greater than 0.
 	 **********************************************************************************************/
-	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
+	const sumOfRewardsAPY =
+		currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR + katanaRewardsAPR;
 	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
 	if (sumOfRewardsAPY > 0) {
 		let veYFIRange: [number, number] | undefined = undefined;
@@ -370,17 +436,19 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					</b>
 					<APYTooltip
 						baseAPY={currentVault.apr.forwardAPR.netAPR}
-						rewardsAPY={veYFIRange ? undefined : sumOfRewardsAPY}
+						rewardsAPY={veYFIRange ? undefined : sumOfRewardsAPY - katanaRewardsAPR}
 						hasPendleArbRewards={hasPendleArbRewards}
 						hasKelpNEngenlayer={hasKelpNEngenlayer}
 						hasKelp={hasKelp}
 						range={veYFIRange}
+						katanaRewardsAPY={katanaRewardsAPR}
 					/>
 				</span>
 				<APYSubline
 					hasPendleArbRewards={hasPendleArbRewards}
 					hasKelp={hasKelp}
 					hasKelpNEngenlayer={hasKelpNEngenlayer}
+					hasKatanaRewards={hasKatanaRewards}
 				/>
 			</div>
 		);
@@ -390,8 +458,9 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	 ** Display the current spot APY, retrieved from the V3Oracle, only if the current APY is
 	 ** greater than 0.
 	 **********************************************************************************************/
-	const hasCurrentAPY = !isZero(currentVault?.apr.forwardAPR.netAPR);
+	const hasCurrentAPY = !isZero(currentVault?.apr.forwardAPR.netAPR) || hasKatanaRewards;
 	if (hasCurrentAPY) {
+		const totalAPY = currentVault?.apr.forwardAPR.netAPR + katanaRewardsAPR;
 		return (
 			<div className={'relative flex flex-col items-end md:text-right'}>
 				<b className={'yearn--table-data-section-item-value'}>
@@ -399,10 +468,10 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 						/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
 						fallback={'NEW'}>
-						{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+						{getEmojiDisplay(hasKatanaRewards, currentVault?.info?.isBoosted)}
 						<RenderAmount
 							shouldHideTooltip
-							value={currentVault?.apr.forwardAPR.netAPR}
+							value={totalAPY}
 							symbol={'percent'}
 							decimals={6}
 						/>
@@ -412,12 +481,14 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					hasPendleArbRewards={hasPendleArbRewards}
 					hasKelp={hasKelp}
 					hasKelpNEngenlayer={hasKelpNEngenlayer}
+					hasKatanaRewards={hasKatanaRewards}
 				/>
 			</div>
 		);
 	}
 
-	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
+	const baseAPY = currentVault.apr?.netAPR + katanaRewardsAPR;
+	const hasZeroAPY = isZero(baseAPY) || Number(baseAPY.toFixed(2)) === 0;
 	return (
 		<div className={'relative flex flex-col items-end md:text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
@@ -427,10 +498,10 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					}
 					/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
 					fallback={'NEW'}>
-					{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+					{getEmojiDisplay(hasKatanaRewards, currentVault?.info?.isBoosted)}
 					<RenderAmount
 						shouldHideTooltip={hasZeroAPY}
-						value={currentVault.apr.netAPR}
+						value={baseAPY}
 						symbol={'percent'}
 						decimals={6}
 					/>
@@ -440,6 +511,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				hasPendleArbRewards={hasPendleArbRewards}
 				hasKelp={hasKelp}
 				hasKelpNEngenlayer={hasKelpNEngenlayer}
+				hasKatanaRewards={hasKatanaRewards}
 			/>
 		</div>
 	);
