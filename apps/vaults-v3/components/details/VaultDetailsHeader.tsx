@@ -108,14 +108,14 @@ function VaultAPY({
 	const katanaRewardsAPR = katanaVaultData?.apr?.extra?.katanaRewardsAPR ?? 0;
 	const hasKatanaRewards = katanaRewardsAPR > 0;
 
-	const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR + katanaRewardsAPR;
+	const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR;
 	const monthlyAPY = apr.points.monthAgo;
 	const weeklyAPY = apr.points.weekAgo;
-	const netAPY = apr.netAPR + extraAPY;
+	const netAPY = apr.netAPR + extraAPY + katanaRewardsAPR;
 	const currentAPY = apr.forwardAPR.netAPR + extraAPY;
 	const isSourceVeYFI = source === 'VeYFI';
 
-	if (apr.forwardAPR.type === '' && extraAPY === 0) {
+	if (apr.forwardAPR.type === '' && extraAPY === 0 && !hasKatanaRewards) {
 		return (
 			<VaultHeaderLineItem
 				label={'Historical APY'}
@@ -386,7 +386,7 @@ function VaultAPY({
 									<p>{'• Rewards APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
-										value={extraAPY - katanaRewardsAPR}
+										value={extraAPY}
 										symbol={'percent'}
 										decimals={6}
 									/>
