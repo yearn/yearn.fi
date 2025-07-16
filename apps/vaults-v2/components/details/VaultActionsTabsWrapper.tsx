@@ -30,7 +30,6 @@ import type {ReactElement} from 'react';
 import type {TNormalizedBN} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
-import {toast} from '@lib/components/yToast';
 
 /**************************************************************************************************
  ** The MobileTabButtons component will be used to display the tab buttons to navigate between the
