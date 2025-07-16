@@ -397,10 +397,13 @@ export function useSolverCowswap(): TSolverContext {
 				});
 				if (result.isSuccessful) {
 					await onSuccess(result.receipt);
-				} else if (onError) {
-					await onError(new Error('Approval failed'));
 				}
 			} catch (error) {
+				toast({
+					type: 'error',
+					content: error instanceof Error ? error.message : 'Unknown error occurred'
+				});
+
 				if (onError) {
 					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
 				}
@@ -441,6 +444,10 @@ export function useSolverCowswap(): TSolverContext {
 				}
 			} catch (error) {
 				const errorMessage = 'Transaction rejected';
+				toast({
+					type: 'error',
+					content: errorMessage
+				});
 				txStatusSetter({
 					...defaultTxStatus,
 					error: true,

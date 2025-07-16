@@ -316,8 +316,6 @@ export const Notification = React.memo(function Notification({
 					'right-2 top-2 w-5 h-5 rounded-full hover:opacity-100 hover:bg-neutral-200',
 					'transition-all duration-200',
 					'opacity-0 group-hover:opacity-60 group-hover:bg-neutral-200/60 hover:!opacity-100',
-					'focus:outline-none focus:ring-1 focus:ring-neutral-400/50',
-					'focus:opacity-100',
 					isDeleting ? '!opacity-30' : ''
 				)}
 				title={'Remove'}>
