@@ -6,6 +6,7 @@ import {IconCross} from '@lib/icons/IconCross';
 
 import {Notification} from './Notification';
 import {cl} from '@lib/utils';
+import {useYearn} from '@lib/contexts/useYearn';
 
 export function NotificationsCurtain(props: {
 	set_shouldOpenCurtain: (value: boolean) => void;
@@ -13,6 +14,8 @@ export function NotificationsCurtain(props: {
 	variant: 'v2' | 'v3';
 }): ReactElement {
 	const {cachedEntries, set_notificationStatus, isLoading, error} = useNotifications();
+	const {vaults, vaultsMigrations, vaultsRetired} = useYearn();
+	const allVaults = {...vaults, ...vaultsMigrations, ...vaultsRetired};
 
 	const isEmpty = cachedEntries.length === 0;
 
@@ -96,6 +99,10 @@ export function NotificationsCurtain(props: {
 											{cachedEntries.toReversed().map(entry => (
 												<Notification
 													key={`notification-${entry.id}`}
+													fromVault={
+														entry.fromAddress ? allVaults[entry.fromAddress] : undefined
+													}
+													toVault={entry.toAddress ? allVaults[entry.toAddress] : undefined}
 													notification={entry}
 													variant={props.variant}
 												/>

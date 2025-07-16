@@ -9,10 +9,11 @@ import {IconCheck} from '@lib/icons/IconCheck';
 import {IconClose} from '@lib/icons/IconClose';
 import {IconCross} from '@lib/icons/IconCross';
 import {IconLoader} from '@lib/icons/IconLoader';
-import {cl, SUPPORTED_NETWORKS, truncateHex} from '@lib/utils';
+import {cl, SUPPORTED_NETWORKS, toAddress, truncateHex} from '@lib/utils';
 
 import type {ReactElement} from 'react';
 import type {TNotification, TNotificationStatus} from '@lib/types/notifications';
+import {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 const STATUS: {[key: string]: [string, string, ReactElement]} = {
 	success: ['Success', 'text-green-800 bg-green-100', <IconCheck className={'size-4'} />],
@@ -35,7 +36,15 @@ function NotificationStatus(props: {status: TNotificationStatus}): ReactElement 
 	);
 }
 
-function NotificationContent({notification}: {notification: TNotification}): ReactElement {
+function NotificationContent({
+	notification,
+	fromVault,
+	toVault
+}: {
+	notification: TNotification;
+	fromVault?: TYDaemonVault;
+	toVault?: TYDaemonVault;
+}): ReactElement {
 	const chainName = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)?.name || 'Unknown';
 	const explorerBaseURI = useMemo(() => {
 		const chain = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId);
@@ -57,6 +66,17 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 		}
 	}, [notification.type]);
 
+	const fromTokenLink = useMemo(() => {
+		if (!fromVault) return `${explorerBaseURI}/address/${notification.fromAddress || '0x0'}`;
+
+		const isV3 = fromVault.version.startsWith('3') || fromVault.version.startsWith('~3');
+		const href = isV3
+			? `/v3/${fromVault.chainID}/${toAddress(fromVault.address)}`
+			: `/vaults/${fromVault.chainID}/${toAddress(fromVault.address)}`;
+
+		return href;
+	}, [notification.type, notification.fromTokenName]);
+
 	const toTokenLabel = useMemo(() => {
 		switch (notification.type) {
 			case 'withdraw':
@@ -65,6 +85,16 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 				return 'To vault:';
 		}
 	}, [notification.type]);
+
+	const toTokenLink = useMemo(() => {
+		if (!toVault) return `${explorerBaseURI}/address/${notification.toAddress || '0x0'}`;
+		const isV3 = toVault.version.startsWith('3') || toVault.version.startsWith('~3');
+		const href = isV3
+			? `/v3/${toVault.chainID}/${toAddress(toVault.address)}`
+			: `/vaults/${toVault.chainID}/${toAddress(toVault.address)}`;
+
+		return href;
+	}, [notification.type, notification.toTokenName]);
 
 	return (
 		<div className={'flex gap-4'}>
@@ -137,7 +167,7 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 					<p>{fromTokenLabel}</p>
 					<p className={'font-bold text-right'}>
 						<Link
-							href={`${explorerBaseURI}/address/${notification.fromAddress || '0x0'}`}
+							href={fromTokenLink}
 							target={'_blank'}
 							rel={'noopener noreferrer'}
 							aria-label={`View token ${notification.fromTokenName || 'Unknown'} on explorer`}
@@ -154,7 +184,7 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 							<p>{toTokenLabel}</p>
 							<p className={'font-bold text-right'}>
 								<Link
-									href={`${explorerBaseURI}/address/${notification.toAddress || '0x0'}`}
+									href={toTokenLink}
 									target={'_blank'}
 									rel={'noopener noreferrer'}
 									aria-label={`View vault ${notification.toTokenName || 'Unknown'} on explorer`}
@@ -193,10 +223,14 @@ function NotificationContent({notification}: {notification: TNotification}): Rea
 
 export const Notification = React.memo(function Notification({
 	notification,
-	variant = 'v3'
+	variant = 'v3',
+	fromVault,
+	toVault
 }: {
 	notification: TNotification;
 	variant: 'v2' | 'v3';
+	fromVault?: TYDaemonVault;
+	toVault?: TYDaemonVault;
 }): ReactElement {
 	const {deleteByID} = useNotifications();
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -328,7 +362,11 @@ export const Notification = React.memo(function Notification({
 					<NotificationStatus status={notification.status} />
 				</div>
 
-				<NotificationContent notification={notification} />
+				<NotificationContent
+					notification={notification}
+					fromVault={fromVault}
+					toVault={toVault}
+				/>
 
 				{notification.status === 'success' ? (
 					<div
