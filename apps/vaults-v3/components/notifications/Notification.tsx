@@ -13,7 +13,7 @@ import {cl, SUPPORTED_NETWORKS, toAddress, truncateHex} from '@lib/utils';
 
 import type {ReactElement} from 'react';
 import type {TNotification, TNotificationStatus} from '@lib/types/notifications';
-import {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 const STATUS: {[key: string]: [string, string, ReactElement]} = {
 	success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} />],
@@ -67,7 +67,9 @@ function NotificationContent({
 	}, [notification.type]);
 
 	const fromTokenLink = useMemo(() => {
-		if (!fromVault) return `${explorerBaseURI}/address/${notification.fromAddress || '0x0'}`;
+		if (!fromVault) {
+			return `${explorerBaseURI}/address/${notification.fromAddress || '0x0'}`;
+		}
 
 		const isV3 = fromVault.version.startsWith('3') || fromVault.version.startsWith('~3');
 		const href = isV3
@@ -87,7 +89,9 @@ function NotificationContent({
 	}, [notification.type]);
 
 	const toTokenLink = useMemo(() => {
-		if (!toVault) return `${explorerBaseURI}/address/${notification.toAddress || '0x0'}`;
+		if (!toVault) {
+			return `${explorerBaseURI}/address/${notification.toAddress || '0x0'}`;
+		}
 		const isV3 = toVault.version.startsWith('3') || toVault.version.startsWith('~3');
 		const href = isV3
 			? `/v3/${toVault.chainID}/${toAddress(toVault.address)}`
@@ -122,7 +126,7 @@ function NotificationContent({
 					</div>
 				</div>
 
-				{notification.toTokenName && <IconArrow className={'rotate-[135deg] size-4'} />}
+				{notification.toTokenName && <IconArrow className={'size-4 rotate-[135deg]'} />}
 
 				{notification.toTokenName && notification.toAddress && (
 					<div className={'relative'}>
@@ -152,7 +156,7 @@ function NotificationContent({
 			<div className={'flex-1'}>
 				<div className={'grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-neutral-800'}>
 					<p>{'Address:'}</p>
-					<p className={'font-bold text-right'}>
+					<p className={'text-right font-bold'}>
 						<Link
 							href={`${explorerBaseURI}/address/${notification.address}`}
 							target={'_blank'}
@@ -165,7 +169,7 @@ function NotificationContent({
 						</Link>
 					</p>
 					<p>{fromTokenLabel}</p>
-					<p className={'font-bold text-right'}>
+					<p className={'text-right font-bold'}>
 						<Link
 							href={fromTokenLink}
 							target={'_blank'}
@@ -178,11 +182,11 @@ function NotificationContent({
 						</Link>
 					</p>
 					<p>{'Amount:'}</p>
-					<p className={'font-bold text-right'}>{notification.amount}</p>
+					<p className={'text-right font-bold'}>{notification.amount}</p>
 					{notification.toTokenName && (
 						<>
 							<p>{toTokenLabel}</p>
-							<p className={'font-bold text-right'}>
+							<p className={'text-right font-bold'}>
 								<Link
 									href={toTokenLink}
 									target={'_blank'}
@@ -199,7 +203,7 @@ function NotificationContent({
 					{notification.spenderAddress && (
 						<>
 							<p>{'Spender:'}</p>
-							<p className={'font-bold text-right'}>
+							<p className={'text-right font-bold'}>
 								<Link
 									href={`${explorerBaseURI}/address/${notification.spenderAddress}`}
 									target={'_blank'}
@@ -214,7 +218,7 @@ function NotificationContent({
 						</>
 					)}
 					<p>{'Chain:'}</p>
-					<p className={'font-bold text-right'}>{chainName}</p>
+					<p className={'text-right font-bold'}>{chainName}</p>
 				</div>
 			</div>
 		</div>
@@ -233,7 +237,7 @@ export const Notification = React.memo(function Notification({
 	toVault?: TYDaemonVault;
 }): ReactElement {
 	const {deleteByID} = useNotifications();
-	const [isDeleting, setIsDeleting] = useState(false);
+	const [isDeleting, set_isDeleting] = useState(false);
 
 	const formattedDate = useMemo(() => {
 		if (!notification.timeFinished || notification.status === 'pending') {
@@ -287,15 +291,17 @@ export const Notification = React.memo(function Notification({
 	}, [notification.type]);
 
 	const handleDelete = useCallback(async () => {
-		if (!notification.id || isDeleting) return;
+		if (!notification.id || isDeleting) {
+			return;
+		}
 
-		setIsDeleting(true);
+		set_isDeleting(true);
 
 		try {
 			await deleteByID(notification.id!);
 		} catch (error) {
 			console.error('Failed to delete notification:', error);
-			setIsDeleting(false);
+			set_isDeleting(false);
 		}
 	}, [deleteByID, notification.id, isDeleting]);
 

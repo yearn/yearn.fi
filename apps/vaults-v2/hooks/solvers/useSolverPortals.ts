@@ -7,9 +7,9 @@ import {isValidPortalsErrorObject} from '@vaults-v2/hooks/helpers/isValidPortals
 import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults-v2/hooks/usePortalsApi';
 import {Solver} from '@vaults-v2/types/solvers';
 import {toast} from '@lib/components/yToast';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
-import {useNotifications} from '@lib/contexts/useNotifications';
 import {
 	assert,
 	assertAddress,
@@ -64,7 +64,7 @@ async function getQuote(
 		});
 
 		// Validate the response structure
-		if (!result || !result.data) {
+		if (!result?.data) {
 			return {data: null, error: new Error('Invalid response from Portals API')};
 		}
 
@@ -354,7 +354,7 @@ export function useSolverPortals(): TSolverContext {
 				}
 			});
 
-			if (!approval || !approval.context) {
+			if (!approval?.context) {
 				console.error('Portals approval response invalid or missing context');
 				return zeroNormalizedBN;
 			}

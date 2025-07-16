@@ -1,12 +1,12 @@
 import {type ReactElement, useEffect} from 'react';
-import {motion, AnimatePresence} from 'framer-motion';
 import {Drawer} from 'vaul';
+import {AnimatePresence,motion} from 'framer-motion';
 import {useNotifications} from '@lib/contexts/useNotifications';
+import {useYearn} from '@lib/contexts/useYearn';
 import {IconCross} from '@lib/icons/IconCross';
+import {cl} from '@lib/utils';
 
 import {Notification} from './Notification';
-import {cl} from '@lib/utils';
-import {useYearn} from '@lib/contexts/useYearn';
 
 export function NotificationsCurtain(props: {
 	set_shouldOpenCurtain: (value: boolean) => void;
@@ -44,7 +44,7 @@ export function NotificationsCurtain(props: {
 			open={props.isOpen}
 			onOpenChange={props.set_shouldOpenCurtain}>
 			<Drawer.Portal>
-				<Drawer.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999998] transition-all duration-300" />
+				<Drawer.Overlay className={'fixed inset-0 z-[999998] bg-black/40 backdrop-blur-sm transition-all duration-300'} />
 				<Drawer.Content className={'fixed inset-y-0 right-0 z-[999999] flex w-full outline-none md:w-[386px]'}>
 					<div
 						className={cl(
@@ -82,7 +82,7 @@ export function NotificationsCurtain(props: {
 								) : error ? (
 									<div className={'mx-auto mt-40 text-center'}>
 										<p className={'text-red-600 font-medium'}>{'Error loading notifications'}</p>
-										<p className={'text-sm text-neutral-600 mt-2'}>{error}</p>
+										<p className={'mt-2 text-sm text-neutral-600'}>{error}</p>
 									</div>
 								) : isEmpty ? (
 									<p className={'mx-auto mt-40 text-center text-neutral-800'}>
@@ -95,7 +95,7 @@ export function NotificationsCurtain(props: {
 										animate={{opacity: 1}}
 										transition={{duration: 0.2, ease: [0.4, 0.0, 0.2, 1]}}
 										className={'flex h-full flex-col pr-2'}>
-										<AnimatePresence mode="popLayout">
+										<AnimatePresence mode={'popLayout'}>
 											{cachedEntries.toReversed().map(entry => (
 												<Notification
 													key={`notification-${entry.id}`}

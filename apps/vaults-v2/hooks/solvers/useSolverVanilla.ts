@@ -3,6 +3,7 @@ import {maxUint256} from 'viem';
 import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
@@ -14,7 +15,6 @@ import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
-import {useNotifications} from '@lib/contexts/useNotifications';
 
 export function useSolverVanilla(): TSolverContext {
 	const {provider} = useWeb3();

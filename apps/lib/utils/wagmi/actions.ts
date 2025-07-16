@@ -13,9 +13,9 @@ import {ZAP_FTM_TO_YVFTM_ABI} from '@lib/utils/abi/zapFtmToYvFTM.abi';
 import {handleTx, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
 
 import type {Connector} from 'wagmi';
+import type {TCTA} from '@lib/components/yToast';
 import type {TAddress} from '@lib/types';
 import type {TTxResponse, TWriteTransaction} from '@lib/utils/wagmi';
-import {TCTA} from '@lib/components/yToast';
 
 function getChainID(chainID: number): number {
 	if (typeof window !== 'undefined' && (window as any)?.ethereum?.useForknetForMainnet) {

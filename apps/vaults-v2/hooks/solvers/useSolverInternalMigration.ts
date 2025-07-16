@@ -6,6 +6,7 @@ import {Solver} from '@vaults-v2/types/solvers';
 import {ZAP_CRV_ABI} from '@vaults-v2/utils/abi/zapCRV.abi';
 import {zapCRV} from '@vaults-v2/utils/actions';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {ZAP_YEARN_VE_CRV_ADDRESS} from '@lib/utils/constants';
@@ -17,7 +18,6 @@ import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
-import {useNotifications} from '@lib/contexts/useNotifications';
 
 /**************************************************************************************************
  ** The InternalMigration solver is a special solver used to migrate from one vault to another. It

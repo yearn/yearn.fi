@@ -16,6 +16,7 @@ import {Renderable} from '@lib/components/Renderable';
 import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
+import {useChainOptions} from '@lib/hooks/useChains';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
 import {IconChain} from '@lib/icons/IconChain';
 import {toAddress, toNormalizedBN} from '@lib/utils';
@@ -24,7 +25,6 @@ import type {ReactElement, ReactNode} from 'react';
 import type {TSortDirection} from '@lib/types';
 import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
-import {useChainOptions} from '@lib/hooks/useChains';
 
 function HeaderUserPosition(): ReactElement {
 	const {cumulatedValueInV2Vaults} = useWallet();

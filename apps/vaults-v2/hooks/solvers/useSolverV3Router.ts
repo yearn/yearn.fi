@@ -3,16 +3,16 @@ import {erc20Abi, maxUint256, zeroAddress} from 'viem';
 import {readContract} from 'wagmi/actions';
 import {Solver} from '@vaults-v2/types/solvers';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
-import {useNotifications} from '@lib/contexts/useNotifications';
 import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
 import {migrateSharesViaRouter} from '@lib/utils/wagmi/actions';
 
-import type {Connector} from 'wagmi';
 import type {TransactionReceipt} from 'viem';
+import type {Connector} from 'wagmi';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';

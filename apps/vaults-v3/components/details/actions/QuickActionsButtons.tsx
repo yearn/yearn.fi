@@ -3,8 +3,9 @@ import {useRouter} from 'next/router';
 import {usePlausible} from 'next-plausible';
 import {maxUint256} from 'viem';
 import {motion} from 'framer-motion';
-import {TActionParams, useActionFlow} from '@vaults-v2/contexts/useActionFlow';
+import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
 import {useSolver} from '@vaults-v2/contexts/useSolver';
+import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData';
 import {Solver} from '@vaults-v2/types/solvers';
 import {Button} from '@lib/components/Button';
 import {useNotificationsActions} from '@lib/contexts/useNotificationsActions';
@@ -20,9 +21,9 @@ import {defaultTxStatus} from '@lib/utils/wagmi';
 import type {ReactElement} from 'react';
 import type {TransactionReceipt} from 'viem';
 import type {TNormalizedBN} from '@lib/types';
+import type {TNotificationType} from '@lib/types/notifications';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {TNotificationType} from '@lib/types/notifications';
-import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData';
+import type {TActionParams} from '@vaults-v2/contexts/useActionFlow';
 
 export function VaultDetailsQuickActionsButtons({
 	currentVault,

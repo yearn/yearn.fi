@@ -6,15 +6,16 @@ import {OrderBookApi, OrderQuoteSideKindSell, OrderSigningUtils} from '@cowproto
 import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {toast} from '@lib/components/yToast';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
-import {useNotifications} from '@lib/contexts/useNotifications';
 import {assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@lib/utils/constants';
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20, retrieveConfig} from '@lib/utils/wagmi';
 import {getEthersSigner} from '@lib/utils/wagmi/ethersAdapter';
 
+import type {TransactionReceipt} from 'viem';
 import type {
 	Order,
 	OrderCreation,
@@ -23,7 +24,6 @@ import type {
 	SigningScheme,
 	UnsignedOrder
 } from '@cowprotocol/cow-sdk';
-import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';

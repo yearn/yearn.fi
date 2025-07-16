@@ -4,6 +4,7 @@ import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults-v2/utils';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {allowanceKey} from '@lib/utils/helpers';
@@ -14,7 +15,6 @@ import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
-import {useNotifications} from '@lib/contexts/useNotifications';
 
 /**************************************************************************************************
  ** The ChainCoin solver is a specific solver that would work only for some vaults. It aims to help

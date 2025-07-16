@@ -1,6 +1,6 @@
 import type {Hex, TransactionReceipt} from 'viem';
+import type {TActionParams} from '@vaults-v2/contexts/useActionFlow';
 import type {TAddress} from './address';
-import {TActionParams} from '@vaults-v2/contexts/useActionFlow';
 
 export type TNotificationStatus = 'pending' | 'success' | 'error';
 

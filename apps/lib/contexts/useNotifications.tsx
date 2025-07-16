@@ -1,10 +1,10 @@
 import React, {createContext, useCallback, useContext, useMemo, useState} from 'react';
+import {useRouter} from 'next/router';
 import {useIndexedDBStore} from 'use-indexeddb';
 import {NotificationsCurtain} from '@vaults-v3/components/notifications/NotificationsCurtain';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
 
 import type {TNotification, TNotificationsContext, TNotificationStatus} from '@lib/types/notifications';
-import {useRouter} from 'next/router';
 
 const defaultProps: TNotificationsContext = {
 	shouldOpenCurtain: false,
