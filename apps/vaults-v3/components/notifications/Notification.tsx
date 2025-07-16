@@ -16,9 +16,9 @@ import type {TNotification, TNotificationStatus} from '@lib/types/notifications'
 import {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 const STATUS: {[key: string]: [string, string, ReactElement]} = {
-	success: ['Success', 'text-green-800 bg-green-100', <IconCheck className={'size-4'} />],
+	success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} />],
 	pending: ['Pending', 'text-neutral-800 bg-neutral-300', <IconLoader className={'size-4 animate-spin'} />],
-	error: ['Error', 'text-white  bg-[#ef4444] bg-opacity-90', <IconCross className={'size-3'} />]
+	error: ['Error', 'text-white bg-[#C73203] bg-opacity-90', <IconCross className={'size-3'} />]
 };
 
 function NotificationStatus(props: {status: TNotificationStatus}): ReactElement {
@@ -374,7 +374,6 @@ export const Notification = React.memo(function Notification({
 							'mt-4 flex items-center justify-between border-t border-neutral-100 pt-3 text-xs text-neutral-800'
 						}>
 						<div className={'flex gap-4'}>
-							<span className={'text-neutral-600'}>{'Arrived at'}</span>
 							<span className={'font-bold'}>{formattedDate}</span>
 						</div>
 						{explorerLink ? (
