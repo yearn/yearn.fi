@@ -229,14 +229,13 @@ function APYTooltip(props: {
 function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {data: katanaAprs} = useKatanaAprs();
 	const isEthMainnet = currentVault.chainID === 1;
-	const isKatanaChain = currentVault.chainID === 747474;
 	const hasPendleArbRewards = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544');
 	const hasKelpNEngenlayer = currentVault.address === toAddress('0xDDa02A2FA0bb0ee45Ba9179a3fd7e65E5D3B2C90');
 	const hasKelp = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544');
 
+	// Get Katana rewards APR for this vault
 	const katanaVaultData = katanaAprs?.[toAddress(currentVault.address)];
-	const katanaRewardsAPR =
-		((isKatanaChain || currentVault.category === 'Katana') && katanaVaultData?.apr?.extra?.katanaRewardsAPR) || 0;
+	const katanaRewardsAPR = katanaVaultData?.apr?.extra?.katanaRewardsAPR ?? 0;
 	const hasKatanaRewards = katanaRewardsAPR > 0;
 
 	/**********************************************************************************************
@@ -436,7 +435,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					</b>
 					<APYTooltip
 						baseAPY={currentVault.apr.forwardAPR.netAPR}
-						rewardsAPY={veYFIRange ? undefined : sumOfRewardsAPY - katanaRewardsAPR}
+						rewardsAPY={veYFIRange ? undefined : sumOfRewardsAPY}
 						hasPendleArbRewards={hasPendleArbRewards}
 						hasKelpNEngenlayer={hasKelpNEngenlayer}
 						hasKelp={hasKelp}

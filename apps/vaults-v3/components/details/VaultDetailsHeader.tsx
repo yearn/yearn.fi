@@ -13,6 +13,7 @@ import {RenderAmount} from '@lib/components/RenderAmount';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
+import {useKatanaAprs} from '@lib/hooks/useKatanaAprs';
 import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice';
 import {IconQuestion} from '@lib/icons/IconQuestion';
 import {
@@ -43,6 +44,33 @@ type TVaultHeaderLineItemProps = {
 	legend?: ReactElement | string;
 };
 
+function KatanaAPRIndicator(): ReactElement {
+	return <div className={'text-xs'}>{'(Incl. vested rewards)'}</div>;
+}
+
+function KatanaAPRTooltipInfo({katanaRewardsAPR}: {katanaRewardsAPR: number}): ReactElement {
+	return (
+		<>
+			<div
+				className={
+					'font-number mt-1 flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+				}>
+				<p>{'• KAT APR (Vested) '}</p>
+				<RenderAmount
+					shouldHideTooltip
+					value={katanaRewardsAPR}
+					symbol={'percent'}
+					decimals={6}
+				/>
+			</div>
+			<div className={'pt-2 text-left text-xxs text-neutral-400'}>
+				<p>{'KAT tokens are locked until no later than Feb. 20 2026.'}</p>
+				<p>{'KAT APR is calculated using an assumed $1B Fully Diluted Valuation.'}</p>
+			</div>
+		</>
+	);
+}
+
 function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProps): ReactElement {
 	return (
 		<div
@@ -64,8 +92,23 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 	);
 }
 
-function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): ReactElement {
-	const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR;
+function VaultAPY({
+	apr,
+	source,
+	currentVault
+}: {
+	apr: TYDaemonVault['apr'];
+	source: string;
+	currentVault: TYDaemonVault;
+}): ReactElement {
+	const {data: katanaAprs} = useKatanaAprs();
+
+	// Get Katana rewards APR for this vault
+	const katanaVaultData = katanaAprs?.[toAddress(currentVault.address)];
+	const katanaRewardsAPR = katanaVaultData?.apr?.extra?.katanaRewardsAPR ?? 0;
+	const hasKatanaRewards = katanaRewardsAPR > 0;
+
+	const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR + katanaRewardsAPR;
 	const monthlyAPY = apr.points.monthAgo;
 	const weeklyAPY = apr.points.weekAgo;
 	const netAPY = apr.netAPR + extraAPY;
@@ -74,7 +117,31 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 
 	if (apr.forwardAPR.type === '' && extraAPY === 0) {
 		return (
-			<VaultHeaderLineItem label={'Historical APY'}>
+			<VaultHeaderLineItem
+				label={'Historical APY'}
+				legend={
+					hasKatanaRewards ? (
+						<span className={'tooltip'}>
+							<div className={'flex flex-row items-center space-x-2'}>
+								<div className={'text-xs'}>{'Incl. vested rewards'}</div>
+								<IconQuestion className={'hidden md:block'} />
+							</div>
+							<span className={'tooltipLight top-full mt-2'}>
+								<div
+									className={
+										'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+									}>
+									<p className={'text-left'}>
+										{'KAT tokens are locked until no later than Feb. 20 2026 (maybe sooner).'}
+									</p>
+									<p className={'text-left'}>
+										{'KAT APR is calculated using an assumed $1B Fully Diluted Valuation'}
+									</p>
+								</div>
+							</span>
+						</span>
+					) : undefined
+				}>
 				<RenderAmount
 					value={netAPY}
 					symbol={'percent'}
@@ -91,17 +158,20 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 				label={'Historical APY'}
 				legend={
 					<span className={'tooltip'}>
-						<div className={'flex flex-row items-center space-x-2'}>
-							<div>
-								{'Est. APY: '}
-								<RenderAmount
-									shouldHideTooltip={boostedAPY === 0}
-									value={boostedAPY}
-									symbol={'percent'}
-									decimals={6}
-								/>
+						<div className={'flex flex-col items-center'}>
+							<div className={'flex flex-row items-center space-x-2'}>
+								<div>
+									{'Est. APY: '}
+									<RenderAmount
+										shouldHideTooltip={boostedAPY === 0}
+										value={boostedAPY}
+										symbol={'percent'}
+										decimals={6}
+									/>
+								</div>
+								<IconQuestion className={'hidden md:block'} />
 							</div>
-							<IconQuestion className={'hidden md:block'} />
+							{hasKatanaRewards && <KatanaAPRIndicator />}
 						</div>
 						<span className={'tooltipLight top-full mt-2'}>
 							<div
@@ -139,6 +209,8 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 										decimals={6}
 									/>
 								</div>
+
+								{hasKatanaRewards ? <KatanaAPRTooltipInfo katanaRewardsAPR={katanaRewardsAPR} /> : null}
 							</div>
 						</span>
 					</span>
@@ -171,26 +243,29 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 				label={'Historical APY'}
 				legend={
 					<span className={'tooltip'}>
-						<div className={'flex flex-row items-center space-x-2'}>
-							<div>
-								{'Est. APY: '}
-								<Fragment>
-									<RenderAmount
-										shouldHideTooltip
-										value={estAPYRange[0]}
-										symbol={'percent'}
-										decimals={6}
-									/>
-									&nbsp;&rarr;&nbsp;
-									<RenderAmount
-										shouldHideTooltip
-										value={estAPYRange[1]}
-										symbol={'percent'}
-										decimals={6}
-									/>
-								</Fragment>
+						<div className={'flex flex-col items-center'}>
+							<div className={'flex flex-row items-center space-x-2'}>
+								<div>
+									{'Est. APY: '}
+									<Fragment>
+										<RenderAmount
+											shouldHideTooltip
+											value={estAPYRange[0]}
+											symbol={'percent'}
+											decimals={6}
+										/>
+										&nbsp;&rarr;&nbsp;
+										<RenderAmount
+											shouldHideTooltip
+											value={estAPYRange[1]}
+											symbol={'percent'}
+											decimals={6}
+										/>
+									</Fragment>
+								</div>
+								<IconQuestion className={'hidden md:block'} />
 							</div>
-							<IconQuestion className={'hidden md:block'} />
+							{hasKatanaRewards && <KatanaAPRIndicator />}
 						</div>
 						<span className={'tooltipLight top-full mt-2'}>
 							<div
@@ -237,6 +312,8 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 										/>
 									</div>
 								</div>
+
+								{hasKatanaRewards ? <KatanaAPRTooltipInfo katanaRewardsAPR={katanaRewardsAPR} /> : null}
 							</div>
 						</span>
 					</span>
@@ -259,16 +336,19 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 			label={'Historical APY'}
 			legend={
 				<span className={'tooltip'}>
-					<div className={'flex flex-row items-center space-x-2'}>
-						<div>
-							{'Est. APY: '}
-							<RenderAmount
-								value={isZero(currentAPY) ? netAPY : currentAPY}
-								symbol={'percent'}
-								decimals={6}
-							/>
+					<div className={'flex flex-col items-center'}>
+						<div className={'flex flex-row items-center space-x-2'}>
+							<div>
+								{'Est. APY: '}
+								<RenderAmount
+									value={isZero(currentAPY) ? netAPY : currentAPY}
+									symbol={'percent'}
+									decimals={6}
+								/>
+							</div>
+							<IconQuestion className={'hidden md:block'} />
 						</div>
-						<IconQuestion className={'hidden md:block'} />
+						{hasKatanaRewards && <KatanaAPRIndicator />}
 					</div>
 					<span className={'tooltipLight top-full mt-2'}>
 						<div
@@ -288,7 +368,7 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 								<p>{'• Base APY '}</p>
 								<RenderAmount
 									shouldHideTooltip
-									value={isZero(currentAPY) ? netAPY : currentAPY}
+									value={apr.forwardAPR.netAPR}
 									symbol={'percent'}
 									decimals={6}
 								/>
@@ -299,8 +379,15 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 								}>
 								<p>{'• Rewards APY '}</p>
-								<p>{'N/A'}</p>
+								<RenderAmount
+									shouldHideTooltip
+									value={extraAPY - katanaRewardsAPR}
+									symbol={'percent'}
+									decimals={6}
+								/>
 							</div>
+
+							{hasKatanaRewards ? <KatanaAPRTooltipInfo katanaRewardsAPR={katanaRewardsAPR} /> : null}
 						</div>
 					</span>
 				</span>
@@ -741,13 +828,13 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 							{getNetwork(currentVault.chainID).name}
 						</strong>
 					</div>
-					{currentVault?.info?.isBoosted ? (
+					{!!currentVault?.info?.isBoosted && (
 						<div className={'w-full rounded-lg bg-neutral-900/30 px-4 py-2 text-center md:w-fit'}>
 							<strong className={'text-sm font-black text-neutral-900 md:text-xl'}>
 								{'⚡️ Boosted'}
 							</strong>
 						</div>
-					) : null}
+					)}
 				</div>
 			</div>
 
@@ -771,6 +858,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					<VaultAPY
 						apr={apr}
 						source={currentVault.staking.source}
+						currentVault={currentVault}
 					/>
 				</div>
 
