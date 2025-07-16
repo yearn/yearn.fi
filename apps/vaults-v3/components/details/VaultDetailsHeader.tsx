@@ -197,18 +197,20 @@ function VaultAPY({
 									/>
 								</div>
 
-								<div
-									className={
-										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}>
-									<p>{'• Rewards APY '}</p>
-									<RenderAmount
-										shouldHideTooltip
-										value={extraAPY}
-										symbol={'percent'}
-										decimals={6}
-									/>
-								</div>
+								{!hasKatanaRewards && (
+									<div
+										className={
+											'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+										}>
+										<p>{'• Rewards APY '}</p>
+										<RenderAmount
+											shouldHideTooltip
+											value={extraAPY}
+											symbol={'percent'}
+											decimals={6}
+										/>
+									</div>
+								)}
 
 								{hasKatanaRewards ? <KatanaAPRTooltipInfo katanaRewardsAPR={katanaRewardsAPR} /> : null}
 							</div>
@@ -291,27 +293,29 @@ function VaultAPY({
 									/>
 								</div>
 
-								<div
-									className={
-										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}>
-									<p>{'• Rewards APY '}</p>
-									<div>
-										<RenderAmount
-											shouldHideTooltip
-											value={veYFIRange[0]}
-											symbol={'percent'}
-											decimals={6}
-										/>
-										&nbsp;&rarr;&nbsp;
-										<RenderAmount
-											shouldHideTooltip
-											value={veYFIRange[1]}
-											symbol={'percent'}
-											decimals={6}
-										/>
+								{!hasKatanaRewards && (
+									<div
+										className={
+											'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+										}>
+										<p>{'• Rewards APY '}</p>
+										<div>
+											<RenderAmount
+												shouldHideTooltip
+												value={veYFIRange[0]}
+												symbol={'percent'}
+												decimals={6}
+											/>
+											&nbsp;&rarr;&nbsp;
+											<RenderAmount
+												shouldHideTooltip
+												value={veYFIRange[1]}
+												symbol={'percent'}
+												decimals={6}
+											/>
+										</div>
 									</div>
-								</div>
+								)}
 
 								{hasKatanaRewards ? <KatanaAPRTooltipInfo katanaRewardsAPR={katanaRewardsAPR} /> : null}
 							</div>
@@ -374,18 +378,20 @@ function VaultAPY({
 								/>
 							</div>
 
-							<div
-								className={
-									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-								}>
-								<p>{'• Rewards APY '}</p>
-								<RenderAmount
-									shouldHideTooltip
-									value={extraAPY - katanaRewardsAPR}
-									symbol={'percent'}
-									decimals={6}
-								/>
-							</div>
+							{!hasKatanaRewards && (
+								<div
+									className={
+										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+									}>
+									<p>{'• Rewards APY '}</p>
+									<RenderAmount
+										shouldHideTooltip
+										value={extraAPY - katanaRewardsAPR}
+										symbol={'percent'}
+										decimals={6}
+									/>
+								</div>
+							)}
 
 							{hasKatanaRewards ? <KatanaAPRTooltipInfo katanaRewardsAPR={katanaRewardsAPR} /> : null}
 						</div>
