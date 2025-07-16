@@ -5,6 +5,7 @@ import {Solver} from '@vaults-v2/types/solvers';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
@@ -36,6 +37,7 @@ async function allowanceOfRouter(request: TInitSolverArgs, provider: Connector |
 export function useSolverV3Router(): TSolverContext {
 	const {provider} = useWeb3();
 	const {maxLoss} = useYearn();
+	const {set_shouldOpenCurtain} = useNotifications();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -130,7 +132,13 @@ export function useSolverV3Router(): TSolverContext {
 					contractAddress: request.current.inputToken.value,
 					spenderAddress: request.current.migrator,
 					amount: amount,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful && result.receipt) {
 					onSuccess(result.receipt);
@@ -164,7 +172,13 @@ export function useSolverV3Router(): TSolverContext {
 					toVault: request.current.outputToken.value,
 					amount: request.current.inputAmount,
 					maxLoss,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful && result.receipt) {
 					onSuccess(result.receipt);

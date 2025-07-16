@@ -6,6 +6,7 @@ import {Solver} from '@vaults-v2/types/solvers';
 import {depositAndStake} from '@vaults-v2/utils/actions';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
 import {useWeb3} from '@lib/contexts/useWeb3';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {YGAUGES_ZAP_ADDRESS} from '@lib/utils/constants';
 import {allowanceKey} from '@lib/utils/helpers';
@@ -17,6 +18,7 @@ import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
 
 export function useSolverGaugeStakingBooster(): TSolverContext {
 	const {provider} = useWeb3();
+	const {set_shouldOpenCurtain} = useNotifications();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -99,7 +101,13 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 					contractAddress: request.current.inputToken.value,
 					spenderAddress: YGAUGES_ZAP_ADDRESS,
 					amount: amount,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful) {
 					onSuccess(result.receipt);
@@ -134,7 +142,13 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 					vaultVersion: request.current.version,
 					stakingPoolAddress: request.current.stakingPoolAddress,
 					amount: request.current.inputAmount,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful) {
 					onSuccess(result.receipt);

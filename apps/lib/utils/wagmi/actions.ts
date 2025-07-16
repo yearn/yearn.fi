@@ -15,6 +15,7 @@ import {handleTx, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
 import type {Connector} from 'wagmi';
 import type {TAddress} from '@lib/types';
 import type {TTxResponse, TWriteTransaction} from '@lib/utils/wagmi';
+import {TCTA} from '@lib/components/yToast';
 
 function getChainID(chainID: number): number {
 	if (typeof window !== 'undefined' && (window as any)?.ethereum?.useForknetForMainnet) {
@@ -98,6 +99,7 @@ type TApproveERC20 = TWriteTransaction & {
 	spenderAddress: TAddress | undefined;
 	amount: bigint;
 	confirmation?: number;
+	cta?: TCTA;
 };
 export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 	assertAddress(props.spenderAddress, 'spenderAddress');

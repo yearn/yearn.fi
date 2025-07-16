@@ -14,6 +14,7 @@ import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
+import {useNotifications} from '@lib/contexts/useNotifications';
 
 export function useSolverVanilla(): TSolverContext {
 	const {provider} = useWeb3();
@@ -21,7 +22,7 @@ export function useSolverVanilla(): TSolverContext {
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
-
+	const {set_shouldOpenCurtain} = useNotifications();
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.
 	 ** It will set the request to the provided value, as it's required to get the quote, and will
@@ -108,7 +109,13 @@ export function useSolverVanilla(): TSolverContext {
 					contractAddress: request.current.inputToken.value,
 					spenderAddress: request.current.outputToken.value,
 					amount: amount,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful && result.receipt) {
 					onSuccess(result.receipt);
@@ -142,6 +149,12 @@ export function useSolverVanilla(): TSolverContext {
 					chainID: request.current.chainID,
 					contractAddress: request.current.outputToken.value,
 					amount: request.current.inputAmount,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					},
 					statusHandler: txStatusSetter
 				});
 				if (result.isSuccessful && result.receipt) {
@@ -171,7 +184,8 @@ export function useSolverVanilla(): TSolverContext {
 				assert(request.current.inputToken, 'Output token is not set');
 				assert(request.current.inputAmount, 'Input amount is not set');
 				const isV3 =
-					request.current?.version.split('.')?.[0] === '3' || request.current?.version.split('.')?.[0] === '~3';
+					request.current?.version.split('.')?.[0] === '3' ||
+					request.current?.version.split('.')?.[0] === '~3';
 
 				if (isV3) {
 					const result = await redeemV3Shares({
@@ -180,7 +194,13 @@ export function useSolverVanilla(): TSolverContext {
 						contractAddress: request.current.inputToken.value,
 						amount: request.current.inputAmount,
 						maxLoss: maxLoss,
-						statusHandler: txStatusSetter
+						statusHandler: txStatusSetter,
+						cta: {
+							label: 'View',
+							onClick: () => {
+								set_shouldOpenCurtain(true);
+							}
+						}
 					});
 					if (result.isSuccessful) {
 						await onSuccess(result.receipt);
@@ -194,7 +214,13 @@ export function useSolverVanilla(): TSolverContext {
 					chainID: request.current.chainID,
 					contractAddress: request.current.inputToken.value,
 					amount: request.current.inputAmount,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful) {
 					await onSuccess(result.receipt);

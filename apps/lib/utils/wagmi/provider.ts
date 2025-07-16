@@ -1,6 +1,11 @@
-import {toast} from 'react-hot-toast';
 import {BaseError} from 'viem';
-import {getConnectorClient, simulateContract, switchChain, waitForTransactionReceipt, writeContract} from 'wagmi/actions';
+import {
+	getConnectorClient,
+	simulateContract,
+	switchChain,
+	waitForTransactionReceipt,
+	writeContract
+} from 'wagmi/actions';
 
 import {assert, assertAddress} from '../assert';
 import {toBigInt} from '../format';
@@ -12,6 +17,7 @@ import type {Client, SimulateContractParameters, WalletClient} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TAddress} from '../../types/address';
 import type {TTxResponse} from './transaction';
+import {TCTA, toast} from '@lib/components/yToast';
 
 export type TWagmiProviderContract = {
 	walletClient: Client;
@@ -46,6 +52,7 @@ export type TWriteTransaction = {
 	shouldDisplaySuccessToast?: boolean;
 	shouldDisplayErrorToast?: boolean;
 	shouldResetStatus?: boolean;
+	cta?: TCTA;
 };
 
 type TPrepareWriteContractConfig = SimulateContractParameters & {
@@ -54,6 +61,7 @@ type TPrepareWriteContractConfig = SimulateContractParameters & {
 	address: TAddress | undefined;
 	confirmation?: number;
 };
+
 export async function handleTx(args: TWriteTransaction, props: TPrepareWriteContractConfig): Promise<TTxResponse> {
 	const {shouldResetStatus = true} = args;
 
@@ -78,7 +86,7 @@ export async function handleTx(args: TWriteTransaction, props: TPrepareWriteCont
 			if (!(error instanceof BaseError)) {
 				return {isSuccessful: false, error};
 			}
-			toast.error(error.shortMessage);
+			toast({content: error.shortMessage, type: 'error', cta: args.cta, duration: 8000});
 			args.statusHandler?.({...defaultTxStatus, error: true});
 			console.error(error);
 			return {isSuccessful: false, error};
@@ -113,7 +121,7 @@ export async function handleTx(args: TWriteTransaction, props: TPrepareWriteCont
 		}
 		// If shouldDisplaySuccessToast is undefined, we display the toast by default
 		if (args.shouldDisplaySuccessToast || args.shouldDisplaySuccessToast === undefined) {
-			toast.success('Transaction successful!');
+			toast({content: 'Transaction successful!', type: 'success', cta: args.cta, duration: 8000});
 		}
 		return {isSuccessful: receipt.status === 'success', receipt};
 	} catch (error) {
@@ -132,7 +140,7 @@ export async function handleTx(args: TWriteTransaction, props: TPrepareWriteCont
 
 		// If shouldDisplayErrorToast is undefined, we display the toast by default
 		if (args.shouldDisplayErrorToast || args.shouldDisplayErrorToast === undefined) {
-			toast.error(error.shortMessage);
+			toast({content: error.shortMessage, type: 'error', cta: args.cta, duration: 8000});
 		}
 		args.statusHandler?.({...defaultTxStatus, error: true});
 		console.error(error);

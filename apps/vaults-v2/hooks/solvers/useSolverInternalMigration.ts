@@ -17,6 +17,7 @@ import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
+import {useNotifications} from '@lib/contexts/useNotifications';
 
 /**************************************************************************************************
  ** The InternalMigration solver is a special solver used to migrate from one vault to another. It
@@ -27,6 +28,8 @@ export function useSolverInternalMigration(): TSolverContext {
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
+
+	const {set_shouldOpenCurtain} = useNotifications();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -121,6 +124,12 @@ export function useSolverInternalMigration(): TSolverContext {
 					contractAddress: toAddress(request.current.inputToken.value),
 					spenderAddress: request.current.migrator,
 					amount: amount,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					},
 					statusHandler: txStatusSetter
 				});
 				if (result.isSuccessful) {
@@ -171,7 +180,13 @@ export function useSolverInternalMigration(): TSolverContext {
 						amount: request.current.inputAmount, //_amount
 						minAmount: toBigInt(_expectedOut), //_min_out
 						slippage: toBigInt(0.06 * 100),
-						statusHandler: txStatusSetter
+						statusHandler: txStatusSetter,
+						cta: {
+							label: 'View',
+							onClick: () => {
+								set_shouldOpenCurtain(true);
+							}
+						}
 					});
 					if (result.isSuccessful) {
 						await onSuccess(result.receipt);
@@ -187,6 +202,12 @@ export function useSolverInternalMigration(): TSolverContext {
 					contractAddress: request.current.migrator,
 					fromVault: request.current.inputToken.value,
 					toVault: request.current.outputToken.value,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					},
 					statusHandler: txStatusSetter
 				});
 				if (result.isSuccessful) {

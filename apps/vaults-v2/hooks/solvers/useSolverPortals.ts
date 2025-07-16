@@ -9,6 +9,7 @@ import {Solver} from '@vaults-v2/types/solvers';
 import {toast} from '@lib/components/yToast';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {
 	assert,
 	assertAddress,
@@ -71,11 +72,11 @@ async function getQuote(
 	} catch (error) {
 		console.error('Portals getQuote error:', error);
 		let errorContent = 'Portals.fi zap not possible. Try again later or pick another token.';
-		
+
 		if (axios.isAxiosError(error)) {
 			const status = error.response?.status;
 			const description = error.response?.data?.description || error.response?.data?.message;
-			
+
 			// Handle specific HTTP status codes
 			switch (status) {
 				case 400:
@@ -90,14 +91,14 @@ async function getQuote(
 				default:
 					errorContent = `Portals.fi error (${status || 'unknown'})`;
 			}
-			
+
 			if (description) {
 				errorContent += ` - ${description}`;
 			}
 		} else if (error instanceof Error) {
 			errorContent = error.message || errorContent;
 		}
-		
+
 		return {data: null, error: new Error(errorContent)};
 	}
 }
@@ -112,6 +113,7 @@ async function getQuote(
  *************************************************************************************************/
 export function useSolverPortals(): TSolverContext {
 	const {provider} = useWeb3();
+	const {set_shouldOpenCurtain} = useNotifications();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<TPortalsEstimate>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -242,10 +244,11 @@ export function useSolverPortals(): TSolverContext {
 				try {
 					await switchChain(retrieveConfig(), {chainId: request.current.chainID});
 				} catch (error) {
-					const chainSwitchError = error instanceof BaseError 
-						? new Error(`Chain switch failed: ${error.shortMessage}`)
-						: error as Error;
-					
+					const chainSwitchError =
+						error instanceof BaseError
+							? new Error(`Chain switch failed: ${error.shortMessage}`)
+							: (error as Error);
+
 					console.error('Chain switch error:', chainSwitchError.message);
 					toast({
 						type: 'error',
@@ -277,7 +280,7 @@ export function useSolverPortals(): TSolverContext {
 			return {isSuccessful: false, error: txError};
 		} catch (error) {
 			let finalError: Error;
-			
+
 			if (isValidPortalsErrorObject(error)) {
 				const errorMessage = error.response.data.message;
 				finalError = new Error(`Portals API error: ${errorMessage}`);
@@ -427,7 +430,13 @@ export function useSolverPortals(): TSolverContext {
 						contractAddress: request.current.inputToken.value,
 						spenderAddress: approval.context.spender,
 						amount: amount,
-						statusHandler: txStatusSetter
+						statusHandler: txStatusSetter,
+						cta: {
+							label: 'View',
+							onClick: () => {
+								set_shouldOpenCurtain(true);
+							}
+						}
 					});
 					if (result.isSuccessful && result.receipt) {
 						await onSuccess(result.receipt);
@@ -465,13 +474,43 @@ export function useSolverPortals(): TSolverContext {
 				const status = await execute();
 				if (status.isSuccessful && status.receipt) {
 					txStatusSetter({...defaultTxStatus, success: true});
+					toast({
+						type: 'success',
+						content: 'Transaction successful!',
+						cta: {
+							label: 'View',
+							onClick: () => {
+								set_shouldOpenCurtain(true);
+							}
+						}
+					});
 					await onSuccess(status.receipt);
 				} else {
 					txStatusSetter({...defaultTxStatus, error: true});
+					toast({
+						type: 'error',
+						content: 'Portals.fi execution failed',
+						cta: {
+							label: 'View',
+							onClick: () => {
+								set_shouldOpenCurtain(true);
+							}
+						}
+					});
 					onError?.(new Error('Transaction failed'));
 				}
 			} catch (error) {
 				txStatusSetter({...defaultTxStatus, error: true});
+				toast({
+					type: 'error',
+					content: 'Portals.fi execution failed',
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
 				onError?.(error as Error);
 			} finally {
 				setTimeout((): void => txStatusSetter(defaultTxStatus), 3000);

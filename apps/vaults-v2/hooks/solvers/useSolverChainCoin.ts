@@ -14,6 +14,7 @@ import type {TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
+import {useNotifications} from '@lib/contexts/useNotifications';
 
 /**************************************************************************************************
  ** The ChainCoin solver is a specific solver that would work only for some vaults. It aims to help
@@ -31,6 +32,7 @@ export function useSolverChainCoin(): TSolverContext {
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
+	const {set_shouldOpenCurtain} = useNotifications();
 
 	/**********************************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -112,7 +114,13 @@ export function useSolverChainCoin(): TSolverContext {
 					contractAddress: toAddress(request.current.inputToken.value),
 					spenderAddress: getEthZapperContract(request.current.chainID),
 					amount: amount,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful) {
 					await onSuccess(result.receipt);
@@ -148,7 +156,13 @@ export function useSolverChainCoin(): TSolverContext {
 					chainID: request.current.chainID,
 					contractAddress: getEthZapperContract(request.current.chainID),
 					amount: request.current.inputAmount,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful) {
 					await onSuccess(result.receipt);
@@ -184,7 +198,13 @@ export function useSolverChainCoin(): TSolverContext {
 					chainID: request.current.chainID,
 					contractAddress: getEthZapperContract(request.current.chainID),
 					amount: request.current.inputAmount,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful) {
 					await onSuccess(result.receipt);

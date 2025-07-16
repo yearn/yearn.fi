@@ -8,6 +8,7 @@ import {Solver} from '@vaults-v2/types/solvers';
 import {toast} from '@lib/components/yToast';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@lib/utils/constants';
 import {allowanceKey} from '@lib/utils/helpers';
@@ -78,6 +79,7 @@ async function getQuote(
 export function useSolverCowswap(): TSolverContext {
 	const {zapSlippage} = useYearn();
 	const {provider} = useWeb3();
+	const {set_shouldOpenCurtain} = useNotifications();
 	const maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
 	const shouldUsePresign = false; //Debug only
 	const request = useRef<TInitSolverArgs>();
@@ -393,7 +395,13 @@ export function useSolverCowswap(): TSolverContext {
 					contractAddress: request.current.inputToken.value,
 					spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS,
 					amount: toBigInt(amount),
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful) {
 					await onSuccess(result.receipt);
@@ -430,6 +438,16 @@ export function useSolverCowswap(): TSolverContext {
 				const result = await execute();
 				if (result.isSuccessful) {
 					txStatusSetter({...defaultTxStatus, success: true});
+					toast({
+						type: 'success',
+						content: 'Transaction successful!',
+						cta: {
+							label: 'View',
+							onClick: () => {
+								set_shouldOpenCurtain(true);
+							}
+						}
+					});
 					await onSuccess(result.receipt);
 				} else {
 					const errorMessage = (result.error as BaseError)?.message || 'Transaction failed';
@@ -446,7 +464,13 @@ export function useSolverCowswap(): TSolverContext {
 				const errorMessage = 'Transaction rejected';
 				toast({
 					type: 'error',
-					content: errorMessage
+					content: errorMessage,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				txStatusSetter({
 					...defaultTxStatus,

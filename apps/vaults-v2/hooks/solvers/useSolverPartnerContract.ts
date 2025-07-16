@@ -5,6 +5,7 @@ import {Solver} from '@vaults-v2/types/solvers';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {assert, assertAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, getNetwork} from '@lib/utils/wagmi';
@@ -18,6 +19,7 @@ import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
 export function useSolverPartnerContract(): TSolverContext {
 	const {provider} = useWeb3();
 	const {currentPartner} = useYearn();
+	const {set_shouldOpenCurtain} = useNotifications();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -105,7 +107,13 @@ export function useSolverPartnerContract(): TSolverContext {
 					contractAddress: request.current.inputToken.value,
 					spenderAddress: partnerContract,
 					amount: amount,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful && result.receipt) {
 					onSuccess(result.receipt);
@@ -142,7 +150,13 @@ export function useSolverPartnerContract(): TSolverContext {
 					vaultAddress: request.current.outputToken.value,
 					partnerAddress: currentPartner ? currentPartner : undefined,
 					amount: request.current.inputAmount,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful && result.receipt) {
 					onSuccess(result.receipt);
@@ -176,7 +190,13 @@ export function useSolverPartnerContract(): TSolverContext {
 					chainID: request.current.chainID,
 					contractAddress: request.current.inputToken.value,
 					amount: request.current.inputAmount,
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
 				});
 				if (result.isSuccessful && result.receipt) {
 					onSuccess(result.receipt);
