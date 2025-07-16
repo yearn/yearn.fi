@@ -136,16 +136,15 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 	}, [pathname]);
 
 	const notificationDotColor = useMemo(() => {
-		if (cachedEntries.find(entry => entry.status === 'pending')) {
-			return 'bg-primary animate-pulse';
-		}
-
 		if (notificationStatus === 'error') {
 			return 'bg-red';
 		}
 
 		if (notificationStatus === 'success') {
-			return 'bg-green';
+			return 'bg-[#0C9000]';
+		}
+		if (notificationStatus === 'pending') {
+			return 'bg-primary animate-pulse';
 		}
 
 		return '';
