@@ -5,10 +5,12 @@ import {useNotifications} from '@lib/contexts/useNotifications';
 import {IconCross} from '@lib/icons/IconCross';
 
 import {Notification} from './Notification';
+import {cl} from '@lib/utils';
 
 export function NotificationsCurtain(props: {
 	set_shouldOpenCurtain: (value: boolean) => void;
 	isOpen: boolean;
+	variant: 'v2' | 'v3';
 }): ReactElement {
 	const {cachedEntries, set_notificationStatus, isLoading, error} = useNotifications();
 	const isEmpty = cachedEntries.length === 0;
@@ -30,9 +32,12 @@ export function NotificationsCurtain(props: {
 			<Drawer.Portal>
 				<Drawer.Content className={'fixed inset-y-0 right-0 z-[999999] flex w-full outline-none md:w-[386px]'}>
 					<div
-						className={'flex w-full grow flex-col bg-neutral-100 py-5 pl-5 md:my-2 md:mr-2 md:rounded-3xl'}>
+						className={cl(
+							'flex w-full grow flex-col bg-neutral-100 py-5 pl-5 md:my-2 md:mr-2',
+							props.variant === 'v3' ? 'md:rounded-3xl' : ''
+						)}>
 						<div className={'h-full'}>
-							<div className={'mb-4 flex items-center justify-between'}>
+							<div className={'mb-4 flex items-center justify-between pr-4'}>
 								<Drawer.Title className={'font-bold text-neutral-900'}>{'Notifications'}</Drawer.Title>
 								<Drawer.Close
 									className={
@@ -41,7 +46,13 @@ export function NotificationsCurtain(props: {
 									<IconCross className={'size-4'} />
 								</Drawer.Close>
 							</div>
-							<div className={'h-[94.5%] overflow-y-auto scrollbar-none'}>
+							<div
+								className={'h-[94.5%] overflow-y-auto overflow-x-hidden pt-2'}
+								style={{
+									scrollbarColor: '#9E9E9E transparent',
+									scrollbarWidth: 'thin',
+									scrollbarGutter: 'stable'
+								}}>
 								{isLoading ? (
 									<div className={'flex h-full items-center justify-center'}>
 										<div className={'flex flex-col items-center gap-2'}>
@@ -63,18 +74,18 @@ export function NotificationsCurtain(props: {
 										{'Nothing here yet!'}
 									</p>
 								) : (
-									<motion.div 
+									<motion.div
 										layout
 										initial={{opacity: 0}}
-									animate={{opacity: 1}}
-									transition={{duration: 0.2, ease: [0.4, 0.0, 0.2, 1]}}
-									className={'flex h-full flex-col w-[95%] pt-2'}>
+										animate={{opacity: 1}}
+										transition={{duration: 0.2, ease: [0.4, 0.0, 0.2, 1]}}
+										className={'flex h-full flex-col pr-2'}>
 										<AnimatePresence mode="popLayout">
 											{cachedEntries.toReversed().map(entry => (
 												<Notification
 													key={`notification-${entry.id}`}
 													notification={entry}
-													variant={'v3'}
+													variant={props.variant}
 												/>
 											))}
 										</AnimatePresence>

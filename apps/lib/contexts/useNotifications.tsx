@@ -4,6 +4,7 @@ import {NotificationsCurtain} from '@vaults-v3/components/notifications/Notifica
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
 
 import type {TNotification, TNotificationsContext, TNotificationStatus} from '@lib/types/notifications';
+import {useRouter} from 'next/router';
 
 const defaultProps: TNotificationsContext = {
 	shouldOpenCurtain: false,
@@ -24,6 +25,9 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 	const [entryNonce, set_entryNonce] = useState<number>(0);
 	const [isLoading, set_isLoading] = useState<boolean>(true);
 	const [error, set_error] = useState<string | null>(null);
+
+	const router = useRouter();
+	const isV3 = router.pathname.includes('/v3');
 
 	/**************************************************************************
 	 * State that is used to store latest added/updated notification status
@@ -110,15 +114,15 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 			try {
 				// Optimistically update the local state first
 				set_cachedEntries(currentEntries => currentEntries.filter(entry => entry.id !== id));
-				
+
 				// Then delete from IndexedDB
 				await deleteByID(id);
-				
+
 				// No need to increment entryNonce since we already updated the state
 			} catch (error) {
 				console.error('Failed to delete notification:', error);
 				set_error('Failed to delete notification');
-				
+
 				// Revert the optimistic update by refetching from DB
 				set_entryNonce(nonce => nonce + 1);
 			}
@@ -158,6 +162,7 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 		<NotificationsContext.Provider value={contextValue}>
 			{children}
 			<NotificationsCurtain
+				variant={isV3 ? 'v3' : 'v2'}
 				set_shouldOpenCurtain={set_shouldOpenCurtain}
 				isOpen={shouldOpenCurtain}
 			/>

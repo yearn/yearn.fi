@@ -283,12 +283,15 @@ export const Notification = React.memo(function Notification({
 			transition={{
 				duration: 0.25,
 				ease: [0.4, 0.0, 0.2, 1], // easeOut
-				layout: { 
-					duration: 0.2, 
+				layout: {
+					duration: 0.2,
 					ease: [0.4, 0.0, 0.2, 1] // easeOut
 				}
 			}}
-			className={'rounded-xl border border-neutral-200 p-4 bg-neutral-200 relative mb-4 overflow-hidden origin-top'}
+			className={cl(
+				'border border-neutral-200 p-4 bg-neutral-200 h-fit relative mb-4 origin-top',
+				variant === 'v3' ? 'rounded-xl' : ''
+			)}
 			style={{transformOrigin: 'top center'}}
 			role={'article'}
 			aria-label={`${notificationTitle} notification`}>
