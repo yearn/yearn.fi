@@ -154,7 +154,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 			name: strategy.name,
 			value: (strategy.details?.debtRatio || 0) / 100,
 			amount: formatCounterValue(
-				toNormalizedBN(strategy.details?.totalDebt || 0, strategy.token?.decimals).display,
+				toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
 				tokenPrice
 			)
 		}));
