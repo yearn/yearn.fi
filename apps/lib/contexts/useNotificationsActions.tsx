@@ -34,7 +34,6 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			status?: TNotificationStatus;
 			idToUpdate?: number;
 		}): Promise<number> => {
-			console.log('approve', actionParams, receipt, status, idToUpdate);
 			if (idToUpdate) {
 				await updateEntry(
 					{
@@ -84,7 +83,6 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			status?: TNotificationStatus;
 			idToUpdate?: number;
 		}): Promise<number> => {
-			console.log('deposit', actionParams, type, receipt, status, idToUpdate);
 			if (idToUpdate) {
 				await updateEntry(
 					{

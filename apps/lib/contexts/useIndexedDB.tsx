@@ -12,15 +12,18 @@ const yearnIDBConfig: IndexedDBConfig = {
 			name: 'notifications',
 			id: {keyPath: 'id', autoIncrement: true},
 			indices: [
+				{name: 'chainId', keyPath: 'chainId'},
+				{name: 'amount', keyPath: 'amount'},
+				{name: 'blockNumber', keyPath: 'blockNumber'},
 				{name: 'fromAddress', keyPath: 'fromAddress'},
-				{name: 'fromChainId', keyPath: 'fromChainId'},
 				{name: 'fromTokenName', keyPath: 'fromTokenName'},
-				{name: 'fromAmount', keyPath: 'fromAmount'},
+				{name: 'spenderAddress', keyPath: 'spenderAddress'},
+				{name: 'spenderName', keyPath: 'spenderName'},
 				{name: 'toAddress', keyPath: 'toAddress'},
-				{name: 'toChainId', keyPath: 'toChainId'},
 				{name: 'toTokenName', keyPath: 'toTokenName'},
-				{name: 'toAmount', keyPath: 'toAmount'},
-				{name: 'status', keyPath: 'status'}
+				{name: 'status', keyPath: 'status'},
+				{name: 'timeFinished', keyPath: 'timeFinished'},
+				{name: 'txHash', keyPath: 'txHash'}
 			]
 		}
 	]

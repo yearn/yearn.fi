@@ -432,7 +432,7 @@ export function RewardsTab(props: {
 		}),
 		[unstakeAmount, vaultData.stakingDecimals, props.currentVault, vaultData.address, vaultData.stakedGaugeSymbol]
 	);
-	console.log(unstakeActionParams);
+
 	/**************************************************************************************************
 	 ** Create action parameters for claim operations to integrate with the notification system.
 	 *************************************************************************************************/
@@ -450,16 +450,13 @@ export function RewardsTab(props: {
 		}),
 		[
 			vaultData.stakedEarned,
-			vaultData.stakingDecimals,
 			props.currentVault,
-			vaultData.address,
-			vaultData.stakedGaugeSymbol,
 			rewardTokenBalance.symbol,
 			vaultData.rewardsToken,
 			vaultData.rewardDecimals
 		]
 	);
-	console.log(claimActionParams);
+
 	/**********************************************************************************************
 	 ** The refreshData function will be called when the user interacts with the stake, unstake, or
 	 ** claim buttons. It will refresh the user's balances and the staking rewards data so the app
