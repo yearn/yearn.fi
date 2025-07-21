@@ -75,8 +75,8 @@ type TTokenListProviderProps = {
 export const WithTokenList = ({
 	children,
 	lists = [
-		'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/etherscan.json',
-		'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/tokenlistooor.json'
+		'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/etherscan.json',
+		'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/tokenlistooor.json'
 	]
 }: TTokenListProviderProps): ReactElement => {
 	const {chainID} = useWeb3();
