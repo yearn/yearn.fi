@@ -115,7 +115,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 		}
 		console.log('yBold Vault APR data: ', yBoldVault.apr);
 	} else {
-		console.warn('yBOLD vault workaround: yBOLD or st-yBOLD vault not found');
+		console.warn('yBOLD vault workaround: yBOLD or ysyBOLD vault not found');
 	}
 	// </WORKAROUND>
 
