@@ -1,6 +1,6 @@
 import type {ReactElement, SVGProps} from 'react';
 
-export function IconClose({stroke = 'currentColor', ...props}: SVGProps<SVGSVGElement>): ReactElement {
+export function IconClose({...props}: SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			width={'24'}

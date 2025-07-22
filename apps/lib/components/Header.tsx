@@ -2,9 +2,12 @@ import React, {useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
+import {IconBell} from '@lib/icons/IconBell';
 import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
 import {IconWallet} from '@lib/icons/IconWallet';
+import {cl} from '@lib/utils';
 import {truncateHex} from '@lib/utils/tools.address';
 
 import {AppName, APPS} from './Apps';
@@ -94,6 +97,7 @@ function WalletSelector(): ReactElement {
 function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 	const {pathname} = useRouter();
 	const [isMenuOpen, set_isMenuOpen] = useState<boolean>(false);
+	const {set_shouldOpenCurtain, cachedEntries, notificationStatus} = useNotifications();
 
 	const menu = useMemo((): TMenu[] => {
 		const HOME_MENU = {path: '/apps', label: 'Apps'};
@@ -131,6 +135,21 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 		];
 	}, [pathname]);
 
+	const notificationDotColor = useMemo(() => {
+		if (notificationStatus === 'error') {
+			return 'bg-red';
+		}
+
+		if (notificationStatus === 'success') {
+			return 'bg-[#0C9000]';
+		}
+		if (notificationStatus === 'pending') {
+			return 'bg-primary animate-pulse';
+		}
+
+		return '';
+	}, [cachedEntries, notificationStatus]);
+
 	return (
 		<div
 			id={'head'}
@@ -153,6 +172,15 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 						</div>
 					</div>
 					<div className={'flex w-1/3 items-center justify-end'}>
+						<button
+							className={
+								'yearn--header-nav-item hover:bg-grey-200 relative rounded-full p-2 transition-colors'
+							}
+							onClick={(): void => set_shouldOpenCurtain(true)}>
+							<IconBell className={'text-grey-900 size-4 font-bold transition-colors'} />
+
+							<div className={cl('absolute right-1 top-1 size-2 rounded-full', notificationDotColor)} />
+						</button>
 						<WalletSelector />
 					</div>
 				</header>

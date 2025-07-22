@@ -2,10 +2,11 @@ import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
 import {BaseError, maxUint256} from 'viem';
 import axios from 'axios';
-import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
+import {OrderBookApi, OrderQuoteSideKindSell, OrderSigningUtils} from '@cowprotocol/cow-sdk';
 import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {toast} from '@lib/components/yToast';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
@@ -14,6 +15,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20, retrieveConfig} from '@lib/utils/wagmi';
 import {getEthersSigner} from '@lib/utils/wagmi/ethersAdapter';
 
+import type {Hash, TransactionReceipt} from 'viem';
 import type {
 	Order,
 	OrderCreation,
@@ -38,7 +40,7 @@ async function getQuote(
 		buyToken: request.outputToken.value, // token to receive
 		receiver: request.from, // always the same as from
 		appData: YEARN_APP_DATA, // Always this
-		kind: OrderQuoteSide.kind.SELL, // always sell
+		kind: OrderQuoteSideKindSell.SELL, // always sell
 		partiallyFillable: false, // always false
 		validTo: 0,
 		sellAmountBeforeFee: toBigInt(request?.inputAmount).toString() // amount to sell, in wei
@@ -77,6 +79,7 @@ async function getQuote(
 export function useSolverCowswap(): TSolverContext {
 	const {zapSlippage} = useYearn();
 	const {provider} = useWeb3();
+	const {set_shouldOpenCurtain} = useNotifications();
 	const maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
 	const shouldUsePresign = false; //Debug only
 	const request = useRef<TInitSolverArgs>();
@@ -262,6 +265,7 @@ export function useSolverCowswap(): TSolverContext {
 		assert(request?.current, 'No request available');
 
 		const {quote, from, id} = latestQuote.current;
+
 		const buyAmountWithSlippage = getBuyAmountWithSlippage(
 			latestQuote.current,
 			request.current.outputToken.decimals
@@ -272,6 +276,7 @@ export function useSolverCowswap(): TSolverContext {
 			quote as Order,
 			buyAmountWithSlippage
 		);
+
 		const orderCreation: OrderCreation = {
 			...quote,
 			buyAmount: buyAmountWithSlippage.toString(),
@@ -358,40 +363,63 @@ export function useSolverCowswap(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			if (!request?.current || request.current.chainID !== 1) {
-				return;
-			}
-			assert(request.current, 'Request is not defined');
-			assert(
-				request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap),
-				'Input token is not supported by Cowswap'
-			);
+			try {
+				if (!request?.current || request.current.chainID !== 1) {
+					if (onError) {
+						await onError(new Error('Cowswap only supports Ethereum mainnet'));
+					}
+					return;
+				}
+				assert(request.current, 'Request is not defined');
+				assert(
+					request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap),
+					'Input token is not supported by Cowswap'
+				);
 
-			const isApproved = await isApprovedERC20(
-				provider,
-				request.current.inputToken.chainID,
-				request.current.inputToken.value, //token to approve
-				SOLVER_COW_VAULT_RELAYER_ADDRESS, //Cowswap relayer
-				toBigInt(amount)
-			);
-			if (isApproved) {
-				return onSuccess();
-			}
-			const result = await approveERC20({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS,
-				amount: toBigInt(amount),
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+				const isApproved = await isApprovedERC20(
+					provider,
+					request.current.inputToken.chainID,
+					request.current.inputToken.value, //token to approve
+					SOLVER_COW_VAULT_RELAYER_ADDRESS, //Cowswap relayer
+					toBigInt(amount)
+				);
+				if (isApproved) {
+					return await onSuccess();
+				}
+				const result = await approveERC20({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS,
+					amount: toBigInt(amount),
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
+				if (result.isSuccessful) {
+					await onSuccess(result.receipt);
+				}
+			} catch (error) {
+				toast({
+					type: 'error',
+					content: error instanceof Error ? error.message : 'Unknown error occurred'
+				});
+
+				if (onError) {
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -402,7 +430,9 @@ export function useSolverCowswap(): TSolverContext {
 	const onExecute = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			_txHashSetter: (txHash: Hash) => void, // not used for Cowswap
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(provider, 'Provider is not defined');
 			txStatusSetter({...defaultTxStatus, pending: true});
@@ -411,25 +441,53 @@ export function useSolverCowswap(): TSolverContext {
 				const result = await execute();
 				if (result.isSuccessful) {
 					txStatusSetter({...defaultTxStatus, success: true});
-					onSuccess();
+					toast({
+						type: 'success',
+						content: 'Transaction successful!',
+						cta: {
+							label: 'View',
+							onClick: () => {
+								set_shouldOpenCurtain(true);
+							}
+						}
+					});
+					await onSuccess(result.receipt);
 				} else {
+					const errorMessage = (result.error as BaseError)?.message || 'Transaction failed';
 					txStatusSetter({
 						...defaultTxStatus,
 						error: true,
-						errorMessage: (result.error as BaseError)?.message || 'Transaction failed'
+						errorMessage
 					});
+					if (onError) {
+						await onError(new Error(errorMessage));
+					}
 				}
 			} catch (error) {
+				const errorMessage = 'Transaction rejected';
+				toast({
+					type: 'error',
+					content: errorMessage,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
 				txStatusSetter({
 					...defaultTxStatus,
 					error: true,
-					errorMessage: 'Transaction rejected'
+					errorMessage
 				});
+				if (onError) {
+					await onError(error instanceof Error ? error : new Error(errorMessage));
+				}
 			} finally {
 				setTimeout((): void => txStatusSetter(defaultTxStatus), 3000);
 			}
 		},
-		[execute, provider]
+		[execute, provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(

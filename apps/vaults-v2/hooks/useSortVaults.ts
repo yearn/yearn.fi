@@ -1,7 +1,7 @@
 import {useCallback, useMemo} from 'react';
 import {deserialize, serialize} from 'wagmi';
-import {useYearn} from '@lib/contexts/useYearn';
 import {useWallet} from '@lib/contexts/useWallet';
+import {useYearn} from '@lib/contexts/useYearn';
 import {isZero, toAddress, toNormalizedBN} from '@lib/utils';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {getVaultName, numberSort, stringSort} from '@lib/utils/helpers';

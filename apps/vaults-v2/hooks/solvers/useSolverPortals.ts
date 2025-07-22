@@ -7,6 +7,7 @@ import {isValidPortalsErrorObject} from '@vaults-v2/hooks/helpers/isValidPortals
 import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults-v2/hooks/usePortalsApi';
 import {Solver} from '@vaults-v2/types/solvers';
 import {toast} from '@lib/components/yToast';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {
@@ -23,6 +24,7 @@ import {
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, defaultTxStatus, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
 
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi';
 import type {TPortalsEstimate} from '@vaults-v2/hooks/usePortalsApi';
@@ -38,21 +40,21 @@ async function getQuote(
 	request: TInitSolverArgs,
 	zapSlippage: number
 ): Promise<{data: TPortalsEstimate | null; error?: Error}> {
-	const network = PORTALS_NETWORK.get(request.chainID);
-	let inputToken = request.inputToken.value;
-
-	if (isEthAddress(request.inputToken.value)) {
-		inputToken = zeroAddress;
-	}
-	if (isZeroAddress(request.outputToken.value)) {
-		return {data: null, error: new Error('Invalid buy token')};
-	}
-	if (isZero(request.inputAmount)) {
-		return {data: null, error: new Error('Invalid sell amount')};
-	}
-
 	try {
-		return getPortalsEstimate({
+		const network = PORTALS_NETWORK.get(request.chainID);
+		let inputToken = request.inputToken.value;
+
+		if (isEthAddress(request.inputToken.value)) {
+			inputToken = zeroAddress;
+		}
+		if (isZeroAddress(request.outputToken.value)) {
+			return {data: null, error: new Error('Invalid buy token')};
+		}
+		if (isZero(request.inputAmount)) {
+			return {data: null, error: new Error('Invalid sell amount')};
+		}
+
+		const result = await getPortalsEstimate({
 			params: {
 				inputToken: `${network}:${toAddress(inputToken)}`,
 				outputToken: `${network}:${toAddress(request.outputToken.value)}`,
@@ -60,13 +62,43 @@ async function getQuote(
 				slippageTolerancePercentage: String(zapSlippage)
 			}
 		});
-	} catch (error) {
-		console.error(error);
-		let errorContent = 'Portals.fi zap not possible. Try again later or pick another token.';
-		if (axios.isAxiosError(error)) {
-			const description = error.response?.data?.description;
-			errorContent += `${description ? ` (Reason: [${description}])` : ''}`;
+
+		// Validate the response structure
+		if (!result?.data) {
+			return {data: null, error: new Error('Invalid response from Portals API')};
 		}
+
+		return result;
+	} catch (error) {
+		console.error('Portals getQuote error:', error);
+		let errorContent = 'Portals.fi zap not possible. Try again later or pick another token.';
+
+		if (axios.isAxiosError(error)) {
+			const status = error.response?.status;
+			const description = error.response?.data?.description || error.response?.data?.message;
+
+			// Handle specific HTTP status codes
+			switch (status) {
+				case 400:
+					errorContent = 'Invalid request parameters for Portals.fi';
+					break;
+				case 429:
+					errorContent = 'Rate limit exceeded. Please try again later.';
+					break;
+				case 500:
+					errorContent = 'Portals.fi service temporarily unavailable';
+					break;
+				default:
+					errorContent = `Portals.fi error (${status || 'unknown'})`;
+			}
+
+			if (description) {
+				errorContent += ` - ${description}`;
+			}
+		} else if (error instanceof Error) {
+			errorContent = error.message || errorContent;
+		}
+
 		return {data: null, error: new Error(errorContent)};
 	}
 }
@@ -81,6 +113,7 @@ async function getQuote(
  *************************************************************************************************/
 export function useSolverPortals(): TSolverContext {
 	const {provider} = useWeb3();
+	const {set_shouldOpenCurtain} = useNotifications();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<TPortalsEstimate>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -93,61 +126,73 @@ export function useSolverPortals(): TSolverContext {
 	 **********************************************************************************************/
 	const init = useCallback(
 		async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN | undefined> => {
-			if (isSolverDisabled(Solver.enum.Portals)) {
-				return undefined;
-			}
-			/******************************************************************************************
-			 ** First we need to know which token we are selling to the zap. When we are depositing, we
-			 ** are selling the inputToken, when we are withdrawing, we are selling the outputToken.
-			 ** based on that token, different checks are required to determine if the solver can be
-			 ** used.
-			 ******************************************************************************************/
-			const sellToken = _request.isDepositing ? _request.inputToken : _request.outputToken;
+			try {
+				if (isSolverDisabled(Solver.enum.Portals)) {
+					return undefined;
+				}
+				/******************************************************************************************
+				 ** First we need to know which token we are selling to the zap. When we are depositing, we
+				 ** are selling the inputToken, when we are withdrawing, we are selling the outputToken.
+				 ** based on that token, different checks are required to determine if the solver can be
+				 ** used.
+				 ******************************************************************************************/
+				const sellToken = _request.isDepositing ? _request.inputToken : _request.outputToken;
 
-			/******************************************************************************************
-			 ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
-			 ******************************************************************************************/
-			if (isSolverDisabled(Solver.enum.Portals)) {
-				return undefined;
-			}
+				/******************************************************************************************
+				 ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
+				 ******************************************************************************************/
+				if (isSolverDisabled(Solver.enum.Portals)) {
+					return undefined;
+				}
 
-			/******************************************************************************************
-			 ** Then, we check if the solver can be used for this specific sellToken. If it can't, we
-			 ** return 0.
-			 ** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
-			 ** a token, you can contact the yDaemon team to add it.
-			 ******************************************************************************************/
-			if (!sellToken.solveVia?.includes(Solver.enum.Portals)) {
-				return undefined;
-			}
+				/******************************************************************************************
+				 ** Then, we check if the solver can be used for this specific sellToken. If it can't, we
+				 ** return 0.
+				 ** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
+				 ** a token, you can contact the yDaemon team to add it.
+				 ******************************************************************************************/
+				if (!sellToken.solveVia?.includes(Solver.enum.Portals)) {
+					return undefined;
+				}
 
-			/******************************************************************************************
-			 ** Same is the amount is 0. If it is, we return 0.
-			 ******************************************************************************************/
-			if (isZero(_request.inputAmount)) {
-				return undefined;
-			}
+				/******************************************************************************************
+				 ** Same is the amount is 0. If it is, we return 0.
+				 ******************************************************************************************/
+				if (isZero(_request.inputAmount)) {
+					return undefined;
+				}
 
-			/******************************************************************************************
-			 ** At this point, we know that the solver can be used for this specific token. We set the
-			 ** request to the provided value, as it's required to get the quote, and we call getQuote
-			 ** to get the current quote for the provided request.current.
-			 ******************************************************************************************/
-			request.current = _request;
-			const {data, error} = await getQuote(_request, zapSlippage);
-			if (!data) {
-				const errorMessage = (error as any)?.response?.data?.message || error?.message;
-				if (errorMessage && shouldLogError) {
-					console.error(errorMessage);
+				/******************************************************************************************
+				 ** At this point, we know that the solver can be used for this specific token. We set the
+				 ** request to the provided value, as it's required to get the quote, and we call getQuote
+				 ** to get the current quote for the provided request.current.
+				 ******************************************************************************************/
+				request.current = _request;
+				const {data, error} = await getQuote(_request, zapSlippage);
+				if (!data) {
+					const errorMessage = (error as any)?.response?.data?.message || error?.message;
+					if (errorMessage && shouldLogError) {
+						console.error(errorMessage);
+						toast({
+							type: 'error',
+							content: `Portals.fi zap not possible: ${errorMessage}`
+						});
+					}
+					return undefined;
+				}
+				latestQuote.current = data;
+				return toNormalizedBN(data?.outputAmount || 0, request?.current?.outputToken?.decimals || 18);
+			} catch (error) {
+				// Catch any synchronous errors that might occur during initialization
+				console.error('Portals solver init error:', error);
+				if (shouldLogError) {
 					toast({
 						type: 'error',
-						content: `Portals.fi zap not possible: ${errorMessage}`
+						content: 'Portals.fi zap initialization failed'
 					});
 				}
 				return undefined;
 			}
-			latestQuote.current = data;
-			return toNormalizedBN(data?.outputAmount || 0, request?.current?.outputToken?.decimals || 18);
 		},
 		[zapSlippage]
 	);
@@ -157,17 +202,17 @@ export function useSolverPortals(): TSolverContext {
 	 ** matter the result. It returns a boolean value indicating whether the order was successful or
 	 ** not.
 	 **********************************************************************************************/
-	const execute = useCallback(async (): Promise<TTxResponse> => {
+	const execute = useCallback(async (txHashSetter: (txHash: Hash) => void): Promise<TTxResponse> => {
 		if (!request.current || isSolverDisabled(Solver.enum.Portals)) {
-			return {isSuccessful: false};
+			return {isSuccessful: false, error: new Error('Portals solver not available')};
 		}
 
-		assert(provider, 'Provider is not set');
-		assert(request.current, 'Request is not set');
-		assert(latestQuote.current, 'Quote is not set');
-		assert(zapSlippage > 0, 'Slippage cannot be 0');
-
 		try {
+			assert(provider, 'Provider is not set');
+			assert(request.current, 'Request is not set');
+			assert(latestQuote.current, 'Quote is not set');
+			assert(zapSlippage > 0, 'Slippage cannot be 0');
+
 			let inputToken = request.current.inputToken.value;
 			if (isEthAddress(request.current.inputToken.value)) {
 				inputToken = zeroAddress;
@@ -185,7 +230,9 @@ export function useSolverPortals(): TSolverContext {
 			});
 
 			if (!transaction.data) {
-				throw new Error('Transaction data was not fetched from Portals!');
+				const error = new Error('Transaction data was not fetched from Portals!');
+				console.error(error.message);
+				return {isSuccessful: false, error};
 			}
 
 			const {
@@ -197,15 +244,17 @@ export function useSolverPortals(): TSolverContext {
 				try {
 					await switchChain(retrieveConfig(), {chainId: request.current.chainID});
 				} catch (error) {
-					if (!(error instanceof BaseError)) {
-						return {isSuccessful: false, error};
-					}
-					console.error(error.shortMessage);
+					const chainSwitchError =
+						error instanceof BaseError
+							? new Error(`Chain switch failed: ${error.shortMessage}`)
+							: (error as Error);
+
+					console.error('Chain switch error:', chainSwitchError.message);
 					toast({
 						type: 'error',
-						content: `Portals.fi zap not possible: ${error.shortMessage}`
+						content: `Portals.fi zap not possible: ${chainSwitchError.message}`
 					});
-					return {isSuccessful: false, error};
+					return {isSuccessful: false, error: chainSwitchError};
 				}
 			}
 
@@ -218,6 +267,7 @@ export function useSolverPortals(): TSolverContext {
 				chainId: request.current.chainID,
 				...rest
 			});
+			txHashSetter(hash);
 			const receipt = await waitForTransactionReceipt(retrieveConfig(), {
 				chainId: wagmiProvider.chainId,
 				confirmations: 2,
@@ -226,21 +276,39 @@ export function useSolverPortals(): TSolverContext {
 			if (receipt.status === 'success') {
 				return {isSuccessful: true, receipt: receipt};
 			}
-			console.error('Fail to perform transaction');
-			return {isSuccessful: false};
+			const txError = new Error('Transaction failed');
+			console.error(txError.message);
+			return {isSuccessful: false, error: txError};
 		} catch (error) {
+			let finalError: Error;
+
 			if (isValidPortalsErrorObject(error)) {
 				const errorMessage = error.response.data.message;
-				console.error(errorMessage);
+				finalError = new Error(`Portals API error: ${errorMessage}`);
+				console.error('Portals API error:', errorMessage);
 				toast({
 					type: 'error',
 					content: `Portals.fi zap not possible: ${errorMessage}`
 				});
+			} else if (axios.isAxiosError(error)) {
+				const status = error.response?.status;
+				const message = error.response?.data?.message || error.message;
+				finalError = new Error(`Portals API error (${status || 'unknown'}): ${message}`);
+				console.error('Portals Axios error:', finalError.message);
+				toast({
+					type: 'error',
+					content: `Portals.fi service error: ${message}`
+				});
 			} else {
-				console.error(error);
+				finalError = error instanceof Error ? error : new Error('Unknown Portals execution error');
+				console.error('Portals execution error:', finalError.message);
+				toast({
+					type: 'error',
+					content: 'Portals.fi execution failed'
+				});
 			}
 
-			return {isSuccessful: false};
+			return {isSuccessful: false, error: finalError};
 		}
 	}, [provider, zapSlippage]);
 
@@ -287,8 +355,14 @@ export function useSolverPortals(): TSolverContext {
 				}
 			});
 
-			if (!approval) {
-				throw new Error('Portals approval not found');
+			if (!approval?.context) {
+				console.error('Portals approval response invalid or missing context');
+				return zeroNormalizedBN;
+			}
+
+			if (!approval.context.allowance) {
+				console.error('Portals approval missing allowance value');
+				return zeroNormalizedBN;
 			}
 
 			existingAllowances.current[key] = toNormalizedBN(
@@ -297,7 +371,13 @@ export function useSolverPortals(): TSolverContext {
 			);
 			return existingAllowances.current[key];
 		} catch (error) {
-			console.error(error);
+			if (axios.isAxiosError(error)) {
+				const status = error.response?.status;
+				const message = error.response?.data?.message || error.message;
+				console.error(`Portals allowance API error (${status || 'unknown'}): ${message}`);
+			} else {
+				console.error('Portals allowance error:', error);
+			}
 			return zeroNormalizedBN;
 		}
 	}, []);
@@ -311,9 +391,12 @@ export function useSolverPortals(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			if (!request.current || isSolverDisabled(Solver.enum.Portals) || !provider) {
+				onError?.(new Error('Request, provider not set or solver disabled'));
 				return;
 			}
 			assert(request.current, 'Request is not set');
@@ -331,6 +414,7 @@ export function useSolverPortals(): TSolverContext {
 				});
 
 				if (!approval) {
+					onError?.(new Error('Portals approval not found'));
 					return;
 				}
 
@@ -348,10 +432,19 @@ export function useSolverPortals(): TSolverContext {
 						contractAddress: request.current.inputToken.value,
 						spenderAddress: approval.context.spender,
 						amount: amount,
-						statusHandler: txStatusSetter
+						statusHandler: txStatusSetter,
+						txHashHandler: txHashSetter,
+						cta: {
+							label: 'View',
+							onClick: () => {
+								set_shouldOpenCurtain(true);
+							}
+						}
 					});
-					if (result.isSuccessful) {
-						await onSuccess();
+					if (result.isSuccessful && result.receipt) {
+						await onSuccess(result.receipt);
+					} else {
+						onError?.(result.error as Error);
 					}
 					return;
 				}
@@ -359,10 +452,11 @@ export function useSolverPortals(): TSolverContext {
 				return;
 			} catch (error) {
 				console.error(error);
+				onError?.(error as Error);
 				return;
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -373,26 +467,60 @@ export function useSolverPortals(): TSolverContext {
 	const onExecute = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(provider, 'Provider is not set');
 
 			txStatusSetter({...defaultTxStatus, pending: true});
 			try {
-				const status = await execute();
-				if (status.isSuccessful) {
+				const status = await execute(txHashSetter);
+				if (status.isSuccessful && status.receipt) {
 					txStatusSetter({...defaultTxStatus, success: true});
-					await onSuccess();
+					toast({
+						type: 'success',
+						content: 'Transaction successful!',
+						cta: {
+							label: 'View',
+							onClick: () => {
+								set_shouldOpenCurtain(true);
+							}
+						}
+					});
+					await onSuccess(status.receipt);
 				} else {
 					txStatusSetter({...defaultTxStatus, error: true});
+					toast({
+						type: 'error',
+						content: 'Portals.fi execution failed',
+						cta: {
+							label: 'View',
+							onClick: () => {
+								set_shouldOpenCurtain(true);
+							}
+						}
+					});
+					onError?.(new Error('Transaction failed'));
 				}
 			} catch (error) {
 				txStatusSetter({...defaultTxStatus, error: true});
+				toast({
+					type: 'error',
+					content: 'Portals.fi execution failed',
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
+				onError?.(error as Error);
 			} finally {
 				setTimeout((): void => txStatusSetter(defaultTxStatus), 3000);
 			}
 		},
-		[execute, provider]
+		[execute, provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(
