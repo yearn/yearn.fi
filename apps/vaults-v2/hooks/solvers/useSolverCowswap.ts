@@ -15,7 +15,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20, retrieveConfig} from '@lib/utils/wagmi';
 import {getEthersSigner} from '@lib/utils/wagmi/ethersAdapter';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {
 	Order,
 	OrderCreation,
@@ -364,6 +364,7 @@ export function useSolverCowswap(): TSolverContext {
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
@@ -396,6 +397,7 @@ export function useSolverCowswap(): TSolverContext {
 					spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS,
 					amount: toBigInt(amount),
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -417,7 +419,7 @@ export function useSolverCowswap(): TSolverContext {
 				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -429,6 +431,7 @@ export function useSolverCowswap(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			_txHashSetter: (txHash: Hash) => void, // not used for Cowswap
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(provider, 'Provider is not defined');
@@ -484,7 +487,7 @@ export function useSolverCowswap(): TSolverContext {
 				setTimeout((): void => txStatusSetter(defaultTxStatus), 3000);
 			}
 		},
-		[execute, provider]
+		[execute, provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(

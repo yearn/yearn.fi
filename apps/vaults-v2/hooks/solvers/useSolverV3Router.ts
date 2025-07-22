@@ -11,7 +11,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
 import {migrateSharesViaRouter} from '@lib/utils/wagmi/actions';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
@@ -119,6 +119,7 @@ export function useSolverV3Router(): TSolverContext {
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
@@ -133,6 +134,7 @@ export function useSolverV3Router(): TSolverContext {
 					spenderAddress: request.current.migrator,
 					amount: amount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -149,13 +151,14 @@ export function useSolverV3Router(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	const onExecuteDeposit = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
@@ -173,6 +176,7 @@ export function useSolverV3Router(): TSolverContext {
 					amount: request.current.inputAmount,
 					maxLoss,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -190,7 +194,7 @@ export function useSolverV3Router(): TSolverContext {
 			}
 			return;
 		},
-		[provider, maxLoss]
+		[provider, maxLoss, set_shouldOpenCurtain]
 	);
 
 	const onExecuteWithdraw = useCallback(async (): Promise<void> => {

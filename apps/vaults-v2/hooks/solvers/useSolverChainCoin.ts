@@ -11,7 +11,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
 import {depositETH, withdrawETH} from '@lib/utils/wagmi/actions';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -103,6 +103,7 @@ export function useSolverChainCoin(): TSolverContext {
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
@@ -115,6 +116,7 @@ export function useSolverChainCoin(): TSolverContext {
 					spenderAddress: getEthZapperContract(request.current.chainID),
 					amount: amount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -133,7 +135,7 @@ export function useSolverChainCoin(): TSolverContext {
 				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -145,6 +147,7 @@ export function useSolverChainCoin(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
@@ -157,6 +160,7 @@ export function useSolverChainCoin(): TSolverContext {
 					contractAddress: getEthZapperContract(request.current.chainID),
 					amount: request.current.inputAmount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -175,7 +179,7 @@ export function useSolverChainCoin(): TSolverContext {
 				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -187,6 +191,7 @@ export function useSolverChainCoin(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
@@ -199,6 +204,7 @@ export function useSolverChainCoin(): TSolverContext {
 					contractAddress: getEthZapperContract(request.current.chainID),
 					amount: request.current.inputAmount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -217,7 +223,7 @@ export function useSolverChainCoin(): TSolverContext {
 				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(

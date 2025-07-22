@@ -11,7 +11,7 @@ import {STAKING_REWARDS_ZAP_ADDRESS} from '@lib/utils/constants';
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -90,6 +90,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
@@ -103,6 +104,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 					spenderAddress: STAKING_REWARDS_ZAP_ADDRESS,
 					amount: amount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -121,7 +123,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -132,6 +134,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
@@ -145,6 +148,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 					vaultAddress: request.current.outputToken.value,
 					amount: request.current.inputAmount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -163,7 +167,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(

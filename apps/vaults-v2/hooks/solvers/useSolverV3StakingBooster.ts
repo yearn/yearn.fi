@@ -11,17 +11,17 @@ import {V3_STAKING_ZAP_ADDRESS} from '@lib/utils/constants';
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
 
 export function useSolverV3StakingBooster(): TSolverContext {
 	const {provider} = useWeb3();
-	const {set_shouldOpenCurtain} = useNotifications();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
+	const {set_shouldOpenCurtain} = useNotifications();
 
 	/**********************************************************************************************
 	 ** init will be called when the gauge staking booster should be used to perform the desired
@@ -90,6 +90,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
@@ -104,6 +105,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 					spenderAddress: V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID],
 					amount: amount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -131,7 +133,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
-			txHashSetter: (txHash: string) => void,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
@@ -146,6 +148,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 					vaultAddress: request.current.outputToken.value,
 					amount: request.current.inputAmount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {

@@ -11,7 +11,7 @@ import {YGAUGES_ZAP_ADDRESS} from '@lib/utils/constants';
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -90,6 +90,7 @@ export function useSolverJuicedStakingBooster(): TSolverContext {
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
@@ -103,6 +104,7 @@ export function useSolverJuicedStakingBooster(): TSolverContext {
 					spenderAddress: YGAUGES_ZAP_ADDRESS,
 					amount: amount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -121,7 +123,7 @@ export function useSolverJuicedStakingBooster(): TSolverContext {
 				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -132,6 +134,7 @@ export function useSolverJuicedStakingBooster(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
@@ -147,6 +150,7 @@ export function useSolverJuicedStakingBooster(): TSolverContext {
 					stakingPoolAddress: request.current.stakingPoolAddress,
 					amount: request.current.inputAmount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -165,7 +169,7 @@ export function useSolverJuicedStakingBooster(): TSolverContext {
 				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(

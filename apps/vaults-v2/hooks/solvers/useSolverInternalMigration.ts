@@ -14,7 +14,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, retrieveConfig} from '@lib/utils/wagmi';
 import {migrateShares} from '@lib/utils/wagmi/actions';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -111,6 +111,7 @@ export function useSolverInternalMigration(): TSolverContext {
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
@@ -130,7 +131,8 @@ export function useSolverInternalMigration(): TSolverContext {
 							set_shouldOpenCurtain(true);
 						}
 					},
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter
 				});
 				if (result.isSuccessful) {
 					await onSuccess(result.receipt);
@@ -143,7 +145,7 @@ export function useSolverInternalMigration(): TSolverContext {
 				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -154,6 +156,7 @@ export function useSolverInternalMigration(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
@@ -181,6 +184,7 @@ export function useSolverInternalMigration(): TSolverContext {
 						minAmount: toBigInt(_expectedOut), //_min_out
 						slippage: toBigInt(0.06 * 100),
 						statusHandler: txStatusSetter,
+						txHashHandler: txHashSetter,
 						cta: {
 							label: 'View',
 							onClick: () => {
@@ -208,7 +212,8 @@ export function useSolverInternalMigration(): TSolverContext {
 							set_shouldOpenCurtain(true);
 						}
 					},
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter
 				});
 				if (result.isSuccessful) {
 					await onSuccess(result.receipt);
@@ -221,7 +226,7 @@ export function useSolverInternalMigration(): TSolverContext {
 				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(

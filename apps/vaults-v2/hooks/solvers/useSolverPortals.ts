@@ -24,7 +24,7 @@ import {
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, defaultTxStatus, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi';
 import type {TPortalsEstimate} from '@vaults-v2/hooks/usePortalsApi';
@@ -202,7 +202,7 @@ export function useSolverPortals(): TSolverContext {
 	 ** matter the result. It returns a boolean value indicating whether the order was successful or
 	 ** not.
 	 **********************************************************************************************/
-	const execute = useCallback(async (): Promise<TTxResponse> => {
+	const execute = useCallback(async (txHashSetter: (txHash: Hash) => void): Promise<TTxResponse> => {
 		if (!request.current || isSolverDisabled(Solver.enum.Portals)) {
 			return {isSuccessful: false, error: new Error('Portals solver not available')};
 		}
@@ -267,6 +267,7 @@ export function useSolverPortals(): TSolverContext {
 				chainId: request.current.chainID,
 				...rest
 			});
+			txHashSetter(hash);
 			const receipt = await waitForTransactionReceipt(retrieveConfig(), {
 				chainId: wagmiProvider.chainId,
 				confirmations: 2,
@@ -391,6 +392,7 @@ export function useSolverPortals(): TSolverContext {
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			if (!request.current || isSolverDisabled(Solver.enum.Portals) || !provider) {
@@ -431,6 +433,7 @@ export function useSolverPortals(): TSolverContext {
 						spenderAddress: approval.context.spender,
 						amount: amount,
 						statusHandler: txStatusSetter,
+						txHashHandler: txHashSetter,
 						cta: {
 							label: 'View',
 							onClick: () => {
@@ -453,7 +456,7 @@ export function useSolverPortals(): TSolverContext {
 				return;
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -465,13 +468,14 @@ export function useSolverPortals(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(provider, 'Provider is not set');
 
 			txStatusSetter({...defaultTxStatus, pending: true});
 			try {
-				const status = await execute();
+				const status = await execute(txHashSetter);
 				if (status.isSuccessful && status.receipt) {
 					txStatusSetter({...defaultTxStatus, success: true});
 					toast({
@@ -516,7 +520,7 @@ export function useSolverPortals(): TSolverContext {
 				setTimeout((): void => txStatusSetter(defaultTxStatus), 3000);
 			}
 		},
-		[execute, provider]
+		[execute, provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(

@@ -11,7 +11,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, getNetwork} from '@lib/utils/wagmi';
 import {depositViaPartner, withdrawShares} from '@lib/utils/wagmi/actions';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -93,6 +93,7 @@ export function useSolverPartnerContract(): TSolverContext {
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
@@ -108,6 +109,7 @@ export function useSolverPartnerContract(): TSolverContext {
 					spenderAddress: partnerContract,
 					amount: amount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -124,7 +126,7 @@ export function useSolverPartnerContract(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -135,6 +137,7 @@ export function useSolverPartnerContract(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
@@ -151,6 +154,7 @@ export function useSolverPartnerContract(): TSolverContext {
 					partnerAddress: currentPartner ? currentPartner : undefined,
 					amount: request.current.inputAmount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -167,7 +171,7 @@ export function useSolverPartnerContract(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[currentPartner, provider]
+		[currentPartner, provider, set_shouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -178,6 +182,7 @@ export function useSolverPartnerContract(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
@@ -191,6 +196,7 @@ export function useSolverPartnerContract(): TSolverContext {
 					contractAddress: request.current.inputToken.value,
 					amount: request.current.inputAmount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -207,7 +213,7 @@ export function useSolverPartnerContract(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(
