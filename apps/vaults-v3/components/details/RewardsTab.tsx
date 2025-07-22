@@ -705,7 +705,7 @@ export function RewardsTab(props: {
 									className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'}
 									suppressHydrationWarning>
 									<div className={'flex items-center justify-between'}>
-										<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} st-yBOLD staked`}</p>
+										<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ysyBOLD staked`}</p>
 										<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
 									</div>
 								</legend>
@@ -731,7 +731,7 @@ export function RewardsTab(props: {
 									'yBOLD represents BOLD deposited in Liquity V2 Stability Pools, earning liquidation fees and protocol interest. '
 								}
 								{
-									'When you stake yBOLD, you receive st-yBOLD that auto-compounds rewards and optimizes allocations across pools every 30 minutes.'
+									'When you stake yBOLD, you receive ysyBOLD that auto-compounds rewards and optimizes allocations across pools every 30 minutes.'
 								}
 							</p>
 							<p>
