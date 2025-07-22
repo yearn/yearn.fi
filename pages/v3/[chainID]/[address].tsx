@@ -20,7 +20,7 @@ function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();
 	const router = useRouter();
 	const {onRefresh} = useWallet();
-	// const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
+// (Line removed as it is no longer needed)
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
 	const [isInit, set_isInit] = useState(false);
 	const {vaults, isLoading: isLoadingVault} = useFetchYearnVaults();
