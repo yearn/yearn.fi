@@ -120,7 +120,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -131,6 +131,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: string) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
@@ -161,7 +162,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(

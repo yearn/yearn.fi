@@ -11,7 +11,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
 import {deposit, redeemV3Shares, withdrawShares} from '@lib/utils/wagmi/actions';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -96,6 +96,7 @@ export function useSolverVanilla(): TSolverContext {
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
@@ -110,6 +111,7 @@ export function useSolverVanilla(): TSolverContext {
 					spenderAddress: request.current.outputToken.value,
 					amount: amount,
 					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
 					cta: {
 						label: 'View',
 						onClick: () => {
@@ -126,7 +128,7 @@ export function useSolverVanilla(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -137,6 +139,7 @@ export function useSolverVanilla(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
@@ -155,7 +158,8 @@ export function useSolverVanilla(): TSolverContext {
 							set_shouldOpenCurtain(true);
 						}
 					},
-					statusHandler: txStatusSetter
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter
 				});
 				if (result.isSuccessful && result.receipt) {
 					onSuccess(result.receipt);
@@ -166,7 +170,7 @@ export function useSolverVanilla(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -177,6 +181,7 @@ export function useSolverVanilla(): TSolverContext {
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
@@ -195,6 +200,7 @@ export function useSolverVanilla(): TSolverContext {
 						amount: request.current.inputAmount,
 						maxLoss: maxLoss,
 						statusHandler: txStatusSetter,
+						txHashHandler: txHashSetter,
 						cta: {
 							label: 'View',
 							onClick: () => {
@@ -233,7 +239,7 @@ export function useSolverVanilla(): TSolverContext {
 				}
 			}
 		},
-		[maxLoss, provider]
+		[maxLoss, provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(

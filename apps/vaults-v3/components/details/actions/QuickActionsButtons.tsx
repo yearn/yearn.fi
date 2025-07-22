@@ -19,7 +19,7 @@ import {PLAUSIBLE_EVENTS} from '@lib/utils/plausible';
 import {defaultTxStatus} from '@lib/utils/wagmi';
 
 import type {ReactElement} from 'react';
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TNormalizedBN} from '@lib/types';
 import type {TNotificationType} from '@lib/types/notifications';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
@@ -158,13 +158,9 @@ export function VaultDetailsQuickActionsButtons({
 			currentVault,
 			currentSolver,
 			onChangeAmount,
+			handleDepositNotification,
+			actionParams,
 			plausible,
-			actionParams.amount?.display,
-			actionParams?.selectedOptionFrom?.value,
-			actionParams?.selectedOptionFrom?.symbol,
-			actionParams?.selectedOptionTo?.value,
-			actionParams?.selectedOptionTo?.symbol,
-			actionParams?.selectedOptionTo?.chainID,
 			onRefresh,
 			isDepositing
 		]
@@ -190,11 +186,14 @@ export function VaultDetailsQuickActionsButtons({
 				await handleApproveNotification({actionParams, receipt, status: 'success', idToUpdate: id});
 				await triggerRetrieveAllowance();
 			},
+			(txHash: Hash) => {
+				handleApproveNotification({actionParams, status: 'pending', idToUpdate: id, txHash});
+			},
 			async (): Promise<void> => {
 				await handleApproveNotification({actionParams, status: 'error', idToUpdate: id});
 			}
 		);
-	}, [currentSolver, onApprove, actionParams.amount?.raw, handleApproveNotification, triggerRetrieveAllowance]);
+	}, [currentSolver, handleApproveNotification, actionParams, onApprove, triggerRetrieveAllowance]);
 
 	/**********************************************************************************************
 	 ** Define the condition for the button to be disabled. The button is disabled if the user is
@@ -283,6 +282,14 @@ export function VaultDetailsQuickActionsButtons({
 						onExecuteDeposit(
 							set_txStatusExecuteDeposit,
 							async (receipt?: TransactionReceipt) => onSuccess(true, 'deposit and stake', receipt, id),
+							(txHash: Hash) => {
+								handleDepositNotification({
+									actionParams: correctActionParams,
+									status: 'pending',
+									idToUpdate: id,
+									txHash
+								});
+							},
 							async () => {
 								await handleDepositNotification({
 									actionParams: correctActionParams,
@@ -319,6 +326,14 @@ export function VaultDetailsQuickActionsButtons({
 					onExecuteDeposit(
 						set_txStatusExecuteDeposit,
 						async (receipt?: TransactionReceipt) => onSuccess(true, 'deposit', receipt, id),
+						(txHash: Hash) => {
+							handleDepositNotification({
+								actionParams: actionParams,
+								status: 'pending',
+								idToUpdate: id,
+								txHash
+							});
+						},
 						async () => {
 							await handleDepositNotification({actionParams, status: 'error', idToUpdate: id});
 						}
@@ -349,6 +364,9 @@ export function VaultDetailsQuickActionsButtons({
 					async (receipt?: TransactionReceipt) => {
 						await handleWithdrawNotification({actionParams, receipt, status: 'success', idToUpdate: id});
 						await onSuccess(false);
+					},
+					(txHash: Hash) => {
+						handleWithdrawNotification({actionParams, status: 'pending', idToUpdate: id, txHash});
 					},
 					async () => {
 						await handleWithdrawNotification({actionParams, status: 'error', idToUpdate: id});

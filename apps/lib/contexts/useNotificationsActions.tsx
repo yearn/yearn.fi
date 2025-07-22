@@ -4,7 +4,7 @@ import {formatTAmount, toAddress} from '@lib/utils';
 import {useNotifications} from './useNotifications';
 import {useWeb3} from './useWeb3';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TNotificationsActionsContext, TNotificationStatus, TNotificationType} from '@lib/types/notifications';
 import type {TActionParams} from '@vaults-v2/contexts/useActionFlow';
 
@@ -27,18 +27,20 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			actionParams,
 			receipt,
 			status,
-			idToUpdate
+			idToUpdate,
+			txHash
 		}: {
 			actionParams: Partial<TActionParams>;
 			receipt?: TransactionReceipt;
 			status?: TNotificationStatus;
 			idToUpdate?: number;
+			txHash?: Hash;
 		}): Promise<number> => {
 			if (idToUpdate) {
 				await updateEntry(
 					{
-						txHash: receipt?.transactionHash,
-						timeFinished: Date.now() / 1000,
+						txHash: txHash ? txHash : receipt?.transactionHash,
+						timeFinished: receipt ? Date.now() / 1000 : undefined,
 						blockNumber: receipt?.blockNumber,
 						status
 					},
@@ -66,7 +68,7 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			});
 			return createdId;
 		},
-		[addNotification, address]
+		[addNotification, address, updateEntry]
 	);
 
 	const handleDepositNotification = useCallback(
@@ -75,9 +77,11 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			type,
 			receipt,
 			status,
-			idToUpdate
+			idToUpdate,
+			txHash
 		}: {
 			actionParams: Partial<TActionParams>;
+			txHash?: Hash;
 			type?: TNotificationType;
 			receipt?: TransactionReceipt;
 			status?: TNotificationStatus;
@@ -86,8 +90,8 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			if (idToUpdate) {
 				await updateEntry(
 					{
-						txHash: receipt?.transactionHash,
-						timeFinished: Date.now() / 1000,
+						txHash: txHash ? txHash : receipt?.transactionHash,
+						timeFinished: receipt ? Date.now() / 1000 : undefined,
 						blockNumber: receipt?.blockNumber,
 						status
 					},
@@ -125,19 +129,21 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			type,
 			receipt,
 			status,
-			idToUpdate
+			idToUpdate,
+			txHash
 		}: {
 			actionParams: Partial<TActionParams>;
 			type?: TNotificationType;
 			receipt?: TransactionReceipt;
 			status?: TNotificationStatus;
 			idToUpdate?: number;
+			txHash?: Hash;
 		}): Promise<number> => {
 			if (idToUpdate) {
 				await updateEntry(
 					{
-						txHash: receipt?.transactionHash,
-						timeFinished: Date.now() / 1000,
+						txHash: txHash ? txHash : receipt?.transactionHash,
+						timeFinished: receipt ? Date.now() / 1000 : undefined,
 						blockNumber: receipt?.blockNumber,
 						status
 					},
@@ -175,19 +181,21 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			type,
 			receipt,
 			status,
-			idToUpdate
+			idToUpdate,
+			txHash
 		}: {
 			actionParams: Partial<TActionParams>;
 			type?: TNotificationType;
 			receipt?: TransactionReceipt;
 			status?: TNotificationStatus;
 			idToUpdate?: number;
+			txHash?: Hash;
 		}): Promise<number> => {
 			if (idToUpdate) {
 				await updateEntry(
 					{
-						txHash: receipt?.transactionHash,
-						timeFinished: Date.now() / 1000,
+						txHash: txHash ? txHash : receipt?.transactionHash,
+						timeFinished: receipt ? Date.now() / 1000 : undefined,
 						blockNumber: receipt?.blockNumber,
 						status
 					},
@@ -225,19 +233,21 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			type,
 			receipt,
 			status,
-			idToUpdate
+			idToUpdate,
+			txHash
 		}: {
 			actionParams: Partial<TActionParams>;
 			type?: TNotificationType;
 			receipt?: TransactionReceipt;
 			status?: TNotificationStatus;
 			idToUpdate?: number;
+			txHash?: Hash;
 		}): Promise<number> => {
 			if (idToUpdate) {
 				await updateEntry(
 					{
-						txHash: receipt?.transactionHash,
-						timeFinished: Date.now() / 1000,
+						txHash: txHash ? txHash : receipt?.transactionHash,
+						timeFinished: receipt ? Date.now() / 1000 : undefined,
 						blockNumber: receipt?.blockNumber,
 						status
 					},
@@ -275,19 +285,21 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			type,
 			receipt,
 			status,
-			idToUpdate
+			idToUpdate,
+			txHash
 		}: {
 			actionParams: Partial<TActionParams>;
 			type?: TNotificationType;
 			receipt?: TransactionReceipt;
 			status?: TNotificationStatus;
 			idToUpdate?: number;
+			txHash?: Hash;
 		}): Promise<number> => {
 			if (idToUpdate) {
 				await updateEntry(
 					{
-						txHash: receipt?.transactionHash,
-						timeFinished: Date.now() / 1000,
+						txHash: txHash ? txHash : receipt?.transactionHash,
+						timeFinished: receipt ? Date.now() / 1000 : undefined,
 						blockNumber: receipt?.blockNumber,
 						status
 					},

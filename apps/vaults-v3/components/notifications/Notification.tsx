@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {motion} from 'framer-motion';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {useNotifications} from '@lib/contexts/useNotifications';
+import {useTransactionStatusPoller} from '@lib/hooks/useTransactionStatusPoller';
 import {IconArrow} from '@lib/icons/IconArrow';
 import {IconCheck} from '@lib/icons/IconCheck';
 import {IconClose} from '@lib/icons/IconClose';
@@ -77,7 +78,7 @@ function NotificationContent({
 			: `/vaults/${fromVault.chainID}/${toAddress(fromVault.address)}`;
 
 		return href;
-	}, [notification.type, notification.fromTokenName]);
+	}, [fromVault, explorerBaseURI, notification.fromAddress]);
 
 	const toTokenLabel = useMemo(() => {
 		switch (notification.type) {
@@ -98,7 +99,7 @@ function NotificationContent({
 			: `/vaults/${toVault.chainID}/${toAddress(toVault.address)}`;
 
 		return href;
-	}, [notification.type, notification.toTokenName]);
+	}, [toVault, explorerBaseURI, notification.toAddress]);
 
 	return (
 		<div className={'flex gap-4'}>
@@ -239,6 +240,12 @@ export const Notification = React.memo(function Notification({
 	const {deleteByID} = useNotifications();
 	const [isDeleting, set_isDeleting] = useState(false);
 
+	/************************************************************************************************
+	 * Use the transaction status poller to automatically check and update pending transactions
+	 * every minute. This will update the notification status when transactions are completed.
+	 ************************************************************************************************/
+	useTransactionStatusPoller(notification);
+
 	const formattedDate = useMemo(() => {
 		if (!notification.timeFinished || notification.status === 'pending') {
 			return null;
@@ -374,7 +381,7 @@ export const Notification = React.memo(function Notification({
 					toVault={toVault}
 				/>
 
-				{notification.status === 'success' ? (
+				{notification.status === 'success' || notification.txHash ? (
 					<div
 						className={
 							'mt-4 flex items-center justify-between border-t border-neutral-100 pt-3 text-xs text-neutral-800'

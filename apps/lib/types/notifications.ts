@@ -1,4 +1,4 @@
-import type {Hex, TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TActionParams} from '@vaults-v2/contexts/useActionFlow';
 import type {TAddress} from './address';
 
@@ -29,7 +29,7 @@ export type TNotification = {
 	fromAmount?: string;
 	toAddress?: TAddress; // Vault token to receive
 	toTokenName?: string;
-	txHash: Hex | undefined;
+	txHash?: Hash;
 	timeFinished?: number;
 	blockNumber?: bigint;
 	status: TNotificationStatus;
@@ -53,6 +53,7 @@ export type TNotificationsContext = {
 // Base interface for notification handler parameters
 export type TNotificationHandlerParams = {
 	actionParams: Partial<TActionParams>;
+	txHash?: Hash;
 	type?: TNotificationType;
 	receipt?: TransactionReceipt;
 	status?: TNotificationStatus;

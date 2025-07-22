@@ -1,6 +1,6 @@
 import {Solver} from '@lib/utils/schemas/yDaemonTokenListBalances';
 
-import type {TransactionReceipt} from 'viem';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TAddress, TDropdownOption, TNormalizedBN} from '@lib/types';
 import type {TSolver} from '@lib/utils/schemas/yDaemonTokenListBalances';
 import type {TTxStatus} from '@lib/utils/wagmi';
@@ -23,16 +23,19 @@ export type TWithSolver = {
 		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		txHashSetter: (txHash: Hash) => void,
 		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 	onExecuteDeposit: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		txHashSetter: (txHash: Hash) => void,
 		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 	onExecuteWithdraw: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		txHashSetter: (txHash: Hash) => void,
 		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 };
@@ -60,16 +63,19 @@ export type TSolverContext = {
 		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		txHashSetter: (txHash: Hash) => void,
 		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 	onExecuteDeposit: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		txHashSetter: (txHash: Hash) => void,
 		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 	onExecuteWithdraw: (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+		txHashSetter: (txHash: Hash) => void,
 		onError?: (error: Error) => Promise<void>
 	) => Promise<void>;
 };

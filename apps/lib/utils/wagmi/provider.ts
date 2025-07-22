@@ -14,7 +14,7 @@ import {toAddress} from '../tools.address';
 import {retrieveConfig} from './config';
 import {defaultTxStatus} from './transaction';
 
-import type {Client, SimulateContractParameters, WalletClient} from 'viem';
+import type {Client, Hash, SimulateContractParameters, WalletClient} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TCTA} from '@lib/components/yToast';
 import type {TAddress} from '../../types/address';
@@ -49,6 +49,7 @@ export type TWriteTransaction = {
 	connector: Connector | undefined;
 	contractAddress: TAddress | undefined;
 	statusHandler?: (status: typeof defaultTxStatus) => void;
+	txHashHandler?: (txHash: Hash) => void;
 	onTrySomethingElse?: () => Promise<TTxResponse>; //When the abi is incorrect, ex: usdt, we may need to bypass the error and try something else
 	shouldDisplaySuccessToast?: boolean;
 	shouldDisplayErrorToast?: boolean;
@@ -109,6 +110,7 @@ export async function handleTx(args: TWriteTransaction, props: TPrepareWriteCont
 			value: toBigInt(props.value)
 		});
 		const hash = await writeContract(config, simulateContractConfig.request);
+		args.txHashHandler?.(hash);
 		const receipt = await waitForTransactionReceipt(config, {
 			chainId: wagmiProvider.chainId,
 			hash,
