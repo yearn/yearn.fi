@@ -173,6 +173,9 @@ function APYTooltip(props: {
 }
 
 function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	// TEMPORARY HACK: Force "NEW" APY for chainID 747474
+	const isForceNewAPY = currentVault.chainID === 747474;
+
 	const isEthMainnet = currentVault.chainID === 1;
 	const hasPendleArbRewards = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544');
 	const hasKelpNEngenlayer = currentVault.address === toAddress('0xDDa02A2FA0bb0ee45Ba9179a3fd7e65E5D3B2C90');
@@ -181,7 +184,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	/**********************************************************************************************
 	 ** If there is no forwardAPY, we only have the historical APY to display.
 	 **********************************************************************************************/
-	if (currentVault.apr.forwardAPR.type === '') {
+	if (currentVault.apr.forwardAPR.type === '' || isForceNewAPY) {
 		const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 		const boostedAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR;
 		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
@@ -192,7 +195,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					<span className={'tooltip'}>
 						<b className={'yearn--table-data-section-item-value'}>
 							<Renderable
-								shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+								shouldRender={!isForceNewAPY && !currentVault.apr.forwardAPR?.type.includes('new')}
 								/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
 								fallback={'NEW'}>
 								{'⚡️ '}
@@ -229,7 +232,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 			<div className={'relative flex flex-col items-end md:text-right'}>
 				<b className={'yearn--table-data-section-item-value'}>
 					<Renderable
-						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+						shouldRender={!isForceNewAPY && !currentVault.apr.forwardAPR?.type.includes('new')}
 						/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
 						fallback={'NEW'}>
 						<RenderAmount
@@ -423,7 +426,9 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
 					shouldRender={
-						!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')
+						(!currentVault.apr.forwardAPR?.type.includes('new') &&
+							!currentVault.apr.type.includes('new')) ||
+						currentVault.chainID == 747474
 					}
 					/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
 					fallback={'NEW'}>
@@ -446,6 +451,8 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 }
 
 function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	// TEMPORARY HACK: Force 'NEW' APY for chainID 747474
+	const isForceNewHistoricalAPY = currentVault.chainID === 747474;
 	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 	const monthlyAPY = currentVault.apr.points.monthAgo;
 	const weeklyAPY = currentVault.apr.points.weekAgo;
@@ -456,7 +463,7 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 				<span className={'tooltip'}>
 					<b className={'yearn--table-data-section-item-value'}>
 						<Renderable
-							shouldRender={!currentVault.apr?.type.includes('new')}
+							shouldRender={!isForceNewHistoricalAPY && !currentVault.apr?.type.includes('new')}
 							fallback={'NEW'}>
 							<span
 								className={
@@ -509,7 +516,7 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 		<div className={'flex flex-col items-end md:text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
-					shouldRender={!currentVault.apr?.type.includes('new')}
+					shouldRender={!isForceNewHistoricalAPY && !currentVault.apr?.type.includes('new')}
 					fallback={'NEW'}>
 					<RenderAmount
 						value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
@@ -719,9 +726,12 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 								isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
 							}`}>
 							<RenderAmount
-								value={availableToDeposit}
+								value={Number(
+									toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized
+								)}
 								symbol={currentVault.token.symbol}
 								decimals={currentVault.token.decimals}
+								shouldFormatDust
 								options={{
 									shouldDisplaySymbol: false,
 									maximumFractionDigits:

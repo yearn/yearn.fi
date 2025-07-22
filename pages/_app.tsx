@@ -135,8 +135,8 @@ function MyApp(props: AppProps): ReactElement {
 					<WithMom
 						supportedChains={SUPPORTED_NETWORKS}
 						tokenLists={[
-							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
-							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/popular.json'
+							'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/yearn.json',
+							'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/popular.json'
 						]}>
 						<AppSettingsContextApp>
 							<YearnContextApp>

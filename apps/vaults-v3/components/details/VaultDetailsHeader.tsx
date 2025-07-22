@@ -64,7 +64,7 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 	);
 }
 
-function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): ReactElement {
+function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: string; chain: number}): ReactElement {
 	const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR;
 	const monthlyAPY = apr.points.monthAgo;
 	const weeklyAPY = apr.points.weekAgo;
@@ -72,14 +72,20 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 	const currentAPY = apr.forwardAPR.netAPR + extraAPY;
 	const isSourceVeYFI = source === 'VeYFI';
 
+	// TEMPORARY HACK: Force 'New' APY for chainID 747474
+	const isForceNewHistoricalAPY = chain === 747474;
 	if (apr.forwardAPR.type === '' && extraAPY === 0) {
 		return (
 			<VaultHeaderLineItem label={'Historical APY'}>
-				<RenderAmount
-					value={netAPY}
-					symbol={'percent'}
-					decimals={6}
-				/>
+				<Renderable
+					shouldRender={!isForceNewHistoricalAPY}
+					fallback={'New'}>
+					<RenderAmount
+						value={netAPY}
+						symbol={'percent'}
+						decimals={6}
+					/>
+				</Renderable>
 			</VaultHeaderLineItem>
 		);
 	}
@@ -144,7 +150,7 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 					</span>
 				}>
 				<Renderable
-					shouldRender={!apr?.type.includes('new')}
+					shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')}
 					fallback={'New'}>
 					<RenderAmount
 						value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
@@ -242,7 +248,7 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 					</span>
 				}>
 				<Renderable
-					shouldRender={!apr?.type.includes('new')}
+					shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')}
 					fallback={'New'}>
 					<RenderAmount
 						value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
@@ -306,7 +312,7 @@ function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 				</span>
 			}>
 			<Renderable
-				shouldRender={!apr?.type.includes('new')}
+				shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')}
 				fallback={'New'}>
 				<RenderAmount
 					value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
@@ -771,6 +777,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					<VaultAPY
 						apr={apr}
 						source={currentVault.staking.source}
+						chain={currentVault.chainID}
 					/>
 				</div>
 

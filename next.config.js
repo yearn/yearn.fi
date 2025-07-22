@@ -71,6 +71,10 @@ module.exports = withPlausibleProxy({
 			},
 			{
 				protocol: 'https',
+				hostname: 'token-assets-one.vercel.app'
+			},
+			{
+				protocol: 'https',
 				hostname: '**.yearn.fi'
 			}
 		]
@@ -148,7 +152,7 @@ module.exports = withPlausibleProxy({
 			},
 			{
 				source: '/static/tokenlist.json',
-				destination: 'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
+				destination: 'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/yearn.json',
 				permanent: true
 			}
 		];
@@ -232,8 +236,8 @@ module.exports = withPlausibleProxy({
 
 		YDAEMON_BASE_URI: process.env.YDAEMON_BASE_URI,
 		// YDAEMON_BASE_URI: 'http://localhost:8080',
-		BASE_YEARN_ASSETS_URI: 'https://assets.smold.app/api/token',
-		BASE_YEARN_CHAIN_URI: 'https://assets.smold.app/api/chain',
-		SMOL_ASSETS_URL: 'https://assets.smold.app/api'
+		BASE_YEARN_ASSETS_URI: 'https://token-assets-one.vercel.app/api/token',
+		BASE_YEARN_CHAIN_URI: 'https://token-assets-one.vercel.app/api/chain',
+		SMOL_ASSETS_URL: 'https://token-assets-one.vercel.app/api'
 	}
 });

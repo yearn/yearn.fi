@@ -279,7 +279,7 @@ function ListOfVaults(): ReactElement {
 			const holdingsValue =
 				toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized;
 
-			if (holdingsValue > 0.001) {
+			if (holdingsValue > 0.5) {
 				holdings.push(
 					<VaultsV3ListRow
 						key={key}
