@@ -295,7 +295,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 								currentVault.address,
 								currentVault.symbol,
 								currentVault.decimals,
-								`https://assets.smold.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
+								`https://token-assets-one.vercel.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
 							);
 						}}>
 						<span className={'sr-only'}>{'Add to wallet'}</span>
