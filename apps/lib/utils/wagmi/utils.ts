@@ -55,7 +55,7 @@ export const katana = defineChain({
 	blockExplorers: {
 		default: {
 			name: 'Katana Explorer',
-			url: 'https://explorer.katanarpc.com'
+			url: 'https://katanascan.com'
 		}
 	},
 	contracts: {

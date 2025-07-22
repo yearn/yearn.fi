@@ -726,9 +726,12 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 								isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
 							}`}>
 							<RenderAmount
-								value={availableToDeposit}
+								value={Number(
+									toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized
+								)}
 								symbol={currentVault.token.symbol}
 								decimals={currentVault.token.decimals}
+								shouldFormatDust
 								options={{
 									shouldDisplaySymbol: false,
 									maximumFractionDigits:
