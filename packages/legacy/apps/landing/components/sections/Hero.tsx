@@ -5,9 +5,11 @@ import {SectionHeader} from '@lib/components/SectionHeader';
 import {TvlStat} from '@lib/components/TvlStat';
 import {useFetch} from '@lib/hooks/useFetch';
 
-import {Button} from '../common/Button';
+import {Button as LegacyButton} from '../common/Button';
 
 import type {ReactElement} from 'react';
+import { TEST } from '@yearnfi/nextgen';
+// import { Button } from '@yearnfi/nextgen/components/elements'; // TODO: Will not work until we upgrade to react 19 to match the nextgen project
 
 function AnimatedLogos(): ReactElement {
 	return (
@@ -82,6 +84,10 @@ export function Hero(): ReactElement {
 		<>
 			{/* Desktop Hero Section */}
 			<div className={'hidden w-full justify-center overflow-hidden border-b border-white/10 md:flex'}>
+				<div className={'fixed z-50'}>
+					{`${TEST} proof the strangler is working ${TEST}`}
+					{/* <Button className={'bg-green-400'}>{'New Stack Button'}</Button> */}
+				</div>
 				<div
 					style={{
 						backgroundImage: "url('/landing/hero-background.png')",
@@ -105,7 +111,7 @@ export function Hero(): ReactElement {
 							/>
 							<div className={'flex flex-row items-center justify-center gap-4'}>
 								<Link href={'/v3'}>
-									<Button className={'md:text-[18px]'}>{'Explore Vaults'}</Button>
+									<LegacyButton className={'md:text-[18px]'}>{'Explore Vaults'}</LegacyButton>
 								</Link>
 								{/* <Link href={'/apps'}>
 									<Button
@@ -148,11 +154,11 @@ export function Hero(): ReactElement {
 							<Link
 								href={'/v3'}
 								className={'block w-full'}>
-								<Button
+								<LegacyButton
 									className={'max-w-xs'}
 									variant={'primary'}>
 									{'Explore Vaults'}
-								</Button>
+								</LegacyButton>
 							</Link>
 							{/* <Link
 								href={'/apps'}
