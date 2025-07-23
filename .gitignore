@@ -1,39 +1,34 @@
-.DS_Store
+# dependencies (bun install)
 node_modules
-/dist
-tsconfig.tsbuildinfo
 
-# local env files
-.env.local
-.env.*.local
+# output
+out
+dist
+*.tgz
 
-# Log files
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# code coverage
+coverage
+*.lcov
 
-# Editor directories and files
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
+# dotenv environment variable files
 .env
-.next
-.vercel
-.tsconfig.tsbuildinfo
-_app
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
 
-# Auto Generated PWA files
-**/public/sw.js
-**/public/workbox-*.js
-**/public/worker-*.js
-**/public/sw.js.map
-**/public/workbox-*.js.map
-**/public/worker-*.js.map
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
 
-# Sentry Auth Token
-.sentryclirc
+# IntelliJ based IDEs
+.idea
+
+# Finder (MacOS) folder config
+.DS_Store
