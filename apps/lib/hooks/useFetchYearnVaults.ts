@@ -1,3 +1,5 @@
+import {zeroAddress} from 'viem';
+import {type Address} from 'viem';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {useFetch} from '@lib/hooks/useFetch';
 import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
@@ -40,7 +42,10 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 			chainIDs: chainIDs ? chainIDs.join(',') : [1, 10, 137, 146, 250, 8453, 42161, 747474].join(','),
 			limit: '2500'
 		})}`,
-		schema: yDaemonVaultsSchema
+		schema: yDaemonVaultsSchema,
+		config: {
+			cacheDuration: 1000 * 60 * 60 // 1 hour
+		}
 	});
 
 	// const vaultsMigrations: TYDaemonVaults = useMemo(() => [], []);
@@ -74,6 +79,75 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 		return _vaultsObject;
 	}, [vaults]);
 
+	// TODO: remove this workaround when possible
+	// <WORKAROUND>
+	const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8';
+	const YBOLD_STAKING_ADDRESS: Address = '0x23346B04a7f55b8760E5860AA5A77383D63491cD';
+
+	const patchedVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
+		// Create a copy of the vaultsObject to avoid mutating the original object
+		const vaultsWithWorkaround = {...vaultsObject};
+
+		const yBoldVault = vaultsWithWorkaround[YBOLD_VAULT_ADDRESS];
+		const stYBoldVault = vaultsWithWorkaround[YBOLD_STAKING_ADDRESS];
+
+		if (yBoldVault && stYBoldVault) {
+			try {
+				vaultsWithWorkaround[YBOLD_VAULT_ADDRESS] = {
+					...yBoldVault,
+					staking: {
+						address: YBOLD_STAKING_ADDRESS,
+						available: true,
+						source: 'yBOLD',
+						rewards: [
+							{
+								address: zeroAddress,
+								name: 'null',
+								symbol: 'null',
+								decimals: 18,
+								price: 0,
+								isFinished: false,
+								finishedAt: 9748476800,
+								apr: null,
+								perWeek: 0
+							}
+						]
+					},
+					// Create immutable copy of APR data
+					apr:
+						yBoldVault.apr && stYBoldVault.apr
+							? {
+									...yBoldVault.apr,
+									netAPR: stYBoldVault.apr.netAPR ?? yBoldVault.apr.netAPR ?? 0,
+									points: {...(stYBoldVault.apr.points ?? yBoldVault.apr.points ?? {})},
+									pricePerShare: {
+										...(stYBoldVault.apr.pricePerShare ?? yBoldVault.apr.pricePerShare ?? {})
+									},
+									fees: {
+										...yBoldVault.apr.fees,
+										performance:
+											stYBoldVault.apr.fees.performance ?? yBoldVault.apr.fees.performance ?? 0
+									}
+								}
+							: yBoldVault.apr
+				};
+			} catch (error) {
+				console.error('yBOLD vault workaround failed:', error);
+				// Return original object if patching fails
+				return vaultsObject;
+			}
+		} else {
+			console.warn('yBOLD vault workaround: Required vaults not found', {
+				yBoldFound: !!yBoldVault,
+				stYBoldFound: !!stYBoldVault,
+				availableVaults: Object.keys(vaultsWithWorkaround).length
+			});
+		}
+
+		return vaultsWithWorkaround;
+	}, [vaultsObject]);
+	// </WORKAROUND>
+
 	const vaultsMigrationsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
 		if (!vaultsMigrations) {
 			return {};
@@ -105,7 +179,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 	}, [vaultsRetired]);
 
 	return {
-		vaults: vaultsObject,
+		vaults: patchedVaultsObject,
 		vaultsMigrations: vaultsMigrationsObject,
 		vaultsRetired: vaultsRetiredObject,
 		isLoading,

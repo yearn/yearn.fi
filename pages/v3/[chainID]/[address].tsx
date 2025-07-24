@@ -1,11 +1,11 @@
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
-import {zeroAddress} from 'viem';
 import {ActionFlowContextApp} from '@vaults-v2/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults-v2/contexts/useSolver';
 import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper';
+import {fetchYBoldVault} from '@vaults-v3/utils/handleYBold';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
@@ -16,7 +16,6 @@ import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';
-import type {Address} from 'viem';
 import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
@@ -25,7 +24,7 @@ function Index(): ReactElement | null {
 	const router = useRouter();
 	const {onRefresh} = useWallet();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
-	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
+	const [_currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
 	const [isInit, set_isInit] = useState(false);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
 		endpoint: router.query.address
@@ -36,64 +35,19 @@ function Index(): ReactElement | null {
 			: null,
 		schema: yDaemonVaultSchema
 	});
+
 	// TODO: remove this workaround when possible
 	// <WORKAROUND>
-	const [isLoadingYBold, set_isLoadingYBold] = useState<boolean>(false);
-	const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8';
+	const [overrideVault, set_overrideVault] = useState<TYDaemonVault | undefined>(undefined);
+	const currentVault = overrideVault ?? _currentVault;
 
 	useEffect(() => {
-		if (vault && !currentVault && vault?.address === YBOLD_VAULT_ADDRESS) {
-			console.log('yBold vault detected');
-			// patch staking
-			vault.staking = {
-				address: '0x23346B04a7f55b8760E5860AA5A77383D63491cD',
-				available: true,
-				source: 'yBOLD',
-				rewards: [
-					{
-						address: zeroAddress,
-						name: 'null',
-						symbol: 'null',
-						decimals: 18,
-						price: 0,
-						isFinished: false,
-						finishedAt: 9748476800,
-						apr: null,
-						perWeek: 0
-					}
-				]
-			};
-
-			set_isLoadingYBold(true);
-			const params = new URLSearchParams({
-				strategiesDetails: 'withDetails',
-				strategiesCondition: 'inQueue'
+		if (!overrideVault) {
+			fetchYBoldVault(yDaemonBaseUri, _currentVault).then(_vault => {
+				set_overrideVault(_vault);
 			});
-			let _stYBoldVault: TYDaemonVault = vault;
-
-			(async () => {
-				try {
-					const res = await fetch(`${yDaemonBaseUri}/vaults/${toAddress(vault.staking.address)}?${params}`);
-					const json = await res.json();
-					const parsed = yDaemonVaultSchema.parse(json);
-					_stYBoldVault = parsed;
-				} catch (error) {
-					console.error(error);
-				} finally {
-					// replace yBOLD apr data with stYBoldVault apr data
-					if (vault?.apr) {
-						vault.apr.netAPR = _stYBoldVault?.apr?.netAPR || vault.apr.netAPR || 0;
-						vault.apr.points = _stYBoldVault?.apr?.points || vault.apr.points || {};
-						vault.apr.pricePerShare = _stYBoldVault?.apr?.pricePerShare || vault.apr.pricePerShare || {};
-						// vault.apr.forwardAPR = _stYBoldVault?.apr?.forwardAPR || vault.apr.forwardAPR || {};
-						vault.apr.fees.performance =
-							_stYBoldVault?.apr?.fees?.performance || vault.apr.fees.performance || 0;
-					}
-					set_isLoadingYBold(false);
-				}
-			})();
 		}
-	}, [currentVault, vault, yDaemonBaseUri]);
+	}, [yDaemonBaseUri, overrideVault, _currentVault]);
 	// </WORKAROUND>
 
 	useEffect((): void => {
@@ -129,7 +83,7 @@ function Index(): ReactElement | null {
 		currentVault?.staking.address
 	]);
 
-	if (isLoadingVault || isLoadingYBold || !router.query.address || !isInit) {
+	if (isLoadingVault || !router.query.address || !isInit) {
 		return (
 			<div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
 				<div className={'mt-[20%] flex h-10 items-center justify-center'}>
