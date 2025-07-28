@@ -374,7 +374,18 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			onExecuteDeposit: currentSolverState.onExecuteDeposit,
 			onExecuteWithdraw: currentSolverState.onExecuteWithdraw
 		}),
-		[currentSolver, currentSolverState, isLoading]
+		[
+			currentSolver,
+			currentSolverState?.hash,
+			currentSolverState.onApprove,
+			currentSolverState.onExecuteDeposit,
+			currentSolverState.onExecuteWithdraw,
+			currentSolverState.onRetrieveAllowance,
+			currentSolverState.onRetrieveRouterAllowance,
+			currentSolverState?.quote,
+			currentSolverState?.type,
+			isLoading
+		]
 	);
 
 	return <WithSolverContext.Provider value={contextValue}>{children}</WithSolverContext.Provider>;

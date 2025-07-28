@@ -13,6 +13,7 @@ import {ZAP_FTM_TO_YVFTM_ABI} from '@lib/utils/abi/zapFtmToYvFTM.abi';
 import {handleTx, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
 
 import type {Connector} from 'wagmi';
+import type {TCTA} from '@lib/components/yToast';
 import type {TAddress} from '@lib/types';
 import type {TTxResponse, TWriteTransaction} from '@lib/utils/wagmi';
 
@@ -84,6 +85,7 @@ export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
 		functionName: 'allowance',
 		args: [wagmiProvider.address, props.spenderAddress]
 	});
+
 	return result || 0n;
 }
 
@@ -97,6 +99,7 @@ type TApproveERC20 = TWriteTransaction & {
 	spenderAddress: TAddress | undefined;
 	amount: bigint;
 	confirmation?: number;
+	cta?: TCTA;
 };
 export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 	assertAddress(props.spenderAddress, 'spenderAddress');
@@ -132,6 +135,7 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
  ******************************************************************************/
 type TDeposit = TWriteTransaction & {
 	amount: bigint;
+	confirmation?: number;
 };
 export async function deposit(props: TDeposit): Promise<TTxResponse> {
 	assert(props.amount > 0n, 'Amount is 0');
@@ -143,7 +147,8 @@ export async function deposit(props: TDeposit): Promise<TTxResponse> {
 		address: props.contractAddress,
 		abi: VAULT_ABI,
 		functionName: 'deposit',
-		args: [props.amount, wagmiProvider.address]
+		args: [props.amount, wagmiProvider.address],
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 

@@ -8,7 +8,7 @@ import {IconCheckmark} from '../icons/IconCheckmark';
 import type {ReactElement} from 'react';
 import type {ToastOptions} from 'react-hot-toast';
 
-type TCTA = {
+export type TCTA = {
 	label: string;
 	onClick: () => void;
 };
