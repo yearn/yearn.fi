@@ -3,6 +3,7 @@ import {erc20Abi, maxUint256, zeroAddress} from 'viem';
 import {readContract} from 'wagmi/actions';
 import {Solver} from '@vaults-v2/types/solvers';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
@@ -10,6 +11,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
 import {migrateSharesViaRouter} from '@lib/utils/wagmi/actions';
 
+import type {Hash, TransactionReceipt} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
@@ -35,6 +37,7 @@ async function allowanceOfRouter(request: TInitSolverArgs, provider: Connector |
 export function useSolverV3Router(): TSolverContext {
 	const {provider} = useWeb3();
 	const {maxLoss} = useYearn();
+	const {set_shouldOpenCurtain} = useNotifications();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -115,53 +118,83 @@ export function useSolverV3Router(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not set');
 			assert(request.current.outputToken, 'Output token is not set');
 
-			const result = await approveERC20({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				spenderAddress: request.current.migrator,
-				amount: amount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await approveERC20({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					spenderAddress: request.current.migrator,
+					amount: amount,
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	const onExecuteDeposit = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Output token is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
 
-			const result = await migrateSharesViaRouter({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				router: request.current.migrator,
-				fromVault: request.current.inputToken.value,
-				toVault: request.current.outputToken.value,
-				amount: request.current.inputAmount,
-				maxLoss,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await migrateSharesViaRouter({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					router: request.current.migrator,
+					fromVault: request.current.inputToken.value,
+					toVault: request.current.outputToken.value,
+					amount: request.current.inputAmount,
+					maxLoss,
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 			return;
 		},
-		[provider, maxLoss]
+		[provider, maxLoss, set_shouldOpenCurtain]
 	);
 
 	const onExecuteWithdraw = useCallback(async (): Promise<void> => {

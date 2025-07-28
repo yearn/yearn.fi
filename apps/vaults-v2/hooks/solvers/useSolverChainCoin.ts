@@ -4,12 +4,14 @@ import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults-v2/utils';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
 import {depositETH, withdrawETH} from '@lib/utils/wagmi/actions';
 
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -30,6 +32,7 @@ export function useSolverChainCoin(): TSolverContext {
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
+	const {set_shouldOpenCurtain} = useNotifications();
 
 	/**********************************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -99,23 +102,40 @@ export function useSolverChainCoin(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request?.current?.inputToken, 'Input token is not set');
+			try {
+				assert(request?.current?.inputToken, 'Input token is not set');
 
-			const result = await approveERC20({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: toAddress(request.current.inputToken.value),
-				spenderAddress: getEthZapperContract(request.current.chainID),
-				amount: amount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+				const result = await approveERC20({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: toAddress(request.current.inputToken.value),
+					spenderAddress: getEthZapperContract(request.current.chainID),
+					amount: amount,
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
+				if (result.isSuccessful) {
+					await onSuccess(result.receipt);
+				} else if (onError) {
+					await onError(new Error('Approval failed'));
+				}
+			} catch (error) {
+				if (onError) {
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -126,23 +146,40 @@ export function useSolverChainCoin(): TSolverContext {
 	const onExecuteDeposit = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current.inputAmount, 'Input amount is not set');
+			try {
+				assert(request.current, 'Request is not set');
+				assert(request.current.inputAmount, 'Input amount is not set');
 
-			const result = await depositETH({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: getEthZapperContract(request.current.chainID),
-				amount: request.current.inputAmount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+				const result = await depositETH({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: getEthZapperContract(request.current.chainID),
+					amount: request.current.inputAmount,
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
+				if (result.isSuccessful) {
+					await onSuccess(result.receipt);
+				} else if (onError) {
+					await onError(new Error('Deposit failed'));
+				}
+			} catch (error) {
+				if (onError) {
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -153,23 +190,40 @@ export function useSolverChainCoin(): TSolverContext {
 	const onExecuteWithdraw = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current.inputAmount, 'Input amount is not set');
+			try {
+				assert(request.current, 'Request is not set');
+				assert(request.current.inputAmount, 'Input amount is not set');
 
-			const result = await withdrawETH({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: getEthZapperContract(request.current.chainID),
-				amount: request.current.inputAmount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+				const result = await withdrawETH({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: getEthZapperContract(request.current.chainID),
+					amount: request.current.inputAmount,
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
+				if (result.isSuccessful) {
+					await onSuccess(result.receipt);
+				} else if (onError) {
+					await onError(new Error('Withdrawal failed'));
+				}
+			} catch (error) {
+				if (onError) {
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+				}
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(

@@ -42,7 +42,8 @@ module.exports = {
 					800: 'hsl(var(--color-blue-800))',
 					900: 'hsl(var(--color-blue-900))'
 				},
-				fallback: '#808080'
+				fallback: '#808080',
+				red: '#D42600'
 			},
 			fontFamily: {
 				aeonik: ['var(--font-aeonik)', 'Aeonik', ...defaultTheme.fontFamily.sans],
