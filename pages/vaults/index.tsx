@@ -129,6 +129,7 @@ function ListOfVaults(): ReactElement {
 	});
 	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(types, chains);
 	const [page, set_page] = useState(0);
+	const chainOptions = useChainOptions(chains);
 
 	const chainOptions = useChainOptions(chains).filter(
 		(option): boolean =>
