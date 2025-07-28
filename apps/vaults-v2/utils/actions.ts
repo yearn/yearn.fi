@@ -21,12 +21,14 @@ import type {TTxResponse, TWriteTransaction} from '@lib/utils/wagmi';
  ** @param amount - The amount of the underlying asset to deposit.
  ** @param vaultVersion - The version of the vault to deposit into.
  ** @param stakingPoolAddress - The address of the staking pool to stake into.
+ ** @param confirmation - The number of confirmations to wait for.
  **		For VeYFI vaults only, ignored for Optimism.
  ******************************************************************************/
 type TDepositAndStake = TWriteTransaction & {
 	vaultAddress: TAddress | undefined;
 	stakingPoolAddress?: TAddress | undefined;
 	vaultVersion?: string | undefined;
+	confirmation?: number | undefined;
 	amount: bigint;
 };
 export async function depositAndStake(props: TDepositAndStake): Promise<TTxResponse> {
@@ -40,7 +42,8 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 			address: props.contractAddress,
 			abi: STAKING_REWARDS_ZAP_ABI,
 			functionName: 'zapIn',
-			args: [props.vaultAddress, props.amount]
+			args: [props.vaultAddress, props.amount],
+			confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 		});
 	}
 	// If we are depositing into the V3 Staking
@@ -52,7 +55,8 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 			address: props.contractAddress,
 			abi: V3_REWARDS_ZAP_ABI,
 			functionName: 'zapIn',
-			args: [props.vaultAddress, props.amount, false]
+			args: [props.vaultAddress, props.amount, false],
+			confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 		});
 	}
 
@@ -64,7 +68,8 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 				address: props.contractAddress,
 				abi: YGAUGE_ZAP_ABI,
 				functionName: 'zapIn',
-				args: [props.vaultAddress, props.amount, props.stakingPoolAddress]
+				args: [props.vaultAddress, props.amount, props.stakingPoolAddress],
+				confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 			});
 		}
 
@@ -72,7 +77,8 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 			address: props.contractAddress,
 			abi: YGAUGE_ZAP_ABI,
 			functionName: 'zapInLegacy',
-			args: [props.vaultAddress, props.amount, props.stakingPoolAddress]
+			args: [props.vaultAddress, props.amount, props.stakingPoolAddress],
+			confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 		});
 	}
 	throw new Error('Invalid contract address');
@@ -87,6 +93,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
  ******************************************************************************/
 type TStake = TWriteTransaction & {
 	amount: bigint;
+	confirmation?: number | undefined;
 };
 export async function stake(props: TStake): Promise<TTxResponse> {
 	assert(props.amount > 0n, 'Amount is 0');
@@ -96,7 +103,8 @@ export async function stake(props: TStake): Promise<TTxResponse> {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,
 		functionName: 'stake',
-		args: [props.amount]
+		args: [props.amount],
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 
@@ -115,7 +123,8 @@ export async function stakeVeYFIGauge(props: TStake): Promise<TTxResponse> {
 		address: props.contractAddress,
 		abi: VEYFI_GAUGE_ABI,
 		functionName: 'deposit',
-		args: [props.amount]
+		args: [props.amount],
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 
@@ -125,14 +134,17 @@ export async function stakeVeYFIGauge(props: TStake): Promise<TTxResponse> {
  **
  ** @app - Vaults (optimism)
  ******************************************************************************/
-type TUnstake = TWriteTransaction;
+type TUnstake = TWriteTransaction & {
+	confirmation?: number | undefined;
+};
 export async function unstake(props: TUnstake): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
 
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,
-		functionName: 'exit'
+		functionName: 'exit',
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 
@@ -145,6 +157,7 @@ export async function unstake(props: TUnstake): Promise<TTxResponse> {
 type TUnstakeVeYFIGauge = TWriteTransaction & {
 	amount: bigint;
 	willClaim: boolean;
+	confirmation?: number | undefined;
 };
 export async function unstakeVeYFIGauge(props: TUnstakeVeYFIGauge): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
@@ -157,7 +170,8 @@ export async function unstakeVeYFIGauge(props: TUnstakeVeYFIGauge): Promise<TTxR
 		address: props.contractAddress,
 		abi: VEYFI_GAUGE_ABI,
 		functionName: 'withdraw',
-		args: [props.amount, wagmiProvider.address, wagmiProvider.address, props.willClaim]
+		args: [props.amount, wagmiProvider.address, wagmiProvider.address, props.willClaim],
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 
@@ -167,14 +181,17 @@ export async function unstakeVeYFIGauge(props: TUnstakeVeYFIGauge): Promise<TTxR
  **
  ** @app - Vaults (optimism)
  ******************************************************************************/
-type TClaim = TWriteTransaction;
+type TClaim = TWriteTransaction & {
+	confirmation?: number | undefined;
+};
 export async function claim(props: TClaim): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
 
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,
-		functionName: 'getReward'
+		functionName: 'getReward',
+		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
 	});
 }
 

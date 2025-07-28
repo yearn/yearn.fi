@@ -3,6 +3,7 @@ import {maxUint256} from 'viem';
 import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import {Solver} from '@vaults-v2/types/solvers';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
+import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {assert, assertAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
@@ -10,6 +11,7 @@ import {allowanceKey} from '@lib/utils/helpers';
 import {allowanceOf, approveERC20, getNetwork} from '@lib/utils/wagmi';
 import {depositViaPartner, withdrawShares} from '@lib/utils/wagmi/actions';
 
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
@@ -17,6 +19,7 @@ import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
 export function useSolverPartnerContract(): TSolverContext {
 	const {provider} = useWeb3();
 	const {currentPartner} = useYearn();
+	const {set_shouldOpenCurtain} = useNotifications();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -89,26 +92,41 @@ export function useSolverPartnerContract(): TSolverContext {
 		async (
 			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current?.inputToken, 'Input token is not set');
 			const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract?.address;
 			assertAddress(partnerContract, 'partnerContract');
 
-			const result = await approveERC20({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				spenderAddress: partnerContract,
-				amount: amount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await approveERC20({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					spenderAddress: partnerContract,
+					amount: amount,
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -118,27 +136,42 @@ export function useSolverPartnerContract(): TSolverContext {
 	const onExecuteDeposit = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
 			const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract?.address;
 			assertAddress(partnerContract, 'partnerContract');
 
-			const result = await depositViaPartner({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: partnerContract,
-				vaultAddress: request.current.outputToken.value,
-				partnerAddress: currentPartner ? currentPartner : undefined,
-				amount: request.current.inputAmount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await depositViaPartner({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: partnerContract,
+					vaultAddress: request.current.outputToken.value,
+					partnerAddress: currentPartner ? currentPartner : undefined,
+					amount: request.current.inputAmount,
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
-		[currentPartner, provider]
+		[currentPartner, provider, set_shouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -148,24 +181,39 @@ export function useSolverPartnerContract(): TSolverContext {
 	const onExecuteWithdraw = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
+			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+			txHashSetter: (txHash: Hash) => void,
+			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
 
-			const result = await withdrawShares({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: request.current.inputToken.value,
-				amount: request.current.inputAmount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			try {
+				const result = await withdrawShares({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					amount: request.current.inputAmount,
+					statusHandler: txStatusSetter,
+					txHashHandler: txHashSetter,
+					cta: {
+						label: 'View',
+						onClick: () => {
+							set_shouldOpenCurtain(true);
+						}
+					}
+				});
+				if (result.isSuccessful && result.receipt) {
+					onSuccess(result.receipt);
+				} else {
+					onError?.(result.error as Error);
+				}
+			} catch (error) {
+				onError?.(error as Error);
 			}
 		},
-		[provider]
+		[provider, set_shouldOpenCurtain]
 	);
 
 	return useMemo(

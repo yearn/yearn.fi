@@ -16,6 +16,7 @@ import {Renderable} from '@lib/components/Renderable';
 import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
+import {useChainOptions} from '@lib/hooks/useChains';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
 import {IconChain} from '@lib/icons/IconChain';
 import {toAddress, toNormalizedBN} from '@lib/utils';
@@ -128,6 +129,7 @@ function ListOfVaults(): ReactElement {
 	});
 	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(types, chains);
 	const [page, set_page] = useState(0);
+	const chainOptions = useChainOptions(chains);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Enhanced search filter implementation that performs case-insensitive partial matching
@@ -279,6 +281,7 @@ function ListOfVaults(): ReactElement {
 				possibleCategories={ALL_VAULTS_CATEGORIES}
 				searchValue={search || ''}
 				chains={chains}
+				chainOptions={chainOptions}
 				onChangeChains={onChangeChains}
 				onChangeCategories={onChangeTypes}
 				onSearch={onSearch}

@@ -29,7 +29,7 @@ export const isSolverDisabled = (key: TSolver): boolean => {
 		[Solver.enum.GaugeStakingBooster]: false,
 		[Solver.enum.JuicedStakingBooster]: false,
 		[Solver.enum.V3StakingBooster]: false,
-		[Solver.enum.Cowswap]: false,
+		[Solver.enum.Cowswap]: true,
 		[Solver.enum.Portals]: false,
 		[Solver.enum.None]: false
 	};
@@ -138,7 +138,9 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 
 			switch (currentSolver) {
 				case Solver.enum.Portals: {
-					const [portalsQuote] = await Promise.allSettled([portals.init(request, currentSolver === Solver.enum.Portals)]);
+					const [portalsQuote] = await Promise.allSettled([
+						portals.init(request, currentSolver === Solver.enum.Portals)
+					]);
 
 					const solvers: {
 						[key in TSolver]?: {
@@ -191,7 +193,9 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 					break;
 				}
 				case Solver.enum.Cowswap: {
-					const [cowswapQuote] = await Promise.allSettled([cowswap.init(request, currentSolver === Solver.enum.Cowswap)]);
+					const [cowswapQuote] = await Promise.allSettled([
+						cowswap.init(request, currentSolver === Solver.enum.Cowswap)
+					]);
 
 					const solvers: {
 						[key in TSolver]?: {
@@ -370,7 +374,18 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			onExecuteDeposit: currentSolverState.onExecuteDeposit,
 			onExecuteWithdraw: currentSolverState.onExecuteWithdraw
 		}),
-		[currentSolver, currentSolverState, isLoading]
+		[
+			currentSolver,
+			currentSolverState?.hash,
+			currentSolverState.onApprove,
+			currentSolverState.onExecuteDeposit,
+			currentSolverState.onExecuteWithdraw,
+			currentSolverState.onRetrieveAllowance,
+			currentSolverState.onRetrieveRouterAllowance,
+			currentSolverState?.quote,
+			currentSolverState?.type,
+			isLoading
+		]
 	);
 
 	return <WithSolverContext.Provider value={contextValue}>{children}</WithSolverContext.Provider>;
