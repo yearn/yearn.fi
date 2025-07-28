@@ -131,16 +131,6 @@ function ListOfVaults(): ReactElement {
 	const [page, set_page] = useState(0);
 	const chainOptions = useChainOptions(chains);
 
-	const chainOptions = useChainOptions(chains).filter(
-		(option): boolean =>
-			option.value === 1 ||
-			option.value === 137 ||
-			option.value === 42161 ||
-			option.value === 8453 ||
-			option.value === 146 ||
-			option.value === 747474
-	);
-
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Enhanced search filter implementation that performs case-insensitive partial matching
 	 **	on multiple vault properties. The search supports multi-word queries and handles special
