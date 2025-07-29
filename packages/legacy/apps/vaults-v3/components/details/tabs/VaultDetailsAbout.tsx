@@ -36,12 +36,12 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 	const {token, apr} = currentVault;
 
 	function getVaultDescription(): string | ReactElement {
-		// if (currentVault.description) {
-		// 	return parseMarkdown(currentVault.description.replaceAll('{{token}}', currentVault.token.symbol));
-		// }
-		// if (token.description) {
-		// 	return parseMarkdown(token.description.replaceAll('{{token}}', currentVault.token.symbol));
-		// }
+		if (currentVault.description) {
+			return parseMarkdown(currentVault.description.replaceAll('{{token}}', currentVault.token.symbol));
+		}
+		if (token.description) {
+			return parseMarkdown(token.description.replaceAll('{{token}}', currentVault.token.symbol));
+		}
 		return (
 			<>
 				Sorry, we don't have a description for this vault right now. To learn more about how Yearn Vaults work,
