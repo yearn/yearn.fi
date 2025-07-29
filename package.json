@@ -1,5 +1,4 @@
 {
-  "name": "@yearnfi",
   "private": true,
   "scripts": {
     "legacy": "(cd packages/legacy && bun dev)",

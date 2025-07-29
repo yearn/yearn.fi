@@ -44,7 +44,7 @@ module.exports = withPlausibleProxy({
 				...config.resolve.alias,
 				'@safe-global/safe-apps-sdk': path.resolve(
 					__dirname,
-					'node_modules/@safe-global/safe-apps-sdk/dist/esm'
+					'../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
 				)
 			},
 			fallback: {
