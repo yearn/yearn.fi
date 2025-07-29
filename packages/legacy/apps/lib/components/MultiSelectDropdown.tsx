@@ -1,10 +1,10 @@
-import {Fragment, useCallback, useMemo, useRef, useState} from 'react';
 import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react';
-import {useClickOutside, useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@lib/components/Renderable';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {IconChevron} from '@lib/icons/IconChevron';
 import {cl} from '@lib/utils';
+import {useClickOutside, useThrottledState} from '@react-hookz/web';
+import {Fragment, useCallback, useMemo, useRef, useState} from 'react';
 
 import type {ReactElement} from 'react';
 
@@ -27,51 +27,54 @@ type TMultiSelectProps = {
 	customDefaultLabel?: string;
 };
 
-function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
+function SelectAllOption({
+	option,
+	onSelectAll
+}: {
+	option: TMultiSelectOptionProps;
+	onSelectAll: () => void;
+}): ReactElement {
 	return (
-		<ComboboxOption
-			value={option}
-			className={'mb-2 border-b border-neutral-100 pb-2'}>
+		<button
+			type={'button'}
+			onClick={onSelectAll}
+			className={'mb-2 cursor-pointer border-b border-neutral-100 pb-2'}>
 			<div className={'flex w-full items-center justify-between p-2 transition-colors hover:bg-neutral-100'}>
 				<p className={'pl-0 font-normal text-neutral-900'}>{option.label}</p>
 				<input
 					type={'checkbox'}
 					checked={option.isSelected}
 					onChange={(): void => {}}
-					className={'checkbox hidden'}
+					onClick={(e): void => {
+						e.stopPropagation();
+						onSelectAll();
+					}}
+					className={'checkbox'}
 				/>
 			</div>
-		</ComboboxOption>
+		</button>
 	);
 }
 
 function Option(option: TMultiSelectOptionProps): ReactElement {
-	const [isHovered, set_isHovered] = useState(false);
-
 	return (
 		<ComboboxOption
 			onClick={option.onContainerClick}
 			value={option}
 			className={'transition-colors hover:bg-neutral-100'}>
-			<div
-				className={'flex w-full items-center justify-between p-2'}
-				onMouseEnter={() => set_isHovered(true)}
-				onMouseLeave={() => set_isHovered(false)}>
+			<div className={'flex w-full items-center justify-between p-2'}>
 				<div className={'flex items-center'}>
 					{option?.icon ? (
 						<div className={'size-8 overflow-hidden rounded-full bg-white'}>{option.icon}</div>
 					) : null}
 					<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
 						{option.label}{' '}
-						<span
-							className={`pl-1 text-xs text-neutral-900 transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+						<span className={'pl-1 text-xs text-neutral-900 transition-opacity hover:opacity-100'}>
 							{'(only)'}
 						</span>
 					</p>
 				</div>
 				<input
-					onMouseEnter={() => set_isHovered(false)}
-					onMouseLeave={() => set_isHovered(true)}
 					type={'checkbox'}
 					checked={option.isSelected}
 					onChange={(): void => {}}
@@ -92,13 +95,14 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 
 	if (!isActive) {
 		return (
-			<div
+			<button
+				type={'button'}
 				onClick={(): void => openLoginModal()}
 				className={
 					'flex h-14 cursor-pointer flex-col items-center justify-center px-4 text-center transition-colors hover:bg-neutral-300'
 				}>
 				<b className={'text-neutral-900'}>{'Connect Wallet'}</b>
-			</div>
+			</button>
 		);
 	}
 	if (query !== '') {
@@ -146,9 +150,13 @@ export function MultiSelectDropdown({
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [query, set_query] = useState('');
 	const areAllSelected = useMemo((): boolean => options.every(({isSelected}): boolean => isSelected), [options]);
-	const componentRef = useRef(null);
+	const componentRef = useRef<HTMLElement>(null);
 
-	useClickOutside(componentRef, (): void => {
+	const selectedValues = useMemo(() => {
+		return options.filter(opt => opt.isSelected).map(opt => opt.value);
+	}, [options]);
+
+	useClickOutside(componentRef as any, (): void => {
 		set_isOpen(false);
 	});
 
@@ -199,28 +207,22 @@ export function MultiSelectDropdown({
 		[options, onSelect]
 	);
 
+	const handleSelectAll = useCallback((): void => {
+		const newState = options.map(
+			(option): TMultiSelectOptionProps => ({
+				...option,
+				isSelected: !areAllSelected
+			})
+		);
+		onSelect(newState);
+	}, [options, areAllSelected, onSelect]);
+
 	return (
 		<Combobox
+			as={Fragment}
+			key={selectedValues.join(',')}
 			ref={componentRef}
-			value={options}
-			onChange={(options): void => {
-				// Just used for the select/desect all options
-				const lastIndex = options.length - 1;
-				const elementSelected = options[lastIndex];
-
-				if (elementSelected.value !== 'select_all') {
-					return;
-				}
-
-				const currentElements = options.slice(0, lastIndex);
-				const currentState = currentElements.map(
-					(option): TMultiSelectOptionProps => ({
-						...option,
-						isSelected: !elementSelected.isSelected
-					})
-				);
-				onSelect(currentState);
-			}}
+			value={selectedValues}
 			multiple>
 			<div className={'relative w-full'}>
 				{customRender ? (
@@ -270,10 +272,12 @@ export function MultiSelectDropdown({
 							'absolute top-12 z-50 flex w-full min-w-[256px] cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'
 						)}>
 						<SelectAllOption
-							key={'select-all'}
-							label={areAllSelected ? 'Unselect All' : 'Select All'}
-							isSelected={areAllSelected}
-							value={'select_all'}
+							option={{
+								label: areAllSelected ? 'Unselect All' : 'Select All',
+								isSelected: areAllSelected,
+								value: 'select_all'
+							}}
+							onSelectAll={handleSelectAll}
 						/>
 						<Renderable
 							shouldRender={filteredOptions.length > 0}

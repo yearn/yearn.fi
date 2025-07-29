@@ -227,8 +227,8 @@ function useQueryArguments(props: {
 				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 				return;
 			}
-			if (value.length === props.defaultTypes?.length) {
-				const isEqual = value.every((category): boolean => Boolean(props.defaultTypes?.includes(category)));
+			if (value.length === props.defaultCategories?.length) {
+				const isEqual = value.every((category): boolean => Boolean(props.defaultCategories?.includes(category)));
 				if (isEqual) {
 					queryArgs.categories = undefined;
 					delete queryArgs.categories;
