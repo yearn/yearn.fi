@@ -1,12 +1,10 @@
+import type {Chain, PublicClient} from 'viem';
 import {createPublicClient, defineChain, http} from 'viem';
 import * as wagmiChains from 'viem/chains';
-
-import {retrieveConfig} from './config';
-import {anotherLocalhost, localhost} from './networks';
-
-import type {Chain, PublicClient} from 'viem';
 import type {TAddress} from '../../types/address';
 import type {TDict, TNDict} from '../../types/mixed';
+import {retrieveConfig} from './config';
+import {anotherLocalhost, localhost} from './networks';
 
 export type TChainContract = {
 	address: TAddress;
@@ -79,7 +77,6 @@ export type TExtendedChain = Chain & {
 	contracts: TDict<TChainContract>;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isChain = (chain: wagmiChains.Chain | any): chain is wagmiChains.Chain => {
 	return chain.id !== undefined;
 };
@@ -153,8 +150,8 @@ function initIndexedWagmiChains(): TNDict<TExtendedChain> {
 			const defaultJsonRPCURL = extendedChain?.rpcUrls?.public?.http?.[0];
 
 			extendedChain.defaultRPC = newRPC || oldRPC || newRPCBugged || defaultJsonRPCURL || '';
-			extendedChain.rpcUrls['alchemy'] = {http: [getAlchemyBaseURL(extendedChain.id)]};
-			extendedChain.rpcUrls['infura'] = {http: [getInfuraBaseURL(extendedChain.id)]};
+			extendedChain.rpcUrls.alchemy = {http: [getAlchemyBaseURL(extendedChain.id)]};
+			extendedChain.rpcUrls.infura = {http: [getInfuraBaseURL(extendedChain.id)]};
 
 			const http = [extendedChain.defaultRPC, ...extendedChain.rpcUrls.default.http].filter(Boolean);
 			extendedChain.rpcUrls.default.http = http;

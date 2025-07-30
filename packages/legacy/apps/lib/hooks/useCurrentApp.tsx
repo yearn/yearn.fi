@@ -1,13 +1,12 @@
-import {useMemo} from 'react';
-import landingManifest from 'public/apps/landing-manifest.json';
-import homeManifest from 'public/manifest.json';
-import {VaultsHeader} from '@vaults-v2/components/header/VaultsHeader';
-import {AppName, APPS} from '@lib/components/Apps';
-
-import type {NextRouter} from 'next/router';
-import type {ReactElement} from 'react';
+import {APPS, AppName} from '@lib/components/Apps';
 import type {TMenu} from '@lib/components/Header';
 import type {TDict} from '@lib/types';
+import {VaultsHeader} from '@vaults-v2/components/header/VaultsHeader';
+import type {NextRouter} from 'next/router';
+import landingManifest from 'public/apps/landing-manifest.json';
+import homeManifest from 'public/manifest.json';
+import type {ReactElement} from 'react';
+import {useMemo} from 'react';
 
 type TCurrentApp = {
 	name: AppName | 'Home' | string;

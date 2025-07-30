@@ -1,8 +1,7 @@
-import {z} from 'zod';
 import {addressSchema, type TAddress} from '@lib/types';
-import {fetch} from '@lib/utils/fetchers';
-
 import type {TFetchReturn} from '@lib/utils/fetchers';
+import {fetch} from '@lib/utils/fetchers';
+import {z} from 'zod';
 
 export const portalsEstimateResponseSchema = z.object({
 	outputToken: z.string(),

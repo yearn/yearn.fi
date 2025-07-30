@@ -1,8 +1,7 @@
-import React, {forwardRef} from 'react';
-
-import {IconLoader} from '../icons/IconLoader';
-
+import type React from 'react';
 import type {ForwardedRef, ReactElement, ReactNode} from 'react';
+import {forwardRef} from 'react';
+import {IconLoader} from '../icons/IconLoader';
 
 export type TButtonVariant = 'filled' | 'outlined' | 'light' | 'inherit' | string;
 
@@ -17,7 +16,6 @@ export type TButton = {
 
 export type TMouseEvent = React.MouseEvent<HTMLButtonElement> & React.MouseEvent<HTMLAnchorElement>;
 
-// eslint-disable-next-line react/display-name
 const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement | null>): ReactElement => {
 	const {
 		children,
@@ -30,13 +28,13 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
 
 	if (rest.as === 'a') {
 		return (
-			<a
-				tabIndex={-1}
-				{...(rest as React.ComponentPropsWithoutRef<'a'>)}>
+			<a tabIndex={-1} {...(rest as React.ComponentPropsWithoutRef<'a'>)}>
 				<button
 					ref={ref}
 					data-variant={variant}
-					className={`yearn--button flex-center ${rest.className}`}>
+					className={`yearn--button flex-center ${rest.className}`}
+					type="button"
+				>
 					{children}
 				</button>
 			</a>
@@ -57,7 +55,8 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
 				if (!isBusy && rest.onClick) {
 					rest.onClick(event);
 				}
-			}}>
+			}}
+		>
 			{children}
 			{isBusy ? (
 				<div className={'absolute inset-0 flex items-center justify-center'}>

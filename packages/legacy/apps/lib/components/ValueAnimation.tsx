@@ -1,9 +1,7 @@
-/* eslint-disable no-irregular-whitespace */
-import {useCallback, useEffect, useRef} from 'react';
-import {useMountEffect} from '@react-hookz/web';
 import {formatAmount} from '@lib/utils';
-
+import {useMountEffect} from '@react-hookz/web';
 import type {ReactElement} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 
 export function ValueAnimation({
 	identifier,
@@ -40,7 +38,7 @@ export function ValueAnimation({
 
 		function changeWord(): void {
 			const cw = wordArray[currentWord];
-			const nw = currentWord == words.length - 1 ? wordArray[0] : wordArray[currentWord + 1];
+			const nw = currentWord === words.length - 1 ? wordArray[0] : wordArray[currentWord + 1];
 			if (!cw || !nw) {
 				return;
 			}
@@ -55,7 +53,7 @@ export function ValueAnimation({
 				}
 				animateLetterIn(nw, i);
 			}
-			currentWord = currentWord == wordArray.length - 1 ? 0 : currentWord + 1;
+			currentWord = currentWord === wordArray.length - 1 ? 0 : currentWord + 1;
 		}
 
 		function animateLetterOut(cw: HTMLSpanElement[], i: number): void {
@@ -102,21 +100,15 @@ export function ValueAnimation({
 	}, [value, onStartAnimation]);
 
 	return (
-		<>
-			<div className={'text'}>
-				<p className={'wordWrapper'}>
-					<span
-						suppressHydrationWarning
-						className={`${className} ${identifier}`}>
-						{`${prefix ? `${prefix} ` : ''}${defaultValue}${suffix ? ` ${suffix}` : ''}`}
-					</span>
-					<span
-						suppressHydrationWarning
-						className={`${className} ${identifier}`}>
-						{`${prefix ? `${prefix} ` : ''}${value}${suffix ? ` ${suffix}` : ''}`}
-					</span>
-				</p>
-			</div>
-		</>
+		<div className={'text'}>
+			<p className={'wordWrapper'}>
+				<span suppressHydrationWarning className={`${className} ${identifier}`}>
+					{`${prefix ? `${prefix} ` : ''}${defaultValue}${suffix ? ` ${suffix}` : ''}`}
+				</span>
+				<span suppressHydrationWarning className={`${className} ${identifier}`}>
+					{`${prefix ? `${prefix} ` : ''}${value}${suffix ? ` ${suffix}` : ''}`}
+				</span>
+			</p>
+		</div>
 	);
 }

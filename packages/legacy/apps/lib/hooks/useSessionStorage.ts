@@ -1,10 +1,8 @@
+import type {Dispatch, RefObject, SetStateAction} from 'react';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {deserialize, serialize} from 'wagmi';
 
-import type {Dispatch, RefObject, SetStateAction} from 'react';
-
 declare global {
-	// eslint-disable-next-line
 	interface WindowEventMap {
 		'session-storage': CustomEvent;
 	}
@@ -23,7 +21,7 @@ function useEventCallback<TArgs extends unknown[], TR>(fn: (...args: TArgs) => T
 		ref.current = fn;
 	}, [fn]);
 
-	return useCallback((...args: TArgs): TR => ref.current(...args), [ref]);
+	return useCallback((...args: TArgs): TR => ref.current(...args), []);
 }
 
 // Window Event based useEventListener interface
@@ -112,7 +110,7 @@ function useSessionStorage<T>(key: string, initialValue: T): [T, TSetValue<T>] {
 	// ... persists the new value to sessionStorage.
 	const assignValue: TSetValue<T> = useEventCallback((value: unknown): void => {
 		// Prevent build error "window is undefined" but keeps working
-		if (typeof window == 'undefined') {
+		if (typeof window === 'undefined') {
 			console.warn(`Tried setting sessionStorage key “${key}” even though environment is not a client`);
 		}
 
@@ -135,7 +133,7 @@ function useSessionStorage<T>(key: string, initialValue: T): [T, TSetValue<T>] {
 
 	useEffect((): void => {
 		set_storedValue(readValue());
-	}, []);
+	}, [readValue]);
 
 	const handleStorageChange = useCallback(
 		(event: StorageEvent | CustomEvent): void => {

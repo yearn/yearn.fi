@@ -9,7 +9,7 @@ on:
 
 permissions:
     checks: write
-    contents: write
+    contents: read
 
 jobs:
     run-linters:
@@ -33,7 +33,8 @@ jobs:
             - name: Install project dependencies
               run: bun install
 
-            - name: Run linters
-              uses: wearerequired/lint-action@v2
-              with:
-                  eslint: true
+            - name: Lint legacy package
+              run: cd packages/legacy && bun run lint
+
+            - name: Lint nextgen package
+              run: cd packages/nextgen && bun run lint

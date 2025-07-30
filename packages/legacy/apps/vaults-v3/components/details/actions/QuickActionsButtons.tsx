@@ -1,29 +1,28 @@
-import {useCallback, useState} from 'react';
-import {useRouter} from 'next/router';
-import {usePlausible} from 'next-plausible';
-import {maxUint256} from 'viem';
-import {motion} from 'framer-motion';
-import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
-import {useSolver} from '@vaults-v2/contexts/useSolver';
-import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData';
-import {Solver} from '@vaults-v2/types/solvers';
 import {Button} from '@lib/components/Button';
 import {useNotificationsActions} from '@lib/contexts/useNotificationsActions';
 import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
+import type {TNormalizedBN} from '@lib/types';
+import type {TNotificationType} from '@lib/types/notifications';
 import {isZero, toAddress, toBigInt, zeroNormalizedBN} from '@lib/utils';
 import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
 import {PLAUSIBLE_EVENTS} from '@lib/utils/plausible';
-import {defaultTxStatus} from '@lib/utils/wagmi';
-
-import type {ReactElement} from 'react';
-import type {Hash, TransactionReceipt} from 'viem';
-import type {TNormalizedBN} from '@lib/types';
-import type {TNotificationType} from '@lib/types/notifications';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {defaultTxStatus} from '@lib/utils/wagmi';
 import type {TActionParams} from '@vaults-v2/contexts/useActionFlow';
+import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
+import {useSolver} from '@vaults-v2/contexts/useSolver';
+import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData';
+import {Solver} from '@vaults-v2/types/solvers';
+import {motion} from 'framer-motion';
+import {useRouter} from 'next/router';
+import {usePlausible} from 'next-plausible';
+import type {ReactElement} from 'react';
+import {useCallback, useState} from 'react';
+import type {Hash, TransactionReceipt} from 'viem';
+import {maxUint256} from 'viem';
 
 export function VaultDetailsQuickActionsButtons({
 	currentVault,
@@ -66,7 +65,6 @@ export function VaultDetailsQuickActionsButtons({
 	const triggerRetrieveAllowance = useAsyncTrigger(async (): Promise<void> => {
 		set_allowanceFrom(await onRetrieveAllowance(true));
 		set_allowanceRouter((await onRetrieveRouterAllowance?.(true)) || zeroNormalizedBN);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [address, onRetrieveAllowance, onRetrieveRouterAllowance, hash]);
 
 	/**********************************************************************************************
@@ -248,7 +246,8 @@ export function VaultDetailsQuickActionsButtons({
 				className={'w-full'}
 				isBusy={txStatusApprove.pending}
 				isDisabled={isButtonDisabled || isZero(toBigInt(expectedOut?.raw))}
-				onClick={onApproveFrom}>
+				onClick={onApproveFrom}
+			>
 				{'Approve'}
 			</Button>
 		);
@@ -306,13 +305,15 @@ export function VaultDetailsQuickActionsButtons({
 						isZero(toBigInt(actionParams.amount?.raw)) ||
 						toBigInt(toBigInt(actionParams.amount?.raw)) >
 							toBigInt(maxDepositPossible(toAddress(actionParams?.selectedOptionFrom?.value)).raw)
-					}>
+					}
+				>
 					<motion.div
 						key={isAutoStakingEnabled ? 'deposit-stake' : 'deposit-only'}
 						initial={{opacity: 0, y: 10}}
 						animate={{opacity: 1, y: 0}}
 						exit={{opacity: 0, y: -10}}
-						transition={{duration: 0.3}}>
+						transition={{duration: 0.3}}
+					>
 						{'Deposit and Stake'}
 					</motion.div>
 				</Button>
@@ -341,13 +342,15 @@ export function VaultDetailsQuickActionsButtons({
 				}}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={isButtonDisabled}>
+				isDisabled={isButtonDisabled}
+			>
 				<motion.div
 					key={isDepositing ? 'deposit' : 'migrate'}
 					initial={{opacity: 0, y: 10}}
 					animate={{opacity: 1, y: 0}}
 					exit={{opacity: 0, y: -10}}
-					transition={{duration: 0.3}}>
+					transition={{duration: 0.3}}
+				>
 					{isDepositing ? 'Deposit' : 'Migrate'}
 				</motion.div>
 			</Button>
@@ -375,7 +378,8 @@ export function VaultDetailsQuickActionsButtons({
 			}}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
-			isDisabled={isButtonDisabled}>
+			isDisabled={isButtonDisabled}
+		>
 			{'Withdraw'}
 		</Button>
 	);

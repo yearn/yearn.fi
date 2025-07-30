@@ -1,20 +1,19 @@
-import {useCallback, useMemo, useRef} from 'react';
-import {maxUint256} from 'viem';
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
-import {Solver} from '@vaults-v2/types/solvers';
-import {depositAndStake} from '@vaults-v2/utils/actions';
-import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
 import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
+import type {TDict, TNormalizedBN} from '@lib/types';
 import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import {YGAUGES_ZAP_ADDRESS} from '@lib/utils/constants';
 import {allowanceKey} from '@lib/utils/helpers';
-import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
-
-import type {Hash, TransactionReceipt} from 'viem';
-import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxStatus} from '@lib/utils/wagmi';
+import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
+import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
+import {Solver} from '@vaults-v2/types/solvers';
+import {depositAndStake} from '@vaults-v2/utils/actions';
+import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
+import {useCallback, useMemo, useRef} from 'react';
+import type {Hash, TransactionReceipt} from 'viem';
+import {maxUint256} from 'viem';
 
 export function useSolverGaugeStakingBooster(): TSolverContext {
 	const {provider} = useWeb3();

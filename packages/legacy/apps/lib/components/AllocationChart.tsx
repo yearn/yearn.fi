@@ -1,8 +1,6 @@
-import {Cell, Label, Pie, PieChart, Tooltip} from 'recharts';
-
-import {AllocationTooltip} from './AllocationTooltip';
-
 import type {ReactElement} from 'react';
+import {Cell, Label, Pie, PieChart, Tooltip} from 'recharts';
+import {AllocationTooltip} from './AllocationTooltip';
 
 export type TAllocationChartData = {
 	id: string;
@@ -50,9 +48,7 @@ export function AllocationChart({
 	labelText = 'allocation %'
 }: TAllocationChartProps): ReactElement {
 	return (
-		<PieChart
-			width={width}
-			height={height}>
+		<PieChart width={width} height={height}>
 			<Pie
 				data={allocationChartData}
 				dataKey={'value'}
@@ -66,13 +62,10 @@ export function AllocationChart({
 				stroke={strokeColor}
 				startAngle={startAngle}
 				minAngle={minAngle}
-				endAngle={endAngle}>
-				{allocationChartData.map((_, index) => (
-					<Cell
-						key={`cell-${index}`}
-						fill={colors[index % colors.length]}
-						className={colors[index % colors.length]}
-					/>
+				endAngle={endAngle}
+			>
+				{allocationChartData.map(({id}, index) => (
+					<Cell key={id} fill={colors[index % colors.length]} className={colors[index % colors.length]} />
 				))}
 				<Label
 					content={() => (
@@ -81,19 +74,15 @@ export function AllocationChart({
 							y={height / 2}
 							textAnchor={'middle'}
 							dominantBaseline={'middle'}
-							className={`${textColor} text-sm font-medium`}>
+							className={`${textColor} text-sm font-medium`}
+						>
 							{labelText}
 						</text>
 					)}
 				/>
 			</Pie>
 			<Tooltip
-				content={({active, payload}) => (
-					<AllocationTooltip
-						active={active || false}
-						payload={payload}
-					/>
-				)}
+				content={({active, payload}) => <AllocationTooltip active={active || false} payload={payload} />}
 			/>
 		</PieChart>
 	);

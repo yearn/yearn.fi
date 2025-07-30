@@ -1,13 +1,12 @@
-import {useMemo, useState} from 'react';
 import {useTokenList} from '@lib/contexts/WithTokenList';
+import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
 import {useChainID} from '@lib/hooks/useChainID';
+import type {TDict} from '@lib/types';
 import {toAddress} from '@lib/utils';
 import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
-import {getNetwork} from '@lib/utils/wagmi';
-
-import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
-import type {TDict} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {getNetwork} from '@lib/utils/wagmi';
+import {useMemo, useState} from 'react';
 
 export function useYearnTokens({
 	vaults,
@@ -185,7 +184,6 @@ export function useYearnTokens({
 	 ** The following function can be used to clone the tokens list for the forknet. This is useful
 	 ** for debuging purpose and should not be used in production.
 	 *************************************************************************************************/
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars, unused-imports/no-unused-vars
 	function cloneForForknet(tokens: TUseBalancesTokens[]): TUseBalancesTokens[] {
 		const clonedTokens: TUseBalancesTokens[] = [];
 		tokens.forEach((token): void => {

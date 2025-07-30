@@ -1,11 +1,12 @@
+import {useDeepCompareMemo} from '@react-hookz/web';
+import type {DependencyList} from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {erc20Abi, type MulticallParameters} from 'viem';
-import {deserialize, serialize} from 'wagmi';
-import {type Connector} from 'wagmi';
+import {type Connector, deserialize, serialize} from 'wagmi';
 import {multicall} from 'wagmi/actions';
-import {useDeepCompareMemo} from '@react-hookz/web';
-
 import {useWeb3} from '../contexts/useWeb3';
+import type {TAddress} from '../types/address';
+import type {TChainTokens, TDefaultStatus, TDict, TNDict, TToken} from '../types/mixed';
 import {AGGREGATE3_ABI} from '../utils/abi/aggregate.abi';
 import {ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS} from '../utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '../utils/decoder';
@@ -16,10 +17,6 @@ import {isEthAddress, isZero, isZeroAddress} from '../utils/tools.is';
 import {retrieveConfig} from '../utils/wagmi';
 import {getNetwork} from '../utils/wagmi/utils';
 import {useAsyncTrigger} from './useAsyncTrigger';
-
-import type {DependencyList} from 'react';
-import type {TAddress} from '../types/address';
-import type {TChainTokens, TDefaultStatus, TDict, TNDict, TToken} from '../types/mixed';
 
 /*******************************************************************************
  ** Request, Response and helpers for the useBalances hook.
@@ -531,7 +528,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				if (!pendingUpdates.current[Number(chainID)]) {
 					pendingUpdates.current[Number(chainID)] = {};
 				}
-				Object.assign(pendingUpdates.current[Number(chainID)], chainData);
+				pendingUpdates.current[Number(chainID)] = {...pendingUpdates.current[Number(chainID)], ...chainData};
 			}
 
 			set_balances(prev => {
@@ -540,7 +537,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					if (!newBalances[Number(chainID)]) {
 						newBalances[Number(chainID)] = {};
 					}
-					Object.assign(newBalances[Number(chainID)], chainData);
+					newBalances[Number(chainID)] = {...newBalances[Number(chainID)], ...chainData};
 				}
 				return newBalances;
 			});
@@ -572,7 +569,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				if (!pendingUpdates.current[Number(chainID)]) {
 					pendingUpdates.current[Number(chainID)] = {};
 				}
-				Object.assign(pendingUpdates.current[Number(chainID)], chainData);
+				pendingUpdates.current[Number(chainID)] = {...pendingUpdates.current[Number(chainID)], ...chainData};
 			}
 
 			set_balances(prev => {
@@ -581,7 +578,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					if (!newBalances[Number(chainID)]) {
 						newBalances[Number(chainID)] = {};
 					}
-					Object.assign(newBalances[Number(chainID)], chainData);
+					newBalances[Number(chainID)] = {...newBalances[Number(chainID)], ...chainData};
 				}
 				return newBalances;
 			});

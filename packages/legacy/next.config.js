@@ -1,11 +1,9 @@
-// eslint-disable-next-line unused-imports/no-unused-vars, @typescript-eslint/no-unused-vars
 const {withPlausibleProxy} = require('next-plausible');
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
 // const withPWA = require('next-pwa')({
 // 	dest: 'public',
 // 	disable: process.env.NODE_ENV !== 'production'
 // });
-const path = require('path');
+const path = require('node:path');
 
 module.exports = withPlausibleProxy({
 	scriptName: 'script',

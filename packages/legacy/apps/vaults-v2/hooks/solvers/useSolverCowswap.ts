@@ -1,21 +1,3 @@
-import {useCallback, useMemo, useRef} from 'react';
-import {ethers} from 'ethers';
-import {BaseError, maxUint256} from 'viem';
-import axios from 'axios';
-import {OrderBookApi, OrderQuoteSideKindSell, OrderSigningUtils} from '@cowprotocol/cow-sdk';
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
-import {Solver} from '@vaults-v2/types/solvers';
-import {toast} from '@lib/components/yToast';
-import {useNotifications} from '@lib/contexts/useNotifications';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import {assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@lib/utils/constants';
-import {allowanceKey} from '@lib/utils/helpers';
-import {allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20, retrieveConfig} from '@lib/utils/wagmi';
-import {getEthersSigner} from '@lib/utils/wagmi/ethersAdapter';
-
-import type {Hash, TransactionReceipt} from 'viem';
 import type {
 	Order,
 	OrderCreation,
@@ -24,9 +6,26 @@ import type {
 	SigningScheme,
 	UnsignedOrder
 } from '@cowprotocol/cow-sdk';
+import {OrderBookApi, OrderQuoteSideKindSell, OrderSigningUtils} from '@cowprotocol/cow-sdk';
+import {toast} from '@lib/components/yToast';
+import {useNotifications} from '@lib/contexts/useNotifications';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
 import type {TDict, TNormalizedBN} from '@lib/types';
+import {assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
+import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@lib/utils/constants';
+import {allowanceKey} from '@lib/utils/helpers';
 import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi';
+import {allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20, retrieveConfig} from '@lib/utils/wagmi';
+import {getEthersSigner} from '@lib/utils/wagmi/ethersAdapter';
+import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
+import {Solver} from '@vaults-v2/types/solvers';
+import axios from 'axios';
+import {ethers} from 'ethers';
+import {useCallback, useMemo, useRef} from 'react';
+import type {Hash, TransactionReceipt} from 'viem';
+import {BaseError, maxUint256} from 'viem';
 
 const orderBookApi = new OrderBookApi({chainId: 1});
 
@@ -189,7 +188,7 @@ export function useSolverCowswap(): TSolverContext {
 	const signCowswapOrder = useCallback(
 		async (chainID: number, quote: Order, buyAmountWithSlippage: string): Promise<SigningResult> => {
 			if (shouldUsePresign) {
-				await new Promise(async (resolve): Promise<NodeJS.Timeout> => setTimeout(resolve, 1000));
+				await new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, 1000));
 				return {
 					signature: '0x',
 					signingScheme: 'presign'
@@ -212,7 +211,7 @@ export function useSolverCowswap(): TSolverContext {
 			);
 			return rawSignature;
 		},
-		[shouldUsePresign, provider]
+		[provider]
 	);
 
 	/**********************************************************************************************
@@ -221,35 +220,35 @@ export function useSolverCowswap(): TSolverContext {
 	 ** boolean value indicating whether the order was successful or not.
 	 ** It will timeout once the order is no longer valid or after 50 minutes (max should be 30mn)
 	 *********************************************************************************************/
-	async function checkOrderStatus(
-		orderUID: string,
-		validTo: number
-	): Promise<{isSuccessful: boolean; error?: Error}> {
-		for (let i = 0; i < maxIterations; i++) {
-			const {data: order} = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`);
-			if (order?.status === 'fulfilled') {
-				return {isSuccessful: true};
+	const checkOrderStatus = useCallback(
+		async (orderUID: string, validTo: number): Promise<{isSuccessful: boolean; error?: Error}> => {
+			for (let i = 0; i < maxIterations; i++) {
+				const {data: order} = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`);
+				if (order?.status === 'fulfilled') {
+					return {isSuccessful: true};
+				}
+				if (order?.status === 'cancelled' || order?.status === 'expired') {
+					return {
+						isSuccessful: false,
+						error: new Error('TX fail because the order was not fulfilled')
+					};
+				}
+				if (validTo.valueOf() < Date.now() / 1000) {
+					return {
+						isSuccessful: false,
+						error: new Error('TX fail because the order expired')
+					};
+				}
+				// Sleep for 3 seconds before checking the status again
+				await new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, 3000));
 			}
-			if (order?.status === 'cancelled' || order?.status === 'expired') {
-				return {
-					isSuccessful: false,
-					error: new Error('TX fail because the order was not fulfilled')
-				};
-			}
-			if (validTo.valueOf() < new Date().valueOf() / 1000) {
-				return {
-					isSuccessful: false,
-					error: new Error('TX fail because the order expired')
-				};
-			}
-			// Sleep for 3 seconds before checking the status again
-			await new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, 3000));
-		}
-		return {
-			isSuccessful: false,
-			error: new Error('TX fail because the order expired')
-		};
-	}
+			return {
+				isSuccessful: false,
+				error: new Error('TX fail because the order expired')
+			};
+		},
+		[]
+	);
 
 	/**********************************************************************************************
 	 ** execute will send the post request to execute the order and wait for it to be executed, no
@@ -302,7 +301,7 @@ export function useSolverCowswap(): TSolverContext {
 		}
 
 		return {isSuccessful: false};
-	}, [getBuyAmountWithSlippage, shouldUsePresign, signCowswapOrder]);
+	}, [getBuyAmountWithSlippage, signCowswapOrder, checkOrderStatus]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Format the quote to a normalized value, which will be used for subsequent
@@ -316,7 +315,7 @@ export function useSolverCowswap(): TSolverContext {
 			toBigInt(latestQuote?.current?.quote?.buyAmount),
 			request?.current?.outputToken?.decimals || 18
 		);
-	}, [latestQuote]);
+	}, []);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will

@@ -1,9 +1,7 @@
-import {useMemo} from 'react';
-import {toAddress} from '@lib/utils';
-
-import {useWallet} from '../contexts/useWallet';
-
 import type {TAddress, TToken} from '@lib/types';
+import {toAddress} from '@lib/utils';
+import {useMemo} from 'react';
+import {useWallet} from '../contexts/useWallet';
 
 /******************************************************************************
  ** The useYearnToken hook is used to retrieve the token from the useWallet

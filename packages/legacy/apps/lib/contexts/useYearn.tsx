@@ -56,7 +56,6 @@ const YearnContext = createContext<TYearnContext>({
 	zapSlippage: 0.1,
 	zapProvider: Solver.enum.Cowswap,
 	isAutoStakingEnabled: true,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	mutateVaultList: (): any => undefined,
 	set_maxLoss: (): void => undefined,
 	set_zapSlippage: (): void => undefined,
