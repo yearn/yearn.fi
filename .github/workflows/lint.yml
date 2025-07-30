@@ -26,7 +26,7 @@ jobs:
                   node-version: 20
 
             - name: Install Bun
-              run: curl -fsSL https://bun.sh/install | bash && export PATH="$HOME/.bun/bin:$PATH"
+              run: curl -fsSL https://bun.sh/install | bash && export PATH="$HOME/.bun/bin:$PATH" && source /home/runner/.bashrc
 
             - name: Install project dependencies
               run: bun install
