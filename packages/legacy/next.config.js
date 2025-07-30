@@ -45,7 +45,8 @@ module.exports = withPlausibleProxy({
 				'@safe-global/safe-apps-sdk': path.resolve(
 					__dirname,
 					'../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
-				)
+				),
+				'@nextgen/components': path.resolve(__dirname, '../nextgen/src/components/elements/index.ts')
 			},
 			fallback: {
 				...config.resolve.fallback,
