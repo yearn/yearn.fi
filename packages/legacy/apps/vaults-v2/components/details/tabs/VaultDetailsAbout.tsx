@@ -117,14 +117,43 @@ export function VaultDetailsAbout({
 	const isMounted = useIsMounted();
 	const {token, apr} = currentVault;
 
-	function getVaultDescription(): string {
+	function getVaultDescription(): string | ReactElement {
 		if (currentVault.description) {
 			return parseMarkdown(currentVault.description.replaceAll('{{token}}', currentVault.token.symbol));
 		}
 		if (token.description) {
 			return parseMarkdown(token.description.replaceAll('{{token}}', currentVault.token.symbol));
 		}
-		return 'Sorry, we don\'t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a "nurdle". Fascinating! We\'ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.';
+		return (
+			<>
+				Sorry, we don't have a description for this vault right now. To learn more about how Yearn Vaults work,
+				check out our{' '}
+				<a
+					href="https://docs.yearn.fi"
+					target="_blank"
+					rel="noopener noreferrer"
+					className="text-neutral-900 underline">
+					docs
+				</a>
+				, or if you want to learn more about this vault, head to our{' '}
+				<a
+					href="https://discord.gg/yearn"
+					target="_blank"
+					rel="noopener noreferrer"
+					className="text-neutral-900 underline">
+					discord
+				</a>{' '}
+				or{' '}
+				<a
+					href="https://t.me/yearnfinance"
+					target="_blank"
+					rel="noopener noreferrer"
+					className="text-neutral-900 underline">
+					telegram
+				</a>{' '}
+				and ask.
+			</>
+		);
 	}
 
 	return (
@@ -132,12 +161,13 @@ export function VaultDetailsAbout({
 			<div className={'col-span-1 w-full space-y-6'}>
 				<div>
 					<b className={'text-neutral-900'}>{'Description'}</b>
-					<p
-						className={'mt-4 text-neutral-600'}
-						dangerouslySetInnerHTML={{
-							__html: getVaultDescription()
-						}}
-					/>
+					<div className={'mt-4 text-neutral-600'}>
+						{typeof getVaultDescription() === 'string' ? (
+							<p dangerouslySetInnerHTML={{__html: getVaultDescription() as string}} />
+						) : (
+							<p>{getVaultDescription()}</p>
+						)}
+					</div>
 				</div>
 				<div>
 					<b className={'text-neutral-900'}>{'APY'}</b>
