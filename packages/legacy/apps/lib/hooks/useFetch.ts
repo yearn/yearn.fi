@@ -3,12 +3,11 @@
  * Uses SWR for intelligent caching, deduplication, and background revalidation
  * Supports Zod schema validation with comprehensive error handling
  ************************************************************************************************/
-import useSWR from 'swr';
-
-import {baseFetcher} from '../utils/fetchers';
 
 import type {SWRResponse} from 'swr';
+import useSWR from 'swr';
 import type {z} from 'zod';
+import {baseFetcher} from '../utils/fetchers';
 
 type TUseZodProps<T> = {
 	endpoint: string | null;

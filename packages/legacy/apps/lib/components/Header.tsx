@@ -1,7 +1,3 @@
-import React, {useEffect, useMemo, useState} from 'react';
-import Link from 'next/link';
-import {useRouter} from 'next/router';
-import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit';
 import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {IconBell} from '@lib/icons/IconBell';
@@ -9,13 +5,15 @@ import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
 import {IconWallet} from '@lib/icons/IconWallet';
 import {cl} from '@lib/utils';
 import {truncateHex} from '@lib/utils/tools.address';
-
-import {AppName, APPS} from './Apps';
+import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit';
+import Link from 'next/link';
+import {useRouter} from 'next/router';
+import type {ReactElement} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
+import type {Chain} from 'viem';
+import {APPS, AppName} from './Apps';
 import {LogoPopover} from './LogoPopover';
 import {ModalMobileMenu} from './ModalMobileMenu';
-
-import type {ReactElement} from 'react';
-import type {Chain} from 'viem';
 
 export type TMenu = {path: string; label: string | ReactElement; target?: string};
 type TNavbar = {nav: TMenu[]; currentPathName: string};
@@ -25,12 +23,10 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 		<nav className={'yearn--nav'}>
 			{nav.map(
 				(option): ReactElement => (
-					<Link
-						key={option.path}
-						target={option.target}
-						href={option.path}>
+					<Link key={option.path} target={option.target} href={option.path}>
 						<p
-							className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}>
+							className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}
+						>
 							{option?.label || 'Unknown'}
 						</p>
 					</Link>
@@ -72,10 +68,9 @@ function WalletSelector(): ReactElement {
 				} else {
 					openLoginModal();
 				}
-			}}>
-			<p
-				suppressHydrationWarning
-				className={'yearn--header-nav-item !text-xs md:!text-sm'}>
+			}}
+		>
+			<p suppressHydrationWarning className={'yearn--header-nav-item !text-xs md:!text-sm'}>
 				{walletIdentity ? (
 					walletIdentity
 				) : (
@@ -84,7 +79,8 @@ function WalletSelector(): ReactElement {
 						<span
 							className={
 								'text-neutral-0 relative hidden h-8 cursor-pointer items-center justify-center rounded border border-transparent bg-neutral-900 px-2 text-xs font-normal transition-all hover:bg-neutral-800 md:flex'
-							}>
+							}
+						>
 							{'Connect wallet'}
 						</span>
 					</span>
@@ -151,19 +147,14 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 	}, [notificationStatus]);
 
 	return (
-		<div
-			id={'head'}
-			className={'inset-x-0 top-0 z-50 w-full'}>
+		<div id={'head'} className={'inset-x-0 top-0 z-50 w-full'}>
 			<div className={'w-full'}>
 				<header className={'yearn--header mx-auto max-w-6xl !px-0'}>
 					<div className={'direction-row flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'}>
 						<div className={'flex justify-center'}>
 							<LogoPopover />
 						</div>
-						<Navbar
-							currentPathName={pathname || ''}
-							nav={menu}
-						/>
+						<Navbar currentPathName={pathname || ''} nav={menu} />
 						<div className={'flex md:hidden'}>
 							<button onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
 								<span className={'sr-only'}>{'Open menu'}</span>
@@ -176,7 +167,8 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 							className={
 								'yearn--header-nav-item hover:bg-grey-200 relative rounded-full p-2 transition-colors'
 							}
-							onClick={(): void => set_shouldOpenCurtain(true)}>
+							onClick={(): void => set_shouldOpenCurtain(true)}
+						>
 							<IconBell className={'text-grey-900 size-4 font-bold transition-colors'} />
 
 							<div className={cl('absolute right-1 top-1 size-2 rounded-full', notificationDotColor)} />
@@ -190,15 +182,12 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 				shouldUseNetworks={true}
 				isOpen={isMenuOpen}
 				onClose={(): void => set_isMenuOpen(false)}
-				supportedNetworks={props.supportedNetworks}>
+				supportedNetworks={props.supportedNetworks}
+			>
 				{menu?.map(
 					(option): ReactElement => (
-						<Link
-							key={option.path}
-							href={option.path}>
-							<div
-								className={'mobile-nav-item'}
-								onClick={(): void => set_isMenuOpen(false)}>
+						<Link key={option.path} href={option.path}>
+							<div className={'mobile-nav-item'} onClick={(): void => set_isMenuOpen(false)}>
 								<p className={'font-bold'}>{option.label}</p>
 							</div>
 						</Link>

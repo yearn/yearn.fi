@@ -1,12 +1,11 @@
-import {type ReactElement, useMemo} from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
 import {AppCard} from '@lib/components/AppCard';
 import {useInitialQueryParam} from '@lib/hooks/useInitialQueryParam';
 import {cl} from '@lib/utils';
 import {ALL_APPS} from '@lib/utils/constants';
-
 import type {GetServerSidePropsContext} from 'next';
+import Image from 'next/image';
+import Link from 'next/link';
+import {type ReactElement, useMemo} from 'react';
 
 export default function SeachResults(): ReactElement {
 	const searchValue = useInitialQueryParam('query');
@@ -25,7 +24,8 @@ export default function SeachResults(): ReactElement {
 						className={cl(
 							'hidden truncate text-[64px] font-bold leading-[84px] text-white md:block',
 							searchFilteredApps.length < 1 ? 'mb-4' : 'mb-10'
-						)}>
+						)}
+					>
 						{`Results for "${searchValue}"`}
 					</p>
 					{searchFilteredApps.length < 1 ? (
@@ -34,9 +34,7 @@ export default function SeachResults(): ReactElement {
 								{
 									"Hmm, we couldn't find what you're looking for, did you spell it right? Try again or go"
 								}{' '}
-								<Link
-									className={'text-white hover:underline'}
-									href={'/apps'}>
+								<Link className={'text-white hover:underline'} href={'/apps'}>
 									{'home'}
 								</Link>
 							</p>
@@ -65,11 +63,8 @@ export default function SeachResults(): ReactElement {
 						</div>
 					) : (
 						<div className={'flex grid-rows-1 flex-col gap-6 md:grid md:grid-cols-2 lg:grid-cols-4'}>
-							{searchFilteredApps.map((app, index) => (
-								<AppCard
-									key={app.name + index}
-									app={app}
-								/>
+							{searchFilteredApps.map(app => (
+								<AppCard key={app.name} app={app} />
 							))}
 						</div>
 					)}

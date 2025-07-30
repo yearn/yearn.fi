@@ -1,24 +1,22 @@
-import {Fragment, useEffect, useMemo, useState} from 'react';
-import {useRouter} from 'next/router';
-import {watchAsset} from 'viem/actions';
-import {getConnectorClient} from 'wagmi/actions';
 import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react';
-import {VaultInfo} from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper';
-import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
-import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
 import {Renderable} from '@lib/components/Renderable';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {IconAddToMetamask} from '@lib/icons/IconAddToMetamask';
 import {IconChevron} from '@lib/icons/IconChevron';
 import {IconLinkOut} from '@lib/icons/IconLinkOut';
 import {assert, cl, toAddress} from '@lib/utils';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {retrieveConfig} from '@lib/utils/wagmi';
 import {getNetwork} from '@lib/utils/wagmi/utils';
-
-import {VaultRiskInfo} from './tabs/VaultRiskInfo';
-
+import {VaultInfo} from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper';
+import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
+import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
+import {useRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {Fragment, useEffect, useMemo, useState} from 'react';
+import {watchAsset} from 'viem/actions';
+import {getConnectorClient} from 'wagmi/actions';
+import {VaultRiskInfo} from './tabs/VaultRiskInfo';
 
 type TTabsOptions = {
 	value: number;
@@ -81,7 +79,8 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutT
 									}
 								);
 								set_selectedAboutTabIndex(tab.value);
-							}}>
+							}}
+						>
 							<p
 								title={tab.label}
 								aria-selected={selectedAboutTabIndex === tab.value}
@@ -90,7 +89,8 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutT
 									selectedAboutTabIndex === tab.value
 										? '!text-neutral-900'
 										: '!text-neutral-900/50 hover:!text-neutral-900'
-								)}>
+								)}
+							>
 								{tab.label}
 							</p>
 						</button>
@@ -98,15 +98,14 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutT
 				)}
 			</nav>
 			<div className={'relative z-50'}>
-				<Listbox
-					value={selectedAboutTabIndex}
-					onChange={(value): void => set_selectedAboutTabIndex(value)}>
+				<Listbox value={selectedAboutTabIndex} onChange={(value): void => set_selectedAboutTabIndex(value)}>
 					{({open}): ReactElement => (
 						<>
 							<ListboxButton
 								className={
 									'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 pl-4 font-bold focus:border-neutral-900 md:hidden'
-								}>
+								}
+							>
 								<div className={'relative flex flex-row items-center'}>
 									{tabs[selectedAboutTabIndex]?.label || 'Menu'}
 								</div>
@@ -124,14 +123,16 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutT
 								enterTo={'transform scale-100 opacity-100'}
 								leave={'transition duration-75 ease-out'}
 								leaveFrom={'transform scale-100 opacity-100'}
-								leaveTo={'transform scale-95 opacity-0'}>
+								leaveTo={'transform scale-95 opacity-0'}
+							>
 								<ListboxOptions className={'yearn--listbox-menu'}>
 									{tabs.map(
 										(tab): ReactElement => (
 											<ListboxOption
 												className={'yearn--listbox-menu-item'}
 												key={tab.value}
-												value={tab.value}>
+												value={tab.value}
+											>
 												{tab.label}
 											</ListboxOption>
 										)
@@ -182,7 +183,8 @@ function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					currentVault.decimals,
 					`https://token-assets-one.vercel.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
 				);
-			}}>
+			}}
+		>
 			<span className={'sr-only'}>{'Add to wallet'}</span>
 			<IconAddToMetamask
 				className={'size-5 text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'}
@@ -193,10 +195,7 @@ function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 
 function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps): ReactElement | null {
 	return (
-		<a
-			href={`${explorerBaseURI}/address/${currentVaultAddress}`}
-			target={'_blank'}
-			rel={'noopener noreferrer'}>
+		<a href={`${explorerBaseURI}/address/${currentVaultAddress}`} target={'_blank'} rel={'noopener noreferrer'}>
 			<span className={'sr-only'}>{'Open in explorer'}</span>
 			<IconLinkOut
 				className={'size-5 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'}

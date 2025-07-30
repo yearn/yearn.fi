@@ -1,10 +1,9 @@
-import {useCallback, useEffect, useRef} from 'react';
-import {getBlock, waitForTransactionReceipt} from 'wagmi/actions';
 import {useNotifications} from '@lib/contexts/useNotifications';
+import type {TNotification} from '@lib/types/notifications';
 import {SUPPORTED_NETWORKS} from '@lib/utils';
 import {retrieveConfig} from '@lib/utils/wagmi';
-
-import type {TNotification} from '@lib/types/notifications';
+import {useCallback, useEffect, useRef} from 'react';
+import {getBlock, waitForTransactionReceipt} from 'wagmi/actions';
 
 /************************************************************************************************
  * Custom hook to poll transaction status for pending notifications every minute.

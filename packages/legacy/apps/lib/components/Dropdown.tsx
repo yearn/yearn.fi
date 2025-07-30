@@ -1,29 +1,20 @@
-import React, {Fragment, useState} from 'react';
 import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react';
-import {useThrottledState} from '@react-hookz/web';
 import {IconChevron} from '@lib/icons/IconChevron';
 import {cl} from '@lib/utils';
-
-import {ImageWithFallback} from './ImageWithFallback';
-
+import {useThrottledState} from '@react-hookz/web';
 import type {ReactElement} from 'react';
+import React, {Fragment, useState} from 'react';
+import {ImageWithFallback} from './ImageWithFallback';
 
 const DropdownOption = (option: TDropdownOption): ReactElement => {
 	const {label, description, icon} = option;
 	return (
 		<ComboboxOption value={option}>
 			{({active}): ReactElement => (
-				<div
-					data-active={active}
-					className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
+				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					{icon && (
 						<div className={'size-6 rounded-full'}>
-							<ImageWithFallback
-								alt={label}
-								width={24}
-								height={24}
-								src={icon}
-							/>
+							<ImageWithFallback alt={label} width={24} height={24} src={icon} />
 						</div>
 					)}
 					<div>
@@ -117,14 +108,16 @@ export const Dropdown = ({
 							}
 							set_isOpen(false);
 						}}
-						disabled={isDisabled}>
+						disabled={isDisabled}
+					>
 						<>
 							<ComboboxButton
 								onClick={(): void => set_isOpen((state: boolean): boolean => !state)}
 								className={cl(
 									'flex h-10 w-full items-center justify-between p-2 text-base md:px-3',
 									isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0 text-neutral-900'
-								)}>
+								)}
+							>
 								<div className={'relative flex flex-row items-center'}>
 									{selected?.icon && (
 										<div className={'size-6 rounded-full'}>
@@ -141,7 +134,8 @@ export const Dropdown = ({
 											'max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap font-normal scrollbar-none md:max-w-full',
 											selected?.icon ? 'pl-2' : 'pl-0',
 											isDisabled ? 'text-neutral-600' : 'text-neutral-900'
-										)}>
+										)}
+									>
 										<ComboboxInput
 											className={
 												'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'
@@ -174,7 +168,8 @@ export const Dropdown = ({
 								afterLeave={(): void => {
 									set_isOpen(false);
 									set_search('');
-								}}>
+								}}
+							>
 								<ComboboxOptions className={'yearn--dropdown-menu z-50'}>
 									{filteredOptions.length === 0 ? (
 										<DropdownEmpty isSearching={isSearching} />

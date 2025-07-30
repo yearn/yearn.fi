@@ -1,18 +1,16 @@
-import {useMemo, useState} from 'react';
 import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
+import type {TSortDirection} from '@lib/types';
 import {cl, toNormalizedBN} from '@lib/utils';
-
-import {VaultsListHead} from './VaultsListHead';
-import {VaultsListRow} from './VaultsListRow';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {FC} from 'react';
+import {useMemo, useState} from 'react';
 import {VaultBalanceCard} from './cards/VaultBalanceCard';
 import {VaultEmptyCard} from './cards/VaultEmptyCard';
 import {VaultPositionCard} from './cards/VaultPositionCard';
-
-import type {FC} from 'react';
-import type {TSortDirection} from '@lib/types';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {VaultsListHead} from './VaultsListHead';
+import {VaultsListRow} from './VaultsListRow';
 
 enum TVaultsPositionsView {
 	Empty = 'Empty',
@@ -125,7 +123,8 @@ export const VaultsPositions: FC = () => {
 
 	return (
 		<div
-			className={`flex rounded-[16px] border border-dashed border-neutral-900/10 bg-neutral-900/10 ${styles.content}`}>
+			className={`flex rounded-[16px] border border-dashed border-neutral-900/10 bg-neutral-900/10 ${styles.content}`}
+		>
 			<VaultBalanceCard
 				showExpandButton={VaultView !== TVaultsPositionsView.Empty}
 				isExpanded={VaultView === TVaultsPositionsView.Table}
@@ -141,10 +140,7 @@ export const VaultsPositions: FC = () => {
 			{VaultView === TVaultsPositionsView.Card && (
 				<div className={styles.cards}>
 					{userPositions.map((vault, index) => (
-						<VaultPositionCard
-							key={index}
-							vault={vault}
-						/>
+						<VaultPositionCard key={index} vault={vault} />
 					))}
 				</div>
 			)}
@@ -152,10 +148,7 @@ export const VaultsPositions: FC = () => {
 				<div className={''}>
 					<div className={cl(styles.cards, 'block md:hidden')}>
 						{userPositions.map((vault, index) => (
-							<VaultPositionCard
-								key={index}
-								vault={vault}
-							/>
+							<VaultPositionCard key={index} vault={vault} />
 						))}
 					</div>
 					<div className={'hidden p-4 md:block dark:bg-black/20'}>

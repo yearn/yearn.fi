@@ -1,5 +1,5 @@
-import {type ReactElement} from 'react';
 import {FooterNav} from '@lib/components/ModalMobileMenu';
+import type {ReactElement} from 'react';
 
 export function Footer(): ReactElement {
 	return (

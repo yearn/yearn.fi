@@ -1,10 +1,9 @@
-import {useEffect, useState} from 'react';
-import {useRouter} from 'next/router';
-import {AnimatePresence, motion} from 'framer-motion';
 import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react';
 import {IconChevron} from '@lib/icons/IconChevron';
-
+import {AnimatePresence, motion} from 'framer-motion';
+import {useRouter} from 'next/router';
 import type {ReactElement} from 'react';
+import {useEffect, useState} from 'react';
 
 const variants = {
 	initial: {y: 10, opacity: 0},
@@ -56,11 +55,13 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 									}
 								);
 								set_selectedTabId(id);
-							}}>
+							}}
+						>
 							<p
 								title={label}
 								aria-selected={selectedTabId === id}
-								className={'hover-fix align-center flex grow flex-col justify-center'}>
+								className={'hover-fix align-center flex grow flex-col justify-center'}
+							>
 								{label}
 							</p>
 							{selectedTabId === id && (
@@ -79,15 +80,14 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 				)}
 			</nav>
 			<div className={'relative z-50 px-4 pt-4 md:hidden'}>
-				<Listbox
-					value={selectedTabId}
-					onChange={(value): void => set_selectedTabId(value)}>
+				<Listbox value={selectedTabId} onChange={(value): void => set_selectedTabId(value)}>
 					{({open}): ReactElement => (
 						<>
 							<ListboxButton
 								className={
 									'flex h-10 w-full flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
-								}>
+								}
+							>
 								<div className={'relative flex flex-row items-center'}>
 									{items.find(({id}): boolean => id === selectedTabId)?.label || 'Menu'}
 								</div>
@@ -104,14 +104,12 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 								enterTo={'transform scale-100 opacity-100'}
 								leave={'transition duration-75 ease-out'}
 								leaveFrom={'transform scale-100 opacity-100'}
-								leaveTo={'transform scale-95 opacity-0'}>
+								leaveTo={'transform scale-95 opacity-0'}
+							>
 								<ListboxOptions className={'yearn--listbox-menu'}>
 									{items.map(
 										({id, label}): ReactElement => (
-											<ListboxOption
-												className={'yearn--listbox-menu-item'}
-												key={id}
-												value={id}>
+											<ListboxOption className={'yearn--listbox-menu-item'} key={id} value={id}>
 												{label}
 											</ListboxOption>
 										)
@@ -129,13 +127,11 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 					animate={'enter'}
 					exit={'exit'}
 					variants={variants}
-					transition={{duration: 0.15}}>
+					transition={{duration: 0.15}}
+				>
 					{items.map(
 						({id, content}): ReactElement => (
-							<div
-								key={`tab-content-${id}`}
-								className={'w-full p-6'}
-								hidden={selectedTabId !== id}>
+							<div key={`tab-content-${id}`} className={'w-full p-6'} hidden={selectedTabId !== id}>
 								{content}
 							</div>
 						)

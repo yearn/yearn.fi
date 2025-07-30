@@ -1,12 +1,12 @@
-import React, {createContext, useCallback, useContext, useMemo} from 'react';
+import type {TNotificationStatus, TNotificationsActionsContext, TNotificationType} from '@lib/types/notifications';
 import {formatTAmount, toAddress} from '@lib/utils';
-
-import {useNotifications} from './useNotifications';
-import {useWeb3} from './useWeb3';
+import type {TActionParams} from '@vaults-v2/contexts/useActionFlow';
+import type React from 'react';
+import {createContext, useCallback, useContext, useMemo} from 'react';
 
 import type {Hash, TransactionReceipt} from 'viem';
-import type {TNotificationsActionsContext, TNotificationStatus, TNotificationType} from '@lib/types/notifications';
-import type {TActionParams} from '@vaults-v2/contexts/useActionFlow';
+import {useNotifications} from './useNotifications';
+import {useWeb3} from './useWeb3';
 
 const defaultProps: TNotificationsActionsContext = {
 	handleApproveNotification: async (): Promise<number> => 0,

@@ -1,8 +1,7 @@
-import {useMemo} from 'react';
 import {useYearn} from '@lib/contexts/useYearn';
-import {toBigInt, toNormalizedValue} from '@lib/utils';
-
 import type {TAddress} from '@lib/types';
+import {toBigInt, toNormalizedValue} from '@lib/utils';
+import {useMemo} from 'react';
 
 /******************************************************************************
  ** The useYearnTokenPrice hook is used to retrieve the price of a token from

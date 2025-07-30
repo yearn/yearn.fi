@@ -1,7 +1,6 @@
-import {Fragment} from 'react';
 import {cl} from '@lib/utils';
-
 import type {FC} from 'react';
+import {Fragment} from 'react';
 
 type TAPYSublineProps = {
 	hasPendleArbRewards: boolean;

@@ -1,14 +1,13 @@
-import {zeroAddress} from 'viem';
-import {type Address} from 'viem';
-import {useDeepCompareMemo} from '@react-hookz/web';
 import {useFetch} from '@lib/hooks/useFetch';
 import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import type {TDict} from '@lib/types';
 import {toAddress} from '@lib/utils';
+import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {yDaemonVaultsSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {useDeepCompareMemo} from '@react-hookz/web';
 
 import type {KeyedMutator} from 'swr';
-import type {TDict} from '@lib/types';
-import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {type Address, zeroAddress} from 'viem';
 
 /******************************************************************************
  ** The useFetchYearnVaults hook is used to fetch the vaults from the yDaemon

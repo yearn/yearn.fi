@@ -1,9 +1,9 @@
-const	lightTheme = {
+const lightTheme = {
 	/* 🔵 - Yearn Finance ******************************************************
-	**	These are the colors you will use the most and will make up the majority
-	**	of your UI. Use them for most of your text, backgrounds, and borders,
-	**	as well as for things like secondary buttons and links.
-	**************************************************************************/
+	 **	These are the colors you will use the most and will make up the majority
+	 **	of your UI. Use them for most of your text, backgrounds, and borders,
+	 **	as well as for things like secondary buttons and links.
+	 **************************************************************************/
 	'--color-neutral-0': '0 0% 100%',
 	'--color-neutral-100': '220 50% 98%',
 	'--color-neutral-200': '220 47% 97%',
@@ -16,11 +16,11 @@ const	lightTheme = {
 	'--color-neutral-900': '0 0% 0%',
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	These are the splashes of color that should appear the most in your UI,
-	**	and are the ones that determine the overall "look" of the site. Use
-	**	these for things like primary actions, links, navigation items, icons,
-	**	accent borders, or text you want to emphasize.
-	**************************************************************************/
+	 **	These are the splashes of color that should appear the most in your UI,
+	 **	and are the ones that determine the overall "look" of the site. Use
+	 **	these for things like primary actions, links, navigation items, icons,
+	 **	accent borders, or text you want to emphasize.
+	 **************************************************************************/
 	'--color-primary-100': '220 100% 94%',
 	'--color-primary-200': '220 81% 88%',
 	'--color-primary-500': '220 95% 50%',
@@ -29,11 +29,11 @@ const	lightTheme = {
 	'--color-accent-600': '220 100% 44%',
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	These colors should be used fairly conservatively throughout your UI to
-	**	avoid overpowering your primary colors. Use them when you need an
-	**	element to stand out, or to reinforce things like error states or
-	**	positive trends with the appropriate semantic color.
-	**************************************************************************/
+	 **	These colors should be used fairly conservatively throughout your UI to
+	 **	avoid overpowering your primary colors. Use them when you need an
+	 **	element to stand out, or to reinforce things like error states or
+	 **	positive trends with the appropriate semantic color.
+	 **************************************************************************/
 	'--color-yellow-900': '32 100% 45%',
 	'--color-yellow-300': '32 100% 95%',
 	'--color-yellow-200': '32 100% 90%',
@@ -42,14 +42,14 @@ const	lightTheme = {
 	'--color-pink-200': '328 100% 90%',
 	'--color-red-900': '0 100% 45%',
 	'--color-red-300': '0 100% 95%',
-	'--color-red-200': '0 100% 90%',
-}
-const	darkTheme = {
+	'--color-red-200': '0 100% 90%'
+};
+const darkTheme = {
 	/* 🔵 - Yearn Finance ******************************************************
-	**	These are the colors you will use the most and will make up the majority
-	**	of your UI. Use them for most of your text, backgrounds, and borders,
-	**	as well as for things like secondary buttons and links.
-	**************************************************************************/
+	 **	These are the colors you will use the most and will make up the majority
+	 **	of your UI. Use them for most of your text, backgrounds, and borders,
+	 **	as well as for things like secondary buttons and links.
+	 **************************************************************************/
 	'--color-neutral-0': '0 0% 0%',
 	'--color-neutral-100': '0 0% 10%',
 	'--color-neutral-200': '0 0% 8%',
@@ -62,11 +62,11 @@ const	darkTheme = {
 	'--color-neutral-900': '0 0% 100%',
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	These are the splashes of color that should appear the most in your UI,
-	**	and are the ones that determine the overall "look" of the site. Use
-	**	these for things like primary actions, links, navigation items, icons,
-	**	accent borders, or text you want to emphasize.
-	**************************************************************************/
+	 **	These are the splashes of color that should appear the most in your UI,
+	 **	and are the ones that determine the overall "look" of the site. Use
+	 **	these for things like primary actions, links, navigation items, icons,
+	 **	accent borders, or text you want to emphasize.
+	 **************************************************************************/
 	'--color-primary-100': '0 0% 15%',
 	'--color-primary-200': '0 0% 13%',
 	'--color-primary-500': '0 0% 100%',
@@ -75,11 +75,11 @@ const	darkTheme = {
 	'--color-accent-600': '220 100% 44%',
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	These colors should be used fairly conservatively throughout your UI to
-	**	avoid overpowering your primary colors. Use them when you need an
-	**	element to stand out, or to reinforce things like error states or
-	**	positive trends with the appropriate semantic color.
-	**************************************************************************/
+	 **	These colors should be used fairly conservatively throughout your UI to
+	 **	avoid overpowering your primary colors. Use them when you need an
+	 **	element to stand out, or to reinforce things like error states or
+	 **	positive trends with the appropriate semantic color.
+	 **************************************************************************/
 	'--color-yellow-900': '32 100% 45%',
 	'--color-yellow-300': '32 100% 95%',
 	'--color-yellow-200': '32 100% 90%',
@@ -88,8 +88,8 @@ const	darkTheme = {
 	'--color-pink-200': '328 100% 90%',
 	'--color-red-900': '0 100% 45%',
 	'--color-red-300': '0 100% 95%',
-	'--color-red-200': '0 100% 90%',
-}
+	'--color-red-200': '0 100% 90%'
+};
 const colors = {
 	...lightTheme, //default
 
@@ -122,6 +122,5 @@ const paddings = {
 	'--padding-wider': '2rem', //32px | p-8
 	'--padding-widest': '3rem' //48px | p-12
 };
-
 
 module.exports = {colors, paddings};

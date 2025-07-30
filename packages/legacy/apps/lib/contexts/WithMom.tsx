@@ -1,19 +1,17 @@
-import {Fragment, useMemo} from 'react';
-import {type Chain} from 'viem/chains';
-import {WagmiProvider} from 'wagmi';
-import {SWRConfig} from 'swr';
+import type {AvatarComponent, DisclaimerComponent, Theme} from '@rainbow-me/rainbowkit';
 import {RainbowKitProvider} from '@rainbow-me/rainbowkit';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-
+import type {ReactElement} from 'react';
+import {Fragment, useMemo} from 'react';
+import {SWRConfig} from 'swr';
+import type {Chain} from 'viem/chains';
+import type {Config, State} from 'wagmi';
+import {WagmiProvider} from 'wagmi';
 import {isIframe} from '../utils';
 import {defaultSWRConfig} from '../utils/swrConfig';
 import {getConfig} from '../utils/wagmi/config';
 import {Web3ContextApp} from './useWeb3';
 import {WithTokenList} from './WithTokenList';
-
-import type {ReactElement} from 'react';
-import type {Config, State} from 'wagmi';
-import type {AvatarComponent, DisclaimerComponent, Theme} from '@rainbow-me/rainbowkit';
 
 type TWithMom = {
 	children: ReactElement;
@@ -49,10 +47,7 @@ function WithMom({
 	const config = useMemo(() => getConfig({chains: supportedChains}), [supportedChains]);
 
 	return (
-		<WagmiProvider
-			config={config as Config}
-			reconnectOnMount={!isIframe()}
-			initialState={initialState}>
+		<WagmiProvider config={config as Config} reconnectOnMount={!isIframe()} initialState={initialState}>
 			<QueryClientProvider client={queryClient}>
 				<SWRConfig value={defaultSWRConfig}>
 					<RainbowKitProvider {...rainbowConfig}>

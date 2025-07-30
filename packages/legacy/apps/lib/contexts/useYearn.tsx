@@ -1,18 +1,17 @@
-import {createContext, memo, useCallback, useContext, useMemo} from 'react';
-import {deserialize, serialize} from 'wagmi';
-import {useLocalStorageValue} from '@react-hookz/web';
-import {Solver, type TSolver} from '@vaults-v2/types/solvers';
 import {useFetchYearnEarnedForUser} from '@lib/hooks/useFetchYearnEarnedForUser';
 import {useFetchYearnPrices} from '@lib/hooks/useFetchYearnPrices';
 import {useFetchYearnVaults} from '@lib/hooks/useFetchYearnVaults';
-import {toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-
-import type {ReactElement} from 'react';
-import type {KeyedMutator} from 'swr';
 import type {TAddress, TDict, TNormalizedBN} from '@lib/types';
+import {toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
 import type {TYDaemonEarned} from '@lib/utils/schemas/yDaemonEarnedSchema';
 import type {TYDaemonPricesChain} from '@lib/utils/schemas/yDaemonPricesSchema';
 import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {useLocalStorageValue} from '@react-hookz/web';
+import {Solver, type TSolver} from '@vaults-v2/types/solvers';
+import type {ReactElement} from 'react';
+import {createContext, memo, useCallback, useContext, useMemo} from 'react';
+import type {KeyedMutator} from 'swr';
+import {deserialize, serialize} from 'wagmi';
 
 export const DEFAULT_SLIPPAGE = 0.5;
 export const DEFAULT_MAX_LOSS = 1n;
@@ -124,7 +123,8 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 				isLoadingVaultList: isLoading,
 				mutateVaultList: mutate,
 				getPrice
-			}}>
+			}}
+		>
 			{children}
 		</YearnContext.Provider>
 	);

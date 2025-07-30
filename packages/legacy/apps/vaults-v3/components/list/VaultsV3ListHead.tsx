@@ -1,9 +1,9 @@
-import {useCallback} from 'react';
 import {IconChevronPlain} from '@lib/icons/IconChevronPlain';
+import type {TSortDirection} from '@lib/types';
 import {cl} from '@lib/utils';
 
 import type {ReactElement} from 'react';
-import type {TSortDirection} from '@lib/types';
+import {useCallback} from 'react';
 
 export type TListHead = {
 	items: {
@@ -62,18 +62,21 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 				className={cl(
 					'grid w-full grid-cols-1 md:grid-cols-12 px-4 py-2 md:px-8',
 					'border-t border-neutral-200 md:border-none'
-				)}>
+				)}
+			>
 				<div
 					className={cl(
 						'col-span-4',
 						'flex flex-row items-center justify-between',
 						'mb-2 py-4 md:mb-0 md:py-0',
 						token.className
-					)}>
+					)}
+				>
 					<button
 						onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
 						disabled={!token.sortable}
-						className={cl('yearn--table-head-label-wrapper group hover:text-neutral-900')}>
+						className={cl('yearn--table-head-label-wrapper group hover:text-neutral-900')}
+					>
 						<p
 							className={cl(
 								'yearn--table-head-label',
@@ -81,7 +84,8 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 								sortBy === token.value
 									? 'text-neutral-800'
 									: `text-neutral-800/60 ${token.sortable ? 'group-hover:text-neutral-800' : ''}`
-							)}>
+							)}
+						>
 							{token.label}
 						</p>
 						{token.sortable ? renderChevron(sortBy === token.value) : null}
@@ -96,7 +100,8 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 								onClick={(): void => onSort(item.value, toggleSortDirection(item.value))}
 								disabled={!item.sortable}
 								className={cl('yearn--table-head-label-wrapper group', item.className)}
-								datatype={'number'}>
+								datatype={'number'}
+							>
 								<p
 									className={cl(
 										'yearn--table-head-label',
@@ -104,7 +109,8 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 										sortBy === item.value
 											? 'text-neutral-800'
 											: 'text-neutral-800/60 group-hover:text-neutral-800'
-									)}>
+									)}
+								>
 									&nbsp;{item.label}
 								</p>
 								{item.sortable ? renderChevron(sortBy === item.value) : null}

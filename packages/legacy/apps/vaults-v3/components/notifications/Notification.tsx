@@ -1,7 +1,3 @@
-import React, {useCallback, useMemo, useState} from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import {motion} from 'framer-motion';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {useNotifications} from '@lib/contexts/useNotifications';
 import {useTransactionStatusPoller} from '@lib/hooks/useTransactionStatusPoller';
@@ -10,11 +6,14 @@ import {IconCheck} from '@lib/icons/IconCheck';
 import {IconClose} from '@lib/icons/IconClose';
 import {IconCross} from '@lib/icons/IconCross';
 import {IconLoader} from '@lib/icons/IconLoader';
-import {cl, SUPPORTED_NETWORKS, toAddress, truncateHex} from '@lib/utils';
-
-import type {ReactElement} from 'react';
 import type {TNotification, TNotificationStatus} from '@lib/types/notifications';
+import {cl, SUPPORTED_NETWORKS, toAddress, truncateHex} from '@lib/utils';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {motion} from 'framer-motion';
+import Image from 'next/image';
+import Link from 'next/link';
+import type {ReactElement} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 
 const STATUS: {[key: string]: [string, string, ReactElement]} = {
 	success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} />],
@@ -30,7 +29,8 @@ function NotificationStatus(props: {status: TNotificationStatus}): ReactElement 
 				STATUS[props.status][1]
 			)}
 			aria-label={`Status: ${STATUS[props.status][0]}`}
-			role={'status'}>
+			role={'status'}
+		>
 			{STATUS[props.status][2]}
 			{STATUS[props.status][0]}
 		</div>
@@ -117,7 +117,8 @@ function NotificationContent({
 					<div
 						className={
 							'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'
-						}>
+						}
+					>
 						<Image
 							width={14}
 							height={14}
@@ -143,7 +144,8 @@ function NotificationContent({
 						<div
 							className={
 								'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'
-							}>
+							}
+						>
 							<Image
 								width={14}
 								height={14}
@@ -163,7 +165,8 @@ function NotificationContent({
 							target={'_blank'}
 							rel={'noopener noreferrer'}
 							aria-label={`View address ${notification.address} on explorer`}
-							className={'text-neutral-900 hover:text-neutral-600'}>
+							className={'text-neutral-900 hover:text-neutral-600'}
+						>
 							<button className={'text-xs font-medium underline'}>
 								{truncateHex(notification.address, 5)}
 							</button>
@@ -176,7 +179,8 @@ function NotificationContent({
 							target={'_blank'}
 							rel={'noopener noreferrer'}
 							aria-label={`View token ${notification.fromTokenName || 'Unknown'} on explorer`}
-							className={'text-neutral-900 hover:text-neutral-600'}>
+							className={'text-neutral-900 hover:text-neutral-600'}
+						>
 							<button className={'text-xs font-medium underline'}>
 								{notification.fromTokenName || 'Unknown'}
 							</button>
@@ -193,7 +197,8 @@ function NotificationContent({
 									target={'_blank'}
 									rel={'noopener noreferrer'}
 									aria-label={`View vault ${notification.toTokenName || 'Unknown'} on explorer`}
-									className={'text-neutral-900 hover:text-neutral-600'}>
+									className={'text-neutral-900 hover:text-neutral-600'}
+								>
 									<button className={'text-xs font-medium underline'}>
 										{notification.toTokenName || 'Unknown'}
 									</button>
@@ -210,7 +215,8 @@ function NotificationContent({
 									target={'_blank'}
 									rel={'noopener noreferrer'}
 									aria-label={`View spender ${notification.spenderAddress} on explorer`}
-									className={'text-neutral-900 hover:text-neutral-600'}>
+									className={'text-neutral-900 hover:text-neutral-600'}
+								>
 									<button className={'text-xs font-medium underline'}>
 										{truncateHex(notification.spenderAddress || '0x0', 5)}
 									</button>
@@ -343,7 +349,8 @@ export const Notification = React.memo(function Notification({
 			)}
 			style={{transformOrigin: 'top center'}}
 			role={'article'}
-			aria-label={`${notificationTitle} notification`}>
+			aria-label={`${notificationTitle} notification`}
+		>
 			{variant === 'v3' && (
 				<div
 					className={cl(
@@ -365,7 +372,8 @@ export const Notification = React.memo(function Notification({
 					'opacity-0 group-hover:opacity-60 group-hover:bg-neutral-200/60 hover:!opacity-100',
 					isDeleting ? '!opacity-30' : ''
 				)}
-				title={'Remove'}>
+				title={'Remove'}
+			>
 				<IconClose className={cl('w-3 h-3', variant === 'v3' ? 'text-neutral-700' : 'text-neutral-600')} />
 			</button>
 
@@ -375,17 +383,14 @@ export const Notification = React.memo(function Notification({
 					<NotificationStatus status={notification.status} />
 				</div>
 
-				<NotificationContent
-					notification={notification}
-					fromVault={fromVault}
-					toVault={toVault}
-				/>
+				<NotificationContent notification={notification} fromVault={fromVault} toVault={toVault} />
 
 				{notification.status === 'success' || notification.txHash ? (
 					<div
 						className={
 							'mt-4 flex items-center justify-between border-t border-neutral-100 pt-3 text-xs text-neutral-800'
-						}>
+						}
+					>
 						<div className={'flex gap-4'}>
 							<span className={'font-bold'}>{formattedDate}</span>
 						</div>
@@ -395,7 +400,8 @@ export const Notification = React.memo(function Notification({
 								target={'_blank'}
 								rel={'noopener noreferrer'}
 								aria-label={`View transaction ${notification.txHash} on explorer`}
-								className={'text-neutral-900 hover:text-neutral-600'}>
+								className={'text-neutral-900 hover:text-neutral-600'}
+							>
 								<button className={'text-xs font-medium underline'}>{'View tx'}</button>
 							</Link>
 						) : null}

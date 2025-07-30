@@ -1,15 +1,9 @@
-import React from 'react';
-
+import type React from 'react';
 import type {ReactElement} from 'react';
 
 export function IconAlertCritical(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
-		<svg
-			width={24}
-			height={24}
-			xmlns={'http://www.w3.org/2000/svg'}
-			viewBox={'0 0 24 24'}
-			{...props}>
+		<svg width={24} height={24} xmlns={'http://www.w3.org/2000/svg'} viewBox={'0 0 24 24'} {...props}>
 			<path
 				d={
 					'M15.4648 3.98809L22.467 16.0932C23.9919 18.7299 22.0614 22 19.0022 22H4.99841C1.93862 22 0.00750279 18.7303 1.53354 16.0932L5.78198 12.4016L3.12355 16.9979C2.30533 18.4116 3.33447 20.1819 4.99841 20.1819H19.0022C20.6649 20.1819 21.6947 18.412 20.877 16.998L14.0583 5.21002L15.4648 3.98809Z'

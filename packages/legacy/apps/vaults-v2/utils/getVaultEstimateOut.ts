@@ -1,11 +1,9 @@
-import {readContract} from 'wagmi/actions';
+import type {TAddress, TNormalizedBN} from '@lib/types';
 import {assert, assertAddress, toBigInt, toNormalizedBN} from '@lib/utils';
 import {VAULT_ABI} from '@lib/utils/abi/vault.abi';
 import {retrieveConfig} from '@lib/utils/wagmi';
-
+import {readContract} from 'wagmi/actions';
 import {VAULT_V3_ABI} from './abi/vaultV3.abi';
-
-import type {TAddress, TNormalizedBN} from '@lib/types';
 
 type TGetVaultEstimateOutProps = {
 	from: TAddress;

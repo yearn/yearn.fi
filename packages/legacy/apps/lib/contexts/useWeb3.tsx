@@ -1,5 +1,11 @@
+import {Clusters, getImageUrl} from '@clustersxyz/sdk';
+import {useAccountModal, useChainModal, useConnectModal} from '@rainbow-me/rainbowkit';
+import {useIsMounted, useUpdateEffect} from '@react-hookz/web';
+import type {ReactElement} from 'react';
 import {createContext, useCallback, useContext, useMemo, useState} from 'react';
+import type {Chain} from 'viem';
 import {mainnet} from 'viem/chains';
+import type {Connector} from 'wagmi';
 import {
 	useAccount,
 	useConnect,
@@ -9,20 +15,12 @@ import {
 	useSwitchChain,
 	useWalletClient
 } from 'wagmi';
-import {Clusters, getImageUrl} from '@clustersxyz/sdk';
-import {useAccountModal, useChainModal, useConnectModal} from '@rainbow-me/rainbowkit';
-import {useIsMounted, useUpdateEffect} from '@react-hookz/web';
-
 import {useAsyncTrigger} from '../hooks/useAsyncTrigger';
+import type {TAddress} from '../types/address';
 import {isAddress} from '../utils';
 import {isIframe} from '../utils/helpers';
 import {toAddress} from '../utils/tools.address';
 import {retrieveConfig} from '../utils/wagmi';
-
-import type {ReactElement} from 'react';
-import type {Chain} from 'viem';
-import type {Connector} from 'wagmi';
-import type {TAddress} from '../types/address';
 
 type TWeb3Context = {
 	address: TAddress | undefined;

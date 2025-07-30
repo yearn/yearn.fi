@@ -1,6 +1,5 @@
-import {Fragment} from 'react';
-
 import type {ReactElement, ReactNode} from 'react';
+import {Fragment} from 'react';
 
 export type TRenderable = {
 	shouldRender: boolean;

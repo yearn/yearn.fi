@@ -1,5 +1,5 @@
-import type {Hash, TransactionReceipt} from 'viem';
 import type {TActionParams} from '@vaults-v2/contexts/useActionFlow';
+import type {Hash, TransactionReceipt} from 'viem';
 import type {TAddress} from './address';
 
 export type TNotificationStatus = 'pending' | 'success' | 'error';

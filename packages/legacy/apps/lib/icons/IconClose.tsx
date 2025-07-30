@@ -9,31 +9,12 @@ export function IconClose({...props}: SVGProps<SVGSVGElement>): ReactElement {
 			fill={'none'}
 			stroke={'currentColor'}
 			xmlns={'http://www.w3.org/2000/svg'}
-			{...props}>
-			<path
-				d={'M6 6L18 18'}
-				strokeWidth={'2'}
-				strokeLinecap={'round'}
-				strokeLinejoin={'round'}
-			/>
-			<path
-				d={'M6 18L18 6'}
-				strokeWidth={'2'}
-				strokeLinecap={'round'}
-				strokeLinejoin={'round'}
-			/>
-			<path
-				d={'M6 6L18 18'}
-				strokeWidth={'2'}
-				strokeLinecap={'round'}
-				strokeLinejoin={'round'}
-			/>
-			<path
-				d={'M6 18L18 6'}
-				strokeWidth={'2'}
-				strokeLinecap={'round'}
-				strokeLinejoin={'round'}
-			/>
+			{...props}
+		>
+			<path d={'M6 6L18 18'} strokeWidth={'2'} strokeLinecap={'round'} strokeLinejoin={'round'} />
+			<path d={'M6 18L18 6'} strokeWidth={'2'} strokeLinecap={'round'} strokeLinejoin={'round'} />
+			<path d={'M6 6L18 18'} strokeWidth={'2'} strokeLinecap={'round'} strokeLinejoin={'round'} />
+			<path d={'M6 18L18 6'} strokeWidth={'2'} strokeLinecap={'round'} strokeLinejoin={'round'} />
 		</svg>
 	);
 }

@@ -1,4 +1,4 @@
-import {AppName, APPS} from '@lib/components/Apps';
+import {APPS, AppName} from '@lib/components/Apps';
 import {MotionDiv} from '@lib/components/MotionDiv';
 
 import type {NextRouter} from 'next/router';
@@ -13,9 +13,7 @@ export function VaultsV3Header({pathname}: TProps): ReactElement {
 	const isVaultPage = pathname === '/v3/[chainID]/[address]';
 
 	return (
-		<MotionDiv
-			animate={!isVaultPage && pathname.startsWith('/v3') ? 'enter' : 'exit'}
-			name={name}>
+		<MotionDiv animate={!isVaultPage && pathname.startsWith('/v3') ? 'enter' : 'exit'} name={name}>
 			{icon}
 		</MotionDiv>
 	);

@@ -1,11 +1,11 @@
-import Image from 'next/image';
-import vaultsManifest from 'public/apps/vaults-manifest.json';
-import {VAULTS_BETA_MENU} from '@vaults/constants/menu';
-import {VAULTS_MENU} from '@vaults-v2/constants/menu';
-import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {LogoYearn} from '@lib/icons/LogoYearn';
 import {VEYFI_DYFI_ADDRESS, YCRV_TOKEN_ADDRESS} from '@lib/utils/constants';
+import {VAULTS_BETA_MENU} from '@vaults/constants/menu';
+import {VAULTS_MENU} from '@vaults-v2/constants/menu';
+import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
+import Image from 'next/image';
+import vaultsManifest from 'public/apps/vaults-manifest.json';
 
 import type {ReactElement} from 'react';
 import type {TMenu} from './Header';
@@ -38,13 +38,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		menu: VAULTS_V3_MENU,
 		manifest: vaultsManifest,
 		isDisabled: false,
-		icon: (
-			<LogoYearn
-				className={'size-8'}
-				back={'text-pink-400'}
-				front={'text-white'}
-			/>
-		)
+		icon: <LogoYearn className={'size-8'} back={'text-pink-400'} front={'text-white'} />
 	},
 	Juiced: {
 		name: `${AppName.JUICED} Vaults`,
@@ -85,26 +79,14 @@ export const APPS: {[key in AppName]: TApp} = {
 		href: '/vaults',
 		menu: VAULTS_MENU,
 		manifest: vaultsManifest,
-		icon: (
-			<LogoYearn
-				className={'size-8'}
-				back={'text-pink-400'}
-				front={'text-white'}
-			/>
-		)
+		icon: <LogoYearn className={'size-8'} back={'text-pink-400'} front={'text-white'} />
 	},
 	Beta: {
 		name: `${AppName.BETA} Vaults`,
 		href: '/vaults-beta',
 		menu: VAULTS_BETA_MENU,
 		manifest: vaultsManifest,
-		icon: (
-			<LogoYearn
-				className={'size-8'}
-				back={'text-primary'}
-				front={'text-white'}
-			/>
-		)
+		icon: <LogoYearn className={'size-8'} back={'text-primary'} front={'text-white'} />
 	},
 	veYFI: {
 		name: AppName.VEYFI,

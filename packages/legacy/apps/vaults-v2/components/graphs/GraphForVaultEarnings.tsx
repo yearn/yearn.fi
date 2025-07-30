@@ -1,10 +1,10 @@
-import {Fragment, useMemo} from 'react';
-import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import type {TGraphData} from '@lib/types';
 import {formatAmount, formatWithUnit, isZero} from '@lib/utils';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 import type {ReactElement} from 'react';
-import type {TGraphData} from '@lib/types';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {Fragment, useMemo} from 'react';
+import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 
 export type TGraphForVaultEarningsProps = {
 	currentVault: TYDaemonVault;
@@ -37,12 +37,11 @@ export function GraphForVaultEarnings({
 		return <Fragment />;
 	}
 	return (
-		<ResponsiveContainer
-			width={'100%'}
-			height={height}>
+		<ResponsiveContainer width={'100%'} height={height}>
 			<LineChart
 				margin={{top: 0, right: -28, bottom: 0, left: 0}}
-				data={isCumulative ? cumulativeData : harvestData}>
+				data={isCumulative ? cumulativeData : harvestData}
+			>
 				<Line
 					className={'text-primary-600'}
 					type={'step'}
@@ -56,10 +55,7 @@ export function GraphForVaultEarnings({
 					dataKey={'value'}
 					stroke={'currentcolor'}
 				/>
-				<XAxis
-					dataKey={'name'}
-					hide
-				/>
+				<XAxis dataKey={'name'} hide />
 				<YAxis
 					orientation={'right'}
 					domain={['dataMin', 'auto']}

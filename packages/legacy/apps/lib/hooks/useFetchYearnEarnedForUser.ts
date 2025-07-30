@@ -1,11 +1,10 @@
 import {useDeepCompareMemo} from '@react-hookz/web';
 
 import {useWeb3} from '../contexts/useWeb3';
+import type {TYDaemonEarned} from '../utils/schemas/yDaemonEarnedSchema';
 import {yDaemonEarnedSchema} from '../utils/schemas/yDaemonEarnedSchema';
 import {useFetch} from './useFetch';
 import {useYDaemonBaseURI} from './useYDaemonBaseURI';
-
-import type {TYDaemonEarned} from '../utils/schemas/yDaemonEarnedSchema';
 
 /******************************************************************************
  ** The useFetchYearnEarnedForUser hook is used to fetch an estimate of the

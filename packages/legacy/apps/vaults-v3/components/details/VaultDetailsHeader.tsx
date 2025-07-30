@@ -1,20 +1,12 @@
-import {Fragment, useEffect, useState} from 'react';
-import {erc20Abi, zeroAddress} from 'viem';
-import {useBlockNumber} from 'wagmi';
-import {readContract, readContracts} from 'wagmi/actions';
-import {JUICED_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/juicedStakingRewards.abi';
-import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi';
-import {V3_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/V3StakingRewards.abi';
-import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi';
-import {VEYFI_GAUGE_ABI} from '@vaults-v2/utils/abi/veYFIGauge.abi';
 import {Counter} from '@lib/components/Counter';
-import {Renderable} from '@lib/components/Renderable';
 import {RenderAmount} from '@lib/components/RenderAmount';
+import {Renderable} from '@lib/components/Renderable';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
 import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice';
 import {IconQuestion} from '@lib/icons/IconQuestion';
+import type {TAddress, TNormalizedBN} from '@lib/types';
 import {
 	cl,
 	decodeAsAddress,
@@ -30,12 +22,19 @@ import {
 	zeroNormalizedBN
 } from '@lib/utils';
 import {copyToClipboard, getVaultName} from '@lib/utils/helpers';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {retrieveConfig} from '@lib/utils/wagmi';
 import {getNetwork} from '@lib/utils/wagmi/utils';
-
+import {JUICED_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/juicedStakingRewards.abi';
+import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi';
+import {V3_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/V3StakingRewards.abi';
+import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi';
+import {VEYFI_GAUGE_ABI} from '@vaults-v2/utils/abi/veYFIGauge.abi';
 import type {ReactElement} from 'react';
-import type {TAddress, TNormalizedBN} from '@lib/types';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {Fragment, useEffect, useState} from 'react';
+import {erc20Abi, zeroAddress} from 'viem';
+import {useBlockNumber} from 'wagmi';
+import {readContract, readContracts} from 'wagmi/actions';
 
 type TVaultHeaderLineItemProps = {
 	label: string;
@@ -48,16 +47,16 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 		<div
 			className={
 				'flex flex-col items-center justify-center space-y-1 overflow-hidden md:space-y-2 md:overflow-visible'
-			}>
+			}
+		>
 			<p className={'text-center text-xs text-neutral-900/70'}>{label}</p>
-			<b
-				className={'font-number text-base md:text-3xl'}
-				suppressHydrationWarning>
+			<b className={'font-number text-base md:text-3xl'} suppressHydrationWarning>
 				{children}
 			</b>
 			<legend
 				className={'font-number whitespace-nowrap text-center text-xs text-neutral-900/70'}
-				suppressHydrationWarning>
+				suppressHydrationWarning
+			>
 				{legend ? legend : '\u00A0'}
 			</legend>
 		</div>
@@ -77,14 +76,8 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 	if (apr.forwardAPR.type === '' && extraAPY === 0) {
 		return (
 			<VaultHeaderLineItem label={'Historical APY'}>
-				<Renderable
-					shouldRender={!isForceNewHistoricalAPY}
-					fallback={'New'}>
-					<RenderAmount
-						value={netAPY}
-						symbol={'percent'}
-						decimals={6}
-					/>
+				<Renderable shouldRender={!isForceNewHistoricalAPY} fallback={'New'}>
+					<RenderAmount value={netAPY} symbol={'percent'} decimals={6} />
 				</Renderable>
 			</VaultHeaderLineItem>
 		);
@@ -113,17 +106,20 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 							<div
 								className={
 									'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-								}>
+								}
+							>
 								<p
 									className={
 										'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
-									}>
+									}
+								>
 									{'Estimated APY for the next period based on current data.'}
 								</p>
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
-									}>
+									}
+								>
 									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
@@ -136,27 +132,18 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}>
+									}
+								>
 									<p>{'• Rewards APY '}</p>
-									<RenderAmount
-										shouldHideTooltip
-										value={extraAPY}
-										symbol={'percent'}
-										decimals={6}
-									/>
+									<RenderAmount shouldHideTooltip value={extraAPY} symbol={'percent'} decimals={6} />
 								</div>
 							</div>
 						</span>
 					</span>
-				}>
-				<Renderable
-					shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')}
-					fallback={'New'}>
-					<RenderAmount
-						value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
-						symbol={'percent'}
-						decimals={6}
-					/>
+				}
+			>
+				<Renderable shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')} fallback={'New'}>
+					<RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
 				</Renderable>
 			</VaultHeaderLineItem>
 		);
@@ -202,17 +189,20 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 							<div
 								className={
 									'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-								}>
+								}
+							>
 								<p
 									className={
 										'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
-									}>
+									}
+								>
 									{'Estimated APY for the next period based on current data.'}
 								</p>
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
-									}>
+									}
+								>
 									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
@@ -225,7 +215,8 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}>
+									}
+								>
 									<p>{'• Rewards APY '}</p>
 									<div>
 										<RenderAmount
@@ -246,15 +237,10 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 							</div>
 						</span>
 					</span>
-				}>
-				<Renderable
-					shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')}
-					fallback={'New'}>
-					<RenderAmount
-						value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
-						symbol={'percent'}
-						decimals={6}
-					/>
+				}
+			>
+				<Renderable shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')} fallback={'New'}>
+					<RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
 				</Renderable>
 			</VaultHeaderLineItem>
 		);
@@ -280,17 +266,20 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 						<div
 							className={
 								'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-							}>
+							}
+						>
 							<p
 								className={
 									'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
-								}>
+								}
+							>
 								{'Estimated APY for the next period based on current data.'}
 							</p>
 							<div
 								className={
 									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
-								}>
+								}
+							>
 								<p>{'• Base APY '}</p>
 								<RenderAmount
 									shouldHideTooltip
@@ -303,22 +292,18 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 							<div
 								className={
 									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-								}>
+								}
+							>
 								<p>{'• Rewards APY '}</p>
 								<p>{'N/A'}</p>
 							</div>
 						</div>
 					</span>
 				</span>
-			}>
-			<Renderable
-				shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')}
-				fallback={'New'}>
-				<RenderAmount
-					value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
-					symbol={'percent'}
-					decimals={6}
-				/>
+			}
+		>
+			<Renderable shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')} fallback={'New'}>
+				<RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
 			</Renderable>
 		</VaultHeaderLineItem>
 	);
@@ -330,9 +315,7 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
  *************************************************************************************************/
 function TVLInVault(props: {tokenSymbol: string; tvl: number; totalAssets: bigint; decimals: number}): ReactElement {
 	return (
-		<VaultHeaderLineItem
-			label={`Total deposited, ${props.tokenSymbol || 'tokens'}`}
-			legend={formatUSD(props.tvl)}>
+		<VaultHeaderLineItem label={`Total deposited, ${props.tokenSymbol || 'tokens'}`} legend={formatUSD(props.tvl)}>
 			<Counter
 				value={toNormalizedBN(props.totalAssets, props.decimals).normalized}
 				decimals={props.decimals}
@@ -371,17 +354,20 @@ function ValueInVaultAsToken(props: {
 						<div
 							className={
 								'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-							}>
+							}
+						>
 							<p
 								className={
 									'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'
-								}>
+								}
+							>
 								{'Your yield is accruing every single block. Go you!'}
 							</p>
 						</div>
 					</span>
 				</span>
-			}>
+			}
+		>
 			<Counter
 				value={props.valueInToken.normalized}
 				decimals={props.currentVault.decimals}
@@ -412,11 +398,7 @@ function ValueEarned(props: {
 					<div className={'flex flex-row items-center space-x-2'}>
 						<div>
 							{'$'}
-							<Counter
-								value={props.earnedValue}
-								decimals={2}
-								decimalsToDisplay={[2, 4, 6, 8]}
-							/>
+							<Counter value={props.earnedValue} decimals={2} decimalsToDisplay={[2, 4, 6, 8]} />
 						</div>
 						<IconQuestion className={'hidden md:block'} />
 					</div>
@@ -424,17 +406,20 @@ function ValueEarned(props: {
 						<div
 							className={
 								'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-							}>
+							}
+						>
 							<p
 								className={
 									'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'
-								}>
+								}
+							>
 								{'Your yield is accruing every single block. Go you!'}
 							</p>
 						</div>
 					</span>
 				</span>
-			}>
+			}
+		>
 			<span className={'font-numer'}>
 				<Counter
 					value={props.earnedAmount.normalized}
@@ -722,7 +707,8 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					'mx-auto flex w-full flex-row items-center justify-center text-center',
 					'text-3xl md:text-[64px] leading-[36px] md:leading-[72px]',
 					'tabular-nums text-neutral-900 font-black'
-				)}>
+				)}
+			>
 				{getVaultName(currentVault)}
 			</strong>
 
@@ -749,9 +735,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					</div>
 					{currentVault?.info?.isBoosted ? (
 						<div className={'w-full rounded-lg bg-neutral-900/30 px-4 py-2 text-center md:w-fit'}>
-							<strong className={'text-sm font-black text-neutral-900 md:text-xl'}>
-								{'⚡️ Boosted'}
-							</strong>
+							<strong className={'text-sm font-black text-neutral-900 md:text-xl'}>{'⚡️ Boosted'}</strong>
 						</div>
 					) : null}
 				</div>
@@ -763,22 +747,14 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					currentVault.staking.available && currentVault.staking.source !== 'yBOLD'
 						? 'md:grid-cols-4'
 						: 'md:grid-cols-3'
-				)}>
+				)}
+			>
 				<div className={'w-full'}>
-					<TVLInVault
-						tokenSymbol={symbol}
-						tvl={tvl.tvl}
-						totalAssets={tvl.totalAssets}
-						decimals={decimals}
-					/>
+					<TVLInVault tokenSymbol={symbol} tvl={tvl.tvl} totalAssets={tvl.totalAssets} decimals={decimals} />
 				</div>
 
 				<div className={'w-full'}>
-					<VaultAPY
-						apr={apr}
-						source={currentVault.staking.source}
-						chain={currentVault.chainID}
-					/>
+					<VaultAPY apr={apr} source={currentVault.staking.source} chain={currentVault.chainID} />
 				</div>
 
 				<div className={'w-full'}>

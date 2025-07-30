@@ -1,8 +1,6 @@
 import {zeroAddress} from 'viem';
-
-import {toAddress} from './tools.address';
-
 import type {TAddress} from '../types/address';
+import {toAddress} from './tools.address';
 
 type TUnknowValueType =
 	| {

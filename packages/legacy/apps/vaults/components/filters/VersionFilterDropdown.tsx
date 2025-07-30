@@ -1,7 +1,6 @@
-import {useMemo} from 'react';
-import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown';
-
 import type {TMultiSelectOptionProps} from '@lib/components/MultiSelectDropdown';
+import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown';
+import {useMemo} from 'react';
 
 export const VersionFilterDropdown: React.FC<{
 	selectedVersion: string;

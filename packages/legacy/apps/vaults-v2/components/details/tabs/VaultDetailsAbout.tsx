@@ -1,13 +1,12 @@
-import {useIsMounted} from '@react-hookz/web';
-import {GraphForVaultEarnings} from '@vaults-v2/components/graphs/GraphForVaultEarnings';
-import {Renderable} from '@lib/components/Renderable';
 import {RenderAmount} from '@lib/components/RenderAmount';
+import {Renderable} from '@lib/components/Renderable';
+import type {TGraphData} from '@lib/types';
 import {cl, formatAmount, formatPercent, isZero} from '@lib/utils';
 import {parseMarkdown} from '@lib/utils/helpers';
-
-import type {ReactElement} from 'react';
-import type {TGraphData} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {useIsMounted} from '@react-hookz/web';
+import {GraphForVaultEarnings} from '@vaults-v2/components/graphs/GraphForVaultEarnings';
+import type {ReactElement} from 'react';
 
 type TAPYLineItemProps = {
 	currentVault: TYDaemonVault;
@@ -42,22 +41,10 @@ function APYLineItem({currentVault, value, label, apyType, isStaking, hasUpperLi
 		return (
 			<div className={'flex flex-row items-center justify-between'}>
 				<p className={'text-sm text-neutral-500'}>{label}</p>
-				<p
-					className={'font-number text-sm text-neutral-900'}
-					suppressHydrationWarning>
-					<RenderAmount
-						shouldHideTooltip
-						value={estAPYRange[0]}
-						symbol={'percent'}
-						decimals={6}
-					/>
+				<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
+					<RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
 					&nbsp;&rarr;&nbsp;
-					<RenderAmount
-						shouldHideTooltip
-						value={estAPYRange[1]}
-						symbol={'percent'}
-						decimals={6}
-					/>
+					<RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
 				</p>
 			</div>
 		);
@@ -66,9 +53,7 @@ function APYLineItem({currentVault, value, label, apyType, isStaking, hasUpperLi
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
 			<p className={'text-sm text-neutral-500'}>{label}</p>
-			<p
-				className={'font-number text-sm text-neutral-900'}
-				suppressHydrationWarning>
+			<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
 				{isNew
 					? 'New'
 					: hasUpperLimit
@@ -88,15 +73,15 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 					tooltip
 						? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
 						: ''
-				)}>
+				)}
+			>
 				{tooltip ? (
-					<span
-						suppressHydrationWarning
-						className={'tooltipFees bottom-full'}>
+					<span suppressHydrationWarning className={'tooltipFees bottom-full'}>
 						<div
 							className={
 								'font-number text-xxs w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-neutral-900'
-							}>
+							}
+						>
 							{tooltip}
 						</div>
 					</span>
@@ -132,7 +117,8 @@ export function VaultDetailsAbout({
 					href="https://docs.yearn.fi"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="text-neutral-900 underline">
+					className="text-neutral-900 underline"
+				>
 					docs
 				</a>
 				, or if you want to learn more about this vault, head to our{' '}
@@ -140,7 +126,8 @@ export function VaultDetailsAbout({
 					href="https://discord.gg/yearn"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="text-neutral-900 underline">
+					className="text-neutral-900 underline"
+				>
 					discord
 				</a>{' '}
 				or{' '}
@@ -148,7 +135,8 @@ export function VaultDetailsAbout({
 					href="https://t.me/yearnfinance"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="text-neutral-900 underline">
+					className="text-neutral-900 underline"
+				>
 					telegram
 				</a>{' '}
 				and ask.
@@ -247,7 +235,8 @@ export function VaultDetailsAbout({
 						{(currentVault.apr.forwardAPR.composite?.keepVELO || 0) > 0 ? (
 							<YearnFeesLineItem
 								label={'keepVELO'}
-								tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}>
+								tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}
+							>
 								<b className={'font-number text-xl text-neutral-500'}>
 									{`${formatAmount((currentVault.apr.forwardAPR.composite?.keepVELO || 0) * 100, 0, 2)} %`}
 								</b>
@@ -259,13 +248,10 @@ export function VaultDetailsAbout({
 					<b className={'text-neutral-900'}>{'Cumulative Earnings'}</b>
 					<div
 						className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'}
-						style={{height: 160}}>
+						style={{height: 160}}
+					>
 						<Renderable shouldRender={isMounted()}>
-							<GraphForVaultEarnings
-								currentVault={currentVault}
-								harvestData={harvestData}
-								height={160}
-							/>
+							<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} height={160} />
 						</Renderable>
 					</div>
 				</div>

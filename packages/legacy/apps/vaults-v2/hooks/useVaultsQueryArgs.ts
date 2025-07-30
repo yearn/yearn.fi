@@ -1,11 +1,10 @@
-import {useCallback, useState} from 'react';
+import {useSupportedChains} from '@lib/hooks/useSupportedChains';
+import type {TDict, TSortDirection} from '@lib/types';
+import {useDeepCompareEffect, useMountEffect} from '@react-hookz/web';
+import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
 import {useSearchParams} from 'next/navigation';
 import {useRouter} from 'next/router';
-import {useDeepCompareEffect, useMountEffect} from '@react-hookz/web';
-import {useSupportedChains} from '@lib/hooks/useSupportedChains';
-
-import type {TDict, TSortDirection} from '@lib/types';
-import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
+import {useCallback, useState} from 'react';
 
 type TQueryArgs = {
 	search: string | null | undefined;
@@ -228,7 +227,9 @@ function useQueryArguments(props: {
 				return;
 			}
 			if (value.length === props.defaultCategories?.length) {
-				const isEqual = value.every((category): boolean => Boolean(props.defaultCategories?.includes(category)));
+				const isEqual = value.every((category): boolean =>
+					Boolean(props.defaultCategories?.includes(category))
+				);
 				if (isEqual) {
 					queryArgs.categories = undefined;
 					delete queryArgs.categories;

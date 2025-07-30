@@ -1,6 +1,6 @@
-import Image from 'next/image';
 import {LogoGimme} from '@lib/icons/LogoGimme';
 import {toAddress} from '@lib/utils';
+import Image from 'next/image';
 
 import {LogoYearn} from '../icons/LogoYearn';
 
@@ -13,26 +13,14 @@ export const APPS = {
 		href: '/v3',
 		host: ['yearn.fi'],
 		pathname: '/v3',
-		icon: (
-			<LogoYearn
-				className={'size-8'}
-				gradient={{start: '#FB245A', end: '#0657F9'}}
-				front={'text-white'}
-			/>
-		)
+		icon: <LogoYearn className={'size-8'} gradient={{start: '#FB245A', end: '#0657F9'}} front={'text-white'} />
 	},
 	Vaults: {
 		name: 'Vaults',
 		href: '/vaults',
 		host: ['localhost:3000/vaults', 'https://yearn.fi/vaults'],
 		pathname: '/vaults',
-		icon: (
-			<LogoYearn
-				className={'size-8'}
-				back={'text-[#f472b6]'}
-				front={'text-white'}
-			/>
-		)
+		icon: <LogoYearn className={'size-8'} back={'text-[#f472b6]'} front={'text-white'} />
 	},
 	yCRV: {
 		name: 'yCRV',
@@ -73,26 +61,14 @@ export const APPS = {
 		href: 'https://factory.yearn.fi',
 		host: ['factory.yearn.fi'],
 		pathname: 'unused',
-		icon: (
-			<LogoYearn
-				className={'!size-6 !max-h-6 !max-w-6'}
-				back={'text-neutral-0'}
-				front={'text-neutral-900'}
-			/>
-		)
+		icon: <LogoYearn className={'!size-6 !max-h-6 !max-w-6'} back={'text-neutral-0'} front={'text-neutral-900'} />
 	},
 	analytics: {
 		name: 'Analytics',
 		href: 'https://yearn-powerglove.vercel.app/',
 		host: ['yearn-powerglove.vercel.app'],
 		pathname: 'unused',
-		icon: (
-			<LogoYearn
-				className={'!size-6 !max-h-6 !max-w-6'}
-				back={'text-neutral-900'}
-				front={'text-black'}
-			/>
-		)
+		icon: <LogoYearn className={'!size-6 !max-h-6 !max-w-6'} back={'text-neutral-900'} front={'text-black'} />
 	},
 	yETH: {
 		name: 'yETH',
@@ -139,12 +115,6 @@ export const APPS = {
 		href: '/vaults-beta',
 		host: ['localhost:3000/vaults-beta', 'https://yearn.fi/vaults-beta'],
 		pathname: '/vaults-beta',
-		icon: (
-			<LogoYearn
-				className={'size-8'}
-				back={'text-white'}
-				front={'text-blue-500'}
-			/>
-		)
+		icon: <LogoYearn className={'size-8'} back={'text-white'} front={'text-blue-500'} />
 	}
 };

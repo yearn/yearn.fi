@@ -1,10 +1,8 @@
 import {useDeepCompareMemo} from '@react-hookz/web';
-
+import type {TYDaemonPricesChain} from '../utils/schemas/yDaemonPricesSchema';
 import {yDaemonPricesChainSchema} from '../utils/schemas/yDaemonPricesSchema';
 import {useFetch} from './useFetch';
 import {useYDaemonBaseURI} from './useYDaemonBaseURI';
-
-import type {TYDaemonPricesChain} from '../utils/schemas/yDaemonPricesSchema';
 
 /******************************************************************************
  ** The useFetchYearnPrices hook is used to fetch the prices of the tokens from

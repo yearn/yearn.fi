@@ -1,9 +1,8 @@
-import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants';
 import {Button} from '@lib/components/Button';
 import {isZero} from '@lib/utils';
-
-import type {ReactElement} from 'react';
 import type {TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants';
+import type {ReactElement} from 'react';
 
 type TVaultListEmpty = {
 	sortedVaultsToDisplay: TYDaemonVaults;
@@ -28,7 +27,8 @@ export function VaultsListEmpty({
 			<div
 				className={
 					'mt-2 flex h-96 w-full animate-pulse flex-col items-center justify-center gap-2 rounded-[12px] bg-white/5 px-10 py-2'
-				}>
+				}
+			>
 				<b className={'text-lg font-medium'}>{'Fetching Vaults…'}</b>
 				<div className={'flex h-10 items-center justify-center'}>
 					<span className={'loader'} />
@@ -64,27 +64,19 @@ export function VaultsListEmpty({
 						<p className={'text-center text-neutral-600'}>
 							{`The vault "${currentSearch}" does not exist.`}
 						</p>
-						<p
-							className={
-								'text-center font-normal text-neutral-600'
-							}>{'No vaults found that match your filters.'}
-      </p>
-						<Button
-							className={'mt-4 w-full md:w-48'}
-							onClick={onReset}>
+						<p className={'text-center font-normal text-neutral-600'}>
+							{'No vaults found that match your filters.'}
+						</p>
+						<Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
 							{'Search all vaults'}
 						</Button>
 					</>
 				) : (
 					<>
-						<p
-							className={
-								'text-center font-normal text-neutral-600'
-							}>{'No vaults found that match your filters.'}
-      </p>
-						<Button
-							className={'mt-4 w-full md:w-48'}
-							onClick={onReset}>
+						<p className={'text-center font-normal text-neutral-600'}>
+							{'No vaults found that match your filters.'}
+						</p>
+						<Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
 							{'Search all vaults'}
 						</Button>
 					</>
@@ -100,9 +92,7 @@ export function VaultsListEmpty({
 					<p className={'text-center text-neutral-600'}>
 						{'Please, select a chain. At least one, just one.'}
 					</p>
-					<Button
-						className={'w-full md:w-48'}
-						onClick={onReset}>
+					<Button className={'w-full md:w-48'} onClick={onReset}>
 						{'Search all vaults'}
 					</Button>
 				</>

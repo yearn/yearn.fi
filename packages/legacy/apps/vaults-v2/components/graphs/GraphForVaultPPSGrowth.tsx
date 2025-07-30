@@ -1,9 +1,8 @@
+import type {TMessariGraphData} from '@lib/types';
+import {formatAmount, formatPercent, isZero} from '@lib/utils';
+import type {ReactElement} from 'react';
 import {Fragment} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {formatAmount, formatPercent, isZero} from '@lib/utils';
-
-import type {ReactElement} from 'react';
-import type {TMessariGraphData} from '@lib/types';
 
 export type TGraphForVaultPPSGrowthProps = {
 	messariData: TMessariGraphData[];
@@ -16,12 +15,8 @@ export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVau
 	}
 
 	return (
-		<ResponsiveContainer
-			width={'100%'}
-			height={height}>
-			<LineChart
-				margin={{top: 0, right: -26, bottom: 0, left: 0}}
-				data={messariData}>
+		<ResponsiveContainer width={'100%'} height={height}>
+			<LineChart margin={{top: 0, right: -26, bottom: 0, left: 0}} data={messariData}>
 				<Line
 					className={'text-primary-600'}
 					type={'step'}
@@ -35,10 +30,7 @@ export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVau
 						return <circle {...e}></circle>;
 					}}
 				/>
-				<XAxis
-					dataKey={'name'}
-					hide
-				/>
+				<XAxis dataKey={'name'} hide />
 				<YAxis
 					orientation={'right'}
 					domain={['dataMin', 'auto']}

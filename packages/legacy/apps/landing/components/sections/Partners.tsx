@@ -1,9 +1,8 @@
-import {useState} from 'react';
+import {SectionHeader} from '@lib/components/SectionHeader';
 import Image from 'next/image';
 import Link from 'next/link';
-import {SectionHeader} from '@lib/components/SectionHeader';
-
 import type {FC} from 'react';
+import {useState} from 'react';
 
 type TPartner = {
 	image: string;
@@ -50,26 +49,26 @@ const partners: TPartner[] = [
 const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 40}) => {
 	const [isHovered, set_isHovered] = useState(false);
 	return (
-		<Link
-			href={href}
-			className={'block flex-1'}>
+		<Link href={href} className={'block flex-1'}>
 			<div
 				className={
 					'relative flex h-20 cursor-pointer items-center justify-center rounded-lg bg-gray-800 p-4 transition-colors duration-200 hover:bg-blue-500 lg:h-full lg:p-6'
 				}
 				onMouseEnter={() => set_isHovered(true)}
-				onMouseLeave={() => set_isHovered(false)}>
+				onMouseLeave={() => set_isHovered(false)}
+			>
 				{isHovered && (
 					<div
 						className={
 							'absolute -top-12 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-700 px-3 py-2 text-sm text-neutral-900 lg:block'
-						}>
+						}
+					>
 						{alt}
 						<div
 							className={
 								'absolute left-1/2 top-full size-0 -translate-x-1/2 border-x-4 border-t-4 border-transparent border-t-gray-700'
-							}>
-      </div>
+							}
+						></div>
 					</div>
 				)}
 				<Image

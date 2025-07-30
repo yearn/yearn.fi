@@ -1,8 +1,7 @@
-import {useState} from 'react';
-import Image from 'next/image';
 import {SectionHeader} from '@lib/components/SectionHeader';
-
+import Image from 'next/image';
 import type {FC, ReactNode} from 'react';
+import {useState} from 'react';
 
 type TFAQItem = {
 	title: string;
@@ -18,11 +17,13 @@ const FAQItem: FC<TFAQItem> = ({title, children, isOpen, onToggle}) => {
 				onClick={onToggle}
 				className={
 					'flex w-full items-center justify-between rounded-lg bg-[#191919] px-6 py-5 text-neutral-900 transition-colors hover:bg-[#2a2a2a]'
-				}>
+				}
+			>
 				<span className={'text-lg'}>{title}</span>
 				<span
 					className={'text-2xl transition-transform'}
-					style={{transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)'}}>
+					style={{transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)'}}
+				>
 					{'+'}
 				</span>
 			</button>
@@ -71,9 +72,7 @@ const faqData = [
 				{
 					'Yes! Yearn has extensive documentation for developers looking to build on top of our protocol. Visit our'
 				}{' '}
-				<a
-					href={'https://docs.yearn.fi'}
-					className={'text-blue-400 underline'}>
+				<a href={'https://docs.yearn.fi'} className={'text-blue-400 underline'}>
 					{'docs'}
 				</a>{' '}
 				{'to learn more.'}
@@ -116,7 +115,8 @@ export const FAQs: FC = () => {
 									key={index}
 									title={faq.title}
 									isOpen={openFAQ === index}
-									onToggle={() => toggleFAQ(index)}>
+									onToggle={() => toggleFAQ(index)}
+								>
 									{faq.content}
 								</FAQItem>
 							))}

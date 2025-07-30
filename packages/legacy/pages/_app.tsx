@@ -1,10 +1,3 @@
-import React, {memo} from 'react';
-import {Toaster} from 'react-hot-toast';
-import {usePathname} from 'next/navigation';
-import PlausibleProvider from 'next-plausible';
-import {LandingAppHeader} from 'apps/landing/components/common/Header';
-import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
-import {AppSettingsContextApp} from '@vaults-v2/contexts/useAppSettings';
 import AppHeader from '@lib/components/Header';
 import {Meta} from '@lib/components/Meta';
 import {WithFonts} from '@lib/components/WithFonts';
@@ -21,10 +14,16 @@ import {IconCheckmark} from '@lib/icons/IconCheckmark';
 import {cl} from '@lib/utils';
 import {variants} from '@lib/utils/animations';
 import {SUPPORTED_NETWORKS} from '@lib/utils/constants';
-
+import {AppSettingsContextApp} from '@vaults-v2/contexts/useAppSettings';
+import {LandingAppHeader} from 'apps/landing/components/common/Header';
+import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import type {AppProps} from 'next/app';
+import {usePathname} from 'next/navigation';
 import type {NextRouter} from 'next/router';
+import PlausibleProvider from 'next-plausible';
 import type {ReactElement} from 'react';
+import React, {memo} from 'react';
+import {Toaster} from 'react-hot-toast';
 import type {Chain} from 'viem';
 
 import '../style.css';
@@ -56,17 +55,13 @@ const WithLayout = memo(function WithLayout(
 				<div
 					className={cl(
 						'mx-auto mb-0 flex z-[60] font-aeonik max-w-6xl absolute top-0 inset-x-0 bg-neutral-0'
-					)}>
+					)}
+				>
 					<AppHeader supportedNetworks={props.supportedNetworks} />
 				</div>
-				<div
-					id={'app'}
-					className={'bg-neutral-0 font-aeonik mb-0 flex min-h-screen justify-center'}>
+				<div id={'app'} className={'bg-neutral-0 font-aeonik mb-0 flex min-h-screen justify-center'}>
 					<div className={'flex w-full max-w-[1230px] justify-start'}>
-						<Component
-							router={props.router}
-							{...pageProps}
-						/>
+						<Component router={props.router} {...pageProps} />
 					</div>
 				</div>
 			</>
@@ -78,9 +73,7 @@ const WithLayout = memo(function WithLayout(
 			<div className={cl('mx-auto mb-0 flex z-[60] font-aeonik max-w-6xl absolute top-0 inset-x-0')}>
 				{pathName === '/' ? <LandingAppHeader /> : <AppHeader supportedNetworks={props.supportedNetworks} />}
 			</div>
-			<div
-				id={'app'}
-				className={cl('mx-auto mb-0 flex font-aeonik')}>
+			<div id={'app'} className={cl('mx-auto mb-0 flex font-aeonik')}>
 				<div className={'block size-full min-h-max'}>
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
@@ -89,11 +82,9 @@ const WithLayout = memo(function WithLayout(
 								initial={'initial'}
 								animate={'enter'}
 								exit={'exit'}
-								variants={variants}>
-								<Component
-									router={props.router}
-									{...pageProps}
-								/>
+								variants={variants}
+							>
+								<Component router={props.router} {...pageProps} />
 							</motion.div>
 						</AnimatePresence>
 					</LazyMotion>
@@ -129,25 +120,21 @@ function MyApp(props: AppProps): ReactElement {
 				uri={manifest.uri || 'https://yearn.fi'}
 			/>
 			<main className={'font-aeonik size-full min-h-screen'}>
-				<PlausibleProvider
-					domain={'yearn.fi'}
-					enabled={true}>
+				<PlausibleProvider domain={'yearn.fi'} enabled={true}>
 					<WithMom
 						supportedChains={SUPPORTED_NETWORKS}
 						tokenLists={[
 							'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/yearn.json',
 							'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/popular.json'
-						]}>
+						]}
+					>
 						<AppSettingsContextApp>
 							<YearnContextApp>
 								<WalletContextApp>
 									<IndexedDB>
 										<WithNotifications>
 											<WithNotificationsActions>
-												<WithLayout
-													supportedNetworks={SUPPORTED_NETWORKS}
-													{...props}
-												/>
+												<WithLayout supportedNetworks={SUPPORTED_NETWORKS} {...props} />
 											</WithNotificationsActions>
 										</WithNotifications>
 									</IndexedDB>

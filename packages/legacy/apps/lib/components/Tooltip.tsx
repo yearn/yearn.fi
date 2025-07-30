@@ -1,8 +1,7 @@
+import {cl} from '@lib/utils';
+import type {FC, ReactElement} from 'react';
 import {useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
-import {cl} from '@lib/utils';
-
-import type {FC, ReactElement} from 'react';
 
 // Created as .tooltip & .tooltiptext can be lower in DOM and not render on top of other elements.
 // Use this when tooltip is not in the same component as the trigger.
@@ -34,7 +33,8 @@ export const Tooltip: FC<{
 			ref={triggerRef}
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={handleMouseLeave}
-			className={cl('flex w-fit items-center justify-end gap-4 md:justify-center relative h-6', className)}>
+			className={cl('flex w-fit items-center justify-end gap-4 md:justify-center relative h-6', className)}
+		>
 			{children}
 
 			{isHovered &&
@@ -47,7 +47,8 @@ export const Tooltip: FC<{
 							top: tooltipPosition.y,
 							transform: 'translateX(-50%)',
 							width: '15rem'
-						}}>
+						}}
+					>
 						{tooltip}
 					</div>,
 					document.body

@@ -1,11 +1,8 @@
-import {type ForwardedRef, forwardRef, type ReactElement} from 'react';
-import React from 'react';
+import type {TApp} from '@lib/types/mixed';
 import {cl} from '@lib/utils';
-
+import React, {type ForwardedRef, forwardRef, type ReactElement} from 'react';
 import {AppCard} from './AppCard';
 import {FeaturedApp} from './FeaturedApp';
-
-import type {TApp} from '@lib/types/mixed';
 
 export const AppsCarousel = forwardRef(
 	(
@@ -32,20 +29,15 @@ export const AppsCarousel = forwardRef(
 						className={cl(
 							'hidden md:flex overflow-x-auto pb-1 pl-1 scrollbar-none max-sm:pr-6',
 							props.isUsingFeatured ? 'gap-x-8' : 'flex-col md:flex-row gap-x-4 overflow-y-hidden'
-						)}>
+						)}
+					>
 						{props.apps?.map((app, i) => {
 							return (
 								<React.Fragment key={app.appURI + i}>
 									{props.isUsingFeatured ? (
-										<FeaturedApp
-											key={app.name + i}
-											app={app}
-										/>
+										<FeaturedApp key={app.name + i} app={app} />
 									) : (
-										<AppCard
-											app={app}
-											key={app.name + i}
-										/>
+										<AppCard app={app} key={app.name + i} />
 									)}
 								</React.Fragment>
 							);
@@ -58,20 +50,15 @@ export const AppsCarousel = forwardRef(
 						className={cl(
 							'flex md:hidden overflow-x-auto pb-1 pl-1 scrollbar-none',
 							props.isUsingFeatured ? 'gap-x-8' : 'flex-col md:flex-row gap-y-4 overflow-y-hidden'
-						)}>
+						)}
+					>
 						{props.apps?.slice(0, 10).map((app, i) => {
 							return (
 								<React.Fragment key={app.appURI + i}>
 									{props.isUsingFeatured ? (
-										<FeaturedApp
-											key={app.name + i}
-											app={app}
-										/>
+										<FeaturedApp key={app.name + i} app={app} />
 									) : (
-										<AppCard
-											app={app}
-											key={app.name + i}
-										/>
+										<AppCard app={app} key={app.name + i} />
 									)}
 								</React.Fragment>
 							);

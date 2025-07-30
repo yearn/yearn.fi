@@ -1,14 +1,14 @@
-import {Fragment, useMemo} from 'react';
-import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {yDaemonReportsSchema} from '@vaults-v2/schemas/reportsSchema';
 import {useFetch} from '@lib/hooks/useFetch';
 import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
 import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@lib/utils';
 import {formatDate} from '@lib/utils/format.time';
-
-import type {ReactElement} from 'react';
 import type {TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TYDaemonReport, TYDaemonReports} from '@vaults-v2/schemas/reportsSchema';
+import {yDaemonReportsSchema} from '@vaults-v2/schemas/reportsSchema';
+
+import type {ReactElement} from 'react';
+import {Fragment, useMemo} from 'react';
+import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 
 export type TGraphForStrategyReportsProps = {
 	strategy: TYDaemonVaultStrategy;
@@ -65,12 +65,8 @@ export function GraphForStrategyReports({
 		<>
 			<p className={'text-neutral-600'}>{'Historical APY'}</p>
 			<div className={'mt-4 flex flex-row border-b border-l border-neutral-300'}>
-				<ResponsiveContainer
-					width={'100%'}
-					height={height}>
-					<LineChart
-						margin={{top: 0, right: -28, bottom: 0, left: 0}}
-						data={strategyData}>
+				<ResponsiveContainer width={'100%'} height={height}>
+					<LineChart margin={{top: 0, right: -28, bottom: 0, left: 0}} data={strategyData}>
 						<Line
 							className={'text-primary-600'}
 							type={'step'}
@@ -84,10 +80,7 @@ export function GraphForStrategyReports({
 								return <circle {...e}></circle>;
 							}}
 						/>
-						<XAxis
-							dataKey={'name'}
-							hide
-						/>
+						<XAxis dataKey={'name'} hide />
 						<YAxis
 							orientation={'right'}
 							hide={false}

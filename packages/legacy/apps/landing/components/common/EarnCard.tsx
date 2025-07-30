@@ -1,7 +1,7 @@
-import {type ReactElement, useState} from 'react';
+import {IconArrow} from '@lib/icons/IconArrow';
 import Image from 'next/image';
 import Link from 'next/link';
-import {IconArrow} from '@lib/icons/IconArrow';
+import {type ReactElement, useState} from 'react';
 
 export function EarnCard(props: {
 	title: string;
@@ -22,7 +22,8 @@ export function EarnCard(props: {
 					? '#0657F9'
 					: 'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
 			}}
-			className={'group relative z-30 flex h-full overflow-hidden rounded-lg border border-[#292929] p-6'}>
+			className={'group relative z-30 flex h-full overflow-hidden rounded-lg border border-[#292929] p-6'}
+		>
 			<div className={'flex md:mt-auto md:items-end'}>
 				<div>
 					<p className={'text-[24px] text-neutral-900 md:group-hover:text-gray-900'}>{props.title}</p>
