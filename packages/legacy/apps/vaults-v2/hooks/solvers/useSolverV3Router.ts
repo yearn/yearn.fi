@@ -38,8 +38,8 @@ export function useSolverV3Router(): TSolverContext {
 	const {provider} = useWeb3();
 	const {maxLoss} = useYearn();
 	const {set_shouldOpenCurtain} = useNotifications();
-	const latestQuote = useRef<TNormalizedBN>();
-	const request = useRef<TInitSolverArgs>();
+	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
+	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 
 	const init = useCallback(
