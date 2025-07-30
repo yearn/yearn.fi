@@ -61,7 +61,7 @@ const WithLayout = memo(function WithLayout(
 				</div>
 				<div
 					id={'app'}
-					className={'mb-0 flex min-h-screen justify-center bg-neutral-0 font-aeonik'}>
+					className={'bg-neutral-0 font-aeonik mb-0 flex min-h-screen justify-center'}>
 					<div className={'flex w-full max-w-[1230px] justify-start'}>
 						<Component
 							router={props.router}
@@ -128,7 +128,7 @@ function MyApp(props: AppProps): ReactElement {
 				og={manifest.og || 'https://yearn.fi/og.png'}
 				uri={manifest.uri || 'https://yearn.fi'}
 			/>
-			<main className={'size-full min-h-screen font-aeonik'}>
+			<main className={'font-aeonik size-full min-h-screen'}>
 				<PlausibleProvider
 					domain={'yearn.fi'}
 					enabled={true}>
