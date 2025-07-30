@@ -18,16 +18,19 @@ jobs:
 
         steps:
             - name: Check out Git repository
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
 
             - name: Set up Node.js
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
                   node-version: 20
+                  cache: 'bun' # Cache Bun dependencies
+
+            - name: Install Bun
+              run: curl -fsSL https://bun.sh/install | bash && export PATH="$HOME/.bun/bin:$PATH"
 
             - name: Install project dependencies
-              run: yarn --prefer-offline
-              id: install
+              run: bun install
 
             - name: Run linters
               uses: wearerequired/lint-action@v2
