@@ -50,7 +50,7 @@
 		"tailwind.config.js",
 		"next.config.js",
 		"theme.config.js",
-		"../../.eslintrc.js",
+		".eslintrc.js",
 		".next/types/**/*.ts",
 		"./apps/lib/.eslintrc.cjs",
 		"jest.config.js",

@@ -33,6 +33,3 @@ jobs:
               uses: wearerequired/lint-action@v2
               with:
                   eslint: true
-                  eslint_dir: packages/legacy
-                  eslint_extensions: js,jsx,ts,tsx
-                  eslint_args: --no-eslintrc --config .eslintrc.js
