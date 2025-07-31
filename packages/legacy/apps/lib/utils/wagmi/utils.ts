@@ -227,7 +227,7 @@ export function getClient(chainID: number): PublicClient {
 			});
 		}
 		return createPublicClient({chain: indexedWagmiChains[chainID], transport: http(url)});
-	} catch (e) {
+	} catch {
 		throw new Error(`We couldn't get a valid RPC URL for chain ${chainID}`);
 	}
 }

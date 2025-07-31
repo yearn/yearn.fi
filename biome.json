@@ -50,15 +50,81 @@
 				"useKeyWithClickEvents": "off"
 			},
 			"complexity": {
+				"noAdjacentSpacesInRegex": "error",
 				"noExcessiveCognitiveComplexity": "off",
-				"noExtraBooleanCast": "off",
+				"noExtraBooleanCast": "error",
 				"noForEach": "off",
-				"noVoid": "off"
+				"noUselessCatch": "error",
+				"noUselessEscapeInRegex": "error",
+				"noVoid": "off",
+				"useOptionalChain": "error"
 			},
-			"correctness": { "useExhaustiveDependencies": "error" },
+			"correctness": {
+				"noConstAssign": "error",
+				"noConstantCondition": "error",
+				"noEmptyCharacterClassInRegex": "error",
+				"noEmptyPattern": "error",
+				"noGlobalObjectCalls": "error",
+				"noInnerDeclarations": "error",
+				"noInvalidConstructorSuper": "error",
+				"noNonoctalDecimalEscape": "error",
+				"noPrecisionLoss": "error",
+				"noSelfAssign": "error",
+				"noSetterReturn": "error",
+				"noSwitchDeclarations": "error",
+				"noUndeclaredVariables": "error",
+				"noUnreachable": "error",
+				"noUnreachableSuper": "error",
+				"noUnsafeFinally": "error",
+				"noUnsafeOptionalChaining": "error",
+				"noUnusedImports": "error",
+				"noUnusedLabels": "error",
+				"noUnusedVariables": "error",
+				"useExhaustiveDependencies": "warn",
+				"useHookAtTopLevel": "error",
+				"useIsNan": "error",
+				"useValidForDirection": "error",
+				"useValidTypeof": "error",
+				"useYield": "error"
+			},
 			"security": { "noDangerouslySetInnerHtml": "off" },
-			"style": { "noNonNullAssertion": "off", "useEnumInitializers": "off", "useTemplate": "off" },
-			"suspicious": { "noExplicitAny": "off" }
+			"style": {
+				"noNonNullAssertion": "off",
+				"useBlockStatements": "error",
+				"useConsistentArrayType": { "level": "error", "options": { "syntax": "shorthand" } },
+				"useEnumInitializers": "off",
+				"useForOf": "error",
+				"useShorthandFunctionType": "error",
+				"useTemplate": "off"
+			},
+			"suspicious": {
+				"noAsyncPromiseExecutor": "off",
+				"noCatchAssign": "error",
+				"noClassAssign": "error",
+				"noCompareNegZero": "error",
+				"noControlCharactersInRegex": "error",
+				"noDebugger": "error",
+				"noDuplicateCase": "error",
+				"noDuplicateClassMembers": "error",
+				"noDuplicateElseIf": "error",
+				"noDuplicateObjectKeys": "error",
+				"noDuplicateParameters": "error",
+				"noEmptyBlockStatements": "error",
+				"noExplicitAny": "warn",
+				"noFallthroughSwitchClause": "error",
+				"noFunctionAssign": "error",
+				"noGlobalAssign": "error",
+				"noImportAssign": "error",
+				"noIrregularWhitespace": "error",
+				"noMisleadingCharacterClass": "error",
+				"noPrototypeBuiltins": "error",
+				"noRedeclare": "error",
+				"noShadowRestrictedNames": "error",
+				"noSparseArray": "error",
+				"noUnsafeNegation": "error",
+				"noWith": "error",
+				"useGetterReturn": "error"
+			}
 		}
 	},
 	"javascript": {
@@ -76,5 +142,6 @@
 	},
 	"css": { "parser": null, "formatter": { "enabled": true }, "linter": { "enabled": true }, "assist": null },
 	"html": { "formatter": { "selfCloseVoidElements": "always" } },
+	"overrides": [{ "includes": ["*.{ts,tsx}"], "linter": { "rules": {} } }],
 	"plugins": ["./.grit/assign.grit"]
 }
