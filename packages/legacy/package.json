@@ -56,7 +56,6 @@
 		"@next/bundle-analyzer": "^14.2.4",
 		"@next/eslint-plugin-next": "^14.2.4",
 		"@testing-library/react": "^16.0.0",
-		"@types/minimatch": "^6.0.0",
 		"@types/node": "^20.14.2",
 		"@types/react": "^19.0.0",
 		"@types/react-dom": "^19.0.0",
