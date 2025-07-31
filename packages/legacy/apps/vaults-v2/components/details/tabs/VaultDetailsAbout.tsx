@@ -95,7 +95,7 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 						className={'tooltipFees bottom-full'}>
 						<div
 							className={
-								'font-number w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+								'font-number text-xxs w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-neutral-900'
 							}>
 							{tooltip}
 						</div>

@@ -292,7 +292,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const data = useRef<TDataRef>({nonce: 0, address: toAddress(), balances: {}});
 	const stringifiedTokens = useMemo((): string => serialize(props?.tokens || []), [props?.tokens]);
 	const currentlyConnectedAddress = useRef<TAddress | undefined>(undefined);
-	const currentIdentifier = useRef<string | undefined>();
+	const currentIdentifier = useRef<string | undefined>(undefined);
 	const pendingUpdates = useRef<TChainTokens>({});
 	const isAccumulatingUpdates = useRef<boolean>(false);
 

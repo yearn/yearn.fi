@@ -91,18 +91,18 @@ export function GraphForStrategyReports({
 						<YAxis
 							orientation={'right'}
 							hide={false}
-							tick={(e): ReactElement => {
+							tick={(props): React.ReactElement<SVGElement> => {
 								const {
 									payload: {value}
-								} = e;
-								e.fill = '#5B5B5B';
-								e.className = 'text-xxs md:text-xs font-number z-10 ';
-								e.alignmentBaseline = 'middle';
-								delete e.verticalAnchor;
-								delete e.visibleTicksCount;
-								delete e.tickFormatter;
+								} = props;
+								props.fill = '#5B5B5B';
+								props.className = 'text-xxs md:text-xs font-number z-10 ';
+								props.alignmentBaseline = 'middle';
+								delete props.verticalAnchor;
+								delete props.visibleTicksCount;
+								delete props.tickFormatter;
 								const formatedValue = formatPercent(value);
-								return <text {...e}>{formatedValue}</text>;
+								return <text {...props}>{formatedValue}</text>;
 							}}
 						/>
 						<Tooltip

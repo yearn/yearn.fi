@@ -19,8 +19,8 @@ import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
 export function useSolverOptimismBooster(): TSolverContext {
 	const {provider} = useWeb3();
 	const {set_shouldOpenCurtain} = useNotifications();
-	const latestQuote = useRef<TNormalizedBN>();
-	const request = useRef<TInitSolverArgs>();
+	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
+	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 
 	/**********************************************************************************************

@@ -16,7 +16,7 @@ export function Counter({
 	decimalsToDisplay?: number[]; // Decimals to display
 }): ReactElement {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const nodeRef = useRef<any>();
+	const nodeRef = useRef<HTMLSpanElement | null>(null);
 	const valueRef = useRef(value || 0);
 
 	useLayoutEffect((): (() => void) => {
