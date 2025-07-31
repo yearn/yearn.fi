@@ -1,0 +1,7 @@
+`const [$state, $setter] = useState($initial)` where {
+    $setter <: r"set[A-Z].*",
+    register_diagnostic(
+        span = $setter,
+        message = "Use underscore naming for state setters: prefer 'set_state' over 'setState'"
+    )
+}
