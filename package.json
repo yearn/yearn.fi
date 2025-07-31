@@ -5,9 +5,11 @@
 		"nextgen": "(cd packages/nextgen && bun dev)",
 		"clean": "bash clean.sh"
 	},
-	"workspaces": ["packages/*"],
+	"workspaces": [
+		"packages/*"
+	],
 	"devDependencies": {
 		"@biomejs/biome": "^2.1.2",
-		"@types/minimatch": "^6.0.0"
+		"minimatch": "^6.0.0"
 	}
 }

@@ -47,7 +47,7 @@
 		"tailwind-gradient-mask-image": "^1.2.0",
 		"use-indexeddb": "^2.0.2",
 		"vaul": "^1.1.2",
-		"viem": "2.30.5",
+		"viem": "2.33.2",
 		"wagmi": "^2.10.10",
 		"xxhashjs": "^0.2.2",
 		"zod": "^3.23.8"
@@ -56,6 +56,7 @@
 		"@next/bundle-analyzer": "^14.2.4",
 		"@next/eslint-plugin-next": "^14.2.4",
 		"@testing-library/react": "^16.0.0",
+		"@types/minimatch": "^6.0.0",
 		"@types/node": "^20.14.2",
 		"@types/react": "^19.0.0",
 		"@types/react-dom": "^19.0.0",
