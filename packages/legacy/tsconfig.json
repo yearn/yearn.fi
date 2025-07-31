@@ -14,6 +14,7 @@
 		"lib": ["es6", "es7", "ESNext", "dom"],
 		"allowJs": true,
 		"jsx": "preserve",
+		"types": ["node"],
 		"removeComments": false,
 		"strict": true,
 		"noImplicitAny": true,
@@ -37,7 +38,7 @@
 		"noEmit": true,
 		"incremental": true,
 		"isolatedModules": true,
-		"plugins": [{"name": "next"}]
+		"plugins": [{ "name": "next" }]
 	},
 	"exclude": ["node_modules", "_app"],
 	"include": [
