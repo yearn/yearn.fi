@@ -47,7 +47,7 @@
 		"tailwind-gradient-mask-image": "^1.2.0",
 		"use-indexeddb": "^2.0.2",
 		"vaul": "^1.1.2",
-		"viem": "2.30.5",
+		"viem": "2.33.1",
 		"wagmi": "^2.10.10",
 		"xxhashjs": "^0.2.2",
 		"zod": "^3.23.8"
