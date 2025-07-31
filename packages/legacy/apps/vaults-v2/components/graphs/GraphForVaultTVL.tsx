@@ -43,18 +43,18 @@ export function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLP
 					orientation={'right'}
 					domain={['dataMin', 'auto']}
 					hide={false}
-					tick={(e): ReactElement => {
+					tick={(props): React.ReactElement<SVGElement> => {
 						const {
 							payload: {value}
-						} = e;
-						e.fill = '#5B5B5B';
-						e.className = 'text-xxs md:text-xs font-number';
-						e.alignmentBaseline = 'middle';
-						delete e.verticalAnchor;
-						delete e.visibleTicksCount;
-						delete e.tickFormatter;
+						} = props;
+						props.fill = '#5B5B5B';
+						props.className = 'text-xxs md:text-xs font-number';
+						props.alignmentBaseline = 'middle';
+						delete props.verticalAnchor;
+						delete props.visibleTicksCount;
+						delete props.tickFormatter;
 						const formatedValue = formatWithUnit(value, 0, 0);
-						return <text {...e}>{formatedValue}</text>;
+						return <text {...props}>{formatedValue}</text>;
 					}}
 				/>
 				<Tooltip
@@ -73,11 +73,9 @@ export function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLP
 									</div>
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'TVL'}</p>
-										<b
-											className={
-												'font-number text-xs font-bold text-neutral-900'
-											}>{`${formatAmount(Number(value))} $`}
-          </b>
+										<b className={'font-number text-xs font-bold text-neutral-900'}>
+											{`${formatAmount(Number(value))} $`}
+										</b>
 									</div>
 								</div>
 							);

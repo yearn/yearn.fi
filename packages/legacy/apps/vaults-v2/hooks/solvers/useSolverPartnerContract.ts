@@ -20,8 +20,8 @@ export function useSolverPartnerContract(): TSolverContext {
 	const {provider} = useWeb3();
 	const {currentPartner} = useYearn();
 	const {set_shouldOpenCurtain} = useNotifications();
-	const latestQuote = useRef<TNormalizedBN>();
-	const request = useRef<TInitSolverArgs>();
+	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
+	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 
 	/* 🔵 - Yearn Finance **************************************************************************

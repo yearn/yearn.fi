@@ -82,8 +82,8 @@ export function useSolverCowswap(): TSolverContext {
 	const {set_shouldOpenCurtain} = useNotifications();
 	const maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
 	const shouldUsePresign = false; //Debug only
-	const request = useRef<TInitSolverArgs>();
-	const latestQuote = useRef<OrderQuoteResponse>();
+	const latestQuote = useRef<OrderQuoteResponse | undefined>(undefined);
+	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 
 	/**********************************************************************************************

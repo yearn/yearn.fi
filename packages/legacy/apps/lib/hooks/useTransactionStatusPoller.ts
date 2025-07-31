@@ -15,7 +15,7 @@ import type {TNotification} from '@lib/types/notifications';
  ************************************************************************************************/
 export function useTransactionStatusPoller(notification: TNotification): void {
 	const {updateEntry} = useNotifications();
-	const pollIntervalRef = useRef<NodeJS.Timeout>();
+	const pollIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
 	/************************************************************************************************
 	 * Function to check the transaction status and update the notification accordingly.

@@ -83,7 +83,7 @@ function WalletSelector(): ReactElement {
 						<IconWallet className={'yearn--header-nav-item mt-0.5 block size-4 md:hidden'} />
 						<span
 							className={
-								'relative hidden h-8 cursor-pointer items-center justify-center rounded border border-transparent bg-neutral-900 px-2 text-xs font-normal text-neutral-0 transition-all hover:bg-neutral-800 md:flex'
+								'text-neutral-0 relative hidden h-8 cursor-pointer items-center justify-center rounded border border-transparent bg-neutral-900 px-2 text-xs font-normal transition-all hover:bg-neutral-800 md:flex'
 							}>
 							{'Connect wallet'}
 						</span>
@@ -97,7 +97,7 @@ function WalletSelector(): ReactElement {
 function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 	const {pathname} = useRouter();
 	const [isMenuOpen, set_isMenuOpen] = useState<boolean>(false);
-	const {set_shouldOpenCurtain, cachedEntries, notificationStatus} = useNotifications();
+	const {set_shouldOpenCurtain, notificationStatus} = useNotifications();
 
 	const menu = useMemo((): TMenu[] => {
 		const HOME_MENU = {path: '/apps', label: 'Apps'};
@@ -148,7 +148,7 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 		}
 
 		return '';
-	}, [cachedEntries, notificationStatus]);
+	}, [notificationStatus]);
 
 	return (
 		<div

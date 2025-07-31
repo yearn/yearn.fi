@@ -114,8 +114,8 @@ async function getQuote(
 export function useSolverPortals(): TSolverContext {
 	const {provider} = useWeb3();
 	const {set_shouldOpenCurtain} = useNotifications();
-	const request = useRef<TInitSolverArgs>();
-	const latestQuote = useRef<TPortalsEstimate>();
+	const latestQuote = useRef<TPortalsEstimate | undefined>(undefined);
+	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 	const {zapSlippage} = useYearn();
 
