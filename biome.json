@@ -1,64 +1,80 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.1.3/schema.json",
+	"files": {
+		"ignoreUnknown": true,
+		"includes": [
+			"packages/legacy/apps/**/*.ts",
+			"packages/legacy/apps/**/*.tsx",
+			"packages/legacy/apps/**/*.js",
+			"packages/legacy/apps/**/*.jsx",
+			"packages/legacy/apps/**/*.css",
+			"packages/legacy/pages/**/*.ts",
+			"packages/legacy/pages/**/*.tsx",
+			"packages/legacy/middleware.ts",
+			"packages/legacy/*.config.js",
+			"packages/legacy/tsconfig.json",
+			"packages/legacy/package.json",
+			"packages/nextgen/src/**/*.ts",
+			"packages/nextgen/src/**/*.tsx",
+			"packages/nextgen/src/**/*.js",
+			"packages/nextgen/src/**/*.jsx",
+			"packages/nextgen/src/**/*.css",
+			"packages/nextgen/*.config.*",
+			"packages/nextgen/tsconfig*.json",
+			"packages/nextgen/package.json"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"formatWithErrors": false,
+		"indentStyle": "tab",
+		"indentWidth": 4,
+		"lineEnding": "lf",
+		"lineWidth": 120,
+		"attributePosition": "auto",
+		"bracketSameLine": false,
+		"bracketSpacing": true,
+		"expand": "auto",
+		"useEditorconfig": true
+	},
 	"linter": {
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"a11y": {
+				"noLabelWithoutControl": "off",
+				"noStaticElementInteractions": "off",
+				"noSvgWithoutTitle": "off",
+				"useAriaPropsSupportedByRole": "off",
+				"useButtonType": "off",
+				"useKeyWithClickEvents": "off"
+			},
 			"complexity": {
 				"noExcessiveCognitiveComplexity": "off",
-				"noVoid": "off",
+				"noExtraBooleanCast": "off",
 				"noForEach": "off",
-				"noExtraBooleanCast": "off"
+				"noVoid": "off"
 			},
-			"correctness": {
-				"useExhaustiveDependencies": "error"
-			},
-			"suspicious": {
-				"noExplicitAny": "off"
-			},
-			"security": {
-				"noDangerouslySetInnerHtml": "off"
-			},
-			"a11y": {
-				"noSvgWithoutTitle": "off",
-				"noLabelWithoutControl": "off",
-				"useKeyWithClickEvents": "off",
-				"useButtonType": "off",
-				"noStaticElementInteractions": "off",
-				"useAriaPropsSupportedByRole": "off"
-			},
-			"style": {
-				"noNonNullAssertion": "off",
-				"useTemplate": "off",
-				"useEnumInitializers": "off"
-			}
+			"correctness": { "useExhaustiveDependencies": "error" },
+			"security": { "noDangerouslySetInnerHtml": "off" },
+			"style": { "noNonNullAssertion": "off", "useEnumInitializers": "off", "useTemplate": "off" },
+			"suspicious": { "noExplicitAny": "off" }
 		}
-	},
-	"formatter": {
-		"enabled": true,
-		"indentStyle": "tab",
-		"indentWidth": 4,
-		"lineWidth": 120
 	},
 	"javascript": {
 		"formatter": {
-			"quoteStyle": "single",
-			"semicolons": "always",
+			"jsxQuoteStyle": "double",
+			"quoteProperties": "asNeeded",
 			"trailingCommas": "none",
+			"semicolons": "always",
 			"arrowParentheses": "asNeeded",
+			"bracketSameLine": false,
+			"quoteStyle": "single",
+			"attributePosition": "auto",
 			"bracketSpacing": false
 		}
 	},
-	"css": {
-		"formatter": {
-			"enabled": true
-		},
-		"linter": {
-			"enabled": true
-		}
-	},
-	"files": {
-		"ignoreUnknown": true
-	},
+	"css": { "parser": null, "formatter": { "enabled": true }, "linter": { "enabled": true }, "assist": null },
+	"html": { "formatter": { "selfCloseVoidElements": "always" } },
 	"plugins": ["./.grit/assign.grit"]
 }
