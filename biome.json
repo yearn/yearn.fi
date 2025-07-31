@@ -11,7 +11,8 @@
 			"!**/.git/**",
 			"!**/generated/**",
 			"!**/wagmi.ts",
-			"!**/wagmi.d.ts"
+			"!**/wagmi.d.ts",
+			"!**/bun.lock"
 		]
 	},
 	"formatter": {
