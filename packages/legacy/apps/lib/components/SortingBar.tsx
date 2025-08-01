@@ -21,8 +21,9 @@ export function SortingBar(): ReactElement {
 				>
 					{Array(4)
 						.fill('List Item')
-						.map((item, i) => (
-							<SortItem key={i} isActive={i === 2} title={item} />
+						.map((item, index) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: Array.from
+							<SortItem key={index} isActive={index === 2} title={item} />
 						))}
 				</div>
 			) : null}

@@ -25,6 +25,7 @@ export function CarouselControls({
 					.fill('')
 					.map((_, index) => (
 						<button
+							// biome-ignore lint/suspicious/noArrayIndexKey: Array.from
 							key={index}
 							className={'p-[2px]'}
 							onClick={() => {

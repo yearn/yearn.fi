@@ -196,9 +196,9 @@ export const Vaults: FC = () => {
 						className={'flex transition-transform duration-500 ease-in-out'}
 						style={{transform: `translateX(-${activeSlide * 100}%)`}}
 					>
-						{slides.map((slide, index) => (
+						{slides.map(slide => (
 							<div
-								key={index}
+								key={slide.title}
 								className={
 									'flex w-full shrink-0 flex-col items-stretch justify-between gap-6 md:flex-row md:gap-8'
 								}
@@ -245,11 +245,11 @@ export const Vaults: FC = () => {
 											'flex w-full flex-col gap-2 overflow-hidden md:flex-col md:rounded-[24px] md:bg-white/5 md:p-[8px]'
 										}
 									>
-										{rows[activeSlide].map((row, vaultIndex) => {
+										{rows[activeSlide].map(row => {
 											const isVaultLoading = row?.address && isLoadingVaultList;
 											return (
 												<a
-													key={vaultIndex}
+													key={row.href}
 													href={row.href}
 													className={`${row.bgClass} flex cursor-pointer items-center justify-between rounded-[12px] p-2 transition-opacity duration-200 hover:opacity-50 md:rounded-[16px] md:p-[8px]`}
 												>
@@ -324,6 +324,7 @@ export const Vaults: FC = () => {
 					<div className={'flex items-center space-x-3'}>
 						{Array.from({length: totalSlides}).map((_, index) => (
 							<button
+								// biome-ignore lint/suspicious/noArrayIndexKey: Array.from
 								key={index}
 								onClick={() => goToSlide(index)}
 								className={`size-2 rounded-full transition-all duration-300 ${

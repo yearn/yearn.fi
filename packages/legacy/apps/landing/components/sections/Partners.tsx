@@ -100,9 +100,9 @@ export const Partners: FC = () => (
 				{/* Mobile */}
 				<div className={'flex flex-col gap-4 pt-8 lg:hidden'}>
 					<div className={'grid grid-cols-2 gap-2'}>
-						{partners.map((partner, index) => (
+						{partners.map(partner => (
 							<PartnerLogo
-								key={index}
+								key={partner.href}
 								image={partner.image}
 								alt={partner.alt}
 								href={partner.href}
@@ -116,9 +116,9 @@ export const Partners: FC = () => (
 				<div className={'hidden gap-4 pt-8 md:pt-14 lg:flex lg:flex-row'}>
 					<div className={'flex size-full h-[128px] flex-col gap-2'}>
 						<div className={'flex flex-1 flex-row gap-2'}>
-							{partners.map((partner, index) => (
+							{partners.map(partner => (
 								<PartnerLogo
-									key={index}
+									key={partner.href}
 									image={partner.image}
 									alt={partner.alt}
 									href={partner.href}

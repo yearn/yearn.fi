@@ -22,7 +22,7 @@ import {usePathname} from 'next/navigation';
 import type {NextRouter} from 'next/router';
 import PlausibleProvider from 'next-plausible';
 import type {ReactElement} from 'react';
-import React, {memo} from 'react';
+import {memo} from 'react';
 import {Toaster} from 'react-hot-toast';
 import type {Chain} from 'viem';
 

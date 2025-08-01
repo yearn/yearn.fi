@@ -1,7 +1,6 @@
 import {Source_Code_Pro} from 'next/font/google';
 import localFont from 'next/font/local';
 import type {ReactElement, ReactNode} from 'react';
-import React from 'react';
 
 const aeonik = localFont({
 	variable: '--font-aeonik',

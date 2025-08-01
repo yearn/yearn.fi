@@ -22,7 +22,7 @@ export function decodeAsBigInt(value: TUnknowValueType, defaultValue = 0n): bigi
 			return defaultValue;
 		}
 		return BigInt(value.result);
-	} catch (error) {
+	} catch {
 		return defaultValue;
 	}
 }
@@ -36,7 +36,7 @@ export function decodeAsString(value: TUnknowValueType, defaultValue = ''): stri
 			return defaultValue;
 		}
 		return value.result;
-	} catch (error) {
+	} catch {
 		return defaultValue;
 	}
 }
@@ -50,7 +50,7 @@ export function decodeAsAddress(value: TUnknowValueType, defaultValue = zeroAddr
 			return defaultValue;
 		}
 		return toAddress(value.result);
-	} catch (error) {
+	} catch {
 		return defaultValue;
 	}
 }
@@ -64,7 +64,7 @@ export function decodeAsNumber(value: TUnknowValueType, defaultValue = 0): numbe
 			return defaultValue;
 		}
 		return value.result;
-	} catch (error) {
+	} catch {
 		return defaultValue;
 	}
 }
@@ -78,7 +78,7 @@ export function decodeAsBoolean(value: TUnknowValueType, defaultValue = false): 
 			return defaultValue;
 		}
 		return value.result;
-	} catch (error) {
+	} catch {
 		return defaultValue;
 	}
 }

@@ -108,7 +108,7 @@ export const Integrations: FC = () => (
 					{integrations.map((integration, index) => (
 						<IntegrationItem
 							index={index}
-							key={index}
+							key={integration.href}
 							name={integration.name}
 							imageSrc={integration.imageSrc}
 							description={integration.description}

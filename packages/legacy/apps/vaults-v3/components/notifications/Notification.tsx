@@ -13,12 +13,16 @@ import {motion} from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import type {ReactElement} from 'react';
-import React, {useCallback, useMemo, useState} from 'react';
+import {memo, useCallback, useMemo, useState} from 'react';
 
 const STATUS: {[key: string]: [string, string, ReactElement]} = {
-	success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} />],
-	pending: ['Pending', 'text-neutral-800 bg-neutral-300', <IconLoader className={'size-4 animate-spin'} />],
-	error: ['Error', 'text-white bg-[#C73203] bg-opacity-90', <IconCross className={'size-3'} />]
+	success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} key={'success'} />],
+	pending: [
+		'Pending',
+		'text-neutral-800 bg-neutral-300',
+		<IconLoader className={'size-4 animate-spin'} key={'pending'} />
+	],
+	error: ['Error', 'text-white bg-[#C73203] bg-opacity-90', <IconCross className={'size-3'} key={'error'} />]
 };
 
 function NotificationStatus(props: {status: TNotificationStatus}): ReactElement {
@@ -29,7 +33,6 @@ function NotificationStatus(props: {status: TNotificationStatus}): ReactElement 
 				STATUS[props.status][1]
 			)}
 			aria-label={`Status: ${STATUS[props.status][0]}`}
-			role={'status'}
 		>
 			{STATUS[props.status][2]}
 			{STATUS[props.status][0]}
@@ -232,7 +235,7 @@ function NotificationContent({
 	);
 }
 
-export const Notification = React.memo(function Notification({
+export const Notification = memo(function Notification({
 	notification,
 	variant = 'v3',
 	fromVault,
@@ -348,7 +351,6 @@ export const Notification = React.memo(function Notification({
 					: 'bg-neutral-0 hover:bg-neutral-100/30 transition-colors'
 			)}
 			style={{transformOrigin: 'top center'}}
-			role={'article'}
 			aria-label={`${notificationTitle} notification`}
 		>
 			{variant === 'v3' && (

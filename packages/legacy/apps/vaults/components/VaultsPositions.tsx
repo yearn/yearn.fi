@@ -139,16 +139,16 @@ export const VaultsPositions: FC = () => {
 			)}
 			{VaultView === TVaultsPositionsView.Card && (
 				<div className={styles.cards}>
-					{userPositions.map((vault, index) => (
-						<VaultPositionCard key={index} vault={vault} />
+					{userPositions.map(vault => (
+						<VaultPositionCard key={`${vault.address}-${vault.chainID}`} vault={vault} />
 					))}
 				</div>
 			)}
 			{VaultView === TVaultsPositionsView.Table && (
 				<div className={''}>
 					<div className={cl(styles.cards, 'block md:hidden')}>
-						{userPositions.map((vault, index) => (
-							<VaultPositionCard key={index} vault={vault} />
+						{userPositions.map(vault => (
+							<VaultPositionCard key={`${vault.address}-${vault.chainID}`} vault={vault} />
 						))}
 					</div>
 					<div className={'hidden p-4 md:block dark:bg-black/20'}>

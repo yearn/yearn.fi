@@ -112,7 +112,7 @@ export const FAQs: FC = () => {
 						<div className={'flex flex-col space-y-2'}>
 							{faqData.map((faq, index) => (
 								<FAQItem
-									key={index}
+									key={faq.title}
 									title={faq.title}
 									isOpen={openFAQ === index}
 									onToggle={() => toggleFAQ(index)}

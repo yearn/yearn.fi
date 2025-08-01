@@ -89,7 +89,8 @@
 				"useEnumInitializers": "off",
 				"useForOf": "error",
 				"useShorthandFunctionType": "error",
-				"useTemplate": "off"
+				"useTemplate": "off",
+				"noDescendingSpecificity": "off"
 			},
 			"suspicious": {
 				"noAsyncPromiseExecutor": "off",
@@ -103,7 +104,7 @@
 				"noDuplicateElseIf": "error",
 				"noDuplicateObjectKeys": "error",
 				"noDuplicateParameters": "error",
-				"noEmptyBlockStatements": "error",
+				"noEmptyBlockStatements": "off",
 				"noExplicitAny": "warn",
 				"noFallthroughSwitchClause": "error",
 				"noFunctionAssign": "error",
@@ -135,7 +136,6 @@
 		}
 	},
 	"css": {
-		"parser": null,
 		"formatter": { "enabled": true },
 		"linter": { "enabled": true },
 		"assist": null

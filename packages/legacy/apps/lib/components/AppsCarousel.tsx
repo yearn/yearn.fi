@@ -1,6 +1,6 @@
 import type {TApp} from '@lib/types/mixed';
 import {cl} from '@lib/utils';
-import React, {type ForwardedRef, forwardRef, type ReactElement} from 'react';
+import {type ForwardedRef, Fragment, forwardRef, type ReactElement} from 'react';
 import {AppCard} from './AppCard';
 import {FeaturedApp} from './FeaturedApp';
 
@@ -33,13 +33,13 @@ export const AppsCarousel = forwardRef(
 					>
 						{props.apps?.map((app, i) => {
 							return (
-								<React.Fragment key={app.appURI + i}>
+								<Fragment key={`${app.appURI} + ${i}`}>
 									{props.isUsingFeatured ? (
-										<FeaturedApp key={app.name + i} app={app} />
+										<FeaturedApp key={`${app.name} + ${i}`} app={app} />
 									) : (
-										<AppCard app={app} key={app.name + i} />
+										<AppCard app={app} key={`${app.name} + ${i}`} />
 									)}
-								</React.Fragment>
+								</Fragment>
 							);
 						})}
 					</div>
@@ -54,13 +54,13 @@ export const AppsCarousel = forwardRef(
 					>
 						{props.apps?.slice(0, 10).map((app, i) => {
 							return (
-								<React.Fragment key={app.appURI + i}>
+								<Fragment key={`${app.appURI} + ${i}`}>
 									{props.isUsingFeatured ? (
-										<FeaturedApp key={app.name + i} app={app} />
+										<FeaturedApp key={`${app.name} + ${i}`} app={app} />
 									) : (
-										<AppCard app={app} key={app.name + i} />
+										<AppCard app={app} key={`${app.name} + ${i}`} />
 									)}
-								</React.Fragment>
+								</Fragment>
 							);
 						})}
 					</div>
