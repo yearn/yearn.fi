@@ -46,7 +46,7 @@
 		"tailwind-gradient-mask-image": "^1.2.0",
 		"use-indexeddb": "^2.0.2",
 		"vaul": "^1.1.2",
-		"viem": "2.33.2",
+		"viem": "^2.31.7",
 		"wagmi": "^2.10.10",
 		"xxhashjs": "^0.2.2",
 		"zod": "^3.23.8",
@@ -72,7 +72,6 @@
 		"postcss-nesting": "^12.1.5",
 		"tailwindcss": "^3.4.4",
 		"ts-loader": "^9.5.1",
-		"typescript": "^5.5.3",
 		"vitest": "^1.6.0",
 		"webpack": "^5.92.1"
 	}
