@@ -9,7 +9,7 @@ import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import React, {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import type {Chain} from 'viem';
 import {APPS, AppName} from './Apps';
 import {LogoPopover} from './LogoPopover';
