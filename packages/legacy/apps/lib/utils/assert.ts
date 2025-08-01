@@ -1,10 +1,8 @@
 import actualAssert from 'assert';
-
+import type {TAddress} from '../types/address';
 import {ZERO_ADDRESS} from './constants';
 import {toAddress} from './tools.address';
 import {isEthAddress, isTAddress} from './tools.is';
-
-import type {TAddress} from '../types/address';
 
 export function assert(
 	expression: unknown,

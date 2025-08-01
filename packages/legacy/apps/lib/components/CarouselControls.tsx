@@ -1,5 +1,5 @@
-import {type ReactElement} from 'react';
 import {cl} from '@lib/utils';
+import type {ReactElement} from 'react';
 
 type TCarouselControlsProps = {
 	carouselLength?: number;
@@ -25,11 +25,13 @@ export function CarouselControls({
 					.fill('')
 					.map((_, index) => (
 						<button
+							// biome-ignore lint/suspicious/noArrayIndexKey: Array.from
 							key={index}
 							className={'p-[2px]'}
 							onClick={() => {
 								onDotsClick(index + 1);
-							}}>
+							}}
+						>
 							<div
 								className={cl(
 									'size-2 rounded-full',

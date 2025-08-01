@@ -1,8 +1,6 @@
 import {useMemo} from 'react';
-
-import {retrieveConfig} from '../utils/wagmi';
-
 import type {Chain} from 'viem/chains';
+import {retrieveConfig} from '../utils/wagmi';
 
 /******************************************************************************
  ** The useSupportedChains hook returns an array of supported chains, based on

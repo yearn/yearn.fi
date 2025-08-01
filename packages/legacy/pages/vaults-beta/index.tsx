@@ -1,10 +1,10 @@
-import {type ReactElement} from 'react';
+import {useSearch} from '@lib/contexts/useSearch';
+import {useWeb3} from '@lib/contexts/useWeb3';
 import {useMountEffect} from '@react-hookz/web';
 import CombinedVaultsTable from '@vaults/components/table/CombinedVaultsTable';
 import {VaultsBanner} from '@vaults/components/VaultsBanner';
 import {VaultsPositions} from '@vaults/components/VaultsPositions';
-import {useSearch} from '@lib/contexts/useSearch';
-import {useWeb3} from '@lib/contexts/useWeb3';
+import type {ReactElement} from 'react';
 
 export default function Home(): ReactElement {
 	const {dispatch} = useSearch();
@@ -24,7 +24,8 @@ export default function Home(): ReactElement {
 						<div
 							className={
 								'flex flex-col gap-4 rounded-[16px] border border-neutral-900/5 bg-neutral-900/5 p-4'
-							}>
+							}
+						>
 							<CombinedVaultsTable />
 						</div>
 					</div>

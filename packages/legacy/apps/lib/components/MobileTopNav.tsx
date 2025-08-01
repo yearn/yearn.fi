@@ -1,9 +1,9 @@
-import {type ReactElement, useCallback} from 'react';
-import {useRouter} from 'next/router';
 import {useSearch} from '@lib/contexts/useSearch';
 import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
 import {IconSearch} from '@lib/icons/IconSearch';
 import {LogoYearn} from '@lib/icons/LogoYearn';
+import {useRouter} from 'next/router';
+import {type ReactElement, useCallback} from 'react';
 
 import {SearchBar} from './SearchBar';
 
@@ -33,7 +33,8 @@ export function MobileTopNav({
 				<div className={'flex items-center gap-4'}>
 					<button
 						className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
-						onClick={() => set_isNavbarOpen(prev => !prev)}>
+						onClick={() => set_isNavbarOpen(prev => !prev)}
+					>
 						<span className={'sr-only'}>{'Open menu'}</span>
 						<IconBurgerPlain />
 					</button>
@@ -42,19 +43,17 @@ export function MobileTopNav({
 						onClick={() => {
 							router.push('/');
 							set_isSearchOpen(false);
-						}}>
-						<LogoYearn
-							className={'size-8'}
-							back={'text-blue-500'}
-							front={'text-white'}
-						/>
+						}}
+					>
+						<LogoYearn className={'size-8'} back={'text-blue-500'} front={'text-white'} />
 					</button>
 				</div>
 				<button
 					onClick={() => {
 						set_isNavbarOpen(false);
 						set_isSearchOpen(prev => !prev);
-					}}>
+					}}
+				>
 					<IconSearch className={'text-white'} />
 				</button>
 			</div>

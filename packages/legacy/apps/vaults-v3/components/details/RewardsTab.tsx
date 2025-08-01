@@ -1,15 +1,3 @@
-import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import {useRouter} from 'next/router';
-import {
-	claim as claimAction,
-	stake as stakeAction,
-	stakeVeYFIGauge as stakeVeYFIAction,
-	unstake as unstakeAction,
-	unstakeVeYFIGauge as unstakeVeYFIAction
-} from '@vaults-v2/utils/actions';
-import {stakeYBold, unstakeYBold} from '@vaults-v3/utils/actions';
 import {Button} from '@lib/components/Button';
 import {Counter} from '@lib/components/Counter';
 import {FakeInput} from '@lib/components/Input';
@@ -28,11 +16,22 @@ import {
 	toNormalizedBN
 } from '@lib/utils';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@lib/utils/constants';
-import {approveERC20, defaultTxStatus} from '@lib/utils/wagmi';
-
-import type {ChangeEvent, ReactElement} from 'react';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {approveERC20, defaultTxStatus} from '@lib/utils/wagmi';
 import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData';
+import {
+	claim as claimAction,
+	stake as stakeAction,
+	stakeVeYFIGauge as stakeVeYFIAction,
+	unstake as unstakeAction,
+	unstakeVeYFIGauge as unstakeVeYFIAction
+} from '@vaults-v2/utils/actions';
+import {stakeYBold, unstakeYBold} from '@vaults-v3/utils/actions';
+import Image from 'next/image';
+import Link from 'next/link';
+import {useRouter} from 'next/router';
+import type {ChangeEvent, ReactElement} from 'react';
+import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 
 /**************************************************************************************************
  ** The BoostMessage component will display a message to the user if the current vault has staking
@@ -55,7 +54,8 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					className={cl(
 						'w-full rounded-lg p-6 text-neutral-0',
 						isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
-					)}>
+					)}
+				>
 					<b className={'text-lg'}>{"Oh no... we're all out of rewards!"}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>{"But fear not, you're still earning that juicy base yield so keep on staking."}</p>
@@ -72,7 +72,8 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					className={cl(
 						'w-full rounded-lg p-6 text-neutral-0',
 						isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
-					)}>
+					)}
+				>
 					<b className={'text-lg'}>{'Great news everybody!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -93,7 +94,8 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					className={cl(
 						'w-full rounded-lg p-6 text-neutral-0',
 						isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
-					)}>
+					)}
+				>
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -105,7 +107,8 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 								className={'underline'}
 								href={'https://docs.yearn.fi/contributing/governance/veyfi-intro'}
 								target={'_blank'}
-								rel={'noreferrer'}>
+								rel={'noreferrer'}
+							>
 								{'FAQ'}
 							</a>
 							{'.'}
@@ -123,7 +126,8 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					className={cl(
 						'w-full rounded-lg p-6 text-neutral-0',
 						isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
-					)}>
+					)}
+				>
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -131,11 +135,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 						</p>
 						<p className={'block'}>
 							{'Visit '}
-							<a
-								className={'underline'}
-								href={'https://juiced.app'}
-								target={'_blank'}
-								rel={'noreferrer'}>
+							<a className={'underline'} href={'https://juiced.app'} target={'_blank'} rel={'noreferrer'}>
 								{'juiced.app'}
 							</a>
 							{' to learn more'}
@@ -153,7 +153,8 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					className={cl(
 						'w-full rounded-lg p-6 text-neutral-0',
 						isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
-					)}>
+					)}
+				>
 					<b className={'text-lg'}>{'Great news everybody!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -181,15 +182,13 @@ function VeYFIBoostMessage(props: {
 	const isV3Page = pathname.startsWith('/v3');
 
 	const OneUp = (
-		<Link
-			href={'https://1up.tokyo/stake'}
-			target={'_blank'}
-			rel={'noreferrer'}>
+		<Link href={'https://1up.tokyo/stake'} target={'_blank'} rel={'noreferrer'}>
 			<div
 				className={cl(
 					'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
 					'bg-neutral-100/5'
-				)}>
+				)}
+			>
 				<Image
 					className={'rounded-full'}
 					src={'https://1up.tokyo/logo.svg'}
@@ -204,15 +203,13 @@ function VeYFIBoostMessage(props: {
 	);
 
 	const Cove = (
-		<Link
-			href={'https://boosties.cove.finance/boosties'}
-			target={'_blank'}
-			rel={'noreferrer'}>
+		<Link href={'https://boosties.cove.finance/boosties'} target={'_blank'} rel={'noreferrer'}>
 			<div
 				className={cl(
 					'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
 					'bg-neutral-100/5'
-				)}>
+				)}
+			>
 				<Image
 					className={'rounded-full'}
 					src={
@@ -229,15 +226,13 @@ function VeYFIBoostMessage(props: {
 	);
 
 	const StakeDAO = (
-		<Link
-			href={'https://www.stakedao.org/yield?protocol=yearn'}
-			target={'_blank'}
-			rel={'noreferrer'}>
+		<Link href={'https://www.stakedao.org/yield?protocol=yearn'} target={'_blank'} rel={'noreferrer'}>
 			<div
 				className={cl(
 					'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
 					'bg-neutral-100/5'
-				)}>
+				)}
+			>
 				<Image
 					className={'rounded-full'}
 					src={'https://www.stakedao.org/logo.png'}
@@ -261,7 +256,7 @@ function VeYFIBoostMessage(props: {
 			return array;
 		}
 		return shuffle(apps);
-	}, []);
+	}, [Cove, OneUp, StakeDAO]);
 
 	if (props.shouldForceUnstake) {
 		return (
@@ -292,7 +287,8 @@ function VeYFIBoostMessage(props: {
 						className={'underline'}
 						href={'https://docs.yearn.fi/contributing/governance/veyfi-intro'}
 						target={'_blank'}
-						rel={'noreferrer'}>
+						rel={'noreferrer'}
+					>
 						{'Learn more'}
 					</a>
 					{'.'}
@@ -300,8 +296,8 @@ function VeYFIBoostMessage(props: {
 				<p>{"Don't have veYFI? Deposit with a liquid locker to earn boosted rewards today!"}</p>
 			</div>
 			<div className={'grid grid-cols-2 gap-2 pt-6 md:grid-cols-3'}>
-				{randomOrder.map((item, index) => (
-					<Fragment key={index}>{item}</Fragment>
+				{randomOrder.map(item => (
+					<Fragment key={item.toString()}>{item}</Fragment>
 				))}
 			</div>
 		</div>
@@ -373,7 +369,13 @@ export function RewardsTab(props: {
 				chainID: props.currentVault.chainID
 			}
 		}),
-		[vaultData.vaultBalanceOf, props.currentVault, vaultData.address]
+		[
+			vaultData.vaultBalanceOf,
+			props.currentVault,
+			vaultData.address,
+			vaultData.stakedGaugeSymbol,
+			vaultData.stakingDecimals
+		]
 	);
 
 	/**************************************************************************************************
@@ -771,21 +773,18 @@ export function RewardsTab(props: {
 		if (!isUnstakeAmountDirty) {
 			set_unstakeAmount(vaultData.stakedBalanceOf.display);
 		}
-	}, [vaultData.stakedBalanceOf.display, unstakeAmount, isUnstakeAmountDirty]);
+	}, [vaultData.stakedBalanceOf.display, isUnstakeAmountDirty]);
 
 	useEffect(() => {
 		if (!isStakeAmountDirty) {
 			set_stakeAmount(vaultData.stakedBalanceOf.display);
 		}
-	}, [stakeAmount, isStakeAmountDirty, vaultData.stakedBalanceOf.display]);
+	}, [isStakeAmountDirty, vaultData.stakedBalanceOf.display]);
 
 	if (props.currentVault.staking.rewards?.length === 0) {
 		return (
 			<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
-				<BoostMessage
-					hasStakingRewardsLive={props.hasStakingRewardsLive}
-					currentVault={props.currentVault}
-				/>
+				<BoostMessage hasStakingRewardsLive={props.hasStakingRewardsLive} currentVault={props.currentVault} />
 			</div>
 		);
 	}
@@ -826,7 +825,8 @@ export function RewardsTab(props: {
 								className={'w-full md:w-[180px] md:min-w-[180px]'}
 								onClick={onUnstake}
 								isBusy={unstakeStatus.pending}
-								isDisabled={!isActive || Number(vaultData.stakedBalanceOf.normalized) <= 0}>
+								isDisabled={!isActive || Number(vaultData.stakedBalanceOf.normalized) <= 0}
+							>
 								{'Claim & Exit'}
 							</Button>
 						</div>
@@ -885,14 +885,16 @@ export function RewardsTab(props: {
 											}}
 											className={
 												'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
-											}>
+											}
+										>
 											{'Max'}
 										</button>
 									</div>
 								</div>
 								<legend
 									className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'}
-									suppressHydrationWarning>
+									suppressHydrationWarning
+								>
 									<div className={'flex items-center justify-between'}>
 										<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} yBOLD available`}</p>
 										<p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
@@ -907,7 +909,8 @@ export function RewardsTab(props: {
 									!isActive ||
 									Number(vaultData.vaultBalanceOf.display) <= 0 ||
 									isLargerThanVaultBalance
-								}>
+								}
+							>
 								{isApproved ? 'Stake' : 'Approve'}
 							</Button>
 						</div>
@@ -946,14 +949,16 @@ export function RewardsTab(props: {
 											}}
 											className={
 												'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
-											}>
+											}
+										>
 											{'Max'}
 										</button>
 									</div>
 								</div>
 								<legend
 									className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'}
-									suppressHydrationWarning>
+									suppressHydrationWarning
+								>
 									<div className={'flex items-center justify-between'}>
 										<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ysyBOLD staked`}</p>
 										<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
@@ -964,7 +969,8 @@ export function RewardsTab(props: {
 								className={'w-full md:w-[180px] md:min-w-[180px]'}
 								onClick={onUnstake}
 								isBusy={unstakeStatus.pending}
-								isDisabled={!isActive || Number(unstakeAmount) <= 0 || isLargerThanStakedBalance}>
+								isDisabled={!isActive || Number(unstakeAmount) <= 0 || isLargerThanStakedBalance}
+							>
 								{'Unstake'}
 							</Button>
 						</div>
@@ -1000,7 +1006,8 @@ export function RewardsTab(props: {
 									className={'underline'}
 									href={'https://docs.yearn.fi/getting-started/products/yvaults/yBold#how-it-works'}
 									target={'_blank'}
-									rel={'noreferrer'}>
+									rel={'noreferrer'}
+								>
 									{'Learn more about yBOLD'}
 								</a>
 								{'.'}
@@ -1015,10 +1022,7 @@ export function RewardsTab(props: {
 	return (
 		<div className={'grid grid-cols-1 md:grid-cols-2'}>
 			<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8 md:pr-0'}>
-				<BoostMessage
-					hasStakingRewardsLive={props.hasStakingRewardsLive}
-					currentVault={props.currentVault}
-				/>
+				<BoostMessage hasStakingRewardsLive={props.hasStakingRewardsLive} currentVault={props.currentVault} />
 				<div className={'flex flex-col gap-2'}>
 					<div>
 						<div className={'font-bold'}>{'Stake'}</div>
@@ -1035,10 +1039,7 @@ export function RewardsTab(props: {
 							}
 							value={
 								toBigInt(vaultData.vaultBalanceOf.raw) === 0n ? undefined : (
-									<Counter
-										value={Number(vaultData.vaultBalanceOf.normalized)}
-										decimals={18}
-									/>
+									<Counter value={Number(vaultData.vaultBalanceOf.normalized)} decimals={18} />
 								)
 							}
 						/>
@@ -1051,7 +1052,8 @@ export function RewardsTab(props: {
 									!isActive ||
 									toBigInt(vaultData.vaultBalanceOf.raw) <= 0n ||
 									(!props.hasStakingRewardsLive && props.currentVault.staking.source !== 'VeYFI')
-								}>
+								}
+							>
 								{isApproved ? 'Stake' : 'Approve & Stake'}
 							</Button>
 						</div>
@@ -1091,14 +1093,16 @@ export function RewardsTab(props: {
 										}}
 										className={
 											'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
-										}>
+										}
+									>
 										{'Max'}
 									</button>
 								</div>
 							</div>
 							<legend
 								className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'}
-								suppressHydrationWarning>
+								suppressHydrationWarning
+							>
 								<div className={'flex items-center justify-between'}>
 									<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${vaultData.stakedGaugeSymbol || props.currentVault.symbol} staked`}</p>
 									<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
@@ -1109,7 +1113,8 @@ export function RewardsTab(props: {
 							className={'w-full md:w-[180px] md:min-w-[180px]'}
 							onClick={onUnstake}
 							isBusy={unstakeStatus.pending}
-							isDisabled={!isActive || Number(unstakeAmount) <= 0 || isLargerThanStakedBalance}>
+							isDisabled={!isActive || Number(unstakeAmount) <= 0 || isLargerThanStakedBalance}
+						>
 							{isUnstakingMax ? 'Claim & Exit' : 'Unstake'}
 						</Button>
 					</div>
@@ -1141,7 +1146,8 @@ export function RewardsTab(props: {
 							className={'w-full md:w-[180px] md:min-w-[180px]'}
 							onClick={onClaim}
 							isBusy={claimStatus.pending}
-							isDisabled={!isActive || isZero(vaultData.stakedEarned.raw)}>
+							isDisabled={!isActive || isZero(vaultData.stakedEarned.raw)}
+						>
 							{'Claim'}
 						</Button>
 					</div>

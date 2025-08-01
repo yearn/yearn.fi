@@ -1,12 +1,11 @@
-import {useMemo} from 'react';
 import {RenderAmount} from '@lib/components/RenderAmount';
 import {useWallet} from '@lib/contexts/useWallet';
 import {useYearn} from '@lib/contexts/useYearn';
-import {cl, isZero, toNormalizedBN} from '@lib/utils';
-
-import type {FC} from 'react';
 import type {TNormalizedBN} from '@lib/types';
+import {cl, isZero, toNormalizedBN} from '@lib/utils';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {FC} from 'react';
+import {useMemo} from 'react';
 
 export const VaultStakedAmount: FC<{currentVault: TYDaemonVault}> = ({currentVault}) => {
 	const {getToken} = useWallet();
@@ -35,7 +34,8 @@ export const VaultStakedAmount: FC<{currentVault: TYDaemonVault}> = ({currentVau
 			<p
 				className={`yearn--table-data-section-item-value ${
 					isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'
-				}`}>
+				}`}
+			>
 				<RenderAmount
 					shouldFormatDust
 					value={staked.normalized}

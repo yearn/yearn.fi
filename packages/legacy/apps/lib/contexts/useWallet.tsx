@@ -1,19 +1,17 @@
 'use client';
 
+import {useDeepCompareMemo} from '@react-hookz/web';
+import type {ReactElement} from 'react';
 import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {serialize} from 'wagmi';
-import {useDeepCompareMemo} from '@react-hookz/web';
-
 import {useWeb3} from '../contexts/useWeb3';
+import type {TUseBalancesTokens} from '../hooks/useBalances.multichains';
 import {useBalances} from '../hooks/useBalances.multichains';
+import type {TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens} from '../types';
 import {DEFAULT_ERC20, toAddress, zeroNormalizedBN} from '../utils';
 import {createUniqueID} from '../utils/tools.identifier';
 import {useYearn} from './useYearn';
 import {useYearnTokens} from './useYearn.helper';
-
-import type {ReactElement} from 'react';
-import type {TUseBalancesTokens} from '../hooks/useBalances.multichains';
-import type {TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens} from '../types';
 
 type TTokenAndChain = {address: TAddress; chainID: number};
 type TWalletContext = {

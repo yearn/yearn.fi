@@ -1,9 +1,7 @@
 import {formatUnits, parseUnits as vParseUnits} from 'viem';
-
+import type {TNormalizedBN, TNumberish} from '../types/mixed';
 import {MAX_UINT_256} from './constants';
 import {isZero} from './tools.is';
-
-import type {TNormalizedBN, TNumberish} from '../types/mixed';
 
 export const DefaultTNormalizedBN: TNormalizedBN = {raw: 0n, normalized: 0, display: '0'};
 
@@ -319,7 +317,7 @@ export function formatAmount(
 	if (typeof amount === 'string') {
 		amount = Number(amount);
 	}
-	if (isNaN(amount)) {
+	if (Number.isNaN(amount)) {
 		amount = 0;
 	}
 	let formattedAmount = new Intl.NumberFormat(locales, {
@@ -458,22 +456,28 @@ export function formatCounterValueRaw(amount: number | string, price: number): s
  *****************************************************************/
 export function eToNumber(num: string): string {
 	let sign = '';
-	(num += '').charAt(0) == '-' && ((num = num.substring(1)), (sign = '-'));
+	// Convert to string and handle negative sign
+	num = String(num);
+	if (num.charAt(0) === '-') {
+		sign = '-';
+		num = num.substring(1);
+	}
 	const arr = num.split(/[e]/gi);
 	if (arr.length < 2) {
 		return sign + num;
 	}
 	const dot = '.';
-	// eslint-disable-next-line prefer-destructuring
 	let n = arr[0];
 	const exp = +arr[1];
-	let w = (n = n.replace(/^0+/, '')).replace(dot, '');
+	// Remove leading zeros from n, then remove decimal point to get w
+	n = n.replace(/^0+/, '');
+	let w = n.replace(dot, '');
 	const pos = n.split(dot)[1] ? n.indexOf(dot) + exp : w.length + exp;
 	const L = pos - w.length;
 	const s = '' + BigInt(w);
 	w = exp >= 0 ? (L >= 0 ? s + '0'.repeat(L) : r()) : pos <= 0 ? '0' + dot + '0'.repeat(Math.abs(pos)) + s : r();
 	const V = w.split(dot);
-	if ((Number(V[0]) == 0 && Number(V[1]) == 0) || (+w == 0 && +s == 0)) {
+	if ((Number(V[0]) === 0 && Number(V[1]) === 0) || (+w === 0 && +s === 0)) {
 		w = '0';
 	} //** added 9/10/2021
 	return sign + w;

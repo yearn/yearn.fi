@@ -1,8 +1,6 @@
 import {getAddress, zeroAddress} from 'viem';
-
-import {isTAddress, isZeroAddress} from './tools.is';
-
 import type {TAddress, TAddressLike, TAddressSmol, TDict} from '../types';
+import {isTAddress, isZeroAddress} from './tools.is';
 
 /******************************************************************************
  ** toAddress - Wagmi only requires a 0xString as a valid address. To use our

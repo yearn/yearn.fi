@@ -1,17 +1,9 @@
-import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
-import {useRouter} from 'next/router';
-import {serialize, useReadContract} from 'wagmi';
-import {readContracts, simulateContract} from 'wagmi/actions';
-import {useMountEffect} from '@react-hookz/web';
-import {Solver} from '@vaults-v2/types/solvers';
-import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi';
-import {VEYFI_ABI} from '@vaults-v2/utils/abi/veYFI.abi';
-import {setZapOption} from '@vaults-v2/utils/zapOptions';
 import {useWallet} from '@lib/contexts/useWallet';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useTokenList} from '@lib/contexts/WithTokenList';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
+import type {TAddress, TDropdownOption, TNormalizedBN} from '@lib/types';
 import {
 	decodeAsBigInt,
 	isEthAddress,
@@ -35,14 +27,22 @@ import {
 	YVWFTM_ADDRESS
 } from '@lib/utils/constants';
 import externalzapOutTokenList from '@lib/utils/externalZapOutTokenList.json';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {createUniqueID} from '@lib/utils/tools.identifier';
 import {retrieveConfig} from '@lib/utils/wagmi';
 import {getNetwork} from '@lib/utils/wagmi/utils';
+import {useMountEffect} from '@react-hookz/web';
+import type {TSolver} from '@vaults-v2/types/solvers';
+import {Solver} from '@vaults-v2/types/solvers';
+import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi';
+import {VEYFI_ABI} from '@vaults-v2/utils/abi/veYFI.abi';
+import {setZapOption} from '@vaults-v2/utils/zapOptions';
+import {useRouter} from 'next/router';
 
 import type {ReactNode} from 'react';
-import type {TAddress, TDropdownOption, TNormalizedBN} from '@lib/types';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TSolver} from '@vaults-v2/types/solvers';
+import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
+import {serialize, useReadContract} from 'wagmi';
+import {readContracts, simulateContract} from 'wagmi/actions';
 
 export enum Flow {
 	Deposit = 'deposit',
@@ -78,7 +78,7 @@ type TActionFlowContext = {
 	hasVeYFIBalance: boolean;
 };
 const DefaultActionFlowContext: TActionFlowContext = {
-	currentVault: {} as TYDaemonVault, // eslint-disable-line @typescript-eslint/consistent-type-assertions
+	currentVault: {} as TYDaemonVault,
 	possibleOptionsFrom: [],
 	possibleOptionsTo: [],
 	actionParams: {
@@ -274,7 +274,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			} else {
 				set_limits({maxDeposit, maxRedeem});
 			}
-		} catch (error) {
+		} catch {
 			set_limits({maxDeposit, maxRedeem});
 		}
 	}, [props.currentVault, address, maxLoss]);
@@ -947,8 +947,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			..._possibleZapOptionsFrom
 		]);
 		currentTokenListIdentifier;
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [props.currentVault.chainID, tokenLists, currentTokenListIdentifier, props.currentVault]);
+	}, [props.currentVault.chainID, tokenLists, currentTokenListIdentifier, props.currentVault, getBalance]);
 
 	/**********************************************************************************************
 	 ** FLOW: Init the possibleZapOptionsTo array.

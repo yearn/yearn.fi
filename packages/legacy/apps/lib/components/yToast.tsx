@@ -1,12 +1,10 @@
+import type {ReactElement} from 'react';
+import type {ToastOptions} from 'react-hot-toast';
 import {toast as toastMaster, useToasterStore} from 'react-hot-toast';
-
 import {IconAlertCritical} from '../icons/IconAlertCritical';
 import {IconAlertError} from '../icons/IconAlertError';
 import {IconAlertWarning} from '../icons/IconAlertWarning';
 import {IconCheckmark} from '../icons/IconCheckmark';
-
-import type {ReactElement} from 'react';
-import type {ToastOptions} from 'react-hot-toast';
 
 export type TCTA = {
 	label: string;
@@ -23,9 +21,7 @@ function buildMessage({content, cta}: Pick<TYToast, 'content' | 'cta'>): ReactEl
 	return (
 		<div className={'flex items-center gap-2'}>
 			{content}
-			<button
-				className={'yearn--toast-button'}
-				onClick={cta?.onClick}>
+			<button className={'yearn--toast-button'} onClick={cta?.onClick}>
 				{cta?.label}
 			</button>
 		</div>

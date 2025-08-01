@@ -1,5 +1,5 @@
-import {describe, expect, it} from 'vitest';
 import {isValidPortalsErrorObject} from '@vaults-v2/hooks/helpers/isValidPortalsErrorObject';
+import {describe, expect, it} from 'vitest';
 
 describe('isValidPortalsErrorObject', (): void => {
 	it('returns false for null', (): void => {

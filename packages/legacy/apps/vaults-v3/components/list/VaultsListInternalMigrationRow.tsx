@@ -1,12 +1,11 @@
-import Link from 'next/link';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {useYearnBalance} from '@lib/hooks/useYearnBalance';
 import {cl, formatAmount, toAddress} from '@lib/utils';
-
-import {VaultChainTag} from '../VaultChainTag';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import Link from 'next/link';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {VaultChainTag} from '../VaultChainTag';
 
 export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const balanceToMigrate = useYearnBalance({address: currentVault.address, chainID: currentVault.chainID});
@@ -47,16 +46,15 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 				</div>
 
 				<div className={'mt-6 flex w-full items-center md:ml-auto md:mt-0 md:justify-end'}>
-					<Link
-						className={'w-full'}
-						href={`/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
+					<Link className={'w-full'} href={`/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 						<button
 							className={cl(
 								'rounded-lg overflow-hidden flex',
 								'px-4 py-2 w-full',
 								'relative group',
 								'border-none'
-							)}>
+							)}
+						>
 							<div
 								className={cl(
 									'absolute inset-0',

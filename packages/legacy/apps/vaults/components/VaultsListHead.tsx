@@ -1,9 +1,9 @@
-import {useCallback} from 'react';
 import {IconChevronPlain} from '@lib/icons/IconChevronPlain';
+import type {TSortDirection} from '@lib/types';
 import {cl} from '@lib/utils';
 
 import type {ReactElement} from 'react';
-import type {TSortDirection} from '@lib/types';
+import {useCallback} from 'react';
 
 export type TListHead = {
 	items: {
@@ -62,16 +62,19 @@ export function VaultsListHead({items, sortBy, sortDirection, onSort}: TListHead
 					'grid w-full grid-cols-1 md:grid-cols-12 px-4 py-2 md:px-4',
 					'border-t border-neutral-200 md:border-none',
 					'cursor-pointer'
-				)}>
+				)}
+			>
 				<div
 					className={cl(
 						'col-span-4',
 						'flex flex-row items-center justify-between',
 						'mb-2 py-4 md:mb-0 md:py-0'
-					)}>
+					)}
+				>
 					<button
 						onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
-						className={'yearn--table-head-label-wrapper group'}>
+						className={'yearn--table-head-label-wrapper group'}
+					>
 						<p className={'yearn--table-head-label'}>{token.label}</p>
 						{renderChevron(sortBy === token.value)}
 					</button>
@@ -84,7 +87,8 @@ export function VaultsListHead({items, sortBy, sortDirection, onSort}: TListHead
 								onClick={(): void => onSort(item.value, toggleSortDirection(item.value))}
 								disabled={!item.sortable}
 								className={cl('yearn--table-head-label-wrapper group', item.className)}
-								datatype={'number'}>
+								datatype={'number'}
+							>
 								<p
 									className={cl(
 										'yearn--table-head-label',
@@ -92,7 +96,8 @@ export function VaultsListHead({items, sortBy, sortDirection, onSort}: TListHead
 										sortBy === item.value
 											? 'text-neutral-800'
 											: 'text-neutral-800/60 group-hover:text-neutral-800'
-									)}>
+									)}
+								>
 									&nbsp;{item.label}
 								</p>
 								{item.sortable ? renderChevron(sortBy === item.value) : null}

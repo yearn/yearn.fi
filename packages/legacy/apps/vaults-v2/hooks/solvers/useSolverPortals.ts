@@ -1,15 +1,8 @@
-import {useCallback, useMemo, useRef} from 'react';
-import {BaseError, isHex, maxUint256, zeroAddress} from 'viem';
-import {sendTransaction, switchChain, waitForTransactionReceipt} from 'wagmi/actions';
-import axios from 'axios';
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
-import {isValidPortalsErrorObject} from '@vaults-v2/hooks/helpers/isValidPortalsErrorObject';
-import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults-v2/hooks/usePortalsApi';
-import {Solver} from '@vaults-v2/types/solvers';
 import {toast} from '@lib/components/yToast';
 import {useNotifications} from '@lib/contexts/useNotifications';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
+import type {TDict, TNormalizedBN} from '@lib/types';
 import {
 	assert,
 	assertAddress,
@@ -22,13 +15,19 @@ import {
 	zeroNormalizedBN
 } from '@lib/utils';
 import {allowanceKey} from '@lib/utils/helpers';
-import {allowanceOf, approveERC20, defaultTxStatus, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
-
-import type {Hash, TransactionReceipt} from 'viem';
-import type {TDict, TNormalizedBN} from '@lib/types';
 import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi';
+import {allowanceOf, approveERC20, defaultTxStatus, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
+import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
+import {isValidPortalsErrorObject} from '@vaults-v2/hooks/helpers/isValidPortalsErrorObject';
 import type {TPortalsEstimate} from '@vaults-v2/hooks/usePortalsApi';
+import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults-v2/hooks/usePortalsApi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
+import {Solver} from '@vaults-v2/types/solvers';
+import axios from 'axios';
+import {useCallback, useMemo, useRef} from 'react';
+import type {Hash, TransactionReceipt} from 'viem';
+import {BaseError, isHex, maxUint256, zeroAddress} from 'viem';
+import {sendTransaction, switchChain, waitForTransactionReceipt} from 'wagmi/actions';
 
 export type TPortalsQuoteResult = {
 	result: TPortalsEstimate | null;
@@ -202,115 +201,118 @@ export function useSolverPortals(): TSolverContext {
 	 ** matter the result. It returns a boolean value indicating whether the order was successful or
 	 ** not.
 	 **********************************************************************************************/
-	const execute = useCallback(async (txHashSetter: (txHash: Hash) => void): Promise<TTxResponse> => {
-		if (!request.current || isSolverDisabled(Solver.enum.Portals)) {
-			return {isSuccessful: false, error: new Error('Portals solver not available')};
-		}
-
-		try {
-			assert(provider, 'Provider is not set');
-			assert(request.current, 'Request is not set');
-			assert(latestQuote.current, 'Quote is not set');
-			assert(zapSlippage > 0, 'Slippage cannot be 0');
-
-			let inputToken = request.current.inputToken.value;
-			if (isEthAddress(request.current.inputToken.value)) {
-				inputToken = zeroAddress;
+	const execute = useCallback(
+		async (txHashSetter: (txHash: Hash) => void): Promise<TTxResponse> => {
+			if (!request.current || isSolverDisabled(Solver.enum.Portals)) {
+				return {isSuccessful: false, error: new Error('Portals solver not available')};
 			}
-			const network = PORTALS_NETWORK.get(request.current.chainID);
-			const transaction = await getPortalsTx({
-				params: {
-					sender: toAddress(request.current.from),
-					inputToken: `${network}:${toAddress(inputToken)}`,
-					outputToken: `${network}:${toAddress(request.current.outputToken.value)}`,
-					inputAmount: toBigInt(request.current.inputAmount).toString(),
-					slippageTolerancePercentage: String(zapSlippage),
-					validate: 'true'
+
+			try {
+				assert(provider, 'Provider is not set');
+				assert(request.current, 'Request is not set');
+				assert(latestQuote.current, 'Quote is not set');
+				assert(zapSlippage > 0, 'Slippage cannot be 0');
+
+				let inputToken = request.current.inputToken.value;
+				if (isEthAddress(request.current.inputToken.value)) {
+					inputToken = zeroAddress;
 				}
-			});
+				const network = PORTALS_NETWORK.get(request.current.chainID);
+				const transaction = await getPortalsTx({
+					params: {
+						sender: toAddress(request.current.from),
+						inputToken: `${network}:${toAddress(inputToken)}`,
+						outputToken: `${network}:${toAddress(request.current.outputToken.value)}`,
+						inputAmount: toBigInt(request.current.inputAmount).toString(),
+						slippageTolerancePercentage: String(zapSlippage),
+						validate: 'true'
+					}
+				});
 
-			if (!transaction.data) {
-				const error = new Error('Transaction data was not fetched from Portals!');
-				console.error(error.message);
-				return {isSuccessful: false, error};
-			}
+				if (!transaction.data) {
+					const error = new Error('Transaction data was not fetched from Portals!');
+					console.error(error.message);
+					return {isSuccessful: false, error};
+				}
 
-			const {
-				tx: {value, to, data, ...rest}
-			} = transaction.data;
-			const wagmiProvider = await toWagmiProvider(provider);
+				const {
+					tx: {value, to, data, ...rest}
+				} = transaction.data;
+				const wagmiProvider = await toWagmiProvider(provider);
 
-			if (wagmiProvider.chainId !== request.current.chainID) {
-				try {
-					await switchChain(retrieveConfig(), {chainId: request.current.chainID});
-				} catch (error) {
-					const chainSwitchError =
-						error instanceof BaseError
-							? new Error(`Chain switch failed: ${error.shortMessage}`)
-							: (error as Error);
+				if (wagmiProvider.chainId !== request.current.chainID) {
+					try {
+						await switchChain(retrieveConfig(), {chainId: request.current.chainID});
+					} catch (error) {
+						const chainSwitchError =
+							error instanceof BaseError
+								? new Error(`Chain switch failed: ${error.shortMessage}`)
+								: (error as Error);
 
-					console.error('Chain switch error:', chainSwitchError.message);
+						console.error('Chain switch error:', chainSwitchError.message);
+						toast({
+							type: 'error',
+							content: `Portals.fi zap not possible: ${chainSwitchError.message}`
+						});
+						return {isSuccessful: false, error: chainSwitchError};
+					}
+				}
+
+				assert(isHex(data), 'Data is not hex');
+				assert(wagmiProvider.walletClient, 'Wallet client is not set');
+				const hash = await sendTransaction(retrieveConfig(), {
+					value: toBigInt(value ?? 0),
+					to: toAddress(to),
+					data,
+					chainId: request.current.chainID,
+					...rest
+				});
+				txHashSetter(hash);
+				const receipt = await waitForTransactionReceipt(retrieveConfig(), {
+					chainId: wagmiProvider.chainId,
+					confirmations: 2,
+					hash
+				});
+				if (receipt.status === 'success') {
+					return {isSuccessful: true, receipt: receipt};
+				}
+				const txError = new Error('Transaction failed');
+				console.error(txError.message);
+				return {isSuccessful: false, error: txError};
+			} catch (error) {
+				let finalError: Error;
+
+				if (isValidPortalsErrorObject(error)) {
+					const errorMessage = error.response.data.message;
+					finalError = new Error(`Portals API error: ${errorMessage}`);
+					console.error('Portals API error:', errorMessage);
 					toast({
 						type: 'error',
-						content: `Portals.fi zap not possible: ${chainSwitchError.message}`
+						content: `Portals.fi zap not possible: ${errorMessage}`
 					});
-					return {isSuccessful: false, error: chainSwitchError};
+				} else if (axios.isAxiosError(error)) {
+					const status = error.response?.status;
+					const message = error.response?.data?.message || error.message;
+					finalError = new Error(`Portals API error (${status || 'unknown'}): ${message}`);
+					console.error('Portals Axios error:', finalError.message);
+					toast({
+						type: 'error',
+						content: `Portals.fi service error: ${message}`
+					});
+				} else {
+					finalError = error instanceof Error ? error : new Error('Unknown Portals execution error');
+					console.error('Portals execution error:', finalError.message);
+					toast({
+						type: 'error',
+						content: 'Portals.fi execution failed'
+					});
 				}
-			}
 
-			assert(isHex(data), 'Data is not hex');
-			assert(wagmiProvider.walletClient, 'Wallet client is not set');
-			const hash = await sendTransaction(retrieveConfig(), {
-				value: toBigInt(value ?? 0),
-				to: toAddress(to),
-				data,
-				chainId: request.current.chainID,
-				...rest
-			});
-			txHashSetter(hash);
-			const receipt = await waitForTransactionReceipt(retrieveConfig(), {
-				chainId: wagmiProvider.chainId,
-				confirmations: 2,
-				hash
-			});
-			if (receipt.status === 'success') {
-				return {isSuccessful: true, receipt: receipt};
+				return {isSuccessful: false, error: finalError};
 			}
-			const txError = new Error('Transaction failed');
-			console.error(txError.message);
-			return {isSuccessful: false, error: txError};
-		} catch (error) {
-			let finalError: Error;
-
-			if (isValidPortalsErrorObject(error)) {
-				const errorMessage = error.response.data.message;
-				finalError = new Error(`Portals API error: ${errorMessage}`);
-				console.error('Portals API error:', errorMessage);
-				toast({
-					type: 'error',
-					content: `Portals.fi zap not possible: ${errorMessage}`
-				});
-			} else if (axios.isAxiosError(error)) {
-				const status = error.response?.status;
-				const message = error.response?.data?.message || error.message;
-				finalError = new Error(`Portals API error (${status || 'unknown'}): ${message}`);
-				console.error('Portals Axios error:', finalError.message);
-				toast({
-					type: 'error',
-					content: `Portals.fi service error: ${message}`
-				});
-			} else {
-				finalError = error instanceof Error ? error : new Error('Unknown Portals execution error');
-				console.error('Portals execution error:', finalError.message);
-				toast({
-					type: 'error',
-					content: 'Portals.fi execution failed'
-				});
-			}
-
-			return {isSuccessful: false, error: finalError};
-		}
-	}, [provider, zapSlippage]);
+		},
+		[provider, zapSlippage]
+	);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Format the quote to a normalized value, which will be used for subsequent

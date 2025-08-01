@@ -1,23 +1,22 @@
-import {useCallback, useMemo, useRef} from 'react';
-import {maxUint256} from 'viem';
-import {readContract} from 'wagmi/actions';
+import {useNotifications} from '@lib/contexts/useNotifications';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import type {TDict, TNormalizedBN} from '@lib/types';
+import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
+import {ZAP_YEARN_VE_CRV_ADDRESS} from '@lib/utils/constants';
+import {allowanceKey} from '@lib/utils/helpers';
+import type {TTxStatus} from '@lib/utils/wagmi';
+import {allowanceOf, approveERC20, retrieveConfig} from '@lib/utils/wagmi';
+import {migrateShares} from '@lib/utils/wagmi/actions';
 import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
+import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
 import {Solver} from '@vaults-v2/types/solvers';
 import {ZAP_CRV_ABI} from '@vaults-v2/utils/abi/zapCRV.abi';
 import {zapCRV} from '@vaults-v2/utils/actions';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
-import {useNotifications} from '@lib/contexts/useNotifications';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {ZAP_YEARN_VE_CRV_ADDRESS} from '@lib/utils/constants';
-import {allowanceKey} from '@lib/utils/helpers';
-import {allowanceOf, approveERC20, retrieveConfig} from '@lib/utils/wagmi';
-import {migrateShares} from '@lib/utils/wagmi/actions';
-
+import {useCallback, useMemo, useRef} from 'react';
 import type {Hash, TransactionReceipt} from 'viem';
-import type {TDict, TNormalizedBN} from '@lib/types';
-import type {TTxStatus} from '@lib/utils/wagmi';
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
+import {maxUint256} from 'viem';
+import {readContract} from 'wagmi/actions';
 
 /**************************************************************************************************
  ** The InternalMigration solver is a special solver used to migrate from one vault to another. It

@@ -13,7 +13,6 @@ updates:
           time: '10:00'
       ignore:
           - dependency-name: '@types/*' #Ignore updates for all `@types/` packages
-          - dependency-name: 'eslint*' #Ignore updates for all `eslint` packages
           - dependency-name: 'ts-loader' #Ignore updates for ts-loader
           - dependency-name: 'dotenv-webpack' #Ignore updates for dotenv-webpack
           - dependency-name: '@typescript*' #Ignore updates for all `@typescript` packages

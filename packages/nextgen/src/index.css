@@ -1,118 +1,118 @@
-@import url('https://fonts.googleapis.com/css2?family=Sono:wght@200..800&family=Workbench&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Sono:wght@200..800&family=Workbench&display=swap");
 
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @layer utilities {
-  @media (hover: hover) {
-    .hoverable\:hidden {
-      display: none
-    }
-    .hoverable\:block {
-      display: block
-    }
-    .hoverable\:flex {
-      display: flex
-    }
-    .hoverable\:invisible {
-      visibility: hidden
-    }
-    .hoverable\:visible {
-      visibility: visible
-    }
-  }
+	@media (hover: hover) {
+		.hoverable\:hidden {
+			display: none;
+		}
+		.hoverable\:block {
+			display: block;
+		}
+		.hoverable\:flex {
+			display: flex;
+		}
+		.hoverable\:invisible {
+			visibility: hidden;
+		}
+		.hoverable\:visible {
+			visibility: visible;
+		}
+	}
 }
 
 /* stylelint-disable at-rule-no-unknown */
 @theme {
-  --font-mono: 'Sono', monospace;
-	--font-fancy: 'Workbench', sans-serif;
+	--font-mono: "Sono", monospace;
+	--font-fancy: "Workbench", sans-serif;
 
-  --color-primary-50: var(--color-fuchsia-50);
-  --color-primary-100: var(--color-fuchsia-100);
-  --color-primary-200: var(--color-fuchsia-200);
-  --color-primary-300: var(--color-fuchsia-300);
-  --color-primary-400: var(--color-fuchsia-400);
-  --color-primary-500: var(--color-fuchsia-500);
-  --color-primary-600: var(--color-fuchsia-600);
-  --color-primary-700: var(--color-fuchsia-700);
-  --color-primary-800: var(--color-fuchsia-800);
-  --color-primary-900: var(--color-fuchsia-900);
-  --color-primary-950: var(--color-fuchsia-950);
+	--color-primary-50: var(--color-fuchsia-50);
+	--color-primary-100: var(--color-fuchsia-100);
+	--color-primary-200: var(--color-fuchsia-200);
+	--color-primary-300: var(--color-fuchsia-300);
+	--color-primary-400: var(--color-fuchsia-400);
+	--color-primary-500: var(--color-fuchsia-500);
+	--color-primary-600: var(--color-fuchsia-600);
+	--color-primary-700: var(--color-fuchsia-700);
+	--color-primary-800: var(--color-fuchsia-800);
+	--color-primary-900: var(--color-fuchsia-900);
+	--color-primary-950: var(--color-fuchsia-950);
 
-  --color-secondary-50: #f4f6fb;
-  --color-secondary-100: #e7edf7;
-  --color-secondary-200: #cad8ed;
-  --color-secondary-300: #9bb7de;
-  --color-secondary-400: #6691ca;
-  --color-secondary-500: #4273b5;
-  --color-secondary-600: #335e9e;
-  --color-secondary-700: #29497b;
-  --color-secondary-800: #253f67;
-  --color-secondary-900: #233757;
-  --color-secondary-950: #182339;
+	--color-secondary-50: #f4f6fb;
+	--color-secondary-100: #e7edf7;
+	--color-secondary-200: #cad8ed;
+	--color-secondary-300: #9bb7de;
+	--color-secondary-400: #6691ca;
+	--color-secondary-500: #4273b5;
+	--color-secondary-600: #335e9e;
+	--color-secondary-700: #29497b;
+	--color-secondary-800: #253f67;
+	--color-secondary-900: #233757;
+	--color-secondary-950: #182339;
 
-  --drop-shadow-2: 2px 2px 0px rgb(0 0 0 / 1);
-  --text-shadow-2: 2px 2px 0px rgb(0 0 0 / 1);
-  --shadow-inner-2: inset 2px 2px 0px rgb(0 0 0 / 1);
+	--drop-shadow-2: 2px 2px 0px rgb(0 0 0 / 1);
+	--text-shadow-2: 2px 2px 0px rgb(0 0 0 / 1);
+	--shadow-inner-2: inset 2px 2px 0px rgb(0 0 0 / 1);
 
-  --drop-shadow-3: 3px 3px 0px rgb(0 0 0 / 1);
-  --text-shadow-3: 3px 3px 0px rgb(0 0 0 / 1);
+	--drop-shadow-3: 3px 3px 0px rgb(0 0 0 / 1);
+	--text-shadow-3: 3px 3px 0px rgb(0 0 0 / 1);
 
-  --drop-shadow-4: 4px 4px 0px rgb(0 0 0 / 1);
-  --text-shadow-4: 4px 4px 0px rgb(0 0 0 / 1);
+	--drop-shadow-4: 4px 4px 0px rgb(0 0 0 / 1);
+	--text-shadow-4: 4px 4px 0px rgb(0 0 0 / 1);
 
-  --drop-shadow-6: 6px 6px 0px rgb(0 0 0 / 1);
-  --text-shadow-6: 6px 6px 0px rgb(0 0 0 / 1);
+	--drop-shadow-6: 6px 6px 0px rgb(0 0 0 / 1);
+	--text-shadow-6: 6px 6px 0px rgb(0 0 0 / 1);
 
-  --drop-shadow-8: 8px 8px 0px rgb(0 0 0 / 1);
-  --text-shadow-8: 8px 8px 0px rgb(0 0 0 / 1);
+	--drop-shadow-8: 8px 8px 0px rgb(0 0 0 / 1);
+	--text-shadow-8: 8px 8px 0px rgb(0 0 0 / 1);
 
-  --radius-primary: var(--radius-xl);
+	--radius-primary: var(--radius-xl);
 }
 
 :root {
-  --foreground: var(--color-secondary-700);
+	--foreground: var(--color-secondary-700);
 	--background: var(--color-secondary-50);
-  scrollbar-color: var(--color-primary-50) var(--color-secondary-600);
+	scrollbar-color: var(--color-primary-50) var(--color-secondary-600);
 
-  font-family: 'Sono', sans-serif;
-  font-weight: 400;
+	font-family: "Sono", sans-serif;
+	font-weight: 400;
 
-  color-scheme: light dark;
-  color: var(--foreground);
-  background-color: var(--background);
+	color-scheme: light dark;
+	color: var(--foreground);
+	background-color: var(--background);
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --foreground: var(--color-secondary-100);
-    --background: var(--color-secondary-950);
-    scrollbar-color: var(--color-primary-400) var(--color-secondary-700);
-  }
+	:root {
+		--foreground: var(--color-secondary-100);
+		--background: var(--color-secondary-950);
+		scrollbar-color: var(--color-primary-400) var(--color-secondary-700);
+	}
 }
 
 @keyframes suspense {
-  0% {
-    background-position: 120% 0;
-  }
-  100% {
-    background-position: -80% 0;
-  }
+	0% {
+		background-position: 120% 0;
+	}
+	100% {
+		background-position: -80% 0;
+	}
 }
 
 .animate-suspense {
-  background: linear-gradient(-45deg, #253f67 50%, #336eae 60%, #93cefe 61%, #253f67 61%);
+	background: linear-gradient(-45deg, #253f67 50%, #336eae 60%, #93cefe 61%, #253f67 61%);
 	background-size: 200% 100%;
-	animation: suspense .75s infinite;
+	animation: suspense 0.75s infinite;
 }
 
 .animate-wait {
-  background: linear-gradient(-45deg, #253f67 50%, #336eae 60%, #93cefe 61%, #253f67 61%);
+	background: linear-gradient(-45deg, #253f67 50%, #336eae 60%, #93cefe 61%, #253f67 61%);
 	background-size: 200% 100%;
-	animation: suspense .5s infinite linear;
+	animation: suspense 0.5s infinite linear;
 }

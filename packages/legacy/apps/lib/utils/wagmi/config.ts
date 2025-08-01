@@ -1,8 +1,5 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-import {type Chain} from 'viem/chains';
-import {cookieStorage, createStorage, custom, fallback, http, unstable_connector, webSocket} from 'wagmi';
-import {injected, safe} from 'wagmi/connectors';
 import {getDefaultConfig} from '@rainbow-me/rainbowkit';
+import type {_chains} from '@rainbow-me/rainbowkit/dist/config/getDefaultConfig';
 import {
 	coinbaseWallet,
 	frameWallet,
@@ -13,14 +10,14 @@ import {
 	safeWallet,
 	walletConnectWallet
 } from '@rainbow-me/rainbowkit/wallets';
-
+import type {Transport} from 'viem';
+import type {Chain} from 'viem/chains';
+import type {Config, ResolvedRegister} from 'wagmi';
+import {cookieStorage, createStorage, custom, fallback, http, unstable_connector, webSocket} from 'wagmi';
+import {injected, safe} from 'wagmi/connectors';
 import {getNetwork} from './utils';
 
-import type {Transport} from 'viem';
-import type {Config, ResolvedRegister} from 'wagmi';
-import type {_chains} from '@rainbow-me/rainbowkit/dist/config/getDefaultConfig';
-
-let CONFIG: Config | undefined = undefined;
+let CONFIG: Config | undefined;
 let CONFIG_CHAINS: Chain[] = [];
 let CONFIG_WITH_WINDOW: boolean = true;
 
@@ -64,16 +61,16 @@ export function getConfig({chains}: {chains: Chain[]}): ResolvedRegister['config
 		/**************************************************************************************
 		 ** Assign the transport via the alchemy and infura keys
 		 *************************************************************************************/
-		if (getNetwork(chain.id)?.rpcUrls['alchemy']?.http[0] && process.env.ALCHEMY_KEY) {
+		if (getNetwork(chain.id)?.rpcUrls.alchemy?.http[0] && process.env.ALCHEMY_KEY) {
 			availableTransports.push(
-				http(`${getNetwork(chain.id)?.rpcUrls['alchemy'].http[0]}/${process.env.ALCHEMY_KEY}`, {
+				http(`${getNetwork(chain.id)?.rpcUrls.alchemy.http[0]}/${process.env.ALCHEMY_KEY}`, {
 					batch: true
 				})
 			);
 		}
-		if (getNetwork(chain.id)?.rpcUrls['infura']?.http[0] && process.env.INFURA_PROJECT_ID) {
+		if (getNetwork(chain.id)?.rpcUrls.infura?.http[0] && process.env.INFURA_PROJECT_ID) {
 			availableTransports.push(
-				http(`${getNetwork(chain.id)?.rpcUrls['infura'].http[0]}/${process.env.INFURA_PROJECT_ID}`, {
+				http(`${getNetwork(chain.id)?.rpcUrls.infura.http[0]}/${process.env.INFURA_PROJECT_ID}`, {
 					batch: true
 				})
 			);
@@ -152,11 +149,11 @@ export function getConfig({chains}: {chains: Chain[]}): ResolvedRegister['config
 		if (injectedRPC) {
 			availableRPCs.push(injectedRPC);
 		}
-		if (chain?.rpcUrls['alchemy']?.http[0] && process.env.ALCHEMY_KEY) {
-			availableRPCs.push(`${chain?.rpcUrls['alchemy'].http[0]}/${process.env.ALCHEMY_KEY}`);
+		if (chain?.rpcUrls.alchemy?.http[0] && process.env.ALCHEMY_KEY) {
+			availableRPCs.push(`${chain?.rpcUrls.alchemy.http[0]}/${process.env.ALCHEMY_KEY}`);
 		}
-		if (chain?.rpcUrls['infura']?.http[0] && process.env.INFURA_PROJECT_ID) {
-			availableRPCs.push(`${chain?.rpcUrls['infura'].http[0]}/${process.env.INFURA_PROJECT_ID}`);
+		if (chain?.rpcUrls.infura?.http[0] && process.env.INFURA_PROJECT_ID) {
+			availableRPCs.push(`${chain?.rpcUrls.infura.http[0]}/${process.env.INFURA_PROJECT_ID}`);
 		}
 		if (!chain.rpcUrls.default) {
 			chain.rpcUrls.default = {http: [], webSocket: []};

@@ -1,37 +1,28 @@
-import {truncateHexTx} from '@vaults-v2/utils';
 import {IconLinkOut} from '@lib/icons/IconLinkOut';
 import {IconSpinner} from '@lib/icons/IconSpinner';
 import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@lib/utils';
 import {formatDate} from '@lib/utils/format.time';
-import {getNetwork} from '@lib/utils/wagmi';
-
-import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultHarvest, TYDaemonVaultHarvests} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {getNetwork} from '@lib/utils/wagmi';
+import {truncateHexTx} from '@vaults-v2/utils';
+import type {ReactElement} from 'react';
 
 function HarvestListHead(): ReactElement {
 	return (
 		<div className={'grid grid-cols-12 border-b border-neutral-200 px-10 pb-2'}>
-			<div
-				className={'col-span-3'}
-				datatype={'number'}>
+			<div className={'col-span-3'} datatype={'number'}>
 				<p className={'yearn--table-head-label'}>{'Date'}</p>
 			</div>
 
-			<div
-				className={'col-span-3'}
-				datatype={'number'}>
+			<div className={'col-span-3'} datatype={'number'}>
 				<p className={'yearn--table-head-label'}>{'Gain'}</p>
 			</div>
 
-			<div
-				className={'col-span-2'}
-				datatype={'number'}>
+			<div className={'col-span-2'} datatype={'number'}>
 				<p className={'yearn--table-head-label'}>{'Value'}</p>
 			</div>
 
-			<div
-				className={'col-span-4'}
-				datatype={'number'}>
+			<div className={'col-span-4'} datatype={'number'}>
 				<p className={'yearn--table-head-label md:text-right'}>{'Transaction'}</p>
 			</div>
 		</div>
@@ -51,20 +42,14 @@ function HarvestListRow({
 
 	return (
 		<div className={'grid grid-cols-1 border-b border-neutral-200 px-10 pb-4 md:grid-cols-12'}>
-			<div
-				className={'col-span-3'}
-				datatype={'number'}>
+			<div className={'col-span-3'} datatype={'number'}>
 				<p className={'yearn--table-data-section-item-label'}>{'Date'}</p>
-				<p
-					className={'yearn--table-data-section-item-value font-number'}
-					style={{lineHeight: '24px'}}>
+				<p className={'yearn--table-data-section-item-value font-number'} style={{lineHeight: '24px'}}>
 					{formatDate(Number(harvest.timestamp) * 1000)}
 				</p>
 			</div>
 
-			<div
-				className={'col-span-3'}
-				datatype={'number'}>
+			<div className={'col-span-3'} datatype={'number'}>
 				<p className={'yearn--table-data-section-item-label'}>{'Gain'}</p>
 				<div>
 					<b className={'yearn--table-data-section-item-value font-number'}>
@@ -82,9 +67,7 @@ function HarvestListRow({
 				</div>
 			</div>
 
-			<div
-				className={'col-span-2'}
-				datatype={'number'}>
+			<div className={'col-span-2'} datatype={'number'}>
 				<p className={'yearn--table-data-section-item-label'}>{'Value'}</p>
 				<p className={'yearn--table-data-section-item-value font-number'}>
 					{formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue))}
@@ -93,13 +76,11 @@ function HarvestListRow({
 
 			<div className={'col-span-4'}>
 				<p className={'yearn--table-data-section-item-label'}>{'Hash'}</p>
-				<a
-					href={`${blockExplorer}/tx/${harvest.txHash}`}
-					target={'_blank'}
-					rel={'noreferrer'}>
+				<a href={`${blockExplorer}/tx/${harvest.txHash}`} target={'_blank'} rel={'noreferrer'}>
 					<div
 						className={'font-number flex flex-row items-center space-x-2 text-neutral-900 md:justify-end'}
-						style={{lineHeight: '24px'}}>
+						style={{lineHeight: '24px'}}
+					>
 						{truncateHexTx(harvest.txHash, 12)}
 						<IconLinkOut className={'ml-2 size-4 md:ml-4'} />
 					</div>

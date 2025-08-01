@@ -1,13 +1,11 @@
-import {encodeFunctionData, toHex} from 'viem';
 import {yToast} from '@lib/components/yToast';
-
-import {toNormalizedBN} from './format';
-import {isObject} from './tools.is';
-
-import type {EncodeFunctionDataParameters, Hex} from 'viem';
 import type {TAddress} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {EncodeFunctionDataParameters, Hex} from 'viem';
+import {encodeFunctionData, toHex} from 'viem';
 import type {TSortDirection} from '../types/mixed';
+import {toNormalizedBN} from './format';
+import {isObject} from './tools.is';
 
 export function getVaultName(vault: TYDaemonVault): string {
 	const baseName = vault.name;
@@ -118,7 +116,7 @@ export function deepMerge(target: unknown, source: unknown): unknown {
 		if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
 			target[key] = sourceValue; //no concat, replace
 		} else if (isObject(targetValue) && isObject(sourceValue)) {
-			target[key] = deepMerge(Object.assign({}, targetValue), sourceValue);
+			target[key] = deepMerge({...targetValue}, sourceValue);
 		} else {
 			target[key] = sourceValue;
 		}
@@ -163,7 +161,7 @@ export function allowanceKey(chainID: number, token: TAddress, spender: TAddress
  * @param stringsToReplace
  * @param replacement
  */
- 
+
 export const replaceStrings = (inputString: string, stringsToReplace: string[], replacement: string): string => {
 	return stringsToReplace.reduce((outputString, stringToReplace) => {
 		const regex = new RegExp(stringToReplace, 'g');

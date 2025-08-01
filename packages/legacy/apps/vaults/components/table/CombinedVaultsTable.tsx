@@ -1,24 +1,22 @@
-import {useEffect, useMemo, useState} from 'react';
-import {TFilter, VAULT_PAGE_SIZE} from '@vaults/constants';
-import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
-import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants';
-import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
-import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
-import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {Pagination} from '@lib/components/Pagination';
 import {SearchBar} from '@lib/components/SearchBar';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
-
+import type {TSortDirection} from '@lib/types';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {TFilter, VAULT_PAGE_SIZE} from '@vaults/constants';
+import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
+import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants';
+import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
+import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
+import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
+import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
+import type {ReactElement, ReactNode} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {ChainFilterDropdown} from '../filters/ChainFilterDropdown';
 import {VersionFilterDropdown} from '../filters/VersionFilterDropdown';
 import {VaultsListHead} from '../VaultsListHead';
 import {VaultsListRow} from '../VaultsListRow';
-
-import type {ReactElement, ReactNode} from 'react';
-import type {TSortDirection} from '@lib/types';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
 
 type TCombinedVaultList = {
 	isLoading: boolean;
@@ -53,12 +51,7 @@ function mapToCombinedVaultList(
 	const allVaults = sortedVaults.map((vault, index) => {
 		const isV3 = vault.version.startsWith('3') || vault.version.startsWith('~3');
 		return (
-			<VaultsListRow
-				key={`${vault.chainID}_${vault.address}`}
-				index={index}
-				currentVault={vault}
-				isV2={!isV3}
-			/>
+			<VaultsListRow key={`${vault.chainID}_${vault.address}`} index={index} currentVault={vault} isV2={!isV3} />
 		);
 	});
 
@@ -198,7 +191,8 @@ function CombinedVaultsTable(): ReactElement {
 								<button
 									key={filter}
 									onClick={() => handleFilterClick(filter)}
-									className={`h-full rounded-full ${activeFilter === filter ? 'bg-white/10' : 'text-neutral-900/75'} mb-0 flex items-center justify-center px-3 py-2 text-[16px]`}>
+									className={`h-full rounded-full ${activeFilter === filter ? 'bg-white/10' : 'text-neutral-900/75'} mb-0 flex items-center justify-center px-3 py-2 text-[16px]`}
+								>
 									{filter}
 								</button>
 							))}

@@ -1,5 +1,7 @@
-import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
-import {serialize} from 'wagmi';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import type {TNormalizedBN} from '@lib/types';
+import {toAddress, toBigInt, zeroNormalizedBN} from '@lib/utils';
+import {hash} from '@lib/utils/helpers';
 import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
 import {useSolverCowswap} from '@vaults-v2/hooks/solvers/useSolverCowswap';
 import {useSolverGaugeStakingBooster} from '@vaults-v2/hooks/solvers/useSolverGaugeStakingBooster';
@@ -11,13 +13,10 @@ import {useSolverPortals} from '@vaults-v2/hooks/solvers/useSolverPortals';
 import {useSolverV3Router} from '@vaults-v2/hooks/solvers/useSolverV3Router';
 import {useSolverV3StakingBooster} from '@vaults-v2/hooks/solvers/useSolverV3StakingBooster';
 import {useSolverVanilla} from '@vaults-v2/hooks/solvers/useSolverVanilla';
-import {Solver} from '@vaults-v2/types/solvers';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {toAddress, toBigInt, zeroNormalizedBN} from '@lib/utils';
-import {hash} from '@lib/utils/helpers';
-
-import type {TNormalizedBN} from '@lib/types';
 import type {TInitSolverArgs, TSolver, TSolverContext, TWithSolver} from '@vaults-v2/types/solvers';
+import {Solver} from '@vaults-v2/types/solvers';
+import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
+import {serialize} from 'wagmi';
 
 export const isSolverDisabled = (key: TSolver): boolean => {
 	const solverStatus = {

@@ -1,13 +1,11 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import {z} from 'zod';
 import {SectionHeader} from '@lib/components/SectionHeader';
 import {TvlStat} from '@lib/components/TvlStat';
 import {useFetch} from '@lib/hooks/useFetch';
-
-import {Button} from '../common/Button';
-
+import Image from 'next/image';
+import Link from 'next/link';
 import type {ReactElement} from 'react';
+import {z} from 'zod';
+import {Button} from '../common/Button';
 
 function AnimatedLogos(): ReactElement {
 	return (
@@ -90,7 +88,8 @@ export function Hero(): ReactElement {
 						backgroundPosition: 'center',
 						overflow: 'hidden'
 					}}
-					className={'relative flex h-[600px] w-[2365px] max-w-[2352px] flex-col items-center self-center'}>
+					className={'relative flex h-[600px] w-[2365px] max-w-[2352px] flex-col items-center self-center'}
+				>
 					<AnimatedLogos />
 					<div className={'flex h-full items-center justify-center'}>
 						<div className={'z-20 flex flex-col items-center justify-center gap-12 text-center'}>
@@ -127,7 +126,8 @@ export function Hero(): ReactElement {
 					backgroundRepeat: 'no-repeat',
 					backgroundSize: '100% 100%',
 					backgroundPosition: 'center'
-				}}>
+				}}
+			>
 				<div className={'mt-4 flex w-full max-w-sm flex-col items-center gap-4 text-center'}>
 					<Image
 						src={'/landing/yfi-top-right.png'}
@@ -145,12 +145,8 @@ export function Hero(): ReactElement {
 							description={"DeFi's most battle tested yield aggregator"}
 						/>
 						<div className={'flex flex-col items-center justify-center gap-4'}>
-							<Link
-								href={'/v3'}
-								className={'block w-full'}>
-								<Button
-									className={'max-w-xs'}
-									variant={'primary'}>
+							<Link href={'/v3'} className={'block w-full'}>
+								<Button className={'max-w-xs'} variant={'primary'}>
 									{'Explore Vaults'}
 								</Button>
 							</Link>

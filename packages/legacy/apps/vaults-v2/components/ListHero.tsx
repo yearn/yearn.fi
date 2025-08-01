@@ -1,11 +1,10 @@
-import {useMemo} from 'react';
+import type {TMultiSelectOptionProps} from '@lib/components/MultiSelectDropdown';
 import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown';
 import {SearchBar} from '@lib/components/SearchBar';
-import {cl} from '@lib/utils';
-
-import type {ReactElement} from 'react';
-import type {TMultiSelectOptionProps} from '@lib/components/MultiSelectDropdown';
 import type {TDict} from '@lib/types';
+import {cl} from '@lib/utils';
+import type {ReactElement} from 'react';
+import {useMemo} from 'react';
 
 type TListHero = {
 	categories: string[] | null;

@@ -1,7 +1,6 @@
+import type {Dispatch, SetStateAction} from 'react';
 import {useState} from 'react';
 import {deserialize, serialize} from 'wagmi';
-
-import type {Dispatch, SetStateAction} from 'react';
 
 export function useLocalStorage<T>(
 	key: string,

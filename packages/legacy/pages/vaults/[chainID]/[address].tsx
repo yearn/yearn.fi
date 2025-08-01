@@ -1,24 +1,24 @@
-import {useEffect, useState} from 'react';
-import {useRouter} from 'next/router';
-import {motion} from 'framer-motion';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import {useWallet} from '@lib/contexts/useWallet';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
+import {useFetch} from '@lib/hooks/useFetch';
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
+import {toAddress} from '@lib/utils';
+import {variants} from '@lib/utils/animations';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {VaultDetailsTabsWrapper} from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultActionsTabsWrapper} from '@vaults-v2/components/details/VaultActionsTabsWrapper';
 import {ActionFlowContextApp} from '@vaults-v2/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults-v2/contexts/useSolver';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
-import {ImageWithFallback} from '@lib/components/ImageWithFallback';
-import {useWallet} from '@lib/contexts/useWallet';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useFetch} from '@lib/hooks/useFetch';
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
-import {toAddress} from '@lib/utils';
-import {variants} from '@lib/utils/animations';
-import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {motion} from 'framer-motion';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
+import {useRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {useEffect, useState} from 'react';
 
 function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();
@@ -98,7 +98,8 @@ function Index(): ReactElement | null {
 					initial={'initial'}
 					animate={'enter'}
 					variants={variants}
-					className={'pointer-events-none cursor-pointer md:-mt-0 '}>
+					className={'pointer-events-none cursor-pointer md:-mt-0 '}
+				>
 					<ImageWithFallback
 						className={'size-12 md:size-[72px]'}
 						src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
@@ -124,7 +125,6 @@ function Index(): ReactElement | null {
 	);
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const getStaticPaths = (async () => {
 	return {
 		paths: [],
@@ -132,7 +132,6 @@ export const getStaticPaths = (async () => {
 	};
 }) satisfies GetStaticPaths;
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const getStaticProps: GetStaticProps = async () => {
 	return {
 		props: {}

@@ -1,5 +1,4 @@
-import React from 'react';
-
+import type React from 'react';
 import type {ReactElement} from 'react';
 
 export function IconChain(props: React.SVGProps<SVGSVGElement>): ReactElement {
@@ -10,7 +9,8 @@ export function IconChain(props: React.SVGProps<SVGSVGElement>): ReactElement {
 			viewBox={'0 0 24 24'}
 			fill={'none'}
 			xmlns={'http://www.w3.org/2000/svg'}
-			{...props}>
+			{...props}
+		>
 			<path
 				fill={'#5B5B5B'}
 				d={

@@ -1,16 +1,14 @@
-import {arbitrum, base, fantom, mainnet, optimism, polygon, sonic} from 'viem/chains';
 import {IconAbout} from '@lib/icons/IconAbout';
 import {IconFrontends} from '@lib/icons/IconFrontends';
 import {IconIntegrations} from '@lib/icons/IconIntegrations';
 import {IconVaults} from '@lib/icons/IconVaults';
 import {IconYearn} from '@lib/icons/IconYearn';
 import {IconYearnXApps} from '@lib/icons/IconYearnXApps';
-
-import {toAddress} from './tools.address';
-import {katana} from './wagmi';
-
 import type {TAddress, TNDict, TToken} from '@lib/types';
 import type {TApp} from '@lib/types/mixed';
+import {arbitrum, base, fantom, mainnet, optimism, polygon, sonic} from 'viem/chains';
+import {toAddress} from './tools.address';
+import {katana} from './wagmi';
 
 export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic, katana];
 

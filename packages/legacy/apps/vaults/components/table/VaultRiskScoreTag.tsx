@@ -17,16 +17,21 @@ export const VaultRiskScoreTag: FC<{riskLevel: number}> = ({riskLevel}) => {
 					<div
 						className={
 							'font-number relative rounded border border-neutral-300 bg-neutral-200 p-1 px-2 text-center text-xxs text-neutral-900 shadow-lg'
-						}>
+						}
+					>
 						<p>
 							<b className={'text-xs font-semibold'}>{`${level} / 5 :`}</b>
-							{' This reflects the vault\'s security, with 1 being most secure and 5 least secure, based on strategy complexity, loss exposure, and external dependencies.'}
+							{
+								" This reflects the vault's security, with 1 being most secure and 5 least secure, based on strategy complexity, loss exposure, and external dependencies."
+							}
 						</p>
 					</div>
-				}>
+				}
+			>
 				<div
 					className={'h-3 w-10 min-w-10 rounded-sm border border-neutral-300 p-[2px] '}
-					style={{borderWidth: '1px'}}>
+					style={{borderWidth: '1px'}}
+				>
 					<div
 						className={'h-1.5 rounded-[1px]'}
 						style={{

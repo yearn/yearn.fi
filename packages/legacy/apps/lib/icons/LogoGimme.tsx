@@ -8,14 +8,10 @@ export function LogoGimme(props: React.SVGProps<SVGSVGElement> & {back?: string;
 			height={'80'}
 			viewBox={'0 0 80 80'}
 			fill={'none'}
-			xmlns={'http://www.w3.org/2000/svg'}>
+			xmlns={'http://www.w3.org/2000/svg'}
+		>
 			<g clipPath={'url(#clip0_1787_1240)'}>
-				<rect
-					width={'80'}
-					height={'80'}
-					rx={'40'}
-					fill={'#6FB5F9'}
-				/>
+				<rect width={'80'} height={'80'} rx={'40'} fill={'#6FB5F9'} />
 				<path
 					d={
 						'M66.497 62.6523C88.367 67.1842 92.0542 77.1485 91.164 81.5642L73.9941 126.254L-53.5401 77.2549C-50.8721 66.2808 -42.4018 61.697 -38.5002 60.7769C-30.9319 42.5895 -14.4133 44.4686 -7.09996 47.6816C0.327199 33.8912 14.2055 36.5139 20.2163 39.549C31.9821 43.6823 34.8947 54.8651 34.8803 59.9399C47.9508 49.0918 61.4041 57.2281 66.497 62.6523Z'
@@ -82,12 +78,7 @@ export function LogoGimme(props: React.SVGProps<SVGSVGElement> & {back?: string;
 			</g>
 			<defs>
 				<clipPath id={'clip0_1787_1240'}>
-					<rect
-						width={'80'}
-						height={'80'}
-						rx={'40'}
-						fill={'white'}
-					/>
+					<rect width={'80'} height={'80'} rx={'40'} fill={'white'} />
 				</clipPath>
 			</defs>
 		</svg>

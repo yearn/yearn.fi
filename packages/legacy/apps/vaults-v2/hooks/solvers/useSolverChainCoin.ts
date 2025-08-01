@@ -1,20 +1,19 @@
-import {useCallback, useMemo, useRef} from 'react';
-import {maxUint256} from 'viem';
+import {useNotifications} from '@lib/contexts/useNotifications';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import type {TDict, TNormalizedBN} from '@lib/types';
+import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
+import {allowanceKey} from '@lib/utils/helpers';
+import type {TTxStatus} from '@lib/utils/wagmi';
+import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
+import {depositETH, withdrawETH} from '@lib/utils/wagmi/actions';
 import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
+import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
 import {Solver} from '@vaults-v2/types/solvers';
 import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults-v2/utils';
 import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
-import {useNotifications} from '@lib/contexts/useNotifications';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {allowanceKey} from '@lib/utils/helpers';
-import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
-import {depositETH, withdrawETH} from '@lib/utils/wagmi/actions';
-
+import {useCallback, useMemo, useRef} from 'react';
 import type {Hash, TransactionReceipt} from 'viem';
-import type {TDict, TNormalizedBN} from '@lib/types';
-import type {TTxStatus} from '@lib/utils/wagmi';
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
+import {maxUint256} from 'viem';
 
 /**************************************************************************************************
  ** The ChainCoin solver is a specific solver that would work only for some vaults. It aims to help
@@ -236,6 +235,6 @@ export function useSolverChainCoin(): TSolverContext {
 			onExecuteDeposit,
 			onExecuteWithdraw
 		}),
-		[latestQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]
+		[init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]
 	);
 }

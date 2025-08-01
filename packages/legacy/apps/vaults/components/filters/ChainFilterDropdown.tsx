@@ -1,6 +1,6 @@
-import React from 'react';
 import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown';
 import {useChainOptions} from '@lib/hooks/useChains';
+import type React from 'react';
 
 type TChainFilterDropdownProps = {
 	chains: number[] | null;
@@ -23,7 +23,8 @@ export const ChainFilterDropdown: React.FC<TChainFilterDropdownProps> = ({chains
 			<div
 				className={
 					'mb-0 flex h-full cursor-pointer items-center justify-center gap-1 rounded-full bg-neutral-100 p-2 text-[16px] text-neutral-900'
-				}>
+				}
+			>
 				{selectedOptions.length > 0 ? (
 					<>
 						{selectedOptions.map((option, index) => (
@@ -33,7 +34,8 @@ export const ChainFilterDropdown: React.FC<TChainFilterDropdownProps> = ({chains
 								style={{
 									marginLeft: index > 0 ? '-4px' : '0',
 									zIndex: selectedOptions.length - index
-								}}>
+								}}
+							>
 								{option.icon}
 							</div>
 						))}

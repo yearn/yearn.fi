@@ -1,12 +1,11 @@
-import Link from 'next/link';
-import {VAULT_NAME_REPLACEMENTS} from '@vaults/constants';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import type {TNormalizedBN} from '@lib/types';
 import {formatAmount, formatPercent, toAddress} from '@lib/utils';
 import {replaceStrings} from '@lib/utils/helpers';
-
-import type {FC} from 'react';
-import type {TNormalizedBN} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {VAULT_NAME_REPLACEMENTS} from '@vaults/constants';
+import Link from 'next/link';
+import type {FC} from 'react';
 
 export const VaultPositionCard: FC<{
 	vault: TYDaemonVault & {totalBalance: TNormalizedBN; totalValue: number};
@@ -27,7 +26,8 @@ export const VaultPositionCard: FC<{
 			<div
 				className={
 					'group relative flex cursor-pointer items-center justify-between overflow-hidden rounded-lg border border-black/10 bg-black/20 transition-all hover:bg-black/5 '
-				}>
+				}
+			>
 				<div className={'flex size-full flex-row items-center '}>
 					<div className={'flex w-full flex-col gap-3 p-4'}>
 						<div className={'flex items-center gap-2'}>
@@ -57,12 +57,14 @@ export const VaultPositionCard: FC<{
 					<div
 						className={
 							'bg-neutral-50/20 flex w-[40px] items-center justify-center self-stretch group-hover:bg-white/5'
-						}>
+						}
+					>
 						<svg
 							className={'size-4 text-neutral-600'}
 							fill={'none'}
 							stroke={'currentColor'}
-							viewBox={'0 0 24 24'}>
+							viewBox={'0 0 24 24'}
+						>
 							<path
 								strokeLinecap={'round'}
 								strokeLinejoin={'round'}

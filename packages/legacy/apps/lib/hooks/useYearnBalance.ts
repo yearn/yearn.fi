@@ -1,8 +1,6 @@
-import {toAddress} from '@lib/utils';
-
-import {useWallet} from '../contexts/useWallet';
-
 import type {TAddress, TDict, TNormalizedBN} from '@lib/types';
+import {toAddress} from '@lib/utils';
+import {useWallet} from '../contexts/useWallet';
 
 /******************************************************************************
  ** The useYearnBalance hook is used to retrieve the balance of a token from

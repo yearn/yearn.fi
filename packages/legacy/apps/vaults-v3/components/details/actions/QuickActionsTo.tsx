@@ -1,19 +1,18 @@
-import {Fragment, type ReactElement, useMemo} from 'react';
-import {useRouter} from 'next/router';
-import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
-import {useSolver} from '@vaults-v2/contexts/useSolver';
-import {Renderable} from '@lib/components/Renderable';
 import {RenderAmount} from '@lib/components/RenderAmount';
+import {Renderable} from '@lib/components/Renderable';
 import {Dropdown} from '@lib/components/TokenDropdown';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice';
+import type {TNormalizedBN} from '@lib/types';
 import {cl, formatCounterValue, formatPercent, toAddress} from '@lib/utils';
 import {calculateBoostFromVeYFI} from '@lib/utils/calculations';
-
-import type {TNormalizedBN} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
+import {useSolver} from '@vaults-v2/contexts/useSolver';
 import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData';
+import {useRouter} from 'next/router';
+import {Fragment, type ReactElement, useMemo} from 'react';
 
 function VaultAPY({
 	currentVault,
@@ -58,19 +57,9 @@ function VaultAPY({
 	) {
 		return (
 			<Fragment>
-				<RenderAmount
-					shouldHideTooltip
-					value={estAPYRange[0]}
-					symbol={'percent'}
-					decimals={6}
-				/>
+				<RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
 				&nbsp;&rarr;&nbsp;
-				<RenderAmount
-					shouldHideTooltip
-					value={estAPYRange[1]}
-					symbol={'percent'}
-					decimals={6}
-				/>
+				<RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
 			</Fragment>
 		);
 	}
@@ -105,31 +94,17 @@ function VaultAPY({
 			return (
 				<Fragment>
 					<span className={'line-through'}>
-						<RenderAmount
-							shouldHideTooltip
-							value={stakedVaultAPY}
-							symbol={'percent'}
-							decimals={6}
-						/>
+						<RenderAmount shouldHideTooltip value={stakedVaultAPY} symbol={'percent'} decimals={6} />
 					</span>
 					&nbsp;&rarr;&nbsp;
-					<RenderAmount
-						shouldHideTooltip
-						value={currentVaultAPY}
-						symbol={'percent'}
-						decimals={6}
-					/>
+					<RenderAmount shouldHideTooltip value={currentVaultAPY} symbol={'percent'} decimals={6} />
 				</Fragment>
 			);
 		}
 
 		return (
 			<Fragment>
-				<RenderAmount
-					value={currentVaultAPY}
-					symbol={'percent'}
-					decimals={6}
-				/>
+				<RenderAmount value={currentVaultAPY} symbol={'percent'} decimals={6} />
 			</Fragment>
 		);
 	}
@@ -221,7 +196,8 @@ export function VaultDetailsQuickActionsTo(props: {
 					</p>
 					<legend
 						className={'font-number inline text-xs text-neutral-900/50 md:hidden'}
-						suppressHydrationWarning>
+						suppressHydrationWarning
+					>
 						<VaultAPY
 							currentVault={currentVault}
 							hasVeYFIBalance={hasVeYFIBalance}
@@ -233,11 +209,13 @@ export function VaultDetailsQuickActionsTo(props: {
 				</div>
 				<Renderable
 					shouldRender={!isActive || isDepositing || possibleOptionsTo.length === 1}
-					fallback={renderMultipleOptionsFallback()}>
+					fallback={renderMultipleOptionsFallback()}
+				>
 					<div
 						className={
 							'flex h-10 w-full items-center justify-between rounded-lg bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
-						}>
+						}
+					>
 						<div className={'relative flex flex-row items-center truncate'}>
 							<div className={'size-6 flex-none rounded-full'}>
 								{actionParams?.selectedOptionTo?.icon}
@@ -245,16 +223,15 @@ export function VaultDetailsQuickActionsTo(props: {
 							<p
 								className={
 									'truncate whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'
-								}>
+								}
+							>
 								{selectedOptionToSymbol}
 							</p>
 						</div>
 					</div>
 				</Renderable>
 				<div className={'mt-1 pl-1'}>
-					<legend
-						className={'hidden text-xs text-neutral-900/50 md:inline'}
-						suppressHydrationWarning>
+					<legend className={'hidden text-xs text-neutral-900/50 md:inline'} suppressHydrationWarning>
 						<div>
 							<p className={'font-number'}>
 								{isDepositing ? (
@@ -276,9 +253,7 @@ export function VaultDetailsQuickActionsTo(props: {
 
 			<div className={'w-full'}>
 				<div className={'pb-2 pl-1'}>
-					<label
-						htmlFor={'toAmount'}
-						className={'hidden text-base text-neutral-600 md:inline'}>
+					<label htmlFor={'toAmount'} className={'hidden text-base text-neutral-600 md:inline'}>
 						{'You will receive'}
 					</label>
 				</div>
@@ -307,9 +282,7 @@ export function VaultDetailsQuickActionsTo(props: {
 					</div>
 				</div>
 				<div className={'mt-1 pl-1'}>
-					<legend
-						suppressHydrationWarning
-						className={'hidden text-xs text-neutral-900/50 md:inline'}>
+					<legend suppressHydrationWarning className={'hidden text-xs text-neutral-900/50 md:inline'}>
 						<div>
 							<p className={'font-number'}>
 								{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}

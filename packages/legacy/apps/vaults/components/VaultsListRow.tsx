@@ -1,16 +1,15 @@
-import Link from 'next/link';
-import {useRouter} from 'next/router';
-import {VaultChainTag} from '@vaults-v3/components/VaultChainTag';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 import {RenderAmount} from '@lib/components/RenderAmount';
 import {IconLinkOut} from '@lib/icons/IconLinkOut';
 import {cl, toAddress} from '@lib/utils';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {getNetwork} from '@lib/utils/wagmi/utils';
-
-import {VaultForwardAPY, VaultRiskScoreTag} from './table';
+import {VaultChainTag} from '@vaults-v3/components/VaultChainTag';
+import Link from 'next/link';
+import {useRouter} from 'next/router';
 
 import type {FC} from 'react';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {VaultForwardAPY, VaultRiskScoreTag} from './table';
 
 type TVaultsListRowProps = {
 	currentVault: TYDaemonVault;
@@ -37,7 +36,8 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, inde
 				'px-4 py-3 md:px-4 md:py-0',
 				'min-h-[200px] md:min-h-0',
 				'cursor-pointer relative group'
-			)}>
+			)}
+		>
 			<div
 				className={cl(
 					'absolute inset-0 rounded-[12px]',
@@ -66,7 +66,8 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, inde
 						<div className={'flex flex-row items-center'}>
 							<p
 								title={currentVault.name}
-								className={'md:text-md block max-w-[280px] truncate text-neutral-800'}>
+								className={'md:text-md block max-w-[280px] truncate text-neutral-800'}
+							>
 								{currentVault.name.replace(/(Yearn |v2|v3)/gi, '')}
 							</p>
 						</div>
@@ -75,9 +76,7 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, inde
 			</div>
 
 			<div className={cl('col-span-8 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
-				<div
-					className={'flex-column col-span-3 flex items-center justify-end'}
-					datatype={'number'}>
+				<div className={'flex-column col-span-3 flex items-center justify-end'} datatype={'number'}>
 					<p className={'inline w-full text-start text-xs text-neutral-800/60 md:hidden'}>
 						{'Estimated APY'}
 					</p>
@@ -88,24 +87,17 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, inde
 					<VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
 				</div>
 
-				<div
-					className={'flex-column col-span-3 flex items-center justify-end'}
-					datatype={'number'}>
+				<div className={'flex-column col-span-3 flex items-center justify-end'} datatype={'number'}>
 					<p className={'inline w-full text-start text-xs text-neutral-800/60 md:hidden'}>{'Vault Type'}</p>
 					<div className={'flex w-full flex-row items-center justify-end gap-1'}>
-						<VaultChainTag
-							chainID={currentVault.chainID}
-							backgroundOpacity={0.5}
-						/>
+						<VaultChainTag chainID={currentVault.chainID} backgroundOpacity={0.5} />
 						<p className={'block rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-800/60'}>
 							{isV2 ? 'V2' : 'V3'}
 						</p>
 					</div>
 				</div>
 
-				<div
-					className={'yearn--table-data-section-item col-span-3 flex-row md:flex-col'}
-					datatype={'number'}>
+				<div className={'yearn--table-data-section-item col-span-3 flex-row md:flex-col'} datatype={'number'}>
 					<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
 					<div className={'flex flex-col pt-0 text-right'}>
 						<p className={'yearn--table-data-section-item-value'}>
@@ -131,7 +123,8 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, inde
 					onClick={(event): void => event.stopPropagation()}
 					className={'text-neutral-900/50 transition-opacity hover:text-neutral-900'}
 					target={'_blank'}
-					rel={'noopener noreferrer'}>
+					rel={'noopener noreferrer'}
+				>
 					<IconLinkOut className={' size-4'} />
 				</Link>
 			</div>

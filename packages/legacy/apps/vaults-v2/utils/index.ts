@@ -1,4 +1,4 @@
-import {zeroAddress} from 'viem';
+import type {TAddress} from '@lib/types';
 import {
 	ARB_WETH_TOKEN_ADDRESS,
 	OPT_WETH_TOKEN_ADDRESS,
@@ -9,8 +9,7 @@ import {
 	ZAP_FTM_WFTM_CONTRACT,
 	ZERO_ADDRESS
 } from '@lib/utils/constants';
-
-import type {TAddress} from '@lib/types';
+import {zeroAddress} from 'viem';
 
 export function getMessariSubgraphEndpoint(chainID: number): string {
 	switch (chainID) {

@@ -5,9 +5,7 @@ function About(): ReactElement {
 		<section className={'mt-4 grid w-full grid-cols-1 gap-10 pb-10 md:mt-20 md:grid-cols-2'}>
 			{/* Yearn? DeFi? I think I'm lost… */}
 			<div className={'w-full bg-neutral-100 p-10'}>
-				<div
-					aria-label={"Yearn? DeFi? I think I'm lost…"}
-					className={'flex flex-col pb-6'}>
+				<div aria-label={"Yearn? DeFi? I think I'm lost…"} className={'flex flex-col pb-6'}>
 					<h2 className={'text-3xl font-bold'}>{"Yearn? DeFi? I think I'm lost…"}</h2>
 				</div>
 				<div aria-label={"Yearn? DeFi? I think I'm lost… details"}>
@@ -29,7 +27,8 @@ function About(): ReactElement {
 							href={'https://discord.com/invite/6PNv2nF'}
 							target={'_blank'}
 							className={'text-neutral-900 underline'}
-							rel={'noreferrer'}>
+							rel={'noreferrer'}
+						>
 							{'discord'}
 						</a>
 						{" if you have any questions, we'd love to chat."}
@@ -39,9 +38,7 @@ function About(): ReactElement {
 
 			{/* Wtf is a Vault? */}
 			<div className={'w-full bg-neutral-100 p-10'}>
-				<div
-					aria-label={'Wtf is a Vault?'}
-					className={'flex flex-col pb-6'}>
+				<div aria-label={'Wtf is a Vault?'} className={'flex flex-col pb-6'}>
 					<h2 className={'text-3xl font-bold'}>{'Wtf is a Vault?'}</h2>
 				</div>
 				<div aria-label={'Wtf is a Vault? details'}>
@@ -70,9 +67,7 @@ function About(): ReactElement {
 
 			{/* Fees */}
 			<div className={'w-full bg-neutral-100 p-10'}>
-				<div
-					aria-label={'Fees'}
-					className={'flex flex-col pb-6'}>
+				<div aria-label={'Fees'} className={'flex flex-col pb-6'}>
 					<h2 className={'text-3xl font-bold'}>{'Fees'}</h2>
 				</div>
 				<div aria-label={'Fees'}>
@@ -86,9 +81,7 @@ function About(): ReactElement {
 
 			{/* APY */}
 			<div className={'w-full bg-neutral-100 p-10'}>
-				<div
-					aria-label={'APY'}
-					className={'flex flex-col pb-6'}>
+				<div aria-label={'APY'} className={'flex flex-col pb-6'}>
 					<h2 className={'text-3xl font-bold'}>{'APY'}</h2>
 				</div>
 				<div aria-label={'APY'}>

@@ -1,16 +1,9 @@
-import React from 'react';
-
+import type React from 'react';
 import type {ReactElement} from 'react';
 
 export function IconAddToMetamask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
-		<svg
-			width={24}
-			height={24}
-			fill={'none'}
-			xmlns={'http://www.w3.org/2000/svg'}
-			viewBox={'0 0 24 24'}
-			{...props}>
+		<svg width={24} height={24} fill={'none'} xmlns={'http://www.w3.org/2000/svg'} viewBox={'0 0 24 24'} {...props}>
 			<path
 				d={
 					'M19.292 2.216a.83.83 0 1 0-1.661 0v2.492h-2.493a.83.83 0 0 0 0 1.661h2.493v2.493a.83.83 0 1 0 1.661 0V6.369h2.492a.83.83 0 1 0 0-1.661h-2.492V2.216Z'

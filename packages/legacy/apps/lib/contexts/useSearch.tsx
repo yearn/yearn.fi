@@ -1,9 +1,9 @@
-import {createContext, useContext, useState} from 'react';
-import {useDeepCompareMemo} from '@react-hookz/web';
+import type {TOptionalRenderProps} from '@lib/types/optionalRenderProps';
 import {optionalRenderProps} from '@lib/types/optionalRenderProps';
+import {useDeepCompareMemo} from '@react-hookz/web';
 
 import type {Dispatch, ReactElement, SetStateAction} from 'react';
-import type {TOptionalRenderProps} from '@lib/types/optionalRenderProps';
+import {createContext, useContext, useState} from 'react';
 
 type TSearchContext = {
 	configuration: TSearchConfiguration;

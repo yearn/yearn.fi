@@ -1,8 +1,7 @@
-import {TOKENIZED_STRATEGY_ABI} from '@vaults-v3/utils/abi/tokenizedStrategy.abi';
 import {assert, assertAddress} from '@lib/utils';
-import {handleTx, toWagmiProvider} from '@lib/utils/wagmi';
-
 import type {TTxResponse, TWriteTransaction} from '@lib/utils/wagmi';
+import {handleTx, toWagmiProvider} from '@lib/utils/wagmi';
+import {TOKENIZED_STRATEGY_ABI} from '@vaults-v3/utils/abi/tokenizedStrategy.abi';
 
 /* 🔵 - Yearn Finance **********************************************************
  ** stake is a _WRITE_ function that stake the shares of the vault into the

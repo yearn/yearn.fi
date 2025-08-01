@@ -8,7 +8,8 @@ export function IconEnter(props: React.SVGProps<SVGSVGElement>): ReactElement {
 			height={'12'}
 			viewBox={'0 0 12 12'}
 			fill={'none'}
-			xmlns={'http://www.w3.org/2000/svg'}>
+			xmlns={'http://www.w3.org/2000/svg'}
+		>
 			<g clipPath={'url(#clip0_2013_717)'}>
 				<path
 					d={'M4 5L1 8L4 11'}
@@ -27,11 +28,7 @@ export function IconEnter(props: React.SVGProps<SVGSVGElement>): ReactElement {
 			</g>
 			<defs>
 				<clipPath id={'clip0_2013_717'}>
-					<rect
-						width={'12'}
-						height={'12'}
-						fill={'white'}
-					/>
+					<rect width={'12'} height={'12'} fill={'white'} />
 				</clipPath>
 			</defs>
 		</svg>

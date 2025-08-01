@@ -1,11 +1,11 @@
-import {useConnect} from 'wagmi';
-import {useCustomCompareMemo, useDeepCompareMemo} from '@react-hookz/web';
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
+import type {TMultiSelectOptionProps} from '@lib/components/MultiSelectDropdown';
 import {retrieveConfig} from '@lib/utils/wagmi';
+import {useCustomCompareMemo, useDeepCompareMemo} from '@react-hookz/web';
 
 import type {Chain} from 'viem';
 import type {Connector} from 'wagmi';
-import type {TMultiSelectOptionProps} from '@lib/components/MultiSelectDropdown';
+import {useConnect} from 'wagmi';
 
 export function useChainOptions(chains: number[] | null): TMultiSelectOptionProps[] {
 	const {connectors} = useConnect();

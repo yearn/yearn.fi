@@ -1,9 +1,7 @@
 import {zeroAddress} from 'viem';
-
+import type {TAddress} from '../types/address';
 import {ETH_TOKEN_ADDRESS} from './constants';
 import {toAddress} from './tools.address';
-
-import type {TAddress} from '../types/address';
 
 export function isZero(value?: bigint | number | string | null): boolean {
 	if (value === null || value === undefined) {

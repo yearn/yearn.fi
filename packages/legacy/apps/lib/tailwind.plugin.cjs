@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
 const plugin = require('tailwindcss/plugin');
 const defaultTheme = require('tailwindcss/defaultTheme');
 const {paddings} = require('./tailwind.theme.cjs');
@@ -225,7 +224,7 @@ module.exports = {
 	plugins: [
 		require('@tailwindcss/typography'),
 		require('@tailwindcss/forms'),
-		plugin(function ({addBase, addUtilities}) {
+		plugin(({addBase, addUtilities}) => {
 			addBase({
 				':root': {
 					...paddings

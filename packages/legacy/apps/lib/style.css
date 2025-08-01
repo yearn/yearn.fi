@@ -137,10 +137,7 @@ label[aria-invalid="true"] {
 }
 
 :focus {
-    outline-width: 0px;
-    outline-offset: 0px;
-	outline: none;
-    outline-color: transparent;
+    outline: none;
 }
 
 /* 🔵 - Yearn Finance ******************************************************

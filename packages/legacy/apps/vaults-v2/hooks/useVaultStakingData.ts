@@ -1,14 +1,6 @@
-import {useEffect, useState} from 'react';
-import {erc20Abi, zeroAddress} from 'viem';
-import {useBlockNumber} from 'wagmi';
-import {readContract, readContracts} from 'wagmi/actions';
-import {JUICED_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/juicedStakingRewards.abi';
-import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi';
-import {V3_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/V3StakingRewards.abi';
-import {VEYFI_GAUGE_ABI} from '@vaults-v2/utils/abi/veYFIGauge.abi';
-import {TOKENIZED_STRATEGY_ABI} from '@vaults-v3/utils/abi/tokenizedStrategy.abi';
 import {useWeb3} from '@lib/contexts/useWeb3';
 import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
+import type {TAddress, TNormalizedBN} from '@lib/types';
 import {
 	decodeAsAddress,
 	decodeAsBigInt,
@@ -21,10 +13,17 @@ import {
 	zeroNormalizedBN
 } from '@lib/utils';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@lib/utils/constants';
-import {retrieveConfig} from '@lib/utils/wagmi';
-
-import type {TAddress, TNormalizedBN} from '@lib/types';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {retrieveConfig} from '@lib/utils/wagmi';
+import {JUICED_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/juicedStakingRewards.abi';
+import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi';
+import {V3_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/V3StakingRewards.abi';
+import {VEYFI_GAUGE_ABI} from '@vaults-v2/utils/abi/veYFIGauge.abi';
+import {TOKENIZED_STRATEGY_ABI} from '@vaults-v3/utils/abi/tokenizedStrategy.abi';
+import {useEffect, useState} from 'react';
+import {erc20Abi, zeroAddress} from 'viem';
+import {useBlockNumber} from 'wagmi';
+import {readContract, readContracts} from 'wagmi/actions';
 
 export type TStakingInfo = {
 	address: TAddress;
@@ -167,11 +166,9 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 				}
 			];
 
-			/* eslint-disable @typescript-eslint/no-unused-vars */
 			const calls = contracts.map(({key: _key, ...rest}) => rest) as Parameters<
 				typeof readContracts
 			>[1]['contracts'];
-			/* eslint-enable @typescript-eslint/no-unused-vars */
 
 			const data = await readContracts(retrieveConfig(), {
 				contracts: calls
@@ -183,7 +180,11 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 					acc[contract.key] = data[idx];
 					return acc;
 				},
-				{} as {[key: string]: any}
+				{} as {
+					[key: string]:
+						| {error: Error; result?: undefined; status: 'failure'}
+						| {error?: undefined; result: unknown; status: 'success'};
+				}
 			);
 
 			stakingToken = decodeAsAddress(resultMap.stakingToken);
@@ -263,7 +264,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 				functionName: 'rewardTokensLength'
 			});
 
-			const rewardTokensCalls = [] as any[];
+			const rewardTokensCalls: Parameters<typeof readContracts>[1]['contracts'][number][] = [];
 			for (let i = 0; i < Number(rewardTokensLength); i++) {
 				rewardTokensCalls.push({
 					address: toAddress(props.currentVault.staking.address),
@@ -385,7 +386,10 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		 ** view of the user's holdings in the vault: we need to know what is the reward token. This
 		 ** means we need to retrieve the token's symbol and decimals.
 		 ******************************************************************************************/
-		let decimalsResult: any;
+		let decimalsResult: Array<
+			| {error: Error; result?: undefined; status: 'failure'}
+			| {error?: undefined; result: unknown; status: 'success'}
+		>;
 		let rewardDecimals: number;
 		let stakingDecimals: number;
 		if (stakingType === 'yBOLD') {
@@ -446,6 +450,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		stakingType
 	]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: fetch data on block number change
 	useEffect(() => {
 		refetch();
 	}, [blockNumber, refetch]);

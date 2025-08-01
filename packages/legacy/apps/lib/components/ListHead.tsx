@@ -1,9 +1,9 @@
-import {useCallback} from 'react';
 import {IconChevronPlain} from '@lib/icons/IconChevronPlain';
+import type {TSortDirection} from '@lib/types';
 import {cl} from '@lib/utils';
 
 import type {ReactElement} from 'react';
-import type {TSortDirection} from '@lib/types';
+import {useCallback} from 'react';
 
 export type TListHead = {
 	items: {
@@ -64,7 +64,8 @@ export function ListHead({
 					<p className={'yearn--table-head-label max-w-[32px]'}>{chain.label}</p>
 					<button
 						onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
-						className={'yearn--table-head-label-wrapper group'}>
+						className={'yearn--table-head-label-wrapper group'}
+					>
 						<p className={'yearn--table-head-label'}>{token.label}</p>
 						{renderChevron(sortBy === token.value)}
 					</button>
@@ -79,7 +80,8 @@ export function ListHead({
 								onClick={(): void => onSort(item.value, toggleSortDirection(item.value))}
 								disabled={!item.sortable}
 								className={cl('yearn--table-head-label-wrapper group', item.className)}
-								datatype={'number'}>
+								datatype={'number'}
+							>
 								<p className={'yearn--table-head-label whitespace-nowrap'}>&nbsp;{item.label}</p>
 								{item.sortable ? renderChevron(sortBy === item.value) : null}
 							</button>

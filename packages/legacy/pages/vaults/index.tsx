@@ -1,13 +1,3 @@
-import {Children, Fragment, useEffect, useMemo, useState} from 'react';
-import {VaultListOptions} from '@vaults-v2/components/list/VaultListOptions';
-import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
-import {VaultsListInternalMigrationRow} from '@vaults-v2/components/list/VaultsListInternalMigrationRow';
-import {VaultsListRetired} from '@vaults-v2/components/list/VaultsListRetired';
-import {VaultsListRow} from '@vaults-v2/components/list/VaultsListRow';
-import {ListHero} from '@vaults-v2/components/ListHero';
-import {ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants';
-import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
-import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
 import {Button} from '@lib/components/Button';
 import {Counter} from '@lib/components/Counter';
 import {ListHead} from '@lib/components/ListHead';
@@ -19,12 +9,21 @@ import {useYearn} from '@lib/contexts/useYearn';
 import {useChainOptions} from '@lib/hooks/useChains';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
 import {IconChain} from '@lib/icons/IconChain';
-import {toAddress, toNormalizedBN} from '@lib/utils';
-
-import type {ReactElement, ReactNode} from 'react';
 import type {TSortDirection} from '@lib/types';
+import {toAddress, toNormalizedBN} from '@lib/utils';
 import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {ListHero} from '@vaults-v2/components/ListHero';
+import {VaultListOptions} from '@vaults-v2/components/list/VaultListOptions';
+import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
+import {VaultsListInternalMigrationRow} from '@vaults-v2/components/list/VaultsListInternalMigrationRow';
+import {VaultsListRetired} from '@vaults-v2/components/list/VaultsListRetired';
+import {VaultsListRow} from '@vaults-v2/components/list/VaultsListRow';
+import {ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants';
 import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
+import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
+import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
+import type {ReactElement, ReactNode} from 'react';
+import {Children, Fragment, useEffect, useMemo, useState} from 'react';
 
 function HeaderUserPosition(): ReactElement {
 	const {cumulatedValueInV2Vaults} = useWallet();
@@ -42,7 +41,8 @@ function HeaderUserPosition(): ReactElement {
 							} else {
 								openLoginModal();
 							}
-						}}>
+						}}
+					>
 						{'Connect Wallet'}
 					</Button>
 				</div>
@@ -55,10 +55,7 @@ function HeaderUserPosition(): ReactElement {
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Deposited'}</p>
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
 					{'$'}
-					<Counter
-						value={Number(cumulatedValueInV2Vaults)}
-						decimals={2}
-					/>
+					<Counter value={Number(cumulatedValueInV2Vaults)} decimals={2} />
 				</b>
 			</div>
 		</Fragment>
@@ -78,10 +75,7 @@ function ListOfRetiredVaults({retiredVaults}: {retiredVaults: TYDaemonVaults}): 
 					)
 					.map(
 						(vault): ReactNode => (
-							<VaultsListRetired
-								key={`${vault.chainID}_${vault.address}`}
-								currentVault={vault}
-							/>
+							<VaultsListRetired key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
 						)
 					)}
 			</div>
@@ -230,21 +224,11 @@ function ListOfVaults(): ReactElement {
 				toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized;
 
 			if (holdingsValue > 0.5) {
-				holdings.push(
-					<VaultsListRow
-						key={`${vault.chainID}_${vault.address}`}
-						currentVault={vault}
-					/>
-				);
+				holdings.push(<VaultsListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />);
 				continue;
 			}
 
-			all.push(
-				<VaultsListRow
-					key={`${vault.chainID}_${vault.address}`}
-					currentVault={vault}
-				/>
-			);
+			all.push(<VaultsListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />);
 		}
 
 		return [holdings, all];
@@ -272,7 +256,8 @@ function ListOfVaults(): ReactElement {
 		<div
 			className={
 				'relative col-span-12 flex min-h-[240px] w-full flex-col overflow-x-hidden bg-neutral-100 md:overflow-x-visible'
-			}>
+			}
+		>
 			<div className={'absolute right-5 top-3 md:right-8 md:top-8'}>
 				<VaultListOptions />
 			</div>

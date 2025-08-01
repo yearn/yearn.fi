@@ -1,8 +1,7 @@
-import {useLayoutEffect, useRef} from 'react';
-import {animate} from 'framer-motion';
 import {formatAmount, parseAmount} from '@lib/utils';
-
+import {animate} from 'framer-motion';
 import type {ReactElement} from 'react';
+import {useLayoutEffect, useRef} from 'react';
 
 export function Counter({
 	value,
@@ -15,7 +14,6 @@ export function Counter({
 	idealDecimals?: number; // Ideal decimals to display
 	decimalsToDisplay?: number[]; // Decimals to display
 }): ReactElement {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const nodeRef = useRef<HTMLSpanElement | null>(null);
 	const valueRef = useRef(value || 0);
 
@@ -88,11 +86,5 @@ export function Counter({
 		return () => undefined;
 	}, [value, decimals, decimalsToDisplay, idealDecimals]);
 
-	return (
-		<span
-			className={'font-number'}
-			suppressHydrationWarning
-			ref={nodeRef}
-		/>
-	);
+	return <span className={'font-number'} suppressHydrationWarning ref={nodeRef} />;
 }

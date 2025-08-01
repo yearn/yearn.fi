@@ -4,9 +4,8 @@ import {useWeb3} from '@lib/contexts/useWeb3';
 import {IconChevron} from '@lib/icons/IconChevron';
 import {cl} from '@lib/utils';
 import {useClickOutside, useThrottledState} from '@react-hookz/web';
-import {Fragment, useCallback, useMemo, useRef, useState} from 'react';
-
 import type {ReactElement} from 'react';
+import {Fragment, useCallback, useMemo, useRef, useState} from 'react';
 
 export type TMultiSelectOptionProps = {
 	label: string;
@@ -38,7 +37,8 @@ function SelectAllOption({
 		<button
 			type={'button'}
 			onClick={onSelectAll}
-			className={'mb-2 cursor-pointer border-b border-neutral-100 pb-2'}>
+			className={'mb-2 cursor-pointer border-b border-neutral-100 pb-2'}
+		>
 			<div className={'flex w-full items-center justify-between p-2 transition-colors hover:bg-neutral-100'}>
 				<p className={'pl-0 font-normal text-neutral-900'}>{option.label}</p>
 				<input
@@ -61,7 +61,8 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 		<ComboboxOption
 			onClick={option.onContainerClick}
 			value={option}
-			className={'transition-colors hover:bg-neutral-100'}>
+			className={'transition-colors hover:bg-neutral-100'}
+		>
 			<div className={'flex w-full items-center justify-between p-2'}>
 				<div className={'flex items-center'}>
 					{option?.icon ? (
@@ -100,7 +101,8 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 				onClick={(): void => openLoginModal()}
 				className={
 					'flex h-14 cursor-pointer flex-col items-center justify-center px-4 text-center transition-colors hover:bg-neutral-300'
-				}>
+				}
+			>
 				<b className={'text-neutral-900'}>{'Connect Wallet'}</b>
 			</button>
 		);
@@ -218,17 +220,13 @@ export function MultiSelectDropdown({
 	}, [options, areAllSelected, onSelect]);
 
 	return (
-		<Combobox
-			as={Fragment}
-			key={selectedValues.join(',')}
-			ref={componentRef}
-			value={selectedValues}
-			multiple>
+		<Combobox as={Fragment} key={selectedValues.join(',')} ref={componentRef} value={selectedValues} multiple>
 			<div className={'relative w-full'}>
 				{customRender ? (
 					<ComboboxButton
 						className={'flex items-center justify-between'}
-						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}>
+						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
+					>
 						{customRender}
 					</ComboboxButton>
 				) : (
@@ -237,7 +235,8 @@ export function MultiSelectDropdown({
 						className={cl(
 							props.buttonClassName,
 							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
-						)}>
+						)}
+					>
 						<ComboboxInput
 							className={cl(
 								'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none',
@@ -265,12 +264,14 @@ export function MultiSelectDropdown({
 					leave={'transition duration-75 ease-out'}
 					leaveFrom={'transform scale-100 opacity-100'}
 					leaveTo={'transform scale-95 opacity-0'}
-					afterLeave={(): void => set_query('')}>
+					afterLeave={(): void => set_query('')}
+				>
 					<ComboboxOptions
 						className={cl(
 							props.comboboxOptionsClassName,
 							'absolute top-12 z-50 flex w-full min-w-[256px] cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'
-						)}>
+						)}
+					>
 						<SelectAllOption
 							option={{
 								label: areAllSelected ? 'Unselect All' : 'Select All',
@@ -281,7 +282,8 @@ export function MultiSelectDropdown({
 						/>
 						<Renderable
 							shouldRender={filteredOptions.length > 0}
-							fallback={<DropdownEmpty query={query} />}>
+							fallback={<DropdownEmpty query={query} />}
+						>
 							{filteredOptions.map(
 								(option): ReactElement => (
 									<Option

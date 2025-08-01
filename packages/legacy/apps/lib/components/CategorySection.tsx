@@ -1,10 +1,8 @@
-import {type ReactElement, useRef, useState} from 'react';
-import {useMountEffect} from '@react-hookz/web';
 import {CarouselSlideArrows} from '@lib/components/CarouselSlideArrows';
-
-import {AppsCarousel} from './AppsCarousel';
-
 import type {TApp} from '@lib/types/mixed';
+import {useMountEffect} from '@react-hookz/web';
+import {type ReactElement, useRef, useState} from 'react';
+import {AppsCarousel} from './AppsCarousel';
 
 type TAppSectionProps = {
 	title: string;
@@ -126,17 +124,10 @@ export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement =
 					<div className={'whitespace-nowrap text-lg font-bold text-neutral-800'}>{title}</div>
 				</div>
 				{apps?.length > 5 && (
-					<CarouselSlideArrows
-						onScrollBack={onScrollBack}
-						onScrollForward={onScrollForward}
-					/>
+					<CarouselSlideArrows onScrollBack={onScrollBack} onScrollForward={onScrollForward} />
 				)}
 			</div>
-			<AppsCarousel
-				apps={shuffledApps}
-				ref={carouselRef}
-				onScroll={onScroll}
-			/>
+			<AppsCarousel apps={shuffledApps} ref={carouselRef} onScroll={onScroll} />
 			{/* <CarouselControls
 				carouselLength={apps.length}
 				onDotsClick={onDotsClick}

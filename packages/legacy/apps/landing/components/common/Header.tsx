@@ -1,9 +1,9 @@
-import {type ReactElement, useMemo, useState} from 'react';
-import Link from 'next/link';
-import {useRouter} from 'next/router';
 import {ModalMobileMenu} from '@lib/components/ModalMobileMenu';
 import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
 import {TypeMarkYearn} from '@lib/icons/TypeMarkYearn';
+import Link from 'next/link';
+import {useRouter} from 'next/router';
+import {type ReactElement, useMemo, useState} from 'react';
 
 type TMenu = {path: string; label: string | ReactElement; target?: string};
 type TNavbar = {nav: TMenu[]; currentPathName: string};
@@ -13,10 +13,7 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 		<nav className={'hidden items-center gap-6 md:flex'}>
 			{nav.map(
 				(option): ReactElement => (
-					<Link
-						key={option.path}
-						target={option.target}
-						href={option.path}>
+					<Link key={option.path} target={option.target} href={option.path}>
 						<p className={`yearn--header-nav-item ${currentPathName === option.path ? 'active' : ''}`}>
 							{option?.label || 'Unknown'}
 						</p>
@@ -48,17 +45,12 @@ export function LandingAppHeader(): ReactElement {
 	}, []);
 
 	return (
-		<div
-			id={'head'}
-			className={'inset-x-0 top-0 z-50 mt-4 w-full md:mt-7'}>
+		<div id={'head'} className={'inset-x-0 top-0 z-50 mt-4 w-full md:mt-7'}>
 			<div className={'w-full'}>
 				<header className={'flex max-w-[1232px] items-center gap-4 py-1 md:justify-between md:!px-10 md:py-4'}>
 					<div className={'hidden flex-row items-center gap-x-3 md:flex'}>
 						<Link href={'/'}>
-							<TypeMarkYearn
-								className={'h-6 w-auto'}
-								color={'#E1E1E1'}
-							/>
+							<TypeMarkYearn className={'h-6 w-auto'} color={'#E1E1E1'} />
 						</Link>
 						{/* <LogoYearn
 								className={'size-7'}
@@ -67,14 +59,12 @@ export function LandingAppHeader(): ReactElement {
 							/>
 						<span>{'Yearn'}</span> */}
 					</div>
-					<Navbar
-						currentPathName={pathname || ''}
-						nav={menu}
-					/>
+					<Navbar currentPathName={pathname || ''} nav={menu} />
 					<div className={'flex md:hidden'}>
 						<button
 							className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
-							onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
+							onClick={(): void => set_isMenuOpen(!isMenuOpen)}
+						>
 							<span className={'sr-only'}>{'Open menu'}</span>
 							<IconBurgerPlain />
 						</button>
@@ -86,15 +76,12 @@ export function LandingAppHeader(): ReactElement {
 				shouldUseNetworks={true}
 				isOpen={isMenuOpen}
 				onClose={(): void => set_isMenuOpen(false)}
-				supportedNetworks={[]}>
+				supportedNetworks={[]}
+			>
 				{menu?.map(
 					(option): ReactElement => (
-						<Link
-							key={option.path}
-							href={option.path}>
-							<div
-								className={'mobile-nav-item'}
-								onClick={(): void => set_isMenuOpen(false)}>
+						<Link key={option.path} href={option.path}>
+							<div className={'mobile-nav-item'} onClick={(): void => set_isMenuOpen(false)}>
 								<p className={'font-bold'}>{option.label}</p>
 							</div>
 						</Link>

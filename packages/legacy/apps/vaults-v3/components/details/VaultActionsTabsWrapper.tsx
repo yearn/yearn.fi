@@ -1,7 +1,22 @@
-import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
-import {useRouter} from 'next/router';
-import {useBlockNumber, useReadContract} from 'wagmi';
-import {readContracts} from 'wagmi/actions';
+import {InfoTooltip} from '@lib/components/InfoTooltip';
+import {Switch} from '@lib/components/Switch';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
+import type {TNormalizedBN} from '@lib/types';
+import {
+	cl,
+	decodeAsBigInt,
+	formatAmount,
+	parseMarkdown,
+	toAddress,
+	toBigInt,
+	toNormalizedBN,
+	toNormalizedValue
+} from '@lib/utils';
+import {DISABLED_VEYFI_GAUGES_VAULTS_LIST, VEYFI_ADDRESS} from '@lib/utils/constants';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {retrieveConfig} from '@lib/utils/wagmi';
 import {useUpdateEffect} from '@react-hookz/web';
 import {Flow, useActionFlow} from '@vaults-v2/contexts/useActionFlow';
 import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData';
@@ -14,27 +29,11 @@ import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/acti
 import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
-import {InfoTooltip} from '@lib/components/InfoTooltip';
-import {Switch} from '@lib/components/Switch';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
-import {
-	cl,
-	decodeAsBigInt,
-	formatAmount,
-	parseMarkdown,
-	toAddress,
-	toBigInt,
-	toNormalizedBN,
-	toNormalizedValue
-} from '@lib/utils';
-import {DISABLED_VEYFI_GAUGES_VAULTS_LIST, VEYFI_ADDRESS} from '@lib/utils/constants';
-import {retrieveConfig} from '@lib/utils/wagmi';
-
+import {useRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TNormalizedBN} from '@lib/types';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
+import {useBlockNumber, useReadContract} from 'wagmi';
+import {readContracts} from 'wagmi/actions';
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug
@@ -147,7 +146,8 @@ export function BoostMessage(props: {
 							className={'underline'}
 							href={'https://docs.yearn.fi/contributing/governance/veyfi-intro'}
 							target={'_blank'}
-							rel={'noreferrer'}>
+							rel={'noreferrer'}
+						>
 							{'FAQ'}
 						</a>
 						{'.'}
@@ -165,11 +165,7 @@ export function BoostMessage(props: {
 					</b>
 					<b className={'block text-neutral-900'}>
 						{'Visit '}
-						<a
-							className={'underline'}
-							href={'https://juiced.app'}
-							target={'_blank'}
-							rel={'noreferrer'}>
+						<a className={'underline'} href={'https://juiced.app'} target={'_blank'} rel={'noreferrer'}>
 							{'juiced.app'}
 						</a>
 						{' to learn more'}
@@ -228,7 +224,8 @@ function MobileTabButtons(props: {
 				props.selectedTab.value === props.currentTab.value
 					? 'border-b-2 border-neutral-900'
 					: 'border-b-2 border-neutral-300'
-			)}>
+			)}
+		>
 			{props.currentTab.label}
 		</button>
 	);
@@ -281,7 +278,8 @@ export function VaultDetailsTab(props: {
 					{shallow: true}
 				);
 				props.onSwitchTab(props.tab);
-			}}>
+			}}
+		>
 			<p
 				title={tabLabel}
 				aria-selected={props.selectedTab.value === props.tab.value}
@@ -292,7 +290,8 @@ export function VaultDetailsTab(props: {
 							? '!text-neutral-900'
 							: '!text-neutral-900/50 hover:!text-neutral-900'
 						: ''
-				)}>
+				)}
+			>
 				{tabLabel}
 				{props.tab.label === 'Boost' && toBigInt(props.unstakedBalance?.raw) > 0n ? (
 					<span className={'absolute -right-3 -top-1 z-10 flex size-2.5'}>
@@ -415,6 +414,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	 ** As we want live data, we want the data to be refreshed every time the block number changes.
 	 ** This way, the user will always have the most up-to-date data.
 	 **********************************************************************************************/
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: fetch data on block number change
 	useEffect(() => {
 		refetch();
 	}, [blockNumber, refetch]);
@@ -429,7 +430,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		if (tab?.value) {
 			set_currentTab(tab);
 		}
-	}, [router.query.action, set_currentTab]);
+	}, [router.query.action]);
 
 	/**********************************************************************************************
 	 ** UpdateEffect to define which tabs are available based on the current state of the vault.
@@ -481,7 +482,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			return;
 		}
 		set_isAutoStakingEnabled(true);
-	}, [currentVault.staking.rewards, hasStakingRewards, hasStakingRewardsLive, set_isAutoStakingEnabled]);
+	}, [currentVault.staking.rewards, hasStakingRewards, set_isAutoStakingEnabled]);
 
 	const isSonneRetiredVault =
 		toAddress(currentVault.address) === toAddress('0x5b977577eb8a480f63e11fc615d6753adb8652ae') ||
@@ -499,9 +500,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	return (
 		<>
 			{currentVault?.migration?.available && (
-				<div
-					aria-label={'Migration Warning'}
-					className={'col-span-12 mt-10'}>
+				<div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
 					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
 						<b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
 						<p className={'mt-2'}>
@@ -517,9 +516,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				currentVault?.info?.isRetired &&
 				!currentVault.info.uiNotice &&
 				!isSonneRetiredVault && (
-					<div
-						aria-label={'Deprecation Warning'}
-						className={'col-span-12 mt-10'}>
+					<div aria-label={'Deprecation Warning'} className={'col-span-12 mt-10'}>
 						<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
 							<b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
 							<p className={'mt-2'}>
@@ -532,9 +529,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				)}
 
 			{currentVault?.info.uiNotice && !currentVault?.migration.available && currentVault.info.isRetired && (
-				<div
-					aria-label={'Migration Warning'}
-					className={'col-span-12 mt-10'}>
+				<div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
 					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
 						<b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
 						<p
@@ -553,9 +548,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				!currentVault?.migration.available &&
 				!currentVault.info.isRetired &&
 				!isSonneRetiredVault && (
-					<div
-						aria-label={'Migration Warning'}
-						className={'col-span-12 mt-10'}>
+					<div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
 						<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
 							<p
 								className={'mt-2'}
@@ -624,7 +617,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					<div
 						className={
 							'col-span-12 flex flex-col space-x-0 space-y-2 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
-						}>
+						}
+					>
 						<VaultDetailsQuickActionsFrom
 							currentVault={currentVault}
 							vaultData={vaultData}
@@ -644,11 +638,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 								{hasStakingRewardsLive && isDepositing ? (
 									<div className={cl('mt-1 flex justify-between pb-[10px]')}>
 										<div className={'flex items-center gap-5'}>
-											<InfoTooltip
-												className={'max-sm:left'}
-												text={tooltipText}
-												size={'sm'}
-											/>
+											<InfoTooltip className={'max-sm:left'} text={tooltipText} size={'sm'} />
 											<p className={cl('text-xs text-neutral-600')}>
 												{isAutoStakingEnabled ? 'Deposit and Stake' : 'Deposit only'}
 											</p>
@@ -676,7 +666,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							<div
 								className={cl(
 									'flex h-10 min-w-28 z-10 flex-row items-center bg-neutral-100 p-0 font-bold md:hidden border-b-2 border-neutral-900'
-								)}>
+								)}
+							>
 								{'Boost'}
 							</div>
 							<div className={'hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>

@@ -1,4 +1,8 @@
+import type {TCTA} from '@lib/components/yToast';
+import {toast} from '@lib/components/yToast';
+import type {Client, Hash, SimulateContractParameters, WalletClient} from 'viem';
 import {BaseError} from 'viem';
+import type {Connector} from 'wagmi';
 import {
 	getConnectorClient,
 	simulateContract,
@@ -6,19 +10,13 @@ import {
 	waitForTransactionReceipt,
 	writeContract
 } from 'wagmi/actions';
-import {toast} from '@lib/components/yToast';
-
+import type {TAddress} from '../../types/address';
 import {assert, assertAddress} from '../assert';
 import {toBigInt} from '../format';
 import {toAddress} from '../tools.address';
 import {retrieveConfig} from './config';
-import {defaultTxStatus} from './transaction';
-
-import type {Client, Hash, SimulateContractParameters, WalletClient} from 'viem';
-import type {Connector} from 'wagmi';
-import type {TCTA} from '@lib/components/yToast';
-import type {TAddress} from '../../types/address';
 import type {TTxResponse} from './transaction';
+import {defaultTxStatus} from './transaction';
 
 export type TWagmiProviderContract = {
 	walletClient: Client;

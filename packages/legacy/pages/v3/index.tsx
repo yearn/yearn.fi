@@ -1,6 +1,12 @@
-import {Children, Fragment, useMemo, useState} from 'react';
-import {motion} from 'framer-motion';
+import {useWallet} from '@lib/contexts/useWallet';
+import {useWeb3} from '@lib/contexts/useWeb3';
+import {useYearn} from '@lib/contexts/useYearn';
+import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
+import type {TSortDirection} from '@lib/types';
+import {cl, formatAmount, isZero, toNormalizedBN} from '@lib/utils';
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
+import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
 import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
 import {Filters} from '@vaults-v3/components/Filters';
@@ -8,16 +14,9 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
-import {useWallet} from '@lib/contexts/useWallet';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
-import {cl, formatAmount, isZero, toNormalizedBN} from '@lib/utils';
-
+import {motion} from 'framer-motion';
 import type {ReactElement, ReactNode} from 'react';
-import type {TSortDirection} from '@lib/types';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
+import {Children, Fragment, useMemo, useState} from 'react';
 
 function Background(): ReactElement {
 	return (
@@ -40,14 +39,16 @@ function BrandNewVaultCard(): ReactElement {
 				'h-full rounded-3xl relative overflow-hidden',
 				'pr-2 pl-4 pb-4 pt-6 md:p-10',
 				'col-span-75 md:col-span-46'
-			)}>
+			)}
+		>
 			<div className={'relative z-10'}>
 				<h1
 					className={cl(
 						'mb-2 md:mb-4 lg:mb-10 font-black text-neutral-900',
 						'text-[48px] lg:text-[56px] lg:leading-[64px] leading-[48px]',
 						'whitespace-break-spaces uppercase'
-					)}>
+					)}
+				>
 					{'A brave new\nworld for Yield'}
 				</h1>
 				<p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
@@ -67,7 +68,8 @@ function V3Card(): ReactElement {
 				className={cl(
 					'flex h-full w-full flex-col items-center justify-center',
 					'gap-y-0 rounded-3xl bg-neutral-200 md:gap-y-6 p-2'
-				)}>
+				)}
+			>
 				<V3Mask className={'size-[90%]'} />
 			</div>
 		</div>
@@ -82,7 +84,8 @@ function PortfolioCard(): ReactElement {
 		return (
 			<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'}>
 				<strong
-					className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
+					className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}
+				>
 					{'Portfolio'}
 				</strong>
 				<div className={'flex'}>
@@ -103,7 +106,8 @@ function PortfolioCard(): ReactElement {
 								} else {
 									openLoginModal();
 								}
-							}}>
+							}}
+						>
 							<div
 								className={cl(
 									'absolute inset-0',
@@ -233,12 +237,7 @@ function ListOfVaults(): ReactElement {
 			const hasBalance = balance.raw > 0n;
 			const hasStakingBalance = stakingBalance.raw > 0n;
 			if (hasBalance || hasStakingBalance) {
-				holdings.push(
-					<VaultsV3ListRow
-						key={key}
-						currentVault={vault}
-					/>
-				);
+				holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />);
 				processedForHoldings.add(key);
 			}
 		}
@@ -251,12 +250,7 @@ function ListOfVaults(): ReactElement {
 				const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
 				const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
 				if (hasBalance || hasStakingBalance) {
-					holdings.push(
-						<VaultsV3ListRow
-							key={key}
-							currentVault={vault}
-						/>
-					);
+					holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />);
 					processedForHoldings.add(key);
 				}
 			}
@@ -280,39 +274,21 @@ function ListOfVaults(): ReactElement {
 				toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized;
 
 			if (holdingsValue > 0.5) {
-				holdings.push(
-					<VaultsV3ListRow
-						key={key}
-						currentVault={vault}
-					/>
-				);
+				holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />);
 				// No need to add to processedForHoldings here again as `continue` prevents further processing for this vault.
 				continue;
 			}
 
 			// If not a holding, categorize into multi, single, and all
 			if (vault.kind === 'Multi Strategy') {
-				multi.push(
-					<VaultsV3ListRow
-						key={key}
-						currentVault={vault}
-					/>
-				);
+				multi.push(<VaultsV3ListRow key={key} currentVault={vault} />);
 			}
 			if (vault.kind === 'Single Strategy') {
-				single.push(
-					<VaultsV3ListRow
-						key={key}
-						currentVault={vault}
-					/>
-				);
+				single.push(<VaultsV3ListRow key={key} currentVault={vault} />);
 			}
 			all.push(
 				// `all` contains active, non-holding vaults
-				<VaultsV3ListRow
-					key={key}
-					currentVault={vault}
-				/>
+				<VaultsV3ListRow key={key} currentVault={vault} />
 			);
 		}
 
@@ -469,18 +445,21 @@ function Index(): ReactElement {
 					isCollapsed
 						? 'translate-y-[354px] md:translate-y-[464px]'
 						: 'translate-y-[24px] md:translate-y-[40px]'
-				)}>
+				)}
+			>
 				<div className={'mx-auto w-full max-w-6xl'}>
 					<div
 						onClick={onClick}
-						className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}>
+						className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}
+					>
 						<div className={'relative -mt-8 flex justify-center rounded-t-3xl'}>
 							<svg
 								xmlns={'http://www.w3.org/2000/svg'}
 								width={'113'}
 								height={'32'}
 								viewBox={'0 0 113 32'}
-								fill={'none'}>
+								fill={'none'}
+							>
 								<path
 									d={'M0 32C37.9861 32 20.9837 0 56 0C91.0057 0 74.388 32 113 32H0Z'}
 									fill={'#000520'}
@@ -489,13 +468,15 @@ function Index(): ReactElement {
 							<div
 								className={`absolute mt-2 flex justify-center transition-transform ${
 									isCollapsed ? '' : '-rotate-180'
-								}`}>
+								}`}
+							>
 								<svg
 									xmlns={'http://www.w3.org/2000/svg'}
 									width={'24'}
 									height={'24'}
 									viewBox={'0 0 24 24'}
-									fill={'none'}>
+									fill={'none'}
+								>
 									<path
 										fillRule={'evenodd'}
 										clipRule={'evenodd'}

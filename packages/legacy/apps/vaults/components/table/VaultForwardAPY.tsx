@@ -1,13 +1,11 @@
-import {Fragment} from 'react';
-import {Renderable} from '@lib/components/Renderable';
 import {RenderAmount} from '@lib/components/RenderAmount';
+import {Renderable} from '@lib/components/Renderable';
 import {isZero, toAddress} from '@lib/utils';
-
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {FC} from 'react';
+import {Fragment} from 'react';
 import {APYSubline} from './APYSubline';
 import {APYTooltip} from './APYTooltip';
-
-import type {FC} from 'react';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 
 export const VAULT_ADDRESSES = {
 	PENDLE_ARB_REWARDS: '0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544',
@@ -37,12 +35,14 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 							<Renderable
 								shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 								/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-								fallback={'NEW'}>
+								fallback={'NEW'}
+							>
 								{'⚡️ '}
 								<span
 									className={
 										'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-									}>
+									}
+								>
 									<RenderAmount
 										shouldHideTooltip={hasZeroBoostedAPY}
 										value={boostedAPY}
@@ -74,7 +74,8 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 					<Renderable
 						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 						/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-						fallback={'NEW'}>
+						fallback={'NEW'}
+					>
 						<RenderAmount
 							value={currentVault.apr?.netAPR}
 							shouldHideTooltip={hasZeroAPY}
@@ -104,10 +105,9 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 					<b
 						className={
 							'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-						}>
-						<Renderable
-							shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
-							fallback={'NEW'}>
+						}
+					>
+						<Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
 							<RenderAmount
 								shouldHideTooltip
 								value={currentVault.apr.forwardAPR.netAPR}
@@ -134,8 +134,8 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
 	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
 	if (sumOfRewardsAPY > 0) {
-		let veYFIRange: [number, number] | undefined = undefined;
-		let estAPYRange: [number, number] | undefined = undefined;
+		let veYFIRange: [number, number] | undefined;
+		let estAPYRange: [number, number] | undefined;
 		let boostedAPY: number;
 		let hasZeroBoostedAPY: boolean;
 
@@ -162,7 +162,8 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 						<Renderable
 							shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 							/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-							fallback={'NEW'}>
+							fallback={'NEW'}
+						>
 							<div className={'flex items-baseline gap-x-2 md:flex-col md:items-end md:gap-x-0'}>
 								{estAPYRange ? (
 									<Fragment>
@@ -175,7 +176,8 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 										<span
 											className={
 												'text-xs font-normal text-neutral-900/50 underline decoration-neutral-600/30 decoration-dotted underline-offset-4'
-											}>
+											}
+										>
 											{'proj. '}
 											<RenderAmount
 												shouldHideTooltip
@@ -226,7 +228,8 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 					<Renderable
 						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 						/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-						fallback={'NEW'}>
+						fallback={'NEW'}
+					>
 						{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
 						<RenderAmount
 							shouldHideTooltip
@@ -254,7 +257,8 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 						!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')
 					}
 					/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-					fallback={'NEW'}>
+					fallback={'NEW'}
+				>
 					{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
 					<RenderAmount
 						shouldHideTooltip={hasZeroAPY}

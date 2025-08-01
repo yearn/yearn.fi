@@ -10,23 +10,13 @@ export function LogoYearn(
 			viewBox={'0 0 32 32'}
 			fill={'none'}
 			{...props}
-			xmlns={'http://www.w3.org/2000/svg'}>
+			xmlns={'http://www.w3.org/2000/svg'}
+		>
 			{props?.gradient && (
 				<defs>
-					<linearGradient
-						id={'yearn-gradient'}
-						x1={'100%'}
-						y1={'0%'}
-						x2={'100%'}
-						y2={'100%'}>
-						<stop
-							offset={'0%'}
-							stopColor={props?.gradient?.start}
-						/>
-						<stop
-							offset={'100%'}
-							stopColor={props?.gradient?.end}
-						/>
+					<linearGradient id={'yearn-gradient'} x1={'100%'} y1={'0%'} x2={'100%'} y2={'100%'}>
+						<stop offset={'0%'} stopColor={props?.gradient?.start} />
+						<stop offset={'100%'} stopColor={props?.gradient?.end} />
 					</linearGradient>
 				</defs>
 			)}
