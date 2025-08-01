@@ -215,7 +215,8 @@ export async function getBalances(
 ): Promise<[TDict<TToken>, Error | undefined]> {
 	let result: TDict<TToken> = {};
 	const ownerAddress = address;
-	const calls: any[] = [];
+
+	const calls: MulticallParameters['contracts'][number][] = [];
 
 	for (const element of tokens) {
 		const {address: token} = element;

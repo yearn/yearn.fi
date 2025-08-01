@@ -180,7 +180,11 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 					acc[contract.key] = data[idx];
 					return acc;
 				},
-				{} as {[key: string]: any}
+				{} as {
+					[key: string]:
+						| {error: Error; result?: undefined; status: 'failure'}
+						| {error?: undefined; result: unknown; status: 'success'};
+				}
 			);
 
 			stakingToken = decodeAsAddress(resultMap.stakingToken);
@@ -260,7 +264,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 				functionName: 'rewardTokensLength'
 			});
 
-			const rewardTokensCalls = [] as any[];
+			const rewardTokensCalls: Parameters<typeof readContracts>[1]['contracts'][number][] = [];
 			for (let i = 0; i < Number(rewardTokensLength); i++) {
 				rewardTokensCalls.push({
 					address: toAddress(props.currentVault.staking.address),
@@ -382,7 +386,10 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		 ** view of the user's holdings in the vault: we need to know what is the reward token. This
 		 ** means we need to retrieve the token's symbol and decimals.
 		 ******************************************************************************************/
-		let decimalsResult: any;
+		let decimalsResult: Array<
+			| {error: Error; result?: undefined; status: 'failure'}
+			| {error?: undefined; result: unknown; status: 'success'}
+		>;
 		let rewardDecimals: number;
 		let stakingDecimals: number;
 		if (stakingType === 'yBOLD') {

@@ -1,4 +1,4 @@
-import {APPS, AppName} from '@lib/components/Apps';
+import {APPS, AppName, type TManifest} from '@lib/components/Apps';
 import type {TMenu} from '@lib/components/Header';
 import type {TDict} from '@lib/types';
 import {VaultsHeader} from '@vaults-v2/components/header/VaultsHeader';
@@ -10,7 +10,7 @@ import {useMemo} from 'react';
 
 type TCurrentApp = {
 	name: AppName | 'Home' | string;
-	manifest: any;
+	manifest: TManifest;
 	header?: ReactElement;
 	menu: TMenu[];
 };

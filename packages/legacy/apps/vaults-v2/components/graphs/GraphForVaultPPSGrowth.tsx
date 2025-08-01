@@ -24,10 +24,11 @@ export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVau
 					dataKey={'pps'}
 					stroke={'currentcolor'}
 					dot={false}
-					activeDot={(e: any): ReactElement => {
-						e.className = `${e.className} activeDot`;
-						delete e.dataKey;
-						return <circle {...e}></circle>;
+					activeDot={(e: unknown): ReactElement => {
+						const dotProps = e as React.SVGProps<SVGCircleElement> & {dataKey?: string};
+						dotProps.className = `${dotProps.className} activeDot`;
+						delete dotProps.dataKey;
+						return <circle {...dotProps}></circle>;
 					}}
 				/>
 				<XAxis dataKey={'name'} hide />

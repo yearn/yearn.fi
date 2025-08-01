@@ -55,7 +55,7 @@ const YearnContext = createContext<TYearnContext>({
 	zapSlippage: 0.1,
 	zapProvider: Solver.enum.Cowswap,
 	isAutoStakingEnabled: true,
-	mutateVaultList: (): any => undefined,
+	mutateVaultList: (): Promise<TYDaemonVaults> => Promise.resolve([]),
 	set_maxLoss: (): void => undefined,
 	set_zapSlippage: (): void => undefined,
 	set_zapProvider: (): void => undefined,

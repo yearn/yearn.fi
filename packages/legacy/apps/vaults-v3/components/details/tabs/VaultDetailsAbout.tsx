@@ -3,7 +3,13 @@ import {parseMarkdown} from '@lib/utils/helpers';
 import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import type {ReactElement} from 'react';
 
-export function YearnFeesLineItem({children, label, tooltip}: any): ReactElement {
+type TYearnFeesLineItem = {
+	children: ReactElement;
+	label: string;
+	tooltip?: string;
+};
+
+export function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): ReactElement {
 	return (
 		<div className={'flex flex-col space-y-0 md:space-y-2'}>
 			<p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>

@@ -22,11 +22,37 @@ export enum AppName {
 	GIMME = 'Gimme'
 }
 
+export type TManifestIcon = {
+	src: string;
+	sizes: string;
+	type: string;
+	purpose?: string;
+};
+
+export interface TManifest {
+	name?: string;
+	short_name?: string;
+	description?: string;
+	iconPath?: string;
+	locale?: string;
+	uri?: string;
+	og?: string;
+	twitter?: string;
+	github?: string;
+	icons?: TManifestIcon[];
+	theme_color?: string;
+	background_color?: string;
+	title_color?: string;
+	start_url?: string;
+	display?: string;
+	orientation?: string;
+}
+
 type TApp = {
 	name: AppName | string;
 	href: string;
 	menu: TMenu[];
-	manifest: any;
+	manifest: TManifest;
 	icon: ReactElement;
 	isDisabled?: boolean;
 };
