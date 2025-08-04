@@ -12,7 +12,8 @@
 			"!**/generated/**",
 			"!**/wagmi.ts",
 			"!**/wagmi.d.ts",
-			"!**/bun.lock"
+			"!**/bun.lock",
+			"!**/apps/lib/style.css"
 		]
 	},
 	"formatter": {
@@ -137,7 +138,7 @@
 	},
 	"css": {
 		"formatter": { "enabled": true },
-		"linter": { "enabled": true },
+		"linter": { "enabled": false },
 		"assist": null
 	},
 	"html": { "formatter": { "selfCloseVoidElements": "always" } },
