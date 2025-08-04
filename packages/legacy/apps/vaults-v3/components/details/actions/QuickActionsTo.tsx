@@ -102,11 +102,7 @@ function VaultAPY({
 			);
 		}
 
-		return (
-			<Fragment>
-				<RenderAmount value={currentVaultAPY} symbol={'percent'} decimals={6} />
-			</Fragment>
-		);
+		return <RenderAmount value={currentVaultAPY} symbol={'percent'} decimals={6} />;
 	}
 
 	/******************************************************************************************

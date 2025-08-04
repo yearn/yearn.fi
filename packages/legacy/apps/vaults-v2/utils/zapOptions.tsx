@@ -1,7 +1,7 @@
 import {ImageWithFallback} from '@lib/components/ImageWithFallback';
 
 import type {TAddress, TDropdownOption} from '@lib/types';
-import type {TSolver} from '@vaults-v2/types/solvers';
+import type {TSolver} from '@lib/utils/schemas/yDaemonTokenListBalances';
 
 type TSetZapOptionProps = {
 	name: string;
@@ -24,7 +24,7 @@ export function setZapOption({
 		symbol,
 		value: address,
 		decimals,
-		solveVia: solveVia as any,
+		solveVia,
 		chainID,
 		icon: (
 			<ImageWithFallback

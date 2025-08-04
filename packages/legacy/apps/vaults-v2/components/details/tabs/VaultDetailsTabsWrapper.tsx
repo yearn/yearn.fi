@@ -255,7 +255,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	): Promise<void> {
 		try {
 			assert(provider, 'Provider is not set');
-			const walletClient = getConnectorClient(retrieveConfig()) as any;
+			const walletClient = await getConnectorClient(retrieveConfig());
 			await watchAsset(walletClient, {
 				type: 'ERC20',
 				options: {

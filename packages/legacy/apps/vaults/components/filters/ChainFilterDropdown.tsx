@@ -26,20 +26,18 @@ export const ChainFilterDropdown: React.FC<TChainFilterDropdownProps> = ({chains
 				}
 			>
 				{selectedOptions.length > 0 ? (
-					<>
-						{selectedOptions.map((option, index) => (
-							<div
-								key={option.value}
-								className={'relative flex size-6 items-center justify-center'}
-								style={{
-									marginLeft: index > 0 ? '-4px' : '0',
-									zIndex: selectedOptions.length - index
-								}}
-							>
-								{option.icon}
-							</div>
-						))}
-					</>
+					selectedOptions.map((option, index) => (
+						<div
+							key={option.value}
+							className={'relative flex size-6 items-center justify-center'}
+							style={{
+								marginLeft: index > 0 ? '-4px' : '0',
+								zIndex: selectedOptions.length - index
+							}}
+						>
+							{option.icon}
+						</div>
+					))
 				) : (
 					<span className={'px-1 text-neutral-600'}>{'Select chains'}</span>
 				)}

@@ -89,9 +89,7 @@ export function VaultsListStrategy({
 		}
 	};
 	const chainBgColor = getChainBgColor(chainId);
-	const lastReportTime = details?.lastReport
-		? formatDuration(details.lastReport * 1000 - new Date().valueOf(), true)
-		: 'N/A';
+	const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A';
 
 	return (
 		<div

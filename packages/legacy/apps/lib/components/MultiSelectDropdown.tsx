@@ -4,7 +4,7 @@ import {useWeb3} from '@lib/contexts/useWeb3';
 import {IconChevron} from '@lib/icons/IconChevron';
 import {cl} from '@lib/utils';
 import {useClickOutside, useThrottledState} from '@react-hookz/web';
-import type {ReactElement} from 'react';
+import type {ReactElement, RefObject} from 'react';
 import {Fragment, useCallback, useMemo, useRef, useState} from 'react';
 
 export type TMultiSelectOptionProps = {
@@ -152,13 +152,13 @@ export function MultiSelectDropdown({
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [query, set_query] = useState('');
 	const areAllSelected = useMemo((): boolean => options.every(({isSelected}): boolean => isSelected), [options]);
-	const componentRef = useRef<HTMLElement>(null);
+	const componentRef = useRef<HTMLDivElement | null>(null);
 
 	const selectedValues = useMemo(() => {
 		return options.filter(opt => opt.isSelected).map(opt => opt.value);
 	}, [options]);
 
-	useClickOutside(componentRef as any, (): void => {
+	useClickOutside(componentRef as RefObject<HTMLElement>, (): void => {
 		set_isOpen(false);
 	});
 

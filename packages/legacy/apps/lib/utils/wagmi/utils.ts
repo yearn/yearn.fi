@@ -77,8 +77,14 @@ export type TExtendedChain = Chain & {
 	contracts: TDict<TChainContract>;
 };
 
-const isChain = (chain: wagmiChains.Chain | any): chain is wagmiChains.Chain => {
-	return chain.id !== undefined;
+const isChain = (chain: wagmiChains.Chain | unknown): chain is wagmiChains.Chain => {
+	return (
+		typeof chain === 'object' &&
+		chain !== null &&
+		'id' in chain &&
+		typeof (chain as Record<string, unknown>).id === 'number' &&
+		chain.id !== undefined
+	);
 };
 
 function getAlchemyBaseURL(chainID: number): string {

@@ -76,7 +76,7 @@ export function useSolverJuicedStakingBooster(): TSolverContext {
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
 		},
-		[request, provider]
+		[provider]
 	);
 
 	/**********************************************************************************************
@@ -181,6 +181,6 @@ export function useSolverJuicedStakingBooster(): TSolverContext {
 			onExecuteDeposit,
 			onExecuteWithdraw: async (): Promise<void> => undefined
 		}),
-		[latestQuote, init, onApprove, onExecuteDeposit, onRetrieveAllowance]
+		[init, onApprove, onExecuteDeposit, onRetrieveAllowance]
 	);
 }

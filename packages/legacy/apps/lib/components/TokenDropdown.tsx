@@ -97,78 +97,76 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 					set_isOpen(false);
 				}}
 			>
-				<>
-					<ComboboxButton
-						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
-						className={cl(
-							props.className,
-							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
-						)}
-					>
-						<div className={'relative w-full'}>
-							<div className={'flex w-full items-center'}>
-								<div key={props.selected?.label} className={'size-6 flex-none rounded-full'}>
-									{props.selected?.icon ? (
-										cloneElement(props.selected.icon)
-									) : (
-										<div className={'size-6 flex-none rounded-full bg-neutral-500'} />
-									)}
-								</div>
-								<p
+				<ComboboxButton
+					onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
+					className={cl(
+						props.className,
+						'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
+					)}
+				>
+					<div className={'relative w-full'}>
+						<div className={'flex w-full items-center'}>
+							<div key={props.selected?.label} className={'size-6 flex-none rounded-full'}>
+								{props.selected?.icon ? (
+									cloneElement(props.selected.icon)
+								) : (
+									<div className={'size-6 flex-none rounded-full bg-neutral-500'} />
+								)}
+							</div>
+							<p
+								className={
+									'whitespace-nowrap px-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'
+								}
+							>
+								<ComboboxInput
 									className={
-										'whitespace-nowrap px-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'
+										'w-full cursor-default text-ellipsis border-none bg-transparent p-0 outline-none scrollbar-none'
 									}
-								>
-									<ComboboxInput
-										className={
-											'w-full cursor-default text-ellipsis border-none bg-transparent p-0 outline-none scrollbar-none'
-										}
-										displayValue={(option: TDropdownOption): string => option?.symbol}
-										placeholder={props.placeholder || ''}
-										spellCheck={false}
-										onChange={(event): void => {
-											set_isOpen(true);
-											set_query(event.target.value);
-										}}
-									/>
-								</p>
-								<div className={'ml-auto'}>
-									<IconChevron
-										aria-hidden={'true'}
-										className={`size-4 text-neutral-900/50 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
-									/>
-								</div>
+									displayValue={(option: TDropdownOption): string => option?.symbol}
+									placeholder={props.placeholder || ''}
+									spellCheck={false}
+									onChange={(event): void => {
+										set_isOpen(true);
+										set_query(event.target.value);
+									}}
+								/>
+							</p>
+							<div className={'ml-auto'}>
+								<IconChevron
+									aria-hidden={'true'}
+									className={`size-4 text-neutral-900/50 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
+								/>
 							</div>
 						</div>
-					</ComboboxButton>
-					<Transition
-						as={Fragment}
-						show={isOpen}
-						enter={'transition duration-100 ease-out'}
-						enterFrom={'transform scale-95 opacity-0'}
-						enterTo={'transform scale-100 opacity-100'}
-						leave={'transition duration-75 ease-out'}
-						leaveFrom={'transform scale-100 opacity-100'}
-						leaveTo={'transform scale-95 opacity-0'}
-						afterLeave={(): void => {
-							set_isOpen(false);
-							set_query('');
-						}}
-					>
-						<ComboboxOptions className={cl(props.comboboxOptionsClassName, 'yearn--dropdown-menu z-50')}>
-							<Renderable
-								shouldRender={filteredOptions.length > 0}
-								fallback={<DropdownEmpty query={query} />}
-							>
-								{filteredOptions.map(
-									(option): ReactElement => (
-										<DropdownItem key={option.label} option={option} />
-									)
-								)}
-							</Renderable>
-						</ComboboxOptions>
-					</Transition>
-				</>
+					</div>
+				</ComboboxButton>
+				<Transition
+					as={Fragment}
+					show={isOpen}
+					enter={'transition duration-100 ease-out'}
+					enterFrom={'transform scale-95 opacity-0'}
+					enterTo={'transform scale-100 opacity-100'}
+					leave={'transition duration-75 ease-out'}
+					leaveFrom={'transform scale-100 opacity-100'}
+					leaveTo={'transform scale-95 opacity-0'}
+					afterLeave={(): void => {
+						set_isOpen(false);
+						set_query('');
+					}}
+				>
+					<ComboboxOptions className={cl(props.comboboxOptionsClassName, 'yearn--dropdown-menu z-50')}>
+						<Renderable
+							shouldRender={filteredOptions.length > 0}
+							fallback={<DropdownEmpty query={query} />}
+						>
+							{filteredOptions.map(
+								(option): ReactElement => (
+									<DropdownItem key={option.label} option={option} />
+								)
+							)}
+						</Renderable>
+					</ComboboxOptions>
+				</Transition>
 			</Combobox>
 		</div>
 	);

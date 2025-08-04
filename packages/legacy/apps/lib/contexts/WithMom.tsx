@@ -2,7 +2,7 @@ import type {AvatarComponent, DisclaimerComponent, Theme} from '@rainbow-me/rain
 import {RainbowKitProvider} from '@rainbow-me/rainbowkit';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import type {ReactElement} from 'react';
-import {Fragment, useMemo} from 'react';
+import {useMemo} from 'react';
 import {SWRConfig} from 'swr';
 import type {Chain} from 'viem/chains';
 import type {Config, State} from 'wagmi';
@@ -52,9 +52,7 @@ function WithMom({
 				<SWRConfig value={defaultSWRConfig}>
 					<RainbowKitProvider {...rainbowConfig}>
 						<Web3ContextApp defaultNetwork={defaultNetwork}>
-							<WithTokenList lists={tokenLists}>
-								<Fragment>{children}</Fragment>
-							</WithTokenList>
+							<WithTokenList lists={tokenLists}>{children}</WithTokenList>
 						</Web3ContextApp>
 					</RainbowKitProvider>
 				</SWRConfig>

@@ -31,7 +31,7 @@ import {V3_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/V3StakingRewards.abi'
 import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi';
 import {VEYFI_GAUGE_ABI} from '@vaults-v2/utils/abi/veYFIGauge.abi';
 import type {ReactElement} from 'react';
-import {Fragment, useEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {erc20Abi, zeroAddress} from 'viem';
 import {useBlockNumber} from 'wagmi';
 import {readContract, readContracts} from 'wagmi/actions';
@@ -167,21 +167,19 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 						<div className={'flex flex-row items-center space-x-2'}>
 							<div>
 								{'Est. APY: '}
-								<Fragment>
-									<RenderAmount
-										shouldHideTooltip
-										value={estAPYRange[0]}
-										symbol={'percent'}
-										decimals={6}
-									/>
-									&nbsp;&rarr;&nbsp;
-									<RenderAmount
-										shouldHideTooltip
-										value={estAPYRange[1]}
-										symbol={'percent'}
-										decimals={6}
-									/>
-								</Fragment>
+								<RenderAmount
+									shouldHideTooltip
+									value={estAPYRange[0]}
+									symbol={'percent'}
+									decimals={6}
+								/>
+								&nbsp;&rarr;&nbsp;
+								<RenderAmount
+									shouldHideTooltip
+									value={estAPYRange[1]}
+									symbol={'percent'}
+									decimals={6}
+								/>
 							</div>
 							<IconQuestion className={'hidden md:block'} />
 						</div>
@@ -568,7 +566,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 				functionName: 'rewardTokensLength'
 			});
 
-			const rewardTokensCalls = [] as any[];
+			const rewardTokensCalls: Parameters<typeof readContracts>[1]['contracts'][number][] = [];
 			for (let i = 0; i < Number(rewardTokensLength); i++) {
 				rewardTokensCalls.push({
 					address: toAddress(currentVault.staking.address),
@@ -696,6 +694,8 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 	 ** As we want live data, we want the data to be refreshed every time the block number changes.
 	 ** This way, the user will always have the most up-to-date data.
 	 **********************************************************************************************/
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: refetch on block number change
 	useEffect(() => {
 		refetch();
 	}, [blockNumber, refetch]);

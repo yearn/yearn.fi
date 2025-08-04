@@ -221,9 +221,9 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
 	if (symbol && shouldDisplaySymbol) {
 		const uppercaseSymbol = String(symbol).toLocaleUpperCase();
 		const symbolToFormat = uppercaseSymbol === 'USD' ? 'USD' : 'EUR';
-		(intlOptions.style = uppercaseSymbol === 'PERCENT' ? 'percent' : 'currency'),
-			(intlOptions.currency = symbolToFormat),
-			(intlOptions.currencyDisplay = symbolToFormat === 'EUR' ? 'code' : 'narrowSymbol');
+		intlOptions.style = uppercaseSymbol === 'PERCENT' ? 'percent' : 'currency';
+		intlOptions.currency = symbolToFormat;
+		intlOptions.currencyDisplay = symbolToFormat === 'EUR' ? 'code' : 'narrowSymbol';
 		isPercent = uppercaseSymbol === 'PERCENT';
 	}
 

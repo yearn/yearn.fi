@@ -79,7 +79,7 @@ export function GraphForVaultEarnings({
 					content={(e): ReactElement => {
 						const {active: isTooltipActive, payload, label} = e;
 						if (!isTooltipActive || !payload) {
-							return <></>;
+							return <Fragment />;
 						}
 						if (payload.length > 0) {
 							const [{value}] = payload;

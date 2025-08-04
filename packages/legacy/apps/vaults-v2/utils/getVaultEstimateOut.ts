@@ -56,7 +56,7 @@ export async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Pro
 		const outputDecimals = toBigInt(props.outputDecimals || 18);
 		const expectedOutFetched = (props.inputAmount * pps) / powerDecimals;
 		return toNormalizedBN(expectedOutFetched, Number(outputDecimals));
-	} catch (error) {
+	} catch {
 		if (props.isDepositing) {
 			const convertedShares = await readContract(retrieveConfig(), {
 				abi: VAULT_V3_ABI,

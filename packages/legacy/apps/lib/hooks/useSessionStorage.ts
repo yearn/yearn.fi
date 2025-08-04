@@ -51,7 +51,7 @@ function useEventListener<TK extends keyof DocumentEventMap>(
 function useEventListener<
 	TKW extends keyof WindowEventMap,
 	TKH extends keyof HTMLElementEventMap,
-	T extends HTMLElement | void = void
+	T extends HTMLElement | undefined = undefined
 >(
 	eventName: TKW | TKH,
 	handler: (event: WindowEventMap[TKW] | HTMLElementEventMap[TKH] | Event) => void,
@@ -65,7 +65,7 @@ function useEventListener<
 		savedHandler.current = handler;
 	}, [handler]);
 
-	useEffect((): void | VoidFunction => {
+	useEffect((): undefined | VoidFunction => {
 		// Define the listening target
 		const targetElement: T | Window = element?.current || window;
 		if (!targetElement?.addEventListener) {

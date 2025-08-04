@@ -17,7 +17,7 @@ export function isZero(value?: bigint | number | string | null): boolean {
 
 		// Check if the string can be parsed as a floating-point number
 		const parsed = Number(value);
-		if (!isNaN(parsed)) {
+		if (!Number.isNaN(parsed)) {
 			return parsed === 0;
 		}
 	}
@@ -69,7 +69,7 @@ export function isNumber(value: string | number): value is number {
 	if (typeof value === 'object') {
 		return false;
 	}
-	return !isNaN(+value);
+	return !Number.isNaN(+value);
 }
 
 export function isNonNullable<T>(value: T): value is NonNullable<T> {

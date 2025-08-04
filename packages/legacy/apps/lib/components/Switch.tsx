@@ -19,7 +19,7 @@ export function Switch(props: TSwitch): ReactElement {
 
 	const isChecked = onSwitch ? isEnabled : isEnabledState;
 
-	function handleOnKeyDown({key}: KeyboardEvent<HTMLButtonElement>): void | null {
+	function handleOnKeyDown({key}: KeyboardEvent<HTMLButtonElement>): void {
 		if (key !== 'Enter') {
 			return;
 		}

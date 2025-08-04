@@ -17,7 +17,7 @@ export function useChainOptions(chains: number[] | null): TMultiSelectOptionProp
 			const noFork = config.chains.filter(({id}): boolean => id !== 1337);
 			return noFork;
 		},
-		[connectors as any],
+		[[...connectors]],
 		(savedDeps: [Connector[]], deps: [Connector[]]): boolean => {
 			for (const savedDep of savedDeps[0]) {
 				if (!deps[0].find((dep): boolean => dep.id === savedDep.id)) {

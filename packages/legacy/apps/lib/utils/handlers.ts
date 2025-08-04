@@ -4,7 +4,7 @@ import {DefaultTNormalizedBN, parseUnits} from './format';
 export function handleInputChangeEventValue(e: React.ChangeEvent<HTMLInputElement>, decimals?: number): TNormalizedBN {
 	const {valueAsNumber, value} = e.target;
 	const amount = valueAsNumber;
-	if (isNaN(amount)) {
+	if (Number.isNaN(amount)) {
 		return DefaultTNormalizedBN;
 	}
 	if (amount === 0) {

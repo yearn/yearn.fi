@@ -187,7 +187,7 @@ function ListOfVaults(): ReactElement {
 			// Escape special regex characters but allow basic wildcard functionality
 			const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 			searchRegex = new RegExp(escapedSearch, 'i'); // 'i' flag for case-insensitive
-		} catch (error) {
+		} catch {
 			// Fallback to simple case-insensitive search if regex creation fails
 			const lowercaseSearch = search.toLowerCase();
 			return activeVaults.filter((vault: TYDaemonVault): boolean => {

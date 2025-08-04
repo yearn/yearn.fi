@@ -23,7 +23,7 @@ import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
 import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
 import type {ReactElement, ReactNode} from 'react';
-import {Children, Fragment, useEffect, useMemo, useState} from 'react';
+import {Children, useEffect, useMemo, useState} from 'react';
 
 function HeaderUserPosition(): ReactElement {
 	const {cumulatedValueInV2Vaults} = useWallet();
@@ -31,34 +31,30 @@ function HeaderUserPosition(): ReactElement {
 
 	if (!isActive) {
 		return (
-			<Fragment>
-				<div className={'col-span-12 h-auto w-full md:col-span-8 md:h-[136px]'}>
-					<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Wallet not connected'}</p>
-					<Button
-						onClick={(): void => {
-							if (!isActive && address) {
-								onSwitchChain(1);
-							} else {
-								openLoginModal();
-							}
-						}}
-					>
-						{'Connect Wallet'}
-					</Button>
-				</div>
-			</Fragment>
+			<div className={'col-span-12 h-auto w-full md:col-span-8 md:h-[136px]'}>
+				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Wallet not connected'}</p>
+				<Button
+					onClick={(): void => {
+						if (!isActive && address) {
+							onSwitchChain(1);
+						} else {
+							openLoginModal();
+						}
+					}}
+				>
+					{'Connect Wallet'}
+				</Button>
+			</div>
 		);
 	}
 	return (
-		<Fragment>
-			<div className={'col-span-12 w-full md:col-span-8'}>
-				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Deposited'}</p>
-				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
-					{'$'}
-					<Counter value={Number(cumulatedValueInV2Vaults)} decimals={2} />
-				</b>
-			</div>
-		</Fragment>
+		<div className={'col-span-12 w-full md:col-span-8'}>
+			<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Deposited'}</p>
+			<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
+				{'$'}
+				<Counter value={Number(cumulatedValueInV2Vaults)} decimals={2} />
+			</b>
+		</div>
 	);
 }
 
@@ -250,7 +246,7 @@ function ListOfVaults(): ReactElement {
 		if (page >= totalPages && totalPages > 0) {
 			set_page(0);
 		}
-	}, [searchedVaultsToDisplay, page, possibleLists]);
+	}, [page, possibleLists]);
 
 	return (
 		<div
@@ -296,20 +292,18 @@ function ListOfVaults(): ReactElement {
 			/>
 
 			<div className={'grid gap-0'}>
-				<Fragment>
-					{hasHoldings && (
-						<div className={'relative grid h-fit'}>
-							<p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
-								&nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
-							</p>
-							{possibleLists[0]}
-						</div>
-					)}
-					{Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[1]) > 0 ? (
-						<div className={'h-1 rounded-lg bg-neutral-200'} />
-					) : null}
-					{((possibleLists[1] || []) as ReactNode[]).slice(page * pageSize, (page + 1) * pageSize)}
-				</Fragment>
+				{hasHoldings && (
+					<div className={'relative grid h-fit'}>
+						<p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
+							&nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
+						</p>
+						{possibleLists[0]}
+					</div>
+				)}
+				{Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[1]) > 0 ? (
+					<div className={'h-1 rounded-lg bg-neutral-200'} />
+				) : null}
+				{((possibleLists[1] || []) as ReactNode[]).slice(page * pageSize, (page + 1) * pageSize)}
 			</div>
 
 			<div className={'mt-4'}>

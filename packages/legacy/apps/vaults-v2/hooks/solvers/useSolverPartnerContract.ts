@@ -77,7 +77,7 @@ export function useSolverPartnerContract(): TSolverContext {
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
 		},
-		[request, provider]
+		[provider]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -225,6 +225,6 @@ export function useSolverPartnerContract(): TSolverContext {
 			onExecuteDeposit,
 			onExecuteWithdraw
 		}),
-		[latestQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]
+		[init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]
 	);
 }

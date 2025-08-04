@@ -432,7 +432,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					shouldRender={
 						(!currentVault.apr.forwardAPR?.type.includes('new') &&
 							!currentVault.apr.type.includes('new')) ||
-						currentVault.chainID == 747474
+						currentVault.chainID === 747474
 					}
 					/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
 					fallback={'NEW'}
@@ -593,7 +593,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 
 	const tokenPrice = useMemo(
 		() => getPrice({address: currentVault.address, chainID: currentVault.chainID}),
-		[currentVault.address, currentVault.chainID]
+		[currentVault.address, currentVault.chainID, getPrice]
 	);
 	const staked = useMemo((): TNormalizedBN => {
 		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address});

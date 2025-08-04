@@ -232,9 +232,12 @@ export const Web3ContextApp = (props: {children: ReactElement; defaultNetwork?: 
 		ens: ensName || '',
 		clusters,
 		isActive: isConnected && [...supportedChainsID, 1337].includes(chain?.id || -1) && isMounted(),
-		isWalletSafe: connector?.id === 'safe' || (connector as any)?._wallets?.[0]?.id === 'safe',
+		isWalletSafe:
+			connector?.id === 'safe' ||
+			(connector as Record<string, unknown> & {_wallets?: Array<{id?: string}>})?._wallets?.[0]?.id === 'safe',
 		isWalletLedger:
-			connector?.id.toLowerCase().includes('ledger') || (connector as any)?._wallets?.[0]?.id === 'ledger',
+			connector?.id.toLowerCase().includes('ledger') ||
+			(connector as Record<string, unknown> & {_wallets?: Array<{id?: string}>})?._wallets?.[0]?.id === 'ledger',
 		lensProtocolHandle: '',
 		hasProvider: !!(walletClient || publicClient),
 		provider: connector,

@@ -66,7 +66,8 @@ function MaxLossSection(): ReactElement {
 						onChange={(e): void => {
 							const value = BigInt(Math.round(parseFloat(e.target.value || '0') * 100));
 							if (value > 10000n) {
-								return set_maxLoss(10000n);
+								set_maxLoss(10000n);
+								return;
 							}
 							set_maxLoss(value);
 						}}

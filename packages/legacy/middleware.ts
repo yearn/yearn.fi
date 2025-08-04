@@ -1,7 +1,7 @@
 import type {NextRequest} from 'next/server';
 import {NextResponse} from 'next/server';
 
-export function middleware(request: NextRequest): NextResponse | void {
+export function middleware(request: NextRequest): NextResponse | undefined {
 	const {pathname} = request.nextUrl;
 
 	// Handle /v3/{chainId} pattern and redirect to /v3?chains={chainId}

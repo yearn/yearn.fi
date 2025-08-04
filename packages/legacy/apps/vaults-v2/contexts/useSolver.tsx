@@ -89,7 +89,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			});
 			set_isLoading(false);
 		},
-		[executionNonce]
+		[]
 	);
 
 	/* 🔵 - Yearn Finance **************************************************************************

@@ -87,7 +87,7 @@ export function useSolverV3Router(): TSolverContext {
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
 		},
-		[request, provider]
+		[provider]
 	);
 
 	const onRetrieveRouterAllowance = useCallback(
@@ -110,7 +110,7 @@ export function useSolverV3Router(): TSolverContext {
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
 		},
-		[request, provider]
+		[provider]
 	);
 
 	const onApprove = useCallback(
@@ -211,14 +211,6 @@ export function useSolverV3Router(): TSolverContext {
 			onExecuteDeposit,
 			onExecuteWithdraw
 		}),
-		[
-			latestQuote,
-			init,
-			onApprove,
-			onExecuteDeposit,
-			onExecuteWithdraw,
-			onRetrieveAllowance,
-			onRetrieveRouterAllowance
-		]
+		[init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, onRetrieveRouterAllowance]
 	);
 }

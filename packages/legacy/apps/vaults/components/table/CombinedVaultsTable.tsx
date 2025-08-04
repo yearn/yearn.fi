@@ -3,7 +3,7 @@ import {SearchBar} from '@lib/components/SearchBar';
 import {useYearn} from '@lib/contexts/useYearn';
 import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
 import type {TSortDirection} from '@lib/types';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
 import {TFilter, VAULT_PAGE_SIZE} from '@vaults/constants';
 import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
 import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants';
@@ -155,7 +155,11 @@ function CombinedVaultsTable(): ReactElement {
 			: activeFilter === TFilter.Popular && !hasUserSelectedSort
 				? 'desc'
 				: sortDirection;
-	const sortedVaults = useSortVaults(filteredVaults as any, actualSortBy, actualSortDirection);
+	const sortedVaults = useSortVaults(
+		filteredVaults as (TYDaemonVault & {details?: TYDaemonVaultStrategy['details']})[],
+		actualSortBy,
+		actualSortDirection
+	);
 
 	// Setup pagination
 	const vaultList = mapToCombinedVaultList(sortedVaults, isLoadingVaultList, onReset);

@@ -96,7 +96,7 @@ export function useSolverInternalMigration(): TSolverContext {
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
 		},
-		[request, provider]
+		[provider]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -238,6 +238,6 @@ export function useSolverInternalMigration(): TSolverContext {
 			onExecuteDeposit: onExecuteMigration,
 			onExecuteWithdraw: async (): Promise<void> => Promise.reject()
 		}),
-		[latestQuote, init, onApprove, onExecuteMigration, onRetrieveAllowance]
+		[init, onApprove, onExecuteMigration, onRetrieveAllowance]
 	);
 }

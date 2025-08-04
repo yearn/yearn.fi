@@ -88,14 +88,11 @@ export function VaultsListEmpty({
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data found'}</b>
-				<>
-					<p className={'text-center text-neutral-600'}>
-						{'Please, select a chain. At least one, just one.'}
-					</p>
-					<Button className={'w-full md:w-48'} onClick={onReset}>
-						{'Search all vaults'}
-					</Button>
-				</>
+
+				<p className={'text-center text-neutral-600'}>{'Please, select a chain. At least one, just one.'}</p>
+				<Button className={'w-full md:w-48'} onClick={onReset}>
+					{'Search all vaults'}
+				</Button>
 			</div>
 		);
 	}

@@ -330,7 +330,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 
 	const tokenPrice = useMemo(
 		() => getPrice({address: currentVault.address, chainID: currentVault.chainID}),
-		[currentVault.address, currentVault.chainID]
+		[currentVault.address, currentVault.chainID, getPrice]
 	);
 	const staked = useMemo((): TNormalizedBN => {
 		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address});

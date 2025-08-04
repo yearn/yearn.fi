@@ -18,6 +18,12 @@ import {retrieveConfig} from './config';
 import type {TTxResponse} from './transaction';
 import {defaultTxStatus} from './transaction';
 
+interface WindowWithCustomEthereum extends Window {
+	ethereum?: {
+		useForknetForMainnet?: boolean;
+	};
+}
+
 export type TWagmiProviderContract = {
 	walletClient: Client;
 	chainId: number;
@@ -70,7 +76,7 @@ export async function handleTx(args: TWriteTransaction, props: TPrepareWriteCont
 	let wagmiProvider = await toWagmiProvider(args.connector);
 
 	// Use debug mode
-	if ((window as any).ethereum.useForknetForMainnet) {
+	if ((window as WindowWithCustomEthereum).ethereum?.useForknetForMainnet) {
 		if (args.chainID === 1) {
 			args.chainID = 1337;
 		}

@@ -5,11 +5,11 @@ import Link from 'next/link';
 
 import type {ReactElement} from 'react';
 
-export function VaultsBanner(): ReactElement {
+export function VaultsBanner(): ReactElement | null {
 	const {address} = useWeb3();
 
 	if (address) {
-		return <></>;
+		return null;
 	}
 
 	return (

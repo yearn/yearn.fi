@@ -139,12 +139,12 @@ function useQueryArguments(props: {
 		[props.defaultTypes, props.defaultCategories, allChains]
 	);
 
-	useMountEffect((): void | VoidFunction => {
+	useMountEffect((): void => {
 		const currentPage = new URL(window.location.href);
 		handleQuery(new URLSearchParams(currentPage.search));
 	});
 
-	useDeepCompareEffect((): void | VoidFunction => {
+	useDeepCompareEffect((): void => {
 		if (!props.defaultPathname || props.defaultPathname === router.pathname) {
 			handleQuery(searchParams);
 		}

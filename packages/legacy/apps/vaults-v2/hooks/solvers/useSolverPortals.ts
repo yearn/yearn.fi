@@ -169,7 +169,7 @@ export function useSolverPortals(): TSolverContext {
 				request.current = _request;
 				const {data, error} = await getQuote(_request, zapSlippage);
 				if (!data) {
-					const errorMessage = (error as any)?.response?.data?.message || error?.message;
+					const errorMessage = error?.message || 'Unknown error';
 					if (errorMessage && shouldLogError) {
 						console.error(errorMessage);
 						toast({
@@ -323,7 +323,7 @@ export function useSolverPortals(): TSolverContext {
 			return zeroNormalizedBN;
 		}
 		return toNormalizedBN(latestQuote?.current?.outputAmount, request?.current?.outputToken?.decimals || 18);
-	}, [latestQuote, request]);
+	}, []);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will

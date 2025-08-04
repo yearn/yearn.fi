@@ -21,7 +21,7 @@ export function useAsync<T>(
 				set_isLoading(false);
 				set_data(res);
 			}
-		} catch (e) {
+		} catch {
 			set_isLoading(false);
 		}
 	}, [callback]);

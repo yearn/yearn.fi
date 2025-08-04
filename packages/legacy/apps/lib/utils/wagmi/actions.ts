@@ -16,8 +16,14 @@ import {erc20Abi} from 'viem';
 import type {Connector} from 'wagmi';
 import {readContract} from 'wagmi/actions';
 
+interface WindowWithCustomEthereum extends Window {
+	ethereum?: {
+		useForknetForMainnet?: boolean;
+	};
+}
+
 function getChainID(chainID: number): number {
-	if (typeof window !== 'undefined' && (window as any)?.ethereum?.useForknetForMainnet) {
+	if (typeof window !== 'undefined' && (window as WindowWithCustomEthereum)?.ethereum?.useForknetForMainnet) {
 		if (chainID === 1) {
 			return 1337;
 		}

@@ -54,7 +54,7 @@ export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVau
 					content={(e): ReactElement => {
 						const {active: isTooltipActive, payload, label} = e;
 						if (!isTooltipActive || !payload) {
-							return <></>;
+							return <Fragment />;
 						}
 						if (payload.length > 0) {
 							const [{value}] = payload;
