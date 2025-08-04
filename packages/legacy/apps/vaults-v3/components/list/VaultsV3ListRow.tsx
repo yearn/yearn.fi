@@ -668,18 +668,25 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 							</p>
 							<div className={'hidden flex-row items-center md:flex'}>
 								<VaultChainTag chainID={currentVault.chainID} />
-								<Link
-									href={`${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${
-										currentVault.address
-									}`}
-									onClick={(event): void => event.stopPropagation()}
-									className={'text-neutral-900/50 transition-opacity hover:text-neutral-900'}
-									target={'_blank'}
-									rel={'noopener noreferrer'}>
+								<button
+									type={'button'}
+									onClick={(event): void => {
+										event.stopPropagation();
+										window.open(
+											`${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${
+												currentVault.address
+											}`,
+											'_blank',
+											'noopener,noreferrer'
+										);
+									}}
+									className={
+										'text-neutral-900/50 transition-opacity hover:text-neutral-900 cursor-pointer'
+									}>
 									<div className={'px-2'}>
 										<IconLinkOut className={'inline-block size-4'} />
 									</div>
-								</Link>
+								</button>
 							</div>
 						</div>
 					</div>
@@ -776,18 +783,23 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 
 				<div className={'mt-4 flex flex-row items-center border-t border-neutral-900/20 pt-4 md:hidden'}>
 					<VaultChainTag chainID={currentVault.chainID} />
-					<Link
-						href={`${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${
-							currentVault.address
-						}`}
-						onClick={(event): void => event.stopPropagation()}
-						className={'text-neutral-900/50 transition-opacity hover:text-neutral-900'}
-						target={'_blank'}
-						rel={'noopener noreferrer'}>
+					<button
+						type={'button'}
+						onClick={(event): void => {
+							event.stopPropagation();
+							window.open(
+								`${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${
+									currentVault.address
+								}`,
+								'_blank',
+								'noopener,noreferrer'
+							);
+						}}
+						className={'text-neutral-900/50 transition-opacity hover:text-neutral-900 cursor-pointer'}>
 						<div className={'px-2'}>
 							<IconLinkOut className={'inline-block size-4'} />
 						</div>
-					</Link>
+					</button>
 				</div>
 			</div>
 		</Link>
