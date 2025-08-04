@@ -10,8 +10,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(({className, theme, h,
 			data-tooltip-id="bearn-sucks"
 			ref={ref}
 			{...props}
-			className={buttonClassName({className, theme, h})}
-		>
+			className={buttonClassName({className, theme, h})}>
 			{busy && (
 				<div className="relative">
 					<div className="invisible">{children}</div>

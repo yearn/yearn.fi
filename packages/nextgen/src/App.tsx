@@ -11,8 +11,7 @@ function App() {
 				</div>
 				<button
 					type="button"
-					className="bg-primary-800 text-neutral-950 w-64 h-32 flex items-center justify-center rounded-primary drop-shadow-6"
-				>
+					className="bg-primary-800 text-neutral-950 w-64 h-32 flex items-center justify-center rounded-primary drop-shadow-6">
 					button
 				</button>
 			</div>
