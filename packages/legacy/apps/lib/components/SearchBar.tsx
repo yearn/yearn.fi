@@ -22,7 +22,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
 	 ** functionality. This provides a responsive user experience while preventing excessive
 	 ** filtering operations and URL updates that could degrade performance.
 	 *********************************************************************************************/
-	const [localSearchValue, set_localSearchValue] = useState<string>(props.searchValue || '');
+	const [localSearchValue, setLocalSearchValue] = useState<string>(props.searchValue || '');
 
 	/**********************************************************************************************
 	 ** Create a debounced search handler that delays the actual search operation by 300ms.
@@ -42,7 +42,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
 	 ** and triggering the debounced search operation for the actual filtering.
 	 *********************************************************************************************/
 	const handleSearchChange = (searchValue: string): void => {
-		set_localSearchValue(searchValue);
+		setLocalSearchValue(searchValue);
 		if (props.shouldDebounce) {
 			debouncedSearch(searchValue);
 			return;
@@ -55,7 +55,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
 	 ** such as URL navigation, browser back/forward, or programmatic updates.
 	 *********************************************************************************************/
 	useEffect(() => {
-		set_localSearchValue(props.searchValue || '');
+		setLocalSearchValue(props.searchValue || '');
 	}, [props.searchValue]);
 
 	return (

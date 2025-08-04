@@ -68,13 +68,13 @@ export const Web3ContextApp = (props: {children: ReactElement; defaultNetwork?: 
 	const {switchChain} = useSwitchChain();
 	const {data: ensName} = useEnsName({address: address, chainId: mainnet.id});
 	const {data: walletClient} = useWalletClient();
-	const [currentChainID, set_currentChainID] = useState(chain?.id);
+	const [currentChainID, setCurrentChainID] = useState(chain?.id);
 	const publicClient = usePublicClient();
 	const isMounted = useIsMounted();
 	const {openAccountModal} = useAccountModal();
 	const {openConnectModal} = useConnectModal();
 	const {openChainModal} = useChainModal();
-	const [clusters, set_clusters] = useState<{name: string; avatar: string} | undefined>(undefined);
+	const [clusters, setClusters] = useState<{name: string; avatar: string} | undefined>(undefined);
 
 	const supportedChainsID = useMemo((): number[] => {
 		connectors; //Hard trigger re-render when connectors change
@@ -84,7 +84,7 @@ export const Web3ContextApp = (props: {children: ReactElement; defaultNetwork?: 
 	}, [connectors]);
 
 	useUpdateEffect((): void => {
-		set_currentChainID(chain?.id);
+		setCurrentChainID(chain?.id);
 	}, [chain]);
 
 	useAsyncTrigger(async () => {
@@ -160,7 +160,7 @@ export const Web3ContextApp = (props: {children: ReactElement; defaultNetwork?: 
 
 	const onSwitchChain = useCallback(
 		(newChainID: number): void => {
-			set_currentChainID(newChainID);
+			setCurrentChainID(newChainID);
 			if (isConnected) {
 				if (!switchChain || !connector) {
 					throw new Error('Switch network function is not defined');
@@ -218,11 +218,11 @@ export const Web3ContextApp = (props: {children: ReactElement; defaultNetwork?: 
 			if (clustersTag) {
 				const [clustersName] = clustersTag.split('/');
 				const profileImage = getImageUrl(clustersName);
-				set_clusters({name: `${clustersName}/`, avatar: profileImage});
+				setClusters({name: `${clustersName}/`, avatar: profileImage});
 				return;
 			}
 		}
-		set_clusters(undefined);
+		setClusters(undefined);
 	}, [address]);
 
 	const contextValue = {

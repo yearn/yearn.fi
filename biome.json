@@ -131,7 +131,7 @@
 			"trailingCommas": "none",
 			"semicolons": "always",
 			"arrowParentheses": "asNeeded",
-			"bracketSameLine": false,
+			"bracketSameLine": true,
 			"quoteStyle": "single",
 			"attributePosition": "auto",
 			"bracketSpacing": false
@@ -144,5 +144,5 @@
 	},
 	"html": { "formatter": { "selfCloseVoidElements": "always" } },
 	"overrides": [{ "includes": ["*.{ts,tsx}"], "linter": { "rules": {} } }],
-	"plugins": ["./.grit/assign.grit", "./.grit/setState-naming.grit"]
+	"plugins": ["./.grit/assign.grit"]
 }

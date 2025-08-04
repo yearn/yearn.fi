@@ -118,7 +118,7 @@ function ListOfVaults(): ReactElement {
 		defaultPathname: '/vaults'
 	});
 	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(types, chains);
-	const [page, set_page] = useState(0);
+	const [page, setPage] = useState(0);
 	const chainOptions = useChainOptions(chains);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -244,7 +244,7 @@ function ListOfVaults(): ReactElement {
 
 		// If current page is beyond available pages, reset to first page
 		if (page >= totalPages && totalPages > 0) {
-			set_page(0);
+			setPage(0);
 		}
 	}, [page, possibleLists]);
 
@@ -313,7 +313,7 @@ function ListOfVaults(): ReactElement {
 						pageCount={totalVaults / pageSize}
 						numberOfItems={totalVaults}
 						currentPage={page}
-						onPageChange={(newPage): void => set_page(newPage.selected)}
+						onPageChange={(newPage): void => setPage(newPage.selected)}
 					/>
 				</div>
 			</div>

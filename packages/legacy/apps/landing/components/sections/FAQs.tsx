@@ -82,10 +82,10 @@ const faqData = [
 ];
 
 export const FAQs: FC = () => {
-	const [openFAQ, set_openFAQ] = useState<number | null>(null);
+	const [openFAQ, setOpenFAQ] = useState<number | null>(null);
 
 	const toggleFAQ = (index: number): void => {
-		set_openFAQ(openFAQ === index ? null : index);
+		setOpenFAQ(openFAQ === index ? null : index);
 	};
 
 	return (

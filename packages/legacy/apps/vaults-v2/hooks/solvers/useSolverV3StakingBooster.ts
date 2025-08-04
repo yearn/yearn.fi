@@ -20,7 +20,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
 	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
-	const {set_shouldOpenCurtain} = useNotifications();
+	const {setShouldOpenCurtain} = useNotifications();
 
 	/**********************************************************************************************
 	 ** init will be called when the gauge staking booster should be used to perform the desired
@@ -108,7 +108,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -121,7 +121,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -151,7 +151,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -164,7 +164,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	return useMemo(

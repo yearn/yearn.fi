@@ -30,14 +30,14 @@ function useQueryArguments(props: {
 	const allChains = useSupportedChains().map((chain): number => chain.id);
 	const searchParams = useSearchParams();
 	const router = useRouter();
-	const [search, set_search] = useState<string | null>(null);
-	const [types, set_types] = useState<string[] | null>(props.defaultTypes || []);
-	const [categories, set_categories] = useState<string[] | null>(props.defaultCategories || []);
-	const [chains, set_chains] = useState<number[] | null>(allChains || []);
-	const [sortDirection, set_sortDirection] = useState<string | null>(null);
+	const [search, setSearch] = useState<string | null>(null);
+	const [types, setTypes] = useState<string[] | null>(props.defaultTypes || []);
+	const [categories, setCategories] = useState<string[] | null>(props.defaultCategories || []);
+	const [chains, setChains] = useState<number[] | null>(allChains || []);
+	const [sortDirection, setSortDirection] = useState<string | null>(null);
 
 	const defaultSortBy = props.defaultSortBy || 'deposited';
-	const [sortBy, set_sortBy] = useState<string | null>(defaultSortBy);
+	const [sortBy, setSortBy] = useState<string | null>(defaultSortBy);
 
 	const handleQuery = useCallback(
 		(_searchParams: URLSearchParams): void => {
@@ -46,37 +46,37 @@ function useQueryArguments(props: {
 				if (_search === null) {
 					return;
 				}
-				set_search(_search);
+				setSearch(_search);
 			}
 
 			if (_searchParams.has('types')) {
 				const typesParam = _searchParams.get('types');
 				const typesParamArray = typesParam?.split('_') || [];
 				if (typesParamArray.length === 0) {
-					set_types(props.defaultTypes || []);
+					setTypes(props.defaultTypes || []);
 					return;
 				}
 				if (typesParamArray.length === props.defaultTypes?.length) {
 					const isEqual = typesParamArray.every((c): boolean => Boolean(props.defaultTypes?.includes(c)));
 					if (isEqual) {
-						set_types(props.defaultTypes);
+						setTypes(props.defaultTypes);
 						return;
 					}
 				}
 				if (typesParamArray[0] === 'none') {
-					set_types([]);
+					setTypes([]);
 					return;
 				}
-				set_types(typesParamArray);
+				setTypes(typesParamArray);
 			} else {
-				set_types(props.defaultTypes || []);
+				setTypes(props.defaultTypes || []);
 			}
 
 			if (_searchParams.has('categories')) {
 				const categoriesParam = _searchParams.get('categories');
 				const categoriesParamArray = categoriesParam?.split('_') || [];
 				if (categoriesParamArray.length === 0) {
-					set_categories(props.defaultCategories || []);
+					setCategories(props.defaultCategories || []);
 					return;
 				}
 				if (categoriesParamArray.length === props.defaultCategories?.length) {
@@ -84,40 +84,40 @@ function useQueryArguments(props: {
 						Boolean(props.defaultCategories?.includes(c))
 					);
 					if (isEqual) {
-						set_categories(props.defaultCategories);
+						setCategories(props.defaultCategories);
 						return;
 					}
 				}
 				if (categoriesParamArray[0] === 'none') {
-					set_categories([]);
+					setCategories([]);
 					return;
 				}
-				set_categories(categoriesParamArray);
+				setCategories(categoriesParamArray);
 			} else {
-				set_categories(props.defaultCategories || []);
+				setCategories(props.defaultCategories || []);
 			}
 
 			if (_searchParams.has('chains')) {
 				const chainsParam = _searchParams.get('chains');
 				const chainsParamArray = chainsParam?.split('_') || [];
 				if (chainsParamArray.length === 0) {
-					set_chains(allChains);
+					setChains(allChains);
 					return;
 				}
 				if (chainsParamArray.length === allChains.length) {
 					const isEqual = chainsParamArray.every((c): boolean => allChains.includes(Number(c)));
 					if (isEqual) {
-						set_chains(allChains);
+						setChains(allChains);
 						return;
 					}
 				}
 				if (chainsParamArray[0] === '0') {
-					set_chains([]);
+					setChains([]);
 					return;
 				}
-				set_chains(chainsParamArray.map((chain): number => Number(chain)));
+				setChains(chainsParamArray.map((chain): number => Number(chain)));
 			} else {
-				set_chains(allChains);
+				setChains(allChains);
 			}
 
 			if (_searchParams.has('sortDirection')) {
@@ -125,7 +125,7 @@ function useQueryArguments(props: {
 				if (_sortDirection === null) {
 					return;
 				}
-				set_sortDirection(_sortDirection);
+				setSortDirection(_sortDirection);
 			}
 
 			if (_searchParams.has('sortBy')) {
@@ -133,7 +133,7 @@ function useQueryArguments(props: {
 				if (_sortBy === null) {
 					return;
 				}
-				set_sortBy(_sortBy);
+				setSortBy(_sortBy);
 			}
 		},
 		[props.defaultTypes, props.defaultCategories, allChains]
@@ -158,7 +158,7 @@ function useQueryArguments(props: {
 		sortDirection: (sortDirection || 'desc') as TSortDirection,
 		sortBy: (sortBy || 'featuringScore') as TPossibleSortBy,
 		onSearch: (value): void => {
-			set_search(value);
+			setSearch(value);
 			const queryArgs: TDict<string | string[] | undefined> = {};
 			for (const key in router.query) {
 				if (key !== 'search') {
@@ -183,7 +183,7 @@ function useQueryArguments(props: {
 				}
 			}
 
-			set_types(value);
+			setTypes(value);
 			if (value === null) {
 				queryArgs.types = 'none';
 				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
@@ -215,7 +215,7 @@ function useQueryArguments(props: {
 				}
 			}
 
-			set_categories(value);
+			setCategories(value);
 			if (value === null) {
 				queryArgs.categories = 'none';
 				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
@@ -247,7 +247,7 @@ function useQueryArguments(props: {
 					queryArgs[key] = router.query[key];
 				}
 			}
-			set_chains(value);
+			setChains(value);
 			if (value === null) {
 				queryArgs.chains = '0';
 				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
@@ -271,7 +271,7 @@ function useQueryArguments(props: {
 			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 		},
 		onChangeSortDirection: (value): void => {
-			set_sortDirection(value);
+			setSortDirection(value);
 			const queryArgs: TDict<string | string[] | undefined> = {};
 			for (const key in router.query) {
 				if (key !== 'sortDirection') {
@@ -289,7 +289,7 @@ function useQueryArguments(props: {
 			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 		},
 		onChangeSortBy: (value): void => {
-			set_sortBy(value);
+			setSortBy(value);
 			const queryArgs: TDict<string | string[] | undefined> = {};
 			for (const key in router.query) {
 				if (key !== 'sortBy') {
@@ -307,12 +307,12 @@ function useQueryArguments(props: {
 			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 		},
 		onReset: (): void => {
-			set_search(null);
-			set_types(props.defaultTypes || []);
-			set_categories(props.defaultCategories || []);
-			set_chains(allChains || []);
-			set_sortDirection('desc');
-			set_sortBy(defaultSortBy);
+			setSearch(null);
+			setTypes(props.defaultTypes || []);
+			setCategories(props.defaultCategories || []);
+			setChains(allChains || []);
+			setSortDirection('desc');
+			setSortBy(defaultSortBy);
 			const queryArgs: TDict<string | string[] | undefined> = {};
 			for (const key in router.query) {
 				if (

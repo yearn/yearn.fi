@@ -35,11 +35,11 @@ export function VaultDetailsQuickActionsButtons({
 	const {onRefresh} = useWallet();
 	const {isAutoStakingEnabled} = useYearn();
 	const {address, provider} = useWeb3();
-	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
-	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
-	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
-	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(zeroNormalizedBN);
-	const [allowanceRouter, set_allowanceRouter] = useState<TNormalizedBN>(zeroNormalizedBN);
+	const [txStatusApprove, setTxStatusApprove] = useState(defaultTxStatus);
+	const [txStatusExecuteDeposit, setTxStatusExecuteDeposit] = useState(defaultTxStatus);
+	const [txStatusExecuteWithdraw, setTxStatusExecuteWithdraw] = useState(defaultTxStatus);
+	const [allowanceFrom, setAllowanceFrom] = useState<TNormalizedBN>(zeroNormalizedBN);
+	const [allowanceRouter, setAllowanceRouter] = useState<TNormalizedBN>(zeroNormalizedBN);
 	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith('/v3');
@@ -63,8 +63,8 @@ export function VaultDetailsQuickActionsButtons({
 	 ** is called when amount/in or out changes. Calls the allowanceFetcher callback.
 	 *********************************************************************************************/
 	const triggerRetrieveAllowance = useAsyncTrigger(async (): Promise<void> => {
-		set_allowanceFrom(await onRetrieveAllowance(true));
-		set_allowanceRouter((await onRetrieveRouterAllowance?.(true)) || zeroNormalizedBN);
+		setAllowanceFrom(await onRetrieveAllowance(true));
+		setAllowanceRouter((await onRetrieveRouterAllowance?.(true)) || zeroNormalizedBN);
 	}, [address, onRetrieveAllowance, onRetrieveRouterAllowance, hash]);
 
 	/**********************************************************************************************
@@ -179,7 +179,7 @@ export function VaultDetailsQuickActionsButtons({
 		const id = await handleApproveNotification({actionParams});
 		onApprove(
 			shouldApproveInfinite ? maxUint256 : toBigInt(actionParams.amount?.raw),
-			set_txStatusApprove,
+			setTxStatusApprove,
 			async (receipt?: TransactionReceipt): Promise<void> => {
 				await handleApproveNotification({actionParams, receipt, status: 'success', idToUpdate: id});
 				await triggerRetrieveAllowance();
@@ -279,7 +279,7 @@ export function VaultDetailsQuickActionsButtons({
 						};
 						const id = await handleDepositNotification({actionParams: correctActionParams});
 						onExecuteDeposit(
-							set_txStatusExecuteDeposit,
+							setTxStatusExecuteDeposit,
 							async (receipt?: TransactionReceipt) => onSuccess(true, 'deposit and stake', receipt, id),
 							(txHash: Hash) => {
 								handleDepositNotification({
@@ -325,7 +325,7 @@ export function VaultDetailsQuickActionsButtons({
 				onClick={async (): Promise<void> => {
 					const id = await handleDepositNotification({actionParams});
 					onExecuteDeposit(
-						set_txStatusExecuteDeposit,
+						setTxStatusExecuteDeposit,
 						async (receipt?: TransactionReceipt) => onSuccess(true, 'deposit', receipt, id),
 						(txHash: Hash) => {
 							handleDepositNotification({
@@ -363,7 +363,7 @@ export function VaultDetailsQuickActionsButtons({
 			onClick={async (): Promise<void> => {
 				const id = await handleWithdrawNotification({actionParams});
 				onExecuteWithdraw(
-					set_txStatusExecuteWithdraw,
+					setTxStatusExecuteWithdraw,
 					async (receipt?: TransactionReceipt) => {
 						await handleWithdrawNotification({actionParams, receipt, status: 'success', idToUpdate: id});
 						await onSuccess(false);

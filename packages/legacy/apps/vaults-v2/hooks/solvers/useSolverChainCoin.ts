@@ -31,7 +31,7 @@ export function useSolverChainCoin(): TSolverContext {
 	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
 	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
-	const {set_shouldOpenCurtain} = useNotifications();
+	const {setShouldOpenCurtain} = useNotifications();
 
 	/**********************************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -119,7 +119,7 @@ export function useSolverChainCoin(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -134,7 +134,7 @@ export function useSolverChainCoin(): TSolverContext {
 				}
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -163,7 +163,7 @@ export function useSolverChainCoin(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -178,7 +178,7 @@ export function useSolverChainCoin(): TSolverContext {
 				}
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -207,7 +207,7 @@ export function useSolverChainCoin(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -222,7 +222,7 @@ export function useSolverChainCoin(): TSolverContext {
 				}
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	return useMemo(

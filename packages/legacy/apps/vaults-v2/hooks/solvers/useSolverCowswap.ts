@@ -78,7 +78,7 @@ async function getQuote(
 export function useSolverCowswap(): TSolverContext {
 	const {zapSlippage} = useYearn();
 	const {provider} = useWeb3();
-	const {set_shouldOpenCurtain} = useNotifications();
+	const {setShouldOpenCurtain} = useNotifications();
 	const maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
 	const shouldUsePresign = false; //Debug only
 	const latestQuote = useRef<OrderQuoteResponse | undefined>(undefined);
@@ -400,7 +400,7 @@ export function useSolverCowswap(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -418,7 +418,7 @@ export function useSolverCowswap(): TSolverContext {
 				}
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -446,7 +446,7 @@ export function useSolverCowswap(): TSolverContext {
 						cta: {
 							label: 'View',
 							onClick: () => {
-								set_shouldOpenCurtain(true);
+								setShouldOpenCurtain(true);
 							}
 						}
 					});
@@ -470,7 +470,7 @@ export function useSolverCowswap(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -486,7 +486,7 @@ export function useSolverCowswap(): TSolverContext {
 				setTimeout((): void => txStatusSetter(defaultTxStatus), 3000);
 			}
 		},
-		[execute, provider, set_shouldOpenCurtain]
+		[execute, provider, setShouldOpenCurtain]
 	);
 
 	return useMemo(

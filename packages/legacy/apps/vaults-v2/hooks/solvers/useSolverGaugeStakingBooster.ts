@@ -17,7 +17,7 @@ import {maxUint256} from 'viem';
 
 export function useSolverGaugeStakingBooster(): TSolverContext {
 	const {provider} = useWeb3();
-	const {set_shouldOpenCurtain} = useNotifications();
+	const {setShouldOpenCurtain} = useNotifications();
 	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
 	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -106,7 +106,7 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -119,7 +119,7 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -149,7 +149,7 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -162,7 +162,7 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	return useMemo(

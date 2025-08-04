@@ -187,11 +187,11 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 	const {maxLoss} = useYearn();
 	const {tokenLists} = useTokenList();
 	const {zapProvider, isAutoStakingEnabled} = useYearn();
-	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
-	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
-	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
-	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
-	const [limits, set_limits] = useState<{maxDeposit: bigint; maxRedeem: bigint} | undefined>(undefined);
+	const [possibleOptionsFrom, setPossibleOptionsFrom] = useState<TDropdownOption[]>([]);
+	const [possibleZapOptionsFrom, setPossibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
+	const [possibleOptionsTo, setPossibleOptionsTo] = useState<TDropdownOption[]>([]);
+	const [possibleZapOptionsTo, setPossibleZapOptionsTo] = useState<TDropdownOption[]>([]);
+	const [limits, setLimits] = useState<{maxDeposit: bigint; maxRedeem: bigint} | undefined>(undefined);
 
 	/**********************************************************************************************
 	 ** currentNetworkTokenList is an object with multiple level of depth. We want to create a
@@ -267,21 +267,21 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 					functionName: 'withdraw',
 					args: [balanceOf]
 				});
-				set_limits({
+				setLimits({
 					maxDeposit,
 					maxRedeem: maxEffectiveWithdraw ? maxEffectiveWithdraw.result : maxRedeem
 				});
 			} else {
-				set_limits({maxDeposit, maxRedeem});
+				setLimits({maxDeposit, maxRedeem});
 			}
 		} catch {
-			set_limits({maxDeposit, maxRedeem});
+			setLimits({maxDeposit, maxRedeem});
 		}
 	}, [props.currentVault, address, maxLoss]);
 
 	/**********************************************************************************************
 	 ** This reducer is used to manage the actionParams state variable and update the different
-	 ** elements in one go rather than multiple set_state. This was done to avoid the multiple
+	 ** elements in one go rather than multiple setState. This was done to avoid the multiple
 	 ** re-render we had with the previous method.
 	 ** 3 actions are available:
 	 ** - amount: update the amount when the user types in the input
@@ -569,8 +569,8 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 							: maxDepositPossible(toAddress(_selectedOptionFrom?.value))
 					}
 				});
-				set_possibleOptionsTo(possibleOptionsFrom);
-				set_possibleOptionsFrom(_possibleOptionsTo);
+				setPossibleOptionsTo(possibleOptionsFrom);
+				setPossibleOptionsFrom(_possibleOptionsTo);
 				return;
 			}
 
@@ -852,8 +852,8 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		/* 🔵 - Yearn Finance **********************************************************************
 		 ** Update the possibleOptions local state and the actionParams global state.
 		 ******************************************************************************************/
-		set_possibleOptionsFrom(payloadFrom);
-		set_possibleOptionsTo(payloadTo);
+		setPossibleOptionsFrom(payloadFrom);
+		setPossibleOptionsTo(payloadTo);
 		if (!isDepositing) {
 			actionParamsDispatcher({
 				type: 'options',
@@ -935,7 +935,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			const bBalance = getBalance({address: toAddress(b.value), chainID: props.currentVault.chainID}).normalized;
 			return bBalance - aBalance;
 		});
-		set_possibleZapOptionsFrom([
+		setPossibleZapOptionsFrom([
 			setZapOption({
 				name: props.currentVault.token.name,
 				symbol: props.currentVault.token.symbol,
@@ -977,7 +977,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 					})
 				);
 			});
-		set_possibleZapOptionsTo(_possibleZapOptionsTo);
+		setPossibleZapOptionsTo(_possibleZapOptionsTo);
 	}, [props.currentVault.chainID]);
 
 	const cleanPossibleOptionsFrom = useMemo((): TDropdownOption[] => {

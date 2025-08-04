@@ -23,13 +23,13 @@ type TTabsProps = {
 };
 
 export function Tabs({items, className}: TTabsProps): ReactElement {
-	const [selectedTabId, set_selectedTabId] = useState(items[0]?.id);
+	const [selectedTabId, setSelectedTabId] = useState(items[0]?.id);
 	const router = useRouter();
 
 	useEffect((): void => {
 		const tab = items.find((tab): boolean => tab.id === router.query.tab);
 		if (tab?.id) {
-			set_selectedTabId(tab?.id);
+			setSelectedTabId(tab?.id);
 		}
 	}, [items, router.query.tab]);
 
@@ -54,7 +54,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 										shallow: true
 									}
 								);
-								set_selectedTabId(id);
+								setSelectedTabId(id);
 							}}
 						>
 							<p
@@ -80,7 +80,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 				)}
 			</nav>
 			<div className={'relative z-50 px-4 pt-4 md:hidden'}>
-				<Listbox value={selectedTabId} onChange={(value): void => set_selectedTabId(value)}>
+				<Listbox value={selectedTabId} onChange={(value): void => setSelectedTabId(value)}>
 					{({open}): ReactElement => (
 						<>
 							<ListboxButton

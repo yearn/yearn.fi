@@ -10,10 +10,10 @@ type TAppSectionProps = {
 };
 
 export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement => {
-	const [shuffledApps, set_shuffledApps] = useState<TApp[]>([]);
-	const [, set_currentPage] = useState(1);
+	const [shuffledApps, setShuffledApps] = useState<TApp[]>([]);
+	const [, setCurrentPage] = useState(1);
 	const carouselRef = useRef<HTMLDivElement | null>(null);
-	const [isProgrammaticScroll, set_isProgrammaticScroll] = useState(false);
+	const [isProgrammaticScroll, setIsProgrammaticScroll] = useState(false);
 
 	/**********************************************************************************************
 	 ** Helper to get the width of a single carousel item.
@@ -38,7 +38,7 @@ export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement =
 			return;
 		}
 
-		set_isProgrammaticScroll(true);
+		setIsProgrammaticScroll(true);
 
 		if (carouselRef.current.scrollLeft <= 0) {
 			// Wrap to end
@@ -48,7 +48,7 @@ export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement =
 		}
 
 		setTimeout(() => {
-			set_isProgrammaticScroll(false);
+			setIsProgrammaticScroll(false);
 		}, 300);
 	};
 
@@ -64,7 +64,7 @@ export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement =
 			return;
 		}
 
-		set_isProgrammaticScroll(true);
+		setIsProgrammaticScroll(true);
 
 		const maxScrollLeft = carouselRef.current.scrollWidth - carouselRef.current.clientWidth;
 		if (carouselRef.current.scrollLeft >= maxScrollLeft) {
@@ -75,7 +75,7 @@ export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement =
 		}
 
 		setTimeout(() => {
-			set_isProgrammaticScroll(false);
+			setIsProgrammaticScroll(false);
 		}, 300);
 	};
 
@@ -94,7 +94,7 @@ export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement =
 		}
 		const {scrollLeft} = carouselRef.current;
 		const page = Math.ceil(scrollLeft / (itemWidth * 4)) + 1; // 4 items per page
-		set_currentPage(page);
+		setCurrentPage(page);
 	};
 
 	/**********************************************************************************************
@@ -114,7 +114,7 @@ export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement =
 			const [resupplyApp] = orderedApps.splice(resupplyIndex, 1);
 			orderedApps = [resupplyApp, ...orderedApps];
 		}
-		set_shuffledApps(orderedApps);
+		setShuffledApps(orderedApps);
 	});
 
 	return (

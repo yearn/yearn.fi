@@ -33,9 +33,9 @@ export const VaultsPositions: FC = () => {
 	const {getBalance, cumulatedValueInV2Vaults, cumulatedValueInV3Vaults} = useWallet();
 	const {vaults, vaultsMigrations, vaultsRetired, getPrice} = useYearn();
 
-	const [sortBy, set_sortBy] = useState<string>('totalValue');
-	const [sortDirection, set_sortDirection] = useState<TSortDirection>('desc');
-	const [viewOverride, set_viewOverride] = useState<TVaultsPositionsView | null>(null);
+	const [sortBy, setSortBy] = useState<string>('totalValue');
+	const [sortDirection, setSortDirection] = useState<TSortDirection>('desc');
+	const [viewOverride, setViewOverride] = useState<TVaultsPositionsView | null>(null);
 
 	const userPositions = useMemo(() => {
 		if (!isActive || !address) {
@@ -84,16 +84,16 @@ export const VaultsPositions: FC = () => {
 	const totalDeposited = cumulatedValueInV2Vaults + cumulatedValueInV3Vaults;
 
 	const handleSort = (newSortBy: string, newSortDirection: TSortDirection): void => {
-		set_sortBy(newSortBy);
-		set_sortDirection(newSortDirection);
+		setSortBy(newSortBy);
+		setSortDirection(newSortDirection);
 	};
 
 	const handleExpansionClick = (): void => {
 		const currentView = viewOverride || getVaultsPositionsView(userPositions);
 		if (currentView === TVaultsPositionsView.Card) {
-			set_viewOverride(TVaultsPositionsView.Table);
+			setViewOverride(TVaultsPositionsView.Table);
 		} else if (currentView === TVaultsPositionsView.Table) {
-			set_viewOverride(TVaultsPositionsView.Card);
+			setViewOverride(TVaultsPositionsView.Card);
 		}
 	};
 

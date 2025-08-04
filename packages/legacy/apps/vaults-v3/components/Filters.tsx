@@ -32,7 +32,7 @@ export function Filters({
 	shouldDebounce,
 	onChangeChains
 }: TListHero): ReactElement {
-	const [shouldExpandFilters, set_shouldExpandFilters] = useState(false);
+	const [shouldExpandFilters, setShouldExpandFilters] = useState(false);
 	const chainOptions = useChainOptions(chains).filter(
 		(option): boolean =>
 			option.value === 1 ||
@@ -71,7 +71,7 @@ export function Filters({
 			</strong>
 
 			<div className={'absolute right-10 top-10 block md:hidden'}>
-				<button onClick={(): void => set_shouldExpandFilters((prev): boolean => !prev)}>
+				<button onClick={(): void => setShouldExpandFilters((prev): boolean => !prev)}>
 					<IconChevron
 						className={cl(
 							'size-4 text-neutral-400 transition-all hover:text-neutral-900',

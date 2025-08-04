@@ -21,7 +21,7 @@ export type TTokenListProps = {
 	isCustomToken: (props: {address: TAddress; chainID: number}) => boolean;
 	getToken: (props: {address: TAddress; chainID: number}) => TToken | undefined;
 	addCustomToken: (token: TToken) => void;
-	set_tokenList: Dispatch<SetStateAction<TNDict<TDict<TToken>>>>;
+	setTokenList: Dispatch<SetStateAction<TNDict<TDict<TToken>>>>;
 };
 const defaultProps: TTokenListProps = {
 	tokenLists: {},
@@ -31,7 +31,7 @@ const defaultProps: TTokenListProps = {
 	isCustomToken: (): boolean => false,
 	getToken: (): TToken | undefined => undefined,
 	addCustomToken: (): void => undefined,
-	set_tokenList: (): void => undefined
+	setTokenList: (): void => undefined
 };
 
 /******************************************************************************
@@ -79,11 +79,11 @@ export const WithTokenList = ({
 }: TTokenListProviderProps): ReactElement => {
 	const {chainID} = useWeb3();
 	const {value: extraTokenlist} = useLocalStorageValue<string[]>('extraTokenlists');
-	const {value: extraTokens, set: set_extraTokens} = useLocalStorageValue<TTokenList['tokens']>('extraTokens');
-	const [tokenList, set_tokenList] = useState<TNDict<TDict<TToken>>>({});
-	const [tokenListExtra, set_tokenListExtra] = useState<TNDict<TDict<TToken>>>({});
-	const [tokenListCustom, set_tokenListCustom] = useState<TNDict<TDict<TToken>>>({});
-	const [isInitialized, set_isInitialized] = useState([false, false, false]);
+	const {value: extraTokens, set: setExtraTokens} = useLocalStorageValue<TTokenList['tokens']>('extraTokens');
+	const [tokenList, setTokenList] = useState<TNDict<TDict<TToken>>>({});
+	const [tokenListExtra, setTokenListExtra] = useState<TNDict<TDict<TToken>>>({});
+	const [tokenListCustom, setTokenListCustom] = useState<TNDict<TDict<TToken>>>({});
+	const [isInitialized, setIsInitialized] = useState([false, false, false]);
 	const hashList = useMemo((): string => lists.join(','), [lists]);
 
 	/************************************************************************************
@@ -151,8 +151,8 @@ export const WithTokenList = ({
 				}
 			}
 		}
-		set_tokenList(tokenListTokens);
-		set_isInitialized(prev => [true, prev[1], prev[2]]);
+		setTokenList(tokenListTokens);
+		setIsInitialized(prev => [true, prev[1], prev[2]]);
 	}, [hashList]);
 
 	/************************************************************************************
@@ -215,8 +215,8 @@ export const WithTokenList = ({
 				}
 			}
 		}
-		set_tokenListExtra(tokenListTokens);
-		set_isInitialized(prev => [prev[0], true, prev[2]]);
+		setTokenListExtra(tokenListTokens);
+		setIsInitialized(prev => [prev[0], true, prev[2]]);
 	}, [extraTokenlist]);
 
 	/************************************************************************************
@@ -271,9 +271,9 @@ export const WithTokenList = ({
 					}
 				}
 			}
-			set_tokenListCustom(tokenListTokens);
+			setTokenListCustom(tokenListTokens);
 		}
-		set_isInitialized(prev => [prev[0], prev[1], true]);
+		setIsInitialized(prev => [prev[0], prev[1], true]);
 	}, [extraTokens]);
 
 	/************************************************************************************
@@ -362,10 +362,10 @@ export const WithTokenList = ({
 		(token: TToken) => {
 			const arr = extraTokens ?? [];
 			if (!arr.some(t => isAddressEqual(t.address, token.address) && t.chainId === token.chainID)) {
-				set_extraTokens([...arr, toTokenListToken(token)]);
+				setExtraTokens([...arr, toTokenListToken(token)]);
 			}
 		},
-		[extraTokens, set_extraTokens]
+		[extraTokens, setExtraTokens]
 	);
 
 	const contextValue = useMemo(
@@ -375,7 +375,7 @@ export const WithTokenList = ({
 			isFromExtraList,
 			isCustomToken,
 			isInitialized: isInitialized[0] && isInitialized[1] && isInitialized[2],
-			set_tokenList,
+			setTokenList,
 			addCustomToken,
 			getToken
 		}),

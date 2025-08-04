@@ -21,7 +21,7 @@ export function useSolverVanilla(): TSolverContext {
 	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
 	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
-	const {set_shouldOpenCurtain} = useNotifications();
+	const {setShouldOpenCurtain} = useNotifications();
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.
 	 ** It will set the request to the provided value, as it's required to get the quote, and will
@@ -114,7 +114,7 @@ export function useSolverVanilla(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -127,7 +127,7 @@ export function useSolverVanilla(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -154,7 +154,7 @@ export function useSolverVanilla(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					},
 					statusHandler: txStatusSetter,
@@ -169,7 +169,7 @@ export function useSolverVanilla(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -203,7 +203,7 @@ export function useSolverVanilla(): TSolverContext {
 						cta: {
 							label: 'View',
 							onClick: () => {
-								set_shouldOpenCurtain(true);
+								setShouldOpenCurtain(true);
 							}
 						}
 					});
@@ -223,7 +223,7 @@ export function useSolverVanilla(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -238,7 +238,7 @@ export function useSolverVanilla(): TSolverContext {
 				}
 			}
 		},
-		[maxLoss, provider, set_shouldOpenCurtain]
+		[maxLoss, provider, setShouldOpenCurtain]
 	);
 
 	return useMemo(

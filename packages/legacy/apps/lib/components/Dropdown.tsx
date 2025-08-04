@@ -77,8 +77,8 @@ export const Dropdown = ({
 	isDisabled,
 	className
 }: TDropdownProps): ReactElement => {
-	const [isOpen, set_isOpen] = useThrottledState(false, 400);
-	const [search, set_search] = useState('');
+	const [isOpen, setIsOpen] = useThrottledState(false, 400);
+	const [search, setSearch] = useState('');
 
 	const isSearching = search !== '';
 	const filteredOptions = isSearching
@@ -96,7 +96,7 @@ export const Dropdown = ({
 							onClick={(e): void => {
 								e.stopPropagation();
 								e.preventDefault();
-								set_isOpen(false);
+								setIsOpen(false);
 							}}
 						/>
 					) : null}
@@ -106,12 +106,12 @@ export const Dropdown = ({
 							if (onChange) {
 								onChange(option);
 							}
-							set_isOpen(false);
+							setIsOpen(false);
 						}}
 						disabled={isDisabled}
 					>
 						<ComboboxButton
-							onClick={(): void => set_isOpen((state: boolean): boolean => !state)}
+							onClick={(): void => setIsOpen((state: boolean): boolean => !state)}
 							className={cl(
 								'flex h-10 w-full items-center justify-between p-2 text-base md:px-3',
 								isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0 text-neutral-900'
@@ -142,8 +142,8 @@ export const Dropdown = ({
 										displayValue={(option?: TDropdownOption): string => option?.label ?? '-'}
 										spellCheck={false}
 										onChange={(event): void => {
-											set_isOpen(true);
-											set_search(event.target.value);
+											setIsOpen(true);
+											setSearch(event.target.value);
 										}}
 									/>
 								</p>
@@ -165,8 +165,8 @@ export const Dropdown = ({
 							leaveFrom={'transform scale-100 opacity-100'}
 							leaveTo={'transform scale-95 opacity-0'}
 							afterLeave={(): void => {
-								set_isOpen(false);
-								set_search('');
+								setIsOpen(false);
+								setSearch('');
 							}}
 						>
 							<ComboboxOptions className={'yearn--dropdown-menu z-50'}>

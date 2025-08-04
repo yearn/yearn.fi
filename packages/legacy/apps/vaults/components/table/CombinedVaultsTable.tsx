@@ -64,10 +64,10 @@ function mapToCombinedVaultList(
 
 function CombinedVaultsTable(): ReactElement {
 	const {isLoadingVaultList} = useYearn();
-	const [page, set_page] = useState(0);
-	const [activeFilter, set_activeFilter] = useState(TFilter.Popular);
-	const [hasUserSelectedSort, set_hasUserSelectedSort] = useState(false);
-	const [selectedVersion, set_selectedVersion] = useState<string>('All Versions');
+	const [page, setPage] = useState(0);
+	const [activeFilter, setActiveFilter] = useState(TFilter.Popular);
+	const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
+	const [selectedVersion, setSelectedVersion] = useState<string>('All Versions');
 
 	// v2
 	const {types: typesV2} = useQueryArguments({
@@ -169,20 +169,20 @@ function CombinedVaultsTable(): ReactElement {
 	useEffect(() => {
 		const totalPages = Math.ceil(totalVaults / VAULT_PAGE_SIZE);
 		if (page >= totalPages && totalPages > 0) {
-			set_page(0);
+			setPage(0);
 		}
 	}, [totalVaults, page]);
 
 	const handleFilterClick = (filter: TFilter): void => {
-		set_activeFilter(filter);
-		set_page(0);
-		set_hasUserSelectedSort(false);
+		setActiveFilter(filter);
+		setPage(0);
+		setHasUserSelectedSort(false);
 	};
 
 	const handleVersionChange = (version: string): void => {
-		set_selectedVersion(version);
-		set_page(0);
-		set_hasUserSelectedSort(false);
+		setSelectedVersion(version);
+		setPage(0);
+		setHasUserSelectedSort(false);
 	};
 
 	return (
@@ -244,7 +244,7 @@ function CombinedVaultsTable(): ReactElement {
 									: sortDirection
 						}
 						onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-							set_hasUserSelectedSort(true);
+							setHasUserSelectedSort(true);
 							if (newSortDirection === '') {
 								onChangeSortBy('tvl');
 								onChangeSortDirection('desc');
@@ -286,7 +286,7 @@ function CombinedVaultsTable(): ReactElement {
 									: sortDirection
 						}
 						onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-							set_hasUserSelectedSort(true);
+							setHasUserSelectedSort(true);
 							if (newSortDirection === '') {
 								onChangeSortBy('tvl');
 								onChangeSortDirection('desc');
@@ -319,7 +319,7 @@ function CombinedVaultsTable(): ReactElement {
 									pageCount={totalVaults / VAULT_PAGE_SIZE}
 									numberOfItems={totalVaults}
 									currentPage={page}
-									onPageChange={(newPage): void => set_page(newPage.selected)}
+									onPageChange={(newPage): void => setPage(newPage.selected)}
 								/>
 							</div>
 						</div>

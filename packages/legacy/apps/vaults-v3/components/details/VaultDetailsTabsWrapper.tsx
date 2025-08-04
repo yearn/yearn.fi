@@ -27,7 +27,7 @@ type TTabs = {
 	hasStrategies: boolean;
 	hasRisk: boolean;
 	selectedAboutTabIndex: number;
-	set_selectedAboutTabIndex: (arg0: number) => void;
+	setSelectedAboutTabIndex: (arg0: number) => void;
 };
 
 type TExplorerLinkProps = {
@@ -35,7 +35,7 @@ type TExplorerLinkProps = {
 	currentVaultAddress: string;
 };
 
-function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
+function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutTabIndex}: TTabs): ReactElement {
 	const router = useRouter();
 
 	const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => {
@@ -54,9 +54,9 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutT
 	useEffect((): void => {
 		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab);
 		if (tab?.value) {
-			set_selectedAboutTabIndex(tab?.value);
+			setSelectedAboutTabIndex(tab?.value);
 		}
-	}, [router.query.tab, set_selectedAboutTabIndex, tabs]);
+	}, [router.query.tab, setSelectedAboutTabIndex, tabs]);
 
 	return (
 		<>
@@ -78,7 +78,7 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutT
 										shallow: true
 									}
 								);
-								set_selectedAboutTabIndex(tab.value);
+								setSelectedAboutTabIndex(tab.value);
 							}}
 						>
 							<p
@@ -98,7 +98,7 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutT
 				)}
 			</nav>
 			<div className={'relative z-50'}>
-				<Listbox value={selectedAboutTabIndex} onChange={(value): void => set_selectedAboutTabIndex(value)}>
+				<Listbox value={selectedAboutTabIndex} onChange={(value): void => setSelectedAboutTabIndex(value)}>
 					{({open}): ReactElement => (
 						<>
 							<ListboxButton
@@ -205,7 +205,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 }
 
 export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
+	const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0);
 	const hasStrategies = Number(currentVault.strategies?.length || 0) > 0;
 
 	return (
@@ -215,7 +215,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					hasStrategies={hasStrategies}
 					hasRisk={true}
 					selectedAboutTabIndex={selectedAboutTabIndex}
-					set_selectedAboutTabIndex={set_selectedAboutTabIndex}
+					setSelectedAboutTabIndex={setSelectedAboutTabIndex}
 				/>
 
 				<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>

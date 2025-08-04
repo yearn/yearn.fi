@@ -76,7 +76,7 @@ function Logo({currentHost}: {currentHost: string; isVaultPage: boolean}): React
 }
 
 export function LogoPopover(): ReactElement {
-	const [isShowing, set_isShowing] = useState(false);
+	const [isShowing, setIsShowing] = useState(false);
 	const isMounted = useIsMounted();
 	const pathname = usePathname();
 	useEffect(() => {
@@ -87,7 +87,7 @@ export function LogoPopover(): ReactElement {
 	}, []);
 	const isV3 = isMounted() && pathname?.includes('/v3');
 
-	const [isShowingMore, set_isShowingMore] = useState(false);
+	const [isShowingMore, setIsShowingMore] = useState(false);
 
 	const currentHost = useMemo(() => {
 		if (typeof window === 'undefined') {
@@ -111,16 +111,16 @@ export function LogoPopover(): ReactElement {
 	useEffect(() => {
 		if (!isShowing) {
 			setTimeout(() => {
-				set_isShowingMore(false);
+				setIsShowingMore(false);
 			}, 500);
 		}
 	}, [isShowing]);
 
 	return (
-		<Popover onMouseEnter={(): void => set_isShowing(true)} onMouseLeave={(): void => set_isShowing(false)}>
+		<Popover onMouseEnter={(): void => setIsShowing(true)} onMouseLeave={(): void => setIsShowing(false)}>
 			<div
-				onClick={(): void => set_isShowing(false)}
-				onMouseEnter={(): void => set_isShowing(false)}
+				onClick={(): void => setIsShowing(false)}
+				onMouseEnter={(): void => setIsShowing(false)}
 				className={cl(
 					'fixed inset-0 bg-black backdrop-blur-sm transition-opacity',
 					!isShowing ? 'opacity-0 pointer-events-none' : 'opacity-0 pointer-events-auto'
@@ -165,10 +165,10 @@ export function LogoPopover(): ReactElement {
 												prefetch={false}
 												key={name}
 												href={href}
-												onClick={(): void => set_isShowing(false)}
+												onClick={(): void => setIsShowing(false)}
 											>
 												<div
-													onClick={(): void => set_isShowing(false)}
+													onClick={(): void => setIsShowing(false)}
 													className={cl(
 														'flex cursor-pointer flex-col items-center justify-center transition-colors p-4 rounded-sm',
 														isV3
@@ -205,10 +205,10 @@ export function LogoPopover(): ReactElement {
 													prefetch={false}
 													key={name}
 													href={href}
-													onClick={(): void => set_isShowing(false)}
+													onClick={(): void => setIsShowing(false)}
 												>
 													<div
-														onClick={(): void => set_isShowing(false)}
+														onClick={(): void => setIsShowing(false)}
 														className={cl(
 															'flex cursor-pointer flex-col items-center justify-center transition-colors p-4 rounded-sm',
 															isV3
@@ -238,7 +238,7 @@ export function LogoPopover(): ReactElement {
 										})}
 									{!isShowingMore && (
 										<button
-											onClick={(): void => set_isShowingMore(true)}
+											onClick={(): void => setIsShowingMore(true)}
 											className={cl(
 												'flex cursor-pointer text-xs flex-col items-center justify-center transition-colors p-4 rounded-sm',
 												isV3

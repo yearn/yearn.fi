@@ -7,12 +7,12 @@ import {useState} from 'react';
 
 function ImageWithFallback(props: ImageProps & {altSrc?: string}): ReactElement {
 	const {alt, src, altSrc, className, ...rest} = props;
-	const [imageSrc, set_imageSrc] = useState(altSrc ? src : `${src}?fallback=true`);
-	const [imageStyle, set_imageStyle] = useState<CSSProperties>({});
+	const [imageSrc, setImageSrc] = useState(altSrc ? src : `${src}?fallback=true`);
+	const [imageStyle, setImageStyle] = useState<CSSProperties>({});
 
 	useUpdateEffect((): void => {
-		set_imageSrc(altSrc ? src : `${src}?fallback=true`);
-		set_imageStyle({});
+		setImageSrc(altSrc ? src : `${src}?fallback=true`);
+		setImageStyle({});
 	}, [src]);
 
 	// Check if className contains size classes that should override width/height
@@ -38,11 +38,11 @@ function ImageWithFallback(props: ImageProps & {altSrc?: string}): ReactElement 
 			onError={(): void => {
 				if (altSrc && imageSrc !== `${altSrc}?fallback=true`) {
 					console.warn('using placeholder');
-					set_imageSrc(`${altSrc}?fallback=true`);
+					setImageSrc(`${altSrc}?fallback=true`);
 					return;
 				}
-				set_imageSrc('/placeholder.png');
-				set_imageStyle({filter: 'opacity(0.2)'});
+				setImageSrc('/placeholder.png');
+				setImageStyle({filter: 'opacity(0.2)'});
 			}}
 			{...rest}
 		/>

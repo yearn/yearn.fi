@@ -6,10 +6,10 @@ function SortItem({isActive, title}: {isActive: boolean; title: string}): ReactE
 }
 
 export function SortingBar(): ReactElement {
-	const [isOpen, set_isOpen] = useState(false);
+	const [isOpen, setIsOpen] = useState(false);
 	return (
 		<>
-			<button onClick={() => set_isOpen(prev => !prev)} className={'relative flex items-center'}>
+			<button onClick={() => setIsOpen(prev => !prev)} className={'relative flex items-center'}>
 				<p className={'mr-2 text-xs text-neutral-900'}>{'Sort by Popularity'}</p>
 				<IconChevron className={`size-6 text-neutral-900 ${isOpen && 'rotate-180'}`} />
 			</button>

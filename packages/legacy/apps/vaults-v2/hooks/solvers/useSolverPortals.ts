@@ -112,7 +112,7 @@ async function getQuote(
  *************************************************************************************************/
 export function useSolverPortals(): TSolverContext {
 	const {provider} = useWeb3();
-	const {set_shouldOpenCurtain} = useNotifications();
+	const {setShouldOpenCurtain} = useNotifications();
 	const latestQuote = useRef<TPortalsEstimate | undefined>(undefined);
 	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -439,7 +439,7 @@ export function useSolverPortals(): TSolverContext {
 						cta: {
 							label: 'View',
 							onClick: () => {
-								set_shouldOpenCurtain(true);
+								setShouldOpenCurtain(true);
 							}
 						}
 					});
@@ -458,7 +458,7 @@ export function useSolverPortals(): TSolverContext {
 				return;
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -486,7 +486,7 @@ export function useSolverPortals(): TSolverContext {
 						cta: {
 							label: 'View',
 							onClick: () => {
-								set_shouldOpenCurtain(true);
+								setShouldOpenCurtain(true);
 							}
 						}
 					});
@@ -499,7 +499,7 @@ export function useSolverPortals(): TSolverContext {
 						cta: {
 							label: 'View',
 							onClick: () => {
-								set_shouldOpenCurtain(true);
+								setShouldOpenCurtain(true);
 							}
 						}
 					});
@@ -513,7 +513,7 @@ export function useSolverPortals(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -522,7 +522,7 @@ export function useSolverPortals(): TSolverContext {
 				setTimeout((): void => txStatusSetter(defaultTxStatus), 3000);
 			}
 		},
-		[execute, provider, set_shouldOpenCurtain]
+		[execute, provider, setShouldOpenCurtain]
 	);
 
 	return useMemo(

@@ -10,13 +10,13 @@ export function EarnCard(props: {
 	hoverLogoSrc: string;
 	href: string;
 }): ReactElement {
-	const [isHovering, set_isHovering] = useState(false);
+	const [isHovering, setIsHovering] = useState(false);
 
 	return (
 		<Link
 			href={props.href}
-			onMouseEnter={() => set_isHovering(true)}
-			onMouseLeave={() => set_isHovering(false)}
+			onMouseEnter={() => setIsHovering(true)}
+			onMouseLeave={() => setIsHovering(false)}
 			style={{
 				background: isHovering
 					? '#0657F9'

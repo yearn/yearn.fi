@@ -26,7 +26,7 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 
 export function LandingAppHeader(): ReactElement {
 	const {pathname} = useRouter();
-	const [isMenuOpen, set_isMenuOpen] = useState<boolean>(false);
+	const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
 	const menu = useMemo((): TMenu[] => {
 		const HOME_MENU = {path: '/apps', label: 'Apps'};
@@ -63,7 +63,7 @@ export function LandingAppHeader(): ReactElement {
 					<div className={'flex md:hidden'}>
 						<button
 							className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
-							onClick={(): void => set_isMenuOpen(!isMenuOpen)}
+							onClick={(): void => setIsMenuOpen(!isMenuOpen)}
 						>
 							<span className={'sr-only'}>{'Open menu'}</span>
 							<IconBurgerPlain />
@@ -75,13 +75,13 @@ export function LandingAppHeader(): ReactElement {
 				shouldUseWallets={true}
 				shouldUseNetworks={true}
 				isOpen={isMenuOpen}
-				onClose={(): void => set_isMenuOpen(false)}
+				onClose={(): void => setIsMenuOpen(false)}
 				supportedNetworks={[]}
 			>
 				{menu?.map(
 					(option): ReactElement => (
 						<Link key={option.path} href={option.path}>
-							<div className={'mobile-nav-item'} onClick={(): void => set_isMenuOpen(false)}>
+							<div className={'mobile-nav-item'} onClick={(): void => setIsMenuOpen(false)}>
 								<p className={'font-bold'}>{option.label}</p>
 							</div>
 						</Link>

@@ -38,13 +38,13 @@ import {readContracts} from 'wagmi/actions';
 function MobileTabButtons(props: {
 	currentTab: TTabsOptions;
 	selectedTab: TTabsOptions;
-	set_currentTab: (tab: TTabsOptions) => void;
+	setCurrentTab: (tab: TTabsOptions) => void;
 	onSwitchSelectedOptions: (flow: Flow) => void;
 }): ReactElement {
 	return (
 		<button
 			onClick={() => {
-				props.set_currentTab(props.currentTab);
+				props.setCurrentTab(props.currentTab);
 				props.onSwitchSelectedOptions(props.currentTab.flowAction);
 			}}
 			className={cl(
@@ -66,14 +66,14 @@ function MobileTabButtons(props: {
  *************************************************************************************************/
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const router = useRouter();
-	const {isAutoStakingEnabled, set_isAutoStakingEnabled} = useYearn();
+	const {isAutoStakingEnabled, setIsAutoStakingEnabled} = useYearn();
 	const {address} = useWeb3();
 	const {vaultData, updateVaultData} = useVaultStakingData({currentVault});
 	const {onSwitchSelectedOptions, isDepositing, actionParams, hasVeYFIBalance, veYFIBalance} = useActionFlow();
-	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
-	const [unstakedBalance, set_unstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
-	const [hasStakingRewardsLive, set_hasStakingRewardsLive] = useState(false);
-	const [currentTab, set_currentTab] = useState<TTabsOptions>(
+	const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
+	const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
+	const [hasStakingRewardsLive, setHasStakingRewardsLive] = useState(false);
+	const [currentTab, setCurrentTab] = useState<TTabsOptions>(
 		getCurrentTab({
 			isDepositing,
 			hasMigration: currentVault?.migration?.available,
@@ -131,8 +131,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				}
 			]
 		});
-		set_unstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals));
-		set_hasStakingRewardsLive(decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000));
+		setUnstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals));
+		setHasStakingRewardsLive(decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000));
 	}, [currentVault, address]);
 
 	/**********************************************************************************************
@@ -153,7 +153,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	useEffect((): void => {
 		const tab = tabs.find((tab): boolean => tab.slug === router.query.action);
 		if (tab?.value) {
-			set_currentTab(tab);
+			setCurrentTab(tab);
 		}
 	}, [router.query.action]);
 
@@ -172,21 +172,21 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			if (hasStakingRewards) {
 				tabsToDisplay.push(tabs[3]);
 			}
-			set_possibleTabs(tabsToDisplay);
-			set_currentTab(tabs[2]);
+			setPossibleTabs(tabsToDisplay);
+			setCurrentTab(tabs[2]);
 			onSwitchSelectedOptions(Flow.Migrate);
 		} else if (currentVault?.info?.isRetired && actionParams.isReady) {
 			const tabsToDisplay = [tabs[1]];
 			if (hasStakingRewards) {
 				tabsToDisplay.push(tabs[3]);
 			}
-			set_possibleTabs(tabsToDisplay);
-			set_currentTab(tabs[1]);
+			setPossibleTabs(tabsToDisplay);
+			setCurrentTab(tabs[1]);
 			onSwitchSelectedOptions(Flow.Withdraw);
 		} else if (hasStakingRewards) {
-			set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
+			setPossibleTabs([tabs[0], tabs[1], tabs[3]]);
 		} else {
-			set_possibleTabs([tabs[0], tabs[1]]);
+			setPossibleTabs([tabs[0], tabs[1]]);
 		}
 	}, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards]);
 
@@ -203,11 +203,11 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			el => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
 		);
 		if (!hasStakingRewards && hasStakingRewardsEndedOverAWeekAgo) {
-			set_isAutoStakingEnabled(false);
+			setIsAutoStakingEnabled(false);
 			return;
 		}
-		set_isAutoStakingEnabled(true);
-	}, [currentVault.staking.rewards, hasStakingRewards, set_isAutoStakingEnabled]);
+		setIsAutoStakingEnabled(true);
+	}, [currentVault.staking.rewards, hasStakingRewards, setIsAutoStakingEnabled]);
 
 	const isSonneRetiredVault =
 		toAddress(currentVault.address) === toAddress('0x5b977577eb8a480f63e11fc615d6753adb8652ae') ||
@@ -311,7 +311,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										selectedTab={currentTab}
 										unstakedBalance={unstakedBalance}
 										onSwitchTab={newTab => {
-											set_currentTab(newTab);
+											setCurrentTab(newTab);
 											onSwitchSelectedOptions(newTab.flowAction);
 										}}
 									/>
@@ -323,13 +323,13 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							<MobileTabButtons
 								currentTab={tabs[0]}
 								selectedTab={currentTab}
-								set_currentTab={set_currentTab}
+								setCurrentTab={setCurrentTab}
 								onSwitchSelectedOptions={onSwitchSelectedOptions}
 							/>
 							<MobileTabButtons
 								currentTab={tabs[1]}
 								selectedTab={currentTab}
-								set_currentTab={set_currentTab}
+								setCurrentTab={setCurrentTab}
 								onSwitchSelectedOptions={onSwitchSelectedOptions}
 							/>
 						</div>
@@ -385,7 +385,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										</div>
 										<Switch
 											isEnabled={isAutoStakingEnabled}
-											onSwitch={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}
+											onSwitch={(): void => setIsAutoStakingEnabled(!isAutoStakingEnabled)}
 										/>
 									</div>
 								) : (

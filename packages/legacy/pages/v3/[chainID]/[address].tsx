@@ -24,8 +24,8 @@ function Index(): ReactElement | null {
 	const router = useRouter();
 	const {onRefresh} = useWallet();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
-	const [_currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
-	const [isInit, set_isInit] = useState(false);
+	const [_currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined);
+	const [isInit, setIsInit] = useState(false);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
 		endpoint: router.query.address
 			? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
@@ -38,13 +38,13 @@ function Index(): ReactElement | null {
 
 	// TODO: remove this workaround when possible
 	// <WORKAROUND>
-	const [overrideVault, set_overrideVault] = useState<TYDaemonVault | undefined>(undefined);
+	const [overrideVault, setOverrideVault] = useState<TYDaemonVault | undefined>(undefined);
 	const currentVault = overrideVault ?? _currentVault;
 
 	useEffect(() => {
 		if (!overrideVault) {
 			fetchYBoldVault(yDaemonBaseUri, _currentVault).then(_vault => {
-				set_overrideVault(_vault);
+				setOverrideVault(_vault);
 			});
 		}
 	}, [yDaemonBaseUri, overrideVault, _currentVault]);
@@ -53,8 +53,8 @@ function Index(): ReactElement | null {
 	useEffect((): void => {
 		if (vault && !currentVault) {
 			console.log('set currentVault');
-			set_currentVault(vault);
-			set_isInit(true);
+			setCurrentVault(vault);
+			setIsInit(true);
 		}
 	}, [currentVault, vault]);
 

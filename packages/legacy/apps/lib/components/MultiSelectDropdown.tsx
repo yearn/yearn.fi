@@ -149,8 +149,8 @@ export function MultiSelectDropdown({
 	customRender,
 	...props
 }: TMultiSelectProps): ReactElement {
-	const [isOpen, set_isOpen] = useThrottledState(false, 400);
-	const [query, set_query] = useState('');
+	const [isOpen, setIsOpen] = useThrottledState(false, 400);
+	const [query, setQuery] = useState('');
 	const areAllSelected = useMemo((): boolean => options.every(({isSelected}): boolean => isSelected), [options]);
 	const componentRef = useRef<HTMLDivElement | null>(null);
 
@@ -159,7 +159,7 @@ export function MultiSelectDropdown({
 	}, [options]);
 
 	useClickOutside(componentRef as RefObject<HTMLElement>, (): void => {
-		set_isOpen(false);
+		setIsOpen(false);
 	});
 
 	const filteredOptions = useMemo(
@@ -225,13 +225,13 @@ export function MultiSelectDropdown({
 				{customRender ? (
 					<ComboboxButton
 						className={'flex items-center justify-between'}
-						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
+						onClick={(): void => setIsOpen((o: boolean): boolean => !o)}
 					>
 						{customRender}
 					</ComboboxButton>
 				) : (
 					<ComboboxButton
-						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
+						onClick={(): void => setIsOpen((o: boolean): boolean => !o)}
 						className={cl(
 							props.buttonClassName,
 							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
@@ -247,7 +247,7 @@ export function MultiSelectDropdown({
 							displayValue={getDisplayName}
 							placeholder={placeholder}
 							spellCheck={false}
-							onChange={(event): void => set_query(event.target.value)}
+							onChange={(event): void => setQuery(event.target.value)}
 						/>
 						<IconChevron
 							aria-hidden={'true'}
@@ -264,7 +264,7 @@ export function MultiSelectDropdown({
 					leave={'transition duration-75 ease-out'}
 					leaveFrom={'transform scale-100 opacity-100'}
 					leaveTo={'transform scale-95 opacity-0'}
-					afterLeave={(): void => set_query('')}
+					afterLeave={(): void => setQuery('')}
 				>
 					<ComboboxOptions
 						className={cl(

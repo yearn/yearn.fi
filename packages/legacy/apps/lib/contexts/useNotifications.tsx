@@ -12,19 +12,19 @@ const defaultProps: TNotificationsContext = {
 	notificationStatus: null,
 	isLoading: true,
 	error: null,
-	set_notificationStatus: (): void => undefined,
+	setNotificationStatus: (): void => undefined,
 	deleteByID: async (): Promise<void> => undefined,
 	updateEntry: async (): Promise<void> => undefined,
 	addNotification: async (): Promise<number> => 0,
-	set_shouldOpenCurtain: (): void => undefined
+	setShouldOpenCurtain: (): void => undefined
 };
 
 const NotificationsContext = createContext<TNotificationsContext>(defaultProps);
 export const WithNotifications = ({children}: {children: React.ReactElement}): React.ReactElement => {
-	const [cachedEntries, set_cachedEntries] = useState<TNotification[]>([]);
-	const [entryNonce, set_entryNonce] = useState<number>(0);
-	const [isLoading, set_isLoading] = useState<boolean>(true);
-	const [error, set_error] = useState<string | null>(null);
+	const [cachedEntries, setCachedEntries] = useState<TNotification[]>([]);
+	const [entryNonce, setEntryNonce] = useState<number>(0);
+	const [isLoading, setIsLoading] = useState<boolean>(true);
+	const [error, setError] = useState<string | null>(null);
 
 	const router = useRouter();
 	const isV3 = router.pathname.includes('/v3');
@@ -32,9 +32,9 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 	/**************************************************************************
 	 * State that is used to store latest added/updated notification status
 	 *************************************************************************/
-	const [notificationStatus, set_notificationStatus] = useState<TNotificationStatus | null>(null);
+	const [notificationStatus, setNotificationStatus] = useState<TNotificationStatus | null>(null);
 
-	const [shouldOpenCurtain, set_shouldOpenCurtain] = useState(false);
+	const [shouldOpenCurtain, setShouldOpenCurtain] = useState(false);
 	const {add, getAll, update, deleteByID, getByID} = useIndexedDBStore<TNotification>('notifications');
 
 	/************************************************************************************************
@@ -47,17 +47,17 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 	 ************************************************************************************************/
 	useAsyncTrigger(async (): Promise<void> => {
 		entryNonce;
-		set_isLoading(true);
-		set_error(null);
+		setIsLoading(true);
+		setError(null);
 		try {
 			const entriesFromDB = await getAll();
-			set_cachedEntries(entriesFromDB || []);
+			setCachedEntries(entriesFromDB || []);
 		} catch (error) {
 			console.error('Failed to fetch notifications from IndexedDB:', error);
-			set_cachedEntries([]);
-			set_error('Failed to load notifications');
+			setCachedEntries([]);
+			setError('Failed to load notifications');
 		} finally {
-			set_isLoading(false);
+			setIsLoading(false);
 		}
 	}, [getAll, entryNonce]);
 
@@ -81,8 +81,8 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 
 				if (notification) {
 					await update({...notification, ...entry});
-					set_entryNonce(nonce => nonce + 1);
-					set_notificationStatus(entry?.status || null);
+					setEntryNonce(nonce => nonce + 1);
+					setNotificationStatus(entry?.status || null);
 				} else {
 					console.warn(`Notification with id ${id} not found`);
 				}
@@ -97,8 +97,8 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 		async (notification: TNotification): Promise<number> => {
 			try {
 				const id = await add(notification);
-				set_entryNonce(nonce => nonce + 1);
-				set_notificationStatus(notification.status);
+				setEntryNonce(nonce => nonce + 1);
+				setNotificationStatus(notification.status);
 				return id;
 			} catch (error) {
 				console.error('Failed to add notification:', error);
@@ -113,7 +113,7 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 		async (id: number): Promise<void> => {
 			try {
 				// Optimistically update the local state first
-				set_cachedEntries(currentEntries => currentEntries.filter(entry => entry.id !== id));
+				setCachedEntries(currentEntries => currentEntries.filter(entry => entry.id !== id));
 
 				// Then delete from IndexedDB
 				await deleteByID(id);
@@ -121,10 +121,10 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 				// No need to increment entryNonce since we already updated the state
 			} catch (error) {
 				console.error('Failed to delete notification:', error);
-				set_error('Failed to delete notification');
+				setError('Failed to delete notification');
 
 				// Revert the optimistic update by refetching from DB
-				set_entryNonce(nonce => nonce + 1);
+				setEntryNonce(nonce => nonce + 1);
 			}
 		},
 		[deleteByID]
@@ -143,8 +143,8 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 			updateEntry,
 			addNotification,
 			notificationStatus,
-			set_notificationStatus,
-			set_shouldOpenCurtain
+			setNotificationStatus,
+			setShouldOpenCurtain
 		}),
 		[
 			shouldOpenCurtain,
@@ -163,7 +163,7 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 			{children}
 			<NotificationsCurtain
 				variant={isV3 ? 'v3' : 'v2'}
-				set_shouldOpenCurtain={set_shouldOpenCurtain}
+				setShouldOpenCurtain={setShouldOpenCurtain}
 				isOpen={shouldOpenCurtain}
 			/>
 		</NotificationsContext.Provider>

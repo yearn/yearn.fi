@@ -27,10 +27,10 @@ export const SearchContextApp = ({
 }: {
 	children: TOptionalRenderProps<TSearchContext, ReactElement>;
 }): ReactElement => {
-	const [configuration, set_configuration] = useState(defaultProps.configuration);
+	const [configuration, setConfiguration] = useState(defaultProps.configuration);
 
 	const contextValue = useDeepCompareMemo(
-		(): TSearchContext => ({configuration, dispatch: set_configuration}),
+		(): TSearchContext => ({configuration, dispatch: setConfiguration}),
 		[configuration]
 	);
 

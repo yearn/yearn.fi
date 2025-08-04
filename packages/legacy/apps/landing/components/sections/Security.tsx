@@ -37,8 +37,8 @@ const SecurityCard: FC<{
 }> = ({type}) => {
 	const {title, description, href, bgColor} = Cards[type];
 	const cardRef = useRef<HTMLDivElement>(null);
-	const [mousePosition, set_mousePosition] = useState({x: 0, y: 0});
-	const [isHovered, set_isHovered] = useState(false);
+	const [mousePosition, setMousePosition] = useState({x: 0, y: 0});
+	const [isHovered, setIsHovered] = useState(false);
 
 	const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
 		if (!cardRef.current) {
@@ -49,14 +49,14 @@ const SecurityCard: FC<{
 		const x = e.clientX - rect.left;
 		const y = e.clientY - rect.top;
 
-		set_mousePosition({x, y});
+		setMousePosition({x, y});
 	};
 
-	const handleMouseEnter = (): void => set_isHovered(true);
+	const handleMouseEnter = (): void => setIsHovered(true);
 
 	const handleMouseLeave = (): void => {
-		set_isHovered(false);
-		set_mousePosition({x: 0, y: 0});
+		setIsHovered(false);
+		setMousePosition({x: 0, y: 0});
 	};
 
 	return (

@@ -280,12 +280,12 @@ export async function getBalances(
  **************************************************************************/
 export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const {address: userAddress} = useWeb3();
-	const [status, set_status] = useState<TDefaultStatus>(defaultStatus);
-	const [someStatus, set_someStatus] = useState<TDefaultStatus>(defaultStatus);
-	const [updateStatus, set_updateStatus] = useState<TDefaultStatus>(defaultStatus);
-	const [error, set_error] = useState<Error | undefined>(undefined);
-	const [balances, set_balances] = useState<TChainTokens>({});
-	const [chainStatus, set_chainStatus] = useState<TChainStatus>(defaultChainStatus);
+	const [status, setStatus] = useState<TDefaultStatus>(defaultStatus);
+	const [someStatus, setSomeStatus] = useState<TDefaultStatus>(defaultStatus);
+	const [updateStatus, setUpdateStatus] = useState<TDefaultStatus>(defaultStatus);
+	const [error, setError] = useState<Error | undefined>(undefined);
+	const [balances, setBalances] = useState<TChainTokens>({});
+	const [chainStatus, setChainStatus] = useState<TChainStatus>(defaultChainStatus);
 
 	const data = useRef<TDataRef>({nonce: 0, address: toAddress(), balances: {}});
 	const stringifiedTokens = useMemo((): string => serialize(props?.tokens || []), [props?.tokens]);
@@ -297,7 +297,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	useEffect(() => {
 		if (toAddress(userAddress) !== toAddress(currentlyConnectedAddress.current)) {
 			currentlyConnectedAddress.current = toAddress(userAddress);
-			set_balances({});
+			setBalances({});
 			pendingUpdates.current = {};
 			data.current = {
 				address: toAddress(userAddress),
@@ -311,8 +311,8 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				resetChainStatus.chainSuccessStatus[network.id] = false;
 				resetChainStatus.chainErrorStatus[network.id] = false;
 			}
-			set_status({...defaultStatus, isLoading: true});
-			set_chainStatus(resetChainStatus);
+			setStatus({...defaultStatus, isLoading: true});
+			setChainStatus(resetChainStatus);
 		}
 	}, [userAddress]);
 
@@ -516,10 +516,10 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			if (isZero(tokens.length)) {
 				return {};
 			}
-			set_updateStatus({...defaultStatus, isLoading: true});
+			setUpdateStatus({...defaultStatus, isLoading: true});
 
 			const updated = await processBatchedBalances(tokens, userAddress, shouldForceFetch || true, {
-				setError: set_error,
+				setError: setError,
 				updateBalancesCall,
 				data,
 				pendingUpdates
@@ -532,7 +532,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				pendingUpdates.current[Number(chainID)] = {...pendingUpdates.current[Number(chainID)], ...chainData};
 			}
 
-			set_balances(prev => {
+			setBalances(prev => {
 				const newBalances = {...prev};
 				for (const [chainID, chainData] of Object.entries(updated)) {
 					if (!newBalances[Number(chainID)]) {
@@ -543,7 +543,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				return newBalances;
 			});
 
-			set_updateStatus({...defaultStatus, isSuccess: true});
+			setUpdateStatus({...defaultStatus, isSuccess: true});
 			return updated;
 		},
 		[stringifiedTokens, userAddress, processBatchedBalances, updateBalancesCall]
@@ -556,11 +556,11 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 **************************************************************************/
 	const onUpdateSome = useCallback(
 		async (tokenList: TUseBalancesTokens[], shouldForceFetch?: boolean): Promise<TChainTokens> => {
-			set_someStatus({...defaultStatus, isLoading: true});
+			setSomeStatus({...defaultStatus, isLoading: true});
 			const tokens = tokenList.filter(({address}: TUseBalancesTokens): boolean => !isZeroAddress(address));
 
 			const updated = await processBatchedBalances(tokens, userAddress, shouldForceFetch || true, {
-				setError: set_error,
+				setError: setError,
 				updateBalancesCall,
 				data,
 				pendingUpdates
@@ -573,7 +573,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				pendingUpdates.current[Number(chainID)] = {...pendingUpdates.current[Number(chainID)], ...chainData};
 			}
 
-			set_balances(prev => {
+			setBalances(prev => {
 				const newBalances = {...prev};
 				for (const [chainID, chainData] of Object.entries(updated)) {
 					if (!newBalances[Number(chainID)]) {
@@ -584,7 +584,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				return newBalances;
 			});
 
-			set_someStatus({...defaultStatus, isSuccess: true});
+			setSomeStatus({...defaultStatus, isSuccess: true});
 			return updated;
 		},
 		[userAddress, processBatchedBalances, updateBalancesCall]
@@ -594,7 +594,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** Everytime the stringifiedTokens change, we need to update the balances.
 	 **************************************************************************/
 	useAsyncTrigger(async (): Promise<void> => {
-		set_status({...defaultStatus, isLoading: true});
+		setStatus({...defaultStatus, isLoading: true});
 		pendingUpdates.current = {};
 		isAccumulatingUpdates.current = true;
 
@@ -609,8 +609,8 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		const tokens = (JSON.parse(stringifiedTokens) || []) as TUseBalancesTokens[];
 
 		await processBatchedBalances(tokens, userAddress, false, {
-			setError: set_error,
-			setChainStatus: set_chainStatus,
+			setError: setError,
+			setChainStatus: setChainStatus,
 			priorityChainID: props?.priorityChainID,
 			currentIdentifierRef: currentIdentifier,
 			identifier,
@@ -630,9 +630,9 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			if (Object.keys(pendingUpdates.current).length > 0) {
 				const finalUpdates = {...pendingUpdates.current};
 				pendingUpdates.current = {};
-				set_balances(finalUpdates);
+				setBalances(finalUpdates);
 			}
-			set_status({...defaultStatus, isSuccess: true});
+			setStatus({...defaultStatus, isSuccess: true});
 		}
 	}, [stringifiedTokens, userAddress, updateBalancesCall, props?.priorityChainID, processBatchedBalances]);
 

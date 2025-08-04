@@ -36,7 +36,7 @@ async function allowanceOfRouter(request: TInitSolverArgs, provider: Connector |
 export function useSolverV3Router(): TSolverContext {
 	const {provider} = useWeb3();
 	const {maxLoss} = useYearn();
-	const {set_shouldOpenCurtain} = useNotifications();
+	const {setShouldOpenCurtain} = useNotifications();
 	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
 	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -137,7 +137,7 @@ export function useSolverV3Router(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -150,7 +150,7 @@ export function useSolverV3Router(): TSolverContext {
 				onError?.(error as Error);
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	const onExecuteDeposit = useCallback(
@@ -179,7 +179,7 @@ export function useSolverV3Router(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -193,7 +193,7 @@ export function useSolverV3Router(): TSolverContext {
 			}
 			return;
 		},
-		[provider, maxLoss, set_shouldOpenCurtain]
+		[provider, maxLoss, setShouldOpenCurtain]
 	);
 
 	const onExecuteWithdraw = useCallback(async (): Promise<void> => {

@@ -17,7 +17,7 @@ import {maxUint256} from 'viem';
 
 export function useSolverOptimismBooster(): TSolverContext {
 	const {provider} = useWeb3();
-	const {set_shouldOpenCurtain} = useNotifications();
+	const {setShouldOpenCurtain} = useNotifications();
 	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
 	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -107,7 +107,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -122,7 +122,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 				}
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	/**********************************************************************************************
@@ -151,7 +151,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					}
 				});
@@ -166,7 +166,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 				}
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	return useMemo(

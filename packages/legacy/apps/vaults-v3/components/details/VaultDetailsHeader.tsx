@@ -435,7 +435,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 	const {getPrice} = useYearn();
 	const {data: blockNumber} = useBlockNumber({watch: true});
 	const {apr, tvl, decimals, symbol = 'token'} = currentVault;
-	const [vaultData, set_vaultData] = useState({
+	const [vaultData, setVaultData] = useState({
 		deposited: zeroNormalizedBN,
 		valueInToken: zeroNormalizedBN,
 		earnedAmount: zeroNormalizedBN,
@@ -672,7 +672,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 		const amountEarned = isZeroAddress(address) ? zeroNormalizedBN : toNormalizedBN(earned, rewardDecimals);
 		const earnedValue = amountEarned.normalized * priceOfRewardsToken.normalized;
 
-		set_vaultData({
+		setVaultData({
 			deposited: isZeroAddress(address) ? zeroNormalizedBN : toNormalizedBN(total, decimals),
 			valueInToken: toNormalizedBN((total * pps) / toBigInt(10 ** decimals), decimals),
 			rewardTokenSymbol: rewardSymbol,

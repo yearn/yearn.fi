@@ -104,7 +104,7 @@ function useSessionStorage<T>(key: string, initialValue: T): [T, TSetValue<T>] {
 
 	// State to store our value
 	// Pass initial state function to useState so logic is only executed once
-	const [storedValue, set_storedValue] = useState<T>(readValue);
+	const [storedValue, setStoredValue] = useState<T>(readValue);
 
 	// Return a wrapped version of useState's setter function that ...
 	// ... persists the new value to sessionStorage.
@@ -122,7 +122,7 @@ function useSessionStorage<T>(key: string, initialValue: T): [T, TSetValue<T>] {
 			window.sessionStorage.setItem(key, serialize(newValue));
 
 			// Save state
-			set_storedValue(newValue);
+			setStoredValue(newValue);
 
 			// We dispatch a custom event so every useSessionStorage hook are notified
 			window.dispatchEvent(new Event('session-storage'));
@@ -132,7 +132,7 @@ function useSessionStorage<T>(key: string, initialValue: T): [T, TSetValue<T>] {
 	});
 
 	useEffect((): void => {
-		set_storedValue(readValue());
+		setStoredValue(readValue());
 	}, [readValue]);
 
 	const handleStorageChange = useCallback(
@@ -140,7 +140,7 @@ function useSessionStorage<T>(key: string, initialValue: T): [T, TSetValue<T>] {
 			if ((event as StorageEvent)?.key && (event as StorageEvent).key !== key) {
 				return;
 			}
-			set_storedValue(readValue());
+			setStoredValue(readValue());
 		},
 		[key, readValue]
 	);

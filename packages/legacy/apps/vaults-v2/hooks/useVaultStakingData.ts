@@ -54,7 +54,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 	)?.staking;
 
 	const stakingType = props.currentVault.staking.source as 'OP Boost' | 'VeYFI' | 'Juiced' | 'V3 Staking' | 'yBOLD';
-	const [vaultData, set_vaultData] = useState<TStakingInfo>({
+	const [vaultData, setVaultData] = useState<TStakingInfo>({
 		address: isZeroAddress(props.currentVault.staking.address)
 			? props.currentVault.staking.address
 			: toAddress(foundVaultWithDisabledStaking),
@@ -426,7 +426,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 			stakingDecimals = decodeAsNumber(decimalsResult[1]);
 		}
 
-		set_vaultData({
+		setVaultData({
 			address: toAddress(stakingAddress),
 			stakingToken,
 			rewardsToken,

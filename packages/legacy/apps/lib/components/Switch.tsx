@@ -11,10 +11,10 @@ type TSwitch = {
 
 export function Switch(props: TSwitch): ReactElement {
 	const {isEnabled, onSwitch, isDisabled = false} = props;
-	const [isEnabledState, set_isEnabledState] = useState(isEnabled);
+	const [isEnabledState, setIsEnabledState] = useState(isEnabled);
 
 	function safeOnSwitch(): void {
-		onSwitch ? onSwitch() : set_isEnabledState(!isEnabledState);
+		onSwitch ? onSwitch() : setIsEnabledState(!isEnabledState);
 	}
 
 	const isChecked = onSwitch ? isEnabled : isEnabledState;

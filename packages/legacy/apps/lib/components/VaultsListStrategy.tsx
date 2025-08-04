@@ -42,7 +42,7 @@ export function VaultsListStrategy({
 	fees: TYDaemonVault['apr']['fees'];
 	isUnallocated?: boolean;
 }): ReactElement {
-	const [isExpanded, set_isExpanded] = useState(false);
+	const [isExpanded, setIsExpanded] = useState(false);
 
 	const isStrategy = !apr;
 
@@ -122,7 +122,7 @@ export function VaultsListStrategy({
 					'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 px-4 md:px-8 cursor-pointer justify-between',
 					variant === 'v3' ? '' : 'md:border-t border-[#606770]'
 				)}
-				onClick={() => set_isExpanded(!isExpanded)}
+				onClick={() => setIsExpanded(!isExpanded)}
 			>
 				<div className={cl('col-span-5 flex flex-row items-center gap-4 z-10')}>
 					<div className={'flex items-center justify-center'}>

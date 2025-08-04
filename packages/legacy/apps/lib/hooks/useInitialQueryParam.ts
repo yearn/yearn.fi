@@ -18,13 +18,13 @@ import {useEffect, useState} from 'react';
  ************************************************************************************************/
 export function useInitialQueryParam(key: string): string | null {
 	const router = useRouter();
-	const [value, set_value] = useState<string | null>(null);
+	const [value, setValue] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (typeof window !== 'undefined') {
 			const urlParams = new URLSearchParams(window.location.search);
 			const initialValue = urlParams.get(key);
-			set_value(initialValue);
+			setValue(initialValue);
 		}
 	}, [key]);
 
@@ -32,7 +32,7 @@ export function useInitialQueryParam(key: string): string | null {
 		if (router.isReady && !value) {
 			const queryValue = router.query[key] as string;
 			if (queryValue) {
-				set_value(queryValue);
+				setValue(queryValue);
 			}
 		}
 	}, [router.isReady, router.query, key, value]);

@@ -321,14 +321,14 @@ export function RewardsTab(props: {
 	const {handleApproveNotification, handleStakeNotification, handleUnstakeNotification, handleClaimNotification} =
 		useNotificationsActions();
 	const rewardTokenBalance = useYearnToken({address: vaultData.rewardsToken, chainID: props.currentVault.chainID});
-	const [approveStakeStatus, set_approveStakeStatus] = useState(defaultTxStatus);
-	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
-	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
-	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
-	const [unstakeAmount, set_unstakeAmount] = useState<string>(vaultData.stakedBalanceOf.display);
-	const [stakeAmount, set_stakeAmount] = useState<string>(vaultData.vaultBalanceOf.display);
-	const [isUnstakeAmountDirty, set_isUnstakeAmountDirty] = useState(false);
-	const [isStakeAmountDirty, set_isStakeAmountDirty] = useState(false);
+	const [approveStakeStatus, setApproveStakeStatus] = useState(defaultTxStatus);
+	const [stakeStatus, setStakeStatus] = useState(defaultTxStatus);
+	const [claimStatus, setClaimStatus] = useState(defaultTxStatus);
+	const [unstakeStatus, setUnstakeStatus] = useState(defaultTxStatus);
+	const [unstakeAmount, setUnstakeAmount] = useState<string>(vaultData.stakedBalanceOf.display);
+	const [stakeAmount, setStakeAmount] = useState<string>(vaultData.vaultBalanceOf.display);
+	const [isUnstakeAmountDirty, setIsUnstakeAmountDirty] = useState(false);
+	const [isStakeAmountDirty, setIsStakeAmountDirty] = useState(false);
 
 	const isUnstakingMax =
 		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) === vaultData.stakedBalanceOf.raw;
@@ -481,7 +481,7 @@ export function RewardsTab(props: {
 			contractAddress: props.currentVault.address,
 			spenderAddress: toAddress(vaultData?.address),
 			amount: vaultData.vaultBalanceOf.raw,
-			statusHandler: set_approveStakeStatus
+			statusHandler: setApproveStakeStatus
 		});
 		if (result.isSuccessful) {
 			await handleApproveNotification({
@@ -521,7 +521,7 @@ export function RewardsTab(props: {
 				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
 				amount: vaultData.vaultBalanceOf.raw,
-				statusHandler: set_stakeStatus
+				statusHandler: setStakeStatus
 			});
 			if (result.isSuccessful) {
 				await handleStakeNotification({
@@ -547,7 +547,7 @@ export function RewardsTab(props: {
 				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
 				amount: fromNormalized(stakeAmount, vaultData.stakingDecimals || 18),
-				statusHandler: set_stakeStatus
+				statusHandler: setStakeStatus
 			});
 			if (result.isSuccessful) {
 				await handleStakeNotification({
@@ -573,7 +573,7 @@ export function RewardsTab(props: {
 				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
 				amount: vaultData.vaultBalanceOf.raw,
-				statusHandler: set_stakeStatus
+				statusHandler: setStakeStatus
 			});
 			if (result.isSuccessful) {
 				await handleStakeNotification({
@@ -628,7 +628,7 @@ export function RewardsTab(props: {
 				contractAddress: toAddress(vaultData?.address),
 				amount: fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
 				willClaim: isUnstakingMax,
-				statusHandler: set_unstakeStatus
+				statusHandler: setUnstakeStatus
 			});
 			if (result.isSuccessful) {
 				await handleUnstakeNotification({
@@ -654,7 +654,7 @@ export function RewardsTab(props: {
 				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
 				amount: fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
-				statusHandler: set_unstakeStatus
+				statusHandler: setUnstakeStatus
 			});
 			if (result.isSuccessful) {
 				await handleUnstakeNotification({
@@ -679,7 +679,7 @@ export function RewardsTab(props: {
 				connector: provider,
 				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
-				statusHandler: set_unstakeStatus
+				statusHandler: setUnstakeStatus
 			});
 			if (result.isSuccessful) {
 				await handleUnstakeNotification({
@@ -727,7 +727,7 @@ export function RewardsTab(props: {
 			connector: provider,
 			chainID: props.currentVault.chainID,
 			contractAddress: toAddress(vaultData?.address),
-			statusHandler: set_claimStatus
+			statusHandler: setClaimStatus
 		});
 		if (result.isSuccessful) {
 			await handleClaimNotification({
@@ -771,13 +771,13 @@ export function RewardsTab(props: {
 
 	useEffect(() => {
 		if (!isUnstakeAmountDirty) {
-			set_unstakeAmount(vaultData.stakedBalanceOf.display);
+			setUnstakeAmount(vaultData.stakedBalanceOf.display);
 		}
 	}, [vaultData.stakedBalanceOf.display, isUnstakeAmountDirty]);
 
 	useEffect(() => {
 		if (!isStakeAmountDirty) {
-			set_stakeAmount(vaultData.stakedBalanceOf.display);
+			setStakeAmount(vaultData.stakedBalanceOf.display);
 		}
 	}, [isStakeAmountDirty, vaultData.stakedBalanceOf.display]);
 
@@ -873,15 +873,15 @@ export function RewardsTab(props: {
 											disabled={!isActive}
 											value={stakeAmount}
 											onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-												set_stakeAmount(e.target.value);
-												set_isStakeAmountDirty(true);
+												setStakeAmount(e.target.value);
+												setIsStakeAmountDirty(true);
 											}}
 										/>
 
 										<button
 											onClick={(): void => {
-												set_stakeAmount(vaultData.vaultBalanceOf.display);
-												set_isStakeAmountDirty(true);
+												setStakeAmount(vaultData.vaultBalanceOf.display);
+												setIsStakeAmountDirty(true);
 											}}
 											className={
 												'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
@@ -937,15 +937,15 @@ export function RewardsTab(props: {
 											disabled={!isActive}
 											value={unstakeAmount}
 											onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-												set_unstakeAmount(e.target.value);
-												set_isUnstakeAmountDirty(true);
+												setUnstakeAmount(e.target.value);
+												setIsUnstakeAmountDirty(true);
 											}}
 										/>
 
 										<button
 											onClick={(): void => {
-												set_unstakeAmount(vaultData.stakedBalanceOf.display);
-												set_isUnstakeAmountDirty(true);
+												setUnstakeAmount(vaultData.stakedBalanceOf.display);
+												setIsUnstakeAmountDirty(true);
 											}}
 											className={
 												'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
@@ -1081,15 +1081,15 @@ export function RewardsTab(props: {
 										disabled={!isActive}
 										value={unstakeAmount}
 										onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-											set_unstakeAmount(e.target.value);
-											set_isUnstakeAmountDirty(true);
+											setUnstakeAmount(e.target.value);
+											setIsUnstakeAmountDirty(true);
 										}}
 									/>
 
 									<button
 										onClick={(): void => {
-											set_unstakeAmount(vaultData.stakedBalanceOf.display);
-											set_isUnstakeAmountDirty(true);
+											setUnstakeAmount(vaultData.stakedBalanceOf.display);
+											setIsUnstakeAmountDirty(true);
 										}}
 										className={
 											'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'

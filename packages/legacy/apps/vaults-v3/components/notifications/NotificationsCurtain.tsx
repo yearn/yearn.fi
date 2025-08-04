@@ -9,11 +9,11 @@ import {Drawer} from 'vaul';
 import {Notification} from './Notification';
 
 export function NotificationsCurtain(props: {
-	set_shouldOpenCurtain: (value: boolean) => void;
+	setShouldOpenCurtain: (value: boolean) => void;
 	isOpen: boolean;
 	variant: 'v2' | 'v3';
 }): ReactElement {
-	const {cachedEntries, set_notificationStatus, isLoading, error} = useNotifications();
+	const {cachedEntries, setNotificationStatus, isLoading, error} = useNotifications();
 	const {vaults, vaultsMigrations, vaultsRetired} = useYearn();
 	const allVaults = {...vaults, ...vaultsMigrations, ...vaultsRetired};
 
@@ -24,7 +24,7 @@ export function NotificationsCurtain(props: {
 	 *******************************************************************/
 	useEffect(() => {
 		if (props.isOpen) {
-			set_notificationStatus(null);
+			setNotificationStatus(null);
 			// Block page scrolling when drawer is open
 			document.body.style.overflow = 'hidden';
 		} else {
@@ -36,10 +36,10 @@ export function NotificationsCurtain(props: {
 		return () => {
 			document.body.style.overflow = '';
 		};
-	}, [props.isOpen, set_notificationStatus]);
+	}, [props.isOpen, setNotificationStatus]);
 
 	return (
-		<Drawer.Root direction={'right'} open={props.isOpen} onOpenChange={props.set_shouldOpenCurtain}>
+		<Drawer.Root direction={'right'} open={props.isOpen} onOpenChange={props.setShouldOpenCurtain}>
 			<Drawer.Portal>
 				<Drawer.Overlay
 					className={'fixed inset-0 z-[999998] bg-black/40 backdrop-blur-sm transition-all duration-300'}

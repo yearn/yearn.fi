@@ -28,7 +28,7 @@ export function useSolverInternalMigration(): TSolverContext {
 	const request = useRef<TInitSolverArgs | undefined>(undefined);
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 
-	const {set_shouldOpenCurtain} = useNotifications();
+	const {setShouldOpenCurtain} = useNotifications();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -127,7 +127,7 @@ export function useSolverInternalMigration(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					},
 					statusHandler: txStatusSetter,
@@ -144,7 +144,7 @@ export function useSolverInternalMigration(): TSolverContext {
 				}
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -187,7 +187,7 @@ export function useSolverInternalMigration(): TSolverContext {
 						cta: {
 							label: 'View',
 							onClick: () => {
-								set_shouldOpenCurtain(true);
+								setShouldOpenCurtain(true);
 							}
 						}
 					});
@@ -208,7 +208,7 @@ export function useSolverInternalMigration(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							set_shouldOpenCurtain(true);
+							setShouldOpenCurtain(true);
 						}
 					},
 					statusHandler: txStatusSetter,
@@ -225,7 +225,7 @@ export function useSolverInternalMigration(): TSolverContext {
 				}
 			}
 		},
-		[provider, set_shouldOpenCurtain]
+		[provider, setShouldOpenCurtain]
 	);
 
 	return useMemo(

@@ -9,7 +9,7 @@ export type TAppSettingsContext = {
 	shouldHideLowTVLVaults: boolean;
 	onSwitchHideDust: VoidFunction;
 	onSwitchHideLowTVLVaults: VoidFunction;
-	set_searchValue: (v: string) => void;
+	setSearchValue: (v: string) => void;
 };
 const defaultProps: TAppSettingsContext = {
 	searchValue: '',
@@ -17,7 +17,7 @@ const defaultProps: TAppSettingsContext = {
 	shouldHideLowTVLVaults: false,
 	onSwitchHideDust: (): void => undefined,
 	onSwitchHideLowTVLVaults: (): void => undefined,
-	set_searchValue: (): void => undefined
+	setSearchValue: (): void => undefined
 };
 
 const AppSettingsContext = createContext<TAppSettingsContext>(defaultProps);
@@ -26,9 +26,9 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({
 }: {
 	children: ReactElement;
 }): ReactElement {
-	const [searchValue, set_searchValue] = useSessionStorage('yearn.fi/vaults-search@0.0.1', '');
-	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust@0.0.1', false);
-	const [shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl@0.0.1', false);
+	const [searchValue, setSearchValue] = useSessionStorage('yearn.fi/vaults-search@0.0.1', '');
+	const [shouldHideDust, setShouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust@0.0.1', false);
+	const [shouldHideLowTVLVaults, setShouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl@0.0.1', false);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Setup and render the Context provider to use in the app.
@@ -36,19 +36,19 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({
 	const contextValue = useMemo(
 		(): TAppSettingsContext => ({
 			shouldHideDust,
-			onSwitchHideDust: (): void => set_shouldHideDust(!shouldHideDust),
+			onSwitchHideDust: (): void => setShouldHideDust(!shouldHideDust),
 			shouldHideLowTVLVaults,
-			onSwitchHideLowTVLVaults: (): void => set_shouldHideLowTVLVaults(!shouldHideLowTVLVaults),
+			onSwitchHideLowTVLVaults: (): void => setShouldHideLowTVLVaults(!shouldHideLowTVLVaults),
 			searchValue,
-			set_searchValue
+			setSearchValue
 		}),
 		[
 			shouldHideDust,
 			shouldHideLowTVLVaults,
 			searchValue,
-			set_searchValue,
-			set_shouldHideDust,
-			set_shouldHideLowTVLVaults
+			setSearchValue,
+			setShouldHideDust,
+			setShouldHideLowTVLVaults
 		]
 	);
 

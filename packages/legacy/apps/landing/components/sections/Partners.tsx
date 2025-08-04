@@ -47,15 +47,15 @@ const partners: TPartner[] = [
 ];
 
 const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 40}) => {
-	const [isHovered, set_isHovered] = useState(false);
+	const [isHovered, setIsHovered] = useState(false);
 	return (
 		<Link href={href} className={'block flex-1'}>
 			<div
 				className={
 					'relative flex h-20 cursor-pointer items-center justify-center rounded-lg bg-gray-800 p-4 transition-colors duration-200 hover:bg-blue-500 lg:h-full lg:p-6'
 				}
-				onMouseEnter={() => set_isHovered(true)}
-				onMouseLeave={() => set_isHovered(false)}
+				onMouseEnter={() => setIsHovered(true)}
+				onMouseLeave={() => setIsHovered(false)}
 			>
 				{isHovered && (
 					<div

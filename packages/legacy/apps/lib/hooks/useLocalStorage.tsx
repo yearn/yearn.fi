@@ -13,7 +13,7 @@ export function useLocalStorage<T>(
 ): [T, Dispatch<SetStateAction<T>>] {
 	// State to store our value
 	// Pass initial state function to useState so logic is only executed once
-	const [storedValue, set_storedValue] = useState<T>((): T => {
+	const [storedValue, setStoredValue] = useState<T>((): T => {
 		const _key = options?.currentVersion ? `${key}${options.currentVersion}` : key;
 		try {
 			if (typeof window === 'undefined') {
@@ -46,13 +46,13 @@ export function useLocalStorage<T>(
 
 	// Return a wrapped version of useState's setter function that ...
 	// ... persists the new value to localStorage.
-	const set_value = (value: T | ((val: T) => T)): void => {
+	const setValue = (value: T | ((val: T) => T)): void => {
 		const _key = options?.currentVersion ? `${key}-${options.currentVersion}` : key;
 		try {
 			// Allow value to be a function so we have same API as useState
 			const valueToStore = value instanceof Function ? value(storedValue) : value;
 			// Save state
-			set_storedValue(valueToStore);
+			setStoredValue(valueToStore);
 			// Save to local storage
 			window.localStorage.setItem(_key, JSON.stringify(valueToStore));
 		} catch (error) {
@@ -60,5 +60,5 @@ export function useLocalStorage<T>(
 		}
 	};
 
-	return [storedValue, set_value];
+	return [storedValue, setValue];
 }

@@ -40,21 +40,21 @@ function WalletSelector(): ReactElement {
 	const {openAccountModal} = useAccountModal();
 	const {openChainModal} = useChainModal();
 	const {isActive, address, ens, clusters, lensProtocolHandle, openLoginModal} = useWeb3();
-	const [walletIdentity, set_walletIdentity] = useState<string | undefined>(undefined);
+	const [walletIdentity, setWalletIdentity] = useState<string | undefined>(undefined);
 
 	useEffect((): void => {
 		if (!isActive && address) {
-			set_walletIdentity('Invalid Network');
+			setWalletIdentity('Invalid Network');
 		} else if (ens) {
-			set_walletIdentity(ens);
+			setWalletIdentity(ens);
 		} else if (clusters) {
-			set_walletIdentity(clusters.name);
+			setWalletIdentity(clusters.name);
 		} else if (lensProtocolHandle) {
-			set_walletIdentity(lensProtocolHandle);
+			setWalletIdentity(lensProtocolHandle);
 		} else if (address) {
-			set_walletIdentity(truncateHex(address, 4));
+			setWalletIdentity(truncateHex(address, 4));
 		} else {
-			set_walletIdentity(undefined);
+			setWalletIdentity(undefined);
 		}
 	}, [ens, clusters, lensProtocolHandle, address, isActive]);
 
@@ -92,8 +92,8 @@ function WalletSelector(): ReactElement {
 
 function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 	const {pathname} = useRouter();
-	const [isMenuOpen, set_isMenuOpen] = useState<boolean>(false);
-	const {set_shouldOpenCurtain, notificationStatus} = useNotifications();
+	const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+	const {setShouldOpenCurtain, notificationStatus} = useNotifications();
 
 	const menu = useMemo((): TMenu[] => {
 		const HOME_MENU = {path: '/apps', label: 'Apps'};
@@ -156,7 +156,7 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 						</div>
 						<Navbar currentPathName={pathname || ''} nav={menu} />
 						<div className={'flex md:hidden'}>
-							<button onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
+							<button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
 								<span className={'sr-only'}>{'Open menu'}</span>
 								<IconBurgerPlain />
 							</button>
@@ -167,7 +167,7 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 							className={
 								'yearn--header-nav-item hover:bg-grey-200 relative rounded-full p-2 transition-colors'
 							}
-							onClick={(): void => set_shouldOpenCurtain(true)}
+							onClick={(): void => setShouldOpenCurtain(true)}
 						>
 							<IconBell className={'text-grey-900 size-4 font-bold transition-colors'} />
 
@@ -181,13 +181,13 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 				shouldUseWallets={true}
 				shouldUseNetworks={true}
 				isOpen={isMenuOpen}
-				onClose={(): void => set_isMenuOpen(false)}
+				onClose={(): void => setIsMenuOpen(false)}
 				supportedNetworks={props.supportedNetworks}
 			>
 				{menu?.map(
 					(option): ReactElement => (
 						<Link key={option.path} href={option.path}>
-							<div className={'mobile-nav-item'} onClick={(): void => set_isMenuOpen(false)}>
+							<div className={'mobile-nav-item'} onClick={(): void => setIsMenuOpen(false)}>
 								<p className={'font-bold'}>{option.label}</p>
 							</div>
 						</Link>

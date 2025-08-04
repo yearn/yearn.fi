@@ -23,7 +23,7 @@ function Label({children}: {children: string}): ReactElement {
 }
 
 export function SettingsPopover({vault}: TSettingPopover): ReactElement {
-	const {zapProvider, set_zapProvider, zapSlippage, set_zapSlippage, isAutoStakingEnabled, set_isAutoStakingEnabled} =
+	const {zapProvider, setZapProvider, zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled} =
 		useYearn();
 	const hasStakingRewards = vault.staking.available;
 
@@ -60,7 +60,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 										<p>{'Zap Provider'}</p>
 										<select
 											id={'zapProvider'}
-											onChange={(e): void => set_zapProvider(e.target.value as TSolver)}
+											onChange={(e): void => setZapProvider(e.target.value as TSolver)}
 											value={
 												!isSolverDisabled(currentZapProvider)
 													? currentZapProvider
@@ -118,7 +118,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 										<Label>{'Slippage'}</Label>
 										<div className={'mt-1 flex flex-row space-x-2'}>
 											<button
-												onClick={(): void => set_zapSlippage(1)}
+												onClick={(): void => setZapSlippage(1)}
 												className={`flex h-10 items-center border bg-neutral-100 px-1.5 py-2 ${
 													zapSlippage === 1 ? 'border-neutral-900' : 'border-transparent'
 												}`}
@@ -126,7 +126,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 												<p className={'font-number pr-4 text-neutral-900'}>{'1%'}</p>
 											</button>
 											<button
-												onClick={(): void => set_zapSlippage(2)}
+												onClick={(): void => setZapSlippage(2)}
 												className={`flex h-10 items-center border bg-neutral-100 px-1.5 py-2 ${
 													zapSlippage === 2 ? 'border-neutral-900' : 'border-transparent'
 												}`}
@@ -151,7 +151,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 													}
 													value={zapSlippage}
 													onChange={(e): void => {
-														set_zapSlippage(parseFloat(e.target.value) || 0);
+														setZapSlippage(parseFloat(e.target.value) || 0);
 													}}
 												/>
 												<p className={'font-number mt-1 pr-2 text-neutral-900/60'}>{'%'}</p>
@@ -172,7 +172,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 													<Switch
 														isEnabled={isAutoStakingEnabled}
 														onSwitch={(): void =>
-															set_isAutoStakingEnabled(!isAutoStakingEnabled)
+															setIsAutoStakingEnabled(!isAutoStakingEnabled)
 														}
 													/>
 												</div>

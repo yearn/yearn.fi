@@ -67,8 +67,8 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 }
 
 export function Dropdown(props: TDropdownProps): ReactElement {
-	const [isOpen, set_isOpen] = useThrottledState(false, 400);
-	const [query, set_query] = useState('');
+	const [isOpen, setIsOpen] = useThrottledState(false, 400);
+	const [query, setQuery] = useState('');
 
 	const filteredOptions =
 		query === ''
@@ -85,7 +85,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 					onClick={(e): void => {
 						e.stopPropagation();
 						e.preventDefault();
-						set_isOpen(false);
+						setIsOpen(false);
 					}}
 				/>
 			</Renderable>
@@ -94,11 +94,11 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 				value={props.selected}
 				onChange={(_selected: TDropdownOption): void => {
 					props.onSelect(_selected);
-					set_isOpen(false);
+					setIsOpen(false);
 				}}
 			>
 				<ComboboxButton
-					onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
+					onClick={(): void => setIsOpen((o: boolean): boolean => !o)}
 					className={cl(
 						props.className,
 						'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
@@ -126,8 +126,8 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 									placeholder={props.placeholder || ''}
 									spellCheck={false}
 									onChange={(event): void => {
-										set_isOpen(true);
-										set_query(event.target.value);
+										setIsOpen(true);
+										setQuery(event.target.value);
 									}}
 								/>
 							</p>
@@ -150,8 +150,8 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 					leaveFrom={'transform scale-100 opacity-100'}
 					leaveTo={'transform scale-95 opacity-0'}
 					afterLeave={(): void => {
-						set_isOpen(false);
-						set_query('');
+						setIsOpen(false);
+						setQuery('');
 					}}
 				>
 					<ComboboxOptions className={cl(props.comboboxOptionsClassName, 'yearn--dropdown-menu z-50')}>

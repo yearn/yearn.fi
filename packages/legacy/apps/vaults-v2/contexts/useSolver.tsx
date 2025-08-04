@@ -70,8 +70,8 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 	const juicedStakingBooster = useSolverJuicedStakingBooster();
 	const v3StakingBooster = useSolverV3StakingBooster();
 	const v3Router = useSolverV3Router();
-	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & {hash?: string}>(vanilla);
-	const [isLoading, set_isLoading] = useState(false);
+	const [currentSolverState, setCurrentSolverState] = useState<TSolverContext & {hash?: string}>(vanilla);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const handleUpdateSolver = useCallback(
 		async ({currentNonce, request, quote, solver, ctx}: TUpdateSolverHandler): Promise<void> => {
@@ -82,12 +82,12 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				return;
 			}
 			const requestHash = await hash(serialize({...request, solver, expectedOut: toBigInt(quote.value?.raw)}));
-			set_currentSolverState({
+			setCurrentSolverState({
 				...ctx,
 				quote: quote.value,
 				hash: requestHash
 			});
-			set_isLoading(false);
+			setIsLoading(false);
 		},
 		[]
 	);
@@ -105,10 +105,10 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				return;
 			}
 			if (actionParams.amount.raw === 0n) {
-				return set_currentSolverState({...vanilla, quote: zeroNormalizedBN});
+				return setCurrentSolverState({...vanilla, quote: zeroNormalizedBN});
 			}
 
-			set_isLoading(true);
+			setIsLoading(true);
 
 			const request: TInitSolverArgs = {
 				chainID: currentVault.chainID,

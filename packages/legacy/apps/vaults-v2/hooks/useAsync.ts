@@ -9,20 +9,20 @@ export function useAsync<T>(
 	effectDependencies: unknown[] = []
 ): [T | undefined, boolean, () => Promise<void>] {
 	const runNonce = useRef(0);
-	const [isLoading, set_isLoading] = useState(false);
-	const [data, set_data] = useState(defaultValue);
+	const [isLoading, setIsLoading] = useState(false);
+	const [data, setData] = useState(defaultValue);
 
 	const callCallback = useCallback(async (): Promise<void> => {
-		set_isLoading(true);
+		setIsLoading(true);
 		const currentNonce = runNonce.current;
 		try {
 			const res = await callback();
 			if (currentNonce === runNonce.current) {
-				set_isLoading(false);
-				set_data(res);
+				setIsLoading(false);
+				setData(res);
 			}
 		} catch {
-			set_isLoading(false);
+			setIsLoading(false);
 		}
 	}, [callback]);
 

@@ -420,10 +420,10 @@ function ListOfVaults(): ReactElement {
 }
 
 function Index(): ReactElement {
-	const [isCollapsed, set_isCollapsed] = useState(true);
+	const [isCollapsed, setIsCollapsed] = useState(true);
 
 	function onClick(): void {
-		set_isCollapsed(!isCollapsed);
+		setIsCollapsed(!isCollapsed);
 	}
 
 	return (

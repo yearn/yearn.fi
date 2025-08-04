@@ -11,22 +11,22 @@ export const Tooltip: FC<{
 	children: ReactElement;
 	tooltip: string | ReactElement;
 }> = ({children, tooltip, className}) => {
-	const [isHovered, set_isHovered] = useState(false);
-	const [tooltipPosition, set_tooltipPosition] = useState({x: 0, y: 0});
+	const [isHovered, setIsHovered] = useState(false);
+	const [tooltipPosition, setTooltipPosition] = useState({x: 0, y: 0});
 	const triggerRef = useRef<HTMLDivElement>(null);
 
 	const handleMouseEnter = (): void => {
 		if (triggerRef.current) {
 			const rect = triggerRef.current.getBoundingClientRect();
-			set_tooltipPosition({
+			setTooltipPosition({
 				x: rect.left + rect.width / 2,
 				y: rect.bottom + 8
 			});
-			set_isHovered(true);
+			setIsHovered(true);
 		}
 	};
 
-	const handleMouseLeave = (): void => set_isHovered(false);
+	const handleMouseLeave = (): void => setIsHovered(false);
 
 	return (
 		<div

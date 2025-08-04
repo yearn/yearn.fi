@@ -26,7 +26,7 @@ function Index(): ReactElement | null {
 
 	const {onRefresh} = useWallet();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
-	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
+	const [currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
 		endpoint: router.query.address
 			? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
@@ -39,7 +39,7 @@ function Index(): ReactElement | null {
 
 	useEffect((): void => {
 		if (vault && !currentVault) {
-			set_currentVault(vault);
+			setCurrentVault(vault);
 		}
 	}, [currentVault, vault]);
 

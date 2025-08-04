@@ -247,7 +247,7 @@ export const Notification = memo(function Notification({
 	toVault?: TYDaemonVault;
 }): ReactElement {
 	const {deleteByID} = useNotifications();
-	const [isDeleting, set_isDeleting] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	/************************************************************************************************
 	 * Use the transaction status poller to automatically check and update pending transactions
@@ -311,13 +311,13 @@ export const Notification = memo(function Notification({
 			return;
 		}
 
-		set_isDeleting(true);
+		setIsDeleting(true);
 
 		try {
 			await deleteByID(notification.id!);
 		} catch (error) {
 			console.error('Failed to delete notification:', error);
-			set_isDeleting(false);
+			setIsDeleting(false);
 		}
 	}, [deleteByID, notification.id, isDeleting]);
 

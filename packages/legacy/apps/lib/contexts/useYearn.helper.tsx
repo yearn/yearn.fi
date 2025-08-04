@@ -21,7 +21,7 @@ export function useYearnTokens({
 }): TUseBalancesTokens[] {
 	const {currentNetworkTokenList} = useTokenList();
 	const {safeChainID} = useChainID();
-	const [isReady, set_isReady] = useState(false);
+	const [isReady, setIsReady] = useState(false);
 	const allVaults = useMemo(
 		(): TYDaemonVault[] => [
 			...Object.values(vaults),
@@ -167,7 +167,7 @@ export function useYearnTokens({
 			}
 		});
 
-		set_isReady(true);
+		setIsReady(true);
 		return tokens;
 	}, [isLoadingVaultList, allVaults]);
 

@@ -24,7 +24,7 @@ function Label({children}: {children: string}): ReactElement {
 }
 
 function MaxLossSection(): ReactElement {
-	const {maxLoss, set_maxLoss} = useYearn();
+	const {maxLoss, setMaxLoss} = useYearn();
 
 	return (
 		<div className={'flex flex-col space-y-1'}>
@@ -34,7 +34,7 @@ function MaxLossSection(): ReactElement {
 			</legend>
 			<div className={'flex flex-row space-x-2 pt-2'}>
 				<button
-					onClick={(): void => set_maxLoss(5n)}
+					onClick={(): void => setMaxLoss(5n)}
 					className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
 						maxLoss === 5n ? 'border-neutral-900/40' : 'border-transparent'
 					}`}
@@ -42,7 +42,7 @@ function MaxLossSection(): ReactElement {
 					<p className={'font-number px-2 text-center text-neutral-900 '}>{'0.05%'}</p>
 				</button>
 				<button
-					onClick={(): void => set_maxLoss(10n)}
+					onClick={(): void => setMaxLoss(10n)}
 					className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
 						maxLoss === 10n ? 'border-neutral-900/40' : 'border-transparent'
 					}`}
@@ -66,10 +66,10 @@ function MaxLossSection(): ReactElement {
 						onChange={(e): void => {
 							const value = BigInt(Math.round(parseFloat(e.target.value || '0') * 100));
 							if (value > 10000n) {
-								set_maxLoss(10000n);
+								setMaxLoss(10000n);
 								return;
 							}
-							set_maxLoss(value);
+							setMaxLoss(value);
 						}}
 					/>
 					<p className={'font-number mt-1 pr-2 text-neutral-900/60'}>{'%'}</p>
@@ -87,7 +87,7 @@ function MaxLossSection(): ReactElement {
 }
 
 function ZapSection({chainID}: {chainID: number}): ReactElement {
-	const {zapProvider, set_zapProvider, zapSlippage, set_zapSlippage} = useYearn();
+	const {zapProvider, setZapProvider, zapSlippage, setZapSlippage} = useYearn();
 
 	const currentZapProvider = useMemo((): TSolver => {
 		if (chainID !== 1 && zapProvider === 'Cowswap') {
@@ -132,7 +132,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 				</Renderable>
 				<select
 					id={'zapProvider'}
-					onChange={(e): void => set_zapProvider(e.target.value as TSolver)}
+					onChange={(e): void => setZapProvider(e.target.value as TSolver)}
 					value={!isSolverDisabled(currentZapProvider) ? currentZapProvider : Solver.enum.Portals}
 					className={
 						'mt-1 h-10 w-full overflow-x-scroll rounded-lg border-none bg-neutral-100 p-2 outline-none scrollbar-none'
@@ -151,7 +151,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 			<div className={'flex flex-col space-y-1'}>
 				<div className={'mt-1 flex flex-row space-x-2'}>
 					<button
-						onClick={(): void => set_zapSlippage(1)}
+						onClick={(): void => setZapSlippage(1)}
 						className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
 							zapSlippage === 1 ? 'border-neutral-900/40' : 'border-transparent'
 						}`}
@@ -159,7 +159,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 						<p className={'font-number px-2 text-center text-neutral-900 '}>{'1%'}</p>
 					</button>
 					<button
-						onClick={(): void => set_zapSlippage(2)}
+						onClick={(): void => setZapSlippage(2)}
 						className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
 							zapSlippage === 2 ? 'border-neutral-900/40' : 'border-transparent'
 						}`}
@@ -182,7 +182,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 							}
 							value={zapSlippage}
 							onChange={(e): void => {
-								set_zapSlippage(parseFloat(e.target.value) || 0);
+								setZapSlippage(parseFloat(e.target.value) || 0);
 							}}
 						/>
 						<p className={'font-number mt-1 pr-2 text-neutral-900/60'}>{'%'}</p>
@@ -195,7 +195,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 }
 
 function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactElement | null {
-	const {isAutoStakingEnabled, set_isAutoStakingEnabled} = useYearn();
+	const {isAutoStakingEnabled, setIsAutoStakingEnabled} = useYearn();
 
 	if (!currentVault.staking.available) {
 		return null;
@@ -216,7 +216,7 @@ function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactEle
 						<p className={'mr-2 text-sm'}>{'Stake automatically'}</p>
 						<Switch
 							isEnabled={isAutoStakingEnabled}
-							onSwitch={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}
+							onSwitch={(): void => setIsAutoStakingEnabled(!isAutoStakingEnabled)}
 						/>
 					</div>
 				</div>

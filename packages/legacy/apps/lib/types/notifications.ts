@@ -43,11 +43,11 @@ export type TNotificationsContext = {
 	notificationStatus: TNotificationStatus | null;
 	isLoading: boolean;
 	error: string | null;
-	set_notificationStatus: (value: TNotificationStatus | null) => void;
+	setNotificationStatus: (value: TNotificationStatus | null) => void;
 	deleteByID: (id: number) => Promise<void>;
 	updateEntry: (value: Partial<TNotification>, id: number) => Promise<void>;
 	addNotification: (value: TNotification) => Promise<number>;
-	set_shouldOpenCurtain: (value: boolean) => void;
+	setShouldOpenCurtain: (value: boolean) => void;
 };
 
 // Base interface for notification handler parameters

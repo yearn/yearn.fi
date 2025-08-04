@@ -9,12 +9,12 @@ import {SearchBar} from './SearchBar';
 
 export function MobileTopNav({
 	isSearchOpen,
-	set_isSearchOpen,
-	set_isNavbarOpen
+	setIsSearchOpen,
+	setIsNavbarOpen
 }: {
 	isSearchOpen: boolean;
-	set_isSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	set_isNavbarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	setIsSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	setIsNavbarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }): ReactElement {
 	const {configuration, dispatch} = useSearch();
 	const router = useRouter();
@@ -33,7 +33,7 @@ export function MobileTopNav({
 				<div className={'flex items-center gap-4'}>
 					<button
 						className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
-						onClick={() => set_isNavbarOpen(prev => !prev)}
+						onClick={() => setIsNavbarOpen(prev => !prev)}
 					>
 						<span className={'sr-only'}>{'Open menu'}</span>
 						<IconBurgerPlain />
@@ -42,7 +42,7 @@ export function MobileTopNav({
 						className={'hidden md:block'}
 						onClick={() => {
 							router.push('/');
-							set_isSearchOpen(false);
+							setIsSearchOpen(false);
 						}}
 					>
 						<LogoYearn className={'size-8'} back={'text-blue-500'} front={'text-white'} />
@@ -50,8 +50,8 @@ export function MobileTopNav({
 				</div>
 				<button
 					onClick={() => {
-						set_isNavbarOpen(false);
-						set_isSearchOpen(prev => !prev);
+						setIsNavbarOpen(false);
+						setIsSearchOpen(prev => !prev);
 					}}
 				>
 					<IconSearch className={'text-white'} />

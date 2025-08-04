@@ -108,9 +108,9 @@ const appRows: TRow[] = [
 
 export const Vaults: FC = () => {
 	const {vaults, isLoadingVaultList} = useYearn();
-	const [activeSlide, set_activeSlide] = useState(0);
-	const [isAnimating, set_isAnimating] = useState(false);
-	const [isHovering, set_isHovering] = useState(false);
+	const [activeSlide, setActiveSlide] = useState(0);
+	const [isAnimating, setIsAnimating] = useState(false);
+	const [isHovering, setIsHovering] = useState(false);
 
 	const rows: TRow[][] = useMemo(() => {
 		return [
@@ -156,18 +156,18 @@ export const Vaults: FC = () => {
 
 	const nextSlide = useCallback(() => {
 		if (!isAnimating) {
-			set_isAnimating(true);
-			set_activeSlide(prev => (prev + 1) % totalSlides);
-			setTimeout(() => set_isAnimating(false), 500);
+			setIsAnimating(true);
+			setActiveSlide(prev => (prev + 1) % totalSlides);
+			setTimeout(() => setIsAnimating(false), 500);
 		}
 	}, [isAnimating, totalSlides]);
 
 	const goToSlide = useCallback(
 		(index: number) => {
 			if (!isAnimating && index !== activeSlide) {
-				set_isAnimating(true);
-				set_activeSlide(index);
-				setTimeout(() => set_isAnimating(false), 500);
+				setIsAnimating(true);
+				setActiveSlide(index);
+				setTimeout(() => setIsAnimating(false), 500);
 			}
 		},
 		[activeSlide, isAnimating]
@@ -189,8 +189,8 @@ export const Vaults: FC = () => {
 				{/* Slides */}
 				<div
 					className={'relative mb-8 overflow-hidden md:mb-12'}
-					onMouseEnter={() => set_isHovering(true)}
-					onMouseLeave={() => set_isHovering(false)}
+					onMouseEnter={() => setIsHovering(true)}
+					onMouseLeave={() => setIsHovering(false)}
 				>
 					<div
 						className={'flex transition-transform duration-500 ease-in-out'}

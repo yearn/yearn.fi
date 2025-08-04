@@ -27,7 +27,7 @@ type TTabsOptions = {
 };
 type TTabs = {
 	selectedAboutTabIndex: number;
-	set_selectedAboutTabIndex: (arg0: number) => void;
+	setSelectedAboutTabIndex: (arg0: number) => void;
 };
 
 type TExplorerLinkProps = {
@@ -43,12 +43,12 @@ function MobileTabButton(props: {
 	selected: boolean;
 	selectedIndex: number;
 	currentTab: TTabsOptions;
-	set_currentTab: (index: number) => void;
+	setCurrentTab: (index: number) => void;
 }): ReactElement {
 	return (
 		<button
 			onClick={() => {
-				props.set_currentTab(props.selectedIndex);
+				props.setCurrentTab(props.selectedIndex);
 			}}
 			className={cl(
 				'flex h-10 overflow-hidden pr-4 transition-all duration-300 flex-row items-center border-0 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden',
@@ -60,7 +60,7 @@ function MobileTabButton(props: {
 	);
 }
 
-function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
+function Tabs({selectedAboutTabIndex, setSelectedAboutTabIndex}: TTabs): ReactElement {
 	const router = useRouter();
 
 	const tabs: TTabsOptions[] = useMemo(
@@ -76,9 +76,9 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	useEffect((): void => {
 		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab);
 		if (tab?.value) {
-			set_selectedAboutTabIndex(tab?.value);
+			setSelectedAboutTabIndex(tab?.value);
 		}
-	}, [router.query.tab, set_selectedAboutTabIndex, tabs]);
+	}, [router.query.tab, setSelectedAboutTabIndex, tabs]);
 
 	return (
 		<>
@@ -100,7 +100,7 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 										shallow: true
 									}
 								);
-								set_selectedAboutTabIndex(tab.value);
+								setSelectedAboutTabIndex(tab.value);
 							}}
 						>
 							<p
@@ -123,7 +123,7 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 									selected={selectedAboutTabIndex === tab.value}
 									currentTab={tab}
 									selectedIndex={tab.value}
-									set_currentTab={(): void => {
+									setCurrentTab={(): void => {
 										router.replace(
 											{
 												query: {
@@ -136,7 +136,7 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 												shallow: true
 											}
 										);
-										set_selectedAboutTabIndex(tab.value);
+										setSelectedAboutTabIndex(tab.value);
 									}}
 								/>
 							</Fragment>
@@ -245,7 +245,7 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider} = useWeb3();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
-	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
+	const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0);
 
 	async function onAddTokenToMetamask(
 		address: string,
@@ -289,7 +289,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 				<Tabs
 					selectedAboutTabIndex={selectedAboutTabIndex}
-					set_selectedAboutTabIndex={set_selectedAboutTabIndex}
+					setSelectedAboutTabIndex={setSelectedAboutTabIndex}
 				/>
 
 				<div className={'flex items-center justify-end space-x-2 pb-0 md:flex-row md:pb-4 md:last:space-x-4'}>

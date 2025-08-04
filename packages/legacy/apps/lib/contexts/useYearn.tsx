@@ -30,10 +30,10 @@ export type TYearnContext = {
 	zapProvider: TSolver;
 	isAutoStakingEnabled: boolean;
 	mutateVaultList: KeyedMutator<TYDaemonVaults>;
-	set_maxLoss: (value: bigint) => void;
-	set_zapSlippage: (value: number) => void;
-	set_zapProvider: (value: TSolver) => void;
-	set_isAutoStakingEnabled: (value: boolean) => void;
+	setMaxLoss: (value: bigint) => void;
+	setZapSlippage: (value: number) => void;
+	setZapProvider: (value: TSolver) => void;
+	setIsAutoStakingEnabled: (value: boolean) => void;
 	//
 	//Price context
 	getPrice: ({address, chainID}: TTokenAndChain) => TNormalizedBN;
@@ -56,28 +56,28 @@ const YearnContext = createContext<TYearnContext>({
 	zapProvider: Solver.enum.Cowswap,
 	isAutoStakingEnabled: true,
 	mutateVaultList: (): Promise<TYDaemonVaults> => Promise.resolve([]),
-	set_maxLoss: (): void => undefined,
-	set_zapSlippage: (): void => undefined,
-	set_zapProvider: (): void => undefined,
-	set_isAutoStakingEnabled: (): void => undefined,
+	setMaxLoss: (): void => undefined,
+	setZapSlippage: (): void => undefined,
+	setZapProvider: (): void => undefined,
+	setIsAutoStakingEnabled: (): void => undefined,
 
 	//Price context
 	getPrice: (): TNormalizedBN => zeroNormalizedBN
 });
 
 export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
-	const {value: maxLoss, set: set_maxLoss} = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
+	const {value: maxLoss, set: setMaxLoss} = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
 		defaultValue: DEFAULT_MAX_LOSS,
 		parse: (str, fallback): bigint => (str ? deserialize(str) : (fallback ?? DEFAULT_MAX_LOSS)),
 		stringify: (data: bigint): string => serialize(data)
 	});
-	const {value: zapSlippage, set: set_zapSlippage} = useLocalStorageValue<number>('yearn.fi/zap-slippage', {
+	const {value: zapSlippage, set: setZapSlippage} = useLocalStorageValue<number>('yearn.fi/zap-slippage', {
 		defaultValue: DEFAULT_SLIPPAGE
 	});
-	const {value: zapProvider, set: set_zapProvider} = useLocalStorageValue<TSolver>('yearn.fi/zap-provider', {
+	const {value: zapProvider, set: setZapProvider} = useLocalStorageValue<TSolver>('yearn.fi/zap-provider', {
 		defaultValue: Solver.enum.Cowswap
 	});
-	const {value: isAutoStakingEnabled, set: set_isAutoStakingEnabled} = useLocalStorageValue<boolean>(
+	const {value: isAutoStakingEnabled, set: setIsAutoStakingEnabled} = useLocalStorageValue<boolean>(
 		'yearn.fi/staking-op-boosted-vaults',
 		{
 			defaultValue: true
@@ -113,10 +113,10 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 				maxLoss: maxLoss ?? DEFAULT_MAX_LOSS,
 				zapProvider: zapProvider ?? Solver.enum.Cowswap,
 				isAutoStakingEnabled: isAutoStakingEnabled ?? true,
-				set_zapSlippage,
-				set_maxLoss,
-				set_zapProvider,
-				set_isAutoStakingEnabled,
+				setZapSlippage,
+				setMaxLoss,
+				setZapProvider,
+				setIsAutoStakingEnabled,
 				vaults,
 				vaultsMigrations,
 				vaultsRetired,
