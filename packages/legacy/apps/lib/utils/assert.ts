@@ -1,4 +1,4 @@
-import actualAssert from 'node:assert';
+import actualAssert from 'assert';
 import type {TAddress} from '../types/address';
 import {ZERO_ADDRESS} from './constants';
 import {toAddress} from './tools.address';
