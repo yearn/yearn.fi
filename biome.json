@@ -143,6 +143,5 @@
 		"assist": null
 	},
 	"html": { "formatter": { "selfCloseVoidElements": "always" } },
-	"overrides": [{ "includes": ["*.{ts,tsx}"], "linter": { "rules": {} } }],
-	"plugins": ["./.grit/assign.grit"]
+	"overrides": [{ "includes": ["*.{ts,tsx}"], "linter": { "rules": {} } }]
 }
