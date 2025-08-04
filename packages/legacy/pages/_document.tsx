@@ -64,8 +64,7 @@ class MyDocument extends Document {
 		return (
 			<Html
 				lang={'en'}
-				className={`duration-150', bg-neutral-0 transition-colors ${isLanding && 'scrollbar-none'}`}
-			>
+				className={`duration-150', bg-neutral-0 transition-colors ${isLanding && 'scrollbar-none'}`}>
 				<Head>
 					<script dangerouslySetInnerHTML={{__html: modeScript}} />
 				</Head>

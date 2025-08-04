@@ -53,8 +53,7 @@ function MobileTabButton(props: {
 			className={cl(
 				'flex h-10 overflow-hidden pr-4 transition-all duration-300 flex-row items-center border-0 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden',
 				props.selected ? 'border-b-2 border-neutral-900' : 'border-b-2 border-neutral-300'
-			)}
-		>
+			)}>
 			<span>{props.currentTab.mobileLabel || props.currentTab.label}</span>
 		</button>
 	);
@@ -101,13 +100,11 @@ function Tabs({selectedAboutTabIndex, setSelectedAboutTabIndex}: TTabs): ReactEl
 									}
 								);
 								setSelectedAboutTabIndex(tab.value);
-							}}
-						>
+							}}>
 							<p
 								title={tab.label}
 								aria-selected={selectedAboutTabIndex === tab.value}
-								className={'hover-fix tab'}
-							>
+								className={'hover-fix tab'}>
 								{tab.label}
 							</p>
 						</button>
@@ -174,8 +171,7 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 						href={`${blockExplorer}/address/${currentVault.address}`}
 						target={'_blank'}
 						rel={'noopener noreferrer'}
-						suppressHydrationWarning
-					>
+						suppressHydrationWarning>
 						{currentVault.address}
 					</a>
 				</div>
@@ -187,8 +183,7 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 						target={'_blank'}
 						rel={'noopener noreferrer'}
 						className={'font-number text-sm text-neutral-900 hover:underline'}
-						suppressHydrationWarning
-					>
+						suppressHydrationWarning>
 						{currentVault.token.address}
 					</a>
 				</div>
@@ -201,8 +196,7 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 							target={'_blank'}
 							rel={'noopener noreferrer'}
 							className={'font-number text-sm text-neutral-900 hover:underline'}
-							suppressHydrationWarning
-						>
+							suppressHydrationWarning>
 							{currentVault.staking.address}
 						</a>
 					</div>
@@ -216,8 +210,7 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 							target={'_blank'}
 							rel={'noopener noreferrer'}
 							className={'font-number text-sm text-neutral-900 hover:underline'}
-							suppressHydrationWarning
-						>
+							suppressHydrationWarning>
 							{currentVault.info.sourceURL}
 						</a>
 					</div>
@@ -231,8 +224,7 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 							target={'_blank'}
 							rel={'noopener noreferrer'}
 							className={'font-number whitespace-nowrap text-sm text-neutral-900 hover:underline'}
-							suppressHydrationWarning
-						>
+							suppressHydrationWarning>
 							{currentVault.info.sourceURL}
 						</a>
 					</div>
@@ -301,8 +293,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 								currentVault.decimals,
 								`https://token-assets-one.vercel.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
 							);
-						}}
-					>
+						}}>
 						<span className={'sr-only'}>{'Add to wallet'}</span>
 						<IconAddToMetamask
 							className={'size-5 text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'}

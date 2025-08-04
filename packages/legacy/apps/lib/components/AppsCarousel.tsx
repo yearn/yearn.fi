@@ -29,8 +29,7 @@ export const AppsCarousel = forwardRef(
 						className={cl(
 							'hidden md:flex overflow-x-auto pb-1 pl-1 scrollbar-none max-sm:pr-6',
 							props.isUsingFeatured ? 'gap-x-8' : 'flex-col md:flex-row gap-x-4 overflow-y-hidden'
-						)}
-					>
+						)}>
 						{props.apps?.map((app, i) => {
 							return (
 								<Fragment key={`${app.appURI} + ${i}`}>
@@ -50,8 +49,7 @@ export const AppsCarousel = forwardRef(
 						className={cl(
 							'flex md:hidden overflow-x-auto pb-1 pl-1 scrollbar-none',
 							props.isUsingFeatured ? 'gap-x-8' : 'flex-col md:flex-row gap-y-4 overflow-y-hidden'
-						)}
-					>
+						)}>
 						{props.apps?.slice(0, 10).map((app, i) => {
 							return (
 								<Fragment key={`${app.appURI} + ${i}`}>

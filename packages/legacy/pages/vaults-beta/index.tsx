@@ -24,8 +24,7 @@ export default function Home(): ReactElement {
 						<div
 							className={
 								'flex flex-col gap-4 rounded-[16px] border border-neutral-900/5 bg-neutral-900/5 p-4'
-							}
-						>
+							}>
 							<CombinedVaultsTable />
 						</div>
 					</div>

@@ -25,8 +25,7 @@ function UnallocatedStrategy({
 			className={cl(
 				'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 px-4 md:px-8 justify-between',
 				'border-t border-[#606770]'
-			)}
-		>
+			)}>
 			<div className={cl('col-span-5 flex flex-row items-center gap-4 z-10')}>
 				<div className={'flex items-center justify-center'}>
 					<button className={cl('text-sm font-bold transition-all duration-300 ease-in-out')}>{'●'}</button>
@@ -40,12 +39,10 @@ function UnallocatedStrategy({
 					'md:col-span-7 z-10',
 					'grid grid-cols-1 sm:grid-cols-3 md:grid-cols-12 md:gap-4',
 					'mt-4 md:mt-0'
-				)}
-			>
+				)}>
 				<div
 					className={'items-right flex flex-row justify-between sm:flex-col md:col-span-3 md:text-right'}
-					datatype={'number'}
-				>
+					datatype={'number'}>
 					<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Percentage'}</p>
 					<p>{formatPercent(unallocatedPercentage / 100, 0)}</p>
 				</div>
@@ -53,8 +50,7 @@ function UnallocatedStrategy({
 					className={
 						'items-right flex flex-row justify-between sm:flex-col md:col-span-4 md:mr-[-20px] md:text-right'
 					}
-					datatype={'number'}
-				>
+					datatype={'number'}>
 					<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Amount'}</p>
 					<p>{unallocatedValue}</p>
 				</div>
@@ -157,8 +153,9 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		<>
 			<div className={cl(isFilteredVaultListEmpty ? 'hidden ' : 'flex md:p-8 lg:pr-0 p-4 ')}>
 				<div
-					className={'grid w-full grid-cols-1 place-content-start md:gap-x-6 lg:max-w-[846px] lg:grid-cols-9'}
-				>
+					className={
+						'grid w-full grid-cols-1 place-content-start md:gap-x-6 lg:max-w-[846px] lg:grid-cols-9'
+					}>
 					<div className={'col-span-9 w-full border border-fallback'}>
 						<VaultsV3ListHead
 							sortBy={sortBy}

@@ -37,23 +37,20 @@ function MaxLossSection(): ReactElement {
 					onClick={(): void => setMaxLoss(5n)}
 					className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
 						maxLoss === 5n ? 'border-neutral-900/40' : 'border-transparent'
-					}`}
-				>
+					}`}>
 					<p className={'font-number px-2 text-center text-neutral-900 '}>{'0.05%'}</p>
 				</button>
 				<button
 					onClick={(): void => setMaxLoss(10n)}
 					className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
 						maxLoss === 10n ? 'border-neutral-900/40' : 'border-transparent'
-					}`}
-				>
+					}`}>
 					<p className={'font-number px-2 text-center text-neutral-900 '}>{'0.1%'}</p>
 				</button>
 				<div
 					className={`flex h-10 w-full min-w-[72px] items-center rounded-lg border bg-neutral-100 px-0 py-4 ${
 						maxLoss !== 5n && maxLoss !== 10n ? 'border-neutral-900/40' : 'border-transparent'
-					}`}
-				>
+					}`}>
 					<input
 						type={'number'}
 						min={0}
@@ -114,8 +111,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 							className={'underline'}
 							href={'https://docs.cow.fi/front-end/cowswap'}
 							target={'_blank'}
-							rel={'noreferrer'}
-						>
+							rel={'noreferrer'}>
 							{'gasless order'}
 						</a>
 						&nbsp;{'using CoW Swap.'}
@@ -136,8 +132,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 					value={!isSolverDisabled(currentZapProvider) ? currentZapProvider : Solver.enum.Portals}
 					className={
 						'mt-1 h-10 w-full overflow-x-scroll rounded-lg border-none bg-neutral-100 p-2 outline-none scrollbar-none'
-					}
-				>
+					}>
 					{chainID === 1 ? (
 						<option disabled={isSolverDisabled(Solver.enum.Cowswap)} value={Solver.enum.Cowswap}>
 							{Solver.enum.Cowswap}
@@ -154,23 +149,20 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 						onClick={(): void => setZapSlippage(1)}
 						className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
 							zapSlippage === 1 ? 'border-neutral-900/40' : 'border-transparent'
-						}`}
-					>
+						}`}>
 						<p className={'font-number px-2 text-center text-neutral-900 '}>{'1%'}</p>
 					</button>
 					<button
 						onClick={(): void => setZapSlippage(2)}
 						className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
 							zapSlippage === 2 ? 'border-neutral-900/40' : 'border-transparent'
-						}`}
-					>
+						}`}>
 						<p className={'font-number px-2 text-center text-neutral-900 '}>{'2%'}</p>
 					</button>
 					<div
 						className={`flex h-10 w-full min-w-[72px] items-center rounded-lg border bg-neutral-100 px-0 py-4 md:min-w-[160px] ${
 							zapSlippage !== 1 && zapSlippage !== 2 ? 'border-neutral-900/40' : 'border-transparent'
-						}`}
-					>
+						}`}>
 						<input
 							id={'slippageTolerance'}
 							type={'number'}
@@ -241,14 +233,12 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 						enterTo={'opacity-100 translate-y-0'}
 						leave={'transition ease-in duration-150'}
 						leaveFrom={'opacity-100 translate-y-0'}
-						leaveTo={'opacity-0 translate-y-1'}
-					>
+						leaveTo={'opacity-0 translate-y-1'}>
 						<PopoverPanel
 							className={cl(
 								'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4 ',
 								'bg-neutral-200 rounded-lg'
-							)}
-						>
+							)}>
 							<div className={'relative p-4'}>
 								<MaxLossSection />
 								<ZapSection chainID={vault.chainID} />

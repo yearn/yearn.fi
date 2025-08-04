@@ -66,8 +66,7 @@ const SecurityCard: FC<{
 				className={`${bgColor} group relative cursor-pointer overflow-hidden rounded-2xl transition-all duration-300`}
 				onMouseMove={handleMouseMove}
 				onMouseEnter={handleMouseEnter}
-				onMouseLeave={handleMouseLeave}
-			>
+				onMouseLeave={handleMouseLeave}>
 				{isHovered && (
 					<div
 						className={'pointer-events-none absolute inset-0 opacity-60 transition-opacity duration-300'}
@@ -83,15 +82,13 @@ const SecurityCard: FC<{
 					<p
 						className={
 							'mb-4 text-[18px] text-neutral-900/70 transition-colors duration-300 group-hover:text-neutral-900/90 '
-						}
-					>
+						}>
 						{description}
 					</p>
 					<div
 						className={
 							'group-hover:text-blue-200 flex items-center text-neutral-900 transition-colors duration-300'
-						}
-					>
+						}>
 						{'Learn More →'}
 					</div>
 				</div>

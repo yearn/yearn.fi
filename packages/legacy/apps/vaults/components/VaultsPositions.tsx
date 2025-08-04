@@ -123,8 +123,7 @@ export const VaultsPositions: FC = () => {
 
 	return (
 		<div
-			className={`flex rounded-[16px] border border-dashed border-neutral-900/10 bg-neutral-900/10 ${styles.content}`}
-		>
+			className={`flex rounded-[16px] border border-dashed border-neutral-900/10 bg-neutral-900/10 ${styles.content}`}>
 			<VaultBalanceCard
 				showExpandButton={VaultView !== TVaultsPositionsView.Empty}
 				isExpanded={VaultView === TVaultsPositionsView.Table}

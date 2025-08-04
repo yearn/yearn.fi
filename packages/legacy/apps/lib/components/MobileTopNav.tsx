@@ -33,8 +33,7 @@ export function MobileTopNav({
 				<div className={'flex items-center gap-4'}>
 					<button
 						className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
-						onClick={() => setIsNavbarOpen(prev => !prev)}
-					>
+						onClick={() => setIsNavbarOpen(prev => !prev)}>
 						<span className={'sr-only'}>{'Open menu'}</span>
 						<IconBurgerPlain />
 					</button>
@@ -43,8 +42,7 @@ export function MobileTopNav({
 						onClick={() => {
 							router.push('/');
 							setIsSearchOpen(false);
-						}}
-					>
+						}}>
 						<LogoYearn className={'size-8'} back={'text-blue-500'} front={'text-white'} />
 					</button>
 				</div>
@@ -52,8 +50,7 @@ export function MobileTopNav({
 					onClick={() => {
 						setIsNavbarOpen(false);
 						setIsSearchOpen(prev => !prev);
-					}}
-				>
+					}}>
 					<IconSearch className={'text-white'} />
 				</button>
 			</div>

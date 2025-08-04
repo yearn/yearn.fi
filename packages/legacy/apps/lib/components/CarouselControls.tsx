@@ -30,8 +30,7 @@ export function CarouselControls({
 							className={'p-[2px]'}
 							onClick={() => {
 								onDotsClick(index + 1);
-							}}
-						>
+							}}>
 							<div
 								className={cl(
 									'size-2 rounded-full',

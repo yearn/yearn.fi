@@ -53,8 +53,7 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 								'px-4 py-2 w-full',
 								'relative group',
 								'border-none'
-							)}
-						>
+							)}>
 							<div
 								className={cl(
 									'absolute inset-0',

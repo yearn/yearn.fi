@@ -8,8 +8,7 @@ export function LogoJuiced(props: React.SVGProps<SVGSVGElement> & {back?: string
 			height={'400'}
 			viewBox={'0 0 400 400'}
 			fill={'none'}
-			xmlns={'http://www.w3.org/2000/svg'}
-		>
+			xmlns={'http://www.w3.org/2000/svg'}>
 			<rect width={'400'} height={'400'} rx={'200'} fill={'#2247FF'} />
 			<path
 				fillRule={'evenodd'}

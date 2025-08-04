@@ -63,8 +63,7 @@ export function LandingAppHeader(): ReactElement {
 					<div className={'flex md:hidden'}>
 						<button
 							className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
-							onClick={(): void => setIsMenuOpen(!isMenuOpen)}
-						>
+							onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
 							<span className={'sr-only'}>{'Open menu'}</span>
 							<IconBurgerPlain />
 						</button>
@@ -76,8 +75,7 @@ export function LandingAppHeader(): ReactElement {
 				shouldUseNetworks={true}
 				isOpen={isMenuOpen}
 				onClose={(): void => setIsMenuOpen(false)}
-				supportedNetworks={[]}
-			>
+				supportedNetworks={[]}>
 				{menu?.map(
 					(option): ReactElement => (
 						<Link key={option.path} href={option.path}>

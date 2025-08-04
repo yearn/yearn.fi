@@ -39,16 +39,14 @@ function BrandNewVaultCard(): ReactElement {
 				'h-full rounded-3xl relative overflow-hidden',
 				'pr-2 pl-4 pb-4 pt-6 md:p-10',
 				'col-span-75 md:col-span-46'
-			)}
-		>
+			)}>
 			<div className={'relative z-10'}>
 				<h1
 					className={cl(
 						'mb-2 md:mb-4 lg:mb-10 font-black text-neutral-900',
 						'text-[48px] lg:text-[56px] lg:leading-[64px] leading-[48px]',
 						'whitespace-break-spaces uppercase'
-					)}
-				>
+					)}>
 					{'A brave new\nworld for Yield'}
 				</h1>
 				<p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
@@ -68,8 +66,7 @@ function V3Card(): ReactElement {
 				className={cl(
 					'flex h-full w-full flex-col items-center justify-center',
 					'gap-y-0 rounded-3xl bg-neutral-200 md:gap-y-6 p-2'
-				)}
-			>
+				)}>
 				<V3Mask className={'size-[90%]'} />
 			</div>
 		</div>
@@ -84,8 +81,7 @@ function PortfolioCard(): ReactElement {
 		return (
 			<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'}>
 				<strong
-					className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}
-				>
+					className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
 					{'Portfolio'}
 				</strong>
 				<div className={'flex'}>
@@ -106,8 +102,7 @@ function PortfolioCard(): ReactElement {
 								} else {
 									openLoginModal();
 								}
-							}}
-						>
+							}}>
 							<div
 								className={cl(
 									'absolute inset-0',
@@ -445,21 +440,18 @@ function Index(): ReactElement {
 					isCollapsed
 						? 'translate-y-[354px] md:translate-y-[464px]'
 						: 'translate-y-[24px] md:translate-y-[40px]'
-				)}
-			>
+				)}>
 				<div className={'mx-auto w-full max-w-6xl'}>
 					<div
 						onClick={onClick}
-						className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}
-					>
+						className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}>
 						<div className={'relative -mt-8 flex justify-center rounded-t-3xl'}>
 							<svg
 								xmlns={'http://www.w3.org/2000/svg'}
 								width={'113'}
 								height={'32'}
 								viewBox={'0 0 113 32'}
-								fill={'none'}
-							>
+								fill={'none'}>
 								<path
 									d={'M0 32C37.9861 32 20.9837 0 56 0C91.0057 0 74.388 32 113 32H0Z'}
 									fill={'#000520'}
@@ -468,15 +460,13 @@ function Index(): ReactElement {
 							<div
 								className={`absolute mt-2 flex justify-center transition-transform ${
 									isCollapsed ? '' : '-rotate-180'
-								}`}
-							>
+								}`}>
 								<svg
 									xmlns={'http://www.w3.org/2000/svg'}
 									width={'24'}
 									height={'24'}
 									viewBox={'0 0 24 24'}
-									fill={'none'}
-								>
+									fill={'none'}>
 									<path
 										fillRule={'evenodd'}
 										clipRule={'evenodd'}

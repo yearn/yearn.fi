@@ -36,8 +36,7 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, inde
 				'px-4 py-3 md:px-4 md:py-0',
 				'min-h-[200px] md:min-h-0',
 				'cursor-pointer relative group'
-			)}
-		>
+			)}>
 			<div
 				className={cl(
 					'absolute inset-0 rounded-[12px]',
@@ -66,8 +65,7 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, inde
 						<div className={'flex flex-row items-center'}>
 							<p
 								title={currentVault.name}
-								className={'md:text-md block max-w-[280px] truncate text-neutral-800'}
-							>
+								className={'md:text-md block max-w-[280px] truncate text-neutral-800'}>
 								{currentVault.name.replace(/(Yearn |v2|v3)/gi, '')}
 							</p>
 						</div>
@@ -123,8 +121,7 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, inde
 					onClick={(event): void => event.stopPropagation()}
 					className={'text-neutral-900/50 transition-opacity hover:text-neutral-900'}
 					target={'_blank'}
-					rel={'noopener noreferrer'}
-				>
+					rel={'noopener noreferrer'}>
 					<IconLinkOut className={' size-4'} />
 				</Link>
 			</div>

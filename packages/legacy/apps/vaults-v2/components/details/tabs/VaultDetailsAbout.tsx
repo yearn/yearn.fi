@@ -73,15 +73,13 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 					tooltip
 						? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
 						: ''
-				)}
-			>
+				)}>
 				{tooltip ? (
 					<span suppressHydrationWarning className={'tooltipFees bottom-full'}>
 						<div
 							className={
 								'font-number text-xxs w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-neutral-900'
-							}
-						>
+							}>
 							{tooltip}
 						</div>
 					</span>
@@ -117,8 +115,7 @@ export function VaultDetailsAbout({
 					href="https://docs.yearn.fi"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="text-neutral-900 underline"
-				>
+					className="text-neutral-900 underline">
 					docs
 				</a>
 				, or if you want to learn more about this vault, head to our{' '}
@@ -126,8 +123,7 @@ export function VaultDetailsAbout({
 					href="https://discord.gg/yearn"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="text-neutral-900 underline"
-				>
+					className="text-neutral-900 underline">
 					discord
 				</a>{' '}
 				or{' '}
@@ -135,8 +131,7 @@ export function VaultDetailsAbout({
 					href="https://t.me/yearnfinance"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="text-neutral-900 underline"
-				>
+					className="text-neutral-900 underline">
 					telegram
 				</a>{' '}
 				and ask.
@@ -235,8 +230,7 @@ export function VaultDetailsAbout({
 						{(currentVault.apr.forwardAPR.composite?.keepVELO || 0) > 0 ? (
 							<YearnFeesLineItem
 								label={'keepVELO'}
-								tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}
-							>
+								tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}>
 								<b className={'font-number text-xl text-neutral-500'}>
 									{`${formatAmount((currentVault.apr.forwardAPR.composite?.keepVELO || 0) * 100, 0, 2)} %`}
 								</b>
@@ -248,8 +242,7 @@ export function VaultDetailsAbout({
 					<b className={'text-neutral-900'}>{'Cumulative Earnings'}</b>
 					<div
 						className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'}
-						style={{height: 160}}
-					>
+						style={{height: 160}}>
 						<Renderable shouldRender={isMounted()}>
 							<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} height={160} />
 						</Renderable>

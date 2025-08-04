@@ -63,14 +63,12 @@ function APYTooltip(props: {
 			<div
 				className={
 					'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-				}
-			>
+				}>
 				<div className={'flex flex-col items-start justify-start text-left'}>
 					<div
 						className={
 							'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-						}
-					>
+						}>
 						<p>{'• Base APY '}</p>
 						<RenderAmount shouldHideTooltip value={props.baseAPY} symbol={'percent'} decimals={6} />
 					</div>
@@ -79,8 +77,7 @@ function APYTooltip(props: {
 						<div
 							className={
 								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-							}
-						>
+							}>
 							<p>{'• Rewards APY '}</p>
 							<RenderAmount shouldHideTooltip value={props.rewardsAPY} symbol={'percent'} decimals={6} />
 						</div>
@@ -90,8 +87,7 @@ function APYTooltip(props: {
 						<div
 							className={
 								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-							}
-						>
+							}>
 							<p>{'• Boost '}</p>
 							<p>{`${formatAmount(props.boost, 2, 2)} x`}</p>
 						</div>
@@ -101,8 +97,7 @@ function APYTooltip(props: {
 						<div
 							className={
 								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-							}
-						>
+							}>
 							<p>{'• Rewards APY '}</p>
 							<div>
 								<RenderAmount
@@ -126,8 +121,7 @@ function APYTooltip(props: {
 						<div
 							className={
 								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-							}
-						>
+							}>
 							<p>{'• Extra ARB '}</p>
 							<p>{'2 500/week'}</p>
 						</div>
@@ -137,8 +131,7 @@ function APYTooltip(props: {
 						<div
 							className={
 								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-							}
-						>
+							}>
 							<p>{'• Extra Kelp Miles '}</p>
 							<p>{'1x'}</p>
 						</div>
@@ -149,16 +142,14 @@ function APYTooltip(props: {
 							<div
 								className={
 									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-								}
-							>
+								}>
 								<p>{'• Extra Kelp Miles '}</p>
 								<p>{'1x'}</p>
 							</div>
 							<div
 								className={
 									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-								}
-							>
+								}>
 								<p>{'• Extra EigenLayer Points '}</p>
 								<p>{'1x'}</p>
 							</div>
@@ -195,14 +186,12 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							<Renderable
 								shouldRender={!isForceNewAPY && !currentVault.apr.forwardAPR?.type.includes('new')}
 								/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-								fallback={'NEW'}
-							>
+								fallback={'NEW'}>
 								{'⚡️ '}
 								<span
 									className={
 										'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-									}
-								>
+									}>
 									<RenderAmount
 										shouldHideTooltip={hasZeroBoostedAPY}
 										value={boostedAPY}
@@ -234,8 +223,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					<Renderable
 						shouldRender={!isForceNewAPY && !currentVault.apr.forwardAPR?.type.includes('new')}
 						/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-						fallback={'NEW'}
-					>
+						fallback={'NEW'}>
 						<RenderAmount
 							value={currentVault.apr?.netAPR}
 							shouldHideTooltip={hasZeroAPY}
@@ -265,8 +253,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					<b
 						className={
 							'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-						}
-					>
+						}>
 						<Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
 							<RenderAmount
 								shouldHideTooltip
@@ -282,8 +269,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 								isEthMainnet &&
 								currentVault.apr.forwardAPR.composite?.boost > 0 &&
 								!currentVault.apr.extra.stakingRewardsAPR
-							}
-						>
+							}>
 							{`BOOST ${formatAmount(currentVault.apr.forwardAPR.composite?.boost, 2, 2)}x`}
 						</Renderable>
 					</small>
@@ -333,14 +319,12 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						<Renderable
 							shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 							/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-							fallback={'NEW'}
-						>
+							fallback={'NEW'}>
 							{'⚡️ '}
 							<span
 								className={
 									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-								}
-							>
+								}>
 								{/* <RenderAmount
 									shouldHideTooltip={hasZeroBoostedAPY}
 									value={boostedAPY}
@@ -404,8 +388,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					<Renderable
 						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 						/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-						fallback={'NEW'}
-					>
+						fallback={'NEW'}>
 						{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
 						<RenderAmount
 							shouldHideTooltip
@@ -435,8 +418,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						currentVault.chainID === 747474
 					}
 					/* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-					fallback={'NEW'}
-				>
+					fallback={'NEW'}>
 					{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
 					<RenderAmount
 						shouldHideTooltip={hasZeroAPY}
@@ -469,13 +451,11 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 					<b className={'yearn--table-data-section-item-value'}>
 						<Renderable
 							shouldRender={!isForceNewHistoricalAPY && !currentVault.apr?.type.includes('new')}
-							fallback={'NEW'}
-						>
+							fallback={'NEW'}>
 							<span
 								className={
 									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-								}
-							>
+								}>
 								<RenderAmount
 									shouldHideTooltip={hasZeroAPY}
 									value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
@@ -489,14 +469,12 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 						<div
 							className={
 								'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-							}
-						>
+							}>
 							<div className={'flex flex-col items-start justify-start text-left'}>
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}
-								>
+									}>
 									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
@@ -509,8 +487,7 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}
-								>
+									}>
 									<p>{'• Rewards APY '}</p>
 									<p>{'N/A'}</p>
 								</div>
@@ -527,8 +504,7 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
 					shouldRender={!isForceNewHistoricalAPY && !currentVault.apr?.type.includes('new')}
-					fallback={'NEW'}
-				>
+					fallback={'NEW'}>
 					<RenderAmount
 						value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
 						shouldHideTooltip={hasZeroAPY}
@@ -553,8 +529,7 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 				className={cl(
 					'flex w-fit items-center justify-end gap-4 md:justify-center',
 					'tooltip relative z-50 h-6'
-				)}
-			>
+				)}>
 				<div className={'h-3 w-10 min-w-10 rounded-sm border-2 border-neutral-400 p-[2px]'}>
 					<div
 						className={'h-1 rounded-[1px]'}
@@ -567,13 +542,11 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 				<span
 					suppressHydrationWarning
 					className={'tooltiptext top-full mt-1'}
-					style={{marginRight: 'calc(-94px + 50%)'}}
-				>
+					style={{marginRight: 'calc(-94px + 50%)'}}>
 					<div
 						className={
 							'font-number relative border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-						}
-					>
+						}>
 						<p>
 							<b className={'text-xs font-semibold'}>{`${level} / 5 :`}</b>
 							{
@@ -616,8 +589,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 			<p
 				className={`yearn--table-data-section-item-value ${
 					isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'
-				}`}
-			>
+				}`}>
 				<RenderAmount
 					shouldFormatDust
 					value={staked.normalized}
@@ -666,8 +638,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					'grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl',
 					'p-6 pt-2 md:pr-10',
 					'cursor-pointer relative group'
-				)}
-			>
+				)}>
 				<div
 					className={cl(
 						'absolute inset-0 rounded-3xl',
@@ -689,8 +660,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 						<div className={'truncate'}>
 							<strong
 								title={currentVault.name}
-								className={'block truncate font-black text-neutral-800 md:-mb-0.5 md:text-lg'}
-							>
+								className={'block truncate font-black text-neutral-800 md:-mb-0.5 md:text-lg'}>
 								{currentVault.name}
 							</strong>
 							<p className={'mb-0 block text-sm text-neutral-800/60 md:mb-2'}>
@@ -705,8 +675,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 									onClick={(event): void => event.stopPropagation()}
 									className={'text-neutral-900/50 transition-opacity hover:text-neutral-900'}
 									target={'_blank'}
-									rel={'noopener noreferrer'}
-								>
+									rel={'noopener noreferrer'}>
 									<div className={'px-2'}>
 										<IconLinkOut className={'inline-block size-4'} />
 									</div>
@@ -719,16 +688,14 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 				<div className={cl('col-span-8 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
 						<VaultForwardAPY currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Historical APY'}</p>
 						<VaultHistoricalAPY currentVault={currentVault} />
 					</div>
@@ -737,14 +704,12 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Available'}</p>
 						<p
 							className={`yearn--table-data-section-item-value ${
 								isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
-							}`}
-						>
+							}`}>
 							<RenderAmount
 								value={Number(
 									toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized
@@ -767,16 +732,14 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
 						<VaultStakedAmount currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
 						<div className={'flex flex-col pt-0 text-right'}>
 							<p className={'yearn--table-data-section-item-value'}>
@@ -820,8 +783,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 						onClick={(event): void => event.stopPropagation()}
 						className={'text-neutral-900/50 transition-opacity hover:text-neutral-900'}
 						target={'_blank'}
-						rel={'noopener noreferrer'}
-					>
+						rel={'noopener noreferrer'}>
 						<div className={'px-2'}>
 							<IconLinkOut className={'inline-block size-4'} />
 						</div>

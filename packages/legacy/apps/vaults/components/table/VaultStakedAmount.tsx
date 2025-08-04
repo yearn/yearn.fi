@@ -34,8 +34,7 @@ export const VaultStakedAmount: FC<{currentVault: TYDaemonVault}> = ({currentVau
 			<p
 				className={`yearn--table-data-section-item-value ${
 					isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'
-				}`}
-			>
+				}`}>
 				<RenderAmount
 					shouldFormatDust
 					value={staked.normalized}

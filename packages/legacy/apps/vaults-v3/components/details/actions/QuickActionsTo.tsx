@@ -192,8 +192,7 @@ export function VaultDetailsQuickActionsTo(props: {
 					</p>
 					<legend
 						className={'font-number inline text-xs text-neutral-900/50 md:hidden'}
-						suppressHydrationWarning
-					>
+						suppressHydrationWarning>
 						<VaultAPY
 							currentVault={currentVault}
 							hasVeYFIBalance={hasVeYFIBalance}
@@ -205,13 +204,11 @@ export function VaultDetailsQuickActionsTo(props: {
 				</div>
 				<Renderable
 					shouldRender={!isActive || isDepositing || possibleOptionsTo.length === 1}
-					fallback={renderMultipleOptionsFallback()}
-				>
+					fallback={renderMultipleOptionsFallback()}>
 					<div
 						className={
 							'flex h-10 w-full items-center justify-between rounded-lg bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
-						}
-					>
+						}>
 						<div className={'relative flex flex-row items-center truncate'}>
 							<div className={'size-6 flex-none rounded-full'}>
 								{actionParams?.selectedOptionTo?.icon}
@@ -219,8 +216,7 @@ export function VaultDetailsQuickActionsTo(props: {
 							<p
 								className={
 									'truncate whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'
-								}
-							>
+								}>
 								{selectedOptionToSymbol}
 							</p>
 						</div>

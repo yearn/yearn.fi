@@ -52,8 +52,7 @@ function MobileTabButtons(props: {
 				props.selectedTab.value === props.currentTab.value
 					? 'border-b-2 border-neutral-900'
 					: 'border-b-2 border-neutral-300'
-			)}
-		>
+			)}>
 			{props.currentTab.label}
 		</button>
 	);
@@ -290,8 +289,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						: currentVault?.info.uiNotice
 							? 'mt-10 md:mt-10'
 							: 'mt-10 md:mt-20'
-				)}
-			>
+				)}>
 				<Link href={'/vaults'}>
 					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>{'Back to vaults'}</p>
 				</Link>
@@ -352,8 +350,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					<div
 						className={
 							'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-6'
-						}
-					>
+						}>
 						<VaultDetailsQuickActionsFrom
 							currentVault={currentVault}
 							vaultData={vaultData}
@@ -405,8 +402,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							<div
 								className={cl(
 									'flex h-10 min-w-28 z-10 flex-row items-center bg-neutral-100 p-0 font-bold md:hidden border-b-2 border-neutral-900'
-								)}
-							>
+								)}>
 								{'Boost'}
 							</div>
 							<div className={'hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>

@@ -62,8 +62,7 @@ export function AllocationChart({
 				stroke={strokeColor}
 				startAngle={startAngle}
 				minAngle={minAngle}
-				endAngle={endAngle}
-			>
+				endAngle={endAngle}>
 				{allocationChartData.map(({id}, index) => (
 					<Cell key={id} fill={colors[index % colors.length]} className={colors[index % colors.length]} />
 				))}
@@ -74,8 +73,7 @@ export function AllocationChart({
 							y={height / 2}
 							textAnchor={'middle'}
 							dominantBaseline={'middle'}
-							className={`${textColor} text-sm font-medium`}
-						>
+							className={`${textColor} text-sm font-medium`}>
 							{labelText}
 						</text>
 					)}

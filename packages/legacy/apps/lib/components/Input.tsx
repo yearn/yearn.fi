@@ -36,8 +36,7 @@ export function Input(props: TAmountInputProps): ReactElement {
 			{(error ?? legend) && (
 				<legend
 					className={`mt-1 pl-0.5 text-xs opacity-70 md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}
-					suppressHydrationWarning
-				>
+					suppressHydrationWarning>
 					{error ?? legend}
 				</legend>
 			)}
@@ -58,8 +57,7 @@ export function FakeInput(
 						'h-10 w-full border-0 border-none rounded-lg bg-neutral-300 p-2 font-mono text-base font-normal outline-none',
 						value === undefined ? 'text-neutral-600/60' : ''
 					)}
-					aria-label={label}
-				>
+					aria-label={label}>
 					{value || '0.00'}
 				</div>
 			</div>

@@ -102,8 +102,7 @@ export function VaultsListStrategy({
 				variant === 'v2' ? '' : 'rounded-3xl',
 				isExpanded && variant === 'v2' ? 'bg-[#97979724] bg-opacity-[14]' : '',
 				isUnallocated ? 'opacity-50' : ''
-			)}
-		>
+			)}>
 			{variant === 'v3' && (
 				<div
 					className={cl(
@@ -122,8 +121,7 @@ export function VaultsListStrategy({
 					'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 px-4 md:px-8 cursor-pointer justify-between',
 					variant === 'v3' ? '' : 'md:border-t border-[#606770]'
 				)}
-				onClick={() => setIsExpanded(!isExpanded)}
-			>
+				onClick={() => setIsExpanded(!isExpanded)}>
 				<div className={cl('col-span-5 flex flex-row items-center gap-4 z-10')}>
 					<div className={'flex items-center justify-center'}>
 						<button
@@ -131,8 +129,7 @@ export function VaultsListStrategy({
 								'text-sm font-bold transition-all duration-300 ease-in-out',
 								isExpanded ? '' : 'rotate-[-90deg]'
 							)}
-							aria-label={isExpanded ? 'Collapse' : 'Expand'}
-						>
+							aria-label={isExpanded ? 'Collapse' : 'Expand'}>
 							{'▼'}
 						</button>
 					</div>
@@ -154,12 +151,10 @@ export function VaultsListStrategy({
 						'md:col-span-7 z-10',
 						'grid grid-cols-1 sm:grid-cols-3 md:grid-cols-12 md:gap-4',
 						'mt-4 md:mt-0'
-					)}
-				>
+					)}>
 					<div
 						className={'items-right flex flex-row justify-between sm:flex-col md:col-span-3 md:text-right'}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Allocation %'}</p>
 						<p>{formatPercent((details?.debtRatio || 0) / 100, 0)}</p>
 					</div>
@@ -167,8 +162,7 @@ export function VaultsListStrategy({
 						className={
 							'items-right flex flex-row justify-between sm:flex-col md:col-span-4 md:mr-[-20px] md:text-right'
 						}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Allocation $'}</p>
 						<p>{allocation}</p>
 					</div>
@@ -176,8 +170,7 @@ export function VaultsListStrategy({
 						className={
 							'items-right flex flex-row justify-between sm:flex-col md:col-span-5 md:mr-[3px] md:text-right'
 						}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
 						<p>
 							<RenderAmount shouldHideTooltip value={finalApr} symbol={'percent'} decimals={6} />
@@ -192,8 +185,7 @@ export function VaultsListStrategy({
 					variants={expandAnimation}
 					initial={'initial'}
 					animate={'enter'}
-					exit={'exit'}
-				>
+					exit={'exit'}>
 					<div className={'h-px w-full bg-[#606770]'} />
 					<div className={cl('w-full py-4 md:pl-16 pl-4 rounded-b-3xl text-neutral-900')}>
 						<motion.div
@@ -202,8 +194,7 @@ export function VaultsListStrategy({
 								initial: {},
 								enter: {},
 								exit: {}
-							}}
-						>
+							}}>
 							{/* First column */}
 							<div className={'flex flex-col gap-4'}>
 								<div className={'flex flex-wrap items-center gap-4'}>
@@ -215,8 +206,7 @@ export function VaultsListStrategy({
 											style={{background: chainBgColor}} // needed for polygon vaults
 											className={cl(
 												'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80 '
-											)}
-										>
+											)}>
 											{'Vault'}
 											<IconLinkOut className={'inline-block size-4'} />
 										</Link>
@@ -229,8 +219,7 @@ export function VaultsListStrategy({
 											'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80'
 										)}
 										target={'_blank'}
-										rel={'noopener noreferrer'}
-									>
+										rel={'noopener noreferrer'}>
 										{truncateHex(address, 4)}
 										<IconLinkOut className={'inline-block size-4'} />
 									</Link>

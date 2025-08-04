@@ -190,19 +190,16 @@ export const Vaults: FC = () => {
 				<div
 					className={'relative mb-8 overflow-hidden md:mb-12'}
 					onMouseEnter={() => setIsHovering(true)}
-					onMouseLeave={() => setIsHovering(false)}
-				>
+					onMouseLeave={() => setIsHovering(false)}>
 					<div
 						className={'flex transition-transform duration-500 ease-in-out'}
-						style={{transform: `translateX(-${activeSlide * 100}%)`}}
-					>
+						style={{transform: `translateX(-${activeSlide * 100}%)`}}>
 						{slides.map(slide => (
 							<div
 								key={slide.title}
 								className={
 									'flex w-full shrink-0 flex-col items-stretch justify-between gap-6 md:flex-row md:gap-8'
-								}
-							>
+								}>
 								<div className={'md:min-h-auto relative hidden min-h-[300px] w-full md:flex md:w-2/5'}>
 									<div
 										className={
@@ -213,8 +210,7 @@ export const Vaults: FC = () => {
 											backgroundRepeat: 'no-repeat',
 											backgroundSize: 'cover',
 											backgroundPosition: 'center'
-										}}
-									>
+										}}>
 										<Image
 											className={
 												'z-10 block transition-opacity group-hover:opacity-0 md:opacity-100'
@@ -230,8 +226,7 @@ export const Vaults: FC = () => {
 								<div
 									className={
 										'relative flex size-full flex-col justify-between gap-4 md:w-3/5 md:gap-4'
-									}
-								>
+									}>
 									<div className={'relative p-4 md:p-0'}>
 										<SectionHeader
 											tagline={slide.tagline}
@@ -243,23 +238,20 @@ export const Vaults: FC = () => {
 									<div
 										className={
 											'flex w-full flex-col gap-2 overflow-hidden md:flex-col md:rounded-[24px] md:bg-white/5 md:p-[8px]'
-										}
-									>
+										}>
 										{rows[activeSlide].map(row => {
 											const isVaultLoading = row?.address && isLoadingVaultList;
 											return (
 												<a
 													key={row.href}
 													href={row.href}
-													className={`${row.bgClass} flex cursor-pointer items-center justify-between rounded-[12px] p-2 transition-opacity duration-200 hover:opacity-50 md:rounded-[16px] md:p-[8px]`}
-												>
+													className={`${row.bgClass} flex cursor-pointer items-center justify-between rounded-[12px] p-2 transition-opacity duration-200 hover:opacity-50 md:rounded-[16px] md:p-[8px]`}>
 													<div className={'flex items-center'}>
 														<div className={' mr-2 rounded-2xl p-1 md:mr-3'}>
 															<div
 																className={
 																	'flex size-5 items-center justify-center rounded-2xl bg-gray-900 md:size-6'
-																}
-															>
+																}>
 																<Image
 																	src={row.icon}
 																	alt={row.text}
@@ -286,8 +278,7 @@ export const Vaults: FC = () => {
 																<span
 																	className={
 																		'hidden font-light text-gray-400 md:block md:text-base'
-																	}
-																>
+																	}>
 																	{row.description}
 																</span>
 															)}
@@ -299,8 +290,7 @@ export const Vaults: FC = () => {
 															className={'size-4 md:size-5'}
 															fill={'none'}
 															viewBox={'0 0 24 24'}
-															stroke={'currentColor'}
-														>
+															stroke={'currentColor'}>
 															<path
 																strokeLinecap={'round'}
 																strokeLinejoin={'round'}

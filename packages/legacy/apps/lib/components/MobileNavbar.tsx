@@ -17,8 +17,7 @@ export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 		<div
 			className={
 				'flex h-full w-screen flex-col justify-end border-t border-gray-600/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A]'
-			}
-		>
+			}>
 			<div className={'flex flex-col items-start gap-y-2 bg-transparent p-6 pb-4'}>
 				{MENU_TABS.map(tab => (
 					<Link
@@ -28,8 +27,7 @@ export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 							currentTab === tab.route ? 'text-neutral-900' : 'text-gray-400'
 						)}
 						onClick={onClose}
-						href={tab.route === 'apps' ? `/${tab.route}` : `/apps/${tab.route}`}
-					>
+						href={tab.route === 'apps' ? `/${tab.route}` : `/apps/${tab.route}`}>
 						<div className={'flex size-6 items-center justify-center'}>
 							{iconsDict[tab.route as keyof typeof iconsDict]}
 						</div>

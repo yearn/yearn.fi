@@ -40,8 +40,7 @@ function HeaderUserPosition(): ReactElement {
 						} else {
 							openLoginModal();
 						}
-					}}
-				>
+					}}>
 					{'Connect Wallet'}
 				</Button>
 			</div>
@@ -252,8 +251,7 @@ function ListOfVaults(): ReactElement {
 		<div
 			className={
 				'relative col-span-12 flex min-h-[240px] w-full flex-col overflow-x-hidden bg-neutral-100 md:overflow-x-visible'
-			}
-		>
+			}>
 			<div className={'absolute right-5 top-3 md:right-8 md:top-8'}>
 				<VaultListOptions />
 			</div>

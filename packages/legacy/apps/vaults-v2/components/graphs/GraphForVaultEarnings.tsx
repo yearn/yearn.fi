@@ -40,8 +40,7 @@ export function GraphForVaultEarnings({
 		<ResponsiveContainer width={'100%'} height={height}>
 			<LineChart
 				margin={{top: 0, right: -28, bottom: 0, left: 0}}
-				data={isCumulative ? cumulativeData : harvestData}
-			>
+				data={isCumulative ? cumulativeData : harvestData}>
 				<Line
 					className={'text-primary-600'}
 					type={'step'}

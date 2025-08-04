@@ -55,13 +55,11 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 									}
 								);
 								setSelectedTabId(id);
-							}}
-						>
+							}}>
 							<p
 								title={label}
 								aria-selected={selectedTabId === id}
-								className={'hover-fix align-center flex grow flex-col justify-center'}
-							>
+								className={'hover-fix align-center flex grow flex-col justify-center'}>
 								{label}
 							</p>
 							{selectedTabId === id && (
@@ -86,8 +84,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 							<ListboxButton
 								className={
 									'flex h-10 w-full flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
-								}
-							>
+								}>
 								<div className={'relative flex flex-row items-center'}>
 									{items.find(({id}): boolean => id === selectedTabId)?.label || 'Menu'}
 								</div>
@@ -104,8 +101,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 								enterTo={'transform scale-100 opacity-100'}
 								leave={'transition duration-75 ease-out'}
 								leaveFrom={'transform scale-100 opacity-100'}
-								leaveTo={'transform scale-95 opacity-0'}
-							>
+								leaveTo={'transform scale-95 opacity-0'}>
 								<ListboxOptions className={'yearn--listbox-menu'}>
 									{items.map(
 										({id, label}): ReactElement => (
@@ -127,8 +123,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 					animate={'enter'}
 					exit={'exit'}
 					variants={variants}
-					transition={{duration: 0.15}}
-				>
+					transition={{duration: 0.15}}>
 					{items.map(
 						({id, content}): ReactElement => (
 							<div key={`tab-content-${id}`} className={'w-full p-6'} hidden={selectedTabId !== id}>

@@ -30,14 +30,12 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						<b className={'yearn--table-data-section-item-value'}>
 							<Renderable
 								shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
-								fallback={'NEW'}
-							>
+								fallback={'NEW'}>
 								{'⚡️ '}
 								<span
 									className={
 										'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-									}
-								>
+									}>
 									<RenderAmount
 										shouldHideTooltip={hasZeroBoostedAPY}
 										value={boostedAPY}
@@ -51,14 +49,12 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							<div
 								className={
 									'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-								}
-							>
+								}>
 								<div className={'flex flex-col items-start justify-start text-left'}>
 									<div
 										className={
 											'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-										}
-									>
+										}>
 										<p>{'• Base APY '}</p>
 										<RenderAmount
 											shouldHideTooltip
@@ -71,8 +67,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 									<div
 										className={
 											'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-										}
-									>
+										}>
 										<p>{'• Rewards APY '}</p>
 										<RenderAmount
 											shouldHideTooltip
@@ -112,8 +107,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					<b
 						className={
 							'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-						}
-					>
+						}>
 						<Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
 							<RenderAmount
 								shouldHideTooltip
@@ -125,8 +119,9 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					</b>
 					<small className={'text-xs text-neutral-900'}>
 						<Renderable
-							shouldRender={isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPY}
-						>
+							shouldRender={
+								isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPY
+							}>
 							{`BOOST ${formatAmount(currentVault.apr.forwardAPR.composite?.boost, 2, 2)}x`}
 						</Renderable>
 					</small>
@@ -134,14 +129,12 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						<div
 							className={
 								'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-							}
-						>
+							}>
 							<div className={'flex flex-col items-start justify-start text-left'}>
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}
-								>
+									}>
 									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
@@ -154,8 +147,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}
-								>
+									}>
 									<p>{'• Boost '}</p>
 									<p>{`${formatAmount(currentVault.apr.forwardAPR.composite.boost, 2, 2)} x`}</p>
 								</div>
@@ -179,8 +171,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							<span
 								className={
 									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-								}
-							>
+								}>
 								<RenderAmount
 									shouldHideTooltip={hasZeroBoostedAPY}
 									value={boostedAPY}
@@ -194,14 +185,12 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						<div
 							className={
 								'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-							}
-						>
+							}>
 							<div className={'flex flex-col items-start justify-start text-left'}>
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}
-								>
+									}>
 									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
@@ -214,8 +203,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}
-								>
+									}>
 									<p>{'• Rewards APY '}</p>
 									<RenderAmount shouldHideTooltip value={extraAPY} symbol={'percent'} decimals={6} />
 								</div>
@@ -260,8 +248,7 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 							<span
 								className={
 									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-								}
-							>
+								}>
 								<RenderAmount
 									shouldHideTooltip={hasZeroAPY}
 									value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
@@ -275,14 +262,12 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 						<div
 							className={
 								'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-							}
-						>
+							}>
 							<div className={'flex flex-col items-start justify-start text-left'}>
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}
-								>
+									}>
 									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
@@ -295,8 +280,7 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}
-								>
+									}>
 									<p>{'• Rewards APY '}</p>
 									<p>{'N/A'}</p>
 								</div>
@@ -352,8 +336,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 			<p
 				className={`yearn--table-data-section-item-value ${
 					isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'
-				}`}
-			>
+				}`}>
 				<RenderAmount
 					value={staked.raw}
 					symbol={currentVault.token.symbol}
@@ -397,15 +380,13 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 	return (
 		<Link
 			key={`${currentVault.address}`}
-			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}
-		>
+			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 			<div
 				className={cl(
 					'grid w-full grid-cols-1 md:grid-cols-12',
 					'p-6 pt-2 md:px-10 bg-neutral-100 hover:bg-neutral-200 transition-colors',
 					'cursor-pointer relative group'
-				)}
-			>
+				)}>
 				<div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between')}>
 					<div className={'flex flex-row gap-6 overflow-hidden'}>
 						<div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
@@ -419,8 +400,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 						<div className={'truncate'}>
 							<strong
 								title={currentVault.name}
-								className={'block truncate font-black text-neutral-800 md:-mb-0.5 md:text-lg'}
-							>
+								className={'block truncate font-black text-neutral-800 md:-mb-0.5 md:text-lg'}>
 								{currentVault.name}
 							</strong>
 							<div className={'flex flex-row items-center gap-1'}>
@@ -442,30 +422,26 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 				<div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-10 gap-1', 'mt-4 md:mt-0')}>
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Estimated APY'}</p>
 						<VaultForwardAPY currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Historical APY'}</p>
 						<VaultHistoricalAPY currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</p>
 						<p
 							className={`yearn--table-data-section-item-value ${
 								isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
-							}`}
-						>
+							}`}>
 							<RenderAmount
 								value={availableToDeposit}
 								symbol={currentVault.token.symbol}
@@ -477,16 +453,14 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</p>
 						<VaultStakedAmount currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-						datatype={'number'}
-					>
+						datatype={'number'}>
 						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'TVL'}</p>
 						<div className={'flex flex-col text-right'}>
 							<p className={'yearn--table-data-section-item-value'}>

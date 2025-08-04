@@ -19,8 +19,7 @@ export function VaultRiskInfo({currentVault}: {currentVault: TYDaemonVault}): Re
 						className={cl(
 							'grid w-full grid-cols-12 items-center gap-6',
 							hasRiskScore ? 'border-b border-neutral-900/20 pb-10 mb-10' : ''
-						)}
-					>
+						)}>
 						<div className={'col-span-10'}>
 							<b className={'block text-neutral-900'}>{'Risk Level'}</b>
 							<small className={'mt-1 block w-3/4 text-xs text-neutral-900/40'}>
@@ -41,8 +40,7 @@ export function VaultRiskInfo({currentVault}: {currentVault: TYDaemonVault}): Re
 						className={cl(
 							'grid w-full grid-cols-12 items-center mb-6',
 							currentVault.info.riskScoreComment ? '' : 'hidden'
-						)}
-					>
+						)}>
 						<div className={'col-span-10'}>
 							<p>{'Comment'}</p>
 							<small className={'whitespace-break-spaces text-xs text-neutral-900/40'}>

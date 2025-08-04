@@ -49,16 +49,14 @@ export function NotificationsCurtain(props: {
 						className={cl(
 							'flex w-full grow flex-col py-5 pl-5 md:my-2 md:mr-2 shadow-2xl',
 							props.variant === 'v3' ? 'bg-neutral-100 md:rounded-3xl' : 'bg-neutral-0'
-						)}
-					>
+						)}>
 						<div className={'h-full'}>
 							<div className={'mb-4 flex items-center justify-between pr-4'}>
 								<Drawer.Title className={'font-bold text-neutral-900'}>{'Notifications'}</Drawer.Title>
 								<Drawer.Close
 									className={
 										'rounded-full p-1 text-neutral-900 transition-colors hover:text-neutral-600'
-									}
-								>
+									}>
 									<IconCross className={'size-4'} />
 								</Drawer.Close>
 							</div>
@@ -68,8 +66,7 @@ export function NotificationsCurtain(props: {
 									scrollbarColor: '#9E9E9E transparent',
 									scrollbarWidth: 'thin',
 									scrollbarGutter: 'stable'
-								}}
-							>
+								}}>
 								{isLoading ? (
 									<div className={'flex h-full items-center justify-center'}>
 										<div className={'flex flex-col items-center gap-2'}>
@@ -96,8 +93,7 @@ export function NotificationsCurtain(props: {
 										initial={{opacity: 0}}
 										animate={{opacity: 1}}
 										transition={{duration: 0.2, ease: [0.4, 0.0, 0.2, 1]}}
-										className={'flex h-full flex-col pr-2'}
-									>
+										className={'flex h-full flex-col pr-2'}>
 										<AnimatePresence mode={'popLayout'}>
 											{cachedEntries.toReversed().map(entry => (
 												<Notification

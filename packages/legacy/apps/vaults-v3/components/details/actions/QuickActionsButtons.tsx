@@ -246,8 +246,7 @@ export function VaultDetailsQuickActionsButtons({
 				className={'w-full'}
 				isBusy={txStatusApprove.pending}
 				isDisabled={isButtonDisabled || isZero(toBigInt(expectedOut?.raw))}
-				onClick={onApproveFrom}
-			>
+				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
 		);
@@ -305,15 +304,13 @@ export function VaultDetailsQuickActionsButtons({
 						isZero(toBigInt(actionParams.amount?.raw)) ||
 						toBigInt(toBigInt(actionParams.amount?.raw)) >
 							toBigInt(maxDepositPossible(toAddress(actionParams?.selectedOptionFrom?.value)).raw)
-					}
-				>
+					}>
 					<motion.div
 						key={isAutoStakingEnabled ? 'deposit-stake' : 'deposit-only'}
 						initial={{opacity: 0, y: 10}}
 						animate={{opacity: 1, y: 0}}
 						exit={{opacity: 0, y: -10}}
-						transition={{duration: 0.3}}
-					>
+						transition={{duration: 0.3}}>
 						{'Deposit and Stake'}
 					</motion.div>
 				</Button>
@@ -342,15 +339,13 @@ export function VaultDetailsQuickActionsButtons({
 				}}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={isButtonDisabled}
-			>
+				isDisabled={isButtonDisabled}>
 				<motion.div
 					key={isDepositing ? 'deposit' : 'migrate'}
 					initial={{opacity: 0, y: 10}}
 					animate={{opacity: 1, y: 0}}
 					exit={{opacity: 0, y: -10}}
-					transition={{duration: 0.3}}
-				>
+					transition={{duration: 0.3}}>
 					{isDepositing ? 'Deposit' : 'Migrate'}
 				</motion.div>
 			</Button>
@@ -378,8 +373,7 @@ export function VaultDetailsQuickActionsButtons({
 			}}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
-			isDisabled={isButtonDisabled}
-		>
+			isDisabled={isButtonDisabled}>
 			{'Withdraw'}
 		</Button>
 	);

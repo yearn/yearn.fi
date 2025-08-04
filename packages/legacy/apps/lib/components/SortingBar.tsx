@@ -17,8 +17,7 @@ export function SortingBar(): ReactElement {
 				<div
 					className={
 						'border-1 absolute top-28 z-30 w-80 border border-gray-700 bg-gray-500 py-2 text-neutral-900 max-sm:left-0 md:right-1 md:top-10'
-					}
-				>
+					}>
 					{Array(4)
 						.fill('List Item')
 						.map((item, index) => (

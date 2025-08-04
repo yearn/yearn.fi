@@ -26,8 +26,7 @@ export const VaultPositionCard: FC<{
 			<div
 				className={
 					'group relative flex cursor-pointer items-center justify-between overflow-hidden rounded-lg border border-black/10 bg-black/20 transition-all hover:bg-black/5 '
-				}
-			>
+				}>
 				<div className={'flex size-full flex-row items-center '}>
 					<div className={'flex w-full flex-col gap-3 p-4'}>
 						<div className={'flex items-center gap-2'}>
@@ -57,14 +56,12 @@ export const VaultPositionCard: FC<{
 					<div
 						className={
 							'bg-neutral-50/20 flex w-[40px] items-center justify-center self-stretch group-hover:bg-white/5'
-						}
-					>
+						}>
 						<svg
 							className={'size-4 text-neutral-600'}
 							fill={'none'}
 							stroke={'currentColor'}
-							viewBox={'0 0 24 24'}
-						>
+							viewBox={'0 0 24 24'}>
 							<path
 								strokeLinecap={'round'}
 								strokeLinejoin={'round'}

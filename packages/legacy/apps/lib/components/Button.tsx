@@ -33,8 +33,7 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
 					ref={ref}
 					data-variant={variant}
 					className={`yearn--button flex-center ${rest.className}`}
-					type="button"
-				>
+					type="button">
 					{children}
 				</button>
 			</a>
@@ -55,8 +54,7 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
 				if (!isBusy && rest.onClick) {
 					rest.onClick(event);
 				}
-			}}
-		>
+			}}>
 			{children}
 			{isBusy ? (
 				<div className={'absolute inset-0 flex items-center justify-center'}>

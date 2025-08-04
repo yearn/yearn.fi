@@ -8,8 +8,7 @@ export function IconLock(props: React.SVGProps<SVGSVGElement>): ReactElement {
 			height={'18'}
 			viewBox={'0 0 16 18'}
 			fill={'none'}
-			xmlns={'http://www.w3.org/2000/svg'}
-		>
+			xmlns={'http://www.w3.org/2000/svg'}>
 			<path
 				d={
 					'M13.5998 8.2002H2.3998C1.51615 8.2002 0.799805 8.91654 0.799805 9.8002V15.4002C0.799805 16.2839 1.51615 17.0002 2.3998 17.0002H13.5998C14.4835 17.0002 15.1998 16.2839 15.1998 15.4002V9.8002C15.1998 8.91654 14.4835 8.2002 13.5998 8.2002Z'

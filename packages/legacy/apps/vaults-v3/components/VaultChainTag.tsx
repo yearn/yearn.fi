@@ -37,8 +37,7 @@ export const VaultChainTag: FC<{
 			style={{
 				backgroundColor: `${ChainColors[chainID]}${opacityToHex(backgroundOpacity)}`,
 				color: `${ChainTextColors[chainID] || '#ffffff'}${opacityToHex(textOpacity)}`
-			}}
-		>
+			}}>
 			{ChainNames[chainID]}
 		</div>
 	);

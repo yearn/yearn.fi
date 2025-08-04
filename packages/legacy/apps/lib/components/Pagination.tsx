@@ -39,8 +39,7 @@ export function Pagination({
 					disabled={currentPage <= 0}
 					className={
 						'hover:bg-gray-50 relative inline-flex items-center rounded-md bg-neutral-200 px-4 py-2 text-sm text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40'
-					}
-				>
+					}>
 					{'Previous'}
 				</button>
 				<button
@@ -48,8 +47,7 @@ export function Pagination({
 					disabled={currentPage >= pageCount - 1}
 					className={
 						'hover:bg-gray-50 relative inline-flex items-center rounded-md bg-neutral-200 px-4 py-2 text-sm text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40'
-					}
-				>
+					}>
 					{'Next'}
 				</button>
 			</div>

@@ -79,8 +79,7 @@ function HarvestListRow({
 				<a href={`${blockExplorer}/tx/${harvest.txHash}`} target={'_blank'} rel={'noreferrer'}>
 					<div
 						className={'font-number flex flex-row items-center space-x-2 text-neutral-900 md:justify-end'}
-						style={{lineHeight: '24px'}}
-					>
+						style={{lineHeight: '24px'}}>
 						{truncateHexTx(harvest.txHash, 12)}
 						<IconLinkOut className={'ml-2 size-4 md:ml-4'} />
 					</div>

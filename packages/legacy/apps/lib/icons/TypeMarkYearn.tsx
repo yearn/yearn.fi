@@ -13,8 +13,7 @@ export function TypeMarkYearn(props: React.SVGProps<SVGSVGElement> & {color?: st
 			viewBox={'0 0 929.7 256.1'}
 			enableBackground={'new 0 0 929.7 256.1'}
 			xmlSpace={'preserve'}
-			{...svgProps}
-		>
+			{...svgProps}>
 			<g>
 				<path
 					fill={color}

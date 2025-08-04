@@ -60,8 +60,7 @@ const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, de
 	return (
 		<Link href={href} className={'block cursor-pointer'}>
 			<div
-				className={`flex flex-row items-center p-[12px] transition-all duration-300 ease-in-out hover:scale-[1.005] hover:bg-[#2a2b2c] hover:shadow-lg md:p-[16px] ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}
-			>
+				className={`flex flex-row items-center p-[12px] transition-all duration-300 ease-in-out hover:scale-[1.005] hover:bg-[#2a2b2c] hover:shadow-lg md:p-[16px] ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}>
 				<div className={'relative mr-4 shrink-0 self-center'}>
 					<Image
 						src={imageSrc}
@@ -77,16 +76,14 @@ const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, de
 						<span
 							className={
 								'ml-2 text-neutral-700 transition-all duration-300 ease-in-out hover:text-neutral-500'
-							}
-						>
+							}>
 							{'↗'}
 						</span>
 					</div>
 					<div
 						className={
 							'hidden text-base text-neutral-400 transition-colors duration-300 ease-in-out hover:text-neutral-300 md:block md:max-w-[60%] md:text-right'
-						}
-					>
+						}>
 						{description}
 					</div>
 				</div>

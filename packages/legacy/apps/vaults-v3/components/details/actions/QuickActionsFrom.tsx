@@ -41,13 +41,11 @@ function AmountWithOptionalTooltip(props: {
 							<div
 								className={
 									'font-number mr-[-360px] max-w-sm border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-								}
-							>
+								}>
 								<p
 									className={
 										'font-number whitespace-pre text-wrap text-left text-neutral-400 md:text-xs'
-									}
-								>
+									}>
 									{`This Vault is not always totally liquid.\n\nRight now, you cannot withdraw your ${props.tokenSymbol}.\n\nLike the best things in life, liquidity comes and goes so feel free to check back later.`}
 								</p>
 							</div>
@@ -67,8 +65,7 @@ function AmountWithOptionalTooltip(props: {
 						<div
 							className={
 								'font-number mr-[-360px] max-w-sm border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-							}
-						>
+							}>
 							<p className={'font-number whitespace-pre text-wrap text-left text-neutral-400 md:text-xs'}>
 								{`This Vault is not always totally liquid (don't worry anon, funds are Safu).\n\nYou can currently withdraw up to ${formatAmount(props.maxPossibleToWithdraw.normalized, 6)} ${props.tokenSymbol}.\n\nLike the best things in life, liquidity comes and goes so feel free to check back later.`}
 							</p>
@@ -184,15 +181,13 @@ export function VaultDetailsQuickActionsFrom(props: {
 	return (
 		<section
 			id={isActive ? 'active' : 'not-active'}
-			className={'grid w-full flex-col gap-0 md:grid-cols-2 md:flex-row md:gap-4'}
-		>
+			className={'grid w-full flex-col gap-0 md:grid-cols-2 md:flex-row md:gap-4'}>
 			<div className={'relative w-full'}>
 				<div className={'flex flex-col items-baseline justify-between pb-2 pl-1 md:flex-row'}>
 					<p className={'text-base text-neutral-600'}>{isDepositing ? 'From wallet' : 'From vault'}</p>
 					<legend
 						className={'font-number inline text-xs text-neutral-900/50 md:hidden'}
-						suppressHydrationWarning
-					>
+						suppressHydrationWarning>
 						{`You have ${formatAmount((userBalance || zeroNormalizedBN).normalized)} ${
 							actionParams?.selectedOptionFrom?.symbol || 'tokens'
 						}`}
@@ -202,15 +197,13 @@ export function VaultDetailsQuickActionsFrom(props: {
 					<div
 						className={
 							'flex h-10 w-full items-center justify-between rounded-lg bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
-						}
-					>
+						}>
 						<div className={'relative flex flex-row items-center truncate'}>
 							<div className={'size-6 flex-none rounded-full'}>{selectedFromIcon}</div>
 							<p
 								className={
 									'truncate whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'
-								}
-							>
+								}>
 								{selectedFromSymbol}
 							</p>
 						</div>
@@ -246,8 +239,7 @@ export function VaultDetailsQuickActionsFrom(props: {
 					className={cl(
 						'flex h-10 items-center rounded-lg p-2 w-full',
 						isV3Page ? 'bg-neutral-300' : 'bg-neutral-0'
-					)}
-				>
+					)}>
 					<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 						<input
 							id={'fromAmount'}
@@ -274,8 +266,7 @@ export function VaultDetailsQuickActionsFrom(props: {
 							}
 							className={
 								'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
-							}
-						>
+							}>
 							{'Max'}
 						</button>
 					</div>

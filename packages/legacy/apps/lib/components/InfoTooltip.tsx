@@ -40,8 +40,7 @@ export const InfoTooltip = ({text, size, iconClassName, className}: TProps): Rea
 					className={cl(
 						'w-fit border border-neutral-300 bg-neutral-100 text-center text-neutral-900',
 						tooltipStyle
-					)}
-				>
+					)}>
 					{text}
 				</div>
 			</span>

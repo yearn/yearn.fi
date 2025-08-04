@@ -17,13 +17,11 @@ const FAQItem: FC<TFAQItem> = ({title, children, isOpen, onToggle}) => {
 				onClick={onToggle}
 				className={
 					'flex w-full items-center justify-between rounded-lg bg-[#191919] px-6 py-5 text-neutral-900 transition-colors hover:bg-[#2a2a2a]'
-				}
-			>
+				}>
 				<span className={'text-lg'}>{title}</span>
 				<span
 					className={'text-2xl transition-transform'}
-					style={{transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)'}}
-				>
+					style={{transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)'}}>
 					{'+'}
 				</span>
 			</button>
@@ -115,8 +113,7 @@ export const FAQs: FC = () => {
 									key={faq.title}
 									title={faq.title}
 									isOpen={openFAQ === index}
-									onToggle={() => toggleFAQ(index)}
-								>
+									onToggle={() => toggleFAQ(index)}>
 									{faq.content}
 								</FAQItem>
 							))}

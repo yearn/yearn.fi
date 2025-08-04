@@ -16,8 +16,7 @@ export function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault})
 		<Link
 			prefetch={false}
 			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}?action=withdraw`}
-			className={'w-full'}
-		>
+			className={'w-full'}>
 			<div className={'yearn--table-wrapper bg-neutral-900 text-neutral-0'}>
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
@@ -44,8 +43,7 @@ export function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault})
 					<div
 						className={
 							'yearn--table-data-section-item inline h-auto text-left text-neutral-0 md:col-span-6 md:py-2'
-						}
-					>
+						}>
 						<b>{'This Vault is no longer supported. '}</b>
 						{
 							'Sadly this vault is deprecated and will no longer earn yield. Please withdraw your funds (many other Vaults await you anon).'
@@ -55,12 +53,10 @@ export function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault})
 					<div
 						className={
 							'col-span-2 flex h-auto flex-row items-center justify-between space-x-4 py-4 md:justify-end'
-						}
-					>
+						}>
 						<button
 							data-variant={'reverted'}
-							className={'yearn--button-smaller reverted !w-full text-center'}
-						>
+							className={'yearn--button-smaller reverted !w-full text-center'}>
 							{'Withdraw'}
 						</button>
 					</div>

@@ -31,8 +31,7 @@ function MotionDiv({animate, name, children}: TMotionDiv): ReactElement {
 			initial={'initial'}
 			animate={animate}
 			variants={variants}
-			className={'absolute cursor-pointer'}
-		>
+			className={'absolute cursor-pointer'}>
 			{children}
 		</motion.div>
 	);
@@ -142,11 +141,9 @@ export function LogoPopover(): ReactElement {
 					leave={'transition ease-in duration-150'}
 					leaveFrom={'opacity-100 translate-y-0'}
 					leaveTo={'opacity-0 translate-y-1'}
-					className={'relative z-[9999999]'}
-				>
+					className={'relative z-[9999999]'}>
 					<PopoverPanel
-						className={'absolute left-0 top-10 z-20 w-[345px] scale-[115%] bg-transparent px-4 sm:px-0'}
-					>
+						className={'absolute left-0 top-10 z-20 w-[345px] scale-[115%] bg-transparent px-4 sm:px-0'}>
 						<div className={cl('overflow-hidden shadow-xl', isVaultPage ? 'pt-4' : 'pt-0')}>
 							<div
 								className={cl(
@@ -156,8 +153,7 @@ export function LogoPopover(): ReactElement {
 									isV3
 										? 'border-[#151C40] bg-[#000520]'
 										: 'dark:border-[#010A3B] dark:bg-neutral-300 bg-white'
-								)}
-							>
+								)}>
 								<div className={'grid grid-cols-2 gap-2'}>
 									{[...Object.values(APPS)].slice(0, 4).map(({name, href, icon}): ReactElement => {
 										return (
@@ -165,8 +161,7 @@ export function LogoPopover(): ReactElement {
 												prefetch={false}
 												key={name}
 												href={href}
-												onClick={(): void => setIsShowing(false)}
-											>
+												onClick={(): void => setIsShowing(false)}>
 												<div
 													onClick={(): void => setIsShowing(false)}
 													className={cl(
@@ -174,8 +169,7 @@ export function LogoPopover(): ReactElement {
 														isV3
 															? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
 															: 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
-													)}
-												>
+													)}>
 													<div>
 														{cloneElement(icon, {
 															className: 'w-8 h-8 min-w-8 max-w-8 min-h-8 max-h-8'
@@ -186,8 +180,7 @@ export function LogoPopover(): ReactElement {
 															className={cl(
 																'text-base',
 																isV3 ? 'text-white' : 'text-black dark:text-white'
-															)}
-														>
+															)}>
 															{name}
 														</b>
 													</div>
@@ -205,8 +198,7 @@ export function LogoPopover(): ReactElement {
 													prefetch={false}
 													key={name}
 													href={href}
-													onClick={(): void => setIsShowing(false)}
-												>
+													onClick={(): void => setIsShowing(false)}>
 													<div
 														onClick={(): void => setIsShowing(false)}
 														className={cl(
@@ -214,8 +206,7 @@ export function LogoPopover(): ReactElement {
 															isV3
 																? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
 																: 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
-														)}
-													>
+														)}>
 														<div>
 															{cloneElement(icon, {
 																className:
@@ -227,8 +218,7 @@ export function LogoPopover(): ReactElement {
 																className={cl(
 																	'text-xs',
 																	isV3 ? 'text-white' : 'text-black dark:text-white'
-																)}
-															>
+																)}>
 																{name}
 															</b>
 														</div>
@@ -244,8 +234,7 @@ export function LogoPopover(): ReactElement {
 												isV3
 													? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
 													: 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
-											)}
-										>
+											)}>
 											<b>{'More...'}</b>
 										</button>
 									)}

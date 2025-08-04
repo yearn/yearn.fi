@@ -108,15 +108,13 @@ export const Dropdown = ({
 							}
 							setIsOpen(false);
 						}}
-						disabled={isDisabled}
-					>
+						disabled={isDisabled}>
 						<ComboboxButton
 							onClick={(): void => setIsOpen((state: boolean): boolean => !state)}
 							className={cl(
 								'flex h-10 w-full items-center justify-between p-2 text-base md:px-3',
 								isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0 text-neutral-900'
-							)}
-						>
+							)}>
 							<div className={'relative flex flex-row items-center'}>
 								{selected?.icon && (
 									<div className={'size-6 rounded-full'}>
@@ -133,8 +131,7 @@ export const Dropdown = ({
 										'max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap font-normal scrollbar-none md:max-w-full',
 										selected?.icon ? 'pl-2' : 'pl-0',
 										isDisabled ? 'text-neutral-600' : 'text-neutral-900'
-									)}
-								>
+									)}>
 									<ComboboxInput
 										className={
 											'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'
@@ -167,8 +164,7 @@ export const Dropdown = ({
 							afterLeave={(): void => {
 								setIsOpen(false);
 								setSearch('');
-							}}
-						>
+							}}>
 							<ComboboxOptions className={'yearn--dropdown-menu z-50'}>
 								{filteredOptions.length === 0 ? (
 									<DropdownEmpty isSearching={isSearching} />

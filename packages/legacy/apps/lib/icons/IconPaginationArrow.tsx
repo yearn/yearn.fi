@@ -9,8 +9,7 @@ export function IconPaginationArrow(props: React.SVGProps<SVGSVGElement>): React
 			height={'16'}
 			viewBox={'0 0 10 16'}
 			fill={'none'}
-			xmlns={'http://www.w3.org/2000/svg'}
-		>
+			xmlns={'http://www.w3.org/2000/svg'}>
 			<svg width={'10'} height={'16'} viewBox={'0 0 10 16'} fill={'none'} xmlns={'http://www.w3.org/2000/svg'}>
 				<path
 					d={

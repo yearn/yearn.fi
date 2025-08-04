@@ -19,8 +19,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 		<div
 			className={
 				'flex h-full w-72 flex-col justify-between rounded-lg border border-gray-700/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] py-6 text-white'
-			}
-		>
+			}>
 			<div>
 				<div className={'px-4'}>
 					<div className={'mb-4 ml-2'}>
@@ -52,8 +51,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 								)}
 								shallow
 								href={href}
-								key={tab.route}
-							>
+								key={tab.route}>
 								<div className={'flex size-6 items-center justify-center'}>
 									{iconsDict[tab.route as keyof typeof iconsDict]}
 								</div>
@@ -70,8 +68,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 						className={'text-xs text-gray-400 hover:text-white'}
 						target={'_blank'}
 						href={link.href}
-						key={link.title}
-					>
+						key={link.title}>
 						{link.title}
 					</Link>
 				))}

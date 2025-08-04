@@ -123,8 +123,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 				isLoadingVaultList: isLoading,
 				mutateVaultList: mutate,
 				getPrice
-			}}
-		>
+			}}>
 			{children}
 		</YearnContext.Provider>
 	);

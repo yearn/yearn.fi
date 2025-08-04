@@ -25,8 +25,7 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 				(option): ReactElement => (
 					<Link key={option.path} target={option.target} href={option.path}>
 						<p
-							className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}
-						>
+							className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}>
 							{option?.label || 'Unknown'}
 						</p>
 					</Link>
@@ -68,8 +67,7 @@ function WalletSelector(): ReactElement {
 				} else {
 					openLoginModal();
 				}
-			}}
-		>
+			}}>
 			<p suppressHydrationWarning className={'yearn--header-nav-item !text-xs md:!text-sm'}>
 				{walletIdentity ? (
 					walletIdentity
@@ -79,8 +77,7 @@ function WalletSelector(): ReactElement {
 						<span
 							className={
 								'text-neutral-0 relative hidden h-8 cursor-pointer items-center justify-center rounded border border-transparent bg-neutral-900 px-2 text-xs font-normal transition-all hover:bg-neutral-800 md:flex'
-							}
-						>
+							}>
 							{'Connect wallet'}
 						</span>
 					</span>
@@ -167,8 +164,7 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 							className={
 								'yearn--header-nav-item hover:bg-grey-200 relative rounded-full p-2 transition-colors'
 							}
-							onClick={(): void => setShouldOpenCurtain(true)}
-						>
+							onClick={(): void => setShouldOpenCurtain(true)}>
 							<IconBell className={'text-grey-900 size-4 font-bold transition-colors'} />
 
 							<div className={cl('absolute right-1 top-1 size-2 rounded-full', notificationDotColor)} />
@@ -182,8 +178,7 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 				shouldUseNetworks={true}
 				isOpen={isMenuOpen}
 				onClose={(): void => setIsMenuOpen(false)}
-				supportedNetworks={props.supportedNetworks}
-			>
+				supportedNetworks={props.supportedNetworks}>
 				{menu?.map(
 					(option): ReactElement => (
 						<Link key={option.path} href={option.path}>

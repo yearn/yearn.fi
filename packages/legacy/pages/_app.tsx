@@ -55,8 +55,7 @@ const WithLayout = memo(function WithLayout(
 				<div
 					className={cl(
 						'mx-auto mb-0 flex z-[60] font-aeonik max-w-6xl absolute top-0 inset-x-0 bg-neutral-0'
-					)}
-				>
+					)}>
 					<AppHeader supportedNetworks={props.supportedNetworks} />
 				</div>
 				<div id={'app'} className={'bg-neutral-0 font-aeonik mb-0 flex min-h-screen justify-center'}>
@@ -82,8 +81,7 @@ const WithLayout = memo(function WithLayout(
 								initial={'initial'}
 								animate={'enter'}
 								exit={'exit'}
-								variants={variants}
-							>
+								variants={variants}>
 								<Component router={props.router} {...pageProps} />
 							</motion.div>
 						</AnimatePresence>
@@ -126,8 +124,7 @@ function MyApp(props: AppProps): ReactElement {
 						tokenLists={[
 							'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/yearn.json',
 							'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/popular.json'
-						]}
-					>
+						]}>
 						<AppSettingsContextApp>
 							<YearnContextApp>
 								<WalletContextApp>

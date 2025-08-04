@@ -8,8 +8,7 @@ export function IconQuestion(props: React.SVGProps<SVGSVGElement>): ReactElement
 			height={'16'}
 			viewBox={'0 0 16 16'}
 			fill={'none'}
-			xmlns={'http://www.w3.org/2000/svg'}
-		>
+			xmlns={'http://www.w3.org/2000/svg'}>
 			<g clipPath={'url(#clip0_1319_556)'}>
 				<path
 					d={

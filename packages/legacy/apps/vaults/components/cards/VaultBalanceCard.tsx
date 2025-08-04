@@ -19,8 +19,7 @@ export const VaultBalanceCard: FC<{
 						className={
 							'flex size-5 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20'
 						}
-						onClick={onExpansionClick}
-					>
+						onClick={onExpansionClick}>
 						{!isExpanded ? <IconExpand /> : <IconMinimize />}
 					</div>
 				)}

@@ -19,8 +19,7 @@ export function Button(
 				'py-2 px-4 text-neutral-900 rounded-[24px] transition-colors',
 				STYLE[variant],
 				rest.className
-			)}
-		>
+			)}>
 			{rest.children}
 		</button>
 	);

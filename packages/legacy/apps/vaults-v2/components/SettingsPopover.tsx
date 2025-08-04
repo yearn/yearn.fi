@@ -49,11 +49,9 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 						enterTo={'opacity-100 translate-y-0'}
 						leave={'transition ease-in duration-150'}
 						leaveFrom={'opacity-100 translate-y-0'}
-						leaveTo={'opacity-0 translate-y-1'}
-					>
+						leaveTo={'opacity-0 translate-y-1'}>
 						<PopoverPanel
-							className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}
-						>
+							className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
 							<div className={'yearn--shadow'}>
 								<div className={'relative bg-neutral-0 p-4'}>
 									<div className={'mb-6 flex flex-col space-y-1'}>
@@ -68,20 +66,17 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 											}
 											className={
 												'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none scrollbar-none'
-											}
-										>
+											}>
 											{vault.chainID === 1 ? (
 												<option
 													disabled={isSolverDisabled(Solver.enum.Cowswap)}
-													value={Solver.enum.Cowswap}
-												>
+													value={Solver.enum.Cowswap}>
 													{Solver.enum.Cowswap}
 												</option>
 											) : null}
 											<option
 												disabled={isSolverDisabled(Solver.enum.Portals)}
-												value={Solver.enum.Portals}
-											>
+												value={Solver.enum.Portals}>
 												{Solver.enum.Portals}
 											</option>
 										</select>
@@ -92,8 +87,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 													className={'underline'}
 													href={'https://docs.cow.fi/front-end/cowswap'}
 													target={'_blank'}
-													rel={'noreferrer'}
-												>
+													rel={'noreferrer'}>
 													{'gasless order'}
 												</a>
 												&nbsp;{'using CoW Swap.'}
@@ -106,8 +100,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 													className={'underline'}
 													href={'https://portals.fi/'}
 													target={'_blank'}
-													rel={'noreferrer'}
-												>
+													rel={'noreferrer'}>
 													{'Portals'}
 												</a>
 												&nbsp;{'(0.3% fee).'}
@@ -121,16 +114,14 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 												onClick={(): void => setZapSlippage(1)}
 												className={`flex h-10 items-center border bg-neutral-100 px-1.5 py-2 ${
 													zapSlippage === 1 ? 'border-neutral-900' : 'border-transparent'
-												}`}
-											>
+												}`}>
 												<p className={'font-number pr-4 text-neutral-900'}>{'1%'}</p>
 											</button>
 											<button
 												onClick={(): void => setZapSlippage(2)}
 												className={`flex h-10 items-center border bg-neutral-100 px-1.5 py-2 ${
 													zapSlippage === 2 ? 'border-neutral-900' : 'border-transparent'
-												}`}
-											>
+												}`}>
 												<p className={'font-number pr-4 text-neutral-900'}>{'2%'}</p>
 											</button>
 											<div
@@ -138,8 +129,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 													zapSlippage !== 1 && zapSlippage !== 2
 														? 'border-neutral-900'
 														: 'border-transparent'
-												}`}
-											>
+												}`}>
 												<input
 													id={'slippageTolerance'}
 													type={'number'}

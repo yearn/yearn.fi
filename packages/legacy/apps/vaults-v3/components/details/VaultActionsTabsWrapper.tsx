@@ -146,8 +146,7 @@ export function BoostMessage(props: {
 							className={'underline'}
 							href={'https://docs.yearn.fi/contributing/governance/veyfi-intro'}
 							target={'_blank'}
-							rel={'noreferrer'}
-						>
+							rel={'noreferrer'}>
 							{'FAQ'}
 						</a>
 						{'.'}
@@ -224,8 +223,7 @@ function MobileTabButtons(props: {
 				props.selectedTab.value === props.currentTab.value
 					? 'border-b-2 border-neutral-900'
 					: 'border-b-2 border-neutral-300'
-			)}
-		>
+			)}>
 			{props.currentTab.label}
 		</button>
 	);
@@ -278,8 +276,7 @@ export function VaultDetailsTab(props: {
 					{shallow: true}
 				);
 				props.onSwitchTab(props.tab);
-			}}
-		>
+			}}>
 			<p
 				title={tabLabel}
 				aria-selected={props.selectedTab.value === props.tab.value}
@@ -290,8 +287,7 @@ export function VaultDetailsTab(props: {
 							? '!text-neutral-900'
 							: '!text-neutral-900/50 hover:!text-neutral-900'
 						: ''
-				)}
-			>
+				)}>
 				{tabLabel}
 				{props.tab.label === 'Boost' && toBigInt(props.unstakedBalance?.raw) > 0n ? (
 					<span className={'absolute -right-3 -top-1 z-10 flex size-2.5'}>
@@ -617,8 +613,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					<div
 						className={
 							'col-span-12 flex flex-col space-x-0 space-y-2 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
-						}
-					>
+						}>
 						<VaultDetailsQuickActionsFrom
 							currentVault={currentVault}
 							vaultData={vaultData}
@@ -666,8 +661,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							<div
 								className={cl(
 									'flex h-10 min-w-28 z-10 flex-row items-center bg-neutral-100 p-0 font-bold md:hidden border-b-2 border-neutral-900'
-								)}
-							>
+								)}>
 								{'Boost'}
 							</div>
 							<div className={'hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>
