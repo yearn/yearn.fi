@@ -12,14 +12,6 @@ export function EarnCard(props: {
 }): ReactElement {
 	const [isHovering, setIsHovering] = useState(false)
 
-	const obj = {
-		foo: 'bar',
-		bar: 'foo',
-		qux: 'qux'
-	}
-
-	const { foo, bar, qux } = obj
-
 	return (
 		<Link
 			href={props.href}
