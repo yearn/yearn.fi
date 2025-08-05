@@ -1,12 +1,12 @@
-import {APPS, AppName, type TManifest} from '@lib/components/Apps'
-import type {TMenu} from '@lib/components/Header'
-import type {TDict} from '@lib/types'
-import {VaultsHeader} from '@vaults-v2/components/header/VaultsHeader'
-import type {NextRouter} from 'next/router'
+import { APPS, AppName, type TManifest } from '@lib/components/Apps'
+import type { TMenu } from '@lib/components/Header'
+import type { TDict } from '@lib/types'
+import { VaultsHeader } from '@vaults-v2/components/header/VaultsHeader'
+import type { NextRouter } from 'next/router'
 import landingManifest from 'public/apps/landing-manifest.json'
 import homeManifest from 'public/manifest.json'
-import type {ReactElement} from 'react'
-import {useMemo} from 'react'
+import type { ReactElement } from 'react'
+import { useMemo } from 'react'
 
 type TCurrentApp = {
 	name: AppName | 'Home' | string
@@ -15,7 +15,7 @@ type TCurrentApp = {
 	menu: TMenu[]
 }
 
-export function useCurrentApp({pathname}: NextRouter): TCurrentApp {
+export function useCurrentApp({ pathname }: NextRouter): TCurrentApp {
 	return useMemo((): TCurrentApp => {
 		const appMapping: TDict<TCurrentApp> = {
 			'/v3': {
@@ -37,6 +37,6 @@ export function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 		if (currentApp) {
 			return appMapping[currentApp]
 		}
-		return {name: 'Home', manifest: homeManifest, menu: []}
+		return { name: 'Home', manifest: homeManifest, menu: [] }
 	}, [pathname])
 }

@@ -1,7 +1,7 @@
 import type React from 'react'
-import type {ForwardedRef, ReactElement, ReactNode} from 'react'
-import {forwardRef} from 'react'
-import {IconLoader} from '../icons/IconLoader'
+import type { ForwardedRef, ReactElement, ReactNode } from 'react'
+import { forwardRef } from 'react'
+import { IconLoader } from '../icons/IconLoader'
 
 export type TButtonVariant = 'filled' | 'outlined' | 'light' | 'inherit' | string
 
@@ -65,4 +65,4 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
 	)
 })
 
-export {Button}
+export { Button }

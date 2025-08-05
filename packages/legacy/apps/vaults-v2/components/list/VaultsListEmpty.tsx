@@ -1,8 +1,8 @@
-import {Button} from '@lib/components/Button'
-import {isZero} from '@lib/utils'
-import type {TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants'
-import type {ReactElement} from 'react'
+import { Button } from '@lib/components/Button'
+import { isZero } from '@lib/utils'
+import type { TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { ALL_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
+import type { ReactElement } from 'react'
 
 type TVaultListEmpty = {
 	sortedVaultsToDisplay: TYDaemonVaults

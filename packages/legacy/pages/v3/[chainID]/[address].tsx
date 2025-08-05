@@ -1,32 +1,32 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback'
-import {useWallet} from '@lib/contexts/useWallet'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains'
-import {useFetch} from '@lib/hooks/useFetch'
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI'
-import {cl, toAddress} from '@lib/utils'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {ActionFlowContextApp} from '@vaults-v2/contexts/useActionFlow'
-import {WithSolverContextApp} from '@vaults-v2/contexts/useSolver'
-import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper'
-import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader'
-import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper'
-import {fetchYBoldVault} from '@vaults-v3/utils/handleYBold'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { useWallet } from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import type { TUseBalancesTokens } from '@lib/hooks/useBalances.multichains'
+import { useFetch } from '@lib/hooks/useFetch'
+import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
+import { cl, toAddress } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { ActionFlowContextApp } from '@vaults-v2/contexts/useActionFlow'
+import { WithSolverContextApp } from '@vaults-v2/contexts/useSolver'
+import { VaultActionsTabsWrapper } from '@vaults-v3/components/details/VaultActionsTabsWrapper'
+import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHeader'
+import { VaultDetailsTabsWrapper } from '@vaults-v3/components/details/VaultDetailsTabsWrapper'
+import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 
-import type {GetStaticPaths, GetStaticProps} from 'next'
-import {useRouter} from 'next/router'
-import type {ReactElement} from 'react'
-import {useEffect, useState} from 'react'
+import type { GetStaticPaths, GetStaticProps } from 'next'
+import { useRouter } from 'next/router'
+import type { ReactElement } from 'react'
+import { useEffect, useState } from 'react'
 
 function Index(): ReactElement | null {
-	const {address, isActive} = useWeb3()
+	const { address, isActive } = useWeb3()
 	const router = useRouter()
-	const {onRefresh} = useWallet()
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)})
+	const { onRefresh } = useWallet()
+	const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: Number(router.query.chainID) })
 	const [_currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
 	const [isInit, setIsInit] = useState(false)
-	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
+	const { data: vault, isLoading: isLoadingVault } = useFetch<TYDaemonVault>({
 		endpoint: router.query.address
 			? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
 					strategiesDetails: 'withDetails',
@@ -62,13 +62,13 @@ function Index(): ReactElement | null {
 		if (address && isActive) {
 			const tokensToRefresh: TUseBalancesTokens[] = []
 			if (currentVault?.address) {
-				tokensToRefresh.push({address: currentVault.address, chainID: currentVault.chainID})
+				tokensToRefresh.push({ address: currentVault.address, chainID: currentVault.chainID })
 			}
 			if (currentVault?.token?.address) {
-				tokensToRefresh.push({address: currentVault.token.address, chainID: currentVault.chainID})
+				tokensToRefresh.push({ address: currentVault.token.address, chainID: currentVault.chainID })
 			}
 			if (currentVault?.staking.available) {
-				tokensToRefresh.push({address: currentVault.staking.address, chainID: currentVault.chainID})
+				tokensToRefresh.push({ address: currentVault.staking.address, chainID: currentVault.chainID })
 			}
 			onRefresh(tokensToRefresh)
 		}

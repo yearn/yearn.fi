@@ -1,18 +1,18 @@
-import {RenderAmount} from '@lib/components/RenderAmount'
-import {Renderable} from '@lib/components/Renderable'
-import {Dropdown} from '@lib/components/TokenDropdown'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice'
-import type {TNormalizedBN} from '@lib/types'
-import {cl, formatCounterValue, formatPercent, toAddress} from '@lib/utils'
-import {calculateBoostFromVeYFI} from '@lib/utils/calculations'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {useActionFlow} from '@vaults-v2/contexts/useActionFlow'
-import {useSolver} from '@vaults-v2/contexts/useSolver'
-import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData'
-import {useRouter} from 'next/router'
-import {Fragment, type ReactElement, useMemo} from 'react'
+import { RenderAmount } from '@lib/components/RenderAmount'
+import { Renderable } from '@lib/components/Renderable'
+import { Dropdown } from '@lib/components/TokenDropdown'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
+import type { TNormalizedBN } from '@lib/types'
+import { cl, formatCounterValue, formatPercent, toAddress } from '@lib/utils'
+import { calculateBoostFromVeYFI } from '@lib/utils/calculations'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { useActionFlow } from '@vaults-v2/contexts/useActionFlow'
+import { useSolver } from '@vaults-v2/contexts/useSolver'
+import type { TStakingInfo } from '@vaults-v2/hooks/useVaultStakingData'
+import { useRouter } from 'next/router'
+import { Fragment, type ReactElement, useMemo } from 'react'
 
 function VaultAPY({
 	currentVault,
@@ -28,10 +28,10 @@ function VaultAPY({
 	stakedVaultBoost: number
 }): ReactElement {
 	const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
-	const {isAutoStakingEnabled} = useYearn()
-	const {address} = useWeb3()
+	const { isAutoStakingEnabled } = useYearn()
+	const { address } = useWeb3()
 
-	const {actionParams} = useActionFlow()
+	const { actionParams } = useActionFlow()
 	const inputAmount = actionParams?.amount?.normalized || 0
 	const stakedBalance = vaultData.stakedBalanceOf.normalized
 
@@ -121,13 +121,13 @@ export function VaultDetailsQuickActionsTo(props: {
 	veYFITotalSupply: number
 	gaugeTotalSupply: number
 }): ReactElement {
-	const {isActive} = useWeb3()
-	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing, hasVeYFIBalance} =
+	const { isActive } = useWeb3()
+	const { currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing, hasVeYFIBalance } =
 		useActionFlow()
-	const {isAutoStakingEnabled} = useYearn()
+	const { isAutoStakingEnabled } = useYearn()
 
-	const {expectedOut, isLoadingExpectedOut} = useSolver()
-	const {pathname} = useRouter()
+	const { expectedOut, isLoadingExpectedOut } = useSolver()
+	const { pathname } = useRouter()
 	const isV3Page = pathname.startsWith('/v3')
 	const isMigrationAvailable = currentVault?.migration?.available
 	const selectedOptionToPricePerToken = useYearnTokenPrice({

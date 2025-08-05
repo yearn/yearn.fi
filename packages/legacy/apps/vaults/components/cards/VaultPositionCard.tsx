@@ -1,15 +1,15 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback'
-import type {TNormalizedBN} from '@lib/types'
-import {formatAmount, formatPercent, toAddress} from '@lib/utils'
-import {replaceStrings} from '@lib/utils/helpers'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {VAULT_NAME_REPLACEMENTS} from '@vaults/constants'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import type { TNormalizedBN } from '@lib/types'
+import { formatAmount, formatPercent, toAddress } from '@lib/utils'
+import { replaceStrings } from '@lib/utils/helpers'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { VAULT_NAME_REPLACEMENTS } from '@vaults/constants'
 import Link from 'next/link'
-import type {FC} from 'react'
+import type { FC } from 'react'
 
 export const VaultPositionCard: FC<{
-	vault: TYDaemonVault & {totalBalance: TNormalizedBN; totalValue: number}
-}> = ({vault}) => {
+	vault: TYDaemonVault & { totalBalance: TNormalizedBN; totalValue: number }
+}> = ({ vault }) => {
 	if (!vault) {
 		return null
 	}

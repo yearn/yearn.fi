@@ -1,12 +1,12 @@
-import {RenderAmount} from '@lib/components/RenderAmount'
-import {Renderable} from '@lib/components/Renderable'
-import type {TGraphData} from '@lib/types'
-import {cl, formatAmount, formatPercent, isZero} from '@lib/utils'
-import {parseMarkdown} from '@lib/utils/helpers'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {useIsMounted} from '@react-hookz/web'
-import {GraphForVaultEarnings} from '@vaults-v2/components/graphs/GraphForVaultEarnings'
-import type {ReactElement} from 'react'
+import { RenderAmount } from '@lib/components/RenderAmount'
+import { Renderable } from '@lib/components/Renderable'
+import type { TGraphData } from '@lib/types'
+import { cl, formatAmount, formatPercent, isZero } from '@lib/utils'
+import { parseMarkdown } from '@lib/utils/helpers'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { useIsMounted } from '@react-hookz/web'
+import { GraphForVaultEarnings } from '@vaults-v2/components/graphs/GraphForVaultEarnings'
+import type { ReactElement } from 'react'
 
 type TAPYLineItemProps = {
 	currentVault: TYDaemonVault
@@ -23,7 +23,14 @@ type TYearnFeesLineItem = {
 	tooltip?: string
 }
 
-function APYLineItem({currentVault, value, label, apyType, isStaking, hasUpperLimit}: TAPYLineItemProps): ReactElement {
+function APYLineItem({
+	currentVault,
+	value,
+	label,
+	apyType,
+	isStaking,
+	hasUpperLimit
+}: TAPYLineItemProps): ReactElement {
 	const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
 	const safeValue = Number(value) || 0
 	const isNew = apyType === 'new' && isZero(safeValue)
@@ -64,7 +71,7 @@ function APYLineItem({currentVault, value, label, apyType, isStaking, hasUpperLi
 	)
 }
 
-function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): ReactElement {
+function YearnFeesLineItem({ children, label, tooltip }: TYearnFeesLineItem): ReactElement {
 	return (
 		<div className={'flex flex-col space-y-0 md:space-y-2'}>
 			<p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>
@@ -98,7 +105,7 @@ export function VaultDetailsAbout({
 	harvestData: TGraphData[]
 }): ReactElement {
 	const isMounted = useIsMounted()
-	const {token, apr} = currentVault
+	const { token, apr } = currentVault
 
 	function getVaultDescription(): string | ReactElement {
 		if (currentVault.description) {
@@ -146,7 +153,7 @@ export function VaultDetailsAbout({
 					<b className={'text-neutral-900'}>{'Description'}</b>
 					<div className={'mt-4 text-neutral-600'}>
 						{typeof getVaultDescription() === 'string' ? (
-							<p dangerouslySetInnerHTML={{__html: getVaultDescription() as string}} />
+							<p dangerouslySetInnerHTML={{ __html: getVaultDescription() as string }} />
 						) : (
 							<p>{getVaultDescription()}</p>
 						)}
@@ -242,7 +249,7 @@ export function VaultDetailsAbout({
 					<b className={'text-neutral-900'}>{'Cumulative Earnings'}</b>
 					<div
 						className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'}
-						style={{height: 160}}>
+						style={{ height: 160 }}>
 						<Renderable shouldRender={isMounted()}>
 							<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} height={160} />
 						</Renderable>

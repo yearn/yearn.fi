@@ -2,7 +2,7 @@ export const ZAP_OPT_ETH_TO_YVETH_ABI = [
 	{
 		stateMutability: 'nonpayable',
 		type: 'constructor',
-		inputs: [{name: 'vault', type: 'address'}],
+		inputs: [{ name: 'vault', type: 'address' }],
 		outputs: []
 	},
 	{
@@ -16,7 +16,7 @@ export const ZAP_OPT_ETH_TO_YVETH_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function',
 		name: 'withdraw',
-		inputs: [{name: 'amount', type: 'uint256'}],
+		inputs: [{ name: 'amount', type: 'uint256' }],
 		outputs: []
 	},
 	{
@@ -24,24 +24,24 @@ export const ZAP_OPT_ETH_TO_YVETH_ABI = [
 		type: 'function',
 		name: 'withdraw',
 		inputs: [
-			{name: 'amount', type: 'uint256'},
-			{name: 'max_loss', type: 'uint256'}
+			{ name: 'amount', type: 'uint256' },
+			{ name: 'max_loss', type: 'uint256' }
 		],
 		outputs: []
 	},
-	{stateMutability: 'payable', type: 'fallback'},
+	{ stateMutability: 'payable', type: 'fallback' },
 	{
 		stateMutability: 'view',
 		type: 'function',
 		name: 'VAULT',
 		inputs: [],
-		outputs: [{name: '', type: 'address'}]
+		outputs: [{ name: '', type: 'address' }]
 	},
 	{
 		stateMutability: 'view',
 		type: 'function',
 		name: 'WETH',
 		inputs: [],
-		outputs: [{name: '', type: 'address'}]
+		outputs: [{ name: '', type: 'address' }]
 	}
 ] as const

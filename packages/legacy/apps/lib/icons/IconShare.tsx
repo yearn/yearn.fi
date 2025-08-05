@@ -1,6 +1,6 @@
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
-export function IconShare({stroke = 'currentColor', ...props}: React.SVGProps<SVGSVGElement>): ReactElement {
+export function IconShare({ stroke = 'currentColor', ...props }: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}

@@ -1,8 +1,8 @@
-import {formatAmount} from '@lib/utils'
+import { formatAmount } from '@lib/utils'
 
-import type {FC} from 'react'
+import type { FC } from 'react'
 
-export const TvlStat: FC<{tvl: number}> = ({tvl}) => {
+export const TvlStat: FC<{ tvl: number }> = ({ tvl }) => {
 	return (
 		<div className={'flex flex-row items-center justify-center gap-2 rounded-[16px] bg-white/20 px-3 py-1'}>
 			<div className={'relative flex size-2 items-center justify-center'}>

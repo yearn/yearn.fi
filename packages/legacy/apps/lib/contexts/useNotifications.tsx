@@ -1,10 +1,10 @@
-import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger'
-import type {TNotification, TNotificationStatus, TNotificationsContext} from '@lib/types/notifications'
-import {NotificationsCurtain} from '@vaults-v3/components/notifications/NotificationsCurtain'
-import {useRouter} from 'next/router'
+import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
+import type { TNotification, TNotificationStatus, TNotificationsContext } from '@lib/types/notifications'
+import { NotificationsCurtain } from '@vaults-v3/components/notifications/NotificationsCurtain'
+import { useRouter } from 'next/router'
 import type React from 'react'
-import {createContext, useCallback, useContext, useMemo, useState} from 'react'
-import {useIndexedDBStore} from 'use-indexeddb'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { useIndexedDBStore } from 'use-indexeddb'
 
 const defaultProps: TNotificationsContext = {
 	shouldOpenCurtain: false,
@@ -20,7 +20,7 @@ const defaultProps: TNotificationsContext = {
 }
 
 const NotificationsContext = createContext<TNotificationsContext>(defaultProps)
-export const WithNotifications = ({children}: {children: React.ReactElement}): React.ReactElement => {
+export const WithNotifications = ({ children }: { children: React.ReactElement }): React.ReactElement => {
 	const [cachedEntries, setCachedEntries] = useState<TNotification[]>([])
 	const [entryNonce, setEntryNonce] = useState<number>(0)
 	const [isLoading, setIsLoading] = useState<boolean>(true)
@@ -35,7 +35,7 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 	const [notificationStatus, setNotificationStatus] = useState<TNotificationStatus | null>(null)
 
 	const [shouldOpenCurtain, setShouldOpenCurtain] = useState(false)
-	const {add, getAll, update, deleteByID, getByID} = useIndexedDBStore<TNotification>('notifications')
+	const { add, getAll, update, deleteByID, getByID } = useIndexedDBStore<TNotification>('notifications')
 
 	/************************************************************************************************
 	 * This useAsyncTrigger hook is responsible for fetching all notifications from the IndexedDB
@@ -80,7 +80,7 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 				const notification = await getByID(id)
 
 				if (notification) {
-					await update({...notification, ...entry})
+					await update({ ...notification, ...entry })
 					setEntryNonce(nonce => nonce + 1)
 					setNotificationStatus(entry?.status || null)
 				} else {

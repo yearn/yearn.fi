@@ -1,8 +1,8 @@
-import {toast} from '@lib/components/yToast'
-import {useNotifications} from '@lib/contexts/useNotifications'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import type {TDict, TNormalizedBN} from '@lib/types'
+import { toast } from '@lib/components/yToast'
+import { useNotifications } from '@lib/contexts/useNotifications'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import type { TDict, TNormalizedBN } from '@lib/types'
 import {
 	assert,
 	assertAddress,
@@ -14,20 +14,20 @@ import {
 	toNormalizedBN,
 	zeroNormalizedBN
 } from '@lib/utils'
-import {allowanceKey} from '@lib/utils/helpers'
-import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi'
-import {allowanceOf, approveERC20, defaultTxStatus, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi'
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
-import {isValidPortalsErrorObject} from '@vaults-v2/hooks/helpers/isValidPortalsErrorObject'
-import type {TPortalsEstimate} from '@vaults-v2/hooks/usePortalsApi'
-import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults-v2/hooks/usePortalsApi'
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers'
-import {Solver} from '@vaults-v2/types/solvers'
+import { allowanceKey } from '@lib/utils/helpers'
+import type { TTxResponse, TTxStatus } from '@lib/utils/wagmi'
+import { allowanceOf, approveERC20, defaultTxStatus, retrieveConfig, toWagmiProvider } from '@lib/utils/wagmi'
+import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
+import { isValidPortalsErrorObject } from '@vaults-v2/hooks/helpers/isValidPortalsErrorObject'
+import type { TPortalsEstimate } from '@vaults-v2/hooks/usePortalsApi'
+import { getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK } from '@vaults-v2/hooks/usePortalsApi'
+import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
+import { Solver } from '@vaults-v2/types/solvers'
 import axios from 'axios'
-import {useCallback, useMemo, useRef} from 'react'
-import type {Hash, TransactionReceipt} from 'viem'
-import {BaseError, isHex, maxUint256, zeroAddress} from 'viem'
-import {sendTransaction, switchChain, waitForTransactionReceipt} from 'wagmi/actions'
+import { useCallback, useMemo, useRef } from 'react'
+import type { Hash, TransactionReceipt } from 'viem'
+import { BaseError, isHex, maxUint256, zeroAddress } from 'viem'
+import { sendTransaction, switchChain, waitForTransactionReceipt } from 'wagmi/actions'
 
 export type TPortalsQuoteResult = {
 	result: TPortalsEstimate | null
@@ -38,7 +38,7 @@ export type TPortalsQuoteResult = {
 async function getQuote(
 	request: TInitSolverArgs,
 	zapSlippage: number
-): Promise<{data: TPortalsEstimate | null; error?: Error}> {
+): Promise<{ data: TPortalsEstimate | null; error?: Error }> {
 	try {
 		const network = PORTALS_NETWORK.get(request.chainID)
 		let inputToken = request.inputToken.value
@@ -47,10 +47,10 @@ async function getQuote(
 			inputToken = zeroAddress
 		}
 		if (isZeroAddress(request.outputToken.value)) {
-			return {data: null, error: new Error('Invalid buy token')}
+			return { data: null, error: new Error('Invalid buy token') }
 		}
 		if (isZero(request.inputAmount)) {
-			return {data: null, error: new Error('Invalid sell amount')}
+			return { data: null, error: new Error('Invalid sell amount') }
 		}
 
 		const result = await getPortalsEstimate({
@@ -64,7 +64,7 @@ async function getQuote(
 
 		// Validate the response structure
 		if (!result?.data) {
-			return {data: null, error: new Error('Invalid response from Portals API')}
+			return { data: null, error: new Error('Invalid response from Portals API') }
 		}
 
 		return result
@@ -98,7 +98,7 @@ async function getQuote(
 			errorContent = error.message || errorContent
 		}
 
-		return {data: null, error: new Error(errorContent)}
+		return { data: null, error: new Error(errorContent) }
 	}
 }
 
@@ -111,12 +111,12 @@ async function getQuote(
  ** third party to execute the swap, in an asynchronous way, with fees and slippage.
  *************************************************************************************************/
 export function useSolverPortals(): TSolverContext {
-	const {provider} = useWeb3()
-	const {setShouldOpenCurtain} = useNotifications()
+	const { provider } = useWeb3()
+	const { setShouldOpenCurtain } = useNotifications()
 	const latestQuote = useRef<TPortalsEstimate | undefined>(undefined)
 	const request = useRef<TInitSolverArgs | undefined>(undefined)
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({})
-	const {zapSlippage} = useYearn()
+	const { zapSlippage } = useYearn()
 
 	/**********************************************************************************************
 	 ** init will be called when the Portals solver should be used to perform the desired swap.
@@ -167,7 +167,7 @@ export function useSolverPortals(): TSolverContext {
 				 ** to get the current quote for the provided request.current.
 				 ******************************************************************************************/
 				request.current = _request
-				const {data, error} = await getQuote(_request, zapSlippage)
+				const { data, error } = await getQuote(_request, zapSlippage)
 				if (!data) {
 					const errorMessage = error?.message || 'Unknown error'
 					if (errorMessage && shouldLogError) {
@@ -204,7 +204,7 @@ export function useSolverPortals(): TSolverContext {
 	const execute = useCallback(
 		async (txHashSetter: (txHash: Hash) => void): Promise<TTxResponse> => {
 			if (!request.current || isSolverDisabled(Solver.enum.Portals)) {
-				return {isSuccessful: false, error: new Error('Portals solver not available')}
+				return { isSuccessful: false, error: new Error('Portals solver not available') }
 			}
 
 			try {
@@ -232,17 +232,17 @@ export function useSolverPortals(): TSolverContext {
 				if (!transaction.data) {
 					const error = new Error('Transaction data was not fetched from Portals!')
 					console.error(error.message)
-					return {isSuccessful: false, error}
+					return { isSuccessful: false, error }
 				}
 
 				const {
-					tx: {value, to, data, ...rest}
+					tx: { value, to, data, ...rest }
 				} = transaction.data
 				const wagmiProvider = await toWagmiProvider(provider)
 
 				if (wagmiProvider.chainId !== request.current.chainID) {
 					try {
-						await switchChain(retrieveConfig(), {chainId: request.current.chainID})
+						await switchChain(retrieveConfig(), { chainId: request.current.chainID })
 					} catch (error) {
 						const chainSwitchError =
 							error instanceof BaseError
@@ -254,7 +254,7 @@ export function useSolverPortals(): TSolverContext {
 							type: 'error',
 							content: `Portals.fi zap not possible: ${chainSwitchError.message}`
 						})
-						return {isSuccessful: false, error: chainSwitchError}
+						return { isSuccessful: false, error: chainSwitchError }
 					}
 				}
 
@@ -274,11 +274,11 @@ export function useSolverPortals(): TSolverContext {
 					hash
 				})
 				if (receipt.status === 'success') {
-					return {isSuccessful: true, receipt: receipt}
+					return { isSuccessful: true, receipt: receipt }
 				}
 				const txError = new Error('Transaction failed')
 				console.error(txError.message)
-				return {isSuccessful: false, error: txError}
+				return { isSuccessful: false, error: txError }
 			} catch (error) {
 				let finalError: Error
 
@@ -308,7 +308,7 @@ export function useSolverPortals(): TSolverContext {
 					})
 				}
 
-				return {isSuccessful: false, error: finalError}
+				return { isSuccessful: false, error: finalError }
 			}
 		},
 		[provider, zapSlippage]
@@ -349,7 +349,7 @@ export function useSolverPortals(): TSolverContext {
 
 		try {
 			const network = PORTALS_NETWORK.get(request.current.chainID)
-			const {data: approval} = await getPortalsApproval({
+			const { data: approval } = await getPortalsApproval({
 				params: {
 					sender: toAddress(request.current.from),
 					inputToken: `${network}:${toAddress(inputToken)}`,
@@ -407,7 +407,7 @@ export function useSolverPortals(): TSolverContext {
 
 			try {
 				const network = PORTALS_NETWORK.get(request.current.chainID)
-				const {data: approval} = await getPortalsApproval({
+				const { data: approval } = await getPortalsApproval({
 					params: {
 						sender: toAddress(request.current.from),
 						inputToken: `${network}:${toAddress(request.current.inputToken.value)}`,
@@ -475,11 +475,11 @@ export function useSolverPortals(): TSolverContext {
 		): Promise<void> => {
 			assert(provider, 'Provider is not set')
 
-			txStatusSetter({...defaultTxStatus, pending: true})
+			txStatusSetter({ ...defaultTxStatus, pending: true })
 			try {
 				const status = await execute(txHashSetter)
 				if (status.isSuccessful && status.receipt) {
-					txStatusSetter({...defaultTxStatus, success: true})
+					txStatusSetter({ ...defaultTxStatus, success: true })
 					toast({
 						type: 'success',
 						content: 'Transaction successful!',
@@ -492,7 +492,7 @@ export function useSolverPortals(): TSolverContext {
 					})
 					await onSuccess(status.receipt)
 				} else {
-					txStatusSetter({...defaultTxStatus, error: true})
+					txStatusSetter({ ...defaultTxStatus, error: true })
 					toast({
 						type: 'error',
 						content: 'Portals.fi execution failed',
@@ -506,7 +506,7 @@ export function useSolverPortals(): TSolverContext {
 					onError?.(new Error('Transaction failed'))
 				}
 			} catch (error) {
-				txStatusSetter({...defaultTxStatus, error: true})
+				txStatusSetter({ ...defaultTxStatus, error: true })
 				toast({
 					type: 'error',
 					content: 'Portals.fi execution failed',

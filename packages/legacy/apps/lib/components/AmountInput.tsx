@@ -1,6 +1,6 @@
-import {Renderable} from '@lib/components/Renderable'
-import type {TNormalizedBN} from '@lib/types'
-import type {ReactElement} from 'react'
+import { Renderable } from '@lib/components/Renderable'
+import type { TNormalizedBN } from '@lib/types'
+import type { ReactElement } from 'react'
 
 type TAmountInputProps = {
 	amount: TNormalizedBN

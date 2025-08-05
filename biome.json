@@ -134,7 +134,7 @@
 			"bracketSameLine": true,
 			"quoteStyle": "single",
 			"attributePosition": "auto",
-			"bracketSpacing": false
+			"bracketSpacing": true
 		}
 	},
 	"css": {

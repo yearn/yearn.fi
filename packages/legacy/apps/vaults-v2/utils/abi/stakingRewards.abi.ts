@@ -1,15 +1,15 @@
 export const STAKING_REWARDS_ABI = [
 	{
 		inputs: [
-			{internalType: 'address', name: '_owner', type: 'address'},
+			{ internalType: 'address', name: '_owner', type: 'address' },
 			{
 				internalType: 'address',
 				name: '_rewardsDistribution',
 				type: 'address'
 			},
-			{internalType: 'address', name: '_rewardsToken', type: 'address'},
-			{internalType: 'address', name: '_stakingToken', type: 'address'},
-			{internalType: 'address', name: '_zapContract', type: 'address'}
+			{ internalType: 'address', name: '_rewardsToken', type: 'address' },
+			{ internalType: 'address', name: '_stakingToken', type: 'address' },
+			{ internalType: 'address', name: '_zapContract', type: 'address' }
 		],
 		payable: false,
 		stateMutability: 'nonpayable',
@@ -205,18 +205,18 @@ export const STAKING_REWARDS_ABI = [
 	},
 	{
 		constant: true,
-		inputs: [{internalType: 'address', name: 'account', type: 'address'}],
+		inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
 		name: 'balanceOf',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		constant: true,
-		inputs: [{internalType: 'address', name: 'account', type: 'address'}],
+		inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
 		name: 'earned',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -243,7 +243,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'getRewardForDuration',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -252,7 +252,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'isRetired',
-		outputs: [{internalType: 'bool', name: '', type: 'bool'}],
+		outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -261,7 +261,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'lastPauseTime',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -270,7 +270,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'lastTimeRewardApplicable',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -279,14 +279,14 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'lastUpdateTime',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		constant: false,
-		inputs: [{internalType: 'address', name: '_owner', type: 'address'}],
+		inputs: [{ internalType: 'address', name: '_owner', type: 'address' }],
 		name: 'nominateNewOwner',
 		outputs: [],
 		payable: false,
@@ -297,14 +297,14 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'nominatedOwner',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		constant: false,
-		inputs: [{internalType: 'uint256', name: 'reward', type: 'uint256'}],
+		inputs: [{ internalType: 'uint256', name: 'reward', type: 'uint256' }],
 		name: 'notifyRewardAmount',
 		outputs: [],
 		payable: false,
@@ -315,7 +315,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'owner',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -324,7 +324,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'paused',
-		outputs: [{internalType: 'bool', name: '', type: 'bool'}],
+		outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -333,7 +333,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'periodFinish',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -341,8 +341,8 @@ export const STAKING_REWARDS_ABI = [
 	{
 		constant: false,
 		inputs: [
-			{internalType: 'address', name: 'tokenAddress', type: 'address'},
-			{internalType: 'uint256', name: 'tokenAmount', type: 'uint256'}
+			{ internalType: 'address', name: 'tokenAddress', type: 'address' },
+			{ internalType: 'uint256', name: 'tokenAmount', type: 'uint256' }
 		],
 		name: 'recoverERC20',
 		outputs: [],
@@ -354,7 +354,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'rewardPerToken',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -363,7 +363,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'rewardPerTokenStored',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -372,16 +372,16 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'rewardRate',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		constant: true,
-		inputs: [{internalType: 'address', name: '', type: 'address'}],
+		inputs: [{ internalType: 'address', name: '', type: 'address' }],
 		name: 'rewards',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -390,7 +390,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'rewardsDistribution',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -399,7 +399,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'rewardsDuration',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -408,14 +408,14 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'rewardsToken',
-		outputs: [{internalType: 'contract IERC20', name: '', type: 'address'}],
+		outputs: [{ internalType: 'contract IERC20', name: '', type: 'address' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		constant: false,
-		inputs: [{internalType: 'bool', name: '_paused', type: 'bool'}],
+		inputs: [{ internalType: 'bool', name: '_paused', type: 'bool' }],
 		name: 'setPaused',
 		outputs: [],
 		payable: false,
@@ -454,7 +454,7 @@ export const STAKING_REWARDS_ABI = [
 	},
 	{
 		constant: false,
-		inputs: [{internalType: 'address', name: '_zapContract', type: 'address'}],
+		inputs: [{ internalType: 'address', name: '_zapContract', type: 'address' }],
 		name: 'setZapContract',
 		outputs: [],
 		payable: false,
@@ -463,7 +463,7 @@ export const STAKING_REWARDS_ABI = [
 	},
 	{
 		constant: false,
-		inputs: [{internalType: 'uint256', name: 'amount', type: 'uint256'}],
+		inputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],
 		name: 'stake',
 		outputs: [],
 		payable: false,
@@ -473,8 +473,8 @@ export const STAKING_REWARDS_ABI = [
 	{
 		constant: false,
 		inputs: [
-			{internalType: 'address', name: 'recipient', type: 'address'},
-			{internalType: 'uint256', name: 'amount', type: 'uint256'}
+			{ internalType: 'address', name: 'recipient', type: 'address' },
+			{ internalType: 'uint256', name: 'amount', type: 'uint256' }
 		],
 		name: 'stakeFor',
 		outputs: [],
@@ -486,7 +486,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'stakingToken',
-		outputs: [{internalType: 'contract IERC20', name: '', type: 'address'}],
+		outputs: [{ internalType: 'contract IERC20', name: '', type: 'address' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
@@ -495,23 +495,23 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'totalSupply',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		constant: true,
-		inputs: [{internalType: 'address', name: '', type: 'address'}],
+		inputs: [{ internalType: 'address', name: '', type: 'address' }],
 		name: 'userRewardPerTokenPaid',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		constant: false,
-		inputs: [{internalType: 'uint256', name: 'amount', type: 'uint256'}],
+		inputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],
 		name: 'withdraw',
 		outputs: [],
 		payable: false,
@@ -522,7 +522,7 @@ export const STAKING_REWARDS_ABI = [
 		constant: true,
 		inputs: [],
 		name: 'zapContract',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		payable: false,
 		stateMutability: 'view',
 		type: 'function'

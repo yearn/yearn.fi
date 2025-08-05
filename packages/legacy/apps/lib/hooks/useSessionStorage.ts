@@ -1,6 +1,6 @@
-import type {Dispatch, RefObject, SetStateAction} from 'react'
-import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react'
-import {deserialize, serialize} from 'wagmi'
+import type { Dispatch, RefObject, SetStateAction } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { deserialize, serialize } from 'wagmi'
 
 declare global {
 	interface WindowEventMap {
@@ -155,4 +155,4 @@ function useSessionStorage<T>(key: string, initialValue: T): [T, TSetValue<T>] {
 	return [storedValue, assignValue]
 }
 
-export {useSessionStorage}
+export { useSessionStorage }

@@ -2,11 +2,11 @@ export const VEYFI_ABI = [
 	{
 		name: 'ModifyLock',
 		inputs: [
-			{name: 'sender', type: 'address', indexed: true},
-			{name: 'user', type: 'address', indexed: true},
-			{name: 'amount', type: 'uint256', indexed: false},
-			{name: 'locktime', type: 'uint256', indexed: false},
-			{name: 'ts', type: 'uint256', indexed: false}
+			{ name: 'sender', type: 'address', indexed: true },
+			{ name: 'user', type: 'address', indexed: true },
+			{ name: 'amount', type: 'uint256', indexed: false },
+			{ name: 'locktime', type: 'uint256', indexed: false },
+			{ name: 'ts', type: 'uint256', indexed: false }
 		],
 		anonymous: false,
 		type: 'event'
@@ -14,9 +14,9 @@ export const VEYFI_ABI = [
 	{
 		name: 'Withdraw',
 		inputs: [
-			{name: 'user', type: 'address', indexed: true},
-			{name: 'amount', type: 'uint256', indexed: false},
-			{name: 'ts', type: 'uint256', indexed: false}
+			{ name: 'user', type: 'address', indexed: true },
+			{ name: 'amount', type: 'uint256', indexed: false },
+			{ name: 'ts', type: 'uint256', indexed: false }
 		],
 		anonymous: false,
 		type: 'event'
@@ -24,9 +24,9 @@ export const VEYFI_ABI = [
 	{
 		name: 'Penalty',
 		inputs: [
-			{name: 'user', type: 'address', indexed: true},
-			{name: 'amount', type: 'uint256', indexed: false},
-			{name: 'ts', type: 'uint256', indexed: false}
+			{ name: 'user', type: 'address', indexed: true },
+			{ name: 'amount', type: 'uint256', indexed: false },
+			{ name: 'ts', type: 'uint256', indexed: false }
 		],
 		anonymous: false,
 		type: 'event'
@@ -34,9 +34,9 @@ export const VEYFI_ABI = [
 	{
 		name: 'Supply',
 		inputs: [
-			{name: 'old_supply', type: 'uint256', indexed: false},
-			{name: 'new_supply', type: 'uint256', indexed: false},
-			{name: 'ts', type: 'uint256', indexed: false}
+			{ name: 'old_supply', type: 'uint256', indexed: false },
+			{ name: 'new_supply', type: 'uint256', indexed: false },
+			{ name: 'ts', type: 'uint256', indexed: false }
 		],
 		anonymous: false,
 		type: 'event'
@@ -44,8 +44,8 @@ export const VEYFI_ABI = [
 	{
 		name: 'Initialized',
 		inputs: [
-			{name: 'token', type: 'address', indexed: false},
-			{name: 'reward_pool', type: 'address', indexed: false}
+			{ name: 'token', type: 'address', indexed: false },
+			{ name: 'reward_pool', type: 'address', indexed: false }
 		],
 		anonymous: false,
 		type: 'event'
@@ -54,8 +54,8 @@ export const VEYFI_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'constructor',
 		inputs: [
-			{name: 'token', type: 'address'},
-			{name: 'reward_pool', type: 'address'}
+			{ name: 'token', type: 'address' },
+			{ name: 'reward_pool', type: 'address' }
 		],
 		outputs: []
 	},
@@ -63,36 +63,36 @@ export const VEYFI_ABI = [
 		stateMutability: 'view',
 		type: 'function',
 		name: 'get_last_user_point',
-		inputs: [{name: 'addr', type: 'address'}],
+		inputs: [{ name: 'addr', type: 'address' }],
 		outputs: [
 			{
 				name: '',
 				type: 'tuple',
 				components: [
-					{name: 'bias', type: 'int128'},
-					{name: 'slope', type: 'int128'},
-					{name: 'ts', type: 'uint256'},
-					{name: 'blk', type: 'uint256'}
+					{ name: 'bias', type: 'int128' },
+					{ name: 'slope', type: 'int128' },
+					{ name: 'ts', type: 'uint256' },
+					{ name: 'blk', type: 'uint256' }
 				]
 			}
 		]
 	},
-	{stateMutability: 'nonpayable', type: 'function', name: 'checkpoint', inputs: [], outputs: []},
+	{ stateMutability: 'nonpayable', type: 'function', name: 'checkpoint', inputs: [], outputs: [] },
 	{
 		stateMutability: 'nonpayable',
 		type: 'function',
 		name: 'modify_lock',
 		inputs: [
-			{name: 'amount', type: 'uint256'},
-			{name: 'unlock_time', type: 'uint256'}
+			{ name: 'amount', type: 'uint256' },
+			{ name: 'unlock_time', type: 'uint256' }
 		],
 		outputs: [
 			{
 				name: '',
 				type: 'tuple',
 				components: [
-					{name: 'amount', type: 'uint256'},
-					{name: 'end', type: 'uint256'}
+					{ name: 'amount', type: 'uint256' },
+					{ name: 'end', type: 'uint256' }
 				]
 			}
 		]
@@ -102,17 +102,17 @@ export const VEYFI_ABI = [
 		type: 'function',
 		name: 'modify_lock',
 		inputs: [
-			{name: 'amount', type: 'uint256'},
-			{name: 'unlock_time', type: 'uint256'},
-			{name: 'user', type: 'address'}
+			{ name: 'amount', type: 'uint256' },
+			{ name: 'unlock_time', type: 'uint256' },
+			{ name: 'user', type: 'address' }
 		],
 		outputs: [
 			{
 				name: '',
 				type: 'tuple',
 				components: [
-					{name: 'amount', type: 'uint256'},
-					{name: 'end', type: 'uint256'}
+					{ name: 'amount', type: 'uint256' },
+					{ name: 'end', type: 'uint256' }
 				]
 			}
 		]
@@ -127,8 +127,8 @@ export const VEYFI_ABI = [
 				name: '',
 				type: 'tuple',
 				components: [
-					{name: 'amount', type: 'uint256'},
-					{name: 'penalty', type: 'uint256'}
+					{ name: 'amount', type: 'uint256' },
+					{ name: 'penalty', type: 'uint256' }
 				]
 			}
 		]
@@ -138,83 +138,83 @@ export const VEYFI_ABI = [
 		type: 'function',
 		name: 'find_epoch_by_timestamp',
 		inputs: [
-			{name: 'user', type: 'address'},
-			{name: 'ts', type: 'uint256'}
+			{ name: 'user', type: 'address' },
+			{ name: 'ts', type: 'uint256' }
 		],
-		outputs: [{name: '', type: 'uint256'}]
+		outputs: [{ name: '', type: 'uint256' }]
 	},
 	{
 		stateMutability: 'view',
 		type: 'function',
 		name: 'balanceOf',
-		inputs: [{name: 'user', type: 'address'}],
-		outputs: [{name: '', type: 'uint256'}]
+		inputs: [{ name: 'user', type: 'address' }],
+		outputs: [{ name: '', type: 'uint256' }]
 	},
 	{
 		stateMutability: 'view',
 		type: 'function',
 		name: 'balanceOf',
 		inputs: [
-			{name: 'user', type: 'address'},
-			{name: 'ts', type: 'uint256'}
+			{ name: 'user', type: 'address' },
+			{ name: 'ts', type: 'uint256' }
 		],
-		outputs: [{name: '', type: 'uint256'}]
+		outputs: [{ name: '', type: 'uint256' }]
 	},
 	{
 		stateMutability: 'view',
 		type: 'function',
 		name: 'getPriorVotes',
 		inputs: [
-			{name: 'user', type: 'address'},
-			{name: 'height', type: 'uint256'}
+			{ name: 'user', type: 'address' },
+			{ name: 'height', type: 'uint256' }
 		],
-		outputs: [{name: '', type: 'uint256'}]
+		outputs: [{ name: '', type: 'uint256' }]
 	},
 	{
 		stateMutability: 'view',
 		type: 'function',
 		name: 'totalSupply',
 		inputs: [],
-		outputs: [{name: '', type: 'uint256'}]
+		outputs: [{ name: '', type: 'uint256' }]
 	},
 	{
 		stateMutability: 'view',
 		type: 'function',
 		name: 'totalSupply',
-		inputs: [{name: 'ts', type: 'uint256'}],
-		outputs: [{name: '', type: 'uint256'}]
+		inputs: [{ name: 'ts', type: 'uint256' }],
+		outputs: [{ name: '', type: 'uint256' }]
 	},
 	{
 		stateMutability: 'view',
 		type: 'function',
 		name: 'totalSupplyAt',
-		inputs: [{name: 'height', type: 'uint256'}],
-		outputs: [{name: '', type: 'uint256'}]
+		inputs: [{ name: 'height', type: 'uint256' }],
+		outputs: [{ name: '', type: 'uint256' }]
 	},
-	{stateMutability: 'view', type: 'function', name: 'token', inputs: [], outputs: [{name: '', type: 'address'}]},
+	{ stateMutability: 'view', type: 'function', name: 'token', inputs: [], outputs: [{ name: '', type: 'address' }] },
 	{
 		stateMutability: 'view',
 		type: 'function',
 		name: 'reward_pool',
 		inputs: [],
-		outputs: [{name: '', type: 'address'}]
+		outputs: [{ name: '', type: 'address' }]
 	},
-	{stateMutability: 'view', type: 'function', name: 'name', inputs: [], outputs: [{name: '', type: 'string'}]},
-	{stateMutability: 'view', type: 'function', name: 'symbol', inputs: [], outputs: [{name: '', type: 'string'}]},
-	{stateMutability: 'view', type: 'function', name: 'decimals', inputs: [], outputs: [{name: '', type: 'uint8'}]},
-	{stateMutability: 'view', type: 'function', name: 'supply', inputs: [], outputs: [{name: '', type: 'uint256'}]},
+	{ stateMutability: 'view', type: 'function', name: 'name', inputs: [], outputs: [{ name: '', type: 'string' }] },
+	{ stateMutability: 'view', type: 'function', name: 'symbol', inputs: [], outputs: [{ name: '', type: 'string' }] },
+	{ stateMutability: 'view', type: 'function', name: 'decimals', inputs: [], outputs: [{ name: '', type: 'uint8' }] },
+	{ stateMutability: 'view', type: 'function', name: 'supply', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
 	{
 		stateMutability: 'view',
 		type: 'function',
 		name: 'locked',
-		inputs: [{name: 'arg0', type: 'address'}],
+		inputs: [{ name: 'arg0', type: 'address' }],
 		outputs: [
 			{
 				name: '',
 				type: 'tuple',
 				components: [
-					{name: 'amount', type: 'uint256'},
-					{name: 'end', type: 'uint256'}
+					{ name: 'amount', type: 'uint256' },
+					{ name: 'end', type: 'uint256' }
 				]
 			}
 		]
@@ -223,26 +223,26 @@ export const VEYFI_ABI = [
 		stateMutability: 'view',
 		type: 'function',
 		name: 'epoch',
-		inputs: [{name: 'arg0', type: 'address'}],
-		outputs: [{name: '', type: 'uint256'}]
+		inputs: [{ name: 'arg0', type: 'address' }],
+		outputs: [{ name: '', type: 'uint256' }]
 	},
 	{
 		stateMutability: 'view',
 		type: 'function',
 		name: 'point_history',
 		inputs: [
-			{name: 'arg0', type: 'address'},
-			{name: 'arg1', type: 'uint256'}
+			{ name: 'arg0', type: 'address' },
+			{ name: 'arg1', type: 'uint256' }
 		],
 		outputs: [
 			{
 				name: '',
 				type: 'tuple',
 				components: [
-					{name: 'bias', type: 'int128'},
-					{name: 'slope', type: 'int128'},
-					{name: 'ts', type: 'uint256'},
-					{name: 'blk', type: 'uint256'}
+					{ name: 'bias', type: 'int128' },
+					{ name: 'slope', type: 'int128' },
+					{ name: 'ts', type: 'uint256' },
+					{ name: 'blk', type: 'uint256' }
 				]
 			}
 		]
@@ -252,9 +252,9 @@ export const VEYFI_ABI = [
 		type: 'function',
 		name: 'slope_changes',
 		inputs: [
-			{name: 'arg0', type: 'address'},
-			{name: 'arg1', type: 'uint256'}
+			{ name: 'arg0', type: 'address' },
+			{ name: 'arg1', type: 'uint256' }
 		],
-		outputs: [{name: '', type: 'int128'}]
+		outputs: [{ name: '', type: 'int128' }]
 	}
 ]

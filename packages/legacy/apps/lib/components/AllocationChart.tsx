@@ -1,6 +1,6 @@
-import type {ReactElement} from 'react'
-import {Cell, Label, Pie, PieChart, Tooltip} from 'recharts'
-import {AllocationTooltip} from './AllocationTooltip'
+import type { ReactElement } from 'react'
+import { Cell, Label, Pie, PieChart, Tooltip } from 'recharts'
+import { AllocationTooltip } from './AllocationTooltip'
 
 export type TAllocationChartData = {
 	id: string
@@ -63,7 +63,7 @@ export function AllocationChart({
 				startAngle={startAngle}
 				minAngle={minAngle}
 				endAngle={endAngle}>
-				{allocationChartData.map(({id}, index) => (
+				{allocationChartData.map(({ id }, index) => (
 					<Cell key={id} fill={colors[index % colors.length]} className={colors[index % colors.length]} />
 				))}
 				<Label
@@ -80,7 +80,7 @@ export function AllocationChart({
 				/>
 			</Pie>
 			<Tooltip
-				content={({active, payload}) => <AllocationTooltip active={active || false} payload={payload} />}
+				content={({ active, payload }) => <AllocationTooltip active={active || false} payload={payload} />}
 			/>
 		</PieChart>
 	)

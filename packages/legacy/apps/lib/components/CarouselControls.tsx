@@ -1,5 +1,5 @@
-import {cl} from '@lib/utils'
-import type {ReactElement} from 'react'
+import { cl } from '@lib/utils'
+import type { ReactElement } from 'react'
 
 type TCarouselControlsProps = {
 	carouselLength?: number

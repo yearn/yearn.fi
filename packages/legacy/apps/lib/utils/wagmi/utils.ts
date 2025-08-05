@@ -1,10 +1,10 @@
-import type {Chain, PublicClient} from 'viem'
-import {createPublicClient, defineChain, http} from 'viem'
+import type { Chain, PublicClient } from 'viem'
+import { createPublicClient, defineChain, http } from 'viem'
 import * as wagmiChains from 'viem/chains'
-import type {TAddress} from '../../types/address'
-import type {TDict, TNDict} from '../../types/mixed'
-import {retrieveConfig} from './config'
-import {anotherLocalhost, localhost} from './networks'
+import type { TAddress } from '../../types/address'
+import type { TDict, TNDict } from '../../types/mixed'
+import { retrieveConfig } from './config'
+import { anotherLocalhost, localhost } from './networks'
 
 export type TChainContract = {
 	address: TAddress
@@ -18,7 +18,7 @@ export type TChainContract = {
 const rari = defineChain({
 	id: 1380012617,
 	name: 'RARI Chain',
-	nativeCurrency: {name: 'Ether', symbol: 'ETH', decimals: 18},
+	nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
 	rpcUrls: {
 		default: {
 			http: ['https://mainnet.rpc.rarichain.org/http']
@@ -48,7 +48,7 @@ export const katana = defineChain({
 		symbol: 'ETH'
 	},
 	rpcUrls: {
-		default: {http: ['https://rpc.katanarpc.com']}
+		default: { http: ['https://rpc.katanarpc.com'] }
 	},
 	blockExplorers: {
 		default: {
@@ -131,7 +131,7 @@ function getInfuraBaseURL(chainID: number): string {
 
 function initIndexedWagmiChains(): TNDict<TExtendedChain> {
 	const _indexedWagmiChains: TNDict<TExtendedChain> = {}
-	for (const chain of Object.values({...wagmiChains, rari, katana})) {
+	for (const chain of Object.values({ ...wagmiChains, rari, katana })) {
 		if (isChain(chain)) {
 			let extendedChain = chain as unknown as TExtendedChain
 			if (extendedChain.id === 1337) {
@@ -156,8 +156,8 @@ function initIndexedWagmiChains(): TNDict<TExtendedChain> {
 			const defaultJsonRPCURL = extendedChain?.rpcUrls?.public?.http?.[0]
 
 			extendedChain.defaultRPC = newRPC || oldRPC || newRPCBugged || defaultJsonRPCURL || ''
-			extendedChain.rpcUrls.alchemy = {http: [getAlchemyBaseURL(extendedChain.id)]}
-			extendedChain.rpcUrls.infura = {http: [getInfuraBaseURL(extendedChain.id)]}
+			extendedChain.rpcUrls.alchemy = { http: [getAlchemyBaseURL(extendedChain.id)] }
+			extendedChain.rpcUrls.infura = { http: [getInfuraBaseURL(extendedChain.id)] }
 
 			const http = [extendedChain.defaultRPC, ...extendedChain.rpcUrls.default.http].filter(Boolean)
 			extendedChain.rpcUrls.default.http = http
@@ -178,7 +178,7 @@ export function getNetwork(chainID: number): TExtendedChain {
 		return {
 			id: chainID,
 			name: `Network ${chainID}`,
-			nativeCurrency: {name: 'Ether', symbol: 'ETH', decimals: 18},
+			nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
 			defaultRPC: '',
 			defaultBlockExplorer: '',
 			contracts: {},
@@ -229,10 +229,10 @@ export function getClient(chainID: number): PublicClient {
 			url = urlAsNodeURL.href.replace(`${urlAsNodeURL.username}:${urlAsNodeURL.password}@`, '')
 			return createPublicClient({
 				chain: indexedWagmiChains[chainID],
-				transport: http(url, {fetchOptions: {headers}})
+				transport: http(url, { fetchOptions: { headers } })
 			})
 		}
-		return createPublicClient({chain: indexedWagmiChains[chainID], transport: http(url)})
+		return createPublicClient({ chain: indexedWagmiChains[chainID], transport: http(url) })
 	} catch {
 		throw new Error(`We couldn't get a valid RPC URL for chain ${chainID}`)
 	}

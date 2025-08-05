@@ -1,30 +1,30 @@
 import AppHeader from '@lib/components/Header'
-import {Meta} from '@lib/components/Meta'
-import {WithFonts} from '@lib/components/WithFonts'
-import {IndexedDB} from '@lib/contexts/useIndexedDB'
-import {WithNotifications} from '@lib/contexts/useNotifications'
-import {WithNotificationsActions} from '@lib/contexts/useNotificationsActions'
-import {WalletContextApp} from '@lib/contexts/useWallet'
-import {YearnContextApp} from '@lib/contexts/useYearn'
-import {WithMom} from '@lib/contexts/WithMom'
-import {useCurrentApp} from '@lib/hooks/useCurrentApp'
-import {IconAlertCritical} from '@lib/icons/IconAlertCritical'
-import {IconAlertError} from '@lib/icons/IconAlertError'
-import {IconCheckmark} from '@lib/icons/IconCheckmark'
-import {cl} from '@lib/utils'
-import {variants} from '@lib/utils/animations'
-import {SUPPORTED_NETWORKS} from '@lib/utils/constants'
-import {AppSettingsContextApp} from '@vaults-v2/contexts/useAppSettings'
-import {LandingAppHeader} from 'apps/landing/components/common/Header'
-import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion'
-import type {AppProps} from 'next/app'
-import {usePathname} from 'next/navigation'
-import type {NextRouter} from 'next/router'
+import { Meta } from '@lib/components/Meta'
+import { WithFonts } from '@lib/components/WithFonts'
+import { IndexedDB } from '@lib/contexts/useIndexedDB'
+import { WithNotifications } from '@lib/contexts/useNotifications'
+import { WithNotificationsActions } from '@lib/contexts/useNotificationsActions'
+import { WalletContextApp } from '@lib/contexts/useWallet'
+import { YearnContextApp } from '@lib/contexts/useYearn'
+import { WithMom } from '@lib/contexts/WithMom'
+import { useCurrentApp } from '@lib/hooks/useCurrentApp'
+import { IconAlertCritical } from '@lib/icons/IconAlertCritical'
+import { IconAlertError } from '@lib/icons/IconAlertError'
+import { IconCheckmark } from '@lib/icons/IconCheckmark'
+import { cl } from '@lib/utils'
+import { variants } from '@lib/utils/animations'
+import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
+import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
+import { LandingAppHeader } from 'apps/landing/components/common/Header'
+import { AnimatePresence, domAnimation, LazyMotion, motion } from 'framer-motion'
+import type { AppProps } from 'next/app'
+import { usePathname } from 'next/navigation'
+import type { NextRouter } from 'next/router'
 import PlausibleProvider from 'next-plausible'
-import type {ReactElement} from 'react'
-import {memo} from 'react'
-import {Toaster} from 'react-hot-toast'
-import type {Chain} from 'viem'
+import type { ReactElement } from 'react'
+import { memo } from 'react'
+import { Toaster } from 'react-hot-toast'
+import type { Chain } from 'viem'
 
 import '../style.css'
 
@@ -43,9 +43,9 @@ import '../style.css'
  ** wrapped with layout, and the feedback popover if it should not be hidden.
  **************************************************************************************************/
 const WithLayout = memo(function WithLayout(
-	props: {router: NextRouter; supportedNetworks: Chain[]} & AppProps
+	props: { router: NextRouter; supportedNetworks: Chain[] } & AppProps
 ): ReactElement {
-	const {Component, pageProps} = props
+	const { Component, pageProps } = props
 	const isAppsPage = props.router.asPath?.startsWith('/apps')
 	const pathName = usePathname()
 
@@ -105,7 +105,7 @@ const WithLayout = memo(function WithLayout(
  ** The returned JSX structure is a main element with the 'WithYearn' and 'App' components.
  **************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
-	const {manifest} = useCurrentApp(props.router)
+	const { manifest } = useCurrentApp(props.router)
 
 	return (
 		<WithFonts>

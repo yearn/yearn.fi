@@ -1,9 +1,9 @@
 const plugin = require('tailwindcss/plugin')
 const defaultTheme = require('tailwindcss/defaultTheme')
-const {paddings} = require('./tailwind.theme.cjs')
+const { paddings } = require('./tailwind.theme.cjs')
 
 function withOpacityValue(variable) {
-	return ({opacityValue}) => {
+	return ({ opacityValue }) => {
 		if (opacityValue === undefined) {
 			return `hsl(var(${variable}))`
 		}
@@ -224,7 +224,7 @@ module.exports = {
 	plugins: [
 		require('@tailwindcss/typography'),
 		require('@tailwindcss/forms'),
-		plugin(({addBase, addUtilities}) => {
+		plugin(({ addBase, addUtilities }) => {
 			addBase({
 				':root': {
 					...paddings

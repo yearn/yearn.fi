@@ -1,8 +1,8 @@
-import {LogoGimme} from '@lib/icons/LogoGimme'
-import {toAddress} from '@lib/utils'
+import { LogoGimme } from '@lib/icons/LogoGimme'
+import { toAddress } from '@lib/utils'
 import Image from 'next/image'
 
-import {LogoYearn} from '../icons/LogoYearn'
+import { LogoYearn } from '../icons/LogoYearn'
 
 const YCRV_TOKEN_ADDRESS = toAddress('0xFCc5c47bE19d06BF83eB04298b026F81069ff65b')
 const VEYFI_DYFI_ADDRESS = toAddress('0x41252E8691e964f7DE35156B68493bAb6797a275')
@@ -13,7 +13,7 @@ export const APPS = {
 		href: '/v3',
 		host: ['yearn.fi'],
 		pathname: '/v3',
-		icon: <LogoYearn className={'size-8'} gradient={{start: '#FB245A', end: '#0657F9'}} front={'text-white'} />
+		icon: <LogoYearn className={'size-8'} gradient={{ start: '#FB245A', end: '#0657F9' }} front={'text-white'} />
 	},
 	Vaults: {
 		name: 'Vaults',

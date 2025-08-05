@@ -1,9 +1,9 @@
-import {InfoTooltip} from '@lib/components/InfoTooltip'
-import {Switch} from '@lib/components/Switch'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger'
-import type {TNormalizedBN} from '@lib/types'
+import { InfoTooltip } from '@lib/components/InfoTooltip'
+import { Switch } from '@lib/components/Switch'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
+import type { TNormalizedBN } from '@lib/types'
 import {
 	cl,
 	decodeAsBigInt,
@@ -14,26 +14,26 @@ import {
 	toNormalizedBN,
 	toNormalizedValue
 } from '@lib/utils'
-import {DISABLED_VEYFI_GAUGES_VAULTS_LIST, VEYFI_ADDRESS} from '@lib/utils/constants'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {retrieveConfig} from '@lib/utils/wagmi'
-import {useUpdateEffect} from '@react-hookz/web'
-import {Flow, useActionFlow} from '@vaults-v2/contexts/useActionFlow'
-import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData'
-import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi'
-import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi'
-import {VEYFI_ABI} from '@vaults-v2/utils/abi/veYFI.abi'
-import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons'
-import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom'
-import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch'
-import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo'
-import {RewardsTab} from '@vaults-v3/components/details/RewardsTab'
-import {SettingsPopover} from '@vaults-v3/components/SettingsPopover'
-import {useRouter} from 'next/router'
-import type {ReactElement} from 'react'
-import {Fragment, useCallback, useEffect, useMemo, useState} from 'react'
-import {useBlockNumber, useReadContract} from 'wagmi'
-import {readContracts} from 'wagmi/actions'
+import { DISABLED_VEYFI_GAUGES_VAULTS_LIST, VEYFI_ADDRESS } from '@lib/utils/constants'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { retrieveConfig } from '@lib/utils/wagmi'
+import { useUpdateEffect } from '@react-hookz/web'
+import { Flow, useActionFlow } from '@vaults-v2/contexts/useActionFlow'
+import { useVaultStakingData } from '@vaults-v2/hooks/useVaultStakingData'
+import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
+import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
+import { VEYFI_ABI } from '@vaults-v2/utils/abi/veYFI.abi'
+import { VaultDetailsQuickActionsButtons } from '@vaults-v3/components/details/actions/QuickActionsButtons'
+import { VaultDetailsQuickActionsFrom } from '@vaults-v3/components/details/actions/QuickActionsFrom'
+import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/actions/QuickActionsSwitch'
+import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
+import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
+import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
+import { useRouter } from 'next/router'
+import type { ReactElement } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { useBlockNumber, useReadContract } from 'wagmi'
+import { readContracts } from 'wagmi/actions'
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug
@@ -63,10 +63,10 @@ export type TTabs = {
  ** Available tabs for vault actions with their respective values, labels and flow actions
  *************************************************************************************************/
 export const tabs: TTabsOptions[] = [
-	{value: 0, label: 'Deposit', flowAction: Flow.Deposit, slug: 'deposit'},
-	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw, slug: 'withdraw'},
-	{value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate'},
-	{value: 3, label: 'Boost', flowAction: Flow.None, slug: 'boost'}
+	{ value: 0, label: 'Deposit', flowAction: Flow.Deposit, slug: 'deposit' },
+	{ value: 1, label: 'Withdraw', flowAction: Flow.Withdraw, slug: 'withdraw' },
+	{ value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate' },
+	{ value: 3, label: 'Boost', flowAction: Flow.None, slug: 'boost' }
 ]
 
 /**************************************************************************************************
@@ -74,7 +74,11 @@ export const tabs: TTabsOptions[] = [
  ** Returns the withdraw tab if vault is migrated or retired, otherwise returns deposit/withdraw tab
  ** based on isDepositing flag
  *************************************************************************************************/
-export function getCurrentTab(props: {isDepositing: boolean; hasMigration: boolean; isRetired: boolean}): TTabsOptions {
+export function getCurrentTab(props: {
+	isDepositing: boolean
+	hasMigration: boolean
+	isRetired: boolean
+}): TTabsOptions {
 	if (props.hasMigration || props.isRetired) {
 		return tabs[1]
 	}
@@ -93,7 +97,7 @@ export function BoostMessage(props: {
 	currentTab: number
 	hasStakingRewardsLive: boolean
 }): ReactElement {
-	const {isAutoStakingEnabled} = useYearn()
+	const { isAutoStakingEnabled } = useYearn()
 	const hasStakingRewards = Boolean(props.currentVault.staking.available)
 	const stakingRewardSource = props.currentVault.staking.source
 	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR
@@ -273,7 +277,7 @@ export function VaultDetailsTab(props: {
 						}
 					},
 					undefined,
-					{shallow: true}
+					{ shallow: true }
 				)
 				props.onSwitchTab(props.tab)
 			}}>
@@ -307,12 +311,12 @@ export function VaultDetailsTab(props: {
  ** section. It will display the different tabs available for the current vault and the
  ** corresponding actions that can be taken.
  *************************************************************************************************/
-export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance} = useActionFlow()
-	const {address} = useWeb3()
+export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+	const { onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance } = useActionFlow()
+	const { address } = useWeb3()
 	const router = useRouter()
-	const {isAutoStakingEnabled, setIsAutoStakingEnabled} = useYearn()
-	const {vaultData, updateVaultData} = useVaultStakingData({currentVault})
+	const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
+	const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })
 	const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined)
 	const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]])
 	const [hasStakingRewardsLive, setHasStakingRewardsLive] = useState(false)
@@ -334,7 +338,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	/**********************************************************************************************
 	 ** Retrieve some data for correct display of APR
 	 **********************************************************************************************/
-	const {data: veYFITotalSupplyData} = useReadContract({
+	const { data: veYFITotalSupplyData } = useReadContract({
 		address: toAddress(VEYFI_ADDRESS),
 		abi: VEYFI_ABI,
 		functionName: 'totalSupply',
@@ -344,7 +348,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	})
 
 	const veYFITotalSupply = veYFITotalSupplyData ? toNormalizedValue(veYFITotalSupplyData as bigint, 18) : 0
-	const {data: gaugeTotalSupplyData} = useReadContract({
+	const { data: gaugeTotalSupplyData } = useReadContract({
 		address: currentVault.staking.address,
 		abi: VAULT_V3_ABI,
 		functionName: 'totalAssets',
@@ -373,7 +377,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		return 'Staking'
 	}, [currentVault.staking.source])
 
-	const {data: blockNumber} = useBlockNumber({watch: true})
+	const { data: blockNumber } = useBlockNumber({ watch: true })
 
 	/**********************************************************************************************
 	 ** Retrieve some data from the vault and the staking contract to display a comprehensive view

@@ -1,6 +1,6 @@
-import {getAddress, zeroAddress} from 'viem'
-import type {TAddress, TAddressLike, TAddressSmol, TDict} from '../types'
-import {isTAddress, isZeroAddress} from './tools.is'
+import { getAddress, zeroAddress } from 'viem'
+import type { TAddress, TAddressLike, TAddressSmol, TDict } from '../types'
+import { isTAddress, isZeroAddress } from './tools.is'
 
 /******************************************************************************
  ** toAddress - Wagmi only requires a 0xString as a valid address. To use our
@@ -90,7 +90,7 @@ export function truncateHex(address: string | undefined, size: number): string {
  ** getColorFromAdddress - Used to generate a color from an address. This color
  ** is used as background color for the avatar.
  *****************************************************************************/
-export function getColorFromAdddress({address}: {address: TAddress}): string {
+export function getColorFromAdddress({ address }: { address: TAddress }): string {
 	if (!address) {
 		return '#000000'
 	}

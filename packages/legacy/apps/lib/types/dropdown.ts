@@ -1,6 +1,6 @@
-import type {TAddress} from '@lib/types'
-import type {ReactElement} from 'react'
-import type {TSolver} from '../utils/schemas/yDaemonTokenListBalances'
+import type { TAddress } from '@lib/types'
+import type { ReactElement } from 'react'
+import type { TSolver } from '../utils/schemas/yDaemonTokenListBalances'
 
 export type TDropdownOption = {
 	label: string

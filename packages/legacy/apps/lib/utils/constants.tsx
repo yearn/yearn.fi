@@ -1,14 +1,14 @@
-import {IconAbout} from '@lib/icons/IconAbout'
-import {IconFrontends} from '@lib/icons/IconFrontends'
-import {IconIntegrations} from '@lib/icons/IconIntegrations'
-import {IconVaults} from '@lib/icons/IconVaults'
-import {IconYearn} from '@lib/icons/IconYearn'
-import {IconYearnXApps} from '@lib/icons/IconYearnXApps'
-import type {TAddress, TNDict, TToken} from '@lib/types'
-import type {TApp} from '@lib/types/mixed'
-import {arbitrum, base, fantom, mainnet, optimism, polygon, sonic} from 'viem/chains'
-import {toAddress} from './tools.address'
-import {katana} from './wagmi'
+import { IconAbout } from '@lib/icons/IconAbout'
+import { IconFrontends } from '@lib/icons/IconFrontends'
+import { IconIntegrations } from '@lib/icons/IconIntegrations'
+import { IconVaults } from '@lib/icons/IconVaults'
+import { IconYearn } from '@lib/icons/IconYearn'
+import { IconYearnXApps } from '@lib/icons/IconYearnXApps'
+import type { TAddress, TNDict, TToken } from '@lib/types'
+import type { TApp } from '@lib/types/mixed'
+import { arbitrum, base, fantom, mainnet, optimism, polygon, sonic } from 'viem/chains'
+import { toAddress } from './tools.address'
+import { katana } from './wagmi'
 
 export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic, katana]
 
@@ -37,7 +37,7 @@ export const DEFAULT_ERC20: TToken = {
 	decimals: 18,
 	chainID: 1,
 	value: 0,
-	balance: {raw: 0n, normalized: 0, display: '0'}
+	balance: { raw: 0n, normalized: 0, display: '0' }
 }
 
 // Theses constants are used by the yCRV app
@@ -343,30 +343,30 @@ export const CATEGORIES_DICT = {
 }
 
 export const LANDING_SIDEBAR_LINKS = [
-	{title: 'Discourse', href: 'https://gov.yearn.fi/'},
-	{title: 'Docs', href: 'https://docs.yearn.fi/'},
-	{title: 'Blog', href: 'https://blog.yearn.fi/'},
-	{title: 'Support', href: 'https://discord.com/invite/yearn'},
-	{title: 'Discord', href: 'https://discord.com/invite/yearn'},
-	{title: 'Twitter', href: 'https://twitter.com/yearnfi'},
-	{title: 'API', href: 'https://github.com/yearn/ydaemon'}
+	{ title: 'Discourse', href: 'https://gov.yearn.fi/' },
+	{ title: 'Docs', href: 'https://docs.yearn.fi/' },
+	{ title: 'Blog', href: 'https://blog.yearn.fi/' },
+	{ title: 'Support', href: 'https://discord.com/invite/yearn' },
+	{ title: 'Discord', href: 'https://discord.com/invite/yearn' },
+	{ title: 'Twitter', href: 'https://twitter.com/yearnfi' },
+	{ title: 'API', href: 'https://github.com/yearn/ydaemon' }
 ]
 
 export const MENU_TABS = [
-	{title: 'Home', route: 'apps'},
-	{title: 'Vaults', route: 'vaults'},
-	{title: 'Yearn Apps', route: 'yearn-apps'},
-	{title: 'Yearn X Projects', route: 'yearn-x'},
-	{title: 'Integrations', route: 'integrations'},
-	{title: 'Retired Apps', route: 'retired-apps'}
+	{ title: 'Home', route: 'apps' },
+	{ title: 'Vaults', route: 'vaults' },
+	{ title: 'Yearn Apps', route: 'yearn-apps' },
+	{ title: 'Yearn X Projects', route: 'yearn-x' },
+	{ title: 'Integrations', route: 'integrations' },
+	{ title: 'Retired Apps', route: 'retired-apps' }
 	// {title: 'About', route: 'about'}
 ]
 
 export const CATEGORY_PAGE_FILTERS = [
-	{title: 'All', value: 'all'},
-	{title: 'Filter', value: 'filter'},
-	{title: 'Tab', value: 'tab'},
-	{title: 'Large Filter', value: 'large-filter'}
+	{ title: 'All', value: 'all' },
+	{ title: 'Filter', value: 'filter' },
+	{ title: 'Tab', value: 'tab' },
+	{ title: 'Large Filter', value: 'large-filter' }
 ]
 
 export const iconsDict = {
@@ -383,6 +383,6 @@ export const iconsDict = {
  ** exit.
  *************************************************************************************************/
 export const DISABLED_VEYFI_GAUGES_VAULTS_LIST = [
-	{address: '0x42842754aBce504E12C20E434Af8960FDf85C833', staking: '0xb98343536e584cf686427a54574567ba5bda8070'}, //GOLD-yETH,
-	{address: '0xbA61BaA1D96c2F4E25205B331306507BcAeA4677', staking: '0x6130E6cD924a40b24703407F246966D7435D4998'} //lp-yPRISMA
+	{ address: '0x42842754aBce504E12C20E434Af8960FDf85C833', staking: '0xb98343536e584cf686427a54574567ba5bda8070' }, //GOLD-yETH,
+	{ address: '0xbA61BaA1D96c2F4E25205B331306507BcAeA4677', staking: '0x6130E6cD924a40b24703407F246966D7435D4998' } //lp-yPRISMA
 ]

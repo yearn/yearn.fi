@@ -1,6 +1,6 @@
-import {z} from 'zod'
+import { z } from 'zod'
 
-import {toAddress} from '../'
+import { toAddress } from '../'
 
 export const curveWeeklyFeesSchema = z.object({
 	success: z.boolean().optional(),
@@ -34,7 +34,7 @@ const curveGaugeSchema = z.object({
 	name: z.string(),
 	shortName: z.string().optional(),
 	gauge: z.string().optional().transform(toAddress),
-	swap_data: z.object({virtual_price: z.string().or(z.number().optional())}).optional(),
+	swap_data: z.object({ virtual_price: z.string().or(z.number().optional()) }).optional(),
 	gauge_data: z
 		.object({
 			inflation_rate: z.number().or(z.string()).optional().default('0'),

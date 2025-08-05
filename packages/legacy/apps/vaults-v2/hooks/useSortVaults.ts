@@ -1,12 +1,12 @@
-import {useWallet} from '@lib/contexts/useWallet'
-import {useYearn} from '@lib/contexts/useYearn'
-import type {TSortDirection} from '@lib/types'
-import {isZero, toAddress, toNormalizedBN} from '@lib/utils'
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants'
-import {getVaultName, numberSort, stringSort} from '@lib/utils/helpers'
-import type {TYDaemonVault, TYDaemonVaultStrategy, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {useCallback, useMemo} from 'react'
-import {deserialize, serialize} from 'wagmi'
+import { useWallet } from '@lib/contexts/useWallet'
+import { useYearn } from '@lib/contexts/useYearn'
+import type { TSortDirection } from '@lib/types'
+import { isZero, toAddress, toNormalizedBN } from '@lib/utils'
+import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@lib/utils/constants'
+import { getVaultName, numberSort, stringSort } from '@lib/utils/helpers'
+import type { TYDaemonVault, TYDaemonVaultStrategy, TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { useCallback, useMemo } from 'react'
+import { deserialize, serialize } from 'wagmi'
 
 export type TPossibleSortBy =
 	| 'APY'
@@ -21,12 +21,12 @@ export type TPossibleSortBy =
 	| 'score'
 
 export function useSortVaults(
-	vaultList: (TYDaemonVault & {details?: TYDaemonVaultStrategy['details']})[],
+	vaultList: (TYDaemonVault & { details?: TYDaemonVaultStrategy['details'] })[],
 	sortBy: TPossibleSortBy,
 	sortDirection: TSortDirection
 ): TYDaemonVaults {
-	const {getBalance} = useWallet()
-	const {getPrice} = useYearn()
+	const { getBalance } = useWallet()
+	const { getPrice } = useYearn()
 
 	const sortedByName = useCallback((): TYDaemonVaults => {
 		if (sortBy !== 'estAPY') {
@@ -105,7 +105,7 @@ export function useSortVaults(
 		if (sortBy !== 'tvl') {
 			return vaultList
 		}
-		return vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection}))
+		return vaultList.sort((a, b): number => numberSort({ a: a.tvl.tvl, b: b.tvl.tvl, sortDirection }))
 	}, [sortDirection, vaultList, sortBy])
 
 	const sortedByAllocation = useCallback((): TYDaemonVaults => {
@@ -126,7 +126,7 @@ export function useSortVaults(
 			return vaultList
 		}
 		return vaultList.sort((a, b): number =>
-			numberSort({a: a.details?.debtRatio, b: b.details?.debtRatio, sortDirection})
+			numberSort({ a: a.details?.debtRatio, b: b.details?.debtRatio, sortDirection })
 		)
 	}, [sortDirection, vaultList, sortBy])
 
@@ -135,8 +135,8 @@ export function useSortVaults(
 			return vaultList
 		}
 		return vaultList.sort((a, b): number => {
-			const aDepositedBalance = Number(getBalance({address: a.address, chainID: a.chainID})?.normalized || 0)
-			const bDepositedBalance = Number(getBalance({address: b.address, chainID: b.chainID})?.normalized || 0)
+			const aDepositedBalance = Number(getBalance({ address: a.address, chainID: a.chainID })?.normalized || 0)
+			const bDepositedBalance = Number(getBalance({ address: b.address, chainID: b.chainID })?.normalized || 0)
 			let aStakedBalance = 0
 			let bStakedBalance = 0
 
@@ -144,19 +144,19 @@ export function useSortVaults(
 			let bStakedValue = 0
 
 			if (a.staking.available) {
-				aStakedBalance = Number(getBalance({address: a.staking.address, chainID: a.chainID})?.normalized || 0)
+				aStakedBalance = Number(getBalance({ address: a.staking.address, chainID: a.chainID })?.normalized || 0)
 			}
 			if (b.staking.available) {
-				bStakedBalance = Number(getBalance({address: b.staking.address, chainID: b.chainID})?.normalized || 0)
+				bStakedBalance = Number(getBalance({ address: b.staking.address, chainID: b.chainID })?.normalized || 0)
 			}
 
 			if (aStakedBalance) {
-				const aPrice = getPrice({address: a.address, chainID: a.chainID}).normalized || 0
+				const aPrice = getPrice({ address: a.address, chainID: a.chainID }).normalized || 0
 				aStakedValue = aPrice * (aDepositedBalance + aStakedBalance)
 			}
 
 			if (bStakedBalance) {
-				const bPrice = getPrice({address: b.address, chainID: b.chainID}).normalized || 0
+				const bPrice = getPrice({ address: b.address, chainID: b.chainID }).normalized || 0
 				bStakedValue = bPrice * (bDepositedBalance + bStakedBalance)
 			}
 
@@ -172,12 +172,12 @@ export function useSortVaults(
 			return vaultList
 		}
 		return vaultList.sort((a, b): number => {
-			let aBalance = Number(getBalance({address: a.token.address, chainID: a.chainID})?.normalized || 0)
-			let bBalance = Number(getBalance({address: b.token.address, chainID: b.chainID})?.normalized || 0)
+			let aBalance = Number(getBalance({ address: a.token.address, chainID: a.chainID })?.normalized || 0)
+			let bBalance = Number(getBalance({ address: b.token.address, chainID: b.chainID })?.normalized || 0)
 			if ([WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(a.token.address))) {
-				aBalance += Number(getBalance({address: ETH_TOKEN_ADDRESS, chainID: a.chainID})?.normalized || 0)
+				aBalance += Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: a.chainID })?.normalized || 0)
 			} else if ([WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(b.token.address))) {
-				bBalance += Number(getBalance({address: ETH_TOKEN_ADDRESS, chainID: b.chainID})?.normalized || 0)
+				bBalance += Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: b.chainID })?.normalized || 0)
 			}
 
 			if (sortDirection === 'asc') {
@@ -191,7 +191,7 @@ export function useSortVaults(
 		if (sortBy !== 'featuringScore') {
 			return vaultList
 		}
-		return vaultList.sort((a, b): number => numberSort({a: a.featuringScore, b: b.featuringScore, sortDirection}))
+		return vaultList.sort((a, b): number => numberSort({ a: a.featuringScore, b: b.featuringScore, sortDirection }))
 	}, [sortBy, sortDirection, vaultList])
 
 	const sortByScore = useCallback((): TYDaemonVaults => {

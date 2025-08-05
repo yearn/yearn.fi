@@ -1,19 +1,19 @@
-import {useNotifications} from '@lib/contexts/useNotifications'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import type {TDict, TNormalizedBN} from '@lib/types'
-import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils'
-import {allowanceKey} from '@lib/utils/helpers'
-import type {TTxStatus} from '@lib/utils/wagmi'
-import {allowanceOf, approveERC20} from '@lib/utils/wagmi'
-import {depositETH, withdrawETH} from '@lib/utils/wagmi/actions'
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers'
-import {Solver} from '@vaults-v2/types/solvers'
-import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults-v2/utils'
-import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut'
-import {useCallback, useMemo, useRef} from 'react'
-import type {Hash, TransactionReceipt} from 'viem'
-import {maxUint256} from 'viem'
+import { useNotifications } from '@lib/contexts/useNotifications'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import type { TDict, TNormalizedBN } from '@lib/types'
+import { assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
+import { allowanceKey } from '@lib/utils/helpers'
+import type { TTxStatus } from '@lib/utils/wagmi'
+import { allowanceOf, approveERC20 } from '@lib/utils/wagmi'
+import { depositETH, withdrawETH } from '@lib/utils/wagmi/actions'
+import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
+import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
+import { Solver } from '@vaults-v2/types/solvers'
+import { getEthZapperContract, getNativeTokenWrapperContract } from '@vaults-v2/utils'
+import { getVaultEstimateOut } from '@vaults-v2/utils/getVaultEstimateOut'
+import { useCallback, useMemo, useRef } from 'react'
+import type { Hash, TransactionReceipt } from 'viem'
+import { maxUint256 } from 'viem'
 
 /**************************************************************************************************
  ** The ChainCoin solver is a specific solver that would work only for some vaults. It aims to help
@@ -27,11 +27,11 @@ import {maxUint256} from 'viem'
  ** Note: DISABLED
  *************************************************************************************************/
 export function useSolverChainCoin(): TSolverContext {
-	const {provider} = useWeb3()
+	const { provider } = useWeb3()
 	const latestQuote = useRef<TNormalizedBN | undefined>(undefined)
 	const request = useRef<TInitSolverArgs | undefined>(undefined)
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({})
-	const {setShouldOpenCurtain} = useNotifications()
+	const { setShouldOpenCurtain } = useNotifications()
 
 	/**********************************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.

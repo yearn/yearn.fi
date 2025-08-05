@@ -1,6 +1,6 @@
-import type {DocumentContext, DocumentInitialProps} from 'next/document'
-import Document, {Head, Html, Main, NextScript} from 'next/document'
-import type {ReactElement} from 'react'
+import type { DocumentContext, DocumentInitialProps } from 'next/document'
+import Document, { Head, Html, Main, NextScript } from 'next/document'
+import type { ReactElement } from 'react'
 
 const modeScript = `
 let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -50,23 +50,23 @@ window.onload = observeUrlChange;
 `
 
 class MyDocument extends Document {
-	static async getInitialProps(ctx: DocumentContext): Promise<DocumentInitialProps & {route: string}> {
+	static async getInitialProps(ctx: DocumentContext): Promise<DocumentInitialProps & { route: string }> {
 		const initialProps = await Document.getInitialProps(ctx)
 
 		// Determine the route from context
 		const route = ctx.pathname
-		return {route, ...initialProps}
+		return { route, ...initialProps }
 	}
 
 	render(): ReactElement {
-		const {route} = this.props as unknown as {route: string}
+		const { route } = this.props as unknown as { route: string }
 		const isLanding = route.startsWith('/vaults')
 		return (
 			<Html
 				lang={'en'}
 				className={`duration-150', bg-neutral-0 transition-colors ${isLanding && 'scrollbar-none'}`}>
 				<Head>
-					<script dangerouslySetInnerHTML={{__html: modeScript}} />
+					<script dangerouslySetInnerHTML={{ __html: modeScript }} />
 				</Head>
 				<body>
 					<Main />

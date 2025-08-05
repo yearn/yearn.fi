@@ -1,20 +1,20 @@
 'use client'
-import {Dialog, Transition, TransitionChild} from '@headlessui/react'
-import {IconClose} from '@lib/icons/IconClose'
-import {IconDiscord} from '@lib/icons/IconDiscord'
-import {IconTwitter} from '@lib/icons/IconTwitter'
+import { Dialog, Transition, TransitionChild } from '@headlessui/react'
+import { IconClose } from '@lib/icons/IconClose'
+import { IconDiscord } from '@lib/icons/IconDiscord'
+import { IconTwitter } from '@lib/icons/IconTwitter'
 import Link from 'next/link'
 import type React from 'react'
-import type {ReactElement, ReactNode} from 'react'
-import {Fragment} from 'react'
-import type {Chain} from 'viem'
-import type {TMenu} from './Header'
+import type { ReactElement, ReactNode } from 'react'
+import { Fragment } from 'react'
+import type { Chain } from 'viem'
+import type { TMenu } from './Header'
 
 const menu: TMenu[] = [
-	{path: '/apps', label: 'Apps'},
-	{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
-	{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'},
-	{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
+	{ path: '/apps', label: 'Apps' },
+	{ path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank' },
+	{ path: 'https://discord.gg/yearn', label: 'Support', target: '_blank' },
+	{ path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank' },
 	{
 		path: 'https://gov.yearn.fi/',
 		label: 'Discourse',
@@ -78,14 +78,14 @@ export type TModal = {
 } & React.ComponentPropsWithoutRef<'div'>
 
 export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
-	const {isOpen, onClose} = props
+	const { isOpen, onClose } = props
 
 	return (
 		<Transition show={isOpen} as={Fragment}>
 			<Dialog
 				as={'div'}
 				className={'fixed inset-0 overflow-y-auto md:hidden'}
-				style={{zIndex: 88}}
+				style={{ zIndex: 88 }}
 				onClose={onClose}>
 				<div className={'relative flex min-h-screen items-end justify-end px-0 pb-0 pt-4 text-center'}>
 					<TransitionChild

@@ -1,24 +1,24 @@
-import {useNotifications} from '@lib/contexts/useNotifications'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import type {TDict, TNormalizedBN} from '@lib/types'
-import {assert, assertAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils'
-import {allowanceKey} from '@lib/utils/helpers'
-import type {TTxStatus} from '@lib/utils/wagmi'
-import {allowanceOf, approveERC20, getNetwork} from '@lib/utils/wagmi'
-import {depositViaPartner, withdrawShares} from '@lib/utils/wagmi/actions'
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers'
-import {Solver} from '@vaults-v2/types/solvers'
-import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut'
-import {useCallback, useMemo, useRef} from 'react'
-import type {Hash, TransactionReceipt} from 'viem'
-import {maxUint256} from 'viem'
+import { useNotifications } from '@lib/contexts/useNotifications'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import type { TDict, TNormalizedBN } from '@lib/types'
+import { assert, assertAddress, toAddress, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
+import { allowanceKey } from '@lib/utils/helpers'
+import type { TTxStatus } from '@lib/utils/wagmi'
+import { allowanceOf, approveERC20, getNetwork } from '@lib/utils/wagmi'
+import { depositViaPartner, withdrawShares } from '@lib/utils/wagmi/actions'
+import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
+import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
+import { Solver } from '@vaults-v2/types/solvers'
+import { getVaultEstimateOut } from '@vaults-v2/utils/getVaultEstimateOut'
+import { useCallback, useMemo, useRef } from 'react'
+import type { Hash, TransactionReceipt } from 'viem'
+import { maxUint256 } from 'viem'
 
 export function useSolverPartnerContract(): TSolverContext {
-	const {provider} = useWeb3()
-	const {currentPartner} = useYearn()
-	const {setShouldOpenCurtain} = useNotifications()
+	const { provider } = useWeb3()
+	const { currentPartner } = useYearn()
+	const { setShouldOpenCurtain } = useNotifications()
 	const latestQuote = useRef<TNormalizedBN | undefined>(undefined)
 	const request = useRef<TInitSolverArgs | undefined>(undefined)
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({})

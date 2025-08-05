@@ -1,16 +1,16 @@
-import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react'
-import {IconChevron} from '@lib/icons/IconChevron'
-import {cl} from '@lib/utils'
-import {useThrottledState} from '@react-hookz/web'
-import type {ReactElement} from 'react'
-import {Fragment, useState} from 'react'
-import {ImageWithFallback} from './ImageWithFallback'
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition } from '@headlessui/react'
+import { IconChevron } from '@lib/icons/IconChevron'
+import { cl } from '@lib/utils'
+import { useThrottledState } from '@react-hookz/web'
+import type { ReactElement } from 'react'
+import { Fragment, useState } from 'react'
+import { ImageWithFallback } from './ImageWithFallback'
 
 const DropdownOption = (option: TDropdownOption): ReactElement => {
-	const {label, description, icon} = option
+	const { label, description, icon } = option
 	return (
 		<ComboboxOption value={option}>
-			{({active}): ReactElement => (
+			{({ active }): ReactElement => (
 				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					{icon && (
 						<div className={'size-6 rounded-full'}>
@@ -31,7 +31,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
 	)
 }
 
-const DropdownEmpty = ({isSearching}: {isSearching: boolean}): ReactElement => {
+const DropdownEmpty = ({ isSearching }: { isSearching: boolean }): ReactElement => {
 	if (!isSearching) {
 		return (
 			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
@@ -82,7 +82,7 @@ export const Dropdown = ({
 
 	const isSearching = search !== ''
 	const filteredOptions = isSearching
-		? options.filter(({label}): boolean => label.toLowerCase().includes(search.toLowerCase()))
+		? options.filter(({ label }): boolean => label.toLowerCase().includes(search.toLowerCase()))
 		: options
 
 	return (
@@ -170,7 +170,7 @@ export const Dropdown = ({
 									<DropdownEmpty isSearching={isSearching} />
 								) : (
 									filteredOptions.map(
-										({id, label, description, icon}): ReactElement => (
+										({ id, label, description, icon }): ReactElement => (
 											<DropdownOption
 												key={id}
 												id={id}

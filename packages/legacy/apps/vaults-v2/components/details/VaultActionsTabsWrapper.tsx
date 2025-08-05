@@ -1,35 +1,35 @@
-import {InfoTooltip} from '@lib/components/InfoTooltip'
-import {Switch} from '@lib/components/Switch'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger'
-import type {TNormalizedBN} from '@lib/types'
-import {cl, decodeAsBigInt, toAddress, toNormalizedBN, toNormalizedValue} from '@lib/utils'
-import {VEYFI_ADDRESS} from '@lib/utils/constants'
-import {parseMarkdown} from '@lib/utils/helpers'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {retrieveConfig} from '@lib/utils/wagmi'
-import {useUpdateEffect} from '@react-hookz/web'
-import {SettingsPopover} from '@vaults-v2/components/SettingsPopover'
-import {Flow, useActionFlow} from '@vaults-v2/contexts/useActionFlow'
-import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData'
-import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi'
-import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi'
-import {VEYFI_ABI} from '@vaults-v2/utils/abi/veYFI.abi'
-import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons'
-import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom'
-import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch'
-import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo'
-import {RewardsTab} from '@vaults-v3/components/details/RewardsTab'
-import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper'
-import {getCurrentTab, tabs, VaultDetailsTab} from '@vaults-v3/components/details/VaultActionsTabsWrapper'
+import { InfoTooltip } from '@lib/components/InfoTooltip'
+import { Switch } from '@lib/components/Switch'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
+import type { TNormalizedBN } from '@lib/types'
+import { cl, decodeAsBigInt, toAddress, toNormalizedBN, toNormalizedValue } from '@lib/utils'
+import { VEYFI_ADDRESS } from '@lib/utils/constants'
+import { parseMarkdown } from '@lib/utils/helpers'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { retrieveConfig } from '@lib/utils/wagmi'
+import { useUpdateEffect } from '@react-hookz/web'
+import { SettingsPopover } from '@vaults-v2/components/SettingsPopover'
+import { Flow, useActionFlow } from '@vaults-v2/contexts/useActionFlow'
+import { useVaultStakingData } from '@vaults-v2/hooks/useVaultStakingData'
+import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
+import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
+import { VEYFI_ABI } from '@vaults-v2/utils/abi/veYFI.abi'
+import { VaultDetailsQuickActionsButtons } from '@vaults-v3/components/details/actions/QuickActionsButtons'
+import { VaultDetailsQuickActionsFrom } from '@vaults-v3/components/details/actions/QuickActionsFrom'
+import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/actions/QuickActionsSwitch'
+import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
+import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
+import type { TTabsOptions } from '@vaults-v3/components/details/VaultActionsTabsWrapper'
+import { getCurrentTab, tabs, VaultDetailsTab } from '@vaults-v3/components/details/VaultActionsTabsWrapper'
 import Link from 'next/link'
-import {useRouter} from 'next/router'
+import { useRouter } from 'next/router'
 
-import type {ReactElement} from 'react'
-import {Fragment, useCallback, useEffect, useMemo, useState} from 'react'
-import {useBlockNumber, useReadContract} from 'wagmi'
-import {readContracts} from 'wagmi/actions'
+import type { ReactElement } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { useBlockNumber, useReadContract } from 'wagmi'
+import { readContracts } from 'wagmi/actions'
 
 /**************************************************************************************************
  ** The MobileTabButtons component will be used to display the tab buttons to navigate between the
@@ -63,12 +63,12 @@ function MobileTabButtons(props: {
  ** section. It will display the different tabs available for the current vault and the
  ** corresponding actions that can be taken.
  *************************************************************************************************/
-export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
 	const router = useRouter()
-	const {isAutoStakingEnabled, setIsAutoStakingEnabled} = useYearn()
-	const {address} = useWeb3()
-	const {vaultData, updateVaultData} = useVaultStakingData({currentVault})
-	const {onSwitchSelectedOptions, isDepositing, actionParams, hasVeYFIBalance, veYFIBalance} = useActionFlow()
+	const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
+	const { address } = useWeb3()
+	const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })
+	const { onSwitchSelectedOptions, isDepositing, actionParams, hasVeYFIBalance, veYFIBalance } = useActionFlow()
 	const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]])
 	const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined)
 	const [hasStakingRewardsLive, setHasStakingRewardsLive] = useState(false)
@@ -84,7 +84,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	/**********************************************************************************************
 	 ** Retrieve some data for correct display of APR
 	 **********************************************************************************************/
-	const {data: veYFITotalSupplyData} = useReadContract({
+	const { data: veYFITotalSupplyData } = useReadContract({
 		address: toAddress(VEYFI_ADDRESS),
 		abi: VEYFI_ABI,
 		functionName: 'totalSupply',
@@ -94,7 +94,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	})
 
 	const veYFITotalSupply = veYFITotalSupplyData ? toNormalizedValue(veYFITotalSupplyData as bigint, 18) : 0
-	const {data: gaugeTotalSupplyData} = useReadContract({
+	const { data: gaugeTotalSupplyData } = useReadContract({
 		address: currentVault.staking.address,
 		abi: VAULT_V3_ABI,
 		functionName: 'totalAssets',
@@ -104,7 +104,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	})
 	const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0
 
-	const {data: blockNumber} = useBlockNumber({watch: true})
+	const { data: blockNumber } = useBlockNumber({ watch: true })
 	/**********************************************************************************************
 	 ** Retrieve some data from the vault and the staking contract to display a comprehensive view
 	 ** of the user's holdings in the vault.

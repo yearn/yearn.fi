@@ -1,20 +1,20 @@
-import type {TCTA} from '@lib/components/yToast'
-import type {TAddress} from '@lib/types'
-import {assert, assertAddress, MAX_UINT_256, toAddress} from '@lib/utils'
-import {PARTNER_VAULT_ABI} from '@lib/utils/abi/partner.vault.abi'
-import {VAULT_ABI} from '@lib/utils/abi/vault.abi'
-import {ZAP_ETH_TO_YVETH_ABI} from '@lib/utils/abi/zapEthToYvEth.abi'
-import {ZAP_FTM_TO_YVFTM_ABI} from '@lib/utils/abi/zapFtmToYvFTM.abi'
-import type {TTxResponse, TWriteTransaction} from '@lib/utils/wagmi'
-import {handleTx, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi'
-import {getEthZapperContract} from '@vaults-v2/utils'
-import {ERC_4626_ROUTER_ABI} from '@vaults-v2/utils/abi/erc4626Router.abi'
-import {VAULT_MIGRATOR_ABI} from '@vaults-v2/utils/abi/vaultMigrator.abi'
-import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi'
-import {ZAP_OPT_ETH_TO_YVETH_ABI} from '@vaults-v2/utils/abi/zapOptEthToYvEth'
-import {erc20Abi} from 'viem'
-import type {Connector} from 'wagmi'
-import {readContract} from 'wagmi/actions'
+import type { TCTA } from '@lib/components/yToast'
+import type { TAddress } from '@lib/types'
+import { assert, assertAddress, MAX_UINT_256, toAddress } from '@lib/utils'
+import { PARTNER_VAULT_ABI } from '@lib/utils/abi/partner.vault.abi'
+import { VAULT_ABI } from '@lib/utils/abi/vault.abi'
+import { ZAP_ETH_TO_YVETH_ABI } from '@lib/utils/abi/zapEthToYvEth.abi'
+import { ZAP_FTM_TO_YVFTM_ABI } from '@lib/utils/abi/zapFtmToYvFTM.abi'
+import type { TTxResponse, TWriteTransaction } from '@lib/utils/wagmi'
+import { handleTx, retrieveConfig, toWagmiProvider } from '@lib/utils/wagmi'
+import { getEthZapperContract } from '@vaults-v2/utils'
+import { ERC_4626_ROUTER_ABI } from '@vaults-v2/utils/abi/erc4626Router.abi'
+import { VAULT_MIGRATOR_ABI } from '@vaults-v2/utils/abi/vaultMigrator.abi'
+import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
+import { ZAP_OPT_ETH_TO_YVETH_ABI } from '@vaults-v2/utils/abi/zapOptEthToYvEth'
+import { erc20Abi } from 'viem'
+import type { Connector } from 'wagmi'
+import { readContract } from 'wagmi/actions'
 
 interface WindowWithCustomEthereum extends Window {
 	ethereum?: {
@@ -36,8 +36,8 @@ const ALTERNATE_ERC20_APPROVE_ABI = [
 	{
 		constant: false,
 		inputs: [
-			{name: '_spender', type: 'address'},
-			{name: '_value', type: 'uint256'}
+			{ name: '_spender', type: 'address' },
+			{ name: '_value', type: 'uint256' }
 		],
 		name: 'approve',
 		outputs: [],
@@ -111,7 +111,7 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 	assertAddress(props.contractAddress)
 
 	props.onTrySomethingElse = async (): Promise<TTxResponse> => {
-		const propsWithoutOnTrySomethingElse = {...props, onTrySomethingElse: undefined}
+		const propsWithoutOnTrySomethingElse = { ...props, onTrySomethingElse: undefined }
 		assertAddress(props.spenderAddress, 'spenderAddress')
 		return await handleTx(propsWithoutOnTrySomethingElse, {
 			address: toAddress(props.contractAddress),

@@ -1,22 +1,22 @@
-import {Pagination} from '@lib/components/Pagination'
-import {SearchBar} from '@lib/components/SearchBar'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useVaultFilter} from '@lib/hooks/useFilteredVaults'
-import type {TSortDirection} from '@lib/types'
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {TFilter, VAULT_PAGE_SIZE} from '@vaults/constants'
-import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty'
-import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants'
-import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults'
-import {useSortVaults} from '@vaults-v2/hooks/useSortVaults'
-import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs'
-import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants'
-import type {ReactElement, ReactNode} from 'react'
-import {useEffect, useMemo, useState} from 'react'
-import {ChainFilterDropdown} from '../filters/ChainFilterDropdown'
-import {VersionFilterDropdown} from '../filters/VersionFilterDropdown'
-import {VaultsListHead} from '../VaultsListHead'
-import {VaultsListRow} from '../VaultsListRow'
+import { Pagination } from '@lib/components/Pagination'
+import { SearchBar } from '@lib/components/SearchBar'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
+import type { TSortDirection } from '@lib/types'
+import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { TFilter, VAULT_PAGE_SIZE } from '@vaults/constants'
+import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
+import { ALL_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
+import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
+import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
+import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
+import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
+import type { ReactElement, ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { ChainFilterDropdown } from '../filters/ChainFilterDropdown'
+import { VersionFilterDropdown } from '../filters/VersionFilterDropdown'
+import { VaultsListHead } from '../VaultsListHead'
+import { VaultsListRow } from '../VaultsListRow'
 
 type TCombinedVaultList = {
 	isLoading: boolean
@@ -63,14 +63,14 @@ function mapToCombinedVaultList(
 }
 
 function CombinedVaultsTable(): ReactElement {
-	const {isLoadingVaultList} = useYearn()
+	const { isLoadingVaultList } = useYearn()
 	const [page, setPage] = useState(0)
 	const [activeFilter, setActiveFilter] = useState(TFilter.Popular)
 	const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false)
 	const [selectedVersion, setSelectedVersion] = useState<string>('All Versions')
 
 	// v2
-	const {types: typesV2} = useQueryArguments({
+	const { types: typesV2 } = useQueryArguments({
 		defaultTypes: ALL_VAULTS_CATEGORIES_KEYS,
 		defaultPathname: '/vaults'
 	})
@@ -102,12 +102,12 @@ function CombinedVaultsTable(): ReactElement {
 	const onChangeSortBy = onChangeSortByV3
 
 	// Get active vaults for both V2 and V3
-	const {activeVaults: activeVaultsV2} = useVaultFilter(typesV2, chains)
-	const {activeVaults: activeVaultsV3} = useVaultFilter(typesV3, chains, true)
+	const { activeVaults: activeVaultsV2 } = useVaultFilter(typesV2, chains)
+	const { activeVaults: activeVaultsV3 } = useVaultFilter(typesV3, chains, true)
 
 	// Filter by chains and combine vaults
-	const filteredV2ByChains = activeVaultsV2.filter(({chainID}) => chains?.includes(chainID))
-	const filteredV3ByChains = activeVaultsV3.filter(({chainID}) => chains?.includes(chainID))
+	const filteredV2ByChains = activeVaultsV2.filter(({ chainID }) => chains?.includes(chainID))
+	const filteredV3ByChains = activeVaultsV3.filter(({ chainID }) => chains?.includes(chainID))
 
 	const combinedVaults = useMemo(() => {
 		let vaults = [...filteredV3ByChains, ...filteredV2ByChains]
@@ -156,7 +156,7 @@ function CombinedVaultsTable(): ReactElement {
 				? 'desc'
 				: sortDirection
 	const sortedVaults = useSortVaults(
-		filteredVaults as (TYDaemonVault & {details?: TYDaemonVaultStrategy['details']})[],
+		filteredVaults as (TYDaemonVault & { details?: TYDaemonVaultStrategy['details'] })[],
 		actualSortBy,
 		actualSortDirection
 	)
@@ -253,16 +253,16 @@ function CombinedVaultsTable(): ReactElement {
 							onChangeSortDirection(newSortDirection as TSortDirection)
 						}}
 						items={[
-							{label: 'Vault', value: 'name', sortable: true, className: 'col-span-6'},
-							{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-3'},
+							{ label: 'Vault', value: 'name', sortable: true, className: 'col-span-6' },
+							{ label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-3' },
 							{
 								label: 'Risk',
 								value: 'score',
 								sortable: true,
 								className: 'col-span-3 whitespace-nowrap'
 							},
-							{label: 'Vault Type', value: 'vaultType', sortable: true, className: 'col-span-3'},
-							{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-3 justify-end'}
+							{ label: 'Vault Type', value: 'vaultType', sortable: true, className: 'col-span-3' },
+							{ label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-3 justify-end' }
 						]}
 					/>
 					<div className={'grid gap-1'}>{vaultList.allVaults}</div>
@@ -295,16 +295,16 @@ function CombinedVaultsTable(): ReactElement {
 							onChangeSortDirection(newSortDirection as TSortDirection)
 						}}
 						items={[
-							{label: 'Vault', value: 'name', sortable: true, className: 'col-span-6'},
-							{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-3'},
+							{ label: 'Vault', value: 'name', sortable: true, className: 'col-span-6' },
+							{ label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-3' },
 							{
 								label: 'Risk',
 								value: 'score',
 								sortable: true,
 								className: 'col-span-3 whitespace-nowrap'
 							},
-							{label: 'Vault Type', value: 'vaultType', sortable: true, className: 'col-span-3'},
-							{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-3 justify-end'}
+							{ label: 'Vault Type', value: 'vaultType', sortable: true, className: 'col-span-3' },
+							{ label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-3 justify-end' }
 						]}
 					/>
 					<div className={'grid gap-4 md:gap-1'}>

@@ -1,17 +1,17 @@
-import type {TAllocationChartData} from '@lib/components/AllocationChart'
-import {AllocationChart} from '@lib/components/AllocationChart'
-import {VaultsListStrategy} from '@lib/components/VaultsListStrategy'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice'
-import type {TSortDirection} from '@lib/types'
-import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@lib/utils'
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults'
-import {useSortVaults} from '@vaults-v2/hooks/useSortVaults'
-import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs'
-import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead'
-import type {ReactElement} from 'react'
-import {useMemo} from 'react'
+import type { TAllocationChartData } from '@lib/components/AllocationChart'
+import { AllocationChart } from '@lib/components/AllocationChart'
+import { VaultsListStrategy } from '@lib/components/VaultsListStrategy'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
+import type { TSortDirection } from '@lib/types'
+import { cl, formatCounterValue, formatPercent, toNormalizedBN } from '@lib/utils'
+import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
+import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
+import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
+import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
+import type { ReactElement } from 'react'
+import { useMemo } from 'react'
 
 function UnallocatedStrategy({
 	unallocatedPercentage,
@@ -59,14 +59,14 @@ function UnallocatedStrategy({
 	)
 }
 
-export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {vaults} = useYearn()
-	const {sortDirection, sortBy, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
+export function VaultDetailsStrategies({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+	const { vaults } = useYearn()
+	const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
 		defaultSortBy: 'allocationPercentage',
 		defaultPathname: '/vaults/[chainID]/[address]'
 	})
 
-	const tokenPrice = useYearnTokenPrice({address: currentVault.token.address, chainID: currentVault.chainID})
+	const tokenPrice = useYearnTokenPrice({ address: currentVault.token.address, chainID: currentVault.chainID })
 
 	const strategyList = useMemo((): TYDaemonVaultStrategy[] => {
 		const _stratList = []
@@ -170,7 +170,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								onChangeSortDirection(newSortDirection as TSortDirection)
 							}}
 							items={[
-								{label: 'Vault', value: 'name', sortable: false, className: 'ml-20'},
+								{ label: 'Vault', value: 'name', sortable: false, className: 'ml-20' },
 								{
 									label: 'Allocation %',
 									value: 'allocationPercentage',

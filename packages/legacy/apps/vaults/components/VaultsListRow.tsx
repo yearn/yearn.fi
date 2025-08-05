@@ -1,15 +1,15 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback'
-import {RenderAmount} from '@lib/components/RenderAmount'
-import {IconLinkOut} from '@lib/icons/IconLinkOut'
-import {cl, toAddress} from '@lib/utils'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {getNetwork} from '@lib/utils/wagmi/utils'
-import {VaultChainTag} from '@vaults-v3/components/VaultChainTag'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { RenderAmount } from '@lib/components/RenderAmount'
+import { IconLinkOut } from '@lib/icons/IconLinkOut'
+import { cl, toAddress } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { getNetwork } from '@lib/utils/wagmi/utils'
+import { VaultChainTag } from '@vaults-v3/components/VaultChainTag'
 import Link from 'next/link'
-import {useRouter} from 'next/router'
+import { useRouter } from 'next/router'
 
-import type {FC} from 'react'
-import {VaultForwardAPY, VaultRiskScoreTag} from './table'
+import type { FC } from 'react'
+import { VaultForwardAPY, VaultRiskScoreTag } from './table'
 
 type TVaultsListRowProps = {
 	currentVault: TYDaemonVault
@@ -17,7 +17,7 @@ type TVaultsListRowProps = {
 	index?: number
 }
 
-export const VaultsListRow: FC<TVaultsListRowProps> = ({currentVault, isV2, index = 0}) => {
+export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, index = 0 }) => {
 	const router = useRouter()
 	const href = isV2
 		? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`

@@ -1,12 +1,12 @@
-import {cl} from '@lib/utils'
-import {useUpdateEffect} from '@react-hookz/web'
-import type {ImageProps} from 'next/image'
+import { cl } from '@lib/utils'
+import { useUpdateEffect } from '@react-hookz/web'
+import type { ImageProps } from 'next/image'
 import Image from 'next/image'
-import type {CSSProperties, ReactElement} from 'react'
-import {useState} from 'react'
+import type { CSSProperties, ReactElement } from 'react'
+import { useState } from 'react'
 
-function ImageWithFallback(props: ImageProps & {altSrc?: string}): ReactElement {
-	const {alt, src, altSrc, className, ...rest} = props
+function ImageWithFallback(props: ImageProps & { altSrc?: string }): ReactElement {
+	const { alt, src, altSrc, className, ...rest } = props
 	const [imageSrc, setImageSrc] = useState(altSrc ? src : `${src}?fallback=true`)
 	const [imageStyle, setImageStyle] = useState<CSSProperties>({})
 
@@ -42,11 +42,11 @@ function ImageWithFallback(props: ImageProps & {altSrc?: string}): ReactElement 
 					return
 				}
 				setImageSrc('/placeholder.png')
-				setImageStyle({filter: 'opacity(0.2)'})
+				setImageStyle({ filter: 'opacity(0.2)' })
 			}}
 			{...rest}
 		/>
 	)
 }
 
-export {ImageWithFallback}
+export { ImageWithFallback }

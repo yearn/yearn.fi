@@ -1,8 +1,8 @@
-import type {TNormalizedBN} from '../types/mixed'
-import {DefaultTNormalizedBN, parseUnits} from './format'
+import type { TNormalizedBN } from '../types/mixed'
+import { DefaultTNormalizedBN, parseUnits } from './format'
 
 export function handleInputChangeEventValue(e: React.ChangeEvent<HTMLInputElement>, decimals?: number): TNormalizedBN {
-	const {valueAsNumber, value} = e.target
+	const { valueAsNumber, value } = e.target
 	const amount = valueAsNumber
 	if (Number.isNaN(amount)) {
 		return DefaultTNormalizedBN
@@ -19,13 +19,13 @@ export function handleInputChangeEventValue(e: React.ChangeEvent<HTMLInputElemen
 					amountStr = amountParts[0] + '.' + amountParts[1].slice(0, decimals)
 				}
 				const raw = parseUnits((amountStr || '0') as `${number}`, decimals || 18)
-				return {raw: raw, normalized: Number(amountStr) || 0, display: amountStr}
+				return { raw: raw, normalized: Number(amountStr) || 0, display: amountStr }
 			}
 		}
 	}
 
 	const raw = parseUnits(amount.toFixed(decimals) || '0', decimals || 18)
-	return {raw: raw, normalized: amount || 0, display: amount.toFixed(decimals)}
+	return { raw: raw, normalized: amount || 0, display: amount.toFixed(decimals) }
 }
 
 export function handleInputChangeValue(value: string, decimals?: number): TNormalizedBN {
@@ -47,5 +47,5 @@ export function handleInputChangeValue(value: string, decimals?: number): TNorma
 	}
 
 	const raw = parseUnits(amount || '0', decimals || 18)
-	return {raw: raw, normalized: Number(amount || 0), display: amount}
+	return { raw: raw, normalized: Number(amount || 0), display: amount }
 }

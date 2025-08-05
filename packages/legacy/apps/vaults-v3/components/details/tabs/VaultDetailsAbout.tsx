@@ -1,7 +1,7 @@
-import {cl, formatAmount, formatPercent} from '@lib/utils'
-import {parseMarkdown} from '@lib/utils/helpers'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import type {ReactElement} from 'react'
+import { cl, formatAmount, formatPercent } from '@lib/utils'
+import { parseMarkdown } from '@lib/utils/helpers'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type { ReactElement } from 'react'
 
 type TYearnFeesLineItem = {
 	children: ReactElement
@@ -9,7 +9,7 @@ type TYearnFeesLineItem = {
 	tooltip?: string
 }
 
-export function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): ReactElement {
+export function YearnFeesLineItem({ children, label, tooltip }: TYearnFeesLineItem): ReactElement {
 	return (
 		<div className={'flex flex-col space-y-0 md:space-y-2'}>
 			<p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>
@@ -35,8 +35,8 @@ export function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem
 	)
 }
 
-export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {token, apr} = currentVault
+export function VaultDetailsAbout({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+	const { token, apr } = currentVault
 
 	function getVaultDescription(): string | ReactElement {
 		if (currentVault.description) {
@@ -84,7 +84,7 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 					<b className={'text-neutral-900'}>{'Description'}</b>
 					<div className={'mt-4 text-neutral-900/50'}>
 						{typeof getVaultDescription() === 'string' ? (
-							<p dangerouslySetInnerHTML={{__html: getVaultDescription() as string}} />
+							<p dangerouslySetInnerHTML={{ __html: getVaultDescription() as string }} />
 						) : (
 							<p>{getVaultDescription()}</p>
 						)}

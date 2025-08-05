@@ -1,22 +1,22 @@
-import {useWeb3} from '@lib/contexts/useWeb3'
-import type {TNormalizedBN} from '@lib/types'
-import {toAddress, toBigInt, zeroNormalizedBN} from '@lib/utils'
-import {hash} from '@lib/utils/helpers'
-import {useActionFlow} from '@vaults-v2/contexts/useActionFlow'
-import {useSolverCowswap} from '@vaults-v2/hooks/solvers/useSolverCowswap'
-import {useSolverGaugeStakingBooster} from '@vaults-v2/hooks/solvers/useSolverGaugeStakingBooster'
-import {useSolverInternalMigration} from '@vaults-v2/hooks/solvers/useSolverInternalMigration'
-import {useSolverJuicedStakingBooster} from '@vaults-v2/hooks/solvers/useSolverJuicedStakingBooster'
-import {useSolverOptimismBooster} from '@vaults-v2/hooks/solvers/useSolverOptimismBooster'
-import {useSolverPartnerContract} from '@vaults-v2/hooks/solvers/useSolverPartnerContract'
-import {useSolverPortals} from '@vaults-v2/hooks/solvers/useSolverPortals'
-import {useSolverV3Router} from '@vaults-v2/hooks/solvers/useSolverV3Router'
-import {useSolverV3StakingBooster} from '@vaults-v2/hooks/solvers/useSolverV3StakingBooster'
-import {useSolverVanilla} from '@vaults-v2/hooks/solvers/useSolverVanilla'
-import type {TInitSolverArgs, TSolver, TSolverContext, TWithSolver} from '@vaults-v2/types/solvers'
-import {Solver} from '@vaults-v2/types/solvers'
-import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react'
-import {serialize} from 'wagmi'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import type { TNormalizedBN } from '@lib/types'
+import { toAddress, toBigInt, zeroNormalizedBN } from '@lib/utils'
+import { hash } from '@lib/utils/helpers'
+import { useActionFlow } from '@vaults-v2/contexts/useActionFlow'
+import { useSolverCowswap } from '@vaults-v2/hooks/solvers/useSolverCowswap'
+import { useSolverGaugeStakingBooster } from '@vaults-v2/hooks/solvers/useSolverGaugeStakingBooster'
+import { useSolverInternalMigration } from '@vaults-v2/hooks/solvers/useSolverInternalMigration'
+import { useSolverJuicedStakingBooster } from '@vaults-v2/hooks/solvers/useSolverJuicedStakingBooster'
+import { useSolverOptimismBooster } from '@vaults-v2/hooks/solvers/useSolverOptimismBooster'
+import { useSolverPartnerContract } from '@vaults-v2/hooks/solvers/useSolverPartnerContract'
+import { useSolverPortals } from '@vaults-v2/hooks/solvers/useSolverPortals'
+import { useSolverV3Router } from '@vaults-v2/hooks/solvers/useSolverV3Router'
+import { useSolverV3StakingBooster } from '@vaults-v2/hooks/solvers/useSolverV3StakingBooster'
+import { useSolverVanilla } from '@vaults-v2/hooks/solvers/useSolverVanilla'
+import type { TInitSolverArgs, TSolver, TSolverContext, TWithSolver } from '@vaults-v2/types/solvers'
+import { Solver } from '@vaults-v2/types/solvers'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { serialize } from 'wagmi'
 
 export const isSolverDisabled = (key: TSolver): boolean => {
 	const solverStatus = {
@@ -56,9 +56,9 @@ const DefaultWithSolverContext: TWithSolver = {
 }
 
 const WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext)
-export function WithSolverContextApp({children}: {children: React.ReactElement}): React.ReactElement {
-	const {address} = useWeb3()
-	const {currentVault, actionParams, currentSolver, isDepositing} = useActionFlow()
+export function WithSolverContextApp({ children }: { children: React.ReactElement }): React.ReactElement {
+	const { address } = useWeb3()
+	const { currentVault, actionParams, currentSolver, isDepositing } = useActionFlow()
 	const executionNonce = useRef<number>(0)
 	const cowswap = useSolverCowswap()
 	const vanilla = useSolverVanilla()
@@ -70,18 +70,18 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 	const juicedStakingBooster = useSolverJuicedStakingBooster()
 	const v3StakingBooster = useSolverV3StakingBooster()
 	const v3Router = useSolverV3Router()
-	const [currentSolverState, setCurrentSolverState] = useState<TSolverContext & {hash?: string}>(vanilla)
+	const [currentSolverState, setCurrentSolverState] = useState<TSolverContext & { hash?: string }>(vanilla)
 	const [isLoading, setIsLoading] = useState(false)
 
 	const handleUpdateSolver = useCallback(
-		async ({currentNonce, request, quote, solver, ctx}: TUpdateSolverHandler): Promise<void> => {
+		async ({ currentNonce, request, quote, solver, ctx }: TUpdateSolverHandler): Promise<void> => {
 			if (quote.status !== 'fulfilled') {
 				return
 			}
 			if (currentNonce !== executionNonce.current) {
 				return
 			}
-			const requestHash = await hash(serialize({...request, solver, expectedOut: toBigInt(quote.value?.raw)}))
+			const requestHash = await hash(serialize({ ...request, solver, expectedOut: toBigInt(quote.value?.raw) }))
 			setCurrentSolverState({
 				...ctx,
 				quote: quote.value,
@@ -105,7 +105,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				return
 			}
 			if (actionParams.amount.raw === 0n) {
-				return setCurrentSolverState({...vanilla, quote: zeroNormalizedBN})
+				return setCurrentSolverState({ ...vanilla, quote: zeroNormalizedBN })
 			}
 
 			setIsLoading(true)
@@ -154,14 +154,14 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 							quote: portalsQuote,
 							ctx: portals
 						}
-					].forEach(({solver, quote, ctx}): void => {
-						if (isValidSolver({quote, solver})) {
-							solvers[solver] = {quote, ctx}
+					].forEach(({ solver, quote, ctx }): void => {
+						if (isValidSolver({ quote, solver })) {
+							solvers[solver] = { quote, ctx }
 						}
 					})
 
 					solvers[Solver.enum.None] = {
-						quote: {status: 'fulfilled', value: zeroNormalizedBN},
+						quote: { status: 'fulfilled', value: zeroNormalizedBN },
 						ctx: vanilla
 					}
 
@@ -178,7 +178,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 
 						const result = solvers[solver] ?? solvers[Solver.enum.None]
 						if (result) {
-							const {quote, ctx} = result
+							const { quote, ctx } = result
 							await handleUpdateSolver({
 								currentNonce,
 								request,
@@ -209,14 +209,14 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 							quote: cowswapQuote,
 							ctx: cowswap
 						}
-					].forEach(({solver, quote, ctx}): void => {
-						if (isValidSolver({quote, solver})) {
-							solvers[solver] = {quote, ctx}
+					].forEach(({ solver, quote, ctx }): void => {
+						if (isValidSolver({ quote, solver })) {
+							solvers[solver] = { quote, ctx }
 						}
 					})
 
 					solvers[Solver.enum.None] = {
-						quote: {status: 'fulfilled', value: zeroNormalizedBN},
+						quote: { status: 'fulfilled', value: zeroNormalizedBN },
 						ctx: vanilla
 					}
 
@@ -233,7 +233,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 
 						const result = solvers[solver] ?? solvers[Solver.enum.None]
 						if (result) {
-							const {quote, ctx} = result
+							const { quote, ctx } = result
 							await handleUpdateSolver({
 								currentNonce,
 								request,

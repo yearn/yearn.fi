@@ -1,10 +1,10 @@
-import type {TGraphData} from '@lib/types'
-import {formatAmount, formatWithUnit, isZero} from '@lib/utils'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type { TGraphData } from '@lib/types'
+import { formatAmount, formatWithUnit, isZero } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 
-import type {ReactElement} from 'react'
-import {Fragment, useMemo} from 'react'
-import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts'
+import type { ReactElement } from 'react'
+import { Fragment, useMemo } from 'react'
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 export type TGraphForVaultEarningsProps = {
 	currentVault: TYDaemonVault
@@ -19,9 +19,9 @@ export function GraphForVaultEarnings({
 	height = 312,
 	isCumulative = true
 }: TGraphForVaultEarningsProps): ReactElement {
-	const cumulativeData = useMemo((): {name: string; value: number}[] => {
+	const cumulativeData = useMemo((): { name: string; value: number }[] => {
 		let cumulativeValue = 0
-		return harvestData.map((item: {name: string; value: number}): {name: string; value: number} => {
+		return harvestData.map((item: { name: string; value: number }): { name: string; value: number } => {
 			cumulativeValue += item.value
 			return {
 				name: item.name,
@@ -39,14 +39,14 @@ export function GraphForVaultEarnings({
 	return (
 		<ResponsiveContainer width={'100%'} height={height}>
 			<LineChart
-				margin={{top: 0, right: -28, bottom: 0, left: 0}}
+				margin={{ top: 0, right: -28, bottom: 0, left: 0 }}
 				data={isCumulative ? cumulativeData : harvestData}>
 				<Line
 					className={'text-primary-600'}
 					type={'step'}
 					dot={false}
 					activeDot={(e: unknown): ReactElement => {
-						const dotProps = e as React.SVGProps<SVGCircleElement> & {dataKey?: string}
+						const dotProps = e as React.SVGProps<SVGCircleElement> & { dataKey?: string }
 						dotProps.className = `${dotProps.className} activeDot`
 						delete dotProps.dataKey
 						return <circle {...dotProps}></circle>
@@ -62,7 +62,7 @@ export function GraphForVaultEarnings({
 					hide={false}
 					tick={(props): React.ReactElement<SVGElement> => {
 						const {
-							payload: {value}
+							payload: { value }
 						} = props
 						props.fill = '#5B5B5B'
 						props.className = 'text-xxs md:text-xs font-number'
@@ -76,12 +76,12 @@ export function GraphForVaultEarnings({
 				/>
 				<Tooltip
 					content={(e): ReactElement => {
-						const {active: isTooltipActive, payload, label} = e
+						const { active: isTooltipActive, payload, label } = e
 						if (!isTooltipActive || !payload) {
 							return <Fragment />
 						}
 						if (payload.length > 0) {
-							const [{value}] = payload
+							const [{ value }] = payload
 
 							return (
 								<div className={'recharts-tooltip w-48'}>

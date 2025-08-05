@@ -1,12 +1,12 @@
-import {IconPaginationArrow} from '@lib/icons/IconPaginationArrow'
-import type {ReactElement} from 'react'
+import { IconPaginationArrow } from '@lib/icons/IconPaginationArrow'
+import type { ReactElement } from 'react'
 import ReactPaginate from 'react-paginate'
 
 type TProps = {
 	range: [from: number, to: number]
 	pageCount: number
 	numberOfItems: number
-	onPageChange: (selectedItem: {selected: number}) => void
+	onPageChange: (selectedItem: { selected: number }) => void
 	currentPage?: number
 }
 
@@ -21,14 +21,14 @@ export function Pagination({
 		if (currentPage === 0) {
 			return
 		}
-		onPageChange({selected: currentPage - 1})
+		onPageChange({ selected: currentPage - 1 })
 	}
 
 	const handleNext = (): void => {
 		if (currentPage >= pageCount - 1) {
 			return
 		}
-		onPageChange({selected: currentPage + 1})
+		onPageChange({ selected: currentPage + 1 })
 	}
 
 	return (

@@ -1,8 +1,8 @@
-import {forwardRef, useMemo} from 'react'
-import {PiSpinnerBold} from 'react-icons/pi'
-import {type ButtonProps, buttonClassName} from './classNames'
+import { forwardRef, useMemo } from 'react'
+import { PiSpinnerBold } from 'react-icons/pi'
+import { type ButtonProps, buttonClassName } from './classNames'
 
-const Button = forwardRef<HTMLButtonElement, ButtonProps>(({className, theme, h, children, ...props}, ref) => {
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, theme, h, children, ...props }, ref) => {
 	const busy = useMemo(() => theme === 'busy', [theme])
 	return (
 		<button
@@ -10,7 +10,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(({className, theme, h,
 			data-tooltip-id="bearn-sucks"
 			ref={ref}
 			{...props}
-			className={buttonClassName({className, theme, h})}>
+			className={buttonClassName({ className, theme, h })}>
 			{busy && (
 				<div className="relative">
 					<div className="invisible">{children}</div>

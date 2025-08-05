@@ -1,6 +1,6 @@
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
-export function LogoJuiced(props: React.SVGProps<SVGSVGElement> & {back?: string; front?: string}): ReactElement {
+export function LogoJuiced(props: React.SVGProps<SVGSVGElement> & { back?: string; front?: string }): ReactElement {
 	return (
 		<svg
 			{...props}

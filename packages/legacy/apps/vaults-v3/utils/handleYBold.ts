@@ -1,9 +1,9 @@
 // Temp file, remove logic at a later date
 
-import {toAddress} from '@lib/utils'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {type Address, isAddressEqual, zeroAddress} from 'viem'
+import { toAddress } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { type Address, isAddressEqual, zeroAddress } from 'viem'
 
 const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8'
 const STAKED_YBOLD_VAULT_ADDRESS: Address = '0x23346B04a7f55b8760E5860AA5A77383D63491cD'

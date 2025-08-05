@@ -1,8 +1,8 @@
-import {IconEnter} from '@lib/icons/IconEnter'
-import {IconSearch} from '@lib/icons/IconSearch'
-import {cl} from '@lib/utils'
-import {useDebouncedCallback} from '@react-hookz/web'
-import {type ChangeEvent, type ReactElement, useEffect, useState} from 'react'
+import { IconEnter } from '@lib/icons/IconEnter'
+import { IconSearch } from '@lib/icons/IconSearch'
+import { cl } from '@lib/utils'
+import { useDebouncedCallback } from '@react-hookz/web'
+import { type ChangeEvent, type ReactElement, useEffect, useState } from 'react'
 
 type TSearchBar = {
 	searchPlaceholder: string

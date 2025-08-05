@@ -77,9 +77,9 @@ export const STAKING_REWARDS_REGISTRY_ABI = [
 	},
 	{
 		inputs: [
-			{internalType: 'address', name: '_stakingPool', type: 'address'},
-			{internalType: 'address', name: '_token', type: 'address'},
-			{internalType: 'bool', name: '_replaceExistingPool', type: 'bool'}
+			{ internalType: 'address', name: '_stakingPool', type: 'address' },
+			{ internalType: 'address', name: '_token', type: 'address' },
+			{ internalType: 'bool', name: '_replaceExistingPool', type: 'bool' }
 		],
 		name: 'addStakingPool',
 		outputs: [],
@@ -87,44 +87,44 @@ export const STAKING_REWARDS_REGISTRY_ABI = [
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '', type: 'address'}],
+		inputs: [{ internalType: 'address', name: '', type: 'address' }],
 		name: 'approvedPoolOwner',
-		outputs: [{internalType: 'bool', name: '', type: 'bool'}],
+		outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '', type: 'address'}],
+		inputs: [{ internalType: 'address', name: '', type: 'address' }],
 		name: 'isRegistered',
-		outputs: [{internalType: 'bool', name: '', type: 'bool'}],
+		outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '', type: 'address'}],
+		inputs: [{ internalType: 'address', name: '', type: 'address' }],
 		name: 'isStakingPoolEndorsed',
-		outputs: [{internalType: 'bool', name: '', type: 'bool'}],
+		outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		inputs: [],
 		name: 'numTokens',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		inputs: [],
 		name: 'owner',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '', type: 'address'}],
+		inputs: [{ internalType: 'address', name: '', type: 'address' }],
 		name: 'poolEndorsers',
-		outputs: [{internalType: 'bool', name: '', type: 'bool'}],
+		outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
@@ -137,8 +137,8 @@ export const STAKING_REWARDS_REGISTRY_ABI = [
 	},
 	{
 		inputs: [
-			{internalType: 'address', name: '_addr', type: 'address'},
-			{internalType: 'bool', name: '_approved', type: 'bool'}
+			{ internalType: 'address', name: '_addr', type: 'address' },
+			{ internalType: 'bool', name: '_approved', type: 'bool' }
 		],
 		name: 'setApprovedPoolOwner',
 		outputs: [],
@@ -147,8 +147,8 @@ export const STAKING_REWARDS_REGISTRY_ABI = [
 	},
 	{
 		inputs: [
-			{internalType: 'address', name: '_addr', type: 'address'},
-			{internalType: 'bool', name: '_approved', type: 'bool'}
+			{ internalType: 'address', name: '_addr', type: 'address' },
+			{ internalType: 'bool', name: '_approved', type: 'bool' }
 		],
 		name: 'setPoolEndorsers',
 		outputs: [],
@@ -156,21 +156,21 @@ export const STAKING_REWARDS_REGISTRY_ABI = [
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '', type: 'address'}],
+		inputs: [{ internalType: 'address', name: '', type: 'address' }],
 		name: 'stakingPool',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		inputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		name: 'tokens',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: 'newOwner', type: 'address'}],
+		inputs: [{ internalType: 'address', name: 'newOwner', type: 'address' }],
 		name: 'transferOwnership',
 		outputs: [],
 		stateMutability: 'nonpayable',

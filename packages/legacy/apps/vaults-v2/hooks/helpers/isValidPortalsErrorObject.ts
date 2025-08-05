@@ -1,4 +1,4 @@
-type TPortalsError = {response: {data: {message: string}}}
+type TPortalsError = { response: { data: { message: string } } }
 
 export function isValidPortalsErrorObject(error: TPortalsError | unknown): error is TPortalsError {
 	if (!error) {

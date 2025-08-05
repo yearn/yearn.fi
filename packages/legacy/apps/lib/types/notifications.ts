@@ -1,6 +1,6 @@
-import type {TActionParams} from '@vaults-v2/contexts/useActionFlow'
-import type {Hash, TransactionReceipt} from 'viem'
-import type {TAddress} from './address'
+import type { TActionParams } from '@vaults-v2/contexts/useActionFlow'
+import type { Hash, TransactionReceipt } from 'viem'
+import type { TAddress } from './address'
 
 export type TNotificationStatus = 'pending' | 'success' | 'error'
 
@@ -35,7 +35,7 @@ export type TNotification = {
 	status: TNotificationStatus
 }
 
-export type TCurtainStatus = {isOpen: boolean}
+export type TCurtainStatus = { isOpen: boolean }
 
 export type TNotificationsContext = {
 	shouldOpenCurtain: boolean

@@ -1,4 +1,4 @@
-const {withPlausibleProxy} = require('next-plausible')
+const { withPlausibleProxy } = require('next-plausible')
 // const withPWA = require('next-pwa')({
 // 	dest: 'public',
 // 	disable: process.env.NODE_ENV !== 'production'
@@ -114,7 +114,7 @@ module.exports = withPlausibleProxy({
 			},
 			{
 				source: '/:path*',
-				has: [{type: 'host', value: 'vote.yearn.fi'}],
+				has: [{ type: 'host', value: 'vote.yearn.fi' }],
 				destination: 'https://yearn.fi/veyfi/:path*',
 				permanent: true
 			},

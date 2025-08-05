@@ -1,15 +1,15 @@
 import Link from 'next/link'
 
-import type {FC, ReactElement} from 'react'
+import type { FC, ReactElement } from 'react'
 
 export const SectionHeader: FC<{
 	tagline?: string
 	title?: string
 	description?: ReactElement | string
-	cta?: {label: string; href: string}
+	cta?: { label: string; href: string }
 	align?: 'left' | 'right' | 'center'
 	isH1?: boolean
-}> = ({tagline, title, description, cta, align = 'left', isH1 = false}) => {
+}> = ({ tagline, title, description, cta, align = 'left', isH1 = false }) => {
 	return (
 		<div
 			className={`flex flex-col ${align === 'right' ? 'items-center md:items-end' : align === 'center' ? 'items-center' : 'items-center md:items-start'}  gap-y-4 px-2 md:px-0`}>

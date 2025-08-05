@@ -1,16 +1,16 @@
 'use client'
 
-import {Popover, PopoverButton, PopoverPanel, Transition, TransitionChild} from '@headlessui/react'
-import {cl} from '@lib/utils'
-import type {AnimationProps} from 'framer-motion'
-import {motion} from 'framer-motion'
+import { Popover, PopoverButton, PopoverPanel, Transition, TransitionChild } from '@headlessui/react'
+import { cl } from '@lib/utils'
+import type { AnimationProps } from 'framer-motion'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
-import {usePathname} from 'next/navigation'
-import {useRouter} from 'next/router'
-import type {ReactElement} from 'react'
-import {cloneElement, useCallback, useEffect, useMemo, useRef, useState} from 'react'
-import {LogoYearn} from '../icons/LogoYearn'
-import {APPS} from './YearnApps'
+import { usePathname } from 'next/navigation'
+import { useRouter } from 'next/router'
+import type { ReactElement } from 'react'
+import { cloneElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { LogoYearn } from '../icons/LogoYearn'
+import { APPS } from './YearnApps'
 
 type TMotionDiv = {
 	animate: AnimationProps['animate']
@@ -18,13 +18,13 @@ type TMotionDiv = {
 	children: ReactElement
 }
 
-const transition = {duration: 0.4, ease: 'easeInOut'}
+const transition = { duration: 0.4, ease: 'easeInOut' }
 const variants = {
-	initial: {opacity: 0, transition},
-	enter: {opacity: 1, transition},
-	exit: {opacity: 0, transition}
+	initial: { opacity: 0, transition },
+	enter: { opacity: 1, transition },
+	exit: { opacity: 0, transition }
 }
-function MotionDiv({animate, name, children}: TMotionDiv): ReactElement {
+function MotionDiv({ animate, name, children }: TMotionDiv): ReactElement {
 	return (
 		<motion.div
 			key={name}
@@ -51,13 +51,13 @@ function useIsMounted(): () => boolean {
 	return useCallback(() => isMounted.current, [])
 }
 
-function Logo({currentHost}: {currentHost: string; isVaultPage: boolean}): ReactElement {
+function Logo({ currentHost }: { currentHost: string; isVaultPage: boolean }): ReactElement {
 	const router = useRouter()
-	const {pathname} = router
+	const { pathname } = router
 	const appsIcon = <LogoYearn className={'!size-8 !max-h-8 !max-w-8'} back={'text-primary'} front={'text-white'} />
 	return (
 		<>
-			{Object.values(APPS).map(({name, host, icon, pathname: appPathname}): ReactElement => {
+			{Object.values(APPS).map(({ name, host, icon, pathname: appPathname }): ReactElement => {
 				const shouldAnimate = host.some(h => currentHost.includes(h)) || pathname.includes(appPathname)
 				return (
 					<MotionDiv key={name} name={name} animate={shouldAnimate ? 'enter' : 'exit'}>
@@ -150,7 +150,7 @@ export function LogoPopover(): ReactElement {
 										: 'dark:border-[#010A3B] dark:bg-neutral-300 bg-white'
 								)}>
 								<div className={'grid grid-cols-2 gap-2'}>
-									{[...Object.values(APPS)].slice(0, 4).map(({name, href, icon}): ReactElement => {
+									{[...Object.values(APPS)].slice(0, 4).map(({ name, href, icon }): ReactElement => {
 										return (
 											<Link
 												prefetch={false}
@@ -187,7 +187,7 @@ export function LogoPopover(): ReactElement {
 								<div className={'mt-2 grid grid-cols-4 gap-2'}>
 									{[...Object.values(APPS)]
 										.slice(4, isShowingMore ? 10 : 7)
-										.map(({name, href, icon}): ReactElement => {
+										.map(({ name, href, icon }): ReactElement => {
 											return (
 												<Link
 													prefetch={false}

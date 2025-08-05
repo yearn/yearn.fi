@@ -1,5 +1,5 @@
 import Head from 'next/head'
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
 type TMeta = {
 	title: string

@@ -1,22 +1,22 @@
-import type {TMessariGraphData} from '@lib/types'
-import {formatAmount, formatWithUnit, isZero} from '@lib/utils'
-import type {ReactElement} from 'react'
-import {Fragment} from 'react'
-import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts'
+import type { TMessariGraphData } from '@lib/types'
+import { formatAmount, formatWithUnit, isZero } from '@lib/utils'
+import type { ReactElement } from 'react'
+import { Fragment } from 'react'
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 export type TGraphForVaultTVLProps = {
 	messariData: TMessariGraphData[]
 	height?: number
 }
 
-export function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): ReactElement {
+export function GraphForVaultTVL({ messariData, height = 312 }: TGraphForVaultTVLProps): ReactElement {
 	if (isZero(messariData?.length)) {
 		return <Fragment />
 	}
 
 	return (
 		<ResponsiveContainer width={'100%'} height={height}>
-			<LineChart margin={{top: 0, right: -28, bottom: 0, left: 0}} data={messariData}>
+			<LineChart margin={{ top: 0, right: -28, bottom: 0, left: 0 }} data={messariData}>
 				<Line
 					className={'text-primary-600'}
 					type={'step'}
@@ -25,7 +25,7 @@ export function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLP
 					stroke={'currentcolor'}
 					dot={false}
 					activeDot={(e: unknown): ReactElement => {
-						const dotProps = e as React.SVGProps<SVGCircleElement> & {dataKey?: string}
+						const dotProps = e as React.SVGProps<SVGCircleElement> & { dataKey?: string }
 						dotProps.className = `${dotProps.className} activeDot`
 						delete dotProps.dataKey
 						return <circle {...dotProps}></circle>
@@ -38,7 +38,7 @@ export function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLP
 					hide={false}
 					tick={(props): React.ReactElement<SVGElement> => {
 						const {
-							payload: {value}
+							payload: { value }
 						} = props
 						props.fill = '#5B5B5B'
 						props.className = 'text-xxs md:text-xs font-number'
@@ -52,12 +52,12 @@ export function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLP
 				/>
 				<Tooltip
 					content={(e): ReactElement => {
-						const {active: isTooltipActive, payload, label} = e
+						const { active: isTooltipActive, payload, label } = e
 						if (!isTooltipActive || !payload) {
 							return <Fragment />
 						}
 						if (payload.length > 0) {
-							const [{value}] = payload
+							const [{ value }] = payload
 
 							return (
 								<div className={'recharts-tooltip'}>

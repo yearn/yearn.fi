@@ -1,13 +1,13 @@
-import {providers} from 'ethers'
-import {useMemo} from 'react'
-import type {Account, Chain, Client, Transport} from 'viem'
-import {type Config, useConnectorClient} from 'wagmi'
-import {getClient, getConnectorClient} from 'wagmi/actions'
+import { providers } from 'ethers'
+import { useMemo } from 'react'
+import type { Account, Chain, Client, Transport } from 'viem'
+import { type Config, useConnectorClient } from 'wagmi'
+import { getClient, getConnectorClient } from 'wagmi/actions'
 
 export function clientToProvider(
 	client: Client<Transport, Chain>
 ): providers.JsonRpcProvider | providers.FallbackProvider {
-	const {chain, transport} = client
+	const { chain, transport } = client
 	const network = {
 		chainId: chain.id,
 		name: chain.name,
@@ -16,7 +16,7 @@ export function clientToProvider(
 	if (transport.type === 'fallback') {
 		return new providers.FallbackProvider(
 			(transport.transports as ReturnType<Transport>[]).map(
-				({value}) => new providers.JsonRpcProvider(value?.url, network)
+				({ value }) => new providers.JsonRpcProvider(value?.url, network)
 			)
 		)
 	}
@@ -26,14 +26,14 @@ export function clientToProvider(
 /** Action to convert a viem Public Client to an ethers.js Provider. */
 export function getEthersProvider(
 	config: Config,
-	{chainId}: {chainId?: number} = {}
+	{ chainId }: { chainId?: number } = {}
 ): providers.JsonRpcProvider | providers.FallbackProvider {
-	const client = getClient(config, {chainId})
+	const client = getClient(config, { chainId })
 	return clientToProvider(client as Client<Transport, Chain>)
 }
 
 export function clientToSigner(client: Client<Transport, Chain, Account>): providers.JsonRpcSigner {
-	const {account, chain, transport} = client
+	const { account, chain, transport } = client
 	const network = {
 		chainId: chain.id,
 		name: chain.name,
@@ -46,9 +46,9 @@ export function clientToSigner(client: Client<Transport, Chain, Account>): provi
 
 export async function getEthersSigner(
 	config: Config,
-	{chainId}: {chainId?: number} = {}
+	{ chainId }: { chainId?: number } = {}
 ): Promise<providers.JsonRpcSigner> {
-	const client = await getConnectorClient(config, {chainId})
+	const client = await getConnectorClient(config, { chainId })
 	return clientToSigner(client)
 }
 
@@ -58,6 +58,6 @@ export async function useEthersSigner({
 }: {
 	chainId?: number
 } = {}): Promise<providers.JsonRpcSigner | undefined> {
-	const {data: client} = useConnectorClient({chainId})
+	const { data: client } = useConnectorClient({ chainId })
 	return useMemo(() => (client ? clientToSigner(client) : undefined), [client])
 }

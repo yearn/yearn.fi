@@ -1,6 +1,6 @@
-import {SectionHeader} from '@lib/components/SectionHeader'
+import { SectionHeader } from '@lib/components/SectionHeader'
 import Link from 'next/link'
-import {type FC, useRef, useState} from 'react'
+import { type FC, useRef, useState } from 'react'
 
 enum SecurityCardType {
 	Audits = 'audits',
@@ -34,10 +34,10 @@ const Cards: {
 
 const SecurityCard: FC<{
 	type: SecurityCardType
-}> = ({type}) => {
-	const {title, description, href, bgColor} = Cards[type]
+}> = ({ type }) => {
+	const { title, description, href, bgColor } = Cards[type]
 	const cardRef = useRef<HTMLDivElement>(null)
-	const [mousePosition, setMousePosition] = useState({x: 0, y: 0})
+	const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
 	const [isHovered, setIsHovered] = useState(false)
 
 	const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
@@ -49,14 +49,14 @@ const SecurityCard: FC<{
 		const x = e.clientX - rect.left
 		const y = e.clientY - rect.top
 
-		setMousePosition({x, y})
+		setMousePosition({ x, y })
 	}
 
 	const handleMouseEnter = (): void => setIsHovered(true)
 
 	const handleMouseLeave = (): void => {
 		setIsHovered(false)
-		setMousePosition({x: 0, y: 0})
+		setMousePosition({ x: 0, y: 0 })
 	}
 
 	return (

@@ -1,27 +1,27 @@
-import {useWallet} from '@lib/contexts/useWallet'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useVaultFilter} from '@lib/hooks/useFilteredVaults'
-import type {TSortDirection} from '@lib/types'
-import {cl, formatAmount, isZero, toNormalizedBN} from '@lib/utils'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty'
-import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults'
-import {useSortVaults} from '@vaults-v2/hooks/useSortVaults'
-import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs'
-import {Filters} from '@vaults-v3/components/Filters'
-import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead'
-import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow'
-import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants'
-import {V3Mask} from '@vaults-v3/Mark'
-import {motion} from 'framer-motion'
-import type {ReactElement, ReactNode} from 'react'
-import {Children, Fragment, useMemo, useState} from 'react'
+import { useWallet } from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
+import type { TSortDirection } from '@lib/types'
+import { cl, formatAmount, isZero, toNormalizedBN } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
+import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
+import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
+import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
+import { Filters } from '@vaults-v3/components/Filters'
+import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
+import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
+import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
+import { V3Mask } from '@vaults-v3/Mark'
+import { motion } from 'framer-motion'
+import type { ReactElement, ReactNode } from 'react'
+import { Children, Fragment, useMemo, useState } from 'react'
 
 function Background(): ReactElement {
 	return (
 		<motion.div
-			transition={{duration: 10, delay: 0, repeat: Infinity, ease: 'linear'}}
+			transition={{ duration: 10, delay: 0, repeat: Infinity, ease: 'linear' }}
 			animate={{
 				background: [
 					'linear-gradient(0deg, #D21162 24.91%, #2C3DA6 99.66%)',
@@ -74,8 +74,8 @@ function V3Card(): ReactElement {
 }
 
 function PortfolioCard(): ReactElement {
-	const {cumulatedValueInV3Vaults, isLoading} = useWallet()
-	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3()
+	const { cumulatedValueInV3Vaults, isLoading } = useWallet()
+	const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
 
 	if (!isActive) {
 		return (
@@ -141,8 +141,8 @@ function PortfolioCard(): ReactElement {
 	)
 }
 function ListOfVaults(): ReactElement {
-	const {getBalance} = useWallet()
-	const {getPrice, isLoadingVaultList} = useYearn()
+	const { getBalance } = useWallet()
+	const { getPrice, isLoadingVaultList } = useYearn()
 	const {
 		search,
 		types,
@@ -162,7 +162,7 @@ function ListOfVaults(): ReactElement {
 		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
 		defaultPathname: '/v3'
 	})
-	const {activeVaults, retiredVaults, migratableVaults} = useVaultFilter(types, chains, true)
+	const { activeVaults, retiredVaults, migratableVaults } = useVaultFilter(types, chains, true)
 
 	/**********************************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
@@ -212,10 +212,10 @@ function ListOfVaults(): ReactElement {
 	 *********************************************************************************************/
 	const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
 		const filteredByChains = sortedVaultsToDisplay.filter(
-			({chainID}): boolean => chains?.includes(chainID) || false
+			({ chainID }): boolean => chains?.includes(chainID) || false
 		)
 		const filteredByCategories = filteredByChains.filter(
-			({category}): boolean => categories?.includes(category) || false
+			({ category }): boolean => categories?.includes(category) || false
 		)
 
 		const holdings: ReactNode[] = []
@@ -227,8 +227,8 @@ function ListOfVaults(): ReactElement {
 		// Add migratable vaults to holdings (guaranteed to have balance)
 		for (const vault of migratableVaults) {
 			const key = `${vault.chainID}_${vault.address}`
-			const balance = getBalance({address: vault.address, chainID: vault.chainID})
-			const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID})
+			const balance = getBalance({ address: vault.address, chainID: vault.chainID })
+			const stakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID })
 			const hasBalance = balance.raw > 0n
 			const hasStakingBalance = stakingBalance.raw > 0n
 			if (hasBalance || hasStakingBalance) {
@@ -242,8 +242,9 @@ function ListOfVaults(): ReactElement {
 			const key = `${vault.chainID}_${vault.address}`
 			if (!processedForHoldings.has(key)) {
 				// Avoid duplicates
-				const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n
-				const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n
+				const hasBalance = getBalance({ address: vault.address, chainID: vault.chainID }).raw > 0n
+				const hasStakingBalance =
+					getBalance({ address: vault.staking.address, chainID: vault.chainID }).raw > 0n
 				if (hasBalance || hasStakingBalance) {
 					holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
 					processedForHoldings.add(key)
@@ -261,9 +262,9 @@ function ListOfVaults(): ReactElement {
 				continue
 			}
 
-			const balance = getBalance({address: vault.address, chainID: vault.chainID})
-			const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID})
-			const price = getPrice({address: vault.address, chainID: vault.chainID})
+			const balance = getBalance({ address: vault.address, chainID: vault.chainID })
+			const stakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID })
+			const price = getPrice({ address: vault.address, chainID: vault.chainID })
 
 			const holdingsValue =
 				toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized
@@ -394,18 +395,18 @@ function ListOfVaults(): ReactElement {
 						onChangeSortDirection(newSortDirection as TSortDirection)
 					}}
 					items={[
-						{label: 'Vault', value: 'name', sortable: true, className: 'col-span-4'},
-						{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2'},
-						{label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2'},
+						{ label: 'Vault', value: 'name', sortable: true, className: 'col-span-4' },
+						{ label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2' },
+						{ label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2' },
 						{
 							label: 'Risk Level',
 							value: 'score',
 							sortable: true,
 							className: 'col-span-2 whitespace-nowrap'
 						},
-						{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-						{label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2'},
-						{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2 justify-end'}
+						{ label: 'Available', value: 'available', sortable: true, className: 'col-span-2' },
+						{ label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2' },
+						{ label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2 justify-end' }
 					]}
 				/>
 				<div className={'grid gap-4'}>{renderVaultList()}</div>

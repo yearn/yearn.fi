@@ -1,8 +1,8 @@
-import {cl} from '@lib/utils'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {type ReactElement, useMemo} from 'react'
+import { cl } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { type ReactElement, useMemo } from 'react'
 
-export function VaultRiskInfo({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultRiskInfo({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
 	const hasRiskScore = useMemo(() => {
 		let sum = 0
 		currentVault.info.riskScore?.forEach(score => {

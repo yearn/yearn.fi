@@ -1,6 +1,6 @@
-import {cl} from '@lib/utils'
+import { cl } from '@lib/utils'
 
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
 export function IconSpinner(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (

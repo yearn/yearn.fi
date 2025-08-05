@@ -1,10 +1,10 @@
-import {Button} from '@lib/components/Button'
-import {Counter} from '@lib/components/Counter'
-import {FakeInput} from '@lib/components/Input'
-import {useNotificationsActions} from '@lib/contexts/useNotificationsActions'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useYearnToken} from '@lib/hooks/useYearnToken'
+import { Button } from '@lib/components/Button'
+import { Counter } from '@lib/components/Counter'
+import { FakeInput } from '@lib/components/Input'
+import { useNotificationsActions } from '@lib/contexts/useNotificationsActions'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useYearnToken } from '@lib/hooks/useYearnToken'
 import {
 	cl,
 	formatAmount,
@@ -15,10 +15,10 @@ import {
 	toBigInt,
 	toNormalizedBN
 } from '@lib/utils'
-import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@lib/utils/constants'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {approveERC20, defaultTxStatus} from '@lib/utils/wagmi'
-import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData'
+import { DISABLED_VEYFI_GAUGES_VAULTS_LIST } from '@lib/utils/constants'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { approveERC20, defaultTxStatus } from '@lib/utils/wagmi'
+import type { TStakingInfo } from '@vaults-v2/hooks/useVaultStakingData'
 import {
 	claim as claimAction,
 	stake as stakeAction,
@@ -26,12 +26,12 @@ import {
 	unstake as unstakeAction,
 	unstakeVeYFIGauge as unstakeVeYFIAction
 } from '@vaults-v2/utils/actions'
-import {stakeYBold, unstakeYBold} from '@vaults-v3/utils/actions'
+import { stakeYBold, unstakeYBold } from '@vaults-v3/utils/actions'
 import Image from 'next/image'
 import Link from 'next/link'
-import {useRouter} from 'next/router'
-import type {ChangeEvent, ReactElement} from 'react'
-import {Fragment, useCallback, useEffect, useMemo, useState} from 'react'
+import { useRouter } from 'next/router'
+import type { ChangeEvent, ReactElement } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 
 /**************************************************************************************************
  ** The BoostMessage component will display a message to the user if the current vault has staking
@@ -40,11 +40,11 @@ import {Fragment, useCallback, useEffect, useMemo, useState} from 'react'
  ** An empty span will be returned if the current tab is not the 'Boost' tab or if no staking
  ** rewards are available.
  *************************************************************************************************/
-function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive: boolean}): ReactElement {
+function BoostMessage(props: { currentVault: TYDaemonVault; hasStakingRewardsLive: boolean }): ReactElement {
 	const hasVaultData = Boolean(props.currentVault.staking.available)
 	const vaultDataSource = props.currentVault.staking.source
 	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR
-	const {pathname} = useRouter()
+	const { pathname } = useRouter()
 	const isV3Page = pathname.startsWith('/v3')
 
 	if (hasVaultData && !props.hasStakingRewardsLive && vaultDataSource !== 'VeYFI') {
@@ -172,7 +172,7 @@ function VeYFIBoostMessage(props: {
 }): ReactElement {
 	const vaultDataource = props.currentVault.staking.source
 	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR
-	const {pathname} = useRouter()
+	const { pathname } = useRouter()
 	const isV3Page = pathname.startsWith('/v3')
 
 	const OneUp = (
@@ -305,12 +305,12 @@ export function RewardsTab(props: {
 	vaultData: TStakingInfo
 	updateVaultData: VoidFunction
 }): ReactElement {
-	const {provider, isActive} = useWeb3()
-	const {getPrice} = useYearn()
-	const {vaultData, updateVaultData} = props
-	const {handleApproveNotification, handleStakeNotification, handleUnstakeNotification, handleClaimNotification} =
+	const { provider, isActive } = useWeb3()
+	const { getPrice } = useYearn()
+	const { vaultData, updateVaultData } = props
+	const { handleApproveNotification, handleStakeNotification, handleUnstakeNotification, handleClaimNotification } =
 		useNotificationsActions()
-	const rewardTokenBalance = useYearnToken({address: vaultData.rewardsToken, chainID: props.currentVault.chainID})
+	const rewardTokenBalance = useYearnToken({ address: vaultData.rewardsToken, chainID: props.currentVault.chainID })
 	const [approveStakeStatus, setApproveStakeStatus] = useState(defaultTxStatus)
 	const [stakeStatus, setStakeStatus] = useState(defaultTxStatus)
 	const [claimStatus, setClaimStatus] = useState(defaultTxStatus)
@@ -464,7 +464,7 @@ export function RewardsTab(props: {
 	 ** yVault tokens. If the approval is successful, the staking rewards data will be updated.
 	 *********************************************************************************************/
 	const onApprove = useCallback(async (): Promise<void> => {
-		const id = await handleApproveNotification({actionParams: approveActionParams})
+		const id = await handleApproveNotification({ actionParams: approveActionParams })
 		const result = await approveERC20({
 			connector: provider,
 			chainID: props.currentVault.chainID,
@@ -482,7 +482,7 @@ export function RewardsTab(props: {
 			})
 			updateVaultData()
 		} else {
-			await handleApproveNotification({actionParams: approveActionParams, status: 'error', idToUpdate: id})
+			await handleApproveNotification({ actionParams: approveActionParams, status: 'error', idToUpdate: id })
 		}
 	}, [
 		props.currentVault,
@@ -503,7 +503,7 @@ export function RewardsTab(props: {
 	 ** stakeVeYFIGauge function.
 	 *********************************************************************************************/
 	const onStake = useCallback(async (): Promise<void> => {
-		const id = await handleStakeNotification({actionParams: stakeActionParams, type: 'stake'})
+		const id = await handleStakeNotification({ actionParams: stakeActionParams, type: 'stake' })
 
 		if (props.currentVault.staking.source === 'VeYFI') {
 			const result = await stakeVeYFIAction({
@@ -609,7 +609,7 @@ export function RewardsTab(props: {
 	 *********************************************************************************************/
 	const onUnstake = useCallback(async (): Promise<void> => {
 		const notificationType = isUnstakingMax ? 'claim and exit' : 'unstake'
-		const id = await handleUnstakeNotification({actionParams: unstakeActionParams, type: notificationType})
+		const id = await handleUnstakeNotification({ actionParams: unstakeActionParams, type: notificationType })
 
 		if (props.currentVault.staking.source === 'VeYFI' || shouldForceUnstake) {
 			const result = await unstakeVeYFIAction({
@@ -712,7 +712,7 @@ export function RewardsTab(props: {
 	 ** refreshed.
 	 *********************************************************************************************/
 	const onClaim = useCallback(async (): Promise<void> => {
-		const id = await handleClaimNotification({actionParams: claimActionParams, type: 'claim'})
+		const id = await handleClaimNotification({ actionParams: claimActionParams, type: 'claim' })
 		const result = await claimAction({
 			connector: provider,
 			chainID: props.currentVault.chainID,
@@ -751,11 +751,11 @@ export function RewardsTab(props: {
 	 ** function from the useYearn hook to get the price of the tokens.
 	 *********************************************************************************************/
 	const rewardTokenPrice = useMemo(
-		() => getPrice({address: rewardTokenBalance.address, chainID: rewardTokenBalance.chainID}),
+		() => getPrice({ address: rewardTokenBalance.address, chainID: rewardTokenBalance.chainID }),
 		[getPrice, rewardTokenBalance]
 	)
 	const vaultTokenPrice = useMemo(
-		() => getPrice({address: props.currentVault.address, chainID: props.currentVault.chainID}),
+		() => getPrice({ address: props.currentVault.address, chainID: props.currentVault.chainID }),
 		[getPrice, props.currentVault]
 	)
 

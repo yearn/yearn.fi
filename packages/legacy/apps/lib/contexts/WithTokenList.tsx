@@ -1,25 +1,25 @@
 'use client'
 
-import {useLocalStorageValue} from '@react-hookz/web'
-import type {AxiosResponse} from 'axios'
+import { useLocalStorageValue } from '@react-hookz/web'
+import type { AxiosResponse } from 'axios'
 import axios from 'axios'
-import type {Dispatch, ReactElement, SetStateAction} from 'react'
-import {createContext, useCallback, useContext, useMemo, useState} from 'react'
-import {isAddressEqual} from 'viem'
-import {useAsyncTrigger} from '../hooks/useAsyncTrigger'
-import type {TAddress} from '../types/address'
-import type {TDict, TNDict, TToken, TTokenList} from '../types/mixed'
-import {zeroNormalizedBN} from '../utils/format'
-import {toAddress} from '../utils/tools.address'
-import {useWeb3} from './useWeb3'
+import type { Dispatch, ReactElement, SetStateAction } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { isAddressEqual } from 'viem'
+import { useAsyncTrigger } from '../hooks/useAsyncTrigger'
+import type { TAddress } from '../types/address'
+import type { TDict, TNDict, TToken, TTokenList } from '../types/mixed'
+import { zeroNormalizedBN } from '../utils/format'
+import { toAddress } from '../utils/tools.address'
+import { useWeb3 } from './useWeb3'
 
 export type TTokenListProps = {
 	tokenLists: TNDict<TDict<TToken>>
 	currentNetworkTokenList: TDict<TToken>
 	isInitialized: boolean
-	isFromExtraList: (props: {address: TAddress; chainID: number}) => boolean
-	isCustomToken: (props: {address: TAddress; chainID: number}) => boolean
-	getToken: (props: {address: TAddress; chainID: number}) => TToken | undefined
+	isFromExtraList: (props: { address: TAddress; chainID: number }) => boolean
+	isCustomToken: (props: { address: TAddress; chainID: number }) => boolean
+	getToken: (props: { address: TAddress; chainID: number }) => TToken | undefined
 	addCustomToken: (token: TToken) => void
 	setTokenList: Dispatch<SetStateAction<TNDict<TDict<TToken>>>>
 }
@@ -77,9 +77,9 @@ export const WithTokenList = ({
 		'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/tokenlistooor.json'
 	]
 }: TTokenListProviderProps): ReactElement => {
-	const {chainID} = useWeb3()
-	const {value: extraTokenlist} = useLocalStorageValue<string[]>('extraTokenlists')
-	const {value: extraTokens, set: setExtraTokens} = useLocalStorageValue<TTokenList['tokens']>('extraTokens')
+	const { chainID } = useWeb3()
+	const { value: extraTokenlist } = useLocalStorageValue<string[]>('extraTokenlists')
+	const { value: extraTokens, set: setExtraTokens } = useLocalStorageValue<TTokenList['tokens']>('extraTokens')
 	const [tokenList, setTokenList] = useState<TNDict<TDict<TToken>>>({})
 	const [tokenListExtra, setTokenListExtra] = useState<TNDict<TDict<TToken>>>({})
 	const [tokenListCustom, setTokenListCustom] = useState<TNDict<TDict<TToken>>>({})
@@ -103,7 +103,7 @@ export const WithTokenList = ({
 		for (const [index, response] of responses.entries()) {
 			if (response.status === 'fulfilled') {
 				tokens.push(...(response.value.data as TTokenList).tokens)
-				fromList.push({...(response.value.data as TTokenList), uri: unhashedLists[index]})
+				fromList.push({ ...(response.value.data as TTokenList), uri: unhashedLists[index] })
 			}
 		}
 
@@ -168,8 +168,8 @@ export const WithTokenList = ({
 			const [fromUserList] = await Promise.allSettled([axios.get(eachURI)])
 
 			if (fromUserList.status === 'fulfilled') {
-				fromList.push({...(fromUserList.value.data as TTokenList), uri: eachURI})
-				const {tokens} = fromUserList.value.data
+				fromList.push({ ...(fromUserList.value.data as TTokenList), uri: eachURI })
+				const { tokens } = fromUserList.value.data
 				for (const eachToken of tokens) {
 					if (!tokenListTokens[eachToken.chainId ?? eachToken.chainID]) {
 						tokenListTokens[eachToken.chainId ?? eachToken.chainID] = {}
@@ -324,7 +324,7 @@ export const WithTokenList = ({
 	 ** token is not found.
 	 ************************************************************************************/
 	const getToken = useCallback(
-		(props: {address: TAddress; chainID: number}): TToken => {
+		(props: { address: TAddress; chainID: number }): TToken => {
 			const fromTokenList = aggregatedTokenList?.[props.chainID]?.[toAddress(props.address)]
 			if (fromTokenList) {
 				return fromTokenList
@@ -338,7 +338,7 @@ export const WithTokenList = ({
 	 ** This will return true if the token is from the tokenListExtra.
 	 ************************************************************************************/
 	const isFromExtraList = useCallback(
-		(props: {address: TAddress; chainID: number}): boolean => {
+		(props: { address: TAddress; chainID: number }): boolean => {
 			return Boolean(tokenListExtra?.[props.chainID]?.[toAddress(props.address)])
 		},
 		[tokenListExtra]
@@ -349,7 +349,7 @@ export const WithTokenList = ({
 	 ** user as an individual token.
 	 ************************************************************************************/
 	const isCustomToken = useCallback(
-		(props: {address: TAddress; chainID: number}): boolean => {
+		(props: { address: TAddress; chainID: number }): boolean => {
 			return Boolean(tokenListCustom?.[props.chainID]?.[toAddress(props.address)])
 		},
 		[tokenListCustom]

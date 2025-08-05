@@ -1,20 +1,20 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback'
-import {RenderAmount} from '@lib/components/RenderAmount'
-import {Renderable} from '@lib/components/Renderable'
-import {useWallet} from '@lib/contexts/useWallet'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useYearnBalance} from '@lib/hooks/useYearnBalance'
-import {IconLinkOut} from '@lib/icons/IconLinkOut'
-import type {TNormalizedBN} from '@lib/types'
-import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils'
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {getNetwork} from '@lib/utils/wagmi/utils'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { RenderAmount } from '@lib/components/RenderAmount'
+import { Renderable } from '@lib/components/Renderable'
+import { useWallet } from '@lib/contexts/useWallet'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useYearnBalance } from '@lib/hooks/useYearnBalance'
+import { IconLinkOut } from '@lib/icons/IconLinkOut'
+import type { TNormalizedBN } from '@lib/types'
+import { cl, formatAmount, isZero, toAddress, toNormalizedBN } from '@lib/utils'
+import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@lib/utils/constants'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { getNetwork } from '@lib/utils/wagmi/utils'
 import Link from 'next/link'
 
-import type {ReactElement} from 'react'
-import {Fragment, useMemo} from 'react'
-import {VaultChainTag} from '../VaultChainTag'
+import type { ReactElement } from 'react'
+import { Fragment, useMemo } from 'react'
+import { VaultChainTag } from '../VaultChainTag'
 
 type TAPYSublineProps = {
 	hasPendleArbRewards: boolean
@@ -22,7 +22,7 @@ type TAPYSublineProps = {
 	hasKelp: boolean
 }
 
-function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer, hasKelp}: TAPYSublineProps): ReactElement {
+function APYSubline({ hasPendleArbRewards, hasKelpNEngenlayer, hasKelp }: TAPYSublineProps): ReactElement {
 	if (hasKelpNEngenlayer) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
@@ -161,7 +161,7 @@ function APYTooltip(props: {
 	)
 }
 
-function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
 	// TEMPORARY HACK: Force "NEW" APY for chainID 747474
 	const isForceNewAPY = currentVault.chainID === 747474
 
@@ -437,7 +437,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	)
 }
 
-function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
 	// TEMPORARY HACK: Force 'NEW' APY for chainID 747474
 	const isForceNewHistoricalAPY = currentVault.chainID === 747474
 	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
@@ -517,7 +517,7 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 	)
 }
 
-function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
+function VaultRiskScoreTag({ riskLevel }: { riskLevel: number }): ReactElement {
 	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel
 	const riskColor = ['transparent', '#63C532', '#F8A908', '#F8A908', '#C73203', '#C73203']
 	return (
@@ -542,7 +542,7 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 				<span
 					suppressHydrationWarning
 					className={'tooltiptext top-full mt-1'}
-					style={{marginRight: 'calc(-94px + 50%)'}}>
+					style={{ marginRight: 'calc(-94px + 50%)' }}>
 					<div
 						className={
 							'font-number relative border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
@@ -560,18 +560,18 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 	)
 }
 
-export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {getToken} = useWallet()
-	const {getPrice} = useYearn()
+export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+	const { getToken } = useWallet()
+	const { getPrice } = useYearn()
 
 	const tokenPrice = useMemo(
-		() => getPrice({address: currentVault.address, chainID: currentVault.chainID}),
+		() => getPrice({ address: currentVault.address, chainID: currentVault.chainID }),
 		[currentVault.address, currentVault.chainID, getPrice]
 	)
 	const staked = useMemo((): TNormalizedBN => {
-		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address})
+		const vaultToken = getToken({ chainID: currentVault.chainID, address: currentVault.address })
 		if (currentVault.staking.available) {
-			const stakingToken = getToken({chainID: currentVault.chainID, address: currentVault.staking.address})
+			const stakingToken = getToken({ chainID: currentVault.chainID, address: currentVault.staking.address })
 			return toNormalizedBN(vaultToken.balance.raw + stakingToken.balance.raw, stakingToken.decimals)
 		}
 
@@ -595,7 +595,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 					value={staked.normalized}
 					symbol={currentVault.token.symbol}
 					decimals={currentVault.token.decimals}
-					options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
+					options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
 				/>
 			</p>
 			<small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
@@ -614,9 +614,9 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 	)
 }
 
-export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address})
-	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS})
+export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+	const balanceOfWant = useYearnBalance({ chainID: currentVault.chainID, address: currentVault.token.address })
+	const balanceOfCoin = useYearnBalance({ chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS })
 	const balanceOfWrappedCoin = useYearnBalance({
 		chainID: currentVault.chainID,
 		address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address

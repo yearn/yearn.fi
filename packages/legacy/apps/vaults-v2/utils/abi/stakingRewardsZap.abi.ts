@@ -89,14 +89,14 @@ export const STAKING_REWARDS_ZAP_ABI = [
 	{
 		inputs: [],
 		name: 'owner',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		inputs: [
-			{internalType: 'address', name: 'tokenAddress', type: 'address'},
-			{internalType: 'uint256', name: 'tokenAmount', type: 'uint256'}
+			{ internalType: 'address', name: 'tokenAddress', type: 'address' },
+			{ internalType: 'uint256', name: 'tokenAmount', type: 'uint256' }
 		],
 		name: 'recoverERC20',
 		outputs: [],
@@ -126,12 +126,12 @@ export const STAKING_REWARDS_ZAP_ABI = [
 	{
 		inputs: [],
 		name: 'stakingPoolRegistry',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: 'newOwner', type: 'address'}],
+		inputs: [{ internalType: 'address', name: 'newOwner', type: 'address' }],
 		name: 'transferOwnership',
 		outputs: [],
 		stateMutability: 'nonpayable',
@@ -139,7 +139,7 @@ export const STAKING_REWARDS_ZAP_ABI = [
 	},
 	{
 		inputs: [
-			{internalType: 'address', name: '_targetVault', type: 'address'},
+			{ internalType: 'address', name: '_targetVault', type: 'address' },
 			{
 				internalType: 'uint256',
 				name: '_underlyingAmount',
@@ -147,7 +147,7 @@ export const STAKING_REWARDS_ZAP_ABI = [
 			}
 		],
 		name: 'zapIn',
-		outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 		stateMutability: 'nonpayable',
 		type: 'function'
 	}

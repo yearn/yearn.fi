@@ -1,6 +1,6 @@
-import {cl} from '@lib/utils'
-import type {FC} from 'react'
-import {Fragment} from 'react'
+import { cl } from '@lib/utils'
+import type { FC } from 'react'
+import { Fragment } from 'react'
 
 type TAPYSublineProps = {
 	hasPendleArbRewards: boolean
@@ -8,7 +8,7 @@ type TAPYSublineProps = {
 	hasKelp: boolean
 }
 
-export const APYSubline: FC<TAPYSublineProps> = ({hasPendleArbRewards, hasKelpNEngenlayer, hasKelp}) => {
+export const APYSubline: FC<TAPYSublineProps> = ({ hasPendleArbRewards, hasKelpNEngenlayer, hasKelp }) => {
 	if (hasKelpNEngenlayer) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>

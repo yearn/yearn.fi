@@ -1,8 +1,8 @@
-import {zeroAddress} from 'viem'
-import {z} from 'zod'
+import { zeroAddress } from 'viem'
+import { z } from 'zod'
 
-import {addressSchema} from '../../types'
-import {toBigInt} from '../../utils'
+import { addressSchema } from '../../types'
+import { toBigInt } from '../../utils'
 
 const yDaemonVaultStrategySchema = z.object({
 	address: addressSchema,

@@ -1,33 +1,33 @@
-import {Button} from '@lib/components/Button'
-import {Counter} from '@lib/components/Counter'
-import {ListHead} from '@lib/components/ListHead'
-import {Pagination} from '@lib/components/Pagination'
-import {Renderable} from '@lib/components/Renderable'
-import {useWallet} from '@lib/contexts/useWallet'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useChainOptions} from '@lib/hooks/useChains'
-import {useVaultFilter} from '@lib/hooks/useFilteredVaults'
-import {IconChain} from '@lib/icons/IconChain'
-import type {TSortDirection} from '@lib/types'
-import {toAddress, toNormalizedBN} from '@lib/utils'
-import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {ListHero} from '@vaults-v2/components/ListHero'
-import {VaultListOptions} from '@vaults-v2/components/list/VaultListOptions'
-import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty'
-import {VaultsListInternalMigrationRow} from '@vaults-v2/components/list/VaultsListInternalMigrationRow'
-import {VaultsListRetired} from '@vaults-v2/components/list/VaultsListRetired'
-import {VaultsListRow} from '@vaults-v2/components/list/VaultsListRow'
-import {ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants'
-import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults'
-import {useSortVaults} from '@vaults-v2/hooks/useSortVaults'
-import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs'
-import type {ReactElement, ReactNode} from 'react'
-import {Children, useEffect, useMemo, useState} from 'react'
+import { Button } from '@lib/components/Button'
+import { Counter } from '@lib/components/Counter'
+import { ListHead } from '@lib/components/ListHead'
+import { Pagination } from '@lib/components/Pagination'
+import { Renderable } from '@lib/components/Renderable'
+import { useWallet } from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useChainOptions } from '@lib/hooks/useChains'
+import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
+import { IconChain } from '@lib/icons/IconChain'
+import type { TSortDirection } from '@lib/types'
+import { toAddress, toNormalizedBN } from '@lib/utils'
+import type { TYDaemonVault, TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { ListHero } from '@vaults-v2/components/ListHero'
+import { VaultListOptions } from '@vaults-v2/components/list/VaultListOptions'
+import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
+import { VaultsListInternalMigrationRow } from '@vaults-v2/components/list/VaultsListInternalMigrationRow'
+import { VaultsListRetired } from '@vaults-v2/components/list/VaultsListRetired'
+import { VaultsListRow } from '@vaults-v2/components/list/VaultsListRow'
+import { ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
+import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
+import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
+import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
+import type { ReactElement, ReactNode } from 'react'
+import { Children, useEffect, useMemo, useState } from 'react'
 
 function HeaderUserPosition(): ReactElement {
-	const {cumulatedValueInV2Vaults} = useWallet()
-	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3()
+	const { cumulatedValueInV2Vaults } = useWallet()
+	const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
 
 	if (!isActive) {
 		return (
@@ -57,14 +57,14 @@ function HeaderUserPosition(): ReactElement {
 	)
 }
 
-function ListOfRetiredVaults({retiredVaults}: {retiredVaults: TYDaemonVaults}): ReactElement {
+function ListOfRetiredVaults({ retiredVaults }: { retiredVaults: TYDaemonVaults }): ReactElement {
 	return (
 		<Renderable shouldRender={retiredVaults?.length > 0}>
 			<div>
 				{retiredVaults
 					.filter((vault): boolean => !!vault)
 					.filter(
-						({address}): boolean =>
+						({ address }): boolean =>
 							toAddress(address) !== toAddress('0x5b977577eb8a480f63e11fc615d6753adb8652ae') ||
 							toAddress(address) !== toAddress('0xad17a225074191d5c8a37b50fda1ae278a2ee6a2')
 					)
@@ -78,7 +78,7 @@ function ListOfRetiredVaults({retiredVaults}: {retiredVaults: TYDaemonVaults}): 
 	)
 }
 
-function ListOfMigratableVaults({migratableVaults}: {migratableVaults: TYDaemonVaults}): ReactElement {
+function ListOfMigratableVaults({ migratableVaults }: { migratableVaults: TYDaemonVaults }): ReactElement {
 	return (
 		<Renderable shouldRender={migratableVaults?.length > 0}>
 			<div>
@@ -98,8 +98,8 @@ function ListOfMigratableVaults({migratableVaults}: {migratableVaults: TYDaemonV
 }
 
 function ListOfVaults(): ReactElement {
-	const {getBalance} = useWallet()
-	const {isLoadingVaultList, getPrice} = useYearn()
+	const { getBalance } = useWallet()
+	const { isLoadingVaultList, getPrice } = useYearn()
 	const {
 		search,
 		types,
@@ -116,7 +116,7 @@ function ListOfVaults(): ReactElement {
 		defaultTypes: ALL_VAULTS_CATEGORIES_KEYS,
 		defaultPathname: '/vaults'
 	})
-	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(types, chains)
+	const { activeVaults, migratableVaults, retiredVaults } = useVaultFilter(types, chains)
 	const [page, setPage] = useState(0)
 	const chainOptions = useChainOptions(chains)
 
@@ -191,7 +191,7 @@ function ListOfVaults(): ReactElement {
 
 	const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
 		const filteredByChains = sortedVaultsToDisplay.filter(
-			({chainID}): boolean => chains?.includes(chainID) || false
+			({ chainID }): boolean => chains?.includes(chainID) || false
 		)
 
 		if (isLoadingVaultList || !chains || chains.length === 0) {
@@ -211,9 +211,9 @@ function ListOfVaults(): ReactElement {
 		const holdings: ReactNode[] = []
 		const all: ReactNode[] = []
 		for (const vault of filteredByChains) {
-			const balance = getBalance({address: vault.address, chainID: vault.chainID})
-			const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID})
-			const price = getPrice({address: vault.address, chainID: vault.chainID})
+			const balance = getBalance({ address: vault.address, chainID: vault.chainID })
+			const stakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID })
+			const price = getPrice({ address: vault.address, chainID: vault.chainID })
 
 			const holdingsValue =
 				toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized
@@ -279,13 +279,13 @@ function ListOfVaults(): ReactElement {
 					onChangeSortDirection(newSortDirection as TSortDirection)
 				}}
 				items={[
-					{label: <IconChain />, value: 'chain', sortable: false, className: 'col-span-1'},
-					{label: 'Token', value: 'name', sortable: true},
-					{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2'},
-					{label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2'},
-					{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-					{label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2'},
-					{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2'}
+					{ label: <IconChain />, value: 'chain', sortable: false, className: 'col-span-1' },
+					{ label: 'Token', value: 'name', sortable: true },
+					{ label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2' },
+					{ label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2' },
+					{ label: 'Available', value: 'available', sortable: true, className: 'col-span-2' },
+					{ label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2' },
+					{ label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2' }
 				]}
 			/>
 

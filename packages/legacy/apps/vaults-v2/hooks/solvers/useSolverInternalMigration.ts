@@ -1,34 +1,34 @@
-import {useNotifications} from '@lib/contexts/useNotifications'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import type {TDict, TNormalizedBN} from '@lib/types'
-import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils'
-import {ZAP_YEARN_VE_CRV_ADDRESS} from '@lib/utils/constants'
-import {allowanceKey} from '@lib/utils/helpers'
-import type {TTxStatus} from '@lib/utils/wagmi'
-import {allowanceOf, approveERC20, retrieveConfig} from '@lib/utils/wagmi'
-import {migrateShares} from '@lib/utils/wagmi/actions'
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers'
-import {Solver} from '@vaults-v2/types/solvers'
-import {ZAP_CRV_ABI} from '@vaults-v2/utils/abi/zapCRV.abi'
-import {zapCRV} from '@vaults-v2/utils/actions'
-import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut'
-import {useCallback, useMemo, useRef} from 'react'
-import type {Hash, TransactionReceipt} from 'viem'
-import {maxUint256} from 'viem'
-import {readContract} from 'wagmi/actions'
+import { useNotifications } from '@lib/contexts/useNotifications'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import type { TDict, TNormalizedBN } from '@lib/types'
+import { assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
+import { ZAP_YEARN_VE_CRV_ADDRESS } from '@lib/utils/constants'
+import { allowanceKey } from '@lib/utils/helpers'
+import type { TTxStatus } from '@lib/utils/wagmi'
+import { allowanceOf, approveERC20, retrieveConfig } from '@lib/utils/wagmi'
+import { migrateShares } from '@lib/utils/wagmi/actions'
+import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
+import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
+import { Solver } from '@vaults-v2/types/solvers'
+import { ZAP_CRV_ABI } from '@vaults-v2/utils/abi/zapCRV.abi'
+import { zapCRV } from '@vaults-v2/utils/actions'
+import { getVaultEstimateOut } from '@vaults-v2/utils/getVaultEstimateOut'
+import { useCallback, useMemo, useRef } from 'react'
+import type { Hash, TransactionReceipt } from 'viem'
+import { maxUint256 } from 'viem'
+import { readContract } from 'wagmi/actions'
 
 /**************************************************************************************************
  ** The InternalMigration solver is a special solver used to migrate from one vault to another. It
  ** is used when a new version of a vault is released, and the user wants to migrate their funds.
  *************************************************************************************************/
 export function useSolverInternalMigration(): TSolverContext {
-	const {provider} = useWeb3()
+	const { provider } = useWeb3()
 	const latestQuote = useRef<TNormalizedBN | undefined>(undefined)
 	const request = useRef<TInitSolverArgs | undefined>(undefined)
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({})
 
-	const {setShouldOpenCurtain} = useNotifications()
+	const { setShouldOpenCurtain } = useNotifications()
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.

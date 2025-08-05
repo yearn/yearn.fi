@@ -4,10 +4,10 @@
  * Supports Zod schema validation with comprehensive error handling
  ************************************************************************************************/
 
-import type {SWRResponse} from 'swr'
+import type { SWRResponse } from 'swr'
 import useSWR from 'swr'
-import type {z} from 'zod'
-import {baseFetcher} from '../utils/fetchers'
+import type { z } from 'zod'
+import { baseFetcher } from '../utils/fetchers'
 
 type TUseZodProps<T> = {
 	endpoint: string | null
@@ -24,7 +24,7 @@ type TUseZodProps<T> = {
 	}
 }
 
-export function useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRResponse<T> & {isSuccess: boolean} {
+export function useFetch<T>({ endpoint, schema, config }: TUseZodProps<T>): SWRResponse<T> & { isSuccess: boolean } {
 	const {
 		cacheDuration = 2 * 60 * 1000, // 2 minutes
 		shouldEnableRefreshInterval = false,
@@ -58,20 +58,20 @@ export function useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRRes
 	})
 
 	if (!result.data || result.isLoading || result.isValidating) {
-		return {...result, isSuccess: false}
+		return { ...result, isSuccess: false }
 	}
 
 	if (result.error) {
 		console.error(`[useFetch] Error fetching ${endpoint}:`, result.error)
-		return {...result, isSuccess: false}
+		return { ...result, isSuccess: false }
 	}
 
 	const parsedData = schema.safeParse(result.data)
 
 	if (!parsedData.success) {
 		console.error(`[useFetch] Schema validation failed for ${endpoint}:`, parsedData.error)
-		return {...result, isSuccess: false}
+		return { ...result, isSuccess: false }
 	}
 
-	return {...result, data: parsedData.data, isSuccess: true}
+	return { ...result, data: parsedData.data, isSuccess: true }
 }

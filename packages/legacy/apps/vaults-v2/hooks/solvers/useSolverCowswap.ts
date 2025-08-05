@@ -6,32 +6,32 @@ import type {
 	SigningScheme,
 	UnsignedOrder
 } from '@cowprotocol/cow-sdk'
-import {OrderBookApi, OrderQuoteSideKindSell, OrderSigningUtils} from '@cowprotocol/cow-sdk'
-import {toast} from '@lib/components/yToast'
-import {useNotifications} from '@lib/contexts/useNotifications'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import type {TDict, TNormalizedBN} from '@lib/types'
-import {assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils'
-import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@lib/utils/constants'
-import {allowanceKey} from '@lib/utils/helpers'
-import type {TTxResponse, TTxStatus} from '@lib/utils/wagmi'
-import {allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20, retrieveConfig} from '@lib/utils/wagmi'
-import {getEthersSigner} from '@lib/utils/wagmi/ethersAdapter'
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers'
-import {Solver} from '@vaults-v2/types/solvers'
+import { OrderBookApi, OrderQuoteSideKindSell, OrderSigningUtils } from '@cowprotocol/cow-sdk'
+import { toast } from '@lib/components/yToast'
+import { useNotifications } from '@lib/contexts/useNotifications'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import type { TDict, TNormalizedBN } from '@lib/types'
+import { assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
+import { SOLVER_COW_VAULT_RELAYER_ADDRESS } from '@lib/utils/constants'
+import { allowanceKey } from '@lib/utils/helpers'
+import type { TTxResponse, TTxStatus } from '@lib/utils/wagmi'
+import { allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20, retrieveConfig } from '@lib/utils/wagmi'
+import { getEthersSigner } from '@lib/utils/wagmi/ethersAdapter'
+import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
+import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
+import { Solver } from '@vaults-v2/types/solvers'
 import axios from 'axios'
-import {ethers} from 'ethers'
-import {useCallback, useMemo, useRef} from 'react'
-import type {Hash, TransactionReceipt} from 'viem'
-import {BaseError, maxUint256} from 'viem'
+import { ethers } from 'ethers'
+import { useCallback, useMemo, useRef } from 'react'
+import type { Hash, TransactionReceipt } from 'viem'
+import { BaseError, maxUint256 } from 'viem'
 
-const orderBookApi = new OrderBookApi({chainId: 1})
+const orderBookApi = new OrderBookApi({ chainId: 1 })
 
 async function getQuote(
 	request: TInitSolverArgs
-): Promise<{data: OrderQuoteResponse | undefined; error: Error | undefined}> {
+): Promise<{ data: OrderQuoteResponse | undefined; error: Error | undefined }> {
 	const YEARN_APP_DATA = '0x5d22bf49b708de1d2d9547a6cca9faccbdc2b162012e8573811c07103b163d4b'
 	const quoteRequest = {
 		from: request.from, // receiver
@@ -46,24 +46,24 @@ async function getQuote(
 	}
 
 	if (isZeroAddress(quoteRequest.from)) {
-		return {data: undefined, error: new Error('Invalid from address')}
+		return { data: undefined, error: new Error('Invalid from address') }
 	}
 	if (isZeroAddress(quoteRequest.sellToken)) {
-		return {data: undefined, error: new Error('Invalid sell token')}
+		return { data: undefined, error: new Error('Invalid sell token') }
 	}
 	if (isZeroAddress(quoteRequest.buyToken)) {
-		return {data: undefined, error: new Error('Invalid buy token')}
+		return { data: undefined, error: new Error('Invalid buy token') }
 	}
 	if (toBigInt(request?.inputAmount) <= 0n) {
-		return {data: undefined, error: new Error('Invalid sell amount')}
+		return { data: undefined, error: new Error('Invalid sell amount') }
 	}
 
 	quoteRequest.validTo = Math.round(new Date().setMinutes(new Date().getMinutes() + 10) / 1000)
 	try {
 		const result = await orderBookApi.getQuote(quoteRequest)
-		return {data: result, error: undefined}
+		return { data: result, error: undefined }
 	} catch (error) {
-		return {data: undefined, error: error as Error}
+		return { data: undefined, error: error as Error }
 	}
 }
 
@@ -76,9 +76,9 @@ async function getQuote(
  ** third party to execute the swap, in an asynchronous way, with fees and slippage.
  *************************************************************************************************/
 export function useSolverCowswap(): TSolverContext {
-	const {zapSlippage} = useYearn()
-	const {provider} = useWeb3()
-	const {setShouldOpenCurtain} = useNotifications()
+	const { zapSlippage } = useYearn()
+	const { provider } = useWeb3()
+	const { setShouldOpenCurtain } = useNotifications()
 	const maxIterations = 1000 // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
 	const shouldUsePresign = false //Debug only
 	const latestQuote = useRef<OrderQuoteResponse | undefined>(undefined)
@@ -95,7 +95,7 @@ export function useSolverCowswap(): TSolverContext {
 			if (!currentQuote) {
 				return '0'
 			}
-			const {quote} = currentQuote
+			const { quote } = currentQuote
 			const buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, decimals))
 			const withSlippage = ethers.utils.parseUnits(
 				(buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals),
@@ -156,13 +156,13 @@ export function useSolverCowswap(): TSolverContext {
 			 ** to get the current quote for the provided request.current.
 			 ******************************************************************************************/
 			request.current = _request
-			const {data, error} = await getQuote(_request)
+			const { data, error } = await getQuote(_request)
 			if (!data) {
-				type TCowRequestError = {body: {description: string}}
+				type TCowRequestError = { body: { description: string } }
 				const err = error as unknown as TCowRequestError
 				if (error && shouldLogError) {
 					if (err?.body?.description) {
-						toast({type: 'error', content: err?.body?.description})
+						toast({ type: 'error', content: err?.body?.description })
 					} else {
 						toast({
 							type: 'error',
@@ -196,7 +196,7 @@ export function useSolverCowswap(): TSolverContext {
 			}
 
 			assert(provider, 'Provider is not set')
-			const signer = await getEthersSigner(retrieveConfig(), {chainId: 1})
+			const signer = await getEthersSigner(retrieveConfig(), { chainId: 1 })
 			assert(signer, 'No signer available')
 
 			const rawSignature = await OrderSigningUtils.signOrder(
@@ -221,11 +221,11 @@ export function useSolverCowswap(): TSolverContext {
 	 ** It will timeout once the order is no longer valid or after 50 minutes (max should be 30mn)
 	 *********************************************************************************************/
 	const checkOrderStatus = useCallback(
-		async (orderUID: string, validTo: number): Promise<{isSuccessful: boolean; error?: Error}> => {
+		async (orderUID: string, validTo: number): Promise<{ isSuccessful: boolean; error?: Error }> => {
 			for (let i = 0; i < maxIterations; i++) {
-				const {data: order} = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`)
+				const { data: order } = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`)
 				if (order?.status === 'fulfilled') {
-					return {isSuccessful: true}
+					return { isSuccessful: true }
 				}
 				if (order?.status === 'cancelled' || order?.status === 'expired') {
 					return {
@@ -257,20 +257,20 @@ export function useSolverCowswap(): TSolverContext {
 	 *********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
 		if (!request?.current || request.current.chainID !== 1) {
-			return {isSuccessful: false}
+			return { isSuccessful: false }
 		}
 
 		assert(latestQuote?.current?.quote, 'No quote available')
 		assert(request?.current, 'No request available')
 
-		const {quote, from, id} = latestQuote.current
+		const { quote, from, id } = latestQuote.current
 
 		const buyAmountWithSlippage = getBuyAmountWithSlippage(
 			latestQuote.current,
 			request.current.outputToken.decimals
 		)
 		quote.buyAmount = buyAmountWithSlippage
-		const {signature, signingScheme} = await signCowswapOrder(
+		const { signature, signingScheme } = await signCowswapOrder(
 			request.current.chainID,
 			quote as Order,
 			buyAmountWithSlippage
@@ -289,7 +289,7 @@ export function useSolverCowswap(): TSolverContext {
 
 		const orderUID = await orderBookApi.sendOrder(orderCreation)
 		if (orderUID) {
-			const {isSuccessful, error} = await checkOrderStatus(orderUID, quote.validTo)
+			const { isSuccessful, error } = await checkOrderStatus(orderUID, quote.validTo)
 			if (error) {
 				console.error(error)
 				return {
@@ -297,10 +297,10 @@ export function useSolverCowswap(): TSolverContext {
 					error: new BaseError('Tx fail because the order was not fulfilled')
 				}
 			}
-			return {isSuccessful}
+			return { isSuccessful }
 		}
 
-		return {isSuccessful: false}
+		return { isSuccessful: false }
 	}, [getBuyAmountWithSlippage, signCowswapOrder, checkOrderStatus])
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -434,12 +434,12 @@ export function useSolverCowswap(): TSolverContext {
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			assert(provider, 'Provider is not defined')
-			txStatusSetter({...defaultTxStatus, pending: true})
+			txStatusSetter({ ...defaultTxStatus, pending: true })
 
 			try {
 				const result = await execute()
 				if (result.isSuccessful) {
-					txStatusSetter({...defaultTxStatus, success: true})
+					txStatusSetter({ ...defaultTxStatus, success: true })
 					toast({
 						type: 'success',
 						content: 'Transaction successful!',

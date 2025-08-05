@@ -1,6 +1,6 @@
-import type {TDict} from '@lib/types'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {useMemo} from 'react'
+import type { TDict } from '@lib/types'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { useMemo } from 'react'
 
 export function useFindVault(
 	vaultMap: TDict<TYDaemonVault>,

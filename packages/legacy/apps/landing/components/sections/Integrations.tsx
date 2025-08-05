@@ -1,8 +1,8 @@
-import {SectionHeader} from '@lib/components/SectionHeader'
+import { SectionHeader } from '@lib/components/SectionHeader'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import type {FC} from 'react'
+import type { FC } from 'react'
 
 type TIntegration = {
 	name: string
@@ -56,7 +56,7 @@ const integrations: TIntegration[] = [
 	}
 ]
 
-const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, description, href, index}) => {
+const IntegrationItem: FC<TIntegration & { index: number }> = ({ name, imageSrc, description, href, index }) => {
 	return (
 		<Link href={href} className={'block cursor-pointer'}>
 			<div

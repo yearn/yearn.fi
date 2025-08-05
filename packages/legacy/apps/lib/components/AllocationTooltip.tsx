@@ -1,8 +1,8 @@
-import {cl} from '@lib/utils/cl'
-import {usePathname} from 'next/navigation'
+import { cl } from '@lib/utils/cl'
+import { usePathname } from 'next/navigation'
 
-import type {ReactNode} from 'react'
-import type {NameType, Payload, ValueType} from 'recharts/types/component/DefaultTooltipContent'
+import type { ReactNode } from 'react'
+import type { NameType, Payload, ValueType } from 'recharts/types/component/DefaultTooltipContent'
 
 export function AllocationTooltip({
 	active,

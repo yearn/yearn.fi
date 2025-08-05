@@ -1,22 +1,22 @@
 'use client'
 
-import {useDeepCompareMemo} from '@react-hookz/web'
-import type {ReactElement} from 'react'
-import {createContext, memo, useCallback, useContext, useMemo} from 'react'
-import {serialize} from 'wagmi'
-import {useWeb3} from '../contexts/useWeb3'
-import type {TUseBalancesTokens} from '../hooks/useBalances.multichains'
-import {useBalances} from '../hooks/useBalances.multichains'
-import type {TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens} from '../types'
-import {DEFAULT_ERC20, toAddress, zeroNormalizedBN} from '../utils'
-import {createUniqueID} from '../utils/tools.identifier'
-import {useYearn} from './useYearn'
-import {useYearnTokens} from './useYearn.helper'
+import { useDeepCompareMemo } from '@react-hookz/web'
+import type { ReactElement } from 'react'
+import { createContext, memo, useCallback, useContext, useMemo } from 'react'
+import { serialize } from 'wagmi'
+import { useWeb3 } from '../contexts/useWeb3'
+import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
+import { useBalances } from '../hooks/useBalances.multichains'
+import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
+import { DEFAULT_ERC20, toAddress, zeroNormalizedBN } from '../utils'
+import { createUniqueID } from '../utils/tools.identifier'
+import { useYearn } from './useYearn'
+import { useYearnTokens } from './useYearn.helper'
 
-type TTokenAndChain = {address: TAddress; chainID: number}
+type TTokenAndChain = { address: TAddress; chainID: number }
 type TWalletContext = {
-	getToken: ({address, chainID}: TTokenAndChain) => TToken
-	getBalance: ({address, chainID}: TTokenAndChain) => TNormalizedBN
+	getToken: ({ address, chainID }: TTokenAndChain) => TToken
+	getBalance: ({ address, chainID }: TTokenAndChain) => TNormalizedBN
 	balances: TChainTokens
 	balanceHash: string
 	isLoading: boolean
@@ -49,9 +49,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 	children: ReactElement
 	shouldWorkOnTestnet?: boolean
 }): ReactElement {
-	const {chainID} = useWeb3()
-	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, getPrice} = useYearn()
-	const allTokens = useYearnTokens({vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList})
+	const { chainID } = useWeb3()
+	const { vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, getPrice } = useYearn()
+	const allTokens = useYearnTokens({ vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList })
 	const {
 		data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
 		onUpdate,
@@ -62,7 +62,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 		priorityChainID: chainID
 	})
 	const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
-		const _tokens = {...tokensRaw}
+		const _tokens = { ...tokensRaw }
 		return _tokens as TYChainTokens
 	}, [tokensRaw])
 
@@ -78,7 +78,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 		[onUpdate, onUpdateSome]
 	)
 	const getToken = useCallback(
-		({address, chainID}: TTokenAndChain): TToken => balances?.[chainID || 1]?.[address] || DEFAULT_ERC20,
+		({ address, chainID }: TTokenAndChain): TToken => balances?.[chainID || 1]?.[address] || DEFAULT_ERC20,
 		[balances]
 	)
 
@@ -86,7 +86,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 	 ** getBalance is a safe retrieval of a balance from the balances state
 	 **************************************************************************/
 	const getBalance = useCallback(
-		({address, chainID}: TTokenAndChain): TNormalizedBN =>
+		({ address, chainID }: TTokenAndChain): TNormalizedBN =>
 			balances?.[chainID || 1]?.[address]?.balance || zeroNormalizedBN,
 		[balances]
 	)
@@ -118,7 +118,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 				}
 
 				const tokenBalance = tokenData.balance
-				const tokenPrice = getPrice({address: tokenData.address, chainID: tokenData.chainID})
+				const tokenPrice = getPrice({ address: tokenData.address, chainID: tokenData.chainID })
 				const tokenValue = tokenBalance.normalized * tokenPrice.normalized
 
 				let stakingValue = 0
@@ -126,12 +126,12 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 
 				if (vaultDetails?.staking) {
 					// Check if vaultDetails and its staking property exist
-					const {staking} = vaultDetails // Safe to destructure now
+					const { staking } = vaultDetails // Safe to destructure now
 					const hasStaking = staking.available ?? false
 					if (hasStaking && staking.address) {
 						// Ensure staking.address is also valid
 						const stakingAddress = staking.address
-						const stakingBalance = getBalance({address: stakingAddress, chainID: tokenData.chainID})
+						const stakingBalance = getBalance({ address: stakingAddress, chainID: tokenData.chainID })
 
 						stakingValue = stakingBalance.normalized * tokenPrice.normalized
 					}

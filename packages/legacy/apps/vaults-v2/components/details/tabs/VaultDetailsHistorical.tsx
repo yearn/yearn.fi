@@ -1,11 +1,15 @@
-import {IconLinkOut} from '@lib/icons/IconLinkOut'
-import {IconSpinner} from '@lib/icons/IconSpinner'
-import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@lib/utils'
-import {formatDate} from '@lib/utils/format.time'
-import type {TYDaemonVault, TYDaemonVaultHarvest, TYDaemonVaultHarvests} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {getNetwork} from '@lib/utils/wagmi'
-import {truncateHexTx} from '@vaults-v2/utils'
-import type {ReactElement} from 'react'
+import { IconLinkOut } from '@lib/icons/IconLinkOut'
+import { IconSpinner } from '@lib/icons/IconSpinner'
+import { formatAmount, formatUSD, toBigInt, toNormalizedValue } from '@lib/utils'
+import { formatDate } from '@lib/utils/format.time'
+import type {
+	TYDaemonVault,
+	TYDaemonVaultHarvest,
+	TYDaemonVaultHarvests
+} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { getNetwork } from '@lib/utils/wagmi'
+import { truncateHexTx } from '@vaults-v2/utils'
+import type { ReactElement } from 'react'
 
 function HarvestListHead(): ReactElement {
 	return (
@@ -44,7 +48,7 @@ function HarvestListRow({
 		<div className={'grid grid-cols-1 border-b border-neutral-200 px-10 pb-4 md:grid-cols-12'}>
 			<div className={'col-span-3'} datatype={'number'}>
 				<p className={'yearn--table-data-section-item-label'}>{'Date'}</p>
-				<p className={'yearn--table-data-section-item-value font-number'} style={{lineHeight: '24px'}}>
+				<p className={'yearn--table-data-section-item-value font-number'} style={{ lineHeight: '24px' }}>
 					{formatDate(Number(harvest.timestamp) * 1000)}
 				</p>
 			</div>
@@ -79,7 +83,7 @@ function HarvestListRow({
 				<a href={`${blockExplorer}/tx/${harvest.txHash}`} target={'_blank'} rel={'noreferrer'}>
 					<div
 						className={'font-number flex flex-row items-center space-x-2 text-neutral-900 md:justify-end'}
-						style={{lineHeight: '24px'}}>
+						style={{ lineHeight: '24px' }}>
 						{truncateHexTx(harvest.txHash, 12)}
 						<IconLinkOut className={'ml-2 size-4 md:ml-4'} />
 					</div>

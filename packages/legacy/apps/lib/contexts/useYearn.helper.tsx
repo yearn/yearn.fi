@@ -1,12 +1,12 @@
-import {useTokenList} from '@lib/contexts/WithTokenList'
-import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains'
-import {useChainID} from '@lib/hooks/useChainID'
-import type {TDict} from '@lib/types'
-import {toAddress} from '@lib/utils'
-import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {getNetwork} from '@lib/utils/wagmi'
-import {useMemo, useState} from 'react'
+import { useTokenList } from '@lib/contexts/WithTokenList'
+import type { TUseBalancesTokens } from '@lib/hooks/useBalances.multichains'
+import { useChainID } from '@lib/hooks/useChainID'
+import type { TDict } from '@lib/types'
+import { toAddress } from '@lib/utils'
+import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { getNetwork } from '@lib/utils/wagmi'
+import { useMemo, useState } from 'react'
 
 export function useYearnTokens({
 	vaults,
@@ -19,8 +19,8 @@ export function useYearnTokens({
 	vaultsRetired: TDict<TYDaemonVault>
 	isLoadingVaultList: boolean
 }): TUseBalancesTokens[] {
-	const {currentNetworkTokenList} = useTokenList()
-	const {safeChainID} = useChainID()
+	const { currentNetworkTokenList } = useTokenList()
+	const { safeChainID } = useChainID()
 	const [isReady, setIsReady] = useState(false)
 	const allVaults = useMemo(
 		(): TYDaemonVault[] => [
@@ -49,7 +49,7 @@ export function useYearnTokens({
 			})
 		})
 
-		const {nativeCurrency} = getNetwork(safeChainID)
+		const { nativeCurrency } = getNetwork(safeChainID)
 		if (nativeCurrency) {
 			tokens.push({
 				address: toAddress(ETH_TOKEN_ADDRESS),
@@ -71,12 +71,12 @@ export function useYearnTokens({
 		const extraTokens: TUseBalancesTokens[] = []
 		extraTokens.push(
 			...[
-				{chainID: 1, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH'},
-				{chainID: 10, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH'},
-				{chainID: 137, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Matic', symbol: 'POL'},
-				{chainID: 250, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Fantom', symbol: 'FTM'},
-				{chainID: 8453, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH'},
-				{chainID: 42161, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH'}
+				{ chainID: 1, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
+				{ chainID: 10, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
+				{ chainID: 137, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Matic', symbol: 'POL' },
+				{ chainID: 250, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Fantom', symbol: 'FTM' },
+				{ chainID: 8453, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
+				{ chainID: 42161, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' }
 			]
 		)
 
@@ -187,9 +187,9 @@ export function useYearnTokens({
 	function cloneForForknet(tokens: TUseBalancesTokens[]): TUseBalancesTokens[] {
 		const clonedTokens: TUseBalancesTokens[] = []
 		tokens.forEach((token): void => {
-			clonedTokens.push({...token})
+			clonedTokens.push({ ...token })
 			if (token.chainID === 1) {
-				clonedTokens.push({...token, chainID: 1337})
+				clonedTokens.push({ ...token, chainID: 1337 })
 			}
 		})
 		return clonedTokens

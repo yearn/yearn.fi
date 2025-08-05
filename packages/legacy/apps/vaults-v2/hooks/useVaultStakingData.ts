@@ -1,6 +1,6 @@
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger'
-import type {TAddress, TNormalizedBN} from '@lib/types'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
+import type { TAddress, TNormalizedBN } from '@lib/types'
 import {
 	decodeAsAddress,
 	decodeAsBigInt,
@@ -12,18 +12,18 @@ import {
 	toNormalizedBN,
 	zeroNormalizedBN
 } from '@lib/utils'
-import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@lib/utils/constants'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {retrieveConfig} from '@lib/utils/wagmi'
-import {JUICED_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/juicedStakingRewards.abi'
-import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi'
-import {V3_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/V3StakingRewards.abi'
-import {VEYFI_GAUGE_ABI} from '@vaults-v2/utils/abi/veYFIGauge.abi'
-import {TOKENIZED_STRATEGY_ABI} from '@vaults-v3/utils/abi/tokenizedStrategy.abi'
-import {useEffect, useState} from 'react'
-import {erc20Abi, zeroAddress} from 'viem'
-import {useBlockNumber} from 'wagmi'
-import {readContract, readContracts} from 'wagmi/actions'
+import { DISABLED_VEYFI_GAUGES_VAULTS_LIST } from '@lib/utils/constants'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { retrieveConfig } from '@lib/utils/wagmi'
+import { JUICED_STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/juicedStakingRewards.abi'
+import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
+import { V3_STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/V3StakingRewards.abi'
+import { VEYFI_GAUGE_ABI } from '@vaults-v2/utils/abi/veYFIGauge.abi'
+import { TOKENIZED_STRATEGY_ABI } from '@vaults-v3/utils/abi/tokenizedStrategy.abi'
+import { useEffect, useState } from 'react'
+import { erc20Abi, zeroAddress } from 'viem'
+import { useBlockNumber } from 'wagmi'
+import { readContract, readContracts } from 'wagmi/actions'
 
 export type TStakingInfo = {
 	address: TAddress
@@ -38,12 +38,12 @@ export type TStakingInfo = {
 	vaultAllowance: TNormalizedBN
 	vaultBalanceOf: TNormalizedBN
 }
-export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
+export function useVaultStakingData(props: { currentVault: TYDaemonVault }): {
 	vaultData: TStakingInfo
 	updateVaultData: VoidFunction
 } {
-	const {address} = useWeb3()
-	const {data: blockNumber} = useBlockNumber({watch: true})
+	const { address } = useWeb3()
+	const { data: blockNumber } = useBlockNumber({ watch: true })
 
 	/**************************************************************************************************
 	 ** Check if the current vault is in the list of disabled veYFI gauges. If it is, we should make
@@ -166,7 +166,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 				}
 			]
 
-			const calls = contracts.map(({key: _key, ...rest}) => rest) as Parameters<
+			const calls = contracts.map(({ key: _key, ...rest }) => rest) as Parameters<
 				typeof readContracts
 			>[1]['contracts']
 
@@ -182,8 +182,8 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 				},
 				{} as {
 					[key: string]:
-						| {error: Error; result?: undefined; status: 'failure'}
-						| {error?: undefined; result: unknown; status: 'success'}
+						| { error: Error; result?: undefined; status: 'failure' }
+						| { error?: undefined; result: unknown; status: 'success' }
 				}
 			)
 
@@ -387,8 +387,8 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		 ** means we need to retrieve the token's symbol and decimals.
 		 ******************************************************************************************/
 		let decimalsResult: Array<
-			| {error: Error; result?: undefined; status: 'failure'}
-			| {error?: undefined; result: unknown; status: 'success'}
+			| { error: Error; result?: undefined; status: 'failure' }
+			| { error?: undefined; result: unknown; status: 'success' }
 		>
 		let rewardDecimals: number
 		let stakingDecimals: number

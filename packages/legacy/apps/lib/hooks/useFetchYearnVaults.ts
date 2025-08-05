@@ -1,13 +1,13 @@
-import {useFetch} from '@lib/hooks/useFetch'
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI'
-import type {TDict} from '@lib/types'
-import {toAddress} from '@lib/utils'
-import type {TYDaemonVault, TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {yDaemonVaultsSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {useDeepCompareMemo} from '@react-hookz/web'
+import { useFetch } from '@lib/hooks/useFetch'
+import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
+import type { TDict } from '@lib/types'
+import { toAddress } from '@lib/utils'
+import type { TYDaemonVault, TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { yDaemonVaultsSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { useDeepCompareMemo } from '@react-hookz/web'
 
-import type {KeyedMutator} from 'swr'
-import {type Address, zeroAddress} from 'viem'
+import type { KeyedMutator } from 'swr'
+import { type Address, zeroAddress } from 'viem'
 
 /******************************************************************************
  ** The useFetchYearnVaults hook is used to fetch the vaults from the yDaemon
@@ -24,7 +24,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 	isLoading: boolean
 	mutate: KeyedMutator<TYDaemonVaults>
 } {
-	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI()
+	const { yDaemonBaseUri: yDaemonBaseUriWithoutChain } = useYDaemonBaseURI()
 
 	const {
 		data: vaults,
@@ -48,7 +48,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 	})
 
 	// const vaultsMigrations: TYDaemonVaults = useMemo(() => [], []);
-	const {data: vaultsMigrations} = useFetch<TYDaemonVaults>({
+	const { data: vaultsMigrations } = useFetch<TYDaemonVaults>({
 		endpoint: `${yDaemonBaseUriWithoutChain}/vaults?${new URLSearchParams({
 			chainIDs: chainIDs ? chainIDs.join(',') : [1, 10, 137, 146, 250, 8453, 42161, 747474].join(','),
 			migratable: 'nodust',
@@ -58,7 +58,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 	})
 
 	// const vaultsRetired: TYDaemonVaults = useMemo(() => [], []);
-	const {data: vaultsRetired} = useFetch<TYDaemonVaults>({
+	const { data: vaultsRetired } = useFetch<TYDaemonVaults>({
 		endpoint: `${yDaemonBaseUriWithoutChain}/vaults/retired?${new URLSearchParams({
 			limit: '2500'
 		})}`,
@@ -85,7 +85,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 
 	const patchedVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
 		// Create a copy of the vaultsObject to avoid mutating the original object
-		const vaultsWithWorkaround = {...vaultsObject}
+		const vaultsWithWorkaround = { ...vaultsObject }
 
 		const yBoldVault = vaultsWithWorkaround[YBOLD_VAULT_ADDRESS]
 		const stYBoldVault = vaultsWithWorkaround[YBOLD_STAKING_ADDRESS]
@@ -118,7 +118,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 							? {
 									...yBoldVault.apr,
 									netAPR: stYBoldVault.apr.netAPR ?? yBoldVault.apr.netAPR ?? 0,
-									points: {...(stYBoldVault.apr.points ?? yBoldVault.apr.points ?? {})},
+									points: { ...(stYBoldVault.apr.points ?? yBoldVault.apr.points ?? {}) },
 									pricePerShare: {
 										...(stYBoldVault.apr.pricePerShare ?? yBoldVault.apr.pricePerShare ?? {})
 									},
@@ -186,4 +186,4 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 	}
 }
 
-export {useFetchYearnVaults}
+export { useFetchYearnVaults }

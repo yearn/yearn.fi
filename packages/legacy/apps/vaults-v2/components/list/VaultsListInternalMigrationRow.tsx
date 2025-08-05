@@ -1,16 +1,16 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback'
-import {useYearnBalance} from '@lib/hooks/useYearnBalance'
-import {formatAmount, toAddress} from '@lib/utils'
-import {getVaultName} from '@lib/utils/helpers'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { useYearnBalance } from '@lib/hooks/useYearnBalance'
+import { formatAmount, toAddress } from '@lib/utils'
+import { getVaultName } from '@lib/utils/helpers'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import Link from 'next/link'
 
-import type {ReactElement} from 'react'
-import {useMemo} from 'react'
+import type { ReactElement } from 'react'
+import { useMemo } from 'react'
 
-export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultsListInternalMigrationRow({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault])
-	const balanceToMigrate = useYearnBalance({address: currentVault.address, chainID: currentVault.chainID})
+	const balanceToMigrate = useYearnBalance({ address: currentVault.address, chainID: currentVault.chainID })
 
 	return (
 		<Link

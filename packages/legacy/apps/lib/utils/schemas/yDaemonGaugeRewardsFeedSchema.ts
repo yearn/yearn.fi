@@ -1,6 +1,6 @@
-import {z} from 'zod'
+import { z } from 'zod'
 
-import {addressSchema} from '../../types'
+import { addressSchema } from '../../types'
 
 export const yDaemonGaugeRewardSchema = z.object({
 	amount: z.string(),

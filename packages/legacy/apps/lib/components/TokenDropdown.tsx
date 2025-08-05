@@ -1,22 +1,22 @@
-import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react'
-import {Renderable} from '@lib/components/Renderable'
-import {useWallet} from '@lib/contexts/useWallet'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {IconChevron} from '@lib/icons/IconChevron'
-import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@lib/types'
-import {cl, formatAmount} from '@lib/utils'
-import {useThrottledState} from '@react-hookz/web'
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition } from '@headlessui/react'
+import { Renderable } from '@lib/components/Renderable'
+import { useWallet } from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { IconChevron } from '@lib/icons/IconChevron'
+import type { TDropdownItemProps, TDropdownOption, TDropdownProps } from '@lib/types'
+import { cl, formatAmount } from '@lib/utils'
+import { useThrottledState } from '@react-hookz/web'
 
-import type {ReactElement} from 'react'
-import {cloneElement, Fragment, useState} from 'react'
+import type { ReactElement } from 'react'
+import { cloneElement, Fragment, useState } from 'react'
 
-function DropdownItem({option}: TDropdownItemProps): ReactElement {
-	const {getBalance} = useWallet()
-	const balance = getBalance({address: option.value, chainID: option.chainID})
+function DropdownItem({ option }: TDropdownItemProps): ReactElement {
+	const { getBalance } = useWallet()
+	const balance = getBalance({ address: option.value, chainID: option.chainID })
 
 	return (
 		<ComboboxOption value={option}>
-			{({active}): ReactElement => (
+			{({ active }): ReactElement => (
 				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					<div className={'size-6 flex-none rounded-full'}>{option?.icon ? option.icon : null}</div>
 					<div>
@@ -33,8 +33,8 @@ function DropdownItem({option}: TDropdownItemProps): ReactElement {
 	)
 }
 
-function DropdownEmpty({query}: {query: string}): ReactElement {
-	const {isActive, openLoginModal} = useWeb3()
+function DropdownEmpty({ query }: { query: string }): ReactElement {
+	const { isActive, openLoginModal } = useWeb3()
 
 	if (!isActive) {
 		return (

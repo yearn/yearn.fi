@@ -1,21 +1,21 @@
-import {useNotifications} from '@lib/contexts/useNotifications'
-import {useYearn} from '@lib/contexts/useYearn'
-import {IconCross} from '@lib/icons/IconCross'
-import {cl} from '@lib/utils'
-import {AnimatePresence, motion} from 'framer-motion'
-import {type ReactElement, useEffect} from 'react'
-import {Drawer} from 'vaul'
+import { useNotifications } from '@lib/contexts/useNotifications'
+import { useYearn } from '@lib/contexts/useYearn'
+import { IconCross } from '@lib/icons/IconCross'
+import { cl } from '@lib/utils'
+import { AnimatePresence, motion } from 'framer-motion'
+import { type ReactElement, useEffect } from 'react'
+import { Drawer } from 'vaul'
 
-import {Notification} from './Notification'
+import { Notification } from './Notification'
 
 export function NotificationsCurtain(props: {
 	setShouldOpenCurtain: (value: boolean) => void
 	isOpen: boolean
 	variant: 'v2' | 'v3'
 }): ReactElement {
-	const {cachedEntries, setNotificationStatus, isLoading, error} = useNotifications()
-	const {vaults, vaultsMigrations, vaultsRetired} = useYearn()
-	const allVaults = {...vaults, ...vaultsMigrations, ...vaultsRetired}
+	const { cachedEntries, setNotificationStatus, isLoading, error } = useNotifications()
+	const { vaults, vaultsMigrations, vaultsRetired } = useYearn()
+	const allVaults = { ...vaults, ...vaultsMigrations, ...vaultsRetired }
 
 	const isEmpty = cachedEntries.length === 0
 
@@ -90,9 +90,9 @@ export function NotificationsCurtain(props: {
 								) : (
 									<motion.div
 										layout
-										initial={{opacity: 0}}
-										animate={{opacity: 1}}
-										transition={{duration: 0.2, ease: [0.4, 0.0, 0.2, 1]}}
+										initial={{ opacity: 0 }}
+										animate={{ opacity: 1 }}
+										transition={{ duration: 0.2, ease: [0.4, 0.0, 0.2, 1] }}
 										className={'flex h-full flex-col pr-2'}>
 										<AnimatePresence mode={'popLayout'}>
 											{cachedEntries.toReversed().map(entry => (

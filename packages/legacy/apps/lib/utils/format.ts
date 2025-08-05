@@ -1,9 +1,9 @@
-import {formatUnits, parseUnits as vParseUnits} from 'viem'
-import type {TNormalizedBN, TNumberish} from '../types/mixed'
-import {MAX_UINT_256} from './constants'
-import {isZero} from './tools.is'
+import { formatUnits, parseUnits as vParseUnits } from 'viem'
+import type { TNormalizedBN, TNumberish } from '../types/mixed'
+import { MAX_UINT_256 } from './constants'
+import { isZero } from './tools.is'
 
-export const DefaultTNormalizedBN: TNormalizedBN = {raw: 0n, normalized: 0, display: '0'}
+export const DefaultTNormalizedBN: TNormalizedBN = { raw: 0n, normalized: 0, display: '0' }
 
 export const toSafeAmount = (value: `${number}`, max: bigint, d = 18): bigint => {
 	if (value === formatUnits(max || 0n, d)) {
@@ -215,7 +215,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
 	locales.push('en-US')
 	locales.push(locale)
 
-	const {shouldDisplaySymbol, shouldCompactValue, ...rest} = options
+	const { shouldDisplaySymbol, shouldCompactValue, ...rest } = options
 	const intlOptions: Intl.NumberFormatOptions = rest
 	let isPercent = false
 	if (symbol && shouldDisplaySymbol) {
@@ -252,21 +252,21 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
 	 **********************************************************************************************/
 	if (amount < 0.01) {
 		if (isPercent) {
-			return formatCurrencyWithPrecision({amount, maxFractionDigits: 2, intlOptions, locale, symbol})
+			return formatCurrencyWithPrecision({ amount, maxFractionDigits: 2, intlOptions, locale, symbol })
 		}
 		if (amount > 0.00000001) {
-			return formatCurrencyWithPrecision({amount, maxFractionDigits: 8, intlOptions, locale, symbol})
+			return formatCurrencyWithPrecision({ amount, maxFractionDigits: 8, intlOptions, locale, symbol })
 		}
 		if (amount > 0.000000000001) {
-			return formatCurrencyWithPrecision({amount, maxFractionDigits: 12, intlOptions, locale, symbol})
+			return formatCurrencyWithPrecision({ amount, maxFractionDigits: 12, intlOptions, locale, symbol })
 		}
-		return formatCurrencyWithPrecision({amount, maxFractionDigits: decimals, intlOptions, locale, symbol})
+		return formatCurrencyWithPrecision({ amount, maxFractionDigits: decimals, intlOptions, locale, symbol })
 	}
 	return new Intl.NumberFormat([locale, 'en-US'], intlOptions).format(amount).replace('EUR', symbol)
 }
 
 export function formatTAmount(props: TAmount): string {
-	const {value} = props
+	const { value } = props
 	const options = assignOptions(props.options)
 	const decimals = assertValidNumber(Number(props.decimals), 18, 'decimals')
 	let amount = 0

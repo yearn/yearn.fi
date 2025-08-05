@@ -1,10 +1,10 @@
-import {Renderable} from '@lib/components/Renderable'
-import {Dropdown} from '@lib/components/TokenDropdown'
-import {useWallet} from '@lib/contexts/useWallet'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import {IconQuestion} from '@lib/icons/IconQuestion'
-import type {TNormalizedBN} from '@lib/types'
+import { Renderable } from '@lib/components/Renderable'
+import { Dropdown } from '@lib/components/TokenDropdown'
+import { useWallet } from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import { IconQuestion } from '@lib/icons/IconQuestion'
+import type { TNormalizedBN } from '@lib/types'
 import {
 	cl,
 	formatAmount,
@@ -15,13 +15,13 @@ import {
 	toAddress,
 	zeroNormalizedBN
 } from '@lib/utils'
-import {calculateBoostFromVeYFI} from '@lib/utils/calculations'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {useActionFlow} from '@vaults-v2/contexts/useActionFlow'
-import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData'
-import {useRouter} from 'next/router'
-import type {ChangeEvent, ReactElement} from 'react'
-import {useCallback, useMemo} from 'react'
+import { calculateBoostFromVeYFI } from '@lib/utils/calculations'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { useActionFlow } from '@vaults-v2/contexts/useActionFlow'
+import type { TStakingInfo } from '@vaults-v2/hooks/useVaultStakingData'
+import { useRouter } from 'next/router'
+import type { ChangeEvent, ReactElement } from 'react'
+import { useCallback, useMemo } from 'react'
 
 function AmountWithOptionalTooltip(props: {
 	canOnlyWithdrawSome: boolean
@@ -91,10 +91,10 @@ export function VaultDetailsQuickActionsFrom(props: {
 	veYFITotalSupply: number
 	gaugeTotalSupply: number
 }): ReactElement {
-	const {address, isActive} = useWeb3()
-	const {getToken, getBalance} = useWallet()
-	const {getPrice} = useYearn()
-	const {pathname} = useRouter()
+	const { address, isActive } = useWeb3()
+	const { getToken, getBalance } = useWallet()
+	const { getPrice } = useYearn()
+	const { pathname } = useRouter()
 
 	const isV3Page = pathname.startsWith('/v3')
 	const {
@@ -162,7 +162,7 @@ export function VaultDetailsQuickActionsFrom(props: {
 	const onChangeInput = useCallback(
 		(e: ChangeEvent<HTMLInputElement>): void => {
 			let newAmount: TNormalizedBN | undefined
-			const {decimals} = getToken({
+			const { decimals } = getToken({
 				address: toAddress(actionParams?.selectedOptionFrom?.value),
 				chainID: Number(actionParams?.selectedOptionFrom?.chainID)
 			})

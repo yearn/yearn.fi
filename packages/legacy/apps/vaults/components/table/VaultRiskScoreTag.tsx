@@ -1,10 +1,10 @@
-import {Tooltip} from '@lib/components/Tooltip'
+import { Tooltip } from '@lib/components/Tooltip'
 
-import type {FC} from 'react'
+import type { FC } from 'react'
 
 export const VAULT_RISK_COLORS = ['transparent', '#63C532', '#F8A908', '#F8A908', '#C73203', '#C73203']
 
-export const VaultRiskScoreTag: FC<{riskLevel: number}> = ({riskLevel}) => {
+export const VaultRiskScoreTag: FC<{ riskLevel: number }> = ({ riskLevel }) => {
 	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel
 
 	return (
@@ -28,7 +28,7 @@ export const VaultRiskScoreTag: FC<{riskLevel: number}> = ({riskLevel}) => {
 				}>
 				<div
 					className={'h-3 w-10 min-w-10 rounded-sm border border-neutral-300 p-[2px] '}
-					style={{borderWidth: '1px'}}>
+					style={{ borderWidth: '1px' }}>
 					<div
 						className={'h-1.5 rounded-[1px]'}
 						style={{

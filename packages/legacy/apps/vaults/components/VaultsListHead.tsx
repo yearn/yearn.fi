@@ -1,9 +1,9 @@
-import {IconChevronPlain} from '@lib/icons/IconChevronPlain'
-import type {TSortDirection} from '@lib/types'
-import {cl} from '@lib/utils'
+import { IconChevronPlain } from '@lib/icons/IconChevronPlain'
+import type { TSortDirection } from '@lib/types'
+import { cl } from '@lib/utils'
 
-import type {ReactElement} from 'react'
-import {useCallback} from 'react'
+import type { ReactElement } from 'react'
+import { useCallback } from 'react'
 
 export type TListHead = {
 	items: {
@@ -17,7 +17,7 @@ export type TListHead = {
 	onSort: (sortBy: string, sortDirection: TSortDirection) => void
 }
 
-export function VaultsListHead({items, sortBy, sortDirection, onSort}: TListHead): ReactElement {
+export function VaultsListHead({ items, sortBy, sortDirection, onSort }: TListHead): ReactElement {
 	const toggleSortDirection = (newSortBy: string): TSortDirection => {
 		if (sortBy === newSortBy) {
 			if (sortDirection === '') {

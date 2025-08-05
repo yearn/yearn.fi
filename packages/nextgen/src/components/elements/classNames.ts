@@ -1,5 +1,5 @@
-import type {ButtonHTMLAttributes, HTMLAttributes} from 'react'
-import {cn} from '../../lib/cn'
+import type { ButtonHTMLAttributes, HTMLAttributes } from 'react'
+import { cn } from '../../lib/cn'
 
 export type ThemeName = 'default' | 'disabled' | 'busy' | 'error'
 export type Hierarchy = 'primary' | 'secondary'
@@ -17,7 +17,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 export function cardClassName(props: CardProps) {
-	const {className, h} = props
+	const { className, h } = props
 	const bg = h === 'secondary' ? 'bg-secondary-800' : 'bg-primary-100'
 	const text = h === 'secondary' ? 'text-primary-50' : ''
 	const outline = h === 'secondary' ? 'outline-secondary-400/40' : 'outline-primary-400/40'
@@ -35,7 +35,7 @@ export function vaultCardContainerClassName() {
 }
 
 export function buttonClassName(props: ButtonProps) {
-	const {className, theme, h} = props
+	const { className, theme, h } = props
 	const busy = theme === 'busy'
 	const bg = theme === 'error' ? 'bg-red-500' : h === 'secondary' ? 'bg-secondary-900' : 'bg-primary-50'
 	const text = theme === 'error' ? 'text-red-50' : h === 'secondary' ? 'text-neutral-300' : 'text-secondary-600'

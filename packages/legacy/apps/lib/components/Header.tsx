@@ -1,24 +1,24 @@
-import {useNotifications} from '@lib/contexts/useNotifications'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {IconBell} from '@lib/icons/IconBell'
-import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain'
-import {IconWallet} from '@lib/icons/IconWallet'
-import {cl} from '@lib/utils'
-import {truncateHex} from '@lib/utils/tools.address'
-import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit'
+import { useNotifications } from '@lib/contexts/useNotifications'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { IconBell } from '@lib/icons/IconBell'
+import { IconBurgerPlain } from '@lib/icons/IconBurgerPlain'
+import { IconWallet } from '@lib/icons/IconWallet'
+import { cl } from '@lib/utils'
+import { truncateHex } from '@lib/utils/tools.address'
+import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
 import Link from 'next/link'
-import {useRouter} from 'next/router'
-import type {ReactElement} from 'react'
-import {useEffect, useMemo, useState} from 'react'
-import type {Chain} from 'viem'
-import {APPS, AppName} from './Apps'
-import {LogoPopover} from './LogoPopover'
-import {ModalMobileMenu} from './ModalMobileMenu'
+import { useRouter } from 'next/router'
+import type { ReactElement } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import type { Chain } from 'viem'
+import { APPS, AppName } from './Apps'
+import { LogoPopover } from './LogoPopover'
+import { ModalMobileMenu } from './ModalMobileMenu'
 
-export type TMenu = {path: string; label: string | ReactElement; target?: string}
-type TNavbar = {nav: TMenu[]; currentPathName: string}
+export type TMenu = { path: string; label: string | ReactElement; target?: string }
+type TNavbar = { nav: TMenu[]; currentPathName: string }
 
-function Navbar({nav, currentPathName}: TNavbar): ReactElement {
+function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
 	return (
 		<nav className={'yearn--nav'}>
 			{nav.map(
@@ -36,9 +36,9 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 }
 
 function WalletSelector(): ReactElement {
-	const {openAccountModal} = useAccountModal()
-	const {openChainModal} = useChainModal()
-	const {isActive, address, ens, clusters, lensProtocolHandle, openLoginModal} = useWeb3()
+	const { openAccountModal } = useAccountModal()
+	const { openChainModal } = useChainModal()
+	const { isActive, address, ens, clusters, lensProtocolHandle, openLoginModal } = useWeb3()
 	const [walletIdentity, setWalletIdentity] = useState<string | undefined>(undefined)
 
 	useEffect((): void => {
@@ -87,13 +87,13 @@ function WalletSelector(): ReactElement {
 	)
 }
 
-function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
-	const {pathname} = useRouter()
+function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
+	const { pathname } = useRouter()
 	const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
-	const {setShouldOpenCurtain, notificationStatus} = useNotifications()
+	const { setShouldOpenCurtain, notificationStatus } = useNotifications()
 
 	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/apps', label: 'Apps'}
+		const HOME_MENU = { path: '/apps', label: 'Apps' }
 
 		if (pathname.startsWith('/ycrv')) {
 			return [...APPS[AppName.YCRV].menu]
@@ -117,9 +117,9 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 
 		return [
 			HOME_MENU,
-			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
-			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'},
-			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
+			{ path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank' },
+			{ path: 'https://discord.gg/yearn', label: 'Support', target: '_blank' },
+			{ path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank' },
 			{
 				path: 'https://gov.yearn.fi/',
 				label: 'Discourse',

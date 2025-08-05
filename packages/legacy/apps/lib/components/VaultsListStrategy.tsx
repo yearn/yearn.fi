@@ -1,21 +1,21 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback'
-import {RenderAmount} from '@lib/components/RenderAmount'
-import {useFetch} from '@lib/hooks/useFetch'
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI'
-import {IconLinkOut} from '@lib/icons/IconLinkOut'
-import type {TAddress} from '@lib/types'
-import {cl, formatPercent, toAddress, truncateHex} from '@lib/utils'
-import {formatDuration} from '@lib/utils/format.time'
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {getNetwork} from '@lib/utils/wagmi/utils'
-import {findLatestAPY} from '@vaults-v2/components/details/tabs/findLatestAPY'
-import type {TYDaemonReports} from '@vaults-v2/schemas/reportsSchema'
-import {yDaemonReportsSchema} from '@vaults-v2/schemas/reportsSchema'
-import {getChainBgColor} from '@vaults-v3/utils'
-import {motion} from 'framer-motion'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { RenderAmount } from '@lib/components/RenderAmount'
+import { useFetch } from '@lib/hooks/useFetch'
+import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
+import { IconLinkOut } from '@lib/icons/IconLinkOut'
+import type { TAddress } from '@lib/types'
+import { cl, formatPercent, toAddress, truncateHex } from '@lib/utils'
+import { formatDuration } from '@lib/utils/format.time'
+import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { getNetwork } from '@lib/utils/wagmi/utils'
+import { findLatestAPY } from '@vaults-v2/components/details/tabs/findLatestAPY'
+import type { TYDaemonReports } from '@vaults-v2/schemas/reportsSchema'
+import { yDaemonReportsSchema } from '@vaults-v2/schemas/reportsSchema'
+import { getChainBgColor } from '@vaults-v3/utils'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
-import type {ReactElement} from 'react'
-import {useMemo, useState} from 'react'
+import type { ReactElement } from 'react'
+import { useMemo, useState } from 'react'
 
 export function VaultsListStrategy({
 	details,
@@ -46,10 +46,10 @@ export function VaultsListStrategy({
 
 	const isStrategy = !apr
 
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: chainId})
+	const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: chainId })
 
 	// Fetch if component is used for strategies that are not vaults
-	const {data: reports} = useFetch<TYDaemonReports>({
+	const { data: reports } = useFetch<TYDaemonReports>({
 		endpoint: isStrategy ? `${yDaemonBaseUri}/reports/${address}` : '',
 		schema: yDaemonReportsSchema
 	})
@@ -203,7 +203,7 @@ export function VaultsListStrategy({
 											href={`/v3/${chainId}/${toAddress(address)}`}
 											target={'_blank'}
 											// onClick={(event): void => event.stopPropagation()}
-											style={{background: chainBgColor}} // needed for polygon vaults
+											style={{ background: chainBgColor }} // needed for polygon vaults
 											className={cl(
 												'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80 '
 											)}>
@@ -214,7 +214,7 @@ export function VaultsListStrategy({
 									<Link
 										href={`${getNetwork(chainId)?.defaultBlockExplorer}/address/${address}`}
 										onClick={(event): void => event.stopPropagation()}
-										style={{background: chainBgColor}} // needed for polygon vaults
+										style={{ background: chainBgColor }} // needed for polygon vaults
 										className={cl(
 											'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80'
 										)}

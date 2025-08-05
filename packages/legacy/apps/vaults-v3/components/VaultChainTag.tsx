@@ -1,8 +1,8 @@
-import {opacityToHex} from '@lib/utils/opacity'
+import { opacityToHex } from '@lib/utils/opacity'
 
-import type {FC} from 'react'
+import type { FC } from 'react'
 
-const ChainColors: {[key: number]: string} = {
+const ChainColors: { [key: number]: string } = {
 	1: '#627EEA',
 	10: '#C80016',
 	137: '#A726C1',
@@ -12,11 +12,11 @@ const ChainColors: {[key: number]: string} = {
 	747474: '#f6ff0d'
 }
 
-const ChainTextColors: {[key: number]: string} = {
+const ChainTextColors: { [key: number]: string } = {
 	747474: '#000000'
 }
 
-const ChainNames: {[key: number]: string} = {
+const ChainNames: { [key: number]: string } = {
 	1: 'Ethereum',
 	10: 'Optimism',
 	137: 'Polygon PoS',
@@ -29,7 +29,7 @@ const ChainNames: {[key: number]: string} = {
 export const VaultChainTag: FC<{
 	chainID?: number
 	backgroundOpacity?: number
-}> = ({chainID = 1, backgroundOpacity = 1}) => {
+}> = ({ chainID = 1, backgroundOpacity = 1 }) => {
 	const textOpacity = backgroundOpacity > 0.5 ? 1 : 0.8
 	return (
 		<div

@@ -1,9 +1,9 @@
-import {useNotifications} from '@lib/contexts/useNotifications'
-import type {TNotification} from '@lib/types/notifications'
-import {SUPPORTED_NETWORKS} from '@lib/utils'
-import {retrieveConfig} from '@lib/utils/wagmi'
-import {useCallback, useEffect, useRef} from 'react'
-import {getBlock, waitForTransactionReceipt} from 'wagmi/actions'
+import { useNotifications } from '@lib/contexts/useNotifications'
+import type { TNotification } from '@lib/types/notifications'
+import { SUPPORTED_NETWORKS } from '@lib/utils'
+import { retrieveConfig } from '@lib/utils/wagmi'
+import { useCallback, useEffect, useRef } from 'react'
+import { getBlock, waitForTransactionReceipt } from 'wagmi/actions'
 
 /************************************************************************************************
  * Custom hook to poll transaction status for pending notifications every minute.
@@ -13,7 +13,7 @@ import {getBlock, waitForTransactionReceipt} from 'wagmi/actions'
  * @param notification - The notification to poll for status updates
  ************************************************************************************************/
 export function useTransactionStatusPoller(notification: TNotification): void {
-	const {updateEntry} = useNotifications()
+	const { updateEntry } = useNotifications()
 	const pollIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
 	/************************************************************************************************

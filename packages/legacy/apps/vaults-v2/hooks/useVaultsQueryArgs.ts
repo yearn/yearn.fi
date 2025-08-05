@@ -1,10 +1,10 @@
-import {useSupportedChains} from '@lib/hooks/useSupportedChains'
-import type {TDict, TSortDirection} from '@lib/types'
-import {useDeepCompareEffect, useMountEffect} from '@react-hookz/web'
-import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults'
-import {useSearchParams} from 'next/navigation'
-import {useRouter} from 'next/router'
-import {useCallback, useState} from 'react'
+import { useSupportedChains } from '@lib/hooks/useSupportedChains'
+import type { TDict, TSortDirection } from '@lib/types'
+import { useDeepCompareEffect, useMountEffect } from '@react-hookz/web'
+import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
+import { useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/router'
+import { useCallback, useState } from 'react'
 
 type TQueryArgs = {
 	search: string | null | undefined
@@ -169,11 +169,11 @@ function useQueryArguments(props: {
 			if (value === '') {
 				queryArgs.search = undefined
 				delete queryArgs.search
-				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+				router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 				return
 			}
 			queryArgs.search = value
-			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+			router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 		},
 		onChangeTypes: (value): void => {
 			const queryArgs: TDict<string | string[] | undefined> = {}
@@ -186,12 +186,12 @@ function useQueryArguments(props: {
 			setTypes(value)
 			if (value === null) {
 				queryArgs.types = 'none'
-				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+				router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 				return
 			}
 			if (value.length === 0) {
 				queryArgs.types = 'none'
-				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+				router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 				return
 			}
 			if (value.length === props.defaultTypes?.length) {
@@ -199,13 +199,13 @@ function useQueryArguments(props: {
 				if (isEqual) {
 					queryArgs.types = undefined
 					delete queryArgs.types
-					router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+					router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 
 					return
 				}
 			}
 			queryArgs.types = value.join('_')
-			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+			router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 		},
 		onChangeCategories: (value): void => {
 			const queryArgs: TDict<string | string[] | undefined> = {}
@@ -218,12 +218,12 @@ function useQueryArguments(props: {
 			setCategories(value)
 			if (value === null) {
 				queryArgs.categories = 'none'
-				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+				router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 				return
 			}
 			if (value.length === 0) {
 				queryArgs.categories = 'none'
-				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+				router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 				return
 			}
 			if (value.length === props.defaultCategories?.length) {
@@ -231,12 +231,12 @@ function useQueryArguments(props: {
 				if (isEqual) {
 					queryArgs.categories = undefined
 					delete queryArgs.categories
-					router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+					router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 					return
 				}
 			}
 			queryArgs.categories = value.join('_')
-			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+			router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 		},
 		onChangeChains: (value): void => {
 			const queryArgs: TDict<string | string[] | undefined> = {}
@@ -248,12 +248,12 @@ function useQueryArguments(props: {
 			setChains(value)
 			if (value === null) {
 				queryArgs.chains = '0'
-				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+				router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 				return
 			}
 			if (value.length === 0) {
 				queryArgs.chains = '0'
-				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+				router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 				return
 			}
 			if (value.length === allChains.length) {
@@ -261,12 +261,12 @@ function useQueryArguments(props: {
 				if (isEqual) {
 					queryArgs.chains = undefined
 					delete queryArgs.chains
-					router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+					router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 					return
 				}
 			}
 			queryArgs.chains = value.join('_')
-			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+			router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 		},
 		onChangeSortDirection: (value): void => {
 			setSortDirection(value)
@@ -280,11 +280,11 @@ function useQueryArguments(props: {
 			if (value === '') {
 				queryArgs.sortDirection = undefined
 				delete queryArgs.sortDirection
-				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+				router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 				return
 			}
 			queryArgs.sortDirection = value as string
-			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+			router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 		},
 		onChangeSortBy: (value): void => {
 			setSortBy(value)
@@ -298,11 +298,11 @@ function useQueryArguments(props: {
 			if (value === '') {
 				queryArgs.sortBy = undefined
 				delete queryArgs.sortBy
-				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+				router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 				return
 			}
 			queryArgs.sortBy = value
-			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+			router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 		},
 		onReset: (): void => {
 			setSearch(null)
@@ -324,9 +324,9 @@ function useQueryArguments(props: {
 					queryArgs[key] = router.query[key]
 				}
 			}
-			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true})
+			router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
 		}
 	}
 }
 
-export {useQueryArguments}
+export { useQueryArguments }

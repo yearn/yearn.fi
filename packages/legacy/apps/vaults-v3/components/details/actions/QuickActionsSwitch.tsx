@@ -1,6 +1,6 @@
-import {IconArrowRight} from '@lib/icons/IconArrowRight'
+import { IconArrowRight } from '@lib/icons/IconArrowRight'
 
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
 export function VaultDetailsQuickActionsSwitch(): ReactElement {
 	return (

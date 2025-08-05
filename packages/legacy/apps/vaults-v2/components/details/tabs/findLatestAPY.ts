@@ -1,6 +1,6 @@
-import {isZero} from '@lib/utils'
+import { isZero } from '@lib/utils'
 
-import type {TYDaemonReport, TYDaemonReports} from '@vaults-v2/schemas/reportsSchema'
+import type { TYDaemonReport, TYDaemonReports } from '@vaults-v2/schemas/reportsSchema'
 
 export function findLatestAPY(reports?: TYDaemonReports): number {
 	if (!reports?.length) {

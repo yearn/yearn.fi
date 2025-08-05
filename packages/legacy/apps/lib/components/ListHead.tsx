@@ -1,9 +1,9 @@
-import {IconChevronPlain} from '@lib/icons/IconChevronPlain'
-import type {TSortDirection} from '@lib/types'
-import {cl} from '@lib/utils'
+import { IconChevronPlain } from '@lib/icons/IconChevronPlain'
+import type { TSortDirection } from '@lib/types'
+import { cl } from '@lib/utils'
 
-import type {ReactElement} from 'react'
-import {useCallback} from 'react'
+import type { ReactElement } from 'react'
+import { useCallback } from 'react'
 
 export type TListHead = {
 	items: {

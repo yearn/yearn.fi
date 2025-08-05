@@ -1,14 +1,14 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback'
-import {LogoYearn} from '@lib/icons/LogoYearn'
-import {VEYFI_DYFI_ADDRESS, YCRV_TOKEN_ADDRESS} from '@lib/utils/constants'
-import {VAULTS_BETA_MENU} from '@vaults/constants/menu'
-import {VAULTS_MENU} from '@vaults-v2/constants/menu'
-import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { LogoYearn } from '@lib/icons/LogoYearn'
+import { VEYFI_DYFI_ADDRESS, YCRV_TOKEN_ADDRESS } from '@lib/utils/constants'
+import { VAULTS_BETA_MENU } from '@vaults/constants/menu'
+import { VAULTS_MENU } from '@vaults-v2/constants/menu'
+import { VAULTS_V3_MENU } from '@vaults-v3/constants/menu'
 import Image from 'next/image'
 import vaultsManifest from 'public/apps/vaults-manifest.json'
 
-import type {ReactElement} from 'react'
-import type {TMenu} from './Header'
+import type { ReactElement } from 'react'
+import type { TMenu } from './Header'
 
 export enum AppName {
 	VAULTSV3 = 'V3',
@@ -57,7 +57,7 @@ type TApp = {
 	isDisabled?: boolean
 }
 
-export const APPS: {[key in AppName]: TApp} = {
+export const APPS: { [key in AppName]: TApp } = {
 	V3: {
 		name: AppName.VAULTSV3,
 		href: '/v3',

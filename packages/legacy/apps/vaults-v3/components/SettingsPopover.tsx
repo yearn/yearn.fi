@@ -1,21 +1,21 @@
-import {Popover, PopoverButton, PopoverPanel, Transition} from '@headlessui/react'
-import {Renderable} from '@lib/components/Renderable'
-import {Switch} from '@lib/components/Switch'
-import {useYearn} from '@lib/contexts/useYearn'
-import {IconSettings} from '@lib/icons/IconSettings'
-import {cl} from '@lib/utils'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
-import type {TSolver} from '@vaults-v2/types/solvers'
-import {Solver} from '@vaults-v2/types/solvers'
-import type {ReactElement} from 'react'
-import {Fragment, useMemo} from 'react'
+import { Popover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react'
+import { Renderable } from '@lib/components/Renderable'
+import { Switch } from '@lib/components/Switch'
+import { useYearn } from '@lib/contexts/useYearn'
+import { IconSettings } from '@lib/icons/IconSettings'
+import { cl } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
+import type { TSolver } from '@vaults-v2/types/solvers'
+import { Solver } from '@vaults-v2/types/solvers'
+import type { ReactElement } from 'react'
+import { Fragment, useMemo } from 'react'
 
 type TSettingPopover = {
 	vault: TYDaemonVault
 }
 
-function Label({children}: {children: string}): ReactElement {
+function Label({ children }: { children: string }): ReactElement {
 	return (
 		<label htmlFor={'zapProvider'} className={'font-bold text-neutral-900'}>
 			{children}
@@ -24,7 +24,7 @@ function Label({children}: {children: string}): ReactElement {
 }
 
 function MaxLossSection(): ReactElement {
-	const {maxLoss, setMaxLoss} = useYearn()
+	const { maxLoss, setMaxLoss } = useYearn()
 
 	return (
 		<div className={'flex flex-col space-y-1'}>
@@ -83,8 +83,8 @@ function MaxLossSection(): ReactElement {
 	)
 }
 
-function ZapSection({chainID}: {chainID: number}): ReactElement {
-	const {zapProvider, setZapProvider, zapSlippage, setZapSlippage} = useYearn()
+function ZapSection({ chainID }: { chainID: number }): ReactElement {
+	const { zapProvider, setZapProvider, zapSlippage, setZapSlippage } = useYearn()
 
 	const currentZapProvider = useMemo((): TSolver => {
 		if (chainID !== 1 && zapProvider === 'Cowswap') {
@@ -186,8 +186,8 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 	)
 }
 
-function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactElement | null {
-	const {isAutoStakingEnabled, setIsAutoStakingEnabled} = useYearn()
+function StakingSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement | null {
+	const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
 
 	if (!currentVault.staking.available) {
 		return null
@@ -217,7 +217,7 @@ function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactEle
 	)
 }
 
-export function SettingsPopover({vault}: TSettingPopover): ReactElement {
+export function SettingsPopover({ vault }: TSettingPopover): ReactElement {
 	return (
 		<Popover className={'relative flex'}>
 			{(): ReactElement => (

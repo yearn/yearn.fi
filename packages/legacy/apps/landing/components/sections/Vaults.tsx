@@ -1,9 +1,9 @@
-import {SectionHeader} from '@lib/components/SectionHeader'
-import {useYearn} from '@lib/contexts/useYearn'
-import {formatPercent} from '@lib/utils/format'
+import { SectionHeader } from '@lib/components/SectionHeader'
+import { useYearn } from '@lib/contexts/useYearn'
+import { formatPercent } from '@lib/utils/format'
 import Image from 'next/image'
-import type {FC} from 'react'
-import {useCallback, useEffect, useMemo, useState} from 'react'
+import type { FC } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 type TRow = {
 	bgClass: string
@@ -21,7 +21,7 @@ type TVault = {
 	tagline: string
 	title: string
 	description: string
-	cta?: {label: string; href: string}
+	cta?: { label: string; href: string }
 }
 
 const slides: TVault[] = [
@@ -32,7 +32,7 @@ const slides: TVault[] = [
 		tagline: 'Growing every day',
 		title: 'Compounding Vaults',
 		description: 'Vaults utilize DeFi opportunities to give you the best risk-adjusted yields',
-		cta: {label: 'View All', href: 'https://yearn.fi/apps/vaults'}
+		cta: { label: 'View All', href: 'https://yearn.fi/apps/vaults' }
 	},
 	{
 		background: '/landing/vault-background-y.png',
@@ -107,7 +107,7 @@ const appRows: TRow[] = [
 ]
 
 export const Vaults: FC = () => {
-	const {vaults, isLoadingVaultList} = useYearn()
+	const { vaults, isLoadingVaultList } = useYearn()
 	const [activeSlide, setActiveSlide] = useState(0)
 	const [isAnimating, setIsAnimating] = useState(false)
 	const [isHovering, setIsHovering] = useState(false)
@@ -193,7 +193,7 @@ export const Vaults: FC = () => {
 					onMouseLeave={() => setIsHovering(false)}>
 					<div
 						className={'flex transition-transform duration-500 ease-in-out'}
-						style={{transform: `translateX(-${activeSlide * 100}%)`}}>
+						style={{ transform: `translateX(-${activeSlide * 100}%)` }}>
 						{slides.map(slide => (
 							<div
 								key={slide.title}
@@ -312,7 +312,7 @@ export const Vaults: FC = () => {
 				{/* Pagination */}
 				<div className={'flex w-full justify-center'}>
 					<div className={'flex items-center space-x-3'}>
-						{Array.from({length: totalSlides}).map((_, index) => (
+						{Array.from({ length: totalSlides }).map((_, index) => (
 							<button
 								// biome-ignore lint/suspicious/noArrayIndexKey: Array.from
 								key={index}

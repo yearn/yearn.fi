@@ -123,4 +123,4 @@ const paddings = {
 	'--padding-widest': '3rem' //48px | p-12
 }
 
-module.exports = {colors, paddings}
+module.exports = { colors, paddings }

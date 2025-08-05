@@ -1,7 +1,7 @@
-import {zeroAddress} from 'viem'
-import type {TAddress} from '../types/address'
-import {ETH_TOKEN_ADDRESS} from './constants'
-import {toAddress} from './tools.address'
+import { zeroAddress } from 'viem'
+import type { TAddress } from '../types/address'
+import { ETH_TOKEN_ADDRESS } from './constants'
+import { toAddress } from './tools.address'
 
 export function isZero(value?: bigint | number | string | null): boolean {
 	if (value === null || value === undefined) {
@@ -80,6 +80,6 @@ export function isString(value: unknown): value is string {
 	return typeof value === 'string'
 }
 
-export function isObject(input: unknown): input is {[key: string]: unknown} {
+export function isObject(input: unknown): input is { [key: string]: unknown } {
 	return typeof input === 'object' && input !== null && !Array.isArray(input)
 }

@@ -1,17 +1,17 @@
-import {useSearch} from '@lib/contexts/useSearch'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useMountEffect} from '@react-hookz/web'
+import { useSearch } from '@lib/contexts/useSearch'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useMountEffect } from '@react-hookz/web'
 import CombinedVaultsTable from '@vaults/components/table/CombinedVaultsTable'
-import {VaultsBanner} from '@vaults/components/VaultsBanner'
-import {VaultsPositions} from '@vaults/components/VaultsPositions'
-import type {ReactElement} from 'react'
+import { VaultsBanner } from '@vaults/components/VaultsBanner'
+import { VaultsPositions } from '@vaults/components/VaultsPositions'
+import type { ReactElement } from 'react'
 
 export default function Home(): ReactElement {
-	const {dispatch} = useSearch()
-	const {isActive} = useWeb3()
+	const { dispatch } = useSearch()
+	const { isActive } = useWeb3()
 
 	useMountEffect(() => {
-		dispatch({searchValue: ''})
+		dispatch({ searchValue: '' })
 	})
 
 	return (

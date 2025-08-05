@@ -1,5 +1,5 @@
 import type React from 'react'
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
 function IconCheck(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -14,4 +14,4 @@ function IconCheck(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	)
 }
 
-export {IconCheck}
+export { IconCheck }

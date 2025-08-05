@@ -1,7 +1,7 @@
-import {IconArrow} from '@lib/icons/IconArrow'
+import { IconArrow } from '@lib/icons/IconArrow'
 import Image from 'next/image'
 import Link from 'next/link'
-import {type ReactElement, useState} from 'react'
+import { type ReactElement, useState } from 'react'
 
 export function EarnCard(props: {
 	title: string
@@ -11,6 +11,14 @@ export function EarnCard(props: {
 	href: string
 }): ReactElement {
 	const [isHovering, setIsHovering] = useState(false)
+
+	const obj = {
+		foo: 'bar',
+		bar: 'foo',
+		qux: 'qux'
+	}
+
+	const { foo, bar, qux } = obj
 
 	return (
 		<Link

@@ -1,8 +1,8 @@
-import type {NextRequest} from 'next/server'
-import {NextResponse} from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export function middleware(request: NextRequest): NextResponse | undefined {
-	const {pathname} = request.nextUrl
+	const { pathname } = request.nextUrl
 
 	// Handle /v3/{chainId} pattern and redirect to /v3?chains={chainId}
 	const v3ChainMatch = pathname.match(/^\/v3\/(\d+)$/)

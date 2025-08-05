@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
 export function IconPools(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (

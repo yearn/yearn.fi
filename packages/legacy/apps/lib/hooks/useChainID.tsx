@@ -1,6 +1,6 @@
-import {useMemo} from 'react'
+import { useMemo } from 'react'
 
-import {useWeb3} from '../contexts/useWeb3'
+import { useWeb3 } from '../contexts/useWeb3'
 
 export type TUseChainIDRes = {
 	chainID: number
@@ -20,7 +20,7 @@ export const toSafeChainID = (chainID: number, fallback: number): number => {
  ** It will return the name and icon of the wallet provider.
  **************************************************************************/
 export function useChainID(defaultChainID?: number): TUseChainIDRes {
-	const {chainID, onSwitchChain} = useWeb3()
+	const { chainID, onSwitchChain } = useWeb3()
 	const safeChainID = useMemo((): number => {
 		const fallbackChainID = defaultChainID || 1
 		return toSafeChainID(chainID, fallbackChainID)

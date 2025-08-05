@@ -1,26 +1,26 @@
-import {useNotifications} from '@lib/contexts/useNotifications'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import type {TDict, TNormalizedBN} from '@lib/types'
-import {assert, isAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils'
-import {V3_STAKING_ZAP_ADDRESS} from '@lib/utils/constants'
-import {allowanceKey} from '@lib/utils/helpers'
-import type {TTxStatus} from '@lib/utils/wagmi'
-import {allowanceOf, approveERC20} from '@lib/utils/wagmi'
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers'
-import {Solver} from '@vaults-v2/types/solvers'
-import {depositAndStake} from '@vaults-v2/utils/actions'
-import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut'
-import {useCallback, useMemo, useRef} from 'react'
-import type {Hash, TransactionReceipt} from 'viem'
-import {maxUint256} from 'viem'
+import { useNotifications } from '@lib/contexts/useNotifications'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import type { TDict, TNormalizedBN } from '@lib/types'
+import { assert, isAddress, toAddress, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
+import { V3_STAKING_ZAP_ADDRESS } from '@lib/utils/constants'
+import { allowanceKey } from '@lib/utils/helpers'
+import type { TTxStatus } from '@lib/utils/wagmi'
+import { allowanceOf, approveERC20 } from '@lib/utils/wagmi'
+import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
+import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
+import { Solver } from '@vaults-v2/types/solvers'
+import { depositAndStake } from '@vaults-v2/utils/actions'
+import { getVaultEstimateOut } from '@vaults-v2/utils/getVaultEstimateOut'
+import { useCallback, useMemo, useRef } from 'react'
+import type { Hash, TransactionReceipt } from 'viem'
+import { maxUint256 } from 'viem'
 
 export function useSolverV3StakingBooster(): TSolverContext {
-	const {provider} = useWeb3()
+	const { provider } = useWeb3()
 	const latestQuote = useRef<TNormalizedBN | undefined>(undefined)
 	const request = useRef<TInitSolverArgs | undefined>(undefined)
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({})
-	const {setShouldOpenCurtain} = useNotifications()
+	const { setShouldOpenCurtain } = useNotifications()
 
 	/**********************************************************************************************
 	 ** init will be called when the gauge staking booster should be used to perform the desired

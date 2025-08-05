@@ -1,7 +1,7 @@
-import {Switch as HeadlessSwitch} from '@headlessui/react'
-import {cl} from '@lib/utils'
-import type {KeyboardEvent, ReactElement} from 'react'
-import {useState} from 'react'
+import { Switch as HeadlessSwitch } from '@headlessui/react'
+import { cl } from '@lib/utils'
+import type { KeyboardEvent, ReactElement } from 'react'
+import { useState } from 'react'
 
 type TSwitch = {
 	isEnabled: boolean
@@ -10,7 +10,7 @@ type TSwitch = {
 }
 
 export function Switch(props: TSwitch): ReactElement {
-	const {isEnabled, onSwitch, isDisabled = false} = props
+	const { isEnabled, onSwitch, isDisabled = false } = props
 	const [isEnabledState, setIsEnabledState] = useState(isEnabled)
 
 	function safeOnSwitch(): void {
@@ -19,7 +19,7 @@ export function Switch(props: TSwitch): ReactElement {
 
 	const isChecked = onSwitch ? isEnabled : isEnabledState
 
-	function handleOnKeyDown({key}: KeyboardEvent<HTMLButtonElement>): void {
+	function handleOnKeyDown({ key }: KeyboardEvent<HTMLButtonElement>): void {
 		if (key !== 'Enter') {
 			return
 		}

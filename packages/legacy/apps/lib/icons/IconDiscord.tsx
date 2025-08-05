@@ -1,4 +1,4 @@
-import type {ReactElement, SVGProps} from 'react'
+import type { ReactElement, SVGProps } from 'react'
 
 export function IconDiscord(props: SVGProps<SVGSVGElement>): ReactElement {
 	return (

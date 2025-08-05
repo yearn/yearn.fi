@@ -1,11 +1,11 @@
-import {RenderAmount} from '@lib/components/RenderAmount'
-import {Renderable} from '@lib/components/Renderable'
-import {isZero, toAddress} from '@lib/utils'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import type {FC} from 'react'
-import {Fragment} from 'react'
-import {APYSubline} from './APYSubline'
-import {APYTooltip} from './APYTooltip'
+import { RenderAmount } from '@lib/components/RenderAmount'
+import { Renderable } from '@lib/components/Renderable'
+import { isZero, toAddress } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type { FC } from 'react'
+import { Fragment } from 'react'
+import { APYSubline } from './APYSubline'
+import { APYTooltip } from './APYTooltip'
 
 export const VAULT_ADDRESSES = {
 	PENDLE_ARB_REWARDS: '0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544',
@@ -13,7 +13,7 @@ export const VAULT_ADDRESSES = {
 	KELP: '0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544'
 }
 
-export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault}) => {
+export const VaultForwardAPY: FC<{ currentVault: TYDaemonVault }> = ({ currentVault }) => {
 	const isEthMainnet = currentVault.chainID === 1
 	const hasPendleArbRewards = currentVault.address === toAddress(VAULT_ADDRESSES.PENDLE_ARB_REWARDS)
 	const hasKelpNEngenlayer = currentVault.address === toAddress(VAULT_ADDRESSES.KELP_N_ENGENLAYER)

@@ -1,12 +1,12 @@
 import type React from 'react'
-import type {BaseError, TransactionReceipt} from 'viem'
-import type {Connector} from 'wagmi'
+import type { BaseError, TransactionReceipt } from 'viem'
+import type { Connector } from 'wagmi'
 
 const timeout = 3000
-export const defaultTxStatus = {none: true, pending: false, success: false, error: false}
-const errorTxStatus = {none: false, pending: false, success: false, error: true}
-const pendingTxStatus = {none: false, pending: true, success: false, error: false}
-const successTxStatus = {none: false, pending: false, success: true, error: false}
+export const defaultTxStatus = { none: true, pending: false, success: false, error: false }
+const errorTxStatus = { none: false, pending: false, success: false, error: true }
+const pendingTxStatus = { none: false, pending: true, success: false, error: false }
+const successTxStatus = { none: false, pending: false, success: true, error: false }
 
 export type TTxStatus = {
 	none: boolean
@@ -28,7 +28,7 @@ export type TTxResponse = {
 export class Transaction {
 	provider: Connector
 	onStatus: React.Dispatch<React.SetStateAction<TTxStatus>>
-	options?: {shouldIgnoreSuccessTxStatusChange: boolean}
+	options?: { shouldIgnoreSuccessTxStatusChange: boolean }
 	txArgs?: unknown[]
 	funcCall: (provider: Connector, ...rest: never[]) => Promise<TTxResponse>
 	successCall?: (receipt?: TransactionReceipt) => Promise<void>
@@ -37,7 +37,7 @@ export class Transaction {
 		provider: Connector,
 		funcCall: (provider: Connector, ...rest: never[]) => Promise<TTxResponse>,
 		onStatus: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		options?: {shouldIgnoreSuccessTxStatusChange: boolean}
+		options?: { shouldIgnoreSuccessTxStatusChange: boolean }
 	) {
 		this.provider = provider
 		this.funcCall = funcCall
@@ -56,7 +56,7 @@ export class Transaction {
 	}
 
 	onHandleError(error: string): void {
-		this.onStatus({...errorTxStatus, errorMessage: error})
+		this.onStatus({ ...errorTxStatus, errorMessage: error })
 		setTimeout((): void => this.onStatus(defaultTxStatus), timeout)
 	}
 
@@ -64,24 +64,24 @@ export class Transaction {
 		this.onStatus(pendingTxStatus)
 		try {
 			const args = (this.txArgs || []) as never[]
-			const {isSuccessful, receipt, error} = await this.funcCall(this.provider, ...args)
+			const { isSuccessful, receipt, error } = await this.funcCall(this.provider, ...args)
 			if (isSuccessful) {
 				if (this.successCall && receipt) {
 					await this.successCall(receipt)
 				}
 				if (this?.options?.shouldIgnoreSuccessTxStatusChange) {
-					return {isSuccessful, receipt}
+					return { isSuccessful, receipt }
 				}
 				this.onStatus(successTxStatus)
 				setTimeout((): void => this.onStatus(defaultTxStatus), timeout)
-				return {isSuccessful, receipt}
+				return { isSuccessful, receipt }
 			}
 			this.onHandleError((error as TBaseError)?.message || 'Transaction failed')
-			return {isSuccessful: false}
+			return { isSuccessful: false }
 		} catch (error) {
 			const err = error as BaseError
 			this.onHandleError(err?.shortMessage || err?.message || 'Transaction failed')
-			return {isSuccessful: false}
+			return { isSuccessful: false }
 		}
 	}
 }

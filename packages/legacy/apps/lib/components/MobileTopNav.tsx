@@ -1,11 +1,11 @@
-import {useSearch} from '@lib/contexts/useSearch'
-import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain'
-import {IconSearch} from '@lib/icons/IconSearch'
-import {LogoYearn} from '@lib/icons/LogoYearn'
-import {useRouter} from 'next/router'
-import {type ReactElement, useCallback} from 'react'
+import { useSearch } from '@lib/contexts/useSearch'
+import { IconBurgerPlain } from '@lib/icons/IconBurgerPlain'
+import { IconSearch } from '@lib/icons/IconSearch'
+import { LogoYearn } from '@lib/icons/LogoYearn'
+import { useRouter } from 'next/router'
+import { type ReactElement, useCallback } from 'react'
 
-import {SearchBar} from './SearchBar'
+import { SearchBar } from './SearchBar'
 
 export function MobileTopNav({
 	isSearchOpen,
@@ -16,7 +16,7 @@ export function MobileTopNav({
 	setIsSearchOpen: React.Dispatch<React.SetStateAction<boolean>>
 	setIsNavbarOpen: React.Dispatch<React.SetStateAction<boolean>>
 }): ReactElement {
-	const {configuration, dispatch} = useSearch()
+	const { configuration, dispatch } = useSearch()
 	const router = useRouter()
 
 	const onSearchClick = useCallback(() => {
@@ -62,7 +62,7 @@ export function MobileTopNav({
 							'!max-w-none !rounded-lg !border-0 !border-none !bg-gray-600/40 text-white !outline-none '
 						}
 						searchValue={configuration.searchValue}
-						onSearch={(value: string) => dispatch({searchValue: value})}
+						onSearch={(value: string) => dispatch({ searchValue: value })}
 						searchPlaceholder={'Search App'}
 						onSearchClick={onSearchClick}
 						shouldSearchByClick

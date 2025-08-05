@@ -1,22 +1,22 @@
-import {useDeepCompareMemo} from '@react-hookz/web'
-import type {DependencyList} from 'react'
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
-import {erc20Abi, type MulticallParameters} from 'viem'
-import {type Connector, deserialize, serialize} from 'wagmi'
-import {multicall} from 'wagmi/actions'
-import {useWeb3} from '../contexts/useWeb3'
-import type {TAddress} from '../types/address'
-import type {TChainTokens, TDefaultStatus, TDict, TNDict, TToken} from '../types/mixed'
-import {AGGREGATE3_ABI} from '../utils/abi/aggregate.abi'
-import {ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS} from '../utils/constants'
-import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '../utils/decoder'
-import {toNormalizedBN} from '../utils/format'
-import {toAddress} from '../utils/tools.address'
-import {createUniqueID} from '../utils/tools.identifier'
-import {isEthAddress, isZero, isZeroAddress} from '../utils/tools.is'
-import {retrieveConfig} from '../utils/wagmi'
-import {getNetwork} from '../utils/wagmi/utils'
-import {useAsyncTrigger} from './useAsyncTrigger'
+import { useDeepCompareMemo } from '@react-hookz/web'
+import type { DependencyList } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { erc20Abi, type MulticallParameters } from 'viem'
+import { type Connector, deserialize, serialize } from 'wagmi'
+import { multicall } from 'wagmi/actions'
+import { useWeb3 } from '../contexts/useWeb3'
+import type { TAddress } from '../types/address'
+import type { TChainTokens, TDefaultStatus, TDict, TNDict, TToken } from '../types/mixed'
+import { AGGREGATE3_ABI } from '../utils/abi/aggregate.abi'
+import { ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS } from '../utils/constants'
+import { decodeAsBigInt, decodeAsNumber, decodeAsString } from '../utils/decoder'
+import { toNormalizedBN } from '../utils/format'
+import { toAddress } from '../utils/tools.address'
+import { createUniqueID } from '../utils/tools.identifier'
+import { isEthAddress, isZero, isZeroAddress } from '../utils/tools.is'
+import { retrieveConfig } from '../utils/wagmi'
+import { getNetwork } from '../utils/wagmi/utils'
+import { useAsyncTrigger } from './useAsyncTrigger'
 
 /*******************************************************************************
  ** Request, Response and helpers for the useBalances hook.
@@ -58,7 +58,7 @@ type TDataRef = {
 	balances: TChainTokens
 }
 
-type TUpdates = TDict<TToken & {lastUpdate: number; owner: TAddress}> // key=chainID/address
+type TUpdates = TDict<TToken & { lastUpdate: number; owner: TAddress }> // key=chainID/address
 const TOKEN_UPDATE: TUpdates = {}
 
 /*******************************************************************************
@@ -121,10 +121,10 @@ export async function performCall(
 	for (let i = 0; i < chunckCalls.length; i++) {
 		const call = chunckCalls[i]
 		const result = results[i]
-		callAndResult.push({call, result})
+		callAndResult.push({ call, result })
 	}
 
-	for (const {call, result} of callAndResult) {
+	for (const { call, result } of callAndResult) {
 		let element = tokensAsObject[toAddress(call.address)]
 		if (!element) {
 			if (call.functionName === 'getEthBalance') {
@@ -138,7 +138,7 @@ export async function performCall(
 		 ** Retrieve the existing data and populate our return object with the existing data if they
 		 ** exist, or just populate the object with the default ones
 		 ******************************************************************************************/
-		const {address, decimals: injectedDecimals, name: injectedName, symbol: injectedSymbol} = element
+		const { address, decimals: injectedDecimals, name: injectedName, symbol: injectedSymbol } = element
 		if (!_data[toAddress(address)]) {
 			_data[toAddress(address)] = {
 				address: address,
@@ -219,7 +219,7 @@ export async function getBalances(
 	const calls: MulticallParameters['contracts'][number][] = []
 
 	for (const element of tokens) {
-		const {address: token} = element
+		const { address: token } = element
 
 		const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(element.address)}`]
 		if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000 && !shouldForceFetch) {
@@ -235,39 +235,39 @@ export async function getBalances(
 				address: network.contracts.multicall3?.address || MULTICALL3_ADDRESS,
 				abi: AGGREGATE3_ABI
 			}
-			const baseContract = {address: ETH_TOKEN_ADDRESS, abi: erc20Abi}
+			const baseContract = { address: ETH_TOKEN_ADDRESS, abi: erc20Abi }
 			if (element.decimals === undefined || element.decimals === 0) {
-				calls.push({...baseContract, functionName: 'decimals'} as never)
+				calls.push({ ...baseContract, functionName: 'decimals' } as never)
 			}
 			if (element.symbol === undefined || element.symbol === '') {
-				calls.push({...baseContract, functionName: 'symbol'} as never)
+				calls.push({ ...baseContract, functionName: 'symbol' } as never)
 			}
 			if (element.name === undefined || element.name === '') {
-				calls.push({...baseContract, functionName: 'name'} as never)
+				calls.push({ ...baseContract, functionName: 'name' } as never)
 			}
 			if (ownerAddress) {
-				calls.push({...multicall3Contract, functionName: 'getEthBalance', args: [ownerAddress]} as never)
+				calls.push({ ...multicall3Contract, functionName: 'getEthBalance', args: [ownerAddress] } as never)
 			}
 		} else {
-			const baseContract = {address: token, abi: erc20Abi}
+			const baseContract = { address: token, abi: erc20Abi }
 			if (element.decimals === undefined || element.decimals === 0) {
-				calls.push({...baseContract, functionName: 'decimals'} as never)
+				calls.push({ ...baseContract, functionName: 'decimals' } as never)
 			}
 			if (element.symbol === undefined || element.symbol === '') {
-				calls.push({...baseContract, functionName: 'symbol'} as never)
+				calls.push({ ...baseContract, functionName: 'symbol' } as never)
 			}
 			if (element.name === undefined || element.name === '') {
-				calls.push({...baseContract, functionName: 'name'} as never)
+				calls.push({ ...baseContract, functionName: 'name' } as never)
 			}
 			if (ownerAddress) {
-				calls.push({...baseContract, functionName: 'balanceOf', args: [ownerAddress]} as never)
+				calls.push({ ...baseContract, functionName: 'balanceOf', args: [ownerAddress] } as never)
 			}
 		}
 	}
 
 	try {
 		const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress))
-		result = {...result, ...callResult}
+		result = { ...result, ...callResult }
 		return [result, undefined]
 	} catch (_error) {
 		console.error(_error)
@@ -279,7 +279,7 @@ export async function getBalances(
  ** This hook can be used to fetch balance information for any ERC20 tokens.
  **************************************************************************/
 export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
-	const {address: userAddress} = useWeb3()
+	const { address: userAddress } = useWeb3()
 	const [status, setStatus] = useState<TDefaultStatus>(defaultStatus)
 	const [someStatus, setSomeStatus] = useState<TDefaultStatus>(defaultStatus)
 	const [updateStatus, setUpdateStatus] = useState<TDefaultStatus>(defaultStatus)
@@ -287,7 +287,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const [balances, setBalances] = useState<TChainTokens>({})
 	const [chainStatus, setChainStatus] = useState<TChainStatus>(defaultChainStatus)
 
-	const data = useRef<TDataRef>({nonce: 0, address: toAddress(), balances: {}})
+	const data = useRef<TDataRef>({ nonce: 0, address: toAddress(), balances: {} })
 	const stringifiedTokens = useMemo((): string => serialize(props?.tokens || []), [props?.tokens])
 	const currentlyConnectedAddress = useRef<TAddress | undefined>(undefined)
 	const currentIdentifier = useRef<string | undefined>(undefined)
@@ -311,7 +311,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				resetChainStatus.chainSuccessStatus[network.id] = false
 				resetChainStatus.chainErrorStatus[network.id] = false
 			}
-			setStatus({...defaultStatus, isLoading: true})
+			setStatus({ ...defaultStatus, isLoading: true })
 			setChainStatus(resetChainStatus)
 		}
 	}, [userAddress])
@@ -383,9 +383,9 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			// Set chain loading status
 			if (options.setChainStatus) {
 				options.setChainStatus(prev => ({
-					chainLoadingStatus: {...(prev?.chainLoadingStatus || {}), [chainID]: true},
-					chainSuccessStatus: {...(prev?.chainSuccessStatus || {}), [chainID]: false},
-					chainErrorStatus: {...(prev?.chainErrorStatus || {}), [chainID]: false}
+					chainLoadingStatus: { ...(prev?.chainLoadingStatus || {}), [chainID]: true },
+					chainSuccessStatus: { ...(prev?.chainSuccessStatus || {}), [chainID]: false },
+					chainErrorStatus: { ...(prev?.chainErrorStatus || {}), [chainID]: false }
 				}))
 			}
 
@@ -421,9 +421,9 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				(!options.currentIdentifierRef || options.currentIdentifierRef.current === options.identifier)
 			) {
 				options.setChainStatus(prev => ({
-					chainLoadingStatus: {...(prev?.chainLoadingStatus || {}), [chainID]: false},
-					chainSuccessStatus: {...(prev?.chainSuccessStatus || {}), [chainID]: true},
-					chainErrorStatus: {...(prev?.chainErrorStatus || {}), [chainID]: false}
+					chainLoadingStatus: { ...(prev?.chainLoadingStatus || {}), [chainID]: false },
+					chainSuccessStatus: { ...(prev?.chainSuccessStatus || {}), [chainID]: true },
+					chainErrorStatus: { ...(prev?.chainErrorStatus || {}), [chainID]: false }
 				}))
 			}
 		},
@@ -472,7 +472,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			}
 
 			const updated: TChainTokens = {}
-			const chainIDs = retrieveConfig().chains.map(({id}) => id)
+			const chainIDs = retrieveConfig().chains.map(({ id }) => id)
 
 			// Process priority chain first if specified
 			if (options.priorityChainID && tokensPerChainID[options.priorityChainID]) {
@@ -512,11 +512,11 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const onUpdate = useCallback(
 		async (shouldForceFetch?: boolean): Promise<TChainTokens> => {
 			const tokenList = (deserialize(stringifiedTokens) || []) as TUseBalancesTokens[]
-			const tokens = tokenList.filter(({address}: TUseBalancesTokens): boolean => !isZeroAddress(address))
+			const tokens = tokenList.filter(({ address }: TUseBalancesTokens): boolean => !isZeroAddress(address))
 			if (isZero(tokens.length)) {
 				return {}
 			}
-			setUpdateStatus({...defaultStatus, isLoading: true})
+			setUpdateStatus({ ...defaultStatus, isLoading: true })
 
 			const updated = await processBatchedBalances(tokens, userAddress, shouldForceFetch || true, {
 				setError: setError,
@@ -529,21 +529,21 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				if (!pendingUpdates.current[Number(chainID)]) {
 					pendingUpdates.current[Number(chainID)] = {}
 				}
-				pendingUpdates.current[Number(chainID)] = {...pendingUpdates.current[Number(chainID)], ...chainData}
+				pendingUpdates.current[Number(chainID)] = { ...pendingUpdates.current[Number(chainID)], ...chainData }
 			}
 
 			setBalances(prev => {
-				const newBalances = {...prev}
+				const newBalances = { ...prev }
 				for (const [chainID, chainData] of Object.entries(updated)) {
 					if (!newBalances[Number(chainID)]) {
 						newBalances[Number(chainID)] = {}
 					}
-					newBalances[Number(chainID)] = {...newBalances[Number(chainID)], ...chainData}
+					newBalances[Number(chainID)] = { ...newBalances[Number(chainID)], ...chainData }
 				}
 				return newBalances
 			})
 
-			setUpdateStatus({...defaultStatus, isSuccess: true})
+			setUpdateStatus({ ...defaultStatus, isSuccess: true })
 			return updated
 		},
 		[stringifiedTokens, userAddress, processBatchedBalances, updateBalancesCall]
@@ -556,8 +556,8 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 **************************************************************************/
 	const onUpdateSome = useCallback(
 		async (tokenList: TUseBalancesTokens[], shouldForceFetch?: boolean): Promise<TChainTokens> => {
-			setSomeStatus({...defaultStatus, isLoading: true})
-			const tokens = tokenList.filter(({address}: TUseBalancesTokens): boolean => !isZeroAddress(address))
+			setSomeStatus({ ...defaultStatus, isLoading: true })
+			const tokens = tokenList.filter(({ address }: TUseBalancesTokens): boolean => !isZeroAddress(address))
 
 			const updated = await processBatchedBalances(tokens, userAddress, shouldForceFetch || true, {
 				setError: setError,
@@ -570,21 +570,21 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				if (!pendingUpdates.current[Number(chainID)]) {
 					pendingUpdates.current[Number(chainID)] = {}
 				}
-				pendingUpdates.current[Number(chainID)] = {...pendingUpdates.current[Number(chainID)], ...chainData}
+				pendingUpdates.current[Number(chainID)] = { ...pendingUpdates.current[Number(chainID)], ...chainData }
 			}
 
 			setBalances(prev => {
-				const newBalances = {...prev}
+				const newBalances = { ...prev }
 				for (const [chainID, chainData] of Object.entries(updated)) {
 					if (!newBalances[Number(chainID)]) {
 						newBalances[Number(chainID)] = {}
 					}
-					newBalances[Number(chainID)] = {...newBalances[Number(chainID)], ...chainData}
+					newBalances[Number(chainID)] = { ...newBalances[Number(chainID)], ...chainData }
 				}
 				return newBalances
 			})
 
-			setSomeStatus({...defaultStatus, isSuccess: true})
+			setSomeStatus({ ...defaultStatus, isSuccess: true })
 			return updated
 		},
 		[userAddress, processBatchedBalances, updateBalancesCall]
@@ -594,7 +594,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** Everytime the stringifiedTokens change, we need to update the balances.
 	 **************************************************************************/
 	useAsyncTrigger(async (): Promise<void> => {
-		setStatus({...defaultStatus, isLoading: true})
+		setStatus({ ...defaultStatus, isLoading: true })
 		pendingUpdates.current = {}
 		isAccumulatingUpdates.current = true
 
@@ -603,7 +603,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		 ** the stringified tokens and the user address. This will allow us to prevent multiple
 		 ** final setState that might jump the UI.
 		 *****************************************************************************************/
-		const identifier = createUniqueID(serialize({stringifiedTokens, userAddress}))
+		const identifier = createUniqueID(serialize({ stringifiedTokens, userAddress }))
 		currentIdentifier.current = identifier
 
 		const tokens = (JSON.parse(stringifiedTokens) || []) as TUseBalancesTokens[]
@@ -628,11 +628,11 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			isAccumulatingUpdates.current = false
 			// Apply all accumulated updates in a single batch
 			if (Object.keys(pendingUpdates.current).length > 0) {
-				const finalUpdates = {...pendingUpdates.current}
+				const finalUpdates = { ...pendingUpdates.current }
 				pendingUpdates.current = {}
 				setBalances(finalUpdates)
 			}
-			setStatus({...defaultStatus, isSuccess: true})
+			setStatus({ ...defaultStatus, isSuccess: true })
 		}
 	}, [stringifiedTokens, userAddress, updateBalancesCall, props?.priorityChainID, processBatchedBalances])
 

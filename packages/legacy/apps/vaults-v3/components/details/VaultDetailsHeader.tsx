@@ -1,12 +1,12 @@
-import {Counter} from '@lib/components/Counter'
-import {RenderAmount} from '@lib/components/RenderAmount'
-import {Renderable} from '@lib/components/Renderable'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger'
-import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice'
-import {IconQuestion} from '@lib/icons/IconQuestion'
-import type {TAddress, TNormalizedBN} from '@lib/types'
+import { Counter } from '@lib/components/Counter'
+import { RenderAmount } from '@lib/components/RenderAmount'
+import { Renderable } from '@lib/components/Renderable'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
+import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
+import { IconQuestion } from '@lib/icons/IconQuestion'
+import type { TAddress, TNormalizedBN } from '@lib/types'
 import {
 	cl,
 	decodeAsAddress,
@@ -21,20 +21,20 @@ import {
 	toNormalizedBN,
 	zeroNormalizedBN
 } from '@lib/utils'
-import {copyToClipboard, getVaultName} from '@lib/utils/helpers'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {retrieveConfig} from '@lib/utils/wagmi'
-import {getNetwork} from '@lib/utils/wagmi/utils'
-import {JUICED_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/juicedStakingRewards.abi'
-import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi'
-import {V3_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/V3StakingRewards.abi'
-import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi'
-import {VEYFI_GAUGE_ABI} from '@vaults-v2/utils/abi/veYFIGauge.abi'
-import type {ReactElement} from 'react'
-import {useEffect, useState} from 'react'
-import {erc20Abi, zeroAddress} from 'viem'
-import {useBlockNumber} from 'wagmi'
-import {readContract, readContracts} from 'wagmi/actions'
+import { copyToClipboard, getVaultName } from '@lib/utils/helpers'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { retrieveConfig } from '@lib/utils/wagmi'
+import { getNetwork } from '@lib/utils/wagmi/utils'
+import { JUICED_STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/juicedStakingRewards.abi'
+import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
+import { V3_STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/V3StakingRewards.abi'
+import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
+import { VEYFI_GAUGE_ABI } from '@vaults-v2/utils/abi/veYFIGauge.abi'
+import type { ReactElement } from 'react'
+import { useEffect, useState } from 'react'
+import { erc20Abi, zeroAddress } from 'viem'
+import { useBlockNumber } from 'wagmi'
+import { readContract, readContracts } from 'wagmi/actions'
 
 type TVaultHeaderLineItemProps = {
 	label: string
@@ -42,7 +42,7 @@ type TVaultHeaderLineItemProps = {
 	legend?: ReactElement | string
 }
 
-function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProps): ReactElement {
+function VaultHeaderLineItem({ label, children, legend }: TVaultHeaderLineItemProps): ReactElement {
 	return (
 		<div
 			className={
@@ -61,7 +61,7 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 	)
 }
 
-function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: string; chain: number}): ReactElement {
+function VaultAPY({ apr, source, chain }: { apr: TYDaemonVault['apr']; source: string; chain: number }): ReactElement {
 	const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
 	const monthlyAPY = apr.points.monthAgo
 	const weeklyAPY = apr.points.weekAgo
@@ -294,7 +294,7 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
  ** TVLInVault will render a block of two values: the total value locked in the vault along with
  ** the value of the vault in USD.
  *************************************************************************************************/
-function TVLInVault(props: {tokenSymbol: string; tvl: number; totalAssets: bigint; decimals: number}): ReactElement {
+function TVLInVault(props: { tokenSymbol: string; tvl: number; totalAssets: bigint; decimals: number }): ReactElement {
 	return (
 		<VaultHeaderLineItem label={`Total deposited, ${props.tokenSymbol || 'tokens'}`} legend={formatUSD(props.tvl)}>
 			<Counter
@@ -407,11 +407,11 @@ function ValueEarned(props: {
 	)
 }
 
-export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {address} = useWeb3()
-	const {getPrice} = useYearn()
-	const {data: blockNumber} = useBlockNumber({watch: true})
-	const {apr, tvl, decimals, symbol = 'token'} = currentVault
+export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+	const { address } = useWeb3()
+	const { getPrice } = useYearn()
+	const { data: blockNumber } = useBlockNumber({ watch: true })
+	const { apr, tvl, decimals, symbol = 'token' } = currentVault
 	const [vaultData, setVaultData] = useState({
 		deposited: zeroNormalizedBN,
 		valueInToken: zeroNormalizedBN,
@@ -645,7 +645,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 		})
 		const rewardSymbol = decodeAsString(rewardResult[0])
 		const rewardDecimals = decodeAsNumber(rewardResult[1])
-		const priceOfRewardsToken = getPrice({address: rewardsToken, chainID: 1})
+		const priceOfRewardsToken = getPrice({ address: rewardsToken, chainID: 1 })
 		const amountEarned = isZeroAddress(address) ? zeroNormalizedBN : toNormalizedBN(earned, rewardDecimals)
 		const earnedValue = amountEarned.normalized * priceOfRewardsToken.normalized
 

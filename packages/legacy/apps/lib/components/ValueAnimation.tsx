@@ -1,7 +1,7 @@
-import {formatAmount} from '@lib/utils'
-import {useMountEffect} from '@react-hookz/web'
-import type {ReactElement} from 'react'
-import {useCallback, useEffect, useRef} from 'react'
+import { formatAmount } from '@lib/utils'
+import { useMountEffect } from '@react-hookz/web'
+import type { ReactElement } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 export function ValueAnimation({
 	identifier,

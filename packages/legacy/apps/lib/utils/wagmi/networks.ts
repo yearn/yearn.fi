@@ -1,4 +1,4 @@
-import type {Chain} from 'viem'
+import type { Chain } from 'viem'
 
 export const localhost = {
 	id: 1337,
@@ -9,8 +9,8 @@ export const localhost = {
 		symbol: 'ETH'
 	},
 	rpcUrls: {
-		default: {http: ['http://localhost:8545', 'http://0.0.0.0:8545']},
-		public: {http: ['http://localhost:8545', 'http://0.0.0.0:8545']}
+		default: { http: ['http://localhost:8545', 'http://0.0.0.0:8545'] },
+		public: { http: ['http://localhost:8545', 'http://0.0.0.0:8545'] }
 	},
 	contracts: {
 		ensRegistry: {
@@ -36,8 +36,8 @@ export const anotherLocalhost = {
 		symbol: 'ETH'
 	},
 	rpcUrls: {
-		default: {http: ['http://localhost:8555', 'http://0.0.0.0:8555']},
-		public: {http: ['http://localhost:8555', 'http://0.0.0.0:8555']}
+		default: { http: ['http://localhost:8555', 'http://0.0.0.0:8555'] },
+		public: { http: ['http://localhost:8555', 'http://0.0.0.0:8555'] }
 	},
 	contracts: {
 		ensRegistry: {

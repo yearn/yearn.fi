@@ -1,6 +1,6 @@
-import {cl} from '@lib/utils'
+import { cl } from '@lib/utils'
 
-import type {ButtonHTMLAttributes, ReactElement} from 'react'
+import type { ButtonHTMLAttributes, ReactElement } from 'react'
 
 const STYLE = {
 	primary: 'bg-primary hover:bg-[#004BE0]',
@@ -8,9 +8,9 @@ const STYLE = {
 }
 
 export function Button(
-	props: {variant?: 'primary' | 'secondary'} & ButtonHTMLAttributes<HTMLButtonElement>
+	props: { variant?: 'primary' | 'secondary' } & ButtonHTMLAttributes<HTMLButtonElement>
 ): ReactElement {
-	const {variant = 'primary', ...rest} = props
+	const { variant = 'primary', ...rest } = props
 
 	return (
 		<button

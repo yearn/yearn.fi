@@ -1,3 +1,3 @@
-import type {TDict} from './'
+import type { TDict } from './'
 
 export type TCurveGaugeVersionRewards = TDict<TDict<bigint>>

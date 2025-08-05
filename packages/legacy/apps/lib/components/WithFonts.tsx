@@ -1,6 +1,6 @@
-import {Source_Code_Pro} from 'next/font/google'
+import { Source_Code_Pro } from 'next/font/google'
 import localFont from 'next/font/local'
-import type {ReactElement, ReactNode} from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 const aeonik = localFont({
 	variable: '--font-aeonik',
@@ -53,7 +53,7 @@ const sourceCodePro = Source_Code_Pro({
 	variable: '--scp-font'
 })
 
-export function WithFonts({children}: {children: ReactNode}): ReactElement {
+export function WithFonts({ children }: { children: ReactNode }): ReactElement {
 	return (
 		<div
 			style={{

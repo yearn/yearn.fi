@@ -1,11 +1,11 @@
-import {yToast} from '@lib/components/yToast'
-import type {TAddress} from '@lib/types'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import type {EncodeFunctionDataParameters, Hex} from 'viem'
-import {encodeFunctionData, toHex} from 'viem'
-import type {TSortDirection} from '../types/mixed'
-import {toNormalizedBN} from './format'
-import {isObject} from './tools.is'
+import { yToast } from '@lib/components/yToast'
+import type { TAddress } from '@lib/types'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type { EncodeFunctionDataParameters, Hex } from 'viem'
+import { encodeFunctionData, toHex } from 'viem'
+import type { TSortDirection } from '../types/mixed'
+import { toNormalizedBN } from './format'
+import { isObject } from './tools.is'
 
 export function getVaultName(vault: TYDaemonVault): string {
 	const baseName = vault.name
@@ -37,9 +37,9 @@ export function parseMarkdown(markdownText: string): string {
 }
 
 export function copyToClipboard(value: string): void {
-	const {toast} = yToast()
+	const { toast } = yToast()
 	navigator.clipboard.writeText(value)
-	toast({content: 'Copied to clipboard!', type: 'info'})
+	toast({ content: 'Copied to clipboard!', type: 'info' })
 }
 
 /***************************************************************************
@@ -77,24 +77,38 @@ export function isIframe(): boolean {
 /***************************************************************************
  ** Framer Motion animation constants
  **************************************************************************/
-export const motionTransition = {duration: 0.4, ease: 'easeInOut'}
+export const motionTransition = { duration: 0.4, ease: 'easeInOut' }
 export const motionVariants = {
-	initial: {y: -80, opacity: 0, motionTransition},
-	enter: {y: 0, opacity: 1, motionTransition},
-	exit: {y: -80, opacity: 0, motionTransition}
+	initial: { y: -80, opacity: 0, motionTransition },
+	enter: { y: 0, opacity: 1, motionTransition },
+	exit: { y: -80, opacity: 0, motionTransition }
 }
 
 /***************************************************************************
  ** Helper function to sort elements based on the type of the element.
  **************************************************************************/
-export const stringSort = ({a, b, sortDirection}: {a: string; b: string; sortDirection: TSortDirection}): number =>
+export const stringSort = ({ a, b, sortDirection }: { a: string; b: string; sortDirection: TSortDirection }): number =>
 	sortDirection === 'desc' ? a.localeCompare(b) : b.localeCompare(a)
 
-export const numberSort = ({a, b, sortDirection}: {a?: number; b?: number; sortDirection: TSortDirection}): number =>
-	sortDirection === 'desc' ? (b ?? 0) - (a ?? 0) : (a ?? 0) - (b ?? 0)
+export const numberSort = ({
+	a,
+	b,
+	sortDirection
+}: {
+	a?: number
+	b?: number
+	sortDirection: TSortDirection
+}): number => (sortDirection === 'desc' ? (b ?? 0) - (a ?? 0) : (a ?? 0) - (b ?? 0))
 
-export const bigNumberSort = ({a, b, sortDirection}: {a: bigint; b: bigint; sortDirection: TSortDirection}): number =>
-	Number(toNormalizedBN(sortDirection === 'desc' ? b - a : a - b, 18).normalized)
+export const bigNumberSort = ({
+	a,
+	b,
+	sortDirection
+}: {
+	a: bigint
+	b: bigint
+	sortDirection: TSortDirection
+}): number => Number(toNormalizedBN(sortDirection === 'desc' ? b - a : a - b, 18).normalized)
 
 /***************************************************************************
  ** Helper function to deep merge two objects
@@ -116,7 +130,7 @@ export function deepMerge(target: unknown, source: unknown): unknown {
 		if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
 			target[key] = sourceValue //no concat, replace
 		} else if (isObject(targetValue) && isObject(sourceValue)) {
-			target[key] = deepMerge({...targetValue}, sourceValue)
+			target[key] = deepMerge({ ...targetValue }, sourceValue)
 		} else {
 			target[key] = sourceValue
 		}
@@ -139,7 +153,7 @@ type TEncodeFunctionCallResp = {
 	data: Hex
 }
 export function encodeFunctionCall(args: TEncodeFunctionCallArgs): TEncodeFunctionCallResp {
-	const {to, value, ...rest} = args
+	const { to, value, ...rest } = args
 
 	return {
 		to,

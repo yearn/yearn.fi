@@ -1,16 +1,16 @@
-import {useWallet} from '@lib/contexts/useWallet'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import type {TSortDirection} from '@lib/types'
-import {cl, toNormalizedBN} from '@lib/utils'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import type {FC} from 'react'
-import {useMemo, useState} from 'react'
-import {VaultBalanceCard} from './cards/VaultBalanceCard'
-import {VaultEmptyCard} from './cards/VaultEmptyCard'
-import {VaultPositionCard} from './cards/VaultPositionCard'
-import {VaultsListHead} from './VaultsListHead'
-import {VaultsListRow} from './VaultsListRow'
+import { useWallet } from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import type { TSortDirection } from '@lib/types'
+import { cl, toNormalizedBN } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type { FC } from 'react'
+import { useMemo, useState } from 'react'
+import { VaultBalanceCard } from './cards/VaultBalanceCard'
+import { VaultEmptyCard } from './cards/VaultEmptyCard'
+import { VaultPositionCard } from './cards/VaultPositionCard'
+import { VaultsListHead } from './VaultsListHead'
+import { VaultsListRow } from './VaultsListRow'
 
 enum TVaultsPositionsView {
 	Empty = 'Empty',
@@ -29,9 +29,9 @@ const getVaultsPositionsView = (userPositions: TYDaemonVault[]): TVaultsPosition
 }
 
 export const VaultsPositions: FC = () => {
-	const {address, isActive} = useWeb3()
-	const {getBalance, cumulatedValueInV2Vaults, cumulatedValueInV3Vaults} = useWallet()
-	const {vaults, vaultsMigrations, vaultsRetired, getPrice} = useYearn()
+	const { address, isActive } = useWeb3()
+	const { getBalance, cumulatedValueInV2Vaults, cumulatedValueInV3Vaults } = useWallet()
+	const { vaults, vaultsMigrations, vaultsRetired, getPrice } = useYearn()
 
 	const [sortBy, setSortBy] = useState<string>('totalValue')
 	const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
@@ -50,14 +50,14 @@ export const VaultsPositions: FC = () => {
 
 		const positions = allVaults
 			.map(vault => {
-				const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID})
+				const vaultBalance = getBalance({ address: vault.address, chainID: vault.chainID })
 				const stakingBalance =
 					vault.staking.available && vault.staking.address
-						? getBalance({address: vault.staking.address, chainID: vault.chainID})
+						? getBalance({ address: vault.staking.address, chainID: vault.chainID })
 						: toNormalizedBN(0n, vault.decimals)
 
 				const totalBalance = toNormalizedBN(vaultBalance.raw + stakingBalance.raw, vault.decimals)
-				const tokenPrice = getPrice({address: vault.address, chainID: vault.chainID})
+				const tokenPrice = getPrice({ address: vault.address, chainID: vault.chainID })
 				const totalValue = totalBalance.normalized * tokenPrice.normalized
 
 				return {
@@ -157,8 +157,8 @@ export const VaultsPositions: FC = () => {
 								sortDirection={sortDirection}
 								onSort={handleSort}
 								items={[
-									{label: 'Vault', value: 'name', sortable: true, className: 'col-span-6'},
-									{label: 'Est. APY', value: 'estAPY', sortable: false, className: 'col-span-3'},
+									{ label: 'Vault', value: 'name', sortable: true, className: 'col-span-6' },
+									{ label: 'Est. APY', value: 'estAPY', sortable: false, className: 'col-span-3' },
 									{
 										label: 'Position Value',
 										value: 'totalValue',

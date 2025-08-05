@@ -1,7 +1,7 @@
-import {formatAmount, parseAmount} from '@lib/utils'
-import {animate} from 'framer-motion'
-import type {ReactElement} from 'react'
-import {useLayoutEffect, useRef} from 'react'
+import { formatAmount, parseAmount } from '@lib/utils'
+import { animate } from 'framer-motion'
+import type { ReactElement } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 
 export function Counter({
 	value,

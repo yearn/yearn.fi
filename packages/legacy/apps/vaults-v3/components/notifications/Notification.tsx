@@ -1,21 +1,21 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback'
-import {useNotifications} from '@lib/contexts/useNotifications'
-import {useTransactionStatusPoller} from '@lib/hooks/useTransactionStatusPoller'
-import {IconArrow} from '@lib/icons/IconArrow'
-import {IconCheck} from '@lib/icons/IconCheck'
-import {IconClose} from '@lib/icons/IconClose'
-import {IconCross} from '@lib/icons/IconCross'
-import {IconLoader} from '@lib/icons/IconLoader'
-import type {TNotification, TNotificationStatus} from '@lib/types/notifications'
-import {cl, SUPPORTED_NETWORKS, toAddress, truncateHex} from '@lib/utils'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {motion} from 'framer-motion'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { useNotifications } from '@lib/contexts/useNotifications'
+import { useTransactionStatusPoller } from '@lib/hooks/useTransactionStatusPoller'
+import { IconArrow } from '@lib/icons/IconArrow'
+import { IconCheck } from '@lib/icons/IconCheck'
+import { IconClose } from '@lib/icons/IconClose'
+import { IconCross } from '@lib/icons/IconCross'
+import { IconLoader } from '@lib/icons/IconLoader'
+import type { TNotification, TNotificationStatus } from '@lib/types/notifications'
+import { cl, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import type {ReactElement} from 'react'
-import {memo, useCallback, useMemo, useState} from 'react'
+import type { ReactElement } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 
-const STATUS: {[key: string]: [string, string, ReactElement]} = {
+const STATUS: { [key: string]: [string, string, ReactElement] } = {
 	success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} key={'success'} />],
 	pending: [
 		'Pending',
@@ -25,7 +25,7 @@ const STATUS: {[key: string]: [string, string, ReactElement]} = {
 	error: ['Error', 'text-white bg-[#C73203] bg-opacity-90', <IconCross className={'size-3'} key={'error'} />]
 }
 
-function NotificationStatus(props: {status: TNotificationStatus}): ReactElement {
+function NotificationStatus(props: { status: TNotificationStatus }): ReactElement {
 	return (
 		<div
 			className={cl(
@@ -239,7 +239,7 @@ export const Notification = memo(function Notification({
 	fromVault?: TYDaemonVault
 	toVault?: TYDaemonVault
 }): ReactElement {
-	const {deleteByID} = useNotifications()
+	const { deleteByID } = useNotifications()
 	const [isDeleting, setIsDeleting] = useState(false)
 
 	/************************************************************************************************
@@ -318,8 +318,8 @@ export const Notification = memo(function Notification({
 		<motion.div
 			layout
 			layoutId={`notification-${notification.id}`}
-			initial={{opacity: 0, y: 20, scaleY: 0.8}}
-			animate={{opacity: 1, y: 0, scaleY: 1}}
+			initial={{ opacity: 0, y: 20, scaleY: 0.8 }}
+			animate={{ opacity: 1, y: 0, scaleY: 1 }}
 			exit={{
 				opacity: 0,
 				y: -10,
@@ -343,7 +343,7 @@ export const Notification = memo(function Notification({
 					? 'bg-neutral-200 rounded-xl'
 					: 'bg-neutral-0 hover:bg-neutral-100/30 transition-colors'
 			)}
-			style={{transformOrigin: 'top center'}}
+			style={{ transformOrigin: 'top center' }}
 			aria-label={`${notificationTitle} notification`}>
 			{variant === 'v3' && (
 				<div

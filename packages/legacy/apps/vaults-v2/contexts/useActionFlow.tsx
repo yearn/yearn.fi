@@ -1,9 +1,9 @@
-import {useWallet} from '@lib/contexts/useWallet'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useTokenList} from '@lib/contexts/WithTokenList'
-import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger'
-import type {TAddress, TDropdownOption, TNormalizedBN} from '@lib/types'
+import { useWallet } from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useTokenList } from '@lib/contexts/WithTokenList'
+import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
+import type { TAddress, TDropdownOption, TNormalizedBN } from '@lib/types'
 import {
 	decodeAsBigInt,
 	isEthAddress,
@@ -14,7 +14,7 @@ import {
 	toNormalizedBN,
 	zeroNormalizedBN
 } from '@lib/utils'
-import {VAULT_ABI} from '@lib/utils/abi/vault.abi'
+import { VAULT_ABI } from '@lib/utils/abi/vault.abi'
 import {
 	ETH_TOKEN_ADDRESS,
 	LPYCRV_TOKEN_ADDRESS,
@@ -27,22 +27,22 @@ import {
 	YVWFTM_ADDRESS
 } from '@lib/utils/constants'
 import externalzapOutTokenList from '@lib/utils/externalZapOutTokenList.json'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {createUniqueID} from '@lib/utils/tools.identifier'
-import {retrieveConfig} from '@lib/utils/wagmi'
-import {getNetwork} from '@lib/utils/wagmi/utils'
-import {useMountEffect} from '@react-hookz/web'
-import type {TSolver} from '@vaults-v2/types/solvers'
-import {Solver} from '@vaults-v2/types/solvers'
-import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi'
-import {VEYFI_ABI} from '@vaults-v2/utils/abi/veYFI.abi'
-import {setZapOption} from '@vaults-v2/utils/zapOptions'
-import {useRouter} from 'next/router'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { createUniqueID } from '@lib/utils/tools.identifier'
+import { retrieveConfig } from '@lib/utils/wagmi'
+import { getNetwork } from '@lib/utils/wagmi/utils'
+import { useMountEffect } from '@react-hookz/web'
+import type { TSolver } from '@vaults-v2/types/solvers'
+import { Solver } from '@vaults-v2/types/solvers'
+import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
+import { VEYFI_ABI } from '@vaults-v2/utils/abi/veYFI.abi'
+import { setZapOption } from '@vaults-v2/utils/zapOptions'
+import { useRouter } from 'next/router'
 
-import type {ReactNode} from 'react'
-import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react'
-import {serialize, useReadContract} from 'wagmi'
-import {readContracts, simulateContract} from 'wagmi/actions'
+import type { ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
+import { serialize, useReadContract } from 'wagmi'
+import { readContracts, simulateContract } from 'wagmi/actions'
 
 export enum Flow {
 	Deposit = 'deposit',
@@ -72,7 +72,7 @@ type TActionFlowContext = {
 	onSwitchSelectedOptions: (nextFlow?: Flow) => void
 	isDepositing: boolean
 	maxDepositPossible: (address: TAddress) => TNormalizedBN
-	maxWithdrawPossible: () => {limit: TNormalizedBN; safeLimit: TNormalizedBN; isLimited: boolean}
+	maxWithdrawPossible: () => { limit: TNormalizedBN; safeLimit: TNormalizedBN; isLimited: boolean }
 	currentSolver: TSolver
 	veYFIBalance: TNormalizedBN
 	hasVeYFIBalance: boolean
@@ -115,7 +115,7 @@ type TUseContextualIs = {
  ** vault, and if the partner contract should be used.
  ** It's a simple helper to make the code more readable in the main context.
  *************************************************************************************************/
-function useContextualIs({selectedTo, currentVault}: TUseContextualIs): [boolean, boolean] {
+function useContextualIs({ selectedTo, currentVault }: TUseContextualIs): [boolean, boolean] {
 	const router = useRouter()
 
 	const isDepositing = useMemo(
@@ -156,7 +156,7 @@ type TGetMaxDepositPossible = {
 	depositLimit: bigint
 }
 function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
-	const {vault, fromToken, fromDecimals, isDepositing, fromTokenBalance, depositLimit} = props
+	const { vault, fromToken, fromDecimals, isDepositing, fromTokenBalance, depositLimit } = props
 	const vaultDepositLimit = toBigInt(depositLimit)
 	const userBalance = toBigInt(fromTokenBalance)
 
@@ -181,17 +181,17 @@ function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
  ** to different way of depositing/withdrawing.
  *************************************************************************************************/
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext)
-export function ActionFlowContextApp(props: {children: ReactNode; currentVault: TYDaemonVault}): React.ReactElement {
-	const {address} = useWeb3()
-	const {getBalance} = useWallet()
-	const {maxLoss} = useYearn()
-	const {tokenLists} = useTokenList()
-	const {zapProvider, isAutoStakingEnabled} = useYearn()
+export function ActionFlowContextApp(props: { children: ReactNode; currentVault: TYDaemonVault }): React.ReactElement {
+	const { address } = useWeb3()
+	const { getBalance } = useWallet()
+	const { maxLoss } = useYearn()
+	const { tokenLists } = useTokenList()
+	const { zapProvider, isAutoStakingEnabled } = useYearn()
 	const [possibleOptionsFrom, setPossibleOptionsFrom] = useState<TDropdownOption[]>([])
 	const [possibleZapOptionsFrom, setPossibleZapOptionsFrom] = useState<TDropdownOption[]>([])
 	const [possibleOptionsTo, setPossibleOptionsTo] = useState<TDropdownOption[]>([])
 	const [possibleZapOptionsTo, setPossibleZapOptionsTo] = useState<TDropdownOption[]>([])
-	const [limits, setLimits] = useState<{maxDeposit: bigint; maxRedeem: bigint} | undefined>(undefined)
+	const [limits, setLimits] = useState<{ maxDeposit: bigint; maxRedeem: bigint } | undefined>(undefined)
 
 	/**********************************************************************************************
 	 ** currentNetworkTokenList is an object with multiple level of depth. We want to create a
@@ -272,10 +272,10 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 					maxRedeem: maxEffectiveWithdraw ? maxEffectiveWithdraw.result : maxRedeem
 				})
 			} else {
-				setLimits({maxDeposit, maxRedeem})
+				setLimits({ maxDeposit, maxRedeem })
 			}
 		} catch {
-			setLimits({maxDeposit, maxRedeem})
+			setLimits({ maxDeposit, maxRedeem })
 		}
 	}, [props.currentVault, address, maxLoss])
 
@@ -383,7 +383,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 				isLimited: true
 			}
 		}
-		return {limit: vaultBalance, safeLimit: vaultBalance, isLimited: false}
+		return { limit: vaultBalance, safeLimit: vaultBalance, isLimited: false }
 	}, [getBalance, props.currentVault, limits?.maxRedeem])
 
 	/**********************************************************************************************
@@ -413,7 +413,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 	)
 
 	const currentTimestamp = Math.floor(Date.now() / 1000)
-	const {data} = useReadContract({
+	const { data } = useReadContract({
 		address: toAddress(VEYFI_ADDRESS),
 		abi: VEYFI_ABI,
 		functionName: 'locked',
@@ -423,7 +423,8 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		}
 	})
 
-	const {amount: veYFIBalance = 0n, end: lockEnds = 0n} = (data as {amount: bigint; end: bigint} | undefined) || {}
+	const { amount: veYFIBalance = 0n, end: lockEnds = 0n } =
+		(data as { amount: bigint; end: bigint } | undefined) || {}
 	const hasVeYFIBalance = veYFIBalance > 0n && lockEnds > currentTimestamp
 
 	/**********************************************************************************************
@@ -712,7 +713,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 	const onChangeAmount = useCallback((newAmount: TNormalizedBN | undefined): void => {
 		actionParamsDispatcher({
 			type: 'amount',
-			payload: {amount: newAmount}
+			payload: { amount: newAmount }
 		})
 	}, [])
 
@@ -909,7 +910,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			if (duplicateAddresses.includes(toAddress(tokenData.address))) {
 				return // Do nothing to avoid duplicate token in the list
 			}
-			if (getBalance({address: toAddress(tokenData.address), chainID: tokenData.chainID}).raw === 0n) {
+			if (getBalance({ address: toAddress(tokenData.address), chainID: tokenData.chainID }).raw === 0n) {
 				return // Do nothing to avoid empty token in the list
 			}
 			if (toAddress(tokenData.address) === toAddress(props.currentVault.token.address)) {
@@ -931,8 +932,8 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			)
 		})
 		_possibleZapOptionsFrom.sort((a, b): number => {
-			const aBalance = getBalance({address: toAddress(a.value), chainID: props.currentVault.chainID}).normalized
-			const bBalance = getBalance({address: toAddress(b.value), chainID: props.currentVault.chainID}).normalized
+			const aBalance = getBalance({ address: toAddress(a.value), chainID: props.currentVault.chainID }).normalized
+			const bBalance = getBalance({ address: toAddress(b.value), chainID: props.currentVault.chainID }).normalized
 			return bBalance - aBalance
 		})
 		setPossibleZapOptionsFrom([

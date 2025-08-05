@@ -1,6 +1,6 @@
-import {cl} from '@lib/utils'
-import type {ReactElement} from 'react'
-import {IconChevron} from '../icons/IconChevron'
+import { cl } from '@lib/utils'
+import type { ReactElement } from 'react'
+import { IconChevron } from '../icons/IconChevron'
 
 type TCarouselSlideArrowsProps = {
 	onScrollBack?: VoidFunction

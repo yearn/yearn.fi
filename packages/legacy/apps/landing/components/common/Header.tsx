@@ -1,14 +1,14 @@
-import {ModalMobileMenu} from '@lib/components/ModalMobileMenu'
-import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain'
-import {TypeMarkYearn} from '@lib/icons/TypeMarkYearn'
+import { ModalMobileMenu } from '@lib/components/ModalMobileMenu'
+import { IconBurgerPlain } from '@lib/icons/IconBurgerPlain'
+import { TypeMarkYearn } from '@lib/icons/TypeMarkYearn'
 import Link from 'next/link'
-import {useRouter} from 'next/router'
-import {type ReactElement, useMemo, useState} from 'react'
+import { useRouter } from 'next/router'
+import { type ReactElement, useMemo, useState } from 'react'
 
-type TMenu = {path: string; label: string | ReactElement; target?: string}
-type TNavbar = {nav: TMenu[]; currentPathName: string}
+type TMenu = { path: string; label: string | ReactElement; target?: string }
+type TNavbar = { nav: TMenu[]; currentPathName: string }
 
-function Navbar({nav, currentPathName}: TNavbar): ReactElement {
+function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
 	return (
 		<nav className={'hidden items-center gap-6 md:flex'}>
 			{nav.map(
@@ -25,17 +25,17 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 }
 
 export function LandingAppHeader(): ReactElement {
-	const {pathname} = useRouter()
+	const { pathname } = useRouter()
 	const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
 
 	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/apps', label: 'Apps'}
+		const HOME_MENU = { path: '/apps', label: 'Apps' }
 
 		return [
 			HOME_MENU,
-			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
-			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'},
-			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
+			{ path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank' },
+			{ path: 'https://discord.gg/yearn', label: 'Support', target: '_blank' },
+			{ path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank' },
 			{
 				path: 'https://gov.yearn.fi/',
 				label: 'Discourse',

@@ -1,12 +1,12 @@
-import {useWallet} from '@lib/contexts/useWallet'
-import {useYearn} from '@lib/contexts/useYearn'
-import type {TDict} from '@lib/types'
-import {toAddress} from '@lib/utils'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {isAutomatedVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {useDeepCompareMemo} from '@react-hookz/web'
-import {useAppSettings} from '@vaults-v2/contexts/useAppSettings'
-import {useCallback} from 'react'
+import { useWallet } from '@lib/contexts/useWallet'
+import { useYearn } from '@lib/contexts/useYearn'
+import type { TDict } from '@lib/types'
+import { toAddress } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { isAutomatedVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { useDeepCompareMemo } from '@react-hookz/web'
+import { useAppSettings } from '@vaults-v2/contexts/useAppSettings'
+import { useCallback } from 'react'
 
 export function useFilteredVaults(
 	vaultMap: TDict<TYDaemonVault>,
@@ -27,9 +27,9 @@ export function useVaultFilter(
 	retiredVaults: TYDaemonVault[]
 	migratableVaults: TYDaemonVault[]
 } {
-	const {vaults, vaultsMigrations, vaultsRetired, getPrice} = useYearn()
-	const {getBalance} = useWallet()
-	const {shouldHideDust} = useAppSettings()
+	const { vaults, vaultsMigrations, vaultsRetired, getPrice } = useYearn()
+	const { getBalance } = useWallet()
+	const { shouldHideDust } = useAppSettings()
 
 	const filterHoldingsCallback = useCallback(
 		(vault: TYDaemonVault, isFactoryOnly: boolean, isForV3: boolean): boolean => {
@@ -39,12 +39,12 @@ export function useVaultFilter(
 			if (!isForV3 && vault.version?.startsWith('3') && !vault.version?.startsWith('~3')) {
 				return false
 			}
-			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID})
-			const vaultPrice = getPrice({address: vault.address, chainID: vault.chainID})
+			const vaultBalance = getBalance({ address: vault.address, chainID: vault.chainID })
+			const vaultPrice = getPrice({ address: vault.address, chainID: vault.chainID })
 
 			// Check the staking balance
 			if (vault.staking.available) {
-				const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID})
+				const stakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID })
 				const hasValidStakedBalance = stakingBalance.raw > 0n
 				const stakedBalanceValue = Number(stakingBalance.normalized) * vaultPrice.normalized
 				if (hasValidStakedBalance && !(shouldHideDust && stakedBalanceValue < 0.01)) {
@@ -78,9 +78,9 @@ export function useVaultFilter(
 				return false
 			}
 
-			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID})
+			const vaultBalance = getBalance({ address: vault.address, chainID: vault.chainID })
 			if (vault.staking.available) {
-				const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID})
+				const stakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID })
 				const hasValidStakedBalance = stakingBalance.raw > 0n
 				if (hasValidStakedBalance) {
 					return true
@@ -97,33 +97,33 @@ export function useVaultFilter(
 	)
 
 	// Specific filter
-	const highlightedVaults = useFilteredVaults(vaults, ({info}): boolean => info.isHighlighted)
+	const highlightedVaults = useFilteredVaults(vaults, ({ info }): boolean => info.isHighlighted)
 	const holdingsVaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false, false))
 	const holdingsV3Vaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false, true))
 
 	// V3 Filtered Vaults
 	const singleVaults = useFilteredVaults(
 		vaults,
-		({version, kind}): boolean =>
+		({ version, kind }): boolean =>
 			((version || '')?.split('.')?.[0] === '3' && kind === 'Single Strategy') ||
 			((version || '')?.split('.')?.[0] === '~3' && kind === 'Single Strategy')
 	)
 	const MultiVaults = useFilteredVaults(
 		vaults,
-		({version, kind}): boolean =>
+		({ version, kind }): boolean =>
 			((version || '')?.split('.')?.[0] === '3' && kind === 'Multi Strategy') ||
 			((version || '')?.split('.')?.[0] === '~3' && kind === 'Multi Strategy')
 	)
 
 	//V2 Filtered Vaults
-	const boostedVaults = useFilteredVaults(vaults, ({apr}) => apr.extra.stakingRewardsAPR > 0)
-	const curveVaults = useFilteredVaults(vaults, ({category}) => category === 'Curve')
-	const prismaVaults = useFilteredVaults(vaults, ({category}) => category === 'Prisma')
-	const velodromeVaults = useFilteredVaults(vaults, ({category}) => category === 'Velodrome')
-	const aerodromeVaults = useFilteredVaults(vaults, ({category}) => category === 'Aerodrome')
-	const stablesVaults = useFilteredVaults(vaults, ({category}) => category === 'Stablecoin')
-	const balancerVaults = useFilteredVaults(vaults, ({category}) => category === 'Balancer')
-	const cryptoVaults = useFilteredVaults(vaults, ({category}) => category === 'Volatile')
+	const boostedVaults = useFilteredVaults(vaults, ({ apr }) => apr.extra.stakingRewardsAPR > 0)
+	const curveVaults = useFilteredVaults(vaults, ({ category }) => category === 'Curve')
+	const prismaVaults = useFilteredVaults(vaults, ({ category }) => category === 'Prisma')
+	const velodromeVaults = useFilteredVaults(vaults, ({ category }) => category === 'Velodrome')
+	const aerodromeVaults = useFilteredVaults(vaults, ({ category }) => category === 'Aerodrome')
+	const stablesVaults = useFilteredVaults(vaults, ({ category }) => category === 'Stablecoin')
+	const balancerVaults = useFilteredVaults(vaults, ({ category }) => category === 'Balancer')
+	const cryptoVaults = useFilteredVaults(vaults, ({ category }) => category === 'Volatile')
 	const curveFactoryVaults = useFilteredVaults(vaults, vault => vault.category === 'Curve' && isAutomatedVault(vault))
 	const migratableVaults = useFilteredVaults(vaultsMigrations, v => filterMigrationCallback(v))
 	const retiredVaults = useFilteredVaults(vaultsRetired, v => filterMigrationCallback(v))
@@ -243,5 +243,5 @@ export function useVaultFilter(
 		cryptoVaults
 	])
 
-	return {activeVaults, migratableVaults, retiredVaults}
+	return { activeVaults, migratableVaults, retiredVaults }
 }

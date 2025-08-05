@@ -1,12 +1,12 @@
-import type {TApp} from '@lib/types/mixed'
-import {cl} from '@lib/utils'
-import {type ForwardedRef, Fragment, forwardRef, type ReactElement} from 'react'
-import {AppCard} from './AppCard'
-import {FeaturedApp} from './FeaturedApp'
+import type { TApp } from '@lib/types/mixed'
+import { cl } from '@lib/utils'
+import { type ForwardedRef, Fragment, forwardRef, type ReactElement } from 'react'
+import { AppCard } from './AppCard'
+import { FeaturedApp } from './FeaturedApp'
 
 export const AppsCarousel = forwardRef(
 	(
-		props: {onScroll?: VoidFunction; isUsingFeatured?: boolean; apps: TApp[]},
+		props: { onScroll?: VoidFunction; isUsingFeatured?: boolean; apps: TApp[] },
 		ref: ForwardedRef<HTMLDivElement>
 	): ReactElement => {
 		return (

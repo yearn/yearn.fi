@@ -1,7 +1,7 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 
-import type {TAddress, TDropdownOption} from '@lib/types'
-import type {TSolver} from '@lib/utils/schemas/yDaemonTokenListBalances'
+import type { TAddress, TDropdownOption } from '@lib/types'
+import type { TSolver } from '@lib/utils/schemas/yDaemonTokenListBalances'
 
 type TSetZapOptionProps = {
 	name: string

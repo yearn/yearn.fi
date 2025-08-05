@@ -1,7 +1,7 @@
-import {cl} from '@lib/utils'
-import type {FC, ReactElement} from 'react'
-import {useRef, useState} from 'react'
-import {createPortal} from 'react-dom'
+import { cl } from '@lib/utils'
+import type { FC, ReactElement } from 'react'
+import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 // Created as .tooltip & .tooltiptext can be lower in DOM and not render on top of other elements.
 // Use this when tooltip is not in the same component as the trigger.
@@ -10,9 +10,9 @@ export const Tooltip: FC<{
 	className?: string
 	children: ReactElement
 	tooltip: string | ReactElement
-}> = ({children, tooltip, className}) => {
+}> = ({ children, tooltip, className }) => {
 	const [isHovered, setIsHovered] = useState(false)
-	const [tooltipPosition, setTooltipPosition] = useState({x: 0, y: 0})
+	const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
 	const triggerRef = useRef<HTMLDivElement>(null)
 
 	const handleMouseEnter = (): void => {

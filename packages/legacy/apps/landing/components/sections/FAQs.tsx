@@ -1,7 +1,7 @@
-import {SectionHeader} from '@lib/components/SectionHeader'
+import { SectionHeader } from '@lib/components/SectionHeader'
 import Image from 'next/image'
-import type {FC, ReactNode} from 'react'
-import {useState} from 'react'
+import type { FC, ReactNode } from 'react'
+import { useState } from 'react'
 
 type TFAQItem = {
 	title: string
@@ -10,7 +10,7 @@ type TFAQItem = {
 	onToggle: () => void
 }
 
-const FAQItem: FC<TFAQItem> = ({title, children, isOpen, onToggle}) => {
+const FAQItem: FC<TFAQItem> = ({ title, children, isOpen, onToggle }) => {
 	return (
 		<div className={'w-full'}>
 			<button
@@ -21,7 +21,7 @@ const FAQItem: FC<TFAQItem> = ({title, children, isOpen, onToggle}) => {
 				<span className={'text-lg'}>{title}</span>
 				<span
 					className={'text-2xl transition-transform'}
-					style={{transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)'}}>
+					style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}>
 					{'+'}
 				</span>
 			</button>

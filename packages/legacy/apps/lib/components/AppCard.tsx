@@ -1,8 +1,8 @@
-import {IconShare} from '@lib/icons/IconShare'
-import type {TApp} from '@lib/types/mixed'
+import { IconShare } from '@lib/icons/IconShare'
+import type { TApp } from '@lib/types/mixed'
 import Image from 'next/image'
 import Link from 'next/link'
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
 type TAppCardProps = {
 	app: TApp

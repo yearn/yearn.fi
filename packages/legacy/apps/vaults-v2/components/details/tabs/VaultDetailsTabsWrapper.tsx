@@ -1,23 +1,23 @@
-import {Renderable} from '@lib/components/Renderable'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {useFetch} from '@lib/hooks/useFetch'
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI'
-import {IconAddToMetamask} from '@lib/icons/IconAddToMetamask'
-import {IconLinkOut} from '@lib/icons/IconLinkOut'
-import {assert, cl, isZero, toAddress, toBigInt, toNormalizedValue} from '@lib/utils'
-import {formatDate} from '@lib/utils/format.time'
-import type {TYDaemonVault, TYDaemonVaultHarvests} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {yDaemonVaultHarvestsSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {retrieveConfig} from '@lib/utils/wagmi'
-import {getNetwork} from '@lib/utils/wagmi/utils'
-import {VaultDetailsAbout} from '@vaults-v2/components/details/tabs/VaultDetailsAbout'
-import {VaultDetailsHistorical} from '@vaults-v2/components/details/tabs/VaultDetailsHistorical'
-import {VaultDetailsStrategies} from '@vaults-v2/components/details/tabs/VaultDetailsStrategies'
-import {useRouter} from 'next/router'
-import type {ReactElement} from 'react'
-import {Fragment, useEffect, useMemo, useState} from 'react'
-import {watchAsset} from 'viem/actions'
-import {getConnectorClient} from 'wagmi/actions'
+import { Renderable } from '@lib/components/Renderable'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useFetch } from '@lib/hooks/useFetch'
+import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
+import { IconAddToMetamask } from '@lib/icons/IconAddToMetamask'
+import { IconLinkOut } from '@lib/icons/IconLinkOut'
+import { assert, cl, isZero, toAddress, toBigInt, toNormalizedValue } from '@lib/utils'
+import { formatDate } from '@lib/utils/format.time'
+import type { TYDaemonVault, TYDaemonVaultHarvests } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { yDaemonVaultHarvestsSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { retrieveConfig } from '@lib/utils/wagmi'
+import { getNetwork } from '@lib/utils/wagmi/utils'
+import { VaultDetailsAbout } from '@vaults-v2/components/details/tabs/VaultDetailsAbout'
+import { VaultDetailsHistorical } from '@vaults-v2/components/details/tabs/VaultDetailsHistorical'
+import { VaultDetailsStrategies } from '@vaults-v2/components/details/tabs/VaultDetailsStrategies'
+import { useRouter } from 'next/router'
+import type { ReactElement } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
+import { watchAsset } from 'viem/actions'
+import { getConnectorClient } from 'wagmi/actions'
 
 type TTabsOptions = {
 	value: number
@@ -59,15 +59,15 @@ function MobileTabButton(props: {
 	)
 }
 
-function Tabs({selectedAboutTabIndex, setSelectedAboutTabIndex}: TTabs): ReactElement {
+function Tabs({ selectedAboutTabIndex, setSelectedAboutTabIndex }: TTabs): ReactElement {
 	const router = useRouter()
 
 	const tabs: TTabsOptions[] = useMemo(
 		(): TTabsOptions[] => [
-			{value: 0, label: 'About', slug: 'about'},
-			{value: 1, label: 'Strategies', slug: 'strategies', mobileLabel: 'Strats'},
-			{value: 2, label: 'Harvests', slug: 'harvests'},
-			{value: 3, label: 'Info', slug: 'info'}
+			{ value: 0, label: 'About', slug: 'about' },
+			{ value: 1, label: 'Strategies', slug: 'strategies', mobileLabel: 'Strats' },
+			{ value: 2, label: 'Harvests', slug: 'harvests' },
+			{ value: 3, label: 'Info', slug: 'info' }
 		],
 		[]
 	)
@@ -145,7 +145,7 @@ function Tabs({selectedAboutTabIndex, setSelectedAboutTabIndex}: TTabs): ReactEl
 	)
 }
 
-function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps): ReactElement | null {
+function ExplorerLink({ explorerBaseURI, currentVaultAddress }: TExplorerLinkProps): ReactElement | null {
 	return (
 		<a href={`${explorerBaseURI}/address/${currentVaultAddress}`} target={'_blank'} rel={'noopener noreferrer'}>
 			<span className={'sr-only'}>{'Open in explorer'}</span>
@@ -156,7 +156,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 	)
 }
 
-export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultInfo({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
 	const blockExplorer =
 		getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
 		getNetwork(currentVault.chainID).blockExplorers?.default.url
@@ -234,9 +234,9 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 	)
 }
 
-export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {provider} = useWeb3()
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID})
+export function VaultDetailsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+	const { provider } = useWeb3()
+	const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: currentVault.chainID })
 	const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0)
 
 	async function onAddTokenToMetamask(
@@ -263,14 +263,14 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		}
 	}
 
-	const {data: yDaemonHarvestsData, isLoading} = useFetch<TYDaemonVaultHarvests>({
+	const { data: yDaemonHarvestsData, isLoading } = useFetch<TYDaemonVaultHarvests>({
 		endpoint: `${yDaemonBaseUri}/vaults/harvests/${currentVault.address}`,
 		schema: yDaemonVaultHarvestsSchema
 	})
 
-	const harvestData = useMemo((): {name: string; value: number}[] => {
+	const harvestData = useMemo((): { name: string; value: number }[] => {
 		const _yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse()
-		return _yDaemonHarvestsData.map((harvest): {name: string; value: number} => ({
+		return _yDaemonHarvestsData.map((harvest): { name: string; value: number } => ({
 			name: formatDate(Number(harvest.timestamp) * 1000),
 			value: toNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), currentVault.decimals)
 		}))

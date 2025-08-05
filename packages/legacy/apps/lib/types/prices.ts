@@ -1,6 +1,6 @@
-import {z} from 'zod'
+import { z } from 'zod'
 
-import {addressSchema} from './address'
+import { addressSchema } from './address'
 
 export const priceSchema = z.string()
 export const pricesSchema = z.record(addressSchema, priceSchema)

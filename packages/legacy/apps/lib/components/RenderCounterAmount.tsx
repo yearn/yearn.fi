@@ -1,8 +1,8 @@
-import type {TAmount} from '@lib/utils'
-import {cl, formatTAmount, isZero} from '@lib/utils'
-import {type ReactElement, useMemo} from 'react'
+import type { TAmount } from '@lib/utils'
+import { cl, formatTAmount, isZero } from '@lib/utils'
+import { type ReactElement, useMemo } from 'react'
 
-export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): ReactElement {
+export function RenderAmount(props: TAmount & { shouldHideTooltip?: boolean }): ReactElement {
 	const normalizedRawValue = useMemo((): string => {
 		return formatTAmount({
 			...props,

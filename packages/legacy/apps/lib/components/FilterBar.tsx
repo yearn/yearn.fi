@@ -1,9 +1,9 @@
-import {cl} from '@lib/utils'
-import {CATEGORY_PAGE_FILTERS} from '@lib/utils/constants'
+import { cl } from '@lib/utils'
+import { CATEGORY_PAGE_FILTERS } from '@lib/utils/constants'
 
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
-function FilterItem({isActive, title}: {isActive: boolean; title: string}): ReactElement {
+function FilterItem({ isActive, title }: { isActive: boolean; title: string }): ReactElement {
 	return (
 		<div
 			className={cl(
@@ -15,7 +15,7 @@ function FilterItem({isActive, title}: {isActive: boolean; title: string}): Reac
 	)
 }
 
-export function FilterBar({selectedFilter}: {selectedFilter: {title: string; value: string}}): ReactElement {
+export function FilterBar({ selectedFilter }: { selectedFilter: { title: string; value: string } }): ReactElement {
 	return (
 		<div className={'flex'}>
 			{CATEGORY_PAGE_FILTERS.map(filter => (

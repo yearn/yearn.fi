@@ -1,5 +1,5 @@
-import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown'
-import {useChainOptions} from '@lib/hooks/useChains'
+import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
+import { useChainOptions } from '@lib/hooks/useChains'
 import type React from 'react'
 
 type TChainFilterDropdownProps = {
@@ -8,7 +8,11 @@ type TChainFilterDropdownProps = {
 	className?: string
 }
 
-export const ChainFilterDropdown: React.FC<TChainFilterDropdownProps> = ({chains, onChangeChains, className = ''}) => {
+export const ChainFilterDropdown: React.FC<TChainFilterDropdownProps> = ({
+	chains,
+	onChangeChains,
+	className = ''
+}) => {
 	const chainOptions = useChainOptions(chains)
 
 	const optionsWithSelection = chainOptions.map(option => ({

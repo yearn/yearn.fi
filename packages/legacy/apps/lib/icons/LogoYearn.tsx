@@ -1,7 +1,7 @@
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
 export function LogoYearn(
-	props: React.SVGProps<SVGSVGElement> & {back?: string; front?: string; gradient?: {start: string; end: string}}
+	props: React.SVGProps<SVGSVGElement> & { back?: string; front?: string; gradient?: { start: string; end: string } }
 ): ReactElement {
 	return (
 		<svg

@@ -1,7 +1,7 @@
-import {useLocalStorage} from '@lib/hooks/useLocalStorage'
-import {useSessionStorage} from '@lib/hooks/useSessionStorage'
-import type {ReactElement} from 'react'
-import {createContext, memo, useContext, useMemo} from 'react'
+import { useLocalStorage } from '@lib/hooks/useLocalStorage'
+import { useSessionStorage } from '@lib/hooks/useSessionStorage'
+import type { ReactElement } from 'react'
+import { createContext, memo, useContext, useMemo } from 'react'
 
 export type TAppSettingsContext = {
 	searchValue: string

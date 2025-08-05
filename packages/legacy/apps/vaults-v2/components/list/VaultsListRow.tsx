@@ -1,19 +1,19 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback'
-import {RenderAmount} from '@lib/components/RenderAmount'
-import {Renderable} from '@lib/components/Renderable'
-import {useWallet} from '@lib/contexts/useWallet'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useYearnBalance} from '@lib/hooks/useYearnBalance'
-import type {TNormalizedBN} from '@lib/types'
-import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils'
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {getNetwork} from '@lib/utils/wagmi'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { RenderAmount } from '@lib/components/RenderAmount'
+import { Renderable } from '@lib/components/Renderable'
+import { useWallet } from '@lib/contexts/useWallet'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useYearnBalance } from '@lib/hooks/useYearnBalance'
+import type { TNormalizedBN } from '@lib/types'
+import { cl, formatAmount, isZero, toAddress, toNormalizedBN } from '@lib/utils'
+import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@lib/utils/constants'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { getNetwork } from '@lib/utils/wagmi'
 import Link from 'next/link'
-import type {ReactElement} from 'react'
-import {useMemo} from 'react'
+import type { ReactElement } from 'react'
+import { useMemo } from 'react'
 
-function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1
 	const extraAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
 
@@ -233,7 +233,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	)
 }
 
-function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
 	const hasZeroAPY =
 		isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0
 	const monthlyAPY = currentVault.apr.points.monthAgo
@@ -308,18 +308,18 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 	)
 }
 
-export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {getToken} = useWallet()
-	const {getPrice} = useYearn()
+export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+	const { getToken } = useWallet()
+	const { getPrice } = useYearn()
 
 	const tokenPrice = useMemo(
-		() => getPrice({address: currentVault.address, chainID: currentVault.chainID}),
+		() => getPrice({ address: currentVault.address, chainID: currentVault.chainID }),
 		[currentVault.address, currentVault.chainID, getPrice]
 	)
 	const staked = useMemo((): TNormalizedBN => {
-		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address})
+		const vaultToken = getToken({ chainID: currentVault.chainID, address: currentVault.address })
 		if (currentVault.staking.available) {
-			const stakingToken = getToken({chainID: currentVault.chainID, address: currentVault.staking.address})
+			const stakingToken = getToken({ chainID: currentVault.chainID, address: currentVault.staking.address })
 			return toNormalizedBN(vaultToken.balance.raw + stakingToken.balance.raw, vaultToken.decimals)
 		}
 		return toNormalizedBN(vaultToken.balance.raw, vaultToken.decimals)
@@ -341,7 +341,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 					value={staked.raw}
 					symbol={currentVault.token.symbol}
 					decimals={currentVault.token.decimals}
-					options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
+					options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
 				/>
 			</p>
 			<small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
@@ -360,9 +360,9 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 	)
 }
 
-export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address})
-	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS})
+export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+	const balanceOfWant = useYearnBalance({ chainID: currentVault.chainID, address: currentVault.token.address })
+	const balanceOfCoin = useYearnBalance({ chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS })
 	const balanceOfWrappedCoin = useYearnBalance({
 		chainID: currentVault.chainID,
 		address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
@@ -446,7 +446,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 								value={availableToDeposit}
 								symbol={currentVault.token.symbol}
 								decimals={currentVault.token.decimals}
-								options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
+								options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
 							/>
 						</p>
 					</div>

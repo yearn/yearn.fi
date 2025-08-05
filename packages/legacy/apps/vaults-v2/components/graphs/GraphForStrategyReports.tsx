@@ -1,14 +1,14 @@
-import {useFetch} from '@lib/hooks/useFetch'
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI'
-import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@lib/utils'
-import {formatDate} from '@lib/utils/format.time'
-import type {TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import type {TYDaemonReport, TYDaemonReports} from '@vaults-v2/schemas/reportsSchema'
-import {yDaemonReportsSchema} from '@vaults-v2/schemas/reportsSchema'
+import { useFetch } from '@lib/hooks/useFetch'
+import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
+import { formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue } from '@lib/utils'
+import { formatDate } from '@lib/utils/format.time'
+import type { TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type { TYDaemonReport, TYDaemonReports } from '@vaults-v2/schemas/reportsSchema'
+import { yDaemonReportsSchema } from '@vaults-v2/schemas/reportsSchema'
 
-import type {ReactElement} from 'react'
-import {Fragment, useMemo} from 'react'
-import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts'
+import type { ReactElement } from 'react'
+import { Fragment, useMemo } from 'react'
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 export type TGraphForStrategyReportsProps = {
 	strategy: TYDaemonVaultStrategy
@@ -25,9 +25,9 @@ export function GraphForStrategyReports({
 	vaultTicker,
 	height = 127
 }: TGraphForStrategyReportsProps): ReactElement {
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: vaultChainID})
+	const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: vaultChainID })
 
-	const {data: reports} = useFetch<TYDaemonReports>({
+	const { data: reports } = useFetch<TYDaemonReports>({
 		endpoint: `${yDaemonBaseUri}/reports/${strategy.address}`,
 		schema: yDaemonReportsSchema
 	})
@@ -66,7 +66,7 @@ export function GraphForStrategyReports({
 			<p className={'text-neutral-600'}>{'Historical APY'}</p>
 			<div className={'mt-4 flex flex-row border-b border-l border-neutral-300'}>
 				<ResponsiveContainer width={'100%'} height={height}>
-					<LineChart margin={{top: 0, right: -28, bottom: 0, left: 0}} data={strategyData}>
+					<LineChart margin={{ top: 0, right: -28, bottom: 0, left: 0 }} data={strategyData}>
 						<Line
 							className={'text-primary-600'}
 							type={'step'}
@@ -75,7 +75,7 @@ export function GraphForStrategyReports({
 							stroke={'currentcolor'}
 							dot={false}
 							activeDot={(e: unknown): ReactElement => {
-								const dotProps = e as React.SVGProps<SVGCircleElement> & {dataKey?: string}
+								const dotProps = e as React.SVGProps<SVGCircleElement> & { dataKey?: string }
 								dotProps.className = `${dotProps.className} activeDot`
 								delete dotProps.dataKey
 								return <circle {...dotProps}></circle>
@@ -87,7 +87,7 @@ export function GraphForStrategyReports({
 							hide={false}
 							tick={(props): React.ReactElement<SVGElement> => {
 								const {
-									payload: {value}
+									payload: { value }
 								} = props
 								props.fill = '#5B5B5B'
 								props.className = 'text-xxs md:text-xs font-number z-10 '
@@ -101,13 +101,13 @@ export function GraphForStrategyReports({
 						/>
 						<Tooltip
 							content={(e): ReactElement => {
-								const {active: isTooltipActive, payload, label} = e
+								const { active: isTooltipActive, payload, label } = e
 								if (!isTooltipActive || !payload) {
 									return <Fragment />
 								}
 								if (payload.length > 0) {
-									const [{value, payload: innerPayload}] = payload
-									const {gain, loss} = innerPayload
+									const [{ value, payload: innerPayload }] = payload
+									const { gain, loss } = innerPayload
 									const diff = toBigInt(gain) - toBigInt(loss)
 									const normalizedDiff = toNormalizedValue(diff, vaultDecimals)
 

@@ -1,7 +1,7 @@
-import {RenderAmount} from '@lib/components/RenderAmount'
-import {formatAmount} from '@lib/utils'
+import { RenderAmount } from '@lib/components/RenderAmount'
+import { formatAmount } from '@lib/utils'
 
-import type {FC} from 'react'
+import type { FC } from 'react'
 
 type TAPYTooltipProps = {
 	baseAPY: number

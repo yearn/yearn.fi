@@ -1,9 +1,9 @@
-import type {TOptionalRenderProps} from '@lib/types/optionalRenderProps'
-import {optionalRenderProps} from '@lib/types/optionalRenderProps'
-import {useDeepCompareMemo} from '@react-hookz/web'
+import type { TOptionalRenderProps } from '@lib/types/optionalRenderProps'
+import { optionalRenderProps } from '@lib/types/optionalRenderProps'
+import { useDeepCompareMemo } from '@react-hookz/web'
 
-import type {Dispatch, ReactElement, SetStateAction} from 'react'
-import {createContext, useContext, useState} from 'react'
+import type { Dispatch, ReactElement, SetStateAction } from 'react'
+import { createContext, useContext, useState } from 'react'
 
 type TSearchContext = {
 	configuration: TSearchConfiguration
@@ -30,7 +30,7 @@ export const SearchContextApp = ({
 	const [configuration, setConfiguration] = useState(defaultProps.configuration)
 
 	const contextValue = useDeepCompareMemo(
-		(): TSearchContext => ({configuration, dispatch: setConfiguration}),
+		(): TSearchContext => ({ configuration, dispatch: setConfiguration }),
 		[configuration]
 	)
 

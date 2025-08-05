@@ -1,7 +1,7 @@
 export const VAULT_MIGRATOR_ABI = [
 	{
 		inputs: [
-			{internalType: 'address', name: '_registry', type: 'address'},
+			{ internalType: 'address', name: '_registry', type: 'address' },
 			{
 				internalType: 'contract IChiToken',
 				name: '_chiToken',
@@ -53,21 +53,21 @@ export const VAULT_MIGRATOR_ABI = [
 	{
 		inputs: [],
 		name: 'chiToken',
-		outputs: [{internalType: 'contract IChiToken', name: '', type: 'address'}],
+		outputs: [{ internalType: 'contract IChiToken', name: '', type: 'address' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		inputs: [],
 		name: 'governance',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		inputs: [
-			{internalType: 'address', name: 'vaultFrom', type: 'address'},
-			{internalType: 'address', name: 'vaultTo', type: 'address'}
+			{ internalType: 'address', name: 'vaultFrom', type: 'address' },
+			{ internalType: 'address', name: 'vaultTo', type: 'address' }
 		],
 		name: 'migrateAll',
 		outputs: [],
@@ -76,10 +76,10 @@ export const VAULT_MIGRATOR_ABI = [
 	},
 	{
 		inputs: [
-			{internalType: 'address', name: 'vaultFrom', type: 'address'},
-			{internalType: 'address', name: 'vaultTo', type: 'address'},
-			{internalType: 'uint256', name: 'deadline', type: 'uint256'},
-			{internalType: 'bytes', name: 'signature', type: 'bytes'}
+			{ internalType: 'address', name: 'vaultFrom', type: 'address' },
+			{ internalType: 'address', name: 'vaultTo', type: 'address' },
+			{ internalType: 'uint256', name: 'deadline', type: 'uint256' },
+			{ internalType: 'bytes', name: 'signature', type: 'bytes' }
 		],
 		name: 'migrateAllWithPermit',
 		outputs: [],
@@ -88,9 +88,9 @@ export const VAULT_MIGRATOR_ABI = [
 	},
 	{
 		inputs: [
-			{internalType: 'address', name: 'vaultFrom', type: 'address'},
-			{internalType: 'address', name: 'vaultTo', type: 'address'},
-			{internalType: 'uint256', name: 'shares', type: 'uint256'}
+			{ internalType: 'address', name: 'vaultFrom', type: 'address' },
+			{ internalType: 'address', name: 'vaultTo', type: 'address' },
+			{ internalType: 'uint256', name: 'shares', type: 'uint256' }
 		],
 		name: 'migrateShares',
 		outputs: [],
@@ -99,11 +99,11 @@ export const VAULT_MIGRATOR_ABI = [
 	},
 	{
 		inputs: [
-			{internalType: 'address', name: 'vaultFrom', type: 'address'},
-			{internalType: 'address', name: 'vaultTo', type: 'address'},
-			{internalType: 'uint256', name: 'shares', type: 'uint256'},
-			{internalType: 'uint256', name: 'deadline', type: 'uint256'},
-			{internalType: 'bytes', name: 'signature', type: 'bytes'}
+			{ internalType: 'address', name: 'vaultFrom', type: 'address' },
+			{ internalType: 'address', name: 'vaultTo', type: 'address' },
+			{ internalType: 'uint256', name: 'shares', type: 'uint256' },
+			{ internalType: 'uint256', name: 'deadline', type: 'uint256' },
+			{ internalType: 'bytes', name: 'signature', type: 'bytes' }
 		],
 		name: 'migrateSharesWithPermit',
 		outputs: [],
@@ -113,14 +113,14 @@ export const VAULT_MIGRATOR_ABI = [
 	{
 		inputs: [],
 		name: 'pendingGovernance',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
 	{
 		inputs: [],
 		name: 'registry',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{ internalType: 'address', name: '', type: 'address' }],
 		stateMutability: 'view',
 		type: 'function'
 	},
@@ -151,21 +151,21 @@ export const VAULT_MIGRATOR_ABI = [
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '_registry', type: 'address'}],
+		inputs: [{ internalType: 'address', name: '_registry', type: 'address' }],
 		name: 'setRegistry',
 		outputs: [],
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'uint256', name: '_amount', type: 'uint256'}],
+		inputs: [{ internalType: 'uint256', name: '_amount', type: 'uint256' }],
 		name: 'subsidize',
 		outputs: [],
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '_token', type: 'address'}],
+		inputs: [{ internalType: 'address', name: '_token', type: 'address' }],
 		name: 'sweep',
 		outputs: [],
 		stateMutability: 'nonpayable',

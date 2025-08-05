@@ -1,11 +1,11 @@
-import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react'
-import {Renderable} from '@lib/components/Renderable'
-import {useWeb3} from '@lib/contexts/useWeb3'
-import {IconChevron} from '@lib/icons/IconChevron'
-import {cl} from '@lib/utils'
-import {useClickOutside, useThrottledState} from '@react-hookz/web'
-import type {ReactElement, RefObject} from 'react'
-import {Fragment, useCallback, useMemo, useRef, useState} from 'react'
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition } from '@headlessui/react'
+import { Renderable } from '@lib/components/Renderable'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { IconChevron } from '@lib/icons/IconChevron'
+import { cl } from '@lib/utils'
+import { useClickOutside, useThrottledState } from '@react-hookz/web'
+import type { ReactElement, RefObject } from 'react'
+import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
 
 export type TMultiSelectOptionProps = {
 	label: string
@@ -89,8 +89,8 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 	)
 }
 
-function DropdownEmpty({query}: {query: string}): ReactElement {
-	const {isActive, openLoginModal} = useWeb3()
+function DropdownEmpty({ query }: { query: string }): ReactElement {
+	const { isActive, openLoginModal } = useWeb3()
 
 	if (!isActive) {
 		return (
@@ -148,7 +148,7 @@ export function MultiSelectDropdown({
 }: TMultiSelectProps): ReactElement {
 	const [isOpen, setIsOpen] = useThrottledState(false, 400)
 	const [query, setQuery] = useState('')
-	const areAllSelected = useMemo((): boolean => options.every(({isSelected}): boolean => isSelected), [options])
+	const areAllSelected = useMemo((): boolean => options.every(({ isSelected }): boolean => isSelected), [options])
 	const componentRef = useRef<HTMLDivElement | null>(null)
 
 	const selectedValues = useMemo(() => {
@@ -160,7 +160,7 @@ export function MultiSelectDropdown({
 	})
 
 	const filteredOptions = useMemo(
-		(): TMultiSelectOptionProps[] => getFilteredOptions({query, currentOptions: options}),
+		(): TMultiSelectOptionProps[] => getFilteredOptions({ query, currentOptions: options }),
 		[options, query]
 	)
 
@@ -170,7 +170,7 @@ export function MultiSelectDropdown({
 				return customDefaultLabel
 			}
 
-			const selectedOptions = options.filter(({isSelected}): boolean => isSelected)
+			const selectedOptions = options.filter(({ isSelected }): boolean => isSelected)
 
 			if (selectedOptions.length === 0) {
 				return placeholder
@@ -186,9 +186,9 @@ export function MultiSelectDropdown({
 	)
 
 	const handleOnCheckboxClick = useCallback(
-		({value}: TMultiSelectOptionProps): void => {
+		({ value }: TMultiSelectOptionProps): void => {
 			const currentState = options.map(
-				(o): TMultiSelectOptionProps => (o.value === value ? {...o, isSelected: !o.isSelected} : o)
+				(o): TMultiSelectOptionProps => (o.value === value ? { ...o, isSelected: !o.isSelected } : o)
 			)
 			onSelect(currentState)
 		},
@@ -196,10 +196,10 @@ export function MultiSelectDropdown({
 	)
 
 	const handleOnContainerClick = useCallback(
-		({value}: TMultiSelectOptionProps): void => {
+		({ value }: TMultiSelectOptionProps): void => {
 			const currentState = options.map(
 				(o): TMultiSelectOptionProps =>
-					o.value === value ? {...o, isSelected: true} : {...o, isSelected: false}
+					o.value === value ? { ...o, isSelected: true } : { ...o, isSelected: false }
 			)
 			onSelect(currentState)
 		},
@@ -235,7 +235,7 @@ export function MultiSelectDropdown({
 						<ComboboxInput
 							className={cl(
 								'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none',
-								options.every(({isSelected}): boolean => !isSelected)
+								options.every(({ isSelected }): boolean => !isSelected)
 									? 'text-neutral-400'
 									: 'text-neutral-900'
 							)}

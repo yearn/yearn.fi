@@ -1,20 +1,20 @@
-import {Popover, PopoverButton, PopoverPanel, Transition} from '@headlessui/react'
-import {Renderable} from '@lib/components/Renderable'
-import {Switch} from '@lib/components/Switch'
-import {useYearn} from '@lib/contexts/useYearn'
-import {IconSettings} from '@lib/icons/IconSettings'
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
-import type {TSolver} from '@vaults-v2/types/solvers'
-import {Solver} from '@vaults-v2/types/solvers'
-import type {ReactElement} from 'react'
-import {Fragment, useMemo} from 'react'
+import { Popover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react'
+import { Renderable } from '@lib/components/Renderable'
+import { Switch } from '@lib/components/Switch'
+import { useYearn } from '@lib/contexts/useYearn'
+import { IconSettings } from '@lib/icons/IconSettings'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
+import type { TSolver } from '@vaults-v2/types/solvers'
+import { Solver } from '@vaults-v2/types/solvers'
+import type { ReactElement } from 'react'
+import { Fragment, useMemo } from 'react'
 
 type TSettingPopover = {
 	vault: TYDaemonVault
 }
 
-function Label({children}: {children: string}): ReactElement {
+function Label({ children }: { children: string }): ReactElement {
 	return (
 		<label htmlFor={'zapProvider'} className={'font-bold text-neutral-900'}>
 			{children}
@@ -22,8 +22,8 @@ function Label({children}: {children: string}): ReactElement {
 	)
 }
 
-export function SettingsPopover({vault}: TSettingPopover): ReactElement {
-	const {zapProvider, setZapProvider, zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled} =
+export function SettingsPopover({ vault }: TSettingPopover): ReactElement {
+	const { zapProvider, setZapProvider, zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } =
 		useYearn()
 	const hasStakingRewards = vault.staking.available
 

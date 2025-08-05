@@ -1,5 +1,5 @@
-import {getDefaultConfig} from '@rainbow-me/rainbowkit'
-import type {_chains} from '@rainbow-me/rainbowkit/dist/config/getDefaultConfig'
+import { getDefaultConfig } from '@rainbow-me/rainbowkit'
+import type { _chains } from '@rainbow-me/rainbowkit/dist/config/getDefaultConfig'
 import {
 	coinbaseWallet,
 	frameWallet,
@@ -10,19 +10,19 @@ import {
 	safeWallet,
 	walletConnectWallet
 } from '@rainbow-me/rainbowkit/wallets'
-import type {Transport} from 'viem'
-import type {Chain} from 'viem/chains'
-import type {Config, ResolvedRegister} from 'wagmi'
-import {cookieStorage, createStorage, custom, fallback, http, unstable_connector, webSocket} from 'wagmi'
-import {injected, safe} from 'wagmi/connectors'
-import {getNetwork} from './utils'
+import type { Transport } from 'viem'
+import type { Chain } from 'viem/chains'
+import type { Config, ResolvedRegister } from 'wagmi'
+import { cookieStorage, createStorage, custom, fallback, http, unstable_connector, webSocket } from 'wagmi'
+import { injected, safe } from 'wagmi/connectors'
+import { getNetwork } from './utils'
 
 let CONFIG: Config | undefined
 let CONFIG_CHAINS: Chain[] = []
 let CONFIG_WITH_WINDOW: boolean = true
 
-type TTransport = {[key: number]: Transport}
-export function getConfig({chains}: {chains: Chain[]}): ResolvedRegister['config'] {
+type TTransport = { [key: number]: Transport }
+export function getConfig({ chains }: { chains: Chain[] }): ResolvedRegister['config'] {
 	const transports: TTransport = {}
 	for (const chain of chains) {
 		/**************************************************************************************
@@ -44,7 +44,7 @@ export function getConfig({chains}: {chains: Chain[]}): ResolvedRegister['config
 		 *************************************************************************************/
 		const availableTransports: Transport[] = []
 		if (getNetwork(chain.id)?.defaultRPC) {
-			availableTransports.push(http(getNetwork(chain.id)?.defaultRPC, {batch: true}))
+			availableTransports.push(http(getNetwork(chain.id)?.defaultRPC, { batch: true }))
 		}
 
 		/**************************************************************************************
@@ -56,7 +56,7 @@ export function getConfig({chains}: {chains: Chain[]}): ResolvedRegister['config
 		const defaultJsonRPCURL = chain?.rpcUrls?.public?.http?.[0]
 		const envRPC = newRPC || oldRPC || newRPCBugged || defaultJsonRPCURL
 		if (envRPC) {
-			availableTransports.push(http(envRPC, {batch: true}))
+			availableTransports.push(http(envRPC, { batch: true }))
 		}
 		/**************************************************************************************
 		 ** Assign the transport via the alchemy and infura keys
@@ -156,7 +156,7 @@ export function getConfig({chains}: {chains: Chain[]}): ResolvedRegister['config
 			availableRPCs.push(`${chain?.rpcUrls.infura.http[0]}/${process.env.INFURA_PROJECT_ID}`)
 		}
 		if (!chain.rpcUrls.default) {
-			chain.rpcUrls.default = {http: [], webSocket: []}
+			chain.rpcUrls.default = { http: [], webSocket: [] }
 		}
 		const defaultHttp = [...new Set([...availableRPCs, ...(chain.rpcUrls.default?.http || [])].filter(Boolean))]
 		const defaultWebSocket = [...new Set([wsURI, ...(chain.rpcUrls.default.webSocket || [])].filter(Boolean))]
@@ -175,7 +175,7 @@ export function retrieveConfig(): ResolvedRegister['config'] {
 		return CONFIG
 	}
 	if (!CONFIG_WITH_WINDOW) {
-		return getConfig({chains: CONFIG_CHAINS})
+		return getConfig({ chains: CONFIG_CHAINS })
 	}
 	throw new Error('Config not set')
 }

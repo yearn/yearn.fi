@@ -1,13 +1,13 @@
-import {cl} from '@lib/utils'
-import {iconsDict, LANDING_SIDEBAR_LINKS} from '@lib/utils/constants'
+import { cl } from '@lib/utils'
+import { iconsDict, LANDING_SIDEBAR_LINKS } from '@lib/utils/constants'
 import Link from 'next/link'
-import {usePathname} from 'next/navigation'
-import type {ReactElement} from 'react'
+import { usePathname } from 'next/navigation'
+import type { ReactElement } from 'react'
 
-import {TypeMarkYearn} from '../icons/TypeMarkYearn'
+import { TypeMarkYearn } from '../icons/TypeMarkYearn'
 
 type TSidebarProps = {
-	tabs: {route: string; title: string; isAcitve?: boolean}[]
+	tabs: { route: string; title: string; isAcitve?: boolean }[]
 }
 
 export function Sidebar(props: TSidebarProps): ReactElement {

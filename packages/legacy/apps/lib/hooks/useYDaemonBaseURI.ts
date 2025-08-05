@@ -3,7 +3,7 @@ type TProps = {
 	baseURI?: string
 }
 
-export function useYDaemonBaseURI(props?: TProps): {yDaemonBaseUri: string} {
+export function useYDaemonBaseURI(props?: TProps): { yDaemonBaseUri: string } {
 	const yDaemonBaseUri = props?.baseURI || process.env.YDAEMON_BASE_URI
 
 	if (!yDaemonBaseUri) {
@@ -11,8 +11,8 @@ export function useYDaemonBaseURI(props?: TProps): {yDaemonBaseUri: string} {
 	}
 
 	if (!props?.chainID) {
-		return {yDaemonBaseUri}
+		return { yDaemonBaseUri }
 	}
 
-	return {yDaemonBaseUri: `${yDaemonBaseUri}/${props.chainID}`}
+	return { yDaemonBaseUri: `${yDaemonBaseUri}/${props.chainID}` }
 }

@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
 export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (

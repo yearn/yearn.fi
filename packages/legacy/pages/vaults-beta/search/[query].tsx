@@ -1,11 +1,11 @@
-import {AppCard} from '@lib/components/AppCard'
-import {useInitialQueryParam} from '@lib/hooks/useInitialQueryParam'
-import {cl} from '@lib/utils'
-import {ALL_APPS} from '@lib/utils/constants'
-import type {GetServerSidePropsContext} from 'next'
+import { AppCard } from '@lib/components/AppCard'
+import { useInitialQueryParam } from '@lib/hooks/useInitialQueryParam'
+import { cl } from '@lib/utils'
+import { ALL_APPS } from '@lib/utils/constants'
+import type { GetServerSidePropsContext } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import {type ReactElement, useMemo} from 'react'
+import { type ReactElement, useMemo } from 'react'
 
 export default function SeachResults(): ReactElement {
 	const searchValue = useInitialQueryParam('query')
@@ -81,8 +81,8 @@ export default function SeachResults(): ReactElement {
  ** 4. To handle cases where the query might be undefined, providing a fallback empty string
  ** This approach allows for immediate access to the search query without client-side processing
  ************************************************************************************************/
-export async function getServerSideProps(context: GetServerSidePropsContext): Promise<{props: {query: string}}> {
-	const {query} = context.params as {query: string}
+export async function getServerSideProps(context: GetServerSidePropsContext): Promise<{ props: { query: string } }> {
+	const { query } = context.params as { query: string }
 	return {
 		props: {
 			query: query || ''

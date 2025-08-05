@@ -1,18 +1,18 @@
-import type {TAllocationChartData} from '@lib/components/AllocationChart'
-import {AllocationChart} from '@lib/components/AllocationChart'
-import {VaultsListStrategy} from '@lib/components/VaultsListStrategy'
-import {useYearn} from '@lib/contexts/useYearn'
-import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice'
-import type {TSortDirection} from '@lib/types'
-import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@lib/utils'
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults'
-import {useSortVaults} from '@vaults-v2/hooks/useSortVaults'
-import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs'
-import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead'
-import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants'
-import type {ReactElement} from 'react'
-import {useMemo} from 'react'
+import type { TAllocationChartData } from '@lib/components/AllocationChart'
+import { AllocationChart } from '@lib/components/AllocationChart'
+import { VaultsListStrategy } from '@lib/components/VaultsListStrategy'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
+import type { TSortDirection } from '@lib/types'
+import { cl, formatCounterValue, formatPercent, toNormalizedBN } from '@lib/utils'
+import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
+import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
+import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
+import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
+import { ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
+import type { ReactElement } from 'react'
+import { useMemo } from 'react'
 
 function UnallocatedStrategy({
 	unallocatedPercentage,
@@ -79,19 +79,19 @@ function UnallocatedStrategy({
 	)
 }
 
-export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {vaults} = useYearn()
-	const {sortDirection, sortBy, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
+export function VaultDetailsStrategies({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+	const { vaults } = useYearn()
+	const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
 		defaultSortBy: 'allocationPercentage',
 		defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
 		defaultPathname: '/v3/[chainID]/[address]'
 	})
-	const tokenPrice = useYearnTokenPrice({address: currentVault.token.address, chainID: currentVault.chainID})
+	const tokenPrice = useYearnTokenPrice({ address: currentVault.token.address, chainID: currentVault.chainID })
 
 	const vaultList = useMemo((): TYDaemonVault[] => {
 		const _vaultList = []
 		for (const strategy of currentVault?.strategies || []) {
-			_vaultList.push({...vaults[strategy.address], details: strategy.details, status: strategy.status})
+			_vaultList.push({ ...vaults[strategy.address], details: strategy.details, status: strategy.status })
 		}
 		return _vaultList.filter(vault => !!vault.address)
 	}, [vaults, currentVault])
@@ -196,14 +196,14 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								onChangeSortDirection(newSortDirection as TSortDirection)
 							}}
 							items={[
-								{label: 'Vault', value: 'name', sortable: false, className: 'ml-20'},
+								{ label: 'Vault', value: 'name', sortable: false, className: 'ml-20' },
 								{
 									label: 'Allocation %',
 									value: 'allocationPercentage',
 									sortable: true,
 									className: 'col-span-4'
 								},
-								{label: 'Allocation $', value: 'allocation', sortable: true, className: 'col-span-4'},
+								{ label: 'Allocation $', value: 'allocation', sortable: true, className: 'col-span-4' },
 								{
 									label: 'Est. APY',
 									value: 'estAPY',

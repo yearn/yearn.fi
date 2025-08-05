@@ -1,15 +1,15 @@
-import {CarouselSlideArrows} from '@lib/components/CarouselSlideArrows'
-import type {TApp} from '@lib/types/mixed'
-import {useMountEffect} from '@react-hookz/web'
-import {type ReactElement, useRef, useState} from 'react'
-import {AppsCarousel} from './AppsCarousel'
+import { CarouselSlideArrows } from '@lib/components/CarouselSlideArrows'
+import type { TApp } from '@lib/types/mixed'
+import { useMountEffect } from '@react-hookz/web'
+import { type ReactElement, useRef, useState } from 'react'
+import { AppsCarousel } from './AppsCarousel'
 
 type TAppSectionProps = {
 	title: string
 	apps: TApp[]
 }
 
-export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement => {
+export const CategorySection = ({ title, apps }: TAppSectionProps): ReactElement => {
 	const [shuffledApps, setShuffledApps] = useState<TApp[]>([])
 	const [, setCurrentPage] = useState(1)
 	const carouselRef = useRef<HTMLDivElement | null>(null)
@@ -92,7 +92,7 @@ export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement =
 		if (itemWidth === 0) {
 			return
 		}
-		const {scrollLeft} = carouselRef.current
+		const { scrollLeft } = carouselRef.current
 		const page = Math.ceil(scrollLeft / (itemWidth * 4)) + 1 // 4 items per page
 		setCurrentPage(page)
 	}

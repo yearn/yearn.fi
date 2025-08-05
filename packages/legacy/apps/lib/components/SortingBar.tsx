@@ -1,7 +1,7 @@
-import {IconChevron} from '@lib/icons/IconChevron'
-import {type ReactElement, useState} from 'react'
+import { IconChevron } from '@lib/icons/IconChevron'
+import { type ReactElement, useState } from 'react'
 
-function SortItem({isActive, title}: {isActive: boolean; title: string}): ReactElement {
+function SortItem({ isActive, title }: { isActive: boolean; title: string }): ReactElement {
 	return <div className={`px-6 py-2 ${isActive ? 'font-bold text-neutral-900' : 'text-gray-400'}`}>{title}</div>
 }
 

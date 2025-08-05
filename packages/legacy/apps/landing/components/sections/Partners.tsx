@@ -1,8 +1,8 @@
-import {SectionHeader} from '@lib/components/SectionHeader'
+import { SectionHeader } from '@lib/components/SectionHeader'
 import Image from 'next/image'
 import Link from 'next/link'
-import type {FC} from 'react'
-import {useState} from 'react'
+import type { FC } from 'react'
+import { useState } from 'react'
 
 type TPartner = {
 	image: string
@@ -46,7 +46,7 @@ const partners: TPartner[] = [
 	}
 ]
 
-const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 40}) => {
+const PartnerLogo: FC<TPartner> = ({ image, alt, href, size = 40 }) => {
 	const [isHovered, setIsHovered] = useState(false)
 	return (
 		<Link href={href} className={'block flex-1'}>

@@ -1,10 +1,10 @@
-import type {TAddress, TDropdownOption, TNormalizedBN} from '@lib/types'
-import type {TSolver} from '@lib/utils/schemas/yDaemonTokenListBalances'
-import {Solver} from '@lib/utils/schemas/yDaemonTokenListBalances'
-import type {TTxStatus} from '@lib/utils/wagmi'
-import type {Hash, TransactionReceipt} from 'viem'
+import type { TAddress, TDropdownOption, TNormalizedBN } from '@lib/types'
+import type { TSolver } from '@lib/utils/schemas/yDaemonTokenListBalances'
+import { Solver } from '@lib/utils/schemas/yDaemonTokenListBalances'
+import type { TTxStatus } from '@lib/utils/wagmi'
+import type { Hash, TransactionReceipt } from 'viem'
 
-export {Solver, type TSolver}
+export { Solver, type TSolver }
 
 /* 🔵 - Yearn Finance ******************************************************
  **	Generic type of the WithSolver interface.

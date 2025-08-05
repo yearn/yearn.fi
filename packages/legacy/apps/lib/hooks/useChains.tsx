@@ -1,20 +1,20 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback'
-import type {TMultiSelectOptionProps} from '@lib/components/MultiSelectDropdown'
-import {retrieveConfig} from '@lib/utils/wagmi'
-import {useCustomCompareMemo, useDeepCompareMemo} from '@react-hookz/web'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
+import { retrieveConfig } from '@lib/utils/wagmi'
+import { useCustomCompareMemo, useDeepCompareMemo } from '@react-hookz/web'
 
-import type {Chain} from 'viem'
-import type {Connector} from 'wagmi'
-import {useConnect} from 'wagmi'
+import type { Chain } from 'viem'
+import type { Connector } from 'wagmi'
+import { useConnect } from 'wagmi'
 
 export function useChainOptions(chains: number[] | null): TMultiSelectOptionProps[] {
-	const {connectors} = useConnect()
+	const { connectors } = useConnect()
 
 	const injectedChains = useCustomCompareMemo(
 		(): Chain[] | undefined => {
 			connectors //Hard trigger re-render when connectors change
 			const config = retrieveConfig()
-			const noFork = config.chains.filter(({id}): boolean => id !== 1337)
+			const noFork = config.chains.filter(({ id }): boolean => id !== 1337)
 			return noFork
 		},
 		[[...connectors]],

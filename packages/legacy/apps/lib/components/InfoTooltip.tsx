@@ -1,7 +1,7 @@
-import {IconQuestion} from '@lib/icons/IconQuestion'
-import {cl} from '@lib/utils'
+import { IconQuestion } from '@lib/icons/IconQuestion'
+import { cl } from '@lib/utils'
 
-import type {ReactElement} from 'react'
+import type { ReactElement } from 'react'
 
 type TProps = {
 	text: string | number
@@ -29,8 +29,8 @@ const getStyle = (
 	}
 }
 
-export const InfoTooltip = ({text, size, iconClassName, className}: TProps): ReactElement => {
-	const {iconStyle, tooltipStyle} = getStyle(size)
+export const InfoTooltip = ({ text, size, iconClassName, className }: TProps): ReactElement => {
+	const { iconStyle, tooltipStyle } = getStyle(size)
 
 	return (
 		<sup className={'tooltip font-light transition-opacity'}>
