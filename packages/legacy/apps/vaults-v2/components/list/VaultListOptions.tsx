@@ -1,16 +1,16 @@
-import {Popover, PopoverButton, PopoverPanel, Transition} from '@headlessui/react';
-import {Switch} from '@lib/components/Switch';
-import {IconSettings} from '@lib/icons/IconSettings';
-import {cl} from '@lib/utils';
-import {useAppSettings} from '@vaults-v2/contexts/useAppSettings';
-import type {ReactElement} from 'react';
-import {Fragment} from 'react';
+import {Popover, PopoverButton, PopoverPanel, Transition} from '@headlessui/react'
+import {Switch} from '@lib/components/Switch'
+import {IconSettings} from '@lib/icons/IconSettings'
+import {cl} from '@lib/utils'
+import {useAppSettings} from '@vaults-v2/contexts/useAppSettings'
+import type {ReactElement} from 'react'
+import {Fragment} from 'react'
 
 type TVautListOptions = {
-	panelClassName?: string;
-};
+	panelClassName?: string
+}
 export function VaultListOptions(props: TVautListOptions): ReactElement {
-	const {shouldHideDust, onSwitchHideDust} = useAppSettings();
+	const {shouldHideDust, onSwitchHideDust} = useAppSettings()
 
 	return (
 		<Popover className={'relative flex'}>
@@ -47,5 +47,5 @@ export function VaultListOptions(props: TVautListOptions): ReactElement {
 				</>
 			)}
 		</Popover>
-	);
+	)
 }

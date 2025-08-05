@@ -601,4 +601,4 @@ export const TOKENIZED_STRATEGY_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function'
 	}
-] as const;
+] as const

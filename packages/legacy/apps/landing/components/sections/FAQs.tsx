@@ -1,14 +1,14 @@
-import {SectionHeader} from '@lib/components/SectionHeader';
-import Image from 'next/image';
-import type {FC, ReactNode} from 'react';
-import {useState} from 'react';
+import {SectionHeader} from '@lib/components/SectionHeader'
+import Image from 'next/image'
+import type {FC, ReactNode} from 'react'
+import {useState} from 'react'
 
 type TFAQItem = {
-	title: string;
-	children: ReactNode;
-	isOpen: boolean;
-	onToggle: () => void;
-};
+	title: string
+	children: ReactNode
+	isOpen: boolean
+	onToggle: () => void
+}
 
 const FAQItem: FC<TFAQItem> = ({title, children, isOpen, onToggle}) => {
 	return (
@@ -29,8 +29,8 @@ const FAQItem: FC<TFAQItem> = ({title, children, isOpen, onToggle}) => {
 				<div className={'mt-px rounded-b-lg bg-[#191919] px-6 py-4 text-base text-gray-300'}>{children}</div>
 			)}
 		</div>
-	);
-};
+	)
+}
 
 const faqData = [
 	{
@@ -77,14 +77,14 @@ const faqData = [
 			</p>
 		)
 	}
-];
+]
 
 export const FAQs: FC = () => {
-	const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+	const [openFAQ, setOpenFAQ] = useState<number | null>(null)
 
 	const toggleFAQ = (index: number): void => {
-		setOpenFAQ(openFAQ === index ? null : index);
-	};
+		setOpenFAQ(openFAQ === index ? null : index)
+	}
 
 	return (
 		<section className={'flex w-full justify-center pb-8 pt-16 lg:pt-32'}>
@@ -122,5 +122,5 @@ export const FAQs: FC = () => {
 				</div>
 			</div>
 		</section>
-	);
-};
+	)
+}

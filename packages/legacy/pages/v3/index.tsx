@@ -1,22 +1,22 @@
-import {useWallet} from '@lib/contexts/useWallet';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import {useVaultFilter} from '@lib/hooks/useFilteredVaults';
-import type {TSortDirection} from '@lib/types';
-import {cl, formatAmount, isZero, toNormalizedBN} from '@lib/utils';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty';
-import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
-import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
-import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
-import {Filters} from '@vaults-v3/components/Filters';
-import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
-import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
-import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
-import {V3Mask} from '@vaults-v3/Mark';
-import {motion} from 'framer-motion';
-import type {ReactElement, ReactNode} from 'react';
-import {Children, Fragment, useMemo, useState} from 'react';
+import {useWallet} from '@lib/contexts/useWallet'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {useYearn} from '@lib/contexts/useYearn'
+import {useVaultFilter} from '@lib/hooks/useFilteredVaults'
+import type {TSortDirection} from '@lib/types'
+import {cl, formatAmount, isZero, toNormalizedBN} from '@lib/utils'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {VaultsListEmpty} from '@vaults-v2/components/list/VaultsListEmpty'
+import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults'
+import {useSortVaults} from '@vaults-v2/hooks/useSortVaults'
+import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs'
+import {Filters} from '@vaults-v3/components/Filters'
+import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead'
+import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow'
+import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants'
+import {V3Mask} from '@vaults-v3/Mark'
+import {motion} from 'framer-motion'
+import type {ReactElement, ReactNode} from 'react'
+import {Children, Fragment, useMemo, useState} from 'react'
 
 function Background(): ReactElement {
 	return (
@@ -30,7 +30,7 @@ function Background(): ReactElement {
 			}}
 			className={cl('absolute inset-0', 'pointer-events-none')}
 		/>
-	);
+	)
 }
 function BrandNewVaultCard(): ReactElement {
 	return (
@@ -57,7 +57,7 @@ function BrandNewVaultCard(): ReactElement {
 			</div>
 			<Background />
 		</div>
-	);
+	)
 }
 function V3Card(): ReactElement {
 	return (
@@ -70,12 +70,12 @@ function V3Card(): ReactElement {
 				<V3Mask className={'size-[90%]'} />
 			</div>
 		</div>
-	);
+	)
 }
 
 function PortfolioCard(): ReactElement {
-	const {cumulatedValueInV3Vaults, isLoading} = useWallet();
-	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
+	const {cumulatedValueInV3Vaults, isLoading} = useWallet()
+	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3()
 
 	if (!isActive) {
 		return (
@@ -98,9 +98,9 @@ function PortfolioCard(): ReactElement {
 							)}
 							onClick={(): void => {
 								if (!isActive && address) {
-									onSwitchChain(1);
+									onSwitchChain(1)
 								} else {
-									openLoginModal();
+									openLoginModal()
 								}
 							}}>
 							<div
@@ -115,7 +115,7 @@ function PortfolioCard(): ReactElement {
 					</div>
 				</div>
 			</div>
-		);
+		)
 	}
 	return (
 		<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'}>
@@ -138,11 +138,11 @@ function PortfolioCard(): ReactElement {
 				</div>
 			</div>
 		</div>
-	);
+	)
 }
 function ListOfVaults(): ReactElement {
-	const {getBalance} = useWallet();
-	const {getPrice, isLoadingVaultList} = useYearn();
+	const {getBalance} = useWallet()
+	const {getPrice, isLoadingVaultList} = useYearn()
 	const {
 		search,
 		types,
@@ -161,8 +161,8 @@ function ListOfVaults(): ReactElement {
 		defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
 		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
 		defaultPathname: '/v3'
-	});
-	const {activeVaults, retiredVaults, migratableVaults} = useVaultFilter(types, chains, true);
+	})
+	const {activeVaults, retiredVaults, migratableVaults} = useVaultFilter(types, chains, true)
 
 	/**********************************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
@@ -170,41 +170,41 @@ function ListOfVaults(): ReactElement {
 	 *********************************************************************************************/
 	const searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
 		if (!search) {
-			return activeVaults;
+			return activeVaults
 		}
 
 		/**********************************************************************************************
 		 * Create a regex pattern from the search term, escaping special regex characters to prevent
 		 * errors and enabling case-insensitive matching for better user experience
 		 *********************************************************************************************/
-		let searchRegex: RegExp;
+		let searchRegex: RegExp
 		try {
 			// Escape special regex characters but allow basic wildcard functionality
-			const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-			searchRegex = new RegExp(escapedSearch, 'i'); // 'i' flag for case-insensitive
+			const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+			searchRegex = new RegExp(escapedSearch, 'i') // 'i' flag for case-insensitive
 		} catch {
 			// Fallback to simple case-insensitive search if regex creation fails
-			const lowercaseSearch = search.toLowerCase();
+			const lowercaseSearch = search.toLowerCase()
 			return activeVaults.filter((vault: TYDaemonVault): boolean => {
 				const searchableText =
-					`${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase();
-				return searchableText.includes(lowercaseSearch);
-			});
+					`${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase()
+				return searchableText.includes(lowercaseSearch)
+			})
 		}
 
 		const filtered = activeVaults.filter((vault: TYDaemonVault): boolean => {
-			const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`;
-			return searchRegex.test(searchableText);
-		});
-		return filtered;
-	}, [activeVaults, search]);
+			const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
+			return searchRegex.test(searchableText)
+		})
+		return filtered
+	}, [activeVaults, search])
 
 	/**********************************************************************************************
 	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
 	 **	is done via a custom method that will sort the vaults based on the sortBy and
 	 **	sortDirection values.
 	 *********************************************************************************************/
-	const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection);
+	const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection)
 
 	/**********************************************************************************************
 	 **	The VaultList component is memoized to prevent it from being re-created on every render.
@@ -213,82 +213,82 @@ function ListOfVaults(): ReactElement {
 	const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
 		const filteredByChains = sortedVaultsToDisplay.filter(
 			({chainID}): boolean => chains?.includes(chainID) || false
-		);
+		)
 		const filteredByCategories = filteredByChains.filter(
 			({category}): boolean => categories?.includes(category) || false
-		);
+		)
 
-		const holdings: ReactNode[] = [];
-		const multi: ReactNode[] = [];
-		const single: ReactNode[] = [];
-		const all: ReactNode[] = [];
-		const processedForHoldings = new Set<string>();
+		const holdings: ReactNode[] = []
+		const multi: ReactNode[] = []
+		const single: ReactNode[] = []
+		const all: ReactNode[] = []
+		const processedForHoldings = new Set<string>()
 
 		// Add migratable vaults to holdings (guaranteed to have balance)
 		for (const vault of migratableVaults) {
-			const key = `${vault.chainID}_${vault.address}`;
-			const balance = getBalance({address: vault.address, chainID: vault.chainID});
-			const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID});
-			const hasBalance = balance.raw > 0n;
-			const hasStakingBalance = stakingBalance.raw > 0n;
+			const key = `${vault.chainID}_${vault.address}`
+			const balance = getBalance({address: vault.address, chainID: vault.chainID})
+			const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID})
+			const hasBalance = balance.raw > 0n
+			const hasStakingBalance = stakingBalance.raw > 0n
 			if (hasBalance || hasStakingBalance) {
-				holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />);
-				processedForHoldings.add(key);
+				holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
+				processedForHoldings.add(key)
 			}
 		}
 
 		// Add retired vaults to holdings (guaranteed to have balance)
 		for (const vault of retiredVaults) {
-			const key = `${vault.chainID}_${vault.address}`;
+			const key = `${vault.chainID}_${vault.address}`
 			if (!processedForHoldings.has(key)) {
 				// Avoid duplicates
-				const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
-				const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
+				const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n
+				const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n
 				if (hasBalance || hasStakingBalance) {
-					holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />);
-					processedForHoldings.add(key);
+					holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
+					processedForHoldings.add(key)
 				}
 			}
 		}
 
 		for (const vault of filteredByCategories) {
 			// Process active vaults
-			const key = `${vault.chainID}_${vault.address}`;
+			const key = `${vault.chainID}_${vault.address}`
 
 			if (processedForHoldings.has(key)) {
 				// This vault was already added to holdings from migratable/retired lists.
 				// Skip adding to multi, single, or all.
-				continue;
+				continue
 			}
 
-			const balance = getBalance({address: vault.address, chainID: vault.chainID});
-			const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID});
-			const price = getPrice({address: vault.address, chainID: vault.chainID});
+			const balance = getBalance({address: vault.address, chainID: vault.chainID})
+			const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID})
+			const price = getPrice({address: vault.address, chainID: vault.chainID})
 
 			const holdingsValue =
-				toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized;
+				toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized
 
 			if (holdingsValue > 0.5) {
-				holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />);
+				holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
 				// No need to add to processedForHoldings here again as `continue` prevents further processing for this vault.
-				continue;
+				continue
 			}
 
 			// If not a holding, categorize into multi, single, and all
 			if (vault.kind === 'Multi Strategy') {
-				multi.push(<VaultsV3ListRow key={key} currentVault={vault} />);
+				multi.push(<VaultsV3ListRow key={key} currentVault={vault} />)
 			}
 			if (vault.kind === 'Single Strategy') {
-				single.push(<VaultsV3ListRow key={key} currentVault={vault} />);
+				single.push(<VaultsV3ListRow key={key} currentVault={vault} />)
 			}
 			all.push(
 				// `all` contains active, non-holding vaults
 				<VaultsV3ListRow key={key} currentVault={vault} />
-			);
+			)
 		}
 
 		const shouldShowEmptyState =
-			isLoadingVaultList || !chains || chains.length === 0 || (isZero(holdings.length) && isZero(all.length)); // Show empty if no holdings and no other active vaults
+			isLoadingVaultList || !chains || chains.length === 0 || (isZero(holdings.length) && isZero(all.length)) // Show empty if no holdings and no other active vaults
 
 		if (shouldShowEmptyState) {
 			return (
@@ -301,10 +301,10 @@ function ListOfVaults(): ReactElement {
 					onReset={onReset}
 					defaultCategories={ALL_VAULTSV3_KINDS_KEYS}
 				/>
-			);
+			)
 		}
 
-		return [holdings, multi, single, all];
+		return [holdings, multi, single, all]
 	}, [
 		sortedVaultsToDisplay,
 		isLoadingVaultList,
@@ -317,14 +317,14 @@ function ListOfVaults(): ReactElement {
 		search,
 		types,
 		onReset
-	]);
+	])
 
 	function renderVaultList(): ReactNode {
 		if (Children.count(VaultList) === 1) {
-			return VaultList as ReactNode;
+			return VaultList as ReactNode
 		}
-		const possibleLists = VaultList as [ReactNode, ReactNode, ReactNode, ReactNode];
-		const hasHoldings = Children.count(possibleLists[0]) > 0;
+		const possibleLists = VaultList as [ReactNode, ReactNode, ReactNode, ReactNode]
+		const hasHoldings = Children.count(possibleLists[0]) > 0
 
 		if (sortBy !== 'featuringScore' && possibleLists[3]) {
 			return (
@@ -342,7 +342,7 @@ function ListOfVaults(): ReactElement {
 					) : null}
 					{possibleLists[3]}
 				</Fragment>
-			);
+			)
 		}
 		return (
 			<Fragment>
@@ -363,7 +363,7 @@ function ListOfVaults(): ReactElement {
 				) : null}
 				{possibleLists[2]}
 			</Fragment>
-		);
+		)
 	}
 
 	return (
@@ -386,12 +386,12 @@ function ListOfVaults(): ReactElement {
 					sortDirection={sortDirection}
 					onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
 						if (newSortDirection === '') {
-							onChangeSortBy('featuringScore');
-							onChangeSortDirection('');
-							return;
+							onChangeSortBy('featuringScore')
+							onChangeSortDirection('')
+							return
 						}
-						onChangeSortBy(newSortBy as TPossibleSortBy);
-						onChangeSortDirection(newSortDirection as TSortDirection);
+						onChangeSortBy(newSortBy as TPossibleSortBy)
+						onChangeSortDirection(newSortDirection as TSortDirection)
 					}}
 					items={[
 						{label: 'Vault', value: 'name', sortable: true, className: 'col-span-4'},
@@ -411,14 +411,14 @@ function ListOfVaults(): ReactElement {
 				<div className={'grid gap-4'}>{renderVaultList()}</div>
 			</div>
 		</Fragment>
-	);
+	)
 }
 
 function Index(): ReactElement {
-	const [isCollapsed, setIsCollapsed] = useState(true);
+	const [isCollapsed, setIsCollapsed] = useState(true)
 
 	function onClick(): void {
-		setIsCollapsed(!isCollapsed);
+		setIsCollapsed(!isCollapsed)
 	}
 
 	return (
@@ -487,7 +487,7 @@ function Index(): ReactElement {
 				</div>
 			</div>
 		</div>
-	);
+	)
 }
 
-export default Index;
+export default Index

@@ -1,83 +1,83 @@
-import {CarouselSlideArrows} from '@lib/components/CarouselSlideArrows';
-import type {TApp} from '@lib/types/mixed';
-import {useMountEffect} from '@react-hookz/web';
-import {type ReactElement, useRef, useState} from 'react';
-import {AppsCarousel} from './AppsCarousel';
+import {CarouselSlideArrows} from '@lib/components/CarouselSlideArrows'
+import type {TApp} from '@lib/types/mixed'
+import {useMountEffect} from '@react-hookz/web'
+import {type ReactElement, useRef, useState} from 'react'
+import {AppsCarousel} from './AppsCarousel'
 
 type TAppSectionProps = {
-	title: string;
-	apps: TApp[];
-};
+	title: string
+	apps: TApp[]
+}
 
 export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement => {
-	const [shuffledApps, setShuffledApps] = useState<TApp[]>([]);
-	const [, setCurrentPage] = useState(1);
-	const carouselRef = useRef<HTMLDivElement | null>(null);
-	const [isProgrammaticScroll, setIsProgrammaticScroll] = useState(false);
+	const [shuffledApps, setShuffledApps] = useState<TApp[]>([])
+	const [, setCurrentPage] = useState(1)
+	const carouselRef = useRef<HTMLDivElement | null>(null)
+	const [isProgrammaticScroll, setIsProgrammaticScroll] = useState(false)
 
 	/**********************************************************************************************
 	 ** Helper to get the width of a single carousel item.
 	 *********************************************************************************************/
 	const getItemWidth = (): number => {
 		if (!carouselRef.current) {
-			return 0;
+			return 0
 		}
-		const firstChild = carouselRef.current.querySelector(':scope > *');
-		return firstChild instanceof HTMLElement ? firstChild.offsetWidth : 0;
-	};
+		const firstChild = carouselRef.current.querySelector(':scope > *')
+		return firstChild instanceof HTMLElement ? firstChild.offsetWidth : 0
+	}
 
 	/**********************************************************************************************
 	 ** Handles scrolling back by one item in the carousel, wrapping to the end if at the start.
 	 *********************************************************************************************/
 	const onScrollBack = (): void => {
 		if (!carouselRef.current) {
-			return;
+			return
 		}
-		const itemWidth = getItemWidth();
+		const itemWidth = getItemWidth()
 		if (itemWidth === 0) {
-			return;
+			return
 		}
 
-		setIsProgrammaticScroll(true);
+		setIsProgrammaticScroll(true)
 
 		if (carouselRef.current.scrollLeft <= 0) {
 			// Wrap to end
-			carouselRef.current.scrollLeft = carouselRef.current.scrollWidth - carouselRef.current.clientWidth;
+			carouselRef.current.scrollLeft = carouselRef.current.scrollWidth - carouselRef.current.clientWidth
 		} else {
-			carouselRef.current.scrollLeft -= itemWidth;
+			carouselRef.current.scrollLeft -= itemWidth
 		}
 
 		setTimeout(() => {
-			setIsProgrammaticScroll(false);
-		}, 300);
-	};
+			setIsProgrammaticScroll(false)
+		}, 300)
+	}
 
 	/**********************************************************************************************
 	 ** Handles scrolling forward by one item in the carousel, wrapping to the start if at the end.
 	 *********************************************************************************************/
 	const onScrollForward = (): void => {
 		if (!carouselRef.current) {
-			return;
+			return
 		}
-		const itemWidth = getItemWidth();
+		const itemWidth = getItemWidth()
 		if (itemWidth === 0) {
-			return;
+			return
 		}
 
-		setIsProgrammaticScroll(true);
+		setIsProgrammaticScroll(true)
 
-		const maxScrollLeft = carouselRef.current.scrollWidth - carouselRef.current.clientWidth;
+		const maxScrollLeft = carouselRef.current.scrollWidth - carouselRef.current.clientWidth
 		if (carouselRef.current.scrollLeft >= maxScrollLeft) {
 			// Wrap to start
-			carouselRef.current.scrollLeft = 0;
+			carouselRef.current.scrollLeft = 0
 		} else {
-			carouselRef.current.scrollLeft += itemWidth;
+			carouselRef.current.scrollLeft += itemWidth
 		}
 
 		setTimeout(() => {
-			setIsProgrammaticScroll(false);
-		}, 300);
-	};
+			setIsProgrammaticScroll(false)
+		}, 300)
+	}
 
 	/**********************************************************************************************
 	 ** Handles the scroll event of the carousel.
@@ -86,36 +86,36 @@ export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement =
 	 *********************************************************************************************/
 	const onScroll = (): void => {
 		if (!carouselRef.current || isProgrammaticScroll) {
-			return;
+			return
 		}
-		const itemWidth = getItemWidth();
+		const itemWidth = getItemWidth()
 		if (itemWidth === 0) {
-			return;
+			return
 		}
-		const {scrollLeft} = carouselRef.current;
-		const page = Math.ceil(scrollLeft / (itemWidth * 4)) + 1; // 4 items per page
-		setCurrentPage(page);
-	};
+		const {scrollLeft} = carouselRef.current
+		const page = Math.ceil(scrollLeft / (itemWidth * 4)) + 1 // 4 items per page
+		setCurrentPage(page)
+	}
 
 	/**********************************************************************************************
 	 ** On component mount we shuffle the array of Partners to avoid any bias.
 	 **********************************************************************************************/
 	useMountEffect(() => {
 		if (apps?.length < 1) {
-			return;
+			return
 		}
-		let orderedApps = apps;
+		let orderedApps = apps
 		if (title === 'Integrations') {
-			orderedApps = apps.slice().sort(() => 0.5 - Math.random());
+			orderedApps = apps.slice().sort(() => 0.5 - Math.random())
 		}
 		// Move 'Resupply' app to the front if it exists
-		const resupplyIndex = orderedApps.findIndex(app => app.name === 'Resupply');
+		const resupplyIndex = orderedApps.findIndex(app => app.name === 'Resupply')
 		if (resupplyIndex > 0) {
-			const [resupplyApp] = orderedApps.splice(resupplyIndex, 1);
-			orderedApps = [resupplyApp, ...orderedApps];
+			const [resupplyApp] = orderedApps.splice(resupplyIndex, 1)
+			orderedApps = [resupplyApp, ...orderedApps]
 		}
-		setShuffledApps(orderedApps);
-	});
+		setShuffledApps(orderedApps)
+	})
 
 	return (
 		<div className={'flex flex-col overflow-hidden'}>
@@ -134,5 +134,5 @@ export const CategorySection = ({title, apps}: TAppSectionProps): ReactElement =
 				currentPage={currentPage}
 			/> */}
 		</div>
-	);
-};
+	)
+}

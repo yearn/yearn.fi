@@ -1,22 +1,22 @@
-import {useNotifications} from '@lib/contexts/useNotifications';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {IconBell} from '@lib/icons/IconBell';
-import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
-import {IconWallet} from '@lib/icons/IconWallet';
-import {cl} from '@lib/utils';
-import {truncateHex} from '@lib/utils/tools.address';
-import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit';
-import Link from 'next/link';
-import {useRouter} from 'next/router';
-import type {ReactElement} from 'react';
-import {useEffect, useMemo, useState} from 'react';
-import type {Chain} from 'viem';
-import {APPS, AppName} from './Apps';
-import {LogoPopover} from './LogoPopover';
-import {ModalMobileMenu} from './ModalMobileMenu';
+import {useNotifications} from '@lib/contexts/useNotifications'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {IconBell} from '@lib/icons/IconBell'
+import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain'
+import {IconWallet} from '@lib/icons/IconWallet'
+import {cl} from '@lib/utils'
+import {truncateHex} from '@lib/utils/tools.address'
+import {useAccountModal, useChainModal} from '@rainbow-me/rainbowkit'
+import Link from 'next/link'
+import {useRouter} from 'next/router'
+import type {ReactElement} from 'react'
+import {useEffect, useMemo, useState} from 'react'
+import type {Chain} from 'viem'
+import {APPS, AppName} from './Apps'
+import {LogoPopover} from './LogoPopover'
+import {ModalMobileMenu} from './ModalMobileMenu'
 
-export type TMenu = {path: string; label: string | ReactElement; target?: string};
-type TNavbar = {nav: TMenu[]; currentPathName: string};
+export type TMenu = {path: string; label: string | ReactElement; target?: string}
+type TNavbar = {nav: TMenu[]; currentPathName: string}
 
 function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 	return (
@@ -32,40 +32,40 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 				)
 			)}
 		</nav>
-	);
+	)
 }
 
 function WalletSelector(): ReactElement {
-	const {openAccountModal} = useAccountModal();
-	const {openChainModal} = useChainModal();
-	const {isActive, address, ens, clusters, lensProtocolHandle, openLoginModal} = useWeb3();
-	const [walletIdentity, setWalletIdentity] = useState<string | undefined>(undefined);
+	const {openAccountModal} = useAccountModal()
+	const {openChainModal} = useChainModal()
+	const {isActive, address, ens, clusters, lensProtocolHandle, openLoginModal} = useWeb3()
+	const [walletIdentity, setWalletIdentity] = useState<string | undefined>(undefined)
 
 	useEffect((): void => {
 		if (!isActive && address) {
-			setWalletIdentity('Invalid Network');
+			setWalletIdentity('Invalid Network')
 		} else if (ens) {
-			setWalletIdentity(ens);
+			setWalletIdentity(ens)
 		} else if (clusters) {
-			setWalletIdentity(clusters.name);
+			setWalletIdentity(clusters.name)
 		} else if (lensProtocolHandle) {
-			setWalletIdentity(lensProtocolHandle);
+			setWalletIdentity(lensProtocolHandle)
 		} else if (address) {
-			setWalletIdentity(truncateHex(address, 4));
+			setWalletIdentity(truncateHex(address, 4))
 		} else {
-			setWalletIdentity(undefined);
+			setWalletIdentity(undefined)
 		}
-	}, [ens, clusters, lensProtocolHandle, address, isActive]);
+	}, [ens, clusters, lensProtocolHandle, address, isActive])
 
 	return (
 		<div
 			onClick={(): void => {
 				if (isActive) {
-					openAccountModal?.();
+					openAccountModal?.()
 				} else if (!isActive && address) {
-					openChainModal?.();
+					openChainModal?.()
 				} else {
-					openLoginModal();
+					openLoginModal()
 				}
 			}}>
 			<p suppressHydrationWarning className={'yearn--header-nav-item !text-xs md:!text-sm'}>
@@ -84,35 +84,35 @@ function WalletSelector(): ReactElement {
 				)}
 			</p>
 		</div>
-	);
+	)
 }
 
 function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
-	const {pathname} = useRouter();
-	const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-	const {setShouldOpenCurtain, notificationStatus} = useNotifications();
+	const {pathname} = useRouter()
+	const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
+	const {setShouldOpenCurtain, notificationStatus} = useNotifications()
 
 	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/apps', label: 'Apps'};
+		const HOME_MENU = {path: '/apps', label: 'Apps'}
 
 		if (pathname.startsWith('/ycrv')) {
-			return [...APPS[AppName.YCRV].menu];
+			return [...APPS[AppName.YCRV].menu]
 		}
 
 		if (pathname.startsWith('/v3')) {
-			return [...APPS[AppName.VAULTSV3].menu];
+			return [...APPS[AppName.VAULTSV3].menu]
 		}
 
 		if (pathname.startsWith('/vaults-beta')) {
-			return [...APPS[AppName.BETA].menu];
+			return [...APPS[AppName.BETA].menu]
 		}
 
 		if (pathname.startsWith('/vaults')) {
-			return [...APPS[AppName.VAULTS].menu];
+			return [...APPS[AppName.VAULTS].menu]
 		}
 
 		if (pathname.startsWith('/veyfi')) {
-			return [...APPS[AppName.VEYFI].menu];
+			return [...APPS[AppName.VEYFI].menu]
 		}
 
 		return [
@@ -125,23 +125,23 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 				label: 'Discourse',
 				target: '_blank'
 			}
-		];
-	}, [pathname]);
+		]
+	}, [pathname])
 
 	const notificationDotColor = useMemo(() => {
 		if (notificationStatus === 'error') {
-			return 'bg-red';
+			return 'bg-red'
 		}
 
 		if (notificationStatus === 'success') {
-			return 'bg-[#0C9000]';
+			return 'bg-[#0C9000]'
 		}
 		if (notificationStatus === 'pending') {
-			return 'bg-primary animate-pulse';
+			return 'bg-primary animate-pulse'
 		}
 
-		return '';
-	}, [notificationStatus]);
+		return ''
+	}, [notificationStatus])
 
 	return (
 		<div id={'head'} className={'inset-x-0 top-0 z-50 w-full'}>
@@ -190,7 +190,7 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 				)}
 			</ModalMobileMenu>
 		</div>
-	);
+	)
 }
 
-export default AppHeader;
+export default AppHeader

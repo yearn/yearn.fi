@@ -828,4 +828,4 @@ export const erc4626Abi = [
 		inputs: [{name: 'arg0', type: 'address'}],
 		outputs: [{name: '', type: 'uint256'}]
 	}
-] as const;
+] as const

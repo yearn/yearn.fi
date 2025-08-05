@@ -1,7 +1,7 @@
-import {cl} from '@lib/utils';
-import {CATEGORY_PAGE_FILTERS} from '@lib/utils/constants';
+import {cl} from '@lib/utils'
+import {CATEGORY_PAGE_FILTERS} from '@lib/utils/constants'
 
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 function FilterItem({isActive, title}: {isActive: boolean; title: string}): ReactElement {
 	return (
@@ -12,7 +12,7 @@ function FilterItem({isActive, title}: {isActive: boolean; title: string}): Reac
 			)}>
 			{title}
 		</div>
-	);
+	)
 }
 
 export function FilterBar({selectedFilter}: {selectedFilter: {title: string; value: string}}): ReactElement {
@@ -22,5 +22,5 @@ export function FilterBar({selectedFilter}: {selectedFilter: {title: string; val
 				<FilterItem title={filter.title} isActive={filter.value === selectedFilter.value} key={filter.value} />
 			))}
 		</div>
-	);
+	)
 }

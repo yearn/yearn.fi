@@ -1,16 +1,16 @@
-import {useWallet} from '@lib/contexts/useWallet';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import type {TSortDirection} from '@lib/types';
-import {cl, toNormalizedBN} from '@lib/utils';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {FC} from 'react';
-import {useMemo, useState} from 'react';
-import {VaultBalanceCard} from './cards/VaultBalanceCard';
-import {VaultEmptyCard} from './cards/VaultEmptyCard';
-import {VaultPositionCard} from './cards/VaultPositionCard';
-import {VaultsListHead} from './VaultsListHead';
-import {VaultsListRow} from './VaultsListRow';
+import {useWallet} from '@lib/contexts/useWallet'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {useYearn} from '@lib/contexts/useYearn'
+import type {TSortDirection} from '@lib/types'
+import {cl, toNormalizedBN} from '@lib/utils'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type {FC} from 'react'
+import {useMemo, useState} from 'react'
+import {VaultBalanceCard} from './cards/VaultBalanceCard'
+import {VaultEmptyCard} from './cards/VaultEmptyCard'
+import {VaultPositionCard} from './cards/VaultPositionCard'
+import {VaultsListHead} from './VaultsListHead'
+import {VaultsListRow} from './VaultsListRow'
 
 enum TVaultsPositionsView {
 	Empty = 'Empty',
@@ -20,106 +20,106 @@ enum TVaultsPositionsView {
 
 const getVaultsPositionsView = (userPositions: TYDaemonVault[]): TVaultsPositionsView => {
 	if (userPositions.length === 0) {
-		return TVaultsPositionsView.Empty;
+		return TVaultsPositionsView.Empty
 	}
 	if (userPositions.length < 4) {
-		return TVaultsPositionsView.Card;
+		return TVaultsPositionsView.Card
 	}
-	return TVaultsPositionsView.Table;
-};
+	return TVaultsPositionsView.Table
+}
 
 export const VaultsPositions: FC = () => {
-	const {address, isActive} = useWeb3();
-	const {getBalance, cumulatedValueInV2Vaults, cumulatedValueInV3Vaults} = useWallet();
-	const {vaults, vaultsMigrations, vaultsRetired, getPrice} = useYearn();
+	const {address, isActive} = useWeb3()
+	const {getBalance, cumulatedValueInV2Vaults, cumulatedValueInV3Vaults} = useWallet()
+	const {vaults, vaultsMigrations, vaultsRetired, getPrice} = useYearn()
 
-	const [sortBy, setSortBy] = useState<string>('totalValue');
-	const [sortDirection, setSortDirection] = useState<TSortDirection>('desc');
-	const [viewOverride, setViewOverride] = useState<TVaultsPositionsView | null>(null);
+	const [sortBy, setSortBy] = useState<string>('totalValue')
+	const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
+	const [viewOverride, setViewOverride] = useState<TVaultsPositionsView | null>(null)
 
 	const userPositions = useMemo(() => {
 		if (!isActive || !address) {
-			return [];
+			return []
 		}
 
 		const allVaults = [
 			...Object.values(vaults),
 			...Object.values(vaultsMigrations),
 			...Object.values(vaultsRetired)
-		];
+		]
 
 		const positions = allVaults
 			.map(vault => {
-				const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
+				const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID})
 				const stakingBalance =
 					vault.staking.available && vault.staking.address
 						? getBalance({address: vault.staking.address, chainID: vault.chainID})
-						: toNormalizedBN(0n, vault.decimals);
+						: toNormalizedBN(0n, vault.decimals)
 
-				const totalBalance = toNormalizedBN(vaultBalance.raw + stakingBalance.raw, vault.decimals);
-				const tokenPrice = getPrice({address: vault.address, chainID: vault.chainID});
-				const totalValue = totalBalance.normalized * tokenPrice.normalized;
+				const totalBalance = toNormalizedBN(vaultBalance.raw + stakingBalance.raw, vault.decimals)
+				const tokenPrice = getPrice({address: vault.address, chainID: vault.chainID})
+				const totalValue = totalBalance.normalized * tokenPrice.normalized
 
 				return {
 					...vault,
 					totalBalance,
 					totalValue
-				};
+				}
 			})
-			.filter(vault => vault.totalBalance.raw > 0n && vault.totalValue >= 0.01);
+			.filter(vault => vault.totalBalance.raw > 0n && vault.totalValue >= 0.01)
 
 		if (sortBy === 'totalValue') {
 			return positions.sort((a, b) =>
 				sortDirection === 'desc' ? b.totalValue - a.totalValue : a.totalValue - b.totalValue
-			);
+			)
 		}
 		if (sortBy === 'name') {
 			return positions.sort((a, b) =>
 				sortDirection === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)
-			);
+			)
 		}
-		return positions.sort((a, b) => b.totalValue - a.totalValue);
-	}, [address, isActive, vaults, vaultsMigrations, vaultsRetired, sortBy, sortDirection, getBalance, getPrice]);
+		return positions.sort((a, b) => b.totalValue - a.totalValue)
+	}, [address, isActive, vaults, vaultsMigrations, vaultsRetired, sortBy, sortDirection, getBalance, getPrice])
 
-	const totalDeposited = cumulatedValueInV2Vaults + cumulatedValueInV3Vaults;
+	const totalDeposited = cumulatedValueInV2Vaults + cumulatedValueInV3Vaults
 
 	const handleSort = (newSortBy: string, newSortDirection: TSortDirection): void => {
-		setSortBy(newSortBy);
-		setSortDirection(newSortDirection);
-	};
+		setSortBy(newSortBy)
+		setSortDirection(newSortDirection)
+	}
 
 	const handleExpansionClick = (): void => {
-		const currentView = viewOverride || getVaultsPositionsView(userPositions);
+		const currentView = viewOverride || getVaultsPositionsView(userPositions)
 		if (currentView === TVaultsPositionsView.Card) {
-			setViewOverride(TVaultsPositionsView.Table);
+			setViewOverride(TVaultsPositionsView.Table)
 		} else if (currentView === TVaultsPositionsView.Table) {
-			setViewOverride(TVaultsPositionsView.Card);
+			setViewOverride(TVaultsPositionsView.Card)
 		}
-	};
+	}
 
 	const VaultView: TVaultsPositionsView = useMemo(() => {
 		if (viewOverride) {
-			return viewOverride;
+			return viewOverride
 		}
-		return getVaultsPositionsView(userPositions);
-	}, [userPositions, viewOverride]);
+		return getVaultsPositionsView(userPositions)
+	}, [userPositions, viewOverride])
 
 	// Adjust
 	const styles = useMemo(() => {
-		const cards = 'flex flex-col md:flex-row gap-2 md:p-0 p-2';
+		const cards = 'flex flex-col md:flex-row gap-2 md:p-0 p-2'
 		if ([TVaultsPositionsView.Card, TVaultsPositionsView.Empty].includes(VaultView)) {
 			return {
 				divider: 'w-full h-px md:h-[100px] md:w-px',
 				content: 'flex-col md:flex-row md:items-center md:gap-8',
 				cards
-			};
+			}
 		}
 		return {
 			divider: 'h-px w-full',
 			content: 'flex-col',
 			cards
-		};
-	}, [VaultView]);
+		}
+	}, [VaultView])
 
 	return (
 		<div
@@ -169,7 +169,7 @@ export const VaultsPositions: FC = () => {
 							/>
 							<div className={'grid gap-1'}>
 								{userPositions.map((vault, index) => {
-									const isV3 = vault.version.startsWith('3') || vault.version.startsWith('~3');
+									const isV3 = vault.version.startsWith('3') || vault.version.startsWith('~3')
 									return (
 										<VaultsListRow
 											key={`${vault.chainID}_${vault.address}`}
@@ -177,7 +177,7 @@ export const VaultsPositions: FC = () => {
 											isV2={!isV3}
 											index={index}
 										/>
-									);
+									)
 								})}
 							</div>
 						</div>
@@ -185,5 +185,5 @@ export const VaultsPositions: FC = () => {
 				</div>
 			)}
 		</div>
-	);
-};
+	)
+}

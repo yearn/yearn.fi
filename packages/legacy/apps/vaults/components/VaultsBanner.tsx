@@ -1,15 +1,15 @@
-import {SectionHeader} from '@lib/components/SectionHeader';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import Image from 'next/image';
-import Link from 'next/link';
+import {SectionHeader} from '@lib/components/SectionHeader'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import Image from 'next/image'
+import Link from 'next/link'
 
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function VaultsBanner(): ReactElement | null {
-	const {address} = useWeb3();
+	const {address} = useWeb3()
 
 	if (address) {
-		return null;
+		return null
 	}
 
 	return (
@@ -46,5 +46,5 @@ export function VaultsBanner(): ReactElement | null {
 				</div>
 			</div>
 		</div>
-	);
+	)
 }

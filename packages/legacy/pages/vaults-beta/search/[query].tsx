@@ -1,20 +1,20 @@
-import {AppCard} from '@lib/components/AppCard';
-import {useInitialQueryParam} from '@lib/hooks/useInitialQueryParam';
-import {cl} from '@lib/utils';
-import {ALL_APPS} from '@lib/utils/constants';
-import type {GetServerSidePropsContext} from 'next';
-import Image from 'next/image';
-import Link from 'next/link';
-import {type ReactElement, useMemo} from 'react';
+import {AppCard} from '@lib/components/AppCard'
+import {useInitialQueryParam} from '@lib/hooks/useInitialQueryParam'
+import {cl} from '@lib/utils'
+import {ALL_APPS} from '@lib/utils/constants'
+import type {GetServerSidePropsContext} from 'next'
+import Image from 'next/image'
+import Link from 'next/link'
+import {type ReactElement, useMemo} from 'react'
 
 export default function SeachResults(): ReactElement {
-	const searchValue = useInitialQueryParam('query');
+	const searchValue = useInitialQueryParam('query')
 	const searchFilteredApps = useMemo(() => {
 		if (!searchValue) {
-			return [];
+			return []
 		}
-		return ALL_APPS.filter(app => app.name.toLowerCase().includes(searchValue.toLowerCase()));
-	}, [searchValue]);
+		return ALL_APPS.filter(app => app.name.toLowerCase().includes(searchValue.toLowerCase()))
+	}, [searchValue])
 
 	return (
 		<div className={'mt-24 flex w-full justify-center md:mt-10'}>
@@ -70,7 +70,7 @@ export default function SeachResults(): ReactElement {
 				</div>
 			</div>
 		</div>
-	);
+	)
 }
 
 /************************************************************************************************
@@ -82,10 +82,10 @@ export default function SeachResults(): ReactElement {
  ** This approach allows for immediate access to the search query without client-side processing
  ************************************************************************************************/
 export async function getServerSideProps(context: GetServerSidePropsContext): Promise<{props: {query: string}}> {
-	const {query} = context.params as {query: string};
+	const {query} = context.params as {query: string}
 	return {
 		props: {
 			query: query || ''
 		}
-	};
+	}
 }

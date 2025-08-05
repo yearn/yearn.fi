@@ -1,22 +1,22 @@
-import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown';
-import {useChainOptions} from '@lib/hooks/useChains';
-import type React from 'react';
+import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown'
+import {useChainOptions} from '@lib/hooks/useChains'
+import type React from 'react'
 
 type TChainFilterDropdownProps = {
-	chains: number[] | null;
-	onChangeChains: (chains: number[] | null) => void;
-	className?: string;
-};
+	chains: number[] | null
+	onChangeChains: (chains: number[] | null) => void
+	className?: string
+}
 
 export const ChainFilterDropdown: React.FC<TChainFilterDropdownProps> = ({chains, onChangeChains, className = ''}) => {
-	const chainOptions = useChainOptions(chains);
+	const chainOptions = useChainOptions(chains)
 
 	const optionsWithSelection = chainOptions.map(option => ({
 		...option,
 		isSelected: (chains || []).includes(Number(option.value))
-	}));
+	}))
 
-	const selectedOptions = optionsWithSelection.filter(option => option.isSelected);
+	const selectedOptions = optionsWithSelection.filter(option => option.isSelected)
 
 	const ChainLogosStack: React.FC = () => (
 		<div className={'flex items-center'}>
@@ -41,7 +41,7 @@ export const ChainFilterDropdown: React.FC<TChainFilterDropdownProps> = ({chains
 				)}
 			</div>
 		</div>
-	);
+	)
 
 	return (
 		<div className={className}>
@@ -51,10 +51,10 @@ export const ChainFilterDropdown: React.FC<TChainFilterDropdownProps> = ({chains
 				onSelect={(options): void => {
 					const selectedChains = options
 						.filter((o): boolean => o.isSelected)
-						.map((option): number => Number(option.value));
-					onChangeChains(selectedChains.length === 0 ? null : selectedChains);
+						.map((option): number => Number(option.value))
+					onChangeChains(selectedChains.length === 0 ? null : selectedChains)
 				}}
 			/>
 		</div>
-	);
-};
+	)
+}

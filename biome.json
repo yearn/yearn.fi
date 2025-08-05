@@ -129,7 +129,7 @@
 			"jsxQuoteStyle": "double",
 			"quoteProperties": "asNeeded",
 			"trailingCommas": "none",
-			"semicolons": "always",
+			"semicolons": "asNeeded",
 			"arrowParentheses": "asNeeded",
 			"bracketSameLine": true,
 			"quoteStyle": "single",

@@ -1,25 +1,25 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback';
-import type {TNormalizedBN} from '@lib/types';
-import {formatAmount, formatPercent, toAddress} from '@lib/utils';
-import {replaceStrings} from '@lib/utils/helpers';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {VAULT_NAME_REPLACEMENTS} from '@vaults/constants';
-import Link from 'next/link';
-import type {FC} from 'react';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback'
+import type {TNormalizedBN} from '@lib/types'
+import {formatAmount, formatPercent, toAddress} from '@lib/utils'
+import {replaceStrings} from '@lib/utils/helpers'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {VAULT_NAME_REPLACEMENTS} from '@vaults/constants'
+import Link from 'next/link'
+import type {FC} from 'react'
 
 export const VaultPositionCard: FC<{
-	vault: TYDaemonVault & {totalBalance: TNormalizedBN; totalValue: number};
+	vault: TYDaemonVault & {totalBalance: TNormalizedBN; totalValue: number}
 }> = ({vault}) => {
 	if (!vault) {
-		return null;
+		return null
 	}
 
-	const title = replaceStrings(vault.name, VAULT_NAME_REPLACEMENTS, '');
-	const apr = vault.apr?.forwardAPR?.netAPR || 0;
-	const isV3 = vault.version.startsWith('3') || vault.version.startsWith('~3');
+	const title = replaceStrings(vault.name, VAULT_NAME_REPLACEMENTS, '')
+	const apr = vault.apr?.forwardAPR?.netAPR || 0
+	const isV3 = vault.version.startsWith('3') || vault.version.startsWith('~3')
 	const href = isV3
 		? `/v3/${vault.chainID}/${toAddress(vault.address)}`
-		: `/vaults/${vault.chainID}/${toAddress(vault.address)}`;
+		: `/vaults/${vault.chainID}/${toAddress(vault.address)}`
 
 	return (
 		<Link href={href}>
@@ -73,5 +73,5 @@ export const VaultPositionCard: FC<{
 				</div>
 			</div>
 		</Link>
-	);
-};
+	)
+}

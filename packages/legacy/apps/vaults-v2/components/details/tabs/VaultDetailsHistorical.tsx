@@ -1,11 +1,11 @@
-import {IconLinkOut} from '@lib/icons/IconLinkOut';
-import {IconSpinner} from '@lib/icons/IconSpinner';
-import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@lib/utils';
-import {formatDate} from '@lib/utils/format.time';
-import type {TYDaemonVault, TYDaemonVaultHarvest, TYDaemonVaultHarvests} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {getNetwork} from '@lib/utils/wagmi';
-import {truncateHexTx} from '@vaults-v2/utils';
-import type {ReactElement} from 'react';
+import {IconLinkOut} from '@lib/icons/IconLinkOut'
+import {IconSpinner} from '@lib/icons/IconSpinner'
+import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@lib/utils'
+import {formatDate} from '@lib/utils/format.time'
+import type {TYDaemonVault, TYDaemonVaultHarvest, TYDaemonVaultHarvests} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {getNetwork} from '@lib/utils/wagmi'
+import {truncateHexTx} from '@vaults-v2/utils'
+import type {ReactElement} from 'react'
 
 function HarvestListHead(): ReactElement {
 	return (
@@ -26,19 +26,19 @@ function HarvestListHead(): ReactElement {
 				<p className={'yearn--table-head-label md:text-right'}>{'Transaction'}</p>
 			</div>
 		</div>
-	);
+	)
 }
 
 function HarvestListRow({
 	harvest,
 	currentVault
 }: {
-	harvest: TYDaemonVaultHarvest;
-	currentVault: TYDaemonVault;
+	harvest: TYDaemonVaultHarvest
+	currentVault: TYDaemonVault
 }): ReactElement {
 	const blockExplorer =
 		getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
-		getNetwork(currentVault.chainID).blockExplorers?.default.url;
+		getNetwork(currentVault.chainID).blockExplorers?.default.url
 
 	return (
 		<div className={'grid grid-cols-1 border-b border-neutral-200 px-10 pb-4 md:grid-cols-12'}>
@@ -86,7 +86,7 @@ function HarvestListRow({
 				</a>
 			</div>
 		</div>
-	);
+	)
 }
 
 export function VaultDetailsHistorical({
@@ -94,16 +94,16 @@ export function VaultDetailsHistorical({
 	isLoading,
 	currentVault
 }: {
-	harvests: TYDaemonVaultHarvests | undefined;
-	isLoading: boolean;
-	currentVault: TYDaemonVault;
+	harvests: TYDaemonVaultHarvests | undefined
+	isLoading: boolean
+	currentVault: TYDaemonVault
 }): ReactElement {
 	if (isLoading) {
 		return (
 			<div className={'mt-6 flex flex-row items-center justify-center pb-12 pt-6'}>
 				<IconSpinner className={'!h-6 !w-6 !text-neutral-400'} />
 			</div>
-		);
+		)
 	}
 
 	if (!harvests || harvests.length === 0) {
@@ -111,7 +111,7 @@ export function VaultDetailsHistorical({
 			<div className={'mt-6 flex flex-row items-center justify-center pb-12 pt-6'}>
 				<p className={'text-neutral-500'}>{'No harvests yet'}</p>
 			</div>
-		);
+		)
 	}
 
 	return (
@@ -125,9 +125,9 @@ export function VaultDetailsHistorical({
 							currentVault={currentVault}
 							harvest={harvest}
 						/>
-					);
+					)
 				})}
 			</div>
 		</div>
-	);
+	)
 }

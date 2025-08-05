@@ -1,21 +1,21 @@
-import {Renderable} from '@lib/components/Renderable';
-import type {TNormalizedBN} from '@lib/types';
-import type {ReactElement} from 'react';
+import {Renderable} from '@lib/components/Renderable'
+import type {TNormalizedBN} from '@lib/types'
+import type {ReactElement} from 'react'
 
 type TAmountInputProps = {
-	amount: TNormalizedBN;
-	maxAmount?: TNormalizedBN;
-	maxLabel?: string;
-	label?: string;
-	placeholder?: string;
-	legend?: string | ReactElement;
-	error?: string;
-	disabled?: boolean;
-	loading?: boolean;
-	onAmountChange?: (amount: string) => void;
-	onLegendClick?: () => void;
-	onMaxClick?: () => void;
-};
+	amount: TNormalizedBN
+	maxAmount?: TNormalizedBN
+	maxLabel?: string
+	label?: string
+	placeholder?: string
+	legend?: string | ReactElement
+	error?: string
+	disabled?: boolean
+	loading?: boolean
+	onAmountChange?: (amount: string) => void
+	onLegendClick?: () => void
+	onMaxClick?: () => void
+}
 
 export function AmountInput({
 	amount,
@@ -68,5 +68,5 @@ export function AmountInput({
 				</legend>
 			</Renderable>
 		</div>
-	);
+	)
 }

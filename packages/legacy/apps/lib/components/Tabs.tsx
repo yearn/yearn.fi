@@ -1,37 +1,37 @@
-import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react';
-import {IconChevron} from '@lib/icons/IconChevron';
-import {AnimatePresence, motion} from 'framer-motion';
-import {useRouter} from 'next/router';
-import type {ReactElement} from 'react';
-import {useEffect, useState} from 'react';
+import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react'
+import {IconChevron} from '@lib/icons/IconChevron'
+import {AnimatePresence, motion} from 'framer-motion'
+import {useRouter} from 'next/router'
+import type {ReactElement} from 'react'
+import {useEffect, useState} from 'react'
 
 const variants = {
 	initial: {y: 10, opacity: 0},
 	enter: {y: 0, opacity: 1},
 	exit: {y: -10, opacity: 0}
-};
+}
 
 type TItem = {
-	id: string;
-	label: string;
-	content: ReactElement;
-};
+	id: string
+	label: string
+	content: ReactElement
+}
 
 type TTabsProps = {
-	items: TItem[];
-	className?: string;
-};
+	items: TItem[]
+	className?: string
+}
 
 export function Tabs({items, className}: TTabsProps): ReactElement {
-	const [selectedTabId, setSelectedTabId] = useState(items[0]?.id);
-	const router = useRouter();
+	const [selectedTabId, setSelectedTabId] = useState(items[0]?.id)
+	const router = useRouter()
 
 	useEffect((): void => {
-		const tab = items.find((tab): boolean => tab.id === router.query.tab);
+		const tab = items.find((tab): boolean => tab.id === router.query.tab)
 		if (tab?.id) {
-			setSelectedTabId(tab?.id);
+			setSelectedTabId(tab?.id)
 		}
-	}, [items, router.query.tab]);
+	}, [items, router.query.tab])
 
 	return (
 		<div className={`w-full bg-neutral-100 ${className}`}>
@@ -53,8 +53,8 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 									{
 										shallow: true
 									}
-								);
-								setSelectedTabId(id);
+								)
+								setSelectedTabId(id)
 							}}>
 							<p
 								title={label}
@@ -134,5 +134,5 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 				</motion.div>
 			</AnimatePresence>
 		</div>
-	);
+	)
 }

@@ -1,26 +1,26 @@
-import {useNotifications} from '@lib/contexts/useNotifications';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import type {TDict, TNormalizedBN} from '@lib/types';
-import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {YGAUGES_ZAP_ADDRESS} from '@lib/utils/constants';
-import {allowanceKey} from '@lib/utils/helpers';
-import type {TTxStatus} from '@lib/utils/wagmi';
-import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
-import {Solver} from '@vaults-v2/types/solvers';
-import {depositAndStake} from '@vaults-v2/utils/actions';
-import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
-import {useCallback, useMemo, useRef} from 'react';
-import type {Hash, TransactionReceipt} from 'viem';
-import {maxUint256} from 'viem';
+import {useNotifications} from '@lib/contexts/useNotifications'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import type {TDict, TNormalizedBN} from '@lib/types'
+import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils'
+import {YGAUGES_ZAP_ADDRESS} from '@lib/utils/constants'
+import {allowanceKey} from '@lib/utils/helpers'
+import type {TTxStatus} from '@lib/utils/wagmi'
+import {allowanceOf, approveERC20} from '@lib/utils/wagmi'
+import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
+import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers'
+import {Solver} from '@vaults-v2/types/solvers'
+import {depositAndStake} from '@vaults-v2/utils/actions'
+import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut'
+import {useCallback, useMemo, useRef} from 'react'
+import type {Hash, TransactionReceipt} from 'viem'
+import {maxUint256} from 'viem'
 
 export function useSolverGaugeStakingBooster(): TSolverContext {
-	const {provider} = useWeb3();
-	const {setShouldOpenCurtain} = useNotifications();
-	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
-	const request = useRef<TInitSolverArgs | undefined>(undefined);
-	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
+	const {provider} = useWeb3()
+	const {setShouldOpenCurtain} = useNotifications()
+	const latestQuote = useRef<TNormalizedBN | undefined>(undefined)
+	const request = useRef<TInitSolverArgs | undefined>(undefined)
+	const existingAllowances = useRef<TDict<TNormalizedBN>>({})
 
 	/**********************************************************************************************
 	 ** init will be called when the gauge staking booster should be used to perform the desired
@@ -29,9 +29,9 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 	 *********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
 		if (isSolverDisabled(Solver.enum.GaugeStakingBooster)) {
-			return undefined;
+			return undefined
 		}
-		request.current = _request;
+		request.current = _request
 		const estimateOut = await getVaultEstimateOut({
 			inputToken: toAddress(_request.inputToken.value),
 			outputToken: toAddress(_request.outputToken.value),
@@ -42,10 +42,10 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 			chainID: _request.chainID,
 			version: _request.version,
 			from: toAddress(_request.from)
-		});
-		latestQuote.current = estimateOut;
-		return latestQuote.current;
-	}, []);
+		})
+		latestQuote.current = estimateOut
+		return latestQuote.current
+	}, [])
 
 	/**********************************************************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will be used to
@@ -54,7 +54,7 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 			if (!request?.current || !provider) {
-				return zeroNormalizedBN;
+				return zeroNormalizedBN
 			}
 
 			const key = allowanceKey(
@@ -62,9 +62,9 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 				toAddress(request.current.inputToken.value),
 				toAddress(request.current.outputToken.value),
 				toAddress(request.current.from)
-			);
+			)
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
-				return existingAllowances.current[key];
+				return existingAllowances.current[key]
 			}
 
 			const allowance = await allowanceOf({
@@ -72,12 +72,12 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 				chainID: request.current.inputToken.chainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: toAddress(YGAUGES_ZAP_ADDRESS)
-			});
-			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
-			return existingAllowances.current[key];
+			})
+			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
+			return existingAllowances.current[key]
 		},
 		[provider]
-	);
+	)
 
 	/**********************************************************************************************
 	 ** Trigger an approve web3 action
@@ -92,8 +92,8 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current.inputToken, 'Input token is not set');
+			assert(request.current, 'Request is not set')
+			assert(request.current.inputToken, 'Input token is not set')
 			try {
 				const result = await approveERC20({
 					connector: provider,
@@ -106,21 +106,21 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					}
-				});
+				})
 				if (result.isSuccessful) {
-					onSuccess(result.receipt);
+					onSuccess(result.receipt)
 				} else {
-					onError?.(result.error as Error);
+					onError?.(result.error as Error)
 				}
 			} catch (error) {
-				onError?.(error as Error);
+				onError?.(error as Error)
 			}
 		},
 		[provider, setShouldOpenCurtain]
-	);
+	)
 
 	/**********************************************************************************************
 	 ** Trigger a deposit and stake web3 action, simply trying to zap `amount` tokens via the
@@ -133,8 +133,8 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current.inputAmount, 'Input amount is not set');
+			assert(request.current, 'Request is not set')
+			assert(request.current.inputAmount, 'Input amount is not set')
 			try {
 				const result = await depositAndStake({
 					connector: provider,
@@ -149,21 +149,21 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					}
-				});
+				})
 				if (result.isSuccessful) {
-					onSuccess(result.receipt);
+					onSuccess(result.receipt)
 				} else {
-					onError?.(result.error as Error);
+					onError?.(result.error as Error)
 				}
 			} catch (error) {
-				onError?.(error as Error);
+				onError?.(error as Error)
 			}
 		},
 		[provider, setShouldOpenCurtain]
-	);
+	)
 
 	return useMemo(
 		(): TSolverContext => ({
@@ -176,5 +176,5 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
 			onExecuteWithdraw: async (): Promise<void> => undefined
 		}),
 		[init, onApprove, onExecuteDeposit, onRetrieveAllowance]
-	);
+	)
 }

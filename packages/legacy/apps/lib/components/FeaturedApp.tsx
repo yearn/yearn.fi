@@ -1,8 +1,8 @@
-import type {TApp} from '@lib/types/mixed';
-import {cl} from '@lib/utils';
-import Image from 'next/image';
-import Link from 'next/link';
-import type {ReactElement} from 'react';
+import type {TApp} from '@lib/types/mixed'
+import {cl} from '@lib/utils'
+import Image from 'next/image'
+import Link from 'next/link'
+import type {ReactElement} from 'react'
 
 export function FeaturedApp(props: {app: TApp}): ReactElement {
 	return (
@@ -33,5 +33,5 @@ export function FeaturedApp(props: {app: TApp}): ReactElement {
 				{props.app.description}
 			</div>
 		</Link>
-	);
+	)
 }

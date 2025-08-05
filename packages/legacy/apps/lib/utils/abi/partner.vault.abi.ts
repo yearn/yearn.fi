@@ -33,4 +33,4 @@ export const PARTNER_VAULT_ABI = [
 		stateMutability: 'view',
 		type: 'function'
 	}
-] as const;
+] as const

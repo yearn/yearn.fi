@@ -44,4 +44,4 @@ export const ZAP_OPT_ETH_TO_YVETH_ABI = [
 		inputs: [],
 		outputs: [{name: '', type: 'address'}]
 	}
-] as const;
+] as const

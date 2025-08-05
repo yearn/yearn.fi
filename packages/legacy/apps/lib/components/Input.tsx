@@ -1,21 +1,21 @@
-import {cl} from '@lib/utils';
+import {cl} from '@lib/utils'
 
-import type {ReactElement, ReactNode} from 'react';
+import type {ReactElement, ReactNode} from 'react'
 
 type TAmountInputProps = {
-	value: string;
-	onChange?: (value: string) => void;
-	label?: string;
-	placeholder?: string;
-	legend?: string | ReactNode;
-	error?: string;
-	isDisabled?: boolean;
-	isLoading?: boolean;
-	className?: string;
-};
+	value: string
+	onChange?: (value: string) => void
+	label?: string
+	placeholder?: string
+	legend?: string | ReactNode
+	error?: string
+	isDisabled?: boolean
+	isLoading?: boolean
+	className?: string
+}
 
 export function Input(props: TAmountInputProps): ReactElement {
-	const {value, onChange, label, placeholder, legend, error, isDisabled, isLoading, className = ''} = props;
+	const {value, onChange, label, placeholder, legend, error, isDisabled, isLoading, className = ''} = props
 	return (
 		<div className={`w-full ${className}`}>
 			{label && <p className={'mb-1 w-full truncate text-base text-neutral-600'}>{label}</p>}
@@ -41,13 +41,13 @@ export function Input(props: TAmountInputProps): ReactElement {
 				</legend>
 			)}
 		</div>
-	);
+	)
 }
 
 export function FakeInput(
 	props: Omit<TAmountInputProps, 'value' | 'placeholder' | 'onChange' | 'isDisabled' | 'error'> & {value: ReactNode}
 ): ReactElement {
-	const {value, label, legend, className = ''} = props;
+	const {value, label, legend, className = ''} = props
 	return (
 		<div className={`w-full ${className}`}>
 			{label && <p className={'mb-1 w-full truncate text-base text-neutral-600'}>{label}</p>}
@@ -67,5 +67,5 @@ export function FakeInput(
 				</legend>
 			)}
 		</div>
-	);
+	)
 }

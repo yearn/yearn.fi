@@ -4,25 +4,25 @@
  * Supports Zod schema validation with comprehensive error handling
  ************************************************************************************************/
 
-import type {SWRResponse} from 'swr';
-import useSWR from 'swr';
-import type {z} from 'zod';
-import {baseFetcher} from '../utils/fetchers';
+import type {SWRResponse} from 'swr'
+import useSWR from 'swr'
+import type {z} from 'zod'
+import {baseFetcher} from '../utils/fetchers'
 
 type TUseZodProps<T> = {
-	endpoint: string | null;
-	schema: z.ZodSchema;
+	endpoint: string | null
+	schema: z.ZodSchema
 	config?: Parameters<typeof useSWR<T>>[2] & {
 		/** Cache duration in milliseconds (default: 2 minutes) */
-		cacheDuration?: number;
+		cacheDuration?: number
 		/** Enable background revalidation on interval (default: false) */
-		shouldEnableRefreshInterval?: boolean;
+		shouldEnableRefreshInterval?: boolean
 		/** Refresh interval in milliseconds (default: 30 seconds) */
-		refreshInterval?: number;
+		refreshInterval?: number
 		/** Maximum number of retries on error (default: 3) */
-		maxRetries?: number;
-	};
-};
+		maxRetries?: number
+	}
+}
 
 export function useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRResponse<T> & {isSuccess: boolean} {
 	const {
@@ -31,7 +31,7 @@ export function useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRRes
 		refreshInterval = 30 * 1000, // 30 seconds
 		maxRetries = 3,
 		...swrConfig
-	} = config ?? {};
+	} = config ?? {}
 
 	const result = useSWR<T>(endpoint, baseFetcher, {
 		// Caching configuration
@@ -55,23 +55,23 @@ export function useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRRes
 
 		// Override with user config
 		...swrConfig
-	});
+	})
 
 	if (!result.data || result.isLoading || result.isValidating) {
-		return {...result, isSuccess: false};
+		return {...result, isSuccess: false}
 	}
 
 	if (result.error) {
-		console.error(`[useFetch] Error fetching ${endpoint}:`, result.error);
-		return {...result, isSuccess: false};
+		console.error(`[useFetch] Error fetching ${endpoint}:`, result.error)
+		return {...result, isSuccess: false}
 	}
 
-	const parsedData = schema.safeParse(result.data);
+	const parsedData = schema.safeParse(result.data)
 
 	if (!parsedData.success) {
-		console.error(`[useFetch] Schema validation failed for ${endpoint}:`, parsedData.error);
-		return {...result, isSuccess: false};
+		console.error(`[useFetch] Schema validation failed for ${endpoint}:`, parsedData.error)
+		return {...result, isSuccess: false}
 	}
 
-	return {...result, data: parsedData.data, isSuccess: true};
+	return {...result, data: parsedData.data, isSuccess: true}
 }

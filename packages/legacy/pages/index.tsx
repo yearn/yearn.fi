@@ -1,6 +1,6 @@
-import {FAQs, Footer, Hero, Integrations, Partners, Security, Vaults} from 'apps/landing/components/sections';
+import {FAQs, Footer, Hero, Integrations, Partners, Security, Vaults} from 'apps/landing/components/sections'
 
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 function Index(): ReactElement {
 	return (
@@ -19,7 +19,7 @@ function Index(): ReactElement {
 				<Footer />
 			</footer>
 		</div>
-	);
+	)
 }
 
-export default Index;
+export default Index

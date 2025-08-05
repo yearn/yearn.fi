@@ -1,47 +1,45 @@
-import {IconChevronPlain} from '@lib/icons/IconChevronPlain';
-import type {TSortDirection} from '@lib/types';
-import {cl} from '@lib/utils';
+import {IconChevronPlain} from '@lib/icons/IconChevronPlain'
+import type {TSortDirection} from '@lib/types'
+import {cl} from '@lib/utils'
 
-import type {ReactElement} from 'react';
-import {useCallback} from 'react';
+import type {ReactElement} from 'react'
+import {useCallback} from 'react'
 
 export type TListHead = {
 	items: {
-		label: string | ReactElement;
-		value: string;
-		sortable?: boolean;
-		className?: string;
-	}[];
-	sortBy: string;
-	sortDirection: TSortDirection;
-	onSort: (sortBy: string, sortDirection: TSortDirection) => void;
-};
+		label: string | ReactElement
+		value: string
+		sortable?: boolean
+		className?: string
+	}[]
+	sortBy: string
+	sortDirection: TSortDirection
+	onSort: (sortBy: string, sortDirection: TSortDirection) => void
+}
 
 export function VaultsListHead({items, sortBy, sortDirection, onSort}: TListHead): ReactElement {
 	const toggleSortDirection = (newSortBy: string): TSortDirection => {
 		if (sortBy === newSortBy) {
 			if (sortDirection === '') {
-				return 'desc';
+				return 'desc'
 			}
 			if (sortDirection === 'desc') {
-				return 'asc';
+				return 'asc'
 			}
 			if (sortDirection === 'asc') {
-				return '';
+				return ''
 			}
 		}
-		return 'desc';
-	};
+		return 'desc'
+	}
 
 	const renderChevron = useCallback(
 		(shouldSortBy: boolean): ReactElement => {
 			if (shouldSortBy && sortDirection === 'desc') {
-				return <IconChevronPlain className={'size-4 min-w-[16px] cursor-pointer text-neutral-800'} />;
+				return <IconChevronPlain className={'size-4 min-w-[16px] cursor-pointer text-neutral-800'} />
 			}
 			if (shouldSortBy && sortDirection === 'asc') {
-				return (
-					<IconChevronPlain className={'size-4 min-w-[16px] rotate-180 cursor-pointer text-neutral-800'} />
-				);
+				return <IconChevronPlain className={'size-4 min-w-[16px] rotate-180 cursor-pointer text-neutral-800'} />
 			}
 			return (
 				<IconChevronPlain
@@ -49,12 +47,12 @@ export function VaultsListHead({items, sortBy, sortDirection, onSort}: TListHead
 						'size-4 min-w-[16px] cursor-pointer text-neutral-800/60 transition-colors group-hover:text-neutral-800'
 					}
 				/>
-			);
+			)
 		},
 		[sortDirection]
-	);
+	)
 
-	const [token, ...rest] = items;
+	const [token, ...rest] = items
 	return (
 		<div className={'mt-4 hidden w-full grid-cols-1 md:mt-0 md:grid'}>
 			<div
@@ -102,5 +100,5 @@ export function VaultsListHead({items, sortBy, sortDirection, onSort}: TListHead
 				</div>
 			</div>
 		</div>
-	);
+	)
 }

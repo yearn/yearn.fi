@@ -1,6 +1,6 @@
-import {z} from 'zod';
+import {z} from 'zod'
 
-import {addressSchema} from '../../types';
+import {addressSchema} from '../../types'
 
 export const yDaemonTokenSchema = z.object({
 	address: addressSchema,
@@ -10,11 +10,11 @@ export const yDaemonTokenSchema = z.object({
 	isVault: z.boolean(),
 	underlyingTokens: z.array(addressSchema).optional(),
 	chainID: z.number().optional()
-});
+})
 
-export const yDaemonTokensSchema = z.record(addressSchema, yDaemonTokenSchema);
-export const yDaemonTokensChainSchema = z.record(z.string(), yDaemonTokensSchema);
+export const yDaemonTokensSchema = z.record(addressSchema, yDaemonTokenSchema)
+export const yDaemonTokensChainSchema = z.record(z.string(), yDaemonTokensSchema)
 
-export type TYDaemonToken = z.infer<typeof yDaemonTokenSchema>;
-export type TYDaemonTokens = z.infer<typeof yDaemonTokensSchema>;
-export type TYDaemonTokensChain = z.infer<typeof yDaemonTokensChainSchema>;
+export type TYDaemonToken = z.infer<typeof yDaemonTokenSchema>
+export type TYDaemonTokens = z.infer<typeof yDaemonTokensSchema>
+export type TYDaemonTokensChain = z.infer<typeof yDaemonTokensChainSchema>

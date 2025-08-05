@@ -527,4 +527,4 @@ export const STAKING_REWARDS_ABI = [
 		stateMutability: 'view',
 		type: 'function'
 	}
-] as const;
+] as const

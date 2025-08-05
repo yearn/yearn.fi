@@ -1,17 +1,17 @@
-import {RenderAmount} from '@lib/components/RenderAmount';
-import {formatAmount} from '@lib/utils';
+import {RenderAmount} from '@lib/components/RenderAmount'
+import {formatAmount} from '@lib/utils'
 
-import type {FC} from 'react';
+import type {FC} from 'react'
 
 type TAPYTooltipProps = {
-	baseAPY: number;
-	rewardsAPY?: number;
-	boost?: number;
-	range?: [number, number];
-	hasPendleArbRewards?: boolean;
-	hasKelpNEngenlayer?: boolean;
-	hasKelp?: boolean;
-};
+	baseAPY: number
+	rewardsAPY?: number
+	boost?: number
+	range?: [number, number]
+	hasPendleArbRewards?: boolean
+	hasKelpNEngenlayer?: boolean
+	hasKelp?: boolean
+}
 
 export const APYTooltip: FC<TAPYTooltipProps> = ({
 	baseAPY,
@@ -112,5 +112,5 @@ export const APYTooltip: FC<TAPYTooltipProps> = ({
 				</div>
 			</div>
 		</span>
-	);
-};
+	)
+}

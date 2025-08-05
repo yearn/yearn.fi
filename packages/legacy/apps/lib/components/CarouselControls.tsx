@@ -1,21 +1,21 @@
-import {cl} from '@lib/utils';
-import type {ReactElement} from 'react';
+import {cl} from '@lib/utils'
+import type {ReactElement} from 'react'
 
 type TCarouselControlsProps = {
-	carouselLength?: number;
-	onDotsClick: (destination: number) => void;
-	currentPage: number;
-};
+	carouselLength?: number
+	onDotsClick: (destination: number) => void
+	currentPage: number
+}
 
 export function CarouselControls({
 	carouselLength = 0,
 	onDotsClick,
 	currentPage
 }: TCarouselControlsProps): ReactElement | null {
-	const numberOfControls = Math.ceil(carouselLength / 4);
+	const numberOfControls = Math.ceil(carouselLength / 4)
 
 	if (carouselLength && carouselLength < 5) {
-		return null;
+		return null
 	}
 
 	return (
@@ -29,7 +29,7 @@ export function CarouselControls({
 							key={index}
 							className={'p-[2px]'}
 							onClick={() => {
-								onDotsClick(index + 1);
+								onDotsClick(index + 1)
 							}}>
 							<div
 								className={cl(
@@ -41,5 +41,5 @@ export function CarouselControls({
 					))}
 			</div>
 		</div>
-	);
+	)
 }

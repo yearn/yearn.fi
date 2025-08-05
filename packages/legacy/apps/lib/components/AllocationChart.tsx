@@ -1,30 +1,30 @@
-import type {ReactElement} from 'react';
-import {Cell, Label, Pie, PieChart, Tooltip} from 'recharts';
-import {AllocationTooltip} from './AllocationTooltip';
+import type {ReactElement} from 'react'
+import {Cell, Label, Pie, PieChart, Tooltip} from 'recharts'
+import {AllocationTooltip} from './AllocationTooltip'
 
 export type TAllocationChartData = {
-	id: string;
-	name: string;
-	value: number;
-	amount: string;
-};
+	id: string
+	name: string
+	value: number
+	amount: string
+}
 
 type TAllocationChartProps = {
-	allocationChartData: TAllocationChartData[];
-	colors?: string[];
-	textColor?: string;
-	strokeColor?: string;
-	fillColor?: string;
-	width?: number;
-	height?: number;
-	innerRadius?: number;
-	outerRadius?: number;
-	paddingAngle?: number;
-	startAngle?: number;
-	endAngle?: number;
-	minAngle?: number;
-	labelText?: string;
-};
+	allocationChartData: TAllocationChartData[]
+	colors?: string[]
+	textColor?: string
+	strokeColor?: string
+	fillColor?: string
+	width?: number
+	height?: number
+	innerRadius?: number
+	outerRadius?: number
+	paddingAngle?: number
+	startAngle?: number
+	endAngle?: number
+	minAngle?: number
+	labelText?: string
+}
 
 /************************************************************************************************
  * Generic pie chart component for displaying allocation data
@@ -83,5 +83,5 @@ export function AllocationChart({
 				content={({active, payload}) => <AllocationTooltip active={active || false} payload={payload} />}
 			/>
 		</PieChart>
-	);
+	)
 }

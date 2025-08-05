@@ -13,4 +13,4 @@ export const ZAP_FTM_TO_YVFTM_ABI = [
 		type: 'function'
 	},
 	{stateMutability: 'payable', type: 'receive'}
-] as const;
+] as const

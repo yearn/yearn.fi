@@ -8,4 +8,4 @@ export const VAULTS_V3_MENU = [
 		label: 'Discourse',
 		target: '_blank'
 	}
-];
+]

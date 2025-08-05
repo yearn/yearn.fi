@@ -7,5 +7,5 @@
  * @returns the joined classes
  */
 export function cl(...classes: (string | null | undefined)[]): string {
-	return classes.filter(Boolean).join(' ');
+	return classes.filter(Boolean).join(' ')
 }

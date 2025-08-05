@@ -3,7 +3,7 @@
  * Provides default settings for cache duration, retries, and error handling
  * Can be used with SWRConfig provider for application-wide defaults
  ************************************************************************************************/
-import type {SWRConfiguration} from 'swr';
+import type {SWRConfiguration} from 'swr'
 
 export const defaultSWRConfig: SWRConfiguration = {
 	// Cache configuration
@@ -26,9 +26,9 @@ export const defaultSWRConfig: SWRConfiguration = {
 	keepPreviousData: true,
 	compare: (a, b) => {
 		// Custom comparison to prevent unnecessary re-renders
-		return JSON.stringify(a) === JSON.stringify(b);
+		return JSON.stringify(a) === JSON.stringify(b)
 	},
 
 	// Loading delay for better UX
 	loadingTimeout: 3000
-};
+}

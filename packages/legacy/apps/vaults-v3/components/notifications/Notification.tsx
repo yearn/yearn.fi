@@ -1,19 +1,19 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback';
-import {useNotifications} from '@lib/contexts/useNotifications';
-import {useTransactionStatusPoller} from '@lib/hooks/useTransactionStatusPoller';
-import {IconArrow} from '@lib/icons/IconArrow';
-import {IconCheck} from '@lib/icons/IconCheck';
-import {IconClose} from '@lib/icons/IconClose';
-import {IconCross} from '@lib/icons/IconCross';
-import {IconLoader} from '@lib/icons/IconLoader';
-import type {TNotification, TNotificationStatus} from '@lib/types/notifications';
-import {cl, SUPPORTED_NETWORKS, toAddress, truncateHex} from '@lib/utils';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {motion} from 'framer-motion';
-import Image from 'next/image';
-import Link from 'next/link';
-import type {ReactElement} from 'react';
-import {memo, useCallback, useMemo, useState} from 'react';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback'
+import {useNotifications} from '@lib/contexts/useNotifications'
+import {useTransactionStatusPoller} from '@lib/hooks/useTransactionStatusPoller'
+import {IconArrow} from '@lib/icons/IconArrow'
+import {IconCheck} from '@lib/icons/IconCheck'
+import {IconClose} from '@lib/icons/IconClose'
+import {IconCross} from '@lib/icons/IconCross'
+import {IconLoader} from '@lib/icons/IconLoader'
+import type {TNotification, TNotificationStatus} from '@lib/types/notifications'
+import {cl, SUPPORTED_NETWORKS, toAddress, truncateHex} from '@lib/utils'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {motion} from 'framer-motion'
+import Image from 'next/image'
+import Link from 'next/link'
+import type {ReactElement} from 'react'
+import {memo, useCallback, useMemo, useState} from 'react'
 
 const STATUS: {[key: string]: [string, string, ReactElement]} = {
 	success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} key={'success'} />],
@@ -23,7 +23,7 @@ const STATUS: {[key: string]: [string, string, ReactElement]} = {
 		<IconLoader className={'size-4 animate-spin'} key={'pending'} />
 	],
 	error: ['Error', 'text-white bg-[#C73203] bg-opacity-90', <IconCross className={'size-3'} key={'error'} />]
-};
+}
 
 function NotificationStatus(props: {status: TNotificationStatus}): ReactElement {
 	return (
@@ -36,7 +36,7 @@ function NotificationStatus(props: {status: TNotificationStatus}): ReactElement 
 			{STATUS[props.status][2]}
 			{STATUS[props.status][0]}
 		</div>
-	);
+	)
 }
 
 function NotificationContent({
@@ -44,64 +44,64 @@ function NotificationContent({
 	fromVault,
 	toVault
 }: {
-	notification: TNotification;
-	fromVault?: TYDaemonVault;
-	toVault?: TYDaemonVault;
+	notification: TNotification
+	fromVault?: TYDaemonVault
+	toVault?: TYDaemonVault
 }): ReactElement {
-	const chainName = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)?.name || 'Unknown';
+	const chainName = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)?.name || 'Unknown'
 	const explorerBaseURI = useMemo(() => {
-		const chain = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId);
-		return chain?.blockExplorers?.default?.url || 'https://etherscan.io';
-	}, [notification.chainId]);
+		const chain = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)
+		return chain?.blockExplorers?.default?.url || 'https://etherscan.io'
+	}, [notification.chainId])
 
 	const fromTokenLabel = useMemo(() => {
 		switch (notification.type) {
 			case 'approve':
-				return 'Token:';
+				return 'Token:'
 			case 'claim':
-				return 'Token:';
+				return 'Token:'
 			case 'withdraw':
-				return 'From vault:';
+				return 'From vault:'
 			case 'unstake':
-				return 'From vault:';
+				return 'From vault:'
 			default:
-				return 'From token:';
+				return 'From token:'
 		}
-	}, [notification.type]);
+	}, [notification.type])
 
 	const fromTokenLink = useMemo(() => {
 		if (!fromVault) {
-			return `${explorerBaseURI}/address/${notification.fromAddress || '0x0'}`;
+			return `${explorerBaseURI}/address/${notification.fromAddress || '0x0'}`
 		}
 
-		const isV3 = fromVault.version.startsWith('3') || fromVault.version.startsWith('~3');
+		const isV3 = fromVault.version.startsWith('3') || fromVault.version.startsWith('~3')
 		const href = isV3
 			? `/v3/${fromVault.chainID}/${toAddress(fromVault.address)}`
-			: `/vaults/${fromVault.chainID}/${toAddress(fromVault.address)}`;
+			: `/vaults/${fromVault.chainID}/${toAddress(fromVault.address)}`
 
-		return href;
-	}, [fromVault, explorerBaseURI, notification.fromAddress]);
+		return href
+	}, [fromVault, explorerBaseURI, notification.fromAddress])
 
 	const toTokenLabel = useMemo(() => {
 		switch (notification.type) {
 			case 'withdraw':
-				return 'To token:';
+				return 'To token:'
 			default:
-				return 'To vault:';
+				return 'To vault:'
 		}
-	}, [notification.type]);
+	}, [notification.type])
 
 	const toTokenLink = useMemo(() => {
 		if (!toVault) {
-			return `${explorerBaseURI}/address/${notification.toAddress || '0x0'}`;
+			return `${explorerBaseURI}/address/${notification.toAddress || '0x0'}`
 		}
-		const isV3 = toVault.version.startsWith('3') || toVault.version.startsWith('~3');
+		const isV3 = toVault.version.startsWith('3') || toVault.version.startsWith('~3')
 		const href = isV3
 			? `/v3/${toVault.chainID}/${toAddress(toVault.address)}`
-			: `/vaults/${toVault.chainID}/${toAddress(toVault.address)}`;
+			: `/vaults/${toVault.chainID}/${toAddress(toVault.address)}`
 
-		return href;
-	}, [toVault, explorerBaseURI, notification.toAddress]);
+		return href
+	}, [toVault, explorerBaseURI, notification.toAddress])
 
 	return (
 		<div className={'flex gap-4'}>
@@ -225,7 +225,7 @@ function NotificationContent({
 				</div>
 			</div>
 		</div>
-	);
+	)
 }
 
 export const Notification = memo(function Notification({
@@ -234,85 +234,85 @@ export const Notification = memo(function Notification({
 	fromVault,
 	toVault
 }: {
-	notification: TNotification;
-	variant: 'v2' | 'v3';
-	fromVault?: TYDaemonVault;
-	toVault?: TYDaemonVault;
+	notification: TNotification
+	variant: 'v2' | 'v3'
+	fromVault?: TYDaemonVault
+	toVault?: TYDaemonVault
 }): ReactElement {
-	const {deleteByID} = useNotifications();
-	const [isDeleting, setIsDeleting] = useState(false);
+	const {deleteByID} = useNotifications()
+	const [isDeleting, setIsDeleting] = useState(false)
 
 	/************************************************************************************************
 	 * Use the transaction status poller to automatically check and update pending transactions
 	 * every minute. This will update the notification status when transactions are completed.
 	 ************************************************************************************************/
-	useTransactionStatusPoller(notification);
+	useTransactionStatusPoller(notification)
 
 	const formattedDate = useMemo(() => {
 		if (!notification.timeFinished || notification.status === 'pending') {
-			return null;
+			return null
 		}
-		const date = new Date(notification.timeFinished * 1000);
+		const date = new Date(notification.timeFinished * 1000)
 		return date.toLocaleDateString('en-US', {
 			year: 'numeric',
 			month: 'short',
 			day: 'numeric',
 			hour: 'numeric',
 			minute: 'numeric'
-		});
-	}, [notification.timeFinished, notification.status]);
+		})
+	}, [notification.timeFinished, notification.status])
 
 	const explorerLink = useMemo(() => {
 		if (!notification.txHash) {
-			return null;
+			return null
 		}
 
-		const chain = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId);
-		const explorerBaseURI = chain?.blockExplorers?.default?.url || 'https://etherscan.io';
-		return `${explorerBaseURI}/tx/${notification.txHash}`;
-	}, [notification.chainId, notification.txHash]);
+		const chain = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)
+		const explorerBaseURI = chain?.blockExplorers?.default?.url || 'https://etherscan.io'
+		return `${explorerBaseURI}/tx/${notification.txHash}`
+	}, [notification.chainId, notification.txHash])
 
 	const notificationTitle = useMemo(() => {
 		switch (notification.type) {
 			case 'approve':
-				return 'Approve';
+				return 'Approve'
 			case 'deposit':
-				return 'Deposit';
+				return 'Deposit'
 			case 'withdraw':
-				return 'Withdraw';
+				return 'Withdraw'
 			case 'zap':
-				return 'Zap';
+				return 'Zap'
 			case 'deposit and stake':
-				return 'Deposit & Stake';
+				return 'Deposit & Stake'
 			case 'stake':
-				return 'Stake';
+				return 'Stake'
 			case 'unstake':
-				return 'Unstake';
+				return 'Unstake'
 			case 'claim':
-				return 'Claim';
+				return 'Claim'
 			case 'claim and exit':
-				return 'Claim & Exit';
+				return 'Claim & Exit'
 			case 'migrate':
-				return 'Migrate';
+				return 'Migrate'
 			default:
-				return 'Transaction';
+				return 'Transaction'
 		}
-	}, [notification.type]);
+	}, [notification.type])
 
 	const handleDelete = useCallback(async () => {
 		if (!notification.id || isDeleting) {
-			return;
+			return
 		}
 
-		setIsDeleting(true);
+		setIsDeleting(true)
 
 		try {
-			await deleteByID(notification.id!);
+			await deleteByID(notification.id!)
 		} catch (error) {
-			console.error('Failed to delete notification:', error);
-			setIsDeleting(false);
+			console.error('Failed to delete notification:', error)
+			setIsDeleting(false)
 		}
-	}, [deleteByID, notification.id, isDeleting]);
+	}, [deleteByID, notification.id, isDeleting])
 
 	return (
 		<motion.div
@@ -400,5 +400,5 @@ export const Notification = memo(function Notification({
 				) : null}
 			</div>
 		</motion.div>
-	);
-});
+	)
+})

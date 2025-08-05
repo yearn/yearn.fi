@@ -1,12 +1,12 @@
-import type {TNotificationStatus, TNotificationsActionsContext, TNotificationType} from '@lib/types/notifications';
-import {formatTAmount, toAddress} from '@lib/utils';
-import type {TActionParams} from '@vaults-v2/contexts/useActionFlow';
-import type React from 'react';
-import {createContext, useCallback, useContext, useMemo} from 'react';
+import type {TNotificationStatus, TNotificationsActionsContext, TNotificationType} from '@lib/types/notifications'
+import {formatTAmount, toAddress} from '@lib/utils'
+import type {TActionParams} from '@vaults-v2/contexts/useActionFlow'
+import type React from 'react'
+import {createContext, useCallback, useContext, useMemo} from 'react'
 
-import type {Hash, TransactionReceipt} from 'viem';
-import {useNotifications} from './useNotifications';
-import {useWeb3} from './useWeb3';
+import type {Hash, TransactionReceipt} from 'viem'
+import {useNotifications} from './useNotifications'
+import {useWeb3} from './useWeb3'
 
 const defaultProps: TNotificationsActionsContext = {
 	handleApproveNotification: async (): Promise<number> => 0,
@@ -15,12 +15,12 @@ const defaultProps: TNotificationsActionsContext = {
 	handleStakeNotification: async (): Promise<number> => 0,
 	handleUnstakeNotification: async (): Promise<number> => 0,
 	handleClaimNotification: async (): Promise<number> => 0
-};
+}
 
-const NotificationsActionsContext = createContext<TNotificationsActionsContext>(defaultProps);
+const NotificationsActionsContext = createContext<TNotificationsActionsContext>(defaultProps)
 export const WithNotificationsActions = ({children}: {children: React.ReactElement}): React.ReactElement => {
-	const {addNotification, updateEntry} = useNotifications();
-	const {address} = useWeb3();
+	const {addNotification, updateEntry} = useNotifications()
+	const {address} = useWeb3()
 
 	const handleApproveNotification = useCallback(
 		async ({
@@ -30,11 +30,11 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			idToUpdate,
 			txHash
 		}: {
-			actionParams: Partial<TActionParams>;
-			receipt?: TransactionReceipt;
-			status?: TNotificationStatus;
-			idToUpdate?: number;
-			txHash?: Hash;
+			actionParams: Partial<TActionParams>
+			receipt?: TransactionReceipt
+			status?: TNotificationStatus
+			idToUpdate?: number
+			txHash?: Hash
 		}): Promise<number> => {
 			if (idToUpdate) {
 				await updateEntry(
@@ -45,9 +45,9 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 						status
 					},
 					idToUpdate
-				);
+				)
 
-				return idToUpdate;
+				return idToUpdate
 			}
 			const createdId = await addNotification({
 				address: toAddress(address),
@@ -65,11 +65,11 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 					value: actionParams.amount?.normalized || 0,
 					decimals: actionParams.selectedOptionFrom?.decimals || 18
 				})
-			});
-			return createdId;
+			})
+			return createdId
 		},
 		[addNotification, address, updateEntry]
-	);
+	)
 
 	const handleDepositNotification = useCallback(
 		async ({
@@ -80,12 +80,12 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			idToUpdate,
 			txHash
 		}: {
-			actionParams: Partial<TActionParams>;
-			txHash?: Hash;
-			type?: TNotificationType;
-			receipt?: TransactionReceipt;
-			status?: TNotificationStatus;
-			idToUpdate?: number;
+			actionParams: Partial<TActionParams>
+			txHash?: Hash
+			type?: TNotificationType
+			receipt?: TransactionReceipt
+			status?: TNotificationStatus
+			idToUpdate?: number
 		}): Promise<number> => {
 			if (idToUpdate) {
 				await updateEntry(
@@ -96,9 +96,9 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 						status
 					},
 					idToUpdate
-				);
+				)
 
-				return idToUpdate;
+				return idToUpdate
 			}
 
 			const createdId = await addNotification({
@@ -117,11 +117,11 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 					value: actionParams.amount?.normalized || 0,
 					decimals: actionParams.selectedOptionFrom?.decimals || 18
 				})
-			});
-			return createdId;
+			})
+			return createdId
 		},
 		[addNotification, updateEntry, address]
-	);
+	)
 
 	const handleWithdrawNotification = useCallback(
 		async ({
@@ -132,12 +132,12 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			idToUpdate,
 			txHash
 		}: {
-			actionParams: Partial<TActionParams>;
-			type?: TNotificationType;
-			receipt?: TransactionReceipt;
-			status?: TNotificationStatus;
-			idToUpdate?: number;
-			txHash?: Hash;
+			actionParams: Partial<TActionParams>
+			type?: TNotificationType
+			receipt?: TransactionReceipt
+			status?: TNotificationStatus
+			idToUpdate?: number
+			txHash?: Hash
 		}): Promise<number> => {
 			if (idToUpdate) {
 				await updateEntry(
@@ -148,9 +148,9 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 						status
 					},
 					idToUpdate
-				);
+				)
 
-				return idToUpdate;
+				return idToUpdate
 			}
 
 			const createdId = await addNotification({
@@ -169,11 +169,11 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 					value: actionParams.amount?.normalized || 0,
 					decimals: actionParams.selectedOptionFrom?.decimals || 18
 				})
-			});
-			return createdId;
+			})
+			return createdId
 		},
 		[addNotification, updateEntry, address]
-	);
+	)
 
 	const handleStakeNotification = useCallback(
 		async ({
@@ -184,12 +184,12 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			idToUpdate,
 			txHash
 		}: {
-			actionParams: Partial<TActionParams>;
-			type?: TNotificationType;
-			receipt?: TransactionReceipt;
-			status?: TNotificationStatus;
-			idToUpdate?: number;
-			txHash?: Hash;
+			actionParams: Partial<TActionParams>
+			type?: TNotificationType
+			receipt?: TransactionReceipt
+			status?: TNotificationStatus
+			idToUpdate?: number
+			txHash?: Hash
 		}): Promise<number> => {
 			if (idToUpdate) {
 				await updateEntry(
@@ -200,9 +200,9 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 						status
 					},
 					idToUpdate
-				);
+				)
 
-				return idToUpdate;
+				return idToUpdate
 			}
 
 			const createdId = await addNotification({
@@ -221,11 +221,11 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 					value: actionParams.amount?.normalized || 0,
 					decimals: actionParams.selectedOptionFrom?.decimals || 18
 				})
-			});
-			return createdId;
+			})
+			return createdId
 		},
 		[addNotification, updateEntry, address]
-	);
+	)
 
 	const handleUnstakeNotification = useCallback(
 		async ({
@@ -236,12 +236,12 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			idToUpdate,
 			txHash
 		}: {
-			actionParams: Partial<TActionParams>;
-			type?: TNotificationType;
-			receipt?: TransactionReceipt;
-			status?: TNotificationStatus;
-			idToUpdate?: number;
-			txHash?: Hash;
+			actionParams: Partial<TActionParams>
+			type?: TNotificationType
+			receipt?: TransactionReceipt
+			status?: TNotificationStatus
+			idToUpdate?: number
+			txHash?: Hash
 		}): Promise<number> => {
 			if (idToUpdate) {
 				await updateEntry(
@@ -252,9 +252,9 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 						status
 					},
 					idToUpdate
-				);
+				)
 
-				return idToUpdate;
+				return idToUpdate
 			}
 
 			const createdId = await addNotification({
@@ -273,11 +273,11 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 					value: actionParams.amount?.normalized || 0,
 					decimals: actionParams.selectedOptionFrom?.decimals || 18
 				})
-			});
-			return createdId;
+			})
+			return createdId
 		},
 		[addNotification, updateEntry, address]
-	);
+	)
 
 	const handleClaimNotification = useCallback(
 		async ({
@@ -288,12 +288,12 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			idToUpdate,
 			txHash
 		}: {
-			actionParams: Partial<TActionParams>;
-			type?: TNotificationType;
-			receipt?: TransactionReceipt;
-			status?: TNotificationStatus;
-			idToUpdate?: number;
-			txHash?: Hash;
+			actionParams: Partial<TActionParams>
+			type?: TNotificationType
+			receipt?: TransactionReceipt
+			status?: TNotificationStatus
+			idToUpdate?: number
+			txHash?: Hash
 		}): Promise<number> => {
 			if (idToUpdate) {
 				await updateEntry(
@@ -304,9 +304,9 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 						status
 					},
 					idToUpdate
-				);
+				)
 
-				return idToUpdate;
+				return idToUpdate
 			}
 
 			const createdId = await addNotification({
@@ -323,11 +323,11 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 					value: actionParams.amount?.normalized || 0,
 					decimals: actionParams.selectedOptionFrom?.decimals || 18
 				})
-			});
-			return createdId;
+			})
+			return createdId
 		},
 		[addNotification, updateEntry, address]
-	);
+	)
 
 	/**************************************************************************
 	 * Context value that is passed to all children of this component.
@@ -349,15 +349,15 @@ export const WithNotificationsActions = ({children}: {children: React.ReactEleme
 			handleUnstakeNotification,
 			handleClaimNotification
 		]
-	);
+	)
 
-	return <NotificationsActionsContext.Provider value={contextValue}>{children}</NotificationsActionsContext.Provider>;
-};
+	return <NotificationsActionsContext.Provider value={contextValue}>{children}</NotificationsActionsContext.Provider>
+}
 
 export const useNotificationsActions = (): TNotificationsActionsContext => {
-	const ctx = useContext(NotificationsActionsContext);
+	const ctx = useContext(NotificationsActionsContext)
 	if (!ctx) {
-		throw new Error('NotificationsActionsContext not found');
+		throw new Error('NotificationsActionsContext not found')
 	}
-	return ctx;
-};
+	return ctx
+}

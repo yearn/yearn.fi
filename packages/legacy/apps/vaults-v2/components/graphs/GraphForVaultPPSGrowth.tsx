@@ -1,17 +1,17 @@
-import type {TMessariGraphData} from '@lib/types';
-import {formatAmount, formatPercent, isZero} from '@lib/utils';
-import type {ReactElement} from 'react';
-import {Fragment} from 'react';
-import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import type {TMessariGraphData} from '@lib/types'
+import {formatAmount, formatPercent, isZero} from '@lib/utils'
+import type {ReactElement} from 'react'
+import {Fragment} from 'react'
+import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts'
 
 export type TGraphForVaultPPSGrowthProps = {
-	messariData: TMessariGraphData[];
-	height?: number;
-};
+	messariData: TMessariGraphData[]
+	height?: number
+}
 
 export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGrowthProps): ReactElement {
 	if (isZero(messariData?.length)) {
-		return <Fragment />;
+		return <Fragment />
 	}
 
 	return (
@@ -25,10 +25,10 @@ export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVau
 					stroke={'currentcolor'}
 					dot={false}
 					activeDot={(e: unknown): ReactElement => {
-						const dotProps = e as React.SVGProps<SVGCircleElement> & {dataKey?: string};
-						dotProps.className = `${dotProps.className} activeDot`;
-						delete dotProps.dataKey;
-						return <circle {...dotProps}></circle>;
+						const dotProps = e as React.SVGProps<SVGCircleElement> & {dataKey?: string}
+						dotProps.className = `${dotProps.className} activeDot`
+						delete dotProps.dataKey
+						return <circle {...dotProps}></circle>
 					}}
 				/>
 				<XAxis dataKey={'name'} hide />
@@ -39,25 +39,25 @@ export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVau
 					tick={(props): React.ReactElement<SVGElement> => {
 						const {
 							payload: {value}
-						} = props;
-						props.fill = '#5B5B5B';
-						props.className = 'text-xxs md:text-xs font-number';
-						props.alignmentBaseline = 'middle';
-						delete props.verticalAnchor;
-						delete props.visibleTicksCount;
-						delete props.tickFormatter;
-						const formatedValue = formatAmount(value, 3, 3);
-						return <text {...props}>{formatedValue}</text>;
+						} = props
+						props.fill = '#5B5B5B'
+						props.className = 'text-xxs md:text-xs font-number'
+						props.alignmentBaseline = 'middle'
+						delete props.verticalAnchor
+						delete props.visibleTicksCount
+						delete props.tickFormatter
+						const formatedValue = formatAmount(value, 3, 3)
+						return <text {...props}>{formatedValue}</text>
 					}}
 				/>
 				<Tooltip
 					content={(e): ReactElement => {
-						const {active: isTooltipActive, payload, label} = e;
+						const {active: isTooltipActive, payload, label} = e
 						if (!isTooltipActive || !payload) {
-							return <Fragment />;
+							return <Fragment />
 						}
 						if (payload.length > 0) {
-							const [{value}] = payload;
+							const [{value}] = payload
 
 							return (
 								<div className={'recharts-tooltip'}>
@@ -71,12 +71,12 @@ export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVau
 										</b>
 									</div>
 								</div>
-							);
+							)
 						}
-						return <div />;
+						return <div />
 					}}
 				/>
 			</LineChart>
 		</ResponsiveContainer>
-	);
+	)
 }

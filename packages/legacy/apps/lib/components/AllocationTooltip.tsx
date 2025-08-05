@@ -1,21 +1,21 @@
-import {cl} from '@lib/utils/cl';
-import {usePathname} from 'next/navigation';
+import {cl} from '@lib/utils/cl'
+import {usePathname} from 'next/navigation'
 
-import type {ReactNode} from 'react';
-import type {NameType, Payload, ValueType} from 'recharts/types/component/DefaultTooltipContent';
+import type {ReactNode} from 'react'
+import type {NameType, Payload, ValueType} from 'recharts/types/component/DefaultTooltipContent'
 
 export function AllocationTooltip({
 	active,
 	payload
 }: {
-	active: boolean;
-	payload: Payload<ValueType, NameType>[] | undefined;
+	active: boolean
+	payload: Payload<ValueType, NameType>[] | undefined
 }): ReactNode {
-	const pathname = usePathname();
-	const isV3Page = pathname.includes('/v3');
+	const pathname = usePathname()
+	const isV3Page = pathname.includes('/v3')
 
 	if (active && payload?.length) {
-		const data = payload[0].payload;
+		const data = payload[0].payload
 		return (
 			<div
 				className={cl(
@@ -39,7 +39,7 @@ export function AllocationTooltip({
 					</div>
 				)}
 			</div>
-		);
+		)
 	}
-	return null;
+	return null
 }

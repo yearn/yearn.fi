@@ -257,4 +257,4 @@ export const VEYFI_ABI = [
 		],
 		outputs: [{name: '', type: 'int128'}]
 	}
-];
+]

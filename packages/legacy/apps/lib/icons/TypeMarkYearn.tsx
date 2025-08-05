@@ -1,7 +1,7 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function TypeMarkYearn(props: React.SVGProps<SVGSVGElement> & {color?: string}): ReactElement {
-	const {color = '#0657F9', ...svgProps} = props;
+	const {color = '#0657F9', ...svgProps} = props
 	return (
 		<svg
 			version={'1.1'}
@@ -37,5 +37,5 @@ export function TypeMarkYearn(props: React.SVGProps<SVGSVGElement> & {color?: st
 				/>
 			</g>
 		</svg>
-	);
+	)
 }

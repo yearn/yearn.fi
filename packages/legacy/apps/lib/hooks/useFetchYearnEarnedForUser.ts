@@ -1,10 +1,10 @@
-import {useDeepCompareMemo} from '@react-hookz/web';
+import {useDeepCompareMemo} from '@react-hookz/web'
 
-import {useWeb3} from '../contexts/useWeb3';
-import type {TYDaemonEarned} from '../utils/schemas/yDaemonEarnedSchema';
-import {yDaemonEarnedSchema} from '../utils/schemas/yDaemonEarnedSchema';
-import {useFetch} from './useFetch';
-import {useYDaemonBaseURI} from './useYDaemonBaseURI';
+import {useWeb3} from '../contexts/useWeb3'
+import type {TYDaemonEarned} from '../utils/schemas/yDaemonEarnedSchema'
+import {yDaemonEarnedSchema} from '../utils/schemas/yDaemonEarnedSchema'
+import {useFetch} from './useFetch'
+import {useYDaemonBaseURI} from './useYDaemonBaseURI'
 
 /******************************************************************************
  ** The useFetchYearnEarnedForUser hook is used to fetch an estimate of the
@@ -12,8 +12,8 @@ import {useYDaemonBaseURI} from './useYDaemonBaseURI';
  ** based on the events emitted by the yearn contracts catched by the subgraph.
  *****************************************************************************/
 function useFetchYearnEarnedForUser(): TYDaemonEarned {
-	const {address} = useWeb3();
-	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
+	const {address} = useWeb3()
+	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI()
 
 	const {data: earned} = useFetch<TYDaemonEarned>({
 		endpoint: address
@@ -22,7 +22,7 @@ function useFetchYearnEarnedForUser(): TYDaemonEarned {
 				})}`
 			: null,
 		schema: yDaemonEarnedSchema
-	});
+	})
 
 	const memorizedEarned = useDeepCompareMemo((): TYDaemonEarned => {
 		if (!earned) {
@@ -30,12 +30,12 @@ function useFetchYearnEarnedForUser(): TYDaemonEarned {
 				earned: {},
 				totalRealizedGainsUSD: 0,
 				totalUnrealizedGainsUSD: 0
-			};
+			}
 		}
-		return earned;
-	}, [earned]);
+		return earned
+	}, [earned])
 
-	return memorizedEarned;
+	return memorizedEarned
 }
 
-export {useFetchYearnEarnedForUser};
+export {useFetchYearnEarnedForUser}

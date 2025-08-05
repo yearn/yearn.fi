@@ -1,18 +1,18 @@
-import {Button} from '@lib/components/Button';
-import {isZero} from '@lib/utils';
-import type {TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants';
-import type {ReactElement} from 'react';
+import {Button} from '@lib/components/Button'
+import {isZero} from '@lib/utils'
+import type {TYDaemonVaults} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults-v2/constants'
+import type {ReactElement} from 'react'
 
 type TVaultListEmpty = {
-	sortedVaultsToDisplay: TYDaemonVaults;
-	currentSearch: string;
-	currentCategories: string[] | null;
-	currentChains: number[] | null;
-	onReset: () => void;
-	isLoading: boolean;
-	defaultCategories?: string[];
-};
+	sortedVaultsToDisplay: TYDaemonVaults
+	currentSearch: string
+	currentCategories: string[] | null
+	currentChains: number[] | null
+	onReset: () => void
+	isLoading: boolean
+	defaultCategories?: string[]
+}
 export function VaultsListEmpty({
 	sortedVaultsToDisplay,
 	currentSearch,
@@ -33,7 +33,7 @@ export function VaultsListEmpty({
 					<span className={'loader'} />
 				</div>
 			</div>
-		);
+		)
 	}
 
 	if (
@@ -49,7 +49,7 @@ export function VaultsListEmpty({
 					{"You don't appear to have any Yearn Vaults deposits."}
 				</p>
 			</div>
-		);
+		)
 	}
 
 	if (!isLoading && isZero(sortedVaultsToDisplay.length)) {
@@ -81,7 +81,7 @@ export function VaultsListEmpty({
 					</>
 				)}
 			</div>
-		);
+		)
 	}
 	if (!isLoading && currentChains && currentChains.length > 0) {
 		return (
@@ -93,9 +93,9 @@ export function VaultsListEmpty({
 					{'Search all vaults'}
 				</Button>
 			</div>
-		);
+		)
 	}
-	return <div />;
+	return <div />
 }
 
 export function VaultListEmptyExternalMigration(): ReactElement {
@@ -104,5 +104,5 @@ export function VaultListEmptyExternalMigration(): ReactElement {
 			<b className={'text-center text-lg'}>{'We looked under the cushions...'}</b>
 			<p className={'text-center text-neutral-600'}>{"Looks like you don't have any tokens to migrate."}</p>
 		</div>
-	);
+	)
 }

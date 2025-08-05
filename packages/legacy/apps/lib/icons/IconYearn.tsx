@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function IconYearn(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -22,5 +22,5 @@ export function IconYearn(props: React.SVGProps<SVGSVGElement>): ReactElement {
 				fill={'currentcolor'}
 			/>
 		</svg>
-	);
+	)
 }

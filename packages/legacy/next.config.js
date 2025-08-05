@@ -1,9 +1,9 @@
-const {withPlausibleProxy} = require('next-plausible');
+const {withPlausibleProxy} = require('next-plausible')
 // const withPWA = require('next-pwa')({
 // 	dest: 'public',
 // 	disable: process.env.NODE_ENV !== 'production'
 // });
-const path = require('node:path');
+const path = require('node:path')
 
 module.exports = withPlausibleProxy({
 	scriptName: 'script',
@@ -50,9 +50,9 @@ module.exports = withPlausibleProxy({
 				...config.resolve.fallback,
 				fs: false
 			}
-		};
+		}
 
-		return config;
+		return config
 	},
 	images: {
 		remotePatterns: [
@@ -88,7 +88,7 @@ module.exports = withPlausibleProxy({
 				source: '/api/event',
 				destination: 'https://plausible.io/api/event'
 			}
-		];
+		]
 	},
 	redirects() {
 		return [
@@ -154,7 +154,7 @@ module.exports = withPlausibleProxy({
 				destination: 'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/yearn.json',
 				permanent: true
 			}
-		];
+		]
 	},
 	env: {
 		/* 🔵 - Yearn Finance **************************************************
@@ -239,4 +239,4 @@ module.exports = withPlausibleProxy({
 		BASE_YEARN_CHAIN_URI: 'https://token-assets-one.vercel.app/api/chain',
 		SMOL_ASSETS_URL: 'https://token-assets-one.vercel.app/api'
 	}
-});
+})

@@ -1,14 +1,14 @@
-'use client';
-import {Dialog, Transition, TransitionChild} from '@headlessui/react';
-import {IconClose} from '@lib/icons/IconClose';
-import {IconDiscord} from '@lib/icons/IconDiscord';
-import {IconTwitter} from '@lib/icons/IconTwitter';
-import Link from 'next/link';
-import type React from 'react';
-import type {ReactElement, ReactNode} from 'react';
-import {Fragment} from 'react';
-import type {Chain} from 'viem';
-import type {TMenu} from './Header';
+'use client'
+import {Dialog, Transition, TransitionChild} from '@headlessui/react'
+import {IconClose} from '@lib/icons/IconClose'
+import {IconDiscord} from '@lib/icons/IconDiscord'
+import {IconTwitter} from '@lib/icons/IconTwitter'
+import Link from 'next/link'
+import type React from 'react'
+import type {ReactElement, ReactNode} from 'react'
+import {Fragment} from 'react'
+import type {Chain} from 'viem'
+import type {TMenu} from './Header'
 
 const menu: TMenu[] = [
 	{path: '/apps', label: 'Apps'},
@@ -20,7 +20,7 @@ const menu: TMenu[] = [
 		label: 'Discourse',
 		target: '_blank'
 	}
-];
+]
 
 export function FooterNav(): ReactElement {
 	return (
@@ -59,26 +59,26 @@ export function FooterNav(): ReactElement {
 				</Link>
 			</div>
 		</div>
-	);
+	)
 }
 
 type TModalMobileMenu = {
-	isOpen: boolean;
-	shouldUseWallets: boolean;
-	shouldUseNetworks: boolean;
-	onClose: () => void;
-	children: ReactNode;
-	supportedNetworks: Chain[];
-};
+	isOpen: boolean
+	shouldUseWallets: boolean
+	shouldUseNetworks: boolean
+	onClose: () => void
+	children: ReactNode
+	supportedNetworks: Chain[]
+}
 
 export type TModal = {
-	isOpen: boolean;
-	onClose: () => void;
-	children: ReactNode;
-} & React.ComponentPropsWithoutRef<'div'>;
+	isOpen: boolean
+	onClose: () => void
+	children: ReactNode
+} & React.ComponentPropsWithoutRef<'div'>
 
 export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
-	const {isOpen, onClose} = props;
+	const {isOpen, onClose} = props
 
 	return (
 		<Transition show={isOpen} as={Fragment}>
@@ -129,5 +129,5 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 				</div>
 			</Dialog>
 		</Transition>
-	);
+	)
 }

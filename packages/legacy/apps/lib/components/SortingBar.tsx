@@ -1,12 +1,12 @@
-import {IconChevron} from '@lib/icons/IconChevron';
-import {type ReactElement, useState} from 'react';
+import {IconChevron} from '@lib/icons/IconChevron'
+import {type ReactElement, useState} from 'react'
 
 function SortItem({isActive, title}: {isActive: boolean; title: string}): ReactElement {
-	return <div className={`px-6 py-2 ${isActive ? 'font-bold text-neutral-900' : 'text-gray-400'}`}>{title}</div>;
+	return <div className={`px-6 py-2 ${isActive ? 'font-bold text-neutral-900' : 'text-gray-400'}`}>{title}</div>
 }
 
 export function SortingBar(): ReactElement {
-	const [isOpen, setIsOpen] = useState(false);
+	const [isOpen, setIsOpen] = useState(false)
 	return (
 		<>
 			<button onClick={() => setIsOpen(prev => !prev)} className={'relative flex items-center'}>
@@ -27,5 +27,5 @@ export function SortingBar(): ReactElement {
 				</div>
 			) : null}
 		</>
-	);
+	)
 }

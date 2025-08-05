@@ -151,4 +151,4 @@ export const STAKING_REWARDS_ZAP_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function'
 	}
-] as const;
+] as const

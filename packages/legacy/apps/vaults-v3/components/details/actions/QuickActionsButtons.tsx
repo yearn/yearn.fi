@@ -1,48 +1,48 @@
-import {Button} from '@lib/components/Button';
-import {useNotificationsActions} from '@lib/contexts/useNotificationsActions';
-import {useWallet} from '@lib/contexts/useWallet';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
-import type {TNormalizedBN} from '@lib/types';
-import type {TNotificationType} from '@lib/types/notifications';
-import {isZero, toAddress, toBigInt, zeroNormalizedBN} from '@lib/utils';
-import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
-import {PLAUSIBLE_EVENTS} from '@lib/utils/plausible';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {defaultTxStatus} from '@lib/utils/wagmi';
-import type {TActionParams} from '@vaults-v2/contexts/useActionFlow';
-import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
-import {useSolver} from '@vaults-v2/contexts/useSolver';
-import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData';
-import {Solver} from '@vaults-v2/types/solvers';
-import {motion} from 'framer-motion';
-import {useRouter} from 'next/router';
-import {usePlausible} from 'next-plausible';
-import type {ReactElement} from 'react';
-import {useCallback, useState} from 'react';
-import type {Hash, TransactionReceipt} from 'viem';
-import {maxUint256} from 'viem';
+import {Button} from '@lib/components/Button'
+import {useNotificationsActions} from '@lib/contexts/useNotificationsActions'
+import {useWallet} from '@lib/contexts/useWallet'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {useYearn} from '@lib/contexts/useYearn'
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger'
+import type {TNormalizedBN} from '@lib/types'
+import type {TNotificationType} from '@lib/types/notifications'
+import {isZero, toAddress, toBigInt, zeroNormalizedBN} from '@lib/utils'
+import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants'
+import {PLAUSIBLE_EVENTS} from '@lib/utils/plausible'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {defaultTxStatus} from '@lib/utils/wagmi'
+import type {TActionParams} from '@vaults-v2/contexts/useActionFlow'
+import {useActionFlow} from '@vaults-v2/contexts/useActionFlow'
+import {useSolver} from '@vaults-v2/contexts/useSolver'
+import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData'
+import {Solver} from '@vaults-v2/types/solvers'
+import {motion} from 'framer-motion'
+import {useRouter} from 'next/router'
+import {usePlausible} from 'next-plausible'
+import type {ReactElement} from 'react'
+import {useCallback, useState} from 'react'
+import type {Hash, TransactionReceipt} from 'viem'
+import {maxUint256} from 'viem'
 
 export function VaultDetailsQuickActionsButtons({
 	currentVault,
 	hasStakingRewardsLive
 }: {
-	currentVault: TYDaemonVault;
-	hasStakingRewardsLive: boolean;
+	currentVault: TYDaemonVault
+	hasStakingRewardsLive: boolean
 }): ReactElement {
-	const plausible = usePlausible();
-	const {onRefresh} = useWallet();
-	const {isAutoStakingEnabled} = useYearn();
-	const {address, provider} = useWeb3();
-	const [txStatusApprove, setTxStatusApprove] = useState(defaultTxStatus);
-	const [txStatusExecuteDeposit, setTxStatusExecuteDeposit] = useState(defaultTxStatus);
-	const [txStatusExecuteWithdraw, setTxStatusExecuteWithdraw] = useState(defaultTxStatus);
-	const [allowanceFrom, setAllowanceFrom] = useState<TNormalizedBN>(zeroNormalizedBN);
-	const [allowanceRouter, setAllowanceRouter] = useState<TNormalizedBN>(zeroNormalizedBN);
-	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
-	const {pathname} = useRouter();
-	const isV3Page = pathname.startsWith('/v3');
+	const plausible = usePlausible()
+	const {onRefresh} = useWallet()
+	const {isAutoStakingEnabled} = useYearn()
+	const {address, provider} = useWeb3()
+	const [txStatusApprove, setTxStatusApprove] = useState(defaultTxStatus)
+	const [txStatusExecuteDeposit, setTxStatusExecuteDeposit] = useState(defaultTxStatus)
+	const [txStatusExecuteWithdraw, setTxStatusExecuteWithdraw] = useState(defaultTxStatus)
+	const [allowanceFrom, setAllowanceFrom] = useState<TNormalizedBN>(zeroNormalizedBN)
+	const [allowanceRouter, setAllowanceRouter] = useState<TNormalizedBN>(zeroNormalizedBN)
+	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow()
+	const {pathname} = useRouter()
+	const isV3Page = pathname.startsWith('/v3')
 	const {
 		onApprove,
 		onExecuteDeposit,
@@ -53,19 +53,18 @@ export function VaultDetailsQuickActionsButtons({
 		expectedOut,
 		isLoadingExpectedOut,
 		hash
-	} = useSolver();
-	const {vaultData} = useVaultStakingData({currentVault});
-	const {handleApproveNotification, handleDepositNotification, handleWithdrawNotification} =
-		useNotificationsActions();
+	} = useSolver()
+	const {vaultData} = useVaultStakingData({currentVault})
+	const {handleApproveNotification, handleDepositNotification, handleWithdrawNotification} = useNotificationsActions()
 
 	/**********************************************************************************************
 	 ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook
 	 ** is called when amount/in or out changes. Calls the allowanceFetcher callback.
 	 *********************************************************************************************/
 	const triggerRetrieveAllowance = useAsyncTrigger(async (): Promise<void> => {
-		setAllowanceFrom(await onRetrieveAllowance(true));
-		setAllowanceRouter((await onRetrieveRouterAllowance?.(true)) || zeroNormalizedBN);
-	}, [address, onRetrieveAllowance, onRetrieveRouterAllowance, hash]);
+		setAllowanceFrom(await onRetrieveAllowance(true))
+		setAllowanceRouter((await onRetrieveRouterAllowance?.(true)) || zeroNormalizedBN)
+	}, [address, onRetrieveAllowance, onRetrieveRouterAllowance, hash])
 
 	/**********************************************************************************************
 	 ** The onSuccess callback is called when the deposit or withdraw action is successful. It
@@ -79,7 +78,7 @@ export function VaultDetailsQuickActionsButtons({
 			receipt?: TransactionReceipt,
 			notificationIdToUpdate?: number
 		): Promise<void> => {
-			const {chainID} = currentVault;
+			const {chainID} = currentVault
 
 			if (notificationIdToUpdate) {
 				await handleDepositNotification({
@@ -88,7 +87,7 @@ export function VaultDetailsQuickActionsButtons({
 					receipt,
 					status: 'success',
 					idToUpdate: notificationIdToUpdate
-				});
+				})
 			}
 
 			if (isDeposit) {
@@ -103,7 +102,7 @@ export function VaultDetailsQuickActionsButtons({
 						isZap: Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver,
 						action: `Deposit ${actionParams.amount?.display} ${actionParams?.selectedOptionFrom?.symbol} -> ${currentVault.symbol} on chain ${currentVault.chainID}`
 					}
-				});
+				})
 			} else {
 				plausible(PLAUSIBLE_EVENTS.WITHDRAW, {
 					props: {
@@ -116,7 +115,7 @@ export function VaultDetailsQuickActionsButtons({
 						isZap: Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver,
 						action: `Withdraw ${actionParams.amount?.display} ${currentVault?.symbol} -> ${actionParams?.selectedOptionTo?.symbol} on chain ${actionParams?.selectedOptionTo?.chainID}`
 					}
-				});
+				})
 			}
 
 			if (
@@ -132,25 +131,25 @@ export function VaultDetailsQuickActionsButtons({
 					{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID},
 					{address: toAddress(actionParams?.selectedOptionTo?.value), chainID},
 					{address: toAddress(currentVault.address), chainID}
-				];
+				]
 				if (currentVault.staking.available) {
-					toRefresh.push({address: toAddress(currentVault.staking.address), chainID});
+					toRefresh.push({address: toAddress(currentVault.staking.address), chainID})
 				}
-				await onRefresh(toRefresh);
+				await onRefresh(toRefresh)
 			} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver) {
 				if (isDepositing) {
-					onRefresh([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}]);
+					onRefresh([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}])
 				} else {
-					onRefresh([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}]);
+					onRefresh([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}])
 				}
 			} else {
 				onRefresh([
 					{address: toAddress(ETH_TOKEN_ADDRESS), chainID},
 					{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID},
 					{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}
-				]);
+				])
 			}
-			onChangeAmount(zeroNormalizedBN);
+			onChangeAmount(zeroNormalizedBN)
 		},
 		[
 			currentVault,
@@ -162,7 +161,7 @@ export function VaultDetailsQuickActionsButtons({
 			onRefresh,
 			isDepositing
 		]
-	);
+	)
 
 	/**********************************************************************************************
 	 ** Trigger an approve web3 action, simply trying to approve `amount` tokens to be used by the
@@ -174,24 +173,24 @@ export function VaultDetailsQuickActionsButtons({
 		const shouldApproveInfinite =
 			currentSolver === Solver.enum.PartnerContract ||
 			// currentSolver === Solver.enum.Vanilla || TODO: Maybe remove this?
-			currentSolver === Solver.enum.InternalMigration;
+			currentSolver === Solver.enum.InternalMigration
 
-		const id = await handleApproveNotification({actionParams});
+		const id = await handleApproveNotification({actionParams})
 		onApprove(
 			shouldApproveInfinite ? maxUint256 : toBigInt(actionParams.amount?.raw),
 			setTxStatusApprove,
 			async (receipt?: TransactionReceipt): Promise<void> => {
-				await handleApproveNotification({actionParams, receipt, status: 'success', idToUpdate: id});
-				await triggerRetrieveAllowance();
+				await handleApproveNotification({actionParams, receipt, status: 'success', idToUpdate: id})
+				await triggerRetrieveAllowance()
 			},
 			(txHash: Hash) => {
-				handleApproveNotification({actionParams, status: 'pending', idToUpdate: id, txHash});
+				handleApproveNotification({actionParams, status: 'pending', idToUpdate: id, txHash})
 			},
 			async (): Promise<void> => {
-				await handleApproveNotification({actionParams, status: 'error', idToUpdate: id});
+				await handleApproveNotification({actionParams, status: 'error', idToUpdate: id})
 			}
-		);
-	}, [currentSolver, handleApproveNotification, actionParams, onApprove, triggerRetrieveAllowance]);
+		)
+	}, [currentSolver, handleApproveNotification, actionParams, onApprove, triggerRetrieveAllowance])
 
 	/**********************************************************************************************
 	 ** Define the condition for the button to be disabled. The button is disabled if the user is
@@ -204,14 +203,14 @@ export function VaultDetailsQuickActionsButtons({
 		(isDepositing &&
 			toBigInt(actionParams.amount?.raw) >
 				toBigInt(maxDepositPossible(toAddress(actionParams?.selectedOptionFrom?.value)).raw)) ||
-		isLoadingExpectedOut;
+		isLoadingExpectedOut
 
 	/**********************************************************************************************
 	 ** We now need to decide which button to display. Depending on a lot of parameters, we can
 	 ** display a button to approve the from token, a button to deposit, a button to withdraw or a
 	 ** button to migrate.
 	 *********************************************************************************************/
-	const isAboveAllowance = toBigInt(actionParams.amount?.raw) > toBigInt(allowanceFrom?.raw);
+	const isAboveAllowance = toBigInt(actionParams.amount?.raw) > toBigInt(allowanceFrom?.raw)
 
 	if (
 		currentVault.version.startsWith('3') &&
@@ -223,7 +222,7 @@ export function VaultDetailsQuickActionsButtons({
 			<div className={'rounded-md bg-white p-2 text-xs text-black'}>
 				{'To enable migrations out of this vault, please ask Yearn to approve the 4626 router!'}
 			</div>
-		);
+		)
 	}
 
 	// Solver: a lot, Action: approve
@@ -249,7 +248,7 @@ export function VaultDetailsQuickActionsButtons({
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
-		);
+		)
 	}
 
 	if (isDepositing || currentSolver === Solver.enum.InternalMigration) {
@@ -275,8 +274,8 @@ export function VaultDetailsQuickActionsButtons({
 								chainID: currentVault.chainID,
 								value: vaultData.address
 							}
-						};
-						const id = await handleDepositNotification({actionParams: correctActionParams});
+						}
+						const id = await handleDepositNotification({actionParams: correctActionParams})
 						onExecuteDeposit(
 							setTxStatusExecuteDeposit,
 							async (receipt?: TransactionReceipt) => onSuccess(true, 'deposit and stake', receipt, id),
@@ -286,16 +285,16 @@ export function VaultDetailsQuickActionsButtons({
 									status: 'pending',
 									idToUpdate: id,
 									txHash
-								});
+								})
 							},
 							async () => {
 								await handleDepositNotification({
 									actionParams: correctActionParams,
 									status: 'error',
 									idToUpdate: id
-								});
+								})
 							}
-						);
+						)
 					}}
 					className={'w-full whitespace-nowrap'}
 					isBusy={txStatusExecuteDeposit.pending}
@@ -314,13 +313,13 @@ export function VaultDetailsQuickActionsButtons({
 						{'Deposit and Stake'}
 					</motion.div>
 				</Button>
-			);
+			)
 		}
 		return (
 			<Button
 				variant={isV3Page ? 'v3' : undefined}
 				onClick={async (): Promise<void> => {
-					const id = await handleDepositNotification({actionParams});
+					const id = await handleDepositNotification({actionParams})
 					onExecuteDeposit(
 						setTxStatusExecuteDeposit,
 						async (receipt?: TransactionReceipt) => onSuccess(true, 'deposit', receipt, id),
@@ -330,12 +329,12 @@ export function VaultDetailsQuickActionsButtons({
 								status: 'pending',
 								idToUpdate: id,
 								txHash
-							});
+							})
 						},
 						async () => {
-							await handleDepositNotification({actionParams, status: 'error', idToUpdate: id});
+							await handleDepositNotification({actionParams, status: 'error', idToUpdate: id})
 						}
-					);
+					)
 				}}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
@@ -349,32 +348,32 @@ export function VaultDetailsQuickActionsButtons({
 					{isDepositing ? 'Deposit' : 'Migrate'}
 				</motion.div>
 			</Button>
-		);
+		)
 	}
 
 	return (
 		<Button
 			variant={isV3Page ? 'v3' : undefined}
 			onClick={async (): Promise<void> => {
-				const id = await handleWithdrawNotification({actionParams});
+				const id = await handleWithdrawNotification({actionParams})
 				onExecuteWithdraw(
 					setTxStatusExecuteWithdraw,
 					async (receipt?: TransactionReceipt) => {
-						await handleWithdrawNotification({actionParams, receipt, status: 'success', idToUpdate: id});
-						await onSuccess(false);
+						await handleWithdrawNotification({actionParams, receipt, status: 'success', idToUpdate: id})
+						await onSuccess(false)
 					},
 					(txHash: Hash) => {
-						handleWithdrawNotification({actionParams, status: 'pending', idToUpdate: id, txHash});
+						handleWithdrawNotification({actionParams, status: 'pending', idToUpdate: id, txHash})
 					},
 					async () => {
-						await handleWithdrawNotification({actionParams, status: 'error', idToUpdate: id});
+						await handleWithdrawNotification({actionParams, status: 'error', idToUpdate: id})
 					}
-				);
+				)
 			}}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
 			isDisabled={isButtonDisabled}>
 			{'Withdraw'}
 		</Button>
-	);
+	)
 }

@@ -1,31 +1,31 @@
-import {useSearch} from '@lib/contexts/useSearch';
-import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
-import {IconSearch} from '@lib/icons/IconSearch';
-import {LogoYearn} from '@lib/icons/LogoYearn';
-import {useRouter} from 'next/router';
-import {type ReactElement, useCallback} from 'react';
+import {useSearch} from '@lib/contexts/useSearch'
+import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain'
+import {IconSearch} from '@lib/icons/IconSearch'
+import {LogoYearn} from '@lib/icons/LogoYearn'
+import {useRouter} from 'next/router'
+import {type ReactElement, useCallback} from 'react'
 
-import {SearchBar} from './SearchBar';
+import {SearchBar} from './SearchBar'
 
 export function MobileTopNav({
 	isSearchOpen,
 	setIsSearchOpen,
 	setIsNavbarOpen
 }: {
-	isSearchOpen: boolean;
-	setIsSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	setIsNavbarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	isSearchOpen: boolean
+	setIsSearchOpen: React.Dispatch<React.SetStateAction<boolean>>
+	setIsNavbarOpen: React.Dispatch<React.SetStateAction<boolean>>
 }): ReactElement {
-	const {configuration, dispatch} = useSearch();
-	const router = useRouter();
+	const {configuration, dispatch} = useSearch()
+	const router = useRouter()
 
 	const onSearchClick = useCallback(() => {
 		if (!configuration.searchValue) {
-			router.push('/apps');
-			return;
+			router.push('/apps')
+			return
 		}
-		router.push(`/apps/search/${encodeURIComponent(configuration.searchValue)}`);
-	}, [configuration.searchValue, router]);
+		router.push(`/apps/search/${encodeURIComponent(configuration.searchValue)}`)
+	}, [configuration.searchValue, router])
 
 	return (
 		<div className={'z-50 bg-gray-900'}>
@@ -40,16 +40,16 @@ export function MobileTopNav({
 					<button
 						className={'hidden md:block'}
 						onClick={() => {
-							router.push('/');
-							setIsSearchOpen(false);
+							router.push('/')
+							setIsSearchOpen(false)
 						}}>
 						<LogoYearn className={'size-8'} back={'text-blue-500'} front={'text-white'} />
 					</button>
 				</div>
 				<button
 					onClick={() => {
-						setIsNavbarOpen(false);
-						setIsSearchOpen(prev => !prev);
+						setIsNavbarOpen(false)
+						setIsSearchOpen(prev => !prev)
 					}}>
 					<IconSearch className={'text-white'} />
 				</button>
@@ -70,5 +70,5 @@ export function MobileTopNav({
 				</div>
 			)}
 		</div>
-	);
+	)
 }

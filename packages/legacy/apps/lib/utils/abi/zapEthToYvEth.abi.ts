@@ -9,4 +9,4 @@ export const ZAP_ETH_TO_YVETH_ABI = [
 		outputs: []
 	},
 	{stateMutability: 'payable', type: 'fallback'}
-] as const;
+] as const

@@ -1,30 +1,30 @@
-import {Popover, PopoverButton, PopoverPanel, Transition} from '@headlessui/react';
-import {Renderable} from '@lib/components/Renderable';
-import {Switch} from '@lib/components/Switch';
-import {useYearn} from '@lib/contexts/useYearn';
-import {IconSettings} from '@lib/icons/IconSettings';
-import {cl} from '@lib/utils';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
-import type {TSolver} from '@vaults-v2/types/solvers';
-import {Solver} from '@vaults-v2/types/solvers';
-import type {ReactElement} from 'react';
-import {Fragment, useMemo} from 'react';
+import {Popover, PopoverButton, PopoverPanel, Transition} from '@headlessui/react'
+import {Renderable} from '@lib/components/Renderable'
+import {Switch} from '@lib/components/Switch'
+import {useYearn} from '@lib/contexts/useYearn'
+import {IconSettings} from '@lib/icons/IconSettings'
+import {cl} from '@lib/utils'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
+import type {TSolver} from '@vaults-v2/types/solvers'
+import {Solver} from '@vaults-v2/types/solvers'
+import type {ReactElement} from 'react'
+import {Fragment, useMemo} from 'react'
 
 type TSettingPopover = {
-	vault: TYDaemonVault;
-};
+	vault: TYDaemonVault
+}
 
 function Label({children}: {children: string}): ReactElement {
 	return (
 		<label htmlFor={'zapProvider'} className={'font-bold text-neutral-900'}>
 			{children}
 		</label>
-	);
+	)
 }
 
 function MaxLossSection(): ReactElement {
-	const {maxLoss, setMaxLoss} = useYearn();
+	const {maxLoss, setMaxLoss} = useYearn()
 
 	return (
 		<div className={'flex flex-col space-y-1'}>
@@ -61,12 +61,12 @@ function MaxLossSection(): ReactElement {
 						}
 						value={(Number(maxLoss) / 100).toString()}
 						onChange={(e): void => {
-							const value = BigInt(Math.round(parseFloat(e.target.value || '0') * 100));
+							const value = BigInt(Math.round(parseFloat(e.target.value || '0') * 100))
 							if (value > 10000n) {
-								setMaxLoss(10000n);
-								return;
+								setMaxLoss(10000n)
+								return
 							}
-							setMaxLoss(value);
+							setMaxLoss(value)
 						}}
 					/>
 					<p className={'font-number mt-1 pr-2 text-neutral-900/60'}>{'%'}</p>
@@ -80,18 +80,18 @@ function MaxLossSection(): ReactElement {
 				</div>
 			) : null}
 		</div>
-	);
+	)
 }
 
 function ZapSection({chainID}: {chainID: number}): ReactElement {
-	const {zapProvider, setZapProvider, zapSlippage, setZapSlippage} = useYearn();
+	const {zapProvider, setZapProvider, zapSlippage, setZapSlippage} = useYearn()
 
 	const currentZapProvider = useMemo((): TSolver => {
 		if (chainID !== 1 && zapProvider === 'Cowswap') {
-			return 'Portals';
+			return 'Portals'
 		}
-		return zapProvider;
-	}, [chainID, zapProvider]);
+		return zapProvider
+	}, [chainID, zapProvider])
 
 	return (
 		<>
@@ -174,7 +174,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 							}
 							value={zapSlippage}
 							onChange={(e): void => {
-								setZapSlippage(parseFloat(e.target.value) || 0);
+								setZapSlippage(parseFloat(e.target.value) || 0)
 							}}
 						/>
 						<p className={'font-number mt-1 pr-2 text-neutral-900/60'}>{'%'}</p>
@@ -183,14 +183,14 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 				<legend className={'pl-1 text-xs text-neutral-500'}>{'Maximum acceptable slippage for Zaps.'}</legend>
 			</div>
 		</>
-	);
+	)
 }
 
 function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactElement | null {
-	const {isAutoStakingEnabled, setIsAutoStakingEnabled} = useYearn();
+	const {isAutoStakingEnabled, setIsAutoStakingEnabled} = useYearn()
 
 	if (!currentVault.staking.available) {
-		return null;
+		return null
 	}
 
 	return (
@@ -214,7 +214,7 @@ function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactEle
 				</div>
 			</div>
 		</>
-	);
+	)
 }
 
 export function SettingsPopover({vault}: TSettingPopover): ReactElement {
@@ -249,5 +249,5 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 				</>
 			)}
 		</Popover>
-	);
+	)
 }

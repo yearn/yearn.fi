@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function IconShare({stroke = 'currentColor', ...props}: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -12,5 +12,5 @@ export function IconShare({stroke = 'currentColor', ...props}: React.SVGProps<SV
 			<path d={'M5 1H11V7'} stroke={stroke} strokeWidth={'2'} strokeLinecap={'round'} strokeLinejoin={'round'} />
 			<path d={'M11 1L1 11'} stroke={stroke} strokeWidth={'2'} strokeLinecap={'round'} strokeLinejoin={'round'} />
 		</svg>
-	);
+	)
 }

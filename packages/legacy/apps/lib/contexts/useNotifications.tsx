@@ -1,10 +1,10 @@
-import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
-import type {TNotification, TNotificationStatus, TNotificationsContext} from '@lib/types/notifications';
-import {NotificationsCurtain} from '@vaults-v3/components/notifications/NotificationsCurtain';
-import {useRouter} from 'next/router';
-import type React from 'react';
-import {createContext, useCallback, useContext, useMemo, useState} from 'react';
-import {useIndexedDBStore} from 'use-indexeddb';
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger'
+import type {TNotification, TNotificationStatus, TNotificationsContext} from '@lib/types/notifications'
+import {NotificationsCurtain} from '@vaults-v3/components/notifications/NotificationsCurtain'
+import {useRouter} from 'next/router'
+import type React from 'react'
+import {createContext, useCallback, useContext, useMemo, useState} from 'react'
+import {useIndexedDBStore} from 'use-indexeddb'
 
 const defaultProps: TNotificationsContext = {
 	shouldOpenCurtain: false,
@@ -17,25 +17,25 @@ const defaultProps: TNotificationsContext = {
 	updateEntry: async (): Promise<void> => undefined,
 	addNotification: async (): Promise<number> => 0,
 	setShouldOpenCurtain: (): void => undefined
-};
+}
 
-const NotificationsContext = createContext<TNotificationsContext>(defaultProps);
+const NotificationsContext = createContext<TNotificationsContext>(defaultProps)
 export const WithNotifications = ({children}: {children: React.ReactElement}): React.ReactElement => {
-	const [cachedEntries, setCachedEntries] = useState<TNotification[]>([]);
-	const [entryNonce, setEntryNonce] = useState<number>(0);
-	const [isLoading, setIsLoading] = useState<boolean>(true);
-	const [error, setError] = useState<string | null>(null);
+	const [cachedEntries, setCachedEntries] = useState<TNotification[]>([])
+	const [entryNonce, setEntryNonce] = useState<number>(0)
+	const [isLoading, setIsLoading] = useState<boolean>(true)
+	const [error, setError] = useState<string | null>(null)
 
-	const router = useRouter();
-	const isV3 = router.pathname.includes('/v3');
+	const router = useRouter()
+	const isV3 = router.pathname.includes('/v3')
 
 	/**************************************************************************
 	 * State that is used to store latest added/updated notification status
 	 *************************************************************************/
-	const [notificationStatus, setNotificationStatus] = useState<TNotificationStatus | null>(null);
+	const [notificationStatus, setNotificationStatus] = useState<TNotificationStatus | null>(null)
 
-	const [shouldOpenCurtain, setShouldOpenCurtain] = useState(false);
-	const {add, getAll, update, deleteByID, getByID} = useIndexedDBStore<TNotification>('notifications');
+	const [shouldOpenCurtain, setShouldOpenCurtain] = useState(false)
+	const {add, getAll, update, deleteByID, getByID} = useIndexedDBStore<TNotification>('notifications')
 
 	/************************************************************************************************
 	 * This useAsyncTrigger hook is responsible for fetching all notifications from the IndexedDB
@@ -46,20 +46,20 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 	 * of the notification list when needed (e.g., after adding or updating a notification).
 	 ************************************************************************************************/
 	useAsyncTrigger(async (): Promise<void> => {
-		entryNonce;
-		setIsLoading(true);
-		setError(null);
+		entryNonce
+		setIsLoading(true)
+		setError(null)
 		try {
-			const entriesFromDB = await getAll();
-			setCachedEntries(entriesFromDB || []);
+			const entriesFromDB = await getAll()
+			setCachedEntries(entriesFromDB || [])
 		} catch (error) {
-			console.error('Failed to fetch notifications from IndexedDB:', error);
-			setCachedEntries([]);
-			setError('Failed to load notifications');
+			console.error('Failed to fetch notifications from IndexedDB:', error)
+			setCachedEntries([])
+			setError('Failed to load notifications')
 		} finally {
-			setIsLoading(false);
+			setIsLoading(false)
 		}
-	}, [getAll, entryNonce]);
+	}, [getAll, entryNonce])
 
 	/************************************************************************************************
 	 * The updateEntry function is responsible for updating an existing notification in the IndexedDB.
@@ -77,58 +77,58 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 	const updateEntry = useCallback(
 		async (entry: Partial<TNotification>, id: number) => {
 			try {
-				const notification = await getByID(id);
+				const notification = await getByID(id)
 
 				if (notification) {
-					await update({...notification, ...entry});
-					setEntryNonce(nonce => nonce + 1);
-					setNotificationStatus(entry?.status || null);
+					await update({...notification, ...entry})
+					setEntryNonce(nonce => nonce + 1)
+					setNotificationStatus(entry?.status || null)
 				} else {
-					console.warn(`Notification with id ${id} not found`);
+					console.warn(`Notification with id ${id} not found`)
 				}
 			} catch (error) {
-				console.error('Failed to update notification:', error);
+				console.error('Failed to update notification:', error)
 			}
 		},
 		[getByID, update]
-	);
+	)
 
 	const addNotification = useCallback(
 		async (notification: TNotification): Promise<number> => {
 			try {
-				const id = await add(notification);
-				setEntryNonce(nonce => nonce + 1);
-				setNotificationStatus(notification.status);
-				return id;
+				const id = await add(notification)
+				setEntryNonce(nonce => nonce + 1)
+				setNotificationStatus(notification.status)
+				return id
 			} catch (error) {
-				console.error('Failed to add notification:', error);
+				console.error('Failed to add notification:', error)
 
-				return -1;
+				return -1
 			}
 		},
 		[add]
-	);
+	)
 
 	const deleteByIDWithErrorHandling = useCallback(
 		async (id: number): Promise<void> => {
 			try {
 				// Optimistically update the local state first
-				setCachedEntries(currentEntries => currentEntries.filter(entry => entry.id !== id));
+				setCachedEntries(currentEntries => currentEntries.filter(entry => entry.id !== id))
 
 				// Then delete from IndexedDB
-				await deleteByID(id);
+				await deleteByID(id)
 
 				// No need to increment entryNonce since we already updated the state
 			} catch (error) {
-				console.error('Failed to delete notification:', error);
-				setError('Failed to delete notification');
+				console.error('Failed to delete notification:', error)
+				setError('Failed to delete notification')
 
 				// Revert the optimistic update by refetching from DB
-				setEntryNonce(nonce => nonce + 1);
+				setEntryNonce(nonce => nonce + 1)
 			}
 		},
 		[deleteByID]
-	);
+	)
 
 	/**************************************************************************
 	 * Context value that is passed to all children of this component.
@@ -156,7 +156,7 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 			addNotification,
 			notificationStatus
 		]
-	);
+	)
 
 	return (
 		<NotificationsContext.Provider value={contextValue}>
@@ -167,13 +167,13 @@ export const WithNotifications = ({children}: {children: React.ReactElement}): R
 				isOpen={shouldOpenCurtain}
 			/>
 		</NotificationsContext.Provider>
-	);
-};
+	)
+}
 
 export const useNotifications = (): TNotificationsContext => {
-	const ctx = useContext(NotificationsContext);
+	const ctx = useContext(NotificationsContext)
 	if (!ctx) {
-		throw new Error('NotificationsContext not found');
+		throw new Error('NotificationsContext not found')
 	}
-	return ctx;
-};
+	return ctx
+}

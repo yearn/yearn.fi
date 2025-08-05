@@ -1,17 +1,17 @@
-import type {TGraphData} from '@lib/types';
-import {formatAmount, formatWithUnit, isZero} from '@lib/utils';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TGraphData} from '@lib/types'
+import {formatAmount, formatWithUnit, isZero} from '@lib/utils'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
 
-import type {ReactElement} from 'react';
-import {Fragment, useMemo} from 'react';
-import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import type {ReactElement} from 'react'
+import {Fragment, useMemo} from 'react'
+import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts'
 
 export type TGraphForVaultEarningsProps = {
-	currentVault: TYDaemonVault;
-	harvestData: TGraphData[];
-	height?: number;
-	isCumulative?: boolean;
-};
+	currentVault: TYDaemonVault
+	harvestData: TGraphData[]
+	height?: number
+	isCumulative?: boolean
+}
 
 export function GraphForVaultEarnings({
 	currentVault,
@@ -20,21 +20,21 @@ export function GraphForVaultEarnings({
 	isCumulative = true
 }: TGraphForVaultEarningsProps): ReactElement {
 	const cumulativeData = useMemo((): {name: string; value: number}[] => {
-		let cumulativeValue = 0;
+		let cumulativeValue = 0
 		return harvestData.map((item: {name: string; value: number}): {name: string; value: number} => {
-			cumulativeValue += item.value;
+			cumulativeValue += item.value
 			return {
 				name: item.name,
 				value: cumulativeValue
-			};
-		});
-	}, [harvestData]);
+			}
+		})
+	}, [harvestData])
 
 	if (isCumulative && isZero(cumulativeData?.length)) {
-		return <Fragment />;
+		return <Fragment />
 	}
 	if (!isCumulative && isZero(harvestData?.length)) {
-		return <Fragment />;
+		return <Fragment />
 	}
 	return (
 		<ResponsiveContainer width={'100%'} height={height}>
@@ -46,10 +46,10 @@ export function GraphForVaultEarnings({
 					type={'step'}
 					dot={false}
 					activeDot={(e: unknown): ReactElement => {
-						const dotProps = e as React.SVGProps<SVGCircleElement> & {dataKey?: string};
-						dotProps.className = `${dotProps.className} activeDot`;
-						delete dotProps.dataKey;
-						return <circle {...dotProps}></circle>;
+						const dotProps = e as React.SVGProps<SVGCircleElement> & {dataKey?: string}
+						dotProps.className = `${dotProps.className} activeDot`
+						delete dotProps.dataKey
+						return <circle {...dotProps}></circle>
 					}}
 					strokeWidth={2}
 					dataKey={'value'}
@@ -63,25 +63,25 @@ export function GraphForVaultEarnings({
 					tick={(props): React.ReactElement<SVGElement> => {
 						const {
 							payload: {value}
-						} = props;
-						props.fill = '#5B5B5B';
-						props.className = 'text-xxs md:text-xs font-number';
-						props.alignmentBaseline = 'middle';
-						delete props.verticalAnchor;
-						delete props.visibleTicksCount;
-						delete props.tickFormatter;
-						const formatedValue = formatWithUnit(value, 0, 0);
-						return <text {...props}>{formatedValue}</text>;
+						} = props
+						props.fill = '#5B5B5B'
+						props.className = 'text-xxs md:text-xs font-number'
+						props.alignmentBaseline = 'middle'
+						delete props.verticalAnchor
+						delete props.visibleTicksCount
+						delete props.tickFormatter
+						const formatedValue = formatWithUnit(value, 0, 0)
+						return <text {...props}>{formatedValue}</text>
 					}}
 				/>
 				<Tooltip
 					content={(e): ReactElement => {
-						const {active: isTooltipActive, payload, label} = e;
+						const {active: isTooltipActive, payload, label} = e
 						if (!isTooltipActive || !payload) {
-							return <Fragment />;
+							return <Fragment />
 						}
 						if (payload.length > 0) {
-							const [{value}] = payload;
+							const [{value}] = payload
 
 							return (
 								<div className={'recharts-tooltip w-48'}>
@@ -95,12 +95,12 @@ export function GraphForVaultEarnings({
 										</b>
 									</div>
 								</div>
-							);
+							)
 						}
-						return <div />;
+						return <div />
 					}}
 				/>
 			</LineChart>
 		</ResponsiveContainer>
-	);
+	)
 }

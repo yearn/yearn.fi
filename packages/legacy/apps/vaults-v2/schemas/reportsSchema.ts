@@ -1,10 +1,10 @@
-import {z} from 'zod';
+import {z} from 'zod'
 
 const resultSchema = z.object({
 	duration: z.coerce.number().optional(),
 	durationPR: z.coerce.number().optional(),
 	APR: z.coerce.number()
-});
+})
 
 const yDaemonReportSchema = z.object({
 	id: z.string().optional(),
@@ -18,10 +18,10 @@ const yDaemonReportSchema = z.object({
 	debtPaid: z.string().optional(),
 	timestamp: z.coerce.number(),
 	results: z.array(resultSchema).nullable()
-});
+})
 
-export const yDaemonReportsSchema = z.array(yDaemonReportSchema);
+export const yDaemonReportsSchema = z.array(yDaemonReportSchema)
 
-export type TYDaemonReport = z.infer<typeof yDaemonReportSchema>;
+export type TYDaemonReport = z.infer<typeof yDaemonReportSchema>
 
-export type TYDaemonReports = z.infer<typeof yDaemonReportsSchema>;
+export type TYDaemonReports = z.infer<typeof yDaemonReportsSchema>

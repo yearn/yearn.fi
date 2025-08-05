@@ -1,12 +1,12 @@
-import {IconShare} from '@lib/icons/IconShare';
-import type {TApp} from '@lib/types/mixed';
-import Image from 'next/image';
-import Link from 'next/link';
-import type {ReactElement} from 'react';
+import {IconShare} from '@lib/icons/IconShare'
+import type {TApp} from '@lib/types/mixed'
+import Image from 'next/image'
+import Link from 'next/link'
+import type {ReactElement} from 'react'
 
 type TAppCardProps = {
-	app: TApp;
-};
+	app: TApp
+}
 
 export function AppCard(props: TAppCardProps): ReactElement {
 	return (
@@ -77,5 +77,5 @@ export function AppCard(props: TAppCardProps): ReactElement {
 				</div>
 			</Link>
 		</>
-	);
+	)
 }

@@ -1,62 +1,62 @@
-import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react';
-import {Renderable} from '@lib/components/Renderable';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {IconAddToMetamask} from '@lib/icons/IconAddToMetamask';
-import {IconChevron} from '@lib/icons/IconChevron';
-import {IconLinkOut} from '@lib/icons/IconLinkOut';
-import {assert, cl, toAddress} from '@lib/utils';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {retrieveConfig} from '@lib/utils/wagmi';
-import {getNetwork} from '@lib/utils/wagmi/utils';
-import {VaultInfo} from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper';
-import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
-import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
-import {useRouter} from 'next/router';
-import type {ReactElement} from 'react';
-import {Fragment, useEffect, useMemo, useState} from 'react';
-import {watchAsset} from 'viem/actions';
-import {getConnectorClient} from 'wagmi/actions';
-import {VaultRiskInfo} from './tabs/VaultRiskInfo';
+import {Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition} from '@headlessui/react'
+import {Renderable} from '@lib/components/Renderable'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {IconAddToMetamask} from '@lib/icons/IconAddToMetamask'
+import {IconChevron} from '@lib/icons/IconChevron'
+import {IconLinkOut} from '@lib/icons/IconLinkOut'
+import {assert, cl, toAddress} from '@lib/utils'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {retrieveConfig} from '@lib/utils/wagmi'
+import {getNetwork} from '@lib/utils/wagmi/utils'
+import {VaultInfo} from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper'
+import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout'
+import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies'
+import {useRouter} from 'next/router'
+import type {ReactElement} from 'react'
+import {Fragment, useEffect, useMemo, useState} from 'react'
+import {watchAsset} from 'viem/actions'
+import {getConnectorClient} from 'wagmi/actions'
+import {VaultRiskInfo} from './tabs/VaultRiskInfo'
 
 type TTabsOptions = {
-	value: number;
-	label: string;
-	slug?: string;
-};
+	value: number
+	label: string
+	slug?: string
+}
 type TTabs = {
-	hasStrategies: boolean;
-	hasRisk: boolean;
-	selectedAboutTabIndex: number;
-	setSelectedAboutTabIndex: (arg0: number) => void;
-};
+	hasStrategies: boolean
+	hasRisk: boolean
+	selectedAboutTabIndex: number
+	setSelectedAboutTabIndex: (arg0: number) => void
+}
 
 type TExplorerLinkProps = {
-	explorerBaseURI?: string;
-	currentVaultAddress: string;
-};
+	explorerBaseURI?: string
+	currentVaultAddress: string
+}
 
 function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutTabIndex}: TTabs): ReactElement {
-	const router = useRouter();
+	const router = useRouter()
 
 	const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => {
-		const tabs = [{value: 0, label: 'About', slug: 'about'}];
+		const tabs = [{value: 0, label: 'About', slug: 'about'}]
 		if (hasStrategies) {
-			tabs.push({value: 1, label: 'Strategies', slug: 'strategies'});
+			tabs.push({value: 1, label: 'Strategies', slug: 'strategies'})
 		}
-		tabs.push({value: 2, label: 'Info', slug: 'info'});
+		tabs.push({value: 2, label: 'Info', slug: 'info'})
 		if (hasRisk) {
-			tabs.push({value: 3, label: 'Risk', slug: 'risk'});
+			tabs.push({value: 3, label: 'Risk', slug: 'risk'})
 		}
 
-		return tabs;
-	}, [hasStrategies, hasRisk]);
+		return tabs
+	}, [hasStrategies, hasRisk])
 
 	useEffect((): void => {
-		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab);
+		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab)
 		if (tab?.value) {
-			setSelectedAboutTabIndex(tab?.value);
+			setSelectedAboutTabIndex(tab?.value)
 		}
-	}, [router.query.tab, setSelectedAboutTabIndex, tabs]);
+	}, [router.query.tab, setSelectedAboutTabIndex, tabs])
 
 	return (
 		<>
@@ -77,8 +77,8 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutTa
 									{
 										shallow: true
 									}
-								);
-								setSelectedAboutTabIndex(tab.value);
+								)
+								setSelectedAboutTabIndex(tab.value)
 							}}>
 							<p
 								title={tab.label}
@@ -139,11 +139,11 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutTa
 				</Listbox>
 			</div>
 		</>
-	);
+	)
 }
 
 function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {provider} = useWeb3();
+	const {provider} = useWeb3()
 
 	async function onAddTokenToMetamask(
 		address: string,
@@ -152,8 +152,8 @@ function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		image: string
 	): Promise<void> {
 		try {
-			assert(provider, 'Provider is not set');
-			const walletClient = await getConnectorClient(retrieveConfig());
+			assert(provider, 'Provider is not set')
+			const walletClient = await getConnectorClient(retrieveConfig())
 			watchAsset(walletClient, {
 				type: 'ERC20',
 				options: {
@@ -162,9 +162,9 @@ function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					symbol: symbol,
 					image: image
 				}
-			});
+			})
 		} catch (error) {
-			console.error(error);
+			console.error(error)
 			// Token has not been added to MetaMask.
 		}
 	}
@@ -177,14 +177,14 @@ function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					currentVault.symbol,
 					currentVault.decimals,
 					`https://token-assets-one.vercel.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
-				);
+				)
 			}}>
 			<span className={'sr-only'}>{'Add to wallet'}</span>
 			<IconAddToMetamask
 				className={'size-5 text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'}
 			/>
 		</button>
-	);
+	)
 }
 
 function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps): ReactElement | null {
@@ -195,12 +195,12 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 				className={'size-5 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'}
 			/>
 		</a>
-	);
+	)
 }
 
 export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0);
-	const hasStrategies = Number(currentVault.strategies?.length || 0) > 0;
+	const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0)
+	const hasStrategies = Number(currentVault.strategies?.length || 0) > 0
 
 	return (
 		<div className={'col-span-12 mt-6 flex flex-col rounded-3xl bg-neutral-100'}>
@@ -239,5 +239,5 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				<VaultRiskInfo currentVault={currentVault} />
 			</Renderable>
 		</div>
-	);
+	)
 }

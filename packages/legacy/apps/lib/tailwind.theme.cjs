@@ -43,7 +43,7 @@ const lightTheme = {
 	'--color-red-900': '0 100% 45%',
 	'--color-red-300': '0 100% 95%',
 	'--color-red-200': '0 100% 90%'
-};
+}
 const darkTheme = {
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	These are the colors you will use the most and will make up the majority
@@ -89,7 +89,7 @@ const darkTheme = {
 	'--color-red-900': '0 100% 45%',
 	'--color-red-300': '0 100% 95%',
 	'--color-red-200': '0 100% 90%'
-};
+}
 const colors = {
 	...lightTheme, //default
 
@@ -109,7 +109,7 @@ const colors = {
 	'& body[data-theme="dark"]': {
 		...darkTheme
 	}
-};
+}
 
 //Not implemented yet
 const paddings = {
@@ -121,6 +121,6 @@ const paddings = {
 	'--padding-wide': '1.5rem', //24px | p-6
 	'--padding-wider': '2rem', //32px | p-8
 	'--padding-widest': '3rem' //48px | p-12
-};
+}
 
-module.exports = {colors, paddings};
+module.exports = {colors, paddings}

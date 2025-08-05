@@ -1,14 +1,14 @@
-import Link from 'next/link';
+import Link from 'next/link'
 
-import type {FC, ReactElement} from 'react';
+import type {FC, ReactElement} from 'react'
 
 export const SectionHeader: FC<{
-	tagline?: string;
-	title?: string;
-	description?: ReactElement | string;
-	cta?: {label: string; href: string};
-	align?: 'left' | 'right' | 'center';
-	isH1?: boolean;
+	tagline?: string
+	title?: string
+	description?: ReactElement | string
+	cta?: {label: string; href: string}
+	align?: 'left' | 'right' | 'center'
+	isH1?: boolean
 }> = ({tagline, title, description, cta, align = 'left', isH1 = false}) => {
 	return (
 		<div
@@ -46,5 +46,5 @@ export const SectionHeader: FC<{
 				</span>
 			)}
 		</div>
-	);
-};
+	)
+}

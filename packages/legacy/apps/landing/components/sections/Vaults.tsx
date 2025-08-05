@@ -1,28 +1,28 @@
-import {SectionHeader} from '@lib/components/SectionHeader';
-import {useYearn} from '@lib/contexts/useYearn';
-import {formatPercent} from '@lib/utils/format';
-import Image from 'next/image';
-import type {FC} from 'react';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {SectionHeader} from '@lib/components/SectionHeader'
+import {useYearn} from '@lib/contexts/useYearn'
+import {formatPercent} from '@lib/utils/format'
+import Image from 'next/image'
+import type {FC} from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
 
 type TRow = {
-	bgClass: string;
-	icon: string;
-	text: string;
-	description?: string;
-	href: string;
-	address?: string;
-};
+	bgClass: string
+	icon: string
+	text: string
+	description?: string
+	href: string
+	address?: string
+}
 
 type TVault = {
-	background: string;
-	image: string;
-	size: number;
-	tagline: string;
-	title: string;
-	description: string;
-	cta?: {label: string; href: string};
-};
+	background: string
+	image: string
+	size: number
+	tagline: string
+	title: string
+	description: string
+	cta?: {label: string; href: string}
+}
 
 const slides: TVault[] = [
 	{
@@ -42,7 +42,7 @@ const slides: TVault[] = [
 		title: 'App Ecosystem',
 		description: 'Apps built on Yearn vaults by contributors and the wider community'
 	}
-];
+]
 
 const vaultsRows = [
 	{
@@ -73,7 +73,7 @@ const vaultsRows = [
 		href: '/v3/1/0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F',
 		address: '0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F'
 	}
-];
+]
 
 const appRows: TRow[] = [
 	{
@@ -104,18 +104,18 @@ const appRows: TRow[] = [
 		description: 'Liquid locker for Berachain',
 		href: 'https://bearn.sucks'
 	}
-];
+]
 
 export const Vaults: FC = () => {
-	const {vaults, isLoadingVaultList} = useYearn();
-	const [activeSlide, setActiveSlide] = useState(0);
-	const [isAnimating, setIsAnimating] = useState(false);
-	const [isHovering, setIsHovering] = useState(false);
+	const {vaults, isLoadingVaultList} = useYearn()
+	const [activeSlide, setActiveSlide] = useState(0)
+	const [isAnimating, setIsAnimating] = useState(false)
+	const [isHovering, setIsHovering] = useState(false)
 
 	const rows: TRow[][] = useMemo(() => {
 		return [
 			vaultsRows.map((vault, index) => {
-				const vaultData = vaults?.[vault.address];
+				const vaultData = vaults?.[vault.address]
 				// no data? skip or default APR to 0
 				if (!vaultData) {
 					return {
@@ -127,12 +127,12 @@ export const Vaults: FC = () => {
 						text: `Earn on ${vault.symbol}`,
 						href: vault.href,
 						address: vault.address
-					};
+					}
 				}
 				// safely pull out APR parts
-				const forward = vaultData.apr.forwardAPR?.netAPR ?? 0;
-				const extra = vaultData.apr.extra?.stakingRewardsAPR ?? 0;
-				const apr = extra > 0 ? forward + extra : forward;
+				const forward = vaultData.apr.forwardAPR?.netAPR ?? 0
+				const extra = vaultData.apr.extra?.stakingRewardsAPR ?? 0
+				const apr = extra > 0 ? forward + extra : forward
 
 				return {
 					bgClass:
@@ -146,42 +146,42 @@ export const Vaults: FC = () => {
 							: `Earn on ${vault.symbol}`,
 					href: vault.href,
 					address: vault.address
-				};
+				}
 			}),
 			appRows
-		];
-	}, [vaults]);
+		]
+	}, [vaults])
 
-	const totalSlides = slides.length;
+	const totalSlides = slides.length
 
 	const nextSlide = useCallback(() => {
 		if (!isAnimating) {
-			setIsAnimating(true);
-			setActiveSlide(prev => (prev + 1) % totalSlides);
-			setTimeout(() => setIsAnimating(false), 500);
+			setIsAnimating(true)
+			setActiveSlide(prev => (prev + 1) % totalSlides)
+			setTimeout(() => setIsAnimating(false), 500)
 		}
-	}, [isAnimating, totalSlides]);
+	}, [isAnimating, totalSlides])
 
 	const goToSlide = useCallback(
 		(index: number) => {
 			if (!isAnimating && index !== activeSlide) {
-				setIsAnimating(true);
-				setActiveSlide(index);
-				setTimeout(() => setIsAnimating(false), 500);
+				setIsAnimating(true)
+				setActiveSlide(index)
+				setTimeout(() => setIsAnimating(false), 500)
 			}
 		},
 		[activeSlide, isAnimating]
-	);
+	)
 
 	useEffect(() => {
 		const interval = setInterval(() => {
 			if (!isHovering) {
-				nextSlide();
+				nextSlide()
 			}
-		}, 15_000);
+		}, 15_000)
 
-		return () => clearInterval(interval);
-	}, [nextSlide, isHovering]);
+		return () => clearInterval(interval)
+	}, [nextSlide, isHovering])
 
 	return (
 		<section className={'flex w-full justify-center border-t border-white/10 px-4 py-16 md:px-8 lg:py-32'}>
@@ -240,7 +240,7 @@ export const Vaults: FC = () => {
 											'flex w-full flex-col gap-2 overflow-hidden md:flex-col md:rounded-[24px] md:bg-white/5 md:p-[8px]'
 										}>
 										{rows[activeSlide].map(row => {
-											const isVaultLoading = row?.address && isLoadingVaultList;
+											const isVaultLoading = row?.address && isLoadingVaultList
 											return (
 												<a
 													key={row.href}
@@ -300,7 +300,7 @@ export const Vaults: FC = () => {
 														</svg>
 													</div>
 												</a>
-											);
+											)
 										})}
 									</div>
 								</div>
@@ -327,5 +327,5 @@ export const Vaults: FC = () => {
 				</div>
 			</div>
 		</section>
-	);
-};
+	)
+}

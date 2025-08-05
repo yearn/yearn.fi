@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function IconVaults(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -60,5 +60,5 @@ export function IconVaults(props: React.SVGProps<SVGSVGElement>): ReactElement {
 				strokeLinejoin={'round'}
 			/>
 		</svg>
-	);
+	)
 }

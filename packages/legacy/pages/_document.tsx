@@ -1,6 +1,6 @@
-import type {DocumentContext, DocumentInitialProps} from 'next/document';
-import Document, {Head, Html, Main, NextScript} from 'next/document';
-import type {ReactElement} from 'react';
+import type {DocumentContext, DocumentInitialProps} from 'next/document'
+import Document, {Head, Html, Main, NextScript} from 'next/document'
+import type {ReactElement} from 'react'
 
 const modeScript = `
 let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -47,20 +47,20 @@ function updateMode() {
 	}
 }
 window.onload = observeUrlChange;
-`;
+`
 
 class MyDocument extends Document {
 	static async getInitialProps(ctx: DocumentContext): Promise<DocumentInitialProps & {route: string}> {
-		const initialProps = await Document.getInitialProps(ctx);
+		const initialProps = await Document.getInitialProps(ctx)
 
 		// Determine the route from context
-		const route = ctx.pathname;
-		return {route, ...initialProps};
+		const route = ctx.pathname
+		return {route, ...initialProps}
 	}
 
 	render(): ReactElement {
-		const {route} = this.props as unknown as {route: string};
-		const isLanding = route.startsWith('/vaults');
+		const {route} = this.props as unknown as {route: string}
+		const isLanding = route.startsWith('/vaults')
 		return (
 			<Html
 				lang={'en'}
@@ -73,8 +73,8 @@ class MyDocument extends Document {
 					<NextScript />
 				</body>
 			</Html>
-		);
+		)
 	}
 }
 
-export default MyDocument;
+export default MyDocument

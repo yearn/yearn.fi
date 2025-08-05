@@ -128,4 +128,4 @@ export const V3_REWARDS_ZAP_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function'
 	}
-] as const;
+] as const

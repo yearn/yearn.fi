@@ -1,54 +1,54 @@
-import {Renderable} from '@lib/components/Renderable';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useFetch} from '@lib/hooks/useFetch';
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
-import {IconAddToMetamask} from '@lib/icons/IconAddToMetamask';
-import {IconLinkOut} from '@lib/icons/IconLinkOut';
-import {assert, cl, isZero, toAddress, toBigInt, toNormalizedValue} from '@lib/utils';
-import {formatDate} from '@lib/utils/format.time';
-import type {TYDaemonVault, TYDaemonVaultHarvests} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {yDaemonVaultHarvestsSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {retrieveConfig} from '@lib/utils/wagmi';
-import {getNetwork} from '@lib/utils/wagmi/utils';
-import {VaultDetailsAbout} from '@vaults-v2/components/details/tabs/VaultDetailsAbout';
-import {VaultDetailsHistorical} from '@vaults-v2/components/details/tabs/VaultDetailsHistorical';
-import {VaultDetailsStrategies} from '@vaults-v2/components/details/tabs/VaultDetailsStrategies';
-import {useRouter} from 'next/router';
-import type {ReactElement} from 'react';
-import {Fragment, useEffect, useMemo, useState} from 'react';
-import {watchAsset} from 'viem/actions';
-import {getConnectorClient} from 'wagmi/actions';
+import {Renderable} from '@lib/components/Renderable'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {useFetch} from '@lib/hooks/useFetch'
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI'
+import {IconAddToMetamask} from '@lib/icons/IconAddToMetamask'
+import {IconLinkOut} from '@lib/icons/IconLinkOut'
+import {assert, cl, isZero, toAddress, toBigInt, toNormalizedValue} from '@lib/utils'
+import {formatDate} from '@lib/utils/format.time'
+import type {TYDaemonVault, TYDaemonVaultHarvests} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {yDaemonVaultHarvestsSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {retrieveConfig} from '@lib/utils/wagmi'
+import {getNetwork} from '@lib/utils/wagmi/utils'
+import {VaultDetailsAbout} from '@vaults-v2/components/details/tabs/VaultDetailsAbout'
+import {VaultDetailsHistorical} from '@vaults-v2/components/details/tabs/VaultDetailsHistorical'
+import {VaultDetailsStrategies} from '@vaults-v2/components/details/tabs/VaultDetailsStrategies'
+import {useRouter} from 'next/router'
+import type {ReactElement} from 'react'
+import {Fragment, useEffect, useMemo, useState} from 'react'
+import {watchAsset} from 'viem/actions'
+import {getConnectorClient} from 'wagmi/actions'
 
 type TTabsOptions = {
-	value: number;
-	label: string;
-	slug?: string;
-	mobileLabel?: string;
-};
+	value: number
+	label: string
+	slug?: string
+	mobileLabel?: string
+}
 type TTabs = {
-	selectedAboutTabIndex: number;
-	setSelectedAboutTabIndex: (arg0: number) => void;
-};
+	selectedAboutTabIndex: number
+	setSelectedAboutTabIndex: (arg0: number) => void
+}
 
 type TExplorerLinkProps = {
-	explorerBaseURI?: string;
-	currentVaultAddress: string;
-};
+	explorerBaseURI?: string
+	currentVaultAddress: string
+}
 
 /**************************************************************************************************
  ** The MobileTabButtons component will be used to display the tab buttons to navigate between the
  ** different tabs on mobile devices.
  *************************************************************************************************/
 function MobileTabButton(props: {
-	selected: boolean;
-	selectedIndex: number;
-	currentTab: TTabsOptions;
-	setCurrentTab: (index: number) => void;
+	selected: boolean
+	selectedIndex: number
+	currentTab: TTabsOptions
+	setCurrentTab: (index: number) => void
 }): ReactElement {
 	return (
 		<button
 			onClick={() => {
-				props.setCurrentTab(props.selectedIndex);
+				props.setCurrentTab(props.selectedIndex)
 			}}
 			className={cl(
 				'flex h-10 overflow-hidden pr-4 transition-all duration-300 flex-row items-center border-0 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden',
@@ -56,11 +56,11 @@ function MobileTabButton(props: {
 			)}>
 			<span>{props.currentTab.mobileLabel || props.currentTab.label}</span>
 		</button>
-	);
+	)
 }
 
 function Tabs({selectedAboutTabIndex, setSelectedAboutTabIndex}: TTabs): ReactElement {
-	const router = useRouter();
+	const router = useRouter()
 
 	const tabs: TTabsOptions[] = useMemo(
 		(): TTabsOptions[] => [
@@ -70,14 +70,14 @@ function Tabs({selectedAboutTabIndex, setSelectedAboutTabIndex}: TTabs): ReactEl
 			{value: 3, label: 'Info', slug: 'info'}
 		],
 		[]
-	);
+	)
 
 	useEffect((): void => {
-		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab);
+		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab)
 		if (tab?.value) {
-			setSelectedAboutTabIndex(tab?.value);
+			setSelectedAboutTabIndex(tab?.value)
 		}
-	}, [router.query.tab, setSelectedAboutTabIndex, tabs]);
+	}, [router.query.tab, setSelectedAboutTabIndex, tabs])
 
 	return (
 		<>
@@ -98,8 +98,8 @@ function Tabs({selectedAboutTabIndex, setSelectedAboutTabIndex}: TTabs): ReactEl
 									{
 										shallow: true
 									}
-								);
-								setSelectedAboutTabIndex(tab.value);
+								)
+								setSelectedAboutTabIndex(tab.value)
 							}}>
 							<p
 								title={tab.label}
@@ -132,8 +132,8 @@ function Tabs({selectedAboutTabIndex, setSelectedAboutTabIndex}: TTabs): ReactEl
 											{
 												shallow: true
 											}
-										);
-										setSelectedAboutTabIndex(tab.value);
+										)
+										setSelectedAboutTabIndex(tab.value)
 									}}
 								/>
 							</Fragment>
@@ -142,7 +142,7 @@ function Tabs({selectedAboutTabIndex, setSelectedAboutTabIndex}: TTabs): ReactEl
 				</div>
 			</div>
 		</>
-	);
+	)
 }
 
 function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps): ReactElement | null {
@@ -153,13 +153,13 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 				className={'size-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'}
 			/>
 		</a>
-	);
+	)
 }
 
 export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const blockExplorer =
 		getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
-		getNetwork(currentVault.chainID).blockExplorers?.default.url;
+		getNetwork(currentVault.chainID).blockExplorers?.default.url
 
 	return (
 		<div className={'grid w-2/3 grid-cols-1 gap-10 p-4 md:p-8'}>
@@ -231,13 +231,13 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 				) : null}
 			</div>
 		</div>
-	);
+	)
 }
 
 export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {provider} = useWeb3();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
-	const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0);
+	const {provider} = useWeb3()
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID})
+	const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0)
 
 	async function onAddTokenToMetamask(
 		address: string,
@@ -246,8 +246,8 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		image: string
 	): Promise<void> {
 		try {
-			assert(provider, 'Provider is not set');
-			const walletClient = await getConnectorClient(retrieveConfig());
+			assert(provider, 'Provider is not set')
+			const walletClient = await getConnectorClient(retrieveConfig())
 			await watchAsset(walletClient, {
 				type: 'ERC20',
 				options: {
@@ -256,9 +256,9 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					symbol: symbol,
 					image: image
 				}
-			});
+			})
 		} catch (error) {
-			console.error(error);
+			console.error(error)
 			// Token has not been added to MetaMask.
 		}
 	}
@@ -266,15 +266,15 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const {data: yDaemonHarvestsData, isLoading} = useFetch<TYDaemonVaultHarvests>({
 		endpoint: `${yDaemonBaseUri}/vaults/harvests/${currentVault.address}`,
 		schema: yDaemonVaultHarvestsSchema
-	});
+	})
 
 	const harvestData = useMemo((): {name: string; value: number}[] => {
-		const _yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
+		const _yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse()
 		return _yDaemonHarvestsData.map((harvest): {name: string; value: number} => ({
 			name: formatDate(Number(harvest.timestamp) * 1000),
 			value: toNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), currentVault.decimals)
-		}));
-	}, [currentVault.decimals, yDaemonHarvestsData]);
+		}))
+	}, [currentVault.decimals, yDaemonHarvestsData])
 
 	return (
 		<div className={'col-span-12 mb-4 flex flex-col rounded-3xl bg-neutral-100 py-2'}>
@@ -292,7 +292,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 								currentVault.symbol,
 								currentVault.decimals,
 								`https://token-assets-one.vercel.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
-							);
+							)
 						}}>
 						<span className={'sr-only'}>{'Add to wallet'}</span>
 						<IconAddToMetamask
@@ -328,5 +328,5 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				<VaultInfo currentVault={currentVault} />
 			</Renderable>
 		</div>
-	);
+	)
 }

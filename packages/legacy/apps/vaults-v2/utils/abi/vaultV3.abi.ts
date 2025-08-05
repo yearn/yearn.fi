@@ -828,4 +828,4 @@ export const VAULT_V3_ABI = [
 		inputs: [{name: 'arg0', type: 'address'}],
 		outputs: [{name: '', type: 'uint256'}]
 	}
-] as const;
+] as const

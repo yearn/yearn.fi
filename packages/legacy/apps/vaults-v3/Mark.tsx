@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -364,7 +364,7 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 				</linearGradient>
 			</defs>
 		</svg>
-	);
+	)
 }
 
 export function V3Logo(props: React.SVGProps<SVGSVGElement>): ReactElement {
@@ -467,5 +467,5 @@ export function V3Logo(props: React.SVGProps<SVGSVGElement>): ReactElement {
 				</linearGradient>
 			</defs>
 		</svg>
-	);
+	)
 }

@@ -1,13 +1,13 @@
-import {variants} from '@lib/utils/animations';
-import type {AnimationProps} from 'framer-motion';
-import {motion} from 'framer-motion';
-import type {ReactElement} from 'react';
+import {variants} from '@lib/utils/animations'
+import type {AnimationProps} from 'framer-motion'
+import {motion} from 'framer-motion'
+import type {ReactElement} from 'react'
 
 type TMotionDiv = {
-	animate: AnimationProps['animate'];
-	name: string;
-	children: ReactElement;
-};
+	animate: AnimationProps['animate']
+	name: string
+	children: ReactElement
+}
 
 export function MotionDiv({animate, name, children}: TMotionDiv): ReactElement {
 	return (
@@ -19,5 +19,5 @@ export function MotionDiv({animate, name, children}: TMotionDiv): ReactElement {
 			className={'absolute cursor-pointer'}>
 			{children}
 		</motion.div>
-	);
+	)
 }

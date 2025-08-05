@@ -1,6 +1,6 @@
-import Image from 'next/image';
-import type {ReactElement} from 'react';
-import Marquee from 'react-fast-marquee';
+import Image from 'next/image'
+import type {ReactElement} from 'react'
+import Marquee from 'react-fast-marquee'
 
 const PARTNERS = [
 	{src: '/landing/partners/aave.png', width: 220},
@@ -12,10 +12,10 @@ const PARTNERS = [
 	{src: '/landing/partners/sky.png', width: 130},
 	{src: '/landing/partners/spark.png', width: 194},
 	{src: '/landing/partners/swell.png', width: 142}
-];
+]
 
 export function Partners(): ReactElement {
-	const partnerSpacing = 30;
+	const partnerSpacing = 30
 	return (
 		<div className={'flex w-full justify-center'}>
 			<div className={'h-20 w-full'}>
@@ -39,5 +39,5 @@ export function Partners(): ReactElement {
 				</Marquee>
 			</div>
 		</div>
-	);
+	)
 }

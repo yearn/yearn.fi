@@ -1,4 +1,4 @@
-import type {Chain} from 'viem';
+import type {Chain} from 'viem'
 
 export const localhost = {
 	id: 1337,
@@ -25,7 +25,7 @@ export const localhost = {
 			blockCreated: 14353601
 		}
 	}
-} as const satisfies Chain;
+} as const satisfies Chain
 
 export const anotherLocalhost = {
 	id: 5402,
@@ -52,4 +52,4 @@ export const anotherLocalhost = {
 			blockCreated: 14353601
 		}
 	}
-} as const satisfies Chain;
+} as const satisfies Chain

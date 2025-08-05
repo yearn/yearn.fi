@@ -1,5 +1,5 @@
-import type React from 'react';
-import type {ReactElement} from 'react';
+import type React from 'react'
+import type {ReactElement} from 'react'
 
 export function IconAlertCritical(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -29,5 +29,5 @@ export function IconAlertCritical(props: React.SVGProps<SVGSVGElement>): ReactEl
 				fill={'currentcolor'}
 			/>
 		</svg>
-	);
+	)
 }

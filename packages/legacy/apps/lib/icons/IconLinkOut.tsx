@@ -1,5 +1,5 @@
-import type React from 'react';
-import type {ReactElement} from 'react';
+import type React from 'react'
+import type {ReactElement} from 'react'
 
 export function IconLinkOut(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -29,5 +29,5 @@ export function IconLinkOut(props: React.SVGProps<SVGSVGElement>): ReactElement 
 				fill={'currentcolor'}
 			/>
 		</svg>
-	);
+	)
 }

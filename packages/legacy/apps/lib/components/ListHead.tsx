@@ -1,24 +1,24 @@
-import {IconChevronPlain} from '@lib/icons/IconChevronPlain';
-import type {TSortDirection} from '@lib/types';
-import {cl} from '@lib/utils';
+import {IconChevronPlain} from '@lib/icons/IconChevronPlain'
+import type {TSortDirection} from '@lib/types'
+import {cl} from '@lib/utils'
 
-import type {ReactElement} from 'react';
-import {useCallback} from 'react';
+import type {ReactElement} from 'react'
+import {useCallback} from 'react'
 
 export type TListHead = {
 	items: {
-		label: string | ReactElement;
-		value: string;
-		sortable?: boolean;
-		className?: string;
-	}[];
-	dataClassName?: string;
-	wrapperClassName?: string;
-	tokenClassName?: string;
-	sortBy: string;
-	sortDirection: TSortDirection;
-	onSort: (sortBy: string, sortDirection: TSortDirection) => void;
-};
+		label: string | ReactElement
+		value: string
+		sortable?: boolean
+		className?: string
+	}[]
+	dataClassName?: string
+	wrapperClassName?: string
+	tokenClassName?: string
+	sortBy: string
+	sortDirection: TSortDirection
+	onSort: (sortBy: string, sortDirection: TSortDirection) => void
+}
 
 export function ListHead({
 	items,
@@ -36,27 +36,27 @@ export function ListHead({
 				: sortDirection === 'desc'
 					? 'asc'
 					: 'desc'
-			: 'desc';
-	};
+			: 'desc'
+	}
 
 	const renderChevron = useCallback(
 		(shouldSortBy: boolean): ReactElement => {
 			if (shouldSortBy && sortDirection === 'desc') {
-				return <IconChevronPlain className={'yearn--sort-chevron'} />;
+				return <IconChevronPlain className={'yearn--sort-chevron'} />
 			}
 			if (shouldSortBy && sortDirection === 'asc') {
-				return <IconChevronPlain className={'yearn--sort-chevron rotate-180'} />;
+				return <IconChevronPlain className={'yearn--sort-chevron rotate-180'} />
 			}
 			return (
 				<IconChevronPlain
 					className={'yearn--sort-chevron--off text-neutral-300 group-hover:text-neutral-500'}
 				/>
-			);
+			)
 		},
 		[sortDirection]
-	);
+	)
 
-	const [chain, token, ...rest] = items;
+	const [chain, token, ...rest] = items
 	return (
 		<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
 			<div className={cl('mb-2 hidden w-full px-10 md:grid md:grid-cols-12', wrapperClassName)}>
@@ -88,5 +88,5 @@ export function ListHead({
 				</div>
 			</div>
 		</div>
-	);
+	)
 }

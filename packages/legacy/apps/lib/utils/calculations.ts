@@ -8,7 +8,7 @@ export function calculateBoostFromVeYFI(
 	totalDeposited: number,
 	depositAmount: number
 ): number {
-	const veRatio = veYFITotalSupply ? veYFIAmount / veYFITotalSupply : 0;
-	const boost = depositAmount ? 1 + veRatio * 9 + (totalDeposited * veRatio * 9) / depositAmount : 1;
-	return Math.min(boost, 10);
+	const veRatio = veYFITotalSupply ? veYFIAmount / veYFITotalSupply : 0
+	const boost = depositAmount ? 1 + veRatio * 9 + (totalDeposited * veRatio * 9) / depositAmount : 1
+	return Math.min(boost, 10)
 }

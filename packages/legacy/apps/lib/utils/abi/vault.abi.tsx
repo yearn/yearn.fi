@@ -686,4 +686,4 @@ export const VAULT_ABI = [
 		inputs: [],
 		outputs: [{name: '', type: 'bytes32'}]
 	}
-] as const;
+] as const

@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function IconExpand(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -11,5 +11,5 @@ export function IconExpand(props: React.SVGProps<SVGSVGElement>): ReactElement {
 				fillOpacity={'.75'}
 			/>
 		</svg>
-	);
+	)
 }

@@ -233,4 +233,4 @@ export const AGGREGATE3_ABI = [
 		stateMutability: 'payable',
 		type: 'function'
 	}
-] as const;
+] as const

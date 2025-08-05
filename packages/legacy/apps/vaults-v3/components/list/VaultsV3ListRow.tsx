@@ -1,26 +1,26 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback';
-import {RenderAmount} from '@lib/components/RenderAmount';
-import {Renderable} from '@lib/components/Renderable';
-import {useWallet} from '@lib/contexts/useWallet';
-import {useYearn} from '@lib/contexts/useYearn';
-import {useYearnBalance} from '@lib/hooks/useYearnBalance';
-import {IconLinkOut} from '@lib/icons/IconLinkOut';
-import type {TNormalizedBN} from '@lib/types';
-import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {getNetwork} from '@lib/utils/wagmi/utils';
-import Link from 'next/link';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback'
+import {RenderAmount} from '@lib/components/RenderAmount'
+import {Renderable} from '@lib/components/Renderable'
+import {useWallet} from '@lib/contexts/useWallet'
+import {useYearn} from '@lib/contexts/useYearn'
+import {useYearnBalance} from '@lib/hooks/useYearnBalance'
+import {IconLinkOut} from '@lib/icons/IconLinkOut'
+import type {TNormalizedBN} from '@lib/types'
+import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils'
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {getNetwork} from '@lib/utils/wagmi/utils'
+import Link from 'next/link'
 
-import type {ReactElement} from 'react';
-import {Fragment, useMemo} from 'react';
-import {VaultChainTag} from '../VaultChainTag';
+import type {ReactElement} from 'react'
+import {Fragment, useMemo} from 'react'
+import {VaultChainTag} from '../VaultChainTag'
 
 type TAPYSublineProps = {
-	hasPendleArbRewards: boolean;
-	hasKelpNEngenlayer: boolean;
-	hasKelp: boolean;
-};
+	hasPendleArbRewards: boolean
+	hasKelpNEngenlayer: boolean
+	hasKelp: boolean
+}
 
 function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer, hasKelp}: TAPYSublineProps): ReactElement {
 	if (hasKelpNEngenlayer) {
@@ -30,33 +30,33 @@ function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer, hasKelp}: TAPYSubl
 				<br />
 				{'+1x EigenLayer Points'}
 			</small>
-		);
+		)
 	}
 	if (hasKelp) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
 				{'+ 1x Kelp Miles'}
 			</small>
-		);
+		)
 	}
 	if (hasPendleArbRewards) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
 				{'+ 2500 ARB/week'}
 			</small>
-		);
+		)
 	}
-	return <Fragment />;
+	return <Fragment />
 }
 
 function APYTooltip(props: {
-	baseAPY: number;
-	rewardsAPY?: number;
-	boost?: number;
-	range?: [number, number];
-	hasPendleArbRewards?: boolean;
-	hasKelpNEngenlayer?: boolean;
-	hasKelp?: boolean;
+	baseAPY: number
+	rewardsAPY?: number
+	boost?: number
+	range?: [number, number]
+	hasPendleArbRewards?: boolean
+	hasKelpNEngenlayer?: boolean
+	hasKelp?: boolean
 }): ReactElement {
 	return (
 		<span className={'tooltipLight bottom-full mb-1'}>
@@ -158,25 +158,25 @@ function APYTooltip(props: {
 				</div>
 			</div>
 		</span>
-	);
+	)
 }
 
 function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	// TEMPORARY HACK: Force "NEW" APY for chainID 747474
-	const isForceNewAPY = currentVault.chainID === 747474;
+	const isForceNewAPY = currentVault.chainID === 747474
 
-	const isEthMainnet = currentVault.chainID === 1;
-	const hasPendleArbRewards = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544');
-	const hasKelpNEngenlayer = currentVault.address === toAddress('0xDDa02A2FA0bb0ee45Ba9179a3fd7e65E5D3B2C90');
-	const hasKelp = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544');
+	const isEthMainnet = currentVault.chainID === 1
+	const hasPendleArbRewards = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544')
+	const hasKelpNEngenlayer = currentVault.address === toAddress('0xDDa02A2FA0bb0ee45Ba9179a3fd7e65E5D3B2C90')
+	const hasKelp = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544')
 
 	/**********************************************************************************************
 	 ** If there is no forwardAPY, we only have the historical APY to display.
 	 **********************************************************************************************/
 	if (currentVault.apr.forwardAPR.type === '' || isForceNewAPY) {
-		const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
-		const boostedAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR;
-		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
+		const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
+		const boostedAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR
+		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 
 		if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 			return (
@@ -215,7 +215,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						hasKelp={hasKelp}
 					/>
 				</div>
-			);
+			)
 		}
 		return (
 			<div className={'relative flex flex-col items-end md:text-right'}>
@@ -238,7 +238,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					hasKelp={hasKelp}
 				/>
 			</div>
-		);
+		)
 	}
 
 	/**********************************************************************************************
@@ -246,7 +246,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	 ** This is mostly valid for Curve vaults.
 	 **********************************************************************************************/
 	if (isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !currentVault.apr.extra.stakingRewardsAPR) {
-		const unBoostedAPY = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost;
+		const unBoostedAPY = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost
 		return (
 			<span className={'tooltip'}>
 				<div className={'flex flex-col items-end md:text-right'}>
@@ -282,34 +282,34 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					/>
 				</div>
 			</span>
-		);
+		)
 	}
 
 	/**********************************************************************************************
 	 ** Display the APY including the rewards APY if the rewards APY is greater than 0.
 	 **********************************************************************************************/
-	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
-	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
+	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
+	const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
 	if (sumOfRewardsAPY > 0) {
-		let veYFIRange: [number, number] | undefined;
-		let estAPYRange: [number, number] | undefined;
-		let boostedAPY: number;
-		let hasZeroBoostedAPY: boolean;
+		let veYFIRange: [number, number] | undefined
+		let estAPYRange: [number, number] | undefined
+		let boostedAPY: number
+		let hasZeroBoostedAPY: boolean
 
 		if (isSourceVeYFI) {
 			veYFIRange = [
 				currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
 				sumOfRewardsAPY
-			] as [number, number];
-			boostedAPY = veYFIRange[0] + currentVault.apr.forwardAPR.netAPR;
-			hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
+			] as [number, number]
+			boostedAPY = veYFIRange[0] + currentVault.apr.forwardAPR.netAPR
+			hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 			estAPYRange = [
 				veYFIRange[0] + currentVault.apr.forwardAPR.netAPR,
 				veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
-			] as [number, number];
+			] as [number, number]
 		} else {
-			boostedAPY = sumOfRewardsAPY + currentVault.apr.forwardAPR.netAPR;
-			hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
+			boostedAPY = sumOfRewardsAPY + currentVault.apr.forwardAPR.netAPR
+			hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 		}
 
 		return (
@@ -373,14 +373,14 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					hasKelpNEngenlayer={hasKelpNEngenlayer}
 				/>
 			</div>
-		);
+		)
 	}
 
 	/**********************************************************************************************
 	 ** Display the current spot APY, retrieved from the V3Oracle, only if the current APY is
 	 ** greater than 0.
 	 **********************************************************************************************/
-	const hasCurrentAPY = !isZero(currentVault?.apr.forwardAPR.netAPR);
+	const hasCurrentAPY = !isZero(currentVault?.apr.forwardAPR.netAPR)
 	if (hasCurrentAPY) {
 		return (
 			<div className={'relative flex flex-col items-end md:text-right'}>
@@ -404,10 +404,10 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					hasKelpNEngenlayer={hasKelpNEngenlayer}
 				/>
 			</div>
-		);
+		)
 	}
 
-	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
+	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
 	return (
 		<div className={'relative flex flex-col items-end md:text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
@@ -434,15 +434,15 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				hasKelpNEngenlayer={hasKelpNEngenlayer}
 			/>
 		</div>
-	);
+	)
 }
 
 function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	// TEMPORARY HACK: Force 'NEW' APY for chainID 747474
-	const isForceNewHistoricalAPY = currentVault.chainID === 747474;
-	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
-	const monthlyAPY = currentVault.apr.points.monthAgo;
-	const weeklyAPY = currentVault.apr.points.weekAgo;
+	const isForceNewHistoricalAPY = currentVault.chainID === 747474
+	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
+	const monthlyAPY = currentVault.apr.points.monthAgo
+	const weeklyAPY = currentVault.apr.points.weekAgo
 
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 		return (
@@ -496,7 +496,7 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 					</span>
 				</span>
 			</div>
-		);
+		)
 	}
 
 	return (
@@ -514,12 +514,12 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 				</Renderable>
 			</b>
 		</div>
-	);
+	)
 }
 
 function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
-	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel;
-	const riskColor = ['transparent', '#63C532', '#F8A908', '#F8A908', '#C73203', '#C73203'];
+	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel
+	const riskColor = ['transparent', '#63C532', '#F8A908', '#F8A908', '#C73203', '#C73203']
 	return (
 		<div className={'md:justify-centere col-span-2 flex flex-row items-end justify-between md:flex-col md:pt-4'}>
 			<p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>
@@ -557,32 +557,32 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 				</span>
 			</div>
 		</div>
-	);
+	)
 }
 
 export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {getToken} = useWallet();
-	const {getPrice} = useYearn();
+	const {getToken} = useWallet()
+	const {getPrice} = useYearn()
 
 	const tokenPrice = useMemo(
 		() => getPrice({address: currentVault.address, chainID: currentVault.chainID}),
 		[currentVault.address, currentVault.chainID, getPrice]
-	);
+	)
 	const staked = useMemo((): TNormalizedBN => {
-		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address});
+		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address})
 		if (currentVault.staking.available) {
-			const stakingToken = getToken({chainID: currentVault.chainID, address: currentVault.staking.address});
-			return toNormalizedBN(vaultToken.balance.raw + stakingToken.balance.raw, stakingToken.decimals);
+			const stakingToken = getToken({chainID: currentVault.chainID, address: currentVault.staking.address})
+			return toNormalizedBN(vaultToken.balance.raw + stakingToken.balance.raw, stakingToken.decimals)
 		}
 
-		return toNormalizedBN(vaultToken.balance.raw, vaultToken.decimals);
+		return toNormalizedBN(vaultToken.balance.raw, vaultToken.decimals)
 	}, [
 		currentVault.address,
 		currentVault.chainID,
 		currentVault.staking.address,
 		currentVault.staking.available,
 		getToken
-	]);
+	])
 
 	return (
 		<div className={'flex flex-col pt-0 text-right'}>
@@ -611,25 +611,25 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 				/>
 			</small>
 		</div>
-	);
+	)
 }
 
 export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address});
-	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
+	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address})
+	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS})
 	const balanceOfWrappedCoin = useYearnBalance({
 		chainID: currentVault.chainID,
 		address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
-	});
+	})
 	const availableToDeposit = useMemo((): bigint => {
 		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
-			return balanceOfWrappedCoin.raw + balanceOfCoin.raw;
+			return balanceOfWrappedCoin.raw + balanceOfCoin.raw
 		}
 		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
-			return balanceOfWrappedCoin.raw + balanceOfCoin.raw;
+			return balanceOfWrappedCoin.raw + balanceOfCoin.raw
 		}
-		return balanceOfWant.raw;
-	}, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address]);
+		return balanceOfWant.raw
+	}, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address])
 
 	return (
 		<Link href={`/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`} scroll={false}>
@@ -671,14 +671,14 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 								<button
 									type={'button'}
 									onClick={(event): void => {
-										event.stopPropagation();
+										event.stopPropagation()
 										window.open(
 											`${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${
 												currentVault.address
 											}`,
 											'_blank',
 											'noopener,noreferrer'
-										);
+										)
 									}}
 									className={
 										'text-neutral-900/50 transition-opacity hover:text-neutral-900 cursor-pointer'
@@ -786,14 +786,14 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					<button
 						type={'button'}
 						onClick={(event): void => {
-							event.stopPropagation();
+							event.stopPropagation()
 							window.open(
 								`${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${
 									currentVault.address
 								}`,
 								'_blank',
 								'noopener,noreferrer'
-							);
+							)
 						}}
 						className={'text-neutral-900/50 transition-opacity hover:text-neutral-900 cursor-pointer'}>
 						<div className={'px-2'}>
@@ -803,5 +803,5 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 				</div>
 			</div>
 		</Link>
-	);
+	)
 }

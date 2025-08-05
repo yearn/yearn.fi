@@ -1,16 +1,16 @@
-import {useLocalStorage} from '@lib/hooks/useLocalStorage';
-import {useSessionStorage} from '@lib/hooks/useSessionStorage';
-import type {ReactElement} from 'react';
-import {createContext, memo, useContext, useMemo} from 'react';
+import {useLocalStorage} from '@lib/hooks/useLocalStorage'
+import {useSessionStorage} from '@lib/hooks/useSessionStorage'
+import type {ReactElement} from 'react'
+import {createContext, memo, useContext, useMemo} from 'react'
 
 export type TAppSettingsContext = {
-	searchValue: string;
-	shouldHideDust: boolean;
-	shouldHideLowTVLVaults: boolean;
-	onSwitchHideDust: VoidFunction;
-	onSwitchHideLowTVLVaults: VoidFunction;
-	setSearchValue: (v: string) => void;
-};
+	searchValue: string
+	shouldHideDust: boolean
+	shouldHideLowTVLVaults: boolean
+	onSwitchHideDust: VoidFunction
+	onSwitchHideLowTVLVaults: VoidFunction
+	setSearchValue: (v: string) => void
+}
 const defaultProps: TAppSettingsContext = {
 	searchValue: '',
 	shouldHideDust: false,
@@ -18,17 +18,17 @@ const defaultProps: TAppSettingsContext = {
 	onSwitchHideDust: (): void => undefined,
 	onSwitchHideLowTVLVaults: (): void => undefined,
 	setSearchValue: (): void => undefined
-};
+}
 
-const AppSettingsContext = createContext<TAppSettingsContext>(defaultProps);
+const AppSettingsContext = createContext<TAppSettingsContext>(defaultProps)
 export const AppSettingsContextApp = memo(function AppSettingsContextApp({
 	children
 }: {
-	children: ReactElement;
+	children: ReactElement
 }): ReactElement {
-	const [searchValue, setSearchValue] = useSessionStorage('yearn.fi/vaults-search@0.0.1', '');
-	const [shouldHideDust, setShouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust@0.0.1', false);
-	const [shouldHideLowTVLVaults, setShouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl@0.0.1', false);
+	const [searchValue, setSearchValue] = useSessionStorage('yearn.fi/vaults-search@0.0.1', '')
+	const [shouldHideDust, setShouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust@0.0.1', false)
+	const [shouldHideLowTVLVaults, setShouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl@0.0.1', false)
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Setup and render the Context provider to use in the app.
@@ -50,9 +50,9 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({
 			setShouldHideDust,
 			setShouldHideLowTVLVaults
 		]
-	);
+	)
 
-	return <AppSettingsContext.Provider value={contextValue}>{children}</AppSettingsContext.Provider>;
-});
+	return <AppSettingsContext.Provider value={contextValue}>{children}</AppSettingsContext.Provider>
+})
 
-export const useAppSettings = (): TAppSettingsContext => useContext(AppSettingsContext);
+export const useAppSettings = (): TAppSettingsContext => useContext(AppSettingsContext)

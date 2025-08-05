@@ -362,4 +362,4 @@ export const erc4626RouterAbi = [
 	},
 	{inputs: [], name: 'wrapWETH9', outputs: [], stateMutability: 'payable', type: 'function'},
 	{stateMutability: 'payable', type: 'receive'}
-] as const;
+] as const

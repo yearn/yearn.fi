@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function LogoGimme(props: React.SVGProps<SVGSVGElement> & {back?: string; front?: string}): ReactElement {
 	return (
@@ -81,5 +81,5 @@ export function LogoGimme(props: React.SVGProps<SVGSVGElement> & {back?: string;
 				</clipPath>
 			</defs>
 		</svg>
-	);
+	)
 }

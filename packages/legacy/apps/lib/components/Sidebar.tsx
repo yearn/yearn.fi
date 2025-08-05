@@ -1,19 +1,19 @@
-import {cl} from '@lib/utils';
-import {iconsDict, LANDING_SIDEBAR_LINKS} from '@lib/utils/constants';
-import Link from 'next/link';
-import {usePathname} from 'next/navigation';
-import type {ReactElement} from 'react';
+import {cl} from '@lib/utils'
+import {iconsDict, LANDING_SIDEBAR_LINKS} from '@lib/utils/constants'
+import Link from 'next/link'
+import {usePathname} from 'next/navigation'
+import type {ReactElement} from 'react'
 
-import {TypeMarkYearn} from '../icons/TypeMarkYearn';
+import {TypeMarkYearn} from '../icons/TypeMarkYearn'
 
 type TSidebarProps = {
-	tabs: {route: string; title: string; isAcitve?: boolean}[];
-};
+	tabs: {route: string; title: string; isAcitve?: boolean}[]
+}
 
 export function Sidebar(props: TSidebarProps): ReactElement {
-	const pathName = usePathname();
+	const pathName = usePathname()
 
-	const currentTab = pathName?.startsWith('/apps/') ? pathName?.split('/')[2] : 'apps';
+	const currentTab = pathName?.startsWith('/apps/') ? pathName?.split('/')[2] : 'apps'
 
 	return (
 		<div
@@ -42,7 +42,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 				</div>
 				<div className={'mt-6 flex flex-col'}>
 					{props.tabs.map(tab => {
-						const href = tab.route === 'apps' ? `/${tab.route}` : `/apps/${tab.route}`;
+						const href = tab.route === 'apps' ? `/${tab.route}` : `/apps/${tab.route}`
 						return (
 							<Link
 								className={cl(
@@ -57,7 +57,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 								</div>
 								<p>{tab.title}</p>
 							</Link>
-						);
+						)
 					})}
 				</div>
 			</div>
@@ -74,5 +74,5 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 				))}
 			</div>
 		</div>
-	);
+	)
 }

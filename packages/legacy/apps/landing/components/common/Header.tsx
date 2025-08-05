@@ -1,12 +1,12 @@
-import {ModalMobileMenu} from '@lib/components/ModalMobileMenu';
-import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain';
-import {TypeMarkYearn} from '@lib/icons/TypeMarkYearn';
-import Link from 'next/link';
-import {useRouter} from 'next/router';
-import {type ReactElement, useMemo, useState} from 'react';
+import {ModalMobileMenu} from '@lib/components/ModalMobileMenu'
+import {IconBurgerPlain} from '@lib/icons/IconBurgerPlain'
+import {TypeMarkYearn} from '@lib/icons/TypeMarkYearn'
+import Link from 'next/link'
+import {useRouter} from 'next/router'
+import {type ReactElement, useMemo, useState} from 'react'
 
-type TMenu = {path: string; label: string | ReactElement; target?: string};
-type TNavbar = {nav: TMenu[]; currentPathName: string};
+type TMenu = {path: string; label: string | ReactElement; target?: string}
+type TNavbar = {nav: TMenu[]; currentPathName: string}
 
 function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 	return (
@@ -21,15 +21,15 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 				)
 			)}
 		</nav>
-	);
+	)
 }
 
 export function LandingAppHeader(): ReactElement {
-	const {pathname} = useRouter();
-	const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+	const {pathname} = useRouter()
+	const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
 
 	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/apps', label: 'Apps'};
+		const HOME_MENU = {path: '/apps', label: 'Apps'}
 
 		return [
 			HOME_MENU,
@@ -41,8 +41,8 @@ export function LandingAppHeader(): ReactElement {
 				label: 'Discourse',
 				target: '_blank'
 			}
-		];
-	}, []);
+		]
+	}, [])
 
 	return (
 		<div id={'head'} className={'inset-x-0 top-0 z-50 mt-4 w-full md:mt-7'}>
@@ -87,5 +87,5 @@ export function LandingAppHeader(): ReactElement {
 				)}
 			</ModalMobileMenu>
 		</div>
-	);
+	)
 }

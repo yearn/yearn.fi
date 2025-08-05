@@ -1,15 +1,15 @@
-import {SectionHeader} from '@lib/components/SectionHeader';
-import Image from 'next/image';
-import Link from 'next/link';
+import {SectionHeader} from '@lib/components/SectionHeader'
+import Image from 'next/image'
+import Link from 'next/link'
 
-import type {FC} from 'react';
+import type {FC} from 'react'
 
 type TIntegration = {
-	name: string;
-	imageSrc: string;
-	description: string;
-	href: string;
-};
+	name: string
+	imageSrc: string
+	description: string
+	href: string
+}
 
 const integrations: TIntegration[] = [
 	{
@@ -54,7 +54,7 @@ const integrations: TIntegration[] = [
 		description: 'A decentralized stablecoin protocol.',
 		href: 'https://resupply.fi/'
 	}
-];
+]
 
 const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, description, href, index}) => {
 	return (
@@ -89,8 +89,8 @@ const IntegrationItem: FC<TIntegration & {index: number}> = ({name, imageSrc, de
 				</div>
 			</div>
 		</Link>
-	);
-};
+	)
+}
 
 export const Integrations: FC = () => (
 	<section className={'flex w-full justify-center bg-white/5 py-16 lg:py-32'}>
@@ -116,4 +116,4 @@ export const Integrations: FC = () => (
 			</div>
 		</div>
 	</section>
-);
+)

@@ -1,6 +1,6 @@
-import type {TAmount} from '@lib/utils';
-import {cl, formatTAmount, isZero} from '@lib/utils';
-import {type ReactElement, useMemo} from 'react';
+import type {TAmount} from '@lib/utils'
+import {cl, formatTAmount, isZero} from '@lib/utils'
+import {type ReactElement, useMemo} from 'react'
 
 export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean; shouldFormatDust?: boolean}): ReactElement {
 	const normalizedRawValue = useMemo((): string => {
@@ -13,19 +13,19 @@ export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean; shou
 				shouldDisplaySymbol: true,
 				shouldCompactValue: props.options?.shouldCompactValue || false
 			}
-		});
-	}, [props]);
+		})
+	}, [props])
 
 	if (props.shouldHideTooltip) {
-		return <span className={'font-number'}>{formatTAmount(props)}</span>;
+		return <span className={'font-number'}>{formatTAmount(props)}</span>
 	}
 
 	const shouldShowTooltip =
 		props.value &&
 		!isZero(props.value) &&
-		((props.value < 0.001 && props.symbol !== 'percent') || (props.value < 0.0001 && props.symbol === 'percent'));
+		((props.value < 0.001 && props.symbol !== 'percent') || (props.value < 0.0001 && props.symbol === 'percent'))
 
-	const value = formatTAmount(props);
+	const value = formatTAmount(props)
 
 	return (
 		<span
@@ -52,5 +52,5 @@ export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean; shou
 				? '< 0.0001'
 				: formatTAmount(props)}
 		</span>
-	);
+	)
 }

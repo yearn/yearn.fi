@@ -1,31 +1,31 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback';
-import {useWallet} from '@lib/contexts/useWallet';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
-import {useFetch} from '@lib/hooks/useFetch';
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
-import {cl, toAddress} from '@lib/utils';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {ActionFlowContextApp} from '@vaults-v2/contexts/useActionFlow';
-import {WithSolverContextApp} from '@vaults-v2/contexts/useSolver';
-import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
-import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
-import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper';
-import {fetchYBoldVault} from '@vaults-v3/utils/handleYBold';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback'
+import {useWallet} from '@lib/contexts/useWallet'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains'
+import {useFetch} from '@lib/hooks/useFetch'
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI'
+import {cl, toAddress} from '@lib/utils'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {yDaemonVaultSchema} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {ActionFlowContextApp} from '@vaults-v2/contexts/useActionFlow'
+import {WithSolverContextApp} from '@vaults-v2/contexts/useSolver'
+import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper'
+import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader'
+import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper'
+import {fetchYBoldVault} from '@vaults-v3/utils/handleYBold'
 
-import type {GetStaticPaths, GetStaticProps} from 'next';
-import {useRouter} from 'next/router';
-import type {ReactElement} from 'react';
-import {useEffect, useState} from 'react';
+import type {GetStaticPaths, GetStaticProps} from 'next'
+import {useRouter} from 'next/router'
+import type {ReactElement} from 'react'
+import {useEffect, useState} from 'react'
 
 function Index(): ReactElement | null {
-	const {address, isActive} = useWeb3();
-	const router = useRouter();
-	const {onRefresh} = useWallet();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
-	const [_currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined);
-	const [isInit, setIsInit] = useState(false);
+	const {address, isActive} = useWeb3()
+	const router = useRouter()
+	const {onRefresh} = useWallet()
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)})
+	const [_currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
+	const [isInit, setIsInit] = useState(false)
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
 		endpoint: router.query.address
 			? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
@@ -34,43 +34,43 @@ function Index(): ReactElement | null {
 				})}`
 			: null,
 		schema: yDaemonVaultSchema
-	});
+	})
 
 	// TODO: remove this workaround when possible
 	// <WORKAROUND>
-	const [overrideVault, setOverrideVault] = useState<TYDaemonVault | undefined>(undefined);
-	const currentVault = overrideVault ?? _currentVault;
+	const [overrideVault, setOverrideVault] = useState<TYDaemonVault | undefined>(undefined)
+	const currentVault = overrideVault ?? _currentVault
 
 	useEffect(() => {
 		if (!overrideVault) {
 			fetchYBoldVault(yDaemonBaseUri, _currentVault).then(_vault => {
-				setOverrideVault(_vault);
-			});
+				setOverrideVault(_vault)
+			})
 		}
-	}, [yDaemonBaseUri, overrideVault, _currentVault]);
+	}, [yDaemonBaseUri, overrideVault, _currentVault])
 	// </WORKAROUND>
 
 	useEffect((): void => {
 		if (vault && !currentVault) {
-			console.log('set currentVault');
-			setCurrentVault(vault);
-			setIsInit(true);
+			console.log('set currentVault')
+			setCurrentVault(vault)
+			setIsInit(true)
 		}
-	}, [currentVault, vault]);
+	}, [currentVault, vault])
 
 	useEffect((): void => {
 		if (address && isActive) {
-			const tokensToRefresh: TUseBalancesTokens[] = [];
+			const tokensToRefresh: TUseBalancesTokens[] = []
 			if (currentVault?.address) {
-				tokensToRefresh.push({address: currentVault.address, chainID: currentVault.chainID});
+				tokensToRefresh.push({address: currentVault.address, chainID: currentVault.chainID})
 			}
 			if (currentVault?.token?.address) {
-				tokensToRefresh.push({address: currentVault.token.address, chainID: currentVault.chainID});
+				tokensToRefresh.push({address: currentVault.token.address, chainID: currentVault.chainID})
 			}
 			if (currentVault?.staking.available) {
-				tokensToRefresh.push({address: currentVault.staking.address, chainID: currentVault.chainID});
+				tokensToRefresh.push({address: currentVault.staking.address, chainID: currentVault.chainID})
 			}
-			onRefresh(tokensToRefresh);
+			onRefresh(tokensToRefresh)
 		}
 	}, [
 		currentVault?.address,
@@ -81,7 +81,7 @@ function Index(): ReactElement | null {
 		currentVault?.chainID,
 		currentVault?.staking.available,
 		currentVault?.staking.address
-	]);
+	])
 
 	if (isLoadingVault || !router.query.address || !isInit) {
 		return (
@@ -90,7 +90,7 @@ function Index(): ReactElement | null {
 					<span className={'loader'} />
 				</div>
 			</div>
-		);
+		)
 	}
 
 	if (!currentVault) {
@@ -102,7 +102,7 @@ function Index(): ReactElement | null {
 					</p>
 				</div>
 			</div>
-		);
+		)
 	}
 
 	return (
@@ -165,20 +165,20 @@ function Index(): ReactElement | null {
 				<VaultDetailsTabsWrapper currentVault={currentVault} />
 			</section>
 		</div>
-	);
+	)
 }
 
 export const getStaticPaths = (async () => {
 	return {
 		paths: [],
 		fallback: true
-	};
-}) satisfies GetStaticPaths;
+	}
+}) satisfies GetStaticPaths
 
 export const getStaticProps: GetStaticProps = async () => {
 	return {
 		props: {}
-	};
-};
+	}
+}
 
-export default Index;
+export default Index

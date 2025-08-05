@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} \*/
-const {join} = require('node:path');
-const defaultTheme = require('tailwindcss/defaultTheme');
+const {join} = require('node:path')
+const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
 	presets: [require('./apps/lib/tailwind.config.cjs')],
@@ -106,4 +106,4 @@ module.exports = {
 		}
 	},
 	plugins: [require('tailwind-gradient-mask-image')]
-};
+}

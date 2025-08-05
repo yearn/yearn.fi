@@ -1,6 +1,6 @@
-import {formatAmount} from '@lib/utils';
+import {formatAmount} from '@lib/utils'
 
-import type {FC} from 'react';
+import type {FC} from 'react'
 
 export const TvlStat: FC<{tvl: number}> = ({tvl}) => {
 	return (
@@ -18,5 +18,5 @@ export const TvlStat: FC<{tvl: number}> = ({tvl}) => {
 				<span className={'text-[14px] text-neutral-900 opacity-75'}>{' deposited in Yearn Vaults'}</span>
 			</p>
 		</div>
-	);
-};
+	)
+}

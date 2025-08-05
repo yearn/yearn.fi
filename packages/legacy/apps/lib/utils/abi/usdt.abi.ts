@@ -189,6 +189,6 @@ export const usdtAbi = [
 			}
 		]
 	}
-] as const;
+] as const
 
-export const usdtAddress = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+export const usdtAddress = '0xdAC17F958D2ee523a2206206994597C13D831ec7'

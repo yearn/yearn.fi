@@ -356,4 +356,4 @@ export const JUICED_STAKING_REWARDS_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function'
 	}
-] as const;
+] as const

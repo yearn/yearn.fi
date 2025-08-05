@@ -1,27 +1,27 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback';
-import {RenderAmount} from '@lib/components/RenderAmount';
-import {Renderable} from '@lib/components/Renderable';
-import {useWallet} from '@lib/contexts/useWallet';
-import {useYearn} from '@lib/contexts/useYearn';
-import {useYearnBalance} from '@lib/hooks/useYearnBalance';
-import type {TNormalizedBN} from '@lib/types';
-import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {getNetwork} from '@lib/utils/wagmi';
-import Link from 'next/link';
-import type {ReactElement} from 'react';
-import {useMemo} from 'react';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback'
+import {RenderAmount} from '@lib/components/RenderAmount'
+import {Renderable} from '@lib/components/Renderable'
+import {useWallet} from '@lib/contexts/useWallet'
+import {useYearn} from '@lib/contexts/useYearn'
+import {useYearnBalance} from '@lib/hooks/useYearnBalance'
+import type {TNormalizedBN} from '@lib/types'
+import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@lib/utils'
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@lib/utils/constants'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {getNetwork} from '@lib/utils/wagmi'
+import Link from 'next/link'
+import type {ReactElement} from 'react'
+import {useMemo} from 'react'
 
 function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const isEthMainnet = currentVault.chainID === 1;
-	const extraAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
+	const isEthMainnet = currentVault.chainID === 1
+	const extraAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
 
 	if (currentVault.apr.forwardAPR.type === '') {
 		const hasZeroAPY =
-			isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
-		const boostedAPY = extraAPY + currentVault.apr.netAPR;
-		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
+			isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0
+		const boostedAPY = extraAPY + currentVault.apr.netAPR
+		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 
 		if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 			return (
@@ -81,7 +81,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						</span>
 					</span>
 				</div>
-			);
+			)
 		}
 		return (
 			<div className={'flex flex-col text-right'}>
@@ -96,11 +96,11 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					</Renderable>
 				</b>
 			</div>
-		);
+		)
 	}
 
 	if (isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPY) {
-		const unBoostedAPY = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost;
+		const unBoostedAPY = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost
 		return (
 			<span className={'tooltip'}>
 				<div className={'flex flex-col text-right'}>
@@ -156,12 +156,12 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					</span>
 				</div>
 			</span>
-		);
+		)
 	}
 
 	if (extraAPY > 0) {
-		const boostedAPY = extraAPY + currentVault.apr.forwardAPR.netAPR;
-		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
+		const boostedAPY = extraAPY + currentVault.apr.forwardAPR.netAPR
+		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 		return (
 			<div className={'flex flex-col text-right'}>
 				<span className={'tooltip'}>
@@ -212,11 +212,11 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					</span>
 				</span>
 			</div>
-		);
+		)
 	}
 
 	const hasZeroAPY =
-		isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
+		isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0
 	return (
 		<div className={'flex flex-col text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
@@ -230,14 +230,14 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				</Renderable>
 			</b>
 		</div>
-	);
+	)
 }
 
 function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const hasZeroAPY =
-		isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
-	const monthlyAPY = currentVault.apr.points.monthAgo;
-	const weeklyAPY = currentVault.apr.points.weekAgo;
+		isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0
+	const monthlyAPY = currentVault.apr.points.monthAgo
+	const weeklyAPY = currentVault.apr.points.weekAgo
 
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 		return (
@@ -289,7 +289,7 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 					</span>
 				</span>
 			</div>
-		);
+		)
 	}
 
 	return (
@@ -305,31 +305,31 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 				</Renderable>
 			</b>
 		</div>
-	);
+	)
 }
 
 export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {getToken} = useWallet();
-	const {getPrice} = useYearn();
+	const {getToken} = useWallet()
+	const {getPrice} = useYearn()
 
 	const tokenPrice = useMemo(
 		() => getPrice({address: currentVault.address, chainID: currentVault.chainID}),
 		[currentVault.address, currentVault.chainID, getPrice]
-	);
+	)
 	const staked = useMemo((): TNormalizedBN => {
-		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address});
+		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address})
 		if (currentVault.staking.available) {
-			const stakingToken = getToken({chainID: currentVault.chainID, address: currentVault.staking.address});
-			return toNormalizedBN(vaultToken.balance.raw + stakingToken.balance.raw, vaultToken.decimals);
+			const stakingToken = getToken({chainID: currentVault.chainID, address: currentVault.staking.address})
+			return toNormalizedBN(vaultToken.balance.raw + stakingToken.balance.raw, vaultToken.decimals)
 		}
-		return toNormalizedBN(vaultToken.balance.raw, vaultToken.decimals);
+		return toNormalizedBN(vaultToken.balance.raw, vaultToken.decimals)
 	}, [
 		currentVault.address,
 		currentVault.chainID,
 		currentVault.staking.address,
 		currentVault.staking.available,
 		getToken
-	]);
+	])
 
 	return (
 		<div className={'flex flex-col pt-0 text-right'}>
@@ -357,25 +357,25 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 				/>
 			</small>
 		</div>
-	);
+	)
 }
 
 export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address});
-	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
+	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address})
+	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS})
 	const balanceOfWrappedCoin = useYearnBalance({
 		chainID: currentVault.chainID,
 		address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
-	});
+	})
 	const availableToDeposit = useMemo((): bigint => {
 		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
-			return balanceOfWrappedCoin.raw + balanceOfCoin.raw;
+			return balanceOfWrappedCoin.raw + balanceOfCoin.raw
 		}
 		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
-			return balanceOfWrappedCoin.raw + balanceOfCoin.raw;
+			return balanceOfWrappedCoin.raw + balanceOfCoin.raw
 		}
-		return balanceOfWant.raw;
-	}, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address]);
+		return balanceOfWant.raw
+	}, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address])
 
 	return (
 		<Link
@@ -495,5 +495,5 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 				</div>
 			</div>
 		</Link>
-	);
+	)
 }

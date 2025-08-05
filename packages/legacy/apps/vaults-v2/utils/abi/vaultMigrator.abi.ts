@@ -171,4 +171,4 @@ export const VAULT_MIGRATOR_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function'
 	}
-] as const;
+] as const

@@ -1,4 +1,4 @@
-import type {ReactElement, SVGProps} from 'react';
+import type {ReactElement, SVGProps} from 'react'
 
 export function IconDiscord(props: SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -25,5 +25,5 @@ export function IconDiscord(props: SVGProps<SVGSVGElement>): ReactElement {
 				</clipPath>
 			</defs>
 		</svg>
-	);
+	)
 }

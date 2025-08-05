@@ -1,15 +1,15 @@
-import {cl} from '@lib/utils';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {type ReactElement, useMemo} from 'react';
+import {cl} from '@lib/utils'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {type ReactElement, useMemo} from 'react'
 
 export function VaultRiskInfo({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const hasRiskScore = useMemo(() => {
-		let sum = 0;
+		let sum = 0
 		currentVault.info.riskScore?.forEach(score => {
-			sum += score;
-		});
-		return sum;
-	}, [currentVault.info.riskScore]);
+			sum += score
+		})
+		return sum
+	}, [currentVault.info.riskScore])
 
 	return (
 		<div className={'grid grid-cols-1 gap-4 p-4 md:grid-cols-12 md:gap-10 md:p-8'}>
@@ -185,5 +185,5 @@ export function VaultRiskInfo({currentVault}: {currentVault: TYDaemonVault}): Re
 				</div>
 			</div>
 		</div>
-	);
+	)
 }

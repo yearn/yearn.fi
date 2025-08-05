@@ -1,12 +1,12 @@
-import {useTokenList} from '@lib/contexts/WithTokenList';
-import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains';
-import {useChainID} from '@lib/hooks/useChainID';
-import type {TDict} from '@lib/types';
-import {toAddress} from '@lib/utils';
-import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {getNetwork} from '@lib/utils/wagmi';
-import {useMemo, useState} from 'react';
+import {useTokenList} from '@lib/contexts/WithTokenList'
+import type {TUseBalancesTokens} from '@lib/hooks/useBalances.multichains'
+import {useChainID} from '@lib/hooks/useChainID'
+import type {TDict} from '@lib/types'
+import {toAddress} from '@lib/utils'
+import {ETH_TOKEN_ADDRESS} from '@lib/utils/constants'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {getNetwork} from '@lib/utils/wagmi'
+import {useMemo, useState} from 'react'
 
 export function useYearnTokens({
 	vaults,
@@ -14,14 +14,14 @@ export function useYearnTokens({
 	vaultsRetired,
 	isLoadingVaultList
 }: {
-	vaults: TDict<TYDaemonVault>;
-	vaultsMigrations: TDict<TYDaemonVault>;
-	vaultsRetired: TDict<TYDaemonVault>;
-	isLoadingVaultList: boolean;
+	vaults: TDict<TYDaemonVault>
+	vaultsMigrations: TDict<TYDaemonVault>
+	vaultsRetired: TDict<TYDaemonVault>
+	isLoadingVaultList: boolean
 }): TUseBalancesTokens[] {
-	const {currentNetworkTokenList} = useTokenList();
-	const {safeChainID} = useChainID();
-	const [isReady, setIsReady] = useState(false);
+	const {currentNetworkTokenList} = useTokenList()
+	const {safeChainID} = useChainID()
+	const [isReady, setIsReady] = useState(false)
 	const allVaults = useMemo(
 		(): TYDaemonVault[] => [
 			...Object.values(vaults),
@@ -29,7 +29,7 @@ export function useYearnTokens({
 			...Object.values(vaultsRetired)
 		],
 		[vaults, vaultsMigrations, vaultsRetired]
-	);
+	)
 
 	/**************************************************************************
 	 ** Define the list of available tokens. This list is retrieved from the
@@ -37,8 +37,8 @@ export function useYearnTokens({
 	 ** network.
 	 **************************************************************************/
 	const availableTokenListTokens = useMemo((): TUseBalancesTokens[] => {
-		const withTokenList = [...Object.values(currentNetworkTokenList)];
-		const tokens: TUseBalancesTokens[] = [];
+		const withTokenList = [...Object.values(currentNetworkTokenList)]
+		const tokens: TUseBalancesTokens[] = []
 		withTokenList.forEach((token): void => {
 			tokens.push({
 				address: toAddress(token.address),
@@ -46,10 +46,10 @@ export function useYearnTokens({
 				decimals: Number(token.decimals),
 				name: token.name,
 				symbol: token.symbol
-			});
-		});
+			})
+		})
 
-		const {nativeCurrency} = getNetwork(safeChainID);
+		const {nativeCurrency} = getNetwork(safeChainID)
 		if (nativeCurrency) {
 			tokens.push({
 				address: toAddress(ETH_TOKEN_ADDRESS),
@@ -57,18 +57,18 @@ export function useYearnTokens({
 				decimals: nativeCurrency.decimals,
 				name: nativeCurrency.name,
 				symbol: nativeCurrency.symbol
-			});
+			})
 		}
-		return tokens;
-	}, [safeChainID, currentNetworkTokenList]);
+		return tokens
+	}, [safeChainID, currentNetworkTokenList])
 
 	//List available tokens
 	const availableTokens = useMemo((): TDict<TUseBalancesTokens> => {
 		if (isLoadingVaultList) {
-			return {};
+			return {}
 		}
-		const tokens: TDict<TUseBalancesTokens> = {};
-		const extraTokens: TUseBalancesTokens[] = [];
+		const tokens: TDict<TUseBalancesTokens> = {}
+		const extraTokens: TUseBalancesTokens[] = []
 		extraTokens.push(
 			...[
 				{chainID: 1, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH'},
@@ -78,16 +78,16 @@ export function useYearnTokens({
 				{chainID: 8453, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH'},
 				{chainID: 42161, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH'}
 			]
-		);
+		)
 
 		for (const token of extraTokens) {
-			const key = `${token.chainID}/${toAddress(token.address)}`;
-			tokens[key] = token;
+			const key = `${token.chainID}/${toAddress(token.address)}`
+			tokens[key] = token
 		}
 
 		allVaults.forEach((vault?: TYDaemonVault): void => {
 			if (!vault) {
-				return;
+				return
 			}
 
 			if (vault?.address && !tokens[`${vault.chainID}/${toAddress(vault.address)}`]) {
@@ -97,20 +97,20 @@ export function useYearnTokens({
 					symbol: vault.symbol,
 					decimals: vault.decimals,
 					name: vault.name
-				};
+				}
 
-				tokens[`${vault.chainID}/${toAddress(vault.address)}`] = newToken;
+				tokens[`${vault.chainID}/${toAddress(vault.address)}`] = newToken
 			} else {
-				const existingToken = tokens[`${vault.chainID}/${toAddress(vault.address)}`];
+				const existingToken = tokens[`${vault.chainID}/${toAddress(vault.address)}`]
 				if (existingToken) {
 					if (!existingToken?.name && vault.name) {
-						tokens[`${vault.chainID}/${toAddress(vault.address)}`].name = vault.name;
+						tokens[`${vault.chainID}/${toAddress(vault.address)}`].name = vault.name
 					}
 					if (!existingToken?.symbol && vault.symbol) {
-						tokens[`${vault.chainID}/${toAddress(vault.address)}`].symbol = vault.symbol;
+						tokens[`${vault.chainID}/${toAddress(vault.address)}`].symbol = vault.symbol
 					}
 					if (!existingToken?.decimals && vault.decimals) {
-						tokens[`${vault.chainID}/${toAddress(vault.address)}`].decimals = vault.decimals;
+						tokens[`${vault.chainID}/${toAddress(vault.address)}`].decimals = vault.decimals
 					}
 				}
 			}
@@ -123,20 +123,20 @@ export function useYearnTokens({
 					symbol: vault.symbol,
 					decimals: vault.decimals,
 					name: vault.name
-				};
+				}
 
-				tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`] = newToken;
+				tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`] = newToken
 			} else {
-				const existingToken = tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`];
+				const existingToken = tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`]
 				if (existingToken) {
 					if (!existingToken?.name && vault.name) {
-						tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].name = vault.name;
+						tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].name = vault.name
 					}
 					if (!existingToken?.symbol && vault.symbol) {
-						tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].symbol = vault.symbol;
+						tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].symbol = vault.symbol
 					}
 					if (!existingToken?.decimals && vault.decimals) {
-						tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].decimals = vault.decimals;
+						tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].decimals = vault.decimals
 					}
 				}
 			}
@@ -149,55 +149,55 @@ export function useYearnTokens({
 					symbol: vault.symbol,
 					decimals: vault.decimals,
 					name: vault.name
-				};
-				tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`] = newToken;
+				}
+				tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`] = newToken
 			} else {
-				const existingToken = tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`];
+				const existingToken = tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`]
 				if (existingToken) {
 					if (!existingToken?.name && vault.name) {
-						tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].name = vault.name;
+						tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].name = vault.name
 					}
 					if (!existingToken?.symbol && vault.symbol) {
-						tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].symbol = vault.symbol;
+						tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].symbol = vault.symbol
 					}
 					if (!existingToken?.decimals && vault.decimals) {
-						tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].decimals = vault.decimals;
+						tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].decimals = vault.decimals
 					}
 				}
 			}
-		});
+		})
 
-		setIsReady(true);
-		return tokens;
-	}, [isLoadingVaultList, allVaults]);
+		setIsReady(true)
+		return tokens
+	}, [isLoadingVaultList, allVaults])
 
 	const allTokens = useMemo((): TUseBalancesTokens[] => {
 		if (!isReady) {
-			return [];
+			return []
 		}
-		const fromAvailableTokens = Object.values(availableTokens);
-		const tokens = [...fromAvailableTokens, ...availableTokenListTokens];
-		return tokens;
-	}, [isReady, availableTokens, availableTokenListTokens]);
+		const fromAvailableTokens = Object.values(availableTokens)
+		const tokens = [...fromAvailableTokens, ...availableTokenListTokens]
+		return tokens
+	}, [isReady, availableTokens, availableTokenListTokens])
 
 	/**************************************************************************************************
 	 ** The following function can be used to clone the tokens list for the forknet. This is useful
 	 ** for debuging purpose and should not be used in production.
 	 *************************************************************************************************/
 	function cloneForForknet(tokens: TUseBalancesTokens[]): TUseBalancesTokens[] {
-		const clonedTokens: TUseBalancesTokens[] = [];
+		const clonedTokens: TUseBalancesTokens[] = []
 		tokens.forEach((token): void => {
-			clonedTokens.push({...token});
+			clonedTokens.push({...token})
 			if (token.chainID === 1) {
-				clonedTokens.push({...token, chainID: 1337});
+				clonedTokens.push({...token, chainID: 1337})
 			}
-		});
-		return clonedTokens;
+		})
+		return clonedTokens
 	}
-	const shouldEnableForknet = false;
+	const shouldEnableForknet = false
 	if (shouldEnableForknet) {
-		return cloneForForknet(allTokens);
+		return cloneForForknet(allTokens)
 	}
 
-	return allTokens;
+	return allTokens
 }

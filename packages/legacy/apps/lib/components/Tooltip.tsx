@@ -1,32 +1,32 @@
-import {cl} from '@lib/utils';
-import type {FC, ReactElement} from 'react';
-import {useRef, useState} from 'react';
-import {createPortal} from 'react-dom';
+import {cl} from '@lib/utils'
+import type {FC, ReactElement} from 'react'
+import {useRef, useState} from 'react'
+import {createPortal} from 'react-dom'
 
 // Created as .tooltip & .tooltiptext can be lower in DOM and not render on top of other elements.
 // Use this when tooltip is not in the same component as the trigger.
 
 export const Tooltip: FC<{
-	className?: string;
-	children: ReactElement;
-	tooltip: string | ReactElement;
+	className?: string
+	children: ReactElement
+	tooltip: string | ReactElement
 }> = ({children, tooltip, className}) => {
-	const [isHovered, setIsHovered] = useState(false);
-	const [tooltipPosition, setTooltipPosition] = useState({x: 0, y: 0});
-	const triggerRef = useRef<HTMLDivElement>(null);
+	const [isHovered, setIsHovered] = useState(false)
+	const [tooltipPosition, setTooltipPosition] = useState({x: 0, y: 0})
+	const triggerRef = useRef<HTMLDivElement>(null)
 
 	const handleMouseEnter = (): void => {
 		if (triggerRef.current) {
-			const rect = triggerRef.current.getBoundingClientRect();
+			const rect = triggerRef.current.getBoundingClientRect()
 			setTooltipPosition({
 				x: rect.left + rect.width / 2,
 				y: rect.bottom + 8
-			});
-			setIsHovered(true);
+			})
+			setIsHovered(true)
 		}
-	};
+	}
 
-	const handleMouseLeave = (): void => setIsHovered(false);
+	const handleMouseLeave = (): void => setIsHovered(false)
 
 	return (
 		<div
@@ -52,5 +52,5 @@ export const Tooltip: FC<{
 					document.body
 				)}
 		</div>
-	);
-};
+	)
+}

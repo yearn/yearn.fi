@@ -1,14 +1,14 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback';
-import {useYearnBalance} from '@lib/hooks/useYearnBalance';
-import {cl, formatAmount, toAddress} from '@lib/utils';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import Link from 'next/link';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback'
+import {useYearnBalance} from '@lib/hooks/useYearnBalance'
+import {cl, formatAmount, toAddress} from '@lib/utils'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import Link from 'next/link'
 
-import type {ReactElement} from 'react';
-import {VaultChainTag} from '../VaultChainTag';
+import type {ReactElement} from 'react'
+import {VaultChainTag} from '../VaultChainTag'
 
 export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const balanceToMigrate = useYearnBalance({address: currentVault.address, chainID: currentVault.chainID});
+	const balanceToMigrate = useYearnBalance({address: currentVault.address, chainID: currentVault.chainID})
 
 	return (
 		<div className={cl('grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl', 'p-6 pt-2 md:pr-10', 'relative')}>
@@ -70,5 +70,5 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 				</div>
 			</div>
 		</div>
-	);
+	)
 }

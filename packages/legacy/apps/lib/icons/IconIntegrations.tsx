@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function IconIntegrations(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -16,5 +16,5 @@ export function IconIntegrations(props: React.SVGProps<SVGSVGElement>): ReactEle
 				fill={'currentcolor'}
 			/>
 		</svg>
-	);
+	)
 }

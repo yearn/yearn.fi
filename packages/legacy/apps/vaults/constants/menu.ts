@@ -8,4 +8,4 @@ export const VAULTS_BETA_MENU = [
 		label: 'Discourse',
 		target: '_blank'
 	}
-];
+]

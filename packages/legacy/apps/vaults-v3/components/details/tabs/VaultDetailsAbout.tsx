@@ -1,13 +1,13 @@
-import {cl, formatAmount, formatPercent} from '@lib/utils';
-import {parseMarkdown} from '@lib/utils/helpers';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {ReactElement} from 'react';
+import {cl, formatAmount, formatPercent} from '@lib/utils'
+import {parseMarkdown} from '@lib/utils/helpers'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type {ReactElement} from 'react'
 
 type TYearnFeesLineItem = {
-	children: ReactElement;
-	label: string;
-	tooltip?: string;
-};
+	children: ReactElement
+	label: string
+	tooltip?: string
+}
 
 export function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): ReactElement {
 	return (
@@ -32,18 +32,18 @@ export function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem
 				{children}
 			</div>
 		</div>
-	);
+	)
 }
 
 export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {token, apr} = currentVault;
+	const {token, apr} = currentVault
 
 	function getVaultDescription(): string | ReactElement {
 		if (currentVault.description) {
-			return parseMarkdown(currentVault.description.replaceAll('{{token}}', currentVault.token.symbol));
+			return parseMarkdown(currentVault.description.replaceAll('{{token}}', currentVault.token.symbol))
 		}
 		if (token.description) {
-			return parseMarkdown(token.description.replaceAll('{{token}}', currentVault.token.symbol));
+			return parseMarkdown(token.description.replaceAll('{{token}}', currentVault.token.symbol))
 		}
 		return (
 			<>
@@ -74,7 +74,7 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 				</a>{' '}
 				and ask.
 			</>
-		);
+		)
 	}
 
 	return (
@@ -142,5 +142,5 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 				</div>
 			</div>
 		</div>
-	);
+	)
 }

@@ -1,51 +1,51 @@
-import {InfoTooltip} from '@lib/components/InfoTooltip';
-import {Switch} from '@lib/components/Switch';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
-import type {TNormalizedBN} from '@lib/types';
-import {cl, decodeAsBigInt, toAddress, toNormalizedBN, toNormalizedValue} from '@lib/utils';
-import {VEYFI_ADDRESS} from '@lib/utils/constants';
-import {parseMarkdown} from '@lib/utils/helpers';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {retrieveConfig} from '@lib/utils/wagmi';
-import {useUpdateEffect} from '@react-hookz/web';
-import {SettingsPopover} from '@vaults-v2/components/SettingsPopover';
-import {Flow, useActionFlow} from '@vaults-v2/contexts/useActionFlow';
-import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData';
-import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi';
-import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi';
-import {VEYFI_ABI} from '@vaults-v2/utils/abi/veYFI.abi';
-import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
-import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom';
-import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch';
-import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
-import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
-import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
-import {getCurrentTab, tabs, VaultDetailsTab} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
-import Link from 'next/link';
-import {useRouter} from 'next/router';
+import {InfoTooltip} from '@lib/components/InfoTooltip'
+import {Switch} from '@lib/components/Switch'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {useYearn} from '@lib/contexts/useYearn'
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger'
+import type {TNormalizedBN} from '@lib/types'
+import {cl, decodeAsBigInt, toAddress, toNormalizedBN, toNormalizedValue} from '@lib/utils'
+import {VEYFI_ADDRESS} from '@lib/utils/constants'
+import {parseMarkdown} from '@lib/utils/helpers'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {retrieveConfig} from '@lib/utils/wagmi'
+import {useUpdateEffect} from '@react-hookz/web'
+import {SettingsPopover} from '@vaults-v2/components/SettingsPopover'
+import {Flow, useActionFlow} from '@vaults-v2/contexts/useActionFlow'
+import {useVaultStakingData} from '@vaults-v2/hooks/useVaultStakingData'
+import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi'
+import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi'
+import {VEYFI_ABI} from '@vaults-v2/utils/abi/veYFI.abi'
+import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons'
+import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom'
+import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch'
+import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo'
+import {RewardsTab} from '@vaults-v3/components/details/RewardsTab'
+import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper'
+import {getCurrentTab, tabs, VaultDetailsTab} from '@vaults-v3/components/details/VaultActionsTabsWrapper'
+import Link from 'next/link'
+import {useRouter} from 'next/router'
 
-import type {ReactElement} from 'react';
-import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
-import {useBlockNumber, useReadContract} from 'wagmi';
-import {readContracts} from 'wagmi/actions';
+import type {ReactElement} from 'react'
+import {Fragment, useCallback, useEffect, useMemo, useState} from 'react'
+import {useBlockNumber, useReadContract} from 'wagmi'
+import {readContracts} from 'wagmi/actions'
 
 /**************************************************************************************************
  ** The MobileTabButtons component will be used to display the tab buttons to navigate between the
  ** different tabs on mobile devices.
  *************************************************************************************************/
 function MobileTabButtons(props: {
-	currentTab: TTabsOptions;
-	selectedTab: TTabsOptions;
-	setCurrentTab: (tab: TTabsOptions) => void;
-	onSwitchSelectedOptions: (flow: Flow) => void;
+	currentTab: TTabsOptions
+	selectedTab: TTabsOptions
+	setCurrentTab: (tab: TTabsOptions) => void
+	onSwitchSelectedOptions: (flow: Flow) => void
 }): ReactElement {
 	return (
 		<button
 			onClick={() => {
-				props.setCurrentTab(props.currentTab);
-				props.onSwitchSelectedOptions(props.currentTab.flowAction);
+				props.setCurrentTab(props.currentTab)
+				props.onSwitchSelectedOptions(props.currentTab.flowAction)
 			}}
 			className={cl(
 				'flex h-10 pr-4 transition-all duration-300 flex-row items-center border-0 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden',
@@ -55,7 +55,7 @@ function MobileTabButtons(props: {
 			)}>
 			{props.currentTab.label}
 		</button>
-	);
+	)
 }
 
 /**************************************************************************************************
@@ -64,23 +64,23 @@ function MobileTabButtons(props: {
  ** corresponding actions that can be taken.
  *************************************************************************************************/
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const router = useRouter();
-	const {isAutoStakingEnabled, setIsAutoStakingEnabled} = useYearn();
-	const {address} = useWeb3();
-	const {vaultData, updateVaultData} = useVaultStakingData({currentVault});
-	const {onSwitchSelectedOptions, isDepositing, actionParams, hasVeYFIBalance, veYFIBalance} = useActionFlow();
-	const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
-	const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
-	const [hasStakingRewardsLive, setHasStakingRewardsLive] = useState(false);
+	const router = useRouter()
+	const {isAutoStakingEnabled, setIsAutoStakingEnabled} = useYearn()
+	const {address} = useWeb3()
+	const {vaultData, updateVaultData} = useVaultStakingData({currentVault})
+	const {onSwitchSelectedOptions, isDepositing, actionParams, hasVeYFIBalance, veYFIBalance} = useActionFlow()
+	const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]])
+	const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined)
+	const [hasStakingRewardsLive, setHasStakingRewardsLive] = useState(false)
 	const [currentTab, setCurrentTab] = useState<TTabsOptions>(
 		getCurrentTab({
 			isDepositing,
 			hasMigration: currentVault?.migration?.available,
 			isRetired: currentVault?.info?.isRetired
 		})
-	);
-	const hasStakingRewards = Boolean(currentVault.staking.available);
-	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
+	)
+	const hasStakingRewards = Boolean(currentVault.staking.available)
+	const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
 	/**********************************************************************************************
 	 ** Retrieve some data for correct display of APR
 	 **********************************************************************************************/
@@ -91,9 +91,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		query: {
 			enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
 		}
-	});
+	})
 
-	const veYFITotalSupply = veYFITotalSupplyData ? toNormalizedValue(veYFITotalSupplyData as bigint, 18) : 0;
+	const veYFITotalSupply = veYFITotalSupplyData ? toNormalizedValue(veYFITotalSupplyData as bigint, 18) : 0
 	const {data: gaugeTotalSupplyData} = useReadContract({
 		address: currentVault.staking.address,
 		abi: VAULT_V3_ABI,
@@ -101,17 +101,17 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		query: {
 			enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
 		}
-	});
-	const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0;
+	})
+	const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0
 
-	const {data: blockNumber} = useBlockNumber({watch: true});
+	const {data: blockNumber} = useBlockNumber({watch: true})
 	/**********************************************************************************************
 	 ** Retrieve some data from the vault and the staking contract to display a comprehensive view
 	 ** of the user's holdings in the vault.
 	 **********************************************************************************************/
 	const refetch = useAsyncTrigger(async (): Promise<void> => {
 		if (!currentVault.staking.available) {
-			return;
+			return
 		}
 		const result = await readContracts(retrieveConfig(), {
 			contracts: [
@@ -129,10 +129,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					functionName: 'periodFinish'
 				}
 			]
-		});
-		setUnstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals));
-		setHasStakingRewardsLive(decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000));
-	}, [currentVault, address]);
+		})
+		setUnstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals))
+		setHasStakingRewardsLive(decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000))
+	}, [currentVault, address])
 
 	/**********************************************************************************************
 	 ** As we want live data, we want the data to be refreshed every time the block number changes.
@@ -141,8 +141,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: fetch data on block number change
 	useEffect(() => {
-		refetch();
-	}, [blockNumber, refetch]);
+		refetch()
+	}, [blockNumber, refetch])
 
 	/**********************************************************************************************
 	 ** Update the current state based on the query parameter action. This will allow the user to
@@ -150,11 +150,11 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	 ** based on the URL.
 	 *********************************************************************************************/
 	useEffect((): void => {
-		const tab = tabs.find((tab): boolean => tab.slug === router.query.action);
+		const tab = tabs.find((tab): boolean => tab.slug === router.query.action)
 		if (tab?.value) {
-			setCurrentTab(tab);
+			setCurrentTab(tab)
 		}
-	}, [router.query.action]);
+	}, [router.query.action])
 
 	/**********************************************************************************************
 	 ** UpdateEffect to define which tabs are available based on the current state of the vault.
@@ -167,27 +167,27 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	 *********************************************************************************************/
 	useUpdateEffect((): void => {
 		if (currentVault?.migration?.available && actionParams.isReady) {
-			const tabsToDisplay = [tabs[1], tabs[2]];
+			const tabsToDisplay = [tabs[1], tabs[2]]
 			if (hasStakingRewards) {
-				tabsToDisplay.push(tabs[3]);
+				tabsToDisplay.push(tabs[3])
 			}
-			setPossibleTabs(tabsToDisplay);
-			setCurrentTab(tabs[2]);
-			onSwitchSelectedOptions(Flow.Migrate);
+			setPossibleTabs(tabsToDisplay)
+			setCurrentTab(tabs[2])
+			onSwitchSelectedOptions(Flow.Migrate)
 		} else if (currentVault?.info?.isRetired && actionParams.isReady) {
-			const tabsToDisplay = [tabs[1]];
+			const tabsToDisplay = [tabs[1]]
 			if (hasStakingRewards) {
-				tabsToDisplay.push(tabs[3]);
+				tabsToDisplay.push(tabs[3])
 			}
-			setPossibleTabs(tabsToDisplay);
-			setCurrentTab(tabs[1]);
-			onSwitchSelectedOptions(Flow.Withdraw);
+			setPossibleTabs(tabsToDisplay)
+			setCurrentTab(tabs[1])
+			onSwitchSelectedOptions(Flow.Withdraw)
 		} else if (hasStakingRewards) {
-			setPossibleTabs([tabs[0], tabs[1], tabs[3]]);
+			setPossibleTabs([tabs[0], tabs[1], tabs[3]])
 		} else {
-			setPossibleTabs([tabs[0], tabs[1]]);
+			setPossibleTabs([tabs[0], tabs[1]])
 		}
-	}, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards]);
+	}, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards])
 
 	/************************************************************************************************
 	 * This effect manages the auto-staking feature based on staking rewards availability.
@@ -200,42 +200,42 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	useEffect(() => {
 		const hasStakingRewardsEndedOverAWeekAgo = currentVault.staking.rewards?.some(
 			el => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
-		);
+		)
 		if (!hasStakingRewards && hasStakingRewardsEndedOverAWeekAgo) {
-			setIsAutoStakingEnabled(false);
-			return;
+			setIsAutoStakingEnabled(false)
+			return
 		}
-		setIsAutoStakingEnabled(true);
-	}, [currentVault.staking.rewards, hasStakingRewards, setIsAutoStakingEnabled]);
+		setIsAutoStakingEnabled(true)
+	}, [currentVault.staking.rewards, hasStakingRewards, setIsAutoStakingEnabled])
 
 	const isSonneRetiredVault =
 		toAddress(currentVault.address) === toAddress('0x5b977577eb8a480f63e11fc615d6753adb8652ae') ||
 		toAddress(currentVault.address) === toAddress('0xad17a225074191d5c8a37b50fda1ae278a2ee6a2') ||
 		toAddress(currentVault.address) === toAddress('0x65343f414ffd6c97b0f6add33d16f6845ac22bac') ||
-		toAddress(currentVault.address) === toAddress('0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de');
+		toAddress(currentVault.address) === toAddress('0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de')
 
 	const getTabLabel = useCallback((): string => {
 		if (currentVault.staking.source === 'VeYFI') {
-			return 'veYFI BOOST';
+			return 'veYFI BOOST'
 		}
 		if (currentVault.staking.source === 'OP Boost') {
-			return '$OP BOOST';
+			return '$OP BOOST'
 		}
 		if (currentVault.staking.source === 'Juiced') {
-			return 'Juiced BOOST';
+			return 'Juiced BOOST'
 		}
 		if (currentVault.staking.source === 'V3 Staking') {
-			return 'Staking BOOST';
+			return 'Staking BOOST'
 		}
-		return 'Staking';
-	}, [currentVault.staking.source]);
+		return 'Staking'
+	}, [currentVault.staking.source])
 
 	const tooltipText = useMemo(() => {
 		if (isAutoStakingEnabled) {
-			return 'Deposit your tokens and automatically stake them to earn additional rewards.';
+			return 'Deposit your tokens and automatically stake them to earn additional rewards.'
 		}
-		return 'Deposit your tokens without automatically staking them for additional rewards.';
-	}, [isAutoStakingEnabled]);
+		return 'Deposit your tokens without automatically staking them for additional rewards.'
+	}, [isAutoStakingEnabled])
 
 	return (
 		<>
@@ -309,8 +309,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										selectedTab={currentTab}
 										unstakedBalance={unstakedBalance}
 										onSwitchTab={newTab => {
-											setCurrentTab(newTab);
-											onSwitchSelectedOptions(newTab.flowAction);
+											setCurrentTab(newTab)
+											onSwitchSelectedOptions(newTab.flowAction)
 										}}
 									/>
 								)
@@ -422,5 +422,5 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				)}
 			</div>
 		</>
-	);
+	)
 }

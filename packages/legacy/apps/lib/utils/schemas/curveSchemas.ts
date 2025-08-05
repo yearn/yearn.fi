@@ -1,6 +1,6 @@
-import {z} from 'zod';
+import {z} from 'zod'
 
-import {toAddress} from '../';
+import {toAddress} from '../'
 
 export const curveWeeklyFeesSchema = z.object({
 	success: z.boolean().optional(),
@@ -19,7 +19,7 @@ export const curveWeeklyFeesSchema = z.object({
 		})
 	}),
 	generatedTimeMs: z.number().optional()
-});
+})
 
 const curveGaugeSchema = z.object({
 	poolUrls: z
@@ -55,13 +55,13 @@ const curveGaugeSchema = z.object({
 	type: z.string().optional(),
 	lpTokenPrice: z.number().nullable().optional(),
 	rewardPerGauge: z.string().array().optional()
-});
+})
 
 export const curveAllGaugesSchema = z.object({
 	success: z.boolean().optional(),
 	data: z.record(z.string(), curveGaugeSchema),
 	generatedTimeMs: z.number().optional()
-});
+})
 
 export const curveGaugeFromYearnSchema = z.object({
 	gauge_name: z.string(),
@@ -84,12 +84,12 @@ export const curveGaugeFromYearnSchema = z.object({
 		gross_apr: z.number().default(0),
 		net_apy: z.number().default(0)
 	})
-});
+})
 
-export const curveGaugesFromYearnSchema = curveGaugeFromYearnSchema.array();
+export const curveGaugesFromYearnSchema = curveGaugeFromYearnSchema.array()
 
-export type TCurveWeeklyFees = z.infer<typeof curveWeeklyFeesSchema>;
-export type TCurveGauge = z.infer<typeof curveGaugeSchema>;
-export type TCurveAllGauges = z.infer<typeof curveAllGaugesSchema>;
-export type TCurveGaugeFromYearn = z.infer<typeof curveGaugeFromYearnSchema>;
-export type TCurveGaugesFromYearn = z.infer<typeof curveGaugesFromYearnSchema>;
+export type TCurveWeeklyFees = z.infer<typeof curveWeeklyFeesSchema>
+export type TCurveGauge = z.infer<typeof curveGaugeSchema>
+export type TCurveAllGauges = z.infer<typeof curveAllGaugesSchema>
+export type TCurveGaugeFromYearn = z.infer<typeof curveGaugeFromYearnSchema>
+export type TCurveGaugesFromYearn = z.infer<typeof curveGaugesFromYearnSchema>

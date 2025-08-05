@@ -1,34 +1,34 @@
-import {useNotifications} from '@lib/contexts/useNotifications';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import type {TDict, TNormalizedBN} from '@lib/types';
-import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {ZAP_YEARN_VE_CRV_ADDRESS} from '@lib/utils/constants';
-import {allowanceKey} from '@lib/utils/helpers';
-import type {TTxStatus} from '@lib/utils/wagmi';
-import {allowanceOf, approveERC20, retrieveConfig} from '@lib/utils/wagmi';
-import {migrateShares} from '@lib/utils/wagmi/actions';
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
-import {Solver} from '@vaults-v2/types/solvers';
-import {ZAP_CRV_ABI} from '@vaults-v2/utils/abi/zapCRV.abi';
-import {zapCRV} from '@vaults-v2/utils/actions';
-import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
-import {useCallback, useMemo, useRef} from 'react';
-import type {Hash, TransactionReceipt} from 'viem';
-import {maxUint256} from 'viem';
-import {readContract} from 'wagmi/actions';
+import {useNotifications} from '@lib/contexts/useNotifications'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import type {TDict, TNormalizedBN} from '@lib/types'
+import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@lib/utils'
+import {ZAP_YEARN_VE_CRV_ADDRESS} from '@lib/utils/constants'
+import {allowanceKey} from '@lib/utils/helpers'
+import type {TTxStatus} from '@lib/utils/wagmi'
+import {allowanceOf, approveERC20, retrieveConfig} from '@lib/utils/wagmi'
+import {migrateShares} from '@lib/utils/wagmi/actions'
+import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
+import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers'
+import {Solver} from '@vaults-v2/types/solvers'
+import {ZAP_CRV_ABI} from '@vaults-v2/utils/abi/zapCRV.abi'
+import {zapCRV} from '@vaults-v2/utils/actions'
+import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut'
+import {useCallback, useMemo, useRef} from 'react'
+import type {Hash, TransactionReceipt} from 'viem'
+import {maxUint256} from 'viem'
+import {readContract} from 'wagmi/actions'
 
 /**************************************************************************************************
  ** The InternalMigration solver is a special solver used to migrate from one vault to another. It
  ** is used when a new version of a vault is released, and the user wants to migrate their funds.
  *************************************************************************************************/
 export function useSolverInternalMigration(): TSolverContext {
-	const {provider} = useWeb3();
-	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
-	const request = useRef<TInitSolverArgs | undefined>(undefined);
-	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
+	const {provider} = useWeb3()
+	const latestQuote = useRef<TNormalizedBN | undefined>(undefined)
+	const request = useRef<TInitSolverArgs | undefined>(undefined)
+	const existingAllowances = useRef<TDict<TNormalizedBN>>({})
 
-	const {setShouldOpenCurtain} = useNotifications();
+	const {setShouldOpenCurtain} = useNotifications()
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -37,9 +37,9 @@ export function useSolverInternalMigration(): TSolverContext {
 	 **********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
 		if (isSolverDisabled(Solver.enum.InternalMigration)) {
-			return undefined;
+			return undefined
 		}
-		request.current = _request;
+		request.current = _request
 		if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
 			const estimateOut = await readContract(retrieveConfig(), {
 				address: ZAP_YEARN_VE_CRV_ADDRESS,
@@ -47,10 +47,10 @@ export function useSolverInternalMigration(): TSolverContext {
 				chainId: request.current.chainID,
 				functionName: 'calc_expected_out',
 				args: [request.current.inputToken.value, request.current.outputToken.value, request.current.inputAmount]
-			});
-			const minAmountWithSlippage = estimateOut - (estimateOut * 6n) / 10_000n;
-			latestQuote.current = toNormalizedBN(minAmountWithSlippage, request.current.outputToken.decimals);
-			return latestQuote.current;
+			})
+			const minAmountWithSlippage = estimateOut - (estimateOut * 6n) / 10_000n
+			latestQuote.current = toNormalizedBN(minAmountWithSlippage, request.current.outputToken.decimals)
+			return latestQuote.current
 		}
 		const estimateOut = await getVaultEstimateOut({
 			inputToken: toAddress(_request.inputToken.value),
@@ -62,10 +62,10 @@ export function useSolverInternalMigration(): TSolverContext {
 			chainID: _request.chainID,
 			version: _request.version,
 			from: toAddress(_request.from)
-		});
-		latestQuote.current = estimateOut;
-		return latestQuote.current;
-	}, []);
+		})
+		latestQuote.current = estimateOut
+		return latestQuote.current
+	}, [])
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will
@@ -74,7 +74,7 @@ export function useSolverInternalMigration(): TSolverContext {
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 			if (!request?.current || !provider) {
-				return zeroNormalizedBN;
+				return zeroNormalizedBN
 			}
 
 			const key = allowanceKey(
@@ -82,9 +82,9 @@ export function useSolverInternalMigration(): TSolverContext {
 				toAddress(request.current.inputToken.value),
 				toAddress(request.current.outputToken.value),
 				toAddress(request.current.from)
-			);
+			)
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
-				return existingAllowances.current[key];
+				return existingAllowances.current[key]
 			}
 
 			const allowance = await allowanceOf({
@@ -92,12 +92,12 @@ export function useSolverInternalMigration(): TSolverContext {
 				chainID: request.current.inputToken.chainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: toAddress(request.current.migrator)
-			});
-			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
-			return existingAllowances.current[key];
+			})
+			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
+			return existingAllowances.current[key]
 		},
 		[provider]
-	);
+	)
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Trigger an approve web3 action, simply trying to approve `amount` tokens
@@ -114,9 +114,9 @@ export function useSolverInternalMigration(): TSolverContext {
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
-				assert(request.current, 'Request is not set');
-				assert(request.current.inputToken, 'Input token is not defined');
-				assert(request.current.migrator, 'Migrator is not defined');
+				assert(request.current, 'Request is not set')
+				assert(request.current.inputToken, 'Input token is not defined')
+				assert(request.current.migrator, 'Migrator is not defined')
 
 				const result = await approveERC20({
 					connector: provider,
@@ -127,25 +127,25 @@ export function useSolverInternalMigration(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					},
 					statusHandler: txStatusSetter,
 					txHashHandler: txHashSetter
-				});
+				})
 				if (result.isSuccessful) {
-					await onSuccess(result.receipt);
+					await onSuccess(result.receipt)
 				} else if (onError) {
-					await onError(new Error('Approval failed'));
+					await onError(new Error('Approval failed'))
 				}
 			} catch (error) {
 				if (onError) {
-					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'))
 				}
 			}
 		},
 		[provider, setShouldOpenCurtain]
-	);
+	)
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Trigger a deposit web3 action, simply trying to deposit `amount` tokens to
@@ -159,7 +159,7 @@ export function useSolverInternalMigration(): TSolverContext {
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
-				assert(request.current, 'Request is not set');
+				assert(request.current, 'Request is not set')
 
 				if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
 					const _expectedOut = await readContract(retrieveConfig(), {
@@ -172,7 +172,7 @@ export function useSolverInternalMigration(): TSolverContext {
 							request.current.outputToken.value,
 							request.current.inputAmount
 						]
-					});
+					})
 					const result = await zapCRV({
 						connector: provider,
 						chainID: request.current.chainID,
@@ -187,16 +187,16 @@ export function useSolverInternalMigration(): TSolverContext {
 						cta: {
 							label: 'View',
 							onClick: () => {
-								setShouldOpenCurtain(true);
+								setShouldOpenCurtain(true)
 							}
 						}
-					});
+					})
 					if (result.isSuccessful) {
-						await onSuccess(result.receipt);
+						await onSuccess(result.receipt)
 					} else if (onError) {
-						await onError(new Error('Migration failed'));
+						await onError(new Error('Migration failed'))
 					}
-					return;
+					return
 				}
 
 				const result = await migrateShares({
@@ -208,25 +208,25 @@ export function useSolverInternalMigration(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					},
 					statusHandler: txStatusSetter,
 					txHashHandler: txHashSetter
-				});
+				})
 				if (result.isSuccessful) {
-					await onSuccess(result.receipt);
+					await onSuccess(result.receipt)
 				} else if (onError) {
-					await onError(new Error('Migration failed'));
+					await onError(new Error('Migration failed'))
 				}
 			} catch (error) {
 				if (onError) {
-					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'))
 				}
 			}
 		},
 		[provider, setShouldOpenCurtain]
-	);
+	)
 
 	return useMemo(
 		(): TSolverContext => ({
@@ -239,5 +239,5 @@ export function useSolverInternalMigration(): TSolverContext {
 			onExecuteWithdraw: async (): Promise<void> => Promise.reject()
 		}),
 		[init, onApprove, onExecuteMigration, onRetrieveAllowance]
-	);
+	)
 }

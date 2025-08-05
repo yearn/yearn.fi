@@ -1,14 +1,14 @@
-const plugin = require('tailwindcss/plugin');
-const defaultTheme = require('tailwindcss/defaultTheme');
-const {paddings} = require('./tailwind.theme.cjs');
+const plugin = require('tailwindcss/plugin')
+const defaultTheme = require('tailwindcss/defaultTheme')
+const {paddings} = require('./tailwind.theme.cjs')
 
 function withOpacityValue(variable) {
 	return ({opacityValue}) => {
 		if (opacityValue === undefined) {
-			return `hsl(var(${variable}))`;
+			return `hsl(var(${variable}))`
 		}
-		return `hsl(var(${variable}) / ${opacityValue})`;
-	};
+		return `hsl(var(${variable}) / ${opacityValue})`
+	}
 }
 
 module.exports = {
@@ -229,7 +229,7 @@ module.exports = {
 				':root': {
 					...paddings
 				}
-			});
+			})
 			addUtilities({
 				'.scrollbar-none': {
 					'-ms-overflow-style': 'none',
@@ -238,7 +238,7 @@ module.exports = {
 						display: 'none'
 					}
 				}
-			});
+			})
 		})
 	]
-};
+}

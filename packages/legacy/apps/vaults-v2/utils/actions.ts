@@ -1,14 +1,14 @@
-import type {TAddress} from '@lib/types';
-import {assert, assertAddress, toAddress} from '@lib/utils';
-import {STAKING_REWARDS_ZAP_ADDRESS, V3_STAKING_ZAP_ADDRESS, YGAUGES_ZAP_ADDRESS} from '@lib/utils/constants';
-import type {TTxResponse, TWriteTransaction} from '@lib/utils/wagmi';
-import {handleTx, toWagmiProvider} from '@lib/utils/wagmi';
-import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi';
-import {STAKING_REWARDS_ZAP_ABI} from '@vaults-v2/utils/abi/stakingRewardsZap.abi';
-import {YGAUGE_ZAP_ABI} from '@vaults-v3/utils/abi/yGaugeZap.abi';
-import {V3_REWARDS_ZAP_ABI} from './abi/V3RewardsZap.abi';
-import {VEYFI_GAUGE_ABI} from './abi/veYFIGauge.abi';
-import {ZAP_CRV_ABI} from './abi/zapCRV.abi';
+import type {TAddress} from '@lib/types'
+import {assert, assertAddress, toAddress} from '@lib/utils'
+import {STAKING_REWARDS_ZAP_ADDRESS, V3_STAKING_ZAP_ADDRESS, YGAUGES_ZAP_ADDRESS} from '@lib/utils/constants'
+import type {TTxResponse, TWriteTransaction} from '@lib/utils/wagmi'
+import {handleTx, toWagmiProvider} from '@lib/utils/wagmi'
+import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi'
+import {STAKING_REWARDS_ZAP_ABI} from '@vaults-v2/utils/abi/stakingRewardsZap.abi'
+import {YGAUGE_ZAP_ABI} from '@vaults-v3/utils/abi/yGaugeZap.abi'
+import {V3_REWARDS_ZAP_ABI} from './abi/V3RewardsZap.abi'
+import {VEYFI_GAUGE_ABI} from './abi/veYFIGauge.abi'
+import {ZAP_CRV_ABI} from './abi/zapCRV.abi'
 
 /* 🔵 - Yearn Finance **********************************************************
  ** depositAndStake is a _WRITE_ function that deposit the underlying asset into
@@ -23,16 +23,16 @@ import {ZAP_CRV_ABI} from './abi/zapCRV.abi';
  **		For VeYFI vaults only, ignored for Optimism.
  ******************************************************************************/
 type TDepositAndStake = TWriteTransaction & {
-	vaultAddress: TAddress | undefined;
-	stakingPoolAddress?: TAddress | undefined;
-	vaultVersion?: string | undefined;
-	confirmation?: number | undefined;
-	amount: bigint;
-};
+	vaultAddress: TAddress | undefined
+	stakingPoolAddress?: TAddress | undefined
+	vaultVersion?: string | undefined
+	confirmation?: number | undefined
+	amount: bigint
+}
 export async function depositAndStake(props: TDepositAndStake): Promise<TTxResponse> {
-	assertAddress(props.contractAddress, 'contractAddress');
-	assertAddress(props.vaultAddress, 'vaultAddress');
-	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress, 'contractAddress')
+	assertAddress(props.vaultAddress, 'vaultAddress')
+	assert(props.amount > 0n, 'Amount is 0')
 
 	// If we are depositing into the Optimism Booster
 	if (props.chainID === 10 && toAddress(props.contractAddress) === toAddress(STAKING_REWARDS_ZAP_ADDRESS)) {
@@ -42,7 +42,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 			functionName: 'zapIn',
 			args: [props.vaultAddress, props.amount],
 			confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
-		});
+		})
 	}
 	// If we are depositing into the V3 Staking
 	if (
@@ -55,12 +55,12 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 			functionName: 'zapIn',
 			args: [props.vaultAddress, props.amount, false],
 			confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
-		});
+		})
 	}
 
 	// If we are depositing into the VeYFI gauge
 	if (toAddress(props.contractAddress) === toAddress(YGAUGES_ZAP_ADDRESS)) {
-		assertAddress(props.stakingPoolAddress, 'stakingPoolAddress');
+		assertAddress(props.stakingPoolAddress, 'stakingPoolAddress')
 		if ((props.vaultVersion || '').startsWith('3') || (props.vaultVersion || '').startsWith('~3')) {
 			return await handleTx(props, {
 				address: props.contractAddress,
@@ -68,7 +68,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 				functionName: 'zapIn',
 				args: [props.vaultAddress, props.amount, props.stakingPoolAddress],
 				confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
-			});
+			})
 		}
 
 		return await handleTx(props, {
@@ -77,9 +77,9 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 			functionName: 'zapInLegacy',
 			args: [props.vaultAddress, props.amount, props.stakingPoolAddress],
 			confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
-		});
+		})
 	}
-	throw new Error('Invalid contract address');
+	throw new Error('Invalid contract address')
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -90,12 +90,12 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
  ** @param amount - The amount of the underlying asset to deposit.
  ******************************************************************************/
 type TStake = TWriteTransaction & {
-	amount: bigint;
-	confirmation?: number | undefined;
-};
+	amount: bigint
+	confirmation?: number | undefined
+}
 export async function stake(props: TStake): Promise<TTxResponse> {
-	assert(props.amount > 0n, 'Amount is 0');
-	assertAddress(props.contractAddress);
+	assert(props.amount > 0n, 'Amount is 0')
+	assertAddress(props.contractAddress)
 
 	return await handleTx(props, {
 		address: props.contractAddress,
@@ -103,7 +103,7 @@ export async function stake(props: TStake): Promise<TTxResponse> {
 		functionName: 'stake',
 		args: [props.amount],
 		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
-	});
+	})
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -114,8 +114,8 @@ export async function stake(props: TStake): Promise<TTxResponse> {
  ** @param amount - The amount of the underlying asset to deposit.
  ******************************************************************************/
 export async function stakeVeYFIGauge(props: TStake): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
-	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress)
+	assert(props.amount > 0n, 'Amount is 0')
 
 	return await handleTx(props, {
 		address: props.contractAddress,
@@ -123,7 +123,7 @@ export async function stakeVeYFIGauge(props: TStake): Promise<TTxResponse> {
 		functionName: 'deposit',
 		args: [props.amount],
 		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
-	});
+	})
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -133,17 +133,17 @@ export async function stakeVeYFIGauge(props: TStake): Promise<TTxResponse> {
  ** @app - Vaults (optimism)
  ******************************************************************************/
 type TUnstake = TWriteTransaction & {
-	confirmation?: number | undefined;
-};
+	confirmation?: number | undefined
+}
 export async function unstake(props: TUnstake): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress)
 
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,
 		functionName: 'exit',
 		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
-	});
+	})
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -153,16 +153,16 @@ export async function unstake(props: TUnstake): Promise<TTxResponse> {
  ** @app - veYFI
  ******************************************************************************/
 type TUnstakeVeYFIGauge = TWriteTransaction & {
-	amount: bigint;
-	willClaim: boolean;
-	confirmation?: number | undefined;
-};
+	amount: bigint
+	willClaim: boolean
+	confirmation?: number | undefined
+}
 export async function unstakeVeYFIGauge(props: TUnstakeVeYFIGauge): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
-	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress)
+	assert(props.amount > 0n, 'Amount is 0')
 
-	const wagmiProvider = await toWagmiProvider(props.connector);
-	assertAddress(wagmiProvider.address, 'ownerAddress');
+	const wagmiProvider = await toWagmiProvider(props.connector)
+	assertAddress(wagmiProvider.address, 'ownerAddress')
 
 	return await handleTx(props, {
 		address: props.contractAddress,
@@ -170,7 +170,7 @@ export async function unstakeVeYFIGauge(props: TUnstakeVeYFIGauge): Promise<TTxR
 		functionName: 'withdraw',
 		args: [props.amount, wagmiProvider.address, wagmiProvider.address, props.willClaim],
 		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
-	});
+	})
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -180,17 +180,17 @@ export async function unstakeVeYFIGauge(props: TUnstakeVeYFIGauge): Promise<TTxR
  ** @app - Vaults (optimism)
  ******************************************************************************/
 type TClaim = TWriteTransaction & {
-	confirmation?: number | undefined;
-};
+	confirmation?: number | undefined
+}
 export async function claim(props: TClaim): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress)
 
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,
 		functionName: 'getReward',
 		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
-	});
+	})
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -205,25 +205,25 @@ export async function claim(props: TClaim): Promise<TTxResponse> {
  ** @param slippage - Slippage tolerance
  ******************************************************************************/
 type TZapYCRV = TWriteTransaction & {
-	inputToken: TAddress | undefined;
-	outputToken: TAddress | undefined;
-	amount: bigint;
-	minAmount: bigint;
-	slippage: bigint;
-};
+	inputToken: TAddress | undefined
+	outputToken: TAddress | undefined
+	amount: bigint
+	minAmount: bigint
+	slippage: bigint
+}
 export async function zapCRV(props: TZapYCRV): Promise<TTxResponse> {
-	const minAmountWithSlippage = props.minAmount - (props.minAmount * props.slippage) / 10_000n;
+	const minAmountWithSlippage = props.minAmount - (props.minAmount * props.slippage) / 10_000n
 
-	assertAddress(props.contractAddress, 'props.contractAddress');
-	assertAddress(props.inputToken, 'inputToken');
-	assertAddress(props.outputToken, 'outputToken');
-	assert(props.amount > 0n, 'Amount must be greater than 0');
-	assert(props.minAmount > 0n, 'Min amount must be greater than 0');
+	assertAddress(props.contractAddress, 'props.contractAddress')
+	assertAddress(props.inputToken, 'inputToken')
+	assertAddress(props.outputToken, 'outputToken')
+	assert(props.amount > 0n, 'Amount must be greater than 0')
+	assert(props.minAmount > 0n, 'Min amount must be greater than 0')
 
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: ZAP_CRV_ABI,
 		functionName: 'zap',
 		args: [props.inputToken, props.outputToken, props.amount, minAmountWithSlippage]
-	});
+	})
 }

@@ -1,11 +1,11 @@
-import {SectionHeader} from '@lib/components/SectionHeader';
-import {TvlStat} from '@lib/components/TvlStat';
-import {useFetch} from '@lib/hooks/useFetch';
-import Image from 'next/image';
-import Link from 'next/link';
-import type {ReactElement} from 'react';
-import {z} from 'zod';
-import {Button} from '../common/Button';
+import {SectionHeader} from '@lib/components/SectionHeader'
+import {TvlStat} from '@lib/components/TvlStat'
+import {useFetch} from '@lib/hooks/useFetch'
+import Image from 'next/image'
+import Link from 'next/link'
+import type {ReactElement} from 'react'
+import {z} from 'zod'
+import {Button} from '../common/Button'
 
 function AnimatedLogos(): ReactElement {
 	return (
@@ -67,14 +67,14 @@ function AnimatedLogos(): ReactElement {
 				}}
 			/>
 		</>
-	);
+	)
 }
 
 export function Hero(): ReactElement {
 	const {data: tvl} = useFetch<number>({
 		endpoint: 'https://api.llama.fi/tvl/yearn',
 		schema: z.number()
-	});
+	})
 
 	return (
 		<>
@@ -162,5 +162,5 @@ export function Hero(): ReactElement {
 				</div>
 			</div>
 		</>
-	);
+	)
 }

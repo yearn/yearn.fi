@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function LogoJuiced(props: React.SVGProps<SVGSVGElement> & {back?: string; front?: string}): ReactElement {
 	return (
@@ -37,5 +37,5 @@ export function LogoJuiced(props: React.SVGProps<SVGSVGElement> & {back?: string
 				fill={'#FFBC03'}
 			/>
 		</svg>
-	);
+	)
 }

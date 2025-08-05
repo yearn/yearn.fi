@@ -1,8 +1,8 @@
-import type {TApp} from '@lib/types/mixed';
-import {cl} from '@lib/utils';
-import {type ForwardedRef, Fragment, forwardRef, type ReactElement} from 'react';
-import {AppCard} from './AppCard';
-import {FeaturedApp} from './FeaturedApp';
+import type {TApp} from '@lib/types/mixed'
+import {cl} from '@lib/utils'
+import {type ForwardedRef, Fragment, forwardRef, type ReactElement} from 'react'
+import {AppCard} from './AppCard'
+import {FeaturedApp} from './FeaturedApp'
 
 export const AppsCarousel = forwardRef(
 	(
@@ -39,7 +39,7 @@ export const AppsCarousel = forwardRef(
 										<AppCard app={app} key={`${app.name} + ${i}`} />
 									)}
 								</Fragment>
-							);
+							)
 						})}
 					</div>
 
@@ -59,11 +59,11 @@ export const AppsCarousel = forwardRef(
 										<AppCard app={app} key={`${app.name} + ${i}`} />
 									)}
 								</Fragment>
-							);
+							)
 						})}
 					</div>
 				</section>
 			</div>
-		);
+		)
 	}
-);
+)

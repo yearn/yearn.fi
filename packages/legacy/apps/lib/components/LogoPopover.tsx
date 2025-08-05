@@ -1,29 +1,29 @@
-'use client';
+'use client'
 
-import {Popover, PopoverButton, PopoverPanel, Transition, TransitionChild} from '@headlessui/react';
-import {cl} from '@lib/utils';
-import type {AnimationProps} from 'framer-motion';
-import {motion} from 'framer-motion';
-import Link from 'next/link';
-import {usePathname} from 'next/navigation';
-import {useRouter} from 'next/router';
-import type {ReactElement} from 'react';
-import {cloneElement, useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {LogoYearn} from '../icons/LogoYearn';
-import {APPS} from './YearnApps';
+import {Popover, PopoverButton, PopoverPanel, Transition, TransitionChild} from '@headlessui/react'
+import {cl} from '@lib/utils'
+import type {AnimationProps} from 'framer-motion'
+import {motion} from 'framer-motion'
+import Link from 'next/link'
+import {usePathname} from 'next/navigation'
+import {useRouter} from 'next/router'
+import type {ReactElement} from 'react'
+import {cloneElement, useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import {LogoYearn} from '../icons/LogoYearn'
+import {APPS} from './YearnApps'
 
 type TMotionDiv = {
-	animate: AnimationProps['animate'];
-	name: string;
-	children: ReactElement;
-};
+	animate: AnimationProps['animate']
+	name: string
+	children: ReactElement
+}
 
-const transition = {duration: 0.4, ease: 'easeInOut'};
+const transition = {duration: 0.4, ease: 'easeInOut'}
 const variants = {
 	initial: {opacity: 0, transition},
 	enter: {opacity: 1, transition},
 	exit: {opacity: 0, transition}
-};
+}
 function MotionDiv({animate, name, children}: TMotionDiv): ReactElement {
 	return (
 		<motion.div
@@ -34,36 +34,36 @@ function MotionDiv({animate, name, children}: TMotionDiv): ReactElement {
 			className={'absolute cursor-pointer'}>
 			{children}
 		</motion.div>
-	);
+	)
 }
 
 function useIsMounted(): () => boolean {
-	const isMounted = useRef(false);
+	const isMounted = useRef(false)
 
 	useEffect(() => {
-		isMounted.current = true;
+		isMounted.current = true
 
 		return () => {
-			isMounted.current = false;
-		};
-	}, []);
+			isMounted.current = false
+		}
+	}, [])
 
-	return useCallback(() => isMounted.current, []);
+	return useCallback(() => isMounted.current, [])
 }
 
 function Logo({currentHost}: {currentHost: string; isVaultPage: boolean}): ReactElement {
-	const router = useRouter();
-	const {pathname} = router;
-	const appsIcon = <LogoYearn className={'!size-8 !max-h-8 !max-w-8'} back={'text-primary'} front={'text-white'} />;
+	const router = useRouter()
+	const {pathname} = router
+	const appsIcon = <LogoYearn className={'!size-8 !max-h-8 !max-w-8'} back={'text-primary'} front={'text-white'} />
 	return (
 		<>
 			{Object.values(APPS).map(({name, host, icon, pathname: appPathname}): ReactElement => {
-				const shouldAnimate = host.some(h => currentHost.includes(h)) || pathname.includes(appPathname);
+				const shouldAnimate = host.some(h => currentHost.includes(h)) || pathname.includes(appPathname)
 				return (
 					<MotionDiv key={name} name={name} animate={shouldAnimate ? 'enter' : 'exit'}>
 						{icon}
 					</MotionDiv>
-				);
+				)
 			})}
 			{(pathname === '/apps' || pathname.startsWith('/apps/')) && (
 				<MotionDiv key={'Apps'} name={'Apps'} animate={'enter'}>
@@ -71,44 +71,44 @@ function Logo({currentHost}: {currentHost: string; isVaultPage: boolean}): React
 				</MotionDiv>
 			)}
 		</>
-	);
+	)
 }
 
 export function LogoPopover(): ReactElement {
-	const [isShowing, setIsShowing] = useState(false);
-	const isMounted = useIsMounted();
-	const pathname = usePathname();
+	const [isShowing, setIsShowing] = useState(false)
+	const isMounted = useIsMounted()
+	const pathname = usePathname()
 
-	const isV3 = isMounted() && pathname?.includes('/v3');
+	const isV3 = isMounted() && pathname?.includes('/v3')
 
-	const [isShowingMore, setIsShowingMore] = useState(false);
+	const [isShowingMore, setIsShowingMore] = useState(false)
 
 	const currentHost = useMemo(() => {
 		if (typeof window === 'undefined') {
-			return '';
+			return ''
 		}
-		return window.location.host;
-	}, []);
+		return window.location.host
+	}, [])
 
 	const isVaultPage = useMemo(() => {
 		if (typeof window === 'undefined') {
-			return false;
+			return false
 		}
 
 		const isVaultPage =
 			typeof window !== 'undefined' &&
 			window.location.pathname.startsWith('/vaults/') &&
-			window.location.pathname.split('/').length === 4;
-		return isVaultPage;
-	}, []);
+			window.location.pathname.split('/').length === 4
+		return isVaultPage
+	}, [])
 
 	useEffect(() => {
 		if (!isShowing) {
 			setTimeout(() => {
-				setIsShowingMore(false);
-			}, 500);
+				setIsShowingMore(false)
+			}, 500)
 		}
-	}, [isShowing]);
+	}, [isShowing])
 
 	return (
 		<Popover onMouseEnter={(): void => setIsShowing(true)} onMouseLeave={(): void => setIsShowing(false)}>
@@ -181,7 +181,7 @@ export function LogoPopover(): ReactElement {
 													</div>
 												</div>
 											</Link>
-										);
+										)
 									})}
 								</div>
 								<div className={'mt-2 grid grid-cols-4 gap-2'}>
@@ -219,7 +219,7 @@ export function LogoPopover(): ReactElement {
 														</div>
 													</div>
 												</Link>
-											);
+											)
 										})}
 									{!isShowingMore && (
 										<button
@@ -240,5 +240,5 @@ export function LogoPopover(): ReactElement {
 				</TransitionChild>
 			</Transition>
 		</Popover>
-	);
+	)
 }

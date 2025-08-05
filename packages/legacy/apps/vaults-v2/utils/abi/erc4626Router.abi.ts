@@ -362,4 +362,4 @@ export const ERC_4626_ROUTER_ABI = [
 	},
 	{inputs: [], name: 'wrapWETH9', outputs: [], stateMutability: 'payable', type: 'function'},
 	{stateMutability: 'payable', type: 'receive'}
-] as const;
+] as const

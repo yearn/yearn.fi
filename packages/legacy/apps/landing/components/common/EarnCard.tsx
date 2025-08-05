@@ -1,16 +1,16 @@
-import {IconArrow} from '@lib/icons/IconArrow';
-import Image from 'next/image';
-import Link from 'next/link';
-import {type ReactElement, useState} from 'react';
+import {IconArrow} from '@lib/icons/IconArrow'
+import Image from 'next/image'
+import Link from 'next/link'
+import {type ReactElement, useState} from 'react'
 
 export function EarnCard(props: {
-	title: string;
-	info: string;
-	logoSrc: string;
-	hoverLogoSrc: string;
-	href: string;
+	title: string
+	info: string
+	logoSrc: string
+	hoverLogoSrc: string
+	href: string
 }): ReactElement {
-	const [isHovering, setIsHovering] = useState(false);
+	const [isHovering, setIsHovering] = useState(false)
 
 	return (
 		<Link
@@ -47,5 +47,5 @@ export function EarnCard(props: {
 				alt={'app-logo'}
 			/>
 		</Link>
-	);
+	)
 }

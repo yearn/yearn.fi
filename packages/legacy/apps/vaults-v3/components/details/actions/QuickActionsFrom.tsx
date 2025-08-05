@@ -1,10 +1,10 @@
-import {Renderable} from '@lib/components/Renderable';
-import {Dropdown} from '@lib/components/TokenDropdown';
-import {useWallet} from '@lib/contexts/useWallet';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import {IconQuestion} from '@lib/icons/IconQuestion';
-import type {TNormalizedBN} from '@lib/types';
+import {Renderable} from '@lib/components/Renderable'
+import {Dropdown} from '@lib/components/TokenDropdown'
+import {useWallet} from '@lib/contexts/useWallet'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {useYearn} from '@lib/contexts/useYearn'
+import {IconQuestion} from '@lib/icons/IconQuestion'
+import type {TNormalizedBN} from '@lib/types'
 import {
 	cl,
 	formatAmount,
@@ -14,19 +14,19 @@ import {
 	isAddress,
 	toAddress,
 	zeroNormalizedBN
-} from '@lib/utils';
-import {calculateBoostFromVeYFI} from '@lib/utils/calculations';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {useActionFlow} from '@vaults-v2/contexts/useActionFlow';
-import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData';
-import {useRouter} from 'next/router';
-import type {ChangeEvent, ReactElement} from 'react';
-import {useCallback, useMemo} from 'react';
+} from '@lib/utils'
+import {calculateBoostFromVeYFI} from '@lib/utils/calculations'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {useActionFlow} from '@vaults-v2/contexts/useActionFlow'
+import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData'
+import {useRouter} from 'next/router'
+import type {ChangeEvent, ReactElement} from 'react'
+import {useCallback, useMemo} from 'react'
 
 function AmountWithOptionalTooltip(props: {
-	canOnlyWithdrawSome: boolean;
-	maxPossibleToWithdraw: TNormalizedBN;
-	tokenSymbol: string;
+	canOnlyWithdrawSome: boolean
+	maxPossibleToWithdraw: TNormalizedBN
+	tokenSymbol: string
 }): ReactElement {
 	if (props.canOnlyWithdrawSome) {
 		if (props.maxPossibleToWithdraw.raw === 0n) {
@@ -52,7 +52,7 @@ function AmountWithOptionalTooltip(props: {
 						</span>
 					</span>
 				</div>
-			);
+			)
 		}
 		return (
 			<div className={'flex flex-row items-center justify-between space-x-2'}>
@@ -73,7 +73,7 @@ function AmountWithOptionalTooltip(props: {
 					</span>
 				</span>
 			</div>
-		);
+		)
 	}
 	return (
 		<div>
@@ -81,22 +81,22 @@ function AmountWithOptionalTooltip(props: {
 				{'Amount'}
 			</label>
 		</div>
-	);
+	)
 }
 
 export function VaultDetailsQuickActionsFrom(props: {
-	currentVault: TYDaemonVault;
-	vaultData: TStakingInfo;
-	veYFIBalance: TNormalizedBN;
-	veYFITotalSupply: number;
-	gaugeTotalSupply: number;
+	currentVault: TYDaemonVault
+	vaultData: TStakingInfo
+	veYFIBalance: TNormalizedBN
+	veYFITotalSupply: number
+	gaugeTotalSupply: number
 }): ReactElement {
-	const {address, isActive} = useWeb3();
-	const {getToken, getBalance} = useWallet();
-	const {getPrice} = useYearn();
-	const {pathname} = useRouter();
+	const {address, isActive} = useWeb3()
+	const {getToken, getBalance} = useWallet()
+	const {getPrice} = useYearn()
+	const {pathname} = useRouter()
 
-	const isV3Page = pathname.startsWith('/v3');
+	const isV3Page = pathname.startsWith('/v3')
 	const {
 		possibleOptionsFrom,
 		actionParams,
@@ -105,14 +105,14 @@ export function VaultDetailsQuickActionsFrom(props: {
 		maxDepositPossible,
 		maxWithdrawPossible,
 		isDepositing
-	} = useActionFlow();
-	const hasMultipleInputsToChooseFrom = isActive && isDepositing && possibleOptionsFrom.length > 1;
-	const selectedFromSymbol = actionParams?.selectedOptionFrom?.symbol || 'tokens';
-	const selectedFromIcon = actionParams?.selectedOptionFrom?.icon;
+	} = useActionFlow()
+	const hasMultipleInputsToChooseFrom = isActive && isDepositing && possibleOptionsFrom.length > 1
+	const selectedFromSymbol = actionParams?.selectedOptionFrom?.symbol || 'tokens'
+	const selectedFromIcon = actionParams?.selectedOptionFrom?.icon
 	const selectedOptionFromPricePerToken = getPrice({
 		address: toAddress(actionParams?.selectedOptionFrom?.value),
 		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
-	});
+	})
 
 	const currentVaultBoost = useMemo(
 		() =>
@@ -123,20 +123,20 @@ export function VaultDetailsQuickActionsFrom(props: {
 				props.vaultData.stakedBalanceOf.normalized
 			),
 		[props.veYFIBalance.normalized, props.veYFITotalSupply, props.gaugeTotalSupply, props.vaultData]
-	);
+	)
 	const currentStakedAPR =
 		currentVaultBoost * (props.currentVault.apr.extra.stakingRewardsAPR / 10) +
-		props.currentVault.apr.forwardAPR.netAPR;
+		props.currentVault.apr.forwardAPR.netAPR
 
 	const userBalance = useMemo(() => {
 		if (!isAddress(address)) {
-			return zeroNormalizedBN;
+			return zeroNormalizedBN
 		}
 		return getBalance({
 			address: toAddress(actionParams?.selectedOptionFrom?.value),
 			chainID: Number(actionParams?.selectedOptionFrom?.chainID)
-		});
-	}, [address, getBalance, actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.chainID]);
+		})
+	}, [address, getBalance, actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.chainID])
 
 	/**********************************************************************************************
 	 ** Fallback component to render a dropdown if the user has multiple options to choose from.
@@ -151,7 +151,7 @@ export function VaultDetailsQuickActionsFrom(props: {
 				selected={actionParams?.selectedOptionFrom}
 				onSelect={onUpdateSelectedOptionFrom}
 			/>
-		);
+		)
 	}
 
 	/**********************************************************************************************
@@ -161,22 +161,22 @@ export function VaultDetailsQuickActionsFrom(props: {
 	 *********************************************************************************************/
 	const onChangeInput = useCallback(
 		(e: ChangeEvent<HTMLInputElement>): void => {
-			let newAmount: TNormalizedBN | undefined;
+			let newAmount: TNormalizedBN | undefined
 			const {decimals} = getToken({
 				address: toAddress(actionParams?.selectedOptionFrom?.value),
 				chainID: Number(actionParams?.selectedOptionFrom?.chainID)
-			});
+			})
 
 			if (e.target.value === '') {
-				newAmount = undefined;
-				onChangeAmount(newAmount);
+				newAmount = undefined
+				onChangeAmount(newAmount)
 			} else {
-				const expectedNewValue = handleInputChangeEventValue(e, decimals);
-				onChangeAmount(expectedNewValue);
+				const expectedNewValue = handleInputChangeEventValue(e, decimals)
+				onChangeAmount(expectedNewValue)
 			}
 		},
 		[actionParams?.selectedOptionFrom?.chainID, actionParams?.selectedOptionFrom?.value, getToken, onChangeAmount]
-	);
+	)
 
 	return (
 		<section
@@ -285,5 +285,5 @@ export function VaultDetailsQuickActionsFrom(props: {
 				</div>
 			</div>
 		</section>
-	);
+	)
 }

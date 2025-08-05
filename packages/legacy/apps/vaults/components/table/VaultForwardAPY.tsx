@@ -1,31 +1,31 @@
-import {RenderAmount} from '@lib/components/RenderAmount';
-import {Renderable} from '@lib/components/Renderable';
-import {isZero, toAddress} from '@lib/utils';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {FC} from 'react';
-import {Fragment} from 'react';
-import {APYSubline} from './APYSubline';
-import {APYTooltip} from './APYTooltip';
+import {RenderAmount} from '@lib/components/RenderAmount'
+import {Renderable} from '@lib/components/Renderable'
+import {isZero, toAddress} from '@lib/utils'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type {FC} from 'react'
+import {Fragment} from 'react'
+import {APYSubline} from './APYSubline'
+import {APYTooltip} from './APYTooltip'
 
 export const VAULT_ADDRESSES = {
 	PENDLE_ARB_REWARDS: '0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544',
 	KELP_N_ENGENLAYER: '0xDDa02A2FA0bb0ee45Ba9179a3fd7e65E5D3B2C90',
 	KELP: '0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544'
-};
+}
 
 export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault}) => {
-	const isEthMainnet = currentVault.chainID === 1;
-	const hasPendleArbRewards = currentVault.address === toAddress(VAULT_ADDRESSES.PENDLE_ARB_REWARDS);
-	const hasKelpNEngenlayer = currentVault.address === toAddress(VAULT_ADDRESSES.KELP_N_ENGENLAYER);
-	const hasKelp = currentVault.address === toAddress(VAULT_ADDRESSES.KELP);
+	const isEthMainnet = currentVault.chainID === 1
+	const hasPendleArbRewards = currentVault.address === toAddress(VAULT_ADDRESSES.PENDLE_ARB_REWARDS)
+	const hasKelpNEngenlayer = currentVault.address === toAddress(VAULT_ADDRESSES.KELP_N_ENGENLAYER)
+	const hasKelp = currentVault.address === toAddress(VAULT_ADDRESSES.KELP)
 
 	/**********************************************************************************************
 	 ** If there is no forwardAPY, we only have the historical APY to display.
 	 **********************************************************************************************/
 	if (currentVault.apr.forwardAPR.type === '') {
-		const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
-		const boostedAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR;
-		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
+		const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
+		const boostedAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR
+		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 
 		if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 			return (
@@ -64,7 +64,7 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 						hasKelp={hasKelp}
 					/>
 				</div>
-			);
+			)
 		}
 		return (
 			<div className={'relative flex flex-col items-end md:text-right'}>
@@ -87,7 +87,7 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 					hasKelp={hasKelp}
 				/>
 			</div>
-		);
+		)
 	}
 
 	/**********************************************************************************************
@@ -95,7 +95,7 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 	 ** This is mostly valid for Curve vaults.
 	 **********************************************************************************************/
 	if (isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !currentVault.apr.extra.stakingRewardsAPR) {
-		const unBoostedAPY = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost;
+		const unBoostedAPY = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost
 		return (
 			<span className={'tooltip'}>
 				<div className={'flex flex-col items-end md:text-right'}>
@@ -121,34 +121,34 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 					/>
 				</div>
 			</span>
-		);
+		)
 	}
 
 	/**********************************************************************************************
 	 ** Display the APY including the rewards APY if the rewards APY is greater than 0.
 	 **********************************************************************************************/
-	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
-	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
+	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
+	const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
 	if (sumOfRewardsAPY > 0) {
-		let veYFIRange: [number, number] | undefined;
-		let estAPYRange: [number, number] | undefined;
-		let boostedAPY: number;
-		let hasZeroBoostedAPY: boolean;
+		let veYFIRange: [number, number] | undefined
+		let estAPYRange: [number, number] | undefined
+		let boostedAPY: number
+		let hasZeroBoostedAPY: boolean
 
 		if (isSourceVeYFI) {
 			veYFIRange = [
 				currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
 				sumOfRewardsAPY
-			] as [number, number];
-			boostedAPY = veYFIRange[0] + currentVault.apr.forwardAPR.netAPR;
-			hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
+			] as [number, number]
+			boostedAPY = veYFIRange[0] + currentVault.apr.forwardAPR.netAPR
+			hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 			estAPYRange = [
 				veYFIRange[0] + currentVault.apr.forwardAPR.netAPR,
 				veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
-			] as [number, number];
+			] as [number, number]
 		} else {
-			boostedAPY = sumOfRewardsAPY + currentVault.apr.forwardAPR.netAPR;
-			hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
+			boostedAPY = sumOfRewardsAPY + currentVault.apr.forwardAPR.netAPR
+			hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 		}
 
 		return (
@@ -207,14 +207,14 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 					hasKelpNEngenlayer={hasKelpNEngenlayer}
 				/>
 			</div>
-		);
+		)
 	}
 
 	/**********************************************************************************************
 	 ** Display the current spot APY, retrieved from the V3Oracle, only if the current APY is
 	 ** greater than 0.
 	 **********************************************************************************************/
-	const hasCurrentAPY = !isZero(currentVault?.apr.forwardAPR.netAPR);
+	const hasCurrentAPY = !isZero(currentVault?.apr.forwardAPR.netAPR)
 	if (hasCurrentAPY) {
 		return (
 			<div className={'relative flex flex-col items-end md:text-right'}>
@@ -238,10 +238,10 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 					hasKelpNEngenlayer={hasKelpNEngenlayer}
 				/>
 			</div>
-		);
+		)
 	}
 
-	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
+	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
 	return (
 		<div className={'relative flex flex-col items-end md:text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
@@ -266,5 +266,5 @@ export const VaultForwardAPY: FC<{currentVault: TYDaemonVault}> = ({currentVault
 				hasKelpNEngenlayer={hasKelpNEngenlayer}
 			/>
 		</div>
-	);
-};
+	)
+}

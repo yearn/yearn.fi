@@ -1,13 +1,13 @@
-import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react';
-import {IconChevron} from '@lib/icons/IconChevron';
-import {cl} from '@lib/utils';
-import {useThrottledState} from '@react-hookz/web';
-import type {ReactElement} from 'react';
-import {Fragment, useState} from 'react';
-import {ImageWithFallback} from './ImageWithFallback';
+import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react'
+import {IconChevron} from '@lib/icons/IconChevron'
+import {cl} from '@lib/utils'
+import {useThrottledState} from '@react-hookz/web'
+import type {ReactElement} from 'react'
+import {Fragment, useState} from 'react'
+import {ImageWithFallback} from './ImageWithFallback'
 
 const DropdownOption = (option: TDropdownOption): ReactElement => {
-	const {label, description, icon} = option;
+	const {label, description, icon} = option
 	return (
 		<ComboboxOption value={option}>
 			{({active}): ReactElement => (
@@ -28,8 +28,8 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
 				</div>
 			)}
 		</ComboboxOption>
-	);
-};
+	)
+}
 
 const DropdownEmpty = ({isSearching}: {isSearching: boolean}): ReactElement => {
 	if (!isSearching) {
@@ -39,7 +39,7 @@ const DropdownEmpty = ({isSearching}: {isSearching: boolean}): ReactElement => {
 					<p className={'text-sm text-neutral-900'}>{'Nothing found.'}</p>
 				</div>
 			</div>
-		);
+		)
 	}
 
 	return (
@@ -48,25 +48,25 @@ const DropdownEmpty = ({isSearching}: {isSearching: boolean}): ReactElement => {
 				<span className={'loader'} />
 			</div>
 		</div>
-	);
-};
+	)
+}
 
 export type TDropdownOption = {
-	id: string;
-	label: string;
-	description?: string;
-	icon?: string;
-};
+	id: string
+	label: string
+	description?: string
+	icon?: string
+}
 
 export type TDropdownProps = {
-	selected?: TDropdownOption;
-	options: TDropdownOption[];
-	onChange?: (selected: TDropdownOption) => void;
-	label?: string;
-	legend?: string;
-	isDisabled?: boolean;
-	className?: string;
-};
+	selected?: TDropdownOption
+	options: TDropdownOption[]
+	onChange?: (selected: TDropdownOption) => void
+	label?: string
+	legend?: string
+	isDisabled?: boolean
+	className?: string
+}
 
 export const Dropdown = ({
 	selected,
@@ -77,13 +77,13 @@ export const Dropdown = ({
 	isDisabled,
 	className
 }: TDropdownProps): ReactElement => {
-	const [isOpen, setIsOpen] = useThrottledState(false, 400);
-	const [search, setSearch] = useState('');
+	const [isOpen, setIsOpen] = useThrottledState(false, 400)
+	const [search, setSearch] = useState('')
 
-	const isSearching = search !== '';
+	const isSearching = search !== ''
 	const filteredOptions = isSearching
 		? options.filter(({label}): boolean => label.toLowerCase().includes(search.toLowerCase()))
-		: options;
+		: options
 
 	return (
 		<div className={className}>
@@ -94,9 +94,9 @@ export const Dropdown = ({
 						<div
 							className={'fixed inset-0 z-0'}
 							onClick={(e): void => {
-								e.stopPropagation();
-								e.preventDefault();
-								setIsOpen(false);
+								e.stopPropagation()
+								e.preventDefault()
+								setIsOpen(false)
 							}}
 						/>
 					) : null}
@@ -104,9 +104,9 @@ export const Dropdown = ({
 						value={selected}
 						onChange={(option: TDropdownOption): void => {
 							if (onChange) {
-								onChange(option);
+								onChange(option)
 							}
-							setIsOpen(false);
+							setIsOpen(false)
 						}}
 						disabled={isDisabled}>
 						<ComboboxButton
@@ -139,8 +139,8 @@ export const Dropdown = ({
 										displayValue={(option?: TDropdownOption): string => option?.label ?? '-'}
 										spellCheck={false}
 										onChange={(event): void => {
-											setIsOpen(true);
-											setSearch(event.target.value);
+											setIsOpen(true)
+											setSearch(event.target.value)
 										}}
 									/>
 								</p>
@@ -162,8 +162,8 @@ export const Dropdown = ({
 							leaveFrom={'transform scale-100 opacity-100'}
 							leaveTo={'transform scale-95 opacity-0'}
 							afterLeave={(): void => {
-								setIsOpen(false);
-								setSearch('');
+								setIsOpen(false)
+								setSearch('')
 							}}>
 							<ComboboxOptions className={'yearn--dropdown-menu z-50'}>
 								{filteredOptions.length === 0 ? (
@@ -188,5 +188,5 @@ export const Dropdown = ({
 				{legend && <p className={'pl-2 text-xs font-normal text-neutral-600'}>{legend}</p>}
 			</div>
 		</div>
-	);
-};
+	)
+}

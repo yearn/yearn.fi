@@ -1,15 +1,15 @@
-import {SectionHeader} from '@lib/components/SectionHeader';
-import Image from 'next/image';
-import Link from 'next/link';
-import type {FC} from 'react';
-import {useState} from 'react';
+import {SectionHeader} from '@lib/components/SectionHeader'
+import Image from 'next/image'
+import Link from 'next/link'
+import type {FC} from 'react'
+import {useState} from 'react'
 
 type TPartner = {
-	image: string;
-	alt: string;
-	href: string;
-	size?: number;
-};
+	image: string
+	alt: string
+	href: string
+	size?: number
+}
 
 const partners: TPartner[] = [
 	{
@@ -44,10 +44,10 @@ const partners: TPartner[] = [
 		href: 'https://pooltogether.yearn.space/',
 		size: 40
 	}
-];
+]
 
 const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 40}) => {
-	const [isHovered, setIsHovered] = useState(false);
+	const [isHovered, setIsHovered] = useState(false)
 	return (
 		<Link href={href} className={'block flex-1'}>
 			<div
@@ -81,8 +81,8 @@ const PartnerLogo: FC<TPartner> = ({image, alt, href, size = 40}) => {
 				/>
 			</div>
 		</Link>
-	);
-};
+	)
+}
 
 export const Partners: FC = () => (
 	<section className={'flex w-full justify-center  py-16 lg:py-32'}>
@@ -128,4 +128,4 @@ export const Partners: FC = () => (
 			</div>
 		</div>
 	</section>
-);
+)

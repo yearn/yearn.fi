@@ -1,14 +1,14 @@
-import {IconPaginationArrow} from '@lib/icons/IconPaginationArrow';
-import type {ReactElement} from 'react';
-import ReactPaginate from 'react-paginate';
+import {IconPaginationArrow} from '@lib/icons/IconPaginationArrow'
+import type {ReactElement} from 'react'
+import ReactPaginate from 'react-paginate'
 
 type TProps = {
-	range: [from: number, to: number];
-	pageCount: number;
-	numberOfItems: number;
-	onPageChange: (selectedItem: {selected: number}) => void;
-	currentPage?: number;
-};
+	range: [from: number, to: number]
+	pageCount: number
+	numberOfItems: number
+	onPageChange: (selectedItem: {selected: number}) => void
+	currentPage?: number
+}
 
 export function Pagination({
 	range: [from, to],
@@ -19,17 +19,17 @@ export function Pagination({
 }: TProps): ReactElement {
 	const handlePrevious = (): void => {
 		if (currentPage === 0) {
-			return;
+			return
 		}
-		onPageChange({selected: currentPage - 1});
-	};
+		onPageChange({selected: currentPage - 1})
+	}
 
 	const handleNext = (): void => {
 		if (currentPage >= pageCount - 1) {
-			return;
+			return
 		}
-		onPageChange({selected: currentPage + 1});
-	};
+		onPageChange({selected: currentPage + 1})
+	}
 
 	return (
 		<>
@@ -93,5 +93,5 @@ export function Pagination({
 				<div className={'md:flex-1'}></div>
 			</div>
 		</>
-	);
+	)
 }

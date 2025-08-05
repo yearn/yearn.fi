@@ -1,25 +1,25 @@
-import type {TAllocationChartData} from '@lib/components/AllocationChart';
-import {AllocationChart} from '@lib/components/AllocationChart';
-import {VaultsListStrategy} from '@lib/components/VaultsListStrategy';
-import {useYearn} from '@lib/contexts/useYearn';
-import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice';
-import type {TSortDirection} from '@lib/types';
-import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@lib/utils';
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults';
-import {useSortVaults} from '@vaults-v2/hooks/useSortVaults';
-import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs';
-import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
-import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
-import type {ReactElement} from 'react';
-import {useMemo} from 'react';
+import type {TAllocationChartData} from '@lib/components/AllocationChart'
+import {AllocationChart} from '@lib/components/AllocationChart'
+import {VaultsListStrategy} from '@lib/components/VaultsListStrategy'
+import {useYearn} from '@lib/contexts/useYearn'
+import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice'
+import type {TSortDirection} from '@lib/types'
+import {cl, formatCounterValue, formatPercent, toNormalizedBN} from '@lib/utils'
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type {TPossibleSortBy} from '@vaults-v2/hooks/useSortVaults'
+import {useSortVaults} from '@vaults-v2/hooks/useSortVaults'
+import {useQueryArguments} from '@vaults-v2/hooks/useVaultsQueryArgs'
+import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead'
+import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants'
+import type {ReactElement} from 'react'
+import {useMemo} from 'react'
 
 function UnallocatedStrategy({
 	unallocatedPercentage,
 	unallocatedValue
 }: {
-	unallocatedPercentage: number;
-	unallocatedValue: string;
+	unallocatedPercentage: number
+	unallocatedValue: string
 }): ReactElement {
 	return (
 		<div
@@ -76,50 +76,50 @@ function UnallocatedStrategy({
 				</div>
 			</div>
 		</div>
-	);
+	)
 }
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {vaults} = useYearn();
+	const {vaults} = useYearn()
 	const {sortDirection, sortBy, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
 		defaultSortBy: 'allocationPercentage',
 		defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
 		defaultPathname: '/v3/[chainID]/[address]'
-	});
-	const tokenPrice = useYearnTokenPrice({address: currentVault.token.address, chainID: currentVault.chainID});
+	})
+	const tokenPrice = useYearnTokenPrice({address: currentVault.token.address, chainID: currentVault.chainID})
 
 	const vaultList = useMemo((): TYDaemonVault[] => {
-		const _vaultList = [];
+		const _vaultList = []
 		for (const strategy of currentVault?.strategies || []) {
-			_vaultList.push({...vaults[strategy.address], details: strategy.details, status: strategy.status});
+			_vaultList.push({...vaults[strategy.address], details: strategy.details, status: strategy.status})
 		}
-		return _vaultList.filter(vault => !!vault.address);
-	}, [vaults, currentVault]);
+		return _vaultList.filter(vault => !!vault.address)
+	}, [vaults, currentVault])
 
 	const strategyList = useMemo((): TYDaemonVaultStrategy[] => {
-		const _stratList = [];
+		const _stratList = []
 		for (const strategy of currentVault?.strategies || []) {
 			if (!vaults[strategy.address]) {
-				_stratList.push(strategy);
+				_stratList.push(strategy)
 			}
 		}
-		return _stratList;
-	}, [vaults, currentVault]);
+		return _stratList
+	}, [vaults, currentVault])
 
 	const mergedList = useMemo(
 		() =>
 			[...vaultList, ...strategyList] as (TYDaemonVault & {
-				details: TYDaemonVaultStrategy['details'];
-				status: TYDaemonVaultStrategy['status'];
+				details: TYDaemonVaultStrategy['details']
+				status: TYDaemonVaultStrategy['status']
 			})[],
 		[vaultList, strategyList]
-	);
+	)
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Source of truth for the unallocated percentage and value.
 	 **********************************************************************************************/
 	const unallocatedPercentage =
-		100 * 100 - mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0);
+		100 * 100 - mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	True when the unallocated percentage is greater than 0. Might be a non-zero value due to
@@ -127,12 +127,12 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	 **********************************************************************************************/
 	const unallocatedValue =
 		Number(currentVault.tvl.totalAssets) -
-		mergedList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0);
+		mergedList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0)
 
 	const filteredVaultList = useMemo(() => {
-		const strategies = mergedList.filter(vault => vault.status !== 'not_active');
-		return strategies;
-	}, [mergedList]);
+		const strategies = mergedList.filter(vault => vault.status !== 'not_active')
+		return strategies
+	}, [mergedList])
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
@@ -140,10 +140,10 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	 **	sortDirection values.
 	 **********************************************************************************************/
 	const sortedVaultsToDisplay = useSortVaults(filteredVaultList, sortBy, sortDirection) as (TYDaemonVault & {
-		details: TYDaemonVaultStrategy['details'];
-		status: TYDaemonVaultStrategy['status'];
-		netAPR: TYDaemonVaultStrategy['netAPR'];
-	})[];
+		details: TYDaemonVaultStrategy['details']
+		status: TYDaemonVaultStrategy['status']
+		netAPR: TYDaemonVaultStrategy['netAPR']
+	})[]
 
 	const allocationChartData = useMemo(() => {
 		const strategyData = filteredVaultList.map(strategy => ({
@@ -154,7 +154,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 				toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
 				tokenPrice
 			)
-		}));
+		}))
 
 		const unallocatedData =
 			unallocatedValue > 0
@@ -167,13 +167,13 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							tokenPrice
 						)
 					}
-				: null;
+				: null
 
-		return [...strategyData, unallocatedData].filter(Boolean) as TAllocationChartData[];
-	}, [currentVault.token?.decimals, filteredVaultList, tokenPrice, unallocatedPercentage, unallocatedValue]);
+		return [...strategyData, unallocatedData].filter(Boolean) as TAllocationChartData[]
+	}, [currentVault.token?.decimals, filteredVaultList, tokenPrice, unallocatedPercentage, unallocatedValue])
 
-	const isVaultListEmpty = mergedList.length === 0;
-	const isFilteredVaultListEmpty = filteredVaultList.length === 0;
+	const isVaultListEmpty = mergedList.length === 0
+	const isFilteredVaultListEmpty = filteredVaultList.length === 0
 
 	return (
 		<>
@@ -188,12 +188,12 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							sortDirection={sortDirection}
 							onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
 								if (newSortDirection === '') {
-									onChangeSortBy('featuringScore');
-									onChangeSortDirection('');
-									return;
+									onChangeSortBy('featuringScore')
+									onChangeSortDirection('')
+									return
 								}
-								onChangeSortBy(newSortBy as TPossibleSortBy);
-								onChangeSortDirection(newSortDirection as TSortDirection);
+								onChangeSortBy(newSortBy as TPossibleSortBy)
+								onChangeSortDirection(newSortDirection as TSortDirection)
 							}}
 							items={[
 								{label: 'Vault', value: 'name', sortable: false, className: 'ml-20'},
@@ -285,5 +285,5 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 				</div>
 			</div>
 		</>
-	);
+	)
 }

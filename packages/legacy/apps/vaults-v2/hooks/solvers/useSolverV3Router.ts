@@ -1,27 +1,27 @@
-import {useNotifications} from '@lib/contexts/useNotifications';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import type {TDict, TNormalizedBN} from '@lib/types';
-import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {allowanceKey} from '@lib/utils/helpers';
-import type {TTxStatus} from '@lib/utils/wagmi';
-import {allowanceOf, approveERC20, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi';
-import {migrateSharesViaRouter} from '@lib/utils/wagmi/actions';
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
-import {Solver} from '@vaults-v2/types/solvers';
-import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
-import {useCallback, useMemo, useRef} from 'react';
-import type {Hash, TransactionReceipt} from 'viem';
-import {erc20Abi, maxUint256, zeroAddress} from 'viem';
-import type {Connector} from 'wagmi';
-import {readContract} from 'wagmi/actions';
+import {useNotifications} from '@lib/contexts/useNotifications'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {useYearn} from '@lib/contexts/useYearn'
+import type {TDict, TNormalizedBN} from '@lib/types'
+import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils'
+import {allowanceKey} from '@lib/utils/helpers'
+import type {TTxStatus} from '@lib/utils/wagmi'
+import {allowanceOf, approveERC20, retrieveConfig, toWagmiProvider} from '@lib/utils/wagmi'
+import {migrateSharesViaRouter} from '@lib/utils/wagmi/actions'
+import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers'
+import {Solver} from '@vaults-v2/types/solvers'
+import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut'
+import {useCallback, useMemo, useRef} from 'react'
+import type {Hash, TransactionReceipt} from 'viem'
+import {erc20Abi, maxUint256, zeroAddress} from 'viem'
+import type {Connector} from 'wagmi'
+import {readContract} from 'wagmi/actions'
 
 async function allowanceOfRouter(request: TInitSolverArgs, provider: Connector | undefined): Promise<bigint> {
 	if (!request || !provider) {
-		return 0n;
+		return 0n
 	}
 
-	const wagmiProvider = await toWagmiProvider(provider);
+	const wagmiProvider = await toWagmiProvider(provider)
 	const result = await readContract(retrieveConfig(), {
 		...wagmiProvider,
 		chainId: request.chainID,
@@ -29,21 +29,21 @@ async function allowanceOfRouter(request: TInitSolverArgs, provider: Connector |
 		address: request.asset ?? zeroAddress,
 		functionName: 'allowance',
 		args: [request.migrator ?? zeroAddress, request.outputToken.value]
-	});
-	return result || 0n;
+	})
+	return result || 0n
 }
 
 export function useSolverV3Router(): TSolverContext {
-	const {provider} = useWeb3();
-	const {maxLoss} = useYearn();
-	const {setShouldOpenCurtain} = useNotifications();
-	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
-	const request = useRef<TInitSolverArgs | undefined>(undefined);
-	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
+	const {provider} = useWeb3()
+	const {maxLoss} = useYearn()
+	const {setShouldOpenCurtain} = useNotifications()
+	const latestQuote = useRef<TNormalizedBN | undefined>(undefined)
+	const request = useRef<TInitSolverArgs | undefined>(undefined)
+	const existingAllowances = useRef<TDict<TNormalizedBN>>({})
 
 	const init = useCallback(
 		async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
-			request.current = _request;
+			request.current = _request
 			const estimateOut = await getVaultEstimateOut({
 				inputToken: toAddress(_request.inputToken.value),
 				outputToken: toAddress(_request.outputToken.value),
@@ -55,17 +55,17 @@ export function useSolverV3Router(): TSolverContext {
 				version: _request.version,
 				from: toAddress(_request.from),
 				maxLoss: maxLoss
-			});
-			latestQuote.current = estimateOut;
-			return latestQuote.current;
+			})
+			latestQuote.current = estimateOut
+			return latestQuote.current
 		},
 		[maxLoss]
-	);
+	)
 
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 			if (!request?.current || !provider) {
-				return zeroNormalizedBN;
+				return zeroNormalizedBN
 			}
 
 			const key = allowanceKey(
@@ -73,9 +73,9 @@ export function useSolverV3Router(): TSolverContext {
 				toAddress(request.current.inputToken.value),
 				toAddress(request.current.outputToken.value),
 				toAddress(request.current.from)
-			);
+			)
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
-				return existingAllowances.current[key];
+				return existingAllowances.current[key]
 			}
 
 			const allowance = await allowanceOf({
@@ -83,17 +83,17 @@ export function useSolverV3Router(): TSolverContext {
 				chainID: request.current.inputToken.chainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: toAddress(request.current.migrator)
-			});
-			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
-			return existingAllowances.current[key];
+			})
+			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
+			return existingAllowances.current[key]
 		},
 		[provider]
-	);
+	)
 
 	const onRetrieveRouterAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 			if (!request?.current || !provider || !request.current.asset || !request.current.migrator) {
-				return zeroNormalizedBN;
+				return zeroNormalizedBN
 			}
 
 			const key = allowanceKey(
@@ -101,17 +101,17 @@ export function useSolverV3Router(): TSolverContext {
 				toAddress(request.current.asset),
 				toAddress(request.current.migrator),
 				toAddress(request.current.outputToken.value)
-			);
+			)
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
-				return existingAllowances.current[key];
+				return existingAllowances.current[key]
 			}
 
-			const allowance = await allowanceOfRouter(request.current, provider);
-			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
-			return existingAllowances.current[key];
+			const allowance = await allowanceOfRouter(request.current, provider)
+			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
+			return existingAllowances.current[key]
 		},
 		[provider]
-	);
+	)
 
 	const onApprove = useCallback(
 		async (
@@ -121,9 +121,9 @@ export function useSolverV3Router(): TSolverContext {
 			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current.inputToken, 'Input token is not set');
-			assert(request.current.outputToken, 'Output token is not set');
+			assert(request.current, 'Request is not set')
+			assert(request.current.inputToken, 'Input token is not set')
+			assert(request.current.outputToken, 'Output token is not set')
 
 			try {
 				const result = await approveERC20({
@@ -137,21 +137,21 @@ export function useSolverV3Router(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					}
-				});
+				})
 				if (result.isSuccessful && result.receipt) {
-					onSuccess(result.receipt);
+					onSuccess(result.receipt)
 				} else {
-					onError?.(result.error as Error);
+					onError?.(result.error as Error)
 				}
 			} catch (error) {
-				onError?.(error as Error);
+				onError?.(error as Error)
 			}
 		},
 		[provider, setShouldOpenCurtain]
-	);
+	)
 
 	const onExecuteDeposit = useCallback(
 		async (
@@ -160,9 +160,9 @@ export function useSolverV3Router(): TSolverContext {
 			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current.inputToken, 'Output token is not set');
-			assert(request.current.inputAmount, 'Input amount is not set');
+			assert(request.current, 'Request is not set')
+			assert(request.current.inputToken, 'Output token is not set')
+			assert(request.current.inputAmount, 'Input amount is not set')
 
 			try {
 				const result = await migrateSharesViaRouter({
@@ -179,26 +179,26 @@ export function useSolverV3Router(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					}
-				});
+				})
 				if (result.isSuccessful && result.receipt) {
-					onSuccess(result.receipt);
+					onSuccess(result.receipt)
 				} else {
-					onError?.(result.error as Error);
+					onError?.(result.error as Error)
 				}
 			} catch (error) {
-				onError?.(error as Error);
+				onError?.(error as Error)
 			}
-			return;
+			return
 		},
 		[provider, maxLoss, setShouldOpenCurtain]
-	);
+	)
 
 	const onExecuteWithdraw = useCallback(async (): Promise<void> => {
-		throw new Error('Not implemented');
-	}, []);
+		throw new Error('Not implemented')
+	}, [])
 
 	return useMemo(
 		(): TSolverContext => ({
@@ -212,5 +212,5 @@ export function useSolverV3Router(): TSolverContext {
 			onExecuteWithdraw
 		}),
 		[init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, onRetrieveRouterAllowance]
-	);
+	)
 }

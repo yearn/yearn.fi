@@ -1,21 +1,21 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback';
-import {RenderAmount} from '@lib/components/RenderAmount';
-import {useFetch} from '@lib/hooks/useFetch';
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
-import {IconLinkOut} from '@lib/icons/IconLinkOut';
-import type {TAddress} from '@lib/types';
-import {cl, formatPercent, toAddress, truncateHex} from '@lib/utils';
-import {formatDuration} from '@lib/utils/format.time';
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {getNetwork} from '@lib/utils/wagmi/utils';
-import {findLatestAPY} from '@vaults-v2/components/details/tabs/findLatestAPY';
-import type {TYDaemonReports} from '@vaults-v2/schemas/reportsSchema';
-import {yDaemonReportsSchema} from '@vaults-v2/schemas/reportsSchema';
-import {getChainBgColor} from '@vaults-v3/utils';
-import {motion} from 'framer-motion';
-import Link from 'next/link';
-import type {ReactElement} from 'react';
-import {useMemo, useState} from 'react';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback'
+import {RenderAmount} from '@lib/components/RenderAmount'
+import {useFetch} from '@lib/hooks/useFetch'
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI'
+import {IconLinkOut} from '@lib/icons/IconLinkOut'
+import type {TAddress} from '@lib/types'
+import {cl, formatPercent, toAddress, truncateHex} from '@lib/utils'
+import {formatDuration} from '@lib/utils/format.time'
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {getNetwork} from '@lib/utils/wagmi/utils'
+import {findLatestAPY} from '@vaults-v2/components/details/tabs/findLatestAPY'
+import type {TYDaemonReports} from '@vaults-v2/schemas/reportsSchema'
+import {yDaemonReportsSchema} from '@vaults-v2/schemas/reportsSchema'
+import {getChainBgColor} from '@vaults-v3/utils'
+import {motion} from 'framer-motion'
+import Link from 'next/link'
+import type {ReactElement} from 'react'
+import {useMemo, useState} from 'react'
 
 export function VaultsListStrategy({
 	details,
@@ -30,32 +30,32 @@ export function VaultsListStrategy({
 	fees,
 	isUnallocated = false
 }: {
-	details: TYDaemonVaultStrategy['details'];
-	chainId: number;
-	allocation: string;
-	name: string;
-	tokenAddress: TAddress;
-	address: TAddress;
-	isVault?: boolean;
-	variant: 'v2' | 'v3';
-	apr: number | undefined;
-	fees: TYDaemonVault['apr']['fees'];
-	isUnallocated?: boolean;
+	details: TYDaemonVaultStrategy['details']
+	chainId: number
+	allocation: string
+	name: string
+	tokenAddress: TAddress
+	address: TAddress
+	isVault?: boolean
+	variant: 'v2' | 'v3'
+	apr: number | undefined
+	fees: TYDaemonVault['apr']['fees']
+	isUnallocated?: boolean
 }): ReactElement {
-	const [isExpanded, setIsExpanded] = useState(false);
+	const [isExpanded, setIsExpanded] = useState(false)
 
-	const isStrategy = !apr;
+	const isStrategy = !apr
 
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: chainId});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: chainId})
 
 	// Fetch if component is used for strategies that are not vaults
 	const {data: reports} = useFetch<TYDaemonReports>({
 		endpoint: isStrategy ? `${yDaemonBaseUri}/reports/${address}` : '',
 		schema: yDaemonReportsSchema
-	});
-	const latestApr = useMemo((): number => findLatestAPY(reports), [reports]);
+	})
+	const latestApr = useMemo((): number => findLatestAPY(reports), [reports])
 
-	const finalApr = apr || latestApr;
+	const finalApr = apr || latestApr
 
 	const expandAnimation = {
 		initial: {
@@ -87,9 +87,9 @@ export function VaultsListStrategy({
 				ease: [0.33, 0, 0.67, 0]
 			}
 		}
-	};
-	const chainBgColor = getChainBgColor(chainId);
-	const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A';
+	}
+	const chainBgColor = getChainBgColor(chainId)
+	const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
 
 	return (
 		<div
@@ -245,5 +245,5 @@ export function VaultsListStrategy({
 				</motion.div>
 			)}
 		</div>
-	);
+	)
 }

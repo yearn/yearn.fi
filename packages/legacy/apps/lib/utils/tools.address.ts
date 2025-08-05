@@ -1,6 +1,6 @@
-import {getAddress, zeroAddress} from 'viem';
-import type {TAddress, TAddressLike, TAddressSmol, TDict} from '../types';
-import {isTAddress, isZeroAddress} from './tools.is';
+import {getAddress, zeroAddress} from 'viem'
+import type {TAddress, TAddressLike, TAddressSmol, TDict} from '../types'
+import {isTAddress, isZeroAddress} from './tools.is'
 
 /******************************************************************************
  ** toAddress - Wagmi only requires a 0xString as a valid address. To use our
@@ -9,34 +9,34 @@ import {isTAddress, isZeroAddress} from './tools.is';
  *****************************************************************************/
 export function toAddress(address?: TAddressLike | null): TAddress {
 	if (!address) {
-		return zeroAddress;
+		return zeroAddress
 	}
-	const trimmedAddress = address.trim();
-	return getAddress(toChecksumAddress(trimmedAddress)?.valueOf());
+	const trimmedAddress = address.trim()
+	return getAddress(toChecksumAddress(trimmedAddress)?.valueOf())
 }
 
 /******************************************************************************
  * safeAddress - Returns a string that is safe to display as an address.
  *****************************************************************************/
 export function toSafeAddress(props: {
-	address?: TAddress;
-	ens?: string;
-	placeholder?: string;
-	addrOverride?: string;
+	address?: TAddress
+	ens?: string
+	placeholder?: string
+	addrOverride?: string
 }): string {
 	if (props.ens) {
-		return props.ens;
+		return props.ens
 	}
 	if (!isZeroAddress(props.address) && props.addrOverride) {
-		return props.addrOverride;
+		return props.addrOverride
 	}
 	if (!isZeroAddress(props.address)) {
-		return truncateHex(props.address, 5);
+		return truncateHex(props.address, 5)
 	}
 	if (!props.address) {
-		return props.placeholder || '';
+		return props.placeholder || ''
 	}
-	return toAddress(props.address);
+	return toAddress(props.address)
 }
 
 /******************************************************************************
@@ -47,15 +47,15 @@ export function toSafeAddress(props: {
 function toChecksumAddress(address?: string | null | undefined): TAddressSmol {
 	try {
 		if (address && address !== 'GENESIS') {
-			const checksummedAddress = getAddress(address);
+			const checksummedAddress = getAddress(address)
 			if (isTAddress(checksummedAddress)) {
-				return checksummedAddress as TAddressSmol;
+				return checksummedAddress as TAddressSmol
 			}
 		}
 	} catch {
 		// console.error(error);
 	}
-	return zeroAddress as TAddressSmol;
+	return zeroAddress as TAddressSmol
 }
 
 /******************************************************************************
@@ -66,24 +66,24 @@ function toChecksumAddress(address?: string | null | undefined): TAddressSmol {
 export function truncateHex(address: string | undefined, size: number): string {
 	if (isZeroAddress(address)) {
 		if (size === 0) {
-			return zeroAddress;
+			return zeroAddress
 		}
-		return `0x${zeroAddress.slice(2, size)}...${zeroAddress.slice(-size)}`;
+		return `0x${zeroAddress.slice(2, size)}...${zeroAddress.slice(-size)}`
 	}
 
 	if (address !== undefined) {
 		if (size === 0) {
-			return address;
+			return address
 		}
 		if (address.length <= size * 2 + 4) {
-			return address;
+			return address
 		}
-		return `0x${address.slice(2, size + 2)}...${address.slice(-size)}`;
+		return `0x${address.slice(2, size + 2)}...${address.slice(-size)}`
 	}
 	if (size === 0) {
-		return zeroAddress;
+		return zeroAddress
 	}
-	return `0x${zeroAddress.slice(2, size)}...${zeroAddress.slice(-size)}`;
+	return `0x${zeroAddress.slice(2, size)}...${zeroAddress.slice(-size)}`
 }
 
 /******************************************************************************
@@ -92,18 +92,18 @@ export function truncateHex(address: string | undefined, size: number): string {
  *****************************************************************************/
 export function getColorFromAdddress({address}: {address: TAddress}): string {
 	if (!address) {
-		return '#000000';
+		return '#000000'
 	}
-	let hash = 0;
+	let hash = 0
 	for (let i = 0; i < address.length; i++) {
-		hash = address.charCodeAt(i) + ((hash << 5) - hash);
+		hash = address.charCodeAt(i) + ((hash << 5) - hash)
 	}
-	let color = '#';
+	let color = '#'
 	for (let i = 0; i < 3; i++) {
-		const value = (hash >> (i * 8)) & 0xff;
-		color += value.toString(16).padStart(2, '0');
+		const value = (hash >> (i * 8)) & 0xff
+		color += value.toString(16).padStart(2, '0')
 	}
-	return color;
+	return color
 }
 
 /***************************************************************************
@@ -112,15 +112,15 @@ export function getColorFromAdddress({address}: {address: TAddress}): string {
  **************************************************************************/
 export function toENS(address: string | null | undefined, format?: boolean, size?: number): string {
 	if (!address) {
-		return address || '';
+		return address || ''
 	}
-	const _address = toAddress(address);
-	const knownENS = process.env.KNOWN_ENS as unknown as TDict<string>;
+	const _address = toAddress(address)
+	const knownENS = process.env.KNOWN_ENS as unknown as TDict<string>
 	if (knownENS?.[_address]) {
-		return knownENS[_address];
+		return knownENS[_address]
 	}
 	if (format) {
-		return truncateHex(_address, size || 4);
+		return truncateHex(_address, size || 4)
 	}
-	return address;
+	return address
 }

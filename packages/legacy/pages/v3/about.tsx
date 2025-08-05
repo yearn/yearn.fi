@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 function About(): ReactElement {
 	return (
@@ -92,7 +92,7 @@ function About(): ReactElement {
 				</div>
 			</div>
 		</section>
-	);
+	)
 }
 
-export default About;
+export default About

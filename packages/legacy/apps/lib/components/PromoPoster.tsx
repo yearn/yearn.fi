@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function PromoPoster(): ReactElement {
 	return (
@@ -12,5 +12,5 @@ export function PromoPoster(): ReactElement {
 				}
 			</p>
 		</div>
-	);
+	)
 }

@@ -8,13 +8,13 @@ export const ALL_VAULTS_CATEGORIES = {
 	boosted: 'Boosted Vaults',
 	velodrome: 'Velodrome Vaults',
 	aerodrome: 'Aerodrome Vaults'
-};
+}
 
-export const VAULT_NAME_REPLACEMENTS = ['Curve', 'Factory', 'yVault'];
+export const VAULT_NAME_REPLACEMENTS = ['Curve', 'Factory', 'yVault']
 
 export enum TFilter {
 	Popular = 'Popular',
 	All = 'All Vaults'
 }
 
-export const VAULT_PAGE_SIZE = 10;
+export const VAULT_PAGE_SIZE = 10

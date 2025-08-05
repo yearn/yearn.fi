@@ -1,13 +1,13 @@
-import {IconShare} from '@lib/icons/IconShare';
-import Link from 'next/link';
+import {IconShare} from '@lib/icons/IconShare'
+import Link from 'next/link'
 
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 type TCutawayProps = {
-	title: string;
-	link: string;
-	icon: ReactElement;
-};
+	title: string
+	link: string
+	icon: ReactElement
+}
 
 export function Cutaway(props: TCutawayProps): ReactElement {
 	return (
@@ -27,5 +27,5 @@ export function Cutaway(props: TCutawayProps): ReactElement {
 				<IconShare />
 			</div>
 		</Link>
-	);
+	)
 }

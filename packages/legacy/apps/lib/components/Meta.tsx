@@ -1,14 +1,14 @@
-import Head from 'next/head';
-import type {ReactElement} from 'react';
+import Head from 'next/head'
+import type {ReactElement} from 'react'
 
 type TMeta = {
-	title: string;
-	titleColor: string;
-	themeColor: string;
-	description: string;
-	og: string;
-	uri: string;
-};
+	title: string
+	titleColor: string
+	themeColor: string
+	description: string
+	og: string
+	uri: string
+}
 
 export function Meta(meta: TMeta): ReactElement {
 	return (
@@ -57,5 +57,5 @@ export function Meta(meta: TMeta): ReactElement {
 			<meta property={'og:title'} content={meta.title} />
 			<meta property={'og:description'} content={meta.description} />
 		</Head>
-	);
+	)
 }

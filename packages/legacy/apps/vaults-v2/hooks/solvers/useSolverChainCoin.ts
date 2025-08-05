@@ -1,19 +1,19 @@
-import {useNotifications} from '@lib/contexts/useNotifications';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import type {TDict, TNormalizedBN} from '@lib/types';
-import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {allowanceKey} from '@lib/utils/helpers';
-import type {TTxStatus} from '@lib/utils/wagmi';
-import {allowanceOf, approveERC20} from '@lib/utils/wagmi';
-import {depositETH, withdrawETH} from '@lib/utils/wagmi/actions';
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
-import {Solver} from '@vaults-v2/types/solvers';
-import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults-v2/utils';
-import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
-import {useCallback, useMemo, useRef} from 'react';
-import type {Hash, TransactionReceipt} from 'viem';
-import {maxUint256} from 'viem';
+import {useNotifications} from '@lib/contexts/useNotifications'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import type {TDict, TNormalizedBN} from '@lib/types'
+import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils'
+import {allowanceKey} from '@lib/utils/helpers'
+import type {TTxStatus} from '@lib/utils/wagmi'
+import {allowanceOf, approveERC20} from '@lib/utils/wagmi'
+import {depositETH, withdrawETH} from '@lib/utils/wagmi/actions'
+import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
+import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers'
+import {Solver} from '@vaults-v2/types/solvers'
+import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults-v2/utils'
+import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut'
+import {useCallback, useMemo, useRef} from 'react'
+import type {Hash, TransactionReceipt} from 'viem'
+import {maxUint256} from 'viem'
 
 /**************************************************************************************************
  ** The ChainCoin solver is a specific solver that would work only for some vaults. It aims to help
@@ -27,11 +27,11 @@ import {maxUint256} from 'viem';
  ** Note: DISABLED
  *************************************************************************************************/
 export function useSolverChainCoin(): TSolverContext {
-	const {provider} = useWeb3();
-	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
-	const request = useRef<TInitSolverArgs | undefined>(undefined);
-	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
-	const {setShouldOpenCurtain} = useNotifications();
+	const {provider} = useWeb3()
+	const latestQuote = useRef<TNormalizedBN | undefined>(undefined)
+	const request = useRef<TInitSolverArgs | undefined>(undefined)
+	const existingAllowances = useRef<TDict<TNormalizedBN>>({})
+	const {setShouldOpenCurtain} = useNotifications()
 
 	/**********************************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -40,10 +40,10 @@ export function useSolverChainCoin(): TSolverContext {
 	 *********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
 		if (isSolverDisabled(Solver.enum.ChainCoin)) {
-			return undefined;
+			return undefined
 		}
-		request.current = _request;
-		const wrapperToken = getNativeTokenWrapperContract(_request.chainID);
+		request.current = _request
+		const wrapperToken = getNativeTokenWrapperContract(_request.chainID)
 		const estimateOut = await getVaultEstimateOut({
 			inputToken: _request.isDepositing ? toAddress(wrapperToken) : toAddress(_request.inputToken.value),
 			outputToken: _request.isDepositing ? toAddress(_request.outputToken.value) : toAddress(wrapperToken),
@@ -54,10 +54,10 @@ export function useSolverChainCoin(): TSolverContext {
 			chainID: _request.chainID,
 			version: _request.version,
 			from: toAddress(_request.from)
-		});
-		latestQuote.current = estimateOut;
-		return latestQuote.current;
-	}, []);
+		})
+		latestQuote.current = estimateOut
+		return latestQuote.current
+	}, [])
 
 	/**********************************************************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will be used to
@@ -67,7 +67,7 @@ export function useSolverChainCoin(): TSolverContext {
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 			if (!request?.current || !provider) {
-				return zeroNormalizedBN;
+				return zeroNormalizedBN
 			}
 
 			const key = allowanceKey(
@@ -75,23 +75,23 @@ export function useSolverChainCoin(): TSolverContext {
 				toAddress(request.current.inputToken.value),
 				toAddress(request.current.outputToken.value),
 				toAddress(request.current.from)
-			);
+			)
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
-				return existingAllowances.current[key];
+				return existingAllowances.current[key]
 			}
 
-			assert(isEthAddress(request.current.outputToken.value), 'Out is not ETH');
+			assert(isEthAddress(request.current.outputToken.value), 'Out is not ETH')
 			const allowance = await allowanceOf({
 				connector: provider,
 				chainID: request.current.inputToken.chainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: toAddress(getEthZapperContract(request.current.chainID))
-			});
-			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
-			return existingAllowances.current[key];
+			})
+			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
+			return existingAllowances.current[key]
 		},
 		[provider]
-	);
+	)
 
 	/**********************************************************************************************
 	 ** When we want to withdraw a yvWrappedCoin to the base chain coin, we first need to approve
@@ -106,7 +106,7 @@ export function useSolverChainCoin(): TSolverContext {
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
-				assert(request?.current?.inputToken, 'Input token is not set');
+				assert(request?.current?.inputToken, 'Input token is not set')
 
 				const result = await approveERC20({
 					connector: provider,
@@ -119,23 +119,23 @@ export function useSolverChainCoin(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					}
-				});
+				})
 				if (result.isSuccessful) {
-					await onSuccess(result.receipt);
+					await onSuccess(result.receipt)
 				} else if (onError) {
-					await onError(new Error('Approval failed'));
+					await onError(new Error('Approval failed'))
 				}
 			} catch (error) {
 				if (onError) {
-					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'))
 				}
 			}
 		},
 		[provider, setShouldOpenCurtain]
-	);
+	)
 
 	/**********************************************************************************************
 	 ** Trigger a deposit web3 action using the ETH zap contract to deposit ETH to the selected
@@ -150,8 +150,8 @@ export function useSolverChainCoin(): TSolverContext {
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
-				assert(request.current, 'Request is not set');
-				assert(request.current.inputAmount, 'Input amount is not set');
+				assert(request.current, 'Request is not set')
+				assert(request.current.inputAmount, 'Input amount is not set')
 
 				const result = await depositETH({
 					connector: provider,
@@ -163,23 +163,23 @@ export function useSolverChainCoin(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					}
-				});
+				})
 				if (result.isSuccessful) {
-					await onSuccess(result.receipt);
+					await onSuccess(result.receipt)
 				} else if (onError) {
-					await onError(new Error('Deposit failed'));
+					await onError(new Error('Deposit failed'))
 				}
 			} catch (error) {
 				if (onError) {
-					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'))
 				}
 			}
 		},
 		[provider, setShouldOpenCurtain]
-	);
+	)
 
 	/**********************************************************************************************
 	 ** Trigger a withdraw web3 action using the ETH zap contract to take back some ETH from the
@@ -194,8 +194,8 @@ export function useSolverChainCoin(): TSolverContext {
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
 			try {
-				assert(request.current, 'Request is not set');
-				assert(request.current.inputAmount, 'Input amount is not set');
+				assert(request.current, 'Request is not set')
+				assert(request.current.inputAmount, 'Input amount is not set')
 
 				const result = await withdrawETH({
 					connector: provider,
@@ -207,23 +207,23 @@ export function useSolverChainCoin(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					}
-				});
+				})
 				if (result.isSuccessful) {
-					await onSuccess(result.receipt);
+					await onSuccess(result.receipt)
 				} else if (onError) {
-					await onError(new Error('Withdrawal failed'));
+					await onError(new Error('Withdrawal failed'))
 				}
 			} catch (error) {
 				if (onError) {
-					await onError(error instanceof Error ? error : new Error('Unknown error occurred'));
+					await onError(error instanceof Error ? error : new Error('Unknown error occurred'))
 				}
 			}
 		},
 		[provider, setShouldOpenCurtain]
-	);
+	)
 
 	return useMemo(
 		(): TSolverContext => ({
@@ -236,5 +236,5 @@ export function useSolverChainCoin(): TSolverContext {
 			onExecuteWithdraw
 		}),
 		[init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]
-	);
+	)
 }

@@ -1,6 +1,6 @@
-import {SectionHeader} from '@lib/components/SectionHeader';
-import Link from 'next/link';
-import {type FC, useRef, useState} from 'react';
+import {SectionHeader} from '@lib/components/SectionHeader'
+import Link from 'next/link'
+import {type FC, useRef, useState} from 'react'
 
 enum SecurityCardType {
 	Audits = 'audits',
@@ -9,12 +9,12 @@ enum SecurityCardType {
 
 const Cards: {
 	[key in SecurityCardType]: {
-		title: string;
-		description: string;
-		href: string;
-		imageSrc: string;
-		bgColor: string;
-	};
+		title: string
+		description: string
+		href: string
+		imageSrc: string
+		bgColor: string
+	}
 } = {
 	[SecurityCardType.Audits]: {
 		title: 'Audits',
@@ -30,34 +30,34 @@ const Cards: {
 		imageSrc: '/landing/integrations.png',
 		bgColor: 'bg-[#0B5DD0]'
 	}
-};
+}
 
 const SecurityCard: FC<{
-	type: SecurityCardType;
+	type: SecurityCardType
 }> = ({type}) => {
-	const {title, description, href, bgColor} = Cards[type];
-	const cardRef = useRef<HTMLDivElement>(null);
-	const [mousePosition, setMousePosition] = useState({x: 0, y: 0});
-	const [isHovered, setIsHovered] = useState(false);
+	const {title, description, href, bgColor} = Cards[type]
+	const cardRef = useRef<HTMLDivElement>(null)
+	const [mousePosition, setMousePosition] = useState({x: 0, y: 0})
+	const [isHovered, setIsHovered] = useState(false)
 
 	const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
 		if (!cardRef.current) {
-			return;
+			return
 		}
 
-		const rect = cardRef.current.getBoundingClientRect();
-		const x = e.clientX - rect.left;
-		const y = e.clientY - rect.top;
+		const rect = cardRef.current.getBoundingClientRect()
+		const x = e.clientX - rect.left
+		const y = e.clientY - rect.top
 
-		setMousePosition({x, y});
-	};
+		setMousePosition({x, y})
+	}
 
-	const handleMouseEnter = (): void => setIsHovered(true);
+	const handleMouseEnter = (): void => setIsHovered(true)
 
 	const handleMouseLeave = (): void => {
-		setIsHovered(false);
-		setMousePosition({x: 0, y: 0});
-	};
+		setIsHovered(false)
+		setMousePosition({x: 0, y: 0})
+	}
 
 	return (
 		<Link href={href} className={'flex'}>
@@ -94,8 +94,8 @@ const SecurityCard: FC<{
 				</div>
 			</div>
 		</Link>
-	);
-};
+	)
+}
 
 export const Security: FC = () => (
 	<section className={'flex w-full justify-center bg-white/5 py-16 lg:py-32'}>
@@ -116,4 +116,4 @@ export const Security: FC = () => (
 			</div>
 		</div>
 	</section>
-);
+)

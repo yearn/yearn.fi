@@ -1,4 +1,4 @@
-import {z} from 'zod';
+import {z} from 'zod'
 
 const SOLVER = [
 	'Vanilla',
@@ -12,8 +12,8 @@ const SOLVER = [
 	'Cowswap',
 	'Portals',
 	'None'
-] as const;
+] as const
 
-export const Solver = z.enum(SOLVER);
+export const Solver = z.enum(SOLVER)
 
-export type TSolver = z.infer<typeof Solver>;
+export type TSolver = z.infer<typeof Solver>

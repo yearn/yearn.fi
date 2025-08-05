@@ -1,18 +1,18 @@
-import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react';
-import {Renderable} from '@lib/components/Renderable';
-import {useWallet} from '@lib/contexts/useWallet';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {IconChevron} from '@lib/icons/IconChevron';
-import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@lib/types';
-import {cl, formatAmount} from '@lib/utils';
-import {useThrottledState} from '@react-hookz/web';
+import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react'
+import {Renderable} from '@lib/components/Renderable'
+import {useWallet} from '@lib/contexts/useWallet'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {IconChevron} from '@lib/icons/IconChevron'
+import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@lib/types'
+import {cl, formatAmount} from '@lib/utils'
+import {useThrottledState} from '@react-hookz/web'
 
-import type {ReactElement} from 'react';
-import {cloneElement, Fragment, useState} from 'react';
+import type {ReactElement} from 'react'
+import {cloneElement, Fragment, useState} from 'react'
 
 function DropdownItem({option}: TDropdownItemProps): ReactElement {
-	const {getBalance} = useWallet();
-	const balance = getBalance({address: option.value, chainID: option.chainID});
+	const {getBalance} = useWallet()
+	const balance = getBalance({address: option.value, chainID: option.chainID})
 
 	return (
 		<ComboboxOption value={option}>
@@ -30,11 +30,11 @@ function DropdownItem({option}: TDropdownItemProps): ReactElement {
 				</div>
 			)}
 		</ComboboxOption>
-	);
+	)
 }
 
 function DropdownEmpty({query}: {query: string}): ReactElement {
-	const {isActive, openLoginModal} = useWeb3();
+	const {isActive, openLoginModal} = useWeb3()
 
 	if (!isActive) {
 		return (
@@ -45,7 +45,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 				}>
 				<b className={'text-neutral-900'}>{'Connect Wallet'}</b>
 			</div>
-		);
+		)
 	}
 	if (query !== '') {
 		return (
@@ -54,7 +54,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 					<p className={'text-sm text-neutral-900'}>{'Nothing found.'}</p>
 				</div>
 			</div>
-		);
+		)
 	}
 	return (
 		<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
@@ -62,19 +62,19 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 				<span className={'loader'} />
 			</div>
 		</div>
-	);
+	)
 }
 
 export function Dropdown(props: TDropdownProps): ReactElement {
-	const [isOpen, setIsOpen] = useThrottledState(false, 400);
-	const [query, setQuery] = useState('');
+	const [isOpen, setIsOpen] = useThrottledState(false, 400)
+	const [query, setQuery] = useState('')
 
 	const filteredOptions =
 		query === ''
 			? props.options
 			: props.options.filter((option): boolean => {
-					return option.symbol.toLowerCase().includes(query.toLowerCase());
-				});
+					return option.symbol.toLowerCase().includes(query.toLowerCase())
+				})
 
 	return (
 		<div>
@@ -82,9 +82,9 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 				<div
 					className={'fixed inset-0 z-0'}
 					onClick={(e): void => {
-						e.stopPropagation();
-						e.preventDefault();
-						setIsOpen(false);
+						e.stopPropagation()
+						e.preventDefault()
+						setIsOpen(false)
 					}}
 				/>
 			</Renderable>
@@ -92,8 +92,8 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 			<Combobox
 				value={props.selected}
 				onChange={(_selected: TDropdownOption): void => {
-					props.onSelect(_selected);
-					setIsOpen(false);
+					props.onSelect(_selected)
+					setIsOpen(false)
 				}}>
 				<ComboboxButton
 					onClick={(): void => setIsOpen((o: boolean): boolean => !o)}
@@ -122,8 +122,8 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 									placeholder={props.placeholder || ''}
 									spellCheck={false}
 									onChange={(event): void => {
-										setIsOpen(true);
-										setQuery(event.target.value);
+										setIsOpen(true)
+										setQuery(event.target.value)
 									}}
 								/>
 							</p>
@@ -146,8 +146,8 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 					leaveFrom={'transform scale-100 opacity-100'}
 					leaveTo={'transform scale-95 opacity-0'}
 					afterLeave={(): void => {
-						setIsOpen(false);
-						setQuery('');
+						setIsOpen(false)
+						setQuery('')
 					}}>
 					<ComboboxOptions className={cl(props.comboboxOptionsClassName, 'yearn--dropdown-menu z-50')}>
 						<Renderable
@@ -163,5 +163,5 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 				</Transition>
 			</Combobox>
 		</div>
-	);
+	)
 }

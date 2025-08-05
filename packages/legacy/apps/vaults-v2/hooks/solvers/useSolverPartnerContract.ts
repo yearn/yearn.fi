@@ -1,27 +1,27 @@
-import {useNotifications} from '@lib/contexts/useNotifications';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import type {TDict, TNormalizedBN} from '@lib/types';
-import {assert, assertAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils';
-import {allowanceKey} from '@lib/utils/helpers';
-import type {TTxStatus} from '@lib/utils/wagmi';
-import {allowanceOf, approveERC20, getNetwork} from '@lib/utils/wagmi';
-import {depositViaPartner, withdrawShares} from '@lib/utils/wagmi/actions';
-import {isSolverDisabled} from '@vaults-v2/contexts/useSolver';
-import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers';
-import {Solver} from '@vaults-v2/types/solvers';
-import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut';
-import {useCallback, useMemo, useRef} from 'react';
-import type {Hash, TransactionReceipt} from 'viem';
-import {maxUint256} from 'viem';
+import {useNotifications} from '@lib/contexts/useNotifications'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {useYearn} from '@lib/contexts/useYearn'
+import type {TDict, TNormalizedBN} from '@lib/types'
+import {assert, assertAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@lib/utils'
+import {allowanceKey} from '@lib/utils/helpers'
+import type {TTxStatus} from '@lib/utils/wagmi'
+import {allowanceOf, approveERC20, getNetwork} from '@lib/utils/wagmi'
+import {depositViaPartner, withdrawShares} from '@lib/utils/wagmi/actions'
+import {isSolverDisabled} from '@vaults-v2/contexts/useSolver'
+import type {TInitSolverArgs, TSolverContext} from '@vaults-v2/types/solvers'
+import {Solver} from '@vaults-v2/types/solvers'
+import {getVaultEstimateOut} from '@vaults-v2/utils/getVaultEstimateOut'
+import {useCallback, useMemo, useRef} from 'react'
+import type {Hash, TransactionReceipt} from 'viem'
+import {maxUint256} from 'viem'
 
 export function useSolverPartnerContract(): TSolverContext {
-	const {provider} = useWeb3();
-	const {currentPartner} = useYearn();
-	const {setShouldOpenCurtain} = useNotifications();
-	const latestQuote = useRef<TNormalizedBN | undefined>(undefined);
-	const request = useRef<TInitSolverArgs | undefined>(undefined);
-	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
+	const {provider} = useWeb3()
+	const {currentPartner} = useYearn()
+	const {setShouldOpenCurtain} = useNotifications()
+	const latestQuote = useRef<TNormalizedBN | undefined>(undefined)
+	const request = useRef<TInitSolverArgs | undefined>(undefined)
+	const existingAllowances = useRef<TDict<TNormalizedBN>>({})
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** init will be called when the partner contract solver should be used to deposit.
@@ -30,9 +30,9 @@ export function useSolverPartnerContract(): TSolverContext {
 	 **********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
 		if (isSolverDisabled(Solver.enum.PartnerContract)) {
-			return undefined;
+			return undefined
 		}
-		request.current = _request;
+		request.current = _request
 		const estimateOut = await getVaultEstimateOut({
 			inputToken: toAddress(_request.inputToken.value),
 			outputToken: toAddress(_request.outputToken.value),
@@ -43,10 +43,10 @@ export function useSolverPartnerContract(): TSolverContext {
 			chainID: _request.chainID,
 			version: _request.version,
 			from: toAddress(_request.from)
-		});
-		latestQuote.current = estimateOut;
-		return latestQuote.current;
-	}, []);
+		})
+		latestQuote.current = estimateOut
+		return latestQuote.current
+	}, [])
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will
@@ -55,7 +55,7 @@ export function useSolverPartnerContract(): TSolverContext {
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 			if (!request?.current || !provider) {
-				return zeroNormalizedBN;
+				return zeroNormalizedBN
 			}
 
 			const key = allowanceKey(
@@ -63,9 +63,9 @@ export function useSolverPartnerContract(): TSolverContext {
 				toAddress(request.current.inputToken.value),
 				toAddress(request.current.outputToken.value),
 				toAddress(request.current.from)
-			);
+			)
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
-				return existingAllowances.current[key];
+				return existingAllowances.current[key]
 			}
 
 			const allowance = await allowanceOf({
@@ -73,12 +73,12 @@ export function useSolverPartnerContract(): TSolverContext {
 				chainID: request.current.inputToken.chainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: toAddress(getNetwork(request.current.chainID)?.contracts?.partnerContract?.address)
-			});
-			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
-			return existingAllowances.current[key];
+			})
+			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
+			return existingAllowances.current[key]
 		},
 		[provider]
-	);
+	)
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Trigger an approve web3 action, simply trying to approve `amount` tokens
@@ -95,10 +95,10 @@ export function useSolverPartnerContract(): TSolverContext {
 			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current?.inputToken, 'Input token is not set');
-			const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract?.address;
-			assertAddress(partnerContract, 'partnerContract');
+			assert(request.current, 'Request is not set')
+			assert(request.current?.inputToken, 'Input token is not set')
+			const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract?.address
+			assertAddress(partnerContract, 'partnerContract')
 
 			try {
 				const result = await approveERC20({
@@ -112,21 +112,21 @@ export function useSolverPartnerContract(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					}
-				});
+				})
 				if (result.isSuccessful && result.receipt) {
-					onSuccess(result.receipt);
+					onSuccess(result.receipt)
 				} else {
-					onError?.(result.error as Error);
+					onError?.(result.error as Error)
 				}
 			} catch (error) {
-				onError?.(error as Error);
+				onError?.(error as Error)
 			}
 		},
 		[provider, setShouldOpenCurtain]
-	);
+	)
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Trigger a deposit web3 action, simply trying to deposit `amount` tokens
@@ -139,10 +139,10 @@ export function useSolverPartnerContract(): TSolverContext {
 			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current.inputAmount, 'Input amount is not set');
-			const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract?.address;
-			assertAddress(partnerContract, 'partnerContract');
+			assert(request.current, 'Request is not set')
+			assert(request.current.inputAmount, 'Input amount is not set')
+			const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract?.address
+			assertAddress(partnerContract, 'partnerContract')
 
 			try {
 				const result = await depositViaPartner({
@@ -157,21 +157,21 @@ export function useSolverPartnerContract(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					}
-				});
+				})
 				if (result.isSuccessful && result.receipt) {
-					onSuccess(result.receipt);
+					onSuccess(result.receipt)
 				} else {
-					onError?.(result.error as Error);
+					onError?.(result.error as Error)
 				}
 			} catch (error) {
-				onError?.(error as Error);
+				onError?.(error as Error)
 			}
 		},
 		[currentPartner, provider, setShouldOpenCurtain]
-	);
+	)
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Trigger a withdraw web3 action using the vault contract to take back
@@ -184,9 +184,9 @@ export function useSolverPartnerContract(): TSolverContext {
 			txHashSetter: (txHash: Hash) => void,
 			onError?: (error: Error) => Promise<void>
 		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current.inputToken, 'Input token is not set');
-			assert(request.current.inputAmount, 'Input amount is not set');
+			assert(request.current, 'Request is not set')
+			assert(request.current.inputToken, 'Input token is not set')
+			assert(request.current.inputAmount, 'Input amount is not set')
 
 			try {
 				const result = await withdrawShares({
@@ -199,21 +199,21 @@ export function useSolverPartnerContract(): TSolverContext {
 					cta: {
 						label: 'View',
 						onClick: () => {
-							setShouldOpenCurtain(true);
+							setShouldOpenCurtain(true)
 						}
 					}
-				});
+				})
 				if (result.isSuccessful && result.receipt) {
-					onSuccess(result.receipt);
+					onSuccess(result.receipt)
 				} else {
-					onError?.(result.error as Error);
+					onError?.(result.error as Error)
 				}
 			} catch (error) {
-				onError?.(error as Error);
+				onError?.(error as Error)
 			}
 		},
 		[provider, setShouldOpenCurtain]
-	);
+	)
 
 	return useMemo(
 		(): TSolverContext => ({
@@ -226,5 +226,5 @@ export function useSolverPartnerContract(): TSolverContext {
 			onExecuteWithdraw
 		}),
 		[init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]
-	);
+	)
 }

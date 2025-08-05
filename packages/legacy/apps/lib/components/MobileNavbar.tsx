@@ -1,17 +1,17 @@
-import {IconDiscord} from '@lib/icons/IconDiscord';
-import {IconParagraph} from '@lib/icons/IconParagraph';
-import {IconTwitter} from '@lib/icons/IconTwitter';
-import {cl} from '@lib/utils';
-import {iconsDict, LANDING_SIDEBAR_LINKS, MENU_TABS} from '@lib/utils/constants';
-import Link from 'next/link';
-import {usePathname} from 'next/navigation';
+import {IconDiscord} from '@lib/icons/IconDiscord'
+import {IconParagraph} from '@lib/icons/IconParagraph'
+import {IconTwitter} from '@lib/icons/IconTwitter'
+import {cl} from '@lib/utils'
+import {iconsDict, LANDING_SIDEBAR_LINKS, MENU_TABS} from '@lib/utils/constants'
+import Link from 'next/link'
+import {usePathname} from 'next/navigation'
 
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
-	const pathName = usePathname();
+	const pathName = usePathname()
 
-	const currentTab = pathName?.startsWith('/vaults/') ? pathName?.split('/')[2] : 'vaults';
+	const currentTab = pathName?.startsWith('/vaults/') ? pathName?.split('/')[2] : 'vaults'
 
 	return (
 		<div
@@ -58,5 +58,5 @@ export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 				</div>
 			</div>
 		</div>
-	);
+	)
 }

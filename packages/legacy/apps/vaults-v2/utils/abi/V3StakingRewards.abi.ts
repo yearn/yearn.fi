@@ -419,4 +419,4 @@ export const V3_STAKING_REWARDS_ABI = [
 		stateMutability: 'view',
 		type: 'function'
 	}
-] as const;
+] as const

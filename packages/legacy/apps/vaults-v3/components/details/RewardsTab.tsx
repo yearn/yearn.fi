@@ -1,10 +1,10 @@
-import {Button} from '@lib/components/Button';
-import {Counter} from '@lib/components/Counter';
-import {FakeInput} from '@lib/components/Input';
-import {useNotificationsActions} from '@lib/contexts/useNotificationsActions';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import {useYearnToken} from '@lib/hooks/useYearnToken';
+import {Button} from '@lib/components/Button'
+import {Counter} from '@lib/components/Counter'
+import {FakeInput} from '@lib/components/Input'
+import {useNotificationsActions} from '@lib/contexts/useNotificationsActions'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {useYearn} from '@lib/contexts/useYearn'
+import {useYearnToken} from '@lib/hooks/useYearnToken'
 import {
 	cl,
 	formatAmount,
@@ -14,24 +14,24 @@ import {
 	toAddress,
 	toBigInt,
 	toNormalizedBN
-} from '@lib/utils';
-import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@lib/utils/constants';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {approveERC20, defaultTxStatus} from '@lib/utils/wagmi';
-import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData';
+} from '@lib/utils'
+import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@lib/utils/constants'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {approveERC20, defaultTxStatus} from '@lib/utils/wagmi'
+import type {TStakingInfo} from '@vaults-v2/hooks/useVaultStakingData'
 import {
 	claim as claimAction,
 	stake as stakeAction,
 	stakeVeYFIGauge as stakeVeYFIAction,
 	unstake as unstakeAction,
 	unstakeVeYFIGauge as unstakeVeYFIAction
-} from '@vaults-v2/utils/actions';
-import {stakeYBold, unstakeYBold} from '@vaults-v3/utils/actions';
-import Image from 'next/image';
-import Link from 'next/link';
-import {useRouter} from 'next/router';
-import type {ChangeEvent, ReactElement} from 'react';
-import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
+} from '@vaults-v2/utils/actions'
+import {stakeYBold, unstakeYBold} from '@vaults-v3/utils/actions'
+import Image from 'next/image'
+import Link from 'next/link'
+import {useRouter} from 'next/router'
+import type {ChangeEvent, ReactElement} from 'react'
+import {Fragment, useCallback, useEffect, useMemo, useState} from 'react'
 
 /**************************************************************************************************
  ** The BoostMessage component will display a message to the user if the current vault has staking
@@ -41,11 +41,11 @@ import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
  ** rewards are available.
  *************************************************************************************************/
 function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive: boolean}): ReactElement {
-	const hasVaultData = Boolean(props.currentVault.staking.available);
-	const vaultDataSource = props.currentVault.staking.source;
-	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR;
-	const {pathname} = useRouter();
-	const isV3Page = pathname.startsWith('/v3');
+	const hasVaultData = Boolean(props.currentVault.staking.available)
+	const vaultDataSource = props.currentVault.staking.source
+	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR
+	const {pathname} = useRouter()
+	const isV3Page = pathname.startsWith('/v3')
 
 	if (hasVaultData && !props.hasStakingRewardsLive && vaultDataSource !== 'VeYFI') {
 		return (
@@ -61,7 +61,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					</div>
 				</div>
 			</div>
-		);
+		)
 	}
 
 	if (hasVaultData && vaultDataSource === 'OP Boost') {
@@ -82,7 +82,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					</div>
 				</div>
 			</div>
-		);
+		)
 	}
 
 	if (hasVaultData && vaultDataSource === 'VeYFI') {
@@ -112,7 +112,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					</div>
 				</div>
 			</div>
-		);
+		)
 	}
 
 	if (hasVaultData && vaultDataSource === 'Juiced') {
@@ -138,7 +138,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					</div>
 				</div>
 			</div>
-		);
+		)
 	}
 
 	if (hasVaultData && vaultDataSource === 'V3 Staking') {
@@ -159,21 +159,21 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					</div>
 				</div>
 			</div>
-		);
+		)
 	}
 
-	return <span />;
+	return <span />
 }
 
 function VeYFIBoostMessage(props: {
-	currentVault: TYDaemonVault;
-	hasStakingRewardsLive: boolean;
-	shouldForceUnstake: boolean;
+	currentVault: TYDaemonVault
+	hasStakingRewardsLive: boolean
+	shouldForceUnstake: boolean
 }): ReactElement {
-	const vaultDataource = props.currentVault.staking.source;
-	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR;
-	const {pathname} = useRouter();
-	const isV3Page = pathname.startsWith('/v3');
+	const vaultDataource = props.currentVault.staking.source
+	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR
+	const {pathname} = useRouter()
+	const isV3Page = pathname.startsWith('/v3')
 
 	const OneUp = (
 		<Link href={'https://1up.tokyo/stake'} target={'_blank'} rel={'noreferrer'}>
@@ -193,7 +193,7 @@ function VeYFIBoostMessage(props: {
 				<p className={cl('text-base font-bold text-neutral-100')}>{'1UP'}</p>
 			</div>
 		</Link>
-	);
+	)
 
 	const Cove = (
 		<Link href={'https://boosties.cove.finance/boosties'} target={'_blank'} rel={'noreferrer'}>
@@ -215,7 +215,7 @@ function VeYFIBoostMessage(props: {
 				<p className={cl('text-base font-bold text-neutral-100')}>{'Cove'}</p>
 			</div>
 		</Link>
-	);
+	)
 
 	const StakeDAO = (
 		<Link href={'https://www.stakedao.org/yield?protocol=yearn'} target={'_blank'} rel={'noreferrer'}>
@@ -235,19 +235,19 @@ function VeYFIBoostMessage(props: {
 				<p className={cl('text-base font-bold text-neutral-100')}>{'StakeDAO'}</p>
 			</div>
 		</Link>
-	);
+	)
 
 	const randomOrder = useMemo(() => {
-		const apps = [OneUp, Cove, StakeDAO];
+		const apps = [OneUp, Cove, StakeDAO]
 		function shuffle(array: ReactElement[]): ReactElement[] {
 			for (let i = array.length - 1; i > 0; i--) {
-				const j = Math.floor(Math.random() * (i + 1));
-				[array[i], array[j]] = [array[j], array[i]];
+				const j = Math.floor(Math.random() * (i + 1))
+				;[array[i], array[j]] = [array[j], array[i]]
 			}
-			return array;
+			return array
 		}
-		return shuffle(apps);
-	}, [Cove, OneUp, StakeDAO]);
+		return shuffle(apps)
+	}, [Cove, OneUp, StakeDAO])
 
 	if (props.shouldForceUnstake) {
 		return (
@@ -257,11 +257,11 @@ function VeYFIBoostMessage(props: {
 					<p>{'This gauge has been removed and no longer brings any benefits. Please withdraw from it'}</p>
 				</div>
 			</div>
-		);
+		)
 	}
 
 	if (vaultDataource !== 'VeYFI') {
-		return <Fragment />;
+		return <Fragment />
 	}
 
 	return (
@@ -291,7 +291,7 @@ function VeYFIBoostMessage(props: {
 				))}
 			</div>
 		</div>
-	);
+	)
 }
 
 /**************************************************************************************************
@@ -300,34 +300,34 @@ function VeYFIBoostMessage(props: {
  ** Based on the staking source, the UI might change a bit to display the correct information.
  *************************************************************************************************/
 export function RewardsTab(props: {
-	currentVault: TYDaemonVault;
-	hasStakingRewardsLive: boolean;
-	vaultData: TStakingInfo;
-	updateVaultData: VoidFunction;
+	currentVault: TYDaemonVault
+	hasStakingRewardsLive: boolean
+	vaultData: TStakingInfo
+	updateVaultData: VoidFunction
 }): ReactElement {
-	const {provider, isActive} = useWeb3();
-	const {getPrice} = useYearn();
-	const {vaultData, updateVaultData} = props;
+	const {provider, isActive} = useWeb3()
+	const {getPrice} = useYearn()
+	const {vaultData, updateVaultData} = props
 	const {handleApproveNotification, handleStakeNotification, handleUnstakeNotification, handleClaimNotification} =
-		useNotificationsActions();
-	const rewardTokenBalance = useYearnToken({address: vaultData.rewardsToken, chainID: props.currentVault.chainID});
-	const [approveStakeStatus, setApproveStakeStatus] = useState(defaultTxStatus);
-	const [stakeStatus, setStakeStatus] = useState(defaultTxStatus);
-	const [claimStatus, setClaimStatus] = useState(defaultTxStatus);
-	const [unstakeStatus, setUnstakeStatus] = useState(defaultTxStatus);
-	const [unstakeAmount, setUnstakeAmount] = useState<string>(vaultData.stakedBalanceOf.display);
-	const [stakeAmount, setStakeAmount] = useState<string>(vaultData.vaultBalanceOf.display);
-	const [isUnstakeAmountDirty, setIsUnstakeAmountDirty] = useState(false);
-	const [isStakeAmountDirty, setIsStakeAmountDirty] = useState(false);
+		useNotificationsActions()
+	const rewardTokenBalance = useYearnToken({address: vaultData.rewardsToken, chainID: props.currentVault.chainID})
+	const [approveStakeStatus, setApproveStakeStatus] = useState(defaultTxStatus)
+	const [stakeStatus, setStakeStatus] = useState(defaultTxStatus)
+	const [claimStatus, setClaimStatus] = useState(defaultTxStatus)
+	const [unstakeStatus, setUnstakeStatus] = useState(defaultTxStatus)
+	const [unstakeAmount, setUnstakeAmount] = useState<string>(vaultData.stakedBalanceOf.display)
+	const [stakeAmount, setStakeAmount] = useState<string>(vaultData.vaultBalanceOf.display)
+	const [isUnstakeAmountDirty, setIsUnstakeAmountDirty] = useState(false)
+	const [isStakeAmountDirty, setIsStakeAmountDirty] = useState(false)
 
 	const isUnstakingMax =
-		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) === vaultData.stakedBalanceOf.raw;
+		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) === vaultData.stakedBalanceOf.raw
 	const isLargerThanStakedBalance =
-		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) > vaultData.stakedBalanceOf.raw;
+		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) > vaultData.stakedBalanceOf.raw
 	const isLargerThanVaultBalance =
-		fromNormalized(stakeAmount, props.currentVault.decimals || 18) > vaultData.vaultBalanceOf.raw;
+		fromNormalized(stakeAmount, props.currentVault.decimals || 18) > vaultData.vaultBalanceOf.raw
 
-	const isApproved = vaultData.vaultAllowance.raw >= vaultData.vaultBalanceOf.raw;
+	const isApproved = vaultData.vaultAllowance.raw >= vaultData.vaultBalanceOf.raw
 
 	/**************************************************************************************************
 	 ** Check if the current vault is in the list of disabled veYFI gauges. If it is, we should make
@@ -335,7 +335,7 @@ export function RewardsTab(props: {
 	 *************************************************************************************************/
 	const shouldForceUnstake = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
 		vault => vault.address === props.currentVault.address
-	);
+	)
 
 	/**************************************************************************************************
 	 ** Create action parameters for approve operations to integrate with the notification system.
@@ -366,7 +366,7 @@ export function RewardsTab(props: {
 			vaultData.stakedGaugeSymbol,
 			vaultData.stakingDecimals
 		]
-	);
+	)
 
 	/**************************************************************************************************
 	 ** Create action parameters for stake operations to integrate with the notification system.
@@ -396,7 +396,7 @@ export function RewardsTab(props: {
 			vaultData.stakedGaugeSymbol,
 			vaultData.stakingDecimals
 		]
-	);
+	)
 
 	/**************************************************************************************************
 	 ** Create action parameters for unstake operations to integrate with the notification system.
@@ -423,7 +423,7 @@ export function RewardsTab(props: {
 			}
 		}),
 		[unstakeAmount, vaultData.stakingDecimals, props.currentVault, vaultData.address, vaultData.stakedGaugeSymbol]
-	);
+	)
 
 	/**************************************************************************************************
 	 ** Create action parameters for claim operations to integrate with the notification system.
@@ -447,7 +447,7 @@ export function RewardsTab(props: {
 			vaultData.rewardsToken,
 			vaultData.rewardDecimals
 		]
-	);
+	)
 
 	/**********************************************************************************************
 	 ** The refreshData function will be called when the user interacts with the stake, unstake, or
@@ -455,8 +455,8 @@ export function RewardsTab(props: {
 	 ** can display the most up-to-date information.
 	 *********************************************************************************************/
 	const refreshData = useCallback(async (): Promise<void> => {
-		await updateVaultData();
-	}, [updateVaultData]);
+		await updateVaultData()
+	}, [updateVaultData])
 
 	/**********************************************************************************************
 	 ** The onApprove function will be called when the user clicks the "Approve" button. It will
@@ -464,7 +464,7 @@ export function RewardsTab(props: {
 	 ** yVault tokens. If the approval is successful, the staking rewards data will be updated.
 	 *********************************************************************************************/
 	const onApprove = useCallback(async (): Promise<void> => {
-		const id = await handleApproveNotification({actionParams: approveActionParams});
+		const id = await handleApproveNotification({actionParams: approveActionParams})
 		const result = await approveERC20({
 			connector: provider,
 			chainID: props.currentVault.chainID,
@@ -472,17 +472,17 @@ export function RewardsTab(props: {
 			spenderAddress: toAddress(vaultData?.address),
 			amount: vaultData.vaultBalanceOf.raw,
 			statusHandler: setApproveStakeStatus
-		});
+		})
 		if (result.isSuccessful) {
 			await handleApproveNotification({
 				actionParams: approveActionParams,
 				receipt: result.receipt,
 				status: 'success',
 				idToUpdate: id
-			});
-			updateVaultData();
+			})
+			updateVaultData()
 		} else {
-			await handleApproveNotification({actionParams: approveActionParams, status: 'error', idToUpdate: id});
+			await handleApproveNotification({actionParams: approveActionParams, status: 'error', idToUpdate: id})
 		}
 	}, [
 		props.currentVault,
@@ -492,7 +492,7 @@ export function RewardsTab(props: {
 		vaultData.vaultBalanceOf.raw,
 		handleApproveNotification,
 		approveActionParams
-	]);
+	])
 
 	/**********************************************************************************************
 	 ** The onStake function will be called when the user clicks the "Stake" button. It will call
@@ -503,7 +503,7 @@ export function RewardsTab(props: {
 	 ** stakeVeYFIGauge function.
 	 *********************************************************************************************/
 	const onStake = useCallback(async (): Promise<void> => {
-		const id = await handleStakeNotification({actionParams: stakeActionParams, type: 'stake'});
+		const id = await handleStakeNotification({actionParams: stakeActionParams, type: 'stake'})
 
 		if (props.currentVault.staking.source === 'VeYFI') {
 			const result = await stakeVeYFIAction({
@@ -512,7 +512,7 @@ export function RewardsTab(props: {
 				contractAddress: toAddress(vaultData?.address),
 				amount: vaultData.vaultBalanceOf.raw,
 				statusHandler: setStakeStatus
-			});
+			})
 			if (result.isSuccessful) {
 				await handleStakeNotification({
 					actionParams: stakeActionParams,
@@ -520,16 +520,16 @@ export function RewardsTab(props: {
 					receipt: result.receipt,
 					status: 'success',
 					idToUpdate: id
-				});
-				refreshData();
-				updateVaultData();
+				})
+				refreshData()
+				updateVaultData()
 			} else {
 				await handleStakeNotification({
 					actionParams: stakeActionParams,
 					type: 'stake',
 					status: 'error',
 					idToUpdate: id
-				});
+				})
 			}
 		} else if (props.currentVault.staking.source === 'yBOLD') {
 			const result = await stakeYBold({
@@ -538,7 +538,7 @@ export function RewardsTab(props: {
 				contractAddress: toAddress(vaultData?.address),
 				amount: fromNormalized(stakeAmount, vaultData.stakingDecimals || 18),
 				statusHandler: setStakeStatus
-			});
+			})
 			if (result.isSuccessful) {
 				await handleStakeNotification({
 					actionParams: stakeActionParams,
@@ -546,16 +546,16 @@ export function RewardsTab(props: {
 					receipt: result.receipt,
 					status: 'success',
 					idToUpdate: id
-				});
-				refreshData();
-				updateVaultData();
+				})
+				refreshData()
+				updateVaultData()
 			} else {
 				await handleStakeNotification({
 					actionParams: stakeActionParams,
 					type: 'stake',
 					status: 'error',
 					idToUpdate: id
-				});
+				})
 			}
 		} else {
 			const result = await stakeAction({
@@ -564,7 +564,7 @@ export function RewardsTab(props: {
 				contractAddress: toAddress(vaultData?.address),
 				amount: vaultData.vaultBalanceOf.raw,
 				statusHandler: setStakeStatus
-			});
+			})
 			if (result.isSuccessful) {
 				await handleStakeNotification({
 					actionParams: stakeActionParams,
@@ -572,16 +572,16 @@ export function RewardsTab(props: {
 					receipt: result.receipt,
 					status: 'success',
 					idToUpdate: id
-				});
-				refreshData();
-				updateVaultData();
+				})
+				refreshData()
+				updateVaultData()
 			} else {
 				await handleStakeNotification({
 					actionParams: stakeActionParams,
 					type: 'stake',
 					status: 'error',
 					idToUpdate: id
-				});
+				})
 			}
 		}
 	}, [
@@ -596,7 +596,7 @@ export function RewardsTab(props: {
 		stakeAmount,
 		handleStakeNotification,
 		stakeActionParams
-	]);
+	])
 
 	/**********************************************************************************************
 	 ** The onUnstake function will be called when the user clicks the "Unstake" button. It will
@@ -608,8 +608,8 @@ export function RewardsTab(props: {
 	 ** unstakeVeYFIGauge function.
 	 *********************************************************************************************/
 	const onUnstake = useCallback(async (): Promise<void> => {
-		const notificationType = isUnstakingMax ? 'claim and exit' : 'unstake';
-		const id = await handleUnstakeNotification({actionParams: unstakeActionParams, type: notificationType});
+		const notificationType = isUnstakingMax ? 'claim and exit' : 'unstake'
+		const id = await handleUnstakeNotification({actionParams: unstakeActionParams, type: notificationType})
 
 		if (props.currentVault.staking.source === 'VeYFI' || shouldForceUnstake) {
 			const result = await unstakeVeYFIAction({
@@ -619,7 +619,7 @@ export function RewardsTab(props: {
 				amount: fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
 				willClaim: isUnstakingMax,
 				statusHandler: setUnstakeStatus
-			});
+			})
 			if (result.isSuccessful) {
 				await handleUnstakeNotification({
 					actionParams: unstakeActionParams,
@@ -627,16 +627,16 @@ export function RewardsTab(props: {
 					receipt: result.receipt,
 					status: 'success',
 					idToUpdate: id
-				});
-				refreshData();
-				updateVaultData();
+				})
+				refreshData()
+				updateVaultData()
 			} else {
 				await handleUnstakeNotification({
 					actionParams: unstakeActionParams,
 					type: notificationType,
 					status: 'error',
 					idToUpdate: id
-				});
+				})
 			}
 		} else if (props.currentVault.staking.source === 'yBOLD') {
 			const result = await unstakeYBold({
@@ -645,7 +645,7 @@ export function RewardsTab(props: {
 				contractAddress: toAddress(vaultData?.address),
 				amount: fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
 				statusHandler: setUnstakeStatus
-			});
+			})
 			if (result.isSuccessful) {
 				await handleUnstakeNotification({
 					actionParams: unstakeActionParams,
@@ -653,16 +653,16 @@ export function RewardsTab(props: {
 					receipt: result.receipt,
 					status: 'success',
 					idToUpdate: id
-				});
-				refreshData();
-				updateVaultData();
+				})
+				refreshData()
+				updateVaultData()
 			} else {
 				await handleUnstakeNotification({
 					actionParams: unstakeActionParams,
 					type: notificationType,
 					status: 'error',
 					idToUpdate: id
-				});
+				})
 			}
 		} else {
 			const result = await unstakeAction({
@@ -670,7 +670,7 @@ export function RewardsTab(props: {
 				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
 				statusHandler: setUnstakeStatus
-			});
+			})
 			if (result.isSuccessful) {
 				await handleUnstakeNotification({
 					actionParams: unstakeActionParams,
@@ -678,16 +678,16 @@ export function RewardsTab(props: {
 					receipt: result.receipt,
 					status: 'success',
 					idToUpdate: id
-				});
-				refreshData();
-				updateVaultData();
+				})
+				refreshData()
+				updateVaultData()
 			} else {
 				await handleUnstakeNotification({
 					actionParams: unstakeActionParams,
 					type: notificationType,
 					status: 'error',
 					idToUpdate: id
-				});
+				})
 			}
 		}
 	}, [
@@ -703,7 +703,7 @@ export function RewardsTab(props: {
 		updateVaultData,
 		handleUnstakeNotification,
 		unstakeActionParams
-	]);
+	])
 
 	/**********************************************************************************************
 	 ** The onClaim function will be called when the user clicks the "Claim" button. It will call
@@ -712,13 +712,13 @@ export function RewardsTab(props: {
 	 ** refreshed.
 	 *********************************************************************************************/
 	const onClaim = useCallback(async (): Promise<void> => {
-		const id = await handleClaimNotification({actionParams: claimActionParams, type: 'claim'});
+		const id = await handleClaimNotification({actionParams: claimActionParams, type: 'claim'})
 		const result = await claimAction({
 			connector: provider,
 			chainID: props.currentVault.chainID,
 			contractAddress: toAddress(vaultData?.address),
 			statusHandler: setClaimStatus
-		});
+		})
 		if (result.isSuccessful) {
 			await handleClaimNotification({
 				actionParams: claimActionParams,
@@ -726,15 +726,15 @@ export function RewardsTab(props: {
 				receipt: result.receipt,
 				status: 'success',
 				idToUpdate: id
-			});
-			refreshData();
+			})
+			refreshData()
 		} else {
 			await handleClaimNotification({
 				actionParams: claimActionParams,
 				type: 'claim',
 				status: 'error',
 				idToUpdate: id
-			});
+			})
 		}
 	}, [
 		provider,
@@ -743,7 +743,7 @@ export function RewardsTab(props: {
 		props.currentVault.chainID,
 		handleClaimNotification,
 		claimActionParams
-	]);
+	])
 
 	/**********************************************************************************************
 	 ** In order to display the counter value of the user's staking rewards and yVault tokens, we
@@ -753,30 +753,30 @@ export function RewardsTab(props: {
 	const rewardTokenPrice = useMemo(
 		() => getPrice({address: rewardTokenBalance.address, chainID: rewardTokenBalance.chainID}),
 		[getPrice, rewardTokenBalance]
-	);
+	)
 	const vaultTokenPrice = useMemo(
 		() => getPrice({address: props.currentVault.address, chainID: props.currentVault.chainID}),
 		[getPrice, props.currentVault]
-	);
+	)
 
 	useEffect(() => {
 		if (!isUnstakeAmountDirty) {
-			setUnstakeAmount(vaultData.stakedBalanceOf.display);
+			setUnstakeAmount(vaultData.stakedBalanceOf.display)
 		}
-	}, [vaultData.stakedBalanceOf.display, isUnstakeAmountDirty]);
+	}, [vaultData.stakedBalanceOf.display, isUnstakeAmountDirty])
 
 	useEffect(() => {
 		if (!isStakeAmountDirty) {
-			setStakeAmount(vaultData.stakedBalanceOf.display);
+			setStakeAmount(vaultData.stakedBalanceOf.display)
 		}
-	}, [isStakeAmountDirty, vaultData.stakedBalanceOf.display]);
+	}, [isStakeAmountDirty, vaultData.stakedBalanceOf.display])
 
 	if (props.currentVault.staking.rewards?.length === 0) {
 		return (
 			<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
 				<BoostMessage hasStakingRewardsLive={props.hasStakingRewardsLive} currentVault={props.currentVault} />
 			</div>
-		);
+		)
 	}
 
 	if (shouldForceUnstake) {
@@ -829,7 +829,7 @@ export function RewardsTab(props: {
 					/>
 				</div>
 			</div>
-		);
+		)
 	}
 
 	/**********************************************************************************************
@@ -862,15 +862,15 @@ export function RewardsTab(props: {
 											disabled={!isActive}
 											value={stakeAmount}
 											onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-												setStakeAmount(e.target.value);
-												setIsStakeAmountDirty(true);
+												setStakeAmount(e.target.value)
+												setIsStakeAmountDirty(true)
 											}}
 										/>
 
 										<button
 											onClick={(): void => {
-												setStakeAmount(vaultData.vaultBalanceOf.display);
-												setIsStakeAmountDirty(true);
+												setStakeAmount(vaultData.vaultBalanceOf.display)
+												setIsStakeAmountDirty(true)
 											}}
 											className={
 												'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
@@ -923,15 +923,15 @@ export function RewardsTab(props: {
 											disabled={!isActive}
 											value={unstakeAmount}
 											onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-												setUnstakeAmount(e.target.value);
-												setIsUnstakeAmountDirty(true);
+												setUnstakeAmount(e.target.value)
+												setIsUnstakeAmountDirty(true)
 											}}
 										/>
 
 										<button
 											onClick={(): void => {
-												setUnstakeAmount(vaultData.stakedBalanceOf.display);
-												setIsUnstakeAmountDirty(true);
+												setUnstakeAmount(vaultData.stakedBalanceOf.display)
+												setIsUnstakeAmountDirty(true)
 											}}
 											className={
 												'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
@@ -998,7 +998,7 @@ export function RewardsTab(props: {
 					</div>
 				</div>
 			</div>
-		);
+		)
 	}
 
 	return (
@@ -1062,15 +1062,15 @@ export function RewardsTab(props: {
 										disabled={!isActive}
 										value={unstakeAmount}
 										onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-											setUnstakeAmount(e.target.value);
-											setIsUnstakeAmountDirty(true);
+											setUnstakeAmount(e.target.value)
+											setIsUnstakeAmountDirty(true)
 										}}
 									/>
 
 									<button
 										onClick={(): void => {
-											setUnstakeAmount(vaultData.stakedBalanceOf.display);
-											setIsUnstakeAmountDirty(true);
+											setUnstakeAmount(vaultData.stakedBalanceOf.display)
+											setIsUnstakeAmountDirty(true)
 										}}
 										className={
 											'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
@@ -1138,5 +1138,5 @@ export function RewardsTab(props: {
 				/>
 			</div>
 		</div>
-	);
+	)
 }

@@ -1,12 +1,12 @@
-import {Counter} from '@lib/components/Counter';
-import {RenderAmount} from '@lib/components/RenderAmount';
-import {Renderable} from '@lib/components/Renderable';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {useYearn} from '@lib/contexts/useYearn';
-import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger';
-import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice';
-import {IconQuestion} from '@lib/icons/IconQuestion';
-import type {TAddress, TNormalizedBN} from '@lib/types';
+import {Counter} from '@lib/components/Counter'
+import {RenderAmount} from '@lib/components/RenderAmount'
+import {Renderable} from '@lib/components/Renderable'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {useYearn} from '@lib/contexts/useYearn'
+import {useAsyncTrigger} from '@lib/hooks/useAsyncTrigger'
+import {useYearnTokenPrice} from '@lib/hooks/useYearnTokenPrice'
+import {IconQuestion} from '@lib/icons/IconQuestion'
+import type {TAddress, TNormalizedBN} from '@lib/types'
 import {
 	cl,
 	decodeAsAddress,
@@ -20,27 +20,27 @@ import {
 	toBigInt,
 	toNormalizedBN,
 	zeroNormalizedBN
-} from '@lib/utils';
-import {copyToClipboard, getVaultName} from '@lib/utils/helpers';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {retrieveConfig} from '@lib/utils/wagmi';
-import {getNetwork} from '@lib/utils/wagmi/utils';
-import {JUICED_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/juicedStakingRewards.abi';
-import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi';
-import {V3_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/V3StakingRewards.abi';
-import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi';
-import {VEYFI_GAUGE_ABI} from '@vaults-v2/utils/abi/veYFIGauge.abi';
-import type {ReactElement} from 'react';
-import {useEffect, useState} from 'react';
-import {erc20Abi, zeroAddress} from 'viem';
-import {useBlockNumber} from 'wagmi';
-import {readContract, readContracts} from 'wagmi/actions';
+} from '@lib/utils'
+import {copyToClipboard, getVaultName} from '@lib/utils/helpers'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {retrieveConfig} from '@lib/utils/wagmi'
+import {getNetwork} from '@lib/utils/wagmi/utils'
+import {JUICED_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/juicedStakingRewards.abi'
+import {STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/stakingRewards.abi'
+import {V3_STAKING_REWARDS_ABI} from '@vaults-v2/utils/abi/V3StakingRewards.abi'
+import {VAULT_V3_ABI} from '@vaults-v2/utils/abi/vaultV3.abi'
+import {VEYFI_GAUGE_ABI} from '@vaults-v2/utils/abi/veYFIGauge.abi'
+import type {ReactElement} from 'react'
+import {useEffect, useState} from 'react'
+import {erc20Abi, zeroAddress} from 'viem'
+import {useBlockNumber} from 'wagmi'
+import {readContract, readContracts} from 'wagmi/actions'
 
 type TVaultHeaderLineItemProps = {
-	label: string;
-	children: ReactElement | string;
-	legend?: ReactElement | string;
-};
+	label: string
+	children: ReactElement | string
+	legend?: ReactElement | string
+}
 
 function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProps): ReactElement {
 	return (
@@ -58,19 +58,19 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 				{legend ? legend : '\u00A0'}
 			</legend>
 		</div>
-	);
+	)
 }
 
 function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: string; chain: number}): ReactElement {
-	const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR;
-	const monthlyAPY = apr.points.monthAgo;
-	const weeklyAPY = apr.points.weekAgo;
-	const netAPY = apr.netAPR + extraAPY;
-	const currentAPY = apr.forwardAPR.netAPR + extraAPY;
-	const isSourceVeYFI = source === 'VeYFI';
+	const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
+	const monthlyAPY = apr.points.monthAgo
+	const weeklyAPY = apr.points.weekAgo
+	const netAPY = apr.netAPR + extraAPY
+	const currentAPY = apr.forwardAPR.netAPR + extraAPY
+	const isSourceVeYFI = source === 'VeYFI'
 
 	// TEMPORARY HACK: Force 'New' APY for chainID 747474
-	const isForceNewHistoricalAPY = chain === 747474;
+	const isForceNewHistoricalAPY = chain === 747474
 	if (apr.forwardAPR.type === '' && extraAPY === 0) {
 		return (
 			<VaultHeaderLineItem label={'Historical APY'}>
@@ -78,11 +78,11 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 					<RenderAmount value={netAPY} symbol={'percent'} decimals={6} />
 				</Renderable>
 			</VaultHeaderLineItem>
-		);
+		)
 	}
 
 	if (apr.forwardAPR.type !== '' && extraAPY !== 0 && !isSourceVeYFI) {
-		const boostedAPY = apr.forwardAPR.netAPR + extraAPY;
+		const boostedAPY = apr.forwardAPR.netAPR + extraAPY
 		return (
 			<VaultHeaderLineItem
 				label={'Historical APY'}
@@ -139,19 +139,19 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 					<RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
 				</Renderable>
 			</VaultHeaderLineItem>
-		);
+		)
 	}
 
 	if (isSourceVeYFI) {
-		const sumOfRewardsAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR;
+		const sumOfRewardsAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
 		const veYFIRange = [apr.extra.stakingRewardsAPR / 10 + apr.extra.gammaRewardAPR, sumOfRewardsAPY] as [
 			number,
 			number
-		];
+		]
 		const estAPYRange = [veYFIRange[0] + apr.forwardAPR.netAPR, veYFIRange[1] + apr.forwardAPR.netAPR] as [
 			number,
 			number
-		];
+		]
 		return (
 			<VaultHeaderLineItem
 				label={'Historical APY'}
@@ -229,7 +229,7 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 					<RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
 				</Renderable>
 			</VaultHeaderLineItem>
-		);
+		)
 	}
 
 	return (
@@ -287,7 +287,7 @@ function VaultAPY({apr, source, chain}: {apr: TYDaemonVault['apr']; source: stri
 				<RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
 			</Renderable>
 		</VaultHeaderLineItem>
-	);
+	)
 }
 
 /**************************************************************************************************
@@ -303,7 +303,7 @@ function TVLInVault(props: {tokenSymbol: string; tvl: number; totalAssets: bigin
 				decimalsToDisplay={[2, 6, 8, 10, 12]}
 			/>
 		</VaultHeaderLineItem>
-	);
+	)
 }
 
 /**************************************************************************************************
@@ -311,9 +311,9 @@ function TVLInVault(props: {tokenSymbol: string; tvl: number; totalAssets: bigin
  ** the vault based on the amount of yvToken deposited, along with the value of the token in USD.
  *************************************************************************************************/
 function ValueInVaultAsToken(props: {
-	currentVault: TYDaemonVault;
-	vaultPrice: number;
-	valueInToken: TNormalizedBN;
+	currentVault: TYDaemonVault
+	vaultPrice: number
+	valueInToken: TNormalizedBN
 }): ReactElement {
 	return (
 		<VaultHeaderLineItem
@@ -353,7 +353,7 @@ function ValueInVaultAsToken(props: {
 				decimalsToDisplay={[6, 8, 10, 12]}
 			/>
 		</VaultHeaderLineItem>
-	);
+	)
 }
 
 /**************************************************************************************************
@@ -362,11 +362,11 @@ function ValueInVaultAsToken(props: {
  ** This is only displayed if the vault has a staking contract.
  *************************************************************************************************/
 function ValueEarned(props: {
-	currentVault: TYDaemonVault;
-	rewardTokenSymbol: string;
-	rewardTokenDecimal: number;
-	earnedValue: number;
-	earnedAmount: TNormalizedBN;
+	currentVault: TYDaemonVault
+	rewardTokenSymbol: string
+	rewardTokenDecimal: number
+	earnedValue: number
+	earnedAmount: TNormalizedBN
 }): ReactElement {
 	return (
 		<VaultHeaderLineItem
@@ -404,14 +404,14 @@ function ValueEarned(props: {
 				/>
 			</span>
 		</VaultHeaderLineItem>
-	);
+	)
 }
 
 export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {address} = useWeb3();
-	const {getPrice} = useYearn();
-	const {data: blockNumber} = useBlockNumber({watch: true});
-	const {apr, tvl, decimals, symbol = 'token'} = currentVault;
+	const {address} = useWeb3()
+	const {getPrice} = useYearn()
+	const {data: blockNumber} = useBlockNumber({watch: true})
+	const {apr, tvl, decimals, symbol = 'token'} = currentVault
 	const [vaultData, setVaultData] = useState({
 		deposited: zeroNormalizedBN,
 		valueInToken: zeroNormalizedBN,
@@ -419,25 +419,25 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 		rewardTokenSymbol: '',
 		rewardTokenDecimal: 0,
 		earnedValue: 0
-	});
+	})
 
 	const tokenPrice =
 		useYearnTokenPrice({
 			address: currentVault.token.address,
 			chainID: currentVault.chainID
-		}) || 0;
+		}) || 0
 
 	/**********************************************************************************************
 	 ** Retrieve some data from the vault and the staking contract to display a comprehensive view
 	 ** of the user's holdings in the vault.
 	 **********************************************************************************************/
 	const refetch = useAsyncTrigger(async (): Promise<void> => {
-		const stakingSource = currentVault.staking.source;
-		let balanceOf = 0n;
-		let stakingBalance = 0n;
-		let pps = 0n;
-		let rewardsToken: TAddress = zeroAddress;
-		let earned = 0n;
+		const stakingSource = currentVault.staking.source
+		let balanceOf = 0n
+		let stakingBalance = 0n
+		let pps = 0n
+		let rewardsToken: TAddress = zeroAddress
+		let earned = 0n
 		/******************************************************************************************
 		 ** To have the most up-to-date data, we fetch a few informations directly onChain, such as:
 		 ** - The user's balance in the vault
@@ -483,12 +483,12 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 						args: [toAddress(address)]
 					}
 				]
-			});
-			balanceOf = decodeAsBigInt(result[0]);
-			stakingBalance = decodeAsBigInt(result[1]);
-			pps = decodeAsBigInt(result[2]);
-			rewardsToken = decodeAsAddress(result[3]);
-			earned = decodeAsBigInt(result[4]);
+			})
+			balanceOf = decodeAsBigInt(result[0])
+			stakingBalance = decodeAsBigInt(result[1])
+			pps = decodeAsBigInt(result[2])
+			rewardsToken = decodeAsAddress(result[3])
+			earned = decodeAsBigInt(result[4])
 		} else if (stakingSource === 'Juiced') {
 			const result = await readContracts(retrieveConfig(), {
 				contracts: [
@@ -520,11 +520,11 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 						args: [0n]
 					}
 				]
-			});
-			balanceOf = decodeAsBigInt(result[0]);
-			stakingBalance = decodeAsBigInt(result[1]);
-			pps = decodeAsBigInt(result[2]);
-			rewardsToken = decodeAsAddress(result[3]);
+			})
+			balanceOf = decodeAsBigInt(result[0])
+			stakingBalance = decodeAsBigInt(result[1])
+			pps = decodeAsBigInt(result[2])
+			rewardsToken = decodeAsAddress(result[3])
 
 			const earnedRaw = await readContract(retrieveConfig(), {
 				address: toAddress(currentVault.staking.address),
@@ -532,18 +532,18 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 				chainId: currentVault.chainID,
 				functionName: 'earned',
 				args: [toAddress(address), rewardsToken]
-			});
+			})
 
-			earned = earnedRaw;
+			earned = earnedRaw
 		} else if (stakingSource === 'V3 Staking') {
 			const rewardTokensLength = await readContract(retrieveConfig(), {
 				address: toAddress(currentVault.staking.address),
 				chainId: currentVault.chainID,
 				abi: V3_STAKING_REWARDS_ABI,
 				functionName: 'rewardTokensLength'
-			});
+			})
 
-			const rewardTokensCalls: Parameters<typeof readContracts>[1]['contracts'][number][] = [];
+			const rewardTokensCalls: Parameters<typeof readContracts>[1]['contracts'][number][] = []
 			for (let i = 0; i < Number(rewardTokensLength); i++) {
 				rewardTokensCalls.push({
 					address: toAddress(currentVault.staking.address),
@@ -551,7 +551,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					abi: V3_STAKING_REWARDS_ABI,
 					functionName: 'rewardTokens',
 					args: [toBigInt(i)]
-				});
+				})
 			}
 			const result = await readContracts(retrieveConfig(), {
 				contracts: [
@@ -577,11 +577,11 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					},
 					...rewardTokensCalls
 				]
-			});
-			balanceOf = decodeAsBigInt(result[0]);
-			stakingBalance = decodeAsBigInt(result[1]);
-			pps = decodeAsBigInt(result[2]);
-			rewardsToken = decodeAsAddress(result[3]);
+			})
+			balanceOf = decodeAsBigInt(result[0])
+			stakingBalance = decodeAsBigInt(result[1])
+			pps = decodeAsBigInt(result[2])
+			rewardsToken = decodeAsAddress(result[3])
 
 			const earnedRaw = await readContract(retrieveConfig(), {
 				address: toAddress(currentVault.staking.address),
@@ -589,8 +589,8 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 				chainId: currentVault.chainID,
 				functionName: 'earned',
 				args: [toAddress(address), rewardsToken]
-			});
-			earned = isZeroAddress(address) ? 0n : earnedRaw;
+			})
+			earned = isZeroAddress(address) ? 0n : earnedRaw
 		} else {
 			const result = await readContracts(retrieveConfig(), {
 				contracts: [
@@ -615,12 +615,12 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 						functionName: 'pricePerShare'
 					}
 				]
-			});
-			balanceOf = decodeAsBigInt(result[0]);
-			stakingBalance = decodeAsBigInt(result[1]);
-			pps = decodeAsBigInt(result[2]);
+			})
+			balanceOf = decodeAsBigInt(result[0])
+			stakingBalance = decodeAsBigInt(result[1])
+			pps = decodeAsBigInt(result[2])
 		}
-		const total = balanceOf + stakingBalance;
+		const total = balanceOf + stakingBalance
 
 		/******************************************************************************************
 		 ** Some extra elements are required at this point to be able to display a comprehensive
@@ -642,12 +642,12 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					functionName: 'decimals'
 				}
 			]
-		});
-		const rewardSymbol = decodeAsString(rewardResult[0]);
-		const rewardDecimals = decodeAsNumber(rewardResult[1]);
-		const priceOfRewardsToken = getPrice({address: rewardsToken, chainID: 1});
-		const amountEarned = isZeroAddress(address) ? zeroNormalizedBN : toNormalizedBN(earned, rewardDecimals);
-		const earnedValue = amountEarned.normalized * priceOfRewardsToken.normalized;
+		})
+		const rewardSymbol = decodeAsString(rewardResult[0])
+		const rewardDecimals = decodeAsNumber(rewardResult[1])
+		const priceOfRewardsToken = getPrice({address: rewardsToken, chainID: 1})
+		const amountEarned = isZeroAddress(address) ? zeroNormalizedBN : toNormalizedBN(earned, rewardDecimals)
+		const earnedValue = amountEarned.normalized * priceOfRewardsToken.normalized
 
 		setVaultData({
 			deposited: isZeroAddress(address) ? zeroNormalizedBN : toNormalizedBN(total, decimals),
@@ -656,7 +656,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 			rewardTokenDecimal: rewardDecimals,
 			earnedValue: earnedValue,
 			earnedAmount: amountEarned
-		});
+		})
 	}, [
 		address,
 		currentVault.address,
@@ -665,7 +665,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 		currentVault.staking.source,
 		decimals,
 		getPrice
-	]);
+	])
 
 	/**********************************************************************************************
 	 ** As we want live data, we want the data to be refreshed every time the block number changes.
@@ -674,8 +674,8 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: refetch on block number change
 	useEffect(() => {
-		refetch();
-	}, [blockNumber, refetch]);
+		refetch()
+	}, [blockNumber, refetch])
 
 	return (
 		<div className={'col-span-12 mt-4 flex w-full flex-col items-center justify-center'}>
@@ -753,5 +753,5 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 				) : null}
 			</div>
 		</div>
-	);
+	)
 }

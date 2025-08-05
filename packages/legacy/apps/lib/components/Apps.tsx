@@ -1,14 +1,14 @@
-import {ImageWithFallback} from '@lib/components/ImageWithFallback';
-import {LogoYearn} from '@lib/icons/LogoYearn';
-import {VEYFI_DYFI_ADDRESS, YCRV_TOKEN_ADDRESS} from '@lib/utils/constants';
-import {VAULTS_BETA_MENU} from '@vaults/constants/menu';
-import {VAULTS_MENU} from '@vaults-v2/constants/menu';
-import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
-import Image from 'next/image';
-import vaultsManifest from 'public/apps/vaults-manifest.json';
+import {ImageWithFallback} from '@lib/components/ImageWithFallback'
+import {LogoYearn} from '@lib/icons/LogoYearn'
+import {VEYFI_DYFI_ADDRESS, YCRV_TOKEN_ADDRESS} from '@lib/utils/constants'
+import {VAULTS_BETA_MENU} from '@vaults/constants/menu'
+import {VAULTS_MENU} from '@vaults-v2/constants/menu'
+import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu'
+import Image from 'next/image'
+import vaultsManifest from 'public/apps/vaults-manifest.json'
 
-import type {ReactElement} from 'react';
-import type {TMenu} from './Header';
+import type {ReactElement} from 'react'
+import type {TMenu} from './Header'
 
 export enum AppName {
 	VAULTSV3 = 'V3',
@@ -23,39 +23,39 @@ export enum AppName {
 }
 
 export type TManifestIcon = {
-	src: string;
-	sizes: string;
-	type: string;
-	purpose?: string;
-};
+	src: string
+	sizes: string
+	type: string
+	purpose?: string
+}
 
 export interface TManifest {
-	name?: string;
-	short_name?: string;
-	description?: string;
-	iconPath?: string;
-	locale?: string;
-	uri?: string;
-	og?: string;
-	twitter?: string;
-	github?: string;
-	icons?: TManifestIcon[];
-	theme_color?: string;
-	background_color?: string;
-	title_color?: string;
-	start_url?: string;
-	display?: string;
-	orientation?: string;
+	name?: string
+	short_name?: string
+	description?: string
+	iconPath?: string
+	locale?: string
+	uri?: string
+	og?: string
+	twitter?: string
+	github?: string
+	icons?: TManifestIcon[]
+	theme_color?: string
+	background_color?: string
+	title_color?: string
+	start_url?: string
+	display?: string
+	orientation?: string
 }
 
 type TApp = {
-	name: AppName | string;
-	href: string;
-	menu: TMenu[];
-	manifest: TManifest;
-	icon: ReactElement;
-	isDisabled?: boolean;
-};
+	name: AppName | string
+	href: string
+	menu: TMenu[]
+	manifest: TManifest
+	icon: ReactElement
+	isDisabled?: boolean
+}
 
 export const APPS: {[key in AppName]: TApp} = {
 	V3: {
@@ -182,4 +182,4 @@ export const APPS: {[key in AppName]: TApp} = {
 			/>
 		)
 	}
-};
+}

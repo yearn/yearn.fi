@@ -1,11 +1,11 @@
-import type {TMultiSelectOptionProps} from '@lib/components/MultiSelectDropdown';
-import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown';
-import {useMemo} from 'react';
+import type {TMultiSelectOptionProps} from '@lib/components/MultiSelectDropdown'
+import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown'
+import {useMemo} from 'react'
 
 export const VersionFilterDropdown: React.FC<{
-	selectedVersion: string;
-	onVersionChange: (version: string) => void;
-	className?: string;
+	selectedVersion: string
+	onVersionChange: (version: string) => void
+	className?: string
 }> = ({selectedVersion, onVersionChange, className = ''}) => {
 	const versionOptions: TMultiSelectOptionProps[] = useMemo(
 		() => [
@@ -26,14 +26,14 @@ export const VersionFilterDropdown: React.FC<{
 			}
 		],
 		[selectedVersion]
-	);
+	)
 
 	const handleSelect = (options: TMultiSelectOptionProps[]): void => {
-		const selectedOption = options.find(option => option.isSelected);
+		const selectedOption = options.find(option => option.isSelected)
 		if (selectedOption) {
-			onVersionChange(selectedOption.label);
+			onVersionChange(selectedOption.label)
 		}
-	};
+	}
 
 	return (
 		<div className={className}>
@@ -45,5 +45,5 @@ export const VersionFilterDropdown: React.FC<{
 				customDefaultLabel={selectedVersion}
 			/>
 		</div>
-	);
-};
+	)
+}

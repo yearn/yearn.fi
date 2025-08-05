@@ -1,36 +1,36 @@
-import {IconQuestion} from '@lib/icons/IconQuestion';
-import {cl} from '@lib/utils';
+import {IconQuestion} from '@lib/icons/IconQuestion'
+import {cl} from '@lib/utils'
 
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 type TProps = {
-	text: string | number;
-	size: 'sm' | 'md';
-	className?: string;
-	iconClassName?: string;
-};
+	text: string | number
+	size: 'sm' | 'md'
+	className?: string
+	iconClassName?: string
+}
 
 const getStyle = (
 	size: TProps['size']
 ): {
-	iconStyle: string;
-	tooltipStyle: string;
+	iconStyle: string
+	tooltipStyle: string
 } => {
 	if (size === 'sm') {
 		return {
 			iconStyle: 'md:h-3 md:w-3 md:top-0',
 			tooltipStyle: 'p-1 px-2 text-xs'
-		};
+		}
 	}
 
 	return {
 		iconStyle: 'md:h-4 md:w-4 md:top-1',
 		tooltipStyle: 'p-2 px-4 text-sm'
-	};
-};
+	}
+}
 
 export const InfoTooltip = ({text, size, iconClassName, className}: TProps): ReactElement => {
-	const {iconStyle, tooltipStyle} = getStyle(size);
+	const {iconStyle, tooltipStyle} = getStyle(size)
 
 	return (
 		<sup className={'tooltip font-light transition-opacity'}>
@@ -45,5 +45,5 @@ export const InfoTooltip = ({text, size, iconClassName, className}: TProps): Rea
 				</div>
 			</span>
 		</sup>
-	);
-};
+	)
+}

@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function IconQuestion(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -37,5 +37,5 @@ export function IconQuestion(props: React.SVGProps<SVGSVGElement>): ReactElement
 				</clipPath>
 			</defs>
 		</svg>
-	);
+	)
 }

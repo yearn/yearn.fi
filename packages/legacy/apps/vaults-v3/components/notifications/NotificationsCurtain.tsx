@@ -1,42 +1,42 @@
-import {useNotifications} from '@lib/contexts/useNotifications';
-import {useYearn} from '@lib/contexts/useYearn';
-import {IconCross} from '@lib/icons/IconCross';
-import {cl} from '@lib/utils';
-import {AnimatePresence, motion} from 'framer-motion';
-import {type ReactElement, useEffect} from 'react';
-import {Drawer} from 'vaul';
+import {useNotifications} from '@lib/contexts/useNotifications'
+import {useYearn} from '@lib/contexts/useYearn'
+import {IconCross} from '@lib/icons/IconCross'
+import {cl} from '@lib/utils'
+import {AnimatePresence, motion} from 'framer-motion'
+import {type ReactElement, useEffect} from 'react'
+import {Drawer} from 'vaul'
 
-import {Notification} from './Notification';
+import {Notification} from './Notification'
 
 export function NotificationsCurtain(props: {
-	setShouldOpenCurtain: (value: boolean) => void;
-	isOpen: boolean;
-	variant: 'v2' | 'v3';
+	setShouldOpenCurtain: (value: boolean) => void
+	isOpen: boolean
+	variant: 'v2' | 'v3'
 }): ReactElement {
-	const {cachedEntries, setNotificationStatus, isLoading, error} = useNotifications();
-	const {vaults, vaultsMigrations, vaultsRetired} = useYearn();
-	const allVaults = {...vaults, ...vaultsMigrations, ...vaultsRetired};
+	const {cachedEntries, setNotificationStatus, isLoading, error} = useNotifications()
+	const {vaults, vaultsMigrations, vaultsRetired} = useYearn()
+	const allVaults = {...vaults, ...vaultsMigrations, ...vaultsRetired}
 
-	const isEmpty = cachedEntries.length === 0;
+	const isEmpty = cachedEntries.length === 0
 
 	/*************************************************************************************
 	 * Clear top bar notification status when drawer is triggered
 	 *******************************************************************/
 	useEffect(() => {
 		if (props.isOpen) {
-			setNotificationStatus(null);
+			setNotificationStatus(null)
 			// Block page scrolling when drawer is open
-			document.body.style.overflow = 'hidden';
+			document.body.style.overflow = 'hidden'
 		} else {
 			// Restore scrolling when drawer is closed
-			document.body.style.overflow = '';
+			document.body.style.overflow = ''
 		}
 
 		// Cleanup on unmount
 		return () => {
-			document.body.style.overflow = '';
-		};
-	}, [props.isOpen, setNotificationStatus]);
+			document.body.style.overflow = ''
+		}
+	}, [props.isOpen, setNotificationStatus])
 
 	return (
 		<Drawer.Root direction={'right'} open={props.isOpen} onOpenChange={props.setShouldOpenCurtain}>
@@ -115,5 +115,5 @@ export function NotificationsCurtain(props: {
 				</Drawer.Content>
 			</Drawer.Portal>
 		</Drawer.Root>
-	);
+	)
 }

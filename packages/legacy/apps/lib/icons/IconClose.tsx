@@ -1,4 +1,4 @@
-import type {ReactElement, SVGProps} from 'react';
+import type {ReactElement, SVGProps} from 'react'
 
 export function IconClose({...props}: SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -15,5 +15,5 @@ export function IconClose({...props}: SVGProps<SVGSVGElement>): ReactElement {
 			<path d={'M6 6L18 18'} strokeWidth={'2'} strokeLinecap={'round'} strokeLinejoin={'round'} />
 			<path d={'M6 18L18 6'} strokeWidth={'2'} strokeLinecap={'round'} strokeLinejoin={'round'} />
 		</svg>
-	);
+	)
 }

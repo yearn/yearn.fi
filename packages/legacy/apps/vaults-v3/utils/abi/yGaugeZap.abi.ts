@@ -113,4 +113,4 @@ export const YGAUGE_ZAP_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function'
 	}
-] as const;
+] as const

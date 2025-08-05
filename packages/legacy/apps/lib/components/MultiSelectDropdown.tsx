@@ -1,37 +1,37 @@
-import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react';
-import {Renderable} from '@lib/components/Renderable';
-import {useWeb3} from '@lib/contexts/useWeb3';
-import {IconChevron} from '@lib/icons/IconChevron';
-import {cl} from '@lib/utils';
-import {useClickOutside, useThrottledState} from '@react-hookz/web';
-import type {ReactElement, RefObject} from 'react';
-import {Fragment, useCallback, useMemo, useRef, useState} from 'react';
+import {Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition} from '@headlessui/react'
+import {Renderable} from '@lib/components/Renderable'
+import {useWeb3} from '@lib/contexts/useWeb3'
+import {IconChevron} from '@lib/icons/IconChevron'
+import {cl} from '@lib/utils'
+import {useClickOutside, useThrottledState} from '@react-hookz/web'
+import type {ReactElement, RefObject} from 'react'
+import {Fragment, useCallback, useMemo, useRef, useState} from 'react'
 
 export type TMultiSelectOptionProps = {
-	label: string;
-	value: number | string;
-	isSelected: boolean;
-	icon?: ReactElement;
-	onCheckboxClick?: (event: React.MouseEvent<HTMLElement>) => void;
-	onContainerClick?: (event: React.MouseEvent<HTMLElement>) => void;
-};
+	label: string
+	value: number | string
+	isSelected: boolean
+	icon?: ReactElement
+	onCheckboxClick?: (event: React.MouseEvent<HTMLElement>) => void
+	onContainerClick?: (event: React.MouseEvent<HTMLElement>) => void
+}
 
 type TMultiSelectProps = {
-	options: TMultiSelectOptionProps[];
-	placeholder?: string;
-	onSelect: (options: TMultiSelectOptionProps[]) => void;
-	buttonClassName?: string;
-	comboboxOptionsClassName?: string;
-	customRender?: ReactElement;
-	customDefaultLabel?: string;
-};
+	options: TMultiSelectOptionProps[]
+	placeholder?: string
+	onSelect: (options: TMultiSelectOptionProps[]) => void
+	buttonClassName?: string
+	comboboxOptionsClassName?: string
+	customRender?: ReactElement
+	customDefaultLabel?: string
+}
 
 function SelectAllOption({
 	option,
 	onSelectAll
 }: {
-	option: TMultiSelectOptionProps;
-	onSelectAll: () => void;
+	option: TMultiSelectOptionProps
+	onSelectAll: () => void
 }): ReactElement {
 	return (
 		<button
@@ -45,14 +45,14 @@ function SelectAllOption({
 					checked={option.isSelected}
 					onChange={(): void => {}}
 					onClick={(e): void => {
-						e.stopPropagation();
-						onSelectAll();
+						e.stopPropagation()
+						onSelectAll()
 					}}
 					className={'checkbox'}
 				/>
 			</div>
 		</button>
-	);
+	)
 }
 
 function Option(option: TMultiSelectOptionProps): ReactElement {
@@ -79,18 +79,18 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 					onChange={(): void => {}}
 					className={'checkbox'}
 					onClick={(event: React.MouseEvent<HTMLElement>): void => {
-						event.stopPropagation();
-						option.onCheckboxClick?.(event);
+						event.stopPropagation()
+						option.onCheckboxClick?.(event)
 					}}
 					readOnly
 				/>
 			</div>
 		</ComboboxOption>
-	);
+	)
 }
 
 function DropdownEmpty({query}: {query: string}): ReactElement {
-	const {isActive, openLoginModal} = useWeb3();
+	const {isActive, openLoginModal} = useWeb3()
 
 	if (!isActive) {
 		return (
@@ -102,7 +102,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 				}>
 				<b className={'text-neutral-900'}>{'Connect Wallet'}</b>
 			</button>
-		);
+		)
 	}
 	if (query !== '') {
 		return (
@@ -111,7 +111,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 					<p className={'text-sm text-neutral-400'}>{'Nothing found.'}</p>
 				</div>
 			</div>
-		);
+		)
 	}
 	return (
 		<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
@@ -119,24 +119,24 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 				<span className={'loader'} />
 			</div>
 		</div>
-	);
+	)
 }
 
 const getFilteredOptions = ({
 	query,
 	currentOptions
 }: {
-	query: string;
-	currentOptions: TMultiSelectOptionProps[];
+	query: string
+	currentOptions: TMultiSelectOptionProps[]
 }): TMultiSelectOptionProps[] => {
 	if (query === '') {
-		return currentOptions;
+		return currentOptions
 	}
 
 	return currentOptions.filter((option): boolean => {
-		return option.label.toLowerCase().includes(query.toLowerCase());
-	});
-};
+		return option.label.toLowerCase().includes(query.toLowerCase())
+	})
+}
 
 export function MultiSelectDropdown({
 	options,
@@ -146,65 +146,65 @@ export function MultiSelectDropdown({
 	customRender,
 	...props
 }: TMultiSelectProps): ReactElement {
-	const [isOpen, setIsOpen] = useThrottledState(false, 400);
-	const [query, setQuery] = useState('');
-	const areAllSelected = useMemo((): boolean => options.every(({isSelected}): boolean => isSelected), [options]);
-	const componentRef = useRef<HTMLDivElement | null>(null);
+	const [isOpen, setIsOpen] = useThrottledState(false, 400)
+	const [query, setQuery] = useState('')
+	const areAllSelected = useMemo((): boolean => options.every(({isSelected}): boolean => isSelected), [options])
+	const componentRef = useRef<HTMLDivElement | null>(null)
 
 	const selectedValues = useMemo(() => {
-		return options.filter(opt => opt.isSelected).map(opt => opt.value);
-	}, [options]);
+		return options.filter(opt => opt.isSelected).map(opt => opt.value)
+	}, [options])
 
 	useClickOutside(componentRef as RefObject<HTMLElement>, (): void => {
-		setIsOpen(false);
-	});
+		setIsOpen(false)
+	})
 
 	const filteredOptions = useMemo(
 		(): TMultiSelectOptionProps[] => getFilteredOptions({query, currentOptions: options}),
 		[options, query]
-	);
+	)
 
 	const getDisplayName = useCallback(
 		(options: TMultiSelectOptionProps[]): string => {
 			if (areAllSelected) {
-				return customDefaultLabel;
+				return customDefaultLabel
 			}
 
-			const selectedOptions = options.filter(({isSelected}): boolean => isSelected);
+			const selectedOptions = options.filter(({isSelected}): boolean => isSelected)
 
 			if (selectedOptions.length === 0) {
-				return placeholder;
+				return placeholder
 			}
 
 			if (selectedOptions.length === 1) {
-				return selectedOptions[0].label;
+				return selectedOptions[0].label
 			}
 
-			return 'Multiple';
+			return 'Multiple'
 		},
 		[areAllSelected, placeholder, customDefaultLabel]
-	);
+	)
 
 	const handleOnCheckboxClick = useCallback(
 		({value}: TMultiSelectOptionProps): void => {
 			const currentState = options.map(
 				(o): TMultiSelectOptionProps => (o.value === value ? {...o, isSelected: !o.isSelected} : o)
-			);
-			onSelect(currentState);
+			)
+			onSelect(currentState)
 		},
 		[options, onSelect]
-	);
+	)
 
 	const handleOnContainerClick = useCallback(
 		({value}: TMultiSelectOptionProps): void => {
 			const currentState = options.map(
 				(o): TMultiSelectOptionProps =>
 					o.value === value ? {...o, isSelected: true} : {...o, isSelected: false}
-			);
-			onSelect(currentState);
+			)
+			onSelect(currentState)
 		},
 		[options, onSelect]
-	);
+	)
 
 	const handleSelectAll = useCallback((): void => {
 		const newState = options.map(
@@ -212,9 +212,9 @@ export function MultiSelectDropdown({
 				...option,
 				isSelected: !areAllSelected
 			})
-		);
-		onSelect(newState);
-	}, [options, areAllSelected, onSelect]);
+		)
+		onSelect(newState)
+	}, [options, areAllSelected, onSelect])
 
 	return (
 		<Combobox as={Fragment} key={selectedValues.join(',')} ref={componentRef} value={selectedValues} multiple>
@@ -291,5 +291,5 @@ export function MultiSelectDropdown({
 				</Transition>
 			</div>
 		</Combobox>
-	);
+	)
 }

@@ -1,27 +1,27 @@
-import type {Dispatch, RefObject, SetStateAction} from 'react';
-import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
-import {deserialize, serialize} from 'wagmi';
+import type {Dispatch, RefObject, SetStateAction} from 'react'
+import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react'
+import {deserialize, serialize} from 'wagmi'
 
 declare global {
 	interface WindowEventMap {
-		'session-storage': CustomEvent;
+		'session-storage': CustomEvent
 	}
 }
 
-type TSetValue<T> = Dispatch<SetStateAction<T>>;
+type TSetValue<T> = Dispatch<SetStateAction<T>>
 
-const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 function useEventCallback<TArgs extends unknown[], TR>(fn: (...args: TArgs) => TR): (...args: TArgs) => TR {
 	const ref = useRef<typeof fn>((): never => {
-		throw new Error('Cannot call an event handler while rendering.');
-	});
+		throw new Error('Cannot call an event handler while rendering.')
+	})
 
 	useIsomorphicLayoutEffect((): void => {
-		ref.current = fn;
-	}, [fn]);
+		ref.current = fn
+	}, [fn])
 
-	return useCallback((...args: TArgs): TR => ref.current(...args), []);
+	return useCallback((...args: TArgs): TR => ref.current(...args), [])
 }
 
 // Window Event based useEventListener interface
@@ -30,7 +30,7 @@ function useEventListener<TK extends keyof WindowEventMap>(
 	handler: (event: WindowEventMap[TK]) => void,
 	element?: undefined,
 	options?: boolean | AddEventListenerOptions
-): void;
+): void
 
 // Element Event based useEventListener interface
 function useEventListener<TK extends keyof HTMLElementEventMap, T extends HTMLElement = HTMLDivElement>(
@@ -38,7 +38,7 @@ function useEventListener<TK extends keyof HTMLElementEventMap, T extends HTMLEl
 	handler: (event: HTMLElementEventMap[TK]) => void,
 	element: RefObject<T>,
 	options?: boolean | AddEventListenerOptions
-): void;
+): void
 
 // Document Event based useEventListener interface
 function useEventListener<TK extends keyof DocumentEventMap>(
@@ -46,7 +46,7 @@ function useEventListener<TK extends keyof DocumentEventMap>(
 	handler: (event: DocumentEventMap[TK]) => void,
 	element: RefObject<Document>,
 	options?: boolean | AddEventListenerOptions
-): void;
+): void
 
 function useEventListener<
 	TKW extends keyof WindowEventMap,
@@ -59,29 +59,29 @@ function useEventListener<
 	options?: boolean | AddEventListenerOptions
 ): void {
 	// Create a ref that stores handler
-	const savedHandler = useRef(handler);
+	const savedHandler = useRef(handler)
 
 	useIsomorphicLayoutEffect((): void => {
-		savedHandler.current = handler;
-	}, [handler]);
+		savedHandler.current = handler
+	}, [handler])
 
 	useEffect((): undefined | VoidFunction => {
 		// Define the listening target
-		const targetElement: T | Window = element?.current || window;
+		const targetElement: T | Window = element?.current || window
 		if (!targetElement?.addEventListener) {
-			return;
+			return
 		}
 
 		// Create event listener that calls handler function stored in ref
-		const eventListener: typeof handler = (event): unknown => savedHandler.current(event);
+		const eventListener: typeof handler = (event): unknown => savedHandler.current(event)
 
-		targetElement.addEventListener(eventName, eventListener, options);
+		targetElement.addEventListener(eventName, eventListener, options)
 
 		// Remove event listener on cleanup
 		return (): void => {
-			targetElement.removeEventListener(eventName, eventListener);
-		};
-	}, [eventName, element, options]);
+			targetElement.removeEventListener(eventName, eventListener)
+		}
+	}, [eventName, element, options])
 }
 
 function useSessionStorage<T>(key: string, initialValue: T): [T, TSetValue<T>] {
@@ -90,69 +90,69 @@ function useSessionStorage<T>(key: string, initialValue: T): [T, TSetValue<T>] {
 	const readValue = useCallback((): T => {
 		// Prevent build error "window is undefined" but keep keep working
 		if (typeof window === 'undefined') {
-			return initialValue;
+			return initialValue
 		}
 
 		try {
-			const item = window.sessionStorage.getItem(key);
-			return item ? deserialize(item) : initialValue;
+			const item = window.sessionStorage.getItem(key)
+			return item ? deserialize(item) : initialValue
 		} catch (error) {
-			console.warn(`Error reading sessionStorage key “${key}”:`, error);
-			return initialValue;
+			console.warn(`Error reading sessionStorage key “${key}”:`, error)
+			return initialValue
 		}
-	}, [initialValue, key]);
+	}, [initialValue, key])
 
 	// State to store our value
 	// Pass initial state function to useState so logic is only executed once
-	const [storedValue, setStoredValue] = useState<T>(readValue);
+	const [storedValue, setStoredValue] = useState<T>(readValue)
 
 	// Return a wrapped version of useState's setter function that ...
 	// ... persists the new value to sessionStorage.
 	const assignValue: TSetValue<T> = useEventCallback((value: unknown): void => {
 		// Prevent build error "window is undefined" but keeps working
 		if (typeof window === 'undefined') {
-			console.warn(`Tried setting sessionStorage key “${key}” even though environment is not a client`);
+			console.warn(`Tried setting sessionStorage key “${key}” even though environment is not a client`)
 		}
 
 		try {
 			// Allow value to be a function so we have the same API as useState
-			const newValue = value instanceof Function ? value(storedValue) : value;
+			const newValue = value instanceof Function ? value(storedValue) : value
 
 			// Save to session storage
-			window.sessionStorage.setItem(key, serialize(newValue));
+			window.sessionStorage.setItem(key, serialize(newValue))
 
 			// Save state
-			setStoredValue(newValue);
+			setStoredValue(newValue)
 
 			// We dispatch a custom event so every useSessionStorage hook are notified
-			window.dispatchEvent(new Event('session-storage'));
+			window.dispatchEvent(new Event('session-storage'))
 		} catch (error) {
-			console.warn(`Error setting sessionStorage key “${key}”:`, error);
+			console.warn(`Error setting sessionStorage key “${key}”:`, error)
 		}
-	});
+	})
 
 	useEffect((): void => {
-		setStoredValue(readValue());
-	}, [readValue]);
+		setStoredValue(readValue())
+	}, [readValue])
 
 	const handleStorageChange = useCallback(
 		(event: StorageEvent | CustomEvent): void => {
 			if ((event as StorageEvent)?.key && (event as StorageEvent).key !== key) {
-				return;
+				return
 			}
-			setStoredValue(readValue());
+			setStoredValue(readValue())
 		},
 		[key, readValue]
-	);
+	)
 
 	// this only works for other documents, not the current one
-	useEventListener('storage', handleStorageChange);
+	useEventListener('storage', handleStorageChange)
 
 	// this is a custom event, triggered in writeValueTosessionStorage
 	// See: useSessionStorage()
-	useEventListener('session-storage', handleStorageChange);
+	useEventListener('session-storage', handleStorageChange)
 
-	return [storedValue, assignValue];
+	return [storedValue, assignValue]
 }
 
-export {useSessionStorage};
+export {useSessionStorage}

@@ -1,22 +1,22 @@
-import {useFetch} from '@lib/hooks/useFetch';
-import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI';
-import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@lib/utils';
-import {formatDate} from '@lib/utils/format.time';
-import type {TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TYDaemonReport, TYDaemonReports} from '@vaults-v2/schemas/reportsSchema';
-import {yDaemonReportsSchema} from '@vaults-v2/schemas/reportsSchema';
+import {useFetch} from '@lib/hooks/useFetch'
+import {useYDaemonBaseURI} from '@lib/hooks/useYDaemonBaseURI'
+import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@lib/utils'
+import {formatDate} from '@lib/utils/format.time'
+import type {TYDaemonVaultStrategy} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type {TYDaemonReport, TYDaemonReports} from '@vaults-v2/schemas/reportsSchema'
+import {yDaemonReportsSchema} from '@vaults-v2/schemas/reportsSchema'
 
-import type {ReactElement} from 'react';
-import {Fragment, useMemo} from 'react';
-import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import type {ReactElement} from 'react'
+import {Fragment, useMemo} from 'react'
+import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts'
 
 export type TGraphForStrategyReportsProps = {
-	strategy: TYDaemonVaultStrategy;
-	vaultChainID: number;
-	vaultDecimals: number;
-	vaultTicker: string;
-	height?: number;
-};
+	strategy: TYDaemonVaultStrategy
+	vaultChainID: number
+	vaultDecimals: number
+	vaultTicker: string
+	height?: number
+}
 
 export function GraphForStrategyReports({
 	strategy,
@@ -25,40 +25,40 @@ export function GraphForStrategyReports({
 	vaultTicker,
 	height = 127
 }: TGraphForStrategyReportsProps): ReactElement {
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: vaultChainID});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: vaultChainID})
 
 	const {data: reports} = useFetch<TYDaemonReports>({
 		endpoint: `${yDaemonBaseUri}/reports/${strategy.address}`,
 		schema: yDaemonReportsSchema
-	});
+	})
 
 	const strategyData = useMemo((): {
-		name: number;
-		value: number;
-		gain: string;
-		loss: string;
+		name: number
+		value: number
+		gain: string
+		loss: string
 	}[] => {
-		const _reports = [...(reports || [])];
+		const _reports = [...(reports || [])]
 		const reportsForGraph = _reports.reverse()?.map(
 			(
 				reports: TYDaemonReport
 			): {
-				name: number;
-				value: number;
-				gain: string;
-				loss: string;
+				name: number
+				value: number
+				gain: string
+				loss: string
 			} => ({
 				name: Number(reports.timestamp),
 				value: Number(reports.results?.[0]?.APR || 0) * 100,
 				gain: reports?.gain || '0',
 				loss: reports?.loss || '0'
 			})
-		);
-		return reportsForGraph;
-	}, [reports]);
+		)
+		return reportsForGraph
+	}, [reports])
 
 	if (!strategyData || isZero(strategyData?.length)) {
-		return <Fragment />;
+		return <Fragment />
 	}
 
 	return (
@@ -75,10 +75,10 @@ export function GraphForStrategyReports({
 							stroke={'currentcolor'}
 							dot={false}
 							activeDot={(e: unknown): ReactElement => {
-								const dotProps = e as React.SVGProps<SVGCircleElement> & {dataKey?: string};
-								dotProps.className = `${dotProps.className} activeDot`;
-								delete dotProps.dataKey;
-								return <circle {...dotProps}></circle>;
+								const dotProps = e as React.SVGProps<SVGCircleElement> & {dataKey?: string}
+								dotProps.className = `${dotProps.className} activeDot`
+								delete dotProps.dataKey
+								return <circle {...dotProps}></circle>
 							}}
 						/>
 						<XAxis dataKey={'name'} hide />
@@ -88,28 +88,28 @@ export function GraphForStrategyReports({
 							tick={(props): React.ReactElement<SVGElement> => {
 								const {
 									payload: {value}
-								} = props;
-								props.fill = '#5B5B5B';
-								props.className = 'text-xxs md:text-xs font-number z-10 ';
-								props.alignmentBaseline = 'middle';
-								delete props.verticalAnchor;
-								delete props.visibleTicksCount;
-								delete props.tickFormatter;
-								const formatedValue = formatPercent(value);
-								return <text {...props}>{formatedValue}</text>;
+								} = props
+								props.fill = '#5B5B5B'
+								props.className = 'text-xxs md:text-xs font-number z-10 '
+								props.alignmentBaseline = 'middle'
+								delete props.verticalAnchor
+								delete props.visibleTicksCount
+								delete props.tickFormatter
+								const formatedValue = formatPercent(value)
+								return <text {...props}>{formatedValue}</text>
 							}}
 						/>
 						<Tooltip
 							content={(e): ReactElement => {
-								const {active: isTooltipActive, payload, label} = e;
+								const {active: isTooltipActive, payload, label} = e
 								if (!isTooltipActive || !payload) {
-									return <Fragment />;
+									return <Fragment />
 								}
 								if (payload.length > 0) {
-									const [{value, payload: innerPayload}] = payload;
-									const {gain, loss} = innerPayload;
-									const diff = toBigInt(gain) - toBigInt(loss);
-									const normalizedDiff = toNormalizedValue(diff, vaultDecimals);
+									const [{value, payload: innerPayload}] = payload
+									const {gain, loss} = innerPayload
+									const diff = toBigInt(gain) - toBigInt(loss)
+									const normalizedDiff = toNormalizedValue(diff, vaultDecimals)
 
 									return (
 										<div className={'recharts-tooltip'}>
@@ -131,14 +131,14 @@ export function GraphForStrategyReports({
 												</b>
 											</div>
 										</div>
-									);
+									)
 								}
-								return <div />;
+								return <div />
 							}}
 						/>
 					</LineChart>
 				</ResponsiveContainer>
 			</div>
 		</>
-	);
+	)
 }

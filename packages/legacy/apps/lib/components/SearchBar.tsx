@@ -1,20 +1,20 @@
-import {IconEnter} from '@lib/icons/IconEnter';
-import {IconSearch} from '@lib/icons/IconSearch';
-import {cl} from '@lib/utils';
-import {useDebouncedCallback} from '@react-hookz/web';
-import {type ChangeEvent, type ReactElement, useEffect, useState} from 'react';
+import {IconEnter} from '@lib/icons/IconEnter'
+import {IconSearch} from '@lib/icons/IconSearch'
+import {cl} from '@lib/utils'
+import {useDebouncedCallback} from '@react-hookz/web'
+import {type ChangeEvent, type ReactElement, useEffect, useState} from 'react'
 
 type TSearchBar = {
-	searchPlaceholder: string;
-	searchValue: string;
-	onSearch: (searchValue: string) => void;
-	className?: string;
-	iconClassName?: string;
-	inputClassName?: string;
-	shouldSearchByClick?: boolean;
-	shouldDebounce?: boolean;
-	onSearchClick?: () => void;
-};
+	searchPlaceholder: string
+	searchValue: string
+	onSearch: (searchValue: string) => void
+	className?: string
+	iconClassName?: string
+	inputClassName?: string
+	shouldSearchByClick?: boolean
+	shouldDebounce?: boolean
+	onSearchClick?: () => void
+}
 
 export function SearchBar(props: TSearchBar): ReactElement {
 	/**********************************************************************************************
@@ -22,7 +22,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
 	 ** functionality. This provides a responsive user experience while preventing excessive
 	 ** filtering operations and URL updates that could degrade performance.
 	 *********************************************************************************************/
-	const [localSearchValue, setLocalSearchValue] = useState<string>(props.searchValue || '');
+	const [localSearchValue, setLocalSearchValue] = useState<string>(props.searchValue || '')
 
 	/**********************************************************************************************
 	 ** Create a debounced search handler that delays the actual search operation by 300ms.
@@ -31,32 +31,32 @@ export function SearchBar(props: TSearchBar): ReactElement {
 	 *********************************************************************************************/
 	const debouncedSearch = useDebouncedCallback(
 		(searchValue: string) => {
-			props.onSearch(searchValue);
+			props.onSearch(searchValue)
 		},
 		[props.onSearch],
 		1000
-	);
+	)
 
 	/**********************************************************************************************
 	 ** Handle search input changes by immediately updating the local state for UI responsiveness
 	 ** and triggering the debounced search operation for the actual filtering.
 	 *********************************************************************************************/
 	const handleSearchChange = (searchValue: string): void => {
-		setLocalSearchValue(searchValue);
+		setLocalSearchValue(searchValue)
 		if (props.shouldDebounce) {
-			debouncedSearch(searchValue);
-			return;
+			debouncedSearch(searchValue)
+			return
 		}
-		props.onSearch(searchValue);
-	};
+		props.onSearch(searchValue)
+	}
 
 	/**********************************************************************************************
 	 ** Synchronize local search state when the search prop changes from external sources
 	 ** such as URL navigation, browser back/forward, or programmatic updates.
 	 *********************************************************************************************/
 	useEffect(() => {
-		setLocalSearchValue(props.searchValue || '');
-	}, [props.searchValue]);
+		setLocalSearchValue(props.searchValue || '')
+	}, [props.searchValue])
 
 	return (
 		<div
@@ -76,14 +76,14 @@ export function SearchBar(props: TSearchBar): ReactElement {
 					placeholder={props.searchPlaceholder}
 					value={localSearchValue || ''}
 					onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-						handleSearchChange(e.target.value);
+						handleSearchChange(e.target.value)
 					}}
 					onKeyDown={e => {
 						if (!props.shouldSearchByClick) {
-							return;
+							return
 						}
 						if (e.key === 'Enter') {
-							return props.onSearchClick?.();
+							return props.onSearchClick?.()
 						}
 					}}
 				/>
@@ -101,5 +101,5 @@ export function SearchBar(props: TSearchBar): ReactElement {
 				</div>
 			</div>
 		</div>
-	);
+	)
 }

@@ -1,12 +1,12 @@
-import {cl} from '@lib/utils';
-import type {ReactElement} from 'react';
-import {IconChevron} from '../icons/IconChevron';
+import {cl} from '@lib/utils'
+import type {ReactElement} from 'react'
+import {IconChevron} from '../icons/IconChevron'
 
 type TCarouselSlideArrowsProps = {
-	onScrollBack?: VoidFunction;
-	onScrollForward?: VoidFunction;
-	className?: string;
-};
+	onScrollBack?: VoidFunction
+	onScrollForward?: VoidFunction
+	className?: string
+}
 
 export function CarouselSlideArrows({
 	onScrollBack,
@@ -33,5 +33,5 @@ export function CarouselSlideArrows({
 				</button>
 			</div>
 		</div>
-	);
+	)
 }

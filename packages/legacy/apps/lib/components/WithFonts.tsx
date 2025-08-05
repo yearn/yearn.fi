@@ -1,6 +1,6 @@
-import {Source_Code_Pro} from 'next/font/google';
-import localFont from 'next/font/local';
-import type {ReactElement, ReactNode} from 'react';
+import {Source_Code_Pro} from 'next/font/google'
+import localFont from 'next/font/local'
+import type {ReactElement, ReactNode} from 'react'
 
 const aeonik = localFont({
 	variable: '--font-aeonik',
@@ -27,7 +27,7 @@ const aeonik = localFont({
 			style: 'normal'
 		}
 	]
-});
+})
 
 const aeonikFono = localFont({
 	variable: '--font-aeonik-fono',
@@ -44,14 +44,14 @@ const aeonikFono = localFont({
 			style: 'normal'
 		}
 	]
-});
+})
 
 const sourceCodePro = Source_Code_Pro({
 	weight: ['400', '500', '600', '700'],
 	subsets: ['latin'],
 	display: 'swap',
 	variable: '--scp-font'
-});
+})
 
 export function WithFonts({children}: {children: ReactNode}): ReactElement {
 	return (
@@ -71,5 +71,5 @@ export function WithFonts({children}: {children: ReactNode}): ReactElement {
 
 			{children}
 		</div>
-	);
+	)
 }

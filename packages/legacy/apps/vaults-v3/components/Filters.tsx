@@ -1,25 +1,25 @@
-import type {TMultiSelectOptionProps} from '@lib/components/MultiSelectDropdown';
-import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown';
-import {SearchBar} from '@lib/components/SearchBar';
-import {useChainOptions} from '@lib/hooks/useChains';
-import {IconChevron} from '@lib/icons/IconChevron';
-import {cl} from '@lib/utils';
-import {ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS} from '@vaults-v3/constants';
+import type {TMultiSelectOptionProps} from '@lib/components/MultiSelectDropdown'
+import {MultiSelectDropdown} from '@lib/components/MultiSelectDropdown'
+import {SearchBar} from '@lib/components/SearchBar'
+import {useChainOptions} from '@lib/hooks/useChains'
+import {IconChevron} from '@lib/icons/IconChevron'
+import {cl} from '@lib/utils'
+import {ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS} from '@vaults-v3/constants'
 
-import type {ReactElement} from 'react';
-import {useMemo, useState} from 'react';
+import type {ReactElement} from 'react'
+import {useMemo, useState} from 'react'
 
 type TListHero = {
-	types: string[] | null;
-	categories: string[] | null;
-	chains: number[] | null;
-	searchValue: string;
-	shouldDebounce: boolean;
-	onChangeTypes: (newType: string[] | null) => void;
-	onChangeChains: (chains: number[] | null) => void;
-	onChangeCategories: (categories: string[] | null) => void;
-	onSearch: (searchValue: string) => void;
-};
+	types: string[] | null
+	categories: string[] | null
+	chains: number[] | null
+	searchValue: string
+	shouldDebounce: boolean
+	onChangeTypes: (newType: string[] | null) => void
+	onChangeChains: (chains: number[] | null) => void
+	onChangeCategories: (categories: string[] | null) => void
+	onSearch: (searchValue: string) => void
+}
 
 export function Filters({
 	types,
@@ -32,7 +32,7 @@ export function Filters({
 	shouldDebounce,
 	onChangeChains
 }: TListHero): ReactElement {
-	const [shouldExpandFilters, setShouldExpandFilters] = useState(false);
+	const [shouldExpandFilters, setShouldExpandFilters] = useState(false)
 	const chainOptions = useChainOptions(chains).filter(
 		(option): boolean =>
 			option.value === 1 ||
@@ -41,7 +41,7 @@ export function Filters({
 			option.value === 8453 ||
 			option.value === 146 ||
 			option.value === 747474
-	);
+	)
 	const typeOptions = useMemo((): TMultiSelectOptionProps[] => {
 		const options: TMultiSelectOptionProps[] = Object.entries(ALL_VAULTSV3_KINDS).map(
 			([key, value]): TMultiSelectOptionProps => ({
@@ -49,9 +49,9 @@ export function Filters({
 				label: value.replaceAll(' Vaults', ''),
 				isSelected: types?.includes(key) || false
 			})
-		);
-		return options;
-	}, [types]);
+		)
+		return options
+	}, [types])
 
 	const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
 		const options: TMultiSelectOptionProps[] = Object.values(ALL_VAULTSV3_CATEGORIES).map(
@@ -60,9 +60,9 @@ export function Filters({
 				label: value,
 				isSelected: categories?.includes(value) || false
 			})
-		);
-		return options;
-	}, [categories]);
+		)
+		return options
+	}, [categories])
 
 	return (
 		<div className={'relative col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-8'}>
@@ -107,8 +107,8 @@ export function Filters({
 						onSelect={(options): void => {
 							const selectedChains = options
 								.filter((o): boolean => o.isSelected)
-								.map((option): number => Number(option.value));
-							onChangeChains(selectedChains);
+								.map((option): number => Number(option.value))
+							onChangeChains(selectedChains)
 						}}
 					/>
 				</div>
@@ -123,8 +123,8 @@ export function Filters({
 						onSelect={(options): void => {
 							const selectedCategories = options
 								.filter((o): boolean => o.isSelected)
-								.map((option): string => String(option.value));
-							onChangeCategories(selectedCategories);
+								.map((option): string => String(option.value))
+							onChangeCategories(selectedCategories)
 						}}
 					/>
 				</div>
@@ -139,12 +139,12 @@ export function Filters({
 						onSelect={(options): void => {
 							const selectedTypes = options
 								.filter((o): boolean => o.isSelected)
-								.map((option): string => String(option.value));
-							onChangeTypes(selectedTypes);
+								.map((option): string => String(option.value))
+							onChangeTypes(selectedTypes)
 						}}
 					/>
 				</div>
 			</div>
 		</div>
-	);
+	)
 }

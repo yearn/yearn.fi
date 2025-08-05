@@ -1,4 +1,4 @@
-import type {FC} from 'react';
+import type {FC} from 'react'
 
 export const VaultEmptyCard: FC = () => {
 	return (
@@ -6,5 +6,5 @@ export const VaultEmptyCard: FC = () => {
 			<p className={'text-[18px] font-medium text-neutral-900/75'}>{'No positions found'}</p>
 			<p className={'text-[14px] font-medium text-neutral-900/50'}>{'Your vault positions will show here'}</p>
 		</div>
-	);
-};
+	)
+}

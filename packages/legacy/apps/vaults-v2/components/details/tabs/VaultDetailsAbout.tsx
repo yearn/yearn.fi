@@ -1,43 +1,43 @@
-import {RenderAmount} from '@lib/components/RenderAmount';
-import {Renderable} from '@lib/components/Renderable';
-import type {TGraphData} from '@lib/types';
-import {cl, formatAmount, formatPercent, isZero} from '@lib/utils';
-import {parseMarkdown} from '@lib/utils/helpers';
-import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import {useIsMounted} from '@react-hookz/web';
-import {GraphForVaultEarnings} from '@vaults-v2/components/graphs/GraphForVaultEarnings';
-import type {ReactElement} from 'react';
+import {RenderAmount} from '@lib/components/RenderAmount'
+import {Renderable} from '@lib/components/Renderable'
+import type {TGraphData} from '@lib/types'
+import {cl, formatAmount, formatPercent, isZero} from '@lib/utils'
+import {parseMarkdown} from '@lib/utils/helpers'
+import type {TYDaemonVault} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import {useIsMounted} from '@react-hookz/web'
+import {GraphForVaultEarnings} from '@vaults-v2/components/graphs/GraphForVaultEarnings'
+import type {ReactElement} from 'react'
 
 type TAPYLineItemProps = {
-	currentVault: TYDaemonVault;
-	label: string;
-	value: number | string;
-	apyType: string;
-	hasUpperLimit?: boolean;
-	isStaking?: boolean;
-};
+	currentVault: TYDaemonVault
+	label: string
+	value: number | string
+	apyType: string
+	hasUpperLimit?: boolean
+	isStaking?: boolean
+}
 
 type TYearnFeesLineItem = {
-	children: ReactElement;
-	label: string;
-	tooltip?: string;
-};
+	children: ReactElement
+	label: string
+	tooltip?: string
+}
 
 function APYLineItem({currentVault, value, label, apyType, isStaking, hasUpperLimit}: TAPYLineItemProps): ReactElement {
-	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
-	const safeValue = Number(value) || 0;
-	const isNew = apyType === 'new' && isZero(safeValue);
+	const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
+	const safeValue = Number(value) || 0
+	const isNew = apyType === 'new' && isZero(safeValue)
 
 	if (isSourceVeYFI && isStaking) {
-		const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
+		const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
 		const veYFIRange = [
 			currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
 			sumOfRewardsAPY
-		] as [number, number];
+		] as [number, number]
 		const estAPYRange = [
 			veYFIRange[0] + currentVault.apr.forwardAPR.netAPR,
 			veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
-		] as [number, number];
+		] as [number, number]
 		return (
 			<div className={'flex flex-row items-center justify-between'}>
 				<p className={'text-sm text-neutral-500'}>{label}</p>
@@ -47,7 +47,7 @@ function APYLineItem({currentVault, value, label, apyType, isStaking, hasUpperLi
 					<RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
 				</p>
 			</div>
-		);
+		)
 	}
 
 	return (
@@ -61,7 +61,7 @@ function APYLineItem({currentVault, value, label, apyType, isStaking, hasUpperLi
 						: formatPercent(safeValue * 100, 2, 2, 500)}
 			</p>
 		</div>
-	);
+	)
 }
 
 function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): ReactElement {
@@ -87,25 +87,25 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 				{children}
 			</div>
 		</div>
-	);
+	)
 }
 
 export function VaultDetailsAbout({
 	currentVault,
 	harvestData
 }: {
-	currentVault: TYDaemonVault;
-	harvestData: TGraphData[];
+	currentVault: TYDaemonVault
+	harvestData: TGraphData[]
 }): ReactElement {
-	const isMounted = useIsMounted();
-	const {token, apr} = currentVault;
+	const isMounted = useIsMounted()
+	const {token, apr} = currentVault
 
 	function getVaultDescription(): string | ReactElement {
 		if (currentVault.description) {
-			return parseMarkdown(currentVault.description.replaceAll('{{token}}', currentVault.token.symbol));
+			return parseMarkdown(currentVault.description.replaceAll('{{token}}', currentVault.token.symbol))
 		}
 		if (token.description) {
-			return parseMarkdown(token.description.replaceAll('{{token}}', currentVault.token.symbol));
+			return parseMarkdown(token.description.replaceAll('{{token}}', currentVault.token.symbol))
 		}
 		return (
 			<>
@@ -136,7 +136,7 @@ export function VaultDetailsAbout({
 				</a>{' '}
 				and ask.
 			</>
-		);
+		)
 	}
 
 	return (
@@ -250,5 +250,5 @@ export function VaultDetailsAbout({
 				</div>
 			</div>
 		</div>
-	);
+	)
 }

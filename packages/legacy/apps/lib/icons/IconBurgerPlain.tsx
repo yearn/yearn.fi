@@ -1,4 +1,4 @@
-import type {ReactElement} from 'react';
+import type {ReactElement} from 'react'
 
 export function IconBurgerPlain(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
@@ -13,5 +13,5 @@ export function IconBurgerPlain(props: React.SVGProps<SVGSVGElement>): ReactElem
 			<rect x={'2'} y={'11'} width={'20'} height={'2'} fill={'white'} />
 			<rect x={'2'} y={'4'} width={'20'} height={'2'} fill={'white'} />
 		</svg>
-	);
+	)
 }
