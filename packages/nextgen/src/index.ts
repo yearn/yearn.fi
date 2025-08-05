@@ -1,2 +1,2 @@
-export const TEST = 'TEST';
-export * from './components/elements';
+export const TEST = 'TEST'
+export * from './components/elements'

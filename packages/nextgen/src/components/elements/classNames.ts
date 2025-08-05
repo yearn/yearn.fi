@@ -1,28 +1,28 @@
-import type {ButtonHTMLAttributes, HTMLAttributes} from 'react';
-import {cn} from '../../lib/cn';
+import type {ButtonHTMLAttributes, HTMLAttributes} from 'react'
+import {cn} from '../../lib/cn'
 
-export type ThemeName = 'default' | 'disabled' | 'busy' | 'error';
-export type Hierarchy = 'primary' | 'secondary';
+export type ThemeName = 'default' | 'disabled' | 'busy' | 'error'
+export type Hierarchy = 'primary' | 'secondary'
 
 export type CardProps = HTMLAttributes<HTMLDivElement> & {
-	className?: string;
-	h?: Hierarchy;
-	header?: React.ReactNode;
-};
+	className?: string
+	h?: Hierarchy
+	header?: React.ReactNode
+}
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-	className?: string;
-	theme?: ThemeName;
-	h?: Hierarchy;
-};
+	className?: string
+	theme?: ThemeName
+	h?: Hierarchy
+}
 
 export function cardClassName(props: CardProps) {
-	const {className, h} = props;
-	const bg = h === 'secondary' ? 'bg-secondary-800' : 'bg-primary-100';
-	const text = h === 'secondary' ? 'text-primary-50' : '';
-	const outline = h === 'secondary' ? 'outline-secondary-400/40' : 'outline-primary-400/40';
+	const {className, h} = props
+	const bg = h === 'secondary' ? 'bg-secondary-800' : 'bg-primary-100'
+	const text = h === 'secondary' ? 'text-primary-50' : ''
+	const outline = h === 'secondary' ? 'outline-secondary-400/40' : 'outline-primary-400/40'
 	return cn(`relative rounded-primary p-6 flex flex-col gap-3 drop-shadow-6 drop-shadow-neutral-500/40
-    ${bg} ${text} outline-0 ${outline} ${className}`);
+    ${bg} ${text} outline-0 ${outline} ${className}`)
 }
 
 export function vaultCardContainerClassName() {
@@ -31,14 +31,14 @@ export function vaultCardContainerClassName() {
     grid-rows-1 data-[has-balance=true]:grid-rows-2
     sm:grid-rows-none sm:data-[has-balance=true]:grid-rows-none
     sm:grid-cols-1 sm:data-[has-balance=true]:grid-cols-[1fr_1fr]      
-    font-mono`);
+    font-mono`)
 }
 
 export function buttonClassName(props: ButtonProps) {
-	const {className, theme, h} = props;
-	const busy = theme === 'busy';
-	const bg = theme === 'error' ? 'bg-red-500' : h === 'secondary' ? 'bg-secondary-900' : 'bg-primary-50';
-	const text = theme === 'error' ? 'text-red-50' : h === 'secondary' ? 'text-neutral-300' : 'text-secondary-600';
+	const {className, theme, h} = props
+	const busy = theme === 'busy'
+	const bg = theme === 'error' ? 'bg-red-500' : h === 'secondary' ? 'bg-secondary-900' : 'bg-primary-50'
+	const text = theme === 'error' ? 'text-red-50' : h === 'secondary' ? 'text-neutral-300' : 'text-secondary-600'
 	return cn(`
     relative h-8 px-8 py-5 flex items-center justify-center
     ${bg} text-2xl ${text} tracking-wide
@@ -61,5 +61,5 @@ export function buttonClassName(props: ButtonProps) {
     cursor-pointer rounded-primary whitespace-nowrap
     ${(busy || theme === 'error') && 'pointer-events-none'}
     ${`theme-${theme ?? 'default'}`}
-    ${className}`);
+    ${className}`)
 }

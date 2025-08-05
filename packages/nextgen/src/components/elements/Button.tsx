@@ -1,9 +1,9 @@
-import {forwardRef, useMemo} from 'react';
-import {PiSpinnerBold} from 'react-icons/pi';
-import {type ButtonProps, buttonClassName} from './classNames';
+import {forwardRef, useMemo} from 'react'
+import {PiSpinnerBold} from 'react-icons/pi'
+import {type ButtonProps, buttonClassName} from './classNames'
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(({className, theme, h, children, ...props}, ref) => {
-	const busy = useMemo(() => theme === 'busy', [theme]);
+	const busy = useMemo(() => theme === 'busy', [theme])
 	return (
 		<button
 			data-theme={theme}
@@ -21,9 +21,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(({className, theme, h,
 			)}
 			{!busy && children}
 		</button>
-	);
-});
+	)
+})
 
-Button.displayName = 'Button';
+Button.displayName = 'Button'
 
-export default Button;
+export default Button
