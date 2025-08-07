@@ -1,5 +1,5 @@
-import {useEffect, useState} from 'react';
-import {useRouter} from 'next/router';
+import { useRouter } from 'next/router'
+import { useEffect, useState } from 'react'
 
 /************************************************************************************************
  ** useInitialQueryParam Hook
@@ -17,25 +17,25 @@ import {useRouter} from 'next/router';
  ** @returns {string | null} - The value of the query parameter, or null if not found
  ************************************************************************************************/
 export function useInitialQueryParam(key: string): string | null {
-	const router = useRouter();
-	const [value, set_value] = useState<string | null>(null);
+  const router = useRouter()
+  const [value, setValue] = useState<string | null>(null)
 
-	useEffect(() => {
-		if (typeof window !== 'undefined') {
-			const urlParams = new URLSearchParams(window.location.search);
-			const initialValue = urlParams.get(key);
-			set_value(initialValue);
-		}
-	}, [key]);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const initialValue = urlParams.get(key)
+      setValue(initialValue)
+    }
+  }, [key])
 
-	useEffect(() => {
-		if (router.isReady && !value) {
-			const queryValue = router.query[key] as string;
-			if (queryValue) {
-				set_value(queryValue);
-			}
-		}
-	}, [router.isReady, router.query, key, value]);
+  useEffect(() => {
+    if (router.isReady && !value) {
+      const queryValue = router.query[key] as string
+      if (queryValue) {
+        setValue(queryValue)
+      }
+    }
+  }, [router.isReady, router.query, key, value])
 
-	return value;
+  return value
 }

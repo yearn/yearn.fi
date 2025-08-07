@@ -1,31 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Sono:wght@200..800&family=Workbench&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Sono:wght@200..800&family=Workbench&display=swap");
 
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @layer utilities {
   @media (hover: hover) {
     .hoverable\:hidden {
-      display: none
+      display: none;
     }
     .hoverable\:block {
-      display: block
+      display: block;
     }
     .hoverable\:flex {
-      display: flex
+      display: flex;
     }
     .hoverable\:invisible {
-      visibility: hidden
+      visibility: hidden;
     }
     .hoverable\:visible {
-      visibility: visible
+      visibility: visible;
     }
   }
 }
 
 /* stylelint-disable at-rule-no-unknown */
 @theme {
-  --font-mono: 'Sono', monospace;
-	--font-fancy: 'Workbench', sans-serif;
+  --font-mono: "Sono", monospace;
+  --font-fancy: "Workbench", sans-serif;
 
   --color-primary-50: var(--color-fuchsia-50);
   --color-primary-100: var(--color-fuchsia-100);
@@ -72,10 +72,10 @@
 
 :root {
   --foreground: var(--color-secondary-700);
-	--background: var(--color-secondary-50);
+  --background: var(--color-secondary-50);
   scrollbar-color: var(--color-primary-50) var(--color-secondary-600);
 
-  font-family: 'Sono', sans-serif;
+  font-family: "Sono", sans-serif;
   font-weight: 400;
 
   color-scheme: light dark;
@@ -107,12 +107,12 @@
 
 .animate-suspense {
   background: linear-gradient(-45deg, #253f67 50%, #336eae 60%, #93cefe 61%, #253f67 61%);
-	background-size: 200% 100%;
-	animation: suspense .75s infinite;
+  background-size: 200% 100%;
+  animation: suspense 0.75s infinite;
 }
 
 .animate-wait {
   background: linear-gradient(-45deg, #253f67 50%, #336eae 60%, #93cefe 61%, #253f67 61%);
-	background-size: 200% 100%;
-	animation: suspense .5s infinite linear;
+  background-size: 200% 100%;
+  animation: suspense 0.5s infinite linear;
 }

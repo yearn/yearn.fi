@@ -1,4 +1,4 @@
 {
-	"*.ts|*.tsx": ["yarn prettier-format", "yarn eslint --quiet --fix", "bash -c tsc --noEmit"],
-	"*.scss|*.css": "yarn prettier-format"
+  "**/*.{ts,tsx}": ["biome check --write --no-errors-on-unmatched --files-ignore-unknown=true", "bash -c tsc --noEmit"],
+  "**/*.{css}": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
 }

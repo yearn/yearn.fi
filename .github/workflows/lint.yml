@@ -9,7 +9,7 @@ on:
 
 permissions:
     checks: write
-    contents: write
+    contents: read
 
 jobs:
     run-linters:
@@ -18,18 +18,23 @@ jobs:
 
         steps:
             - name: Check out Git repository
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
 
             - name: Set up Node.js
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
                   node-version: 20
 
-            - name: Install project dependencies
-              run: yarn --prefer-offline
-              id: install
+            - name: Install Bun
+              run: |
+                  curl -fsSL https://bun.sh/install | bash
+                  echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
-            - name: Run linters
-              uses: wearerequired/lint-action@v2
-              with:
-                  eslint: true
+            - name: Install project dependencies
+              run: bun install
+
+            - name: Lint legacy package
+              run: cd packages/legacy && bun run lint
+
+            - name: Lint nextgen package
+              run: cd packages/nextgen && bun run lint

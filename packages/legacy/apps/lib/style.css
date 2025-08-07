@@ -94,10 +94,15 @@
 	--color-neutral-0: 0 0% 5%;
 }
 
-
-body {@apply text-neutral-900;}
-h1 {@apply text-xl font-bold text-neutral-900;}
-h4 {@apply text-lg font-bold text-neutral-700;}
+body {
+	@apply text-neutral-900;
+}
+h1 {
+	@apply text-xl font-bold text-neutral-900;
+}
+h4 {
+	@apply text-lg font-bold text-neutral-700;
+}
 #__next {@apply w-full h-full}
 
 /* 🔵 - Yearn Finance ******************************************************
@@ -137,10 +142,7 @@ label[aria-invalid="true"] {
 }
 
 :focus {
-    outline-width: 0px;
-    outline-offset: 0px;
-	outline: none;
-    outline-color: transparent;
+    outline: none;
 }
 
 /* 🔵 - Yearn Finance ******************************************************

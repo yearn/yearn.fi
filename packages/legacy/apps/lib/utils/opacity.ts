@@ -5,6 +5,6 @@
  * @returns A string representing the opacity in hex format.
  */
 export const opacityToHex = (opacity: number): string => {
-	const alpha = Math.round(opacity * 255);
-	return alpha.toString(16).padStart(2, '0').toUpperCase();
-};
+  const alpha = Math.round(opacity * 255)
+  return alpha.toString(16).padStart(2, '0').toUpperCase()
+}

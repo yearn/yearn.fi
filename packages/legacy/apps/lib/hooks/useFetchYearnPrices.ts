@@ -1,10 +1,8 @@
-import {useDeepCompareMemo} from '@react-hookz/web';
-
-import {yDaemonPricesChainSchema} from '../utils/schemas/yDaemonPricesSchema';
-import {useFetch} from './useFetch';
-import {useYDaemonBaseURI} from './useYDaemonBaseURI';
-
-import type {TYDaemonPricesChain} from '../utils/schemas/yDaemonPricesSchema';
+import { useDeepCompareMemo } from '@react-hookz/web'
+import type { TYDaemonPricesChain } from '../utils/schemas/yDaemonPricesSchema'
+import { yDaemonPricesChainSchema } from '../utils/schemas/yDaemonPricesSchema'
+import { useFetch } from './useFetch'
+import { useYDaemonBaseURI } from './useYDaemonBaseURI'
 
 /******************************************************************************
  ** The useFetchYearnPrices hook is used to fetch the prices of the tokens from
@@ -12,20 +10,20 @@ import type {TYDaemonPricesChain} from '../utils/schemas/yDaemonPricesSchema';
  ** splitted by chain.
  *****************************************************************************/
 function useFetchYearnPrices(): TYDaemonPricesChain {
-	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
-	const {data: prices} = useFetch<TYDaemonPricesChain>({
-		endpoint: `${yDaemonBaseUriWithoutChain}/prices/all`,
-		schema: yDaemonPricesChainSchema
-	});
+  const { yDaemonBaseUri: yDaemonBaseUriWithoutChain } = useYDaemonBaseURI()
+  const { data: prices } = useFetch<TYDaemonPricesChain>({
+    endpoint: `${yDaemonBaseUriWithoutChain}/prices/all`,
+    schema: yDaemonPricesChainSchema
+  })
 
-	const pricesUpdated = useDeepCompareMemo((): TYDaemonPricesChain => {
-		if (!prices) {
-			return {};
-		}
-		return prices;
-	}, [prices]);
+  const pricesUpdated = useDeepCompareMemo((): TYDaemonPricesChain => {
+    if (!prices) {
+      return {}
+    }
+    return prices
+  }, [prices])
 
-	return pricesUpdated;
+  return pricesUpdated
 }
 
-export {useFetchYearnPrices};
+export { useFetchYearnPrices }
