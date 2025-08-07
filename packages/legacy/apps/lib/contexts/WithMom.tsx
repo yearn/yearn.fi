@@ -14,51 +14,54 @@ import { Web3ContextApp } from './useWeb3'
 import { WithTokenList } from './WithTokenList'
 
 type TWithMom = {
-	children: ReactElement
-	initialState?: State
-	defaultNetwork?: Chain
-	supportedChains: Chain[]
-	tokenLists?: string[]
-	rainbowConfig?: {
-		initialChain?: Chain | number
-		id?: string
-		theme?: Theme | null
-		showRecentTransactions?: boolean
-		appInfo?: {
-			appName?: string
-			learnMoreUrl?: string
-			disclaimer?: DisclaimerComponent
-		}
-		coolMode?: boolean
-		avatar?: AvatarComponent
-		modalSize?: 'compact' | 'wide'
-	}
+  children: ReactElement
+  initialState?: State
+  defaultNetwork?: Chain
+  supportedChains: Chain[]
+  tokenLists?: string[]
+  rainbowConfig?: {
+    initialChain?: Chain | number
+    id?: string
+    theme?: Theme | null
+    showRecentTransactions?: boolean
+    appInfo?: {
+      appName?: string
+      learnMoreUrl?: string
+      disclaimer?: DisclaimerComponent
+    }
+    coolMode?: boolean
+    avatar?: AvatarComponent
+    modalSize?: 'compact' | 'wide'
+  }
 }
 
 const queryClient = new QueryClient()
 function WithMom({
-	children,
-	supportedChains,
-	defaultNetwork,
-	tokenLists,
-	rainbowConfig,
-	initialState
+  children,
+  supportedChains,
+  defaultNetwork,
+  tokenLists,
+  rainbowConfig,
+  initialState
 }: TWithMom): ReactElement {
-	const config = useMemo(() => getConfig({ chains: supportedChains }), [supportedChains])
+  const config = useMemo(() => getConfig({ chains: supportedChains }), [supportedChains])
 
-	return (
-		<WagmiProvider config={config as Config} reconnectOnMount={!isIframe()} initialState={initialState}>
-			<QueryClientProvider client={queryClient}>
-				<SWRConfig value={defaultSWRConfig}>
-					<RainbowKitProvider {...rainbowConfig}>
-						<Web3ContextApp defaultNetwork={defaultNetwork}>
-							<WithTokenList lists={tokenLists}>{children}</WithTokenList>
-						</Web3ContextApp>
-					</RainbowKitProvider>
-				</SWRConfig>
-			</QueryClientProvider>
-		</WagmiProvider>
-	)
+  return (
+    <WagmiProvider
+      config={config as Config}
+      reconnectOnMount={!isIframe()}
+      initialState={initialState}>
+      <QueryClientProvider client={queryClient}>
+        <SWRConfig value={defaultSWRConfig}>
+          <RainbowKitProvider {...rainbowConfig}>
+            <Web3ContextApp defaultNetwork={defaultNetwork}>
+              <WithTokenList lists={tokenLists}>{children}</WithTokenList>
+            </Web3ContextApp>
+          </RainbowKitProvider>
+        </SWRConfig>
+      </QueryClientProvider>
+    </WagmiProvider>
+  )
 }
 
 export { WithMom }

@@ -27,214 +27,224 @@ import { maxUint256 } from 'viem'
  ** Note: DISABLED
  *************************************************************************************************/
 export function useSolverChainCoin(): TSolverContext {
-	const { provider } = useWeb3()
-	const latestQuote = useRef<TNormalizedBN | undefined>(undefined)
-	const request = useRef<TInitSolverArgs | undefined>(undefined)
-	const existingAllowances = useRef<TDict<TNormalizedBN>>({})
-	const { setShouldOpenCurtain } = useNotifications()
+  const { provider } = useWeb3()
+  const latestQuote = useRef<TNormalizedBN | undefined>(undefined)
+  const request = useRef<TInitSolverArgs | undefined>(undefined)
+  const existingAllowances = useRef<TDict<TNormalizedBN>>({})
+  const { setShouldOpenCurtain } = useNotifications()
 
-	/**********************************************************************************************
-	 ** init will be called when the cowswap solver should be used to perform the desired swap.
-	 ** It will set the request to the provided value, as it's required to get the quote, and will
-	 ** call getQuote to get the current quote for the provided request.
-	 *********************************************************************************************/
-	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
-		if (isSolverDisabled(Solver.enum.ChainCoin)) {
-			return undefined
-		}
-		request.current = _request
-		const wrapperToken = getNativeTokenWrapperContract(_request.chainID)
-		const estimateOut = await getVaultEstimateOut({
-			inputToken: _request.isDepositing ? toAddress(wrapperToken) : toAddress(_request.inputToken.value),
-			outputToken: _request.isDepositing ? toAddress(_request.outputToken.value) : toAddress(wrapperToken),
-			inputDecimals: _request.inputToken.decimals,
-			outputDecimals: _request.outputToken.decimals,
-			inputAmount: _request.inputAmount,
-			isDepositing: _request.isDepositing,
-			chainID: _request.chainID,
-			version: _request.version,
-			from: toAddress(_request.from)
-		})
-		latestQuote.current = estimateOut
-		return latestQuote.current
-	}, [])
+  /**********************************************************************************************
+   ** init will be called when the cowswap solver should be used to perform the desired swap.
+   ** It will set the request to the provided value, as it's required to get the quote, and will
+   ** call getQuote to get the current quote for the provided request.
+   *********************************************************************************************/
+  const init = useCallback(
+    async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
+      if (isSolverDisabled(Solver.enum.ChainCoin)) {
+        return undefined
+      }
+      request.current = _request
+      const wrapperToken = getNativeTokenWrapperContract(_request.chainID)
+      const estimateOut = await getVaultEstimateOut({
+        inputToken: _request.isDepositing
+          ? toAddress(wrapperToken)
+          : toAddress(_request.inputToken.value),
+        outputToken: _request.isDepositing
+          ? toAddress(_request.outputToken.value)
+          : toAddress(wrapperToken),
+        inputDecimals: _request.inputToken.decimals,
+        outputDecimals: _request.outputToken.decimals,
+        inputAmount: _request.inputAmount,
+        isDepositing: _request.isDepositing,
+        chainID: _request.chainID,
+        version: _request.version,
+        from: toAddress(_request.from)
+      })
+      latestQuote.current = estimateOut
+      return latestQuote.current
+    },
+    []
+  )
 
-	/**********************************************************************************************
-	 ** Retrieve the allowance for the token to be used by the solver. This will be used to
-	 ** determine if the user should approve the token or not.
-	 ** No allowance required if depositing chainCoin, so set it to infinity.
-	 *********************************************************************************************/
-	const onRetrieveAllowance = useCallback(
-		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-			if (!request?.current || !provider) {
-				return zeroNormalizedBN
-			}
+  /**********************************************************************************************
+   ** Retrieve the allowance for the token to be used by the solver. This will be used to
+   ** determine if the user should approve the token or not.
+   ** No allowance required if depositing chainCoin, so set it to infinity.
+   *********************************************************************************************/
+  const onRetrieveAllowance = useCallback(
+    async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
+      if (!request?.current || !provider) {
+        return zeroNormalizedBN
+      }
 
-			const key = allowanceKey(
-				request.current.chainID,
-				toAddress(request.current.inputToken.value),
-				toAddress(request.current.outputToken.value),
-				toAddress(request.current.from)
-			)
-			if (existingAllowances.current[key] && !shouldForceRefetch) {
-				return existingAllowances.current[key]
-			}
+      const key = allowanceKey(
+        request.current.chainID,
+        toAddress(request.current.inputToken.value),
+        toAddress(request.current.outputToken.value),
+        toAddress(request.current.from)
+      )
+      if (existingAllowances.current[key] && !shouldForceRefetch) {
+        return existingAllowances.current[key]
+      }
 
-			assert(isEthAddress(request.current.outputToken.value), 'Out is not ETH')
-			const allowance = await allowanceOf({
-				connector: provider,
-				chainID: request.current.inputToken.chainID,
-				tokenAddress: toAddress(request.current.inputToken.value),
-				spenderAddress: toAddress(getEthZapperContract(request.current.chainID))
-			})
-			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
-			return existingAllowances.current[key]
-		},
-		[provider]
-	)
+      assert(isEthAddress(request.current.outputToken.value), 'Out is not ETH')
+      const allowance = await allowanceOf({
+        connector: provider,
+        chainID: request.current.inputToken.chainID,
+        tokenAddress: toAddress(request.current.inputToken.value),
+        spenderAddress: toAddress(getEthZapperContract(request.current.chainID))
+      })
+      existingAllowances.current[key] = toNormalizedBN(
+        allowance,
+        request.current.inputToken.decimals
+      )
+      return existingAllowances.current[key]
+    },
+    [provider]
+  )
 
-	/**********************************************************************************************
-	 ** When we want to withdraw a yvWrappedCoin to the base chain coin, we first need to approve
-	 ** the yvWrappedCoin to be used by the zap contract.
-	 *********************************************************************************************/
-	const onApprove = useCallback(
-		async (
-			amount = maxUint256,
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
-			txHashSetter: (txHash: Hash) => void,
-			onError?: (error: Error) => Promise<void>
-		): Promise<void> => {
-			try {
-				assert(request?.current?.inputToken, 'Input token is not set')
+  /**********************************************************************************************
+   ** When we want to withdraw a yvWrappedCoin to the base chain coin, we first need to approve
+   ** the yvWrappedCoin to be used by the zap contract.
+   *********************************************************************************************/
+  const onApprove = useCallback(
+    async (
+      amount = maxUint256,
+      txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+      onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+      txHashSetter: (txHash: Hash) => void,
+      onError?: (error: Error) => Promise<void>
+    ): Promise<void> => {
+      try {
+        assert(request?.current?.inputToken, 'Input token is not set')
 
-				const result = await approveERC20({
-					connector: provider,
-					chainID: request.current.chainID,
-					contractAddress: toAddress(request.current.inputToken.value),
-					spenderAddress: getEthZapperContract(request.current.chainID),
-					amount: amount,
-					statusHandler: txStatusSetter,
-					txHashHandler: txHashSetter,
-					cta: {
-						label: 'View',
-						onClick: () => {
-							setShouldOpenCurtain(true)
-						}
-					}
-				})
-				if (result.isSuccessful) {
-					await onSuccess(result.receipt)
-				} else if (onError) {
-					await onError(new Error('Approval failed'))
-				}
-			} catch (error) {
-				if (onError) {
-					await onError(error instanceof Error ? error : new Error('Unknown error occurred'))
-				}
-			}
-		},
-		[provider, setShouldOpenCurtain]
-	)
+        const result = await approveERC20({
+          connector: provider,
+          chainID: request.current.chainID,
+          contractAddress: toAddress(request.current.inputToken.value),
+          spenderAddress: getEthZapperContract(request.current.chainID),
+          amount: amount,
+          statusHandler: txStatusSetter,
+          txHashHandler: txHashSetter,
+          cta: {
+            label: 'View',
+            onClick: () => {
+              setShouldOpenCurtain(true)
+            }
+          }
+        })
+        if (result.isSuccessful) {
+          await onSuccess(result.receipt)
+        } else if (onError) {
+          await onError(new Error('Approval failed'))
+        }
+      } catch (error) {
+        if (onError) {
+          await onError(error instanceof Error ? error : new Error('Unknown error occurred'))
+        }
+      }
+    },
+    [provider, setShouldOpenCurtain]
+  )
 
-	/**********************************************************************************************
-	 ** Trigger a deposit web3 action using the ETH zap contract to deposit ETH to the selected
-	 ** yvETH vault. The contract will first convert ETH to WETH, aka the vault underlying token,
-	 ** and then deposit it to the vault.
-	 *********************************************************************************************/
-	const onExecuteDeposit = useCallback(
-		async (
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
-			txHashSetter: (txHash: Hash) => void,
-			onError?: (error: Error) => Promise<void>
-		): Promise<void> => {
-			try {
-				assert(request.current, 'Request is not set')
-				assert(request.current.inputAmount, 'Input amount is not set')
+  /**********************************************************************************************
+   ** Trigger a deposit web3 action using the ETH zap contract to deposit ETH to the selected
+   ** yvETH vault. The contract will first convert ETH to WETH, aka the vault underlying token,
+   ** and then deposit it to the vault.
+   *********************************************************************************************/
+  const onExecuteDeposit = useCallback(
+    async (
+      txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+      onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+      txHashSetter: (txHash: Hash) => void,
+      onError?: (error: Error) => Promise<void>
+    ): Promise<void> => {
+      try {
+        assert(request.current, 'Request is not set')
+        assert(request.current.inputAmount, 'Input amount is not set')
 
-				const result = await depositETH({
-					connector: provider,
-					chainID: request.current.chainID,
-					contractAddress: getEthZapperContract(request.current.chainID),
-					amount: request.current.inputAmount,
-					statusHandler: txStatusSetter,
-					txHashHandler: txHashSetter,
-					cta: {
-						label: 'View',
-						onClick: () => {
-							setShouldOpenCurtain(true)
-						}
-					}
-				})
-				if (result.isSuccessful) {
-					await onSuccess(result.receipt)
-				} else if (onError) {
-					await onError(new Error('Deposit failed'))
-				}
-			} catch (error) {
-				if (onError) {
-					await onError(error instanceof Error ? error : new Error('Unknown error occurred'))
-				}
-			}
-		},
-		[provider, setShouldOpenCurtain]
-	)
+        const result = await depositETH({
+          connector: provider,
+          chainID: request.current.chainID,
+          contractAddress: getEthZapperContract(request.current.chainID),
+          amount: request.current.inputAmount,
+          statusHandler: txStatusSetter,
+          txHashHandler: txHashSetter,
+          cta: {
+            label: 'View',
+            onClick: () => {
+              setShouldOpenCurtain(true)
+            }
+          }
+        })
+        if (result.isSuccessful) {
+          await onSuccess(result.receipt)
+        } else if (onError) {
+          await onError(new Error('Deposit failed'))
+        }
+      } catch (error) {
+        if (onError) {
+          await onError(error instanceof Error ? error : new Error('Unknown error occurred'))
+        }
+      }
+    },
+    [provider, setShouldOpenCurtain]
+  )
 
-	/**********************************************************************************************
-	 ** Trigger a withdraw web3 action using the ETH zap contract to take back some ETH from the
-	 ** selected yvETH vault. The contract will first convert yvETH to wETH, unwrap the wETH and
-	 ** send them to the user.
-	 *********************************************************************************************/
-	const onExecuteWithdraw = useCallback(
-		async (
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
-			txHashSetter: (txHash: Hash) => void,
-			onError?: (error: Error) => Promise<void>
-		): Promise<void> => {
-			try {
-				assert(request.current, 'Request is not set')
-				assert(request.current.inputAmount, 'Input amount is not set')
+  /**********************************************************************************************
+   ** Trigger a withdraw web3 action using the ETH zap contract to take back some ETH from the
+   ** selected yvETH vault. The contract will first convert yvETH to wETH, unwrap the wETH and
+   ** send them to the user.
+   *********************************************************************************************/
+  const onExecuteWithdraw = useCallback(
+    async (
+      txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+      onSuccess: (receipt?: TransactionReceipt) => Promise<void>,
+      txHashSetter: (txHash: Hash) => void,
+      onError?: (error: Error) => Promise<void>
+    ): Promise<void> => {
+      try {
+        assert(request.current, 'Request is not set')
+        assert(request.current.inputAmount, 'Input amount is not set')
 
-				const result = await withdrawETH({
-					connector: provider,
-					chainID: request.current.chainID,
-					contractAddress: getEthZapperContract(request.current.chainID),
-					amount: request.current.inputAmount,
-					statusHandler: txStatusSetter,
-					txHashHandler: txHashSetter,
-					cta: {
-						label: 'View',
-						onClick: () => {
-							setShouldOpenCurtain(true)
-						}
-					}
-				})
-				if (result.isSuccessful) {
-					await onSuccess(result.receipt)
-				} else if (onError) {
-					await onError(new Error('Withdrawal failed'))
-				}
-			} catch (error) {
-				if (onError) {
-					await onError(error instanceof Error ? error : new Error('Unknown error occurred'))
-				}
-			}
-		},
-		[provider, setShouldOpenCurtain]
-	)
+        const result = await withdrawETH({
+          connector: provider,
+          chainID: request.current.chainID,
+          contractAddress: getEthZapperContract(request.current.chainID),
+          amount: request.current.inputAmount,
+          statusHandler: txStatusSetter,
+          txHashHandler: txHashSetter,
+          cta: {
+            label: 'View',
+            onClick: () => {
+              setShouldOpenCurtain(true)
+            }
+          }
+        })
+        if (result.isSuccessful) {
+          await onSuccess(result.receipt)
+        } else if (onError) {
+          await onError(new Error('Withdrawal failed'))
+        }
+      } catch (error) {
+        if (onError) {
+          await onError(error instanceof Error ? error : new Error('Unknown error occurred'))
+        }
+      }
+    },
+    [provider, setShouldOpenCurtain]
+  )
 
-	return useMemo(
-		(): TSolverContext => ({
-			type: Solver.enum.ChainCoin,
-			quote: latestQuote?.current || zeroNormalizedBN,
-			init,
-			onRetrieveAllowance,
-			onApprove,
-			onExecuteDeposit,
-			onExecuteWithdraw
-		}),
-		[init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]
-	)
+  return useMemo(
+    (): TSolverContext => ({
+      type: Solver.enum.ChainCoin,
+      quote: latestQuote?.current || zeroNormalizedBN,
+      init,
+      onRetrieveAllowance,
+      onApprove,
+      onExecuteDeposit,
+      onExecuteWithdraw
+    }),
+    [init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]
+  )
 }

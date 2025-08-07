@@ -19,10 +19,9 @@
 	"formatter": {
 		"enabled": true,
 		"formatWithErrors": false,
-		"indentStyle": "tab",
-		"indentWidth": 4,
-		"lineEnding": "lf",
-		"lineWidth": 120,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
 		"attributePosition": "auto",
 		"bracketSameLine": false,
 		"bracketSpacing": true,

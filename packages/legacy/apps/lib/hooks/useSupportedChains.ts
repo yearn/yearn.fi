@@ -7,11 +7,11 @@ import { retrieveConfig } from '../utils/wagmi'
  ** the injected connector.
  *****************************************************************************/
 export function useSupportedChains(): Chain[] {
-	const supportedChains = useMemo((): Chain[] => {
-		const config = retrieveConfig()
-		const noFork = config.chains.filter(({ id }): boolean => id !== 1337)
-		return noFork
-	}, [])
+  const supportedChains = useMemo((): Chain[] => {
+    const config = retrieveConfig()
+    const noFork = config.chains.filter(({ id }): boolean => id !== 1337)
+    return noFork
+  }, [])
 
-	return supportedChains
+  return supportedChains
 }

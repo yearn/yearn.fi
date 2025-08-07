@@ -3,12 +3,12 @@ import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useMemo } from 'react'
 
 export function useFindVault(
-	vaultMap: TDict<TYDaemonVault>,
-	condition: (v: TYDaemonVault) => boolean
+  vaultMap: TDict<TYDaemonVault>,
+  condition: (v: TYDaemonVault) => boolean
 ): TYDaemonVault | null {
-	const foundVault = useMemo((): TYDaemonVault | undefined => {
-		return Object.values(vaultMap).find((vault): boolean => condition(vault))
-	}, [vaultMap, condition])
+  const foundVault = useMemo((): TYDaemonVault | undefined => {
+    return Object.values(vaultMap).find((vault): boolean => condition(vault))
+  }, [vaultMap, condition])
 
-	return foundVault ? foundVault : null
+  return foundVault ? foundVault : null
 }

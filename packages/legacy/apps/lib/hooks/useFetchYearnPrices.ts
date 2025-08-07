@@ -10,20 +10,20 @@ import { useYDaemonBaseURI } from './useYDaemonBaseURI'
  ** splitted by chain.
  *****************************************************************************/
 function useFetchYearnPrices(): TYDaemonPricesChain {
-	const { yDaemonBaseUri: yDaemonBaseUriWithoutChain } = useYDaemonBaseURI()
-	const { data: prices } = useFetch<TYDaemonPricesChain>({
-		endpoint: `${yDaemonBaseUriWithoutChain}/prices/all`,
-		schema: yDaemonPricesChainSchema
-	})
+  const { yDaemonBaseUri: yDaemonBaseUriWithoutChain } = useYDaemonBaseURI()
+  const { data: prices } = useFetch<TYDaemonPricesChain>({
+    endpoint: `${yDaemonBaseUriWithoutChain}/prices/all`,
+    schema: yDaemonPricesChainSchema
+  })
 
-	const pricesUpdated = useDeepCompareMemo((): TYDaemonPricesChain => {
-		if (!prices) {
-			return {}
-		}
-		return prices
-	}, [prices])
+  const pricesUpdated = useDeepCompareMemo((): TYDaemonPricesChain => {
+    if (!prices) {
+      return {}
+    }
+    return prices
+  }, [prices])
 
-	return pricesUpdated
+  return pricesUpdated
 }
 
 export { useFetchYearnPrices }

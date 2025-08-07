@@ -17,34 +17,37 @@ import type { Connector } from 'wagmi'
 import { readContract } from 'wagmi/actions'
 
 interface WindowWithCustomEthereum extends Window {
-	ethereum?: {
-		useForknetForMainnet?: boolean
-	}
+  ethereum?: {
+    useForknetForMainnet?: boolean
+  }
 }
 
 function getChainID(chainID: number): number {
-	if (typeof window !== 'undefined' && (window as WindowWithCustomEthereum)?.ethereum?.useForknetForMainnet) {
-		if (chainID === 1) {
-			return 1337
-		}
-	}
-	return chainID
+  if (
+    typeof window !== 'undefined' &&
+    (window as WindowWithCustomEthereum)?.ethereum?.useForknetForMainnet
+  ) {
+    if (chainID === 1) {
+      return 1337
+    }
+  }
+  return chainID
 }
 
 //Because USDT do not return a boolean on approve, we need to use this ABI
 const ALTERNATE_ERC20_APPROVE_ABI = [
-	{
-		constant: false,
-		inputs: [
-			{ name: '_spender', type: 'address' },
-			{ name: '_value', type: 'uint256' }
-		],
-		name: 'approve',
-		outputs: [],
-		payable: false,
-		stateMutability: 'nonpayable',
-		type: 'function'
-	}
+  {
+    constant: false,
+    inputs: [
+      { name: '_spender', type: 'address' },
+      { name: '_value', type: 'uint256' }
+    ],
+    name: 'approve',
+    outputs: [],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function'
+  }
 ] as const
 
 /*******************************************************************************
@@ -52,22 +55,22 @@ const ALTERNATE_ERC20_APPROVE_ABI = [
  ** a spender.
  ******************************************************************************/
 export async function isApprovedERC20(
-	connector: Connector | undefined,
-	chainID: number,
-	tokenAddress: TAddress,
-	spender: TAddress,
-	amount = MAX_UINT_256
+  connector: Connector | undefined,
+  chainID: number,
+  tokenAddress: TAddress,
+  spender: TAddress,
+  amount = MAX_UINT_256
 ): Promise<boolean> {
-	const wagmiProvider = await toWagmiProvider(connector as Connector)
-	const result = await readContract(retrieveConfig(), {
-		...wagmiProvider,
-		abi: erc20Abi,
-		chainId: getChainID(chainID),
-		address: tokenAddress,
-		functionName: 'allowance',
-		args: [wagmiProvider.address, spender]
-	})
-	return (result || 0n) >= amount
+  const wagmiProvider = await toWagmiProvider(connector as Connector)
+  const result = await readContract(retrieveConfig(), {
+    ...wagmiProvider,
+    abi: erc20Abi,
+    chainId: getChainID(chainID),
+    address: tokenAddress,
+    functionName: 'allowance',
+    args: [wagmiProvider.address, spender]
+  })
+  return (result || 0n) >= amount
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -75,23 +78,23 @@ export async function isApprovedERC20(
  ** approved for a spender.
  ******************************************************************************/
 type TAllowanceOf = {
-	connector: Connector | undefined
-	chainID: number
-	tokenAddress: TAddress
-	spenderAddress: TAddress
+  connector: Connector | undefined
+  chainID: number
+  tokenAddress: TAddress
+  spenderAddress: TAddress
 }
 export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
-	const wagmiProvider = await toWagmiProvider(props.connector)
-	const result = await readContract(retrieveConfig(), {
-		...wagmiProvider,
-		chainId: getChainID(props.chainID),
-		abi: erc20Abi,
-		address: props.tokenAddress,
-		functionName: 'allowance',
-		args: [wagmiProvider.address, props.spenderAddress]
-	})
+  const wagmiProvider = await toWagmiProvider(props.connector)
+  const result = await readContract(retrieveConfig(), {
+    ...wagmiProvider,
+    chainId: getChainID(props.chainID),
+    abi: erc20Abi,
+    address: props.tokenAddress,
+    functionName: 'allowance',
+    args: [wagmiProvider.address, props.spenderAddress]
+  })
 
-	return result || 0n
+  return result || 0n
 }
 
 /*******************************************************************************
@@ -101,34 +104,34 @@ export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
  ** @param amount - The amount of collateral to deposit.
  ******************************************************************************/
 type TApproveERC20 = TWriteTransaction & {
-	spenderAddress: TAddress | undefined
-	amount: bigint
-	confirmation?: number
-	cta?: TCTA
+  spenderAddress: TAddress | undefined
+  amount: bigint
+  confirmation?: number
+  cta?: TCTA
 }
 export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
-	assertAddress(props.spenderAddress, 'spenderAddress')
-	assertAddress(props.contractAddress)
+  assertAddress(props.spenderAddress, 'spenderAddress')
+  assertAddress(props.contractAddress)
 
-	props.onTrySomethingElse = async (): Promise<TTxResponse> => {
-		const propsWithoutOnTrySomethingElse = { ...props, onTrySomethingElse: undefined }
-		assertAddress(props.spenderAddress, 'spenderAddress')
-		return await handleTx(propsWithoutOnTrySomethingElse, {
-			address: toAddress(props.contractAddress),
-			abi: ALTERNATE_ERC20_APPROVE_ABI,
-			confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined),
-			functionName: 'approve',
-			args: [props.spenderAddress, props.amount]
-		})
-	}
+  props.onTrySomethingElse = async (): Promise<TTxResponse> => {
+    const propsWithoutOnTrySomethingElse = { ...props, onTrySomethingElse: undefined }
+    assertAddress(props.spenderAddress, 'spenderAddress')
+    return await handleTx(propsWithoutOnTrySomethingElse, {
+      address: toAddress(props.contractAddress),
+      abi: ALTERNATE_ERC20_APPROVE_ABI,
+      confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined),
+      functionName: 'approve',
+      args: [props.spenderAddress, props.amount]
+    })
+  }
 
-	return await handleTx(props, {
-		address: props.contractAddress,
-		abi: erc20Abi,
-		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined),
-		functionName: 'approve',
-		args: [props.spenderAddress, props.amount]
-	})
+  return await handleTx(props, {
+    address: props.contractAddress,
+    abi: erc20Abi,
+    confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined),
+    functionName: 'approve',
+    args: [props.spenderAddress, props.amount]
+  })
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -139,22 +142,22 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
  ** @param amount - The amount of ETH to deposit.
  ******************************************************************************/
 type TDeposit = TWriteTransaction & {
-	amount: bigint
-	confirmation?: number
+  amount: bigint
+  confirmation?: number
 }
 export async function deposit(props: TDeposit): Promise<TTxResponse> {
-	assert(props.amount > 0n, 'Amount is 0')
-	assertAddress(props.contractAddress)
-	const wagmiProvider = await toWagmiProvider(props.connector)
-	assertAddress(wagmiProvider.address, 'wagmiProvider.address')
+  assert(props.amount > 0n, 'Amount is 0')
+  assertAddress(props.contractAddress)
+  const wagmiProvider = await toWagmiProvider(props.connector)
+  assertAddress(wagmiProvider.address, 'wagmiProvider.address')
 
-	return await handleTx(props, {
-		address: props.contractAddress,
-		abi: VAULT_ABI,
-		functionName: 'deposit',
-		args: [props.amount, wagmiProvider.address],
-		confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
-	})
+  return await handleTx(props, {
+    address: props.contractAddress,
+    abi: VAULT_ABI,
+    functionName: 'deposit',
+    args: [props.amount, wagmiProvider.address],
+    confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
+  })
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -166,48 +169,48 @@ export async function deposit(props: TDeposit): Promise<TTxResponse> {
  ** @param amount - The amount of collateral to deposit.
  ******************************************************************************/
 type TDepositEth = TWriteTransaction & {
-	amount: bigint
+  amount: bigint
 }
 export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
-	assert(props.connector, 'No connector')
-	assert(props.amount > 0n, 'Amount is 0')
-	switch (props.chainID) {
-		case 1: {
-			return await handleTx(props, {
-				address: getEthZapperContract(1),
-				abi: ZAP_ETH_TO_YVETH_ABI,
-				functionName: 'deposit',
-				value: props.amount
-			})
-		}
-		case 10: {
-			return await handleTx(props, {
-				address: getEthZapperContract(10),
-				abi: ZAP_OPT_ETH_TO_YVETH_ABI,
-				functionName: 'deposit',
-				value: props.amount
-			})
-		}
-		case 250: {
-			return await handleTx(props, {
-				address: getEthZapperContract(250),
-				abi: ZAP_FTM_TO_YVFTM_ABI,
-				functionName: 'deposit',
-				value: props.amount
-			})
-		}
-		case 1337: {
-			return await handleTx(props, {
-				address: getEthZapperContract(1),
-				abi: ZAP_ETH_TO_YVETH_ABI,
-				functionName: 'deposit',
-				value: props.amount
-			})
-		}
-		default: {
-			throw new Error('Invalid chainId')
-		}
-	}
+  assert(props.connector, 'No connector')
+  assert(props.amount > 0n, 'Amount is 0')
+  switch (props.chainID) {
+    case 1: {
+      return await handleTx(props, {
+        address: getEthZapperContract(1),
+        abi: ZAP_ETH_TO_YVETH_ABI,
+        functionName: 'deposit',
+        value: props.amount
+      })
+    }
+    case 10: {
+      return await handleTx(props, {
+        address: getEthZapperContract(10),
+        abi: ZAP_OPT_ETH_TO_YVETH_ABI,
+        functionName: 'deposit',
+        value: props.amount
+      })
+    }
+    case 250: {
+      return await handleTx(props, {
+        address: getEthZapperContract(250),
+        abi: ZAP_FTM_TO_YVFTM_ABI,
+        functionName: 'deposit',
+        value: props.amount
+      })
+    }
+    case 1337: {
+      return await handleTx(props, {
+        address: getEthZapperContract(1),
+        abi: ZAP_ETH_TO_YVETH_ABI,
+        functionName: 'deposit',
+        value: props.amount
+      })
+    }
+    default: {
+      throw new Error('Invalid chainId')
+    }
+  }
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -219,21 +222,25 @@ export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
  ** @param amount - The amount of ETH to deposit.
  ******************************************************************************/
 type TDepositViaPartner = TWriteTransaction & {
-	vaultAddress: TAddress | undefined
-	partnerAddress: TAddress | undefined
-	amount: bigint
+  vaultAddress: TAddress | undefined
+  partnerAddress: TAddress | undefined
+  amount: bigint
 }
 export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxResponse> {
-	assertAddress(props.vaultAddress, 'vaultAddress')
-	assert(props.amount > 0n, 'Amount is 0')
-	assertAddress(props.contractAddress)
+  assertAddress(props.vaultAddress, 'vaultAddress')
+  assert(props.amount > 0n, 'Amount is 0')
+  assertAddress(props.contractAddress)
 
-	return await handleTx(props, {
-		address: props.contractAddress,
-		abi: PARTNER_VAULT_ABI,
-		functionName: 'deposit',
-		args: [props.vaultAddress, props.partnerAddress || toAddress(process.env.PARTNER_ID_ADDRESS), props.amount]
-	})
+  return await handleTx(props, {
+    address: props.contractAddress,
+    abi: PARTNER_VAULT_ABI,
+    functionName: 'deposit',
+    args: [
+      props.vaultAddress,
+      props.partnerAddress || toAddress(process.env.PARTNER_ID_ADDRESS),
+      props.amount
+    ]
+  })
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -245,48 +252,48 @@ export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxR
  ** @param amount - The amount of ETH to withdraw.
  ******************************************************************************/
 type TWithdrawEth = TWriteTransaction & {
-	amount: bigint
+  amount: bigint
 }
 export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
-	assert(props.connector, 'No connector')
-	assert(props.amount > 0n, 'Amount is 0')
-	switch (props.chainID) {
-		case 1: {
-			return await handleTx(props, {
-				address: getEthZapperContract(1),
-				abi: ZAP_ETH_TO_YVETH_ABI,
-				functionName: 'withdraw',
-				args: [props.amount]
-			})
-		}
-		case 10: {
-			return await handleTx(props, {
-				address: getEthZapperContract(10),
-				abi: ZAP_OPT_ETH_TO_YVETH_ABI,
-				functionName: 'withdraw',
-				args: [props.amount]
-			})
-		}
-		case 250: {
-			return await handleTx(props, {
-				address: getEthZapperContract(250),
-				abi: ZAP_FTM_TO_YVFTM_ABI,
-				functionName: 'withdraw',
-				args: [props.amount]
-			})
-		}
-		case 1337: {
-			return await handleTx(props, {
-				address: getEthZapperContract(1),
-				abi: ZAP_ETH_TO_YVETH_ABI,
-				functionName: 'withdraw',
-				args: [props.amount]
-			})
-		}
-		default: {
-			throw new Error('Invalid chainId')
-		}
-	}
+  assert(props.connector, 'No connector')
+  assert(props.amount > 0n, 'Amount is 0')
+  switch (props.chainID) {
+    case 1: {
+      return await handleTx(props, {
+        address: getEthZapperContract(1),
+        abi: ZAP_ETH_TO_YVETH_ABI,
+        functionName: 'withdraw',
+        args: [props.amount]
+      })
+    }
+    case 10: {
+      return await handleTx(props, {
+        address: getEthZapperContract(10),
+        abi: ZAP_OPT_ETH_TO_YVETH_ABI,
+        functionName: 'withdraw',
+        args: [props.amount]
+      })
+    }
+    case 250: {
+      return await handleTx(props, {
+        address: getEthZapperContract(250),
+        abi: ZAP_FTM_TO_YVFTM_ABI,
+        functionName: 'withdraw',
+        args: [props.amount]
+      })
+    }
+    case 1337: {
+      return await handleTx(props, {
+        address: getEthZapperContract(1),
+        abi: ZAP_ETH_TO_YVETH_ABI,
+        functionName: 'withdraw',
+        args: [props.amount]
+      })
+    }
+    default: {
+      throw new Error('Invalid chainId')
+    }
+  }
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -297,18 +304,18 @@ export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
  ** @param amount - The amount of ETH to withdraw.
  ******************************************************************************/
 type TWithdrawShares = TWriteTransaction & {
-	amount: bigint
+  amount: bigint
 }
 export async function withdrawShares(props: TWithdrawShares): Promise<TTxResponse> {
-	assert(props.amount > 0n, 'Amount is 0')
-	assertAddress(props.contractAddress)
+  assert(props.amount > 0n, 'Amount is 0')
+  assertAddress(props.contractAddress)
 
-	return await handleTx(props, {
-		address: props.contractAddress,
-		abi: VAULT_ABI,
-		functionName: 'withdraw',
-		args: [props.amount]
-	})
+  return await handleTx(props, {
+    address: props.contractAddress,
+    abi: VAULT_ABI,
+    functionName: 'withdraw',
+    args: [props.amount]
+  })
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -319,22 +326,22 @@ export async function withdrawShares(props: TWithdrawShares): Promise<TTxRespons
  ** @param amount - The amount of ETH to withdraw.
  ******************************************************************************/
 type TRedeemV3Shares = TWriteTransaction & {
-	amount: bigint
-	maxLoss: bigint
+  amount: bigint
+  maxLoss: bigint
 }
 export async function redeemV3Shares(props: TRedeemV3Shares): Promise<TTxResponse> {
-	assert(props.amount > 0n, 'Amount is 0')
-	assert(props.maxLoss > 0n && props.maxLoss <= 10000n, 'Max loss is invalid')
-	assertAddress(props.contractAddress)
-	const wagmiProvider = await toWagmiProvider(props.connector)
-	assertAddress(wagmiProvider.address, 'wagmiProvider.address')
+  assert(props.amount > 0n, 'Amount is 0')
+  assert(props.maxLoss > 0n && props.maxLoss <= 10000n, 'Max loss is invalid')
+  assertAddress(props.contractAddress)
+  const wagmiProvider = await toWagmiProvider(props.connector)
+  assertAddress(wagmiProvider.address, 'wagmiProvider.address')
 
-	return await handleTx(props, {
-		address: props.contractAddress,
-		abi: VAULT_V3_ABI,
-		functionName: 'redeem',
-		args: [props.amount, wagmiProvider.address, wagmiProvider.address, props.maxLoss]
-	})
+  return await handleTx(props, {
+    address: props.contractAddress,
+    abi: VAULT_V3_ABI,
+    functionName: 'redeem',
+    args: [props.amount, wagmiProvider.address, wagmiProvider.address, props.maxLoss]
+  })
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -346,42 +353,42 @@ export async function redeemV3Shares(props: TRedeemV3Shares): Promise<TTxRespons
  ** @param toVault - The address of the vault to migrate to.
  ******************************************************************************/
 type TMigrateShares = TWriteTransaction & {
-	fromVault: TAddress | undefined
-	toVault: TAddress | undefined
+  fromVault: TAddress | undefined
+  toVault: TAddress | undefined
 }
 export async function migrateShares(props: TMigrateShares): Promise<TTxResponse> {
-	assertAddress(props.fromVault, 'fromVault')
-	assertAddress(props.toVault, 'toVault')
-	assertAddress(props.contractAddress)
+  assertAddress(props.fromVault, 'fromVault')
+  assertAddress(props.toVault, 'toVault')
+  assertAddress(props.contractAddress)
 
-	return await handleTx(props, {
-		address: props.contractAddress,
-		abi: VAULT_MIGRATOR_ABI,
-		functionName: 'migrateAll',
-		args: [props.fromVault, props.toVault]
-	})
+  return await handleTx(props, {
+    address: props.contractAddress,
+    abi: VAULT_MIGRATOR_ABI,
+    functionName: 'migrateAll',
+    args: [props.fromVault, props.toVault]
+  })
 }
 
 type TMigrateSharesViaRouter = TWriteTransaction & {
-	router: TAddress | undefined
-	fromVault: TAddress | undefined
-	toVault: TAddress | undefined
-	amount: bigint
-	maxLoss: bigint
+  router: TAddress | undefined
+  fromVault: TAddress | undefined
+  toVault: TAddress | undefined
+  amount: bigint
+  maxLoss: bigint
 }
 export async function migrateSharesViaRouter(props: TMigrateSharesViaRouter): Promise<TTxResponse> {
-	assertAddress(props.router, 'router')
-	assertAddress(props.fromVault, 'fromVault')
-	assertAddress(props.toVault, 'toVault')
-	assertAddress(props.contractAddress)
-	assert(props.amount > 0n, 'Amount is 0')
-	assert(props.maxLoss > 0n && props.maxLoss <= 10000n, 'Max loss is invalid')
-	const minAmount = props.amount - (props.amount * props.maxLoss) / 10000n
+  assertAddress(props.router, 'router')
+  assertAddress(props.fromVault, 'fromVault')
+  assertAddress(props.toVault, 'toVault')
+  assertAddress(props.contractAddress)
+  assert(props.amount > 0n, 'Amount is 0')
+  assert(props.maxLoss > 0n && props.maxLoss <= 10000n, 'Max loss is invalid')
+  const minAmount = props.amount - (props.amount * props.maxLoss) / 10000n
 
-	return await handleTx(props, {
-		address: props.router,
-		abi: ERC_4626_ROUTER_ABI,
-		functionName: 'migrate',
-		args: [props.fromVault, props.toVault, props.amount, minAmount]
-	})
+  return await handleTx(props, {
+    address: props.router,
+    abi: ERC_4626_ROUTER_ABI,
+    functionName: 'migrate',
+    args: [props.fromVault, props.toVault, props.amount, minAmount]
+  })
 }

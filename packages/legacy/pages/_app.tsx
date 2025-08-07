@@ -43,53 +43,60 @@ import '../style.css'
  ** wrapped with layout, and the feedback popover if it should not be hidden.
  **************************************************************************************************/
 const WithLayout = memo(function WithLayout(
-	props: { router: NextRouter; supportedNetworks: Chain[] } & AppProps
+  props: { router: NextRouter; supportedNetworks: Chain[] } & AppProps
 ): ReactElement {
-	const { Component, pageProps } = props
-	const isAppsPage = props.router.asPath?.startsWith('/apps')
-	const pathName = usePathname()
+  const { Component, pageProps } = props
+  const isAppsPage = props.router.asPath?.startsWith('/apps')
+  const pathName = usePathname()
 
-	if (isAppsPage) {
-		return (
-			<>
-				<div
-					className={cl(
-						'mx-auto mb-0 flex z-[60] font-aeonik max-w-6xl absolute top-0 inset-x-0 bg-neutral-0'
-					)}>
-					<AppHeader supportedNetworks={props.supportedNetworks} />
-				</div>
-				<div id={'app'} className={'bg-neutral-0 font-aeonik mb-0 flex min-h-screen justify-center'}>
-					<div className={'flex w-full max-w-[1230px] justify-start'}>
-						<Component router={props.router} {...pageProps} />
-					</div>
-				</div>
-			</>
-		)
-	}
+  if (isAppsPage) {
+    return (
+      <>
+        <div
+          className={cl(
+            'mx-auto mb-0 flex z-[60] font-aeonik max-w-6xl absolute top-0 inset-x-0 bg-neutral-0'
+          )}>
+          <AppHeader supportedNetworks={props.supportedNetworks} />
+        </div>
+        <div
+          id={'app'}
+          className={'bg-neutral-0 font-aeonik mb-0 flex min-h-screen justify-center'}>
+          <div className={'flex w-full max-w-[1230px] justify-start'}>
+            <Component router={props.router} {...pageProps} />
+          </div>
+        </div>
+      </>
+    )
+  }
 
-	return (
-		<>
-			<div className={cl('mx-auto mb-0 flex z-[60] font-aeonik max-w-6xl absolute top-0 inset-x-0')}>
-				{pathName === '/' ? <LandingAppHeader /> : <AppHeader supportedNetworks={props.supportedNetworks} />}
-			</div>
-			<div id={'app'} className={cl('mx-auto mb-0 flex font-aeonik')}>
-				<div className={'block size-full min-h-max'}>
-					<LazyMotion features={domAnimation}>
-						<AnimatePresence mode={'wait'}>
-							<motion.div
-								key={props.router.asPath}
-								initial={'initial'}
-								animate={'enter'}
-								exit={'exit'}
-								variants={variants}>
-								<Component router={props.router} {...pageProps} />
-							</motion.div>
-						</AnimatePresence>
-					</LazyMotion>
-				</div>
-			</div>
-		</>
-	)
+  return (
+    <>
+      <div
+        className={cl('mx-auto mb-0 flex z-[60] font-aeonik max-w-6xl absolute top-0 inset-x-0')}>
+        {pathName === '/' ? (
+          <LandingAppHeader />
+        ) : (
+          <AppHeader supportedNetworks={props.supportedNetworks} />
+        )}
+      </div>
+      <div id={'app'} className={cl('mx-auto mb-0 flex font-aeonik')}>
+        <div className={'block size-full min-h-max'}>
+          <LazyMotion features={domAnimation}>
+            <AnimatePresence mode={'wait'}>
+              <motion.div
+                key={props.router.asPath}
+                initial={'initial'}
+                animate={'enter'}
+                exit={'exit'}
+                variants={variants}>
+                <Component router={props.router} {...pageProps} />
+              </motion.div>
+            </AnimatePresence>
+          </LazyMotion>
+        </div>
+      </div>
+    </>
+  )
 })
 
 /**** 🔵 - Yearn Finance ***************************************************************************
@@ -105,70 +112,70 @@ const WithLayout = memo(function WithLayout(
  ** The returned JSX structure is a main element with the 'WithYearn' and 'App' components.
  **************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
-	const { manifest } = useCurrentApp(props.router)
+  const { manifest } = useCurrentApp(props.router)
 
-	return (
-		<WithFonts>
-			<Meta
-				title={manifest.name || 'Yearn'}
-				description={manifest.description || 'The yield protocol for digital assets'}
-				titleColor={'#ffffff'}
-				themeColor={'#000000'}
-				og={manifest.og || 'https://yearn.fi/og.png'}
-				uri={manifest.uri || 'https://yearn.fi'}
-			/>
-			<main className={'font-aeonik size-full min-h-screen'}>
-				<PlausibleProvider domain={'yearn.fi'} enabled={true}>
-					<WithMom
-						supportedChains={SUPPORTED_NETWORKS}
-						tokenLists={[
-							'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/yearn.json',
-							'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/popular.json'
-						]}>
-						<AppSettingsContextApp>
-							<YearnContextApp>
-								<WalletContextApp>
-									<IndexedDB>
-										<WithNotifications>
-											<WithNotificationsActions>
-												<WithLayout supportedNetworks={SUPPORTED_NETWORKS} {...props} />
-											</WithNotificationsActions>
-										</WithNotifications>
-									</IndexedDB>
-								</WalletContextApp>
-							</YearnContextApp>
-						</AppSettingsContextApp>
-					</WithMom>
-				</PlausibleProvider>
-				<Toaster
-					toastOptions={{
-						duration: 5000,
-						className: 'toast',
-						error: {
-							icon: <IconAlertCritical className={'ml-3'} />,
-							style: {
-								backgroundColor: '#C73203',
-								color: 'white'
-							}
-						},
-						success: {
-							icon: <IconCheckmark className={'ml-3'} />,
-							style: {
-								backgroundColor: '#00796D',
-								color: 'white'
-							}
-						},
-						icon: <IconAlertError className={'ml-3'} />,
-						style: {
-							backgroundColor: '#0657F9',
-							color: 'white'
-						}
-					}}
-					position={'bottom-right'}
-				/>
-			</main>
-		</WithFonts>
-	)
+  return (
+    <WithFonts>
+      <Meta
+        title={manifest.name || 'Yearn'}
+        description={manifest.description || 'The yield protocol for digital assets'}
+        titleColor={'#ffffff'}
+        themeColor={'#000000'}
+        og={manifest.og || 'https://yearn.fi/og.png'}
+        uri={manifest.uri || 'https://yearn.fi'}
+      />
+      <main className={'font-aeonik size-full min-h-screen'}>
+        <PlausibleProvider domain={'yearn.fi'} enabled={true}>
+          <WithMom
+            supportedChains={SUPPORTED_NETWORKS}
+            tokenLists={[
+              'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/yearn.json',
+              'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/popular.json'
+            ]}>
+            <AppSettingsContextApp>
+              <YearnContextApp>
+                <WalletContextApp>
+                  <IndexedDB>
+                    <WithNotifications>
+                      <WithNotificationsActions>
+                        <WithLayout supportedNetworks={SUPPORTED_NETWORKS} {...props} />
+                      </WithNotificationsActions>
+                    </WithNotifications>
+                  </IndexedDB>
+                </WalletContextApp>
+              </YearnContextApp>
+            </AppSettingsContextApp>
+          </WithMom>
+        </PlausibleProvider>
+        <Toaster
+          toastOptions={{
+            duration: 5000,
+            className: 'toast',
+            error: {
+              icon: <IconAlertCritical className={'ml-3'} />,
+              style: {
+                backgroundColor: '#C73203',
+                color: 'white'
+              }
+            },
+            success: {
+              icon: <IconCheckmark className={'ml-3'} />,
+              style: {
+                backgroundColor: '#00796D',
+                color: 'white'
+              }
+            },
+            icon: <IconAlertError className={'ml-3'} />,
+            style: {
+              backgroundColor: '#0657F9',
+              color: 'white'
+            }
+          }}
+          position={'bottom-right'}
+        />
+      </main>
+    </WithFonts>
+  )
 }
 
 export default MyApp

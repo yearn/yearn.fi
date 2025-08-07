@@ -3,13 +3,13 @@ import { z } from 'zod'
 import { addressSchema } from '../../types'
 
 export const yDaemonTokenSchema = z.object({
-	address: addressSchema,
-	name: z.string(),
-	symbol: z.string(),
-	decimals: z.number(),
-	isVault: z.boolean(),
-	underlyingTokens: z.array(addressSchema).optional(),
-	chainID: z.number().optional()
+  address: addressSchema,
+  name: z.string(),
+  symbol: z.string(),
+  decimals: z.number(),
+  isVault: z.boolean(),
+  underlyingTokens: z.array(addressSchema).optional(),
+  chainID: z.number().optional()
 })
 
 export const yDaemonTokensSchema = z.record(addressSchema, yDaemonTokenSchema)

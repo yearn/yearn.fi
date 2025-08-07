@@ -17,25 +17,25 @@ import { useEffect, useState } from 'react'
  ** @returns {string | null} - The value of the query parameter, or null if not found
  ************************************************************************************************/
 export function useInitialQueryParam(key: string): string | null {
-	const router = useRouter()
-	const [value, setValue] = useState<string | null>(null)
+  const router = useRouter()
+  const [value, setValue] = useState<string | null>(null)
 
-	useEffect(() => {
-		if (typeof window !== 'undefined') {
-			const urlParams = new URLSearchParams(window.location.search)
-			const initialValue = urlParams.get(key)
-			setValue(initialValue)
-		}
-	}, [key])
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const initialValue = urlParams.get(key)
+      setValue(initialValue)
+    }
+  }, [key])
 
-	useEffect(() => {
-		if (router.isReady && !value) {
-			const queryValue = router.query[key] as string
-			if (queryValue) {
-				setValue(queryValue)
-			}
-		}
-	}, [router.isReady, router.query, key, value])
+  useEffect(() => {
+    if (router.isReady && !value) {
+      const queryValue = router.query[key] as string
+      if (queryValue) {
+        setValue(queryValue)
+      }
+    }
+  }, [router.isReady, router.query, key, value])
 
-	return value
+  return value
 }

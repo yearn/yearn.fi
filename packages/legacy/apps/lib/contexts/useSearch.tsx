@@ -6,45 +6,45 @@ import type { Dispatch, ReactElement, SetStateAction } from 'react'
 import { createContext, useContext, useState } from 'react'
 
 type TSearchContext = {
-	configuration: TSearchConfiguration
-	dispatch: Dispatch<SetStateAction<TSearchConfiguration>>
+  configuration: TSearchConfiguration
+  dispatch: Dispatch<SetStateAction<TSearchConfiguration>>
 }
 
 type TSearchConfiguration = {
-	searchValue: string
+  searchValue: string
 }
 
 const defaultProps = {
-	configuration: {
-		searchValue: ''
-	},
-	dispatch: (): void => undefined
+  configuration: {
+    searchValue: ''
+  },
+  dispatch: (): void => undefined
 }
 
 const SearchContext = createContext<TSearchContext>(defaultProps)
 export const SearchContextApp = ({
-	children
+  children
 }: {
-	children: TOptionalRenderProps<TSearchContext, ReactElement>
+  children: TOptionalRenderProps<TSearchContext, ReactElement>
 }): ReactElement => {
-	const [configuration, setConfiguration] = useState(defaultProps.configuration)
+  const [configuration, setConfiguration] = useState(defaultProps.configuration)
 
-	const contextValue = useDeepCompareMemo(
-		(): TSearchContext => ({ configuration, dispatch: setConfiguration }),
-		[configuration]
-	)
+  const contextValue = useDeepCompareMemo(
+    (): TSearchContext => ({ configuration, dispatch: setConfiguration }),
+    [configuration]
+  )
 
-	return (
-		<SearchContext.Provider value={contextValue}>
-			{optionalRenderProps(children, contextValue)}
-		</SearchContext.Provider>
-	)
+  return (
+    <SearchContext.Provider value={contextValue}>
+      {optionalRenderProps(children, contextValue)}
+    </SearchContext.Provider>
+  )
 }
 
 export const useSearch = (): TSearchContext => {
-	const ctx = useContext(SearchContext)
-	if (!ctx) {
-		throw new Error('SearchContext not found')
-	}
-	return ctx
+  const ctx = useContext(SearchContext)
+  if (!ctx) {
+    throw new Error('SearchContext not found')
+  }
+  return ctx
 }

@@ -6,16 +6,16 @@ import { readContract } from 'wagmi/actions'
 import { VAULT_V3_ABI } from './abi/vaultV3.abi'
 
 type TGetVaultEstimateOutProps = {
-	from: TAddress
-	inputToken: TAddress
-	outputToken: TAddress
-	inputDecimals: number
-	outputDecimals: number
-	inputAmount: bigint
-	maxLoss?: bigint
-	isDepositing: boolean
-	chainID: number
-	version: string
+  from: TAddress
+  inputToken: TAddress
+  outputToken: TAddress
+  inputDecimals: number
+  outputDecimals: number
+  inputAmount: bigint
+  maxLoss?: bigint
+  isDepositing: boolean
+  chainID: number
+  version: string
 }
 
 /**************************************************************************************************
@@ -27,54 +27,56 @@ type TGetVaultEstimateOutProps = {
  ** This method takes the input amount without verifications, meaning that it will not check if
  ** the user has enough balance to perform the action.
  *************************************************************************************************/
-export async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Promise<TNormalizedBN | undefined> {
-	assertAddress(props.inputToken, 'inputToken')
-	assertAddress(props.outputToken, 'outputToken')
-	assert(props.inputDecimals > 0, 'inputDecimals must be greater than 0')
-	assert(props.outputDecimals > 0, 'outputDecimals must be greater than 0')
+export async function getVaultEstimateOut(
+  props: TGetVaultEstimateOutProps
+): Promise<TNormalizedBN | undefined> {
+  assertAddress(props.inputToken, 'inputToken')
+  assertAddress(props.outputToken, 'outputToken')
+  assert(props.inputDecimals > 0, 'inputDecimals must be greater than 0')
+  assert(props.outputDecimals > 0, 'outputDecimals must be greater than 0')
 
-	if (props.inputAmount <= 0n) {
-		return undefined
-	}
+  if (props.inputAmount <= 0n) {
+    return undefined
+  }
 
-	const inputDecimals = toBigInt(props.inputDecimals || 18)
-	const powerDecimals = toBigInt(10) ** inputDecimals
-	const contractAddress = props.isDepositing ? props.outputToken : props.inputToken
+  const inputDecimals = toBigInt(props.inputDecimals || 18)
+  const powerDecimals = toBigInt(10) ** inputDecimals
+  const contractAddress = props.isDepositing ? props.outputToken : props.inputToken
 
-	try {
-		const pps = await readContract(retrieveConfig(), {
-			abi: VAULT_ABI,
-			address: contractAddress,
-			functionName: 'pricePerShare',
-			chainId: props.chainID
-		})
+  try {
+    const pps = await readContract(retrieveConfig(), {
+      abi: VAULT_ABI,
+      address: contractAddress,
+      functionName: 'pricePerShare',
+      chainId: props.chainID
+    })
 
-		if (props.isDepositing) {
-			const expectedOutFetched = (props.inputAmount * powerDecimals) / pps
-			return toNormalizedBN(expectedOutFetched, Number(inputDecimals))
-		}
-		const outputDecimals = toBigInt(props.outputDecimals || 18)
-		const expectedOutFetched = (props.inputAmount * pps) / powerDecimals
-		return toNormalizedBN(expectedOutFetched, Number(outputDecimals))
-	} catch {
-		if (props.isDepositing) {
-			const convertedShares = await readContract(retrieveConfig(), {
-				abi: VAULT_V3_ABI,
-				address: contractAddress,
-				functionName: 'convertToShares',
-				chainId: props.chainID,
-				args: [props.inputAmount]
-			})
-			return toNormalizedBN(convertedShares, Number(inputDecimals))
-		}
-		const convertedAssets = await readContract(retrieveConfig(), {
-			abi: VAULT_V3_ABI,
-			address: contractAddress,
-			functionName: 'convertToAssets',
-			chainId: props.chainID,
-			args: [props.inputAmount]
-		})
-		const outputDecimals = toBigInt(props.outputDecimals || 18)
-		return toNormalizedBN(convertedAssets, Number(outputDecimals))
-	}
+    if (props.isDepositing) {
+      const expectedOutFetched = (props.inputAmount * powerDecimals) / pps
+      return toNormalizedBN(expectedOutFetched, Number(inputDecimals))
+    }
+    const outputDecimals = toBigInt(props.outputDecimals || 18)
+    const expectedOutFetched = (props.inputAmount * pps) / powerDecimals
+    return toNormalizedBN(expectedOutFetched, Number(outputDecimals))
+  } catch {
+    if (props.isDepositing) {
+      const convertedShares = await readContract(retrieveConfig(), {
+        abi: VAULT_V3_ABI,
+        address: contractAddress,
+        functionName: 'convertToShares',
+        chainId: props.chainID,
+        args: [props.inputAmount]
+      })
+      return toNormalizedBN(convertedShares, Number(inputDecimals))
+    }
+    const convertedAssets = await readContract(retrieveConfig(), {
+      abi: VAULT_V3_ABI,
+      address: contractAddress,
+      functionName: 'convertToAssets',
+      chainId: props.chainID,
+      args: [props.inputAmount]
+    })
+    const outputDecimals = toBigInt(props.outputDecimals || 18)
+    return toNormalizedBN(convertedAssets, Number(outputDecimals))
+  }
 }

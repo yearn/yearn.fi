@@ -50,31 +50,33 @@ window.onload = observeUrlChange;
 `
 
 class MyDocument extends Document {
-	static async getInitialProps(ctx: DocumentContext): Promise<DocumentInitialProps & { route: string }> {
-		const initialProps = await Document.getInitialProps(ctx)
+  static async getInitialProps(
+    ctx: DocumentContext
+  ): Promise<DocumentInitialProps & { route: string }> {
+    const initialProps = await Document.getInitialProps(ctx)
 
-		// Determine the route from context
-		const route = ctx.pathname
-		return { route, ...initialProps }
-	}
+    // Determine the route from context
+    const route = ctx.pathname
+    return { route, ...initialProps }
+  }
 
-	render(): ReactElement {
-		const { route } = this.props as unknown as { route: string }
-		const isLanding = route.startsWith('/vaults')
-		return (
-			<Html
-				lang={'en'}
-				className={`duration-150', bg-neutral-0 transition-colors ${isLanding && 'scrollbar-none'}`}>
-				<Head>
-					<script dangerouslySetInnerHTML={{ __html: modeScript }} />
-				</Head>
-				<body>
-					<Main />
-					<NextScript />
-				</body>
-			</Html>
-		)
-	}
+  render(): ReactElement {
+    const { route } = this.props as unknown as { route: string }
+    const isLanding = route.startsWith('/vaults')
+    return (
+      <Html
+        lang={'en'}
+        className={`duration-150', bg-neutral-0 transition-colors ${isLanding && 'scrollbar-none'}`}>
+        <Head>
+          <script dangerouslySetInnerHTML={{ __html: modeScript }} />
+        </Head>
+        <body>
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    )
+  }
 }
 
 export default MyDocument

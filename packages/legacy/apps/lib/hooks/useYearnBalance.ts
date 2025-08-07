@@ -7,14 +7,14 @@ import { useWallet } from '../contexts/useWallet'
  ** the useYearn context.
  *****************************************************************************/
 export function useYearnBalance({
-	address,
-	chainID
+  address,
+  chainID
 }: {
-	address: string | TAddress
-	chainID: number
-	source?: TDict<TNormalizedBN>
+  address: string | TAddress
+  chainID: number
+  source?: TDict<TNormalizedBN>
 }): TNormalizedBN {
-	const { getBalance } = useWallet()
+  const { getBalance } = useWallet()
 
-	return getBalance({ address: toAddress(address), chainID: chainID })
+  return getBalance({ address: toAddress(address), chainID: chainID })
 }

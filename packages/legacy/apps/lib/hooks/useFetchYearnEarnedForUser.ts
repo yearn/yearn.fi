@@ -12,30 +12,30 @@ import { useYDaemonBaseURI } from './useYDaemonBaseURI'
  ** based on the events emitted by the yearn contracts catched by the subgraph.
  *****************************************************************************/
 function useFetchYearnEarnedForUser(): TYDaemonEarned {
-	const { address } = useWeb3()
-	const { yDaemonBaseUri: yDaemonBaseUriWithoutChain } = useYDaemonBaseURI()
+  const { address } = useWeb3()
+  const { yDaemonBaseUri: yDaemonBaseUriWithoutChain } = useYDaemonBaseURI()
 
-	const { data: earned } = useFetch<TYDaemonEarned>({
-		endpoint: address
-			? `${yDaemonBaseUriWithoutChain}/earned/${address}?${new URLSearchParams({
-					chainIDs: [1, 10].join(',')
-				})}`
-			: null,
-		schema: yDaemonEarnedSchema
-	})
+  const { data: earned } = useFetch<TYDaemonEarned>({
+    endpoint: address
+      ? `${yDaemonBaseUriWithoutChain}/earned/${address}?${new URLSearchParams({
+          chainIDs: [1, 10].join(',')
+        })}`
+      : null,
+    schema: yDaemonEarnedSchema
+  })
 
-	const memorizedEarned = useDeepCompareMemo((): TYDaemonEarned => {
-		if (!earned) {
-			return {
-				earned: {},
-				totalRealizedGainsUSD: 0,
-				totalUnrealizedGainsUSD: 0
-			}
-		}
-		return earned
-	}, [earned])
+  const memorizedEarned = useDeepCompareMemo((): TYDaemonEarned => {
+    if (!earned) {
+      return {
+        earned: {},
+        totalRealizedGainsUSD: 0,
+        totalUnrealizedGainsUSD: 0
+      }
+    }
+    return earned
+  }, [earned])
 
-	return memorizedEarned
+  return memorizedEarned
 }
 
 export { useFetchYearnEarnedForUser }
