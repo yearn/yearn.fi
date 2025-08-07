@@ -28,7 +28,7 @@
     "@wagmi/connectors": "^5.1.4",
     "@wagmi/core": "^2.11.7",
     "axios": "^1.7.2",
-    "ethers": "5.7.2",
+    "ethers": "5.8.0",
     "framer-motion": "^11.2.10",
     "graphql": "^16.8.2",
     "graphql-request": "^7.0.1",
