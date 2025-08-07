@@ -35,47 +35,37 @@ export function useSolverInternalMigration(): TSolverContext {
    ** It will set the request to the provided value, as it's required to get the quote, and will
    ** call getQuote to get the current quote for the provided request.
    **********************************************************************************************/
-  const init = useCallback(
-    async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
-      if (isSolverDisabled(Solver.enum.InternalMigration)) {
-        return undefined
-      }
-      request.current = _request
-      if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
-        const estimateOut = await readContract(retrieveConfig(), {
-          address: ZAP_YEARN_VE_CRV_ADDRESS,
-          abi: ZAP_CRV_ABI,
-          chainId: request.current.chainID,
-          functionName: 'calc_expected_out',
-          args: [
-            request.current.inputToken.value,
-            request.current.outputToken.value,
-            request.current.inputAmount
-          ]
-        })
-        const minAmountWithSlippage = estimateOut - (estimateOut * 6n) / 10_000n
-        latestQuote.current = toNormalizedBN(
-          minAmountWithSlippage,
-          request.current.outputToken.decimals
-        )
-        return latestQuote.current
-      }
-      const estimateOut = await getVaultEstimateOut({
-        inputToken: toAddress(_request.inputToken.value),
-        outputToken: toAddress(_request.outputToken.value),
-        inputDecimals: _request.inputToken.decimals,
-        outputDecimals: _request.outputToken.decimals,
-        inputAmount: _request.inputAmount,
-        isDepositing: _request.isDepositing,
-        chainID: _request.chainID,
-        version: _request.version,
-        from: toAddress(_request.from)
+  const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
+    if (isSolverDisabled(Solver.enum.InternalMigration)) {
+      return undefined
+    }
+    request.current = _request
+    if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
+      const estimateOut = await readContract(retrieveConfig(), {
+        address: ZAP_YEARN_VE_CRV_ADDRESS,
+        abi: ZAP_CRV_ABI,
+        chainId: request.current.chainID,
+        functionName: 'calc_expected_out',
+        args: [request.current.inputToken.value, request.current.outputToken.value, request.current.inputAmount]
       })
-      latestQuote.current = estimateOut
+      const minAmountWithSlippage = estimateOut - (estimateOut * 6n) / 10_000n
+      latestQuote.current = toNormalizedBN(minAmountWithSlippage, request.current.outputToken.decimals)
       return latestQuote.current
-    },
-    []
-  )
+    }
+    const estimateOut = await getVaultEstimateOut({
+      inputToken: toAddress(_request.inputToken.value),
+      outputToken: toAddress(_request.outputToken.value),
+      inputDecimals: _request.inputToken.decimals,
+      outputDecimals: _request.outputToken.decimals,
+      inputAmount: _request.inputAmount,
+      isDepositing: _request.isDepositing,
+      chainID: _request.chainID,
+      version: _request.version,
+      from: toAddress(_request.from)
+    })
+    latestQuote.current = estimateOut
+    return latestQuote.current
+  }, [])
 
   /* 🔵 - Yearn Finance ******************************************************
    ** Retrieve the allowance for the token to be used by the solver. This will
@@ -103,10 +93,7 @@ export function useSolverInternalMigration(): TSolverContext {
         tokenAddress: toAddress(request.current.inputToken.value),
         spenderAddress: toAddress(request.current.migrator)
       })
-      existingAllowances.current[key] = toNormalizedBN(
-        allowance,
-        request.current.inputToken.decimals
-      )
+      existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
       return existingAllowances.current[key]
     },
     [provider]
@@ -180,11 +167,7 @@ export function useSolverInternalMigration(): TSolverContext {
             abi: ZAP_CRV_ABI,
             chainId: request.current.chainID,
             functionName: 'calc_expected_out',
-            args: [
-              request.current.inputToken.value,
-              request.current.outputToken.value,
-              request.current.inputAmount
-            ]
+            args: [request.current.inputToken.value, request.current.outputToken.value, request.current.inputAmount]
           })
           const result = await zapCRV({
             connector: provider,

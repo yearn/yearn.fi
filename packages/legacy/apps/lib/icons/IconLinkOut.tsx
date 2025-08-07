@@ -3,13 +3,7 @@ import type { ReactElement } from 'react'
 
 export function IconLinkOut(props: React.SVGProps<SVGSVGElement>): ReactElement {
   return (
-    <svg
-      width={'24'}
-      height={'24'}
-      viewBox={'0 0 24 24'}
-      fill={'none'}
-      xmlns={'http://www.w3.org/2000/svg'}
-      {...props}>
+    <svg width={'24'} height={'24'} viewBox={'0 0 24 24'} fill={'none'} xmlns={'http://www.w3.org/2000/svg'} {...props}>
       <path
         d={
           'M7 4C5.34328 4 4 5.34328 4 7V17C4 18.6567 5.34328 20 7 20H17C18.6567 20 20 18.6567 20 17V16C20 15.4477 20.4477 15 21 15C21.5523 15 22 15.4477 22 16V17C22 19.7613 19.7613 22 17 22H7C4.23872 22 2 19.7613 2 17V7C2 4.23872 4.23872 2 7 2H8C8.55228 2 9 2.44772 9 3C9 3.55228 8.55228 4 8 4H7Z'

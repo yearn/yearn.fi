@@ -29,9 +29,7 @@ export type TWagmiProviderContract = {
   chainId: number
   address: TAddress
 }
-export async function toWagmiProvider(
-  connector: Connector | undefined
-): Promise<TWagmiProviderContract> {
+export async function toWagmiProvider(connector: Connector | undefined): Promise<TWagmiProviderContract> {
   assert(connector, 'Connector is not set')
   if (!connector) {
     throw new Error('Connector is not set')
@@ -70,10 +68,7 @@ type TPrepareWriteContractConfig = SimulateContractParameters & {
   confirmation?: number
 }
 
-export async function handleTx(
-  args: TWriteTransaction,
-  props: TPrepareWriteContractConfig
-): Promise<TTxResponse> {
+export async function handleTx(args: TWriteTransaction, props: TPrepareWriteContractConfig): Promise<TTxResponse> {
   const { shouldResetStatus = true } = args
 
   const config = retrieveConfig()

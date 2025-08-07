@@ -27,28 +27,25 @@ export function useSolverV3StakingBooster(): TSolverContext {
    ** deposit. It will set the request to the provided value, as it's required to get the quote,
    ** and will call getQuote to get the current quote for the provided request.
    *********************************************************************************************/
-  const init = useCallback(
-    async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
-      if (isSolverDisabled(Solver.enum.V3StakingBooster)) {
-        return undefined
-      }
-      request.current = _request
-      const estimateOut = await getVaultEstimateOut({
-        inputToken: toAddress(_request.inputToken.value),
-        outputToken: toAddress(_request.outputToken.value),
-        inputDecimals: _request.inputToken.decimals,
-        outputDecimals: _request.outputToken.decimals,
-        inputAmount: _request.inputAmount,
-        isDepositing: _request.isDepositing,
-        chainID: _request.chainID,
-        version: _request.version,
-        from: toAddress(_request.from)
-      })
-      latestQuote.current = estimateOut
-      return latestQuote.current
-    },
-    []
-  )
+  const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
+    if (isSolverDisabled(Solver.enum.V3StakingBooster)) {
+      return undefined
+    }
+    request.current = _request
+    const estimateOut = await getVaultEstimateOut({
+      inputToken: toAddress(_request.inputToken.value),
+      outputToken: toAddress(_request.outputToken.value),
+      inputDecimals: _request.inputToken.decimals,
+      outputDecimals: _request.outputToken.decimals,
+      inputAmount: _request.inputAmount,
+      isDepositing: _request.isDepositing,
+      chainID: _request.chainID,
+      version: _request.version,
+      from: toAddress(_request.from)
+    })
+    latestQuote.current = estimateOut
+    return latestQuote.current
+  }, [])
 
   /**********************************************************************************************
    ** Retrieve the allowance for the token to be used by the solver. This will be used to
@@ -56,11 +53,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
    *********************************************************************************************/
   const onRetrieveAllowance = useCallback(
     async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-      if (
-        !request?.current ||
-        !provider ||
-        !V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]
-      ) {
+      if (!request?.current || !provider || !V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]) {
         return zeroNormalizedBN
       }
 
@@ -80,10 +73,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
         tokenAddress: toAddress(request.current.inputToken.value),
         spenderAddress: V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]
       })
-      existingAllowances.current[key] = toNormalizedBN(
-        allowance,
-        request.current.inputToken.decimals
-      )
+      existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
       return existingAllowances.current[key]
     },
     [provider]
@@ -104,10 +94,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
     ): Promise<void> => {
       assert(request.current, 'Request is not set')
       assert(request.current.inputToken, 'Input token is not set')
-      assert(
-        isAddress(V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]),
-        'Invalid zap contract'
-      )
+      assert(isAddress(V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]), 'Invalid zap contract')
 
       try {
         const result = await approveERC20({
@@ -150,10 +137,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
     ): Promise<void> => {
       assert(request.current, 'Request is not set')
       assert(request.current.inputAmount, 'Input amount is not set')
-      assert(
-        isAddress(V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]),
-        'Invalid zap contract'
-      )
+      assert(isAddress(V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]), 'Invalid zap contract')
 
       try {
         const result = await depositAndStake({

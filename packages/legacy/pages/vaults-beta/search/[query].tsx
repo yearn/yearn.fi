@@ -13,7 +13,7 @@ export default function SeachResults(): ReactElement {
     if (!searchValue) {
       return []
     }
-    return ALL_APPS.filter(app => app.name.toLowerCase().includes(searchValue.toLowerCase()))
+    return ALL_APPS.filter((app) => app.name.toLowerCase().includes(searchValue.toLowerCase()))
   }, [searchValue])
 
   return (
@@ -24,15 +24,14 @@ export default function SeachResults(): ReactElement {
             className={cl(
               'hidden truncate text-[64px] font-bold leading-[84px] text-white md:block',
               searchFilteredApps.length < 1 ? 'mb-4' : 'mb-10'
-            )}>
+            )}
+          >
             {`Results for "${searchValue}"`}
           </p>
           {searchFilteredApps.length < 1 ? (
             <div>
               <p className={'text-base text-gray-400'}>
-                {
-                  "Hmm, we couldn't find what you're looking for, did you spell it right? Try again or go"
-                }{' '}
+                {"Hmm, we couldn't find what you're looking for, did you spell it right? Try again or go"}{' '}
                 <Link className={'text-white hover:underline'} href={'/apps'}>
                   {'home'}
                 </Link>
@@ -61,9 +60,8 @@ export default function SeachResults(): ReactElement {
               />
             </div>
           ) : (
-            <div
-              className={'flex grid-rows-1 flex-col gap-6 md:grid md:grid-cols-2 lg:grid-cols-4'}>
-              {searchFilteredApps.map(app => (
+            <div className={'flex grid-rows-1 flex-col gap-6 md:grid md:grid-cols-2 lg:grid-cols-4'}>
+              {searchFilteredApps.map((app) => (
                 <AppCard key={app.name} app={app} />
               ))}
             </div>
@@ -82,9 +80,7 @@ export default function SeachResults(): ReactElement {
  ** 4. To handle cases where the query might be undefined, providing a fallback empty string
  ** This approach allows for immediate access to the search query without client-side processing
  ************************************************************************************************/
-export async function getServerSideProps(
-  context: GetServerSidePropsContext
-): Promise<{ props: { query: string } }> {
+export async function getServerSideProps(context: GetServerSidePropsContext): Promise<{ props: { query: string } }> {
   const { query } = context.params as { query: string }
   return {
     props: {

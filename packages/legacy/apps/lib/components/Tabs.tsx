@@ -1,10 +1,4 @@
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
-  Transition
-} from '@headlessui/react'
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useRouter } from 'next/router'
@@ -41,10 +35,7 @@ export function Tabs({ items, className }: TTabsProps): ReactElement {
 
   return (
     <div className={`w-full bg-neutral-100 ${className}`}>
-      <nav
-        className={
-          'hidden h-14 w-full border-b-2 border-neutral-300 pl-px pr-4 text-center md:flex'
-        }>
+      <nav className={'hidden h-14 w-full border-b-2 border-neutral-300 pl-px pr-4 text-center md:flex'}>
         {items.map(
           ({ id, label }): ReactElement => (
             <div
@@ -64,11 +55,13 @@ export function Tabs({ items, className }: TTabsProps): ReactElement {
                   }
                 )
                 setSelectedTabId(id)
-              }}>
+              }}
+            >
               <p
                 title={label}
                 aria-selected={selectedTabId === id}
-                className={'hover-fix align-center flex grow flex-col justify-center'}>
+                className={'hover-fix align-center flex grow flex-col justify-center'}
+              >
                 {label}
               </p>
               {selectedTabId === id && (
@@ -78,9 +71,7 @@ export function Tabs({ items, className }: TTabsProps): ReactElement {
                 />
               )}
               {selectedTabId !== id && (
-                <motion.div
-                  className={'relative -bottom-0.5 w-full border-b-[3px] border-transparent'}
-                />
+                <motion.div className={'relative -bottom-0.5 w-full border-b-[3px] border-transparent'} />
               )}
             </div>
           )
@@ -93,14 +84,13 @@ export function Tabs({ items, className }: TTabsProps): ReactElement {
               <ListboxButton
                 className={
                   'flex h-10 w-full flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
-                }>
+                }
+              >
                 <div className={'relative flex flex-row items-center'}>
                   {items.find(({ id }): boolean => id === selectedTabId)?.label || 'Menu'}
                 </div>
                 <div className={'absolute right-4'}>
-                  <IconChevron
-                    className={`size-6 transition-transform${open ? '-rotate-180' : 'rotate-0'}`}
-                  />
+                  <IconChevron className={`size-6 transition-transform${open ? '-rotate-180' : 'rotate-0'}`} />
                 </div>
               </ListboxButton>
               <Transition
@@ -110,7 +100,8 @@ export function Tabs({ items, className }: TTabsProps): ReactElement {
                 enterTo={'transform scale-100 opacity-100'}
                 leave={'transition duration-75 ease-out'}
                 leaveFrom={'transform scale-100 opacity-100'}
-                leaveTo={'transform scale-95 opacity-0'}>
+                leaveTo={'transform scale-95 opacity-0'}
+              >
                 <ListboxOptions className={'yearn--listbox-menu'}>
                   {items.map(
                     ({ id, label }): ReactElement => (
@@ -132,7 +123,8 @@ export function Tabs({ items, className }: TTabsProps): ReactElement {
           animate={'enter'}
           exit={'exit'}
           variants={variants}
-          transition={{ duration: 0.15 }}>
+          transition={{ duration: 0.15 }}
+        >
           {items.map(
             ({ id, content }): ReactElement => (
               <div key={`tab-content-${id}`} className={'w-full p-6'} hidden={selectedTabId !== id}>

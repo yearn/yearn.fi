@@ -35,8 +35,7 @@ function VaultAPY({
   const inputAmount = actionParams?.amount?.normalized || 0
   const stakedBalance = vaultData.stakedBalanceOf.normalized
 
-  const sumOfRewardsAPY =
-    currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
+  const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
   const veYFIRange = [
     currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
     sumOfRewardsAPY
@@ -54,11 +53,7 @@ function VaultAPY({
    ******************************************************************************************/
   if (
     (!address && isAutoStakingEnabled) ||
-    (isSourceVeYFI &&
-      isAutoStakingEnabled &&
-      hasVeYFIBalance &&
-      !inputAmount &&
-      stakedBalance === 0)
+    (isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance && !inputAmount && stakedBalance === 0)
   ) {
     return (
       <Fragment>
@@ -79,8 +74,7 @@ function VaultAPY({
      ** they deposit the full amount.
      ******************************************************************************************/
     const currentVaultAPY = Math.min(
-      currentVaultBoost * (currentVault.apr.extra.stakingRewardsAPR / 10) +
-        currentVault.apr.forwardAPR.netAPR,
+      currentVaultBoost * (currentVault.apr.extra.stakingRewardsAPR / 10) + currentVault.apr.forwardAPR.netAPR,
       veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
     )
 
@@ -89,8 +83,7 @@ function VaultAPY({
      ** is already earning.
      ******************************************************************************************/
     const stakedVaultAPY = Math.min(
-      stakedVaultBoost * (currentVault.apr.extra.stakingRewardsAPR / 10) +
-        currentVault.apr.forwardAPR.netAPR
+      stakedVaultBoost * (currentVault.apr.extra.stakingRewardsAPR / 10) + currentVault.apr.forwardAPR.netAPR
     )
 
     /******************************************************************************************
@@ -101,12 +94,7 @@ function VaultAPY({
       return (
         <Fragment>
           <span className={'line-through'}>
-            <RenderAmount
-              shouldHideTooltip
-              value={stakedVaultAPY}
-              symbol={'percent'}
-              decimals={6}
-            />
+            <RenderAmount shouldHideTooltip value={stakedVaultAPY} symbol={'percent'} decimals={6} />
           </span>
           &nbsp;&rarr;&nbsp;
           <RenderAmount shouldHideTooltip value={currentVaultAPY} symbol={'percent'} decimals={6} />
@@ -134,14 +122,8 @@ export function VaultDetailsQuickActionsTo(props: {
   gaugeTotalSupply: number
 }): ReactElement {
   const { isActive } = useWeb3()
-  const {
-    currentVault,
-    possibleOptionsTo,
-    actionParams,
-    onUpdateSelectedOptionTo,
-    isDepositing,
-    hasVeYFIBalance
-  } = useActionFlow()
+  const { currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing, hasVeYFIBalance } =
+    useActionFlow()
   const { isAutoStakingEnabled } = useYearn()
 
   const { expectedOut, isLoadingExpectedOut } = useSolver()
@@ -158,11 +140,7 @@ export function VaultDetailsQuickActionsTo(props: {
     }
 
     return actionParams?.selectedOptionTo?.symbol
-  }, [
-    actionParams?.selectedOptionTo?.symbol,
-    isAutoStakingEnabled,
-    props.vaultData.stakedGaugeSymbol
-  ])
+  }, [actionParams?.selectedOptionTo?.symbol, isAutoStakingEnabled, props.vaultData.stakedGaugeSymbol])
 
   const currentVaultBoost = useMemo(
     () =>
@@ -212,9 +190,7 @@ export function VaultDetailsQuickActionsTo(props: {
           <p className={'text-base text-neutral-600'}>
             {isDepositing || isMigrationAvailable ? 'To vault' : 'To wallet'}
           </p>
-          <legend
-            className={'font-number inline text-xs text-neutral-900/50 md:hidden'}
-            suppressHydrationWarning>
+          <legend className={'font-number inline text-xs text-neutral-900/50 md:hidden'} suppressHydrationWarning>
             <VaultAPY
               currentVault={currentVault}
               hasVeYFIBalance={hasVeYFIBalance}
@@ -226,28 +202,23 @@ export function VaultDetailsQuickActionsTo(props: {
         </div>
         <Renderable
           shouldRender={!isActive || isDepositing || possibleOptionsTo.length === 1}
-          fallback={renderMultipleOptionsFallback()}>
+          fallback={renderMultipleOptionsFallback()}
+        >
           <div
             className={
               'flex h-10 w-full items-center justify-between rounded-lg bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
-            }>
+            }
+          >
             <div className={'relative flex flex-row items-center truncate'}>
-              <div className={'size-6 flex-none rounded-full'}>
-                {actionParams?.selectedOptionTo?.icon}
-              </div>
-              <p
-                className={
-                  'truncate whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'
-                }>
+              <div className={'size-6 flex-none rounded-full'}>{actionParams?.selectedOptionTo?.icon}</div>
+              <p className={'truncate whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
                 {selectedOptionToSymbol}
               </p>
             </div>
           </div>
         </Renderable>
         <div className={'mt-1 pl-1'}>
-          <legend
-            className={'hidden text-xs text-neutral-900/50 md:inline'}
-            suppressHydrationWarning>
+          <legend className={'hidden text-xs text-neutral-900/50 md:inline'} suppressHydrationWarning>
             <div>
               <p className={'font-number'}>
                 {isDepositing ? (
@@ -298,9 +269,7 @@ export function VaultDetailsQuickActionsTo(props: {
           </div>
         </div>
         <div className={'mt-1 pl-1'}>
-          <legend
-            suppressHydrationWarning
-            className={'hidden text-xs text-neutral-900/50 md:inline'}>
+          <legend suppressHydrationWarning className={'hidden text-xs text-neutral-900/50 md:inline'}>
             <div>
               <p className={'font-number'}>
                 {formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}

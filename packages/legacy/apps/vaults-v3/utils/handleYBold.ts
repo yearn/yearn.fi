@@ -22,9 +22,7 @@ export const fetchYBoldVault = async (
   }
 
   try {
-    const res = await fetch(
-      `${yDaemonBaseUri}/vaults/${toAddress(STAKED_YBOLD_VAULT_ADDRESS)}?${params}`
-    )
+    const res = await fetch(`${yDaemonBaseUri}/vaults/${toAddress(STAKED_YBOLD_VAULT_ADDRESS)}?${params}`)
     const json = await res.json()
     const parsed: TYDaemonVault = yDaemonVaultSchema.parse(json)
     return {

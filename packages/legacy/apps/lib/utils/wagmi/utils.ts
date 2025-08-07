@@ -147,8 +147,7 @@ function initIndexedWagmiChains(): TNDict<TExtendedChain> {
 
       const newRPC = process.env.RPC_URI_FOR?.[extendedChain.id] || ''
       const newRPCBugged = process.env[`RPC_URI_FOR_${extendedChain.id}`]
-      const oldRPC =
-        process.env.JSON_RPC_URI?.[extendedChain.id] || process.env.JSON_RPC_URL?.[extendedChain.id]
+      const oldRPC = process.env.JSON_RPC_URI?.[extendedChain.id] || process.env.JSON_RPC_URL?.[extendedChain.id]
       if (!newRPC && (newRPCBugged || oldRPC)) {
         console.debug(
           `JSON_RPC_URI[${extendedChain.id}] and RPC_URI_FOR_${extendedChain.id} are deprecated. Please use RPC_URI_FOR[${extendedChain.id}]`
@@ -203,8 +202,7 @@ export function getClient(chainID: number): PublicClient {
   if (!indexedWagmiChains[chainID]) {
     throw new Error(`Chain ${chainID} is not supported`)
   }
-  const chainConfig =
-    indexedWagmiChains?.[chainID] || retrieveConfig().chains.find(chain => chain.id === chainID)
+  const chainConfig = indexedWagmiChains?.[chainID] || retrieveConfig().chains.find((chain) => chain.id === chainID)
 
   const newRPC = process.env.RPC_URI_FOR?.[chainID] || ''
   const newRPCBugged = process.env[`RPC_URI_FOR_${chainID}`]

@@ -1,8 +1,6 @@
 import type { ReactElement } from 'react'
 
-export function TypeMarkYearn(
-  props: React.SVGProps<SVGSVGElement> & { color?: string }
-): ReactElement {
+export function TypeMarkYearn(props: React.SVGProps<SVGSVGElement> & { color?: string }): ReactElement {
   const { color = '#0657F9', ...svgProps } = props
   return (
     <svg
@@ -15,7 +13,8 @@ export function TypeMarkYearn(
       viewBox={'0 0 929.7 256.1'}
       enableBackground={'new 0 0 929.7 256.1'}
       xmlSpace={'preserve'}
-      {...svgProps}>
+      {...svgProps}
+    >
       <g>
         <path
           fill={color}
@@ -33,9 +32,7 @@ export function TypeMarkYearn(
         />
         <polygon
           fill={color}
-          points={
-            '86.8,170.7 129.5,170.7 129.5,102.9 202.2,30.2 172,0 108.2,63.8 44.4,0 14.2,30.2 86.8,102.8'
-          }
+          points={'86.8,170.7 129.5,170.7 129.5,102.9 202.2,30.2 172,0 108.2,63.8 44.4,0 14.2,30.2 86.8,102.8'}
         />
       </g>
     </svg>

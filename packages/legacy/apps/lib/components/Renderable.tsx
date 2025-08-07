@@ -7,11 +7,7 @@ export type TRenderable = {
   fallback?: ReactNode[] | ReactNode | ReactElement | null
 }
 
-export function Renderable({
-  shouldRender,
-  children,
-  fallback = null
-}: TRenderable): ReactElement | null {
+export function Renderable({ shouldRender, children, fallback = null }: TRenderable): ReactElement | null {
   if (shouldRender) {
     return <Fragment>{children}</Fragment>
   }

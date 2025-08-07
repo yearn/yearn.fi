@@ -24,11 +24,7 @@ type TUseZodProps<T> = {
   }
 }
 
-export function useFetch<T>({
-  endpoint,
-  schema,
-  config
-}: TUseZodProps<T>): SWRResponse<T> & { isSuccess: boolean } {
+export function useFetch<T>({ endpoint, schema, config }: TUseZodProps<T>): SWRResponse<T> & { isSuccess: boolean } {
   const {
     cacheDuration = 2 * 60 * 1000, // 2 minutes
     shouldEnableRefreshInterval = false,

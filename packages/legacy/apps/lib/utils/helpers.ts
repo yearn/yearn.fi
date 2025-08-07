@@ -64,11 +64,7 @@ export function isIframe(): boolean {
   if (typeof window === 'undefined') {
     return false
   }
-  if (
-    window !== window.top ||
-    window.top !== window.self ||
-    (document?.location?.ancestorOrigins || []).length !== 0
-  ) {
+  if (window !== window.top || window.top !== window.self || (document?.location?.ancestorOrigins || []).length !== 0) {
     return true
   }
   return false
@@ -87,15 +83,8 @@ export const motionVariants = {
 /***************************************************************************
  ** Helper function to sort elements based on the type of the element.
  **************************************************************************/
-export const stringSort = ({
-  a,
-  b,
-  sortDirection
-}: {
-  a: string
-  b: string
-  sortDirection: TSortDirection
-}): number => (sortDirection === 'desc' ? a.localeCompare(b) : b.localeCompare(a))
+export const stringSort = ({ a, b, sortDirection }: { a: string; b: string; sortDirection: TSortDirection }): number =>
+  sortDirection === 'desc' ? a.localeCompare(b) : b.localeCompare(a)
 
 export const numberSort = ({
   a,
@@ -173,12 +162,7 @@ export function encodeFunctionCall(args: TEncodeFunctionCallArgs): TEncodeFuncti
  ** allowanceKey is used to access the unique allowance key matching one
  ** token with one spender
  **************************************************************************/
-export function allowanceKey(
-  chainID: number,
-  token: TAddress,
-  spender: TAddress,
-  owner: TAddress
-): string {
+export function allowanceKey(chainID: number, token: TAddress, spender: TAddress, owner: TAddress): string {
   return `${chainID}_${token}_${spender}_${owner}`
 }
 /**
@@ -188,11 +172,7 @@ export function allowanceKey(
  * @param replacement
  */
 
-export const replaceStrings = (
-  inputString: string,
-  stringsToReplace: string[],
-  replacement: string
-): string => {
+export const replaceStrings = (inputString: string, stringsToReplace: string[], replacement: string): string => {
   return stringsToReplace.reduce((outputString, stringToReplace) => {
     const regex = new RegExp(stringToReplace, 'g')
     return outputString.replace(regex, replacement)

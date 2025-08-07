@@ -142,10 +142,7 @@ export function useYearnTokens({
       }
 
       // Add staking token
-      if (
-        vault?.staking?.available &&
-        !tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`]
-      ) {
+      if (vault?.staking?.available && !tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`]) {
         const newToken = {
           address: toAddress(vault?.staking?.address),
           chainID: vault.chainID,
@@ -164,8 +161,7 @@ export function useYearnTokens({
             tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].symbol = vault.symbol
           }
           if (!existingToken?.decimals && vault.decimals) {
-            tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].decimals =
-              vault.decimals
+            tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].decimals = vault.decimals
           }
         }
       }

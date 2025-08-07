@@ -25,13 +25,15 @@ export function Partners(): ReactElement {
           pauseOnHover={true}
           speed={20}
           gradientWidth={'25%'}
-          className={'h-full overflow-hidden'}>
+          className={'h-full overflow-hidden'}
+        >
           <div className={'flex h-full items-center'}>
-            {[...PARTNERS, ...PARTNERS].map(partner => (
+            {[...PARTNERS, ...PARTNERS].map((partner) => (
               <div
                 className={'flex h-full max-h-[32px] items-center justify-center'}
                 style={{ marginLeft: partnerSpacing, marginRight: partnerSpacing }}
-                key={partner.src}>
+                key={partner.src}
+              >
                 <Image src={partner.src} alt={'partner'} width={partner.width / 2.25} height={32} />
               </div>
             ))}

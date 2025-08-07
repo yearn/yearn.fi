@@ -37,7 +37,8 @@ export const VaultStakedAmount: FC<{ currentVault: TYDaemonVault }> = ({ current
       <p
         className={`yearn--table-data-section-item-value ${
           isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'
-        }`}>
+        }`}
+      >
         <RenderAmount
           shouldFormatDust
           value={staked.normalized}
@@ -46,8 +47,7 @@ export const VaultStakedAmount: FC<{ currentVault: TYDaemonVault }> = ({ current
           options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
         />
       </p>
-      <small
-        className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
+      <small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
         <RenderAmount
           value={staked.normalized * tokenPrice.normalized}
           symbol={'USD'}

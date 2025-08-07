@@ -29,12 +29,10 @@ function Index(): ReactElement | null {
   const [currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
   const { data: vault, isLoading: isLoadingVault } = useFetch<TYDaemonVault>({
     endpoint: router.query.address
-      ? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams(
-          {
-            strategiesDetails: 'withDetails',
-            strategiesCondition: 'inQueue'
-          }
-        )}`
+      ? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
+          strategiesDetails: 'withDetails',
+          strategiesCondition: 'inQueue'
+        })}`
       : null,
     schema: yDaemonVaultSchema
   })
@@ -87,9 +85,7 @@ function Index(): ReactElement | null {
     return (
       <div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>
-          <p className={'text-sm text-neutral-900'}>
-            {"We couln't find this vault on the connected network."}
-          </p>
+          <p className={'text-sm text-neutral-900'}>{"We couln't find this vault on the connected network."}</p>
         </div>
       </div>
     )
@@ -103,7 +99,8 @@ function Index(): ReactElement | null {
           initial={'initial'}
           animate={'enter'}
           variants={variants}
-          className={'pointer-events-none cursor-pointer md:-mt-0 '}>
+          className={'pointer-events-none cursor-pointer md:-mt-0 '}
+        >
           <ImageWithFallback
             className={'size-12 md:size-[72px]'}
             src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(

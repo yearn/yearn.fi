@@ -50,15 +50,10 @@ export function useVaultStakingData(props: { currentVault: TYDaemonVault }): {
    ** it possible to withdraw the rewards and display a corresponding message to the user.
    *************************************************************************************************/
   const foundVaultWithDisabledStaking = DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
-    vault => vault.address === props.currentVault.address
+    (vault) => vault.address === props.currentVault.address
   )?.staking
 
-  const stakingType = props.currentVault.staking.source as
-    | 'OP Boost'
-    | 'VeYFI'
-    | 'Juiced'
-    | 'V3 Staking'
-    | 'yBOLD'
+  const stakingType = props.currentVault.staking.source as 'OP Boost' | 'VeYFI' | 'Juiced' | 'V3 Staking' | 'yBOLD'
   const [vaultData, setVaultData] = useState<TStakingInfo>({
     address: isZeroAddress(props.currentVault.staking.address)
       ? props.currentVault.staking.address
@@ -171,9 +166,7 @@ export function useVaultStakingData(props: { currentVault: TYDaemonVault }): {
         }
       ]
 
-      const calls = contracts.map(({ key: _key, ...rest }) => rest) as Parameters<
-        typeof readContracts
-      >[1]['contracts']
+      const calls = contracts.map(({ key: _key, ...rest }) => rest) as Parameters<typeof readContracts>[1]['contracts']
 
       const data = await readContracts(retrieveConfig(), {
         contracts: calls

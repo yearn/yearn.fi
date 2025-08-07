@@ -7,15 +7,7 @@ import { serialize } from 'wagmi'
 import { useWeb3 } from '../contexts/useWeb3'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
 import { useBalances } from '../hooks/useBalances.multichains'
-import type {
-  TAddress,
-  TChainTokens,
-  TDict,
-  TNDict,
-  TNormalizedBN,
-  TToken,
-  TYChainTokens
-} from '../types'
+import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
 import { DEFAULT_ERC20, toAddress, zeroNormalizedBN } from '../utils'
 import { createUniqueID } from '../utils/tools.identifier'
 import { useYearn } from './useYearn'
@@ -86,8 +78,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     [onUpdate, onUpdateSome]
   )
   const getToken = useCallback(
-    ({ address, chainID }: TTokenAndChain): TToken =>
-      balances?.[chainID || 1]?.[address] || DEFAULT_ERC20,
+    ({ address, chainID }: TTokenAndChain): TToken => balances?.[chainID || 1]?.[address] || DEFAULT_ERC20,
     [balances]
   )
 
@@ -150,10 +141,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         }
 
         if (allVaults?.[toAddress(tokenAddress)]) {
-          if (
-            vaultDetails.version.split('.')?.[0] === '3' ||
-            vaultDetails.version.split('.')?.[0] === '~3'
-          ) {
+          if (vaultDetails.version.split('.')?.[0] === '3' || vaultDetails.version.split('.')?.[0] === '~3') {
             cumulatedValueInV3Vaults += tokenValue + stakingValue
           } else {
             cumulatedValueInV2Vaults += tokenValue + stakingValue

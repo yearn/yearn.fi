@@ -36,16 +36,10 @@ export function VaultsListHead({ items, sortBy, sortDirection, onSort }: TListHe
   const renderChevron = useCallback(
     (shouldSortBy: boolean): ReactElement => {
       if (shouldSortBy && sortDirection === 'desc') {
-        return (
-          <IconChevronPlain className={'size-4 min-w-[16px] cursor-pointer text-neutral-800'} />
-        )
+        return <IconChevronPlain className={'size-4 min-w-[16px] cursor-pointer text-neutral-800'} />
       }
       if (shouldSortBy && sortDirection === 'asc') {
-        return (
-          <IconChevronPlain
-            className={'size-4 min-w-[16px] rotate-180 cursor-pointer text-neutral-800'}
-          />
-        )
+        return <IconChevronPlain className={'size-4 min-w-[16px] rotate-180 cursor-pointer text-neutral-800'} />
       }
       return (
         <IconChevronPlain
@@ -66,26 +60,18 @@ export function VaultsListHead({ items, sortBy, sortDirection, onSort }: TListHe
           'grid w-full grid-cols-1 md:grid-cols-12 px-4 py-2 md:px-4',
           'border-t border-neutral-200 md:border-none',
           'cursor-pointer'
-        )}>
-        <div
-          className={cl(
-            'col-span-4',
-            'flex flex-row items-center justify-between',
-            'mb-2 py-4 md:mb-0 md:py-0'
-          )}>
+        )}
+      >
+        <div className={cl('col-span-4', 'flex flex-row items-center justify-between', 'mb-2 py-4 md:mb-0 md:py-0')}>
           <button
             onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
-            className={'yearn--table-head-label-wrapper group'}>
+            className={'yearn--table-head-label-wrapper group'}
+          >
             <p className={'yearn--table-head-label'}>{token.label}</p>
             {renderChevron(sortBy === token.value)}
           </button>
         </div>
-        <div
-          className={cl(
-            'col-span-8 z-10',
-            'grid grid-cols-2 md:grid-cols-12 gap-1',
-            'mt-4 md:mt-0'
-          )}>
+        <div className={cl('col-span-8 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-1', 'mt-4 md:mt-0')}>
           {rest.map(
             (item, index): ReactElement => (
               <button
@@ -93,15 +79,15 @@ export function VaultsListHead({ items, sortBy, sortDirection, onSort }: TListHe
                 onClick={(): void => onSort(item.value, toggleSortDirection(item.value))}
                 disabled={!item.sortable}
                 className={cl('yearn--table-head-label-wrapper group', item.className)}
-                datatype={'number'}>
+                datatype={'number'}
+              >
                 <p
                   className={cl(
                     'yearn--table-head-label',
                     'transition-colors',
-                    sortBy === item.value
-                      ? 'text-neutral-800'
-                      : 'text-neutral-800/60 group-hover:text-neutral-800'
-                  )}>
+                    sortBy === item.value ? 'text-neutral-800' : 'text-neutral-800/60 group-hover:text-neutral-800'
+                  )}
+                >
                   &nbsp;{item.label}
                 </p>
                 {item.sortable ? renderChevron(sortBy === item.value) : null}

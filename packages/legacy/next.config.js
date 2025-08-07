@@ -35,19 +35,13 @@ module.exports = withPlausibleProxy({
     '@react-hookz/web'
   ],
 
-  webpack: config => {
+  webpack: (config) => {
     config.resolve = {
       ...config.resolve,
       alias: {
         ...config.resolve.alias,
-        '@safe-global/safe-apps-sdk': path.resolve(
-          __dirname,
-          '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
-        ),
-        '@nextgen/components': path.resolve(
-          __dirname,
-          '../nextgen/src/components/elements/index.ts'
-        )
+        '@safe-global/safe-apps-sdk': path.resolve(__dirname, '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'),
+        '@nextgen/components': path.resolve(__dirname, '../nextgen/src/components/elements/index.ts')
       },
       fallback: {
         ...config.resolve.fallback,

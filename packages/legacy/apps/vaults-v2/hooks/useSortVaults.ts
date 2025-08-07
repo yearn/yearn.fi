@@ -4,11 +4,7 @@ import type { TSortDirection } from '@lib/types'
 import { isZero, toAddress, toNormalizedBN } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { getVaultName, numberSort, stringSort } from '@lib/utils/helpers'
-import type {
-  TYDaemonVault,
-  TYDaemonVaultStrategy,
-  TYDaemonVaults
-} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type { TYDaemonVault, TYDaemonVaultStrategy, TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useCallback, useMemo } from 'react'
 import { deserialize, serialize } from 'wagmi'
 
@@ -53,11 +49,7 @@ export function useSortVaults(
       let aAPY = 0
       if (a.apr?.forwardAPR.type === '') {
         aAPY = a.apr.extra.stakingRewardsAPR + a.apr.netAPR
-      } else if (
-        a.chainID === 1 &&
-        a.apr.forwardAPR.composite.boost > 0 &&
-        !a.apr.extra.stakingRewardsAPR
-      ) {
+      } else if (a.chainID === 1 && a.apr.forwardAPR.composite.boost > 0 && !a.apr.extra.stakingRewardsAPR) {
         aAPY = a.apr.forwardAPR.netAPR
       } else {
         const sumOfRewardsAPY = a.apr?.extra.stakingRewardsAPR + a.apr?.extra.gammaRewardAPR
@@ -74,11 +66,7 @@ export function useSortVaults(
       let bAPY = 0
       if (b.apr?.forwardAPR.type === '') {
         bAPY = b.apr?.extra.stakingRewardsAPR + b.apr?.netAPR
-      } else if (
-        b.chainID === 1 &&
-        b.apr?.forwardAPR.composite.boost > 0 &&
-        !b.apr?.extra.stakingRewardsAPR
-      ) {
+      } else if (b.chainID === 1 && b.apr?.forwardAPR.composite.boost > 0 && !b.apr?.extra.stakingRewardsAPR) {
         bAPY = b.apr?.forwardAPR.netAPR
       } else {
         const sumOfRewardsAPY = b.apr?.extra.stakingRewardsAPR + b.apr?.extra.gammaRewardAPR
@@ -117,9 +105,7 @@ export function useSortVaults(
     if (sortBy !== 'tvl') {
       return vaultList
     }
-    return vaultList.sort((a, b): number =>
-      numberSort({ a: a.tvl.tvl, b: b.tvl.tvl, sortDirection })
-    )
+    return vaultList.sort((a, b): number => numberSort({ a: a.tvl.tvl, b: b.tvl.tvl, sortDirection }))
   }, [sortDirection, vaultList, sortBy])
 
   const sortedByAllocation = useCallback((): TYDaemonVaults => {
@@ -149,12 +135,8 @@ export function useSortVaults(
       return vaultList
     }
     return vaultList.sort((a, b): number => {
-      const aDepositedBalance = Number(
-        getBalance({ address: a.address, chainID: a.chainID })?.normalized || 0
-      )
-      const bDepositedBalance = Number(
-        getBalance({ address: b.address, chainID: b.chainID })?.normalized || 0
-      )
+      const aDepositedBalance = Number(getBalance({ address: a.address, chainID: a.chainID })?.normalized || 0)
+      const bDepositedBalance = Number(getBalance({ address: b.address, chainID: b.chainID })?.normalized || 0)
       let aStakedBalance = 0
       let bStakedBalance = 0
 
@@ -162,14 +144,10 @@ export function useSortVaults(
       let bStakedValue = 0
 
       if (a.staking.available) {
-        aStakedBalance = Number(
-          getBalance({ address: a.staking.address, chainID: a.chainID })?.normalized || 0
-        )
+        aStakedBalance = Number(getBalance({ address: a.staking.address, chainID: a.chainID })?.normalized || 0)
       }
       if (b.staking.available) {
-        bStakedBalance = Number(
-          getBalance({ address: b.staking.address, chainID: b.chainID })?.normalized || 0
-        )
+        bStakedBalance = Number(getBalance({ address: b.staking.address, chainID: b.chainID })?.normalized || 0)
       }
 
       if (aStakedBalance) {
@@ -194,20 +172,12 @@ export function useSortVaults(
       return vaultList
     }
     return vaultList.sort((a, b): number => {
-      let aBalance = Number(
-        getBalance({ address: a.token.address, chainID: a.chainID })?.normalized || 0
-      )
-      let bBalance = Number(
-        getBalance({ address: b.token.address, chainID: b.chainID })?.normalized || 0
-      )
+      let aBalance = Number(getBalance({ address: a.token.address, chainID: a.chainID })?.normalized || 0)
+      let bBalance = Number(getBalance({ address: b.token.address, chainID: b.chainID })?.normalized || 0)
       if ([WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(a.token.address))) {
-        aBalance += Number(
-          getBalance({ address: ETH_TOKEN_ADDRESS, chainID: a.chainID })?.normalized || 0
-        )
+        aBalance += Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: a.chainID })?.normalized || 0)
       } else if ([WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(b.token.address))) {
-        bBalance += Number(
-          getBalance({ address: ETH_TOKEN_ADDRESS, chainID: b.chainID })?.normalized || 0
-        )
+        bBalance += Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: b.chainID })?.normalized || 0)
       }
 
       if (sortDirection === 'asc') {
@@ -221,9 +191,7 @@ export function useSortVaults(
     if (sortBy !== 'featuringScore') {
       return vaultList
     }
-    return vaultList.sort((a, b): number =>
-      numberSort({ a: a.featuringScore, b: b.featuringScore, sortDirection })
-    )
+    return vaultList.sort((a, b): number => numberSort({ a: a.featuringScore, b: b.featuringScore, sortDirection }))
   }, [sortBy, sortDirection, vaultList])
 
   const sortByScore = useCallback((): TYDaemonVaults => {

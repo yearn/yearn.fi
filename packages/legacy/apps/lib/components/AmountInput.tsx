@@ -38,9 +38,7 @@ export function AmountInput({
           className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${
             maxAmount && !disabled ? 'pr-12' : null
           } ${
-            error
-              ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]'
-              : 'border-0 border-none'
+            error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'
           } ${disabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0'}`}
           type={'text'}
           autoComplete={'off'}
@@ -55,7 +53,8 @@ export function AmountInput({
             onClick={onMaxClick ? (): void => onMaxClick() : undefined}
             className={
               'absolute right-2 ml-2 h-6 cursor-pointer border-none bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'
-            }>
+            }
+          >
             {'Max'}
           </button>
         </Renderable>
@@ -65,7 +64,8 @@ export function AmountInput({
           role={onLegendClick ? 'button' : 'text'}
           onClick={onLegendClick}
           suppressHydrationWarning
-          className={`mt-1 pl-1 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}>
+          className={`mt-1 pl-1 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}
+        >
           {error ?? legend}
         </legend>
       </Renderable>

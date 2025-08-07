@@ -61,10 +61,7 @@ const defaultState: TWeb3Context = {
 }
 
 const Web3Context = createContext<TWeb3Context>(defaultState)
-export const Web3ContextApp = (props: {
-  children: ReactElement
-  defaultNetwork?: Chain
-}): ReactElement => {
+export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?: Chain }): ReactElement => {
   const { address, isConnecting, isConnected, isDisconnected, connector, chain } = useAccount()
   const { connectors, connectAsync } = useConnect()
   const { disconnect, disconnectAsync } = useDisconnect()
@@ -96,17 +93,10 @@ export const Web3ContextApp = (props: {
     }
 
     try {
-      if (
-        isIframe() &&
-        connector &&
-        connector?.id !== 'safe' &&
-        !connector?.id?.toLowerCase().includes('ledger')
-      ) {
+      if (isIframe() && connector && connector?.id !== 'safe' && !connector?.id?.toLowerCase().includes('ledger')) {
         const ancestorOrigin = typeof window !== 'undefined' && window.location.ancestorOrigins[0]
         if (!ancestorOrigin.toString().includes('safe')) {
-          const ledgerConnector = connectors.find((c): boolean =>
-            c.id.toLowerCase().includes('ledger')
-          )
+          const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
           if (ledgerConnector) {
             await disconnectAsync({ connector: connector })
             const isAuth = await ledgerConnector.isAuthorized()
@@ -126,9 +116,7 @@ export const Web3ContextApp = (props: {
       } else if (isIframe() && !connector) {
         const ancestorOrigin = typeof window !== 'undefined' && window.location.ancestorOrigins[0]
         if (!ancestorOrigin.toString().includes('safe')) {
-          const ledgerConnector = connectors.find((c): boolean =>
-            c.id.toLowerCase().includes('ledger')
-          )
+          const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
           if (ledgerConnector) {
             await connectAsync({ connector: ledgerConnector })
           }
@@ -241,12 +229,10 @@ export const Web3ContextApp = (props: {
     isActive: isConnected && [...supportedChainsID, 1337].includes(chain?.id || -1) && isMounted(),
     isWalletSafe:
       connector?.id === 'safe' ||
-      (connector as Record<string, unknown> & { _wallets?: Array<{ id?: string }> })?._wallets?.[0]
-        ?.id === 'safe',
+      (connector as Record<string, unknown> & { _wallets?: Array<{ id?: string }> })?._wallets?.[0]?.id === 'safe',
     isWalletLedger:
       connector?.id.toLowerCase().includes('ledger') ||
-      (connector as Record<string, unknown> & { _wallets?: Array<{ id?: string }> })?._wallets?.[0]
-        ?.id === 'ledger',
+      (connector as Record<string, unknown> & { _wallets?: Array<{ id?: string }> })?._wallets?.[0]?.id === 'ledger',
     lensProtocolHandle: '',
     hasProvider: !!(walletClient || publicClient),
     provider: connector,

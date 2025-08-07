@@ -76,7 +76,8 @@ function About(): ReactElement {
                 href={'https://discord.com/invite/6PNv2nF'}
                 target={'_blank'}
                 className={'text-neutral-900 underline'}
-                rel={'noreferrer'}>
+                rel={'noreferrer'}
+              >
                 {'discord'}
               </a>
               {' if you have any questions, we’d love to chat.'}

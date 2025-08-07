@@ -8,13 +8,7 @@ import { useMemo } from 'react'
  ** the useYearn context. The price is returned as a normalizedValue with a
  ** fallback of 0.
  *****************************************************************************/
-export function useYearnTokenPrice({
-  address,
-  chainID
-}: {
-  address: TAddress
-  chainID: number
-}): number {
+export function useYearnTokenPrice({ address, chainID }: { address: TAddress; chainID: number }): number {
   const { prices } = useYearn()
 
   const tokenPrice = useMemo(

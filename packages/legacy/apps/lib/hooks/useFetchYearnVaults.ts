@@ -38,9 +38,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
       strategiesDetails: 'withDetails',
       strategiesCondition: 'inQueue',
 
-      chainIDs: chainIDs
-        ? chainIDs.join(',')
-        : [1, 10, 137, 146, 250, 8453, 42161, 747474].join(','),
+      chainIDs: chainIDs ? chainIDs.join(',') : [1, 10, 137, 146, 250, 8453, 42161, 747474].join(','),
       limit: '2500'
     })}`,
     schema: yDaemonVaultsSchema,
@@ -52,9 +50,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
   // const vaultsMigrations: TYDaemonVaults = useMemo(() => [], []);
   const { data: vaultsMigrations } = useFetch<TYDaemonVaults>({
     endpoint: `${yDaemonBaseUriWithoutChain}/vaults?${new URLSearchParams({
-      chainIDs: chainIDs
-        ? chainIDs.join(',')
-        : [1, 10, 137, 146, 250, 8453, 42161, 747474].join(','),
+      chainIDs: chainIDs ? chainIDs.join(',') : [1, 10, 137, 146, 250, 8453, 42161, 747474].join(','),
       migratable: 'nodust',
       limit: '2500'
     })}`,
@@ -73,15 +69,12 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
     if (!vaults) {
       return {}
     }
-    const _vaultsObject = (vaults || []).reduce(
-      (acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
-        if (!vault.migration.available) {
-          acc[toAddress(vault.address)] = vault
-        }
-        return acc
-      },
-      {}
-    )
+    const _vaultsObject = (vaults || []).reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
+      if (!vault.migration.available) {
+        acc[toAddress(vault.address)] = vault
+      }
+      return acc
+    }, {})
     return _vaultsObject
   }, [vaults])
 
@@ -131,8 +124,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
                   },
                   fees: {
                     ...yBoldVault.apr.fees,
-                    performance:
-                      stYBoldVault.apr.fees.performance ?? yBoldVault.apr.fees.performance ?? 0
+                    performance: stYBoldVault.apr.fees.performance ?? yBoldVault.apr.fees.performance ?? 0
                   }
                 }
               : yBoldVault.apr

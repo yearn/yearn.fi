@@ -28,12 +28,10 @@ function Index(): ReactElement | null {
   const [isInit, setIsInit] = useState(false)
   const { data: vault, isLoading: isLoadingVault } = useFetch<TYDaemonVault>({
     endpoint: router.query.address
-      ? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams(
-          {
-            strategiesDetails: 'withDetails',
-            strategiesCondition: 'inQueue'
-          }
-        )}`
+      ? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
+          strategiesDetails: 'withDetails',
+          strategiesCondition: 'inQueue'
+        })}`
       : null,
     schema: yDaemonVaultSchema
   })
@@ -45,7 +43,7 @@ function Index(): ReactElement | null {
 
   useEffect(() => {
     if (!overrideVault) {
-      fetchYBoldVault(yDaemonBaseUri, _currentVault).then(_vault => {
+      fetchYBoldVault(yDaemonBaseUri, _currentVault).then((_vault) => {
         setOverrideVault(_vault)
       })
     }
@@ -102,9 +100,7 @@ function Index(): ReactElement | null {
     return (
       <div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>
-          <p className={'text-sm text-neutral-900'}>
-            {"We couldn't find this vault on the connected network."}
-          </p>
+          <p className={'text-sm text-neutral-900'}>{"We couldn't find this vault on the connected network."}</p>
         </div>
       </div>
     )
@@ -115,10 +111,7 @@ function Index(): ReactElement | null {
       {/* Mobile Back Button */}
       <nav className={'mb-4 self-start md:mb-2 md:hidden'}>
         <button className={'z-50 w-fit'} onClick={async () => await router.push('/v3')}>
-          <p
-            className={
-              'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'
-            }>
+          <p className={'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'}>
             <span className={'pr-2 leading-[normal]'}>&#10229;</span>
             {'  Back'}
           </p>
@@ -131,13 +124,13 @@ function Index(): ReactElement | null {
           'pt-6 pb-6 md:pb-10 px-4 md:px-8',
           'bg-[linear-gradient(73deg,_#D21162_24.91%,_#2C3DA6_99.66%)]',
           'relative flex flex-col items-center justify-center'
-        )}>
+        )}
+      >
         <nav className={'mb-4 hidden self-start md:mb-2 md:block'}>
           <button className={'w-fit'} onClick={async () => await router.push('/v3')}>
             <p
-              className={
-                'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'
-              }>
+              className={'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'}
+            >
               <span className={'pr-2 leading-[normal]'}>&#10229;</span>
               {'  Back'}
             </p>
@@ -148,7 +141,8 @@ function Index(): ReactElement | null {
             className={cl(
               'h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-[#FAD1ED7A] backdrop-blur',
               'flex justify-center items-center'
-            )}>
+            )}
+          >
             <ImageWithFallback
               className={'size-10 md:size-12'}
               src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}

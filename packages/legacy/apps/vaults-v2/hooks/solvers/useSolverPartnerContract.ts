@@ -28,28 +28,25 @@ export function useSolverPartnerContract(): TSolverContext {
    ** It will set the request to the provided value, as it's required to get the quote, and will
    ** call getQuote to get the current quote for the provided request.
    **********************************************************************************************/
-  const init = useCallback(
-    async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
-      if (isSolverDisabled(Solver.enum.PartnerContract)) {
-        return undefined
-      }
-      request.current = _request
-      const estimateOut = await getVaultEstimateOut({
-        inputToken: toAddress(_request.inputToken.value),
-        outputToken: toAddress(_request.outputToken.value),
-        inputDecimals: _request.inputToken.decimals,
-        outputDecimals: _request.outputToken.decimals,
-        inputAmount: _request.inputAmount,
-        isDepositing: _request.isDepositing,
-        chainID: _request.chainID,
-        version: _request.version,
-        from: toAddress(_request.from)
-      })
-      latestQuote.current = estimateOut
-      return latestQuote.current
-    },
-    []
-  )
+  const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
+    if (isSolverDisabled(Solver.enum.PartnerContract)) {
+      return undefined
+    }
+    request.current = _request
+    const estimateOut = await getVaultEstimateOut({
+      inputToken: toAddress(_request.inputToken.value),
+      outputToken: toAddress(_request.outputToken.value),
+      inputDecimals: _request.inputToken.decimals,
+      outputDecimals: _request.outputToken.decimals,
+      inputAmount: _request.inputAmount,
+      isDepositing: _request.isDepositing,
+      chainID: _request.chainID,
+      version: _request.version,
+      from: toAddress(_request.from)
+    })
+    latestQuote.current = estimateOut
+    return latestQuote.current
+  }, [])
 
   /* 🔵 - Yearn Finance ******************************************************
    ** Retrieve the allowance for the token to be used by the solver. This will
@@ -75,14 +72,9 @@ export function useSolverPartnerContract(): TSolverContext {
         connector: provider,
         chainID: request.current.inputToken.chainID,
         tokenAddress: toAddress(request.current.inputToken.value),
-        spenderAddress: toAddress(
-          getNetwork(request.current.chainID)?.contracts?.partnerContract?.address
-        )
+        spenderAddress: toAddress(getNetwork(request.current.chainID)?.contracts?.partnerContract?.address)
       })
-      existingAllowances.current[key] = toNormalizedBN(
-        allowance,
-        request.current.inputToken.decimals
-      )
+      existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
       return existingAllowances.current[key]
     },
     [provider]
@@ -105,8 +97,7 @@ export function useSolverPartnerContract(): TSolverContext {
     ): Promise<void> => {
       assert(request.current, 'Request is not set')
       assert(request.current?.inputToken, 'Input token is not set')
-      const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract
-        ?.address
+      const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract?.address
       assertAddress(partnerContract, 'partnerContract')
 
       try {
@@ -150,8 +141,7 @@ export function useSolverPartnerContract(): TSolverContext {
     ): Promise<void> => {
       assert(request.current, 'Request is not set')
       assert(request.current.inputAmount, 'Input amount is not set')
-      const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract
-        ?.address
+      const partnerContract = getNetwork(request.current.chainID)?.contracts?.partnerContract?.address
       assertAddress(partnerContract, 'partnerContract')
 
       try {

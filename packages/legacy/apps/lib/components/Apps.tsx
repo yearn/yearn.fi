@@ -89,15 +89,7 @@ export const APPS: { [key in AppName]: TApp } = {
     menu: [],
     manifest: {},
     icon: (
-      <Image
-        className={'size-8'}
-        src={'/gimme.png'}
-        width={64}
-        height={64}
-        alt={'gimme'}
-        loading={'eager'}
-        priority
-      />
+      <Image className={'size-8'} src={'/gimme.png'} width={64} height={64} alt={'gimme'} loading={'eager'} priority />
     )
   },
   Vaults: {

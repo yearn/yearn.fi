@@ -42,14 +42,10 @@ export const VaultsPositions: FC = () => {
       return []
     }
 
-    const allVaults = [
-      ...Object.values(vaults),
-      ...Object.values(vaultsMigrations),
-      ...Object.values(vaultsRetired)
-    ]
+    const allVaults = [...Object.values(vaults), ...Object.values(vaultsMigrations), ...Object.values(vaultsRetired)]
 
     const positions = allVaults
-      .map(vault => {
+      .map((vault) => {
         const vaultBalance = getBalance({ address: vault.address, chainID: vault.chainID })
         const stakingBalance =
           vault.staking.available && vault.staking.address
@@ -66,7 +62,7 @@ export const VaultsPositions: FC = () => {
           totalValue
         }
       })
-      .filter(vault => vault.totalBalance.raw > 0n && vault.totalValue >= 0.01)
+      .filter((vault) => vault.totalBalance.raw > 0n && vault.totalValue >= 0.01)
 
     if (sortBy === 'totalValue') {
       return positions.sort((a, b) =>
@@ -79,17 +75,7 @@ export const VaultsPositions: FC = () => {
       )
     }
     return positions.sort((a, b) => b.totalValue - a.totalValue)
-  }, [
-    address,
-    isActive,
-    vaults,
-    vaultsMigrations,
-    vaultsRetired,
-    sortBy,
-    sortDirection,
-    getBalance,
-    getPrice
-  ])
+  }, [address, isActive, vaults, vaultsMigrations, vaultsRetired, sortBy, sortDirection, getBalance, getPrice])
 
   const totalDeposited = cumulatedValueInV2Vaults + cumulatedValueInV3Vaults
 
@@ -133,7 +119,8 @@ export const VaultsPositions: FC = () => {
 
   return (
     <div
-      className={`flex rounded-[16px] border border-dashed border-neutral-900/10 bg-neutral-900/10 ${styles.content}`}>
+      className={`flex rounded-[16px] border border-dashed border-neutral-900/10 bg-neutral-900/10 ${styles.content}`}
+    >
       <VaultBalanceCard
         showExpandButton={VaultView !== TVaultsPositionsView.Empty}
         isExpanded={VaultView === TVaultsPositionsView.Table}
@@ -148,7 +135,7 @@ export const VaultsPositions: FC = () => {
       )}
       {VaultView === TVaultsPositionsView.Card && (
         <div className={styles.cards}>
-          {userPositions.map(vault => (
+          {userPositions.map((vault) => (
             <VaultPositionCard key={`${vault.address}-${vault.chainID}`} vault={vault} />
           ))}
         </div>
@@ -156,7 +143,7 @@ export const VaultsPositions: FC = () => {
       {VaultView === TVaultsPositionsView.Table && (
         <div className={''}>
           <div className={cl(styles.cards, 'block md:hidden')}>
-            {userPositions.map(vault => (
+            {userPositions.map((vault) => (
               <VaultPositionCard key={`${vault.address}-${vault.chainID}`} vault={vault} />
             ))}
           </div>

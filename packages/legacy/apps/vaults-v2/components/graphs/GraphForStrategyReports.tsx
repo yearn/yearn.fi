@@ -123,9 +123,7 @@ export function GraphForStrategyReports({
                         </b>
                       </div>
                       <div className={'flex flex-row items-center justify-between'}>
-                        <p className={'text-xs text-neutral-600'}>
-                          {normalizedDiff > 0 ? 'Gain' : 'Loss'}
-                        </p>
+                        <p className={'text-xs text-neutral-600'}>{normalizedDiff > 0 ? 'Gain' : 'Loss'}</p>
                         <b className={'font-number text-xs font-bold text-neutral-900'}>
                           {`${formatAmount(normalizedDiff)} ${vaultTicker}`}
                         </b>

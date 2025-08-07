@@ -48,9 +48,7 @@ function HarvestListRow({
     <div className={'grid grid-cols-1 border-b border-neutral-200 px-10 pb-4 md:grid-cols-12'}>
       <div className={'col-span-3'} datatype={'number'}>
         <p className={'yearn--table-data-section-item-label'}>{'Date'}</p>
-        <p
-          className={'yearn--table-data-section-item-value font-number'}
-          style={{ lineHeight: '24px' }}>
+        <p className={'yearn--table-data-section-item-value font-number'} style={{ lineHeight: '24px' }}>
           {formatDate(Number(harvest.timestamp) * 1000)}
         </p>
       </div>
@@ -62,10 +60,7 @@ function HarvestListRow({
             {toBigInt(harvest.profit) - toBigInt(harvest.loss) > 0n ? '+' : '-'}
             &nbsp;
             {formatAmount(
-              toNormalizedValue(
-                toBigInt(harvest.profit) - toBigInt(harvest.loss),
-                currentVault.token.decimals
-              ),
+              toNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), currentVault.token.decimals),
               6,
               currentVault.token.decimals
             )}
@@ -84,10 +79,9 @@ function HarvestListRow({
         <p className={'yearn--table-data-section-item-label'}>{'Hash'}</p>
         <a href={`${blockExplorer}/tx/${harvest.txHash}`} target={'_blank'} rel={'noreferrer'}>
           <div
-            className={
-              'font-number flex flex-row items-center space-x-2 text-neutral-900 md:justify-end'
-            }
-            style={{ lineHeight: '24px' }}>
+            className={'font-number flex flex-row items-center space-x-2 text-neutral-900 md:justify-end'}
+            style={{ lineHeight: '24px' }}
+          >
             {truncateHexTx(harvest.txHash, 12)}
             <IconLinkOut className={'ml-2 size-4 md:ml-4'} />
           </div>

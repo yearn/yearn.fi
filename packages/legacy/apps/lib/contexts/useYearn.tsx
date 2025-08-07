@@ -65,42 +65,28 @@ const YearnContext = createContext<TYearnContext>({
   getPrice: (): TNormalizedBN => zeroNormalizedBN
 })
 
-export const YearnContextApp = memo(function YearnContextApp({
-  children
-}: {
-  children: ReactElement
-}): ReactElement {
+export const YearnContextApp = memo(function YearnContextApp({ children }: { children: ReactElement }): ReactElement {
   const { value: maxLoss, set: setMaxLoss } = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
     defaultValue: DEFAULT_MAX_LOSS,
     parse: (str, fallback): bigint => (str ? deserialize(str) : (fallback ?? DEFAULT_MAX_LOSS)),
     stringify: (data: bigint): string => serialize(data)
   })
-  const { value: zapSlippage, set: setZapSlippage } = useLocalStorageValue<number>(
-    'yearn.fi/zap-slippage',
+  const { value: zapSlippage, set: setZapSlippage } = useLocalStorageValue<number>('yearn.fi/zap-slippage', {
+    defaultValue: DEFAULT_SLIPPAGE
+  })
+  const { value: zapProvider, set: setZapProvider } = useLocalStorageValue<TSolver>('yearn.fi/zap-provider', {
+    defaultValue: Solver.enum.Cowswap
+  })
+  const { value: isAutoStakingEnabled, set: setIsAutoStakingEnabled } = useLocalStorageValue<boolean>(
+    'yearn.fi/staking-op-boosted-vaults',
     {
-      defaultValue: DEFAULT_SLIPPAGE
-    }
-  )
-  const { value: zapProvider, set: setZapProvider } = useLocalStorageValue<TSolver>(
-    'yearn.fi/zap-provider',
-    {
-      defaultValue: Solver.enum.Cowswap
-    }
-  )
-  const { value: isAutoStakingEnabled, set: setIsAutoStakingEnabled } =
-    useLocalStorageValue<boolean>('yearn.fi/staking-op-boosted-vaults', {
       defaultValue: true
-    })
+    }
+  )
 
   const prices = useFetchYearnPrices()
   const earned = useFetchYearnEarnedForUser()
-  const {
-    vaults: rawVaults,
-    vaultsMigrations,
-    vaultsRetired,
-    isLoading,
-    mutate
-  } = useFetchYearnVaults()
+  const { vaults: rawVaults, vaultsMigrations, vaultsRetired, isLoading, mutate } = useFetchYearnVaults()
 
   const vaults = useMemo(() => {
     const vaults: TDict<TYDaemonVault> = {}
@@ -137,7 +123,8 @@ export const YearnContextApp = memo(function YearnContextApp({
         isLoadingVaultList: isLoading,
         mutateVaultList: mutate,
         getPrice
-      }}>
+      }}
+    >
       {children}
     </YearnContext.Provider>
   )

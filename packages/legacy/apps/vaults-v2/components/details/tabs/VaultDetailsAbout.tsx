@@ -36,8 +36,7 @@ function APYLineItem({
   const isNew = apyType === 'new' && isZero(safeValue)
 
   if (isSourceVeYFI && isStaking) {
-    const sumOfRewardsAPY =
-      currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
+    const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
     const veYFIRange = [
       currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
       sumOfRewardsAPY
@@ -62,11 +61,7 @@ function APYLineItem({
     <div className={'flex flex-row items-center justify-between'}>
       <p className={'text-sm text-neutral-500'}>{label}</p>
       <p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
-        {isNew
-          ? 'New'
-          : hasUpperLimit
-            ? formatPercent(safeValue * 100)
-            : formatPercent(safeValue * 100, 2, 2, 500)}
+        {isNew ? 'New' : hasUpperLimit ? formatPercent(safeValue * 100) : formatPercent(safeValue * 100, 2, 2, 500)}
       </p>
     </div>
   )
@@ -81,13 +76,15 @@ function YearnFeesLineItem({ children, label, tooltip }: TYearnFeesLineItem): Re
           tooltip
             ? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
             : ''
-        )}>
+        )}
+      >
         {tooltip ? (
           <span suppressHydrationWarning className={'tooltipFees bottom-full'}>
             <div
               className={
                 'font-number text-xxs w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-neutral-900'
-              }>
+              }
+            >
               {tooltip}
             </div>
           </span>
@@ -110,22 +107,21 @@ export function VaultDetailsAbout({
 
   function getVaultDescription(): string | ReactElement {
     if (currentVault.description) {
-      return parseMarkdown(
-        currentVault.description.replaceAll('{{token}}', currentVault.token.symbol)
-      )
+      return parseMarkdown(currentVault.description.replaceAll('{{token}}', currentVault.token.symbol))
     }
     if (token.description) {
       return parseMarkdown(token.description.replaceAll('{{token}}', currentVault.token.symbol))
     }
     return (
       <>
-        Sorry, we don't have a description for this vault right now. To learn more about how Yearn
-        Vaults work, check out our{' '}
+        Sorry, we don't have a description for this vault right now. To learn more about how Yearn Vaults work, check
+        out our{' '}
         <a
           href="https://docs.yearn.fi"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-900 underline">
+          className="text-neutral-900 underline"
+        >
           docs
         </a>
         , or if you want to learn more about this vault, head to our{' '}
@@ -133,7 +129,8 @@ export function VaultDetailsAbout({
           href="https://discord.gg/yearn"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-900 underline">
+          className="text-neutral-900 underline"
+        >
           discord
         </a>{' '}
         or{' '}
@@ -141,7 +138,8 @@ export function VaultDetailsAbout({
           href="https://t.me/yearnfinance"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-900 underline">
+          className="text-neutral-900 underline"
+        >
           telegram
         </a>{' '}
         and ask.
@@ -206,11 +204,7 @@ export function VaultDetailsAbout({
                     currentVault={currentVault}
                     isStaking
                     hasUpperLimit
-                    label={
-                      currentVault.staking.source === 'VeYFI'
-                        ? '• veYFI APR'
-                        : '• Staking Reward APY'
-                    }
+                    label={currentVault.staking.source === 'VeYFI' ? '• veYFI APR' : '• Staking Reward APY'}
                     apyType={apr.type}
                     value={apr.extra.stakingRewardsAPR}
                   />
@@ -240,7 +234,8 @@ export function VaultDetailsAbout({
             {(currentVault.apr.forwardAPR.composite?.keepVELO || 0) > 0 ? (
               <YearnFeesLineItem
                 label={'keepVELO'}
-                tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}>
+                tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}
+              >
                 <b className={'font-number text-xl text-neutral-500'}>
                   {`${formatAmount((currentVault.apr.forwardAPR.composite?.keepVELO || 0) * 100, 0, 2)} %`}
                 </b>
@@ -252,13 +247,10 @@ export function VaultDetailsAbout({
           <b className={'text-neutral-900'}>{'Cumulative Earnings'}</b>
           <div
             className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'}
-            style={{ height: 160 }}>
+            style={{ height: 160 }}
+          >
             <Renderable shouldRender={isMounted()}>
-              <GraphForVaultEarnings
-                currentVault={currentVault}
-                harvestData={harvestData}
-                height={160}
-              />
+              <GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} height={160} />
             </Renderable>
           </div>
         </div>

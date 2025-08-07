@@ -3,12 +3,7 @@ import type { ReactElement } from 'react'
 
 export function IconAlertWarning(props: React.SVGProps<SVGSVGElement>): ReactElement {
   return (
-    <svg
-      width={24}
-      height={24}
-      xmlns={'http://www.w3.org/2000/svg'}
-      viewBox={'0 0 24 24'}
-      {...props}>
+    <svg width={24} height={24} xmlns={'http://www.w3.org/2000/svg'} viewBox={'0 0 24 24'} {...props}>
       <path
         fillRule={'evenodd'}
         clipRule={'evenodd'}

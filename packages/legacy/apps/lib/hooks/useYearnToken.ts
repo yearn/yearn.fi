@@ -7,13 +7,7 @@ import { useWallet } from '../contexts/useWallet'
  ** The useYearnToken hook is used to retrieve the token from the useWallet
  ** context. The token is returned as a TToken.
  *****************************************************************************/
-export function useYearnToken({
-  address,
-  chainID
-}: {
-  address: string | TAddress
-  chainID: number
-}): TToken {
+export function useYearnToken({ address, chainID }: { address: string | TAddress; chainID: number }): TToken {
   const { getToken } = useWallet()
 
   const balance = useMemo((): TToken => {

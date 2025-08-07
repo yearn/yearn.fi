@@ -1,12 +1,6 @@
 'use client'
 
-import {
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-  Transition,
-  TransitionChild
-} from '@headlessui/react'
+import { Popover, PopoverButton, PopoverPanel, Transition, TransitionChild } from '@headlessui/react'
 import { cl } from '@lib/utils'
 import type { AnimationProps } from 'framer-motion'
 import { motion } from 'framer-motion'
@@ -37,7 +31,8 @@ function MotionDiv({ animate, name, children }: TMotionDiv): ReactElement {
       initial={'initial'}
       animate={animate}
       variants={variants}
-      className={'absolute cursor-pointer'}>
+      className={'absolute cursor-pointer'}
+    >
       {children}
     </motion.div>
   )
@@ -60,14 +55,11 @@ function useIsMounted(): () => boolean {
 function Logo({ currentHost }: { currentHost: string; isVaultPage: boolean }): ReactElement {
   const router = useRouter()
   const { pathname } = router
-  const appsIcon = (
-    <LogoYearn className={'!size-8 !max-h-8 !max-w-8'} back={'text-primary'} front={'text-white'} />
-  )
+  const appsIcon = <LogoYearn className={'!size-8 !max-h-8 !max-w-8'} back={'text-primary'} front={'text-white'} />
   return (
     <>
       {Object.values(APPS).map(({ name, host, icon, pathname: appPathname }): ReactElement => {
-        const shouldAnimate =
-          host.some(h => currentHost.includes(h)) || pathname.includes(appPathname)
+        const shouldAnimate = host.some((h) => currentHost.includes(h)) || pathname.includes(appPathname)
         return (
           <MotionDiv key={name} name={name} animate={shouldAnimate ? 'enter' : 'exit'}>
             {icon}
@@ -120,9 +112,7 @@ export function LogoPopover(): ReactElement {
   }, [isShowing])
 
   return (
-    <Popover
-      onMouseEnter={(): void => setIsShowing(true)}
-      onMouseLeave={(): void => setIsShowing(false)}>
+    <Popover onMouseEnter={(): void => setIsShowing(true)} onMouseLeave={(): void => setIsShowing(false)}>
       <div
         onClick={(): void => setIsShowing(false)}
         onMouseEnter={(): void => setIsShowing(false)}
@@ -147,68 +137,52 @@ export function LogoPopover(): ReactElement {
           leave={'transition ease-in duration-150'}
           leaveFrom={'opacity-100 translate-y-0'}
           leaveTo={'opacity-0 translate-y-1'}
-          className={'relative z-[9999999]'}>
-          <PopoverPanel
-            className={
-              'absolute left-0 top-10 z-20 w-[345px] scale-[115%] bg-transparent px-4 sm:px-0'
-            }>
+          className={'relative z-[9999999]'}
+        >
+          <PopoverPanel className={'absolute left-0 top-10 z-20 w-[345px] scale-[115%] bg-transparent px-4 sm:px-0'}>
             <div className={cl('overflow-hidden shadow-xl', isVaultPage ? 'pt-4' : 'pt-0')}>
               <div
                 className={cl(
                   'relative gap-2 border p-4 rounded-md',
                   'border-transparent ',
                   // 'bg-white',
-                  isV3
-                    ? 'border-[#151C40] bg-[#000520]'
-                    : 'dark:border-[#010A3B] dark:bg-neutral-300 bg-white'
-                )}>
+                  isV3 ? 'border-[#151C40] bg-[#000520]' : 'dark:border-[#010A3B] dark:bg-neutral-300 bg-white'
+                )}
+              >
                 <div className={'grid grid-cols-2 gap-2'}>
-                  {[...Object.values(APPS)]
-                    .slice(0, 4)
-                    .map(({ name, href, icon }): ReactElement => {
-                      return (
-                        <Link
-                          prefetch={false}
-                          key={name}
-                          href={href}
-                          onClick={(): void => setIsShowing(false)}>
-                          <div
-                            onClick={(): void => setIsShowing(false)}
-                            className={cl(
-                              'flex cursor-pointer flex-col items-center justify-center transition-colors p-4 rounded-sm',
-                              isV3
-                                ? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
-                                : 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
-                            )}>
-                            <div>
-                              {cloneElement(icon, {
-                                className: 'w-8 h-8 min-w-8 max-w-8 min-h-8 max-h-8'
-                              })}
-                            </div>
-                            <div className={'pt-2 text-center'}>
-                              <b
-                                className={cl(
-                                  'text-base',
-                                  isV3 ? 'text-white' : 'text-black dark:text-white'
-                                )}>
-                                {name}
-                              </b>
-                            </div>
+                  {[...Object.values(APPS)].slice(0, 4).map(({ name, href, icon }): ReactElement => {
+                    return (
+                      <Link prefetch={false} key={name} href={href} onClick={(): void => setIsShowing(false)}>
+                        <div
+                          onClick={(): void => setIsShowing(false)}
+                          className={cl(
+                            'flex cursor-pointer flex-col items-center justify-center transition-colors p-4 rounded-sm',
+                            isV3
+                              ? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
+                              : 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
+                          )}
+                        >
+                          <div>
+                            {cloneElement(icon, {
+                              className: 'w-8 h-8 min-w-8 max-w-8 min-h-8 max-h-8'
+                            })}
                           </div>
-                        </Link>
-                      )
-                    })}
+                          <div className={'pt-2 text-center'}>
+                            <b className={cl('text-base', isV3 ? 'text-white' : 'text-black dark:text-white')}>
+                              {name}
+                            </b>
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
                 </div>
                 <div className={'mt-2 grid grid-cols-4 gap-2'}>
                   {[...Object.values(APPS)]
                     .slice(4, isShowingMore ? 10 : 7)
                     .map(({ name, href, icon }): ReactElement => {
                       return (
-                        <Link
-                          prefetch={false}
-                          key={name}
-                          href={href}
-                          onClick={(): void => setIsShowing(false)}>
+                        <Link prefetch={false} key={name} href={href} onClick={(): void => setIsShowing(false)}>
                           <div
                             onClick={(): void => setIsShowing(false)}
                             className={cl(
@@ -216,19 +190,15 @@ export function LogoPopover(): ReactElement {
                               isV3
                                 ? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
                                 : 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
-                            )}>
+                            )}
+                          >
                             <div>
                               {cloneElement(icon, {
-                                className:
-                                  'w-[22px] h-[22px] min-w-[22px] max-w-[22px] min-h-[22px] max-h-[22px]'
+                                className: 'w-[22px] h-[22px] min-w-[22px] max-w-[22px] min-h-[22px] max-h-[22px]'
                               })}
                             </div>
                             <div className={'text-center'}>
-                              <b
-                                className={cl(
-                                  'text-xs',
-                                  isV3 ? 'text-white' : 'text-black dark:text-white'
-                                )}>
+                              <b className={cl('text-xs', isV3 ? 'text-white' : 'text-black dark:text-white')}>
                                 {name}
                               </b>
                             </div>
@@ -244,7 +214,8 @@ export function LogoPopover(): ReactElement {
                         isV3
                           ? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
                           : 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
-                      )}>
+                      )}
+                    >
                       <b>{'More...'}</b>
                     </button>
                   )}

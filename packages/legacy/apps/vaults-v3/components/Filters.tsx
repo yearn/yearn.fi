@@ -66,10 +66,7 @@ export function Filters({
 
   return (
     <div className={'relative col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-8'}>
-      <strong
-        className={
-          'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'
-        }>
+      <strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
         {'Filters'}
       </strong>
 
@@ -99,7 +96,8 @@ export function Filters({
         className={cl(
           'grid grid-cols-1 gap-6 md:grid-cols-3',
           shouldExpandFilters ? 'h-auto' : 'h-0 overflow-hidden md:h-auto md:overflow-visible'
-        )}>
+        )}
+      >
         <div className={'w-full'}>
           <p className={'pb-2 text-[#757CA6]'}>{'Select Blockchain'}</p>
           <MultiSelectDropdown

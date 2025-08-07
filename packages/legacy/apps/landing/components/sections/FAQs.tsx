@@ -17,19 +17,17 @@ const FAQItem: FC<TFAQItem> = ({ title, children, isOpen, onToggle }) => {
         onClick={onToggle}
         className={
           'flex w-full items-center justify-between rounded-lg bg-[#191919] px-6 py-5 text-neutral-900 transition-colors hover:bg-[#2a2a2a]'
-        }>
+        }
+      >
         <span className={'text-lg'}>{title}</span>
         <span
           className={'text-2xl transition-transform'}
-          style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}>
+          style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
+        >
           {'+'}
         </span>
       </button>
-      {isOpen && (
-        <div className={'mt-px rounded-b-lg bg-[#191919] px-6 py-4 text-base text-gray-300'}>
-          {children}
-        </div>
-      )}
+      {isOpen && <div className={'mt-px rounded-b-lg bg-[#191919] px-6 py-4 text-base text-gray-300'}>{children}</div>}
     </div>
   )
 }
@@ -69,9 +67,7 @@ const faqData = [
     title: 'Are there Developer Docs?',
     content: (
       <p>
-        {
-          'Yes! Yearn has extensive documentation for developers looking to build on top of our protocol. Visit our'
-        }{' '}
+        {'Yes! Yearn has extensive documentation for developers looking to build on top of our protocol. Visit our'}{' '}
         <a href={'https://docs.yearn.fi'} className={'text-blue-400 underline'}>
           {'docs'}
         </a>{' '}
@@ -90,8 +86,7 @@ export const FAQs: FC = () => {
 
   return (
     <section className={'flex w-full justify-center pb-8 pt-16 lg:pt-32'}>
-      <div
-        className={'flex w-full max-w-[1180px] flex-col items-center justify-between md:flex-row'}>
+      <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between md:flex-row'}>
         <div className={'w-full px-4'}>
           <div className={'mb-10 flex flex-col justify-between gap-y-6 md:flex-row'}>
             <SectionHeader
@@ -112,11 +107,7 @@ export const FAQs: FC = () => {
             </div>
             <div className={'flex flex-col space-y-2'}>
               {faqData.map((faq, index) => (
-                <FAQItem
-                  key={faq.title}
-                  title={faq.title}
-                  isOpen={openFAQ === index}
-                  onToggle={() => toggleFAQ(index)}>
+                <FAQItem key={faq.title} title={faq.title} isOpen={openFAQ === index} onToggle={() => toggleFAQ(index)}>
                   {faq.content}
                 </FAQItem>
               ))}

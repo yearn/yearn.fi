@@ -1,7 +1,4 @@
 {
-  "**/*.{ts,tsx}": [
-    "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true",
-    "bash -c tsc --noEmit"
-  ],
+  "**/*.{ts,tsx}": ["biome check --write --no-errors-on-unmatched --files-ignore-unknown=true", "bash -c tsc --noEmit"],
   "**/*.{css}": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
 }

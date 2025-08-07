@@ -21,15 +21,13 @@ export function GraphForVaultEarnings({
 }: TGraphForVaultEarningsProps): ReactElement {
   const cumulativeData = useMemo((): { name: string; value: number }[] => {
     let cumulativeValue = 0
-    return harvestData.map(
-      (item: { name: string; value: number }): { name: string; value: number } => {
-        cumulativeValue += item.value
-        return {
-          name: item.name,
-          value: cumulativeValue
-        }
+    return harvestData.map((item: { name: string; value: number }): { name: string; value: number } => {
+      cumulativeValue += item.value
+      return {
+        name: item.name,
+        value: cumulativeValue
       }
-    )
+    })
   }, [harvestData])
 
   if (isCumulative && isZero(cumulativeData?.length)) {
@@ -40,9 +38,7 @@ export function GraphForVaultEarnings({
   }
   return (
     <ResponsiveContainer width={'100%'} height={height}>
-      <LineChart
-        margin={{ top: 0, right: -28, bottom: 0, left: 0 }}
-        data={isCumulative ? cumulativeData : harvestData}>
+      <LineChart margin={{ top: 0, right: -28, bottom: 0, left: 0 }} data={isCumulative ? cumulativeData : harvestData}>
         <Line
           className={'text-primary-600'}
           type={'step'}

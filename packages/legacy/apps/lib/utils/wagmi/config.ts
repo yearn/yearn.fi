@@ -13,15 +13,7 @@ import {
 import type { Transport } from 'viem'
 import type { Chain } from 'viem/chains'
 import type { Config, ResolvedRegister } from 'wagmi'
-import {
-  cookieStorage,
-  createStorage,
-  custom,
-  fallback,
-  http,
-  unstable_connector,
-  webSocket
-} from 'wagmi'
+import { cookieStorage, createStorage, custom, fallback, http, unstable_connector, webSocket } from 'wagmi'
 import { injected, safe } from 'wagmi/connectors'
 import { getNetwork } from './utils'
 
@@ -166,12 +158,8 @@ export function getConfig({ chains }: { chains: Chain[] }): ResolvedRegister['co
     if (!chain.rpcUrls.default) {
       chain.rpcUrls.default = { http: [], webSocket: [] }
     }
-    const defaultHttp = [
-      ...new Set([...availableRPCs, ...(chain.rpcUrls.default?.http || [])].filter(Boolean))
-    ]
-    const defaultWebSocket = [
-      ...new Set([wsURI, ...(chain.rpcUrls.default.webSocket || [])].filter(Boolean))
-    ]
+    const defaultHttp = [...new Set([...availableRPCs, ...(chain.rpcUrls.default?.http || [])].filter(Boolean))]
+    const defaultWebSocket = [...new Set([wsURI, ...(chain.rpcUrls.default.webSocket || [])].filter(Boolean))]
     chain.rpcUrls.default.http = defaultHttp
     chain.rpcUrls.default.webSocket = defaultWebSocket
   }

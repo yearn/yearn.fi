@@ -13,13 +13,7 @@ export const APPS = {
     href: '/v3',
     host: ['yearn.fi'],
     pathname: '/v3',
-    icon: (
-      <LogoYearn
-        className={'size-8'}
-        gradient={{ start: '#FB245A', end: '#0657F9' }}
-        front={'text-white'}
-      />
-    )
+    icon: <LogoYearn className={'size-8'} gradient={{ start: '#FB245A', end: '#0657F9' }} front={'text-white'} />
   },
   Vaults: {
     name: 'Vaults',
@@ -67,26 +61,14 @@ export const APPS = {
     href: 'https://factory.yearn.fi',
     host: ['factory.yearn.fi'],
     pathname: 'unused',
-    icon: (
-      <LogoYearn
-        className={'!size-6 !max-h-6 !max-w-6'}
-        back={'text-neutral-0'}
-        front={'text-neutral-900'}
-      />
-    )
+    icon: <LogoYearn className={'!size-6 !max-h-6 !max-w-6'} back={'text-neutral-0'} front={'text-neutral-900'} />
   },
   analytics: {
     name: 'Analytics',
     href: 'https://yearn-powerglove.vercel.app/',
     host: ['yearn-powerglove.vercel.app'],
     pathname: 'unused',
-    icon: (
-      <LogoYearn
-        className={'!size-6 !max-h-6 !max-w-6'}
-        back={'text-neutral-900'}
-        front={'text-black'}
-      />
-    )
+    icon: <LogoYearn className={'!size-6 !max-h-6 !max-w-6'} back={'text-neutral-900'} front={'text-black'} />
   },
   yETH: {
     name: 'yETH',

@@ -79,8 +79,7 @@ export const WithTokenList = ({
 }: TTokenListProviderProps): ReactElement => {
   const { chainID } = useWeb3()
   const { value: extraTokenlist } = useLocalStorageValue<string[]>('extraTokenlists')
-  const { value: extraTokens, set: setExtraTokens } =
-    useLocalStorageValue<TTokenList['tokens']>('extraTokens')
+  const { value: extraTokens, set: setExtraTokens } = useLocalStorageValue<TTokenList['tokens']>('extraTokens')
   const [tokenList, setTokenList] = useState<TNDict<TDict<TToken>>>({})
   const [tokenListExtra, setTokenListExtra] = useState<TNDict<TDict<TToken>>>({})
   const [tokenListCustom, setTokenListCustom] = useState<TNDict<TDict<TToken>>>({})
@@ -153,7 +152,7 @@ export const WithTokenList = ({
       }
     }
     setTokenList(tokenListTokens)
-    setIsInitialized(prev => [true, prev[1], prev[2]])
+    setIsInitialized((prev) => [true, prev[1], prev[2]])
   }, [hashList])
 
   /************************************************************************************
@@ -175,20 +174,17 @@ export const WithTokenList = ({
           if (!tokenListTokens[eachToken.chainId ?? eachToken.chainID]) {
             tokenListTokens[eachToken.chainId ?? eachToken.chainID] = {}
           }
-          if (
-            !tokenListTokens[eachToken.chainId ?? eachToken.chainID][toAddress(eachToken.address)]
-          ) {
-            tokenListTokens[eachToken.chainId ?? eachToken.chainID][toAddress(eachToken.address)] =
-              {
-                address: eachToken.address,
-                name: eachToken.name,
-                symbol: eachToken.symbol,
-                decimals: eachToken.decimals,
-                chainID: eachToken.chainID ?? eachToken.chainId,
-                logoURI: eachToken.logoURI,
-                value: 0,
-                balance: zeroNormalizedBN
-              }
+          if (!tokenListTokens[eachToken.chainId ?? eachToken.chainID][toAddress(eachToken.address)]) {
+            tokenListTokens[eachToken.chainId ?? eachToken.chainID][toAddress(eachToken.address)] = {
+              address: eachToken.address,
+              name: eachToken.name,
+              symbol: eachToken.symbol,
+              decimals: eachToken.decimals,
+              chainID: eachToken.chainID ?? eachToken.chainId,
+              logoURI: eachToken.logoURI,
+              value: 0,
+              balance: zeroNormalizedBN
+            }
           }
 
           /**************************************************************************************
@@ -220,7 +216,7 @@ export const WithTokenList = ({
       }
     }
     setTokenListExtra(tokenListTokens)
-    setIsInitialized(prev => [prev[0], true, prev[2]])
+    setIsInitialized((prev) => [prev[0], true, prev[2]])
   }, [extraTokenlist])
 
   /************************************************************************************
@@ -277,7 +273,7 @@ export const WithTokenList = ({
       }
       setTokenListCustom(tokenListTokens)
     }
-    setIsInitialized(prev => [prev[0], prev[1], true])
+    setIsInitialized((prev) => [prev[0], prev[1], true])
   }, [extraTokens])
 
   /************************************************************************************
@@ -365,7 +361,7 @@ export const WithTokenList = ({
   const addCustomToken = useCallback(
     (token: TToken) => {
       const arr = extraTokens ?? []
-      if (!arr.some(t => isAddressEqual(t.address, token.address) && t.chainId === token.chainID)) {
+      if (!arr.some((t) => isAddressEqual(t.address, token.address) && t.chainId === token.chainID)) {
         setExtraTokens([...arr, toTokenListToken(token)])
       }
     },
@@ -383,15 +379,7 @@ export const WithTokenList = ({
       addCustomToken,
       getToken
     }),
-    [
-      addCustomToken,
-      aggregatedTokenList,
-      currentNetworkList,
-      getToken,
-      isCustomToken,
-      isInitialized,
-      isFromExtraList
-    ]
+    [addCustomToken, aggregatedTokenList, currentNetworkList, getToken, isCustomToken, isInitialized, isFromExtraList]
   )
 
   return <TokenList.Provider value={contextValue}>{children}</TokenList.Provider>

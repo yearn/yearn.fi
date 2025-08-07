@@ -40,15 +40,7 @@ import { setZapOption } from '@vaults-v2/utils/zapOptions'
 import { useRouter } from 'next/router'
 
 import type { ReactNode } from 'react'
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-  useState
-} from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
 import { serialize, useReadContract } from 'wagmi'
 import { readContracts, simulateContract } from 'wagmi/actions'
 
@@ -134,8 +126,7 @@ function useContextualIs({ selectedTo, currentVault }: TUseContextualIs): [boole
   )
 
   const isPartnerAddressValid = useMemo(
-    (): boolean =>
-      !isZeroAddress(getNetwork(currentVault.chainID)?.contracts?.partnerContract?.address),
+    (): boolean => !isZeroAddress(getNetwork(currentVault.chainID)?.contracts?.partnerContract?.address),
     [currentVault.chainID]
   )
 
@@ -190,10 +181,7 @@ function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
  ** to different way of depositing/withdrawing.
  *************************************************************************************************/
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext)
-export function ActionFlowContextApp(props: {
-  children: ReactNode
-  currentVault: TYDaemonVault
-}): React.ReactElement {
+export function ActionFlowContextApp(props: { children: ReactNode; currentVault: TYDaemonVault }): React.ReactElement {
   const { address } = useWeb3()
   const { getBalance } = useWallet()
   const { maxLoss } = useYearn()
@@ -203,9 +191,7 @@ export function ActionFlowContextApp(props: {
   const [possibleZapOptionsFrom, setPossibleZapOptionsFrom] = useState<TDropdownOption[]>([])
   const [possibleOptionsTo, setPossibleOptionsTo] = useState<TDropdownOption[]>([])
   const [possibleZapOptionsTo, setPossibleZapOptionsTo] = useState<TDropdownOption[]>([])
-  const [limits, setLimits] = useState<{ maxDeposit: bigint; maxRedeem: bigint } | undefined>(
-    undefined
-  )
+  const [limits, setLimits] = useState<{ maxDeposit: bigint; maxRedeem: bigint } | undefined>(undefined)
 
   /**********************************************************************************************
    ** currentNetworkTokenList is an object with multiple level of depth. We want to create a
@@ -229,40 +215,37 @@ export function ActionFlowContextApp(props: {
     if (!address || isZeroAddress(address) || !props.currentVault) {
       return
     }
-    const [_depositLimit, _maxDeposit, _maxRedeem, _balance] = await readContracts(
-      retrieveConfig(),
-      {
-        contracts: [
-          {
-            address: props.currentVault.address,
-            abi: VAULT_ABI,
-            chainId: props.currentVault.chainID,
-            functionName: 'depositLimit'
-          },
-          {
-            address: props.currentVault.address,
-            abi: VAULT_V3_ABI,
-            chainId: props.currentVault.chainID,
-            functionName: 'maxDeposit',
-            args: [toAddress(address)]
-          },
-          {
-            address: props.currentVault.address,
-            abi: VAULT_V3_ABI,
-            chainId: props.currentVault.chainID,
-            functionName: 'maxRedeem',
-            args: [toAddress(address), toBigInt(maxLoss)]
-          },
-          {
-            address: props.currentVault.address,
-            abi: VAULT_V3_ABI,
-            chainId: props.currentVault.chainID,
-            functionName: 'balanceOf',
-            args: [toAddress(address)]
-          }
-        ]
-      }
-    )
+    const [_depositLimit, _maxDeposit, _maxRedeem, _balance] = await readContracts(retrieveConfig(), {
+      contracts: [
+        {
+          address: props.currentVault.address,
+          abi: VAULT_ABI,
+          chainId: props.currentVault.chainID,
+          functionName: 'depositLimit'
+        },
+        {
+          address: props.currentVault.address,
+          abi: VAULT_V3_ABI,
+          chainId: props.currentVault.chainID,
+          functionName: 'maxDeposit',
+          args: [toAddress(address)]
+        },
+        {
+          address: props.currentVault.address,
+          abi: VAULT_V3_ABI,
+          chainId: props.currentVault.chainID,
+          functionName: 'maxRedeem',
+          args: [toAddress(address), toBigInt(maxLoss)]
+        },
+        {
+          address: props.currentVault.address,
+          abi: VAULT_V3_ABI,
+          chainId: props.currentVault.chainID,
+          functionName: 'balanceOf',
+          args: [toAddress(address)]
+        }
+      ]
+    })
 
     const balanceOf = decodeAsBigInt(_balance, 0n)
     const maxDeposit = decodeAsBigInt(_depositLimit, decodeAsBigInt(_maxDeposit, 0n))
@@ -274,8 +257,7 @@ export function ActionFlowContextApp(props: {
 
     try {
       // This throws if Vault is V3 as withdraw(balance) does not exist on V3 Vaults.
-      const isV3 =
-        props.currentVault.version.startsWith('3') || props.currentVault.version.startsWith('~3')
+      const isV3 = props.currentVault.version.startsWith('3') || props.currentVault.version.startsWith('~3')
 
       if (!isV3) {
         const maxEffectiveWithdraw = await simulateContract(retrieveConfig(), {
@@ -421,20 +403,13 @@ export function ActionFlowContextApp(props: {
       return getMaxDepositPossible({
         vault: props.currentVault,
         fromToken: toAddress(tokenAddress),
-        fromDecimals:
-          actionParams?.selectedOptionFrom?.decimals || props.currentVault?.token?.decimals || 18,
+        fromDecimals: actionParams?.selectedOptionFrom?.decimals || props.currentVault?.token?.decimals || 18,
         fromTokenBalance: tokenBalance.raw,
         isDepositing,
         depositLimit: toBigInt(limits?.maxDeposit)
       })
     },
-    [
-      getBalance,
-      props.currentVault,
-      actionParams?.selectedOptionFrom?.decimals,
-      isDepositing,
-      limits?.maxDeposit
-    ]
+    [getBalance, props.currentVault, actionParams?.selectedOptionFrom?.decimals, isDepositing, limits?.maxDeposit]
   )
 
   const currentTimestamp = Math.floor(Date.now() / 1000)
@@ -448,8 +423,7 @@ export function ActionFlowContextApp(props: {
     }
   })
 
-  const { amount: veYFIBalance = 0n, end: lockEnds = 0n } =
-    (data as { amount: bigint; end: bigint } | undefined) || {}
+  const { amount: veYFIBalance = 0n, end: lockEnds = 0n } = (data as { amount: bigint; end: bigint } | undefined) || {}
   const hasVeYFIBalance = veYFIBalance > 0n && lockEnds > currentTimestamp
 
   /**********************************************************************************************
@@ -458,8 +432,7 @@ export function ActionFlowContextApp(props: {
    *********************************************************************************************/
   const currentSolver = useMemo((): TSolver => {
     const isUnderlyingToken =
-      toAddress(actionParams?.selectedOptionFrom?.value) ===
-      toAddress(props.currentVault.token.address)
+      toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(props.currentVault.token.address)
 
     // Only use OptimismBooster if the user chose to stake automatically and the vault is staking with OP Boost
     if (
@@ -509,19 +482,16 @@ export function ActionFlowContextApp(props: {
     }
 
     const isV3 =
-      props.currentVault?.version.split('.')?.[0] === '3' ||
-      props.currentVault?.version.split('.')?.[0] === '~3'
+      props.currentVault?.version.split('.')?.[0] === '3' || props.currentVault?.version.split('.')?.[0] === '~3'
     if (
       props.currentVault?.migration?.available &&
-      toAddress(actionParams?.selectedOptionTo?.value) ===
-        toAddress(props.currentVault?.migration?.address)
+      toAddress(actionParams?.selectedOptionTo?.value) === toAddress(props.currentVault?.migration?.address)
     ) {
       return Solver.enum.InternalMigration
     }
     if (
       isDepositing &&
-      toAddress(actionParams?.selectedOptionTo?.value) ===
-        toAddress(props.currentVault?.token?.address)
+      toAddress(actionParams?.selectedOptionTo?.value) === toAddress(props.currentVault?.token?.address)
     ) {
       return Solver.enum.Vanilla
     }
@@ -585,8 +555,7 @@ export function ActionFlowContextApp(props: {
           // We don't want to be able to withdraw to exotic tokens. If the current from is one of them, take another one.
           _selectedOptionFrom = possibleOptionsFrom.find(
             (option: TDropdownOption): boolean =>
-              option.value !== actionParams?.selectedOptionFrom?.value &&
-              isZero((option.solveVia || []).length)
+              option.value !== actionParams?.selectedOptionFrom?.value && isZero((option.solveVia || []).length)
           )
         }
         actionParamsDispatcher({
@@ -594,9 +563,7 @@ export function ActionFlowContextApp(props: {
           payload: {
             selectedOptionFrom: _selectedOptionTo,
             selectedOptionTo: _selectedOptionFrom,
-            amount: isDepositing
-              ? zeroNormalizedBN
-              : maxDepositPossible(toAddress(_selectedOptionFrom?.value))
+            amount: isDepositing ? zeroNormalizedBN : maxDepositPossible(toAddress(_selectedOptionFrom?.value))
           }
         })
         setPossibleOptionsTo(possibleOptionsFrom)
@@ -703,17 +670,11 @@ export function ActionFlowContextApp(props: {
         address: toAddress(_selectedFrom?.value),
         chainID: props.currentVault.chainID
       }).raw
-      let _amount = toNormalizedBN(
-        userBalance,
-        _selectedFrom?.decimals || props.currentVault?.token?.decimals || 18
-      )
+      let _amount = toNormalizedBN(userBalance, _selectedFrom?.decimals || props.currentVault?.token?.decimals || 18)
       if (isDepositing) {
         if (_selectedFrom?.value === props.currentVault?.token?.address) {
           if (userBalance > toBigInt(limits?.maxDeposit)) {
-            _amount = toNormalizedBN(
-              toBigInt(limits?.maxDeposit),
-              props.currentVault.token.decimals
-            )
+            _amount = toNormalizedBN(toBigInt(limits?.maxDeposit), props.currentVault.token.decimals)
           }
         }
       }
@@ -847,10 +808,7 @@ export function ActionFlowContextApp(props: {
           name: props.currentVault?.token?.name,
           symbol: props.currentVault?.token?.symbol,
           address: toAddress(props.currentVault.token.address),
-          chainID:
-            props.currentVault?.chainID === 1337
-              ? props.currentVault.chainID
-              : props.currentVault?.chainID,
+          chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
           decimals: props.currentVault?.token?.decimals || 18
         })
       )
@@ -859,10 +817,7 @@ export function ActionFlowContextApp(props: {
           name: props.currentVault?.name,
           symbol: props.currentVault?.symbol,
           address: toAddress(props.currentVault.address),
-          chainID:
-            props.currentVault?.chainID === 1337
-              ? props.currentVault.chainID
-              : props.currentVault?.chainID,
+          chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
           decimals: props.currentVault?.decimals || 18
         })
       )
@@ -875,20 +830,14 @@ export function ActionFlowContextApp(props: {
       name: props.currentVault?.token?.name,
       symbol: props.currentVault?.token?.symbol,
       address: toAddress(props.currentVault.token.address),
-      chainID:
-        props.currentVault?.chainID === 1337
-          ? props.currentVault.chainID
-          : props.currentVault?.chainID,
+      chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
       decimals: props.currentVault?.token?.decimals || 18
     })
     const _selectedTo = setZapOption({
       name: props.currentVault?.name,
       symbol: props.currentVault.symbol,
       address: toAddress(props.currentVault.address),
-      chainID:
-        props.currentVault?.chainID === 1337
-          ? props.currentVault.chainID
-          : props.currentVault?.chainID,
+      chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
       decimals: props.currentVault?.decimals || 18
     })
 
@@ -932,14 +881,11 @@ export function ActionFlowContextApp(props: {
   useEffect((): void => {
     const _possibleZapOptionsFrom: TDropdownOption[] = []
     const isWithWETH =
-      props.currentVault.chainID === 1 &&
-      toAddress(props.currentVault?.token?.address) === WETH_TOKEN_ADDRESS
+      props.currentVault.chainID === 1 && toAddress(props.currentVault?.token?.address) === WETH_TOKEN_ADDRESS
     const isWithWOPT =
-      props.currentVault.chainID === 10 &&
-      toAddress(props.currentVault?.token?.address) === OPT_WETH_TOKEN_ADDRESS
+      props.currentVault.chainID === 10 && toAddress(props.currentVault?.token?.address) === OPT_WETH_TOKEN_ADDRESS
     const isWithWFTM =
-      props.currentVault.chainID === 250 &&
-      toAddress(props.currentVault?.token?.address) === WFTM_TOKEN_ADDRESS
+      props.currentVault.chainID === 250 && toAddress(props.currentVault?.token?.address) === WFTM_TOKEN_ADDRESS
 
     Object.values(tokenLists?.[props.currentVault.chainID] || []).forEach((tokenData): void => {
       const duplicateAddresses = [
@@ -954,9 +900,7 @@ export function ActionFlowContextApp(props: {
       if (duplicateAddresses.includes(toAddress(tokenData.address))) {
         return // Do nothing to avoid duplicate token in the list
       }
-      if (
-        getBalance({ address: toAddress(tokenData.address), chainID: tokenData.chainID }).raw === 0n
-      ) {
+      if (getBalance({ address: toAddress(tokenData.address), chainID: tokenData.chainID }).raw === 0n) {
         return // Do nothing to avoid empty token in the list
       }
       if (toAddress(tokenData.address) === toAddress(props.currentVault.token.address)) {
@@ -970,10 +914,7 @@ export function ActionFlowContextApp(props: {
           address: toAddress(tokenData.address),
           chainID: tokenData.chainID,
           decimals: tokenData.decimals,
-          solveVia:
-            tokenData.chainID === 1 && !isEthAddress(tokenData.address)
-              ? ['Portals', 'Cowswap']
-              : ['Portals']
+          solveVia: tokenData.chainID === 1 && !isEthAddress(tokenData.address) ? ['Portals', 'Cowswap'] : ['Portals']
         })
       )
     })
@@ -1000,13 +941,7 @@ export function ActionFlowContextApp(props: {
       ..._possibleZapOptionsFrom
     ])
     currentTokenListIdentifier
-  }, [
-    props.currentVault.chainID,
-    tokenLists,
-    currentTokenListIdentifier,
-    props.currentVault,
-    getBalance
-  ])
+  }, [props.currentVault.chainID, tokenLists, currentTokenListIdentifier, props.currentVault, getBalance])
 
   /**********************************************************************************************
    ** FLOW: Init the possibleZapOptionsTo array.
@@ -1020,20 +955,14 @@ export function ActionFlowContextApp(props: {
 
     externalzapOutTokenList
       .filter((): boolean => props.currentVault.chainID === props.currentVault?.chainID) // Disable if we are on the wrong chain
-      .filter(
-        (token): boolean =>
-          token.chainID === (props.currentVault?.chainID || props.currentVault.chainID)
-      )
+      .filter((token): boolean => token.chainID === (props.currentVault?.chainID || props.currentVault.chainID))
       .forEach((tokenListData): void => {
         _possibleZapOptionsTo.push(
           setZapOption({
             name: tokenListData?.name,
             symbol: tokenListData?.symbol,
             address: toAddress(tokenListData?.address),
-            chainID:
-              props.currentVault?.chainID === 1337
-                ? props.currentVault.chainID
-                : props.currentVault?.chainID,
+            chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
             decimals: tokenListData?.decimals,
             solveVia: (tokenListData?.supportedZaps as TSolver[]) || []
           })
@@ -1052,9 +981,7 @@ export function ActionFlowContextApp(props: {
       if (toAddress(option.value) === '0x0000000000000000000000000000000000001010') {
         return // Matic as ERC20
       }
-      const isDuplicate = uniqueTokens.some(
-        (uniqueOption): boolean => uniqueOption.value === option.value
-      )
+      const isDuplicate = uniqueTokens.some((uniqueOption): boolean => uniqueOption.value === option.value)
       if (!isDuplicate) {
         uniqueTokens.push(option)
       }
@@ -1103,9 +1030,7 @@ export function ActionFlowContextApp(props: {
     ]
   )
 
-  return (
-    <ActionFlowContext.Provider value={contextValue}>{props.children}</ActionFlowContext.Provider>
-  )
+  return <ActionFlowContext.Provider value={contextValue}>{props.children}</ActionFlowContext.Provider>
 }
 
 export const useActionFlow = (): TActionFlowContext => useContext(ActionFlowContext)

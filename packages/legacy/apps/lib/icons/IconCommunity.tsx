@@ -2,13 +2,7 @@ import type { ReactElement } from 'react'
 
 export function IconYearnApps(props: React.SVGProps<SVGSVGElement>): ReactElement {
   return (
-    <svg
-      {...props}
-      width={'18'}
-      height={'17'}
-      viewBox={'0 0 18 17'}
-      fill={'none'}
-      xmlns={'http://www.w3.org/2000/svg'}>
+    <svg {...props} width={'18'} height={'17'} viewBox={'0 0 18 17'} fill={'none'} xmlns={'http://www.w3.org/2000/svg'}>
       <path
         fillRule={'evenodd'}
         clipRule={'evenodd'}

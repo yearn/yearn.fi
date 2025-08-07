@@ -34,12 +34,10 @@ export function Switch(props: TSwitch): ReactElement {
         onChange={safeOnSwitch}
         onKeyDown={handleOnKeyDown}
         disabled={isDisabled}
-        className={'yearn--next-switch'}>
+        className={'yearn--next-switch'}
+      >
         <span className={'sr-only'}>{'Use setting'}</span>
-        <div
-          aria-hidden={'true'}
-          className={cl(isChecked ? 'translate-x-[14px]' : 'translate-x-0')}
-        />
+        <div aria-hidden={'true'} className={cl(isChecked ? 'translate-x-[14px]' : 'translate-x-0')} />
       </HeadlessSwitch>
     </div>
   )

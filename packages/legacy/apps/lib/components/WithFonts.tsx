@@ -58,7 +58,8 @@ export function WithFonts({ children }: { children: ReactNode }): ReactElement {
     <div
       style={{
         fontFamily: `${aeonik.style.fontFamily}, ${aeonikFono.style.fontFamily}, ${sourceCodePro.style.fontFamily}`
-      }}>
+      }}
+    >
       <style jsx global>
         {`
 					:root {

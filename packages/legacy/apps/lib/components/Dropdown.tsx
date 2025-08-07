@@ -1,11 +1,4 @@
-import {
-  Combobox,
-  ComboboxButton,
-  ComboboxInput,
-  ComboboxOption,
-  ComboboxOptions,
-  Transition
-} from '@headlessui/react'
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition } from '@headlessui/react'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { cl } from '@lib/utils'
 import { useThrottledState } from '@react-hookz/web'
@@ -18,9 +11,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
   return (
     <ComboboxOption value={option}>
       {({ active }): ReactElement => (
-        <div
-          data-active={active}
-          className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
+        <div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
           {icon && (
             <div className={'size-6 rounded-full'}>
               <ImageWithFallback alt={label} width={24} height={24} src={icon} />
@@ -29,9 +20,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
           <div>
             <p className={`font-normal text-neutral-900 ${icon ? 'pl-2' : 'pl-0'}`}>{label}</p>
             {description && (
-              <p className={`text-xxs font-normal text-neutral-600 ${icon ? 'pl-2' : 'pl-0'}`}>
-                {description}
-              </p>
+              <p className={`text-xxs font-normal text-neutral-600 ${icon ? 'pl-2' : 'pl-0'}`}>{description}</p>
             )}
           </div>
         </div>
@@ -117,22 +106,19 @@ export const Dropdown = ({
               }
               setIsOpen(false)
             }}
-            disabled={isDisabled}>
+            disabled={isDisabled}
+          >
             <ComboboxButton
               onClick={(): void => setIsOpen((state: boolean): boolean => !state)}
               className={cl(
                 'flex h-10 w-full items-center justify-between p-2 text-base md:px-3',
                 isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0 text-neutral-900'
-              )}>
+              )}
+            >
               <div className={'relative flex flex-row items-center'}>
                 {selected?.icon && (
                   <div className={'size-6 rounded-full'}>
-                    <ImageWithFallback
-                      alt={selected.label}
-                      width={24}
-                      height={24}
-                      src={selected.icon}
-                    />
+                    <ImageWithFallback alt={selected.label} width={24} height={24} src={selected.icon} />
                   </div>
                 )}
                 <p
@@ -140,7 +126,8 @@ export const Dropdown = ({
                     'max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap font-normal scrollbar-none md:max-w-full',
                     selected?.icon ? 'pl-2' : 'pl-0',
                     isDisabled ? 'text-neutral-600' : 'text-neutral-900'
-                  )}>
+                  )}
+                >
                   <ComboboxInput
                     className={
                       'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'
@@ -173,20 +160,15 @@ export const Dropdown = ({
               afterLeave={(): void => {
                 setIsOpen(false)
                 setSearch('')
-              }}>
+              }}
+            >
               <ComboboxOptions className={'yearn--dropdown-menu z-50'}>
                 {filteredOptions.length === 0 ? (
                   <DropdownEmpty isSearching={isSearching} />
                 ) : (
                   filteredOptions.map(
                     ({ id, label, description, icon }): ReactElement => (
-                      <DropdownOption
-                        key={id}
-                        id={id}
-                        label={label}
-                        description={description}
-                        icon={icon}
-                      />
+                      <DropdownOption key={id} id={id} label={label} description={description} icon={icon} />
                     )
                   )
                 )}

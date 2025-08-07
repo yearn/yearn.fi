@@ -1,10 +1,7 @@
 import type { TNormalizedBN } from '../types/mixed'
 import { DefaultTNormalizedBN, parseUnits } from './format'
 
-export function handleInputChangeEventValue(
-  e: React.ChangeEvent<HTMLInputElement>,
-  decimals?: number
-): TNormalizedBN {
+export function handleInputChangeEventValue(e: React.ChangeEvent<HTMLInputElement>, decimals?: number): TNormalizedBN {
   const { valueAsNumber, value } = e.target
   const amount = valueAsNumber
   if (Number.isNaN(amount)) {

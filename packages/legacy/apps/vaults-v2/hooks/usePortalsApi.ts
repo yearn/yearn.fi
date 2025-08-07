@@ -100,9 +100,7 @@ export const PORTALS_NETWORK = new Map<number, string>([
 
 const BASE_URL = 'https://api.portals.fi/v2'
 
-export async function getPortalsEstimate({
-  params
-}: TGetEstimateProps): TFetchReturn<TPortalsEstimate> {
+export async function getPortalsEstimate({ params }: TGetEstimateProps): TFetchReturn<TPortalsEstimate> {
   const url = `${BASE_URL}/portal/estimate`
 
   return fetch<TPortalsEstimate>({
@@ -111,9 +109,7 @@ export async function getPortalsEstimate({
   })
 }
 
-export async function getPortalsTx({
-  params
-}: TGetTransactionProps): TFetchReturn<TPortalsTransaction> {
+export async function getPortalsTx({ params }: TGetTransactionProps): TFetchReturn<TPortalsTransaction> {
   const url = `${BASE_URL}/portal`
 
   return fetch<TPortalsTransaction>({
@@ -122,9 +118,7 @@ export async function getPortalsTx({
   })
 }
 
-export async function getPortalsApproval({
-  params
-}: TGetApprovalProps): TFetchReturn<TPortalsApproval> {
+export async function getPortalsApproval({ params }: TGetApprovalProps): TFetchReturn<TPortalsApproval> {
   const url = `${BASE_URL}/approval`
 
   return fetch<TPortalsApproval>({

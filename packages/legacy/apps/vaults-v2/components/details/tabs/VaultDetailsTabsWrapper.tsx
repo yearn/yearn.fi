@@ -53,7 +53,8 @@ function MobileTabButton(props: {
       className={cl(
         'flex h-10 overflow-hidden pr-4 transition-all duration-300 flex-row items-center border-0 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden',
         props.selected ? 'border-b-2 border-neutral-900' : 'border-b-2 border-neutral-300'
-      )}>
+      )}
+    >
       <span>{props.currentTab.mobileLabel || props.currentTab.label}</span>
     </button>
   )
@@ -100,11 +101,9 @@ function Tabs({ selectedAboutTabIndex, setSelectedAboutTabIndex }: TTabs): React
                   }
                 )
                 setSelectedAboutTabIndex(tab.value)
-              }}>
-              <p
-                title={tab.label}
-                aria-selected={selectedAboutTabIndex === tab.value}
-                className={'hover-fix tab'}>
+              }}
+            >
+              <p title={tab.label} aria-selected={selectedAboutTabIndex === tab.value} className={'hover-fix tab'}>
                 {tab.label}
               </p>
             </button>
@@ -145,20 +144,12 @@ function Tabs({ selectedAboutTabIndex, setSelectedAboutTabIndex }: TTabs): React
   )
 }
 
-function ExplorerLink({
-  explorerBaseURI,
-  currentVaultAddress
-}: TExplorerLinkProps): ReactElement | null {
+function ExplorerLink({ explorerBaseURI, currentVaultAddress }: TExplorerLinkProps): ReactElement | null {
   return (
-    <a
-      href={`${explorerBaseURI}/address/${currentVaultAddress}`}
-      target={'_blank'}
-      rel={'noopener noreferrer'}>
+    <a href={`${explorerBaseURI}/address/${currentVaultAddress}`} target={'_blank'} rel={'noopener noreferrer'}>
       <span className={'sr-only'}>{'Open in explorer'}</span>
       <IconLinkOut
-        className={
-          'size-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'
-        }
+        className={'size-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'}
       />
     </a>
   )
@@ -179,7 +170,8 @@ export function VaultInfo({ currentVault }: { currentVault: TYDaemonVault }): Re
             href={`${blockExplorer}/address/${currentVault.address}`}
             target={'_blank'}
             rel={'noopener noreferrer'}
-            suppressHydrationWarning>
+            suppressHydrationWarning
+          >
             {currentVault.address}
           </a>
         </div>
@@ -191,22 +183,22 @@ export function VaultInfo({ currentVault }: { currentVault: TYDaemonVault }): Re
             target={'_blank'}
             rel={'noopener noreferrer'}
             className={'font-number text-sm text-neutral-900 hover:underline'}
-            suppressHydrationWarning>
+            suppressHydrationWarning
+          >
             {currentVault.token.address}
           </a>
         </div>
 
         {currentVault.staking.available ? (
           <div className={'flex flex-col items-center md:flex-row'}>
-            <p className={'w-full text-sm text-neutral-500 md:w-44'}>
-              {'Staking Contract Address'}
-            </p>
+            <p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Staking Contract Address'}</p>
             <a
               href={`${blockExplorer}/address/${currentVault.staking.address}`}
               target={'_blank'}
               rel={'noopener noreferrer'}
               className={'font-number text-sm text-neutral-900 hover:underline'}
-              suppressHydrationWarning>
+              suppressHydrationWarning
+            >
               {currentVault.staking.address}
             </a>
           </div>
@@ -220,7 +212,8 @@ export function VaultInfo({ currentVault }: { currentVault: TYDaemonVault }): Re
               target={'_blank'}
               rel={'noopener noreferrer'}
               className={'font-number text-sm text-neutral-900 hover:underline'}
-              suppressHydrationWarning>
+              suppressHydrationWarning
+            >
               {currentVault.info.sourceURL}
             </a>
           </div>
@@ -234,7 +227,8 @@ export function VaultInfo({ currentVault }: { currentVault: TYDaemonVault }): Re
               target={'_blank'}
               rel={'noopener noreferrer'}
               className={'font-number whitespace-nowrap text-sm text-neutral-900 hover:underline'}
-              suppressHydrationWarning>
+              suppressHydrationWarning
+            >
               {currentVault.info.sourceURL}
             </a>
           </div>
@@ -244,21 +238,12 @@ export function VaultInfo({ currentVault }: { currentVault: TYDaemonVault }): Re
   )
 }
 
-export function VaultDetailsTabsWrapper({
-  currentVault
-}: {
-  currentVault: TYDaemonVault
-}): ReactElement {
+export function VaultDetailsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { provider } = useWeb3()
   const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: currentVault.chainID })
   const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0)
 
-  async function onAddTokenToMetamask(
-    address: string,
-    symbol: string,
-    decimals: number,
-    image: string
-  ): Promise<void> {
+  async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
     try {
       assert(provider, 'Provider is not set')
       const walletClient = await getConnectorClient(retrieveConfig())
@@ -286,26 +271,16 @@ export function VaultDetailsTabsWrapper({
     const _yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse()
     return _yDaemonHarvestsData.map((harvest): { name: string; value: number } => ({
       name: formatDate(Number(harvest.timestamp) * 1000),
-      value: toNormalizedValue(
-        toBigInt(harvest.profit) - toBigInt(harvest.loss),
-        currentVault.decimals
-      )
+      value: toNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), currentVault.decimals)
     }))
   }, [currentVault.decimals, yDaemonHarvestsData])
 
   return (
     <div className={'col-span-12 mb-4 flex flex-col rounded-3xl bg-neutral-100 py-2'}>
-      <div
-        className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
-        <Tabs
-          selectedAboutTabIndex={selectedAboutTabIndex}
-          setSelectedAboutTabIndex={setSelectedAboutTabIndex}
-        />
+      <div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
+        <Tabs selectedAboutTabIndex={selectedAboutTabIndex} setSelectedAboutTabIndex={setSelectedAboutTabIndex} />
 
-        <div
-          className={
-            'flex items-center justify-end space-x-2 pb-0 md:flex-row md:pb-4 md:last:space-x-4'
-          }>
+        <div className={'flex items-center justify-end space-x-2 pb-0 md:flex-row md:pb-4 md:last:space-x-4'}>
           <button
             onClick={(): void => {
               onAddTokenToMetamask(
@@ -314,12 +289,11 @@ export function VaultDetailsTabsWrapper({
                 currentVault.decimals,
                 `https://token-assets-one.vercel.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
               )
-            }}>
+            }}
+          >
             <span className={'sr-only'}>{'Add to wallet'}</span>
             <IconAddToMetamask
-              className={
-                'size-5 text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'
-              }
+              className={'size-5 text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'}
             />
           </button>
           <ExplorerLink
@@ -340,11 +314,7 @@ export function VaultDetailsTabsWrapper({
       </Renderable>
 
       <Renderable shouldRender={currentVault && selectedAboutTabIndex === 2}>
-        <VaultDetailsHistorical
-          currentVault={currentVault}
-          isLoading={isLoading}
-          harvests={yDaemonHarvestsData}
-        />
+        <VaultDetailsHistorical currentVault={currentVault} isLoading={isLoading} harvests={yDaemonHarvestsData} />
       </Renderable>
 
       <Renderable shouldRender={currentVault && selectedAboutTabIndex === 3}>

@@ -57,9 +57,7 @@ function useQueryArguments(props: {
           return
         }
         if (typesParamArray.length === props.defaultTypes?.length) {
-          const isEqual = typesParamArray.every((c): boolean =>
-            Boolean(props.defaultTypes?.includes(c))
-          )
+          const isEqual = typesParamArray.every((c): boolean => Boolean(props.defaultTypes?.includes(c)))
           if (isEqual) {
             setTypes(props.defaultTypes)
             return
@@ -82,9 +80,7 @@ function useQueryArguments(props: {
           return
         }
         if (categoriesParamArray.length === props.defaultCategories?.length) {
-          const isEqual = categoriesParamArray.every((c): boolean =>
-            Boolean(props.defaultCategories?.includes(c))
-          )
+          const isEqual = categoriesParamArray.every((c): boolean => Boolean(props.defaultCategories?.includes(c)))
           if (isEqual) {
             setCategories(props.defaultCategories)
             return
@@ -203,9 +199,7 @@ function useQueryArguments(props: {
         return
       }
       if (value.length === props.defaultTypes?.length) {
-        const isEqual = value.every((category): boolean =>
-          Boolean(props.defaultTypes?.includes(category))
-        )
+        const isEqual = value.every((category): boolean => Boolean(props.defaultTypes?.includes(category)))
         if (isEqual) {
           queryArgs.types = undefined
           delete queryArgs.types
@@ -243,9 +237,7 @@ function useQueryArguments(props: {
         return
       }
       if (value.length === props.defaultCategories?.length) {
-        const isEqual = value.every((category): boolean =>
-          Boolean(props.defaultCategories?.includes(category))
-        )
+        const isEqual = value.every((category): boolean => Boolean(props.defaultCategories?.includes(category)))
         if (isEqual) {
           queryArgs.categories = undefined
           delete queryArgs.categories

@@ -1,11 +1,4 @@
-import {
-  Combobox,
-  ComboboxButton,
-  ComboboxInput,
-  ComboboxOption,
-  ComboboxOptions,
-  Transition
-} from '@headlessui/react'
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition } from '@headlessui/react'
 import { Renderable } from '@lib/components/Renderable'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -24,14 +17,10 @@ function DropdownItem({ option }: TDropdownItemProps): ReactElement {
   return (
     <ComboboxOption value={option}>
       {({ active }): ReactElement => (
-        <div
-          data-active={active}
-          className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
+        <div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
           <div className={'size-6 flex-none rounded-full'}>{option?.icon ? option.icon : null}</div>
           <div>
-            <p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
-              {option.symbol}
-            </p>
+            <p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>{option.symbol}</p>
             <p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xxs font-normal text-neutral-600`}>
               {`${formatAmount(balance.normalized)} ${option.symbol}`}
             </p>
@@ -51,7 +40,8 @@ function DropdownEmpty({ query }: { query: string }): ReactElement {
         onClick={(): void => openLoginModal()}
         className={
           'flex h-14 cursor-pointer flex-col items-center justify-center px-4 text-center transition-colors hover:bg-neutral-300'
-        }>
+        }
+      >
         <b className={'text-neutral-900'}>{'Connect Wallet'}</b>
       </div>
     )
@@ -103,13 +93,15 @@ export function Dropdown(props: TDropdownProps): ReactElement {
         onChange={(_selected: TDropdownOption): void => {
           props.onSelect(_selected)
           setIsOpen(false)
-        }}>
+        }}
+      >
         <ComboboxButton
           onClick={(): void => setIsOpen((o: boolean): boolean => !o)}
           className={cl(
             props.className,
             'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
-          )}>
+          )}
+        >
           <div className={'relative w-full'}>
             <div className={'flex w-full items-center'}>
               <div key={props.selected?.label} className={'size-6 flex-none rounded-full'}>
@@ -119,10 +111,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
                   <div className={'size-6 flex-none rounded-full bg-neutral-500'} />
                 )}
               </div>
-              <p
-                className={
-                  'whitespace-nowrap px-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'
-                }>
+              <p className={'whitespace-nowrap px-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'}>
                 <ComboboxInput
                   className={
                     'w-full cursor-default text-ellipsis border-none bg-transparent p-0 outline-none scrollbar-none'
@@ -157,12 +146,10 @@ export function Dropdown(props: TDropdownProps): ReactElement {
           afterLeave={(): void => {
             setIsOpen(false)
             setQuery('')
-          }}>
-          <ComboboxOptions
-            className={cl(props.comboboxOptionsClassName, 'yearn--dropdown-menu z-50')}>
-            <Renderable
-              shouldRender={filteredOptions.length > 0}
-              fallback={<DropdownEmpty query={query} />}>
+          }}
+        >
+          <ComboboxOptions className={cl(props.comboboxOptionsClassName, 'yearn--dropdown-menu z-50')}>
+            <Renderable shouldRender={filteredOptions.length > 0} fallback={<DropdownEmpty query={query} />}>
               {filteredOptions.map(
                 (option): ReactElement => (
                   <DropdownItem key={option.label} option={option} />

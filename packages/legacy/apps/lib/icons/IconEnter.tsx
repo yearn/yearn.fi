@@ -2,13 +2,7 @@ import type { ReactElement } from 'react'
 
 export function IconEnter(props: React.SVGProps<SVGSVGElement>): ReactElement {
   return (
-    <svg
-      {...props}
-      width={'12'}
-      height={'12'}
-      viewBox={'0 0 12 12'}
-      fill={'none'}
-      xmlns={'http://www.w3.org/2000/svg'}>
+    <svg {...props} width={'12'} height={'12'} viewBox={'0 0 12 12'} fill={'none'} xmlns={'http://www.w3.org/2000/svg'}>
       <g clipPath={'url(#clip0_2013_717)'}>
         <path
           d={'M4 5L1 8L4 11'}

@@ -22,11 +22,7 @@ import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/ac
 import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import type { TTabsOptions } from '@vaults-v3/components/details/VaultActionsTabsWrapper'
-import {
-  getCurrentTab,
-  tabs,
-  VaultDetailsTab
-} from '@vaults-v3/components/details/VaultActionsTabsWrapper'
+import { getCurrentTab, tabs, VaultDetailsTab } from '@vaults-v3/components/details/VaultActionsTabsWrapper'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 
@@ -56,7 +52,8 @@ function MobileTabButtons(props: {
         props.selectedTab.value === props.currentTab.value
           ? 'border-b-2 border-neutral-900'
           : 'border-b-2 border-neutral-300'
-      )}>
+      )}
+    >
       {props.currentTab.label}
     </button>
   )
@@ -67,17 +64,12 @@ function MobileTabButtons(props: {
  ** section. It will display the different tabs available for the current vault and the
  ** corresponding actions that can be taken.
  *************************************************************************************************/
-export function VaultActionsTabsWrapper({
-  currentVault
-}: {
-  currentVault: TYDaemonVault
-}): ReactElement {
+export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const router = useRouter()
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const { address } = useWeb3()
   const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })
-  const { onSwitchSelectedOptions, isDepositing, actionParams, hasVeYFIBalance, veYFIBalance } =
-    useActionFlow()
+  const { onSwitchSelectedOptions, isDepositing, actionParams, hasVeYFIBalance, veYFIBalance } = useActionFlow()
   const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]])
   const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined)
   const [hasStakingRewardsLive, setHasStakingRewardsLive] = useState(false)
@@ -102,9 +94,7 @@ export function VaultActionsTabsWrapper({
     }
   })
 
-  const veYFITotalSupply = veYFITotalSupplyData
-    ? toNormalizedValue(veYFITotalSupplyData as bigint, 18)
-    : 0
+  const veYFITotalSupply = veYFITotalSupplyData ? toNormalizedValue(veYFITotalSupplyData as bigint, 18) : 0
   const { data: gaugeTotalSupplyData } = useReadContract({
     address: currentVault.staking.address,
     abi: VAULT_V3_ABI,
@@ -113,9 +103,7 @@ export function VaultActionsTabsWrapper({
       enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
     }
   })
-  const gaugeTotalSupply = gaugeTotalSupplyData
-    ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18)
-    : 0
+  const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0
 
   const { data: blockNumber } = useBlockNumber({ watch: true })
   /**********************************************************************************************
@@ -200,12 +188,7 @@ export function VaultActionsTabsWrapper({
     } else {
       setPossibleTabs([tabs[0], tabs[1]])
     }
-  }, [
-    currentVault?.migration?.available,
-    currentVault?.info?.isRetired,
-    actionParams.isReady,
-    hasStakingRewards
-  ])
+  }, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards])
 
   /************************************************************************************************
    * This effect manages the auto-staking feature based on staking rewards availability.
@@ -217,7 +200,7 @@ export function VaultActionsTabsWrapper({
    ************************************************************************************************/
   useEffect(() => {
     const hasStakingRewardsEndedOverAWeekAgo = currentVault.staking.rewards?.some(
-      el => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
+      (el) => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
     )
     if (!hasStakingRewards && hasStakingRewardsEndedOverAWeekAgo) {
       setIsAutoStakingEnabled(false)
@@ -270,20 +253,18 @@ export function VaultActionsTabsWrapper({
         </div>
       )}
 
-      {!currentVault?.migration.available &&
-        currentVault?.info?.isRetired &&
-        !isSonneRetiredVault && (
-          <div aria-label={'Deprecation Warning'} className={'col-span-12 mt-10'}>
-            <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
-              <b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
-              <p className={'mt-2'}>
-                {
-                  'They say all good things must come to an end, and sadly this vault is deprecated and will no longer earn yield or be supported by Yearn. Please withdraw your funds (which you could deposit into another Vault. Just saying…)'
-                }
-              </p>
-            </div>
+      {!currentVault?.migration.available && currentVault?.info?.isRetired && !isSonneRetiredVault && (
+        <div aria-label={'Deprecation Warning'} className={'col-span-12 mt-10'}>
+          <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+            <b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
+            <p className={'mt-2'}>
+              {
+                'They say all good things must come to an end, and sadly this vault is deprecated and will no longer earn yield or be supported by Yearn. Please withdraw your funds (which you could deposit into another Vault. Just saying…)'
+              }
+            </p>
           </div>
-        )}
+        </div>
+      )}
 
       {currentVault?.info.uiNotice && (
         <div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
@@ -292,9 +273,7 @@ export function VaultActionsTabsWrapper({
             <p
               className={'mt-2'}
               dangerouslySetInnerHTML={{
-                __html: parseMarkdown(
-                  currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol)
-                )
+                __html: parseMarkdown(currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol))
               }}
             />
           </div>
@@ -309,22 +288,18 @@ export function VaultActionsTabsWrapper({
             : currentVault?.info.uiNotice
               ? 'mt-10 md:mt-10'
               : 'mt-10 md:mt-20'
-        )}>
+        )}
+      >
         <Link href={'/vaults'}>
-          <p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>
-            {'Back to vaults'}
-          </p>
+          <p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>{'Back to vaults'}</p>
         </Link>
       </nav>
 
       <div className={'col-span-12 mb-4 flex flex-col rounded-3xl bg-neutral-100 py-2'}>
-        <div
-          className={
-            'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'
-          }>
+        <div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
           <nav className={'hidden flex-row items-center space-x-10 md:flex'}>
             {possibleTabs
-              .filter(tab => tab.value !== 3)
+              .filter((tab) => tab.value !== 3)
               .map(
                 (tab): ReactElement => (
                   <VaultDetailsTab
@@ -333,7 +308,7 @@ export function VaultActionsTabsWrapper({
                     tab={tab}
                     selectedTab={currentTab}
                     unstakedBalance={unstakedBalance}
-                    onSwitchTab={newTab => {
+                    onSwitchTab={(newTab) => {
                       setCurrentTab(newTab)
                       onSwitchSelectedOptions(newTab.flowAction)
                     }}
@@ -358,10 +333,7 @@ export function VaultActionsTabsWrapper({
             </div>
           </div>
 
-          <div
-            className={
-              'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'
-            }>
+          <div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
             <SettingsPopover vault={currentVault} />
           </div>
         </div>
@@ -378,7 +350,8 @@ export function VaultActionsTabsWrapper({
           <div
             className={
               'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-6'
-            }>
+            }
+          >
             <VaultDetailsQuickActionsFrom
               currentVault={currentVault}
               vaultData={vaultData}
@@ -426,19 +399,15 @@ export function VaultActionsTabsWrapper({
         )}
         {currentTab.value !== 3 && currentVault.staking.rewards && (
           <Fragment>
-            <div
-              className={
-                'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'
-              }>
+            <div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
               <div
                 className={cl(
                   'flex h-10 min-w-28 z-10 flex-row items-center bg-neutral-100 p-0 font-bold md:hidden border-b-2 border-neutral-900'
-                )}>
+                )}
+              >
                 {'Boost'}
               </div>
-              <div className={'hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>
-                {getTabLabel()}
-              </div>
+              <div className={'hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>{getTabLabel()}</div>
             </div>
             <div>
               <div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />

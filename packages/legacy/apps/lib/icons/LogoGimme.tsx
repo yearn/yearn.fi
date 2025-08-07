@@ -1,16 +1,8 @@
 import type { ReactElement } from 'react'
 
-export function LogoGimme(
-  props: React.SVGProps<SVGSVGElement> & { back?: string; front?: string }
-): ReactElement {
+export function LogoGimme(props: React.SVGProps<SVGSVGElement> & { back?: string; front?: string }): ReactElement {
   return (
-    <svg
-      {...props}
-      width={'80'}
-      height={'80'}
-      viewBox={'0 0 80 80'}
-      fill={'none'}
-      xmlns={'http://www.w3.org/2000/svg'}>
+    <svg {...props} width={'80'} height={'80'} viewBox={'0 0 80 80'} fill={'none'} xmlns={'http://www.w3.org/2000/svg'}>
       <g clipPath={'url(#clip0_1787_1240)'}>
         <rect width={'80'} height={'80'} rx={'40'} fill={'#6FB5F9'} />
         <path

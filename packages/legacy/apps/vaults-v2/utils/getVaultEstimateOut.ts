@@ -27,9 +27,7 @@ type TGetVaultEstimateOutProps = {
  ** This method takes the input amount without verifications, meaning that it will not check if
  ** the user has enough balance to perform the action.
  *************************************************************************************************/
-export async function getVaultEstimateOut(
-  props: TGetVaultEstimateOutProps
-): Promise<TNormalizedBN | undefined> {
+export async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Promise<TNormalizedBN | undefined> {
   assertAddress(props.inputToken, 'inputToken')
   assertAddress(props.outputToken, 'outputToken')
   assert(props.inputDecimals > 0, 'inputDecimals must be greater than 0')

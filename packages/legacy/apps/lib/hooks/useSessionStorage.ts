@@ -12,9 +12,7 @@ type TSetValue<T> = Dispatch<SetStateAction<T>>
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
-function useEventCallback<TArgs extends unknown[], TR>(
-  fn: (...args: TArgs) => TR
-): (...args: TArgs) => TR {
+function useEventCallback<TArgs extends unknown[], TR>(fn: (...args: TArgs) => TR): (...args: TArgs) => TR {
   const ref = useRef<typeof fn>((): never => {
     throw new Error('Cannot call an event handler while rendering.')
   })
@@ -35,10 +33,7 @@ function useEventListener<TK extends keyof WindowEventMap>(
 ): void
 
 // Element Event based useEventListener interface
-function useEventListener<
-  TK extends keyof HTMLElementEventMap,
-  T extends HTMLElement = HTMLDivElement
->(
+function useEventListener<TK extends keyof HTMLElementEventMap, T extends HTMLElement = HTMLDivElement>(
   eventName: TK,
   handler: (event: HTMLElementEventMap[TK]) => void,
   element: RefObject<T>,
@@ -116,9 +111,7 @@ function useSessionStorage<T>(key: string, initialValue: T): [T, TSetValue<T>] {
   const assignValue: TSetValue<T> = useEventCallback((value: unknown): void => {
     // Prevent build error "window is undefined" but keeps working
     if (typeof window === 'undefined') {
-      console.warn(
-        `Tried setting sessionStorage key “${key}” even though environment is not a client`
-      )
+      console.warn(`Tried setting sessionStorage key “${key}” even though environment is not a client`)
     }
 
     try {

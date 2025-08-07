@@ -42,8 +42,7 @@ export const CategorySection = ({ title, apps }: TAppSectionProps): ReactElement
 
     if (carouselRef.current.scrollLeft <= 0) {
       // Wrap to end
-      carouselRef.current.scrollLeft =
-        carouselRef.current.scrollWidth - carouselRef.current.clientWidth
+      carouselRef.current.scrollLeft = carouselRef.current.scrollWidth - carouselRef.current.clientWidth
     } else {
       carouselRef.current.scrollLeft -= itemWidth
     }
@@ -110,7 +109,7 @@ export const CategorySection = ({ title, apps }: TAppSectionProps): ReactElement
       orderedApps = apps.slice().sort(() => 0.5 - Math.random())
     }
     // Move 'Resupply' app to the front if it exists
-    const resupplyIndex = orderedApps.findIndex(app => app.name === 'Resupply')
+    const resupplyIndex = orderedApps.findIndex((app) => app.name === 'Resupply')
     if (resupplyIndex > 0) {
       const [resupplyApp] = orderedApps.splice(resupplyIndex, 1)
       orderedApps = [resupplyApp, ...orderedApps]
@@ -124,9 +123,7 @@ export const CategorySection = ({ title, apps }: TAppSectionProps): ReactElement
         <div className={'flex gap-x-4'}>
           <div className={'whitespace-nowrap text-lg font-bold text-neutral-800'}>{title}</div>
         </div>
-        {apps?.length > 5 && (
-          <CarouselSlideArrows onScrollBack={onScrollBack} onScrollForward={onScrollForward} />
-        )}
+        {apps?.length > 5 && <CarouselSlideArrows onScrollBack={onScrollBack} onScrollForward={onScrollForward} />}
       </div>
       <AppsCarousel apps={shuffledApps} ref={carouselRef} onScroll={onScroll} />
       {/* <CarouselControls

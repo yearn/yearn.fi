@@ -39,20 +39,20 @@ function BrandNewVaultCard(): ReactElement {
         'h-full rounded-3xl relative overflow-hidden',
         'pr-2 pl-4 pb-4 pt-6 md:p-10',
         'col-span-75 md:col-span-46'
-      )}>
+      )}
+    >
       <div className={'relative z-10'}>
         <h1
           className={cl(
             'mb-2 md:mb-4 lg:mb-10 font-black text-neutral-900',
             'text-[48px] lg:text-[56px] lg:leading-[64px] leading-[48px]',
             'whitespace-break-spaces uppercase'
-          )}>
+          )}
+        >
           {'A brave new\nworld for Yield'}
         </h1>
         <p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
-          {
-            'Yearn v3 is a new yield paradigm offering better automation,\ncomposability and flexibility. Enjoy!'
-          }
+          {'Yearn v3 is a new yield paradigm offering better automation,\ncomposability and flexibility. Enjoy!'}
         </p>
       </div>
       <Background />
@@ -66,7 +66,8 @@ function V3Card(): ReactElement {
         className={cl(
           'flex h-full w-full flex-col items-center justify-center',
           'gap-y-0 rounded-3xl bg-neutral-200 md:gap-y-6 p-2'
-        )}>
+        )}
+      >
         <V3Mask className={'size-[90%]'} />
       </div>
     </div>
@@ -80,10 +81,7 @@ function PortfolioCard(): ReactElement {
   if (!isActive) {
     return (
       <div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'}>
-        <strong
-          className={
-            'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'
-          }>
+        <strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
           {'Portfolio'}
         </strong>
         <div className={'flex'}>
@@ -92,19 +90,15 @@ function PortfolioCard(): ReactElement {
               {'Looks like you need to connect your wallet. And call your mum. Always important.'}
             </p>
             <button
-              className={cl(
-                'rounded-lg overflow-hidden flex',
-                'px-[42px] py-2 mt-16',
-                'relative group',
-                'border-none'
-              )}
+              className={cl('rounded-lg overflow-hidden flex', 'px-[42px] py-2 mt-16', 'relative group', 'border-none')}
               onClick={(): void => {
                 if (!isActive && address) {
                   onSwitchChain(1)
                 } else {
                   openLoginModal()
                 }
-              }}>
+              }}
+            >
               <div
                 className={cl(
                   'absolute inset-0',
@@ -121,10 +115,7 @@ function PortfolioCard(): ReactElement {
   }
   return (
     <div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'}>
-      <strong
-        className={
-          'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'
-        }>
+      <strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
         {'Portfolio'}
       </strong>
       <div className={'flex flex-col gap-4 md:flex-row md:gap-32'}>
@@ -135,9 +126,7 @@ function PortfolioCard(): ReactElement {
           ) : (
             <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
               {'$'}
-              <span suppressHydrationWarning>
-                {formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}
-              </span>
+              <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
             </b>
           )}
         </div>
@@ -216,9 +205,7 @@ function ListOfVaults(): ReactElement {
    **	It contains either the list of vaults, is some are available, or a message to the user.
    *********************************************************************************************/
   const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
-    const filteredByChains = sortedVaultsToDisplay.filter(
-      ({ chainID }): boolean => chains?.includes(chainID) || false
-    )
+    const filteredByChains = sortedVaultsToDisplay.filter(({ chainID }): boolean => chains?.includes(chainID) || false)
     const filteredByCategories = filteredByChains.filter(
       ({ category }): boolean => categories?.includes(category) || false
     )
@@ -248,8 +235,7 @@ function ListOfVaults(): ReactElement {
       if (!processedForHoldings.has(key)) {
         // Avoid duplicates
         const hasBalance = getBalance({ address: vault.address, chainID: vault.chainID }).raw > 0n
-        const hasStakingBalance =
-          getBalance({ address: vault.staking.address, chainID: vault.chainID }).raw > 0n
+        const hasStakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID }).raw > 0n
         if (hasBalance || hasStakingBalance) {
           holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
           processedForHoldings.add(key)
@@ -272,8 +258,7 @@ function ListOfVaults(): ReactElement {
       const price = getPrice({ address: vault.address, chainID: vault.chainID })
 
       const holdingsValue =
-        toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized *
-        price.normalized
+        toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized
 
       if (holdingsValue > 0.5) {
         holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
@@ -295,10 +280,7 @@ function ListOfVaults(): ReactElement {
     }
 
     const shouldShowEmptyState =
-      isLoadingVaultList ||
-      !chains ||
-      chains.length === 0 ||
-      (isZero(holdings.length) && isZero(all.length)) // Show empty if no holdings and no other active vaults
+      isLoadingVaultList || !chains || chains.length === 0 || (isZero(holdings.length) && isZero(all.length)) // Show empty if no holdings and no other active vaults
 
     if (shouldShowEmptyState) {
       return (
@@ -447,38 +429,34 @@ function Index(): ReactElement {
           'relative pb-8 bg-neutral-0 z-50',
           'min-h-screen',
           'transition-transform duration-300',
-          isCollapsed
-            ? 'translate-y-[354px] md:translate-y-[464px]'
-            : 'translate-y-[24px] md:translate-y-[40px]'
-        )}>
+          isCollapsed ? 'translate-y-[354px] md:translate-y-[464px]' : 'translate-y-[24px] md:translate-y-[40px]'
+        )}
+      >
         <div className={'mx-auto w-full max-w-6xl'}>
           <div
             onClick={onClick}
-            className={
-              'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'
-            }>
+            className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}
+          >
             <div className={'relative -mt-8 flex justify-center rounded-t-3xl'}>
               <svg
                 xmlns={'http://www.w3.org/2000/svg'}
                 width={'113'}
                 height={'32'}
                 viewBox={'0 0 113 32'}
-                fill={'none'}>
-                <path
-                  d={'M0 32C37.9861 32 20.9837 0 56 0C91.0057 0 74.388 32 113 32H0Z'}
-                  fill={'#000520'}
-                />
+                fill={'none'}
+              >
+                <path d={'M0 32C37.9861 32 20.9837 0 56 0C91.0057 0 74.388 32 113 32H0Z'} fill={'#000520'} />
               </svg>
               <div
-                className={`absolute mt-2 flex justify-center transition-transform ${
-                  isCollapsed ? '' : '-rotate-180'
-                }`}>
+                className={`absolute mt-2 flex justify-center transition-transform ${isCollapsed ? '' : '-rotate-180'}`}
+              >
                 <svg
                   xmlns={'http://www.w3.org/2000/svg'}
                   width={'24'}
                   height={'24'}
                   viewBox={'0 0 24 24'}
-                  fill={'none'}>
+                  fill={'none'}
+                >
                   <path
                     fillRule={'evenodd'}
                     clipRule={'evenodd'}

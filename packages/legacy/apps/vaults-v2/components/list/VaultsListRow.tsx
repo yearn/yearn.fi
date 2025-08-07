@@ -19,8 +19,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
 
   if (currentVault.apr.forwardAPR.type === '') {
     const hasZeroAPY =
-      isZero(currentVault.apr?.netAPR) ||
-      Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0
+      isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0
     const boostedAPY = extraAPY + currentVault.apr.netAPR
     const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 
@@ -29,14 +28,13 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
         <div className={'flex flex-col text-right'}>
           <span className={'tooltip'}>
             <b className={'yearn--table-data-section-item-value'}>
-              <Renderable
-                shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
-                fallback={'NEW'}>
+              <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 {'⚡️ '}
                 <span
                   className={
                     'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                  }>
+                  }
+                >
                   <RenderAmount
                     shouldHideTooltip={hasZeroBoostedAPY}
                     value={boostedAPY}
@@ -50,32 +48,25 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
               <div
                 className={
                   'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-                }>
+                }
+              >
                 <div className={'flex flex-col items-start justify-start text-left'}>
                   <div
                     className={
                       'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                    }>
+                    }
+                  >
                     <p>{'• Base APY '}</p>
-                    <RenderAmount
-                      shouldHideTooltip
-                      value={currentVault.apr.netAPR}
-                      symbol={'percent'}
-                      decimals={6}
-                    />
+                    <RenderAmount shouldHideTooltip value={currentVault.apr.netAPR} symbol={'percent'} decimals={6} />
                   </div>
 
                   <div
                     className={
                       'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                    }>
+                    }
+                  >
                     <p>{'• Rewards APY '}</p>
-                    <RenderAmount
-                      shouldHideTooltip
-                      value={extraAPY}
-                      symbol={'percent'}
-                      decimals={6}
-                    />
+                    <RenderAmount shouldHideTooltip value={extraAPY} symbol={'percent'} decimals={6} />
                   </div>
                 </div>
               </div>
@@ -87,9 +78,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
     return (
       <div className={'flex flex-col text-right'}>
         <b className={'yearn--table-data-section-item-value'}>
-          <Renderable
-            shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
-            fallback={'NEW'}>
+          <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
             <RenderAmount
               value={currentVault.apr?.netAPR}
               shouldHideTooltip={hasZeroAPY}
@@ -103,18 +92,16 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
   }
 
   if (isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPY) {
-    const unBoostedAPY =
-      currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost
+    const unBoostedAPY = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost
     return (
       <span className={'tooltip'}>
         <div className={'flex flex-col text-right'}>
           <b
             className={
               'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-            }>
-            <Renderable
-              shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
-              fallback={'NEW'}>
+            }
+          >
+            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <RenderAmount
                 shouldHideTooltip
                 value={currentVault.apr.forwardAPR.netAPR}
@@ -124,10 +111,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
             </Renderable>
           </b>
           <small className={'text-xs text-neutral-900'}>
-            <Renderable
-              shouldRender={
-                isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPY
-              }>
+            <Renderable shouldRender={isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPY}>
               {`BOOST ${formatAmount(currentVault.apr.forwardAPR.composite?.boost, 2, 2)}x`}
             </Renderable>
           </small>
@@ -135,25 +119,23 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
             <div
               className={
                 'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-              }>
+              }
+            >
               <div className={'flex flex-col items-start justify-start text-left'}>
                 <div
                   className={
                     'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                  }>
+                  }
+                >
                   <p>{'• Base APY '}</p>
-                  <RenderAmount
-                    shouldHideTooltip
-                    value={unBoostedAPY}
-                    symbol={'percent'}
-                    decimals={6}
-                  />
+                  <RenderAmount shouldHideTooltip value={unBoostedAPY} symbol={'percent'} decimals={6} />
                 </div>
 
                 <div
                   className={
                     'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                  }>
+                  }
+                >
                   <p>{'• Boost '}</p>
                   <p>{`${formatAmount(currentVault.apr.forwardAPR.composite.boost, 2, 2)} x`}</p>
                 </div>
@@ -172,14 +154,13 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
       <div className={'flex flex-col text-right'}>
         <span className={'tooltip'}>
           <b className={'yearn--table-data-section-item-value'}>
-            <Renderable
-              shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
-              fallback={'NEW'}>
+            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               {'⚡️ '}
               <span
                 className={
                   'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                }>
+                }
+              >
                 <RenderAmount
                   shouldHideTooltip={hasZeroBoostedAPY}
                   value={boostedAPY}
@@ -193,12 +174,14 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
             <div
               className={
                 'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-              }>
+              }
+            >
               <div className={'flex flex-col items-start justify-start text-left'}>
                 <div
                   className={
                     'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                  }>
+                  }
+                >
                   <p>{'• Base APY '}</p>
                   <RenderAmount
                     shouldHideTooltip
@@ -211,14 +194,10 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
                 <div
                   className={
                     'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                  }>
+                  }
+                >
                   <p>{'• Rewards APY '}</p>
-                  <RenderAmount
-                    shouldHideTooltip
-                    value={extraAPY}
-                    symbol={'percent'}
-                    decimals={6}
-                  />
+                  <RenderAmount shouldHideTooltip value={extraAPY} symbol={'percent'} decimals={6} />
                 </div>
               </div>
             </div>
@@ -228,15 +207,11 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
     )
   }
 
-  const hasZeroAPY =
-    isZero(currentVault.apr?.netAPR) ||
-    Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0
+  const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0
   return (
     <div className={'flex flex-col text-right'}>
       <b className={'yearn--table-data-section-item-value'}>
-        <Renderable
-          shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
-          fallback={'NEW'}>
+        <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
           <RenderAmount
             shouldHideTooltip={hasZeroAPY}
             value={currentVault.apr.forwardAPR.netAPR}
@@ -250,9 +225,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
 }
 
 function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
-  const hasZeroAPY =
-    isZero(currentVault.apr?.netAPR) ||
-    Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0
+  const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0
   const monthlyAPY = currentVault.apr.points.monthAgo
   const weeklyAPY = currentVault.apr.points.weekAgo
 
@@ -265,7 +238,8 @@ function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): 
               <span
                 className={
                   'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                }>
+                }
+              >
                 <RenderAmount
                   shouldHideTooltip={hasZeroAPY}
                   value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
@@ -279,12 +253,14 @@ function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): 
             <div
               className={
                 'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-              }>
+              }
+            >
               <div className={'flex flex-col items-start justify-start text-left'}>
                 <div
                   className={
                     'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                  }>
+                  }
+                >
                   <p>{'• Base APY '}</p>
                   <RenderAmount
                     shouldHideTooltip
@@ -297,7 +273,8 @@ function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): 
                 <div
                   className={
                     'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                  }>
+                  }
+                >
                   <p>{'• Rewards APY '}</p>
                   <p>{'N/A'}</p>
                 </div>
@@ -356,7 +333,8 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
       <p
         className={`yearn--table-data-section-item-value ${
           isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'
-        }`}>
+        }`}
+      >
         <RenderAmount
           value={staked.raw}
           symbol={currentVault.token.symbol}
@@ -364,8 +342,7 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
           options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
         />
       </p>
-      <small
-        className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
+      <small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
         <RenderAmount
           value={staked.normalized * tokenPrice.normalized}
           symbol={'USD'}
@@ -392,10 +369,7 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
   })
   const balanceOfWrappedCoin = useYearnBalance({
     chainID: currentVault.chainID,
-    address:
-      toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS
-        ? WFTM_TOKEN_ADDRESS
-        : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
+    address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
   })
   const availableToDeposit = useMemo((): bigint => {
     if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
@@ -408,15 +382,14 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
   }, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address])
 
   return (
-    <Link
-      key={`${currentVault.address}`}
-      href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
+    <Link key={`${currentVault.address}`} href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
       <div
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-12',
           'p-6 pt-2 md:px-10 bg-neutral-100 hover:bg-neutral-200 transition-colors',
           'cursor-pointer relative group'
-        )}>
+        )}
+      >
         <div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between')}>
           <div className={'flex flex-row gap-6 overflow-hidden'}>
             <div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
@@ -430,7 +403,8 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
             <div className={'truncate'}>
               <strong
                 title={currentVault.name}
-                className={'block truncate font-black text-neutral-800 md:-mb-0.5 md:text-lg'}>
+                className={'block truncate font-black text-neutral-800 md:-mb-0.5 md:text-lg'}
+              >
                 {currentVault.name}
               </strong>
               <div className={'flex flex-row items-center gap-1'}>
@@ -449,36 +423,24 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
         </div>
 
         <div />
-        <div
-          className={cl(
-            'col-span-7 z-10',
-            'grid grid-cols-2 md:grid-cols-10 gap-1',
-            'mt-4 md:mt-0'
-          )}>
-          <div
-            className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-            datatype={'number'}>
+        <div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-10 gap-1', 'mt-4 md:mt-0')}>
+          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
             <p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Estimated APY'}</p>
             <VaultForwardAPY currentVault={currentVault} />
           </div>
 
-          <div
-            className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-            datatype={'number'}>
-            <p className={'yearn--table-data-section-item-label !font-aeonik'}>
-              {'Historical APY'}
-            </p>
+          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
+            <p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Historical APY'}</p>
             <VaultHistoricalAPY currentVault={currentVault} />
           </div>
 
-          <div
-            className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-            datatype={'number'}>
+          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
             <p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</p>
             <p
               className={`yearn--table-data-section-item-value ${
                 isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
-              }`}>
+              }`}
+            >
               <RenderAmount
                 value={availableToDeposit}
                 symbol={currentVault.token.symbol}
@@ -488,24 +450,17 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
             </p>
           </div>
 
-          <div
-            className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-            datatype={'number'}>
+          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
             <p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</p>
             <VaultStakedAmount currentVault={currentVault} />
           </div>
 
-          <div
-            className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
-            datatype={'number'}>
+          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
             <p className={'yearn--table-data-section-item-label !font-aeonik'}>{'TVL'}</p>
             <div className={'flex flex-col text-right'}>
               <p className={'yearn--table-data-section-item-value'}>
                 <RenderAmount
-                  value={Number(
-                    toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals)
-                      .normalized
-                  )}
+                  value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
                   symbol={''}
                   decimals={6}
                   options={{

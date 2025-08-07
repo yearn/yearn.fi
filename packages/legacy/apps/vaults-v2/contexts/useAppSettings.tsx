@@ -27,14 +27,8 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({
   children: ReactElement
 }): ReactElement {
   const [searchValue, setSearchValue] = useSessionStorage('yearn.fi/vaults-search@0.0.1', '')
-  const [shouldHideDust, setShouldHideDust] = useLocalStorage(
-    'yearn.fi/should-hide-dust@0.0.1',
-    false
-  )
-  const [shouldHideLowTVLVaults, setShouldHideLowTVLVaults] = useLocalStorage(
-    'yearn.fi/hide-low-tvl@0.0.1',
-    false
-  )
+  const [shouldHideDust, setShouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust@0.0.1', false)
+  const [shouldHideLowTVLVaults, setShouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl@0.0.1', false)
 
   /* 🔵 - Yearn Finance ******************************************************
    **	Setup and render the Context provider to use in the app.
@@ -48,14 +42,7 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({
       searchValue,
       setSearchValue
     }),
-    [
-      shouldHideDust,
-      shouldHideLowTVLVaults,
-      searchValue,
-      setSearchValue,
-      setShouldHideDust,
-      setShouldHideLowTVLVaults
-    ]
+    [shouldHideDust, shouldHideLowTVLVaults, searchValue, setSearchValue, setShouldHideDust, setShouldHideLowTVLVaults]
   )
 
   return <AppSettingsContext.Provider value={contextValue}>{children}</AppSettingsContext.Provider>

@@ -32,9 +32,7 @@ function HeaderUserPosition(): ReactElement {
   if (!isActive) {
     return (
       <div className={'col-span-12 h-auto w-full md:col-span-8 md:h-[136px]'}>
-        <p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>
-          {'Wallet not connected'}
-        </p>
+        <p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Wallet not connected'}</p>
         <Button
           onClick={(): void => {
             if (!isActive && address) {
@@ -42,7 +40,8 @@ function HeaderUserPosition(): ReactElement {
             } else {
               openLoginModal()
             }
-          }}>
+          }}
+        >
           {'Connect Wallet'}
         </Button>
       </div>
@@ -80,11 +79,7 @@ function ListOfRetiredVaults({ retiredVaults }: { retiredVaults: TYDaemonVaults 
   )
 }
 
-function ListOfMigratableVaults({
-  migratableVaults
-}: {
-  migratableVaults: TYDaemonVaults
-}): ReactElement {
+function ListOfMigratableVaults({ migratableVaults }: { migratableVaults: TYDaemonVaults }): ReactElement {
   return (
     <Renderable shouldRender={migratableVaults?.length > 0}>
       <div>
@@ -92,10 +87,7 @@ function ListOfMigratableVaults({
           .filter((vault): boolean => !!vault)
           .map(
             (vault): ReactNode => (
-              <VaultsListInternalMigrationRow
-                key={`${vault.chainID}_${vault.address}`}
-                currentVault={vault}
-              />
+              <VaultsListInternalMigrationRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
             )
           )}
       </div>
@@ -150,23 +142,22 @@ function ListOfVaults(): ReactElement {
       // Normalize search terms
       const allSearchWords = lowercaseSearch
         .split(' ')
-        .filter(word => word.length > 0)
-        .map(word => word.trim())
+        .filter((word) => word.length > 0)
+        .map((word) => word.trim())
 
       if (allSearchWords.length === 0) {
         return false
       }
 
       // Create a normalized string containing all searchable vault properties
-      const vaultInfoString =
-        `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol}`
-          .toLowerCase()
-          .replaceAll('-', ' ')
-          .replaceAll('_', ' ')
-          .replaceAll('.', ' ')
-          .replaceAll(',', ' ')
-          .replaceAll('+', ' ')
-          .replaceAll('/', ' ')
+      const vaultInfoString = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol}`
+        .toLowerCase()
+        .replaceAll('-', ' ')
+        .replaceAll('_', ' ')
+        .replaceAll('.', ' ')
+        .replaceAll(',', ' ')
+        .replaceAll('+', ' ')
+        .replaceAll('/', ' ')
 
       // More flexible matching based on search term count
       if (allSearchWords.length === 1) {
@@ -174,8 +165,8 @@ function ListOfVaults(): ReactElement {
         return vaultInfoString.includes(allSearchWords[0])
       }
       // For multi-word searches, try both OR and AND logic based on what makes more sense
-      const isAllWordsMatch = allSearchWords.every(word => vaultInfoString.includes(word))
-      const isAnyWordMatches = allSearchWords.some(word => vaultInfoString.includes(word))
+      const isAllWordsMatch = allSearchWords.every((word) => vaultInfoString.includes(word))
+      const isAnyWordMatches = allSearchWords.some((word) => vaultInfoString.includes(word))
 
       // If all words match, this is clearly a good result
       if (isAllWordsMatch) {
@@ -197,9 +188,7 @@ function ListOfVaults(): ReactElement {
   const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection)
 
   const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
-    const filteredByChains = sortedVaultsToDisplay.filter(
-      ({ chainID }): boolean => chains?.includes(chainID) || false
-    )
+    const filteredByChains = sortedVaultsToDisplay.filter(({ chainID }): boolean => chains?.includes(chainID) || false)
 
     if (isLoadingVaultList || !chains || chains.length === 0) {
       return (
@@ -223,13 +212,10 @@ function ListOfVaults(): ReactElement {
       const price = getPrice({ address: vault.address, chainID: vault.chainID })
 
       const holdingsValue =
-        toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized *
-        price.normalized
+        toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized
 
       if (holdingsValue > 0.5) {
-        holdings.push(
-          <VaultsListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
-        )
+        holdings.push(<VaultsListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />)
         continue
       }
 
@@ -237,16 +223,7 @@ function ListOfVaults(): ReactElement {
     }
 
     return [holdings, all]
-  }, [
-    sortedVaultsToDisplay,
-    isLoadingVaultList,
-    chains,
-    search,
-    types,
-    onReset,
-    getBalance,
-    getPrice
-  ])
+  }, [sortedVaultsToDisplay, isLoadingVaultList, chains, search, types, onReset, getBalance, getPrice])
 
   const possibleLists = VaultList as [ReactNode, ReactNode]
   const hasHoldings = Children.count(possibleLists[0]) > 0
@@ -270,7 +247,8 @@ function ListOfVaults(): ReactElement {
     <div
       className={
         'relative col-span-12 flex min-h-[240px] w-full flex-col overflow-x-hidden bg-neutral-100 md:overflow-x-visible'
-      }>
+      }
+    >
       <div className={'absolute right-5 top-3 md:right-8 md:top-8'}>
         <VaultListOptions />
       </div>
@@ -341,10 +319,7 @@ function ListOfVaults(): ReactElement {
 function Index(): ReactElement {
   return (
     <div className={'mx-auto my-0 max-w-6xl pt-4 md:mb-0 md:mt-16'}>
-      <section
-        className={
-          'mt-16 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'
-        }>
+      <section className={'mt-16 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
         <HeaderUserPosition />
         <ListOfVaults />
       </section>

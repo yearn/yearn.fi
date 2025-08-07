@@ -47,10 +47,7 @@ function WithMom({
   const config = useMemo(() => getConfig({ chains: supportedChains }), [supportedChains])
 
   return (
-    <WagmiProvider
-      config={config as Config}
-      reconnectOnMount={!isIframe()}
-      initialState={initialState}>
+    <WagmiProvider config={config as Config} reconnectOnMount={!isIframe()} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
         <SWRConfig value={defaultSWRConfig}>
           <RainbowKitProvider {...rainbowConfig}>

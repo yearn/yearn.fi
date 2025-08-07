@@ -1,8 +1,4 @@
-import type {
-  TNotificationStatus,
-  TNotificationsActionsContext,
-  TNotificationType
-} from '@lib/types/notifications'
+import type { TNotificationStatus, TNotificationsActionsContext, TNotificationType } from '@lib/types/notifications'
 import { formatTAmount, toAddress } from '@lib/utils'
 import type { TActionParams } from '@vaults-v2/contexts/useActionFlow'
 import type React from 'react'
@@ -22,11 +18,7 @@ const defaultProps: TNotificationsActionsContext = {
 }
 
 const NotificationsActionsContext = createContext<TNotificationsActionsContext>(defaultProps)
-export const WithNotificationsActions = ({
-  children
-}: {
-  children: React.ReactElement
-}): React.ReactElement => {
+export const WithNotificationsActions = ({ children }: { children: React.ReactElement }): React.ReactElement => {
   const { addNotification, updateEntry } = useNotifications()
   const { address } = useWeb3()
 
@@ -359,11 +351,7 @@ export const WithNotificationsActions = ({
     ]
   )
 
-  return (
-    <NotificationsActionsContext.Provider value={contextValue}>
-      {children}
-    </NotificationsActionsContext.Provider>
-  )
+  return <NotificationsActionsContext.Provider value={contextValue}>{children}</NotificationsActionsContext.Provider>
 }
 
 export const useNotificationsActions = (): TNotificationsActionsContext => {

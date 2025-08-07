@@ -138,12 +138,7 @@ export async function performCall(
      ** Retrieve the existing data and populate our return object with the existing data if they
      ** exist, or just populate the object with the default ones
      ******************************************************************************************/
-    const {
-      address,
-      decimals: injectedDecimals,
-      name: injectedName,
-      symbol: injectedSymbol
-    } = element
+    const { address, decimals: injectedDecimals, name: injectedName, symbol: injectedSymbol } = element
     if (!_data[toAddress(address)]) {
       _data[toAddress(address)] = {
         address: address,
@@ -227,11 +222,7 @@ export async function getBalances(
     const { address: token } = element
 
     const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(element.address)}`]
-    if (
-      tokenUpdateInfo?.lastUpdate &&
-      Date.now() - tokenUpdateInfo?.lastUpdate < 60_000 &&
-      !shouldForceFetch
-    ) {
+    if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000 && !shouldForceFetch) {
       if (toAddress(tokenUpdateInfo.owner) === toAddress(ownerAddress)) {
         result[toAddress(token)] = tokenUpdateInfo
         continue
@@ -384,18 +375,14 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
         setChainStatus?: (updater: (prev: TChainStatus) => TChainStatus) => void
         currentIdentifierRef?: React.MutableRefObject<string | undefined>
         identifier?: string
-        updateBalancesCall: (
-          currentUserAddress: TAddress,
-          chainID: number,
-          newRawData: TDict<TToken>
-        ) => TChainTokens
+        updateBalancesCall: (currentUserAddress: TAddress, chainID: number, newRawData: TDict<TToken>) => TChainTokens
         data: React.MutableRefObject<TDataRef>
         pendingUpdates: React.MutableRefObject<TChainTokens>
       }
     ): Promise<void> => {
       // Set chain loading status
       if (options.setChainStatus) {
-        options.setChainStatus(prev => ({
+        options.setChainStatus((prev) => ({
           chainLoadingStatus: { ...(prev?.chainLoadingStatus || {}), [chainID]: true },
           chainSuccessStatus: { ...(prev?.chainSuccessStatus || {}), [chainID]: false },
           chainErrorStatus: { ...(prev?.chainErrorStatus || {}), [chainID]: false }
@@ -408,13 +395,8 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
         chunks.push(tokens.slice(i, i + 200))
       }
 
-      const allPromises = chunks.map(async chunkTokens => {
-        const [newRawData, err] = await getBalances(
-          chainID,
-          userAddress,
-          chunkTokens,
-          shouldForceFetch
-        )
+      const allPromises = chunks.map(async (chunkTokens) => {
+        const [newRawData, err] = await getBalances(chainID, userAddress, chunkTokens, shouldForceFetch)
         if (err) {
           options.setError(err)
         }
@@ -436,10 +418,9 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
       // Update chain status on completion
       if (
         options.setChainStatus &&
-        (!options.currentIdentifierRef ||
-          options.currentIdentifierRef.current === options.identifier)
+        (!options.currentIdentifierRef || options.currentIdentifierRef.current === options.identifier)
       ) {
-        options.setChainStatus(prev => ({
+        options.setChainStatus((prev) => ({
           chainLoadingStatus: { ...(prev?.chainLoadingStatus || {}), [chainID]: false },
           chainSuccessStatus: { ...(prev?.chainSuccessStatus || {}), [chainID]: true },
           chainErrorStatus: { ...(prev?.chainErrorStatus || {}), [chainID]: false }
@@ -463,11 +444,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
         priorityChainID?: number
         currentIdentifierRef?: React.MutableRefObject<string | undefined>
         identifier?: string
-        updateBalancesCall: (
-          currentUserAddress: TAddress,
-          chainID: number,
-          newRawData: TDict<TToken>
-        ) => TChainTokens
+        updateBalancesCall: (currentUserAddress: TAddress, chainID: number, newRawData: TDict<TToken>) => TChainTokens
         data: React.MutableRefObject<TDataRef>
         pendingUpdates: React.MutableRefObject<TChainTokens>
       }
@@ -531,9 +508,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
   const onUpdate = useCallback(
     async (shouldForceFetch?: boolean): Promise<TChainTokens> => {
       const tokenList = (deserialize(stringifiedTokens) || []) as TUseBalancesTokens[]
-      const tokens = tokenList.filter(
-        ({ address }: TUseBalancesTokens): boolean => !isZeroAddress(address)
-      )
+      const tokens = tokenList.filter(({ address }: TUseBalancesTokens): boolean => !isZeroAddress(address))
       if (isZero(tokens.length)) {
         return {}
       }
@@ -556,7 +531,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
         }
       }
 
-      setBalances(prev => {
+      setBalances((prev) => {
         const newBalances = { ...prev }
         for (const [chainID, chainData] of Object.entries(updated)) {
           if (!newBalances[Number(chainID)]) {
@@ -581,9 +556,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
   const onUpdateSome = useCallback(
     async (tokenList: TUseBalancesTokens[], shouldForceFetch?: boolean): Promise<TChainTokens> => {
       setSomeStatus({ ...defaultStatus, isLoading: true })
-      const tokens = tokenList.filter(
-        ({ address }: TUseBalancesTokens): boolean => !isZeroAddress(address)
-      )
+      const tokens = tokenList.filter(({ address }: TUseBalancesTokens): boolean => !isZeroAddress(address))
 
       const updated = await processBatchedBalances(tokens, userAddress, shouldForceFetch || true, {
         setError: setError,
@@ -602,7 +575,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
         }
       }
 
-      setBalances(prev => {
+      setBalances((prev) => {
         const newBalances = { ...prev }
         for (const [chainID, chainData] of Object.entries(updated)) {
           if (!newBalances[Number(chainID)]) {
@@ -663,13 +636,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
       }
       setStatus({ ...defaultStatus, isSuccess: true })
     }
-  }, [
-    stringifiedTokens,
-    userAddress,
-    updateBalancesCall,
-    props?.priorityChainID,
-    processBatchedBalances
-  ])
+  }, [stringifiedTokens, userAddress, updateBalancesCall, props?.priorityChainID, processBatchedBalances])
 
   const contextValue = useDeepCompareMemo(
     (): TUseBalancesRes => ({

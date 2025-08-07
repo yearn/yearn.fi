@@ -35,9 +35,7 @@ export const SearchContextApp = ({
   )
 
   return (
-    <SearchContext.Provider value={contextValue}>
-      {optionalRenderProps(children, contextValue)}
-    </SearchContext.Provider>
+    <SearchContext.Provider value={contextValue}>{optionalRenderProps(children, contextValue)}</SearchContext.Provider>
   )
 }
 

@@ -28,7 +28,7 @@ export function useTransactionStatusPoller(notification: TNotification): void {
 
     try {
       const config = retrieveConfig()
-      const chain = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)
+      const chain = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)
 
       if (!chain) {
         console.warn(`Chain ${notification.chainId} not supported for transaction polling`)

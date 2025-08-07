@@ -8,7 +8,8 @@ export function IconParagraph(props: SVGProps<SVGSVGElement>): ReactElement {
       height={'32'}
       viewBox={'0 0 32 32'}
       fill={'currentColor'}
-      xmlns={'http://www.w3.org/2000/svg'}>
+      xmlns={'http://www.w3.org/2000/svg'}
+    >
       <g clipPath={'url(#clip0_2811_22168)'}>
         <path
           fillRule={'evenodd'}

@@ -23,8 +23,7 @@ export const VaultForwardAPY: FC<{ currentVault: TYDaemonVault }> = ({ currentVa
    ** If there is no forwardAPY, we only have the historical APY to display.
    **********************************************************************************************/
   if (currentVault.apr.forwardAPR.type === '') {
-    const hasZeroAPY =
-      isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
+    const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
     const boostedAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR
     const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 
@@ -36,12 +35,14 @@ export const VaultForwardAPY: FC<{ currentVault: TYDaemonVault }> = ({ currentVa
               <Renderable
                 shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
                 /* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-                fallback={'NEW'}>
+                fallback={'NEW'}
+              >
                 {'⚡️ '}
                 <span
                   className={
                     'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                  }>
+                  }
+                >
                   <RenderAmount
                     shouldHideTooltip={hasZeroBoostedAPY}
                     value={boostedAPY}
@@ -73,7 +74,8 @@ export const VaultForwardAPY: FC<{ currentVault: TYDaemonVault }> = ({ currentVa
           <Renderable
             shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
             /* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-            fallback={'NEW'}>
+            fallback={'NEW'}
+          >
             <RenderAmount
               value={currentVault.apr?.netAPR}
               shouldHideTooltip={hasZeroAPY}
@@ -95,23 +97,17 @@ export const VaultForwardAPY: FC<{ currentVault: TYDaemonVault }> = ({ currentVa
    ** If we are on eth mainnet and the vault has a boost, we display the APY with the boost.
    ** This is mostly valid for Curve vaults.
    **********************************************************************************************/
-  if (
-    isEthMainnet &&
-    currentVault.apr.forwardAPR.composite?.boost > 0 &&
-    !currentVault.apr.extra.stakingRewardsAPR
-  ) {
-    const unBoostedAPY =
-      currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost
+  if (isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !currentVault.apr.extra.stakingRewardsAPR) {
+    const unBoostedAPY = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost
     return (
       <span className={'tooltip'}>
         <div className={'flex flex-col items-end md:text-right'}>
           <b
             className={
               'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-            }>
-            <Renderable
-              shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
-              fallback={'NEW'}>
+            }
+          >
+            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <RenderAmount
                 shouldHideTooltip
                 value={currentVault.apr.forwardAPR.netAPR}
@@ -135,8 +131,7 @@ export const VaultForwardAPY: FC<{ currentVault: TYDaemonVault }> = ({ currentVa
   /**********************************************************************************************
    ** Display the APY including the rewards APY if the rewards APY is greater than 0.
    **********************************************************************************************/
-  const sumOfRewardsAPY =
-    currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
+  const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
   const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
   if (sumOfRewardsAPY > 0) {
     let veYFIRange: [number, number] | undefined
@@ -167,27 +162,19 @@ export const VaultForwardAPY: FC<{ currentVault: TYDaemonVault }> = ({ currentVa
             <Renderable
               shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
               /* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-              fallback={'NEW'}>
+              fallback={'NEW'}
+            >
               <div className={'flex items-baseline gap-x-2 md:flex-col md:items-end md:gap-x-0'}>
                 {estAPYRange ? (
                   <Fragment>
-                    <RenderAmount
-                      shouldHideTooltip
-                      value={estAPYRange[0]}
-                      symbol={'percent'}
-                      decimals={6}
-                    />
+                    <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
                     <span
                       className={
                         'text-xs font-normal text-neutral-900/50 underline decoration-neutral-600/30 decoration-dotted underline-offset-4'
-                      }>
+                      }
+                    >
                       {'proj. '}
-                      <RenderAmount
-                        shouldHideTooltip
-                        value={estAPYRange[1]}
-                        symbol={'percent'}
-                        decimals={6}
-                      />
+                      <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
                     </span>
                   </Fragment>
                 ) : (
@@ -231,7 +218,8 @@ export const VaultForwardAPY: FC<{ currentVault: TYDaemonVault }> = ({ currentVa
           <Renderable
             shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
             /* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-            fallback={'NEW'}>
+            fallback={'NEW'}
+          >
             {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
             <RenderAmount
               shouldHideTooltip
@@ -250,18 +238,15 @@ export const VaultForwardAPY: FC<{ currentVault: TYDaemonVault }> = ({ currentVa
     )
   }
 
-  const hasZeroAPY =
-    isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
+  const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
   return (
     <div className={'relative flex flex-col items-end md:text-right'}>
       <b className={'yearn--table-data-section-item-value'}>
         <Renderable
-          shouldRender={
-            !currentVault.apr.forwardAPR?.type.includes('new') &&
-            !currentVault.apr.type.includes('new')
-          }
+          shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')}
           /* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
-          fallback={'NEW'}>
+          fallback={'NEW'}
+        >
           {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
           <RenderAmount
             shouldHideTooltip={hasZeroAPY}
@@ -271,11 +256,7 @@ export const VaultForwardAPY: FC<{ currentVault: TYDaemonVault }> = ({ currentVa
           />
         </Renderable>
       </b>
-      <APYSubline
-        hasPendleArbRewards={hasPendleArbRewards}
-        hasKelp={hasKelp}
-        hasKelpNEngenlayer={hasKelpNEngenlayer}
-      />
+      <APYSubline hasPendleArbRewards={hasPendleArbRewards} hasKelp={hasKelp} hasKelpNEngenlayer={hasKelpNEngenlayer} />
     </div>
   )
 }

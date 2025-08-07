@@ -79,8 +79,7 @@ export function Hero(): ReactElement {
   return (
     <>
       {/* Desktop Hero Section */}
-      <div
-        className={'hidden w-full justify-center overflow-hidden border-b border-white/10 md:flex'}>
+      <div className={'hidden w-full justify-center overflow-hidden border-b border-white/10 md:flex'}>
         <div
           style={{
             backgroundImage: "url('/landing/hero-background.png')",
@@ -89,9 +88,8 @@ export function Hero(): ReactElement {
             backgroundPosition: 'center',
             overflow: 'hidden'
           }}
-          className={
-            'relative flex h-[600px] w-[2365px] max-w-[2352px] flex-col items-center self-center'
-          }>
+          className={'relative flex h-[600px] w-[2365px] max-w-[2352px] flex-col items-center self-center'}
+        >
           <AnimatedLogos />
           <div className={'flex h-full items-center justify-center'}>
             <div className={'z-20 flex flex-col items-center justify-center gap-12 text-center'}>
@@ -128,7 +126,8 @@ export function Hero(): ReactElement {
           backgroundRepeat: 'no-repeat',
           backgroundSize: '100% 100%',
           backgroundPosition: 'center'
-        }}>
+        }}
+      >
         <div className={'mt-4 flex w-full max-w-sm flex-col items-center gap-4 text-center'}>
           <Image
             src={'/landing/yfi-top-right.png'}

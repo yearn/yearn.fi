@@ -78,10 +78,7 @@ export function useSolverVanilla(): TSolverContext {
         spenderAddress: toAddress(request.current.outputToken.value)
       })
 
-      existingAllowances.current[key] = toNormalizedBN(
-        allowance,
-        request.current.inputToken.decimals
-      )
+      existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
       return existingAllowances.current[key]
     },
     [provider]
@@ -191,8 +188,7 @@ export function useSolverVanilla(): TSolverContext {
         assert(request.current.inputToken, 'Output token is not set')
         assert(request.current.inputAmount, 'Input amount is not set')
         const isV3 =
-          request.current?.version.split('.')?.[0] === '3' ||
-          request.current?.version.split('.')?.[0] === '~3'
+          request.current?.version.split('.')?.[0] === '3' || request.current?.version.split('.')?.[0] === '~3'
 
         if (isV3) {
           const result = await redeemV3Shares({

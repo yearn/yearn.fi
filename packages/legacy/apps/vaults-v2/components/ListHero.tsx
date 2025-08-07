@@ -40,19 +40,9 @@ export function ListHero({
   }, [categories, possibleCategories])
 
   return (
-    <div
-      className={
-        'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'
-      }>
-      <div
-        className={
-          'mt-0 flex w-full flex-col items-center justify-between gap-4 md:mt-0 md:flex-row'
-        }>
-        <div
-          className={cl(
-            'w-full md:w-1/3',
-            shouldHideChainSelector ? 'invisible pointer-events-none' : ''
-          )}>
+    <div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>
+      <div className={'mt-0 flex w-full flex-col items-center justify-between gap-4 md:mt-0 md:flex-row'}>
+        <div className={cl('w-full md:w-1/3', shouldHideChainSelector ? 'invisible pointer-events-none' : '')}>
           <small>{'Select Blockchain'}</small>
           <MultiSelectDropdown
             options={chainOptions}

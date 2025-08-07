@@ -23,12 +23,8 @@ function UnallocatedStrategy({
 }): ReactElement {
   return (
     <div
-      className={cl(
-        'w-full group',
-        'relative transition-all duration-300 ease-in-out',
-        'text-white',
-        'rounded-3xl'
-      )}>
+      className={cl('w-full group', 'relative transition-all duration-300 ease-in-out', 'text-white', 'rounded-3xl')}
+    >
       <div
         className={cl(
           'absolute inset-0 rounded-2xl',
@@ -40,12 +36,11 @@ function UnallocatedStrategy({
       <div
         className={cl(
           'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 md:px-8 px-4 justify-between'
-        )}>
+        )}
+      >
         <div className={cl('col-span-5 flex flex-row items-center gap-4 z-10')}>
           <div className={'flex items-center justify-center'}>
-            <button className={cl('text-sm font-bold transition-all duration-300 ease-in-out')}>
-              {'●'}
-            </button>
+            <button className={cl('text-sm font-bold transition-all duration-300 ease-in-out')}>{'●'}</button>
           </div>
 
           <strong title={'Unallocated'} className={'block truncate font-bold '}>
@@ -58,22 +53,21 @@ function UnallocatedStrategy({
             'md:col-span-7 z-10',
             'grid grid-cols-1 sm:grid-cols-3 md:grid-cols-12 md:gap-4',
             'mt-4 md:mt-0'
-          )}>
+          )}
+        >
           <div
-            className={
-              'items-right flex flex-row justify-between sm:flex-col md:col-span-3 md:text-right'
-            }
-            datatype={'number'}>
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>
-              {'Percentage'}
-            </p>
+            className={'items-right flex flex-row justify-between sm:flex-col md:col-span-3 md:text-right'}
+            datatype={'number'}
+          >
+            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Percentage'}</p>
             <p>{formatPercent(unallocatedPercentage / 100, 0)}</p>
           </div>
           <div
             className={
               'items-right flex flex-row justify-between sm:flex-col md:col-span-4 md:mr-[-20px] md:text-right'
             }
-            datatype={'number'}>
+            datatype={'number'}
+          >
             <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Amount'}</p>
             <p>{unallocatedValue}</p>
           </div>
@@ -83,11 +77,7 @@ function UnallocatedStrategy({
   )
 }
 
-export function VaultDetailsStrategies({
-  currentVault
-}: {
-  currentVault: TYDaemonVault
-}): ReactElement {
+export function VaultDetailsStrategies({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { vaults } = useYearn()
   const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
     defaultSortBy: 'allocationPercentage',
@@ -108,7 +98,7 @@ export function VaultDetailsStrategies({
         status: strategy.status
       })
     }
-    return _vaultList.filter(vault => !!vault.address)
+    return _vaultList.filter((vault) => !!vault.address)
   }, [vaults, currentVault])
 
   const strategyList = useMemo((): TYDaemonVaultStrategy[] => {
@@ -145,7 +135,7 @@ export function VaultDetailsStrategies({
     mergedList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0)
 
   const filteredVaultList = useMemo(() => {
-    const strategies = mergedList.filter(vault => vault.status !== 'not_active')
+    const strategies = mergedList.filter((vault) => vault.status !== 'not_active')
     return strategies
   }, [mergedList])
 
@@ -154,18 +144,14 @@ export function VaultDetailsStrategies({
    **	is done via a custom method that will sort the vaults based on the sortBy and
    **	sortDirection values.
    **********************************************************************************************/
-  const sortedVaultsToDisplay = useSortVaults(
-    filteredVaultList,
-    sortBy,
-    sortDirection
-  ) as (TYDaemonVault & {
+  const sortedVaultsToDisplay = useSortVaults(filteredVaultList, sortBy, sortDirection) as (TYDaemonVault & {
     details: TYDaemonVaultStrategy['details']
     status: TYDaemonVaultStrategy['status']
     netAPR: TYDaemonVaultStrategy['netAPR']
   })[]
 
   const allocationChartData = useMemo(() => {
-    const strategyData = filteredVaultList.map(strategy => ({
+    const strategyData = filteredVaultList.map((strategy) => ({
       id: strategy.address,
       name: strategy.name,
       value: (strategy.details?.debtRatio || 0) / 100,
@@ -189,13 +175,7 @@ export function VaultDetailsStrategies({
         : null
 
     return [...strategyData, unallocatedData].filter(Boolean) as TAllocationChartData[]
-  }, [
-    currentVault.token?.decimals,
-    filteredVaultList,
-    tokenPrice,
-    unallocatedPercentage,
-    unallocatedValue
-  ])
+  }, [currentVault.token?.decimals, filteredVaultList, tokenPrice, unallocatedPercentage, unallocatedValue])
 
   const isVaultListEmpty = mergedList.length === 0
   const isFilteredVaultListEmpty = filteredVaultList.length === 0
@@ -206,7 +186,8 @@ export function VaultDetailsStrategies({
         <div
           className={
             'grid w-full grid-cols-1 place-content-start gap-y-6 md:gap-x-6 lg:max-w-[846px] lg:grid-cols-9 lg:gap-y-4'
-          }>
+          }
+        >
           <div className={'col-span-9 flex w-full flex-col'}>
             <VaultsV3ListHead
               sortBy={sortBy}
@@ -243,13 +224,11 @@ export function VaultDetailsStrategies({
               ]}
             />
             <div className={'grid gap-4'}>
-              {sortedVaultsToDisplay.map(vault => (
+              {sortedVaultsToDisplay.map((vault) => (
                 <VaultsListStrategy
                   key={`${vault?.chainID || currentVault.chainID}_${vault.address}`}
                   isUnallocated={
-                    vault.status === 'unallocated' ||
-                    vault.details?.totalDebt === '0' ||
-                    !vault.details?.debtRatio
+                    vault.status === 'unallocated' || vault.details?.totalDebt === '0' || !vault.details?.debtRatio
                   }
                   details={vault.details}
                   chainId={vault.chainID || currentVault.chainID}
@@ -259,10 +238,8 @@ export function VaultDetailsStrategies({
                   name={vault.name}
                   tokenAddress={vault.token?.address || currentVault.token.address}
                   allocation={formatCounterValue(
-                    toNormalizedBN(
-                      vault.details?.totalDebt || 0,
-                      vault.token?.decimals || currentVault.token?.decimals
-                    ).display,
+                    toNormalizedBN(vault.details?.totalDebt || 0, vault.token?.decimals || currentVault.token?.decimals)
+                      .display,
                     tokenPrice
                   )}
                   apr={vault.netAPR || vault.apr?.forwardAPR.netAPR || vault.apr?.netAPR}
@@ -303,10 +280,7 @@ export function VaultDetailsStrategies({
       </div>
 
       <div className={cl(isFilteredVaultListEmpty ? '' : 'hidden')}>
-        <div
-          className={
-            'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'
-          }>
+        <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
           <b className={'text-center text-lg'}>
             {isVaultListEmpty ? 'This vault IS the strategy' : 'No strategies found'}
           </b>

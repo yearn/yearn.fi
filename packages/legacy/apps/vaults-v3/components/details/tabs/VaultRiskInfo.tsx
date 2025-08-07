@@ -5,7 +5,7 @@ import { type ReactElement, useMemo } from 'react'
 export function VaultRiskInfo({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const hasRiskScore = useMemo(() => {
     let sum = 0
-    currentVault.info.riskScore?.forEach(score => {
+    currentVault.info.riskScore?.forEach((score) => {
       sum += score
     })
     return sum
@@ -19,7 +19,8 @@ export function VaultRiskInfo({ currentVault }: { currentVault: TYDaemonVault })
             className={cl(
               'grid w-full grid-cols-12 items-center gap-6',
               hasRiskScore ? 'border-b border-neutral-900/20 pb-10 mb-10' : ''
-            )}>
+            )}
+          >
             <div className={'col-span-10'}>
               <b className={'block text-neutral-900'}>{'Risk Level'}</b>
               <small className={'mt-1 block w-3/4 text-xs text-neutral-900/40'}>
@@ -30,9 +31,7 @@ export function VaultRiskInfo({ currentVault }: { currentVault: TYDaemonVault })
             </div>
             <div className={'col-span-2 flex items-center justify-center font-bold'}>
               <span>
-                <b className={'font-number text-xl text-neutral-900'}>
-                  {currentVault.info.riskLevel}
-                </b>
+                <b className={'font-number text-xl text-neutral-900'}>{currentVault.info.riskLevel}</b>
                 <span className={'text-neutral-900/40'}>{' / 5'}</span>
               </span>
             </div>
@@ -42,7 +41,8 @@ export function VaultRiskInfo({ currentVault }: { currentVault: TYDaemonVault })
             className={cl(
               'grid w-full grid-cols-12 items-center mb-6',
               currentVault.info.riskScoreComment ? '' : 'hidden'
-            )}>
+            )}
+          >
             <div className={'col-span-10'}>
               <p>{'Comment'}</p>
               <small className={'whitespace-break-spaces text-xs text-neutral-900/40'}>
@@ -51,11 +51,7 @@ export function VaultRiskInfo({ currentVault }: { currentVault: TYDaemonVault })
             </div>
           </div>
 
-          <div
-            className={cl(
-              'grid w-full grid-cols-12 items-center gap-6',
-              hasRiskScore ? '' : 'hidden'
-            )}>
+          <div className={cl('grid w-full grid-cols-12 items-center gap-6', hasRiskScore ? '' : 'hidden')}>
             <div className={'col-span-10'}>
               <p>{'Review'}</p>
               <small className={'whitespace-break-spaces text-xs text-neutral-900/40'}>

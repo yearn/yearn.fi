@@ -14,8 +14,7 @@ function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
       {nav.map(
         (option): ReactElement => (
           <Link key={option.path} target={option.target} href={option.path}>
-            <p
-              className={`yearn--header-nav-item ${currentPathName === option.path ? 'active' : ''}`}>
+            <p className={`yearn--header-nav-item ${currentPathName === option.path ? 'active' : ''}`}>
               {option?.label || 'Unknown'}
             </p>
           </Link>
@@ -48,10 +47,7 @@ export function LandingAppHeader(): ReactElement {
   return (
     <div id={'head'} className={'inset-x-0 top-0 z-50 mt-4 w-full md:mt-7'}>
       <div className={'w-full'}>
-        <header
-          className={
-            'flex max-w-[1232px] items-center gap-4 py-1 md:justify-between md:!px-10 md:py-4'
-          }>
+        <header className={'flex max-w-[1232px] items-center gap-4 py-1 md:justify-between md:!px-10 md:py-4'}>
           <div className={'hidden flex-row items-center gap-x-3 md:flex'}>
             <Link href={'/'}>
               <TypeMarkYearn className={'h-6 w-auto'} color={'#E1E1E1'} />
@@ -66,10 +62,9 @@ export function LandingAppHeader(): ReactElement {
           <Navbar currentPathName={pathname || ''} nav={menu} />
           <div className={'flex md:hidden'}>
             <button
-              className={
-                'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'
-              }
-              onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
+              className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
+              onClick={(): void => setIsMenuOpen(!isMenuOpen)}
+            >
               <span className={'sr-only'}>{'Open menu'}</span>
               <IconBurgerPlain />
             </button>
@@ -81,7 +76,8 @@ export function LandingAppHeader(): ReactElement {
         shouldUseNetworks={true}
         isOpen={isMenuOpen}
         onClose={(): void => setIsMenuOpen(false)}
-        supportedNetworks={[]}>
+        supportedNetworks={[]}
+      >
         {menu?.map(
           (option): ReactElement => (
             <Link key={option.path} href={option.path}>

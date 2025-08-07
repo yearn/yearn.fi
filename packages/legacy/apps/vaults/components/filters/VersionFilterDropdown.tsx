@@ -29,7 +29,7 @@ export const VersionFilterDropdown: React.FC<{
   )
 
   const handleSelect = (options: TMultiSelectOptionProps[]): void => {
-    const selectedOption = options.find(option => option.isSelected)
+    const selectedOption = options.find((option) => option.isSelected)
     if (selectedOption) {
       onVersionChange(selectedOption.label)
     }
@@ -40,9 +40,7 @@ export const VersionFilterDropdown: React.FC<{
       <MultiSelectDropdown
         options={versionOptions}
         onSelect={handleSelect}
-        buttonClassName={
-          'mb-0 h-full rounded-full bg-white/10 px-3 py-2 text-[14px] text-neutral-900'
-        }
+        buttonClassName={'mb-0 h-full rounded-full bg-white/10 px-3 py-2 text-[14px] text-neutral-900'}
         comboboxOptionsClassName={'rounded-lg border border-white/20 bg-black p-2 shadow-xl'}
         customDefaultLabel={selectedVersion}
       />

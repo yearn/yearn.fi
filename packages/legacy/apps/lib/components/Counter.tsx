@@ -46,11 +46,7 @@ export function Counter({
                 hasBeenSet = true
                 break
               }
-              const formatedValue = formatAmount(
-                value.toFixed(decimals),
-                decimalToDisplay,
-                decimalToDisplay
-              )
+              const formatedValue = formatAmount(value.toFixed(decimals), decimalToDisplay, decimalToDisplay)
               if (
                 Number.isNaN(parseAmount(formatedValue)) ||
                 formatedValue === 'NaN' ||

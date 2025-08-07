@@ -32,10 +32,9 @@ export function MobileTopNav({
       <div className={'flex w-full items-center justify-between bg-gray-900 p-4'}>
         <div className={'flex items-center gap-4'}>
           <button
-            className={
-              'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'
-            }
-            onClick={() => setIsNavbarOpen(prev => !prev)}>
+            className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
+            onClick={() => setIsNavbarOpen((prev) => !prev)}
+          >
             <span className={'sr-only'}>{'Open menu'}</span>
             <IconBurgerPlain />
           </button>
@@ -44,15 +43,17 @@ export function MobileTopNav({
             onClick={() => {
               router.push('/')
               setIsSearchOpen(false)
-            }}>
+            }}
+          >
             <LogoYearn className={'size-8'} back={'text-blue-500'} front={'text-white'} />
           </button>
         </div>
         <button
           onClick={() => {
             setIsNavbarOpen(false)
-            setIsSearchOpen(prev => !prev)
-          }}>
+            setIsSearchOpen((prev) => !prev)
+          }}
+        >
           <IconSearch className={'text-white'} />
         </button>
       </div>
@@ -60,9 +61,7 @@ export function MobileTopNav({
       {isSearchOpen && (
         <div className={'!w-full bg-gray-900 pb-6 pl-8 pr-6'}>
           <SearchBar
-            className={
-              '!max-w-none !rounded-lg !border-0 !border-none !bg-gray-600/40 text-white !outline-none '
-            }
+            className={'!max-w-none !rounded-lg !border-0 !border-none !bg-gray-600/40 text-white !outline-none '}
             searchValue={configuration.searchValue}
             onSearch={(value: string) => dispatch({ searchValue: value })}
             searchPlaceholder={'Search App'}

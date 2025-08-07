@@ -104,12 +104,8 @@ export function useVaultFilter(
 
   // Specific filter
   const highlightedVaults = useFilteredVaults(vaults, ({ info }): boolean => info.isHighlighted)
-  const holdingsVaults = useFilteredVaults(vaults, (vault): boolean =>
-    filterHoldingsCallback(vault, false, false)
-  )
-  const holdingsV3Vaults = useFilteredVaults(vaults, (vault): boolean =>
-    filterHoldingsCallback(vault, false, true)
-  )
+  const holdingsVaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false, false))
+  const holdingsV3Vaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false, true))
 
   // V3 Filtered Vaults
   const singleVaults = useFilteredVaults(
@@ -134,12 +130,9 @@ export function useVaultFilter(
   const stablesVaults = useFilteredVaults(vaults, ({ category }) => category === 'Stablecoin')
   const balancerVaults = useFilteredVaults(vaults, ({ category }) => category === 'Balancer')
   const cryptoVaults = useFilteredVaults(vaults, ({ category }) => category === 'Volatile')
-  const curveFactoryVaults = useFilteredVaults(
-    vaults,
-    vault => vault.category === 'Curve' && isAutomatedVault(vault)
-  )
-  const migratableVaults = useFilteredVaults(vaultsMigrations, v => filterMigrationCallback(v))
-  const retiredVaults = useFilteredVaults(vaultsRetired, v => filterMigrationCallback(v))
+  const curveFactoryVaults = useFilteredVaults(vaults, (vault) => vault.category === 'Curve' && isAutomatedVault(vault))
+  const migratableVaults = useFilteredVaults(vaultsMigrations, (v) => filterMigrationCallback(v))
+  const retiredVaults = useFilteredVaults(vaultsRetired, (v) => filterMigrationCallback(v))
 
   /* 🔵 - Yearn Finance **************************************************************************
    **	First, we need to determine in which category we are. The activeVaults function will
@@ -181,8 +174,7 @@ export function useVaultFilter(
 
     if (categories?.includes('featured')) {
       _vaultList.sort(
-        (a, b): number =>
-          (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0)
+        (a, b): number => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0)
       )
       _vaultList = _vaultList.slice(0, 10)
     }
@@ -219,8 +211,7 @@ export function useVaultFilter(
 
     //remove duplicates
     _vaultList = _vaultList.filter(
-      (vault, index, self): boolean =>
-        index === self.findIndex((v): boolean => v.address === vault.address)
+      (vault, index, self): boolean => index === self.findIndex((v): boolean => v.address === vault.address)
     )
 
     // Remove v3 vaults

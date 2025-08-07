@@ -34,15 +34,11 @@ export const InfoTooltip = ({ text, size, iconClassName, className }: TProps): R
 
   return (
     <sup className={'tooltip font-light transition-opacity'}>
-      <IconQuestion
-        className={cl('absolute h-3 w-3 md:-right-4 -right-3 top-0', iconStyle, iconClassName)}
-      />
+      <IconQuestion className={cl('absolute h-3 w-3 md:-right-4 -right-3 top-0', iconStyle, iconClassName)} />
       <span suppressHydrationWarning className={cl('tooltiptext bottom-full mb-1', className)}>
         <div
-          className={cl(
-            'w-fit border border-neutral-300 bg-neutral-100 text-center text-neutral-900',
-            tooltipStyle
-          )}>
+          className={cl('w-fit border border-neutral-300 bg-neutral-100 text-center text-neutral-900', tooltipStyle)}
+        >
           {text}
         </div>
       </span>

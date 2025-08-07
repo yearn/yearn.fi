@@ -66,32 +66,28 @@ const SecurityCard: FC<{
         className={`${bgColor} group relative cursor-pointer overflow-hidden rounded-2xl transition-all duration-300`}
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}>
+        onMouseLeave={handleMouseLeave}
+      >
         {isHovered && (
           <div
-            className={
-              'pointer-events-none absolute inset-0 opacity-60 transition-opacity duration-300'
-            }
+            className={'pointer-events-none absolute inset-0 opacity-60 transition-opacity duration-300'}
             style={{
               background: `radial-gradient(200px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.25) 0%, transparent 100%)`
             }}
           />
         )}
         <div className={'group-hover:bg/80 relative z-10  p-8 transition-all duration-300'}>
-          <h3
-            className={'mb-4 text-3xl transition-colors duration-300 group-hover:text-neutral-900'}>
-            {title}
-          </h3>
+          <h3 className={'mb-4 text-3xl transition-colors duration-300 group-hover:text-neutral-900'}>{title}</h3>
           <p
             className={
               'mb-4 text-[18px] text-neutral-900/70 transition-colors duration-300 group-hover:text-neutral-900/90 '
-            }>
+            }
+          >
             {description}
           </p>
           <div
-            className={
-              'group-hover:text-blue-200 flex items-center text-neutral-900 transition-colors duration-300'
-            }>
+            className={'group-hover:text-blue-200 flex items-center text-neutral-900 transition-colors duration-300'}
+          >
             {'Learn More →'}
           </div>
         </div>
@@ -102,8 +98,7 @@ const SecurityCard: FC<{
 
 export const Security: FC = () => (
   <section className={'flex w-full justify-center bg-white/5 py-16 lg:py-32'}>
-    <div
-      className={'flex w-full max-w-[1180px] flex-col items-center justify-between  lg:flex-row '}>
+    <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between  lg:flex-row '}>
       <div className={'w-full max-w-7xl px-4'}>
         <div className={'px-2'}>
           <SectionHeader

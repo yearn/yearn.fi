@@ -59,9 +59,7 @@ export const TOKENIZED_STRATEGY_ABI = [
   },
   {
     anonymous: false,
-    inputs: [
-      { indexed: true, internalType: 'address', name: 'newEmergencyAdmin', type: 'address' }
-    ],
+    inputs: [{ indexed: true, internalType: 'address', name: 'newEmergencyAdmin', type: 'address' }],
     name: 'UpdateEmergencyAdmin',
     type: 'event'
   },
@@ -79,9 +77,7 @@ export const TOKENIZED_STRATEGY_ABI = [
   },
   {
     anonymous: false,
-    inputs: [
-      { indexed: true, internalType: 'address', name: 'newPendingManagement', type: 'address' }
-    ],
+    inputs: [{ indexed: true, internalType: 'address', name: 'newPendingManagement', type: 'address' }],
     name: 'UpdatePendingManagement',
     type: 'event'
   },
@@ -106,9 +102,7 @@ export const TOKENIZED_STRATEGY_ABI = [
   },
   {
     anonymous: false,
-    inputs: [
-      { indexed: false, internalType: 'uint256', name: 'newProfitMaxUnlockTime', type: 'uint256' }
-    ],
+    inputs: [{ indexed: false, internalType: 'uint256', name: 'newProfitMaxUnlockTime', type: 'uint256' }],
     name: 'UpdateProfitMaxUnlockTime',
     type: 'event'
   },

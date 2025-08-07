@@ -24,8 +24,7 @@ function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
       {nav.map(
         (option): ReactElement => (
           <Link key={option.path} target={option.target} href={option.path}>
-            <p
-              className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}>
+            <p className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}>
               {option?.label || 'Unknown'}
             </p>
           </Link>
@@ -67,7 +66,8 @@ function WalletSelector(): ReactElement {
         } else {
           openLoginModal()
         }
-      }}>
+      }}
+    >
       <p suppressHydrationWarning className={'yearn--header-nav-item !text-xs md:!text-sm'}>
         {walletIdentity ? (
           walletIdentity
@@ -77,7 +77,8 @@ function WalletSelector(): ReactElement {
             <span
               className={
                 'text-neutral-0 relative hidden h-8 cursor-pointer items-center justify-center rounded border border-transparent bg-neutral-900 px-2 text-xs font-normal transition-all hover:bg-neutral-800 md:flex'
-              }>
+              }
+            >
               {'Connect wallet'}
             </span>
           </span>
@@ -147,8 +148,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     <div id={'head'} className={'inset-x-0 top-0 z-50 w-full'}>
       <div className={'w-full'}>
         <header className={'yearn--header mx-auto max-w-6xl !px-0'}>
-          <div
-            className={'direction-row flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'}>
+          <div className={'direction-row flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'}>
             <div className={'flex justify-center'}>
               <LogoPopover />
             </div>
@@ -162,15 +162,12 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
           </div>
           <div className={'flex w-1/3 items-center justify-end'}>
             <button
-              className={
-                'yearn--header-nav-item hover:bg-grey-200 relative rounded-full p-2 transition-colors'
-              }
-              onClick={(): void => setShouldOpenCurtain(true)}>
+              className={'yearn--header-nav-item hover:bg-grey-200 relative rounded-full p-2 transition-colors'}
+              onClick={(): void => setShouldOpenCurtain(true)}
+            >
               <IconBell className={'text-grey-900 size-4 font-bold transition-colors'} />
 
-              <div
-                className={cl('absolute right-1 top-1 size-2 rounded-full', notificationDotColor)}
-              />
+              <div className={cl('absolute right-1 top-1 size-2 rounded-full', notificationDotColor)} />
             </button>
             <WalletSelector />
           </div>
@@ -181,7 +178,8 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
         shouldUseNetworks={true}
         isOpen={isMenuOpen}
         onClose={(): void => setIsMenuOpen(false)}
-        supportedNetworks={props.supportedNetworks}>
+        supportedNetworks={props.supportedNetworks}
+      >
         {menu?.map(
           (option): ReactElement => (
             <Link key={option.path} href={option.path}>

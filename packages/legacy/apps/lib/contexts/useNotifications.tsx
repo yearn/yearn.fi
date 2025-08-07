@@ -1,9 +1,5 @@
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
-import type {
-  TNotification,
-  TNotificationStatus,
-  TNotificationsContext
-} from '@lib/types/notifications'
+import type { TNotification, TNotificationStatus, TNotificationsContext } from '@lib/types/notifications'
 import { NotificationsCurtain } from '@vaults-v3/components/notifications/NotificationsCurtain'
 import { useRouter } from 'next/router'
 import type React from 'react'
@@ -24,11 +20,7 @@ const defaultProps: TNotificationsContext = {
 }
 
 const NotificationsContext = createContext<TNotificationsContext>(defaultProps)
-export const WithNotifications = ({
-  children
-}: {
-  children: React.ReactElement
-}): React.ReactElement => {
+export const WithNotifications = ({ children }: { children: React.ReactElement }): React.ReactElement => {
   const [cachedEntries, setCachedEntries] = useState<TNotification[]>([])
   const [entryNonce, setEntryNonce] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(true)
@@ -43,8 +35,7 @@ export const WithNotifications = ({
   const [notificationStatus, setNotificationStatus] = useState<TNotificationStatus | null>(null)
 
   const [shouldOpenCurtain, setShouldOpenCurtain] = useState(false)
-  const { add, getAll, update, deleteByID, getByID } =
-    useIndexedDBStore<TNotification>('notifications')
+  const { add, getAll, update, deleteByID, getByID } = useIndexedDBStore<TNotification>('notifications')
 
   /************************************************************************************************
    * This useAsyncTrigger hook is responsible for fetching all notifications from the IndexedDB
@@ -90,7 +81,7 @@ export const WithNotifications = ({
 
         if (notification) {
           await update({ ...notification, ...entry })
-          setEntryNonce(nonce => nonce + 1)
+          setEntryNonce((nonce) => nonce + 1)
           setNotificationStatus(entry?.status || null)
         } else {
           console.warn(`Notification with id ${id} not found`)
@@ -106,7 +97,7 @@ export const WithNotifications = ({
     async (notification: TNotification): Promise<number> => {
       try {
         const id = await add(notification)
-        setEntryNonce(nonce => nonce + 1)
+        setEntryNonce((nonce) => nonce + 1)
         setNotificationStatus(notification.status)
         return id
       } catch (error) {
@@ -122,7 +113,7 @@ export const WithNotifications = ({
     async (id: number): Promise<void> => {
       try {
         // Optimistically update the local state first
-        setCachedEntries(currentEntries => currentEntries.filter(entry => entry.id !== id))
+        setCachedEntries((currentEntries) => currentEntries.filter((entry) => entry.id !== id))
 
         // Then delete from IndexedDB
         await deleteByID(id)
@@ -133,7 +124,7 @@ export const WithNotifications = ({
         setError('Failed to delete notification')
 
         // Revert the optimistic update by refetching from DB
-        setEntryNonce(nonce => nonce + 1)
+        setEntryNonce((nonce) => nonce + 1)
       }
     },
     [deleteByID]

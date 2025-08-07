@@ -20,8 +20,7 @@ export function useLocalStorage<T>(
         return initialValue
       }
       // Get from local storage by key
-      const previousKey =
-        options?.previousVersion !== undefined ? `${key}${options.previousVersion}` : key
+      const previousKey = options?.previousVersion !== undefined ? `${key}${options.previousVersion}` : key
       const previousItem = window.localStorage.getItem(previousKey)
       const item = window.localStorage.getItem(_key)
 

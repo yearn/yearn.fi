@@ -1,10 +1,4 @@
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
-  Transition
-} from '@headlessui/react'
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react'
 import { Renderable } from '@lib/components/Renderable'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { IconAddToMetamask } from '@lib/icons/IconAddToMetamask'
@@ -41,12 +35,7 @@ type TExplorerLinkProps = {
   currentVaultAddress: string
 }
 
-function Tabs({
-  hasStrategies,
-  hasRisk,
-  selectedAboutTabIndex,
-  setSelectedAboutTabIndex
-}: TTabs): ReactElement {
+function Tabs({ hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutTabIndex }: TTabs): ReactElement {
   const router = useRouter()
 
   const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => {
@@ -90,7 +79,8 @@ function Tabs({
                   }
                 )
                 setSelectedAboutTabIndex(tab.value)
-              }}>
+              }}
+            >
               <p
                 title={tab.label}
                 aria-selected={selectedAboutTabIndex === tab.value}
@@ -99,7 +89,8 @@ function Tabs({
                   selectedAboutTabIndex === tab.value
                     ? '!text-neutral-900'
                     : '!text-neutral-900/50 hover:!text-neutral-900'
-                )}>
+                )}
+              >
                 {tab.label}
               </p>
             </button>
@@ -107,22 +98,19 @@ function Tabs({
         )}
       </nav>
       <div className={'relative z-50'}>
-        <Listbox
-          value={selectedAboutTabIndex}
-          onChange={(value): void => setSelectedAboutTabIndex(value)}>
+        <Listbox value={selectedAboutTabIndex} onChange={(value): void => setSelectedAboutTabIndex(value)}>
           {({ open }): ReactElement => (
             <>
               <ListboxButton
                 className={
                   'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 pl-4 font-bold focus:border-neutral-900 md:hidden'
-                }>
+                }
+              >
                 <div className={'relative flex flex-row items-center'}>
                   {tabs[selectedAboutTabIndex]?.label || 'Menu'}
                 </div>
                 <div className={'absolute right-2'}>
-                  <IconChevron
-                    className={`size-4 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`}
-                  />
+                  <IconChevron className={`size-4 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`} />
                 </div>
               </ListboxButton>
               <Transition
@@ -133,14 +121,12 @@ function Tabs({
                 enterTo={'transform scale-100 opacity-100'}
                 leave={'transition duration-75 ease-out'}
                 leaveFrom={'transform scale-100 opacity-100'}
-                leaveTo={'transform scale-95 opacity-0'}>
+                leaveTo={'transform scale-95 opacity-0'}
+              >
                 <ListboxOptions className={'yearn--listbox-menu'}>
                   {tabs.map(
                     (tab): ReactElement => (
-                      <ListboxOption
-                        className={'yearn--listbox-menu-item'}
-                        key={tab.value}
-                        value={tab.value}>
+                      <ListboxOption className={'yearn--listbox-menu-item'} key={tab.value} value={tab.value}>
                         {tab.label}
                       </ListboxOption>
                     )
@@ -158,12 +144,7 @@ function Tabs({
 function AddToWalletLink({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { provider } = useWeb3()
 
-  async function onAddTokenToMetamask(
-    address: string,
-    symbol: string,
-    decimals: number,
-    image: string
-  ): Promise<void> {
+  async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
     try {
       assert(provider, 'Provider is not set')
       const walletClient = await getConnectorClient(retrieveConfig())
@@ -191,46 +172,32 @@ function AddToWalletLink({ currentVault }: { currentVault: TYDaemonVault }): Rea
           currentVault.decimals,
           `https://token-assets-one.vercel.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
         )
-      }}>
+      }}
+    >
       <span className={'sr-only'}>{'Add to wallet'}</span>
-      <IconAddToMetamask
-        className={'size-5 text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'}
-      />
+      <IconAddToMetamask className={'size-5 text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'} />
     </button>
   )
 }
 
-function ExplorerLink({
-  explorerBaseURI,
-  currentVaultAddress
-}: TExplorerLinkProps): ReactElement | null {
+function ExplorerLink({ explorerBaseURI, currentVaultAddress }: TExplorerLinkProps): ReactElement | null {
   return (
-    <a
-      href={`${explorerBaseURI}/address/${currentVaultAddress}`}
-      target={'_blank'}
-      rel={'noopener noreferrer'}>
+    <a href={`${explorerBaseURI}/address/${currentVaultAddress}`} target={'_blank'} rel={'noopener noreferrer'}>
       <span className={'sr-only'}>{'Open in explorer'}</span>
       <IconLinkOut
-        className={
-          'size-5 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'
-        }
+        className={'size-5 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'}
       />
     </a>
   )
 }
 
-export function VaultDetailsTabsWrapper({
-  currentVault
-}: {
-  currentVault: TYDaemonVault
-}): ReactElement {
+export function VaultDetailsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0)
   const hasStrategies = Number(currentVault.strategies?.length || 0) > 0
 
   return (
     <div className={'col-span-12 mt-6 flex flex-col rounded-3xl bg-neutral-100'}>
-      <div
-        className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
+      <div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
         <Tabs
           hasStrategies={hasStrategies}
           hasRisk={true}
@@ -238,10 +205,7 @@ export function VaultDetailsTabsWrapper({
           setSelectedAboutTabIndex={setSelectedAboutTabIndex}
         />
 
-        <div
-          className={
-            'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'
-          }>
+        <div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
           <AddToWalletLink currentVault={currentVault} />
           <ExplorerLink
             explorerBaseURI={getNetwork(currentVault.chainID)?.defaultBlockExplorer}

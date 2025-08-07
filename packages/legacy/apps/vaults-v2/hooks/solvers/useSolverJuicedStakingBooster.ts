@@ -27,28 +27,25 @@ export function useSolverJuicedStakingBooster(): TSolverContext {
    ** deposit. It will set the request to the provided value, as it's required to get the quote,
    ** and will call getQuote to get the current quote for the provided request.
    *********************************************************************************************/
-  const init = useCallback(
-    async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
-      if (isSolverDisabled(Solver.enum.JuicedStakingBooster)) {
-        return undefined
-      }
-      request.current = _request
-      const estimateOut = await getVaultEstimateOut({
-        inputToken: toAddress(_request.inputToken.value),
-        outputToken: toAddress(_request.outputToken.value),
-        inputDecimals: _request.inputToken.decimals,
-        outputDecimals: _request.outputToken.decimals,
-        inputAmount: _request.inputAmount,
-        isDepositing: _request.isDepositing,
-        chainID: _request.chainID,
-        version: _request.version,
-        from: toAddress(_request.from)
-      })
-      latestQuote.current = estimateOut
-      return latestQuote.current
-    },
-    []
-  )
+  const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
+    if (isSolverDisabled(Solver.enum.JuicedStakingBooster)) {
+      return undefined
+    }
+    request.current = _request
+    const estimateOut = await getVaultEstimateOut({
+      inputToken: toAddress(_request.inputToken.value),
+      outputToken: toAddress(_request.outputToken.value),
+      inputDecimals: _request.inputToken.decimals,
+      outputDecimals: _request.outputToken.decimals,
+      inputAmount: _request.inputAmount,
+      isDepositing: _request.isDepositing,
+      chainID: _request.chainID,
+      version: _request.version,
+      from: toAddress(_request.from)
+    })
+    latestQuote.current = estimateOut
+    return latestQuote.current
+  }, [])
 
   /**********************************************************************************************
    ** Retrieve the allowance for the token to be used by the solver. This will be used to
@@ -76,10 +73,7 @@ export function useSolverJuicedStakingBooster(): TSolverContext {
         tokenAddress: toAddress(request.current.inputToken.value),
         spenderAddress: toAddress(YGAUGES_ZAP_ADDRESS)
       })
-      existingAllowances.current[key] = toNormalizedBN(
-        allowance,
-        request.current.inputToken.decimals
-      )
+      existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
       return existingAllowances.current[key]
     },
     [provider]

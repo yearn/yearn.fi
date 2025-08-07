@@ -30,13 +30,9 @@ export function CarouselControls({
               className={'p-[2px]'}
               onClick={() => {
                 onDotsClick(index + 1)
-              }}>
-              <div
-                className={cl(
-                  'size-2 rounded-full',
-                  currentPage === index + 1 ? 'bg-white' : 'bg-gray-500'
-                )}
-              />
+              }}
+            >
+              <div className={cl('size-2 rounded-full', currentPage === index + 1 ? 'bg-white' : 'bg-gray-500')} />
             </button>
           ))}
       </div>

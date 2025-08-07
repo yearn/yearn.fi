@@ -14,10 +14,7 @@ function useAsyncTrigger(effect: () => Promise<void>, deps: DependencyList): () 
   return asyncEffectInCallback
 }
 
-function useAsyncTriggerWithArgs(
-  effect: (args?: unknown) => Promise<void>,
-  deps: DependencyList
-): () => Promise<void> {
+function useAsyncTriggerWithArgs(effect: (args?: unknown) => Promise<void>, deps: DependencyList): () => Promise<void> {
   // biome-ignore lint/correctness/useExhaustiveDependencies: effect is not valid dep here
   const asyncEffectInCallback = useCallback(
     async (...args: unknown[]): Promise<void> => {

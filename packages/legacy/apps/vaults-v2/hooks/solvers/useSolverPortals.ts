@@ -16,22 +16,11 @@ import {
 } from '@lib/utils'
 import { allowanceKey } from '@lib/utils/helpers'
 import type { TTxResponse, TTxStatus } from '@lib/utils/wagmi'
-import {
-  allowanceOf,
-  approveERC20,
-  defaultTxStatus,
-  retrieveConfig,
-  toWagmiProvider
-} from '@lib/utils/wagmi'
+import { allowanceOf, approveERC20, defaultTxStatus, retrieveConfig, toWagmiProvider } from '@lib/utils/wagmi'
 import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
 import { isValidPortalsErrorObject } from '@vaults-v2/hooks/helpers/isValidPortalsErrorObject'
 import type { TPortalsEstimate } from '@vaults-v2/hooks/usePortalsApi'
-import {
-  getPortalsApproval,
-  getPortalsEstimate,
-  getPortalsTx,
-  PORTALS_NETWORK
-} from '@vaults-v2/hooks/usePortalsApi'
+import { getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK } from '@vaults-v2/hooks/usePortalsApi'
 import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
 import { Solver } from '@vaults-v2/types/solvers'
 import axios from 'axios'
@@ -135,10 +124,7 @@ export function useSolverPortals(): TSolverContext {
    ** call getQuote to get the current quote for the provided request.current.
    **********************************************************************************************/
   const init = useCallback(
-    async (
-      _request: TInitSolverArgs,
-      shouldLogError?: boolean
-    ): Promise<TNormalizedBN | undefined> => {
+    async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN | undefined> => {
       try {
         if (isSolverDisabled(Solver.enum.Portals)) {
           return undefined
@@ -194,10 +180,7 @@ export function useSolverPortals(): TSolverContext {
           return undefined
         }
         latestQuote.current = data
-        return toNormalizedBN(
-          data?.outputAmount || 0,
-          request?.current?.outputToken?.decimals || 18
-        )
+        return toNormalizedBN(data?.outputAmount || 0, request?.current?.outputToken?.decimals || 18)
       } catch (error) {
         // Catch any synchronous errors that might occur during initialization
         console.error('Portals solver init error:', error)
@@ -262,9 +245,7 @@ export function useSolverPortals(): TSolverContext {
             await switchChain(retrieveConfig(), { chainId: request.current.chainID })
           } catch (error) {
             const chainSwitchError =
-              error instanceof BaseError
-                ? new Error(`Chain switch failed: ${error.shortMessage}`)
-                : (error as Error)
+              error instanceof BaseError ? new Error(`Chain switch failed: ${error.shortMessage}`) : (error as Error)
 
             console.error('Chain switch error:', chainSwitchError.message)
             toast({
@@ -336,80 +317,70 @@ export function useSolverPortals(): TSolverContext {
    ** process and displayed to the user.
    **************************************************************************/
   const expectedOut = useMemo((): TNormalizedBN => {
-    if (
-      !latestQuote?.current?.outputAmount ||
-      !request.current ||
-      isSolverDisabled(Solver.enum.Portals)
-    ) {
+    if (!latestQuote?.current?.outputAmount || !request.current || isSolverDisabled(Solver.enum.Portals)) {
       return zeroNormalizedBN
     }
-    return toNormalizedBN(
-      latestQuote?.current?.outputAmount,
-      request?.current?.outputToken?.decimals || 18
-    )
+    return toNormalizedBN(latestQuote?.current?.outputAmount, request?.current?.outputToken?.decimals || 18)
   }, [])
 
   /* 🔵 - Yearn Finance ******************************************************
    ** Retrieve the allowance for the token to be used by the solver. This will
    ** be used to determine if the user should approve the token or not.
    **************************************************************************/
-  const onRetrieveAllowance = useCallback(
-    async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-      if (!latestQuote?.current || !request?.current || isSolverDisabled(Solver.enum.Portals)) {
+  const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
+    if (!latestQuote?.current || !request?.current || isSolverDisabled(Solver.enum.Portals)) {
+      return zeroNormalizedBN
+    }
+    const inputToken = request.current.inputToken.value
+    if (isEthAddress(request.current.inputToken.value)) {
+      return toNormalizedBN(maxUint256, 18)
+    }
+    const key = allowanceKey(
+      request.current.chainID,
+      toAddress(request.current.inputToken.value),
+      toAddress(request.current.outputToken.value),
+      toAddress(request.current.from)
+    )
+    if (existingAllowances.current[key] && !shouldForceRefetch) {
+      return existingAllowances.current[key]
+    }
+
+    try {
+      const network = PORTALS_NETWORK.get(request.current.chainID)
+      const { data: approval } = await getPortalsApproval({
+        params: {
+          sender: toAddress(request.current.from),
+          inputToken: `${network}:${toAddress(inputToken)}`,
+          inputAmount: toBigInt(request.current.inputAmount).toString()
+        }
+      })
+
+      if (!approval?.context) {
+        console.error('Portals approval response invalid or missing context')
         return zeroNormalizedBN
       }
-      const inputToken = request.current.inputToken.value
-      if (isEthAddress(request.current.inputToken.value)) {
-        return toNormalizedBN(maxUint256, 18)
+
+      if (!approval.context.allowance) {
+        console.error('Portals approval missing allowance value')
+        return zeroNormalizedBN
       }
-      const key = allowanceKey(
-        request.current.chainID,
-        toAddress(request.current.inputToken.value),
-        toAddress(request.current.outputToken.value),
-        toAddress(request.current.from)
+
+      existingAllowances.current[key] = toNormalizedBN(
+        toBigInt(approval.context.allowance),
+        request.current.inputToken.decimals
       )
-      if (existingAllowances.current[key] && !shouldForceRefetch) {
-        return existingAllowances.current[key]
+      return existingAllowances.current[key]
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status
+        const message = error.response?.data?.message || error.message
+        console.error(`Portals allowance API error (${status || 'unknown'}): ${message}`)
+      } else {
+        console.error('Portals allowance error:', error)
       }
-
-      try {
-        const network = PORTALS_NETWORK.get(request.current.chainID)
-        const { data: approval } = await getPortalsApproval({
-          params: {
-            sender: toAddress(request.current.from),
-            inputToken: `${network}:${toAddress(inputToken)}`,
-            inputAmount: toBigInt(request.current.inputAmount).toString()
-          }
-        })
-
-        if (!approval?.context) {
-          console.error('Portals approval response invalid or missing context')
-          return zeroNormalizedBN
-        }
-
-        if (!approval.context.allowance) {
-          console.error('Portals approval missing allowance value')
-          return zeroNormalizedBN
-        }
-
-        existingAllowances.current[key] = toNormalizedBN(
-          toBigInt(approval.context.allowance),
-          request.current.inputToken.decimals
-        )
-        return existingAllowances.current[key]
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          const status = error.response?.status
-          const message = error.response?.data?.message || error.message
-          console.error(`Portals allowance API error (${status || 'unknown'}): ${message}`)
-        } else {
-          console.error('Portals allowance error:', error)
-        }
-        return zeroNormalizedBN
-      }
-    },
-    []
-  )
+      return zeroNormalizedBN
+    }
+  }, [])
 
   /* 🔵 - Yearn Finance ******************************************************
    ** Trigger an signature to approve the token to be used by the Portals

@@ -55,17 +55,20 @@ const PartnerLogo: FC<TPartner> = ({ image, alt, href, size = 40 }) => {
           'relative flex h-20 cursor-pointer items-center justify-center rounded-lg bg-gray-800 p-4 transition-colors duration-200 hover:bg-blue-500 lg:h-full lg:p-6'
         }
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}>
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {isHovered && (
           <div
             className={
               'absolute -top-12 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-700 px-3 py-2 text-sm text-neutral-900 lg:block'
-            }>
+            }
+          >
             {alt}
             <div
               className={
                 'absolute left-1/2 top-full size-0 -translate-x-1/2 border-x-4 border-t-4 border-transparent border-t-gray-700'
-              }></div>
+              }
+            ></div>
           </div>
         )}
         <Image
@@ -86,8 +89,7 @@ const PartnerLogo: FC<TPartner> = ({ image, alt, href, size = 40 }) => {
 
 export const Partners: FC = () => (
   <section className={'flex w-full justify-center  py-16 lg:py-32'}>
-    <div
-      className={'flex w-full max-w-[1180px] flex-col items-center justify-between  lg:flex-row '}>
+    <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between  lg:flex-row '}>
       <div className={'flex w-full flex-col gap-4 px-4'}>
         <SectionHeader
           tagline={'Partners'}
@@ -98,7 +100,7 @@ export const Partners: FC = () => (
         {/* Mobile */}
         <div className={'flex flex-col gap-4 pt-8 lg:hidden'}>
           <div className={'grid grid-cols-2 gap-2'}>
-            {partners.map(partner => (
+            {partners.map((partner) => (
               <PartnerLogo
                 key={partner.href}
                 image={partner.image}
@@ -114,7 +116,7 @@ export const Partners: FC = () => (
         <div className={'hidden gap-4 pt-8 md:pt-14 lg:flex lg:flex-row'}>
           <div className={'flex size-full h-[128px] flex-col gap-2'}>
             <div className={'flex flex-1 flex-row gap-2'}>
-              {partners.map(partner => (
+              {partners.map((partner) => (
                 <PartnerLogo
                   key={partner.href}
                   image={partner.image}

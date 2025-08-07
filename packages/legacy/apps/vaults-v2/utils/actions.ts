@@ -1,10 +1,6 @@
 import type { TAddress } from '@lib/types'
 import { assert, assertAddress, toAddress } from '@lib/utils'
-import {
-  STAKING_REWARDS_ZAP_ADDRESS,
-  V3_STAKING_ZAP_ADDRESS,
-  YGAUGES_ZAP_ADDRESS
-} from '@lib/utils/constants'
+import { STAKING_REWARDS_ZAP_ADDRESS, V3_STAKING_ZAP_ADDRESS, YGAUGES_ZAP_ADDRESS } from '@lib/utils/constants'
 import type { TTxResponse, TWriteTransaction } from '@lib/utils/wagmi'
 import { handleTx, toWagmiProvider } from '@lib/utils/wagmi'
 import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
@@ -39,10 +35,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
   assert(props.amount > 0n, 'Amount is 0')
 
   // If we are depositing into the Optimism Booster
-  if (
-    props.chainID === 10 &&
-    toAddress(props.contractAddress) === toAddress(STAKING_REWARDS_ZAP_ADDRESS)
-  ) {
+  if (props.chainID === 10 && toAddress(props.contractAddress) === toAddress(STAKING_REWARDS_ZAP_ADDRESS)) {
     return await handleTx(props, {
       address: props.contractAddress,
       abi: STAKING_REWARDS_ZAP_ABI,

@@ -17,9 +17,10 @@ export function MobileNavbar({ onClose }: { onClose: VoidFunction }): ReactEleme
     <div
       className={
         'flex h-full w-screen flex-col justify-end border-t border-gray-600/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A]'
-      }>
+      }
+    >
       <div className={'flex flex-col items-start gap-y-2 bg-transparent p-6 pb-4'}>
-        {MENU_TABS.map(tab => (
+        {MENU_TABS.map((tab) => (
           <Link
             key={tab.route}
             className={cl(
@@ -27,7 +28,8 @@ export function MobileNavbar({ onClose }: { onClose: VoidFunction }): ReactEleme
               currentTab === tab.route ? 'text-neutral-900' : 'text-gray-400'
             )}
             onClick={onClose}
-            href={tab.route === 'apps' ? `/${tab.route}` : `/apps/${tab.route}`}>
+            href={tab.route === 'apps' ? `/${tab.route}` : `/apps/${tab.route}`}
+          >
             <div className={'flex size-6 items-center justify-center'}>
               {iconsDict[tab.route as keyof typeof iconsDict]}
             </div>
@@ -38,12 +40,8 @@ export function MobileNavbar({ onClose }: { onClose: VoidFunction }): ReactEleme
 
       <div className={'w-full border-t border-gray-700 p-6 pb-[104px]'}>
         <div className={'flex w-full justify-between'}>
-          {LANDING_SIDEBAR_LINKS.slice(0, 5).map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={'text-sm text-gray-400'}
-              target={'_blank'}>
+          {LANDING_SIDEBAR_LINKS.slice(0, 5).map((link) => (
+            <Link key={link.href} href={link.href} className={'text-sm text-gray-400'} target={'_blank'}>
               {link.title}
             </Link>
           ))}

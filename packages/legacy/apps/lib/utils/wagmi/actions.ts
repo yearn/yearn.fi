@@ -23,10 +23,7 @@ interface WindowWithCustomEthereum extends Window {
 }
 
 function getChainID(chainID: number): number {
-  if (
-    typeof window !== 'undefined' &&
-    (window as WindowWithCustomEthereum)?.ethereum?.useForknetForMainnet
-  ) {
+  if (typeof window !== 'undefined' && (window as WindowWithCustomEthereum)?.ethereum?.useForknetForMainnet) {
     if (chainID === 1) {
       return 1337
     }
@@ -235,11 +232,7 @@ export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxR
     address: props.contractAddress,
     abi: PARTNER_VAULT_ABI,
     functionName: 'deposit',
-    args: [
-      props.vaultAddress,
-      props.partnerAddress || toAddress(process.env.PARTNER_ID_ADDRESS),
-      props.amount
-    ]
+    args: [props.vaultAddress, props.partnerAddress || toAddress(process.env.PARTNER_ID_ADDRESS), props.amount]
   })
 }
 

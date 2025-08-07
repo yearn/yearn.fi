@@ -37,14 +37,8 @@ export function vaultCardContainerClassName() {
 export function buttonClassName(props: ButtonProps) {
   const { className, theme, h } = props
   const busy = theme === 'busy'
-  const bg =
-    theme === 'error' ? 'bg-red-500' : h === 'secondary' ? 'bg-secondary-900' : 'bg-primary-50'
-  const text =
-    theme === 'error'
-      ? 'text-red-50'
-      : h === 'secondary'
-        ? 'text-neutral-300'
-        : 'text-secondary-600'
+  const bg = theme === 'error' ? 'bg-red-500' : h === 'secondary' ? 'bg-secondary-900' : 'bg-primary-50'
+  const text = theme === 'error' ? 'text-red-50' : h === 'secondary' ? 'text-neutral-300' : 'text-secondary-600'
   return cn(`
     relative h-8 px-8 py-5 flex items-center justify-center
     ${bg} text-2xl ${text} tracking-wide

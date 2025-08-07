@@ -36,7 +36,8 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, ind
         'px-4 py-3 md:px-4 md:py-0',
         'min-h-[200px] md:min-h-0',
         'cursor-pointer relative group'
-      )}>
+      )}
+    >
       <div
         className={cl(
           'absolute inset-0 rounded-[12px]',
@@ -53,10 +54,7 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, ind
 
       <div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between')}>
         <div className={'flex w-full flex-row items-center gap-3'}>
-          <div
-            className={
-              'relative flex size-8 min-h-8 min-w-8 items-center justify-center rounded-full'
-            }>
+          <div className={'relative flex size-8 min-h-8 min-w-8 items-center justify-center rounded-full'}>
             <ImageWithFallback
               src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
               alt={''}
@@ -66,9 +64,7 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, ind
           </div>
           <div className={'flex flex-col gap-1.5'}>
             <div className={'flex flex-row items-center'}>
-              <p
-                title={currentVault.name}
-                className={'md:text-md block max-w-[280px] truncate text-neutral-800'}>
+              <p title={currentVault.name} className={'md:text-md block max-w-[280px] truncate text-neutral-800'}>
                 {currentVault.name.replace(/(Yearn |v2|v3)/gi, '')}
               </p>
             </div>
@@ -76,12 +72,9 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, ind
         </div>
       </div>
 
-      <div
-        className={cl('col-span-8 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
+      <div className={cl('col-span-8 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
         <div className={'flex-column col-span-3 flex items-center justify-end'} datatype={'number'}>
-          <p className={'inline w-full text-start text-xs text-neutral-800/60 md:hidden'}>
-            {'Estimated APY'}
-          </p>
+          <p className={'inline w-full text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
           <VaultForwardAPY currentVault={currentVault} />
         </div>
 
@@ -90,23 +83,16 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, ind
         </div>
 
         <div className={'flex-column col-span-3 flex items-center justify-end'} datatype={'number'}>
-          <p className={'inline w-full text-start text-xs text-neutral-800/60 md:hidden'}>
-            {'Vault Type'}
-          </p>
+          <p className={'inline w-full text-start text-xs text-neutral-800/60 md:hidden'}>{'Vault Type'}</p>
           <div className={'flex w-full flex-row items-center justify-end gap-1'}>
             <VaultChainTag chainID={currentVault.chainID} backgroundOpacity={0.5} />
-            <p
-              className={
-                'block rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-800/60'
-              }>
+            <p className={'block rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-800/60'}>
               {isV2 ? 'V2' : 'V3'}
             </p>
           </div>
         </div>
 
-        <div
-          className={'yearn--table-data-section-item col-span-3 flex-row md:flex-col'}
-          datatype={'number'}>
+        <div className={'yearn--table-data-section-item col-span-3 flex-row md:flex-col'} datatype={'number'}>
           <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
           <div className={'flex flex-col pt-0 text-right'}>
             <p className={'yearn--table-data-section-item-value'}>
@@ -125,17 +111,15 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, ind
         </div>
       </div>
 
-      <div
-        className={
-          'mt-4 flex flex-row items-center gap-1 border-t border-neutral-900/20 pt-4 md:hidden'
-        }>
+      <div className={'mt-4 flex flex-row items-center gap-1 border-t border-neutral-900/20 pt-4 md:hidden'}>
         <VaultChainTag chainID={currentVault.chainID} />
         <Link
           href={`${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${currentVault.address}`}
           onClick={(event): void => event.stopPropagation()}
           className={'text-neutral-900/50 transition-opacity hover:text-neutral-900'}
           target={'_blank'}
-          rel={'noopener noreferrer'}>
+          rel={'noopener noreferrer'}
+        >
           <IconLinkOut className={' size-4'} />
         </Link>
       </div>

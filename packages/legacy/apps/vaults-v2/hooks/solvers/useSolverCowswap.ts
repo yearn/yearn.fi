@@ -12,24 +12,11 @@ import { useNotifications } from '@lib/contexts/useNotifications'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import type { TDict, TNormalizedBN } from '@lib/types'
-import {
-  assert,
-  isEthAddress,
-  isZeroAddress,
-  toBigInt,
-  toNormalizedBN,
-  zeroNormalizedBN
-} from '@lib/utils'
+import { assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
 import { SOLVER_COW_VAULT_RELAYER_ADDRESS } from '@lib/utils/constants'
 import { allowanceKey } from '@lib/utils/helpers'
 import type { TTxResponse, TTxStatus } from '@lib/utils/wagmi'
-import {
-  allowanceOf,
-  approveERC20,
-  defaultTxStatus,
-  isApprovedERC20,
-  retrieveConfig
-} from '@lib/utils/wagmi'
+import { allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20, retrieveConfig } from '@lib/utils/wagmi'
 import { getEthersSigner } from '@lib/utils/wagmi/ethersAdapter'
 import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
 import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
@@ -125,10 +112,7 @@ export function useSolverCowswap(): TSolverContext {
    ** call getQuote to get the current quote for the provided request.current.
    *********************************************************************************************/
   const init = useCallback(
-    async (
-      _request: TInitSolverArgs,
-      shouldLogError?: boolean
-    ): Promise<TNormalizedBN | undefined> => {
+    async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN | undefined> => {
       if (isSolverDisabled(Solver.enum.Cowswap)) {
         return undefined
       }
@@ -189,10 +173,7 @@ export function useSolverCowswap(): TSolverContext {
         return undefined
       }
       latestQuote.current = data
-      const buyAmountWithSlippage = getBuyAmountWithSlippage(
-        data,
-        _request?.outputToken?.decimals || 18
-      )
+      const buyAmountWithSlippage = getBuyAmountWithSlippage(data, _request?.outputToken?.decimals || 18)
       return toNormalizedBN(buyAmountWithSlippage || 0, _request?.outputToken?.decimals || 18)
     },
     [getBuyAmountWithSlippage]
@@ -205,11 +186,7 @@ export function useSolverCowswap(): TSolverContext {
    ** skipped. This should only be used for debugging purposes.
    *********************************************************************************************/
   const signCowswapOrder = useCallback(
-    async (
-      chainID: number,
-      quote: Order,
-      buyAmountWithSlippage: string
-    ): Promise<SigningResult> => {
+    async (chainID: number, quote: Order, buyAmountWithSlippage: string): Promise<SigningResult> => {
       if (shouldUsePresign) {
         await new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, 1000))
         return {
@@ -244,14 +221,9 @@ export function useSolverCowswap(): TSolverContext {
    ** It will timeout once the order is no longer valid or after 50 minutes (max should be 30mn)
    *********************************************************************************************/
   const checkOrderStatus = useCallback(
-    async (
-      orderUID: string,
-      validTo: number
-    ): Promise<{ isSuccessful: boolean; error?: Error }> => {
+    async (orderUID: string, validTo: number): Promise<{ isSuccessful: boolean; error?: Error }> => {
       for (let i = 0; i < maxIterations; i++) {
-        const { data: order } = await axios.get(
-          `https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`
-        )
+        const { data: order } = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`)
         if (order?.status === 'fulfilled') {
           return { isSuccessful: true }
         }
@@ -293,10 +265,7 @@ export function useSolverCowswap(): TSolverContext {
 
     const { quote, from, id } = latestQuote.current
 
-    const buyAmountWithSlippage = getBuyAmountWithSlippage(
-      latestQuote.current,
-      request.current.outputToken.decimals
-    )
+    const buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals)
     quote.buyAmount = buyAmountWithSlippage
     const { signature, signingScheme } = await signCowswapOrder(
       request.current.chainID,
@@ -336,11 +305,7 @@ export function useSolverCowswap(): TSolverContext {
    ** process and displayed to the user.
    **************************************************************************/
   const expectedOut = useMemo((): TNormalizedBN => {
-    if (
-      !latestQuote?.current?.quote?.buyAmount ||
-      !request?.current ||
-      request.current.chainID !== 1
-    ) {
+    if (!latestQuote?.current?.quote?.buyAmount || !request?.current || request.current.chainID !== 1) {
       return zeroNormalizedBN
     }
     return toNormalizedBN(
@@ -379,10 +344,7 @@ export function useSolverCowswap(): TSolverContext {
         tokenAddress: request.current.inputToken.value,
         spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS
       })
-      existingAllowances.current[key] = toNormalizedBN(
-        allowance,
-        request.current.inputToken.decimals
-      )
+      existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
       return existingAllowances.current[key]
     },
     [provider]

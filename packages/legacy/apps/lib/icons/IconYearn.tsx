@@ -2,13 +2,7 @@ import type { ReactElement } from 'react'
 
 export function IconYearn(props: React.SVGProps<SVGSVGElement>): ReactElement {
   return (
-    <svg
-      {...props}
-      width={'16'}
-      height={'18'}
-      viewBox={'0 0 16 18'}
-      fill={'none'}
-      xmlns={'http://www.w3.org/2000/svg'}>
+    <svg {...props} width={'16'} height={'18'} viewBox={'0 0 16 18'} fill={'none'} xmlns={'http://www.w3.org/2000/svg'}>
       <path
         d={
           'M15.3956 6.75431L13.7772 8.35997C13.8899 8.81728 13.9513 9.30507 13.9513 9.80303C13.9513 13.0651 11.2881 15.7175 8 15.7175C4.71191 15.7175 2.04866 13.0753 2.04866 9.80303C2.04866 9.30507 2.11012 8.82744 2.22279 8.35997L0.604353 6.75431C0.215109 7.68925 0 8.71565 0 9.80303C0 14.1932 3.58515 17.75 8 17.75C12.4149 17.75 16 14.1932 16 9.80303C16 8.72581 15.7849 7.69942 15.3956 6.75431Z'

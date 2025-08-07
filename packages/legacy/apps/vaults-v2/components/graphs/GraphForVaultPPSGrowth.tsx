@@ -9,10 +9,7 @@ export type TGraphForVaultPPSGrowthProps = {
   height?: number
 }
 
-export function GraphForVaultPPSGrowth({
-  messariData,
-  height = 312
-}: TGraphForVaultPPSGrowthProps): ReactElement {
+export function GraphForVaultPPSGrowth({ messariData, height = 312 }: TGraphForVaultPPSGrowthProps): ReactElement {
   if (isZero(messariData?.length)) {
     return <Fragment />
   }

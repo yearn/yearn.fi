@@ -27,12 +27,7 @@ export const toBigInt = (amount?: TNumberish): bigint => {
   return BigInt(amount || 0)
 }
 
-export function toBigNumberAsAmount(
-  bnAmount = 0n,
-  decimals = 18,
-  decimalsToDisplay = 2,
-  symbol = ''
-): string {
+export function toBigNumberAsAmount(bnAmount = 0n, decimals = 18, decimalsToDisplay = 2, symbol = ''): string {
   let locale = 'en-US'
   if (typeof navigator !== 'undefined') {
     locale = navigator.language || 'fr-FR'
@@ -164,22 +159,14 @@ function assignOptions(options?: TAmountOptions): TAmountOptions {
    ** integer between 0 and 18. If the value is invalid, we display a warning and set the value to
    ** the default value (2 or 18).
    **********************************************************************************************/
-  options.minimumFractionDigits = assertValidNumber(
-    options?.minimumFractionDigits,
-    2,
-    'minimumFractionDigits'
-  )
+  options.minimumFractionDigits = assertValidNumber(options?.minimumFractionDigits, 2, 'minimumFractionDigits')
 
   /**********************************************************************************************
    ** We need to ensure that maximumFractionDigits is a valid number. It can be any positive
    ** integer between 0 and 18. If the value is invalid, we display a warning and set the value to
    ** the default value (2 or 18).
    **********************************************************************************************/
-  options.maximumFractionDigits = assertValidNumber(
-    options?.maximumFractionDigits,
-    2,
-    'maximumFractionDigits'
-  )
+  options.maximumFractionDigits = assertValidNumber(options?.maximumFractionDigits, 2, 'maximumFractionDigits')
 
   /**********************************************************************************************
    ** We need to ensure that maximumFractionDigits is always bigger or equal to
@@ -204,21 +191,13 @@ function formatCurrencyWithPrecision({
 }: TFormatCurrencyWithPrecision): string {
   return new Intl.NumberFormat([locale, 'en-US'], {
     ...intlOptions,
-    maximumFractionDigits: Math.max(
-      maxFractionDigits,
-      intlOptions.maximumFractionDigits || maxFractionDigits
-    )
+    maximumFractionDigits: Math.max(maxFractionDigits, intlOptions.maximumFractionDigits || maxFractionDigits)
   })
     .format(amount)
     .replace('EUR', symbol)
 }
 
-export function formatLocalAmount(
-  amount: number,
-  decimals: number,
-  symbol: string,
-  options: TAmountOptions
-): string {
+export function formatLocalAmount(amount: number, decimals: number, symbol: string, options: TAmountOptions): string {
   /**********************************************************************************************
    ** Define the normalized elements.
    ** We use a few tricks here to get the benefits of the intl package and correct formating no
@@ -520,14 +499,7 @@ export function eToNumber(num: string): string {
   const pos = n.split(dot)[1] ? n.indexOf(dot) + exp : w.length + exp
   const L = pos - w.length
   const s = '' + BigInt(w)
-  w =
-    exp >= 0
-      ? L >= 0
-        ? s + '0'.repeat(L)
-        : r()
-      : pos <= 0
-        ? '0' + dot + '0'.repeat(Math.abs(pos)) + s
-        : r()
+  w = exp >= 0 ? (L >= 0 ? s + '0'.repeat(L) : r()) : pos <= 0 ? '0' + dot + '0'.repeat(Math.abs(pos)) + s : r()
   const V = w.split(dot)
   if ((Number(V[0]) === 0 && Number(V[1]) === 0) || (+w === 0 && +s === 0)) {
     w = '0'

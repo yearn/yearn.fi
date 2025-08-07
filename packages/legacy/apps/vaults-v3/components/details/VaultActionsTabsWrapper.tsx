@@ -102,12 +102,7 @@ export function BoostMessage(props: {
   const stakingRewardSource = props.currentVault.staking.source
   const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR
 
-  if (
-    props.currentTab === 0 &&
-    hasStakingRewards &&
-    !props.hasStakingRewardsLive &&
-    stakingRewardSource !== 'VeYFI'
-  ) {
+  if (props.currentTab === 0 && hasStakingRewards && !props.hasStakingRewardsLive && stakingRewardSource !== 'VeYFI') {
     return <Fragment />
   }
 
@@ -150,7 +145,8 @@ export function BoostMessage(props: {
               className={'underline'}
               href={'https://docs.yearn.fi/contributing/governance/veyfi-intro'}
               target={'_blank'}
-              rel={'noreferrer'}>
+              rel={'noreferrer'}
+            >
               {'FAQ'}
             </a>
             {'.'}
@@ -168,11 +164,7 @@ export function BoostMessage(props: {
           </b>
           <b className={'block text-neutral-900'}>
             {'Visit '}
-            <a
-              className={'underline'}
-              href={'https://juiced.app'}
-              target={'_blank'}
-              rel={'noreferrer'}>
+            <a className={'underline'} href={'https://juiced.app'} target={'_blank'} rel={'noreferrer'}>
               {'juiced.app'}
             </a>
             {' to learn more'}
@@ -231,7 +223,8 @@ function MobileTabButtons(props: {
         props.selectedTab.value === props.currentTab.value
           ? 'border-b-2 border-neutral-900'
           : 'border-b-2 border-neutral-300'
-      )}>
+      )}
+    >
       {props.currentTab.label}
     </button>
   )
@@ -284,7 +277,8 @@ export function VaultDetailsTab(props: {
           { shallow: true }
         )
         props.onSwitchTab(props.tab)
-      }}>
+      }}
+    >
       <p
         title={tabLabel}
         aria-selected={props.selectedTab.value === props.tab.value}
@@ -295,15 +289,12 @@ export function VaultDetailsTab(props: {
               ? '!text-neutral-900'
               : '!text-neutral-900/50 hover:!text-neutral-900'
             : ''
-        )}>
+        )}
+      >
         {tabLabel}
         {props.tab.label === 'Boost' && toBigInt(props.unstakedBalance?.raw) > 0n ? (
           <span className={'absolute -right-3 -top-1 z-10 flex size-2.5'}>
-            <span
-              className={
-                'absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75'
-              }
-            />
+            <span className={'absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75'} />
             <span className={'relative inline-flex size-2.5 rounded-full bg-primary'} />
           </span>
         ) : null}
@@ -317,13 +308,8 @@ export function VaultDetailsTab(props: {
  ** section. It will display the different tabs available for the current vault and the
  ** corresponding actions that can be taken.
  *************************************************************************************************/
-export function VaultActionsTabsWrapper({
-  currentVault
-}: {
-  currentVault: TYDaemonVault
-}): ReactElement {
-  const { onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance } =
-    useActionFlow()
+export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+  const { onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance } = useActionFlow()
   const { address } = useWeb3()
   const router = useRouter()
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
@@ -341,7 +327,7 @@ export function VaultActionsTabsWrapper({
   const hasStakingRewards = Boolean(currentVault.staking.available)
 
   const shouldForceDisplayBoostTab = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
-    vault => vault.address === currentVault.address
+    (vault) => vault.address === currentVault.address
   )
 
   const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
@@ -358,9 +344,7 @@ export function VaultActionsTabsWrapper({
     }
   })
 
-  const veYFITotalSupply = veYFITotalSupplyData
-    ? toNormalizedValue(veYFITotalSupplyData as bigint, 18)
-    : 0
+  const veYFITotalSupply = veYFITotalSupplyData ? toNormalizedValue(veYFITotalSupplyData as bigint, 18) : 0
   const { data: gaugeTotalSupplyData } = useReadContract({
     address: currentVault.staking.address,
     abi: VAULT_V3_ABI,
@@ -369,9 +353,7 @@ export function VaultActionsTabsWrapper({
       enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
     }
   })
-  const gaugeTotalSupply = gaugeTotalSupplyData
-    ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18)
-    : 0
+  const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0
 
   const getTabLabel = useCallback((): string => {
     if (currentVault.staking.source === 'VeYFI') {
@@ -478,12 +460,7 @@ export function VaultActionsTabsWrapper({
     } else {
       setPossibleTabs([tabs[0], tabs[1]])
     }
-  }, [
-    currentVault?.migration?.available,
-    currentVault?.info?.isRetired,
-    actionParams.isReady,
-    hasStakingRewards
-  ])
+  }, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards])
 
   /************************************************************************************************
    * This effect manages the auto-staking feature based on staking rewards availability.
@@ -495,7 +472,7 @@ export function VaultActionsTabsWrapper({
    ************************************************************************************************/
   useEffect(() => {
     const hasStakingRewardsEndedOverAWeekAgo = currentVault.staking.rewards?.some(
-      el => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
+      (el) => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
     )
     if (!hasStakingRewards && hasStakingRewardsEndedOverAWeekAgo) {
       setIsAutoStakingEnabled(false)
@@ -548,23 +525,19 @@ export function VaultActionsTabsWrapper({
           </div>
         )}
 
-      {currentVault?.info.uiNotice &&
-        !currentVault?.migration.available &&
-        currentVault.info.isRetired && (
-          <div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
-            <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
-              <b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
-              <p
-                className={'mt-2'}
-                dangerouslySetInnerHTML={{
-                  __html: parseMarkdown(
-                    currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol)
-                  )
-                }}
-              />
-            </div>
+      {currentVault?.info.uiNotice && !currentVault?.migration.available && currentVault.info.isRetired && (
+        <div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
+          <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+            <b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
+            <p
+              className={'mt-2'}
+              dangerouslySetInnerHTML={{
+                __html: parseMarkdown(currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol))
+              }}
+            />
           </div>
-        )}
+        </div>
+      )}
 
       {currentVault?.info.uiNotice &&
         !currentVault?.migration.available &&
@@ -575,9 +548,7 @@ export function VaultActionsTabsWrapper({
               <p
                 className={'mt-2'}
                 dangerouslySetInnerHTML={{
-                  __html: parseMarkdown(
-                    currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol)
-                  )
+                  __html: parseMarkdown(currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol))
                 }}
               />
             </div>
@@ -585,13 +556,10 @@ export function VaultActionsTabsWrapper({
         )}
 
       <div className={'col-span-12 mt-6 flex flex-col rounded-3xl bg-neutral-100'}>
-        <div
-          className={
-            'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'
-          }>
+        <div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
           <nav className={'hidden flex-row items-center space-x-10 md:flex'}>
             {(possibleTabs as TTabsOptions[])
-              .filter(tab => tab.value !== 3)
+              .filter((tab) => tab.value !== 3)
               .map(
                 (tab): ReactElement => (
                   <VaultDetailsTab
@@ -600,7 +568,7 @@ export function VaultActionsTabsWrapper({
                     tab={tab}
                     selectedTab={currentTab}
                     unstakedBalance={unstakedBalance}
-                    onSwitchTab={newTab => {
+                    onSwitchTab={(newTab) => {
                       setCurrentTab(newTab)
                       onSwitchSelectedOptions(newTab.flowAction)
                     }}
@@ -625,10 +593,7 @@ export function VaultActionsTabsWrapper({
             </div>
           </div>
 
-          <div
-            className={
-              'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'
-            }>
+          <div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
             <SettingsPopover vault={currentVault} />
           </div>
         </div>
@@ -645,7 +610,8 @@ export function VaultActionsTabsWrapper({
           <div
             className={
               'col-span-12 flex flex-col space-x-0 space-y-2 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
-            }>
+            }
+          >
             <VaultDetailsQuickActionsFrom
               currentVault={currentVault}
               vaultData={vaultData}
@@ -693,12 +659,11 @@ export function VaultActionsTabsWrapper({
               <div
                 className={cl(
                   'flex h-10 min-w-28 z-10 flex-row items-center bg-neutral-100 p-0 font-bold md:hidden border-b-2 border-neutral-900'
-                )}>
+                )}
+              >
                 {'Boost'}
               </div>
-              <div className={'hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>
-                {getTabLabel()}
-              </div>
+              <div className={'hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>{getTabLabel()}</div>
             </div>
             <div>
               <div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />

@@ -8,15 +8,10 @@ type TAPYSublineProps = {
   hasKelp: boolean
 }
 
-export const APYSubline: FC<TAPYSublineProps> = ({
-  hasPendleArbRewards,
-  hasKelpNEngenlayer,
-  hasKelp
-}) => {
+export const APYSubline: FC<TAPYSublineProps> = ({ hasPendleArbRewards, hasKelpNEngenlayer, hasKelp }) => {
   if (hasKelpNEngenlayer) {
     return (
-      <small
-        className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
+      <small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
         {'+1x Kelp Miles'}
         <br />
         {'+1x EigenLayer Points'}
@@ -25,16 +20,14 @@ export const APYSubline: FC<TAPYSublineProps> = ({
   }
   if (hasKelp) {
     return (
-      <small
-        className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
+      <small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
         {'+ 1x Kelp Miles'}
       </small>
     )
   }
   if (hasPendleArbRewards) {
     return (
-      <small
-        className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
+      <small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
         {'+ 2500 ARB/week'}
       </small>
     )

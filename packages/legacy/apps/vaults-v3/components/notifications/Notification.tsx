@@ -16,21 +16,13 @@ import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
 
 const STATUS: { [key: string]: [string, string, ReactElement] } = {
-  success: [
-    'Success',
-    'text-white bg-[#00796D]',
-    <IconCheck className={'size-4'} key={'success'} />
-  ],
+  success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} key={'success'} />],
   pending: [
     'Pending',
     'text-neutral-800 bg-neutral-300',
     <IconLoader className={'size-4 animate-spin'} key={'pending'} />
   ],
-  error: [
-    'Error',
-    'text-white bg-[#C73203] bg-opacity-90',
-    <IconCross className={'size-3'} key={'error'} />
-  ]
+  error: ['Error', 'text-white bg-[#C73203] bg-opacity-90', <IconCross className={'size-3'} key={'error'} />]
 }
 
 function NotificationStatus(props: { status: TNotificationStatus }): ReactElement {
@@ -40,7 +32,8 @@ function NotificationStatus(props: { status: TNotificationStatus }): ReactElemen
         'flex gap-2 justify-center self-start py-2 px-4 items-center rounded-lg text-xs',
         STATUS[props.status][1]
       )}
-      aria-label={`Status: ${STATUS[props.status][0]}`}>
+      aria-label={`Status: ${STATUS[props.status][0]}`}
+    >
       {STATUS[props.status][2]}
       {STATUS[props.status][0]}
     </div>
@@ -56,10 +49,9 @@ function NotificationContent({
   fromVault?: TYDaemonVault
   toVault?: TYDaemonVault
 }): ReactElement {
-  const chainName =
-    SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)?.name || 'Unknown'
+  const chainName = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)?.name || 'Unknown'
   const explorerBaseURI = useMemo(() => {
-    const chain = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)
+    const chain = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)
     return chain?.blockExplorers?.default?.url || 'https://etherscan.io'
   }, [notification.chainId])
 
@@ -125,10 +117,7 @@ function NotificationContent({
             width={32}
             height={32}
           />
-          <div
-            className={
-              'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'
-            }>
+          <div className={'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
             <Image
               width={14}
               height={14}
@@ -151,10 +140,7 @@ function NotificationContent({
               width={32}
               height={32}
             />
-            <div
-              className={
-                'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'
-              }>
+            <div className={'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
               <Image
                 width={14}
                 height={14}
@@ -174,10 +160,9 @@ function NotificationContent({
               target={'_blank'}
               rel={'noopener noreferrer'}
               aria-label={`View address ${notification.address} on explorer`}
-              className={'text-neutral-900 hover:text-neutral-600'}>
-              <button className={'text-xs font-medium underline'}>
-                {truncateHex(notification.address, 5)}
-              </button>
+              className={'text-neutral-900 hover:text-neutral-600'}
+            >
+              <button className={'text-xs font-medium underline'}>{truncateHex(notification.address, 5)}</button>
             </Link>
           </p>
           <p>{fromTokenLabel}</p>
@@ -187,10 +172,9 @@ function NotificationContent({
               target={'_blank'}
               rel={'noopener noreferrer'}
               aria-label={`View token ${notification.fromTokenName || 'Unknown'} on explorer`}
-              className={'text-neutral-900 hover:text-neutral-600'}>
-              <button className={'text-xs font-medium underline'}>
-                {notification.fromTokenName || 'Unknown'}
-              </button>
+              className={'text-neutral-900 hover:text-neutral-600'}
+            >
+              <button className={'text-xs font-medium underline'}>{notification.fromTokenName || 'Unknown'}</button>
             </Link>
           </p>
           <p>{'Amount:'}</p>
@@ -204,10 +188,9 @@ function NotificationContent({
                   target={'_blank'}
                   rel={'noopener noreferrer'}
                   aria-label={`View vault ${notification.toTokenName || 'Unknown'} on explorer`}
-                  className={'text-neutral-900 hover:text-neutral-600'}>
-                  <button className={'text-xs font-medium underline'}>
-                    {notification.toTokenName || 'Unknown'}
-                  </button>
+                  className={'text-neutral-900 hover:text-neutral-600'}
+                >
+                  <button className={'text-xs font-medium underline'}>{notification.toTokenName || 'Unknown'}</button>
                 </Link>
               </p>
             </>
@@ -221,7 +204,8 @@ function NotificationContent({
                   target={'_blank'}
                   rel={'noopener noreferrer'}
                   aria-label={`View spender ${notification.spenderAddress} on explorer`}
-                  className={'text-neutral-900 hover:text-neutral-600'}>
+                  className={'text-neutral-900 hover:text-neutral-600'}
+                >
                   <button className={'text-xs font-medium underline'}>
                     {truncateHex(notification.spenderAddress || '0x0', 5)}
                   </button>
@@ -276,7 +260,7 @@ export const Notification = memo(function Notification({
       return null
     }
 
-    const chain = SUPPORTED_NETWORKS.find(network => network.id === notification.chainId)
+    const chain = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)
     const explorerBaseURI = chain?.blockExplorers?.default?.url || 'https://etherscan.io'
     return `${explorerBaseURI}/tx/${notification.txHash}`
   }, [notification.chainId, notification.txHash])
@@ -348,12 +332,11 @@ export const Notification = memo(function Notification({
       }}
       className={cl(
         'border border-neutral-200 p-4 h-fit relative mb-4 origin-top group',
-        variant === 'v3'
-          ? 'bg-neutral-200 rounded-xl'
-          : 'bg-neutral-0 hover:bg-neutral-100/30 transition-colors'
+        variant === 'v3' ? 'bg-neutral-200 rounded-xl' : 'bg-neutral-0 hover:bg-neutral-100/30 transition-colors'
       )}
       style={{ transformOrigin: 'top center' }}
-      aria-label={`${notificationTitle} notification`}>
+      aria-label={`${notificationTitle} notification`}
+    >
       {variant === 'v3' && (
         <div
           className={cl(
@@ -375,10 +358,9 @@ export const Notification = memo(function Notification({
           'opacity-0 group-hover:opacity-60 group-hover:bg-neutral-200/60 hover:!opacity-100',
           isDeleting ? '!opacity-30' : ''
         )}
-        title={'Remove'}>
-        <IconClose
-          className={cl('w-3 h-3', variant === 'v3' ? 'text-neutral-700' : 'text-neutral-600')}
-        />
+        title={'Remove'}
+      >
+        <IconClose className={cl('w-3 h-3', variant === 'v3' ? 'text-neutral-700' : 'text-neutral-600')} />
       </button>
 
       <div className={'relative z-20'}>
@@ -393,7 +375,8 @@ export const Notification = memo(function Notification({
           <div
             className={
               'mt-4 flex items-center justify-between border-t border-neutral-100 pt-3 text-xs text-neutral-800'
-            }>
+            }
+          >
             <div className={'flex gap-4'}>
               <span className={'font-bold'}>{formattedDate}</span>
             </div>
@@ -403,7 +386,8 @@ export const Notification = memo(function Notification({
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 aria-label={`View transaction ${notification.txHash} on explorer`}
-                className={'text-neutral-900 hover:text-neutral-600'}>
+                className={'text-neutral-900 hover:text-neutral-600'}
+              >
                 <button className={'text-xs font-medium underline'}>{'View tx'}</button>
               </Link>
             ) : null}

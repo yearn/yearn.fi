@@ -21,14 +21,16 @@ export function CarouselSlideArrows({
           onClick={onScrollBack}
           className={
             'flex !h-8 items-center rounded-[4px] px-4 text-neutral-400 outline !outline-1 outline-neutral-200 hover:bg-neutral-200'
-          }>
+          }
+        >
           <IconChevron className={'size-3 rotate-90 '} />
         </button>
         <button
           onClick={onScrollForward}
           className={
             'flex !h-8 items-center rounded-[4px] px-4 text-neutral-400 outline !outline-1 outline-neutral-200 hover:bg-neutral-200'
-          }>
+          }
+        >
           <IconChevron className={'size-3 -rotate-90  '} />
         </button>
       </div>

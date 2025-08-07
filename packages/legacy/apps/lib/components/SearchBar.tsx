@@ -63,7 +63,8 @@ export function SearchBar(props: TSearchBar): ReactElement {
       className={cl(
         props.className,
         'flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'
-      )}>
+      )}
+    >
       <div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
         <input
           id={'search'}
@@ -78,7 +79,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
           onChange={(e: ChangeEvent<HTMLInputElement>): void => {
             handleSearchChange(e.target.value)
           }}
-          onKeyDown={e => {
+          onKeyDown={(e) => {
             if (!props.shouldSearchByClick) {
               return
             }
@@ -90,7 +91,8 @@ export function SearchBar(props: TSearchBar): ReactElement {
         <div
           role={props.shouldSearchByClick ? 'button' : 'div'}
           onClick={() => props.onSearchClick?.()}
-          className={cl(props.iconClassName, 'absolute right-[10px] top-[12px] text-neutral-400')}>
+          className={cl(props.iconClassName, 'absolute right-[10px] top-[12px] text-neutral-400')}
+        >
           {props.shouldSearchByClick && props.searchValue ? (
             <div className={'rounded-md border border-gray-500 p-[6px]'}>
               <IconEnter className={'size-3'} />

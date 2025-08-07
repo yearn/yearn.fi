@@ -10,16 +10,7 @@ import { arbitrum, base, fantom, mainnet, optimism, polygon, sonic } from 'viem/
 import { toAddress } from './tools.address'
 import { katana } from './wagmi'
 
-export const SUPPORTED_NETWORKS = [
-  mainnet,
-  optimism,
-  polygon,
-  fantom,
-  base,
-  arbitrum,
-  sonic,
-  katana
-]
+export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic, katana]
 
 export const MULTICALL3_ADDRESS = toAddress('0xcA11bde05977b3631167028862bE2a173976CA11')
 
@@ -102,15 +93,11 @@ export const VEYFI_YFI_REWARD_POOL = toAddress('0xb287a1964AEE422911c7b8409f5E5A
 export const VEYFI_DYFI_REWARD_POOL = toAddress('0x2391Fc8f5E417526338F5aa3968b1851C16D894E')
 
 // Theses constants are used in order to make the solvers work
-export const SOLVER_COW_VAULT_RELAYER_ADDRESS = toAddress(
-  '0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'
-)
+export const SOLVER_COW_VAULT_RELAYER_ADDRESS = toAddress('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110')
 export const SOLVER_WIDO_RELAYER_ADDRESS = toAddress('0x7Fb69e8fb1525ceEc03783FFd8a317bafbDfD394')
 
 // Optimism staking rewards contract addresses used on yVault app
-export const STAKING_REWARDS_REGISTRY_ADDRESS = toAddress(
-  '0x8ED9F6343f057870F1DeF47AaE7CD88dfAA049A8'
-)
+export const STAKING_REWARDS_REGISTRY_ADDRESS = toAddress('0x8ED9F6343f057870F1DeF47AaE7CD88dfAA049A8')
 export const STAKING_REWARDS_ZAP_ADDRESS = toAddress('0x498d9dCBB1708e135bdc76Ef007f08CBa4477BE2')
 
 export const DEFAULT_SLIPPAGE = 0.5
@@ -152,8 +139,7 @@ export const YEARN_APPS: TApp[] = [
   {
     name: 'veYFI',
     description: 'Stake YFI to earn yield, boost gauges, and take part in governance.',
-    logoURI:
-      'https://token-assets-one.vercel.app/api/token/1/0x41252E8691e964f7DE35156B68493bAb6797a275/logo-128.png',
+    logoURI: 'https://token-assets-one.vercel.app/api/token/1/0x41252E8691e964f7DE35156B68493bAb6797a275/logo-128.png',
     appURI: 'https://veyfi.yearn.fi'
   },
   {
@@ -246,8 +232,7 @@ export const INTEGRATIONS_APPS: TApp[] = [
   },
   {
     name: 'Resupply',
-    description:
-      'A decentralized stablecoin protocol, leveraging the liquidity and stability of lending markets',
+    description: 'A decentralized stablecoin protocol, leveraging the liquidity and stability of lending markets',
     logoURI: '/resupply-logo.svg',
     appURI: 'https://www.resupply.fi'
   }
@@ -296,8 +281,7 @@ export const OLD_APPS: TApp[] = [
   {
     name: 'yPrisma',
     description: 'Put your yPRISMA to work.',
-    logoURI:
-      'https://token-assets-one.vercel.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png',
+    logoURI: 'https://token-assets-one.vercel.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png',
     appURI: 'https://yprisma.yearn.fi'
   }
 ]

@@ -24,9 +24,7 @@ export type TDropdownProps = {
   placeholder?: string
   className?: string
   comboboxOptionsClassName?: string
-  onSelect:
-    | React.Dispatch<React.SetStateAction<TDropdownOption>>
-    | ((option: TDropdownOption) => void)
+  onSelect: React.Dispatch<React.SetStateAction<TDropdownOption>> | ((option: TDropdownOption) => void)
 }
 
 export type TDropdownItemProps = {
@@ -49,9 +47,7 @@ export type TDropdownGaugeProps = {
   options: TDropdownGaugeOption[]
   selected?: TDropdownGaugeOption
   placeholder?: string
-  onSelect:
-    | React.Dispatch<React.SetStateAction<TDropdownGaugeOption>>
-    | ((option: TDropdownGaugeOption) => void)
+  onSelect: React.Dispatch<React.SetStateAction<TDropdownGaugeOption>> | ((option: TDropdownGaugeOption) => void)
 }
 
 export type TDropdownGaugeItemProps = {

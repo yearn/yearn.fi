@@ -13,12 +13,7 @@ import { useSolverPortals } from '@vaults-v2/hooks/solvers/useSolverPortals'
 import { useSolverV3Router } from '@vaults-v2/hooks/solvers/useSolverV3Router'
 import { useSolverV3StakingBooster } from '@vaults-v2/hooks/solvers/useSolverV3StakingBooster'
 import { useSolverVanilla } from '@vaults-v2/hooks/solvers/useSolverVanilla'
-import type {
-  TInitSolverArgs,
-  TSolver,
-  TSolverContext,
-  TWithSolver
-} from '@vaults-v2/types/solvers'
+import type { TInitSolverArgs, TSolver, TSolverContext, TWithSolver } from '@vaults-v2/types/solvers'
 import { Solver } from '@vaults-v2/types/solvers'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { serialize } from 'wagmi'
@@ -61,11 +56,7 @@ const DefaultWithSolverContext: TWithSolver = {
 }
 
 const WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext)
-export function WithSolverContextApp({
-  children
-}: {
-  children: React.ReactElement
-}): React.ReactElement {
+export function WithSolverContextApp({ children }: { children: React.ReactElement }): React.ReactElement {
   const { address } = useWeb3()
   const { currentVault, actionParams, currentSolver, isDepositing } = useActionFlow()
   const executionNonce = useRef<number>(0)
@@ -79,9 +70,7 @@ export function WithSolverContextApp({
   const juicedStakingBooster = useSolverJuicedStakingBooster()
   const v3StakingBooster = useSolverV3StakingBooster()
   const v3Router = useSolverV3Router()
-  const [currentSolverState, setCurrentSolverState] = useState<TSolverContext & { hash?: string }>(
-    vanilla
-  )
+  const [currentSolverState, setCurrentSolverState] = useState<TSolverContext & { hash?: string }>(vanilla)
   const [isLoading, setIsLoading] = useState(false)
 
   const handleUpdateSolver = useCallback(
@@ -92,9 +81,7 @@ export function WithSolverContextApp({
       if (currentNonce !== executionNonce.current) {
         return
       }
-      const requestHash = await hash(
-        serialize({ ...request, solver, expectedOut: toBigInt(quote.value?.raw) })
-      )
+      const requestHash = await hash(serialize({ ...request, solver, expectedOut: toBigInt(quote.value?.raw) }))
       setCurrentSolverState({
         ...ctx,
         quote: quote.value,
@@ -110,11 +97,7 @@ export function WithSolverContextApp({
    **********************************************************************************************/
   const onUpdateSolver = useCallback(
     async (currentNonce: number): Promise<void> => {
-      if (
-        !actionParams?.selectedOptionFrom ||
-        !actionParams?.selectedOptionTo ||
-        actionParams?.amount === undefined
-      ) {
+      if (!actionParams?.selectedOptionFrom || !actionParams?.selectedOptionTo || actionParams?.amount === undefined) {
         return
       }
       if (actionParams.amount.raw === 0n) {
@@ -145,11 +128,7 @@ export function WithSolverContextApp({
         quote: PromiseSettledResult<TNormalizedBN | undefined>
         solver: TSolver
       }): boolean => {
-        return (
-          quote.status === 'fulfilled' &&
-          toBigInt(quote.value?.raw) > 0n &&
-          !isSolverDisabled(solver)
-        )
+        return quote.status === 'fulfilled' && toBigInt(quote.value?.raw) > 0n && !isSolverDisabled(solver)
       }
 
       switch (currentSolver) {

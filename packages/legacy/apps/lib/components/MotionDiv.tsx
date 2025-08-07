@@ -16,7 +16,8 @@ export function MotionDiv({ animate, name, children }: TMotionDiv): ReactElement
       initial={'initial'}
       animate={animate}
       variants={variants}
-      className={'absolute cursor-pointer'}>
+      className={'absolute cursor-pointer'}
+    >
       {children}
     </motion.div>
   )

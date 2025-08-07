@@ -13,9 +13,7 @@ export function VaultsHeader({ pathname }: TProps): ReactElement {
   const isVaultPage = pathname === '/vaults/[chainID]/[address]'
 
   return (
-    <MotionDiv
-      animate={!isVaultPage && pathname.startsWith('/vaults') ? 'enter' : 'exit'}
-      name={name}>
+    <MotionDiv animate={!isVaultPage && pathname.startsWith('/vaults') ? 'enter' : 'exit'} name={name}>
       {icon}
     </MotionDiv>
   )

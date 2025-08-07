@@ -1,12 +1,4 @@
-import {
-  FAQs,
-  Footer,
-  Hero,
-  Integrations,
-  Partners,
-  Security,
-  Vaults
-} from 'apps/landing/components/sections'
+import { FAQs, Footer, Hero, Integrations, Partners, Security, Vaults } from 'apps/landing/components/sections'
 
 import type { ReactElement } from 'react'
 

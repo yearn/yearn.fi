@@ -16,10 +16,7 @@ import { erc20Abi, maxUint256, zeroAddress } from 'viem'
 import type { Connector } from 'wagmi'
 import { readContract } from 'wagmi/actions'
 
-async function allowanceOfRouter(
-  request: TInitSolverArgs,
-  provider: Connector | undefined
-): Promise<bigint> {
+async function allowanceOfRouter(request: TInitSolverArgs, provider: Connector | undefined): Promise<bigint> {
   if (!request || !provider) {
     return 0n
   }
@@ -87,10 +84,7 @@ export function useSolverV3Router(): TSolverContext {
         tokenAddress: toAddress(request.current.inputToken.value),
         spenderAddress: toAddress(request.current.migrator)
       })
-      existingAllowances.current[key] = toNormalizedBN(
-        allowance,
-        request.current.inputToken.decimals
-      )
+      existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
       return existingAllowances.current[key]
     },
     [provider]
@@ -113,10 +107,7 @@ export function useSolverV3Router(): TSolverContext {
       }
 
       const allowance = await allowanceOfRouter(request.current, provider)
-      existingAllowances.current[key] = toNormalizedBN(
-        allowance,
-        request.current.inputToken.decimals
-      )
+      existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
       return existingAllowances.current[key]
     },
     [provider]
@@ -220,13 +211,6 @@ export function useSolverV3Router(): TSolverContext {
       onExecuteDeposit,
       onExecuteWithdraw
     }),
-    [
-      init,
-      onApprove,
-      onExecuteDeposit,
-      onExecuteWithdraw,
-      onRetrieveAllowance,
-      onRetrieveRouterAllowance
-    ]
+    [init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, onRetrieveRouterAllowance]
   )
 }
