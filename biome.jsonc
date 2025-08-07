@@ -9,9 +9,9 @@
         "noForEach": "off",
         "noExtraBooleanCast": "off"
       },
-
       "security": {
-        "noDangerouslySetInnerHtml": "off" //
+        // Rules that are relevant to the legacy app
+        "noDangerouslySetInnerHtml": "off"
       },
       "suspicious": {
         "noExplicitAny": "off"
