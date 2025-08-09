@@ -68,6 +68,84 @@
   --line-height-8xl: 104px;
 
   --animation-spin-slow: spin-slow 4s linear infinite;
+
+  --color-primary: 220 95% 50%;
+  --color-neutral-0: 0 0% 100%;
+  --color-neutral-100: 0 0% 96%;
+  --color-neutral-200: 0 0% 92%;
+  --color-neutral-300: 0 0% 88%;
+  --color-neutral-400: 0 0% 62%;
+  --color-neutral-500: 0 0% 50%;
+  --color-neutral-600: 0 0% 36%;
+  --color-neutral-700: 0 0% 26%;
+  --color-neutral-800: 0 0% 16%;
+  --color-neutral-900: 0 0% 5%;
+
+  /* Up Only Green */
+  --color-green-50: 79 75% 81%;
+  --color-green-100: 79 74% 63%;
+  --color-green-200: 113 90% 61%;
+  --color-green-300: 128 100% 53%;
+  --color-green-400: 118 76% 54%;
+  --color-green-500: 100 60% 48%;
+  --color-green-600: 135 51% 42%;
+  --color-green-700: 174 100% 24%;
+  --color-green-800: 174 98% 19%;
+  --color-green-900: 175 100% 11%;
+
+  /* Tokyo Party */
+  --color-purple-50: 288 46% 75%;
+  --color-purple-100: 289 46% 50%;
+  --color-purple-200: 266 75% 52%;
+  --color-purple-300: 258 97% 53%;
+  --color-purple-400: 267 67% 45%;
+  --color-purple-500: 293 42% 37%;
+  --color-purple-600: 272 45% 39%;
+  --color-purple-700: 257 50% 40%;
+  --color-purple-800: 257 58% 29%;
+  --color-purple-900: 257 100% 13%;
+
+  /* Disco Salmon */
+  --color-pink-50: 351 100% 96%;
+  --color-pink-100: 351 100% 78%;
+  --color-pink-200: 333 98% 68%;
+  --color-pink-300: 326 95% 60%;
+  --color-pink-400: 336 83% 61%;
+  --color-pink-500: 350 69% 60%;
+  --color-pink-600: 341 59% 51%;
+  --color-pink-700: 332 76% 41%;
+  --color-pink-800: 332 81% 33%;
+  --color-pink-900: 332 100% 21%;
+
+  /* Metaverse Sunset */
+  --color-orange-50: 48 100% 83%;
+  --color-orange-100: 48 100% 66%;
+  --color-orange-200: 60 88% 55%;
+  --color-orange-300: 65 98% 51%;
+  --color-orange-400: 53 94% 49%;
+  --color-orange-500: 40 94% 50%;
+  --color-orange-600: 31 94% 49%;
+  --color-orange-700: 20 97% 47%;
+  --color-orange-800: 14 97% 40%;
+  --color-orange-900: 0 100% 28%;
+
+  /* 🔵 - Yearn Finance ******************************************************
+	**	These colors should be used fairly conservatively throughout your UI to
+	**	avoid overpowering your primary colors. Use them when you need an
+	**	element to stand out, or to reinforce things like error states or
+	**	positive trends with the appropriate semantic color.
+	**************************************************************************/
+  --color-yellow-900: 32 100% 45%;
+  --color-yellow-300: 32 100% 95%;
+  --color-yellow-200: 32 100% 90%;
+  --color-error-900: 328 100% 45%;
+  --color-error-300: 328 100% 95%;
+  --color-error-200: 328 100% 90%;
+  --color-red-900: 0 100% 45%;
+  --color-red-300: 0 100% 95%;
+  --color-red-200: 0 100% 90%;
+
+  --default-rounded: 0rem;
 }
 
 /*
