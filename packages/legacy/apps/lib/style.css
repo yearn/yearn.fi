@@ -1,326 +1,449 @@
-@tailwind base;
+@import 'tailwindcss';
 
-:root {
-	--color-primary: 220 95% 50%;
-	--color-neutral-0: 0 0% 100%;
-	--color-neutral-100: 0 0% 96%;
-	--color-neutral-200: 0 0% 92%;
-	--color-neutral-300: 0 0% 88%;
-	--color-neutral-400: 0 0% 62%;
-	--color-neutral-500: 0 0% 50%;
-	--color-neutral-600: 0 0% 36%;
-	--color-neutral-700: 0 0% 26%;
-	--color-neutral-800: 0 0% 16%;
-	--color-neutral-900: 0 0% 5%;
+@config './tailwind.config.cjs';
 
-	/* Up Only Green */
-	--color-green-50: 79 75% 81%;
-	--color-green-100: 79 74% 63%;
-	--color-green-200: 113 90% 61%;
-	--color-green-300: 128 100% 53%;
-	--color-green-400: 118 76% 54%;
-	--color-green-500: 100 60% 48%;
-	--color-green-600: 135 51% 42%;
-	--color-green-700: 174 100% 24%;
-	--color-green-800: 174 98% 19%;
-	--color-green-900: 175 100% 11%;
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
 
-	/* Tokyo Party */
-	--color-purple-50: 288 46% 75%;
-	--color-purple-100: 289 46% 50%;
-	--color-purple-200: 266 75% 52%;
-	--color-purple-300: 258 97% 53%;
-	--color-purple-400: 267 67% 45%;
-	--color-purple-500: 293 42% 37%;
-	--color-purple-600: 272 45% 39%;
-	--color-purple-700: 257 50% 40%;
-	--color-purple-800: 257 58% 29%;
-	--color-purple-900: 257 100% 13%;
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
-	/* Disco Salmon */
-	--color-pink-50: 351 100% 96%;
-	--color-pink-100: 351 100% 78%;
-	--color-pink-200: 333 98% 68%;
-	--color-pink-300: 326 95% 60%;
-	--color-pink-400: 336 83% 61%;
-	--color-pink-500: 350 69% 60%;
-	--color-pink-600: 341 59% 51%;
-	--color-pink-700: 332 76% 41%;
-	--color-pink-800: 332 81% 33%;
-	--color-pink-900: 332 100% 21%;
+@layer base {
+  :root {
+    --color-primary: 220 95% 50%;
+    --color-neutral-0: 0 0% 100%;
+    --color-neutral-100: 0 0% 96%;
+    --color-neutral-200: 0 0% 92%;
+    --color-neutral-300: 0 0% 88%;
+    --color-neutral-400: 0 0% 62%;
+    --color-neutral-500: 0 0% 50%;
+    --color-neutral-600: 0 0% 36%;
+    --color-neutral-700: 0 0% 26%;
+    --color-neutral-800: 0 0% 16%;
+    --color-neutral-900: 0 0% 5%;
 
-	/* Metaverse Sunset */
-	--color-orange-50: 48 100% 83%;
-	--color-orange-100: 48 100% 66%;
-	--color-orange-200: 60 88% 55%;
-	--color-orange-300: 65 98% 51%;
-	--color-orange-400: 53 94% 49%;
-	--color-orange-500: 40 94% 50%;
-	--color-orange-600: 31 94% 49%;
-	--color-orange-700: 20 97% 47%;
-	--color-orange-800: 14 97% 40%;
-	--color-orange-900: 0 100% 28%;
+    /* Up Only Green */
+    --color-green-50: 79 75% 81%;
+    --color-green-100: 79 74% 63%;
+    --color-green-200: 113 90% 61%;
+    --color-green-300: 128 100% 53%;
+    --color-green-400: 118 76% 54%;
+    --color-green-500: 100 60% 48%;
+    --color-green-600: 135 51% 42%;
+    --color-green-700: 174 100% 24%;
+    --color-green-800: 174 98% 19%;
+    --color-green-900: 175 100% 11%;
 
-	/* 🔵 - Yearn Finance ******************************************************
+    /* Tokyo Party */
+    --color-purple-50: 288 46% 75%;
+    --color-purple-100: 289 46% 50%;
+    --color-purple-200: 266 75% 52%;
+    --color-purple-300: 258 97% 53%;
+    --color-purple-400: 267 67% 45%;
+    --color-purple-500: 293 42% 37%;
+    --color-purple-600: 272 45% 39%;
+    --color-purple-700: 257 50% 40%;
+    --color-purple-800: 257 58% 29%;
+    --color-purple-900: 257 100% 13%;
+
+    /* Disco Salmon */
+    --color-pink-50: 351 100% 96%;
+    --color-pink-100: 351 100% 78%;
+    --color-pink-200: 333 98% 68%;
+    --color-pink-300: 326 95% 60%;
+    --color-pink-400: 336 83% 61%;
+    --color-pink-500: 350 69% 60%;
+    --color-pink-600: 341 59% 51%;
+    --color-pink-700: 332 76% 41%;
+    --color-pink-800: 332 81% 33%;
+    --color-pink-900: 332 100% 21%;
+
+    /* Metaverse Sunset */
+    --color-orange-50: 48 100% 83%;
+    --color-orange-100: 48 100% 66%;
+    --color-orange-200: 60 88% 55%;
+    --color-orange-300: 65 98% 51%;
+    --color-orange-400: 53 94% 49%;
+    --color-orange-500: 40 94% 50%;
+    --color-orange-600: 31 94% 49%;
+    --color-orange-700: 20 97% 47%;
+    --color-orange-800: 14 97% 40%;
+    --color-orange-900: 0 100% 28%;
+
+    /* 🔵 - Yearn Finance ******************************************************
 	**	These colors should be used fairly conservatively throughout your UI to
 	**	avoid overpowering your primary colors. Use them when you need an
 	**	element to stand out, or to reinforce things like error states or
 	**	positive trends with the appropriate semantic color.
 	**************************************************************************/
-	--color-yellow-900: 32 100% 45%;
-	--color-yellow-300: 32 100% 95%;
-	--color-yellow-200: 32 100% 90%;
-	--color-error-900: 328 100% 45%;
-	--color-error-300: 328 100% 95%;
-	--color-error-200: 328 100% 90%;
-	--color-red-900: 0 100% 45%;
-	--color-red-300: 0 100% 95%;
-	--color-red-200: 0 100% 90%;
+    --color-yellow-900: 32 100% 45%;
+    --color-yellow-300: 32 100% 95%;
+    --color-yellow-200: 32 100% 90%;
+    --color-error-900: 328 100% 45%;
+    --color-error-300: 328 100% 95%;
+    --color-error-200: 328 100% 90%;
+    --color-red-900: 0 100% 45%;
+    --color-red-300: 0 100% 95%;
+    --color-red-200: 0 100% 90%;
 
-	--default-rounded: 0rem;
+    --default-rounded: 0rem;
+  }
+
+  :root.dark {
+    --color-primary: 220 95% 50%;
+    --color-neutral-900: 0 0% 100%;
+    --color-neutral-800: 0 0% 96%;
+    --color-neutral-700: 0 0% 92%;
+    --color-neutral-600: 0 0% 88%;
+    --color-neutral-500: 0 0% 62%;
+    --color-neutral-400: 0 0% 50%;
+    --color-neutral-300: 0 0% 36%;
+    --color-neutral-200: 0 0% 26%;
+    --color-neutral-100: 0 0% 16%;
+    --color-neutral-0: 0 0% 5%;
+  }
+
+@theme {
+  --color-black: hsl(0, 0%, 0%);
+  --color-white: rgb(255, 255, 255);
+  --color-transparent: transparent;
+  --color-inherit: inherit;
+  --color-primary-500: oklch(0.5 0.233 220);
+  --color-primary-600: oklch(0.45 0.233 220);
+
+  --color-gray-300: #E1E1E1;
+  --color-gray-400: #9D9D9D;
+  --color-gray-500: #424242;
+  --color-gray-600: #292929;
+  --color-gray-700: #282828;
+  --color-gray-800: #181818;
+  --color-gray-900: #0C0C0C;
+
+  --color-steelGray-500: oklch(0.71 0.014 218);
+  --color-lightBlue-500: oklch(0.67 0.142 220);
+  --color-blue-500: oklch(0.5 0.233 220);
+  --color-blue-800: oklch(0.38 0.182 230);
+  --color-blue-900: oklch(0.11 0.071 231);
+  --color-fallback: #808080;
+  --color-red: #D42600;
+
+  /* --font-aeonik: var(--font-aeonik), "Aeonik", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-aeonikFono: var(--font-aeonik-fono), "Aeonik Fono", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: "Aeonik Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; */
+
+  --width-22: 5.5rem;
+  --width-42: 10.5rem;
+  --width-50: 12.5rem;
+  --width-54: 13.5rem;
+
+  --min-width-42: 10.5rem;
+
+  --max-width-50: 12.5rem;
+  --max-width-54: 13.5rem;
+
+  --height-inherit: inherit;
+
+  --breakpoint-lg: 1200px;
+
+  --grid-template-columns-13: repeat(13, minmax(0, 1fr));
+  --grid-template-columns-14: repeat(14, minmax(0, 1fr));
+  --grid-template-columns-20: repeat(20, minmax(0, 1fr));
+  --grid-template-columns-30: repeat(30, minmax(0, 1fr));
+  --grid-template-columns-75: repeat(75, minmax(0, 1fr));
+
+  --grid-column-span-75: span 75 / span 75;
+  --grid-column-span-50: span 50 / span 50;
+  --grid-column-span-46: span 46 / span 46;
+  --grid-column-span-29: span 29 / span 29;
+  --grid-column-span-25: span 25 / span 25;
+
+  --font-size-xxs: 10px;
+  --line-height-xxs: 16px;
+  --font-size-2xl: 24px;
+  --line-height-2xl: 32px;
+  --font-size-3xl: 32px;
+  --line-height-3xl: 40px;
+  --font-size-7xl: 64px;
+  --line-height-7xl: 72px;
+  --font-size-8xl: 88px;
+  --line-height-8xl: 104px;
+
+  --animation-spin-slow: spin-slow 4s linear infinite;
 }
 
-:root.dark {
-	--color-primary: 220 95% 50%;
-	--color-neutral-900: 0 0% 100%;
-	--color-neutral-800: 0 0% 96%;
-	--color-neutral-700: 0 0% 92%;
-	--color-neutral-600: 0 0% 88%;
-	--color-neutral-500: 0 0% 62%;
-	--color-neutral-400: 0 0% 50%;
-	--color-neutral-300: 0 0% 36%;
-	--color-neutral-200: 0 0% 26%;
-	--color-neutral-100: 0 0% 16%;
-	--color-neutral-0: 0 0% 5%;
-}
+  body {
+    @apply text-neutral-900;
+  }
+  h1 {
+    @apply text-xl font-bold text-neutral-900;
+  }
+  h4 {
+    @apply text-lg font-bold text-neutral-700;
+  }
+  #__next {
+    @apply w-full h-full;
+  }
 
-body {
-	@apply text-neutral-900;
-}
-h1 {
-	@apply text-xl font-bold text-neutral-900;
-}
-h4 {
-	@apply text-lg font-bold text-neutral-700;
-}
-#__next {@apply w-full h-full}
-
-/* 🔵 - Yearn Finance ******************************************************
+  /* 🔵 - Yearn Finance ******************************************************
 ** Overwritting the defaults to match our needs
 **************************************************************************/
-* {@apply scroll-smooth font-aeonik}
-input::placeholder {@apply text-neutral-400 not-italic}
-textarea::placeholder {@apply text-neutral-400 not-italic}
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-textarea:-webkit-autofill,
-textarea:-webkit-autofill:hover,
-textarea:-webkit-autofill:focus,
-select:-webkit-autofill,
-select:-webkit-autofill:hover,
-select:-webkit-autofill:focus {
-	-webkit-box-shadow: 0 0 0px 1000px rgba(0, 0, 0, 0) inset;
-	transition: background-color 5000s ease-in-out 0s;
-}
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-	-webkit-appearance: none;
-	margin: 0;
-}
-input[type=number] {
-	-moz-appearance: textfield;
-}
-label[aria-invalid="true"] {
-	@apply text-neutral-500 transition-colors;
-	& > form > div {
-		@apply border-[#FE0000] focus-within:border-[#FE0000] text-[#FE0000] focus-within:text-[#FE0000];
-	}
-	& > p {
-		@apply text-[#FF0000];
-	}
-}
+  * {
+    @apply scroll-smooth font-aeonik;
+  }
+  input::placeholder {
+    @apply text-neutral-400 not-italic;
+  }
+  textarea::placeholder {
+    @apply text-neutral-400 not-italic;
+  }
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px rgba(0, 0, 0, 0) inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+  label[aria-invalid='true'] {
+    @apply text-neutral-500 transition-colors;
+    & > form > div {
+      @apply border-[#FE0000] focus-within:border-[#FE0000] text-[#FE0000] focus-within:text-[#FE0000];
+    }
+    & > p {
+      @apply text-[#FF0000];
+    }
+  }
 
-:focus {
+  :focus {
     outline: none;
-}
+  }
 
-/* 🔵 - Yearn Finance ******************************************************
+  /* 🔵 - Yearn Finance ******************************************************
 ** First, we are declaring the Yearn's specific class for the components.
 ** We need to declare them first in order to work with css inheritence
 ** correctly. Aka theses class should be possible to overwrite by adding an
 ** extra tailwind class
 **************************************************************************/
-.image-align-middle > img {
-	object-position: 0 70%;
-}
-.inline-dl {@apply flex flex-col p-6 shadow-xl;}
-.flex-center {@apply flex justify-center items-center;}
-.cell-end {@apply justify-end text-right;}
-.cell-start {@apply justify-start text-left;}
-.link {
-	@apply text-primary-500 underline cursor-pointer transition-colors;
-	&:hover {@apply text-primary-600;}
-}
-.rounded-default {border-radius: var(--default-rounded);}
-.rounded-b-default {
-	border-bottom-left-radius: var(--default-rounded);
-	border-bottom-right-radius: var(--default-rounded);
-}
-.rounded-t-default {
-	border-top-left-radius: var(--default-rounded);
-	border-top-right-radius: var(--default-rounded);
-}
-.rounded-l-default {
-	border-top-left-radius: var(--default-rounded);
-	border-bottom-left-radius: var(--default-rounded);
-}
-.rounded-r-default {
-	border-top-right-radius: var(--default-rounded);
-	border-bottom-right-radius: var(--default-rounded);
-}
+  .image-align-middle > img {
+    object-position: 0 70%;
+  }
+  .inline-dl {
+    @apply flex flex-col p-6 shadow-xl;
+  }
+  .flex-center {
+    @apply flex justify-center items-center;
+  }
+  .cell-end {
+    @apply justify-end text-right;
+  }
+  .cell-start {
+    @apply justify-start text-left;
+  }
+  .link {
+    @apply text-primary-500 underline cursor-pointer transition-colors;
+    &:hover {
+      @apply text-primary-600;
+    }
+  }
+  .rounded-default {
+    border-radius: var(--default-rounded);
+  }
+  .rounded-b-default {
+    border-bottom-left-radius: var(--default-rounded);
+    border-bottom-right-radius: var(--default-rounded);
+  }
+  .rounded-t-default {
+    border-top-left-radius: var(--default-rounded);
+    border-top-right-radius: var(--default-rounded);
+  }
+  .rounded-l-default {
+    border-top-left-radius: var(--default-rounded);
+    border-bottom-left-radius: var(--default-rounded);
+  }
+  .rounded-r-default {
+    border-top-right-radius: var(--default-rounded);
+    border-bottom-right-radius: var(--default-rounded);
+  }
 
-/* -- Button.tsx ------------------------------------------------------- */
-.yearn--button {
-	@apply cursor-pointer px-5 flex justify-center items-center h-10 text-base transition-all relative;
-	border-radius: var(--default-rounded);
+  /* -- Button.tsx ------------------------------------------------------- */
+  .yearn--button {
+    @apply cursor-pointer px-5 flex justify-center items-center h-10 text-base transition-all relative;
+    border-radius: var(--default-rounded);
 
-	&[data-variant="filled"] {
-		@apply text-neutral-0 bg-neutral-900 font-normal border border-transparent;
-		&:disabled {@apply bg-neutral-700 opacity-40;}
-		&:not(:disabled):not([aria-busy="true"]):hover {@apply bg-neutral-800;}
-	}
-	&[data-variant="light"] {
-		@apply text-neutral-900 bg-neutral-100 border border-transparent;
-		&:disabled {@apply opacity-40;}
-		&:not(:disabled):not([aria-busy="true"]):hover {@apply bg-neutral-200;}
-	}
-	&[data-variant="outlined"] {
-		@apply text-neutral-900 bg-transparent border border-neutral-900;
-		&:disabled {@apply opacity-40;}
-		&:not(:disabled):not([aria-busy="true"]):hover {@apply bg-neutral-900 text-neutral-0;}
-	}
-	&[data-variant="reverted"] {
-		@apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
-		&:disabled {@apply bg-neutral-200 opacity-40;}
-		&:not(:disabled):not([aria-busy="true"]):hover {@apply bg-neutral-200;}
-		&[aria-busy="true"] svg {
-			@apply text-neutral-900;
-		}
-	}
-	&[aria-busy="true"] {
-		@apply cursor-wait;
-		color: transparent !important;
-	}
-	&:disabled {@apply cursor-not-allowed;}
-}
+    &[data-variant='filled'] {
+      @apply text-neutral-0 bg-neutral-900 font-normal border border-transparent;
+      &:disabled {
+        @apply bg-neutral-700 opacity-40;
+      }
+      &:not(:disabled):not([aria-busy='true']):hover {
+        @apply bg-neutral-800;
+      }
+    }
+    &[data-variant='light'] {
+      @apply text-neutral-900 bg-neutral-100 border border-transparent;
+      &:disabled {
+        @apply opacity-40;
+      }
+      &:not(:disabled):not([aria-busy='true']):hover {
+        @apply bg-neutral-200;
+      }
+    }
+    &[data-variant='outlined'] {
+      @apply text-neutral-900 bg-transparent border border-neutral-900;
+      &:disabled {
+        @apply opacity-40;
+      }
+      &:not(:disabled):not([aria-busy='true']):hover {
+        @apply bg-neutral-900 text-neutral-0;
+      }
+    }
+    &[data-variant='reverted'] {
+      @apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
+      &:disabled {
+        @apply bg-neutral-200 opacity-40;
+      }
+      &:not(:disabled):not([aria-busy='true']):hover {
+        @apply bg-neutral-200;
+      }
+      &[aria-busy='true'] svg {
+        @apply text-neutral-900;
+      }
+    }
+    &[aria-busy='true'] {
+      @apply cursor-wait;
+      color: transparent !important;
+    }
+    &:disabled {
+      @apply cursor-not-allowed;
+    }
+  }
 
+  /* -- Dropdown.tsx ----------------------------------------------------- */
+  .yearn--dropdown-menu {
+    --dropdown-text-color: hsl(var(--color-primary-500));
+    --dropdown-bg-color: hsl(var(--color-neutral-300));
+    --dropdown-bg-color-active: hsl(var(--color-neutral-600));
+    --dropdown-border-width: 0px;
+    --dropdown-border-color: transparent;
 
-/* -- Dropdown.tsx ----------------------------------------------------- */
-.yearn--dropdown-menu {
-	--dropdown-text-color: hsl(var(--color-primary-500));
-	--dropdown-bg-color: hsl(var(--color-neutral-300));
-	--dropdown-bg-color-active: hsl(var(--color-neutral-600));
-	--dropdown-border-width: 0px;
-	--dropdown-border-color: transparent;
+    @apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60 scrollbar-none;
+    border-radius: var(--default-rounded);
+    border: solid var(--dropdown-border-width) var(--dropdown-border-color);
+    background: var(--dropdown-bg-color);
+  }
+  .yearn--dropdown-menu-item {
+    @apply flex flex-row items-center cursor-pointer py-1 pr-4 pl-3 transition-colors;
+    color: var(--dropdown-text-color);
+    &[data-active='true'] {
+      background-color: var(--dropdown-bg-color-active);
+    }
+  }
 
-	@apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60 scrollbar-none;
-	border-radius: var(--default-rounded);
-	border: solid var(--dropdown-border-width) var(--dropdown-border-color);
-	background: var(--dropdown-bg-color);
-}
-.yearn--dropdown-menu-item {
-	@apply flex flex-row items-center cursor-pointer py-1 pr-4 pl-3 transition-colors;
-	color: var(--dropdown-text-color);
-	&[data-active="true"] {
-		background-color: var(--dropdown-bg-color-active);
-	}
-}
+  /* -- Input.tsx -------------------------------------------------------- */
+  .yearn--input {
+    --input-label-color: hsl(var(--color-neutral-500));
+    --input-max-bg-color: transparent;
+    --input-max-bg-color-hover: hsl(var(--color-primary-100));
+    --input-max-text-color: hsl(var(--color-primary-500));
+    --input-max-border-color: hsl(var(--color-primary-500));
+    --input-max-border-width: 1px;
 
-/* -- Input.tsx -------------------------------------------------------- */
-.yearn--input {
-	--input-label-color: hsl(var(--color-neutral-500));
-	--input-max-bg-color: transparent;
-	--input-max-bg-color-hover: hsl(var(--color-primary-100));
-	--input-max-text-color: hsl(var(--color-primary-500));
-	--input-max-border-color: hsl(var(--color-primary-500));
-	--input-max-border-width: 1px;
+    @apply space-y-1;
+    & > p {
+      @apply text-sm md:text-base transition-colors;
+      color: var(--input-label-color);
+    }
+  }
 
-	@apply space-y-1;
-	& > p {
-		@apply text-sm md:text-base transition-colors;
-		color: var(--input-label-color);
-	}
-}
+  /* -- Modal.tsx ---------------------------------------------------- */
+  .yearn--modal-wrapper {
+    @apply flex justify-center items-end px-4 pt-4 pb-20 min-h-screen text-center sm:block sm:p-0;
+  }
+  .yearn--modal-overlay {
+    @apply fixed inset-0 z-10 bg-neutral-900/90 transition-opacity;
+  }
+  :root.dark {
+    & .yearn--modal-overlay {
+      @apply bg-neutral-100/90;
+    }
+  }
 
-/* -- Modal.tsx ---------------------------------------------------- */
-.yearn--modal-wrapper {
-	@apply flex justify-center items-end px-4 pt-4 pb-20 min-h-screen text-center sm:block sm:p-0;
-}
-.yearn--modal-overlay {
-	@apply fixed inset-0 z-10 bg-neutral-900/90 transition-opacity;
-}
-:root.dark {
-	& .yearn--modal-overlay {
-		@apply bg-neutral-100/90;
-	}
-}
+  .yearn--modal {
+    @apply inline-block overflow-hidden relative z-50 w-full text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle md:mb-96 bg-neutral-0;
 
-.yearn--modal {
-	@apply inline-block overflow-hidden relative z-50 w-full text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle md:mb-96 bg-neutral-0;
+    border-radius: var(--default-rounded);
+  }
 
-	border-radius: var(--default-rounded);
-}
+  /* -- ModalMobileMenu.tsx ---------------------------------------------------- */
+  .yearn--modalMobileMenu-content {
+    @apply relative flex w-full flex-col items-center justify-center space-y-1 pt-4;
+  }
+  .yearn--modalMobileMenu-title {
+    @apply text-center text-xl font-bold text-neutral-700;
+  }
+  .yearn--modalMobileMenu-networkIndicator {
+    @apply text-sm text-neutral-500;
+    & > span {
+      @apply flex flex-row items-center;
+    }
+  }
+  .yearn--modalMobileMenu-select {
+    @apply rounded-default relative ml-1 flex flex-row items-center bg-neutral-500/10 py-1 pl-2 text-neutral-500;
+  }
+  .yearn--modalMobileMenu-walletCard {
+    @apply rounded-default flex cursor-pointer flex-col items-center justify-center bg-neutral-100 py-4 px-2 text-center transition-colors;
+  }
+  .yearn--modalMobileMenu-childrenWrapper {
+    @apply mb-4 space-y-2 px-2;
+  }
+  .yearn--modalMobileMenu-separatorWrapper {
+    @apply w-full px-2;
+  }
+  .yearn--modalMobileMenu-separator {
+    @apply mx-auto mt-2 mb-4 h-[2px] w-full items-center justify-center bg-neutral-500/20;
+  }
+  .yearn--modalMobileMenu-chevron {
+    @apply absolute right-2;
+    & > svg {
+      @apply ml-1 h-3 w-3;
+    }
+  }
+  .yearn--modalMobileMenu-logout {
+    @apply absolute top-4 right-4;
+    & > svg {
+      @apply h-6 w-6 rounded-full bg-neutral-200 p-1.5 text-neutral-500;
+    }
+  }
 
-/* -- ModalMobileMenu.tsx ---------------------------------------------------- */
-.yearn--modalMobileMenu-content {
-	@apply relative flex w-full flex-col items-center justify-center space-y-1 pt-4;
-}
-.yearn--modalMobileMenu-title {
-	@apply text-center text-xl font-bold text-neutral-700;
-}
-.yearn--modalMobileMenu-networkIndicator {
-	@apply text-sm text-neutral-500;
-	& > span {
-		@apply flex flex-row items-center;
-	}
-}
-.yearn--modalMobileMenu-select {
-	@apply rounded-default relative ml-1 flex flex-row items-center bg-neutral-500/10 py-1 pl-2 text-neutral-500;
-}
-.yearn--modalMobileMenu-walletCard {
-	@apply rounded-default flex cursor-pointer flex-col items-center justify-center bg-neutral-100 py-4 px-2 text-center transition-colors;
-}
-.yearn--modalMobileMenu-childrenWrapper {
-	@apply mb-4 space-y-2 px-2;
-}
-.yearn--modalMobileMenu-separatorWrapper {
-	@apply w-full px-2;
-}
-.yearn--modalMobileMenu-separator {
-	@apply mx-auto mt-2 mb-4 h-[2px] w-full items-center justify-center bg-neutral-500/20;
-}
-.yearn--modalMobileMenu-chevron {
-	@apply absolute right-2;
-	& > svg {
-		@apply ml-1 h-3 w-3;
-	}
-}
-.yearn--modalMobileMenu-logout {
-	@apply absolute top-4 right-4;
-	& > svg {
-		@apply h-6 w-6 rounded-full bg-neutral-200 p-1.5 text-neutral-500;
-	}
-}
-
-
-
-/* 🔵 - Yearn Finance ******************************************************
+  /* 🔵 - Yearn Finance ******************************************************
 ** Then, we import the tailwind class. They will be able to overwrite all
 ** the previous classes, not the next ones directly.
 **************************************************************************/
-@tailwind components;
-@tailwind utilities;
+}
 
 /* 🔵 - Yearn Finance ******************************************************
 ** Shorthand for some group of style used across the application
@@ -339,8 +462,8 @@ label[aria-invalid="true"] {
 .nprogress-custom-parent #nprogress .spinner {@apply absolute}
 .nprogress-custom-parent #nprogress .bar {@apply absolute}
 #nprogress {@apply pointer-events-none}
-#nprogress .bar {@apply bg-neutral-900 fixed top-0 left-0 w-full h-1 z-[1031]}
-#nprogress .spinner {@apply block fixed z-[1031] top-4 right-4}
+#nprogress .bar {@apply bg-neutral-900 fixed top-0 left-0 w-full h-1 z-1031}
+#nprogress .spinner {@apply block fixed z-1031 top-4 right-4}
 #nprogress .spinner-icon {@apply hidden}
 
 /* 🔵 - Yearn Finance ******************************************************
@@ -445,7 +568,7 @@ label[aria-invalid="true"] {
 }
 
 .mobile-nav-item {
-	@apply flex flex-col items-start justify-between rounded bg-good-ol-grey-100;
+	@apply flex flex-col items-start justify-between rounded-sm bg-good-ol-grey-100;
 	& > p {
 		@apply p-2 text-base font-bold text-neutral-900;
 	}
@@ -471,7 +594,7 @@ label[aria-invalid="true"] {
 
 
 .yearn--toast-options {
-	@apply !w-screen text-sm text-neutral-700 !px-4 !rounded-none !shadow-none !py-2 !max-w-full;
+	@apply w-screen! text-sm text-neutral-700 px-4! rounded-none! shadow-none! py-2! max-w-full!;
 }
 
 .yearn--toast-button {
@@ -587,6 +710,6 @@ select:focus {
 
 [type='checkbox'],
 [type='checkbox']:focus {
-	@apply outline-none focus:border-0 focus:outline-none focus:ring-0 active:border-0 active:ring-0;
+	@apply outline-hidden focus:border-0 focus:outline-hidden focus:ring-0 active:border-0 active:ring-0;
 	box-shadow: none !important;
 }

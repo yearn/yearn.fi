@@ -1,6 +1,6 @@
 /* This will load Tailwindcss + all the overwrite from Yearn lib */
-@import "apps/lib/style.css";
-@import "@rainbow-me/rainbowkit/styles.css";
+@import './apps/lib/style.css';
+@import '@rainbow-me/rainbowkit/styles.css';
 
 @font-face {
   font-family: "Aeonik Mono";
