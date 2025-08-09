@@ -1,7 +1,46 @@
-/* This will load Tailwindcss + all the overwrite from Yearn lib */
-@import "./apps/lib/style.css";
+/*************************************************************************************************
+ * Yearn Finance - Consolidated Style Sheet
+ * This file consolidates all styles from the legacy app into a single, deduplicated CSS file.
+ * Previously spread across: style.css, apps/style.css, and apps/lib/style.css
+ *
+ * Structure:
+ * 1. External imports
+ * 2. Tailwind CSS with configuration
+ * 3. Tailwind v4 compatibility layer
+ * 4. Font face definitions
+ * 5. Theme variables (@theme block)
+ * 6. Base layer styles
+ * 7. Component styles
+ * 8. Utility classes
+ *************************************************************************************************/
+
+/* External Dependencies */
 @import "@rainbow-me/rainbowkit/styles.css";
 
+/* Tailwind CSS */
+@import "tailwindcss";
+
+@config './tailwind.config.js';
+
+/*************************************************************************************************
+ * Tailwind CSS v4 Compatibility Layer
+ * The default border color has changed to `currentcolor` in Tailwind CSS v4,
+ * so we've added these compatibility styles to make sure everything still
+ * looks the same as it did with Tailwind CSS v3.
+ *************************************************************************************************/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+/*************************************************************************************************
+ * Font Face Definitions
+ *************************************************************************************************/
 @font-face {
   font-family: "Aeonik Mono";
   src: url("public/fonts/AeonikMono-Regular.eot");
@@ -38,55 +77,16 @@
   font-family: "Aeonik Fono";
   src: url("public/fonts/AeonikFono-Regular.otf");
   src: local("Aeonik Fono Regular"), local("AeonikFono-Regular");
-
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
-#main {
-  @apply flex flex-col w-full h-full min-h-screen bg-neutral-0;
-}
-
-:root.v3 {
-  --color-primary: 220 95% 50%;
-  --color-neutral-900: 0 0% 96%;
-  --color-neutral-800: 0 0% 96%;
-  --color-neutral-700: 0 0% 92%;
-  --color-neutral-600: 0 0% 88%;
-  --color-neutral-500: 0 0% 62%;
-  --color-neutral-400: 0 0% 50%;
-  --color-neutral-300: 231 51% 19%;
-  --color-neutral-200: 242 54% 27%;
-  --color-neutral-100: 231 100% 11%;
-  --color-neutral-0: 231 100% 6%;
-}
-
-:root {
-  --color-blue-500: 220 95% 50%;
-  --color-blue-800: 230 93% 38%;
-  --color-blue-900: 231 100% 11%;
-  --color-lightBlue-500: 220 100% 67%;
-  --color-steelGray-500: 218 14% 71%;
-}
-
-:root.dark {
-  --color-blue-500: 220 95% 50%;
-  --color-blue-800: 230 93% 38%;
-  --color-blue-900: 231 100% 11%;
-  --color-lightBlue-500: 220 100% 67%;
-  --color-steelGray-500: 218 14% 71%;
-}
-
-:root.light {
-  --color-blue-500: 220 95% 35%;
-  --color-blue-800: 230 93% 25%;
-  --color-blue-900: 218 100% 95%;
-  --color-lightBlue-500: 220 100% 45%;
-  --color-steelGray-500: 218 14% 45%;
-}
-
+/*************************************************************************************************
+ * Theme Variables and Custom Properties
+ *************************************************************************************************/
 @theme {
+  /* Base Colors */
   --color-black: hsl(0, 0%, 0%);
   --color-white: rgb(255, 255, 255);
   --color-transparent: transparent;
@@ -94,6 +94,7 @@
   --color-primary-500: oklch(0.5 0.233 220);
   --color-primary-600: oklch(0.45 0.233 220);
 
+  /* Gray Scale */
   --color-gray-300: #e1e1e1;
   --color-gray-400: #9d9d9d;
   --color-gray-500: #424242;
@@ -102,6 +103,7 @@
   --color-gray-800: #181818;
   --color-gray-900: #0c0c0c;
 
+  /* Brand Colors */
   --color-steelGray-500: oklch(0.71 0.014 218);
   --color-lightBlue-500: oklch(0.67 0.142 220);
   --color-blue-500: oklch(0.5 0.233 220);
@@ -110,36 +112,32 @@
   --color-fallback: #808080;
   --color-red: #d42600;
 
-  /* --font-aeonik: var(--font-aeonik), "Aeonik", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-aeonikFono: var(--font-aeonik-fono), "Aeonik Fono", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-mono: "Aeonik Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; */
-
+  /* Spacing */
   --width-22: 5.5rem;
   --width-42: 10.5rem;
   --width-50: 12.5rem;
   --width-54: 13.5rem;
-
   --min-width-42: 10.5rem;
-
   --max-width-50: 12.5rem;
   --max-width-54: 13.5rem;
-
   --height-inherit: inherit;
 
+  /* Breakpoints */
   --breakpoint-lg: 1200px;
 
+  /* Grid */
   --grid-template-columns-13: repeat(13, minmax(0, 1fr));
   --grid-template-columns-14: repeat(14, minmax(0, 1fr));
   --grid-template-columns-20: repeat(20, minmax(0, 1fr));
   --grid-template-columns-30: repeat(30, minmax(0, 1fr));
   --grid-template-columns-75: repeat(75, minmax(0, 1fr));
-
   --grid-column-span-75: span 75 / span 75;
   --grid-column-span-50: span 50 / span 50;
   --grid-column-span-46: span 46 / span 46;
   --grid-column-span-29: span 29 / span 29;
   --grid-column-span-25: span 25 / span 25;
 
+  /* Typography */
   --font-size-xxs: 10px;
   --line-height-xxs: 16px;
   --font-size-2xl: 24px;
@@ -151,8 +149,10 @@
   --font-size-8xl: 88px;
   --line-height-8xl: 104px;
 
+  /* Animations */
   --animation-spin-slow: spin-slow 4s linear infinite;
 
+  /* Theme Colors - Light Mode Defaults */
   --color-primary: 220 95% 50%;
   --color-neutral-0: 0 0% 100%;
   --color-neutral-100: 0 0% 96%;
@@ -213,12 +213,11 @@
   --color-orange-800: 14 97% 40%;
   --color-orange-900: 0 100% 28%;
 
-  /* 🔵 - Yearn Finance ******************************************************
-	**	These colors should be used fairly conservatively throughout your UI to
-	**	avoid overpowering your primary colors. Use them when you need an
-	**	element to stand out, or to reinforce things like error states or
-	**	positive trends with the appropriate semantic color.
-	**************************************************************************/
+  /*************************************************************************************************
+   * Semantic Colors - Use conservatively throughout UI to avoid overpowering primary colors.
+   * Use when you need an element to stand out, or to reinforce things like error states or
+   * positive trends with the appropriate semantic color.
+   *************************************************************************************************/
   --color-yellow-900: 32 100% 45%;
   --color-yellow-300: 32 100% 95%;
   --color-yellow-200: 32 100% 90%;
@@ -232,6 +231,61 @@
   --default-rounded: 0rem;
 }
 
+/*************************************************************************************************
+ * Root Color Scheme Overrides
+ *************************************************************************************************/
+:root {
+  --color-blue-500: 220 95% 50%;
+  --color-blue-800: 230 93% 38%;
+  --color-blue-900: 231 100% 11%;
+  --color-lightBlue-500: 220 100% 67%;
+  --color-steelGray-500: 218 14% 71%;
+}
+
+:root.v3 {
+  --color-primary: 220 95% 50%;
+  --color-neutral-900: 0 0% 96%;
+  --color-neutral-800: 0 0% 96%;
+  --color-neutral-700: 0 0% 92%;
+  --color-neutral-600: 0 0% 88%;
+  --color-neutral-500: 0 0% 62%;
+  --color-neutral-400: 0 0% 50%;
+  --color-neutral-300: 231 51% 19%;
+  --color-neutral-200: 242 54% 27%;
+  --color-neutral-100: 231 100% 11%;
+  --color-neutral-0: 231 100% 6%;
+}
+
+:root.dark {
+  --color-blue-500: 220 95% 50%;
+  --color-blue-800: 230 93% 38%;
+  --color-blue-900: 231 100% 11%;
+  --color-lightBlue-500: 220 100% 67%;
+  --color-steelGray-500: 218 14% 71%;
+  --color-primary: 220 95% 50%;
+  --color-neutral-900: 0 0% 100%;
+  --color-neutral-800: 0 0% 96%;
+  --color-neutral-700: 0 0% 92%;
+  --color-neutral-600: 0 0% 88%;
+  --color-neutral-500: 0 0% 62%;
+  --color-neutral-400: 0 0% 50%;
+  --color-neutral-300: 0 0% 36%;
+  --color-neutral-200: 0 0% 26%;
+  --color-neutral-100: 0 0% 16%;
+  --color-neutral-0: 0 0% 5%;
+}
+
+:root.light {
+  --color-blue-500: 220 95% 35%;
+  --color-blue-800: 230 93% 25%;
+  --color-blue-900: 218 100% 95%;
+  --color-lightBlue-500: 220 100% 45%;
+  --color-steelGray-500: 218 14% 45%;
+}
+
+/*************************************************************************************************
+ * Base Layer Styles
+ *************************************************************************************************/
 @layer base {
   /* This is to prevent the horizontal scrollbar from appearing on the page and to make it possible to scroll while the dropdown is open. */
   html {
@@ -244,328 +298,171 @@
     margin-right: 0px !important;
   }
 
+  body {
+    @apply text-neutral-900;
+  }
+
+  h1 {
+    @apply text-xl font-bold text-neutral-900;
+  }
+
+  h4 {
+    @apply text-lg font-bold text-neutral-700;
+  }
+
+  #__next {
+    @apply w-full h-full;
+  }
+
+  #main {
+    @apply flex flex-col w-full h-full min-h-screen bg-neutral-0;
+  }
+
   #swap {
     @apply scroll-mt-12 mb-0 md:mb-44;
   }
 
-  .yearn--header {
-    @apply !mb-0 !z-[99999];
-  }
-  .yearn--button {
-    @apply rounded-lg;
-    &[data-variant="filled"],
-    &[data-variant="light"],
-    &[data-variant="outlined"],
-    &[data-variant="reverted"],
-    &[data-variant="filled"] {
-      @apply rounded-lg;
-    }
-    &[data-variant="v3"] {
-      @apply text-neutral-900 bg-[#D21162] rounded-lg font-normal border border-transparent;
-      &:disabled {
-        @apply bg-[#D21162] opacity-40;
-      }
-      &:not(:disabled):not([aria-busy="true"]):hover {
-        @apply hover:bg-[#d21162]/80;
-      }
-    }
+  /*************************************************************************************************
+   * Global Element Overrides
+   *************************************************************************************************/
+  * {
+    @apply scroll-smooth font-aeonik;
   }
 
-  /* 🔵 - Yearn Finance ******************************************************************************
-	** AppBox is the style used to make the nices animations on the home page feel nice and smooth
-	** A custom overwrite is required for dark/light mode
-	***************************************************************************************************/
-  .appBox {
-    @apply relative flex aspect-video h-full w-full cursor-pointer flex-col items-center border border-neutral-300/50 p-6 shadow shadow-transparent transition-all duration-[400ms] hover:bg-neutral-100/40;
-  }
-  :root.dark {
-    & .appBox {
-      @apply border-neutral-100/30;
-    }
+  input::placeholder {
+    @apply text-neutral-400 not-italic;
   }
 
-  .yearn--button-smaller.reverted {
-    @apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
-    &:disabled {
-      @apply bg-neutral-200 opacity-40;
-    }
-    &:not(:disabled):not([aria-busy="true"]):hover {
-      @apply bg-neutral-200;
-    }
-
-    &[aria-busy="true"] svg {
-      @apply text-neutral-900;
-    }
+  textarea::placeholder {
+    @apply text-neutral-400 not-italic;
   }
 
-  /* 🔵 - Yearn Finance ******************************************************************************
-	** Table
-	** Fake table properties
-	***************************************************************************************************/
-  .yearn--table-head-label {
-    @apply text-start text-base text-neutral-400;
-  }
-  .yearn--table-head-label-wrapper {
-    @apply col-span-1 flex flex-row items-center justify-start space-x-1;
-    &[datatype="number"] {
-      @apply justify-end;
-      & > .yearn--table-head-label {
-        @apply text-end;
-      }
-    }
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px rgba(0, 0, 0, 0) inset;
+    transition: background-color 5000s ease-in-out 0s;
   }
 
-  .yearn--table-wrapper {
-    @apply grid w-full grid-cols-1 border-t border-neutral-200 py-2 px-4 md:grid-cols-[64px_repeat(7,_minmax(0,_1fr))] md:border-none md:px-10;
-  }
-  .yearn--table-token-section {
-    @apply col-span-2 mb-2 flex flex-row items-center justify-between py-4 md:mb-0 md:py-0;
-  }
-  .yearn--table-token-section-item {
-    @apply flex flex-row items-center space-x-4 md:space-x-6;
-  }
-  .yearn--table-token-section-item-image {
-    @apply h-8 min-h-[32px] w-8 min-w-[32px] rounded-full md:flex;
-  }
-  .yearn--table-data-section {
-    @apply col-span-5 grid grid-cols-1 gap-x-0 md:gap-x-7 md:grid-cols-8 gap-y-0;
-  }
-  .yearn--table-data-section-item-label {
-    @apply inline text-start text-neutral-500 md:hidden text-sm;
-  }
-  .yearn--table-data-section-item-value {
-    @apply text-neutral-900;
-  }
-  .yearn--table-data-section-item {
-    @apply col-span-1 flex h-min flex-col md:flex-row justify-between pt-0 px-0 md:h-14 md:pt-4;
-    &[datatype="number"] {
-      @apply md:text-right;
-      & > .yearn--table-data-section-item-value {
-        @apply font-number md:text-end;
-      }
-    }
-  }
-  .yearn--table-label {
-    @apply inline text-start text-neutral-500 md:hidden;
-  }
-
-  .yearn--next-switch {
-    @apply relative flex h-[18px] w-8 border-neutral-500 rounded-full cursor-pointer transition-colors ease-in-out duration-200 p-0 items-center border-2;
-    &[aria-checked="true"] {
-      @apply bg-neutral-400 border-neutral-900;
-      & > div {
-        @apply bg-neutral-900;
-      }
-    }
-    &[aria-checked="false"] {
-      @apply bg-transparent border-neutral-600;
-      & > div {
-        @apply bg-neutral-600;
-      }
-    }
-
-    &[disabled] {
-      @apply opacity-40 cursor-not-allowed;
-    }
-
-    & > div {
-      @apply mx-1 pointer-events-none inline-block h-2 w-2 rounded-full transition ease-in-out duration-200;
-    }
-  }
-
-  /* 🔵 - Yearn Finance ******************************************************************************
-	** Details and summary nice styles.
-	***************************************************************************************************/
-  details > summary {
-    list-style: none;
-  }
-  details > summary::-webkit-details-marker {
-    display: none;
-  }
-  details {
-    @apply border-b border-neutral-300 last-of-type:border-b-0;
-
-    & > summary {
-      @apply px-4 md:px-6 py-6 md:py-8 cursor-pointer flex flex-row items-center justify-between;
-    }
-
-    & > summary .summary-chevron {
-      @apply h-6 w-6 -rotate-90 text-neutral-900 transition-all;
-    }
-    &[open] > summary .summary-chevron {
-      @apply rotate-0;
-    }
-  }
-
-  /* 🔵 - Yearn Finance ******************************************************************************
-	** The WordWrapper css is used for the animation with the text in the header. This animation require
-	** letters to be splitted and a custom css is required to make it work.
-	***************************************************************************************************/
-  .wordWrapper {
-    display: inline-block;
-    vertical-align: top;
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
     margin: 0;
   }
-  .word {
-    @apply absolute text-neutral-900 font-bold text-5xl md:text-8xl uppercase text-center flex justify-center items-center w-[300px] md:w-[600px];
-    opacity: 0;
-  }
-  .wordCenter {
-    @apply absolute text-center flex justify-center items-center;
-    opacity: 0;
-  }
-  .wordLeft {
-    @apply absolute text-left flex justify-start items-center;
-    opacity: 0;
-  }
-  .letter {
-    display: inline-block;
-    position: relative;
-    float: left;
-    transform: translateZ(25px);
-    transform-origin: 50% 50% 25px;
-  }
-  .letter.out {
-    transform: rotateX(90deg);
-    transition: transform 0.32s cubic-bezier(0.55, 0.055, 0.675, 0.19);
-  }
-  .letter.behind {
-    transform: rotateX(-90deg);
-  }
-  .letter.in {
-    transform: rotateX(0deg);
-    transition: transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  input[type="number"] {
+    -moz-appearance: textfield;
   }
 
-  /* 🔵 - Yearn Finance ******************************************************************************
-	** Recharts custom css overwrite, mostly used to make the chart works with our light/dark mode
-	***************************************************************************************************/
-  .recharts-surface {
-    overflow: visible;
-  }
-  .recharts-tooltip-wrapper {
-    @apply !bg-neutral-100 text-neutral-900;
-  }
-  .recharts-default-tooltip {
-    @apply !bg-neutral-100 text-neutral-900;
-  }
-  .recharts-cartesian-axis-line {
-    stroke: hsl(var(--color-neutral-300));
-  }
-  .recharts-cartesian-axis-tick-line {
-    stroke: hsl(var(--color-neutral-300));
-  }
-  .recharts-tooltip {
-    @apply p-2 bg-neutral-0 flex flex-col min-w-[160px];
-    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
-  }
-  .activeDot {
-    stroke: hsl(var(--color-neutral-900));
-    fill: hsl(var(--color-neutral-0));
-  }
-
-  /* 🔵 - Yearn Finance ******************************************************************************
-	** Tooltip
-	** In some place we need a tooltip to display some information on hover. This style controls the
-	** display of that tooltip.
-	**
-	** Usage:
-	**	<div className={'tooltip'}>
-	**		{'Something displayed'}
-	** 		<span className={'tooltiptext text-xs'}>
-	** 			<p>{'Tooltip content'}</p>
-	** 		</span>
-	** 	</div>
-	***************************************************************************************************/
-  .tooltip {
-    @apply relative;
-  }
-  .tooltip .tooltipLight {
-    @apply invisible inset-x-0 absolute z-50 opacity-0 transition-opacity flex justify-center items-center;
-  }
-  .tooltip .tooltipFees {
-    @apply invisible right-0 absolute z-50 opacity-0 transition-opacity;
-  }
-  .tooltip .tooltiptext {
-    @apply text-xs text-center invisible bg-neutral-0 text-neutral-900 absolute z-50 -right-7 opacity-0 transition-opacity;
-    width: 15rem;
-    top: 130%;
-    margin-right: calc(-122px + 50%);
-    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
-  }
-  .tooltip:hover .tooltiptext {
-    @apply visible opacity-100;
-  }
-  .tooltip:hover .tooltipLight {
-    @apply visible opacity-100;
-  }
-  .tooltip:hover .tooltipFees {
-    @apply visible opacity-100;
-  }
-
-  .tooltip .tooltiptext::after {
-    content: "";
-    position: absolute;
-    bottom: 98%;
-    right: 50%;
-    margin-right: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: hsl(var(--color-neutral-0)) transparent transparent transparent;
-    transform: rotate(180deg);
-  }
-
-  .tooltip.top .tooltiptext {
-    top: -105%;
-    bottom: unset;
-  }
-  .tooltip.top .tooltiptext::after {
-    top: 98%;
-    transform: rotate(0deg);
-  }
-
-  /* 🔵 - Yearn Finance ******************************************************************************
-	** Loader
-	** Custom style for the loader icon
-	***************************************************************************************************/
-  .loader {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: #fff;
-    box-shadow:
-      16px 0 #fff,
-      -16px 0 #fff;
-    position: relative;
-    animation: flash 1s ease-out infinite alternate;
-  }
-
-  @keyframes flash {
-    0% {
-      background-color: #fff2;
-      box-shadow:
-        12px 0 #fff2,
-        -12px 0 #fff;
+  label[aria-invalid="true"] {
+    @apply text-neutral-500 transition-colors;
+    & > form > div {
+      @apply border-[#FE0000] focus-within:border-[#FE0000] text-[#FE0000] focus-within:text-[#FE0000];
     }
-    50% {
-      background-color: #fff;
-      box-shadow:
-        12px 0 #fff2,
-        -12px 0 #fff2;
+    & > p {
+      @apply text-[#FF0000];
     }
-    100% {
-      background-color: #fff2;
-      box-shadow:
-        12px 0 #fff,
-        -12px 0 #fff2;
+  }
+
+  :focus {
+    outline: none;
+  }
+
+  [type="text"]:focus,
+  [type="email"]:focus,
+  [type="url"]:focus,
+  [type="password"]:focus,
+  [type="number"]:focus,
+  [type="date"]:focus,
+  [type="datetime-local"]:focus,
+  [type="month"]:focus,
+  [type="search"]:focus,
+  [type="tel"]:focus,
+  [type="time"]:focus,
+  [type="week"]:focus,
+  [multiple]:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  [type="checkbox"],
+  [type="checkbox"]:focus {
+    @apply outline-hidden focus:border-0 focus:outline-hidden focus:ring-0 active:border-0 active:ring-0;
+    box-shadow: none !important;
+  }
+
+  /*************************************************************************************************
+   * Yearn-specific Global Styles
+   *************************************************************************************************/
+  .image-align-middle > img {
+    object-position: 0 70%;
+  }
+
+  .inline-dl {
+    @apply flex flex-col p-6 shadow-xl;
+  }
+
+  .flex-center {
+    @apply flex justify-center items-center;
+  }
+
+  .cell-end {
+    @apply justify-end text-right;
+  }
+
+  .cell-start {
+    @apply justify-start text-left;
+  }
+
+  .link {
+    @apply text-primary-500 underline cursor-pointer transition-colors;
+    &:hover {
+      @apply text-primary-600;
     }
+  }
+
+  .rounded-default {
+    border-radius: var(--default-rounded);
+  }
+
+  .rounded-b-default {
+    border-bottom-left-radius: var(--default-rounded);
+    border-bottom-right-radius: var(--default-rounded);
+  }
+
+  .rounded-t-default {
+    border-top-left-radius: var(--default-rounded);
+    border-top-right-radius: var(--default-rounded);
+  }
+
+  .rounded-l-default {
+    border-top-left-radius: var(--default-rounded);
+    border-bottom-left-radius: var(--default-rounded);
+  }
+
+  .rounded-r-default {
+    border-top-right-radius: var(--default-rounded);
+    border-bottom-right-radius: var(--default-rounded);
   }
 }
 
-/* 🔵 - Yearn Finance ******************************************************************************
-	** Override for default navbar and header items
-	**
-	***************************************************************************************************/
+/*************************************************************************************************
+ * Component Styles
+ *************************************************************************************************/
+
+/* Header and Navigation */
+.yearn--header {
+  @apply !mb-0 !z-[99999] inset-x-0 top-0 flex h-20 w-full max-w-[1200px] flex-row items-center justify-between p-4 text-xs sm:text-sm md:inset-x-auto md:px-0 md:text-base;
+}
+
 .yearn--nav {
   @apply hidden w-auto flex-row items-center space-x-3 md:flex md:space-x-6;
 }
@@ -577,15 +474,524 @@
   }
 }
 
+.yearn--header-nav-item {
+  @apply relative cursor-pointer transition-colors text-neutral-500 hover:text-neutral-900 font-normal text-sm;
+  &.active {
+    @apply text-neutral-900 font-bold;
+  }
+}
+
+/* Button Component */
+.yearn--button {
+  @apply cursor-pointer px-5 flex justify-center items-center h-10 text-base transition-all relative rounded-lg;
+  border-radius: var(--default-rounded);
+
+  &[data-variant="filled"],
+  &[data-variant="light"],
+  &[data-variant="outlined"],
+  &[data-variant="reverted"] {
+    @apply rounded-lg;
+  }
+
+  &[data-variant="filled"] {
+    @apply text-neutral-0 bg-neutral-900 font-normal border border-transparent;
+    &:disabled {
+      @apply bg-neutral-700 opacity-40;
+    }
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-800;
+    }
+  }
+
+  &[data-variant="light"] {
+    @apply text-neutral-900 bg-neutral-100 border border-transparent;
+    &:disabled {
+      @apply opacity-40;
+    }
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-200;
+    }
+  }
+
+  &[data-variant="outlined"] {
+    @apply text-neutral-900 bg-transparent border border-neutral-900;
+    &:disabled {
+      @apply opacity-40;
+    }
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-900 text-neutral-0;
+    }
+  }
+
+  &[data-variant="reverted"] {
+    @apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
+    &:disabled {
+      @apply bg-neutral-200 opacity-40;
+    }
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-200;
+    }
+    &[aria-busy="true"] svg {
+      @apply text-neutral-900;
+    }
+  }
+
+  &[data-variant="v3"] {
+    @apply text-neutral-900 bg-[#D21162] rounded-lg font-normal border border-transparent;
+    &:disabled {
+      @apply bg-[#D21162] opacity-40;
+    }
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply hover:bg-[#d21162]/80;
+    }
+  }
+
+  &[aria-busy="true"] {
+    @apply cursor-wait;
+    color: transparent !important;
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed;
+  }
+}
+
+.yearn--button-smaller {
+  @apply h-8 text-xs py-2 w-16 px-2;
+}
+
+.yearn--button-smaller.reverted {
+  @apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
+  &:disabled {
+    @apply bg-neutral-200 opacity-40;
+  }
+  &:not(:disabled):not([aria-busy="true"]):hover {
+    @apply bg-neutral-200;
+  }
+  &[aria-busy="true"] svg {
+    @apply text-neutral-900;
+  }
+}
+
+/* Dropdown Component */
+.yearn--dropdown-menu {
+  --dropdown-text-color: hsl(var(--color-primary-500));
+  --dropdown-bg-color: hsl(var(--color-neutral-100));
+  --dropdown-bg-color-active: hsl(var(--color-neutral-600));
+  --dropdown-border-width: 0px;
+  --dropdown-border-color: transparent;
+
+  @apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60 scrollbar-none text-neutral-400 border border-neutral-300 bg-neutral-100;
+  border-radius: var(--default-rounded);
+  border: solid var(--dropdown-border-width) var(--dropdown-border-color);
+  background: var(--dropdown-bg-color);
+}
+
+.yearn--dropdown-menu-item {
+  @apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
+  color: var(--dropdown-text-color);
+  &[data-active="true"] {
+    @apply bg-neutral-0/40;
+    background-color: var(--dropdown-bg-color-active);
+  }
+}
+
+/* Listbox Component */
+.yearn--listbox-menu {
+  @apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60 scrollbar-none text-neutral-900 bg-neutral-0;
+}
+
+.yearn--listbox-menu-item {
+  @apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
+  &[data-active="true"] {
+    @apply bg-neutral-0/40;
+  }
+}
+
+/* Input Component */
+.yearn--input {
+  --input-label-color: hsl(var(--color-neutral-500));
+  --input-max-bg-color: transparent;
+  --input-max-bg-color-hover: hsl(var(--color-primary-100));
+  --input-max-text-color: hsl(var(--color-primary-500));
+  --input-max-border-color: hsl(var(--color-primary-500));
+  --input-max-border-width: 1px;
+
+  @apply space-y-1;
+  & > p {
+    @apply text-sm md:text-base transition-colors;
+    color: var(--input-label-color);
+  }
+}
+
+/* Modal Component */
+.yearn--modal-wrapper {
+  @apply flex justify-center items-end px-4 pt-4 pb-20 min-h-screen text-center sm:block sm:p-0;
+}
+
+.yearn--modal-overlay {
+  @apply fixed inset-0 z-10 bg-neutral-900/90 transition-opacity;
+}
+
+:root.dark {
+  & .yearn--modal-overlay {
+    @apply bg-neutral-100/90;
+  }
+}
+
+.yearn--modal {
+  @apply inline-block overflow-hidden relative z-50 w-full text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle md:mb-96 bg-neutral-0;
+  border-radius: var(--default-rounded);
+}
+
+/* Mobile Menu Component */
+.yearn--modalMobileMenu-content {
+  @apply relative flex w-full flex-col items-center justify-center space-y-1 pt-4;
+}
+
+.yearn--modalMobileMenu-title {
+  @apply text-center text-xl font-bold text-neutral-700;
+}
+
+.yearn--modalMobileMenu-networkIndicator {
+  @apply text-sm text-neutral-500;
+  & > span {
+    @apply flex flex-row items-center;
+  }
+}
+
+.yearn--modalMobileMenu-select {
+  @apply relative ml-1 flex flex-row items-center bg-neutral-500/10 py-1 pl-2 text-neutral-500;
+  border-radius: var(--default-rounded);
+}
+
+.yearn--modalMobileMenu-walletCard {
+  @apply flex cursor-pointer flex-col items-center justify-center bg-neutral-100 py-4 px-2 text-center transition-colors;
+  border-radius: var(--default-rounded);
+}
+
+.yearn--modalMobileMenu-childrenWrapper {
+  @apply mb-4 space-y-2 px-2;
+}
+
+.yearn--modalMobileMenu-separatorWrapper {
+  @apply w-full px-2;
+}
+
+.yearn--modalMobileMenu-separator {
+  @apply mx-auto mt-2 mb-4 h-[2px] w-full items-center justify-center bg-neutral-500/20;
+}
+
+.yearn--modalMobileMenu-chevron {
+  @apply absolute right-2;
+  & > svg {
+    @apply ml-1 h-3 w-3;
+  }
+}
+
+.yearn--modalMobileMenu-logout {
+  @apply absolute top-4 right-4;
+  & > svg {
+    @apply h-6 w-6 rounded-full bg-neutral-200 p-1.5 text-neutral-500;
+  }
+}
+
+.yearn--modalMobileMenu-childrenWrapper > a {
+  &:last-child > .mobile-nav-item {
+    @apply border-b-0;
+  }
+}
+
+/* Table Component */
+.yearn--table-head-label {
+  @apply text-start text-base text-neutral-400;
+}
+
+.yearn--table-head-label-wrapper {
+  @apply col-span-1 flex flex-row items-center justify-start space-x-1;
+  &[datatype="number"] {
+    @apply justify-end;
+    & > .yearn--table-head-label {
+      @apply text-end;
+    }
+  }
+}
+
+.yearn--table-wrapper {
+  @apply grid w-full grid-cols-1 border-t border-neutral-200 py-2 px-4 md:grid-cols-[64px_repeat(7,_minmax(0,_1fr))] md:border-none md:px-10;
+}
+
+.yearn--table-token-section {
+  @apply col-span-2 mb-2 flex flex-row items-center justify-between py-4 md:mb-0 md:py-0;
+}
+
+.yearn--table-token-section-item {
+  @apply flex flex-row items-center space-x-4 md:space-x-6;
+}
+
+.yearn--table-token-section-item-image {
+  @apply h-8 min-h-[32px] w-8 min-w-[32px] rounded-full md:flex;
+}
+
+.yearn--table-data-section {
+  @apply col-span-5 grid grid-cols-1 gap-x-0 md:gap-x-7 md:grid-cols-8 gap-y-0;
+}
+
+.yearn--table-data-section-item-label {
+  @apply inline text-start text-neutral-500 md:hidden text-sm;
+}
+
+.yearn--table-data-section-item-value {
+  @apply text-neutral-900;
+}
+
+.yearn--table-data-section-item {
+  @apply col-span-1 flex h-min flex-col md:flex-row justify-between pt-0 px-0 md:h-14 md:pt-4;
+  &[datatype="number"] {
+    @apply md:text-right;
+    & > .yearn--table-data-section-item-value {
+      @apply font-number md:text-end;
+    }
+  }
+}
+
+.yearn--table-label {
+  @apply inline text-start text-neutral-500 md:hidden;
+}
+
+/* Switch Component */
+.yearn--next-switch {
+  @apply relative flex h-[18px] w-8 border-neutral-500 rounded-full cursor-pointer transition-colors ease-in-out duration-200 p-0 items-center border-2;
+  &[aria-checked="true"] {
+    @apply bg-neutral-400 border-neutral-900;
+    & > div {
+      @apply bg-neutral-900;
+    }
+  }
+  &[aria-checked="false"] {
+    @apply bg-transparent border-neutral-600;
+    & > div {
+      @apply bg-neutral-600;
+    }
+  }
+  &[disabled] {
+    @apply opacity-40 cursor-not-allowed;
+  }
+  & > div {
+    @apply mx-1 pointer-events-none inline-block h-2 w-2 rounded-full transition ease-in-out duration-200;
+  }
+}
+
+/* AppBox Component */
+.appBox {
+  @apply relative flex aspect-video h-full w-full cursor-pointer flex-col items-center border border-neutral-300/50 p-6 shadow shadow-transparent transition-all duration-[400ms] hover:bg-neutral-100/40;
+}
+
+:root.dark {
+  & .appBox {
+    @apply border-neutral-100/30;
+  }
+}
+
+/* Details and Summary */
+details > summary {
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details {
+  @apply border-b border-neutral-300 last-of-type:border-b-0;
+
+  & > summary {
+    @apply px-4 md:px-6 py-6 md:py-8 cursor-pointer flex flex-row items-center justify-between;
+  }
+
+  & > summary .summary-chevron {
+    @apply h-6 w-6 -rotate-90 text-neutral-900 transition-all;
+  }
+
+  &[open] > summary .summary-chevron {
+    @apply rotate-0;
+  }
+}
+
+/* Word Animation Component */
+.wordWrapper {
+  display: inline-block;
+  vertical-align: top;
+  margin: 0;
+}
+
+.word {
+  @apply absolute text-neutral-900 font-bold text-5xl md:text-8xl uppercase text-center flex justify-center items-center w-[300px] md:w-[600px];
+  opacity: 0;
+}
+
+.wordCenter {
+  @apply absolute text-center flex justify-center items-center;
+  opacity: 0;
+}
+
+.wordLeft {
+  @apply absolute text-left flex justify-start items-center;
+  opacity: 0;
+}
+
+.letter {
+  display: inline-block;
+  position: relative;
+  float: left;
+  transform: translateZ(25px);
+  transform-origin: 50% 50% 25px;
+}
+
+.letter.out {
+  transform: rotateX(90deg);
+  transition: transform 0.32s cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+
+.letter.behind {
+  transform: rotateX(-90deg);
+}
+
+.letter.in {
+  transform: rotateX(0deg);
+  transition: transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Recharts Overrides */
+.recharts-surface {
+  overflow: visible;
+}
+
+.recharts-tooltip-wrapper {
+  @apply !bg-neutral-100 text-neutral-900;
+}
+
+.recharts-default-tooltip {
+  @apply !bg-neutral-100 text-neutral-900;
+}
+
+.recharts-cartesian-axis-line {
+  stroke: hsl(var(--color-neutral-300));
+}
+
+.recharts-cartesian-axis-tick-line {
+  stroke: hsl(var(--color-neutral-300));
+}
+
+.recharts-tooltip {
+  @apply p-2 bg-neutral-0 flex flex-col min-w-[160px];
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
+}
+
+.activeDot {
+  stroke: hsl(var(--color-neutral-900));
+  fill: hsl(var(--color-neutral-0));
+}
+
+/* Tooltip Component */
+.tooltip {
+  @apply relative;
+}
+
+.tooltip .tooltipLight {
+  @apply invisible inset-x-0 absolute z-50 opacity-0 transition-opacity flex justify-center items-center;
+}
+
+.tooltip .tooltipFees {
+  @apply invisible right-0 absolute z-50 opacity-0 transition-opacity;
+}
+
+.tooltip .tooltiptext {
+  @apply text-xs text-center invisible bg-neutral-0 text-neutral-900 absolute z-50 -right-7 opacity-0 transition-opacity;
+  width: 15rem;
+  top: 130%;
+  margin-right: calc(-122px + 50%);
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
+}
+
+.tooltip:hover .tooltiptext {
+  @apply visible opacity-100;
+}
+
+.tooltip:hover .tooltipLight {
+  @apply visible opacity-100;
+}
+
+.tooltip:hover .tooltipFees {
+  @apply visible opacity-100;
+}
+
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  bottom: 98%;
+  right: 50%;
+  margin-right: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: hsl(var(--color-neutral-0)) transparent transparent transparent;
+  transform: rotate(180deg);
+}
+
+.tooltip.top .tooltiptext {
+  top: -105%;
+  bottom: unset;
+}
+
+.tooltip.top .tooltiptext::after {
+  top: 98%;
+  transform: rotate(0deg);
+}
+
+/* Loader Component */
+.loader {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow:
+    16px 0 #fff,
+    -16px 0 #fff;
+  position: relative;
+  animation: flash 1s ease-out infinite alternate;
+}
+
+@keyframes flash {
+  0% {
+    background-color: #fff2;
+    box-shadow:
+      12px 0 #fff2,
+      -12px 0 #fff;
+  }
+  50% {
+    background-color: #fff;
+    box-shadow:
+      12px 0 #fff2,
+      -12px 0 #fff2;
+  }
+  100% {
+    background-color: #fff2;
+    box-shadow:
+      12px 0 #fff,
+      -12px 0 #fff2;
+  }
+}
+
+/* Checkbox Component */
 .checkbox {
   @apply text-primary accent-primary rounded-sm border-primary border-0 focus:outline-primary outline-none !ring-opacity-0 indeterminate:border-primary-200 indeterminate:bg-primary-200 indeterminate:text-primary-200 indeterminate:accent-primary-200 indeterminate:focus:outline-primary-200 indeterminate:after:absolute indeterminate:after:ml-[0.2rem] indeterminate:after:mt-[6px] indeterminate:after:w-[0.5rem] indeterminate:after:border-[0.05rem] indeterminate:after:border-solid indeterminate:after:border-white indeterminate:focus:after:w-[0.5rem] indeterminate:focus:after:rounded-none indeterminate:focus:after:border-[0.125rem] indeterminate:focus:after:border-b-0 indeterminate:focus:after:border-l-0 indeterminate:focus:after:border-r-0;
-
   @apply focus:!outline-none focus:!ring-opacity-0;
 
   &[aria-busy="true"] {
     @apply border-neutral-300 bg-neutral-300 text-neutral-300 accent-neutral-300 rounded-sm focus:outline-neutral-300 relative after:animate-spin;
     background-image: none;
   }
+
   &[aria-busy="true"]:after {
     height: 12px;
     width: 12px;
@@ -603,9 +1009,7 @@
   }
 }
 
-/* 🔵 - Yearn Finance ******************************************************************************
-** Custom style for landing search input
-***************************************************************************************************/
+/* Landing Input Component */
 .yearn--landing-input {
   @apply bg-[#F4F4F4];
   input:-webkit-autofill,
@@ -617,6 +1021,7 @@
     caret-color: black !important;
   }
 }
+
 :root.dark {
   & .yearn--landing-input {
     @apply bg-[#282828];
@@ -630,9 +1035,8 @@
     }
   }
 }
-/* 🔵 - Yearn Finance ******************************************************************************
-** Custom style for autofilled text color
-***************************************************************************************************/
+
+/* Autofill Text Color Override */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -640,4 +1044,251 @@ input:-webkit-autofill:active {
   color: white !important;
   -webkit-text-fill-color: white !important;
   caret-color: white !important;
+}
+
+/*************************************************************************************************
+ * Utility Classes
+ *************************************************************************************************/
+
+/* Layout Utilities */
+.flex-row-center {
+  @apply flex flex-row items-center;
+}
+
+.flex-row-start {
+  @apply flex flex-row items-start;
+}
+
+.flex-col-start {
+  @apply flex flex-col items-start;
+}
+
+.flex-col-full {
+  @apply flex flex-col w-full h-full;
+}
+
+.max-w-6xl {
+  @apply max-w-[1232px] px-4;
+}
+
+/* NProgress Loading Indicator */
+.nprogress-custom-parent {
+  @apply overflow-hidden relative;
+}
+
+.nprogress-custom-parent #nprogress .spinner {
+  @apply absolute;
+}
+
+.nprogress-custom-parent #nprogress .bar {
+  @apply absolute;
+}
+
+#nprogress {
+  @apply pointer-events-none;
+}
+
+#nprogress .bar {
+  @apply bg-neutral-900 fixed top-0 left-0 w-full h-1 z-1031;
+}
+
+#nprogress .spinner {
+  @apply block fixed z-1031 top-4 right-4;
+}
+
+#nprogress .spinner-icon {
+  @apply hidden;
+}
+
+/* Accessibility Utilities */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.yearn--select-reset {
+  @apply bg-transparent p-0 border-none;
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+}
+
+.yearn--select-no-arrow {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none;
+}
+
+.yearn--select-no-arrow::-ms-expand {
+  display: none;
+}
+
+/* Image Utilities */
+.img-gradient::after {
+  content: "";
+  background-image: linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%);
+  @apply absolute inset-0 w-full h-full;
+}
+
+/* Sort Chevron Utilities */
+.yearn--sort-chevron {
+  @apply h-4 w-4 min-w-[16px] cursor-pointer text-neutral-500;
+}
+
+.yearn--sort-chevron--off {
+  @apply h-4 w-4 min-w-[16px] cursor-pointer transition-colors text-neutral-300 group-hover:text-neutral-500;
+}
+
+:root.dark {
+  & .yearn--sort-chevron--off {
+    @apply text-neutral-200;
+  }
+}
+
+/* Mobile Navigation */
+.mobile-nav-item {
+  @apply flex flex-col items-start justify-between rounded-xs bg-neutral-100;
+  @apply rounded-none border-b border-neutral-300 bg-neutral-100/60;
+  & > p {
+    @apply p-2 text-base font-bold text-neutral-900;
+  }
+}
+
+/* Tab Component */
+.tab {
+  @apply font-normal text-neutral-600 transition-colors hover:text-neutral-900 cursor-pointer border-b-2 border-transparent pb-4 z-20;
+  &[aria-selected="true"] {
+    @apply font-bold text-neutral-900 border-neutral-900;
+  }
+}
+
+/* Hover Fix Utility */
+.hover-fix::before {
+  display: block;
+  content: attr(title);
+  font-weight: bold;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+/* Toast Component */
+.yearn--toast-options {
+  @apply w-screen! text-sm text-neutral-700 px-4! rounded-none! shadow-none! py-2! max-w-full!;
+}
+
+.yearn--toast-button {
+  @apply text-xs px-3 py-1 text-[#0657F9] bg-white;
+}
+
+/* Shadow Utility */
+.yearn--shadow {
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
+}
+
+:root.dark {
+  & .yearn--shadow {
+    @apply border-solid border border-neutral-200;
+  }
+}
+
+/*************************************************************************************************
+ * Typography Utilities
+ *************************************************************************************************/
+
+/* Heading Styles */
+.text-h1 {
+  @apply font-normal text-3xl;
+}
+
+.text-h1-bold {
+  @apply font-bold text-3xl;
+}
+
+.text-h1-mono-bold {
+  @apply font-mono font-bold text-3xl;
+}
+
+.text-h2 {
+  @apply font-normal text-xl;
+}
+
+.text-h2-bold {
+  @apply font-bold text-xl;
+}
+
+.text-h2-mono-bold {
+  @apply font-mono font-bold text-xl;
+}
+
+.text-h3 {
+  @apply font-normal text-lg;
+}
+
+.text-h3-bold {
+  @apply font-bold text-lg;
+}
+
+.text-h3-mono-bold {
+  @apply font-mono font-bold text-lg;
+}
+
+/* Body Text Styles */
+.text-body {
+  @apply font-normal text-base;
+}
+
+.text-body-bold {
+  @apply font-bold text-base;
+}
+
+.text-body-underlined {
+  @apply font-normal text-base underline underline-offset-4;
+}
+
+.text-body-mono {
+  @apply font-mono text-base;
+}
+
+.text-body-mono-bold {
+  @apply font-mono font-bold text-base;
+}
+
+.text-body-mono-underlined {
+  @apply font-mono text-base underline underline-offset-4;
+}
+
+/* Caption Text Styles */
+.text-caption {
+  @apply font-normal text-xs;
+}
+
+.text-caption-bold {
+  @apply font-bold text-xs;
+}
+
+.text-caption-underlined {
+  @apply font-normal text-xs underline underline-offset-4;
+}
+
+.text-caption-mono {
+  @apply font-normal text-xs;
+}
+
+.text-caption-mono-bold {
+  @apply font-bold text-xs;
+}
+
+.text-caption-mono-underlined {
+  @apply font-normal text-xs underline underline-offset-4;
+}
+
+/* Number Font Utility */
+.font-number {
+  @apply font-mono tabular-nums;
 }
