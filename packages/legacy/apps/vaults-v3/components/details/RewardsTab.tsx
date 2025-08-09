@@ -865,7 +865,7 @@ export function RewardsTab(props: {
                     <input
                       id={'stakeAmount'}
                       className={cl(
-                        'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
+                        'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-hidden scrollbar-none',
                         isActive ? '' : 'cursor-not-allowed'
                       )}
                       type={'number'}
@@ -922,7 +922,7 @@ export function RewardsTab(props: {
                     <input
                       id={'unstakeAmount'}
                       className={cl(
-                        'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
+                        'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-hidden scrollbar-none',
                         isActive ? '' : 'cursor-not-allowed'
                       )}
                       type={'number'}
@@ -1057,7 +1057,7 @@ export function RewardsTab(props: {
                   <input
                     id={'fromAmount'}
                     className={cl(
-                      'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
+                      'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-hidden scrollbar-none',
                       isActive ? '' : 'cursor-not-allowed'
                     )}
                     type={'number'}

@@ -18,7 +18,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
   return (
     <div
       className={
-        'flex h-full w-72 flex-col justify-between rounded-lg border border-gray-700/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] py-6 text-white'
+        'flex h-full w-72 flex-col justify-between rounded-lg border border-gray-700/50 bg-linear-to-b from-gray-900 to-[#1A1A1A] py-6 text-white'
       }
     >
       <div>
@@ -33,7 +33,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 						<PromoPoster />
 					</div> */}
           {/* <SearchBar
-						className={cl('!w-full !border-0 rounded-lg !border-white !bg-gray-600/40')}
+						className={cl('w-full! border-0! rounded-lg border-white! bg-gray-600/40!')}
 						searchPlaceholder={'Search App'}
 						searchValue={configuration.searchValue}
 						onSearch={(value: string) => dispatch({searchValue: value})}

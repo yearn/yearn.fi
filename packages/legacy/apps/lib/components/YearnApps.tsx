@@ -30,7 +30,7 @@ export const APPS = {
     icon: (
       <Image
         alt={'yCRV'}
-        className={'!size-8 !max-h-8 !max-w-8'}
+        className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
         src={`${process.env.SMOL_ASSETS_URL}/token/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
@@ -47,7 +47,7 @@ export const APPS = {
     icon: (
       <Image
         alt={'veYFI'}
-        className={'!size-8 !max-h-8 !max-w-8'}
+        className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
         src={`${process.env.SMOL_ASSETS_URL}/token/1/${VEYFI_DYFI_ADDRESS}/logo-128.png`}
@@ -61,14 +61,14 @@ export const APPS = {
     href: 'https://factory.yearn.fi',
     host: ['factory.yearn.fi'],
     pathname: 'unused',
-    icon: <LogoYearn className={'!size-6 !max-h-6 !max-w-6'} back={'text-neutral-0'} front={'text-neutral-900'} />
+    icon: <LogoYearn className={'size-6! max-h-6! max-w-6!'} back={'text-neutral-0'} front={'text-neutral-900'} />
   },
   analytics: {
     name: 'Analytics',
     href: 'https://yearn-powerglove.vercel.app/',
     host: ['yearn-powerglove.vercel.app'],
     pathname: 'unused',
-    icon: <LogoYearn className={'!size-6 !max-h-6 !max-w-6'} back={'text-neutral-900'} front={'text-black'} />
+    icon: <LogoYearn className={'size-6! max-h-6! max-w-6!'} back={'text-neutral-900'} front={'text-black'} />
   },
   yETH: {
     name: 'yETH',
@@ -78,7 +78,7 @@ export const APPS = {
     icon: (
       <Image
         alt={'yETH'}
-        className={'!size-8 !max-h-8 !max-w-8'}
+        className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
         src={`${process.env.SMOL_ASSETS_URL}/token/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
@@ -96,7 +96,7 @@ export const APPS = {
       <Image
         priority
         src={`${process.env.SMOL_ASSETS_URL}/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
-        className={'!size-8 !max-h-8 !max-w-8'}
+        className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
         alt={'yPrisma'}

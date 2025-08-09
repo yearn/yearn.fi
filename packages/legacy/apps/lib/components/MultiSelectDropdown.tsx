@@ -230,7 +230,7 @@ export function MultiSelectDropdown({
           >
             <ComboboxInput
               className={cl(
-                'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none',
+                'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-hidden scrollbar-none',
                 options.every(({ isSelected }): boolean => !isSelected) ? 'text-neutral-400' : 'text-neutral-900'
               )}
               displayValue={getDisplayName}

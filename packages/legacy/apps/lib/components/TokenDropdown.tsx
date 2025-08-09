@@ -114,7 +114,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
               <p className={'whitespace-nowrap px-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'}>
                 <ComboboxInput
                   className={
-                    'w-full cursor-default text-ellipsis border-none bg-transparent p-0 outline-none scrollbar-none'
+                    'w-full cursor-default text-ellipsis border-none bg-transparent p-0 outline-hidden scrollbar-none'
                   }
                   displayValue={(option: TDropdownOption): string => option?.symbol}
                   placeholder={props.placeholder || ''}

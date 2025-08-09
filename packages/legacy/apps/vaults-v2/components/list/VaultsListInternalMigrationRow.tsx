@@ -51,7 +51,7 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
           </div>
 
           <div className={'col-span-2 flex h-auto flex-row items-center justify-between space-x-4 py-4 md:justify-end'}>
-            <button data-variant={'reverted'} className={'yearn--button-smaller reverted !w-full text-center'}>
+            <button data-variant={'reverted'} className={'yearn--button-smaller reverted w-full! text-center'}>
               {'Migrate'}
             </button>
           </div>

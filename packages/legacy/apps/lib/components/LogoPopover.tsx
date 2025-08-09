@@ -55,7 +55,7 @@ function useIsMounted(): () => boolean {
 function Logo({ currentHost }: { currentHost: string; isVaultPage: boolean }): ReactElement {
   const router = useRouter()
   const { pathname } = router
-  const appsIcon = <LogoYearn className={'!size-8 !max-h-8 !max-w-8'} back={'text-primary'} front={'text-white'} />
+  const appsIcon = <LogoYearn className={'size-8! max-h-8! max-w-8!'} back={'text-primary'} front={'text-white'} />
   return (
     <>
       {Object.values(APPS).map(({ name, host, icon, pathname: appPathname }): ReactElement => {
@@ -117,7 +117,7 @@ export function LogoPopover(): ReactElement {
         onClick={(): void => setIsShowing(false)}
         onMouseEnter={(): void => setIsShowing(false)}
         className={cl(
-          'fixed inset-0 bg-black backdrop-blur-sm transition-opacity',
+          'fixed inset-0 bg-black backdrop-blur-xs transition-opacity',
           !isShowing ? 'opacity-0 pointer-events-none' : 'opacity-0 pointer-events-auto'
         )}
       />
@@ -137,7 +137,7 @@ export function LogoPopover(): ReactElement {
           leave={'transition ease-in duration-150'}
           leaveFrom={'opacity-100 translate-y-0'}
           leaveTo={'opacity-0 translate-y-1'}
-          className={'relative z-[9999999]'}
+          className={'relative z-9999999'}
         >
           <PopoverPanel className={'absolute left-0 top-10 z-20 w-[345px] scale-[115%] bg-transparent px-4 sm:px-0'}>
             <div className={cl('overflow-hidden shadow-xl', isVaultPage ? 'pt-4' : 'pt-0')}>
@@ -156,10 +156,10 @@ export function LogoPopover(): ReactElement {
                         <div
                           onClick={(): void => setIsShowing(false)}
                           className={cl(
-                            'flex cursor-pointer flex-col items-center justify-center transition-colors p-4 rounded-sm',
+                            'flex cursor-pointer flex-col items-center justify-center transition-colors p-4 rounded-xs',
                             isV3
                               ? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
-                              : 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
+                              : 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 dark:hover:bg-neutral-0'
                           )}
                         >
                           <div>
@@ -186,10 +186,10 @@ export function LogoPopover(): ReactElement {
                           <div
                             onClick={(): void => setIsShowing(false)}
                             className={cl(
-                              'flex cursor-pointer flex-col items-center justify-center transition-colors p-4 rounded-sm',
+                              'flex cursor-pointer flex-col items-center justify-center transition-colors p-4 rounded-xs',
                               isV3
                                 ? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
-                                : 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
+                                : 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 dark:hover:bg-neutral-0'
                             )}
                           >
                             <div>
@@ -210,10 +210,10 @@ export function LogoPopover(): ReactElement {
                     <button
                       onClick={(): void => setIsShowingMore(true)}
                       className={cl(
-                        'flex cursor-pointer text-xs flex-col items-center justify-center transition-colors p-4 rounded-sm',
+                        'flex cursor-pointer text-xs flex-col items-center justify-center transition-colors p-4 rounded-xs',
                         isV3
                           ? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
-                          : 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
+                          : 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 dark:hover:bg-neutral-0'
                       )}
                     >
                       <b>{'More...'}</b>

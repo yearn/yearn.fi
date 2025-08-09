@@ -110,7 +110,7 @@ export function VaultsListStrategy({
             'absolute inset-0 rounded-2xl',
             'opacity-20 transition-opacity  pointer-events-none',
 
-            isExpanded ? 'bg-[#474592]' : 'bg-[linear-gradient(80deg,_#2C3DA6,_#D21162)] group-hover:opacity-100'
+            isExpanded ? 'bg-[#474592]' : 'bg-[linear-gradient(80deg,#2C3DA6,#D21162)] group-hover:opacity-100'
           )}
         />
       )}
@@ -127,7 +127,7 @@ export function VaultsListStrategy({
             <button
               className={cl(
                 'text-sm font-bold transition-all duration-300 ease-in-out',
-                isExpanded ? '' : 'rotate-[-90deg]'
+                isExpanded ? '' : '-rotate-90'
               )}
               aria-label={isExpanded ? 'Collapse' : 'Expand'}
             >

@@ -71,7 +71,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
           suppressHydrationWarning
           className={cl(
             props.inputClassName,
-            'text-[14px] h-10 w-full overflow-x-scroll border-none bg-transparent pl-2 px-0 py-2 text-base outline-none scrollbar-none placeholder:text-neutral-400'
+            'text-[14px] h-10 w-full overflow-x-scroll border-none bg-transparent pl-2 px-0 py-2 text-base outline-hidden scrollbar-none placeholder:text-neutral-400'
           )}
           type={'text'}
           placeholder={props.searchPlaceholder}

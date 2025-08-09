@@ -520,7 +520,7 @@ function VaultRiskScoreTag({ riskLevel }: { riskLevel: number }): ReactElement {
     <div className={'md:justify-centere col-span-2 flex flex-row items-end justify-between md:flex-col md:pt-4'}>
       <p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>{'Risk Score'}</p>
       <div className={cl('flex w-fit items-center justify-end gap-4 md:justify-center', 'tooltip relative z-50 h-6')}>
-        <div className={'h-3 w-10 min-w-10 rounded-sm border-2 border-neutral-400 p-[2px]'}>
+        <div className={'h-3 w-10 min-w-10 rounded-xs border-2 border-neutral-400 p-[2px]'}>
           <div
             className={'h-1 rounded-[1px]'}
             style={{
@@ -646,7 +646,7 @@ export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault 
           className={cl(
             'absolute inset-0 rounded-3xl',
             'opacity-20 transition-opacity group-hover:opacity-100 pointer-events-none',
-            'bg-[linear-gradient(80deg,_#2C3DA6,_#D21162)]'
+            'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
           )}
         />
 

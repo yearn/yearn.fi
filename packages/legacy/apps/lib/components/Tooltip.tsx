@@ -41,7 +41,7 @@ export const Tooltip: FC<{
         typeof window !== 'undefined' &&
         createPortal(
           <div
-            className={'pointer-events-none fixed z-[9999]'}
+            className={'pointer-events-none fixed z-9999'}
             style={{
               left: tooltipPosition.x,
               top: tooltipPosition.y,

@@ -166,6 +166,24 @@
   }
 }
 
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
 :root {
 	--color-primary: 220 95% 50%;
 	--color-neutral-0: 0 0% 100%;
@@ -612,7 +630,7 @@ label[aria-invalid="true"] {
 }
 
 .mobile-nav-item {
-	@apply flex flex-col items-start justify-between rounded-sm bg-neutral-100;
+	@apply flex flex-col items-start justify-between rounded-xs bg-neutral-100;
 	& > p {
 		@apply p-2 text-base font-bold text-neutral-900;
 	}

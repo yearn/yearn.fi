@@ -68,7 +68,7 @@ function WalletSelector(): ReactElement {
         }
       }}
     >
-      <p suppressHydrationWarning className={'yearn--header-nav-item !text-xs md:!text-sm'}>
+      <p suppressHydrationWarning className={'yearn--header-nav-item text-xs! md:text-sm!'}>
         {walletIdentity ? (
           walletIdentity
         ) : (
@@ -76,7 +76,7 @@ function WalletSelector(): ReactElement {
             <IconWallet className={'yearn--header-nav-item mt-0.5 block size-4 md:hidden'} />
             <span
               className={
-                'text-neutral-0 relative hidden h-8 cursor-pointer items-center justify-center rounded border border-transparent bg-neutral-900 px-2 text-xs font-normal transition-all hover:bg-neutral-800 md:flex'
+                'text-neutral-0 relative hidden h-8 cursor-pointer items-center justify-center rounded-sm border border-transparent bg-neutral-900 px-2 text-xs font-normal transition-all hover:bg-neutral-800 md:flex'
               }
             >
               {'Connect wallet'}
@@ -147,7 +147,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
   return (
     <div id={'head'} className={'inset-x-0 top-0 z-50 w-full'}>
       <div className={'w-full'}>
-        <header className={'yearn--header mx-auto max-w-6xl !px-0'}>
+        <header className={'yearn--header mx-auto max-w-6xl px-0!'}>
           <div className={'direction-row flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'}>
             <div className={'flex justify-center'}>
               <LogoPopover />

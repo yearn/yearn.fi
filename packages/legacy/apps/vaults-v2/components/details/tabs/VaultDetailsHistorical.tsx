@@ -103,7 +103,7 @@ export function VaultDetailsHistorical({
   if (isLoading) {
     return (
       <div className={'mt-6 flex flex-row items-center justify-center pb-12 pt-6'}>
-        <IconSpinner className={'!h-6 !w-6 !text-neutral-400'} />
+        <IconSpinner className={'h-6! w-6! text-neutral-400!'} />
       </div>
     )
   }

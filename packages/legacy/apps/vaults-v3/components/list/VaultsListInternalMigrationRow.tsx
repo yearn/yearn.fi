@@ -19,7 +19,7 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
         className={cl(
           'absolute inset-0 rounded-3xl',
           'opacity-20 pointer-events-none',
-          'bg-[linear-gradient(80deg,_#2C3DA6,_#D21162)]'
+          'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
         )}
       />
       <div className={cl('col-span-3 z-10', 'flex flex-row items-center justify-between')}>
@@ -55,7 +55,7 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
                 className={cl(
                   'absolute inset-0',
                   'opacity-80 transition-opacity group-hover:opacity-100 pointer-events-none',
-                  'bg-[linear-gradient(80deg,_#D21162,_#2C3DA6)]'
+                  'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
                 )}
               />
               <p className={'z-10 mx-auto whitespace-nowrap text-neutral-900'}>

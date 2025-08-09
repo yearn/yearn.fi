@@ -59,9 +59,9 @@ export function MobileTopNav({
       </div>
 
       {isSearchOpen && (
-        <div className={'!w-full bg-gray-900 pb-6 pl-8 pr-6'}>
+        <div className={'w-full! bg-gray-900 pb-6 pl-8 pr-6'}>
           <SearchBar
-            className={'!max-w-none !rounded-lg !border-0 !border-none !bg-gray-600/40 text-white !outline-none '}
+            className={'max-w-none! rounded-lg! border-0! border-none! bg-gray-600/40! text-white outline-hidden! '}
             searchValue={configuration.searchValue}
             onSearch={(value: string) => dispatch({ searchValue: value })}
             searchPlaceholder={'Search App'}

@@ -122,7 +122,7 @@ function Index(): ReactElement | null {
         className={cl(
           'h-full rounded-3xl',
           'pt-6 pb-6 md:pb-10 px-4 md:px-8',
-          'bg-[linear-gradient(73deg,_#D21162_24.91%,_#2C3DA6_99.66%)]',
+          'bg-[linear-gradient(73deg,#D21162_24.91%,#2C3DA6_99.66%)]',
           'relative flex flex-col items-center justify-center'
         )}
       >
@@ -139,7 +139,7 @@ function Index(): ReactElement | null {
         <div className={'absolute -top-10 md:-top-6'}>
           <div
             className={cl(
-              'h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-[#FAD1ED7A] backdrop-blur',
+              'h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-[#FAD1ED7A] backdrop-blur-sm',
               'flex justify-center items-center'
             )}
           >

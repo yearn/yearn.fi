@@ -41,7 +41,7 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, ind
       <div
         className={cl(
           'absolute inset-0 rounded-[12px]',
-          index % 2 === 0 ? 'bg-neutral-900/[0.03]' : 'bg-neutral-900/[0.04]'
+          index % 2 === 0 ? 'bg-neutral-900/3' : 'bg-neutral-900/4'
         )}
       />
       <div

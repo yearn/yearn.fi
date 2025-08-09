@@ -87,8 +87,8 @@ function Tabs({ hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutT
                 className={cl(
                   'hover-fix tab',
                   selectedAboutTabIndex === tab.value
-                    ? '!text-neutral-900'
-                    : '!text-neutral-900/50 hover:!text-neutral-900'
+                    ? 'text-neutral-900!'
+                    : 'text-neutral-900/50! hover:text-neutral-900!'
                 )}
               >
                 {tab.label}

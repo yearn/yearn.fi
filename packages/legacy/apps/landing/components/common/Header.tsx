@@ -47,7 +47,7 @@ export function LandingAppHeader(): ReactElement {
   return (
     <div id={'head'} className={'inset-x-0 top-0 z-50 mt-4 w-full md:mt-7'}>
       <div className={'w-full'}>
-        <header className={'flex max-w-[1232px] items-center gap-4 py-1 md:justify-between md:!px-10 md:py-4'}>
+        <header className={'flex max-w-[1232px] items-center gap-4 py-1 md:justify-between md:px-10! md:py-4'}>
           <div className={'hidden flex-row items-center gap-x-3 md:flex'}>
             <Link href={'/'}>
               <TypeMarkYearn className={'h-6 w-auto'} color={'#E1E1E1'} />

@@ -130,7 +130,7 @@ export const Dropdown = ({
                 >
                   <ComboboxInput
                     className={
-                      'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'
+                      'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-hidden scrollbar-none'
                     }
                     displayValue={(option?: TDropdownOption): string => option?.label ?? '-'}
                     spellCheck={false}

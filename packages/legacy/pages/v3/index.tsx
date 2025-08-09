@@ -103,7 +103,7 @@ function PortfolioCard(): ReactElement {
                 className={cl(
                   'absolute inset-0',
                   'opacity-80 transition-opacity group-hover:opacity-100 pointer-events-none',
-                  'bg-[linear-gradient(80deg,_#D21162,_#2C3DA6)]'
+                  'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
                 )}
               />
               <p className={'z-10 text-neutral-900'}>{'Connect Wallet'}</p>
@@ -122,7 +122,7 @@ function PortfolioCard(): ReactElement {
         <div>
           <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Deposited'}</p>
           {isLoading ? (
-            <div className={'h-[36.5px] w-32 animate-pulse rounded bg-[#757CA6]'} />
+            <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
           ) : (
             <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
               {'$'}
