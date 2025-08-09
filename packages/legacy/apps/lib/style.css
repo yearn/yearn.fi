@@ -704,7 +704,7 @@
 }
 
 .mobile-nav-item {
-	@apply flex flex-col items-start justify-between rounded-xs bg-good-ol-grey-100;
+	@apply flex flex-col items-start justify-between rounded-xs bg-neutral-100;
 	& > p {
 		@apply p-2 text-base font-bold text-neutral-900;
 	}

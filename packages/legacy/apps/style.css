@@ -612,7 +612,7 @@ label[aria-invalid="true"] {
 }
 
 .mobile-nav-item {
-	@apply flex flex-col items-start justify-between rounded-sm bg-good-ol-grey-100;
+	@apply flex flex-col items-start justify-between rounded-sm bg-neutral-100;
 	& > p {
 		@apply p-2 text-base font-bold text-neutral-900;
 	}
