@@ -38,6 +38,24 @@
   }
 }
 
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
 @layer base {
   :root {
     --color-primary: 220 95% 50%;
@@ -201,7 +219,7 @@
   --animation-spin-slow: spin-slow 4s linear infinite;
 
   --color-primary: 220 95% 50%;
-    --color-neutral-0: 0 0% 100%;
+  --color-neutral-0: 0 0% 100%;
     --color-neutral-100: 0 0% 96%;
     --color-neutral-200: 0 0% 92%;
     --color-neutral-300: 0 0% 88%;
@@ -277,8 +295,10 @@
     --color-red-200: 0 100% 90%;
 
     --default-rounded: 0rem;
+  }
 }
 
+@layer base {
   body {
     @apply text-neutral-900;
   }
@@ -508,10 +528,12 @@
     }
   }
   .yearn--modalMobileMenu-select {
-    @apply rounded-default relative ml-1 flex flex-row items-center bg-neutral-500/10 py-1 pl-2 text-neutral-500;
+    @apply relative ml-1 flex flex-row items-center bg-neutral-500/10 py-1 pl-2 text-neutral-500;
+    border-radius: var(--default-rounded);
   }
   .yearn--modalMobileMenu-walletCard {
-    @apply rounded-default flex cursor-pointer flex-col items-center justify-center bg-neutral-100 py-4 px-2 text-center transition-colors;
+    @apply flex cursor-pointer flex-col items-center justify-center bg-neutral-100 py-4 px-2 text-center transition-colors;
+    border-radius: var(--default-rounded);
   }
   .yearn--modalMobileMenu-childrenWrapper {
     @apply mb-4 space-y-2 px-2;
