@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+@config '../tailwind.config.js';
 
 @theme {
   --color-black: hsl(0, 0%, 0%);
@@ -8,13 +10,13 @@
   --color-primary-500: oklch(0.5 0.233 220);
   --color-primary-600: oklch(0.45 0.233 220);
 
-  --color-gray-300: #E1E1E1;
-  --color-gray-400: #9D9D9D;
+  --color-gray-300: #e1e1e1;
+  --color-gray-400: #9d9d9d;
   --color-gray-500: #424242;
   --color-gray-600: #292929;
   --color-gray-700: #282828;
   --color-gray-800: #181818;
-  --color-gray-900: #0C0C0C;
+  --color-gray-900: #0c0c0c;
 
   --color-steelGray-500: oklch(0.71 0.014 218);
   --color-lightBlue-500: oklch(0.67 0.142 220);
@@ -22,7 +24,7 @@
   --color-blue-800: oklch(0.38 0.182 230);
   --color-blue-900: oklch(0.11 0.071 231);
   --color-fallback: #808080;
-  --color-red: #D42600;
+  --color-red: #d42600;
 
   /* --font-aeonik: var(--font-aeonik), "Aeonik", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-aeonikFono: var(--font-aeonik-fono), "Aeonik Fono", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -66,6 +68,24 @@
   --line-height-8xl: 104px;
 
   --animation-spin-slow: spin-slow 4s linear infinite;
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
 }
 
 :root {
@@ -408,8 +428,8 @@ label[aria-invalid="true"] {
 .nprogress-custom-parent #nprogress .spinner {@apply absolute}
 .nprogress-custom-parent #nprogress .bar {@apply absolute}
 #nprogress {@apply pointer-events-none}
-#nprogress .bar {@apply bg-neutral-900 fixed top-0 left-0 w-full h-1 z-[1031]}
-#nprogress .spinner {@apply block fixed z-[1031] top-4 right-4}
+#nprogress .bar {@apply bg-neutral-900 fixed top-0 left-0 w-full h-1 z-1031}
+#nprogress .spinner {@apply block fixed z-1031 top-4 right-4}
 #nprogress .spinner-icon {@apply hidden}
 
 /* 🔵 - Yearn Finance ******************************************************
@@ -514,7 +534,7 @@ label[aria-invalid="true"] {
 }
 
 .mobile-nav-item {
-	@apply flex flex-col items-start justify-between rounded bg-good-ol-grey-100;
+	@apply flex flex-col items-start justify-between rounded-sm bg-good-ol-grey-100;
 	& > p {
 		@apply p-2 text-base font-bold text-neutral-900;
 	}
@@ -540,7 +560,7 @@ label[aria-invalid="true"] {
 
 
 .yearn--toast-options {
-	@apply !w-screen text-sm text-neutral-700 !px-4 !rounded-none !shadow-none !py-2 !max-w-full;
+	@apply w-screen! text-sm text-neutral-700 px-4! rounded-none! shadow-none! py-2! max-w-full!;
 }
 
 .yearn--toast-button {
@@ -656,6 +676,6 @@ select:focus {
 
 [type='checkbox'],
 [type='checkbox']:focus {
-	@apply outline-none focus:border-0 focus:outline-none focus:ring-0 active:border-0 active:ring-0;
+	@apply outline-hidden focus:border-0 focus:outline-hidden focus:ring-0 active:border-0 active:ring-0;
 	box-shadow: none !important;
 }
