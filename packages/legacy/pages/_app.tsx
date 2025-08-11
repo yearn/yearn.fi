@@ -104,6 +104,16 @@ const WithLayout = memo(function WithLayout(
  **************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
   const { manifest } = useCurrentApp(props.router)
+  // Determine dynamic meta for V3 vault detail pages
+  const { asPath } = props.router
+  let ogUrl = manifest.og || 'https://yearn.fi/og.png'
+  let pageUri = manifest.uri || 'https://yearn.fi'
+  // Use dynamic OG API for V3 detail pages: /v3/[chainID]/[address]
+  if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
+    const [, , chainID, address] = asPath.split('/')
+    ogUrl = `https://yearn.fi/api/og/v3/${chainID}/${address}`
+    pageUri = `https://yearn.fi${asPath}`
+  }
 
   return (
     <WithFonts>
@@ -112,8 +122,8 @@ function MyApp(props: AppProps): ReactElement {
         description={manifest.description || 'The yield protocol for digital assets'}
         titleColor={'#ffffff'}
         themeColor={'#000000'}
-        og={manifest.og || 'https://yearn.fi/og.png'}
-        uri={manifest.uri || 'https://yearn.fi'}
+        og={ogUrl}
+        uri={pageUri}
       />
       <main className={'font-aeonik size-full min-h-screen'}>
         <PlausibleProvider domain={'yearn.fi'} enabled={true}>
