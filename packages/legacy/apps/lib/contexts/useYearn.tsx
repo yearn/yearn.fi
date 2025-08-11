@@ -1,7 +1,7 @@
 import { useFetchYearnEarnedForUser } from "@lib/hooks/useFetchYearnEarnedForUser";
 import { useFetchYearnPrices } from "@lib/hooks/useFetchYearnPrices";
 import { useFetchYearnVaults } from "@lib/hooks/useFetchYearnVaults";
-import { useKatanaAprs, TKatanaAprs, TAprData } from "@lib/hooks/useKatanaAprs";
+import { useKatanaAprs, TKatanaAprs } from "@lib/hooks/useKatanaAprs";
 import type { TAddress, TDict, TNormalizedBN } from "@lib/types";
 import { toAddress, toNormalizedBN, zeroNormalizedBN } from "@lib/utils";
 import type { TYDaemonEarned } from "@lib/utils/schemas/yDaemonEarnedSchema";
