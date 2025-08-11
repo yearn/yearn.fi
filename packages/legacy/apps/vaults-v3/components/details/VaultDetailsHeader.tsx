@@ -4,6 +4,7 @@ import { Renderable } from '@lib/components/Renderable'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
+import type { TKatanaAprData } from '@lib/hooks/useKatanaAprs'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import { IconQuestion } from '@lib/icons/IconQuestion'
 import type { TAddress, TNormalizedBN } from '@lib/types'
@@ -30,8 +31,9 @@ import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
 import { V3_STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/V3StakingRewards.abi'
 import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
 import { VEYFI_GAUGE_ABI } from '@vaults-v2/utils/abi/veYFIGauge.abi'
+import { KatanaApyTooltip } from '@vaults-v3/components/list/VaultsV3ListRow'
 import type { ReactElement } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { erc20Abi, zeroAddress } from 'viem'
 import { useBlockNumber } from 'wagmi'
 import { readContract, readContracts } from 'wagmi/actions'
@@ -61,7 +63,16 @@ function VaultHeaderLineItem({ label, children, legend }: TVaultHeaderLineItemPr
   )
 }
 
-function VaultAPY({ apr, source, chain }: { apr: TYDaemonVault['apr']; source: string; chain: number }): ReactElement {
+function VaultAPY({
+  apr,
+  source,
+  katanaExtras
+}: {
+  apr: TYDaemonVault['apr']
+  source: string
+  chain: number
+  katanaExtras?: TKatanaAprData
+}): ReactElement {
   const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
   const monthlyAPY = apr.points.monthAgo
   const weeklyAPY = apr.points.weekAgo
@@ -69,12 +80,39 @@ function VaultAPY({ apr, source, chain }: { apr: TYDaemonVault['apr']; source: s
   const currentAPY = apr.forwardAPR.netAPR + extraAPY
   const isSourceVeYFI = source === 'VeYFI'
 
-  // TEMPORARY HACK: Force 'New' APY for chainID 747474
-  const isForceNewHistoricalAPY = chain === 747474
+  if (katanaExtras) {
+    return (
+      <VaultHeaderLineItem
+        label={'Estimated APR'}
+        legend={
+          <span className={'tooltip'}>
+            <div className={'flex flex-row items-center space-x-2'}>
+              <div>{'APR Breakdown '}</div>
+              <IconQuestion className={'hidden md:block'} />
+            </div>
+            <KatanaApyTooltip
+              extrinsicYield={katanaExtras.extrinsicYield}
+              katanaNativeYield={katanaExtras.katanaNativeYield}
+              fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards}
+              katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR}
+              katanaBonusAPR={katanaExtras.katanaBonusAPY}
+              position="top"
+              maxWidth="min-w-[280px] max-w-[320px] w-max"
+            />
+          </span>
+        }
+      >
+        <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
+          <RenderAmount value={netAPY} symbol={'percent'} decimals={6} />
+        </Renderable>
+      </VaultHeaderLineItem>
+    )
+  }
+
   if (apr.forwardAPR.type === '' && extraAPY === 0) {
     return (
       <VaultHeaderLineItem label={'Historical APY'}>
-        <Renderable shouldRender={!isForceNewHistoricalAPY} fallback={'New'}>
+        <Renderable shouldRender={true} fallback={'New'}>
           <RenderAmount value={netAPY} symbol={'percent'} decimals={6} />
         </Renderable>
       </VaultHeaderLineItem>
@@ -130,7 +168,7 @@ function VaultAPY({ apr, source, chain }: { apr: TYDaemonVault['apr']; source: s
           </span>
         }
       >
-        <Renderable shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')} fallback={'New'}>
+        <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
           <RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
         </Renderable>
       </VaultHeaderLineItem>
@@ -200,7 +238,7 @@ function VaultAPY({ apr, source, chain }: { apr: TYDaemonVault['apr']; source: s
           </span>
         }
       >
-        <Renderable shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')} fallback={'New'}>
+        <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
           <RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
         </Renderable>
       </VaultHeaderLineItem>
@@ -259,7 +297,7 @@ function VaultAPY({ apr, source, chain }: { apr: TYDaemonVault['apr']; source: s
         </span>
       }
     >
-      <Renderable shouldRender={!isForceNewHistoricalAPY && !apr?.type.includes('new')} fallback={'New'}>
+      <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
         <RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
       </Renderable>
     </VaultHeaderLineItem>
@@ -383,7 +421,7 @@ function ValueEarned(props: {
 
 export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { address } = useWeb3()
-  const { getPrice } = useYearn()
+  const { getPrice, katanaAprs } = useYearn()
   const { data: blockNumber } = useBlockNumber({ watch: true })
   const { apr, tvl, decimals, symbol = 'token' } = currentVault
   const [vaultData, setVaultData] = useState({
@@ -394,6 +432,29 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
     rewardTokenDecimal: 0,
     earnedValue: 0
   })
+
+  // Override for Katana
+  const shouldUseKatanaAPRs = currentVault.chainID === 747474
+
+  const katanaAprData = useMemo(
+    () =>
+      shouldUseKatanaAPRs
+        ? (katanaAprs?.[toAddress(currentVault.address)]?.apr?.extra as TKatanaAprData | undefined)
+        : undefined,
+    [shouldUseKatanaAPRs, katanaAprs, currentVault.address]
+  )
+
+  const totalAPR = useMemo(
+    () => (katanaAprData ? Object.values(katanaAprData).reduce((sum, value) => sum + value, 0) : 0),
+    [katanaAprData]
+  )
+
+  const displayApr = useMemo((): TYDaemonVault['apr'] => {
+    if (!katanaAprData) return apr
+    // Override netAPR with the calculated totalAPR from Katana data
+    const overrideNetAPR = totalAPR
+    return { ...apr, netAPR: overrideNetAPR }
+  }, [apr, katanaAprData, totalAPR])
 
   const tokenPrice =
     useYearnTokenPrice({
@@ -701,7 +762,12 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
         </div>
 
         <div className={'w-full'}>
-          <VaultAPY apr={apr} source={currentVault.staking.source} chain={currentVault.chainID} />
+          <VaultAPY
+            apr={displayApr}
+            source={currentVault.staking.source}
+            chain={currentVault.chainID}
+            katanaExtras={katanaAprData}
+          />
         </div>
 
         <div className={'w-full'}>

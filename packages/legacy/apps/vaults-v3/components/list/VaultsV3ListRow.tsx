@@ -14,7 +14,7 @@ import Link from 'next/link'
 
 import type { ReactElement } from 'react'
 import { Fragment, useMemo } from 'react'
-import type { TAprData } from '../../../lib/hooks/useKatanaAprs'
+import type { TKatanaAprData } from '../../../lib/hooks/useKatanaAprs'
 import { VaultChainTag } from '../VaultChainTag'
 
 type TAPYSublineProps = {
@@ -161,52 +161,62 @@ function APYTooltip(props: {
   )
 }
 
-function KatanaApyTooltip(props: {
+export function KatanaApyTooltip(props: {
   extrinsicYield: number
   katanaNativeYield: number
   fixedRateKatanRewardsAPR: number
   katanaAppRewardsAPR: number
   katanaBonusAPR: number
+  position?: 'bottom' | 'top'
+  maxWidth?: string
 }): ReactElement {
+  const position = props.position || 'bottom'
+  const positionClass = position === 'bottom' ? 'bottom-full mb-1' : 'top-full mt-1'
+  const maxWidth = props.maxWidth || 'min-w-[280px] w-max'
+
   return (
-    <span className={'tooltipLight bottom-full mb-1'}>
+    <span className={`tooltipLight ${positionClass}`}>
       <div
-        className={
-          'font-number min-w-[280px] w-max border border-neutral-300 bg-neutral-100 p-1 px-3 text-center text-xxs text-neutral-900'
-        }
+        className={`font-number ${maxWidth} border border-neutral-300 bg-neutral-100 p-1 px-3 text-center text-xxs text-neutral-900`}
       >
         <div className={'flex flex-col items-start justify-start text-left'}>
           {/* Group 1: Native APY */}
           <p
             className={
-              'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm'
+              'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-xs text-bold'
             }
           >
             {'Native APY'}
           </p>
           <div
             className={
-              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-sm'
+              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
             }
           >
             <p>{'• Extrinsic Yield '}</p>
             <RenderAmount shouldHideTooltip value={props.extrinsicYield} symbol={'percent'} decimals={6} />
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400'}>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
             {'Yield Earned from underlying bridged assets'}
           </p>
 
           <div
             className={
-              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-sm'
+              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
             }
           >
             <p>{'• Katana APY '}</p>
             <RenderAmount shouldHideTooltip value={props.katanaNativeYield} symbol={'percent'} decimals={6} />
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400'}>{'Yield Earned on Katana'}</p>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
+            {'Yield Earned on Katana'}
+          </p>
 
-          <p className={'mb-2 w-full text-left text-[10px] italic text-xs text-neutral-400'}>
+          <p
+            className={
+              'mb-2 w-full text-left text-[10px] italic text-xs text-neutral-400 break-words whitespace-normal'
+            }
+          >
             {'*This yield is guaranteed but may be paid in KAT tokens if actual rates are lower.'}
           </p>
 
@@ -216,42 +226,46 @@ function KatanaApyTooltip(props: {
           {/* Group 2: Rewards APR */}
           <p
             className={
-              'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm'
+              'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-xs text-bold'
             }
           >
             {'Rewards APR'}
           </p>
           <div
             className={
-              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-sm'
+              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
             }
           >
             <p>{'• Base Rewards APR '}</p>
             <RenderAmount shouldHideTooltip value={props.fixedRateKatanRewardsAPR} symbol={'percent'} decimals={6} />
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400'}>{'Limited time fixed KAT rewards'}</p>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
+            {'Limited time fixed KAT rewards'}
+          </p>
 
           <div
             className={
-              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-sm'
+              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
             }
           >
             <p>{'• App Rewards APR '}</p>
             <RenderAmount shouldHideTooltip value={props.katanaAppRewardsAPR} symbol={'percent'} decimals={6} />
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400'}>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
             {'Kat Rewards passed through from Apps'}
           </p>
 
           <div
             className={
-              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-sm'
+              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
             }
           >
             <p>{'• Deposit Bonus APR '}</p>
             <RenderAmount shouldHideTooltip value={props.katanaBonusAPR} symbol={'percent'} decimals={6} />
           </div>
-          <p className={'-mt-1 mb-0 w-full text-left text-xs text-neutral-400'}>{'If you hold for 90 days'}</p>
+          <p className={'-mt-1 mb-0 w-full text-left text-xs text-neutral-400 break-words'}>
+            {'If you hold for 90 days'}
+          </p>
         </div>
       </div>
     </span>
@@ -268,7 +282,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
   const katanaAprData = useMemo(
     () =>
       shouldUseKatanaAPRs
-        ? (katanaAprs?.[toAddress(currentVault.address)]?.apr?.extra as TAprData | undefined)
+        ? (katanaAprs?.[toAddress(currentVault.address)]?.apr?.extra as TKatanaAprData | undefined)
         : undefined,
     [shouldUseKatanaAPRs, katanaAprs, currentVault.address]
   )
