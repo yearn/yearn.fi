@@ -298,7 +298,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
       <div className={'relative flex flex-col items-end md:text-right'}>
         <span className={'tooltip'}>
           <b className={'yearn--table-data-section-item-value'}>
-            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
+            <Renderable shouldRender={true} fallback={'NEW'}>
               {'⚔️ '}
               <span
                 className={
@@ -590,20 +590,33 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
 
 function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   // TEMPORARY HACK: Force 'NEW' APY for chainID 747474
-  const isForceNewHistoricalAPY = currentVault.chainID === 747474
+  const shouldUseKatanaAPRs = currentVault.chainID === 747474
   const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
   const monthlyAPY = currentVault.apr.points.monthAgo
   const weeklyAPY = currentVault.apr.points.weekAgo
 
+  if (shouldUseKatanaAPRs) {
+    return (
+      <div className={'flex flex-col items-end md:text-right'}>
+        <b className={'yearn--table-data-section-item-value'}>
+          <Renderable shouldRender={!shouldUseKatanaAPRs} fallback={'-'}>
+            <RenderAmount
+              value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
+              shouldHideTooltip={hasZeroAPY}
+              symbol={'percent'}
+              decimals={6}
+            />
+          </Renderable>
+        </b>
+      </div>
+    )
+  }
   if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
     return (
       <div className={'flex flex-col items-end md:text-right'}>
         <span className={'tooltip'}>
           <b className={'yearn--table-data-section-item-value'}>
-            <Renderable
-              shouldRender={!isForceNewHistoricalAPY && !currentVault.apr?.type.includes('new')}
-              fallback={'NEW'}
-            >
+            <Renderable shouldRender={!currentVault.apr?.type.includes('new')} fallback={'NEW'}>
               <span
                 className={
                   'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
@@ -658,7 +671,7 @@ function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): 
   return (
     <div className={'flex flex-col items-end md:text-right'}>
       <b className={'yearn--table-data-section-item-value'}>
-        <Renderable shouldRender={!isForceNewHistoricalAPY && !currentVault.apr?.type.includes('new')} fallback={'NEW'}>
+        <Renderable shouldRender={!currentVault.apr?.type.includes('new')} fallback={'NEW'}>
           <RenderAmount
             value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
             shouldHideTooltip={hasZeroAPY}
