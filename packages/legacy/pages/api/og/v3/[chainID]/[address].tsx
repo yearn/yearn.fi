@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/performance/noImgElement: <explanation> */
+/** biome-ignore-all lint/performance/noImgElement: <img> elements are required for OG image generation because Next.js ImageResponse does not support the Next.js <Image> component, and <img> is the only way to render external images in the generated OG image. */
 import { ImageResponse } from 'next/og'
 import type { NextRequest } from 'next/server'
 import { TypeMarkYearn } from '../../../../../apps/lib/icons/TypeMarkYearn-naughty'
