@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/performance/noImgElement: <explanation> */
+/** biome-ignore-all lint/performance/noImgElement: <img> elements are required for OG image generation because Next.js ImageResponse does not support the Next.js <Image> component, and <img> is the only way to render external images in the generated OG image. */
 import { ImageResponse } from 'next/og'
 import type { NextRequest } from 'next/server'
 import { TypeMarkYearn } from '../../../../../apps/lib/icons/TypeMarkYearn-naughty'
@@ -49,7 +49,7 @@ interface VaultData {
   chainName: string
 }
 
-// Validation functions to prevent SSRF
+// Chain identification and currency formatting utility functions
 const ALLOWED_CHAIN_IDS = [1, 10, 137, 250, 8453, 42161, 747474];
 
 function isValidChainID(chainID: string): boolean {
@@ -102,7 +102,7 @@ async function fetchVaultData(chainID: string, address: string) {
       console.error(`Failed to fetch vault data: ${response.status}`)
       return null
     }
-
+  if (vault.chainID === KATANA_CHAIN_ID) {
     const data = await response.json()
     return data
   } catch (error) {
@@ -190,10 +190,52 @@ export default async function handler(req: NextRequest) {
       historicalApy: '0.00%',
       tvlUsd: '$0',
       chainName: getChainName(parseInt(chainID))
-    }
+  // Whitelist of allowed hostnames
+  const allowedHosts = ['yearn.fi', 'localhost:3000', 'localhost', 'app.yearn.fi'];
+  let rawOrigin = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+  // Extract hostname (strip port if present)
+  let originHost = rawOrigin.split(':')[0];
+  let originPort = rawOrigin.split(':')[1];
+  let validatedOrigin = allowedHosts.includes(rawOrigin)
+    ? rawOrigin
+    : allowedHosts.includes(originHost)
+      ? originHost + (originPort ? ':' + originPort : '')
+      : 'yearn.fi';
+  const protocol = validatedOrigin.includes('localhost') ? 'http' : 'https';
+  const plasticLogo = `${protocol}://${validatedOrigin}/3d-logo-bw.png`;
+
+  // Load Aeonik fonts
+  const aeonikRegular = await fetch(`${protocol}://${validatedOrigin}/fonts/Aeonik-Regular.ttf`).then((res) => res.arrayBuffer())
+  const aeonikBold = await fetch(`${protocol}://${validatedOrigin}/fonts/Aeonik-Bold.ttf`).then((res) => res.arrayBuffer())
+  const aeonikMono = await fetch(`${protocol}://${validatedOrigin}/fonts/AeonikMono-Regular.ttf`).then((res) =>
   }
 
-  // Pre-compute all strings to avoid JSX interpolation issues - STEP 7: FIGMA DESIGN FLAT
+  // Load Aeonik fonts with error handling
+  let aeonikRegular, aeonikBold, aeonikMono;
+  try {
+    const regularRes = await fetch(`${protocol}://${origin}/fonts/Aeonik-Regular.ttf`);
+    if (!regularRes.ok) {
+      throw new Error(`Failed to load Aeonik-Regular.ttf: ${regularRes.status} ${regularRes.statusText}`);
+    }
+    aeonikRegular = await regularRes.arrayBuffer();
+
+    const boldRes = await fetch(`${protocol}://${origin}/fonts/Aeonik-Bold.ttf`);
+    if (!boldRes.ok) {
+      throw new Error(`Failed to load Aeonik-Bold.ttf: ${boldRes.status} ${boldRes.statusText}`);
+    }
+    aeonikBold = await boldRes.arrayBuffer();
+
+    const monoRes = await fetch(`${protocol}://${origin}/fonts/AeonikMono-Regular.ttf`);
+    if (!monoRes.ok) {
+      throw new Error(`Failed to load AeonikMono-Regular.ttf: ${monoRes.status} ${monoRes.statusText}`);
+    }
+    aeonikMono = await monoRes.arrayBuffer();
+  } catch (err) {
+    return new Response(
+      `Font loading error: ${err instanceof Error ? err.message : String(err)}`,
+      { status: 500 }
+    );
+  }
   const vaultName = displayData.name
   const vaultIcon = displayData.icon
   const estimatedApyValue = displayData.estimatedApy
