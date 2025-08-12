@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/performance/noImgElement: <img> elements are required for OG image generation because Next.js ImageResponse does not support the Next.js <Image> component, and <img> is the only way to render external images in the generated OG image. */
 import { ImageResponse } from 'next/og'
 import type { NextRequest } from 'next/server'
-import { TypeMarkYearn } from '../../../../../apps/lib/icons/TypeMarkYearn-naughty'
+import { TypeMarkYearn } from '@lib/icons/TypeMarkYearn-naughty'
 
 export const runtime = 'edge'
 
@@ -49,7 +49,7 @@ interface VaultData {
   chainName: string
 }
 
-// Chain identification and currency formatting utility functions
+// Chain identification functions
 const ALLOWED_CHAIN_IDS = [1, 10, 137, 250, 8453, 42161, 747474];
 
 function isValidChainID(chainID: string): boolean {
@@ -102,9 +102,8 @@ async function fetchVaultData(chainID: string, address: string) {
       console.error(`Failed to fetch vault data: ${response.status}`)
       return null
     }
-  if (vault.chainID === KATANA_CHAIN_ID) {
-    const data = await response.json()
-    return data
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Error fetching vault data:', error)
     return null
@@ -190,13 +189,14 @@ export default async function handler(req: NextRequest) {
       historicalApy: '0.00%',
       tvlUsd: '$0',
       chainName: getChainName(parseInt(chainID))
+    }
   // Whitelist of allowed hostnames
   const allowedHosts = ['yearn.fi', 'localhost:3000', 'localhost', 'app.yearn.fi'];
-  let rawOrigin = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+  const rawOrigin = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
   // Extract hostname (strip port if present)
-  let originHost = rawOrigin.split(':')[0];
-  let originPort = rawOrigin.split(':')[1];
-  let validatedOrigin = allowedHosts.includes(rawOrigin)
+  const originHost = rawOrigin.split(':')[0];
+  const originPort = rawOrigin.split(':')[1];
+  const validatedOrigin = allowedHosts.includes(rawOrigin)
     ? rawOrigin
     : allowedHosts.includes(originHost)
       ? originHost + (originPort ? ':' + originPort : '')
@@ -204,14 +204,8 @@ export default async function handler(req: NextRequest) {
   const protocol = validatedOrigin.includes('localhost') ? 'http' : 'https';
   const plasticLogo = `${protocol}://${validatedOrigin}/3d-logo-bw.png`;
 
-  // Load Aeonik fonts
-  const aeonikRegular = await fetch(`${protocol}://${validatedOrigin}/fonts/Aeonik-Regular.ttf`).then((res) => res.arrayBuffer())
-  const aeonikBold = await fetch(`${protocol}://${validatedOrigin}/fonts/Aeonik-Bold.ttf`).then((res) => res.arrayBuffer())
-  const aeonikMono = await fetch(`${protocol}://${validatedOrigin}/fonts/AeonikMono-Regular.ttf`).then((res) =>
-  }
-
   // Load Aeonik fonts with error handling
-  let aeonikRegular, aeonikBold, aeonikMono;
+  let aeonikRegular: ArrayBuffer | undefined, aeonikBold: ArrayBuffer | undefined, aeonikMono: ArrayBuffer | undefined;
   try {
     const regularRes = await fetch(`${protocol}://${origin}/fonts/Aeonik-Regular.ttf`);
     if (!regularRes.ok) {
@@ -243,17 +237,6 @@ export default async function handler(req: NextRequest) {
   const tvlValue = displayData.tvlUsd
   const footerText = `${displayData.chainName} | ${address.slice(0, 6)}...${address.slice(-4)}`
   const earnWithYearnText = 'Earn With Yearn'
-  // Use absolute URL for /public/3d-logo-png
-  const origin = req.headers.get('x-forwarded-host') || req.headers.get('host') || 'yearn.fi'
-  const protocol = origin.includes('localhost') ? 'http' : 'https'
-  const plasticLogo = `${protocol}://${origin}/3d-logo-bw.png`
-
-  // Load Aeonik fonts
-  const aeonikRegular = await fetch(`${protocol}://${origin}/fonts/Aeonik-Regular.ttf`).then((res) => res.arrayBuffer())
-  const aeonikBold = await fetch(`${protocol}://${origin}/fonts/Aeonik-Bold.ttf`).then((res) => res.arrayBuffer())
-  const aeonikMono = await fetch(`${protocol}://${origin}/fonts/AeonikMono-Regular.ttf`).then((res) =>
-    res.arrayBuffer()
-  )
 
   return new ImageResponse(
     <div
