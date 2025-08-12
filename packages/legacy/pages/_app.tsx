@@ -106,12 +106,22 @@ function MyApp(props: AppProps): ReactElement {
   const { manifest } = useCurrentApp(props.router)
   // Determine dynamic meta for V3 vault detail pages
   const { asPath } = props.router
+
+  // Get most basic og and uri info
   let ogUrl = manifest.og || 'https://yearn.fi/og.png'
   let pageUri = manifest.uri || 'https://yearn.fi'
-  // Use dynamic OG API for V3 detail pages: /v3/[chainID]/[address]
+  // if a vercel dev build, use vercel url for dynamic OG API
+  const baseUrl = process.env.VERCEL_ENV === 'production' ? pageUri : `https://${process.env.VERCEL_URL}`
+  // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
   if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
     const [, , chainID, address] = asPath.split('/')
-    ogUrl = `https://yearn.fi/api/og/v3/${chainID}/${address}`
+    ogUrl = `https://yearn.fi/api/og/${chainID}/${address}`
+    pageUri = `https://yearn.fi${asPath}`
+  }
+  // Use dynamic OG API for v2 vault pages: /vaults/[chainID]/[address]
+  if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
+    const [, , chainID, address] = asPath.split('/')
+    ogUrl = `${baseUrl}/api/og/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`
   }
 

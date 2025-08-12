@@ -50,16 +50,16 @@ interface VaultData {
 }
 
 // Chain identification functions
-const ALLOWED_CHAIN_IDS = [1, 10, 137, 250, 8453, 42161, 747474];
+const ALLOWED_CHAIN_IDS = [1, 10, 137, 250, 8453, 42161, 747474]
 
 function isValidChainID(chainID: string): boolean {
   // Only allow known chain IDs
-  return ALLOWED_CHAIN_IDS.includes(Number(chainID));
+  return ALLOWED_CHAIN_IDS.includes(Number(chainID))
 }
 
 function isValidEthereumAddress(address: string): boolean {
   // Accepts 40 hex chars, optionally prefixed with '0x'
-  return /^0x[a-fA-F0-9]{40}$/.test(address) || /^[a-fA-F0-9]{40}$/.test(address);
+  return /^0x[a-fA-F0-9]{40}$/.test(address) || /^[a-fA-F0-9]{40}$/.test(address)
 }
 
 // Utility functions
@@ -102,8 +102,8 @@ async function fetchVaultData(chainID: string, address: string) {
       console.error(`Failed to fetch vault data: ${response.status}`)
       return null
     }
-    const data = await response.json();
-    return data;
+    const data = await response.json()
+    return data
   } catch (error) {
     console.error('Error fetching vault data:', error)
     return null
@@ -190,45 +190,43 @@ export default async function handler(req: NextRequest) {
       tvlUsd: '$0',
       chainName: getChainName(parseInt(chainID))
     }
+  }
   // Whitelist of allowed hostnames
-  const allowedHosts = ['yearn.fi', 'localhost:3000', 'localhost', 'app.yearn.fi'];
-  const rawOrigin = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+  const allowedHosts = ['yearn.fi', 'localhost:3000', 'localhost', 'app.yearn.fi']
+  const rawOrigin = req.headers.get('x-forwarded-host') || req.headers.get('host') || ''
   // Extract hostname (strip port if present)
-  const originHost = rawOrigin.split(':')[0];
-  const originPort = rawOrigin.split(':')[1];
+  const originHost = rawOrigin.split(':')[0]
+  const originPort = rawOrigin.split(':')[1]
   const validatedOrigin = allowedHosts.includes(rawOrigin)
     ? rawOrigin
     : allowedHosts.includes(originHost)
       ? originHost + (originPort ? ':' + originPort : '')
-      : 'yearn.fi';
-  const protocol = validatedOrigin.includes('localhost') ? 'http' : 'https';
-  const plasticLogo = `${protocol}://${validatedOrigin}/3d-logo-bw.png`;
+      : 'yearn.fi'
+  const protocol = validatedOrigin.includes('localhost') ? 'http' : 'https'
+  const plasticLogo = `${protocol}://${validatedOrigin}/3d-logo-bw.png`
 
   // Load Aeonik fonts with error handling
-  let aeonikRegular: ArrayBuffer | undefined, aeonikBold: ArrayBuffer | undefined, aeonikMono: ArrayBuffer | undefined;
+  let aeonikRegular: ArrayBuffer | undefined, aeonikBold: ArrayBuffer | undefined, aeonikMono: ArrayBuffer | undefined
   try {
-    const regularRes = await fetch(`${protocol}://${origin}/fonts/Aeonik-Regular.ttf`);
+    const regularRes = await fetch(`${protocol}://${origin}/fonts/Aeonik-Regular.ttf`)
     if (!regularRes.ok) {
-      throw new Error(`Failed to load Aeonik-Regular.ttf: ${regularRes.status} ${regularRes.statusText}`);
+      throw new Error(`Failed to load Aeonik-Regular.ttf: ${regularRes.status} ${regularRes.statusText}`)
     }
-    aeonikRegular = await regularRes.arrayBuffer();
+    aeonikRegular = await regularRes.arrayBuffer()
 
-    const boldRes = await fetch(`${protocol}://${origin}/fonts/Aeonik-Bold.ttf`);
+    const boldRes = await fetch(`${protocol}://${origin}/fonts/Aeonik-Bold.ttf`)
     if (!boldRes.ok) {
-      throw new Error(`Failed to load Aeonik-Bold.ttf: ${boldRes.status} ${boldRes.statusText}`);
+      throw new Error(`Failed to load Aeonik-Bold.ttf: ${boldRes.status} ${boldRes.statusText}`)
     }
-    aeonikBold = await boldRes.arrayBuffer();
+    aeonikBold = await boldRes.arrayBuffer()
 
-    const monoRes = await fetch(`${protocol}://${origin}/fonts/AeonikMono-Regular.ttf`);
+    const monoRes = await fetch(`${protocol}://${origin}/fonts/AeonikMono-Regular.ttf`)
     if (!monoRes.ok) {
-      throw new Error(`Failed to load AeonikMono-Regular.ttf: ${monoRes.status} ${monoRes.statusText}`);
+      throw new Error(`Failed to load AeonikMono-Regular.ttf: ${monoRes.status} ${monoRes.statusText}`)
     }
-    aeonikMono = await monoRes.arrayBuffer();
+    aeonikMono = await monoRes.arrayBuffer()
   } catch (err) {
-    return new Response(
-      `Font loading error: ${err instanceof Error ? err.message : String(err)}`,
-      { status: 500 }
-    );
+    return new Response(`Font loading error: ${err instanceof Error ? err.message : String(err)}`, { status: 500 })
   }
   const vaultName = displayData.name
   const vaultIcon = displayData.icon
