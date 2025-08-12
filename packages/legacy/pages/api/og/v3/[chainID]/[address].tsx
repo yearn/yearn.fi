@@ -190,7 +190,24 @@ export default async function handler(req: NextRequest) {
       historicalApy: '0.00%',
       tvlUsd: '$0',
       chainName: getChainName(parseInt(chainID))
-    }
+  // Whitelist of allowed hostnames
+  const allowedHosts = ['yearn.fi', 'localhost:3000', 'localhost', 'app.yearn.fi'];
+  let rawOrigin = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+  // Extract hostname (strip port if present)
+  let originHost = rawOrigin.split(':')[0];
+  let originPort = rawOrigin.split(':')[1];
+  let validatedOrigin = allowedHosts.includes(rawOrigin)
+    ? rawOrigin
+    : allowedHosts.includes(originHost)
+      ? originHost + (originPort ? ':' + originPort : '')
+      : 'yearn.fi';
+  const protocol = validatedOrigin.includes('localhost') ? 'http' : 'https';
+  const plasticLogo = `${protocol}://${validatedOrigin}/3d-logo-bw.png`;
+
+  // Load Aeonik fonts
+  const aeonikRegular = await fetch(`${protocol}://${validatedOrigin}/fonts/Aeonik-Regular.ttf`).then((res) => res.arrayBuffer())
+  const aeonikBold = await fetch(`${protocol}://${validatedOrigin}/fonts/Aeonik-Bold.ttf`).then((res) => res.arrayBuffer())
+  const aeonikMono = await fetch(`${protocol}://${validatedOrigin}/fonts/AeonikMono-Regular.ttf`).then((res) =>
   }
 
   // Load Aeonik fonts with error handling
