@@ -49,7 +49,7 @@ interface VaultData {
   chainName: string
 }
 
-// Validation functions to prevent SSRF
+// Chain identification and currency formatting utility functions
 const ALLOWED_CHAIN_IDS = [1, 10, 137, 250, 8453, 42161, 747474];
 
 function isValidChainID(chainID: string): boolean {
