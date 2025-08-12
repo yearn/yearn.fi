@@ -1,21 +1,98 @@
-/*************************************************************************************************
- * Yearn Finance - Consolidated Style Sheet
- * This file consolidates all styles from the legacy app into a single, deduplicated CSS file.
- * Previously spread across: style.css, apps/style.css, and apps/lib/style.css
- *
- * Structure:
- * 1. External imports
- * 2. Tailwind CSS with configuration
- * 3. Tailwind v4 compatibility layer
- * 4. Font face definitions
- * 5. Theme variables (@theme block)
- * 6. Base layer styles
- * 7. Component styles
- * 8. Utility classes
- *************************************************************************************************/
-
 /* External Dependencies */
-@import "@rainbow-me/rainbowkit/styles.css";
+/* @import "@rainbow-me/rainbowkit/styles.css"; */
 
 /* Tailwind CSS */
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: hsl(220 95% 50%);
+  --color-neutral-0: hsl(0 0% 100%);
+  --color-neutral-100: hsl(0 0% 96%);
+  --color-neutral-200: hsl(0 0% 92%);
+  --color-neutral-300: hsl(0 0% 88%);
+  --color-neutral-400: hsl(0 0% 62%);
+  --color-neutral-500: hsl(0 0% 50%);
+  --color-neutral-600: hsl(0 0% 36%);
+  --color-neutral-700: hsl(0 0% 26%);
+  --color-neutral-800: hsl(0 0% 16%);
+  --color-neutral-900: hsl(0 0% 5%);
+
+  /* Disco Salmon */
+  --color-pink-50: hsl(351 100% 96%);
+  --color-pink-100: hsl(351 100% 78%);
+  --color-pink-200: hsl(333 98% 68%);
+  --color-pink-300: hsl(326 95% 60%);
+  --color-pink-400: hsl(336 83% 61%);
+  --color-pink-500: hsl(350 69% 60%);
+  --color-pink-600: hsl(341 59% 51%);
+  --color-pink-700: hsl(332 76% 41%);
+  --color-pink-800: hsl(332 81% 33%);
+  --color-pink-900: hsl(332 100% 21%);
+
+  --color-gray-300: "#E1E1E1";
+  --color-gray-400: "#9D9D9D";
+  --color-gray-500: "#424242";
+  --color-gray-600: "#292929";
+  --color-gray-700: "#282828";
+  --color-gray-800: "#181818";
+  --color-gray-900: "#0C0C0C";
+
+  /* 🔵 - Yearn Finance
+  /* These colors should be used fairly conservatively throughout your UI to
+  avoid overpowering your primary colors. Use them when you need an
+  element to stand out, or to reinforce things like error states or
+  positive trends with the appropriate semantic color.
+  **************************************************************************/
+  --color-red-900: hsl(0 100% 45%);
+  --color-red-300: hsl(0 100% 95%);
+  --color-red-200: hsl(0 100% 90%);
+
+  --color-blue-500: hsl(220 95% 50%);
+  --color-blue-800: hsl(230 93% 38%);
+  --color-blue-900: hsl(231 100% 11%);
+  --color-steel-gray-500: hsl(218 14% 71%);
+  --color-light-blue-500: hsl(220 100% 67%);
+  --default-rounded: 0rem;
+}
+
+@layer theme {
+  .dark {
+    --color-primary: hsl(220 95% 50%);
+    --color-neutral-900: hsl(0 0% 100%);
+    --color-neutral-800: hsl(0 0% 96%);
+    --color-neutral-700: hsl(0 0% 92%);
+    --color-neutral-600: hsl(0 0% 88%);
+    --color-neutral-500: hsl(0 0% 62%);
+    --color-neutral-400: hsl(0 0% 50%);
+    --color-neutral-300: hsl(0 0% 36%);
+    --color-neutral-200: hsl(0 0% 26%);
+    --color-neutral-100: hsl(0 0% 16%);
+    --color-neutral-0: hsl(0 0% 5%);
+  }
+
+  .v3 {
+    --color-primary: hsl(220 95% 50%);
+    --color-neutral-900: hsl(0 0% 96%);
+    --color-neutral-800: hsl(0 0% 96%);
+    --color-neutral-700: hsl(0 0% 92%);
+    --color-neutral-600: hsl(0 0% 88%);
+    --color-neutral-500: hsl(0 0% 62%);
+    --color-neutral-400: hsl(0 0% 50%);
+    --color-neutral-300: hsl(231 51% 19%);
+    --color-neutral-200: hsl(242 54% 27%);
+    --color-neutral-100: hsl(231 100% 11%);
+    --color-neutral-0: hsl(231 100% 6%);
+  }
+}
+
+body {
+  color: var(--color-neutral-900);
+}
+/* h1 {
+  @apply text-xl font-bold text-neutral-900;
+}
+h4 {
+  @apply text-lg font-bold text-neutral-700;
+} */

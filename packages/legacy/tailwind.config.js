@@ -3,7 +3,6 @@ const { join } = require('node:path')
 const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
-  presets: [require('./apps/lib/tailwind.config.cjs')],
   content: [
     './app/**/*.{js,ts,jsx,tsx}',
     './pages/**/*.{js,ts,jsx,tsx}',
@@ -22,26 +21,6 @@ module.exports = {
         inherit: 'inherit',
         primary: '#0657F9',
 
-        gray: {
-          300: '#E1E1E1',
-          400: '#9D9D9D',
-          500: '#424242',
-          600: '#292929',
-          700: '#282828',
-          800: '#181818',
-          900: '#0C0C0C'
-        },
-        steelGray: {
-          500: 'hsl(var(--color-steelGray-500))'
-        },
-        lightBlue: {
-          500: 'hsl(var(--color-lightBlue-500))'
-        },
-        blue: {
-          500: 'hsl(var(--color-blue-500))',
-          800: 'hsl(var(--color-blue-800))',
-          900: 'hsl(var(--color-blue-900))'
-        },
         fallback: '#808080',
         red: '#D42600'
       },

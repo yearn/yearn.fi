@@ -25,7 +25,6 @@ import type { ReactElement } from 'react'
 import { memo } from 'react'
 import { Toaster } from 'react-hot-toast'
 import type { Chain } from 'viem'
-
 import '../style.css'
 
 /** 🔵 - Yearn Finance ***************************************************************************
