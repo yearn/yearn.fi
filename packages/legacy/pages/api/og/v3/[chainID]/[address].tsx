@@ -193,7 +193,32 @@ export default async function handler(req: NextRequest) {
     }
   }
 
-  // Pre-compute all strings to avoid JSX interpolation issues - STEP 7: FIGMA DESIGN FLAT
+  // Load Aeonik fonts with error handling
+  let aeonikRegular, aeonikBold, aeonikMono;
+  try {
+    const regularRes = await fetch(`${protocol}://${origin}/fonts/Aeonik-Regular.ttf`);
+    if (!regularRes.ok) {
+      throw new Error(`Failed to load Aeonik-Regular.ttf: ${regularRes.status} ${regularRes.statusText}`);
+    }
+    aeonikRegular = await regularRes.arrayBuffer();
+
+    const boldRes = await fetch(`${protocol}://${origin}/fonts/Aeonik-Bold.ttf`);
+    if (!boldRes.ok) {
+      throw new Error(`Failed to load Aeonik-Bold.ttf: ${boldRes.status} ${boldRes.statusText}`);
+    }
+    aeonikBold = await boldRes.arrayBuffer();
+
+    const monoRes = await fetch(`${protocol}://${origin}/fonts/AeonikMono-Regular.ttf`);
+    if (!monoRes.ok) {
+      throw new Error(`Failed to load AeonikMono-Regular.ttf: ${monoRes.status} ${monoRes.statusText}`);
+    }
+    aeonikMono = await monoRes.arrayBuffer();
+  } catch (err) {
+    return new Response(
+      `Font loading error: ${err instanceof Error ? err.message : String(err)}`,
+      { status: 500 }
+    );
+  }
   const vaultName = displayData.name
   const vaultIcon = displayData.icon
   const estimatedApyValue = displayData.estimatedApy
