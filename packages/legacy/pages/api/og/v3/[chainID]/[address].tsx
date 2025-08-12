@@ -1,5 +1,7 @@
+/** biome-ignore-all lint/performance/noImgElement: <explanation> */
 import { ImageResponse } from 'next/og'
 import type { NextRequest } from 'next/server'
+import { TypeMarkYearn } from '../../../../../apps/lib/icons/TypeMarkYearn-naughty'
 
 export const runtime = 'edge'
 
@@ -34,6 +36,8 @@ export const runtime = 'edge'
  * RULE: Always pre-compute ALL dynamic strings before the JSX return statement.
  * Never use template literals, object property access, or function calls inside JSX elements.
  * The edge runtime's JSX parser is extremely strict about this.
+ *
+ * The display css property must be set to 'flex' for all elements.
  */
 
 interface VaultData {
@@ -69,9 +73,9 @@ function getChainName(chainId: number): string {
 
 function formatUSD(amount: number): string {
   if (amount < 1000) return `$${amount.toFixed(2)}`
-  if (amount < 1e6) return `$${(amount / 1e3).toFixed(1)}K`
-  if (amount < 1e9) return `$${(amount / 1e6).toFixed(1)}M`
-  if (amount < 1e12) return `$${(amount / 1e9).toFixed(1)}B`
+  if (amount < 1e6) return `$${(amount / 1e3).toFixed(2)}K`
+  if (amount < 1e9) return `$${(amount / 1e6).toFixed(2)}M`
+  if (amount < 1e12) return `$${(amount / 1e9).toFixed(2)}B`
   return `$${(amount / 1e12).toFixed(1)}T`
 }
 
@@ -151,7 +155,7 @@ export default async function handler(req: NextRequest) {
     const historicalAPY = calculateHistoricalAPY(vaultData)
 
     displayData = {
-      icon: `${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-128.png`,
+      icon: `${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${vaultData.token.address}/logo-128.png`,
       name: vaultData.name?.replace(/\s+Vault$/, '') || 'Yearn Vault',
       estimatedApy: `${(estimatedAPY * 100).toFixed(2)}%`,
       historicalApy: `${(historicalAPY * 100).toFixed(2)}%`,
@@ -170,39 +174,338 @@ export default async function handler(req: NextRequest) {
     }
   }
 
-  // Pre-compute all strings to avoid JSX interpolation issues
+  // Pre-compute all strings to avoid JSX interpolation issues - STEP 7: FIGMA DESIGN FLAT
   const vaultName = displayData.name
-  const estimatedApyText = `Estimated APY: ${displayData.estimatedApy}`
-  const historicalApyText = `Historical APY: ${displayData.historicalApy}`
-  const tvlText = `TVL: ${displayData.tvlUsd}`
-  const footerText = `${displayData.chainName} • ${address.slice(0, 6)}...${address.slice(-4)}`
+  const vaultIcon = displayData.icon
+  const estimatedApyValue = displayData.estimatedApy
+  const historicalApyValue = displayData.historicalApy
+  const tvlValue = displayData.tvlUsd
+  const footerText = `${displayData.chainName} | ${address.slice(0, 6)}...${address.slice(-4)}`
+  const earnWithYearnText = 'Earn With Yearn'
+  // Use absolute URL for /public/3d-logo-png
+  const origin = req.headers.get('x-forwarded-host') || req.headers.get('host') || 'yearn.fi'
+  const protocol = origin.includes('localhost') ? 'http' : 'https'
+  const plasticLogo = `${protocol}://${origin}/3d-logo-bw.png`
+
+  // Load Aeonik fonts
+  const aeonikRegular = await fetch(`${protocol}://${origin}/fonts/Aeonik-Regular.ttf`).then((res) => res.arrayBuffer())
+  const aeonikBold = await fetch(`${protocol}://${origin}/fonts/Aeonik-Bold.ttf`).then((res) => res.arrayBuffer())
+  const aeonikMono = await fetch(`${protocol}://${origin}/fonts/AeonikMono-Regular.ttf`).then((res) =>
+    res.arrayBuffer()
+  )
 
   return new ImageResponse(
-    <div tw="flex w-[1200px] h-[630px] bg-gradient-to-r from-[#2C3DA6] to-[#D21162] text-white">
-      {/* Left side content */}
-      <div tw="flex flex-col justify-between w-[700px] p-[60px]">
-        {/* Title */}
-        <div tw="text-[48px] font-bold leading-tight mb-[40px]">{vaultName}</div>
+    <div
+      style={{
+        width: 1200,
+        height: 630,
+        display: 'flex',
+        backgroundColor: 'white'
+      }}
+    >
+      <div
+        style={{
+          flex: '1 1 0',
+          alignSelf: 'stretch',
+          background: 'linear-gradient(225deg, #D21162 0%, #2C3DA6 100%)',
+          overflow: 'hidden',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          display: 'flex'
+        }}
+      >
+        {/* Info Panel */}
+        <div
+          style={{
+            alignSelf: 'stretch',
+            paddingLeft: 70,
+            paddingRight: 70,
+            justifyContent: 'flex-start',
+            alignItems: 'flex-start',
+            display: 'flex'
+          }}
+        >
+          {/* content */}
+          <div
+            style={{
+              flex: '1 1 0',
+              alignSelf: 'stretch',
+              justifyContent: 'center',
+              alignItems: 'center',
+              display: 'flex'
+            }}
+          >
+            {/* 3d logo image */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <img
+                src={plasticLogo}
+                alt="Yearn 3D Logo"
+                width="300"
+                height="300"
+                style={{
+                  objectFit: 'contain'
+                }}
+              />
+            </div>
 
-        {/* Stats */}
-        <div tw="flex flex-col">
-          <div tw="text-[32px] font-bold mb-[16px]">{estimatedApyText}</div>
-          <div tw="text-[24px] mb-[16px]">{historicalApyText}</div>
-          <div tw="text-[24px] mb-[40px]">{tvlText}</div>
+            {/* Vault Info */}
+            <div
+              style={{
+                flex: '1 1 0',
+                height: '100%',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'flex-end',
+                gap: 20,
+                display: 'flex'
+              }}
+            >
+              {/* Title block */}
+              <div
+                style={{
+                  alignSelf: 'stretch',
+                  height: 168,
+                  paddingTop: 60,
+                  paddingBottom: 20,
+                  overflow: 'hidden',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'flex-end',
+                  display: 'flex'
+                }}
+              >
+                {/* Token Logo and Name */}
+                <div style={{ justifyContent: 'center', alignItems: 'center', gap: 20, display: 'flex' }}>
+                  {/* Token Logo */}
+                  <img src={vaultIcon} alt={vaultName} width="48" height="48" style={{ borderRadius: 24 }} />
+                  {/* Token Name */}
+                  <div
+                    style={{
+                      color: 'white',
+                      fontSize: 64,
+                      fontFamily: 'Aeonik',
+                      fontWeight: '700',
+                      wordWrap: 'break-word'
+                    }}
+                  >
+                    {vaultName}
+                  </div>
+                </div>
+                {/* Chain and Address */}
+                <div
+                  style={{
+                    textAlign: 'right',
+                    color: 'white',
+                    fontSize: 20,
+                    fontFamily: 'Aeonik',
+                    fontWeight: '500',
+                    wordWrap: 'break-word',
+                    marginTop: -1
+                  }}
+                >
+                  {footerText}
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div
+                style={{
+                  width: 450,
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                  display: 'flex'
+                }}
+              >
+                {/* Estimated APY */}
+                <div
+                  style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    display: 'flex'
+                  }}
+                >
+                  <div
+                    style={{
+                      textAlign: 'right',
+                      color: 'white',
+                      fontSize: 32,
+                      fontFamily: 'Aeonik',
+                      fontWeight: '400',
+                      wordWrap: 'break-word'
+                    }}
+                  >
+                    Estimated APY:
+                  </div>
+                  <div
+                    style={{
+                      textAlign: 'right',
+                      color: 'white',
+                      fontSize: 48,
+                      fontFamily: 'AeonikMono',
+                      fontWeight: '700',
+                      wordWrap: 'break-word'
+                    }}
+                  >
+                    {estimatedApyValue}
+                  </div>
+                </div>
+                {/* Historical APY */}
+                <div
+                  style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    display: 'flex'
+                  }}
+                >
+                  <div
+                    style={{
+                      textAlign: 'right',
+                      color: 'white',
+                      fontSize: 32,
+                      fontFamily: 'Aeonik',
+                      fontWeight: '400',
+                      wordWrap: 'break-word'
+                    }}
+                  >
+                    Historical APY:
+                  </div>
+                  <div
+                    style={{
+                      textAlign: 'right',
+                      color: 'white',
+                      fontSize: 48,
+                      fontFamily: 'AeonikMono',
+                      fontWeight: '700',
+                      wordWrap: 'break-word'
+                    }}
+                  >
+                    {historicalApyValue}
+                  </div>
+                </div>
+                {/* Vault TVL */}
+                <div
+                  style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    display: 'flex'
+                  }}
+                >
+                  <div
+                    style={{
+                      textAlign: 'right',
+                      color: 'white',
+                      fontSize: 32,
+                      fontFamily: 'Aeonik',
+                      fontWeight: '400',
+                      wordWrap: 'break-word'
+                    }}
+                  >
+                    Vault TVL:
+                  </div>
+                  <div
+                    style={{
+                      flexDirection: 'column',
+                      justifyContent: 'flex-end',
+                      alignItems: 'flex-end',
+                      display: 'flex'
+                    }}
+                  >
+                    <div
+                      style={{
+                        alignSelf: 'stretch',
+                        textAlign: 'right',
+                        color: 'white',
+                        fontSize: 48,
+                        fontFamily: 'AeonikMono',
+                        fontWeight: '700',
+                        wordWrap: 'break-word'
+                      }}
+                    >
+                      {tvlValue}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
-        <div tw="text-[18px] opacity-80">{footerText}</div>
-      </div>
+        <div
+          style={{
+            width: '100%',
+            paddingBottom: 40,
+            paddingLeft: 70,
+            paddingRight: 70,
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            display: 'flex'
+          }}
+        >
+          {/* TypeMark Logo */}
+          <div
+            style={{
+              width: 309,
+              height: 85,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start'
+            }}
+          >
+            <TypeMarkYearn width={300} height={90} color="#FFFFFF" />
+          </div>
 
-      {/* Right side icon */}
-      <div tw="flex items-center justify-center w-[500px]">
-        <div tw="flex items-center justify-center w-[120px] h-[120px] bg-white rounded-[60px] text-[48px]">🏛️</div>
+          {/* Call to action */}
+          <div
+            style={{
+              textAlign: 'right',
+              color: 'white',
+              fontSize: 48,
+              fontFamily: 'Aeonik',
+              fontWeight: '700',
+              wordWrap: 'break-word'
+            }}
+          >
+            {earnWithYearnText}
+          </div>
+        </div>
       </div>
     </div>,
     {
       width: 1200,
-      height: 630
+      height: 630,
+      fonts: [
+        {
+          name: 'Aeonik',
+          data: aeonikRegular,
+          weight: 400,
+          style: 'normal'
+        },
+        {
+          name: 'Aeonik',
+          data: aeonikBold,
+          weight: 700,
+          style: 'normal'
+        },
+        {
+          name: 'AeonikMono',
+          data: aeonikMono,
+          weight: 400,
+          style: 'normal'
+        }
+      ]
     }
   )
 }
