@@ -102,7 +102,7 @@ async function fetchVaultData(chainID: string, address: string) {
       console.error(`Failed to fetch vault data: ${response.status}`)
       return null
     }
-
+  if (vault.chainID === KATANA_CHAIN_ID) {
     const data = await response.json()
     return data
   } catch (error) {
