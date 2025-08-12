@@ -49,6 +49,19 @@ interface VaultData {
   chainName: string
 }
 
+// Validation functions to prevent SSRF
+const ALLOWED_CHAIN_IDS = [1, 10, 137, 250, 8453, 42161, 747474];
+
+function isValidChainID(chainID: string): boolean {
+  // Only allow known chain IDs
+  return ALLOWED_CHAIN_IDS.includes(Number(chainID));
+}
+
+function isValidEthereumAddress(address: string): boolean {
+  // Accepts 40 hex chars, optionally prefixed with '0x'
+  return /^0x[a-fA-F0-9]{40}$/.test(address) || /^[a-fA-F0-9]{40}$/.test(address);
+}
+
 // Utility functions
 function getChainName(chainId: number): string {
   switch (chainId) {
@@ -143,6 +156,12 @@ export default async function handler(req: NextRequest) {
   const match = url.match(/v3\/(\d+)\/([a-zA-Z0-9]+)/)
   const chainID = match?.[1] || '1'
   const address = match?.[2] || ''
+
+  // SSRF protection: validate chainID and address
+  if (!isValidChainID(chainID) || !isValidEthereumAddress(address)) {
+    // Optionally, return a 400 error or a default response
+    return new Response('Invalid chainID or address', { status: 400 })
+  }
 
   // Fetch real vault data
   const vaultData = await fetchVaultData(chainID, address)
