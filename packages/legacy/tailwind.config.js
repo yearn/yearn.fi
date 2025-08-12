@@ -15,8 +15,6 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        black: 'hsl(0, 0%, 0%)',
-        white: 'rgb(255, 255, 255)',
         transparent: 'transparent',
         inherit: 'inherit',
         primary: '#0657F9',

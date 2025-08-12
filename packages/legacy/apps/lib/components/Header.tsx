@@ -162,10 +162,10 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
           </div>
           <div className={'flex w-1/3 items-center justify-end'}>
             <button
-              className={'yearn--header-nav-item hover:bg-grey-200 relative rounded-full p-2 transition-colors'}
+              className={'yearn--header-nav-item hover:bg-gray-200 relative rounded-full p-2 transition-colors'}
               onClick={(): void => setShouldOpenCurtain(true)}
             >
-              <IconBell className={'text-grey-900 size-4 font-bold transition-colors'} />
+              <IconBell className={'text-gray-900 size-4 font-bold transition-colors'} />
 
               <div className={cl('absolute right-1 top-1 size-2 rounded-full', notificationDotColor)} />
             </button>
