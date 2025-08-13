@@ -234,6 +234,7 @@ module.exports = withPlausibleProxy({
     // YDAEMON_BASE_URI: 'http://localhost:8080',
     BASE_YEARN_ASSETS_URI: 'https://token-assets-one.vercel.app/api/token',
     BASE_YEARN_CHAIN_URI: 'https://token-assets-one.vercel.app/api/chain',
-    SMOL_ASSETS_URL: 'https://token-assets-one.vercel.app/api'
+    SMOL_ASSETS_URL: 'https://token-assets-one.vercel.app/api',
+    KATANA_APR_SERVICE_API: process.env.KATANA_APR_SERVICE_API || 'https://katana-apr-service.vercel.app/api/vaults'
   }
 })
