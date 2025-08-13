@@ -150,3 +150,156 @@
     @apply mx-1 pointer-events-none inline-block h-2 w-2 rounded-full transition ease-in-out duration-200;
   }
 }
+
+/*************************************************************************************************
+ * Button Component Styles
+ * Provides consistent button styling across all variants with proper state management
+ *************************************************************************************************/
+.yearn--button {
+  /* Base button styles */
+  @apply cursor-pointer px-5 flex justify-center items-center h-10 text-base transition-all relative;
+  @apply font-normal border border-transparent;
+  @apply rounded-lg;
+
+  /* Global state styles */
+  &[aria-busy="true"] {
+    @apply cursor-wait;
+    color: transparent !important;
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  /* Variant: Filled (Primary) */
+  &[data-variant="filled"] {
+    @apply text-neutral-0 bg-neutral-900;
+
+    &:disabled {
+      @apply bg-neutral-700;
+    }
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-800;
+    }
+  }
+
+  /* Variant: Light */
+  &[data-variant="light"] {
+    @apply text-neutral-900 bg-neutral-100;
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-200;
+    }
+  }
+
+  /* Variant: Outlined */
+  &[data-variant="outlined"] {
+    @apply text-neutral-900 bg-transparent border-neutral-900;
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-900 text-neutral-0;
+    }
+  }
+
+  /* Variant: Reverted */
+  &[data-variant="reverted"] {
+    @apply text-neutral-900 bg-neutral-0;
+
+    &:disabled {
+      @apply bg-neutral-200;
+    }
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-200;
+    }
+
+    &[aria-busy="true"] svg {
+      @apply text-neutral-900;
+    }
+  }
+
+  /* Variant: V3 (Special variant) */
+  &[data-variant="v3"] {
+    @apply text-neutral-900 bg-pink-600;
+
+    &:disabled {
+      @apply bg-pink-600;
+    }
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-pink-600/80;
+    }
+  }
+}
+
+/*************************************************************************************************
+ * Dropdown Component Styles
+ *************************************************************************************************/
+.yearn--dropdown-menu {
+  @apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60;
+  @apply text-neutral-400 border border-neutral-300 bg-neutral-100;
+  @apply rounded-lg;
+}
+
+.yearn--dropdown-menu-item {
+  @apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
+
+  &[data-active="true"] {
+    @apply bg-neutral-0/40;
+  }
+
+  &:hover {
+    @apply bg-neutral-0/20;
+  }
+}
+
+/*************************************************************************************************
+ * Tab Component Styles
+ *************************************************************************************************/
+.tab {
+  @apply font-normal text-neutral-600 transition-colors hover:text-neutral-900 cursor-pointer border-b-2 border-transparent pb-4 z-20;
+  &[aria-selected="true"] {
+    @apply font-bold text-neutral-900 border-neutral-900;
+  }
+}
+
+/* 🔵 - Yearn Finance ******************************************************
+** Overwriting the defaults to match our needs
+**************************************************************************/
+input[type="number"] {
+  /* Firefox: Remove increment/decrement buttons */
+  -moz-appearance: textfield;
+
+  /* WebKit/Chrome/Safari: Remove increment/decrement buttons */
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+[type="text"]:focus,
+[type="email"]:focus,
+[type="url"]:focus,
+[type="password"]:focus,
+[type="number"]:focus,
+[type="date"]:focus,
+[type="datetime-local"]:focus,
+[type="month"]:focus,
+[type="search"]:focus,
+[type="tel"]:focus,
+[type="time"]:focus,
+[type="week"]:focus,
+[multiple]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+[type="checkbox"],
+[type="checkbox"]:focus {
+  @apply outline-none focus:border-0 focus:outline-none focus:ring-0 active:border-0 active:ring-0;
+  box-shadow: none !important;
+}

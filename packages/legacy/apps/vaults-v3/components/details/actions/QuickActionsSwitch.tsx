@@ -4,15 +4,11 @@ import type { ReactElement } from 'react'
 
 export function VaultDetailsQuickActionsSwitch(): ReactElement {
   return (
-    <div className={'mx-auto flex w-full justify-center space-y-0 md:mx-none md:block md:w-14 md:space-y-2'}>
-      <p className={'hidden text-base md:inline'}>&nbsp;</p>
-
-      <div className={'flex size-6 rotate-90 items-center justify-center p-0 md:h-10 md:w-14 md:rotate-0'}>
+    <div className={'flex w-full items-center justify-center md:w-14'}>
+      <div className={'flex h-12 w-12 rotate-90 items-center justify-center md:h-14 md:w-14 md:rotate-0'}>
         <span className={'sr-only'}>{'Deposit / Withdraw'}</span>
-        <IconArrowRight className={'w-4 text-neutral-900/50 md:w-[25px]'} />
+        <IconArrowRight className={'h-4 w-4 text-neutral-900/50 md:h-6 md:w-6 md:mt-2'} />
       </div>
-
-      <legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
     </div>
   )
 }

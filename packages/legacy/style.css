@@ -43,6 +43,19 @@
   --color-gray-800: hsl(0 0% 9%);
   --color-gray-900: hsl(0 0% 5%);
 
+  /* 🔵 - Yearn Finance ******************************************************
+   **	These are the splashes of color that should appear the most in your UI,
+   **	and are the ones that determine the overall "look" of the site. Use
+   **	these for things like primary actions, links, navigation items, icons,
+   **	accent borders, or text you want to emphasize.
+   **************************************************************************/
+  --color-primary-100: hsl(220 100% 94%);
+  --color-primary-200: hsl(220 81% 88%);
+  --color-primary-500: hsl(220 95% 50%);
+  --color-primary-600: hsl(220 100% 44%);
+  --color-accent-500: hsl(220 95% 50%);
+  --color-accent-600: hsl(220 100% 44%);
+
   /* 🔵 - Yearn Finance
   /* These colors should be used fairly conservatively throughout your UI to
   avoid overpowering your primary colors. Use them when you need an
