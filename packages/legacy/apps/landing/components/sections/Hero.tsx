@@ -100,7 +100,7 @@ export function Hero(): ReactElement {
                 isH1
                 align={'center'}
                 title={'Earn on your Crypto'}
-                description={"DeFi's most battle tested yield aggregator"}
+                description={"Yearn is DeFi's Yield Aggregator"}
               />
               <div className={'flex flex-row items-center justify-center gap-4'}>
                 <Link href={'/v3'}>
