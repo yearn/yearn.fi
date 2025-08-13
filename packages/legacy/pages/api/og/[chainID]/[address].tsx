@@ -1,7 +1,9 @@
 /** biome-ignore-all lint/performance/noImgElement: <img> elements are required for OG image generation because Next.js ImageResponse does not support the Next.js <Image> component, and <img> is the only way to render external images in the generated OG image. */
+
+import { TypeMarkYearn } from '@lib/icons/TypeMarkYearn-naughty'
 import { ImageResponse } from 'next/og'
 import type { NextRequest } from 'next/server'
-import { TypeMarkYearn } from '@lib/icons/TypeMarkYearn-naughty'
+import { isAddress } from '@lib/utils'
 
 export const runtime = 'edge'
 
@@ -55,11 +57,6 @@ const ALLOWED_CHAIN_IDS = [1, 10, 137, 250, 8453, 42161, 747474]
 function isValidChainID(chainID: string): boolean {
   // Only allow known chain IDs
   return ALLOWED_CHAIN_IDS.includes(Number(chainID))
-}
-
-function isValidEthereumAddress(address: string): boolean {
-  // Accepts 40 hex chars, optionally prefixed with '0x'
-  return /^0x[a-fA-F0-9]{40}$/.test(address) || /^[a-fA-F0-9]{40}$/.test(address)
 }
 
 // Utility functions
@@ -152,12 +149,12 @@ function calculateHistoricalAPY(vault: any): number {
 
 export default async function handler(req: NextRequest) {
   const url = req.url || req.nextUrl?.pathname || ''
-  const match = url.match(/v3\/(\d+)\/([a-zA-Z0-9]+)/)
+  // Extract chainID and address from the URL pattern: /api/og/{chainID}/{address}
+  const match = url.match(/\/api\/og\/(\d+)\/([a-fA-F0-9x]+)/i)
   const chainID = match?.[1] || '1'
   const address = match?.[2] || ''
-
   // SSRF protection: validate chainID and address
-  if (!isValidChainID(chainID) || !isValidEthereumAddress(address)) {
+  if (!isValidChainID(chainID) || !isAddress(address)) {
     // Optionally, return a 400 error or a default response
     return new Response('Invalid chainID or address', { status: 400 })
   }
@@ -208,19 +205,19 @@ export default async function handler(req: NextRequest) {
   // Load Aeonik fonts with error handling
   let aeonikRegular: ArrayBuffer | undefined, aeonikBold: ArrayBuffer | undefined, aeonikMono: ArrayBuffer | undefined
   try {
-    const regularRes = await fetch(`${protocol}://${origin}/fonts/Aeonik-Regular.ttf`)
+    const regularRes = await fetch(`${protocol}://${validatedOrigin}/fonts/Aeonik-Regular.ttf`)
     if (!regularRes.ok) {
       throw new Error(`Failed to load Aeonik-Regular.ttf: ${regularRes.status} ${regularRes.statusText}`)
     }
     aeonikRegular = await regularRes.arrayBuffer()
 
-    const boldRes = await fetch(`${protocol}://${origin}/fonts/Aeonik-Bold.ttf`)
+    const boldRes = await fetch(`${protocol}://${validatedOrigin}/fonts/Aeonik-Bold.ttf`)
     if (!boldRes.ok) {
       throw new Error(`Failed to load Aeonik-Bold.ttf: ${boldRes.status} ${boldRes.statusText}`)
     }
     aeonikBold = await boldRes.arrayBuffer()
 
-    const monoRes = await fetch(`${protocol}://${origin}/fonts/AeonikMono-Regular.ttf`)
+    const monoRes = await fetch(`${protocol}://${validatedOrigin}/fonts/AeonikMono-Regular.ttf`)
     if (!monoRes.ok) {
       throw new Error(`Failed to load AeonikMono-Regular.ttf: ${monoRes.status} ${monoRes.statusText}`)
     }

@@ -109,9 +109,7 @@ function MyApp(props: AppProps): ReactElement {
 
   // Get most basic og and uri info
   let ogUrl = manifest.og || 'https://yearn.fi/og.png'
-  console.log('ogUrl', ogUrl)
   let pageUri = manifest.uri || 'https://yearn.fi'
-  console.log('pageUri', pageUri)
 
   // Determine base URL for dynamic OG API based on environment
   let baseUrl = 'https://yearn.fi' // Default to production
@@ -127,17 +125,14 @@ function MyApp(props: AppProps): ReactElement {
     // Server-side fallback for localhost
     baseUrl = 'http://localhost:3000'
   }
-  console.log('baseUrl', baseUrl, 'VERCEL_ENV:', process.env.VERCEL_ENV, 'VERCEL_URL:', process.env.VERCEL_URL)
   // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
   if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
-    console.log('v3')
     const [, , chainID, address] = asPath.split('/')
     ogUrl = `${baseUrl}/api/og/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`
   }
   // Use dynamic OG API for v2 vault pages: /vaults/[chainID]/[address]
   if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
-    console.log('v2')
     const [, , chainID, address] = asPath.split('/')
     ogUrl = `${baseUrl}/api/og/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`
