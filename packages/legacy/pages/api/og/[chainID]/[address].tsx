@@ -6,85 +6,174 @@ import type { NextRequest } from 'next/server'
 
 export const runtime = 'edge'
 
-// Tailwind-like utility function for OG image generation
-// Since edge runtime doesn't support Tailwind CSS, we create inline styles
-function tw(classes: string): React.CSSProperties {
-  const classMap: Record<string, React.CSSProperties> = {
-    // Layout
-    'w-full': { width: '100%' },
-    'w-[1200px]': { width: 1200 },
-    'w-[309px]': { width: 309 },
-    'w-[450px]': { width: 450 },
-    'h-full': { height: '100%' },
-    'h-[630px]': { height: 630 },
-    'h-[85px]': { height: 85 },
-    'h-[168px]': { height: 168 },
-    'h-[300px]': { height: 300 },
-    'h-[48px]': { height: 48 },
+// CSS styles for OG image components
+// Note: Edge runtime only supports inline styles for ImageResponse
+const styles = {
+  // Layout containers
+  container: {
+    width: 1200,
+    height: 630,
+    display: 'flex',
+    backgroundColor: 'white'
+  } as React.CSSProperties,
 
-    // Display
-    flex: { display: 'flex' },
-    'flex-col': { flexDirection: 'column' },
-    'flex-1': { flex: '1 1 0' },
+  mainPanel: {
+    flex: '1 1 0',
+    alignSelf: 'stretch',
+    background: 'linear-gradient(225deg, #b51055ff 0%, #263490ff 100%)',
+    overflow: 'hidden',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    display: 'flex'
+  } as React.CSSProperties,
 
-    // Alignment
-    'items-center': { alignItems: 'center' },
-    'items-start': { alignItems: 'flex-start' },
-    'items-end': { alignItems: 'flex-end' },
-    'justify-center': { justifyContent: 'center' },
-    'justify-start': { justifyContent: 'flex-start' },
-    'justify-end': { justifyContent: 'flex-end' },
-    'justify-between': { justifyContent: 'space-between' },
-    'self-stretch': { alignSelf: 'stretch' },
-    'text-right': { textAlign: 'right' },
-    'text-left': { textAlign: 'left' },
+  infoPanel: {
+    alignSelf: 'stretch',
+    paddingLeft: 70,
+    paddingRight: 70,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    display: 'flex'
+  } as React.CSSProperties,
 
-    // Spacing
-    'gap-5': { gap: 20 },
-    'gap-3': { gap: 12 },
-    'p-0': { padding: 0 },
-    'px-[70px]': { paddingLeft: 70, paddingRight: 70 },
-    'pt-[60px]': { paddingTop: 60 },
-    'pb-5': { paddingBottom: 20 },
-    'pb-[40px]': { paddingBottom: 40 },
-    '-mt-px': { marginTop: -1 },
+  contentWrapper: {
+    flex: '1 1 0',
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+    alignItems: 'center',
+    display: 'flex'
+  } as React.CSSProperties,
 
-    // Colors
-    'bg-white': { backgroundColor: 'white' },
-    'text-white': { color: 'white' },
-    'bg-gradient-yearn': {
-      background: 'linear-gradient(225deg, #a20f4cff 0%, #233087ff 100%)'
-    },
+  vaultInfoContainer: {
+    flex: '1 1 0',
+    height: '100%',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: 20,
+    display: 'flex'
+  } as React.CSSProperties,
 
-    // Typography
-    'text-[64px]': { fontSize: 64 },
-    'text-[48px]': { fontSize: 48 },
-    'text-[32px]': { fontSize: 32 },
-    'text-xl': { fontSize: 20 },
-    'font-aeonik': { fontFamily: 'Aeonik' },
-    'font-aeonik-mono': { fontFamily: 'AeonikMono' },
-    'font-bold': { fontWeight: '700' },
-    'font-medium': { fontWeight: '500' },
-    'font-normal': { fontWeight: '400' },
-    'break-words': { wordWrap: 'break-word' },
+  titleBlock: {
+    alignSelf: 'stretch',
+    height: 'auto',
+    paddingTop: 56,
+    paddingBottom: 20,
+    gap: 6,
+    overflow: 'hidden',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    display: 'flex'
+  } as React.CSSProperties,
 
-    // Borders
-    'rounded-[24px]': { borderRadius: 24 },
+  tokenHeader: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+    display: 'flex'
+  } as React.CSSProperties,
 
-    // Other
-    'overflow-hidden': { overflow: 'hidden' },
-    'object-contain': { objectFit: 'contain' }
-  }
+  tokenIcon: {
+    borderRadius: 0
+  } as React.CSSProperties,
 
-  return classes.split(' ').reduce((styles, className) => {
-    const style = classMap[className.trim()]
-    if (style) {
-      for (const [key, value] of Object.entries(style)) {
-        styles[key as keyof React.CSSProperties] = value
-      }
-    }
-    return styles
-  }, {} as React.CSSProperties)
+  tokenName: {
+    color: 'white',
+    fontSize: 64,
+    fontFamily: 'Aeonik',
+    fontWeight: '700',
+    wordWrap: 'break-word',
+    overflow: 'visible'
+  } as React.CSSProperties,
+
+  chainAddress: {
+    textAlign: 'right',
+    color: 'white',
+    fontSize: 28,
+    fontFamily: 'Aeonik',
+    fontWeight: '300',
+    wordWrap: 'break-word'
+  } as React.CSSProperties,
+
+  statsContainer: {
+    width: 450,
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    gap: 30,
+    display: 'flex'
+  } as React.CSSProperties,
+
+  statRow: {
+    alignSelf: 'stretch',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    display: 'flex'
+  } as React.CSSProperties,
+
+  statLabel: {
+    textAlign: 'right',
+    color: 'white',
+    fontSize: 32,
+    fontFamily: 'Aeonik',
+    fontWeight: '300',
+    wordWrap: 'break-word'
+  } as React.CSSProperties,
+
+  statValue: {
+    textAlign: 'right',
+    color: 'white',
+    fontSize: 48,
+    fontFamily: 'Aeonik',
+    fontWeight: '700',
+    wordWrap: 'break-word'
+  } as React.CSSProperties,
+
+  tvlContainer: {
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+    display: 'flex'
+  } as React.CSSProperties,
+
+  secondaryStatValue: {
+    alignSelf: 'stretch',
+    textAlign: 'right',
+    color: 'white',
+    fontSize: 32,
+    fontFamily: 'Aeonik',
+    fontWeight: '300',
+    wordWrap: 'break-word'
+  } as React.CSSProperties,
+
+  footer: {
+    width: '100%',
+    paddingBottom: 40,
+    paddingLeft: 70,
+    paddingRight: 70,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    display: 'flex'
+  } as React.CSSProperties,
+
+  logoWrapper: {
+    width: 309,
+    height: 85,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start'
+  } as React.CSSProperties,
+
+  callToAction: {
+    textAlign: 'right',
+    color: 'white',
+    fontSize: 48,
+    fontFamily: 'Aeonik',
+    fontWeight: '700',
+    wordWrap: 'break-word'
+  } as React.CSSProperties
 }
 
 /**
@@ -300,6 +389,7 @@ export default async function handler(req: NextRequest) {
       ? originHost + (originPort ? ':' + originPort : '')
       : 'yearn.fi'
   const protocol = validatedOrigin.includes('localhost') ? 'http' : 'https'
+  const plasticLogo = `${protocol}://${validatedOrigin}/3d-logo-bw.png`
 
   // Load Aeonik fonts with error handling
   let aeonikRegular: ArrayBuffer | undefined, aeonikBold: ArrayBuffer | undefined, aeonikMono: ArrayBuffer | undefined
@@ -333,66 +423,44 @@ export default async function handler(req: NextRequest) {
   const earnWithYearnText = 'Earn With Yearn'
 
   return new ImageResponse(
-    <div style={tw('w-[1200px] h-[630px] flex bg-white')}>
-      <div
-        style={tw('flex-1 self-stretch bg-gradient-yearn overflow-hidden flex-col justify-between items-center flex')}
-      >
+    <div style={styles.container}>
+      <div style={styles.mainPanel}>
         {/* Info Panel */}
-        <div style={tw('self-stretch px-[70px] justify-start items-start flex')}>
+        <div style={styles.infoPanel}>
           {/* content */}
-          <div style={tw('flex-1 self-stretch justify-center items-center flex')}>
+          <div style={styles.contentWrapper}>
             {/* Vault Info */}
-            <div style={tw('flex-1 h-full flex-col justify-center items-start gap-5 flex')}>
+            <div style={styles.vaultInfoContainer}>
               {/* Title block */}
-              <div
-                style={tw(
-                  'self-stretch h-[168px] pt-[60px] pb-5 overflow-hidden flex-col justify-center items-start flex'
-                )}
-              >
+              <div style={styles.titleBlock}>
                 {/* Token Logo and Name */}
-                <div style={tw('justify-center items-center gap-5 flex')}>
+                <div style={styles.tokenHeader}>
                   {/* Token Logo */}
-                  <img src={vaultIcon} alt={vaultName} width="48" height="48" />
+                  <img src={vaultIcon} alt={vaultName} width="48" height="48" style={styles.tokenIcon} />
                   {/* Token Name */}
-                  <div style={tw('text-white text-[64px] font-aeonik font-bold break-words')}>{vaultName}</div>
+                  <div style={styles.tokenName}>{vaultName}</div>
                 </div>
                 {/* Chain and Address */}
-                <div style={tw('text-right text-white text-xl font-aeonik font-medium break-words -mt-px')}>
-                  {footerText}
-                </div>
+                <div style={styles.chainAddress}>{footerText}</div>
               </div>
 
               {/* Stats */}
-              <div style={tw('w-[450px] flex-col justify-start items-start gap-5 flex')}>
+              <div style={styles.statsContainer}>
                 {/* Estimated APY */}
-                <div style={tw('self-stretch justify-between items-center flex')}>
-                  <div style={tw('text-left text-white text-[32px] font-aeonik font-normal break-words')}>
-                    Expected APY:
-                  </div>
-                  <div style={tw('text-right text-white text-[48px] font-aeonik font-bold break-words')}>
-                    {estimatedApyValue}
-                  </div>
+                <div style={styles.statRow}>
+                  <div style={styles.statLabel}>Estimated APY:</div>
+                  <div style={styles.statValue}>{estimatedApyValue}</div>
                 </div>
                 {/* Historical APY */}
-                <div style={tw('self-stretch justify-between items-center flex')}>
-                  <div style={tw('text-left text-white text-[32px] font-aeonik font-normal break-words')}>
-                    Historical APY:
-                  </div>
-                  <div style={tw('text-right text-white text-[32px] font-aeonik font-normal break-words')}>
-                    {historicalApyValue}
-                  </div>
+                <div style={styles.statRow}>
+                  <div style={styles.statLabel}>Historical APY:</div>
+                  <div style={styles.secondaryStatValue}>{historicalApyValue}</div>
                 </div>
                 {/* Vault TVL */}
-                <div style={tw('self-stretch justify-between items-center flex')}>
-                  <div style={tw('text-left text-white text-[32px] font-aeonik font-normal break-words')}>
-                    Vault TVL:
-                  </div>
-                  <div style={tw('flex-col justify-end items-end flex')}>
-                    <div
-                      style={tw('self-stretch text-right text-white text-[32px] font-aeonik font-normal break-words')}
-                    >
-                      {tvlValue}
-                    </div>
+                <div style={styles.statRow}>
+                  <div style={styles.statLabel}>Vault TVL:</div>
+                  <div style={styles.tvlContainer}>
+                    <div style={styles.secondaryStatValue}>{tvlValue}</div>
                   </div>
                 </div>
               </div>
@@ -401,16 +469,14 @@ export default async function handler(req: NextRequest) {
         </div>
 
         {/* Footer */}
-        <div style={tw('w-full pb-[40px] px-[70px] justify-between items-end flex')}>
+        <div style={styles.footer}>
           {/* TypeMark Logo */}
-          <div style={tw('w-[309px] h-[85px] flex items-center justify-start')}>
+          <div style={styles.logoWrapper}>
             <TypeMarkYearnNaughty width={300} height={90} color="#FFFFFF" />
           </div>
 
           {/* Call to action */}
-          <div style={tw('text-right text-white text-[48px] font-aeonik font-bold break-words')}>
-            {earnWithYearnText}
-          </div>
+          <div style={styles.callToAction}>{earnWithYearnText}</div>
         </div>
       </div>
     </div>,
