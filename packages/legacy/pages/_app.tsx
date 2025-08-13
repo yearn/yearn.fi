@@ -109,9 +109,12 @@ function MyApp(props: AppProps): ReactElement {
 
   // Get most basic og and uri info
   let ogUrl = manifest.og || 'https://yearn.fi/og.png'
+  console.log('ogUrl', ogUrl)
   let pageUri = manifest.uri || 'https://yearn.fi'
+  console.log('pageUri', pageUri)
   // if a vercel dev build, use vercel url for dynamic OG API
   const baseUrl = process.env.VERCEL_ENV === 'production' ? pageUri : `https://${process.env.VERCEL_URL}`
+  console.log('baseUrl', baseUrl)
   // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
   if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
     const [, , chainID, address] = asPath.split('/')
