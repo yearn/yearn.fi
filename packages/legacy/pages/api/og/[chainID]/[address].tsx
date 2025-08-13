@@ -3,7 +3,6 @@
 import { TypeMarkYearn } from '@lib/icons/TypeMarkYearn-naughty'
 import { ImageResponse } from 'next/og'
 import type { NextRequest } from 'next/server'
-import { isAddress } from '@lib/utils'
 
 export const runtime = 'edge'
 
@@ -59,6 +58,11 @@ function isValidChainID(chainID: string): boolean {
   return ALLOWED_CHAIN_IDS.includes(Number(chainID))
 }
 
+function isValidEthereumAddress(address: string): boolean {
+  // Accepts 40 hex chars, optionally prefixed with '0x'
+  return /^0x[a-fA-F0-9]{40}$/.test(address) || /^[a-fA-F0-9]{40}$/.test(address)
+}
+
 // Utility functions
 function getChainName(chainId: number): string {
   switch (chainId) {
@@ -90,9 +94,24 @@ function formatUSD(amount: number): string {
 }
 
 async function fetchVaultData(chainID: string, address: string) {
+  // Additional security: ensure base URI is a trusted external service
+  const baseUri = process.env.YDAEMON_BASE_URI
+  if (!baseUri || !baseUri.startsWith('https://')) {
+    console.error('Invalid or missing YDAEMON_BASE_URI')
+    return null
+  }
+
   try {
     const response = await fetch(
-      `${process.env.YDAEMON_BASE_URI}/${chainID}/vault/${address}?strategiesDetails=withDetails&strategiesCondition=inQueue`
+      `${baseUri}/${chainID}/vault/${address}?strategiesDetails=withDetails&strategiesCondition=inQueue`,
+      {
+        // Additional security headers and timeout
+        headers: {
+          'User-Agent': 'yearn.fi-og-generator/1.0'
+        },
+        // Prevent hanging requests
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      }
     )
 
     if (!response.ok) {
@@ -154,7 +173,7 @@ export default async function handler(req: NextRequest) {
   const chainID = match?.[1] || '1'
   const address = match?.[2] || ''
   // SSRF protection: validate chainID and address
-  if (!isValidChainID(chainID) || !isAddress(address)) {
+  if (!isValidChainID(chainID) || !isValidEthereumAddress(address)) {
     // Optionally, return a 400 error or a default response
     return new Response('Invalid chainID or address', { status: 400 })
   }
