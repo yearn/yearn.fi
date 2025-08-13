@@ -62,7 +62,7 @@
   margin-right: -5px;
   border-width: 5px;
   border-style: solid;
-  border-color: hsl(var(--color-neutral-0)) transparent transparent transparent;
+  border-color: var(--color-neutral-0) transparent transparent transparent;
   transform: rotate(180deg);
 }
 

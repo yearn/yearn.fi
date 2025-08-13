@@ -531,16 +531,16 @@ function VaultRiskScoreTag({ riskLevel }: { riskLevel: number }): ReactElement {
         </div>
         <span
           suppressHydrationWarning
-          className={'tooltiptext top-full mt-1'}
+          className={'tooltiptext top-full mt-1 !text-[10px]'}
           style={{ marginRight: 'calc(-94px + 50%)' }}
         >
           <div
             className={
-              'font-number relative border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+              'font-number relative border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-neutral-900'
             }
           >
             <p>
-              <b className={'text-xs font-semibold'}>{`${level} / 5 :`}</b>
+              <b className={'font-semibold'}>{`${level} / 5 :`}</b>
               {
                 " This reflects the vault's security, with 1 being most secure and 5 least secure, based on strategy complexity, loss exposure, and external dependencies."
               }
