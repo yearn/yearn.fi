@@ -112,17 +112,32 @@ function MyApp(props: AppProps): ReactElement {
   console.log('ogUrl', ogUrl)
   let pageUri = manifest.uri || 'https://yearn.fi'
   console.log('pageUri', pageUri)
-  // if a vercel dev build, use vercel url for dynamic OG API
-  const baseUrl = process.env.VERCEL_ENV === 'production' ? pageUri : `https://${process.env.VERCEL_URL}`
-  console.log('baseUrl', baseUrl)
+
+  // Determine base URL for dynamic OG API based on environment
+  let baseUrl = 'https://yearn.fi' // Default to production
+  if (process.env.VERCEL_ENV === 'production') {
+    baseUrl = 'https://yearn.fi'
+  } else if (process.env.VERCEL_URL) {
+    // Vercel preview/development builds
+    baseUrl = `https://${process.env.VERCEL_URL}`
+  } else if (typeof window !== 'undefined') {
+    // Local development fallback
+    baseUrl = window.location.origin
+  } else {
+    // Server-side fallback for localhost
+    baseUrl = 'http://localhost:3000'
+  }
+  console.log('baseUrl', baseUrl, 'VERCEL_ENV:', process.env.VERCEL_ENV, 'VERCEL_URL:', process.env.VERCEL_URL)
   // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
   if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
+    console.log('v3')
     const [, , chainID, address] = asPath.split('/')
-    ogUrl = `https://yearn.fi/api/og/${chainID}/${address}`
+    ogUrl = `${baseUrl}/api/og/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`
   }
   // Use dynamic OG API for v2 vault pages: /vaults/[chainID]/[address]
   if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
+    console.log('v2')
     const [, , chainID, address] = asPath.split('/')
     ogUrl = `${baseUrl}/api/og/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`
