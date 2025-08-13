@@ -1,5 +1,5 @@
 /* External Dependencies */
-/* @import "@rainbow-me/rainbowkit/styles.css"; */
+@import "@rainbow-me/rainbowkit/styles.css";
 @import "./legacy.css";
 @import "./public/fonts/fonts.css";
 /* Tailwind CSS */
@@ -103,5 +103,12 @@ body {
   .font-number {
     font-family:
       "Aeonik Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+}
+
+@layer components {
+  [role="button"],
+  button {
+    @apply cursor-pointer;
   }
 }
