@@ -6,6 +6,87 @@ import type { NextRequest } from 'next/server'
 
 export const runtime = 'edge'
 
+// Tailwind-like utility function for OG image generation
+// Since edge runtime doesn't support Tailwind CSS, we create inline styles
+function tw(classes: string): React.CSSProperties {
+  const classMap: Record<string, React.CSSProperties> = {
+    // Layout
+    'w-full': { width: '100%' },
+    'w-[1200px]': { width: 1200 },
+    'w-[309px]': { width: 309 },
+    'w-[450px]': { width: 450 },
+    'h-full': { height: '100%' },
+    'h-[630px]': { height: 630 },
+    'h-[85px]': { height: 85 },
+    'h-[168px]': { height: 168 },
+    'h-[300px]': { height: 300 },
+    'h-[48px]': { height: 48 },
+
+    // Display
+    flex: { display: 'flex' },
+    'flex-col': { flexDirection: 'column' },
+    'flex-1': { flex: '1 1 0' },
+
+    // Alignment
+    'items-center': { alignItems: 'center' },
+    'items-start': { alignItems: 'flex-start' },
+    'items-end': { alignItems: 'flex-end' },
+    'justify-center': { justifyContent: 'center' },
+    'justify-start': { justifyContent: 'flex-start' },
+    'justify-end': { justifyContent: 'flex-end' },
+    'justify-between': { justifyContent: 'space-between' },
+    'self-stretch': { alignSelf: 'stretch' },
+    'text-right': { textAlign: 'right' },
+    'text-left': { textAlign: 'left' },
+
+    // Spacing
+    'gap-5': { gap: 20 },
+    'gap-3': { gap: 12 },
+    'p-0': { padding: 0 },
+    'px-[70px]': { paddingLeft: 70, paddingRight: 70 },
+    'pt-[60px]': { paddingTop: 60 },
+    'pb-5': { paddingBottom: 20 },
+    'pb-[40px]': { paddingBottom: 40 },
+    '-mt-px': { marginTop: -1 },
+
+    // Colors
+    'bg-white': { backgroundColor: 'white' },
+    'text-white': { color: 'white' },
+    'bg-gradient-yearn': {
+      background: 'linear-gradient(225deg, #a20f4cff 0%, #233087ff 100%)'
+    },
+
+    // Typography
+    'text-[64px]': { fontSize: 64 },
+    'text-[48px]': { fontSize: 48 },
+    'text-[32px]': { fontSize: 32 },
+    'text-xl': { fontSize: 20 },
+    'font-aeonik': { fontFamily: 'Aeonik' },
+    'font-aeonik-mono': { fontFamily: 'AeonikMono' },
+    'font-bold': { fontWeight: '700' },
+    'font-medium': { fontWeight: '500' },
+    'font-normal': { fontWeight: '400' },
+    'break-words': { wordWrap: 'break-word' },
+
+    // Borders
+    'rounded-[24px]': { borderRadius: 24 },
+
+    // Other
+    'overflow-hidden': { overflow: 'hidden' },
+    'object-contain': { objectFit: 'contain' }
+  }
+
+  return classes.split(' ').reduce((styles, className) => {
+    const style = classMap[className.trim()]
+    if (style) {
+      for (const [key, value] of Object.entries(style)) {
+        styles[key as keyof React.CSSProperties] = value
+      }
+    }
+    return styles
+  }, {} as React.CSSProperties)
+}
+
 /**
  * OG Image Generation for Yearn V3 Vaults
  *
@@ -253,243 +334,63 @@ export default async function handler(req: NextRequest) {
   const earnWithYearnText = 'Earn With Yearn'
 
   return new ImageResponse(
-    <div
-      style={{
-        width: 1200,
-        height: 630,
-        display: 'flex',
-        backgroundColor: 'white'
-      }}
-    >
+    <div style={tw('w-[1200px] h-[630px] flex bg-white')}>
       <div
-        style={{
-          flex: '1 1 0',
-          alignSelf: 'stretch',
-          background: 'linear-gradient(225deg, #D21162 0%, #2C3DA6 100%)',
-          overflow: 'hidden',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          display: 'flex'
-        }}
+        style={tw('flex-1 self-stretch bg-gradient-yearn overflow-hidden flex-col justify-between items-center flex')}
       >
         {/* Info Panel */}
-        <div
-          style={{
-            alignSelf: 'stretch',
-            paddingLeft: 70,
-            paddingRight: 70,
-            justifyContent: 'flex-start',
-            alignItems: 'flex-start',
-            display: 'flex'
-          }}
-        >
+        <div style={tw('self-stretch px-[70px] justify-start items-start flex')}>
           {/* content */}
-          <div
-            style={{
-              flex: '1 1 0',
-              alignSelf: 'stretch',
-              justifyContent: 'center',
-              alignItems: 'center',
-              display: 'flex'
-            }}
-          >
-            {/* 3d logo image */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <img
-                src={plasticLogo}
-                alt="Yearn 3D Logo"
-                width="300"
-                height="300"
-                style={{
-                  objectFit: 'contain'
-                }}
-              />
-            </div>
-
+          <div style={tw('flex-1 self-stretch justify-center items-center flex')}>
             {/* Vault Info */}
-            <div
-              style={{
-                flex: '1 1 0',
-                height: '100%',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'flex-end',
-                gap: 20,
-                display: 'flex'
-              }}
-            >
+            <div style={tw('flex-1 h-full flex-col justify-center items-start gap-5 flex')}>
               {/* Title block */}
               <div
-                style={{
-                  alignSelf: 'stretch',
-                  height: 168,
-                  paddingTop: 60,
-                  paddingBottom: 20,
-                  overflow: 'hidden',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  alignItems: 'flex-end',
-                  display: 'flex'
-                }}
+                style={tw(
+                  'self-stretch h-[168px] pt-[60px] pb-5 overflow-hidden flex-col justify-center items-start flex'
+                )}
               >
                 {/* Token Logo and Name */}
-                <div style={{ justifyContent: 'center', alignItems: 'center', gap: 20, display: 'flex' }}>
+                <div style={tw('justify-center items-center gap-5 flex')}>
                   {/* Token Logo */}
-                  <img src={vaultIcon} alt={vaultName} width="48" height="48" style={{ borderRadius: 24 }} />
+                  <img src={vaultIcon} alt={vaultName} width="48" height="48" />
                   {/* Token Name */}
-                  <div
-                    style={{
-                      color: 'white',
-                      fontSize: 64,
-                      fontFamily: 'Aeonik',
-                      fontWeight: '700',
-                      wordWrap: 'break-word'
-                    }}
-                  >
-                    {vaultName}
-                  </div>
+                  <div style={tw('text-white text-[64px] font-aeonik font-bold break-words')}>{vaultName}</div>
                 </div>
                 {/* Chain and Address */}
-                <div
-                  style={{
-                    textAlign: 'right',
-                    color: 'white',
-                    fontSize: 20,
-                    fontFamily: 'Aeonik',
-                    fontWeight: '500',
-                    wordWrap: 'break-word',
-                    marginTop: -1
-                  }}
-                >
+                <div style={tw('text-right text-white text-xl font-aeonik font-medium break-words -mt-px')}>
                   {footerText}
                 </div>
               </div>
 
               {/* Stats */}
-              <div
-                style={{
-                  width: 450,
-                  flexDirection: 'column',
-                  justifyContent: 'flex-start',
-                  alignItems: 'flex-start',
-                  gap: 12,
-                  display: 'flex'
-                }}
-              >
+              <div style={tw('w-[450px] flex-col justify-start items-start gap-5 flex')}>
                 {/* Estimated APY */}
-                <div
-                  style={{
-                    alignSelf: 'stretch',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    display: 'flex'
-                  }}
-                >
-                  <div
-                    style={{
-                      textAlign: 'right',
-                      color: 'white',
-                      fontSize: 32,
-                      fontFamily: 'Aeonik',
-                      fontWeight: '400',
-                      wordWrap: 'break-word'
-                    }}
-                  >
-                    Estimated APY:
+                <div style={tw('self-stretch justify-between items-center flex')}>
+                  <div style={tw('text-left text-white text-[32px] font-aeonik font-normal break-words')}>
+                    Expected APY:
                   </div>
-                  <div
-                    style={{
-                      textAlign: 'right',
-                      color: 'white',
-                      fontSize: 48,
-                      fontFamily: 'AeonikMono',
-                      fontWeight: '700',
-                      wordWrap: 'break-word'
-                    }}
-                  >
+                  <div style={tw('text-right text-white text-[48px] font-aeonik font-bold break-words')}>
                     {estimatedApyValue}
                   </div>
                 </div>
                 {/* Historical APY */}
-                <div
-                  style={{
-                    alignSelf: 'stretch',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    display: 'flex'
-                  }}
-                >
-                  <div
-                    style={{
-                      textAlign: 'right',
-                      color: 'white',
-                      fontSize: 32,
-                      fontFamily: 'Aeonik',
-                      fontWeight: '400',
-                      wordWrap: 'break-word'
-                    }}
-                  >
+                <div style={tw('self-stretch justify-between items-center flex')}>
+                  <div style={tw('text-left text-white text-[32px] font-aeonik font-normal break-words')}>
                     Historical APY:
                   </div>
-                  <div
-                    style={{
-                      textAlign: 'right',
-                      color: 'white',
-                      fontSize: 48,
-                      fontFamily: 'AeonikMono',
-                      fontWeight: '700',
-                      wordWrap: 'break-word'
-                    }}
-                  >
+                  <div style={tw('text-right text-white text-[32px] font-aeonik font-normal break-words')}>
                     {historicalApyValue}
                   </div>
                 </div>
                 {/* Vault TVL */}
-                <div
-                  style={{
-                    alignSelf: 'stretch',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    display: 'flex'
-                  }}
-                >
-                  <div
-                    style={{
-                      textAlign: 'right',
-                      color: 'white',
-                      fontSize: 32,
-                      fontFamily: 'Aeonik',
-                      fontWeight: '400',
-                      wordWrap: 'break-word'
-                    }}
-                  >
+                <div style={tw('self-stretch justify-between items-center flex')}>
+                  <div style={tw('text-left text-white text-[32px] font-aeonik font-normal break-words')}>
                     Vault TVL:
                   </div>
-                  <div
-                    style={{
-                      flexDirection: 'column',
-                      justifyContent: 'flex-end',
-                      alignItems: 'flex-end',
-                      display: 'flex'
-                    }}
-                  >
+                  <div style={tw('flex-col justify-end items-end flex')}>
                     <div
-                      style={{
-                        alignSelf: 'stretch',
-                        textAlign: 'right',
-                        color: 'white',
-                        fontSize: 48,
-                        fontFamily: 'AeonikMono',
-                        fontWeight: '700',
-                        wordWrap: 'break-word'
-                      }}
+                      style={tw('self-stretch text-right text-white text-[32px] font-aeonik font-normal break-words')}
                     >
                       {tvlValue}
                     </div>
@@ -501,41 +402,14 @@ export default async function handler(req: NextRequest) {
         </div>
 
         {/* Footer */}
-        <div
-          style={{
-            width: '100%',
-            paddingBottom: 40,
-            paddingLeft: 70,
-            paddingRight: 70,
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            display: 'flex'
-          }}
-        >
+        <div style={tw('w-full pb-[40px] px-[70px] justify-between items-end flex')}>
           {/* TypeMark Logo */}
-          <div
-            style={{
-              width: 309,
-              height: 85,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-start'
-            }}
-          >
+          <div style={tw('w-[309px] h-[85px] flex items-center justify-start')}>
             <TypeMarkYearnNaughty width={300} height={90} color="#FFFFFF" />
           </div>
 
           {/* Call to action */}
-          <div
-            style={{
-              textAlign: 'right',
-              color: 'white',
-              fontSize: 48,
-              fontFamily: 'Aeonik',
-              fontWeight: '700',
-              wordWrap: 'break-word'
-            }}
-          >
+          <div style={tw('text-right text-white text-[48px] font-aeonik font-bold break-words')}>
             {earnWithYearnText}
           </div>
         </div>
