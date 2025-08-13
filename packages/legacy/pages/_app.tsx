@@ -51,10 +51,10 @@ const WithLayout = memo(function WithLayout(
   if (isAppsPage) {
     return (
       <>
-        <div className={cl('mx-auto mb-0 flex z-60 font-aeonik max-w-6xl absolute top-0 inset-x-0 bg-neutral-0')}>
+        <div className={cl('mx-auto mb-0 flex z-60 max-w-6xl absolute top-0 inset-x-0 px-4 bg-neutral-0')}>
           <AppHeader supportedNetworks={props.supportedNetworks} />
         </div>
-        <div id={'app'} className={'bg-neutral-0 font-aeonik mb-0 flex min-h-screen justify-center'}>
+        <div id={'app'} className={'bg-neutral-0 mb-0 flex min-h-screen justify-center'}>
           <div className={'flex w-full max-w-[1230px] justify-start'}>
             <Component router={props.router} {...pageProps} />
           </div>
@@ -65,10 +65,10 @@ const WithLayout = memo(function WithLayout(
 
   return (
     <>
-      <div className={cl('mx-auto mb-0 flex z-60 font-aeonik max-w-6xl absolute top-0 inset-x-0')}>
+      <div className={cl('mx-auto mb-0 flex z-60 max-w-6xl absolute top-0 inset-x-0 px-4')}>
         {pathName === '/' ? <LandingAppHeader /> : <AppHeader supportedNetworks={props.supportedNetworks} />}
       </div>
-      <div id={'app'} className={cl('mx-auto mb-0 flex font-aeonik')}>
+      <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>
           <LazyMotion features={domAnimation}>
             <AnimatePresence mode={'wait'}>

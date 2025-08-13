@@ -432,7 +432,7 @@ function Index(): ReactElement {
           isCollapsed ? 'translate-y-[354px] md:translate-y-[464px]' : 'translate-y-[24px] md:translate-y-[40px]'
         )}
       >
-        <div className={'mx-auto w-full max-w-6xl'}>
+        <div className={'mx-auto w-full max-w-6xl px-4'}>
           <div
             onClick={onClick}
             className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}
