@@ -300,7 +300,6 @@ export default async function handler(req: NextRequest) {
       ? originHost + (originPort ? ':' + originPort : '')
       : 'yearn.fi'
   const protocol = validatedOrigin.includes('localhost') ? 'http' : 'https'
-  const plasticLogo = `${protocol}://${validatedOrigin}/3d-logo-bw.png`
 
   // Load Aeonik fonts with error handling
   let aeonikRegular: ArrayBuffer | undefined, aeonikBold: ArrayBuffer | undefined, aeonikMono: ArrayBuffer | undefined
