@@ -23,7 +23,7 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
     >
       <div className={'yearn--table-wrapper bg-neutral-900 text-neutral-0'}>
         <div className={'yearn--table-token-section'}>
-          <div className={'yearn--table-token-section-item'}>
+          <div className={'yearn--table-token-section-item inline'}>
             <div className={'yearn--table-token-section-item-image'}>
               <ImageWithFallback
                 src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
