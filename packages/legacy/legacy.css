@@ -290,7 +290,7 @@
   @apply fixed inset-0 z-10 bg-neutral-900/90 transition-opacity;
 }
 .yearn--modal {
-  @apply inline-block overflow-hidden relative z-50 w-full text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle md:mb-96 bg-neutral-0;
+  @apply inline-block overflow-hidden relative z-50 w-full text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-[1200px] sm:align-middle md:mb-96 bg-neutral-0;
 
   border-radius: var(--default-rounded);
 }

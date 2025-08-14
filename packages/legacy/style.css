@@ -8,6 +8,8 @@
 @theme {
   --color-black: hsl(0 0% 0%);
   --color-white: hsl(0 0% 100%);
+  --color-fallback: hsl(0 0% 80%);
+  --color-red: hsl(0 100% 45%);
 
   --color-primary: hsl(220 95% 50%);
   --color-neutral-0: hsl(0 0% 100%);
@@ -70,6 +72,18 @@
   --color-steel-gray-500: hsl(218 14% 71%);
   --color-light-blue-500: hsl(220 100% 67%);
   --default-rounded: 0rem;
+
+  /* Custom Font Sizes */
+  --text-xxs: 0.625rem; /* 10px */
+  --text-xxs--line-height: 1rem; /* 16px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-2xl--line-height: 2rem; /* 32px */
+  --text-3xl: 2rem; /* 32px */
+  --text-3xl--line-height: 2.5rem; /* 40px */
+  --text-7xl: 4rem; /* 64px */
+  --text-7xl--line-height: 4.5rem; /* 72px */
+  --text-8xl: 5.5rem; /* 88px */
+  --text-8xl--line-height: 6.5rem; /* 104px */
 }
 
 @layer theme {
