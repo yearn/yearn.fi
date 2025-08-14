@@ -20,7 +20,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
           <div>
             <p className={`font-normal text-neutral-900 ${icon ? 'pl-2' : 'pl-0'}`}>{label}</p>
             {description && (
-              <p className={`text-xxs font-normal text-neutral-600 ${icon ? 'pl-2' : 'pl-0'}`}>{description}</p>
+              <p className={`text-[10px] font-normal text-neutral-600 ${icon ? 'pl-2' : 'pl-0'}`}>{description}</p>
             )}
           </div>
         </div>

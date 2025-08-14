@@ -21,7 +21,7 @@ function DropdownItem({ option }: TDropdownItemProps): ReactElement {
           <div className={'size-6 flex-none rounded-full'}>{option?.icon ? option.icon : null}</div>
           <div>
             <p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>{option.symbol}</p>
-            <p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xxs font-normal text-neutral-600`}>
+            <p className={`${option.icon ? 'pl-2' : 'pl-0'} text-[10px] font-normal text-neutral-600`}>
               {`${formatAmount(balance.normalized)} ${option.symbol}`}
             </p>
           </div>
