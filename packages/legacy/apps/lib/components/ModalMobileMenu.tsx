@@ -22,7 +22,7 @@ const menu: TMenu[] = [
   }
 ]
 
-export function FooterNav(): ReactElement {
+export function FooterNav({ onClose }: { onClose?: () => void }): ReactElement {
   return (
     <div
       className={
@@ -36,6 +36,12 @@ export function FooterNav(): ReactElement {
             key={link.path}
             target={link.target}
             href={link.path}
+            onClick={() => {
+              // Close modal for internal navigation (not external links)
+              if (!link.target && onClose) {
+                onClose()
+              }
+            }}
           >
             <span className={'text-[20px]'}>{link.label}</span>
             <span className={'size-6'}>{'↗'}</span>
@@ -87,7 +93,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
   return (
     <Transition show={isOpen} as={Fragment}>
       <Dialog as={'div'} className={'fixed inset-0 overflow-y-auto md:hidden'} style={{ zIndex: 88 }} onClose={onClose}>
-        <div className={'relative flex min-h-screen items-end justify-end px-0 pb-0 pt-4 text-center'}>
+        <div className={'relative flex h-screen items-stretch justify-end px-0 pb-0 text-center'}>
           <TransitionChild
             as={Fragment}
             enter={'ease-out duration-300'}
@@ -112,7 +118,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
             leaveFrom={'opacity-100 translate-y-0'}
             leaveTo={'opacity-0 translate-y-full'}
           >
-            <div className={'yearn--modal fixed bottom-0 mb-0 h-full max-w-full'}>
+            <div className={'yearn--modal w-full h-full max-w-full flex flex-col'}>
               <div className={'flex items-center justify-between border-b border-gray-600 p-4'}>
                 <button onClick={onClose}>
                   <IconClose />
@@ -122,9 +128,9 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
                 style={{
                   background: 'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
                 }}
-                className={'flex h-[calc(100vh-88px)] w-full flex-col justify-end px-8 pb-20'}
+                className={'flex flex-1 w-full flex-col justify-end px-8 pb-20 h-full'}
               >
-                <FooterNav />
+                <FooterNav onClose={onClose} />
               </div>
             </div>
           </TransitionChild>

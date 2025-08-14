@@ -153,7 +153,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
               <LogoPopover />
             </div>
             <Navbar currentPathName={pathname || ''} nav={menu} />
-            <div className={'flex md:hidden'}>
+            <div className={'flex md:hidden text-neutral-500'}>
               <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
                 <span className={'sr-only'}>{'Open menu'}</span>
                 <IconBurgerPlain />

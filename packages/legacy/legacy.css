@@ -281,6 +281,21 @@
 }
 
 /* 🔵 - Yearn Finance ******************************************************
+** Modal
+**************************************************************************/
+.yearn--modal-wrapper {
+  @apply flex justify-center items-end px-4 pt-4 pb-20 min-h-screen text-center sm:block sm:p-0;
+}
+.yearn--modal-overlay {
+  @apply fixed inset-0 z-10 bg-neutral-900/90 transition-opacity;
+}
+.yearn--modal {
+  @apply inline-block overflow-hidden relative z-50 w-full text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle md:mb-96 bg-neutral-0;
+
+  border-radius: var(--default-rounded);
+}
+
+/* 🔵 - Yearn Finance ******************************************************
 ** Overwriting the defaults to match our needs
 **************************************************************************/
 input[type="number"] {
