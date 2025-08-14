@@ -102,7 +102,7 @@ export function Tabs({ items, className }: TTabsProps): ReactElement {
                 leaveFrom={'transform scale-100 opacity-100'}
                 leaveTo={'transform scale-95 opacity-0'}
               >
-                <ListboxOptions className={'yearn--listbox-menu'}>
+                <ListboxOptions className={'yearn--listbox-menu scrollbar-none'}>
                   {items.map(
                     ({ id, label }): ReactElement => (
                       <ListboxOption className={'yearn--listbox-menu-item'} key={id} value={id}>

@@ -270,6 +270,16 @@
   }
 }
 
+.yearn--listbox-menu {
+  @apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60 text-neutral-900 bg-neutral-0;
+}
+.yearn--listbox-menu-item {
+  @apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
+  &[data-active="true"] {
+    @apply bg-neutral-0/40;
+  }
+}
+
 /*************************************************************************************************
  * Tab Component Styles
  *************************************************************************************************/
@@ -310,25 +320,9 @@ input[type="number"] {
   }
 }
 
-[type="text"]:focus,
-[type="email"]:focus,
-[type="url"]:focus,
-[type="password"]:focus,
-[type="number"]:focus,
-[type="date"]:focus,
-[type="datetime-local"]:focus,
-[type="month"]:focus,
-[type="search"]:focus,
-[type="tel"]:focus,
-[type="time"]:focus,
-[type="week"]:focus,
-[multiple]:focus,
-textarea:focus,
-select:focus {
+:focus {
   outline: none;
-  box-shadow: none;
 }
-
 [type="checkbox"],
 [type="checkbox"]:focus {
   @apply outline-none focus:border-0 focus:outline-none focus:ring-0 active:border-0 active:ring-0;
