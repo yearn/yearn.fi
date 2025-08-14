@@ -1,6 +1,7 @@
 /* 🔵 - Yearn Finance ******************************************************************************
 ** Header an navbar
 ***************************************************************************************************/
+/** biome-ignore-all lint/complexity/noImportantStyles: legacy styles */
 .yearn--header {
   @apply inset-x-0 top-0 z-50 mb-5 flex h-20 w-full max-w-[1200px] flex-row items-center justify-between p-4 text-xs sm:text-sm md:inset-x-auto md:mb-0 md:px-0 md:text-base;
 }

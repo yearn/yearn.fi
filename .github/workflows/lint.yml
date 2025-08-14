@@ -29,11 +29,8 @@ jobs:
               run: |
                   curl -fsSL https://bun.sh/install | bash
                   echo "$HOME/.bun/bin" >> $GITHUB_PATH
-
-            - name: Clean up
-              run: bun clean
             - name: Install project dependencies
-              run: bun install --no-cache
+              run: bun install
 
             - name: Lint legacy package
               run: cd packages/legacy && bun run lint
