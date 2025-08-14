@@ -305,6 +305,18 @@
   border-radius: var(--default-rounded);
 }
 
+/* 🔵 - Yearn Finance ******************************************************************************
+	** Recharts custom css overwrite
+	***************************************************************************************************/
+.recharts-tooltip {
+  @apply p-2 bg-neutral-0 flex flex-col min-w-[160px];
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
+}
+.activeDot {
+  stroke: var(--color-neutral-900);
+  fill: var(--color-neutral-0);
+}
+
 /* 🔵 - Yearn Finance ******************************************************
 ** Overwriting the defaults to match our needs
 **************************************************************************/

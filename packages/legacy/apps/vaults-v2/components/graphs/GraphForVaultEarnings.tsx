@@ -40,7 +40,6 @@ export function GraphForVaultEarnings({
     <ResponsiveContainer width={'100%'} height={height}>
       <LineChart margin={{ top: 0, right: -28, bottom: 0, left: 0 }} data={isCumulative ? cumulativeData : harvestData}>
         <Line
-          className={'text-primary-600'}
           type={'step'}
           dot={false}
           activeDot={(e: unknown): ReactElement => {
@@ -86,7 +85,7 @@ export function GraphForVaultEarnings({
                   <div className={'mb-4'}>
                     <p className={'text-xs'}>{label}</p>
                   </div>
-                  <div className={'flex flex-row items-center justify-between'}>
+                  <div className={'flex flex-row items-center flex-wrap justify-between'}>
                     <p className={'text-xs text-neutral-600'}>{'Earnings'}</p>
                     <b className={'font-number text-xs font-bold text-neutral-900'}>
                       {`${formatAmount(Number(value))} ${currentVault.token.symbol}`}
