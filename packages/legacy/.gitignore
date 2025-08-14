@@ -37,3 +37,6 @@ _app
 
 # Sentry Auth Token
 .sentryclirc
+
+# docs
+/docs

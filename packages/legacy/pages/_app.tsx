@@ -104,6 +104,39 @@ const WithLayout = memo(function WithLayout(
  **************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
   const { manifest } = useCurrentApp(props.router)
+  // Determine dynamic meta for V3 vault detail pages
+  const { asPath } = props.router
+
+  // Get most basic og and uri info
+  let ogUrl = manifest.og || 'https://yearn.fi/og.png'
+  let pageUri = manifest.uri || 'https://yearn.fi'
+
+  // Determine base URL for dynamic OG API based on environment
+  let baseUrl = 'https://yearn.fi' // Default to production
+  if (process.env.VERCEL_ENV === 'production') {
+    baseUrl = 'https://yearn.fi'
+  } else if (process.env.VERCEL_URL) {
+    // Vercel preview/development builds
+    baseUrl = `https://${process.env.VERCEL_URL}`
+  } else if (typeof window !== 'undefined') {
+    // Local development fallback
+    baseUrl = window.location.origin
+  } else {
+    // Server-side fallback for localhost
+    baseUrl = 'http://localhost:3000'
+  }
+  // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
+  if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
+    const [, , chainID, address] = asPath.split('/')
+    ogUrl = `${baseUrl}/api/og/${chainID}/${address}`
+    pageUri = `https://yearn.fi${asPath}`
+  }
+  // Use dynamic OG API for v2 vault pages: /vaults/[chainID]/[address]
+  if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
+    const [, , chainID, address] = asPath.split('/')
+    ogUrl = `${baseUrl}/api/og/${chainID}/${address}`
+    pageUri = `https://yearn.fi${asPath}`
+  }
 
   return (
     <WithFonts>
@@ -112,8 +145,8 @@ function MyApp(props: AppProps): ReactElement {
         description={manifest.description || 'The yield protocol for digital assets'}
         titleColor={'#ffffff'}
         themeColor={'#000000'}
-        og={manifest.og || 'https://yearn.fi/og.png'}
-        uri={manifest.uri || 'https://yearn.fi'}
+        og={ogUrl}
+        uri={pageUri}
       />
       <main className={'font-aeonik size-full min-h-screen'}>
         <PlausibleProvider domain={'yearn.fi'} enabled={true}>
