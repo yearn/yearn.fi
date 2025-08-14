@@ -107,7 +107,7 @@ function Index(): ReactElement | null {
   }
 
   return (
-    <div className={'mx-auto w-full max-w-6xl pt-20 md:pt-32 px-4'}>
+    <div className={'mx-auto w-full max-w-[1232px] pt-20 md:pt-32 px-4'}>
       {/* Mobile Back Button */}
       <nav className={'mb-4 self-start md:mb-2 md:hidden'}>
         <button className={'z-50 w-fit'} onClick={async () => await router.push('/v3')}>

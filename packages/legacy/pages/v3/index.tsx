@@ -415,7 +415,7 @@ function Index(): ReactElement {
 
   return (
     <div className={'z-50 w-full bg-neutral-100 pt-20'}>
-      <div className={'relative mx-auto w-full max-w-6xl'}>
+      <div className={'relative mx-auto w-full max-w-[1232px]'}>
         <div className={'absolute inset-x-0 top-0 w-full px-4 pt-6 md:pt-16'}>
           <div className={'grid grid-cols-75'}>
             <V3Card />
@@ -432,7 +432,7 @@ function Index(): ReactElement {
           isCollapsed ? 'translate-y-[354px] md:translate-y-[464px]' : 'translate-y-[24px] md:translate-y-[40px]'
         )}
       >
-        <div className={'mx-auto w-full max-w-6xl px-4'}>
+        <div className={'mx-auto w-full max-w-[1232px] px-4'}>
           <div
             onClick={onClick}
             className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}
