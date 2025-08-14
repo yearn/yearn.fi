@@ -287,10 +287,12 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
     [shouldUseKatanaAPRs, katanaAprs, currentVault.address]
   )
 
-  const totalAPR = useMemo(
-    () => (katanaAprData ? Object.values(katanaAprData).reduce((sum, value) => sum + value, 0) : 0),
-    [katanaAprData]
-  )
+  const totalAPR = useMemo(() => {
+    if (!katanaAprData) return 0
+    // Exclude legacy katanaRewardsAPR to avoid double counting with katanaAppRewardsAPR
+    const { katanaRewardsAPR: _katanaRewardsAPR, ...relevantAprs } = katanaAprData
+    return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
+  }, [katanaAprData])
 
   // if Katana, get the APRs from context
   if (shouldUseKatanaAPRs && katanaAprData) {
