@@ -14,6 +14,7 @@ import Link from 'next/link'
 
 import type { ReactElement } from 'react'
 import { Fragment, useMemo } from 'react'
+import type { TKatanaAprData } from '../../../lib/hooks/useKatanaAprs'
 import { VaultChainTag } from '../VaultChainTag'
 
 type TAPYSublineProps = {
@@ -160,9 +161,168 @@ function APYTooltip(props: {
   )
 }
 
+export function KatanaApyTooltip(props: {
+  extrinsicYield: number
+  katanaNativeYield: number
+  fixedRateKatanRewardsAPR: number
+  katanaAppRewardsAPR: number
+  katanaBonusAPR: number
+  position?: 'bottom' | 'top'
+  maxWidth?: string
+}): ReactElement {
+  const position = props.position || 'bottom'
+  const positionClass = position === 'bottom' ? 'bottom-full mb-1' : 'top-full mt-1'
+  const maxWidth = props.maxWidth || 'min-w-[280px] w-max'
+
+  return (
+    <span className={`tooltipLight ${positionClass}`}>
+      <div
+        className={`font-number ${maxWidth} border border-neutral-300 bg-neutral-100 p-1 px-3 text-center text-xxs text-neutral-900`}
+      >
+        <div className={'flex flex-col items-start justify-start text-left'}>
+          {/* Group 1: Native APY */}
+          <p
+            className={
+              'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-xs text-bold'
+            }
+          >
+            {'Native APY'}
+          </p>
+          <div
+            className={
+              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
+            }
+          >
+            <p>{'• Extrinsic Yield '}</p>
+            <RenderAmount shouldHideTooltip value={props.extrinsicYield} symbol={'percent'} decimals={6} />
+          </div>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
+            {'Yield Earned from underlying bridged assets'}
+          </p>
+
+          <div
+            className={
+              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
+            }
+          >
+            <p>{'• Katana APY '}</p>
+            <RenderAmount shouldHideTooltip value={props.katanaNativeYield} symbol={'percent'} decimals={6} />
+          </div>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
+            {'Yield Earned on Katana'}
+          </p>
+
+          <p
+            className={
+              'mb-2 w-full text-left text-[10px] italic text-xs text-neutral-400 break-words whitespace-normal'
+            }
+          >
+            {'*This yield is guaranteed but may be paid in KAT tokens if actual rates are lower.'}
+          </p>
+
+          {/* Divider */}
+          <div className={'my-1 h-px w-full bg-neutral-300/60'} />
+
+          {/* Group 2: Rewards APR */}
+          <p
+            className={
+              'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-xs text-bold'
+            }
+          >
+            {'Rewards APR'}
+          </p>
+          <div
+            className={
+              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
+            }
+          >
+            <p>{'• Base Rewards APR '}</p>
+            <RenderAmount shouldHideTooltip value={props.fixedRateKatanRewardsAPR} symbol={'percent'} decimals={6} />
+          </div>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
+            {'Limited time fixed KAT rewards'}
+          </p>
+
+          <div
+            className={
+              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
+            }
+          >
+            <p>{'• App Rewards APR '}</p>
+            <RenderAmount shouldHideTooltip value={props.katanaAppRewardsAPR} symbol={'percent'} decimals={6} />
+          </div>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
+            {'Kat Rewards passed through from Apps'}
+          </p>
+
+          <div
+            className={
+              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
+            }
+          >
+            <p>{'• Deposit Bonus APR '}</p>
+            <RenderAmount shouldHideTooltip value={props.katanaBonusAPR} symbol={'percent'} decimals={6} />
+          </div>
+          <p className={'-mt-1 mb-0 w-full text-left text-xs text-neutral-400 break-words'}>
+            {'If you hold for 90 days'}
+          </p>
+        </div>
+      </div>
+    </span>
+  )
+}
+
 function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
-  // TEMPORARY HACK: Force "NEW" APY for chainID 747474
-  const isForceNewAPY = currentVault.chainID === 747474
+  // Override for Katana vaults
+  const shouldUseKatanaAPRs = currentVault.chainID === 747474
+  // Always call hooks at the top level
+  const { katanaAprs } = useYearn()
+
+  // Memoize the Katana APR data to avoid unnecessary recalculations
+  const katanaAprData = useMemo(
+    () =>
+      shouldUseKatanaAPRs
+        ? (katanaAprs?.[toAddress(currentVault.address)]?.apr?.extra as TKatanaAprData | undefined)
+        : undefined,
+    [shouldUseKatanaAPRs, katanaAprs, currentVault.address]
+  )
+
+  const totalAPR = useMemo(() => {
+    if (!katanaAprData) return 0
+    // Exclude legacy katanaRewardsAPR to avoid double counting with katanaAppRewardsAPR
+    const { katanaRewardsAPR: _katanaRewardsAPR, ...relevantAprs } = katanaAprData
+    return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
+  }, [katanaAprData])
+
+  // if Katana, get the APRs from context
+  if (shouldUseKatanaAPRs && katanaAprData) {
+    return (
+      <div className={'relative flex flex-col items-end md:text-right'}>
+        <span className={'tooltip'}>
+          <b className={'yearn--table-data-section-item-value'}>
+            <Renderable shouldRender={true} fallback={'NEW'}>
+              {'⚔️ '}
+              <span
+                className={
+                  'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                }
+              >
+                <RenderAmount value={totalAPR} symbol={'percent'} decimals={6} />
+              </span>
+            </Renderable>
+          </b>
+          <KatanaApyTooltip
+            extrinsicYield={katanaAprData.extrinsicYield}
+            katanaNativeYield={katanaAprData.katanaNativeYield}
+            fixedRateKatanRewardsAPR={katanaAprData.FixedRateKatanaRewards}
+            katanaAppRewardsAPR={katanaAprData.katanaAppRewardsAPR}
+            katanaBonusAPR={katanaAprData.katanaBonusAPY}
+          />
+        </span>
+        {/* <APYSubline hasPendleArbRewards={hasPendleArbRewards} hasKelpNEngenlayer={hasKelpNEngenlayer} hasKelp={hasKelp} /> */}
+      </div>
+    )
+  }
 
   const isEthMainnet = currentVault.chainID === 1
   const hasPendleArbRewards = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544')
@@ -172,7 +332,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
   /**********************************************************************************************
    ** If there is no forwardAPY, we only have the historical APY to display.
    **********************************************************************************************/
-  if (currentVault.apr.forwardAPR.type === '' || isForceNewAPY) {
+  if (currentVault.apr.forwardAPR.type === '' || shouldUseKatanaAPRs) {
     const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
     const boostedAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR
     const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
@@ -183,7 +343,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
           <span className={'tooltip'}>
             <b className={'yearn--table-data-section-item-value'}>
               <Renderable
-                shouldRender={!isForceNewAPY && !currentVault.apr.forwardAPR?.type.includes('new')}
+                shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
                 /* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
                 fallback={'NEW'}
               >
@@ -222,7 +382,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
       <div className={'relative flex flex-col items-end md:text-right'}>
         <b className={'yearn--table-data-section-item-value'}>
           <Renderable
-            shouldRender={!isForceNewAPY && !currentVault.apr.forwardAPR?.type.includes('new')}
+            shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
             /* TEMPORARY CODE TO NOTIFY 2500 ARB PER WEEK REWARD FOR SOME VAULTS */
             fallback={'NEW'}
           >
@@ -432,20 +592,33 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
 
 function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   // TEMPORARY HACK: Force 'NEW' APY for chainID 747474
-  const isForceNewHistoricalAPY = currentVault.chainID === 747474
+  const shouldUseKatanaAPRs = currentVault.chainID === 747474
   const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
   const monthlyAPY = currentVault.apr.points.monthAgo
   const weeklyAPY = currentVault.apr.points.weekAgo
 
+  if (shouldUseKatanaAPRs) {
+    return (
+      <div className={'flex flex-col items-end md:text-right'}>
+        <b className={'yearn--table-data-section-item-value'}>
+          <Renderable shouldRender={!shouldUseKatanaAPRs} fallback={'-'}>
+            <RenderAmount
+              value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
+              shouldHideTooltip={hasZeroAPY}
+              symbol={'percent'}
+              decimals={6}
+            />
+          </Renderable>
+        </b>
+      </div>
+    )
+  }
   if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
     return (
       <div className={'flex flex-col items-end md:text-right'}>
         <span className={'tooltip'}>
           <b className={'yearn--table-data-section-item-value'}>
-            <Renderable
-              shouldRender={!isForceNewHistoricalAPY && !currentVault.apr?.type.includes('new')}
-              fallback={'NEW'}
-            >
+            <Renderable shouldRender={!currentVault.apr?.type.includes('new')} fallback={'NEW'}>
               <span
                 className={
                   'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
@@ -500,7 +673,7 @@ function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): 
   return (
     <div className={'flex flex-col items-end md:text-right'}>
       <b className={'yearn--table-data-section-item-value'}>
-        <Renderable shouldRender={!isForceNewHistoricalAPY && !currentVault.apr?.type.includes('new')} fallback={'NEW'}>
+        <Renderable shouldRender={!currentVault.apr?.type.includes('new')} fallback={'NEW'}>
           <RenderAmount
             value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
             shouldHideTooltip={hasZeroAPY}
@@ -582,9 +755,7 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
   return (
     <div className={'flex flex-col pt-0 text-right'}>
       <p
-        className={`yearn--table-data-section-item-value ${
-          isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'
-        }`}
+        className={`yearn--table-data-section-item-value ${isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'}`}
       >
         <RenderAmount
           shouldFormatDust
@@ -707,9 +878,7 @@ export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault 
           <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
             <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Available'}</p>
             <p
-              className={`yearn--table-data-section-item-value ${
-                isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
-              }`}
+              className={`yearn--table-data-section-item-value ${isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'}`}
             >
               <RenderAmount
                 value={Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized)}

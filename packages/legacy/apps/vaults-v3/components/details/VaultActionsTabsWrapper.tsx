@@ -496,6 +496,17 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
 
   return (
     <>
+      {currentVault?.chainID === 747474 && (
+        <div aria-label={'Rewards Claim Notification'} className={'col-span-12 mt-10'}>
+          <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+            <b>{'KAT Rewards earned by Katana Vaults can be claimed at: '}</b>
+            <a className={'underline'} href={'https://katana.yearn.space'} target={'_blank'} rel={'noreferrer'}>
+              {'https://katana.yearn.space'}
+            </a>
+          </div>
+        </div>
+      )}
+
       {currentVault?.migration?.available && (
         <div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
           <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>

@@ -1,13 +1,13 @@
 {
   "name": "Yearn Vaults",
   "short_name": "Vaults",
-  "description": "The defi way to earn on crypto",
+  "description": "DeFi's Yield Aggregator.",
   "iconPath": "./favicons/favicon.svg",
   "locale": "en-US",
   "uri": "https://yearn.fi/landing/",
   "og": "https://yearn.fi/apps/landing-og.png",
-  "twitter": "@iearnfinance",
-  "github": "https://github.com/yearn/yearn.fi",
+  "twitter": "@yearnfi",
+  "github": "https://github.com/yearn",
   "icons": [
     {
       "src": "./favicons/android-icon-192x192.png",
