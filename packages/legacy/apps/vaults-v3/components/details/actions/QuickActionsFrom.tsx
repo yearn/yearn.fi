@@ -143,7 +143,9 @@ export function VaultDetailsQuickActionsFrom(props: {
     return (
       <Dropdown
         className={isV3Page ? 'w-full rounded-lg bg-neutral-300 md:w-fit!' : 'rounded-lg'}
-        comboboxOptionsClassName={isV3Page ? 'bg-neutral-300 w-full rounded-lg' : 'rounded-lg'}
+        comboboxOptionsClassName={
+          isV3Page ? 'bg-neutral-300 w-full rounded-lg scrollbar-none' : 'rounded-lg scrollbar-none'
+        }
         defaultOption={possibleOptionsFrom[0]}
         options={possibleOptionsFrom}
         selected={actionParams?.selectedOptionFrom}
