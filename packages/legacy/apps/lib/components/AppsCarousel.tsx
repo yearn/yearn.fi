@@ -27,7 +27,7 @@ export const AppsCarousel = forwardRef(
             ref={ref}
             onScroll={props.onScroll}
             className={cl(
-              'hidden md:flex overflow-x-auto pb-1 pl-1 scrollbar-none max-sm:pr-6',
+              'hidden md:flex overflow-x-auto pb-1 pl-1 scrollbar-none max-sm:pr-6 scroll-smooth',
               props.isUsingFeatured ? 'gap-x-8' : 'flex-col md:flex-row gap-x-4 overflow-y-hidden'
             )}
           >
@@ -48,7 +48,7 @@ export const AppsCarousel = forwardRef(
           <div
             onScroll={props.onScroll}
             className={cl(
-              'flex md:hidden overflow-x-auto pb-1 pl-1 scrollbar-none',
+              'flex md:hidden overflow-x-auto pb-1 pl-1 scrollbar-none scroll-smooth',
               props.isUsingFeatured ? 'gap-x-8' : 'flex-col md:flex-row gap-y-4 overflow-y-hidden'
             )}
           >
