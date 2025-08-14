@@ -41,9 +41,7 @@ export function NotificationsCurtain(props: {
   return (
     <Drawer.Root direction={'right'} open={props.isOpen} onOpenChange={props.setShouldOpenCurtain}>
       <Drawer.Portal>
-        <Drawer.Overlay
-          className={'fixed inset-0 z-999998 bg-black/40 backdrop-blur-xs transition-all duration-300'}
-        />
+        <Drawer.Overlay className={'fixed inset-0 z-999998 bg-black/40 backdrop-blur-xs transition-all duration-300'} />
         <Drawer.Content className={'fixed inset-y-0 right-0 z-999999 flex w-full outline-hidden md:w-[386px]'}>
           <div
             className={cl(
