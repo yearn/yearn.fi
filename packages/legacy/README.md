@@ -31,8 +31,8 @@
 
 ### Install and run
 
-1. Run `yarn`
-2. Run `yarn run dev`
+1. Run `bun install`
+2. Run `bun run dev`
 3. Open the browser and navigate to `http://localhost:3000`
 
 ### Run with Docker
