@@ -286,8 +286,8 @@ export function VaultDetailsTab(props: {
           'hover-fix tab relative',
           isV3Page
             ? props.selectedTab.value === props.tab.value
-              ? '!text-neutral-900'
-              : '!text-neutral-900/50 hover:!text-neutral-900'
+              ? 'text-neutral-900!'
+              : 'text-neutral-900/50! hover:text-neutral-900!'
             : ''
         )}
       >

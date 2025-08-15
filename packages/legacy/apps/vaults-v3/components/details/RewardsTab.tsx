@@ -242,17 +242,7 @@ function VeYFIBoostMessage(props: {
     </Link>
   )
 
-  const randomOrder = useMemo(() => {
-    const apps = [OneUp, Cove, StakeDAO]
-    function shuffle(array: ReactElement[]): ReactElement[] {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[array[i], array[j]] = [array[j], array[i]]
-      }
-      return array
-    }
-    return shuffle(apps)
-  }, [Cove, OneUp, StakeDAO])
+  const apps = [OneUp, Cove, StakeDAO]
 
   if (props.shouldForceUnstake) {
     return (
@@ -292,7 +282,7 @@ function VeYFIBoostMessage(props: {
         <p>{"Don't have veYFI? Deposit with a liquid locker to earn boosted rewards today!"}</p>
       </div>
       <div className={'grid grid-cols-2 gap-2 pt-6 md:grid-cols-3'}>
-        {randomOrder.map((item) => (
+        {apps.map((item) => (
           <Fragment key={item.toString()}>{item}</Fragment>
         ))}
       </div>
@@ -865,7 +855,7 @@ export function RewardsTab(props: {
                     <input
                       id={'stakeAmount'}
                       className={cl(
-                        'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
+                        'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-hidden scrollbar-none',
                         isActive ? '' : 'cursor-not-allowed'
                       )}
                       type={'number'}
@@ -922,7 +912,7 @@ export function RewardsTab(props: {
                     <input
                       id={'unstakeAmount'}
                       className={cl(
-                        'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
+                        'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-hidden scrollbar-none',
                         isActive ? '' : 'cursor-not-allowed'
                       )}
                       type={'number'}
@@ -1057,7 +1047,7 @@ export function RewardsTab(props: {
                   <input
                     id={'fromAmount'}
                     className={cl(
-                      'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
+                      'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-hidden scrollbar-none',
                       isActive ? '' : 'cursor-not-allowed'
                     )}
                     type={'number'}

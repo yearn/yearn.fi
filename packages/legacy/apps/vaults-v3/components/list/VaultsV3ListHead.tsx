@@ -73,7 +73,7 @@ export function VaultsV3ListHead({ items, sortBy, sortDirection, onSort }: TList
           <button
             onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
             disabled={!token.sortable}
-            className={cl('yearn--table-head-label-wrapper group hover:text-neutral-900')}
+            className={cl('yearn--table-head-label-wrapper group')}
           >
             <p
               className={cl(
@@ -81,7 +81,9 @@ export function VaultsV3ListHead({ items, sortBy, sortDirection, onSort }: TList
                 'transition-colors',
                 sortBy === token.value
                   ? 'text-neutral-800'
-                  : `text-neutral-800/60 ${token.sortable ? 'group-hover:text-neutral-800' : ''}`
+                  : token.sortable
+                    ? 'text-neutral-800/60 group-hover:text-neutral-800'
+                    : 'text-neutral-800/60'
               )}
             >
               {token.label}
@@ -104,7 +106,11 @@ export function VaultsV3ListHead({ items, sortBy, sortDirection, onSort }: TList
                   className={cl(
                     'yearn--table-head-label',
                     'transition-colors',
-                    sortBy === item.value ? 'text-neutral-800' : 'text-neutral-800/60 group-hover:text-neutral-800'
+                    sortBy === item.value
+                      ? 'text-neutral-800'
+                      : item.sortable
+                        ? 'text-neutral-800/60 group-hover:text-neutral-800'
+                        : 'text-neutral-800/60'
                   )}
                 >
                   &nbsp;{item.label}

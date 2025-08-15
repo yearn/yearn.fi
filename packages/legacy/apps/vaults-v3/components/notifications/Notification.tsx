@@ -127,7 +127,7 @@ function NotificationContent({
           </div>
         </div>
 
-        {notification.toTokenName && <IconArrow className={'size-4 rotate-[135deg]'} />}
+        {notification.toTokenName && <IconArrow className={'size-4 rotate-135'} />}
 
         {notification.toTokenName && notification.toAddress && (
           <div className={'relative'}>
@@ -342,7 +342,7 @@ export const Notification = memo(function Notification({
           className={cl(
             'absolute inset-0 rounded-xl',
             'opacity-20 transition-opacity  pointer-events-none',
-            'bg-[linear-gradient(80deg,_#2C3DA6,_#D21162)] group-hover:opacity-100'
+            'bg-[linear-gradient(80deg,#2C3DA6,#D21162)] group-hover:opacity-100'
           )}
         />
       )}
@@ -352,11 +352,11 @@ export const Notification = memo(function Notification({
         onClick={handleDelete}
         disabled={isDeleting}
         className={cl(
-          'absolute z-[999999] flex items-center justify-center',
+          'absolute z-999999 flex items-center justify-center',
           'right-2 top-2 w-5 h-5 rounded-full hover:opacity-100 hover:bg-neutral-200',
           'transition-all duration-200',
-          'opacity-0 group-hover:opacity-60 group-hover:bg-neutral-200/60 hover:!opacity-100',
-          isDeleting ? '!opacity-30' : ''
+          'opacity-0 group-hover:opacity-60 group-hover:bg-neutral-200/60 hover:opacity-100!',
+          isDeleting ? 'opacity-30!' : ''
         )}
         title={'Remove'}
       >

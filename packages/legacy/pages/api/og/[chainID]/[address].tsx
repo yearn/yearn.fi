@@ -350,7 +350,7 @@ export default async function handler(req: NextRequest) {
       estimatedApy: `${(estimatedAPY * 100).toFixed(2)}%`,
       historicalApy: historicalAPY === -1 ? '--%' : `${(historicalAPY * 100).toFixed(2)}%`,
       tvlUsd: formatUSD(vaultData.tvl?.tvl || 0),
-      chainName: getChainName(parseInt(chainID))
+      chainName: getChainName(parseInt(chainID, 10))
     }
   } else {
     // Fallback data if vault fetch fails
@@ -360,7 +360,7 @@ export default async function handler(req: NextRequest) {
       estimatedApy: '0.00%',
       historicalApy: '0.00%',
       tvlUsd: '$0',
-      chainName: getChainName(parseInt(chainID))
+      chainName: getChainName(parseInt(chainID, 10))
     }
   }
   // Whitelist of allowed hostnames

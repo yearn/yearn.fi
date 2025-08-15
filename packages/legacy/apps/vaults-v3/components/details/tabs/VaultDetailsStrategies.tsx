@@ -29,7 +29,7 @@ function UnallocatedStrategy({
         className={cl(
           'absolute inset-0 rounded-2xl',
           'opacity-20 transition-opacity  pointer-events-none',
-          'bg-[linear-gradient(80deg,_#2C3DA6,_#D21162)]'
+          'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
         )}
       />
 

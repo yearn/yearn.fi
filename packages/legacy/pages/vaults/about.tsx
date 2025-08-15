@@ -2,7 +2,7 @@ import type { ReactElement } from 'react'
 
 function About(): ReactElement {
   return (
-    <div className={'mx-auto my-0 max-w-6xl pt-4 md:mb-0 md:mt-16'}>
+    <div className={'mx-auto my-0 max-w-[1232px] pt-4 md:mb-0 md:mt-16'}>
       <section className={'mt-4 grid w-full grid-cols-1 gap-10 pb-10 md:mt-20 md:grid-cols-2'}>
         <div className={'w-full bg-neutral-100 p-10'}>
           <div aria-label={'Wtf is a Vault?'} className={'flex flex-col pb-6'}>

@@ -32,7 +32,7 @@ const slides: TVault[] = [
     tagline: 'Growing every day',
     title: 'Compounding Vaults',
     description: 'Vaults utilize DeFi opportunities to give you the best risk-adjusted yields',
-    cta: { label: 'View All', href: 'https://yearn.fi/apps/vaults' }
+    cta: { label: 'View All', href: 'https://yearn.fi/v3' }
   },
   {
     background: '/landing/vault-background-y.png',
@@ -46,28 +46,24 @@ const slides: TVault[] = [
 
 const vaultsRows = [
   {
-    bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
     symbol: 'ETH',
     icon: '/landing/vaults/eth.png',
     href: '/v3/1/0xAc37729B76db6438CE62042AE1270ee574CA7571',
     address: '0xAc37729B76db6438CE62042AE1270ee574CA7571'
   },
   {
-    bgClass: 'bg-gradient-to-r from-gray-900 to-gray-800',
     symbol: 'USDS',
     icon: '/landing/vaults/usds.png',
     href: '/v3/1/0x182863131F9a4630fF9E27830d945B1413e347E8',
     address: '0x182863131F9a4630fF9E27830d945B1413e347E8'
   },
   {
-    bgClass: 'bg-gradient-to-r from-gray-900 to-gray-700',
     symbol: 'USDC',
     icon: '/landing/vaults/usdc.png',
     href: '/v3/1/0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
     address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204'
   },
   {
-    bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
     symbol: 'crvUSD',
     icon: '/landing/vaults/crvusd.png',
     href: '/v3/1/0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F',
@@ -77,28 +73,28 @@ const vaultsRows = [
 
 const appRows: TRow[] = [
   {
-    bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
+    bgClass: 'bg-linear-to-r from-gray-800 to-gray-700',
     icon: '/landing/apps/veyfi.png',
     text: 'veYFI',
     description: 'Earn yield, boost gauges, and take part in governance',
     href: 'https://veyfi.yearn.fi/'
   },
   {
-    bgClass: 'bg-gradient-to-r from-gray-900 to-gray-800',
+    bgClass: 'bg-linear-to-r from-gray-900 to-gray-800',
     icon: '/landing/apps/ycrv.png',
     text: 'yCRV',
     description: 'Put your yCRV to work',
     href: 'https://ycrv.yearn.fi/'
   },
   {
-    bgClass: 'bg-gradient-to-r from-gray-800 to-gray-700',
+    bgClass: 'bg-linear-to-r from-gray-800 to-gray-700',
     icon: '/landing/apps/yeth.png',
     text: 'yETH',
     description: 'A basket of LSTs in a single token',
     href: 'https://yeth.yearn.fi/'
   },
   {
-    bgClass: 'bg-gradient-to-r from-gray-900 to-gray-800',
+    bgClass: 'bg-linear-to-r from-gray-900 to-gray-800',
     icon: '/landing/apps/bearn.png',
     text: 'Bearn',
     description: 'Liquid locker for Berachain',
@@ -120,9 +116,7 @@ export const Vaults: FC = () => {
         if (!vaultData) {
           return {
             bgClass:
-              index % 2 === 0
-                ? 'bg-gradient-to-r from-gray-800 to-gray-700'
-                : 'bg-gradient-to-r from-gray-900 to-gray-800',
+              index % 2 === 0 ? 'bg-linear-to-r from-gray-800 to-gray-700' : 'bg-linear-to-r from-gray-900 to-gray-800',
             icon: vault.icon,
             text: `Earn on ${vault.symbol}`,
             href: vault.href,
@@ -136,9 +130,7 @@ export const Vaults: FC = () => {
 
         return {
           bgClass:
-            index % 2 === 0
-              ? 'bg-gradient-to-r from-gray-800 to-gray-700'
-              : 'bg-gradient-to-r from-gray-900 to-gray-800',
+            index % 2 === 0 ? 'bg-linear-to-r from-gray-800 to-gray-700' : 'bg-linear-to-r from-gray-900 to-gray-800',
           icon: vault.icon,
           text: apr > 0 ? `Earn up to ${formatPercent(apr * 100, 2, 2)} on ${vault.symbol}` : `Earn on ${vault.symbol}`,
           href: vault.href,
@@ -253,7 +245,7 @@ export const Vaults: FC = () => {
                             <div className={'flex flex-col gap-1 md:flex-row md:gap-2'}>
                               {isVaultLoading ? (
                                 <div className={'flex items-center space-x-2'}>
-                                  <div className={'h-6 w-48 animate-pulse rounded bg-gray-600'} />
+                                  <div className={'h-6 w-48 animate-pulse rounded-sm bg-gray-600'} />
                                 </div>
                               ) : (
                                 <span className={':text-base font-medium'}>{row.text}</span>

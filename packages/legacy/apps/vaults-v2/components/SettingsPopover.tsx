@@ -51,7 +51,7 @@ export function SettingsPopover({ vault }: TSettingPopover): ReactElement {
             leaveFrom={'opacity-100 translate-y-0'}
             leaveTo={'opacity-0 translate-y-1'}
           >
-            <PopoverPanel className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
+            <PopoverPanel className={'absolute right-0 top-6 z-1000 mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
               <div className={'yearn--shadow'}>
                 <div className={'relative bg-neutral-0 p-4'}>
                   <div className={'mb-6 flex flex-col space-y-1'}>
@@ -61,7 +61,7 @@ export function SettingsPopover({ vault }: TSettingPopover): ReactElement {
                       onChange={(e): void => setZapProvider(e.target.value as TSolver)}
                       value={!isSolverDisabled(currentZapProvider) ? currentZapProvider : Solver.enum.Portals}
                       className={
-                        'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none scrollbar-none'
+                        'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-hidden scrollbar-none'
                       }
                     >
                       {vault.chainID === 1 ? (
@@ -128,7 +128,7 @@ export function SettingsPopover({ vault }: TSettingPopover): ReactElement {
                           step={0.1}
                           max={100}
                           className={
-                            'font-number h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-none scrollbar-none'
+                            'font-number h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-hidden scrollbar-none'
                           }
                           value={zapSlippage}
                           onChange={(e): void => {

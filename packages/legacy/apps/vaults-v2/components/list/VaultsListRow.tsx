@@ -425,17 +425,17 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
         <div />
         <div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-10 gap-1', 'mt-4 md:mt-0')}>
           <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
-            <p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Estimated APY'}</p>
+            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Estimated APY'}</p>
             <VaultForwardAPY currentVault={currentVault} />
           </div>
 
           <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
-            <p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Historical APY'}</p>
+            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Historical APY'}</p>
             <VaultHistoricalAPY currentVault={currentVault} />
           </div>
 
           <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
-            <p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</p>
+            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Available'}</p>
             <p
               className={`yearn--table-data-section-item-value ${
                 isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
@@ -451,12 +451,12 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
           </div>
 
           <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
-            <p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</p>
+            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Deposited'}</p>
             <VaultStakedAmount currentVault={currentVault} />
           </div>
 
           <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
-            <p className={'yearn--table-data-section-item-label !font-aeonik'}>{'TVL'}</p>
+            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'TVL'}</p>
             <div className={'flex flex-col text-right'}>
               <p className={'yearn--table-data-section-item-value'}>
                 <RenderAmount

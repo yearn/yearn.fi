@@ -21,7 +21,7 @@ export function Input(props: TAmountInputProps): ReactElement {
       {label && <p className={'mb-1 w-full truncate text-base text-neutral-600'}>{label}</p>}
       <div className={'relative flex w-full items-center justify-center'}>
         <input
-          className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${
+          className={`h-10 w-full p-2 font-mono text-base font-normal outline-hidden ${
             error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'
           } ${isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0'}`}
           type={'text'}
@@ -57,7 +57,7 @@ export function FakeInput(
       <div className={'relative flex w-full items-center justify-center'}>
         <div
           className={cl(
-            'h-10 w-full border-0 border-none rounded-lg bg-neutral-300 p-2 font-mono text-base font-normal outline-none',
+            'h-10 w-full border-0 border-none rounded-lg bg-neutral-300 p-2 font-mono text-base font-normal outline-hidden',
             value === undefined ? 'text-neutral-600/60' : ''
           )}
           aria-label={label}

@@ -142,8 +142,10 @@ export function VaultDetailsQuickActionsFrom(props: {
   function renderMultipleOptionsFallback(): ReactElement {
     return (
       <Dropdown
-        className={isV3Page ? 'w-full rounded-lg bg-neutral-300 md:!w-fit' : 'rounded-lg'}
-        comboboxOptionsClassName={isV3Page ? 'bg-neutral-300 w-full rounded-lg' : 'rounded-lg'}
+        className={isV3Page ? 'w-full rounded-lg bg-neutral-300 md:w-fit!' : 'rounded-lg'}
+        comboboxOptionsClassName={
+          isV3Page ? 'bg-neutral-300 w-full rounded-lg scrollbar-none' : 'rounded-lg scrollbar-none'
+        }
         defaultOption={possibleOptionsFrom[0]}
         options={possibleOptionsFrom}
         selected={actionParams?.selectedOptionFrom}
@@ -237,7 +239,7 @@ export function VaultDetailsQuickActionsFrom(props: {
             <input
               id={'fromAmount'}
               className={cl(
-                'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
+                'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-hidden scrollbar-none',
                 isActive ? '' : 'cursor-not-allowed'
               )}
               type={'number'}

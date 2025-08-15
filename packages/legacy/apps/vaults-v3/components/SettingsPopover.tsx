@@ -58,7 +58,7 @@ function MaxLossSection(): ReactElement {
             step={0.1}
             max={100}
             className={
-              'font-number h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-none scrollbar-none'
+              'font-number h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-hidden scrollbar-none'
             }
             value={(Number(maxLoss) / 100).toString()}
             onChange={(e): void => {
@@ -133,7 +133,7 @@ function ZapSection({ chainID }: { chainID: number }): ReactElement {
           onChange={(e): void => setZapProvider(e.target.value as TSolver)}
           value={!isSolverDisabled(currentZapProvider) ? currentZapProvider : Solver.enum.Portals}
           className={
-            'mt-1 h-10 w-full overflow-x-scroll rounded-lg border-none bg-neutral-100 p-2 outline-none scrollbar-none'
+            'mt-1 h-10 w-full overflow-x-scroll rounded-lg border-none bg-neutral-100 p-2 outline-hidden scrollbar-none'
           }
         >
           {chainID === 1 ? (
@@ -176,7 +176,7 @@ function ZapSection({ chainID }: { chainID: number }): ReactElement {
               step={0.1}
               max={100}
               className={
-                'font-number h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-none scrollbar-none'
+                'font-number h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-hidden scrollbar-none'
               }
               value={zapSlippage}
               onChange={(e): void => {
@@ -243,7 +243,7 @@ export function SettingsPopover({ vault }: TSettingPopover): ReactElement {
           >
             <PopoverPanel
               className={cl(
-                'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4 ',
+                'absolute right-0 top-6 z-1000 mt-3 w-screen max-w-xs md:-right-4 md:top-4 ',
                 'bg-neutral-200 rounded-lg'
               )}
             >

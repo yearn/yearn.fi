@@ -4,7 +4,7 @@ export function PromoPoster(): ReactElement {
   return (
     <div
       className={
-        'border-1 relative flex max-w-[610px] flex-col rounded-lg border border-gray-600/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] p-4 hover:from-[#1A1A1A] hover:to-[#262626]'
+        'border relative flex max-w-[610px] flex-col rounded-lg border border-gray-600/50 bg-linear-to-b from-gray-900 to-[#1A1A1A] p-4 hover:from-[#1A1A1A] hover:to-[#262626]'
       }
     >
       <p className={'text-sm text-gray-400'}>

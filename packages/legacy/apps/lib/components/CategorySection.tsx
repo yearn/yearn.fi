@@ -42,9 +42,15 @@ export const CategorySection = ({ title, apps }: TAppSectionProps): ReactElement
 
     if (carouselRef.current.scrollLeft <= 0) {
       // Wrap to end
-      carouselRef.current.scrollLeft = carouselRef.current.scrollWidth - carouselRef.current.clientWidth
+      carouselRef.current.scrollTo({
+        left: carouselRef.current.scrollWidth - carouselRef.current.clientWidth,
+        behavior: 'smooth'
+      })
     } else {
-      carouselRef.current.scrollLeft -= itemWidth
+      carouselRef.current.scrollTo({
+        left: carouselRef.current.scrollLeft - itemWidth,
+        behavior: 'smooth'
+      })
     }
 
     setTimeout(() => {
@@ -69,9 +75,15 @@ export const CategorySection = ({ title, apps }: TAppSectionProps): ReactElement
     const maxScrollLeft = carouselRef.current.scrollWidth - carouselRef.current.clientWidth
     if (carouselRef.current.scrollLeft >= maxScrollLeft) {
       // Wrap to start
-      carouselRef.current.scrollLeft = 0
+      carouselRef.current.scrollTo({
+        left: 0,
+        behavior: 'smooth'
+      })
     } else {
-      carouselRef.current.scrollLeft += itemWidth
+      carouselRef.current.scrollTo({
+        left: carouselRef.current.scrollLeft + itemWidth,
+        behavior: 'smooth'
+      })
     }
 
     setTimeout(() => {

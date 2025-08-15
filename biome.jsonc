@@ -14,7 +14,8 @@
         "noDangerouslySetInnerHtml": "off"
       },
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noUnknownAtRules": "off"
       },
       "a11y": {
         "noSvgWithoutTitle": "off",
@@ -54,12 +55,12 @@
     "ignoreUnknown": true,
     "includes": [
       "**",
-      "!**/dist/**",
-      "!**/build/**",
-      "!**/node_modules/**",
-      "!**/.next/**",
-      "!**/.git/**",
-      "!**/generated/**",
+      "!**/dist",
+      "!**/build",
+      "!**/node_modules",
+      "!**/.next",
+      "!**/.git",
+      "!**/generated",
       "!**/wagmi.ts",
       "!**/wagmi.d.ts",
       "!**/bun.lock",

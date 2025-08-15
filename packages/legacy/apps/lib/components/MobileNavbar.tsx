@@ -16,7 +16,7 @@ export function MobileNavbar({ onClose }: { onClose: VoidFunction }): ReactEleme
   return (
     <div
       className={
-        'flex h-full w-screen flex-col justify-end border-t border-gray-600/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A]'
+        'flex h-full w-screen flex-col justify-end border-t border-gray-600/50 bg-linear-to-b from-gray-900 to-[#1A1A1A]'
       }
     >
       <div className={'flex flex-col items-start gap-y-2 bg-transparent p-6 pb-4'}>
