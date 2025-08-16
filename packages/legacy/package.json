@@ -30,7 +30,7 @@
     "@wagmi/core": "^2.11.7",
     "@yearnfi/nextgen": "workspace:*",
     "axios": "^1.7.2",
-    "ethers": "5.7.2",
+    "ethers": "6.15.0",
     "framer-motion": "^11.2.10",
     "graphql": "^16.8.2",
     "graphql-request": "^7.0.1",
