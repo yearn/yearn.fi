@@ -31,17 +31,10 @@
 
 ### Install and run
 
-1. Run `yarn`
-2. Run `yarn run dev`
+1. Run `bun install`
+2. Run `bun run dev`
 3. Open the browser and navigate to `http://localhost:3000`
 
-### Run with Docker
-
-This project can be run with Docker.
-
-1. Build the image: `docker build -t [name-of-your-container] .`
-2. Run the container: `docker run -p 3000:3000 [name-of-your-container]`
-3. Open the browser and navigate to `http://localhost:3000`
 
 ### Making Changes
 

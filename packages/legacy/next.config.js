@@ -1,8 +1,4 @@
 const { withPlausibleProxy } = require('next-plausible')
-// const withPWA = require('next-pwa')({
-// 	dest: 'public',
-// 	disable: process.env.NODE_ENV !== 'production'
-// });
 const path = require('node:path')
 
 module.exports = withPlausibleProxy({
@@ -22,7 +18,6 @@ module.exports = withPlausibleProxy({
       '@headlessui/react',
       '@tanstack/react-query',
       'recharts',
-      // '@safe-global/safe-apps-sdk',
       'framer-motion',
       '@react-hookz/web'
     ]

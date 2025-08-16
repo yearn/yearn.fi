@@ -27,25 +27,3 @@ export function handleInputChangeEventValue(e: React.ChangeEvent<HTMLInputElemen
   const raw = parseUnits(amount.toFixed(decimals) || '0', decimals || 18)
   return { raw: raw, normalized: amount || 0, display: amount.toFixed(decimals) }
 }
-
-export function handleInputChangeValue(value: string, decimals?: number): TNormalizedBN {
-  if (value === '') {
-    return DefaultTNormalizedBN
-  }
-
-  let amount = value
-    .replace(/,/g, '.')
-    .replace(/[^0-9.]/g, '')
-    .replace(/(\..*)\./g, '$1')
-  if (amount.startsWith('.')) {
-    amount = '0' + amount
-  }
-
-  const amountParts = amount.split('.')
-  if (amountParts.length === 2) {
-    amount = amountParts[0] + '.' + amountParts[1].slice(0, decimals)
-  }
-
-  const raw = parseUnits(amount || '0', decimals || 18)
-  return { raw: raw, normalized: Number(amount || 0), display: amount }
-}
