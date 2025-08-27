@@ -152,7 +152,7 @@ function ListOfVaults(): ReactElement {
       const strategyNames = vault.strategies?.map((strategy) => strategy.name).join(' ') || ''
       const strategyAddresses = vault.strategies?.map((strategy) => strategy.address).join(' ') || ''
       const vaultInfoString =
-        `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${strategyNames} ${strategyAddresses}`
+        `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address} ${strategyNames} ${strategyAddresses}`
           .toLowerCase()
           .replaceAll('-', ' ')
           .replaceAll('_', ' ')
