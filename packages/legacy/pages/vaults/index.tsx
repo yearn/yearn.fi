@@ -149,15 +149,17 @@ function ListOfVaults(): ReactElement {
         return false
       }
 
-      // Create a normalized string containing all searchable vault properties
-      const vaultInfoString = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol}`
-        .toLowerCase()
-        .replaceAll('-', ' ')
-        .replaceAll('_', ' ')
-        .replaceAll('.', ' ')
-        .replaceAll(',', ' ')
-        .replaceAll('+', ' ')
-        .replaceAll('/', ' ')
+      const strategyNames = vault.strategies?.map((strategy) => strategy.name).join(' ') || ''
+      const strategyAddresses = vault.strategies?.map((strategy) => strategy.address).join(' ') || ''
+      const vaultInfoString =
+        `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${strategyNames} ${strategyAddresses}`
+          .toLowerCase()
+          .replaceAll('-', ' ')
+          .replaceAll('_', ' ')
+          .replaceAll('.', ' ')
+          .replaceAll(',', ' ')
+          .replaceAll('+', ' ')
+          .replaceAll('/', ' ')
 
       // More flexible matching based on search term count
       if (allSearchWords.length === 1) {
