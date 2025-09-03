@@ -10,7 +10,7 @@ type TVaultListEmpty = {
   currentChains: number[] | null
   onReset: () => void
   isLoading: boolean
-  defaultCategories?: string[]
+
   hiddenByFiltersCount?: number
   onShowAll?: () => void
 }

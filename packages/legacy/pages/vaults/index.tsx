@@ -199,7 +199,6 @@ function ListOfVaults(): ReactElement {
           currentCategories={types}
           currentChains={chains}
           onReset={onReset}
-          defaultCategories={ALL_VAULTS_CATEGORIES_KEYS}
         />
       )
     }

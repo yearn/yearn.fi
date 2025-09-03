@@ -2,6 +2,7 @@ import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@lib/types'
 import { useDeepCompareEffect, useMountEffect } from '@react-hookz/web'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
+import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/router'
 import { useCallback, useState } from 'react'
@@ -20,6 +21,7 @@ type TQueryArgs = {
   onChangeSortDirection: (value: TSortDirection | '') => void
   onChangeSortBy: (value: TPossibleSortBy | '') => void
   onReset: () => void
+  onResetFilters: () => void
 }
 function useQueryArguments(props: {
   defaultTypes?: string[]
@@ -347,6 +349,21 @@ function useQueryArguments(props: {
         }
       }
       router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
+    },
+    // Reset filters but keep the search
+    onResetFilters: (): void => {
+      setTypes(ALL_VAULTSV3_KINDS_KEYS)
+      setCategories(ALL_VAULTSV3_CATEGORIES_KEYS)
+      setChains(allChains)
+
+      const queryArgs: TDict<string | string[] | undefined> = {}
+      for (const key in router.query) {
+        if (key !== 'types' && key !== 'categories' && key !== 'chains') {
+          queryArgs[key] = router.query[key]
+        }
+      }
+      router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
+      console.log(queryArgs)
     }
   }
 }

@@ -152,7 +152,8 @@ function ListOfVaults(): ReactElement {
     onChangeChains,
     onChangeSortDirection,
     onChangeSortBy,
-    onReset
+    onReset,
+    onResetFilters
   } = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
     defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
@@ -320,13 +321,8 @@ function ListOfVaults(): ReactElement {
             currentCategories={types}
             currentChains={chains}
             onReset={onReset}
-            defaultCategories={ALL_VAULTSV3_KINDS_KEYS}
             hiddenByFiltersCount={hiddenByFiltersCount}
-            onShowAll={() => {
-              onChangeTypes(ALL_VAULTSV3_KINDS_KEYS)
-              // onChangeCategories(ALL_VAULTSV3_CATEGORIES_KEYS)
-              // onChangeChains([1, 137, 42161, 8453, 146, 747474])
-            }}
+            onShowAll={onResetFilters}
           />
         ]
       }
@@ -336,13 +332,11 @@ function ListOfVaults(): ReactElement {
     sortedVaultsToDisplay,
     isLoadingVaultList,
     initiallySkippedVaults,
-    // onChangeCategories,
     potentialSearchVaultsToDisplayAmount,
     totalActiveVaults.length,
-    // onChangeChains,
-    onChangeTypes,
     chains,
     categories,
+    onResetFilters,
     migratableVaults,
     getBalance,
     retiredVaults,
@@ -457,14 +451,7 @@ function ListOfVaults(): ReactElement {
                 <p className={'text-sm text-neutral-600'}>
                   {`${hiddenVaultsCount} vault${hiddenVaultsCount === 1 ? '' : 's'} hidden by filters`}
                 </p>
-                <Button
-                  className={'h-8 px-3 text-xs'}
-                  onClick={() => {
-                    onChangeTypes(ALL_VAULTSV3_KINDS_KEYS)
-                    // onChangeCategories(ALL_VAULTSV3_CATEGORIES_KEYS)
-                    // onChangeChains([1, 137, 42161, 8453, 146, 747474])
-                  }}
-                >
+                <Button className={'h-8 px-3 text-xs'} onClick={onResetFilters}>
                   {'Show all'}
                 </Button>
               </div>

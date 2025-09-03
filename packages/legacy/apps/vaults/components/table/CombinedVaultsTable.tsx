@@ -42,7 +42,6 @@ function mapToCombinedVaultList(
           currentCategories={[]}
           currentChains={[]}
           onReset={onReset}
-          defaultCategories={ALL_VAULTSV3_KINDS_KEYS}
         />
       ]
     }
