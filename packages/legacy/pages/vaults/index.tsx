@@ -109,7 +109,7 @@ function ListOfVaults(): ReactElement {
     onChangeChains,
     onChangeSortDirection,
     onChangeSortBy,
-    onReset
+    onResetToDefaults
   } = useQueryArguments({
     defaultTypes: ALL_VAULTS_CATEGORIES_KEYS,
     defaultPathname: '/vaults'
@@ -198,7 +198,7 @@ function ListOfVaults(): ReactElement {
           currentSearch={search || ''}
           currentCategories={types}
           currentChains={chains}
-          onReset={onReset}
+          onReset={onResetToDefaults}
         />
       )
     }
@@ -222,7 +222,7 @@ function ListOfVaults(): ReactElement {
     }
 
     return [holdings, all]
-  }, [sortedVaultsToDisplay, isLoadingVaultList, chains, search, types, onReset, getBalance, getPrice])
+  }, [sortedVaultsToDisplay, isLoadingVaultList, chains, search, types, onResetToDefaults, getBalance, getPrice])
 
   const possibleLists = VaultList as [ReactNode, ReactNode]
   const hasHoldings = Children.count(possibleLists[0]) > 0

@@ -12,17 +12,14 @@ type TVaultListEmpty = {
   isLoading: boolean
 
   hiddenByFiltersCount?: number
-  onShowAll?: () => void
 }
 export function VaultsListEmpty({
   sortedVaultsToDisplay,
   currentSearch,
   currentCategories,
-  currentChains,
   onReset,
   isLoading,
-  hiddenByFiltersCount = 0,
-  onShowAll
+  hiddenByFiltersCount = 0
 }: TVaultListEmpty): ReactNode {
   if (isLoading && isZero(sortedVaultsToDisplay.length)) {
     return (
@@ -77,25 +74,14 @@ export function VaultsListEmpty({
 
         {/* Action button - "Show all" when there are hidden vaults, otherwise reset */}
         {(hasHiddenVaults || !hasSearch) && (
-          <Button className={'mt-4 w-full md:w-48'} onClick={hasHiddenVaults ? onShowAll || onReset : onReset}>
-            {hasHiddenVaults ? 'Show all' : 'Search all vaults'}
+          <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
+            {'Show all'}
           </Button>
         )}
       </div>
     )
   }
-  if (!isLoading && currentChains && currentChains.length > 0) {
-    return (
-      <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
-        <b className={'text-center text-lg'}>{'No data found'}</b>
 
-        <p className={'text-center text-neutral-600'}>{'Please, select a chain. At least one, just one.'}</p>
-        <Button className={'w-full md:w-48'} onClick={onReset}>
-          {'Search all vaults'}
-        </Button>
-      </div>
-    )
-  }
   return <div />
 }
 

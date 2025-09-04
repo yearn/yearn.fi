@@ -152,8 +152,7 @@ function ListOfVaults(): ReactElement {
     onChangeChains,
     onChangeSortDirection,
     onChangeSortBy,
-    onReset,
-    onResetFilters
+    onResetToAll
   } = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
     defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
@@ -203,21 +202,21 @@ function ListOfVaults(): ReactElement {
     return filtered
   }, [activeVaults, search])
 
-  const potentialSearchVaultsToDisplayAmount = useMemo((): number => {
-    if (!search) {
-      return totalActiveVaults.length
-    }
+  // const potentialSearchVaultsToDisplayAmount = useMemo((): number => {
+  //   if (!search) {
+  //     return totalActiveVaults.length
+  //   }
 
-    let searchRegex: RegExp
-    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    searchRegex = new RegExp(escapedSearch, 'i')
+  //   let searchRegex: RegExp
+  //   const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  //   searchRegex = new RegExp(escapedSearch, 'i')
 
-    const filtered = totalActiveVaults.filter((vault: TYDaemonVault): boolean => {
-      const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
-      return searchRegex.test(searchableText)
-    })
-    return filtered.length
-  }, [totalActiveVaults, search])
+  //   const filtered = totalActiveVaults.filter((vault: TYDaemonVault): boolean => {
+  //     const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
+  //     return searchRegex.test(searchableText)
+  //   })
+  //   return filtered.length
+  // }, [totalActiveVaults, search])
   /**********************************************************************************************
    **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
    **	is done via a custom method that will sort the vaults based on the sortBy and
@@ -306,9 +305,8 @@ function ListOfVaults(): ReactElement {
 
     const shouldShowEmptyState =
       isLoadingVaultList || !chains || chains.length === 0 || (isZero(holdings.length) && isZero(all.length)) // Show empty if no holdings and no other active vaults
-    const hiddenByFiltersCount = search
-      ? potentialSearchVaultsToDisplayAmount
-      : totalActiveVaults.length - (all.length + holdings.length) - initiallySkippedVaults.length
+    const hiddenByFiltersCount =
+      totalActiveVaults.length - (all.length + holdings.length) - initiallySkippedVaults.length
 
     if (shouldShowEmptyState) {
       return {
@@ -320,9 +318,8 @@ function ListOfVaults(): ReactElement {
             currentSearch={search || ''}
             currentCategories={types}
             currentChains={chains}
-            onReset={onReset}
+            onReset={onResetToAll}
             hiddenByFiltersCount={hiddenByFiltersCount}
-            onShowAll={onResetFilters}
           />
         ]
       }
@@ -332,18 +329,16 @@ function ListOfVaults(): ReactElement {
     sortedVaultsToDisplay,
     isLoadingVaultList,
     initiallySkippedVaults,
-    potentialSearchVaultsToDisplayAmount,
     totalActiveVaults.length,
     chains,
     categories,
-    onResetFilters,
+    onResetToAll,
     migratableVaults,
     getBalance,
     retiredVaults,
     getPrice,
     search,
-    types,
-    onReset
+    types
   ])
 
   const hiddenVaultsCount = VaultList.hiddenByFiltersCount ?? 0
@@ -440,23 +435,18 @@ function ListOfVaults(): ReactElement {
         <div className={'grid gap-4'}>{renderVaultList()}</div>
 
         {/* Hidden vaults badge - show only when vaults are displayed (not in empty state) */}
-        {!search &&
-          hiddenVaultsCount > 0 &&
-          !isLoadingVaultList &&
-          chains &&
-          chains.length > 0 &&
-          VaultList.list.length !== 1 && (
-            <div className={'mt-6 flex items-center justify-center'}>
-              <div className={'flex items-center gap-2 rounded-lg bg-neutral-200 px-4 py-2'}>
-                <p className={'text-sm text-neutral-600'}>
-                  {`${hiddenVaultsCount} vault${hiddenVaultsCount === 1 ? '' : 's'} hidden by filters`}
-                </p>
-                <Button className={'h-8 px-3 text-xs'} onClick={onResetFilters}>
-                  {'Show all'}
-                </Button>
-              </div>
+        {hiddenVaultsCount > 0 && !isLoadingVaultList && chains && chains.length > 0 && VaultList.list.length !== 1 && (
+          <div className={'mt-6 flex items-center justify-center'}>
+            <div className={'flex items-center gap-2 rounded-lg bg-neutral-200 px-4 py-2'}>
+              <p className={'text-sm text-neutral-600'}>
+                {`${hiddenVaultsCount} vault${hiddenVaultsCount === 1 ? '' : 's'} hidden by filters`}
+              </p>
+              <Button className={'h-8 px-3 text-xs'} onClick={onResetToAll}>
+                {'Show all'}
+              </Button>
             </div>
-          )}
+          </div>
+        )}
       </div>
     </Fragment>
   )

@@ -83,7 +83,7 @@ function CombinedVaultsTable(): ReactElement {
     onChangeSortBy: onChangeSortByV3,
     onSearch,
     onChangeChains,
-    onReset
+    onResetToDefaults
   } = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
     defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
@@ -159,7 +159,7 @@ function CombinedVaultsTable(): ReactElement {
   )
 
   // Setup pagination
-  const vaultList = mapToCombinedVaultList(sortedVaults, isLoadingVaultList, onReset)
+  const vaultList = mapToCombinedVaultList(sortedVaults, isLoadingVaultList, onResetToDefaults)
   const totalVaults = vaultList.allVaults.length
 
   // Reset pagination when search results change
