@@ -8,6 +8,7 @@ import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useChainOptions } from '@lib/hooks/useChains'
 import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
+import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import { IconChain } from '@lib/icons/IconChain'
 import type { TSortDirection } from '@lib/types'
 import { toAddress, toNormalizedBN } from '@lib/utils'
@@ -114,6 +115,10 @@ function ListOfVaults(): ReactElement {
     defaultTypes: ALL_VAULTS_CATEGORIES_KEYS,
     defaultPathname: '/vaults'
   })
+
+  const allChains = useSupportedChains().map((chain): number => chain.id)
+  const { activeVaults: totalActiveVaults } = useVaultFilter(ALL_VAULTS_CATEGORIES_KEYS, allChains)
+
   const { activeVaults, migratableVaults, retiredVaults } = useVaultFilter(types, chains)
   const [page, setPage] = useState(0)
   const chainOptions = useChainOptions(chains)
@@ -187,20 +192,26 @@ function ListOfVaults(): ReactElement {
 
   const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection)
 
-  const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
+  const VaultList = useMemo((): { hiddenByFiltersCount?: number; list: ReactNode[] } => {
     const filteredByChains = sortedVaultsToDisplay.filter(({ chainID }): boolean => chains?.includes(chainID) || false)
 
+    const hiddenByFiltersCount = totalActiveVaults.length - filteredByChains.length
+
     if (isLoadingVaultList || !chains || chains.length === 0) {
-      return (
-        <VaultsListEmpty
-          isLoading={isLoadingVaultList}
-          sortedVaultsToDisplay={filteredByChains}
-          currentSearch={search || ''}
-          currentCategories={types}
-          currentChains={chains}
-          onReset={onResetToDefaults}
-        />
-      )
+      return {
+        list: [
+          <VaultsListEmpty
+            key="empty"
+            isLoading={isLoadingVaultList}
+            sortedVaultsToDisplay={filteredByChains}
+            currentSearch={search || ''}
+            currentCategories={types}
+            currentChains={chains}
+            onReset={onResetToDefaults}
+            hiddenByFiltersCount={hiddenByFiltersCount}
+          />
+        ]
+      }
     }
 
     const holdings: ReactNode[] = []
@@ -221,12 +232,41 @@ function ListOfVaults(): ReactElement {
       all.push(<VaultsListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />)
     }
 
-    return [holdings, all]
-  }, [sortedVaultsToDisplay, isLoadingVaultList, chains, search, types, onResetToDefaults, getBalance, getPrice])
+    // Check if we should show empty state
+    if (holdings.length === 0 && all.length === 0) {
+      return {
+        list: [
+          <VaultsListEmpty
+            key="empty"
+            isLoading={false}
+            sortedVaultsToDisplay={filteredByChains}
+            currentSearch={search || ''}
+            currentCategories={types}
+            currentChains={chains}
+            onReset={onResetToDefaults}
+            hiddenByFiltersCount={hiddenByFiltersCount}
+          />
+        ]
+      }
+    }
 
-  const possibleLists = VaultList as [ReactNode, ReactNode]
-  const hasHoldings = Children.count(possibleLists[0]) > 0
-  const totalVaults = Children.count(possibleLists[1])
+    return { hiddenByFiltersCount, list: [holdings, all] }
+  }, [
+    sortedVaultsToDisplay,
+    isLoadingVaultList,
+    chains,
+    search,
+    types,
+    onResetToDefaults,
+    getBalance,
+    getPrice,
+    totalActiveVaults.length
+  ])
+
+  const hiddenVaultsCount = VaultList.hiddenByFiltersCount ?? 0
+  const possibleLists = VaultList.list
+  const hasHoldings = possibleLists.length > 1 ? Children.count(possibleLists[0]) > 0 : false
+  const totalVaults = possibleLists.length > 1 ? Children.count(possibleLists[1]) : 0
   const pageSize = 20
 
   /* 🔵 - Yearn Finance **************************************************************************
@@ -286,18 +326,25 @@ function ListOfVaults(): ReactElement {
       />
 
       <div className={'grid gap-0'}>
-        {hasHoldings && (
-          <div className={'relative grid h-fit'}>
-            <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
-              &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
-            </p>
-            {possibleLists[0]}
-          </div>
+        {possibleLists.length === 1 ? (
+          // Empty state
+          possibleLists[0]
+        ) : (
+          <>
+            {hasHoldings && (
+              <div className={'relative grid h-fit'}>
+                <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
+                  &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
+                </p>
+                {possibleLists[0]}
+              </div>
+            )}
+            {Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[1]) > 0 ? (
+              <div className={'h-1 rounded-lg bg-neutral-200'} />
+            ) : null}
+            {((possibleLists[1] || []) as ReactNode[]).slice(page * pageSize, (page + 1) * pageSize)}
+          </>
         )}
-        {Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[1]) > 0 ? (
-          <div className={'h-1 rounded-lg bg-neutral-200'} />
-        ) : null}
-        {((possibleLists[1] || []) as ReactNode[]).slice(page * pageSize, (page + 1) * pageSize)}
       </div>
 
       <div className={'mt-4'}>
@@ -311,6 +358,24 @@ function ListOfVaults(): ReactElement {
           />
         </div>
       </div>
+
+      {/* Hidden vaults notice - show only when vaults are displayed (not in empty state) */}
+      {hiddenVaultsCount > 0 && !isLoadingVaultList && chains && chains.length > 0 && possibleLists.length > 1 && (
+        <div className={'border-t border-neutral-200/60 px-4 py-4'}>
+          <div className={'flex ml-3 items-center justify-between'}>
+            <p className={'text-sm text-neutral-500'}>
+              {`${hiddenVaultsCount} vault${hiddenVaultsCount === 1 ? '' : 's'} hidden by filters`}
+            </p>
+            <Button
+              className={'!h-8 !px-4 !py-1 !text-xs !rounded-none'}
+              variant={'outlined'}
+              onClick={onResetToDefaults}
+            >
+              {'Show all'}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
