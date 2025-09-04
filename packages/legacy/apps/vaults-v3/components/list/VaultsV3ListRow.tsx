@@ -9,7 +9,7 @@ import type { TNormalizedBN } from '@lib/types'
 import { cl, formatAmount, isZero, toAddress, toNormalizedBN } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { getNetwork, katana } from '@lib/utils/wagmi/utils'
+import { getNetwork } from '@lib/utils/wagmi/utils'
 import Link from 'next/link'
 
 import type { ReactElement } from 'react'
