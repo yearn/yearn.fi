@@ -9,7 +9,7 @@ import type { TNormalizedBN } from '@lib/types'
 import { cl, formatAmount, isZero, toAddress, toNormalizedBN } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { getNetwork } from '@lib/utils/wagmi/utils'
+import { getNetwork, katana } from '@lib/utils/wagmi/utils'
 import Link from 'next/link'
 
 import type { ReactElement } from 'react'
@@ -21,10 +21,17 @@ type TAPYSublineProps = {
   hasPendleArbRewards: boolean
   hasKelpNEngenlayer: boolean
   hasKelp: boolean
-  isKatana?: boolean
+  isEligibleForSteer?: boolean
+  steerPointsPerDollar?: number
 }
 
-function APYSubline({ hasPendleArbRewards, hasKelpNEngenlayer, hasKelp, isKatana }: TAPYSublineProps): ReactElement {
+function APYSubline({
+  hasPendleArbRewards,
+  hasKelpNEngenlayer,
+  hasKelp,
+  isEligibleForSteer,
+  steerPointsPerDollar
+}: TAPYSublineProps): ReactElement {
   if (hasKelpNEngenlayer) {
     return (
       <small className={cl('whitespace-nowrap text-xs text-neutral-500 self-end -mb-1')}>
@@ -44,7 +51,7 @@ function APYSubline({ hasPendleArbRewards, hasKelpNEngenlayer, hasKelp, isKatana
       <small className={cl('whitespace-nowrap text-xs text-neutral-500 self-end -mb-1')}>{'+ 2500 ARB/week'}</small>
     )
   }
-  if (isKatana) {
+  if (isEligibleForSteer) {
     return (
       <span className={'tooltip'}>
         <small
@@ -61,7 +68,9 @@ function APYSubline({ hasPendleArbRewards, hasKelpNEngenlayer, hasKelp, isKatana
             }
           >
             <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
-              {'This vault earns Steer Points / dollar deposited, but you must '}
+              {'This vault earns '}
+              {formatAmount(steerPointsPerDollar ?? 0, 2, 2)}
+              {' Steer Points / dollar deposited, but you must '}
               <a
                 href={'https://app.steer.finance/points'}
                 target={'_blank'}
@@ -383,6 +392,9 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
     [shouldUseKatanaAPRs, katanaAprs, currentVault.address]
   )
 
+  const isEligibleForSteer =
+    katanaAprData?.steerPointsPerDollar !== undefined && katanaAprData?.steerPointsPerDollar > 0
+
   const totalAPR = useMemo(() => {
     if (!katanaAprData) return 0
     // Exclude legacy katanaRewardsAPR to avoid double counting with katanaAppRewardsAPR
@@ -417,7 +429,13 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
             currentVault={currentVault}
           />
         </span>
-        <APYSubline hasPendleArbRewards={false} hasKelpNEngenlayer={false} hasKelp={false} isKatana={true} />
+        <APYSubline
+          hasPendleArbRewards={false}
+          hasKelpNEngenlayer={false}
+          hasKelp={false}
+          isEligibleForSteer={isEligibleForSteer}
+          steerPointsPerDollar={katanaAprData?.steerPointsPerDollar}
+        />
       </div>
     )
   }
