@@ -438,7 +438,7 @@ function ListOfVaults(): ReactElement {
         {/* Hidden vaults badge - show only when vaults are displayed (not in empty state) */}
         {hiddenVaultsCount > 0 && !isLoadingVaultList && chains && chains.length > 0 && VaultList.list.length !== 1 && (
           <div className={'mt-6 flex items-center justify-center'}>
-            <div className={'flex items-center gap-2 rounded-[18px] bg-neutral-200 p-3'}>
+            <div className={'flex items-center gap-4 rounded-[18px] bg-neutral-200 px-6 py-3'}>
               <p className={'text-sm text-neutral-600'}>
                 {`${hiddenVaultsCount} vault${hiddenVaultsCount === 1 ? '' : 's'} hidden by filters`}
               </p>
