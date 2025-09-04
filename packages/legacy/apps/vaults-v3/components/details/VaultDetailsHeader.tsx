@@ -66,12 +66,14 @@ function VaultHeaderLineItem({ label, children, legend }: TVaultHeaderLineItemPr
 function VaultAPY({
   apr,
   source,
-  katanaExtras
+  katanaExtras,
+  currentVault
 }: {
   apr: TYDaemonVault['apr']
   source: string
   chain: number
   katanaExtras?: TKatanaAprData
+  currentVault: TYDaemonVault
 }): ReactElement {
   const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
   const monthlyAPY = apr.points.monthAgo
@@ -96,8 +98,10 @@ function VaultAPY({
               fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards}
               katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR}
               katanaBonusAPR={katanaExtras.katanaBonusAPY}
+              steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
+              currentVault={currentVault}
               position="top"
-              maxWidth="min-w-[280px] max-w-[320px] w-max"
+              maxWidth="w-max"
             />
           </span>
         }
@@ -767,6 +771,7 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
             source={currentVault.staking.source}
             chain={currentVault.chainID}
             katanaExtras={katanaAprData}
+            currentVault={currentVault}
           />
         </div>
 

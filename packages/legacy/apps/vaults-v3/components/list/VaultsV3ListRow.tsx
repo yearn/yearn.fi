@@ -21,12 +21,13 @@ type TAPYSublineProps = {
   hasPendleArbRewards: boolean
   hasKelpNEngenlayer: boolean
   hasKelp: boolean
+  isKatana?: boolean
 }
 
-function APYSubline({ hasPendleArbRewards, hasKelpNEngenlayer, hasKelp }: TAPYSublineProps): ReactElement {
+function APYSubline({ hasPendleArbRewards, hasKelpNEngenlayer, hasKelp, isKatana }: TAPYSublineProps): ReactElement {
   if (hasKelpNEngenlayer) {
     return (
-      <small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
+      <small className={cl('whitespace-nowrap text-xs text-neutral-500 self-end -mb-1')}>
         {'+1x Kelp Miles'}
         <br />
         {'+1x EigenLayer Points'}
@@ -35,16 +36,46 @@ function APYSubline({ hasPendleArbRewards, hasKelpNEngenlayer, hasKelp }: TAPYSu
   }
   if (hasKelp) {
     return (
-      <small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
-        {'+ 1x Kelp Miles'}
-      </small>
+      <small className={cl('whitespace-nowrap text-xs text-neutral-500 self-end -mb-1')}>{'+ 1x Kelp Miles'}</small>
     )
   }
   if (hasPendleArbRewards) {
     return (
-      <small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
-        {'+ 2500 ARB/week'}
-      </small>
+      <small className={cl('whitespace-nowrap text-xs text-neutral-500 self-end -mb-1')}>{'+ 2500 ARB/week'}</small>
+    )
+  }
+  if (isKatana) {
+    return (
+      <span className={'tooltip'}>
+        <small
+          className={cl(
+            'whitespace-nowrap text-xs text-neutral-500 self-end -mb-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+          )}
+        >
+          {'Eligible for Steer Points'}
+        </small>
+        <span className={'tooltipLight top-full left-4 '}>
+          <div
+            className={
+              'font-number min-w-[360px] rounded-xl border border-neutral-300 bg-neutral-100 p-4 pb-1 text-center text-xxs text-neutral-900'
+            }
+          >
+            <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
+              {'This vault earns Steer Points / dollar deposited, but you must '}
+              <a
+                href={'https://app.steer.finance/points'}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'font-bold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 hover:decoration-neutral-600'
+                }
+              >
+                {'register here to earn them.'}
+              </a>
+            </p>
+          </div>
+        </span>
+      </span>
     )
   }
   return <Fragment />
@@ -167,105 +198,170 @@ export function KatanaApyTooltip(props: {
   fixedRateKatanRewardsAPR: number
   katanaAppRewardsAPR: number
   katanaBonusAPR: number
+  steerPointsPerDollar?: number
   position?: 'bottom' | 'top'
   maxWidth?: string
+  currentVault: TYDaemonVault
 }): ReactElement {
   const position = props.position || 'bottom'
-  const positionClass = position === 'bottom' ? 'bottom-full mb-1' : 'top-full mt-1'
-  const maxWidth = props.maxWidth || 'min-w-[280px] w-max'
+  const positionClass = position === 'bottom' ? 'bottom-full' : 'top-full '
+  const maxWidth = props.maxWidth || 'min-w-[360px] w-max'
 
   return (
     <span className={`tooltipLight ${positionClass}`}>
       <div
-        className={`font-number ${maxWidth} border border-neutral-300 bg-neutral-100 p-1 px-3 text-center text-xxs text-neutral-900`}
+        className={`${maxWidth} border border-neutral-300 bg-neutral-100 p-6 text-center text-xxs text-neutral-900 rounded-2xl`}
       >
         <div className={'flex flex-col items-start justify-start text-left'}>
           {/* Group 1: Native APY */}
           <p
             className={
-              'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-xs text-bold'
+              'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm text-bold pb-2'
             }
           >
             {'Native APY'}
           </p>
           <div
             className={
-              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
+              'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-sm text-bold pb-2'
             }
           >
-            <p>{'• Extrinsic Yield '}</p>
+            <div className={'flex flex-row items-center space-x-2'}>
+              <ImageWithFallback
+                src={`${process.env.BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
+                alt={''}
+                width={16}
+                height={16}
+              />
+              <p>{'Extrinsic Yield '}</p>
+            </div>
             <RenderAmount shouldHideTooltip value={props.extrinsicYield} symbol={'percent'} decimals={6} />
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
             {'Yield Earned from underlying bridged assets'}
           </p>
 
           <div
             className={
-              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
+              'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-sm text-bold pb-2'
             }
           >
-            <p>{'• Katana APY '}</p>
+            <div className={'flex flex-row items-center space-x-2'}>
+              <ImageWithFallback
+                src={`${process.env.BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
+                alt={''}
+                width={16}
+                height={16}
+              />
+              <p>{'Katana APY '}</p>
+            </div>
             <RenderAmount shouldHideTooltip value={props.katanaNativeYield} symbol={'percent'} decimals={6} />
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
             {'Yield Earned on Katana'}
           </p>
 
-          <p
-            className={
-              'mb-2 w-full text-left text-[10px] italic text-xs text-neutral-400 break-words whitespace-normal'
-            }
-          >
+          <p className={'mb-2 w-full text-left text-xs italic text-neutral-500 break-words whitespace-normal'}>
             {'*This yield is guaranteed but may be paid in KAT tokens if actual rates are lower.'}
           </p>
 
           {/* Divider */}
-          <div className={'my-1 h-px w-full bg-neutral-300/60'} />
+          <div className={'my-2 h-px w-full bg-neutral-300/60'} />
 
           {/* Group 2: Rewards APR */}
           <p
             className={
-              'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-xs text-bold'
+              'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm text-bold '
             }
           >
             {'Rewards APR'}
           </p>
           <div
             className={
-              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
+              'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-sm text-bold pb-2'
             }
           >
-            <p>{'• Base Rewards APR '}</p>
+            <div className={'flex flex-row items-center space-x-2'}>
+              <ImageWithFallback
+                src={`${process.env.BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
+                alt={''}
+                width={16}
+                height={16}
+              />
+              <p>{'Base Rewards APR '}</p>
+            </div>
             <RenderAmount shouldHideTooltip value={props.fixedRateKatanRewardsAPR} symbol={'percent'} decimals={6} />
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
             {'Limited time fixed KAT rewards'}
           </p>
 
           <div
             className={
-              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
+              'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-sm text-bold pb-2'
             }
           >
-            <p>{'• App Rewards APR '}</p>
+            <div className={'flex flex-row items-center space-x-2'}>
+              <ImageWithFallback
+                src={`${process.env.BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
+                alt={''}
+                width={16}
+                height={16}
+              />
+              <p>{'App Rewards APR '}</p>
+            </div>
             <RenderAmount shouldHideTooltip value={props.katanaAppRewardsAPR} symbol={'percent'} decimals={6} />
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-400 break-words'}>
+          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
             {'Kat Rewards passed through from Apps'}
           </p>
-
           <div
             className={
-              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-xs text-bold'
+              'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700/35 md:text-sm text-bold pb-2'
             }
           >
-            <p>{'• Deposit Bonus APR '}</p>
+            <div className={'flex flex-row items-center space-x-2'}>
+              <ImageWithFallback
+                src={`${process.env.BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
+                alt={''}
+                width={16}
+                height={16}
+              />
+              <p>{'Deposit Bonus APR '}</p>
+            </div>
             <RenderAmount shouldHideTooltip value={props.katanaBonusAPR} symbol={'percent'} decimals={6} />
           </div>
-          <p className={'-mt-1 mb-0 w-full text-left text-xs text-neutral-400 break-words'}>
-            {'If you hold for 90 days'}
+          <p className={'-mt-1 mb-0 w-full text-left text-xs text-neutral-700/35 break-words'}>
+            {'Applied if you deposited before Sept. 1st and hold for 90 days'}
           </p>
+          {/* Steer Points (metadata, not part of APR) */}
+          {props.steerPointsPerDollar && props.steerPointsPerDollar > 0 ? (
+            <>
+              <div className={'my-2 h-px w-full bg-neutral-300/60'} />
+              <p
+                className={
+                  'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm text-bold pb-2'
+                }
+              >
+                {'Steer Points'}
+              </p>
+              <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
+                {'This vault earns '}
+                {formatAmount(props.steerPointsPerDollar, 2, 2)}
+                {' Steer Points / dollar deposited, but you must '}
+                <a
+                  href={'https://app.steer.finance/points'}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className={
+                    'font-bold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 hover:decoration-neutral-600'
+                  }
+                >
+                  {'register here to earn them.'}
+                </a>
+              </p>
+            </>
+          ) : null}
         </div>
       </div>
     </span>
@@ -290,7 +386,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
   const totalAPR = useMemo(() => {
     if (!katanaAprData) return 0
     // Exclude legacy katanaRewardsAPR to avoid double counting with katanaAppRewardsAPR
-    const { katanaRewardsAPR: _katanaRewardsAPR, ...relevantAprs } = katanaAprData
+    const { katanaRewardsAPR: _katanaRewardsAPR, steerPointsPerDollar: _points, ...relevantAprs } = katanaAprData
     return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
   }, [katanaAprData])
 
@@ -298,7 +394,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
   if (shouldUseKatanaAPRs && katanaAprData) {
     return (
       <div className={'relative flex flex-col items-end md:text-right'}>
-        <span className={'tooltip'}>
+        <span className={'tooltip w-full'}>
           <b className={'yearn--table-data-section-item-value'}>
             <Renderable shouldRender={true} fallback={'NEW'}>
               {'⚔️ '}
@@ -317,9 +413,11 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
             fixedRateKatanRewardsAPR={katanaAprData.FixedRateKatanaRewards}
             katanaAppRewardsAPR={katanaAprData.katanaAppRewardsAPR}
             katanaBonusAPR={katanaAprData.katanaBonusAPY}
+            steerPointsPerDollar={katanaAprData?.steerPointsPerDollar}
+            currentVault={currentVault}
           />
         </span>
-        {/* <APYSubline hasPendleArbRewards={hasPendleArbRewards} hasKelpNEngenlayer={hasKelpNEngenlayer} hasKelp={hasKelp} /> */}
+        <APYSubline hasPendleArbRewards={false} hasKelpNEngenlayer={false} hasKelp={false} isKatana={true} />
       </div>
     )
   }

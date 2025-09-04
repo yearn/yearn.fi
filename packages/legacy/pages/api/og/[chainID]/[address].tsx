@@ -67,6 +67,7 @@ type TKatanaAprData = {
   katanaBonusAPY: number // bonus APR from Katana for not leaving the vault
   extrinsicYield: number // yield from underlying assets in bridge
   katanaNativeYield: number // yield from katana markets (the netAPR). This is subsidized if low.
+  steerPointsPerDollar?: number // points per dollar from APR oracle (metadata, not part of APR sum).
 }
 
 type TKatanaAprs = {
@@ -232,7 +233,7 @@ async function fetchYBoldApr(chainID: string): Promise<{ estimatedAPY: number; h
 
 function calculateKatanaAPY(katanaAprData: TKatanaAprData): number {
   // Exclude legacy katanaRewardsAPR to avoid double counting with katanaAppRewardsAPR
-  const { katanaRewardsAPR: _katanaRewardsAPR, ...relevantAprs } = katanaAprData
+  const { katanaRewardsAPR: _katanaRewardsAPR, steerPointsPerDollar: _points, ...relevantAprs } = katanaAprData
   return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
 }
 
