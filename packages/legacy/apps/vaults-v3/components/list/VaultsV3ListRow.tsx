@@ -397,7 +397,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
 
   const totalAPR = useMemo(() => {
     if (!katanaAprData) return 0
-    // Exclude legacy katanaRewardsAPR to avoid double counting with katanaAppRewardsAPR
+    // Exclude legacy katanaRewardsAPR, bonus APR, and points
     const {
       katanaRewardsAPR: _katanaRewardsAPR,
       katanaBonusAPY: _bonus,

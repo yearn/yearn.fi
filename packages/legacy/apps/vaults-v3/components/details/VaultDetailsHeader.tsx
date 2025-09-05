@@ -84,13 +84,10 @@ function VaultAPY({
 
   const katanaNetAPY = useMemo(() => {
     if (!katanaExtras) return 0
-    // Exclude legacy katanaRewardsAPR and non-APR "steerPointsPerDollar" from totals
+    // Exclude legacy katanaRewardsAPR, bonusAPR, and non-APR "steerPointsPerDollar" from totals
     const {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       katanaRewardsAPR: _katanaRewardsAPR,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       steerPointsPerDollar: _points,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       katanaBonusAPY: _bonus,
       ...relevantAprs
     } = katanaExtras ?? {}
