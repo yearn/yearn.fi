@@ -32,6 +32,7 @@ import { V3_STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/V3StakingRewards.ab
 import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
 import { VEYFI_GAUGE_ABI } from '@vaults-v2/utils/abi/veYFIGauge.abi'
 import { KatanaApyTooltip } from '@vaults-v3/components/table/KatanaApyTooltip'
+import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { erc20Abi, zeroAddress } from 'viem'
@@ -449,7 +450,7 @@ function ValueEarned(props: {
 
 export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { address } = useWeb3()
-  const { getPrice, katanaAprs } = useYearn()
+  const { getPrice } = useYearn()
   const { data: blockNumber } = useBlockNumber({ watch: true })
   const { apr, tvl, decimals, symbol = 'token' } = currentVault
   const [vaultData, setVaultData] = useState({
@@ -461,28 +462,12 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
     earnedValue: 0
   })
 
-  // Override for Katana
-  const shouldUseKatanaAPRs = currentVault.chainID === 747474
-
-  const katanaAprData = useMemo(
-    () =>
-      shouldUseKatanaAPRs
-        ? (katanaAprs?.[toAddress(currentVault.address)]?.apr?.extra as TKatanaAprData | undefined)
-        : undefined,
-    [shouldUseKatanaAPRs, katanaAprs, currentVault.address]
-  )
-
-  const totalAPR = useMemo(
-    () => (katanaAprData ? Object.values(katanaAprData).reduce((sum, value) => sum + value, 0) : 0),
-    [katanaAprData]
-  )
+  const apyData = useVaultApyData(currentVault)
 
   const displayApr = useMemo((): TYDaemonVault['apr'] => {
-    if (!katanaAprData) return apr
-    // Override netAPR with the calculated totalAPR from Katana data
-    const overrideNetAPR = totalAPR
-    return { ...apr, netAPR: overrideNetAPR }
-  }, [apr, katanaAprData, totalAPR])
+    if (apyData.katanaTotalApr === undefined) return apr
+    return { ...apr, netAPR: apyData.katanaTotalApr }
+  }, [apr, apyData.katanaTotalApr])
 
   const tokenPrice =
     useYearnTokenPrice({
@@ -794,7 +779,7 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
             apr={displayApr}
             source={currentVault.staking.source}
             chain={currentVault.chainID}
-            katanaExtras={katanaAprData}
+            katanaExtras={apyData.katanaExtras}
             currentVault={currentVault}
           />
         </div>

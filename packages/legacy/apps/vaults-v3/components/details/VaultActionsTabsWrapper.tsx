@@ -30,6 +30,7 @@ import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/action
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
 import { useRouter } from 'next/router'
+import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
 import type { ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useBlockNumber, useReadContract } from 'wagmi'
@@ -496,7 +497,7 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
 
   return (
     <>
-      {currentVault?.chainID === 747474 && (
+      {currentVault?.chainID === KATANA_CHAIN_ID && (
         <div aria-label={'Rewards Claim Notification'} className={'col-span-12 mt-10'}>
           <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
             <div>

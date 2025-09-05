@@ -3,7 +3,8 @@ import { RenderAmount } from '@lib/components/RenderAmount'
 import { IconLinkOut } from '@lib/icons/IconLinkOut'
 import { cl, isZero, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { getNetwork } from '@lib/utils/wagmi/utils'
+ 
+import { getExplorerAddressUrl } from '@vaults-v3/utils/explorer'
 import { VaultForwardAPY } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
@@ -57,11 +58,7 @@ export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault 
                   type={'button'}
                   onClick={(event): void => {
                     event.stopPropagation()
-                    window.open(
-                      `${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${currentVault.address}`,
-                      '_blank',
-                      'noopener,noreferrer'
-                    )
+                    window.open(getExplorerAddressUrl(currentVault.chainID, currentVault.address), '_blank', 'noopener,noreferrer')
                   }}
                   className={'text-neutral-900/50 transition-opacity hover:text-neutral-900 cursor-pointer'}
                 >
@@ -149,11 +146,7 @@ export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault 
             type={'button'}
             onClick={(event): void => {
               event.stopPropagation()
-              window.open(
-                `${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${currentVault.address}`,
-                '_blank',
-                'noopener,noreferrer'
-              )
+              window.open(getExplorerAddressUrl(currentVault.chainID, currentVault.address), '_blank', 'noopener,noreferrer')
             }}
             className={'text-neutral-900/50 transition-opacity hover:text-neutral-900 cursor-pointer'}
           >

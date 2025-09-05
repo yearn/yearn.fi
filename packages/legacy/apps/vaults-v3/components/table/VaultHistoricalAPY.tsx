@@ -1,12 +1,13 @@
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { Renderable } from '@lib/components/Renderable'
 import { isZero } from '@lib/utils'
+import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 
 export function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
-  // TEMPORARY HACK: Force 'NEW' APY for chainID 747474
-  const shouldUseKatanaAPRs = currentVault.chainID === 747474
+  // TEMPORARY HACK: Force 'NEW' APY for chainID KATANA
+  const shouldUseKatanaAPRs = currentVault.chainID === KATANA_CHAIN_ID
   const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
   const monthlyAPY = currentVault.apr.points.monthAgo
   const weeklyAPY = currentVault.apr.points.weekAgo
