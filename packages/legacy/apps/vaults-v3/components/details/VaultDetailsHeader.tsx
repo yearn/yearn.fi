@@ -82,6 +82,18 @@ function VaultAPY({
   const currentAPY = apr.forwardAPR.netAPR + extraAPY
   const isSourceVeYFI = source === 'VeYFI'
 
+  const katanaNetAPY = useMemo(() => {
+    if (!katanaExtras) return 0
+    // Exclude legacy katanaRewardsAPR, bonusAPR, and non-APR "steerPointsPerDollar" from totals
+    const {
+      katanaRewardsAPR: _katanaRewardsAPR,
+      steerPointsPerDollar: _points,
+      katanaBonusAPY: _bonus,
+      ...relevantAprs
+    } = katanaExtras ?? {}
+    return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
+  }, [katanaExtras])
+
   if (katanaExtras) {
     return (
       <VaultHeaderLineItem
@@ -107,7 +119,7 @@ function VaultAPY({
         }
       >
         <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
-          <RenderAmount value={netAPY} symbol={'percent'} decimals={6} />
+          <RenderAmount value={katanaNetAPY} symbol={'percent'} decimals={6} />
         </Renderable>
       </VaultHeaderLineItem>
     )
