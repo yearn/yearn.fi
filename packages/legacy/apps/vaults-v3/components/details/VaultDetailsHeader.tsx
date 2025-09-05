@@ -82,6 +82,23 @@ function VaultAPY({
   const currentAPY = apr.forwardAPR.netAPR + extraAPY
   const isSourceVeYFI = source === 'VeYFI'
 
+  const katanaNetAPY = useMemo(() => {
+    if (katanaExtras) {
+      // Exclude legacy katanaRewardsAPR and non-APR "steerPointsPerDollar" from totals
+      const {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        katanaRewardsAPR: _katanaRewardsAPR,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        steerPointsPerDollar: _points,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        katanaBonusAPY: _bonus,
+        ...relevantAprs
+      } = katanaExtras ?? {}
+      return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
+    }
+    return 0
+  }, [katanaExtras])
+
   if (katanaExtras) {
     return (
       <VaultHeaderLineItem
@@ -107,7 +124,7 @@ function VaultAPY({
         }
       >
         <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
-          <RenderAmount value={netAPY} symbol={'percent'} decimals={6} />
+          <RenderAmount value={katanaNetAPY} symbol={'percent'} decimals={6} />
         </Renderable>
       </VaultHeaderLineItem>
     )
@@ -140,32 +157,36 @@ function VaultAPY({
             <span className={'tooltipLight top-full mt-2'}>
               <div
                 className={
-                  'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+                  '-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'
                 }
               >
                 <p
                   className={
-                    'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
+                    'flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
                   }
                 >
                   {'Estimated APY for the next period based on current data.'}
                 </p>
                 <div
                   className={
-                    'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
+                    'flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
                   }
                 >
                   <p>{'• Base APY '}</p>
-                  <RenderAmount shouldHideTooltip value={apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                  <span className={'font-number'}>
+                    <RenderAmount shouldHideTooltip value={apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                  </span>
                 </div>
 
                 <div
                   className={
-                    'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+                    'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
                   }
                 >
                   <p>{'• Rewards APY '}</p>
-                  <RenderAmount shouldHideTooltip value={extraAPY} symbol={'percent'} decimals={6} />
+                  <span className={'font-number'}>
+                    <RenderAmount shouldHideTooltip value={extraAPY} symbol={'percent'} decimals={6} />
+                  </span>
                 </div>
               </div>
             </span>
@@ -206,35 +227,41 @@ function VaultAPY({
             <span className={'tooltipLight top-full mt-2'}>
               <div
                 className={
-                  'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+                  '-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'
                 }
               >
                 <p
                   className={
-                    'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
+                    'flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
                   }
                 >
                   {'Estimated APY for the next period based on current data.'}
                 </p>
                 <div
                   className={
-                    'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
+                    'flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
                   }
                 >
                   <p>{'• Base APY '}</p>
-                  <RenderAmount shouldHideTooltip value={apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                  <span className={'font-number'}>
+                    <RenderAmount shouldHideTooltip value={apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                  </span>
                 </div>
 
                 <div
                   className={
-                    'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+                    'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
                   }
                 >
                   <p>{'• Rewards APY '}</p>
                   <div>
-                    <RenderAmount shouldHideTooltip value={veYFIRange[0]} symbol={'percent'} decimals={6} />
+                    <span className={'font-number'}>
+                      <RenderAmount shouldHideTooltip value={veYFIRange[0]} symbol={'percent'} decimals={6} />
+                    </span>
                     &nbsp;&rarr;&nbsp;
-                    <RenderAmount shouldHideTooltip value={veYFIRange[1]} symbol={'percent'} decimals={6} />
+                    <span className={'font-number'}>
+                      <RenderAmount shouldHideTooltip value={veYFIRange[1]} symbol={'percent'} decimals={6} />
+                    </span>
                   </div>
                 </div>
               </div>
@@ -264,33 +291,35 @@ function VaultAPY({
           <span className={'tooltipLight top-full mt-2'}>
             <div
               className={
-                'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+                '-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'
               }
             >
               <p
                 className={
-                  'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
+                  'flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
                 }
               >
                 {'Estimated APY for the next period based on current data.'}
               </p>
               <div
                 className={
-                  'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
+                  'flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
                 }
               >
                 <p>{'• Base APY '}</p>
-                <RenderAmount
-                  shouldHideTooltip
-                  value={isZero(currentAPY) ? netAPY : currentAPY}
-                  symbol={'percent'}
-                  decimals={6}
-                />
+                <span className={'font-number'}>
+                  <RenderAmount
+                    shouldHideTooltip
+                    value={isZero(currentAPY) ? netAPY : currentAPY}
+                    symbol={'percent'}
+                    decimals={6}
+                  />
+                </span>
               </div>
 
               <div
                 className={
-                  'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+                  'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
                 }
               >
                 <p>{'• Rewards APY '}</p>
@@ -352,10 +381,10 @@ function ValueInVaultAsToken(props: {
           <span className={'tooltipLight top-full mt-2'}>
             <div
               className={
-                'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+                '-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'
               }
             >
-              <p className={'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
+              <p className={'flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
                 {'Your yield is accruing every single block. Go you!'}
               </p>
             </div>
@@ -400,10 +429,10 @@ function ValueEarned(props: {
           <span className={'tooltipLight top-full mt-2'}>
             <div
               className={
-                'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+                '-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'
               }
             >
-              <p className={'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
+              <p className={'flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
                 {'Your yield is accruing every single block. Go you!'}
               </p>
             </div>

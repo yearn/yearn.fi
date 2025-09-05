@@ -32,7 +32,12 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
   const totalAPR = useMemo(() => {
     if (!katanaAprData) return 0
     // Exclude legacy katanaRewardsAPR to avoid double counting with katanaAppRewardsAPR
-    const { katanaRewardsAPR: _katanaRewardsAPR, steerPointsPerDollar: _points, ...relevantAprs } = katanaAprData
+    const {
+      katanaRewardsAPR: _katanaRewardsAPR,
+      katanaBonusAPY: _bonus,
+      steerPointsPerDollar: _points,
+      ...relevantAprs
+    } = katanaAprData
     return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
   }, [katanaAprData])
 

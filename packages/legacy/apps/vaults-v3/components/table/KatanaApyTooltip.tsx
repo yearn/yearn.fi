@@ -22,7 +22,7 @@ export function KatanaApyTooltip(props: {
   return (
     <span className={`tooltipLight ${positionClass}`}>
       <div
-        className={`${maxWidth} border border-neutral-300 bg-neutral-100 p-6 text-center text-xxs text-neutral-900 rounded-2xl`}
+        className={`${maxWidth} rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-xs text-neutral-900`}
       >
         <div className={'flex flex-col items-start justify-start text-left'}>
           {/* Native APY */}
@@ -47,7 +47,9 @@ export function KatanaApyTooltip(props: {
               />
               <p>{'Extrinsic Yield '}</p>
             </div>
-            <RenderAmount shouldHideTooltip value={props.extrinsicYield} symbol={'percent'} decimals={6} />
+            <span className={'font-number'}>
+              <RenderAmount shouldHideTooltip value={props.extrinsicYield} symbol={'percent'} decimals={6} />
+            </span>
           </div>
           <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
             {'Yield Earned from underlying bridged assets'}
@@ -67,7 +69,9 @@ export function KatanaApyTooltip(props: {
               />
               <p>{'Katana APY '}</p>
             </div>
-            <RenderAmount shouldHideTooltip value={props.katanaNativeYield} symbol={'percent'} decimals={6} />
+            <span className={'font-number'}>
+              <RenderAmount shouldHideTooltip value={props.katanaNativeYield} symbol={'percent'} decimals={6} />
+            </span>
           </div>
           <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
             {'Yield Earned on Katana'}
@@ -102,7 +106,9 @@ export function KatanaApyTooltip(props: {
               />
               <p>{'Base Rewards APR '}</p>
             </div>
-            <RenderAmount shouldHideTooltip value={props.fixedRateKatanRewardsAPR} symbol={'percent'} decimals={6} />
+            <span className={'font-number'}>
+              <RenderAmount shouldHideTooltip value={props.fixedRateKatanRewardsAPR} symbol={'percent'} decimals={6} />
+            </span>
           </div>
           <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
             {'Limited time fixed KAT rewards'}
@@ -122,7 +128,9 @@ export function KatanaApyTooltip(props: {
               />
               <p>{'App Rewards APR '}</p>
             </div>
-            <RenderAmount shouldHideTooltip value={props.katanaAppRewardsAPR} symbol={'percent'} decimals={6} />
+            <span className={'font-number'}>
+              <RenderAmount shouldHideTooltip value={props.katanaAppRewardsAPR} symbol={'percent'} decimals={6} />
+            </span>
           </div>
           <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
             {'Kat Rewards passed through from Apps'}
@@ -141,7 +149,9 @@ export function KatanaApyTooltip(props: {
               />
               <p>{'Deposit Bonus APR '}</p>
             </div>
-            <RenderAmount shouldHideTooltip value={props.katanaBonusAPR} symbol={'percent'} decimals={6} />
+            <span className={'font-number'}>
+              <RenderAmount shouldHideTooltip value={props.katanaBonusAPR} symbol={'percent'} decimals={6} />
+            </span>
           </div>
           <p className={'-mt-1 mb-0 w-full text-left text-xs text-neutral-700/35 break-words'}>
             {'Applied if you deposited before Sept. 1st and hold for 90 days'}
@@ -160,7 +170,7 @@ export function KatanaApyTooltip(props: {
               </p>
               <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
                 {'This vault earns '}
-                {formatAmount(props.steerPointsPerDollar, 2, 2)}
+                <span className={'font-number'}>{formatAmount(props.steerPointsPerDollar, 2, 2)}</span>
                 {' Steer Points / dollar deposited, but you must '}
                 <a
                   href={'https://app.steer.finance/points'}

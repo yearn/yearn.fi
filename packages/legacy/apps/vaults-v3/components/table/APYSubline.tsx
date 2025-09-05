@@ -1,5 +1,4 @@
-import { RenderAmount } from '@lib/components/RenderAmount'
-import { cl } from '@lib/utils'
+import { cl, formatAmount } from '@lib/utils'
 import type { FC } from 'react'
 import { Fragment } from 'react'
 
@@ -20,7 +19,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
 }) => {
   if (hasKelpNEngenlayer) {
     return (
-      <small className={cl('whitespace-nowrap text-xs text-neutral-500 self-end -mb-1')}>
+      <small className={cl('whitespace-nowrap text-sm text-neutral-500 self-end -mb-1')}>
         {'+1x Kelp Miles'}
         <br />
         {'+1x EigenLayer Points'}
@@ -29,12 +28,12 @@ export const APYSubline: FC<TAPYSublineProps> = ({
   }
   if (hasKelp) {
     return (
-      <small className={cl('whitespace-nowrap text-xs text-neutral-500 self-end -mb-1')}>{'+ 1x Kelp Miles'}</small>
+      <small className={cl('whitespace-nowrap text-sm text-neutral-500 self-end -mb-1')}>{'+ 1x Kelp Miles'}</small>
     )
   }
   if (hasPendleArbRewards) {
     return (
-      <small className={cl('whitespace-nowrap text-xs text-neutral-500 self-end -mb-1')}>{'+ 2500 ARB/week'}</small>
+      <small className={cl('whitespace-nowrap text-sm text-neutral-500 self-end -mb-1')}>{'+ 2500 ARB/week'}</small>
     )
   }
   if (isEligibleForSteer && (steerPointsPerDollar || 0) > 0) {
@@ -42,7 +41,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
       <span className={'tooltip'}>
         <small
           className={cl(
-            'whitespace-nowrap text-xs text-neutral-500 self-end -mb-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+            'whitespace-nowrap text-sm text-neutral-500 self-end -mb-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
           )}
         >
           {'Eligible for Steer Points'}
@@ -50,12 +49,12 @@ export const APYSubline: FC<TAPYSublineProps> = ({
         <span className={'tooltipLight top-full left-4 '}>
           <div
             className={
-              'font-number min-w-[360px] rounded-xl border border-neutral-300 bg-neutral-100 p-4 pb-1 text-center text-xxs text-neutral-900'
+              'min-w-[360px] rounded-xl border border-neutral-300 bg-neutral-100 p-4 pb-1 text-center text-sm text-neutral-900'
             }
           >
-            <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
+            <p className={'-mt-1 mb-2 w-full text-left text-sm text-neutral-700 break-words whitespace-normal'}>
               {'This vault earns '}
-              <RenderAmount shouldHideTooltip value={steerPointsPerDollar || 0} symbol={'percent'} decimals={6} />
+              <span className={'font-number'}>{formatAmount(steerPointsPerDollar || 0, 2, 2)}</span>
               {' Steer Points / dollar deposited, but you must '}
               <a
                 href={'https://app.steer.finance/points'}

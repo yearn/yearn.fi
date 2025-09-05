@@ -25,75 +25,72 @@ export const APYTooltip: FC<TAPYTooltipProps> = ({
   return (
     <span className={'tooltipLight bottom-full mb-1'}>
       <div
-        className={
-          'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-        }
+        className={'w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-sm text-neutral-900'}
       >
         <div className={'flex flex-col items-start justify-start text-left'}>
           <div
-            className={
-              'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-            }
+            className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
           >
-            <p>{'• Base APY '}</p>
-            <RenderAmount shouldHideTooltip value={baseAPY} symbol={'percent'} decimals={6} />
+            <p>{'Base APY '}</p>
+            <span className={'font-number'}>
+              <RenderAmount shouldHideTooltip value={baseAPY} symbol={'percent'} decimals={6} />
+            </span>
           </div>
 
           {rewardsAPY ? (
             <div
-              className={
-                'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-              }
+              className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
             >
-              <p>{'• Rewards APY '}</p>
-              <RenderAmount shouldHideTooltip value={rewardsAPY} symbol={'percent'} decimals={6} />
+              <p>{'Rewards APY '}</p>
+              <span className={'font-number'}>
+                <RenderAmount shouldHideTooltip value={rewardsAPY} symbol={'percent'} decimals={6} />
+              </span>
             </div>
           ) : null}
 
           {boost ? (
             <div
-              className={
-                'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-              }
+              className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
             >
-              <p>{'• Boost '}</p>
-              <p>{`${formatAmount(boost, 2, 2)} x`}</p>
+              <p>{'Boost '}</p>
+              <p>
+                <span className={'font-number'}>{formatAmount(boost, 2, 2)}</span>
+                {' x'}
+              </p>
             </div>
           ) : null}
 
           {range ? (
             <div
-              className={
-                'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-              }
+              className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
             >
-              <p>{'• Rewards APY '}</p>
+              <p>{'Rewards APY '}</p>
               <div>
-                <RenderAmount shouldHideTooltip value={range[0]} symbol={'percent'} decimals={6} />
+                <span className={'font-number'}>
+                  <RenderAmount shouldHideTooltip value={range[0]} symbol={'percent'} decimals={6} />
+                </span>
                 &nbsp;&rarr;&nbsp;
-                <RenderAmount shouldHideTooltip value={range[1]} symbol={'percent'} decimals={6} />
+                <span className={'font-number'}>
+                  <RenderAmount shouldHideTooltip value={range[1]} symbol={'percent'} decimals={6} />
+                </span>
               </div>
             </div>
           ) : null}
 
           {hasPendleArbRewards ? (
             <div
-              className={
-                'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-              }
+              className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
             >
-              <p>{'• Extra ARB '}</p>
+              <p>{'Extra ARB '}</p>
               <p>{'2 500/week'}</p>
             </div>
           ) : null}
 
           {hasKelp ? (
             <div
-              className={
-                'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-              }
+              className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
             >
-              <p>{'• Extra Kelp Miles '}</p>
+              <p>{'Extra Kelp Miles '}</p>
               <p>{'1x'}</p>
             </div>
           ) : null}
@@ -102,18 +99,18 @@ export const APYTooltip: FC<TAPYTooltipProps> = ({
             <>
               <div
                 className={
-                  'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+                  'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'
                 }
               >
-                <p>{'• Extra Kelp Miles '}</p>
+                <p>{'Extra Kelp Miles '}</p>
                 <p>{'1x'}</p>
               </div>
               <div
                 className={
-                  'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+                  'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'
                 }
               >
-                <p>{'• Extra EigenLayer Points '}</p>
+                <p>{'Extra EigenLayer Points '}</p>
                 <p>{'1x'}</p>
               </div>
             </>

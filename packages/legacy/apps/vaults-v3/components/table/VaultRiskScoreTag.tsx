@@ -22,13 +22,12 @@ export function VaultRiskScoreTag({ riskLevel }: { riskLevel: number }): ReactEl
           className={'tooltiptext top-full mt-1 !text-[10px]'}
           style={{ marginRight: 'calc(-94px + 50%)' }}
         >
-          <div
-            className={
-              'font-number relative border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-neutral-900'
-            }
-          >
+          <div className={'relative rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-neutral-900'}>
             <p>
-              <b className={'font-semibold'}>{`${level} / 5 :`}</b>
+              <b className={'font-semibold'}>
+                <span className={'font-number'}>{`${level} / 5`}</span>
+                {' :'}
+              </b>
               {
                 " This reflects the vault's security, with 1 being most secure and 5 least secure, based on strategy complexity, loss exposure, and external dependencies."
               }
