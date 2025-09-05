@@ -3,7 +3,14 @@ import type { TKatanaAprData } from '@lib/hooks/useKatanaAprs'
 import { isZero, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
-import { calcBoostedApr, isKelpEigenVault, isKelpVault, isPendleArbVault, projectVeYfiRange, sumApr } from '@vaults-v3/utils/apy'
+import {
+  calcBoostedApr,
+  isKelpEigenVault,
+  isKelpVault,
+  isPendleArbVault,
+  projectVeYfiRange,
+  sumApr
+} from '@vaults-v3/utils/apy'
 import { useMemo } from 'react'
 
 export type TVaultApyMode = 'katana' | 'noForward' | 'boosted' | 'rewards' | 'spot' | 'historical'
@@ -45,7 +52,8 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
   const baseForwardApr = vault.apr.forwardAPR.netAPR
   const netApr = vault.apr.netAPR
   const rewardsAprSum = vault.apr.extra.stakingRewardsAPR + vault.apr.extra.gammaRewardAPR
-  const isBoosted = vault.chainID === 1 && (vault.apr.forwardAPR.composite?.boost || 0) > 0 && !vault.apr.extra.stakingRewardsAPR
+  const isBoosted =
+    vault.chainID === 1 && (vault.apr.forwardAPR.composite?.boost || 0) > 0 && !vault.apr.extra.stakingRewardsAPR
   const { boost, unboosted } = calcBoostedApr(vault)
 
   const hasPendleArbRewards = isPendleArbVault(vault)
@@ -66,7 +74,7 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
     mode = 'rewards'
     if (vault.staking.source === 'VeYFI') {
       veYfiRange = projectVeYfiRange(vault)
-      estAprRange = [veYfiRange[0] + baseForwardApr, veYfiRange[1] + baseForwardApr]
+      estAprRange = [baseForwardApr, veYfiRange[1] + baseForwardApr]
     }
   } else if (!isZero(baseForwardApr)) {
     mode = 'spot'
@@ -96,4 +104,3 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
     katanaTotalApr
   }
 }
-

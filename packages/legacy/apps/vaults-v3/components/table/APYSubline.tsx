@@ -49,7 +49,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
         <span className={'tooltipLight top-full left-4 '}>
           <div
             className={
-              'min-w-[360px] rounded-xl border border-neutral-300 bg-neutral-100 p-4 pb-1 text-center text-sm text-neutral-900'
+              'min-w-[360px] rounded-xl border border-neutral-300 bg-neutral-200 p-4 pb-1 text-center text-sm text-neutral-900'
             }
           >
             <p className={'-mt-1 mb-2 w-full text-left text-sm text-neutral-700 break-words whitespace-normal'}>

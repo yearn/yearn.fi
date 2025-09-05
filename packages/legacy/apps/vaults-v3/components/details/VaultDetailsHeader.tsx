@@ -76,6 +76,7 @@ function VaultAPY({
   katanaExtras?: TKatanaAprData
   currentVault: TYDaemonVault
 }): ReactElement {
+  const apyData = useVaultApyData(currentVault)
   const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
   const monthlyAPY = apr.points.monthAgo
   const weeklyAPY = apr.points.weekAgo
@@ -83,17 +84,7 @@ function VaultAPY({
   const currentAPY = apr.forwardAPR.netAPR + extraAPY
   const isSourceVeYFI = source === 'VeYFI'
 
-  const katanaNetAPY = useMemo(() => {
-    if (!katanaExtras) return 0
-    // Exclude legacy katanaRewardsAPR and non-APR "steerPointsPerDollar" from totals
-    const {
-      katanaRewardsAPR: _katanaRewardsAPR,
-      steerPointsPerDollar: _points,
-      katanaBonusAPY: _bonus,
-      ...relevantAprs
-    } = katanaExtras ?? {}
-    return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
-  }, [katanaExtras])
+  const katanaNetAPY = useMemo(() => apyData.katanaTotalApr || 0, [apyData.katanaTotalApr])
 
   if (katanaExtras) {
     return (
@@ -137,7 +128,7 @@ function VaultAPY({
   }
 
   if (apr.forwardAPR.type !== '' && extraAPY !== 0 && !isSourceVeYFI) {
-    const boostedAPY = apr.forwardAPR.netAPR + extraAPY
+    const boostedAPY = (apyData.baseForwardApr || apr.forwardAPR.netAPR) + (apyData.rewardsAprSum || extraAPY)
     return (
       <VaultHeaderLineItem
         label={'Historical APY'}
@@ -170,7 +161,7 @@ function VaultAPY({
                 >
                   <p>{'• Base APY '}</p>
                   <span className={'font-number'}>
-                    <RenderAmount shouldHideTooltip value={apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                    <RenderAmount shouldHideTooltip value={apyData.baseForwardApr || apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
                   </span>
                 </div>
 
@@ -181,7 +172,7 @@ function VaultAPY({
                 >
                   <p>{'• Rewards APY '}</p>
                   <span className={'font-number'}>
-                    <RenderAmount shouldHideTooltip value={extraAPY} symbol={'percent'} decimals={6} />
+                    <RenderAmount shouldHideTooltip value={apyData.rewardsAprSum || extraAPY} symbol={'percent'} decimals={6} />
                   </span>
                 </div>
               </div>
@@ -197,15 +188,9 @@ function VaultAPY({
   }
 
   if (isSourceVeYFI) {
-    const sumOfRewardsAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
-    const veYFIRange = [apr.extra.stakingRewardsAPR / 10 + apr.extra.gammaRewardAPR, sumOfRewardsAPY] as [
-      number,
-      number
-    ]
-    const estAPYRange = [veYFIRange[0] + apr.forwardAPR.netAPR, veYFIRange[1] + apr.forwardAPR.netAPR] as [
-      number,
-      number
-    ]
+    const sumOfRewardsAPY = apyData.rewardsAprSum
+    const veYFIRange = apyData.veYfiRange as [number, number]
+    const estAPYRange = apyData.estAprRange as [number, number]
     return (
       <VaultHeaderLineItem
         label={'Historical APY'}
@@ -240,7 +225,7 @@ function VaultAPY({
                 >
                   <p>{'• Base APY '}</p>
                   <span className={'font-number'}>
-                    <RenderAmount shouldHideTooltip value={apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                    <RenderAmount shouldHideTooltip value={apyData.baseForwardApr || apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
                   </span>
                 </div>
 
@@ -252,11 +237,11 @@ function VaultAPY({
                   <p>{'• Rewards APY '}</p>
                   <div>
                     <span className={'font-number'}>
-                      <RenderAmount shouldHideTooltip value={veYFIRange[0]} symbol={'percent'} decimals={6} />
+                      <RenderAmount shouldHideTooltip value={veYFIRange?.[0] || 0} symbol={'percent'} decimals={6} />
                     </span>
                     &nbsp;&rarr;&nbsp;
                     <span className={'font-number'}>
-                      <RenderAmount shouldHideTooltip value={veYFIRange[1]} symbol={'percent'} decimals={6} />
+                      <RenderAmount shouldHideTooltip value={veYFIRange?.[1] || 0} symbol={'percent'} decimals={6} />
                     </span>
                   </div>
                 </div>
@@ -377,10 +362,10 @@ function ValueInVaultAsToken(props: {
           <span className={'tooltipLight top-full mt-2'}>
             <div
               className={
-                '-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'
+                '-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-xs text-neutral-900'
               }
             >
-              <p className={'flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
+              <p className={'flex w-full flex-row justify-between text-neutral-700 md:text-xs'}>
                 {'Your yield is accruing every single block. Go you!'}
               </p>
             </div>

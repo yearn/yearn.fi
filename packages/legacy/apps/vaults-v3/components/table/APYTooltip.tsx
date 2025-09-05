@@ -25,7 +25,7 @@ export const APYTooltip: FC<TAPYTooltipProps> = ({
   return (
     <span className={'tooltipLight bottom-full mb-1'}>
       <div
-        className={'w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-sm text-neutral-900'}
+        className={'w-fit rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-sm text-neutral-900'}
       >
         <div className={'flex flex-col items-start justify-start text-left'}>
           <div
@@ -41,7 +41,7 @@ export const APYTooltip: FC<TAPYTooltipProps> = ({
             <div
               className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
             >
-              <p>{'Rewards APY '}</p>
+              <p>{'Rewards APR '}</p>
               <span className={'font-number'}>
                 <RenderAmount shouldHideTooltip value={rewardsAPY} symbol={'percent'} decimals={6} />
               </span>
@@ -64,7 +64,7 @@ export const APYTooltip: FC<TAPYTooltipProps> = ({
             <div
               className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
             >
-              <p>{'Rewards APY '}</p>
+              <p>{'Rewards APR '}</p>
               <div>
                 <span className={'font-number'}>
                   <RenderAmount shouldHideTooltip value={range[0]} symbol={'percent'} decimals={6} />
