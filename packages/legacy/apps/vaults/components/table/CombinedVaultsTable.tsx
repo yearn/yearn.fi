@@ -126,8 +126,11 @@ function CombinedVaultsTable(): ReactElement {
     }
     const filtered = combinedVaults.filter((vault: TYDaemonVault): boolean => {
       const lowercaseSearch = search.toLowerCase()
+
+      const strategyNames = vault.strategies?.map((strategy) => strategy.name).join(' ') || ''
+      const strategyAddresses = vault.strategies?.map((strategy) => strategy.address).join(' ') || ''
       const searchableFields =
-        `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
+        `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address} ${strategyNames} ${strategyAddresses}`
           .toLowerCase()
           .split(' ')
       return searchableFields.some((word): boolean => word.includes(lowercaseSearch))

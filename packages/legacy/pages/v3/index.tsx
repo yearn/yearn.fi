@@ -180,14 +180,18 @@ function ListOfVaults(): ReactElement {
       // Fallback to simple case-insensitive search if regex creation fails
       const lowercaseSearch = search.toLowerCase()
       return activeVaults.filter((vault: TYDaemonVault): boolean => {
+        const strategyNames = vault.strategies?.map((strategy) => strategy.name).join(' ') || ''
+        const strategyAddresses = vault.strategies?.map((strategy) => strategy.address).join(' ') || ''
         const searchableText =
-          `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase()
+          `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address} ${strategyNames} ${strategyAddresses}`.toLowerCase()
         return searchableText.includes(lowercaseSearch)
       })
     }
 
     const filtered = activeVaults.filter((vault: TYDaemonVault): boolean => {
-      const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
+      const strategyNames = vault.strategies?.map((strategy) => strategy.name).join(' ') || ''
+      const strategyAddresses = vault.strategies?.map((strategy) => strategy.address).join(' ') || ''
+      const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address} ${strategyNames} ${strategyAddresses}`
       return searchRegex.test(searchableText)
     })
     return filtered
