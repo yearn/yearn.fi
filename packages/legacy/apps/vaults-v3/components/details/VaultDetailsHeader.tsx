@@ -83,20 +83,15 @@ function VaultAPY({
   const isSourceVeYFI = source === 'VeYFI'
 
   const katanaNetAPY = useMemo(() => {
-    if (katanaExtras) {
-      // Exclude legacy katanaRewardsAPR and non-APR "steerPointsPerDollar" from totals
-      const {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        katanaRewardsAPR: _katanaRewardsAPR,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        steerPointsPerDollar: _points,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        katanaBonusAPY: _bonus,
-        ...relevantAprs
-      } = katanaExtras ?? {}
-      return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
-    }
-    return 0
+    if (!katanaExtras) return 0
+    // Exclude legacy katanaRewardsAPR and non-APR "steerPointsPerDollar" from totals
+    const {
+      katanaRewardsAPR: _katanaRewardsAPR,
+      steerPointsPerDollar: _points,
+      katanaBonusAPY: _bonus,
+      ...relevantAprs
+    } = katanaExtras ?? {}
+    return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
   }, [katanaExtras])
 
   if (katanaExtras) {
