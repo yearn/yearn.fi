@@ -152,7 +152,7 @@ function ListOfVaults(): ReactElement {
     onChangeSortBy,
     onReset
   } = useQueryArguments({
-    defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
+    defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
     defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
     defaultPathname: '/v3'
   })
