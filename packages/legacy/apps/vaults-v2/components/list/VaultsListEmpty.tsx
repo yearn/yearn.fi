@@ -1,8 +1,7 @@
 import { Button } from '@lib/components/Button'
-import { isZero } from '@lib/utils'
+import { cl, isZero } from '@lib/utils'
 import type { TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { ALL_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 type TVaultListEmpty = {
   sortedVaultsToDisplay: TYDaemonVaults
@@ -11,17 +10,18 @@ type TVaultListEmpty = {
   currentChains: number[] | null
   onReset: () => void
   isLoading: boolean
-  defaultCategories?: string[]
+  isV3?: boolean
+  hiddenByFiltersCount?: number
 }
 export function VaultsListEmpty({
   sortedVaultsToDisplay,
   currentSearch,
   currentCategories,
-  currentChains,
   onReset,
   isLoading,
-  defaultCategories = ALL_VAULTS_CATEGORIES_KEYS
-}: TVaultListEmpty): ReactElement {
+  hiddenByFiltersCount = 0,
+  isV3 = false
+}: TVaultListEmpty): ReactNode {
   if (isLoading && isZero(sortedVaultsToDisplay.length)) {
     return (
       <div
@@ -54,42 +54,32 @@ export function VaultsListEmpty({
   }
 
   if (!isLoading && isZero(sortedVaultsToDisplay.length)) {
+    const hasSearch = currentSearch !== ''
+    const hasHiddenVaults = hiddenByFiltersCount > 0
+
     return (
       <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
         <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
-        {(currentCategories?.length || 0) >= defaultCategories.length && currentSearch !== '' ? (
-          <p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
-        ) : (currentCategories?.length || 0) < defaultCategories.length && currentSearch !== '' ? (
-          <>
-            <p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist.`}</p>
-            <p className={'text-center font-normal text-neutral-600'}>{'No vaults found that match your filters.'}</p>
-            <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
-              {'Search all vaults'}
-            </Button>
-          </>
-        ) : (
-          <>
-            <p className={'text-center font-normal text-neutral-600'}>{'No vaults found that match your filters.'}</p>
-            <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
-              {'Search all vaults'}
-            </Button>
-          </>
+
+        <p className={'text-center text-neutral-600'}>
+          {hasSearch ? `The vault "${currentSearch}" is not found` : 'No vaults found that match your filters.'}
+        </p>
+
+        {hasHiddenVaults && (
+          <p className={'mt-2 text-center text-sm text-neutral-500'}>
+            {`${hiddenByFiltersCount} vault${hiddenByFiltersCount === 1 ? '' : 's'} hidden by filters`}
+          </p>
+        )}
+
+        {(hasHiddenVaults || !hasSearch) && (
+          <Button className={cl('mt-4 w-full md:w-48 ', isV3 ? '' : '!rounded-none')} onClick={onReset}>
+            {'Show all'}
+          </Button>
         )}
       </div>
     )
   }
-  if (!isLoading && currentChains && currentChains.length > 0) {
-    return (
-      <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
-        <b className={'text-center text-lg'}>{'No data found'}</b>
 
-        <p className={'text-center text-neutral-600'}>{'Please, select a chain. At least one, just one.'}</p>
-        <Button className={'w-full md:w-48'} onClick={onReset}>
-          {'Search all vaults'}
-        </Button>
-      </div>
-    )
-  }
   return <div />
 }
 

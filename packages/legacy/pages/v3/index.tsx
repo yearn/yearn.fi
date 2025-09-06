@@ -1,7 +1,9 @@
+import { Button } from '@lib/components/Button'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
+import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TSortDirection } from '@lib/types'
 import { cl, formatAmount, isZero, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -150,12 +152,19 @@ function ListOfVaults(): ReactElement {
     onChangeChains,
     onChangeSortDirection,
     onChangeSortBy,
-    onReset
+    onResetToAll
   } = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
     defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
     defaultPathname: '/v3'
   })
+
+  const allChains = useSupportedChains().map((chain): number => chain.id)
+  const { activeVaults: totalActiveVaults } = useVaultFilter(ALL_VAULTSV3_KINDS_KEYS, allChains, true)
+  const initiallySkippedVaults = totalActiveVaults.filter(
+    ({ category }): boolean => !ALL_VAULTSV3_CATEGORIES_KEYS?.includes(category)
+  )
+
   const { activeVaults, retiredVaults, migratableVaults } = useVaultFilter(types, chains, true)
 
   /**********************************************************************************************
@@ -193,6 +202,21 @@ function ListOfVaults(): ReactElement {
     return filtered
   }, [activeVaults, search])
 
+  // const potentialSearchVaultsToDisplayAmount = useMemo((): number => {
+  //   if (!search) {
+  //     return totalActiveVaults.length
+  //   }
+
+  //   let searchRegex: RegExp
+  //   const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  //   searchRegex = new RegExp(escapedSearch, 'i')
+
+  //   const filtered = totalActiveVaults.filter((vault: TYDaemonVault): boolean => {
+  //     const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
+  //     return searchRegex.test(searchableText)
+  //   })
+  //   return filtered.length
+  // }, [totalActiveVaults, search])
   /**********************************************************************************************
    **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
    **	is done via a custom method that will sort the vaults based on the sortBy and
@@ -204,7 +228,7 @@ function ListOfVaults(): ReactElement {
    **	The VaultList component is memoized to prevent it from being re-created on every render.
    **	It contains either the list of vaults, is some are available, or a message to the user.
    *********************************************************************************************/
-  const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
+  const VaultList = useMemo((): { hiddenByFiltersCount?: number; list: ReactNode[] } => {
     const filteredByChains = sortedVaultsToDisplay.filter(({ chainID }): boolean => chains?.includes(chainID) || false)
     const filteredByCategories = filteredByChains.filter(
       ({ category }): boolean => categories?.includes(category) || false
@@ -242,7 +266,6 @@ function ListOfVaults(): ReactElement {
         }
       }
     }
-
     for (const vault of filteredByCategories) {
       // Process active vaults
       const key = `${vault.chainID}_${vault.address}`
@@ -273,6 +296,7 @@ function ListOfVaults(): ReactElement {
       if (vault.kind === 'Single Strategy') {
         single.push(<VaultsV3ListRow key={key} currentVault={vault} />)
       }
+
       all.push(
         // `all` contains active, non-holding vaults
         <VaultsV3ListRow key={key} currentVault={vault} />
@@ -281,41 +305,50 @@ function ListOfVaults(): ReactElement {
 
     const shouldShowEmptyState =
       isLoadingVaultList || !chains || chains.length === 0 || (isZero(holdings.length) && isZero(all.length)) // Show empty if no holdings and no other active vaults
+    const hiddenByFiltersCount =
+      totalActiveVaults.length - (all.length + holdings.length) - initiallySkippedVaults.length
 
     if (shouldShowEmptyState) {
-      return (
-        <VaultsListEmpty
-          isLoading={isLoadingVaultList}
-          sortedVaultsToDisplay={filteredByCategories} // Represents the set of vaults filters were applied to
-          currentSearch={search || ''}
-          currentCategories={types}
-          currentChains={chains}
-          onReset={onReset}
-          defaultCategories={ALL_VAULTSV3_KINDS_KEYS}
-        />
-      )
+      return {
+        list: [
+          <VaultsListEmpty
+            key="empty"
+            isLoading={isLoadingVaultList}
+            sortedVaultsToDisplay={filteredByCategories} // Represents the set of vaults filters were applied to
+            currentSearch={search || ''}
+            currentCategories={types}
+            currentChains={chains}
+            isV3
+            onReset={onResetToAll}
+            hiddenByFiltersCount={hiddenByFiltersCount}
+          />
+        ]
+      }
     }
-
-    return [holdings, multi, single, all]
+    return { hiddenByFiltersCount, list: [holdings, multi, single, all] }
   }, [
     sortedVaultsToDisplay,
     isLoadingVaultList,
+    initiallySkippedVaults,
+    totalActiveVaults.length,
     chains,
     categories,
+    onResetToAll,
     migratableVaults,
     getBalance,
     retiredVaults,
     getPrice,
     search,
-    types,
-    onReset
+    types
   ])
 
+  const hiddenVaultsCount = VaultList.hiddenByFiltersCount ?? 0
+
   function renderVaultList(): ReactNode {
-    if (Children.count(VaultList) === 1) {
-      return VaultList as ReactNode
+    if (VaultList.list.length === 1) {
+      return VaultList.list[0] as ReactNode
     }
-    const possibleLists = VaultList as [ReactNode, ReactNode, ReactNode, ReactNode]
+    const possibleLists = VaultList.list
     const hasHoldings = Children.count(possibleLists[0]) > 0
 
     if (sortBy !== 'featuringScore' && possibleLists[3]) {
@@ -401,6 +434,20 @@ function ListOfVaults(): ReactElement {
           ]}
         />
         <div className={'grid gap-4'}>{renderVaultList()}</div>
+
+        {/* Hidden vaults badge - show only when vaults are displayed (not in empty state) */}
+        {hiddenVaultsCount > 0 && !isLoadingVaultList && chains && chains.length > 0 && VaultList.list.length !== 1 && (
+          <div className={'mt-6 flex items-center justify-center'}>
+            <div className={'flex items-center gap-4 rounded-[18px] bg-neutral-200 px-6 py-3'}>
+              <p className={'text-sm text-neutral-600'}>
+                {`${hiddenVaultsCount} vault${hiddenVaultsCount === 1 ? '' : 's'} hidden by filters`}
+              </p>
+              <Button className={'!h-8 px-3 text-xs !rounded-[6px]'} onClick={onResetToAll}>
+                {'Show all'}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </Fragment>
   )
