@@ -127,8 +127,8 @@ export function VaultDetailsQuickActionsTo(props: {
   const { isAutoStakingEnabled } = useYearn()
 
   const { expectedOut, isLoadingExpectedOut } = useSolver()
-  const { pathname } = useRouter()
-  const isV3Page = pathname.startsWith('/v3')
+  const location = useLocation()
+  const isV3Page = location.pathname.startsWith('/v3')
   const isMigrationAvailable = currentVault?.migration?.available
   const selectedOptionToPricePerToken = useYearnTokenPrice({
     address: toAddress(actionParams?.selectedOptionTo?.value),

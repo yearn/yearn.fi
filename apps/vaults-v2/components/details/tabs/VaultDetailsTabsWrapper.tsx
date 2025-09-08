@@ -15,7 +15,7 @@ import { getNetwork } from '@lib/utils/wagmi/utils'
 import { VaultDetailsAbout } from '@vaults-v2/components/details/tabs/VaultDetailsAbout'
 import { VaultDetailsHistorical } from '@vaults-v2/components/details/tabs/VaultDetailsHistorical'
 import { VaultDetailsStrategies } from '@vaults-v2/components/details/tabs/VaultDetailsStrategies'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { watchAsset } from 'viem/actions'
@@ -64,9 +64,9 @@ function MobileTabButton(props: {
 
 function Tabs({ selectedAboutTabIndex, setSelectedAboutTabIndex }: TTabs): ReactElement {
   const navigate = useNavigate()
-const params = useParams()
-const location = useLocation()
-// TODO: Update router usage to use navigate, params, and location
+  const params = useParams()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
 
   const tabs: TTabsOptions[] = useMemo(
     (): TTabsOptions[] => [
@@ -79,11 +79,12 @@ const location = useLocation()
   )
 
   useEffect((): void => {
-    const tab = tabs.find((tab): boolean => tab.slug === router.query.tab)
+    const tabParam = searchParams.get('tab')
+    const tab = tabs.find((tab): boolean => tab.slug === tabParam)
     if (tab?.value) {
       setSelectedAboutTabIndex(tab?.value)
     }
-  }, [router.query.tab, setSelectedAboutTabIndex, tabs])
+  }, [searchParams, setSelectedAboutTabIndex, tabs])
 
   return (
     <>
@@ -93,18 +94,9 @@ const location = useLocation()
             <button
               key={`desktop-${tab.value}`}
               onClick={(): void => {
-                router.replace(
-                  {
-                    query: {
-                      ...params /* TODO: Update to use params from useParams() */,
-                      tab: tab.slug
-                    }
-                  },
-                  undefined,
-                  {
-                    shallow: true
-                  }
-                )
+                const newSearchParams = new URLSearchParams(searchParams)
+                newSearchParams.set('tab', tab.slug || '')
+                navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true })
                 setSelectedAboutTabIndex(tab.value)
               }}
             >
@@ -125,18 +117,9 @@ const location = useLocation()
                   currentTab={tab}
                   selectedIndex={tab.value}
                   setCurrentTab={(): void => {
-                    router.replace(
-                      {
-                        query: {
-                          ...params /* TODO: Update to use params from useParams() */,
-                          tab: tab.slug
-                        }
-                      },
-                      undefined,
-                      {
-                        shallow: true
-                      }
-                    )
+                    const newSearchParams = new URLSearchParams(searchParams)
+                    newSearchParams.set('tab', tab.slug || '')
+                    navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true })
                     setSelectedAboutTabIndex(tab.value)
                   }}
                 />

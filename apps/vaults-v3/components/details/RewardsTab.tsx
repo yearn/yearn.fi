@@ -44,8 +44,8 @@ function BoostMessage(props: { currentVault: TYDaemonVault; hasStakingRewardsLiv
   const hasVaultData = Boolean(props.currentVault.staking.available)
   const vaultDataSource = props.currentVault.staking.source
   const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR
-  const { pathname } = useRouter()
-  const isV3Page = pathname.startsWith('/v3')
+  const location = useLocation()
+  const isV3Page = location.pathname.startsWith('/v3')
 
   if (hasVaultData && !props.hasStakingRewardsLive && vaultDataSource !== 'VeYFI') {
     return (
@@ -174,8 +174,8 @@ function VeYFIBoostMessage(props: {
 }): ReactElement {
   const vaultDataource = props.currentVault.staking.source
   const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR
-  const { pathname } = useRouter()
-  const isV3Page = pathname.startsWith('/v3')
+  const location = useLocation()
+  const isV3Page = location.pathname.startsWith('/v3')
 
   const OneUp = (
     <Link href={'https://1up.tokyo/stake'} target={'_blank'} rel={'noreferrer'}>

@@ -3,7 +3,7 @@
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
 
@@ -27,16 +27,17 @@ type TTabsProps = {
 export function Tabs({ items, className }: TTabsProps): ReactElement {
   const [selectedTabId, setSelectedTabId] = useState(items[0]?.id)
   const navigate = useNavigate()
-const params = useParams()
-const location = useLocation()
-// TODO: Update router usage to use navigate, params, and location
+  const params = useParams()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
 
   useEffect((): void => {
-    const tab = items.find((tab): boolean => tab.id === router.query.tab)
+    const tabParam = searchParams.get('tab')
+    const tab = items.find((tab): boolean => tab.id === tabParam)
     if (tab?.id) {
       setSelectedTabId(tab?.id)
     }
-  }, [items, router.query.tab])
+  }, [items, searchParams])
 
   return (
     <div className={`w-full bg-neutral-100 ${className}`}>
@@ -47,18 +48,9 @@ const location = useLocation()
               key={`tab-label-${id}`}
               className={`yearn--tab ${selectedTabId === id ? 'selected' : ''}`}
               onClick={(): void => {
-                router.replace(
-                  {
-                    query: {
-                      ...params /* TODO: Update to use params from useParams() */,
-                      tab: id
-                    }
-                  },
-                  undefined,
-                  {
-                    shallow: true
-                  }
-                )
+                const newSearchParams = new URLSearchParams(searchParams)
+                newSearchParams.set('tab', id)
+                navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true })
                 setSelectedTabId(id)
               }}
             >

@@ -11,7 +11,9 @@ export default defineConfig({
       '@vaults-v2': path.resolve(__dirname, './apps/vaults-v2'),
       '@vaults-v3': path.resolve(__dirname, './apps/vaults-v3'),
       '@landing': path.resolve(__dirname, './apps/landing'),
-      '@safe-global/safe-apps-sdk': path.resolve(__dirname, 'node_modules/@safe-global/safe-apps-sdk/dist/esm')
+      '@safe-global/safe-apps-sdk': path.resolve(__dirname, 'node_modules/@safe-global/safe-apps-sdk/dist/esm'),
+      // Polyfill node-fetch for browser
+      'node-fetch': 'cross-fetch'
     }
   },
   define: {
@@ -61,7 +63,14 @@ export default defineConfig({
       '@tanstack/react-query',
       'recharts',
       'framer-motion',
-      '@react-hookz/web'
-    ]
+      '@react-hookz/web',
+      '@cowprotocol/cow-sdk',
+      'cross-fetch'
+    ],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
+    }
   }
 })

@@ -43,8 +43,8 @@ export function VaultDetailsQuickActionsButtons({
   const [allowanceFrom, setAllowanceFrom] = useState<TNormalizedBN>(zeroNormalizedBN)
   const [allowanceRouter, setAllowanceRouter] = useState<TNormalizedBN>(zeroNormalizedBN)
   const { actionParams, onChangeAmount, maxDepositPossible, isDepositing } = useActionFlow()
-  const { pathname } = useRouter()
-  const isV3Page = pathname.startsWith('/v3')
+  const location = useLocation()
+  const isV3Page = location.pathname.startsWith('/v3')
   const {
     onApprove,
     onExecuteDeposit,

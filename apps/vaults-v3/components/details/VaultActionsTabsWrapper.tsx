@@ -31,7 +31,7 @@ import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/ac
 import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useBlockNumber, useReadContract } from 'wagmi'
@@ -246,9 +246,9 @@ export function VaultDetailsTab(props: {
   onSwitchTab: (tab: TTabsOptions) => void
 }): ReactElement {
   const navigate = useNavigate()
-const params = useParams()
-const location = useLocation()
-// TODO: Update router usage to use navigate, params, and location
+  const params = useParams()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
   const isV3Page = location.pathname.startsWith('/v3')
   const stakingRewardSource = props.currentVault.staking.source
   const tabLabel = useMemo(() => {
@@ -271,16 +271,9 @@ const location = useLocation()
     <button
       key={`desktop-${props.tab.value}`}
       onClick={(): void => {
-        router.replace(
-          {
-            query: {
-              ...params /* TODO: Update to use params from useParams() */,
-              action: props.tab.slug
-            }
-          },
-          undefined,
-          { shallow: true }
-        )
+        const newSearchParams = new URLSearchParams(searchParams)
+        newSearchParams.set('action', props.tab.slug || '')
+        navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true })
         props.onSwitchTab(props.tab)
       }}
     >
@@ -317,9 +310,9 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
   const { onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance } = useActionFlow()
   const { address } = useWeb3()
   const navigate = useNavigate()
-const params = useParams()
-const location = useLocation()
-// TODO: Update router usage to use navigate, params, and location
+  const params = useParams()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })
   const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined)
@@ -418,12 +411,20 @@ const location = useLocation()
   /**********************************************************************************************
    ** As we want live data, we want the data to be refreshed every time the block number changes.
    ** This way, the user will always have the most up-to-date data.
+   ** For Base chain (8453), we limit updates to reduce RPC calls and prevent rate limiting.
    **********************************************************************************************/
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetch data on block number change
   useEffect(() => {
-    refetch()
-  }, [blockNumber, refetch])
+    // For Base chain, only refetch every 10 blocks to reduce RPC load
+    if (currentVault.chainID === 8453) {
+      if (blockNumber && blockNumber % 10 === 0) {
+        refetch()
+      }
+    } else {
+      refetch()
+    }
+  }, [blockNumber, refetch, currentVault.chainID])
 
   /**********************************************************************************************
    ** Update the current state based on the query parameter action. This will allow the user to
@@ -431,11 +432,12 @@ const location = useLocation()
    ** based on the URL.
    *********************************************************************************************/
   useEffect((): void => {
-    const tab = tabs.find((tab): boolean => tab.slug === router.query.action)
+    const actionParam = searchParams.get('action')
+    const tab = tabs.find((tab): boolean => tab.slug === actionParam)
     if (tab?.value) {
       setCurrentTab(tab)
     }
-  }, [router.query.action])
+  }, [searchParams])
 
   /**********************************************************************************************
    ** UpdateEffect to define which tabs are available based on the current state of the vault.

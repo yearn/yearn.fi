@@ -721,12 +721,20 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
   /**********************************************************************************************
    ** As we want live data, we want the data to be refreshed every time the block number changes.
    ** This way, the user will always have the most up-to-date data.
+   ** For Base chain (8453), we limit updates to reduce RPC calls and prevent rate limiting.
    **********************************************************************************************/
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: refetch on block number change
   useEffect(() => {
-    refetch()
-  }, [blockNumber, refetch])
+    // For Base chain, only refetch every 10 blocks to reduce RPC load
+    if (currentVault.chainID === 8453) {
+      if (blockNumber && blockNumber % 10 === 0) {
+        refetch()
+      }
+    } else {
+      refetch()
+    }
+  }, [blockNumber, refetch, currentVault.chainID])
 
   return (
     <div className={'col-span-12 mt-4 flex w-full flex-col items-center justify-center'}>

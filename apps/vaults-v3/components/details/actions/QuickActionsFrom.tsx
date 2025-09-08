@@ -93,9 +93,9 @@ export function VaultDetailsQuickActionsFrom(props: {
   const { address, isActive } = useWeb3()
   const { getToken, getBalance } = useWallet()
   const { getPrice } = useYearn()
-  const { pathname } = useRouter()
+  const location = useLocation()
 
-  const isV3Page = pathname.startsWith('/v3')
+  const isV3Page = location.pathname.startsWith('/v3')
   const {
     possibleOptionsFrom,
     actionParams,

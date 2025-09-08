@@ -24,16 +24,15 @@ import { useEffect, useState } from 'react'
 function Index(): ReactElement | null {
   const { address, isActive } = useWeb3()
   const navigate = useNavigate()
-const params = useParams()
-const location = useLocation()
-// TODO: Update router usage to use navigate, params, and location
+  const params = useParams()
+  const location = useLocation()
   const { onRefresh } = useWallet()
-  const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: Number(router.query.chainID) })
+  const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: Number(params.chainID) })
   const [_currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
   const [isInit, setIsInit] = useState(false)
   const { data: vault, isLoading: isLoadingVault } = useFetch<TYDaemonVault>({
-    endpoint: router.query.address
-      ? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
+    endpoint: params.address
+      ? `${yDaemonBaseUri}/vaults/${toAddress(params.address as string)}?${new URLSearchParams({
           strategiesDetails: 'withDetails',
           strategiesCondition: 'inQueue'
         })}`
@@ -91,7 +90,7 @@ const location = useLocation()
     currentVault?.staking.address
   ])
 
-  if (isLoadingVault || !router.query.address || !isInit) {
+  if (isLoadingVault || !params.address || !isInit) {
     return (
       <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>
