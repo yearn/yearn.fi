@@ -1,0 +1,16 @@
+{
+	"typescript.updateImportsOnFileMove.enabled": "always",
+	"editor.formatOnSave": true,
+	// "workbench.colorTheme": "Default Light Modern",
+	"javascript.updateImportsOnFileMove.enabled": "always",
+	"biome.suggestInstallingGlobally": false,
+	"[typescript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	}
+}
