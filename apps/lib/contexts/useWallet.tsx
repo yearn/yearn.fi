@@ -6,7 +6,7 @@ import { createContext, memo, useCallback, useContext, useMemo } from 'react'
 import { serialize } from 'wagmi'
 import { useWeb3 } from '../contexts/useWeb3'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
-import { useBalances } from '../hooks/useBalances.multichains'
+import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
 import { DEFAULT_ERC20, toAddress, zeroNormalizedBN } from '../utils'
 import { createUniqueID } from '../utils/tools.identifier'
@@ -57,7 +57,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     onUpdate,
     onUpdateSome,
     isLoading
-  } = useBalances({
+  } = useBalancesWithQuery({
     tokens: allTokens,
     priorityChainID: chainID
   })

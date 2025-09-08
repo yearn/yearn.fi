@@ -2,11 +2,11 @@
 
 import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@lib/types'
-import { useDeepCompareEffect, useMountEffect } from '@react-hookz/web'
+import { useMountEffect } from '@react-hookz/web'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
 import { useSearchParams } from 'react-router-dom'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 
 type TQueryArgs = {
   search: string | null | undefined
@@ -44,6 +44,8 @@ const location = useLocation()
   const defaultSortBy = props.defaultSortBy || 'deposited'
   const [sortBy, setSortBy] = useState<string | null>(defaultSortBy)
 
+  const pathname = location.pathname
+  
   const updateSearchParams = useCallback((queryArgs: TDict<string | string[] | undefined>): void => {
     const newSearchParams = new URLSearchParams()
     Object.entries(queryArgs).forEach(([key, value]) => {
@@ -55,8 +57,8 @@ const location = useLocation()
         }
       }
     })
-    navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true })
-  }, [navigate, location.pathname])
+    navigate(`${pathname}?${newSearchParams.toString()}`, { replace: true })
+  }, [navigate, pathname])
 
   const handleQuery = useCallback(
     (_searchParams: URLSearchParams): void => {
@@ -161,11 +163,19 @@ const location = useLocation()
     handleQuery(new URLSearchParams(currentPage.search))
   })
 
-  useDeepCompareEffect((): void => {
-    if (!props.defaultPathname || props.defaultPathname === location.pathname) {
-      handleQuery(searchParams as URLSearchParams)
+  // Track if we've already processed the current search params to avoid loops
+  const lastProcessedSearch = useRef<string>('')
+  const searchString = searchParams.toString()
+  
+  useEffect((): void => {
+    // Only process if search params actually changed
+    if (lastProcessedSearch.current !== searchString) {
+      lastProcessedSearch.current = searchString
+      if (!props.defaultPathname || props.defaultPathname === pathname) {
+        handleQuery(searchParams as URLSearchParams)
+      }
     }
-  }, [searchParams, props.defaultPathname, location.pathname, handleQuery])
+  }, [searchString, props.defaultPathname, pathname, handleQuery, searchParams])
 
   return {
     search,

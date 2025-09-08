@@ -37,11 +37,17 @@ function Image(props: CustomImageProps): ReactElement {
     className = '',
     style,
     fill,
+    priority,
+    quality,
+    placeholder,
+    blurDataURL,
+    loader,
+    unoptimized,
     ...rest
   } = props
 
   const [imageSrc, setImageSrc] = useState<string | typeof src>(src)
-  const [isVisible, setIsVisible] = useState(loading !== 'lazy')
+  const [isVisible, setIsVisible] = useState(loading !== 'lazy' || priority === true)
   const [isLoading, setIsLoading] = useState(false)
   const [hasError, setHasError] = useState(false)
   const imageRef = useRef<HTMLDivElement>(null)
@@ -49,7 +55,7 @@ function Image(props: CustomImageProps): ReactElement {
 
   // Set up IntersectionObserver for lazy loading
   useEffect(() => {
-    if (loading !== 'lazy' || !imageRef.current) return
+    if (loading !== 'lazy' || priority || !imageRef.current) return
 
     const observerOptions: IntersectionObserverInit = {
       root: null,
@@ -71,7 +77,7 @@ function Image(props: CustomImageProps): ReactElement {
     return () => {
       observerRef.current?.disconnect()
     }
-  }, [loading])
+  }, [loading, priority])
 
   // Reset states when src changes
   useEffect(() => {
