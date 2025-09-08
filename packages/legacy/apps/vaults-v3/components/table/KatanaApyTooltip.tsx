@@ -14,17 +14,15 @@ export function KatanaApyTooltip(props: {
   position?: 'bottom' | 'top'
   maxWidth?: string
   currentVault: TYDaemonVault
+  standalone?: boolean
 }): ReactElement {
   const position = props.position || 'bottom'
   const positionClass = position === 'bottom' ? 'bottom-full' : 'top-full '
   const maxWidth = props.maxWidth || 'min-w-[360px] w-max'
 
-  return (
-    <span className={`tooltipLight ${positionClass}`}>
-      <div
-        className={`${maxWidth} rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-xs text-neutral-900`}
-      >
-        <div className={'flex flex-col items-start justify-start text-left'}>
+  const Content = (
+    <div className={`${maxWidth} rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-xs text-neutral-900`}>
+      <div className={'flex flex-col items-start justify-start text-left'}>
           {/* Native APY */}
           <p
             className={
@@ -185,8 +183,15 @@ export function KatanaApyTooltip(props: {
               </p>
             </>
           ) : null}
-        </div>
       </div>
+    </div>
+  )
+
+  if (props.standalone) return Content
+
+  return (
+    <span className={`tooltipLight ${positionClass}`}>
+      {Content}
     </span>
   )
 }

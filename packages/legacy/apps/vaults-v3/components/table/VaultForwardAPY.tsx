@@ -9,6 +9,8 @@ import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import { APYSubline } from './APYSubline'
 import { APYTooltip } from './APYTooltip'
 import { KatanaApyTooltip } from './KatanaApyTooltip'
+import { ResponsivePopover } from '@vaults-v3/components/ui/ResponsivePopover'
+import { InfoButton } from '@vaults-v3/components/ui/InfoButton'
 
 export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const data = useVaultApyData(currentVault)
@@ -17,29 +19,48 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
   if (currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined) {
     return (
       <div className={'relative flex flex-col items-end md:text-right'}>
-        <span className={'tooltip w-full'}>
-          <b className={'yearn--table-data-section-item-value'}>
-            <Renderable shouldRender={true} fallback={'NEW'}>
-              {'⚔️ '}
-              <span
-                className={
-                  'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                }
-              >
-                <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
-              </span>
-            </Renderable>
-          </b>
-          <KatanaApyTooltip
-            extrinsicYield={data.katanaExtras.extrinsicYield}
-            katanaNativeYield={data.katanaExtras.katanaNativeYield}
-            fixedRateKatanRewardsAPR={data.katanaExtras.FixedRateKatanaRewards}
-            katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR}
-            katanaBonusAPR={data.katanaExtras.katanaBonusAPY}
-            steerPointsPerDollar={data.katanaExtras.steerPointsPerDollar}
-            currentVault={currentVault}
-          />
-        </span>
+        <b className={'yearn--table-data-section-item-value flex items-center'}>
+          <Renderable shouldRender={true} fallback={'NEW'}>
+            {'⚔️ '}
+            <ResponsivePopover
+              trigger={
+                <span
+                  className={
+                    'hidden md:inline underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                  }
+                >
+                  <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
+                </span>
+              }
+              mobileTrigger={<InfoButton />}
+              mobileContent={
+                <KatanaApyTooltip
+                  extrinsicYield={data.katanaExtras.extrinsicYield}
+                  katanaNativeYield={data.katanaExtras.katanaNativeYield}
+                  fixedRateKatanRewardsAPR={data.katanaExtras.FixedRateKatanaRewards}
+                  katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR}
+                  katanaBonusAPR={data.katanaExtras.katanaBonusAPY}
+                  steerPointsPerDollar={data.katanaExtras.steerPointsPerDollar}
+                  currentVault={currentVault}
+                  standalone
+                />
+              }
+            >
+              <KatanaApyTooltip
+                extrinsicYield={data.katanaExtras.extrinsicYield}
+                katanaNativeYield={data.katanaExtras.katanaNativeYield}
+                fixedRateKatanRewardsAPR={data.katanaExtras.FixedRateKatanaRewards}
+                katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR}
+                katanaBonusAPR={data.katanaExtras.katanaBonusAPY}
+                steerPointsPerDollar={data.katanaExtras.steerPointsPerDollar}
+                currentVault={currentVault}
+              />
+            </ResponsivePopover>
+            <span className={'md:hidden inline font-number'}>
+              <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
+            </span>
+          </Renderable>
+        </b>
         <APYSubline
           hasPendleArbRewards={false}
           hasKelpNEngenlayer={false}
@@ -60,27 +81,44 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
     if (data.rewardsAprSum > 0) {
       return (
         <div className={'relative flex flex-col items-end md:text-right'}>
-          <span className={'tooltip'}>
-            <b className={'yearn--table-data-section-item-value'}>
-              <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-                {'⚡️ '}
-                <span
-                  className={
-                    'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                  }
-                >
-                  <RenderAmount shouldHideTooltip={hasZeroBoostedAPY} value={boostedAPY} symbol={'percent'} decimals={6} />
-                </span>
-              </Renderable>
-            </b>
-            <APYTooltip
-              baseAPY={data.netApr}
-              hasPendleArbRewards={data.hasPendleArbRewards}
-              hasKelp={data.hasKelp}
-              hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-              rewardsAPY={data.rewardsAprSum}
-            />
-          </span>
+          <b className={'yearn--table-data-section-item-value flex items-center'}>
+            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
+              {'⚡️ '}
+              <ResponsivePopover
+                trigger={
+                  <span
+                    className={
+                      'hidden md:inline underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                    }
+                  >
+                    <RenderAmount shouldHideTooltip={hasZeroBoostedAPY} value={boostedAPY} symbol={'percent'} decimals={6} />
+                  </span>
+                }
+                mobileTrigger={<InfoButton />}
+                mobileContent={
+                  <APYTooltip
+                    baseAPY={data.netApr}
+                    hasPendleArbRewards={data.hasPendleArbRewards}
+                    hasKelp={data.hasKelp}
+                    hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+                    rewardsAPY={data.rewardsAprSum}
+                    standalone
+                  />
+                }
+              >
+                <APYTooltip
+                  baseAPY={data.netApr}
+                  hasPendleArbRewards={data.hasPendleArbRewards}
+                  hasKelp={data.hasKelp}
+                  hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+                  rewardsAPY={data.rewardsAprSum}
+                />
+              </ResponsivePopover>
+              <span className={'md:hidden inline font-number'}>
+                <RenderAmount shouldHideTooltip={hasZeroBoostedAPY} value={boostedAPY} symbol={'percent'} decimals={6} />
+              </span>
+            </Renderable>
+          </b>
           <APYSubline
             hasPendleArbRewards={data.hasPendleArbRewards}
             hasKelpNEngenlayer={data.hasKelpNEngenlayer}
@@ -110,31 +148,50 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
   if (data.mode === 'boosted' && data.isBoosted) {
     const unBoostedAPY = data.unboostedApr || 0
     return (
-      <span className={'tooltip'}>
-        <div className={'flex flex-col items-end md:text-right'}>
-          <b
-            className={
-              'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-            }
-          >
-            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
+      <div className={'flex flex-col items-end md:text-right'}>
+        <b className={'yearn--table-data-section-item-value flex items-center'}>
+          <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
+            <ResponsivePopover
+              trigger={
+                <span
+                  className={
+                    'hidden md:inline underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                  }
+                >
+                  <RenderAmount shouldHideTooltip value={currentVault.apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                </span>
+              }
+              mobileTrigger={<InfoButton />}
+              mobileContent={
+                <APYTooltip
+                  baseAPY={unBoostedAPY}
+                  hasPendleArbRewards={data.hasPendleArbRewards}
+                  hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+                  hasKelp={data.hasKelp}
+                  boost={data.boost}
+                  standalone
+                />
+              }
+            >
+              <APYTooltip
+                baseAPY={unBoostedAPY}
+                hasPendleArbRewards={data.hasPendleArbRewards}
+                hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+                hasKelp={data.hasKelp}
+                boost={data.boost}
+              />
+            </ResponsivePopover>
+            <span className={'md:hidden inline font-number'}>
               <RenderAmount shouldHideTooltip value={currentVault.apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
-            </Renderable>
-          </b>
-          <small className={'text-xs text-neutral-800'}>
-            <Renderable shouldRender={data.isBoosted}>
-              {`BOOST ${formatAmount(data.boost || 0, 2, 2)}x`}
-            </Renderable>
-          </small>
-          <APYTooltip
-            baseAPY={unBoostedAPY}
-            hasPendleArbRewards={data.hasPendleArbRewards}
-            hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-            hasKelp={data.hasKelp}
-            boost={data.boost}
-          />
-        </div>
-      </span>
+            </span>
+          </Renderable>
+        </b>
+        <small className={'text-xs text-neutral-800'}>
+          <Renderable shouldRender={data.isBoosted}>
+            {`BOOST ${formatAmount(data.boost || 0, 2, 2)}x`}
+          </Renderable>
+        </small>
+      </div>
     )
   }
 
@@ -158,36 +215,62 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
 
     return (
       <div className={'relative flex flex-col items-end md:text-right'}>
-        <span className={'tooltip'}>
-          <b className={'yearn--table-data-section-item-value whitespace-nowrap'}>
-            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-              {'⚡️ '}
-              <span
-                className={
-                  'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                }
-              >
-                {estAPYRange ? (
-                  <Fragment>
-                    <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
-                    &nbsp;&rarr;&nbsp;
-                    <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
-                  </Fragment>
-                ) : (
-                  <RenderAmount shouldHideTooltip={hasZeroBoostedAPY} value={boostedAPY} symbol={'percent'} decimals={6} />
-                )}
-              </span>
-            </Renderable>
-          </b>
-          <APYTooltip
-            baseAPY={data.baseForwardApr}
-            rewardsAPY={veYFIRange ? undefined : data.rewardsAprSum}
-            hasPendleArbRewards={data.hasPendleArbRewards}
-            hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-            hasKelp={data.hasKelp}
-            range={veYFIRange}
-          />
-        </span>
+        <b className={'yearn--table-data-section-item-value whitespace-nowrap flex items-center'}>
+          <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
+            {'⚡️ '}
+            <ResponsivePopover
+              trigger={
+                <span
+                  className={
+                    'hidden md:inline underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                  }
+                >
+                  {estAPYRange ? (
+                    <Fragment>
+                      <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
+                      &nbsp;&rarr;&nbsp;
+                      <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
+                    </Fragment>
+                  ) : (
+                    <RenderAmount shouldHideTooltip={hasZeroBoostedAPY} value={boostedAPY} symbol={'percent'} decimals={6} />
+                  )}
+                </span>
+              }
+              mobileTrigger={<InfoButton />}
+              mobileContent={
+                <APYTooltip
+                  baseAPY={data.baseForwardApr}
+                  rewardsAPY={veYFIRange ? undefined : data.rewardsAprSum}
+                  hasPendleArbRewards={data.hasPendleArbRewards}
+                  hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+                  hasKelp={data.hasKelp}
+                  range={veYFIRange}
+                  standalone
+                />
+              }
+            >
+              <APYTooltip
+                baseAPY={data.baseForwardApr}
+                rewardsAPY={veYFIRange ? undefined : data.rewardsAprSum}
+                hasPendleArbRewards={data.hasPendleArbRewards}
+                hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+                hasKelp={data.hasKelp}
+                range={veYFIRange}
+              />
+            </ResponsivePopover>
+            <span className={'md:hidden inline font-number'}>
+              {estAPYRange ? (
+                <Fragment>
+                  <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
+                  &nbsp;&rarr;&nbsp;
+                  <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
+                </Fragment>
+              ) : (
+                <RenderAmount shouldHideTooltip={hasZeroBoostedAPY} value={boostedAPY} symbol={'percent'} decimals={6} />
+              )}
+            </span>
+          </Renderable>
+        </b>
         <APYSubline hasPendleArbRewards={data.hasPendleArbRewards} hasKelp={data.hasKelp} hasKelpNEngenlayer={data.hasKelpNEngenlayer} />
       </div>
     )
@@ -222,4 +305,3 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
     </div>
   )
 }
-
