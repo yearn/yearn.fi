@@ -1,4 +1,6 @@
-import { useRouter } from 'next/router'
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
 /************************************************************************************************
@@ -17,7 +19,10 @@ import { useEffect, useState } from 'react'
  ** @returns {string | null} - The value of the query parameter, or null if not found
  ************************************************************************************************/
 export function useInitialQueryParam(key: string): string | null {
-  const router = useRouter()
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
   const [value, setValue] = useState<string | null>(null)
 
   useEffect(() => {
@@ -30,12 +35,12 @@ export function useInitialQueryParam(key: string): string | null {
 
   useEffect(() => {
     if (router.isReady && !value) {
-      const queryValue = router.query[key] as string
+      const queryValue = params /* TODO: Update to use params from useParams() */[key] as string
       if (queryValue) {
         setValue(queryValue)
       }
     }
-  }, [router.isReady, router.query, key, value])
+  }, [router.isReady, params /* TODO: Update to use params from useParams() */, key, value])
 
   return value
 }

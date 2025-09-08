@@ -116,7 +116,7 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
     return await handleTx(propsWithoutOnTrySomethingElse, {
       address: toAddress(props.contractAddress),
       abi: ALTERNATE_ERC20_APPROVE_ABI,
-      confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined),
+      confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined),
       functionName: 'approve',
       args: [props.spenderAddress, props.amount]
     })
@@ -125,7 +125,7 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
   return await handleTx(props, {
     address: props.contractAddress,
     abi: erc20Abi,
-    confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined),
+    confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined),
     functionName: 'approve',
     args: [props.spenderAddress, props.amount]
   })
@@ -153,7 +153,7 @@ export async function deposit(props: TDeposit): Promise<TTxResponse> {
     abi: VAULT_ABI,
     functionName: 'deposit',
     args: [props.amount, wagmiProvider.address],
-    confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
+    confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined)
   })
 }
 
@@ -232,7 +232,7 @@ export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxR
     address: props.contractAddress,
     abi: PARTNER_VAULT_ABI,
     functionName: 'deposit',
-    args: [props.vaultAddress, props.partnerAddress || toAddress(process.env.PARTNER_ID_ADDRESS), props.amount]
+    args: [props.vaultAddress, props.partnerAddress || toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS), props.amount]
   })
 }
 

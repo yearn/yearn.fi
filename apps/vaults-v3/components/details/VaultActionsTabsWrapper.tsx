@@ -1,3 +1,5 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { InfoTooltip } from '@lib/components/InfoTooltip'
 import { Switch } from '@lib/components/Switch'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -29,7 +31,7 @@ import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/ac
 import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
-import { useRouter } from 'next/router'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useBlockNumber, useReadContract } from 'wagmi'
@@ -243,8 +245,11 @@ export function VaultDetailsTab(props: {
   unstakedBalance: TNormalizedBN | undefined
   onSwitchTab: (tab: TTabsOptions) => void
 }): ReactElement {
-  const router = useRouter()
-  const isV3Page = router.pathname.startsWith('/v3')
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
+  const isV3Page = location.pathname.startsWith('/v3')
   const stakingRewardSource = props.currentVault.staking.source
   const tabLabel = useMemo(() => {
     if (props.tab.label === 'Boost' && stakingRewardSource === 'VeYFI') {
@@ -269,7 +274,7 @@ export function VaultDetailsTab(props: {
         router.replace(
           {
             query: {
-              ...router.query,
+              ...params /* TODO: Update to use params from useParams() */,
               action: props.tab.slug
             }
           },
@@ -311,7 +316,10 @@ export function VaultDetailsTab(props: {
 export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance } = useActionFlow()
   const { address } = useWeb3()
-  const router = useRouter()
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })
   const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined)

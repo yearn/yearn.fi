@@ -1,6 +1,6 @@
 import { IconArrow } from '@lib/icons/IconArrow'
-import Image from 'next/image'
-import Link from 'next/link'
+import Image from '/src/components/Image'
+import Link from '/src/components/Link'
 import { type ReactElement, useState } from 'react'
 
 export function EarnCard(props: {

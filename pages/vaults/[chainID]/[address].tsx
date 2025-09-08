@@ -1,3 +1,5 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -16,13 +18,16 @@ import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHe
 import { motion } from 'framer-motion'
 
 import type { GetStaticPaths, GetStaticProps } from 'next'
-import { useRouter } from 'next/router'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
 
 function Index(): ReactElement | null {
   const { address, isActive } = useWeb3()
-  const router = useRouter()
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
 
   const { onRefresh } = useWallet()
   const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: Number(router.query.chainID) })
@@ -103,7 +108,7 @@ function Index(): ReactElement | null {
         >
           <ImageWithFallback
             className={'size-12 md:size-[72px]'}
-            src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
+            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
               currentVault.token.address
             )}/logo-128.png`}
             alt={''}

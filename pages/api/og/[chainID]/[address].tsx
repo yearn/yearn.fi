@@ -128,7 +128,7 @@ function formatUSD(amount: number): string {
 
 async function fetchVaultData(chainID: string, address: string) {
   // Additional security: ensure base URI is a trusted external service
-  const baseUri = process.env.YDAEMON_BASE_URI
+  const baseUri = import.meta.env.VITE_YDAEMON_BASE_URI
   if (!baseUri || !baseUri.startsWith('https://')) {
     console.error('Invalid or missing YDAEMON_BASE_URI')
     return null
@@ -160,7 +160,7 @@ async function fetchVaultData(chainID: string, address: string) {
 }
 
 async function fetchKatanaAprs(): Promise<TKatanaAprs | null> {
-  const apiUrl = process.env.KATANA_APR_SERVICE_API
+  const apiUrl = import.meta.env.VITE_KATANA_APR_SERVICE_API
   if (!apiUrl) {
     console.error('KATANA_APR_SERVICE_API environment variable is not set')
     return null
@@ -192,7 +192,7 @@ async function fetchYBoldApr(chainID: string): Promise<{ estimatedAPY: number; h
     return null
   }
 
-  const baseUri = process.env.YDAEMON_BASE_URI
+  const baseUri = import.meta.env.VITE_YDAEMON_BASE_URI
   if (!baseUri || !baseUri.startsWith('https://')) {
     console.error('Invalid or missing YDAEMON_BASE_URI')
     return null
@@ -346,7 +346,7 @@ export default async function handler(req: NextRequest) {
     const historicalAPY = calculateHistoricalAPY(vaultData, yBoldApr)
 
     displayData = {
-      icon: `${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${vaultData.token.address}/logo-128.png`,
+      icon: `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${chainID}/${vaultData.token.address}/logo-128.png`,
       name: vaultData.name?.replace(/\s+Vault$/, '') || 'Yearn Vault',
       estimatedApy: `${(estimatedAPY * 100).toFixed(2)}%`,
       historicalApy: historicalAPY === -1 ? '--%' : `${(historicalAPY * 100).toFixed(2)}%`,
@@ -356,7 +356,7 @@ export default async function handler(req: NextRequest) {
   } else {
     // Fallback data if vault fetch fails
     displayData = {
-      icon: `${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-128.png`,
+      icon: `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-128.png`,
       name: 'Yearn Vault',
       estimatedApy: '0.00%',
       historicalApy: '0.00%',

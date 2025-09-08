@@ -1,5 +1,5 @@
 import { SectionHeader } from '@lib/components/SectionHeader'
-import Image from 'next/image'
+import Image from '/src/components/Image'
 import type { FC, ReactNode } from 'react'
 import { useState } from 'react'
 

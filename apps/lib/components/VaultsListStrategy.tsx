@@ -13,7 +13,7 @@ import type { TYDaemonReports } from '@vaults-v2/schemas/reportsSchema'
 import { yDaemonReportsSchema } from '@vaults-v2/schemas/reportsSchema'
 import { getChainBgColor } from '@vaults-v3/utils'
 import { motion } from 'framer-motion'
-import Link from 'next/link'
+import Link from '/src/components/Link'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 
@@ -136,7 +136,7 @@ export function VaultsListStrategy({
           </div>
           <div className={'rounded-full'}>
             <ImageWithFallback
-              src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainId}/${tokenAddress}/logo-128.png`}
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${chainId}/${tokenAddress}/logo-128.png`}
               alt={''}
               width={24}
               height={24}

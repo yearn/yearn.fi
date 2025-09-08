@@ -1,6 +1,7 @@
 import AppHeader from '@lib/components/Header'
 import { Meta } from '@lib/components/Meta'
 import { WithFonts } from '@lib/components/WithFonts'
+import { HelmetProvider } from 'react-helmet-async'
 import { IndexedDB } from '@lib/contexts/useIndexedDB'
 import { WithNotifications } from '@lib/contexts/useNotifications'
 import { WithNotificationsActions } from '@lib/contexts/useNotificationsActions'
@@ -15,48 +16,29 @@ import { cl } from '@lib/utils'
 import { variants } from '@lib/utils/animations'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
-import { LandingAppHeader } from 'apps/landing/components/common/Header'
+import { LandingAppHeader } from '@landing/components/common/Header'
 import { AnimatePresence, domAnimation, LazyMotion, motion } from 'framer-motion'
-import type { AppProps } from 'next/app'
-import { usePathname } from 'next/navigation'
-import type { NextRouter } from 'next/router'
-import PlausibleProvider from 'next-plausible'
+import PlausibleProvider from './components/PlausibleProvider'
 import type { ReactElement } from 'react'
 import { memo } from 'react'
 import { Toaster } from 'react-hot-toast'
-import type { Chain } from 'viem'
-import '../style.css'
+import { useLocation } from 'react-router-dom'
+import { AppRoutes } from './routes'
 
-/** 🔵 - Yearn Finance ***************************************************************************
- ** The 'WithLayout' function is a React functional component that returns a ReactElement. It is used
- ** to wrap the current page component and provide layout for the page.
- **
- ** It uses the 'useLocalStorageValue' hook to get the value of 'yearn.fi/feedback-popover' from
- ** local storage. This value is used to determine whether to show the feedback popover.
- **
- ** The 'useCurrentApp' hook is used to get the current app name.
- ** The 'getLayout' function is used to get the layout of the current page component. If the current
- ** page component does not have a 'getLayout' function, it defaults to a function that returns the
- ** page as is.
- ** The returned JSX structure is a div with the 'AppHeader' component, the current page component
- ** wrapped with layout, and the feedback popover if it should not be hidden.
- **************************************************************************************************/
-const WithLayout = memo(function WithLayout(
-  props: { router: NextRouter; supportedNetworks: Chain[] } & AppProps
-): ReactElement {
-  const { Component, pageProps } = props
-  const isAppsPage = props.router.asPath?.startsWith('/apps')
-  const pathName = usePathname()
+const WithLayout = memo(function WithLayout(): ReactElement {
+  const location = useLocation()
+  const isAppsPage = location.pathname?.startsWith('/apps')
+  const isHomePage = location.pathname === '/'
 
   if (isAppsPage) {
     return (
       <>
         <div className={cl('mx-auto mb-0 flex z-60 max-w-[1232px] absolute top-0 inset-x-0 px-4 bg-neutral-0')}>
-          <AppHeader supportedNetworks={props.supportedNetworks} />
+          <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
         </div>
         <div id={'app'} className={'bg-neutral-0 mb-0 flex min-h-screen justify-center'}>
           <div className={'flex w-full max-w-[1230px] justify-start'}>
-            <Component router={props.router} {...pageProps} />
+            <AppRoutes />
           </div>
         </div>
       </>
@@ -66,20 +48,20 @@ const WithLayout = memo(function WithLayout(
   return (
     <>
       <div className={cl('mx-auto mb-0 flex z-60 max-w-[1232px] absolute top-0 inset-x-0 px-4')}>
-        {pathName === '/' ? <LandingAppHeader /> : <AppHeader supportedNetworks={props.supportedNetworks} />}
+        {isHomePage ? <LandingAppHeader /> : <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />}
       </div>
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>
           <LazyMotion features={domAnimation}>
             <AnimatePresence mode={'wait'}>
               <motion.div
-                key={props.router.asPath}
+                key={location.pathname}
                 initial={'initial'}
                 animate={'enter'}
                 exit={'exit'}
                 variants={variants}
               >
-                <Component router={props.router} {...pageProps} />
+                <AppRoutes />
               </motion.div>
             </AnimatePresence>
           </LazyMotion>
@@ -89,22 +71,12 @@ const WithLayout = memo(function WithLayout(
   )
 })
 
-/**** 🔵 - Yearn Finance ***************************************************************************
- ** The 'MyApp' function is a React functional component that returns a ReactElement. It is the main
- ** entry point of the application.
- **
- ** It uses the 'WithYearn' context provider to provide global state for Yearn. The 'WithYearn'
- ** component is configured with a list of supported chains and some options.
- **
- ** The 'App' component is wrapped with the 'WithYearn' component to provide it with the Yearn
- ** context.
- **
- ** The returned JSX structure is a main element with the 'WithYearn' and 'App' components.
- **************************************************************************************************/
-function MyApp(props: AppProps): ReactElement {
-  const { manifest } = useCurrentApp(props.router)
+function App(): ReactElement {
+  const location = useLocation()
+  const { manifest } = useCurrentApp()
+  
   // Determine dynamic meta for V3 vault detail pages
-  const { asPath } = props.router
+  const asPath = location.pathname
 
   // Get most basic og and uri info
   let ogUrl = manifest.og || 'https://yearn.fi/og.png'
@@ -112,11 +84,11 @@ function MyApp(props: AppProps): ReactElement {
 
   // Determine base URL for dynamic OG API based on environment
   let baseUrl = 'https://yearn.fi' // Default to production
-  if (process.env.VERCEL_ENV === 'production') {
+  if (import.meta.env.VITE_VERCEL_ENV === 'production') {
     baseUrl = 'https://yearn.fi'
-  } else if (process.env.VERCEL_URL) {
+  } else if (import.meta.env.VITE_VERCEL_URL) {
     // Vercel preview/development builds
-    baseUrl = `https://${process.env.VERCEL_URL}`
+    baseUrl = `https://${import.meta.env.VITE_VERCEL_URL}`
   } else if (typeof window !== 'undefined') {
     // Local development fallback
     baseUrl = window.location.origin
@@ -138,8 +110,9 @@ function MyApp(props: AppProps): ReactElement {
   }
 
   return (
-    <WithFonts>
-      <Meta
+    <HelmetProvider>
+      <WithFonts>
+        <Meta
         title={manifest.name || 'Yearn'}
         description={manifest.description || 'The yield protocol for digital assets'}
         titleColor={'#ffffff'}
@@ -162,7 +135,7 @@ function MyApp(props: AppProps): ReactElement {
                   <IndexedDB>
                     <WithNotifications>
                       <WithNotificationsActions>
-                        <WithLayout supportedNetworks={SUPPORTED_NETWORKS} {...props} />
+                        <WithLayout />
                       </WithNotificationsActions>
                     </WithNotifications>
                   </IndexedDB>
@@ -198,8 +171,9 @@ function MyApp(props: AppProps): ReactElement {
           position={'bottom-right'}
         />
       </main>
-    </WithFonts>
+      </WithFonts>
+    </HelmetProvider>
   )
 }
 
-export default MyApp
+export default App

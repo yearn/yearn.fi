@@ -11,7 +11,7 @@ import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useActionFlow } from '@vaults-v2/contexts/useActionFlow'
 import { useSolver } from '@vaults-v2/contexts/useSolver'
 import type { TStakingInfo } from '@vaults-v2/hooks/useVaultStakingData'
-import { useRouter } from 'next/router'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { Fragment, type ReactElement, useMemo } from 'react'
 
 function VaultAPY({

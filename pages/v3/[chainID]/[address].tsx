@@ -1,3 +1,5 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -14,14 +16,17 @@ import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHe
 import { VaultDetailsTabsWrapper } from '@vaults-v3/components/details/VaultDetailsTabsWrapper'
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 
-import type { GetStaticPaths, GetStaticProps } from 'next'
-import { useRouter } from 'next/router'
+// Removed Next.js imports - using React Router instead
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
 
 function Index(): ReactElement | null {
   const { address, isActive } = useWeb3()
-  const router = useRouter()
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
   const { onRefresh } = useWallet()
   const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: Number(router.query.chainID) })
   const [_currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
@@ -110,7 +115,7 @@ function Index(): ReactElement | null {
     <div className={'mx-auto w-full max-w-[1232px] pt-20 md:pt-32 px-4'}>
       {/* Mobile Back Button */}
       <nav className={'mb-4 self-start md:mb-2 md:hidden'}>
-        <button className={'z-50 w-fit'} onClick={async () => await router.push('/v3')}>
+        <button className={'z-50 w-fit'} onClick={async () => await navigate('/v3')}>
           <p className={'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'}>
             <span className={'pr-2 leading-[normal]'}>&#10229;</span>
             {'  Back'}
@@ -127,7 +132,7 @@ function Index(): ReactElement | null {
         )}
       >
         <nav className={'mb-4 hidden self-start md:mb-2 md:block'}>
-          <button className={'w-fit'} onClick={async () => await router.push('/v3')}>
+          <button className={'w-fit'} onClick={async () => await navigate('/v3')}>
             <p
               className={'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'}
             >
@@ -145,7 +150,7 @@ function Index(): ReactElement | null {
           >
             <ImageWithFallback
               className={'size-10 md:size-12'}
-              src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
               alt={''}
               width={48}
               height={48}
@@ -167,17 +172,6 @@ function Index(): ReactElement | null {
   )
 }
 
-export const getStaticPaths = (async () => {
-  return {
-    paths: [],
-    fallback: true
-  }
-}) satisfies GetStaticPaths
-
-export const getStaticProps: GetStaticProps = async () => {
-  return {
-    props: {}
-  }
-}
+// Static generation handled by Vite
 
 export default Index

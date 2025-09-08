@@ -4,8 +4,8 @@ import { VEYFI_DYFI_ADDRESS, YCRV_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { VAULTS_BETA_MENU } from '@vaults/constants/menu'
 import { VAULTS_MENU } from '@vaults-v2/constants/menu'
 import { VAULTS_V3_MENU } from '@vaults-v3/constants/menu'
-import Image from 'next/image'
-import vaultsManifest from 'public/apps/vaults-manifest.json'
+import Image from '/src/components/Image'
+import vaultsManifest from '@lib/data/vaults-manifest.json'
 
 import type { ReactElement } from 'react'
 import type { TMenu } from './Header'
@@ -117,7 +117,7 @@ export const APPS: { [key in AppName]: TApp } = {
         className={'size-8'}
         width={64}
         height={64}
-        src={`${process.env.SMOL_ASSETS_URL}/token/1/${VEYFI_DYFI_ADDRESS}/logo-128.png`}
+        src={`${import.meta.env.VITE_SMOL_ASSETS_URL}/token/1/${VEYFI_DYFI_ADDRESS}/logo-128.png`}
         loading={'eager'}
         priority
       />
@@ -134,7 +134,7 @@ export const APPS: { [key in AppName]: TApp } = {
         width={64}
         height={64}
         className={'size-8'}
-        src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
+        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
         loading={'eager'}
         priority
       />
@@ -151,7 +151,7 @@ export const APPS: { [key in AppName]: TApp } = {
         width={64}
         height={64}
         className={'size-8'}
-        src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
+        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
         loading={'eager'}
         priority
       />
@@ -168,7 +168,7 @@ export const APPS: { [key in AppName]: TApp } = {
         width={64}
         height={64}
         className={'size-8'}
-        src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
+        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
         loading={'eager'}
         priority
       />

@@ -10,8 +10,8 @@ import type { TNotification, TNotificationStatus } from '@lib/types/notification
 import { cl, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { motion } from 'framer-motion'
-import Image from 'next/image'
-import Link from 'next/link'
+import Image from '/src/components/Image'
+import Link from '/src/components/Link'
 import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
 
@@ -111,8 +111,8 @@ function NotificationContent({
           <ImageWithFallback
             alt={notification.fromTokenName || 'Token'}
             unoptimized
-            src={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.fromAddress || '0x0'}/logo-128.png`}
-            altSrc={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.fromAddress || '0x0'}/logo-128.png`}
+            src={`${import.meta.env.VITE_SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.fromAddress || '0x0'}/logo-128.png`}
+            altSrc={`${import.meta.env.VITE_SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.fromAddress || '0x0'}/logo-128.png`}
             quality={90}
             width={32}
             height={32}
@@ -122,7 +122,7 @@ function NotificationContent({
               width={14}
               height={14}
               alt={'chain'}
-              src={`${process.env.SMOL_ASSETS_URL}/chain/${notification.chainId}/logo.svg`}
+              src={`${import.meta.env.VITE_SMOL_ASSETS_URL}/chain/${notification.chainId}/logo.svg`}
             />
           </div>
         </div>
@@ -134,8 +134,8 @@ function NotificationContent({
             <ImageWithFallback
               alt={notification.toTokenName || 'Token'}
               unoptimized
-              src={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.toAddress}/logo-128.png`}
-              altSrc={`${process.env.SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.toAddress}/logo-128.png`}
+              src={`${import.meta.env.VITE_SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.toAddress}/logo-128.png`}
+              altSrc={`${import.meta.env.VITE_SMOL_ASSETS_URL}/token/${notification.chainId}/${notification.toAddress}/logo-128.png`}
               quality={90}
               width={32}
               height={32}
@@ -145,7 +145,7 @@ function NotificationContent({
                 width={14}
                 height={14}
                 alt={'chain'}
-                src={`${process.env.SMOL_ASSETS_URL}/chain/${notification.chainId}/logo.svg`}
+                src={`${import.meta.env.VITE_SMOL_ASSETS_URL}/chain/${notification.chainId}/logo.svg`}
               />
             </div>
           </div>

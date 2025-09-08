@@ -50,7 +50,7 @@ export const useKatanaAprs = (): { data: Partial<TKatanaAprs>; isLoading: boolea
           }
         }
 
-        const apiUrl = process.env.KATANA_APR_SERVICE_API
+        const apiUrl = import.meta.env.VITE_KATANA_APR_SERVICE_API
         if (!apiUrl) {
           throw new Error('KATANA_APR_SERVICE_API environment variable is not set')
         }

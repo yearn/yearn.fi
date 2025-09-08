@@ -1,3 +1,5 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
@@ -37,7 +39,7 @@ import { Solver } from '@vaults-v2/types/solvers'
 import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
 import { VEYFI_ABI } from '@vaults-v2/utils/abi/veYFI.abi'
 import { setZapOption } from '@vaults-v2/utils/zapOptions'
-import { useRouter } from 'next/router'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 
 import type { ReactNode } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
@@ -116,7 +118,10 @@ type TUseContextualIs = {
  ** It's a simple helper to make the code more readable in the main context.
  *************************************************************************************************/
 function useContextualIs({ selectedTo, currentVault }: TUseContextualIs): [boolean, boolean] {
-  const router = useRouter()
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
 
   const isDepositing = useMemo(
     (): boolean =>

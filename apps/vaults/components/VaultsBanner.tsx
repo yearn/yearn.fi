@@ -1,7 +1,7 @@
 import { SectionHeader } from '@lib/components/SectionHeader'
 import { useWeb3 } from '@lib/contexts/useWeb3'
-import Image from 'next/image'
-import Link from 'next/link'
+import Image from '/src/components/Image'
+import Link from '/src/components/Link'
 
 import type { ReactElement } from 'react'
 

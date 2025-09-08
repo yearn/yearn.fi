@@ -4,7 +4,7 @@ import { formatAmount, formatPercent, toAddress } from '@lib/utils'
 import { replaceStrings } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VAULT_NAME_REPLACEMENTS } from '@vaults/constants'
-import Link from 'next/link'
+import Link from '/src/components/Link'
 import type { FC } from 'react'
 
 export const VaultPositionCard: FC<{
@@ -33,7 +33,7 @@ export const VaultPositionCard: FC<{
             <div className={'flex items-center gap-2'}>
               <div className={'rounded-full'}>
                 <ImageWithFallback
-                  src={`${process.env.BASE_YEARN_ASSETS_URI}/${vault.chainID}/${vault.token.address}/logo-128.png`}
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${vault.chainID}/${vault.token.address}/logo-128.png`}
                   alt={vault.symbol}
                   width={28}
                   height={28}

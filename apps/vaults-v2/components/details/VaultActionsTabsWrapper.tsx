@@ -1,3 +1,5 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { InfoTooltip } from '@lib/components/InfoTooltip'
 import { Switch } from '@lib/components/Switch'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -23,8 +25,8 @@ import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/action
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import type { TTabsOptions } from '@vaults-v3/components/details/VaultActionsTabsWrapper'
 import { getCurrentTab, tabs, VaultDetailsTab } from '@vaults-v3/components/details/VaultActionsTabsWrapper'
-import Link from 'next/link'
-import { useRouter } from 'next/router'
+import Link from '/src/components/Link'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 
 import type { ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
@@ -65,7 +67,10 @@ function MobileTabButtons(props: {
  ** corresponding actions that can be taken.
  *************************************************************************************************/
 export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
-  const router = useRouter()
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const { address } = useWeb3()
   const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })

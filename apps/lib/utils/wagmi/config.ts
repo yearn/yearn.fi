@@ -50,27 +50,26 @@ export function getConfig({ chains }: { chains: Chain[] }): ResolvedRegister['co
     /**************************************************************************************
      ** Assign the transport via the env variables
      *************************************************************************************/
-    const newRPC = process.env.RPC_URI_FOR?.[chain.id] || ''
-    const newRPCBugged = process.env[`RPC_URI_FOR_${chain.id}`]
-    const oldRPC = process.env.JSON_RPC_URI?.[chain.id] || process.env.JSON_RPC_URL?.[chain.id]
+    const newRPC = import.meta.env.VITE_RPC_URI_FOR?.[chain.id] || ''
+    const oldRPC = import.meta.env.VITE_JSON_RPC_URI?.[chain.id] || import.meta.env.VITE_JSON_RPC_URL?.[chain.id]
     const defaultJsonRPCURL = chain?.rpcUrls?.public?.http?.[0]
-    const envRPC = newRPC || oldRPC || newRPCBugged || defaultJsonRPCURL
+    const envRPC = newRPC || oldRPC || defaultJsonRPCURL
     if (envRPC) {
       availableTransports.push(http(envRPC, { batch: true }))
     }
     /**************************************************************************************
      ** Assign the transport via the alchemy and infura keys
      *************************************************************************************/
-    if (getNetwork(chain.id)?.rpcUrls.alchemy?.http[0] && process.env.ALCHEMY_KEY) {
+    if (getNetwork(chain.id)?.rpcUrls.alchemy?.http[0] && import.meta.env.VITE_ALCHEMY_KEY) {
       availableTransports.push(
-        http(`${getNetwork(chain.id)?.rpcUrls.alchemy.http[0]}/${process.env.ALCHEMY_KEY}`, {
+        http(`${getNetwork(chain.id)?.rpcUrls.alchemy.http[0]}/${import.meta.env.VITE_ALCHEMY_KEY}`, {
           batch: true
         })
       )
     }
-    if (getNetwork(chain.id)?.rpcUrls.infura?.http[0] && process.env.INFURA_PROJECT_ID) {
+    if (getNetwork(chain.id)?.rpcUrls.infura?.http[0] && import.meta.env.VITE_INFURA_PROJECT_ID) {
       availableTransports.push(
-        http(`${getNetwork(chain.id)?.rpcUrls.infura.http[0]}/${process.env.INFURA_PROJECT_ID}`, {
+        http(`${getNetwork(chain.id)?.rpcUrls.infura.http[0]}/${import.meta.env.VITE_INFURA_PROJECT_ID}`, {
           batch: true
         })
       )
@@ -103,8 +102,8 @@ export function getConfig({ chains }: { chains: Chain[] }): ResolvedRegister['co
   }
 
   const config = getDefaultConfig({
-    appName: (process.env.WALLETCONNECT_PROJECT_NAME as string) || '',
-    projectId: process.env.WALLETCONNECT_PROJECT_ID as string,
+    appName: (import.meta.env.VITE_WALLETCONNECT_PROJECT_NAME as string) || '',
+    projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string,
     chains: chains as unknown as _chains,
     ssr: true,
     wallets: [
@@ -140,20 +139,19 @@ export function getConfig({ chains }: { chains: Chain[] }): ResolvedRegister['co
       wsURI = 'ws' + wsURI
     }
     const availableRPCs: string[] = []
-    const newRPC = process.env.RPC_URI_FOR?.[chain.id] || ''
-    const newRPCBugged = process.env[`RPC_URI_FOR_${chain.id}`]
-    const oldRPC = process.env.JSON_RPC_URI?.[chain.id] || process.env.JSON_RPC_URL?.[chain.id]
+    const newRPC = import.meta.env.VITE_RPC_URI_FOR?.[chain.id] || ''
+    const oldRPC = import.meta.env.VITE_JSON_RPC_URI?.[chain.id] || import.meta.env.VITE_JSON_RPC_URL?.[chain.id]
     const defaultJsonRPCURL = chain?.rpcUrls?.public?.http?.[0]
-    const injectedRPC = newRPC || oldRPC || newRPCBugged || defaultJsonRPCURL || ''
+    const injectedRPC = newRPC || oldRPC || defaultJsonRPCURL || ''
 
     if (injectedRPC) {
       availableRPCs.push(injectedRPC)
     }
-    if (chain?.rpcUrls.alchemy?.http[0] && process.env.ALCHEMY_KEY) {
-      availableRPCs.push(`${chain?.rpcUrls.alchemy.http[0]}/${process.env.ALCHEMY_KEY}`)
+    if (chain?.rpcUrls.alchemy?.http[0] && import.meta.env.VITE_ALCHEMY_KEY) {
+      availableRPCs.push(`${chain?.rpcUrls.alchemy.http[0]}/${import.meta.env.VITE_ALCHEMY_KEY}`)
     }
-    if (chain?.rpcUrls.infura?.http[0] && process.env.INFURA_PROJECT_ID) {
-      availableRPCs.push(`${chain?.rpcUrls.infura.http[0]}/${process.env.INFURA_PROJECT_ID}`)
+    if (chain?.rpcUrls.infura?.http[0] && import.meta.env.VITE_INFURA_PROJECT_ID) {
+      availableRPCs.push(`${chain?.rpcUrls.infura.http[0]}/${import.meta.env.VITE_INFURA_PROJECT_ID}`)
     }
     if (!chain.rpcUrls.default) {
       chain.rpcUrls.default = { http: [], webSocket: [] }

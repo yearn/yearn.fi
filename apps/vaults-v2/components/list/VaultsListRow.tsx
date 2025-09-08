@@ -1,3 +1,5 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { Renderable } from '@lib/components/Renderable'
@@ -9,7 +11,7 @@ import { cl, formatAmount, isZero, toAddress, toNormalizedBN } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
-import Link from 'next/link'
+import Link from '/src/components/Link'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 
@@ -394,7 +396,7 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
           <div className={'flex flex-row gap-6 overflow-hidden'}>
             <div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
               <ImageWithFallback
-                src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
                 alt={''}
                 width={32}
                 height={32}
@@ -409,7 +411,7 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
               </strong>
               <div className={'flex flex-row items-center gap-1'}>
                 <ImageWithFallback
-                  src={`${process.env.BASE_YEARN_CHAIN_URI}/${currentVault.chainID}/logo-32.png`}
+                  src={`${import.meta.env.VITE_BASE_YEARN_CHAIN_URI}/${currentVault.chainID}/logo-32.png`}
                   alt={`Chain ${currentVault.chainID}`}
                   width={14}
                   height={14}

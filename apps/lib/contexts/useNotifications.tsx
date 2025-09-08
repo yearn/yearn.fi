@@ -1,7 +1,9 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
 import type { TNotification, TNotificationStatus, TNotificationsContext } from '@lib/types/notifications'
 import { NotificationsCurtain } from '@vaults-v3/components/notifications/NotificationsCurtain'
-import { useRouter } from 'next/router'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type React from 'react'
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import { useIndexedDBStore } from 'use-indexeddb'
@@ -26,8 +28,11 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  const router = useRouter()
-  const isV3 = router.pathname.includes('/v3')
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
+  const isV3 = location.pathname.includes('/v3')
 
   /**************************************************************************
    * State that is used to store latest added/updated notification status

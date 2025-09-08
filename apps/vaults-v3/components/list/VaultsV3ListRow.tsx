@@ -1,3 +1,5 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { Renderable } from '@lib/components/Renderable'
@@ -10,7 +12,7 @@ import { cl, formatAmount, isZero, toAddress, toNormalizedBN } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi/utils'
-import Link from 'next/link'
+import Link from '/src/components/Link'
 
 import type { ReactElement } from 'react'
 import { Fragment, useMemo } from 'react'
@@ -71,16 +73,18 @@ function APYSubline({
               {'This vault earns '}
               {formatAmount(steerPointsPerDollar ?? 0, 2, 2)}
               {' Steer Points / dollar deposited, but you must '}
-              <a
-                href={'https://app.steer.finance/points'}
-                target={'_blank'}
-                rel={'noopener noreferrer'}
+              <span
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  window.open('https://app.steer.finance/points', '_blank', 'noopener,noreferrer')
+                }}
                 className={
-                  'font-bold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 hover:decoration-neutral-600'
+                  'font-bold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 hover:decoration-neutral-600 cursor-pointer'
                 }
               >
                 {'register here to earn them.'}
-              </a>
+              </span>
             </p>
           </div>
         </span>
@@ -237,7 +241,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${process.env.BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -257,7 +261,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${process.env.BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -292,7 +296,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${process.env.BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -312,7 +316,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${process.env.BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -331,7 +335,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${process.env.BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -358,16 +362,18 @@ export function KatanaApyTooltip(props: {
                 {'This vault earns '}
                 {formatAmount(props.steerPointsPerDollar, 2, 2)}
                 {' Steer Points / dollar deposited, but you must '}
-                <a
-                  href={'https://app.steer.finance/points'}
-                  target={'_blank'}
-                  rel={'noopener noreferrer'}
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    window.open('https://app.steer.finance/points', '_blank', 'noopener,noreferrer')
+                  }}
                   className={
-                    'font-bold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 hover:decoration-neutral-600'
+                    'font-bold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 hover:decoration-neutral-600 cursor-pointer'
                   }
                 >
                   {'register here to earn them.'}
-                </a>
+                </span>
               </p>
             </>
           ) : null}
@@ -946,7 +952,7 @@ export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault 
           <div className={'flex flex-row gap-6 overflow-hidden pr-10'}>
             <div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
               <ImageWithFallback
-                src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
                 alt={''}
                 width={32}
                 height={32}

@@ -2,9 +2,9 @@ import { AppCard } from '@lib/components/AppCard'
 import { useInitialQueryParam } from '@lib/hooks/useInitialQueryParam'
 import { cl } from '@lib/utils'
 import { ALL_APPS } from '@lib/utils/constants'
-import type { GetServerSidePropsContext } from 'next'
-import Image from 'next/image'
-import Link from 'next/link'
+// Removed Next.js imports - using React Router instead
+import Image from '/src/components/Image'
+import Link from '/src/components/Link'
 import { type ReactElement, useMemo } from 'react'
 
 export default function SeachResults(): ReactElement {
@@ -72,19 +72,4 @@ export default function SeachResults(): ReactElement {
   )
 }
 
-/************************************************************************************************
- ** getServerSideProps is used here for the following reasons:
- ** 1. To extract the search query from the URL parameters on the server-side
- ** 2. To ensure the search query is available as a prop when the page is initially rendered
- ** 3. To enable server-side rendering (SSR) for this dynamic route, improving SEO and performance
- ** 4. To handle cases where the query might be undefined, providing a fallback empty string
- ** This approach allows for immediate access to the search query without client-side processing
- ************************************************************************************************/
-export async function getServerSideProps(context: GetServerSidePropsContext): Promise<{ props: { query: string } }> {
-  const { query } = context.params as { query: string }
-  return {
-    props: {
-      query: query || ''
-    }
-  }
-}
+// Server-side props handled by React Router - query param is accessed via useInitialQueryParam hook

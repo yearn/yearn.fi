@@ -1,5 +1,6 @@
 import { cl } from '@lib/utils/cl'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'react-router-dom'
+import { usePathname } from '/src/hooks/usePathname'
 
 import type { ReactNode } from 'react'
 import type { NameType, Payload, ValueType } from 'recharts/types/component/DefaultTooltipContent'

@@ -1,7 +1,9 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useRouter } from 'next/router'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
 
@@ -24,7 +26,10 @@ type TTabsProps = {
 
 export function Tabs({ items, className }: TTabsProps): ReactElement {
   const [selectedTabId, setSelectedTabId] = useState(items[0]?.id)
-  const router = useRouter()
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
 
   useEffect((): void => {
     const tab = items.find((tab): boolean => tab.id === router.query.tab)
@@ -45,7 +50,7 @@ export function Tabs({ items, className }: TTabsProps): ReactElement {
                 router.replace(
                   {
                     query: {
-                      ...router.query,
+                      ...params /* TODO: Update to use params from useParams() */,
                       tab: id
                     }
                   },

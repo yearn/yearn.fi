@@ -1,4 +1,4 @@
-import Image from 'next/image'
+import Image from '/src/components/Image'
 import type { ReactElement } from 'react'
 import Marquee from 'react-fast-marquee'
 

@@ -3,7 +3,7 @@ import { useYearnBalance } from '@lib/hooks/useYearnBalance'
 import { formatAmount, toAddress } from '@lib/utils'
 import { getVaultName } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import Link from 'next/link'
+import Link from '/src/components/Link'
 
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
@@ -26,7 +26,7 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
           <div className={'yearn--table-token-section-item inline'}>
             <div className={'yearn--table-token-section-item-image'}>
               <ImageWithFallback
-                src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
                   currentVault.token.address
                 )}/logo-32.png`}
                 alt={''}

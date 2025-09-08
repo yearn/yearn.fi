@@ -1,8 +1,8 @@
 import { ModalMobileMenu } from '@lib/components/ModalMobileMenu'
 import { IconBurgerPlain } from '@lib/icons/IconBurgerPlain'
 import { TypeMarkYearn } from '@lib/icons/TypeMarkYearn'
-import Link from 'next/link'
-import { useRouter } from 'next/router'
+import Link from '/src/components/Link'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { type ReactElement, useMemo, useState } from 'react'
 
 type TMenu = { path: string; label: string | ReactElement; target?: string }
@@ -25,7 +25,8 @@ function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
 }
 
 export function LandingAppHeader(): ReactElement {
-  const { pathname } = useRouter()
+  const location = useLocation()
+  const pathname = location.pathname
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
 
   const menu = useMemo((): TMenu[] => {

@@ -27,9 +27,9 @@ import {
   unstakeVeYFIGauge as unstakeVeYFIAction
 } from '@vaults-v2/utils/actions'
 import { stakeYBold, unstakeYBold } from '@vaults-v3/utils/actions'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useRouter } from 'next/router'
+import Image from '/src/components/Image'
+import Link from '/src/components/Link'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ChangeEvent, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 

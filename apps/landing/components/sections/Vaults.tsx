@@ -1,7 +1,7 @@
 import { SectionHeader } from '@lib/components/SectionHeader'
 import { useYearn } from '@lib/contexts/useYearn'
 import { formatPercent } from '@lib/utils/format'
-import Image from 'next/image'
+import Image from '/src/components/Image'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 

@@ -41,7 +41,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
       abi: STAKING_REWARDS_ZAP_ABI,
       functionName: 'zapIn',
       args: [props.vaultAddress, props.amount],
-      confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
+      confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined)
     })
   }
   // If we are depositing into the V3 Staking
@@ -54,7 +54,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
       abi: V3_REWARDS_ZAP_ABI,
       functionName: 'zapIn',
       args: [props.vaultAddress, props.amount, false],
-      confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
+      confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined)
     })
   }
 
@@ -67,7 +67,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
         abi: YGAUGE_ZAP_ABI,
         functionName: 'zapIn',
         args: [props.vaultAddress, props.amount, props.stakingPoolAddress],
-        confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
+        confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined)
       })
     }
 
@@ -76,7 +76,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
       abi: YGAUGE_ZAP_ABI,
       functionName: 'zapInLegacy',
       args: [props.vaultAddress, props.amount, props.stakingPoolAddress],
-      confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
+      confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined)
     })
   }
   throw new Error('Invalid contract address')
@@ -102,7 +102,7 @@ export async function stake(props: TStake): Promise<TTxResponse> {
     abi: STAKING_REWARDS_ABI,
     functionName: 'stake',
     args: [props.amount],
-    confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
+    confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined)
   })
 }
 
@@ -122,7 +122,7 @@ export async function stakeVeYFIGauge(props: TStake): Promise<TTxResponse> {
     abi: VEYFI_GAUGE_ABI,
     functionName: 'deposit',
     args: [props.amount],
-    confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
+    confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined)
   })
 }
 
@@ -142,7 +142,7 @@ export async function unstake(props: TUnstake): Promise<TTxResponse> {
     address: props.contractAddress,
     abi: STAKING_REWARDS_ABI,
     functionName: 'exit',
-    confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
+    confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined)
   })
 }
 
@@ -169,7 +169,7 @@ export async function unstakeVeYFIGauge(props: TUnstakeVeYFIGauge): Promise<TTxR
     abi: VEYFI_GAUGE_ABI,
     functionName: 'withdraw',
     args: [props.amount, wagmiProvider.address, wagmiProvider.address, props.willClaim],
-    confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
+    confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined)
   })
 }
 
@@ -189,7 +189,7 @@ export async function claim(props: TClaim): Promise<TTxResponse> {
     address: props.contractAddress,
     abi: STAKING_REWARDS_ABI,
     functionName: 'getReward',
-    confirmation: props.confirmation ?? (process.env.NODE_ENV === 'development' ? 1 : undefined)
+    confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined)
   })
 }
 

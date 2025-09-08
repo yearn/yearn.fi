@@ -1,3 +1,5 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { Renderable } from '@lib/components/Renderable'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useFetch } from '@lib/hooks/useFetch'
@@ -13,7 +15,7 @@ import { getNetwork } from '@lib/utils/wagmi/utils'
 import { VaultDetailsAbout } from '@vaults-v2/components/details/tabs/VaultDetailsAbout'
 import { VaultDetailsHistorical } from '@vaults-v2/components/details/tabs/VaultDetailsHistorical'
 import { VaultDetailsStrategies } from '@vaults-v2/components/details/tabs/VaultDetailsStrategies'
-import { useRouter } from 'next/router'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { watchAsset } from 'viem/actions'
@@ -61,7 +63,10 @@ function MobileTabButton(props: {
 }
 
 function Tabs({ selectedAboutTabIndex, setSelectedAboutTabIndex }: TTabs): ReactElement {
-  const router = useRouter()
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
 
   const tabs: TTabsOptions[] = useMemo(
     (): TTabsOptions[] => [
@@ -91,7 +96,7 @@ function Tabs({ selectedAboutTabIndex, setSelectedAboutTabIndex }: TTabs): React
                 router.replace(
                   {
                     query: {
-                      ...router.query,
+                      ...params /* TODO: Update to use params from useParams() */,
                       tab: tab.slug
                     }
                   },
@@ -123,7 +128,7 @@ function Tabs({ selectedAboutTabIndex, setSelectedAboutTabIndex }: TTabs): React
                     router.replace(
                       {
                         query: {
-                          ...router.query,
+                          ...params /* TODO: Update to use params from useParams() */,
                           tab: tab.slug
                         }
                       },

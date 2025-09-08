@@ -130,8 +130,8 @@ export const WithTokenList = ({
        ** if the token's chainID is 1 (Ethereum).
        *************************************************************************************/
       if (
-        process.env.NODE_ENV === 'development' &&
-        Boolean(process.env.SHOULD_USE_FORKNET) &&
+        import.meta.env.VITE_NODE_ENV === 'development' &&
+        Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) &&
         eachToken.chainId === 1
       ) {
         if (!tokenListTokens[1337]) {
@@ -192,8 +192,8 @@ export const WithTokenList = ({
            ** if the token's chainID is 1 (Ethereum).
            *************************************************************************************/
           if (
-            process.env.NODE_ENV === 'development' &&
-            Boolean(process.env.SHOULD_USE_FORKNET) &&
+            import.meta.env.VITE_NODE_ENV === 'development' &&
+            Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) &&
             (eachToken.chainID ?? eachToken.chainId) === 1
           ) {
             if (!tokenListTokens[1337]) {
@@ -250,8 +250,8 @@ export const WithTokenList = ({
          ** if the token's chainID is 1 (Ethereum).
          *************************************************************************************/
         if (
-          process.env.NODE_ENV === 'development' &&
-          Boolean(process.env.SHOULD_USE_FORKNET) &&
+          import.meta.env.VITE_NODE_ENV === 'development' &&
+          Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) &&
           eachToken.chainId === 1
         ) {
           if (!tokenListTokens[1337]) {

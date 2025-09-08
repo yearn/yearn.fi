@@ -145,17 +145,16 @@ function initIndexedWagmiChains(): TNDict<TExtendedChain> {
         ...extendedChain.contracts
       }
 
-      const newRPC = process.env.RPC_URI_FOR?.[extendedChain.id] || ''
-      const newRPCBugged = process.env[`RPC_URI_FOR_${extendedChain.id}`]
-      const oldRPC = process.env.JSON_RPC_URI?.[extendedChain.id] || process.env.JSON_RPC_URL?.[extendedChain.id]
-      if (!newRPC && (newRPCBugged || oldRPC)) {
+      const newRPC = import.meta.env.VITE_RPC_URI_FOR?.[extendedChain.id] || ''
+      const oldRPC = import.meta.env.VITE_JSON_RPC_URI?.[extendedChain.id] || import.meta.env.VITE_JSON_RPC_URL?.[extendedChain.id]
+      if (!newRPC && oldRPC) {
         console.debug(
-          `JSON_RPC_URI[${extendedChain.id}] and RPC_URI_FOR_${extendedChain.id} are deprecated. Please use RPC_URI_FOR[${extendedChain.id}]`
+          `JSON_RPC_URI[${extendedChain.id}] is deprecated. Please use RPC_URI_FOR[${extendedChain.id}]`
         )
       }
       const defaultJsonRPCURL = extendedChain?.rpcUrls?.public?.http?.[0]
 
-      extendedChain.defaultRPC = newRPC || oldRPC || newRPCBugged || defaultJsonRPCURL || ''
+      extendedChain.defaultRPC = newRPC || oldRPC || defaultJsonRPCURL || ''
       extendedChain.rpcUrls.alchemy = { http: [getAlchemyBaseURL(extendedChain.id)] }
       extendedChain.rpcUrls.infura = { http: [getInfuraBaseURL(extendedChain.id)] }
 
@@ -204,14 +203,12 @@ export function getClient(chainID: number): PublicClient {
   }
   const chainConfig = indexedWagmiChains?.[chainID] || retrieveConfig().chains.find((chain) => chain.id === chainID)
 
-  const newRPC = process.env.RPC_URI_FOR?.[chainID] || ''
-  const newRPCBugged = process.env[`RPC_URI_FOR_${chainID}`]
-  const oldRPC = process.env.JSON_RPC_URI?.[chainID] || process.env.JSON_RPC_URL?.[chainID]
+  const newRPC = import.meta.env.VITE_RPC_URI_FOR?.[chainID] || ''
+  const oldRPC = import.meta.env.VITE_JSON_RPC_URI?.[chainID] || import.meta.env.VITE_JSON_RPC_URL?.[chainID]
 
   let url =
     newRPC ||
     oldRPC ||
-    newRPCBugged ||
     chainConfig.rpcUrls.default.http[0] ||
     chainConfig.rpcUrls.alchemy.http[0] ||
     chainConfig.rpcUrls.infura.http[0] ||

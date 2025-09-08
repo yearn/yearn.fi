@@ -3,8 +3,9 @@ import { IconParagraph } from '@lib/icons/IconParagraph'
 import { IconTwitter } from '@lib/icons/IconTwitter'
 import { cl } from '@lib/utils'
 import { iconsDict, LANDING_SIDEBAR_LINKS, MENU_TABS } from '@lib/utils/constants'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import Link from '/src/components/Link'
+import { useLocation } from 'react-router-dom'
+import { usePathname } from '/src/hooks/usePathname'
 
 import type { ReactElement } from 'react'
 

@@ -1,11 +1,11 @@
 import { APPS, AppName } from '@lib/components/Apps'
 import { MotionDiv } from '@lib/components/MotionDiv'
 
-import type { NextRouter } from 'next/router'
+import type { RouterType } from '/src/types/router'
 import type { ReactElement } from 'react'
 
 type TProps = {
-  pathname: NextRouter['pathname']
+  pathname: RouterType['pathname']
 }
 
 export function VaultsV3Header({ pathname }: TProps): ReactElement {

@@ -1,7 +1,7 @@
 import type { TApp } from '@lib/types/mixed'
 import { cl } from '@lib/utils'
-import Image from 'next/image'
-import Link from 'next/link'
+import Image from '/src/components/Image'
+import Link from '/src/components/Link'
 import type { ReactElement } from 'react'
 
 export function FeaturedApp(props: { app: TApp }): ReactElement {

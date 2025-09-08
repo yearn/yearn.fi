@@ -1,3 +1,5 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { Button } from '@lib/components/Button'
 import { useNotificationsActions } from '@lib/contexts/useNotificationsActions'
 import { useWallet } from '@lib/contexts/useWallet'
@@ -17,8 +19,8 @@ import { useSolver } from '@vaults-v2/contexts/useSolver'
 import { useVaultStakingData } from '@vaults-v2/hooks/useVaultStakingData'
 import { Solver } from '@vaults-v2/types/solvers'
 import { motion } from 'framer-motion'
-import { useRouter } from 'next/router'
-import { usePlausible } from 'next-plausible'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { usePlausible } from '/src/hooks/usePlausible'
 import type { ReactElement } from 'react'
 import { useCallback, useState } from 'react'
 import type { Hash, TransactionReceipt } from 'viem'

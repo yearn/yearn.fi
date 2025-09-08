@@ -43,7 +43,7 @@ export type TYearnContext = {
 }
 
 const YearnContext = createContext<TYearnContext>({
-  currentPartner: toAddress(process.env.PARTNER_ID_ADDRESS),
+  currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
   earned: {
     earned: {},
     totalRealizedGainsUSD: 0,
@@ -112,7 +112,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
   return (
     <YearnContext.Provider
       value={{
-        currentPartner: toAddress(process.env.PARTNER_ID_ADDRESS),
+        currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
         prices,
         earned,
         zapSlippage: zapSlippage ?? DEFAULT_SLIPPAGE,

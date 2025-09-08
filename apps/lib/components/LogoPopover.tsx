@@ -1,12 +1,14 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 'use client'
 
 import { Popover, PopoverButton, PopoverPanel, Transition, TransitionChild } from '@headlessui/react'
 import { cl } from '@lib/utils'
 import type { AnimationProps } from 'framer-motion'
 import { motion } from 'framer-motion'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useRouter } from 'next/router'
+import Link from '/src/components/Link'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { usePathname } from '/src/hooks/usePathname'
 import type { ReactElement } from 'react'
 import { cloneElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LogoYearn } from '../icons/LogoYearn'
@@ -53,8 +55,10 @@ function useIsMounted(): () => boolean {
 }
 
 function Logo({ currentHost }: { currentHost: string; isVaultPage: boolean }): ReactElement {
-  const router = useRouter()
-  const { pathname } = router
+  const navigate = useNavigate()
+  const params = useParams()
+  const location = useLocation()
+  const pathname = location.pathname
   const appsIcon = <LogoYearn className={'size-8! max-h-8! max-w-8!'} back={'text-primary'} front={'text-white'} />
   return (
     <>

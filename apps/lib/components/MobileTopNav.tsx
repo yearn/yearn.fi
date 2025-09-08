@@ -1,8 +1,10 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { useSearch } from '@lib/contexts/useSearch'
 import { IconBurgerPlain } from '@lib/icons/IconBurgerPlain'
 import { IconSearch } from '@lib/icons/IconSearch'
 import { LogoYearn } from '@lib/icons/LogoYearn'
-import { useRouter } from 'next/router'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { type ReactElement, useCallback } from 'react'
 
 import { SearchBar } from './SearchBar'
@@ -17,14 +19,17 @@ export function MobileTopNav({
   setIsNavbarOpen: React.Dispatch<React.SetStateAction<boolean>>
 }): ReactElement {
   const { configuration, dispatch } = useSearch()
-  const router = useRouter()
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
 
   const onSearchClick = useCallback(() => {
     if (!configuration.searchValue) {
-      router.push('/apps')
+      navigate('/apps')
       return
     }
-    router.push(`/apps/search/${encodeURIComponent(configuration.searchValue)}`)
+    navigate(`/apps/search/${encodeURIComponent(configuration.searchValue)}`)
   }, [configuration.searchValue, router])
 
   return (
@@ -41,7 +46,7 @@ export function MobileTopNav({
           <button
             className={'hidden md:block'}
             onClick={() => {
-              router.push('/')
+              navigate('/')
               setIsSearchOpen(false)
             }}
           >

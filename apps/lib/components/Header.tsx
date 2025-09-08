@@ -6,8 +6,8 @@ import { IconWallet } from '@lib/icons/IconWallet'
 import { cl } from '@lib/utils'
 import { truncateHex } from '@lib/utils/tools.address'
 import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
-import Link from 'next/link'
-import { useRouter } from 'next/router'
+import Link from '/src/components/Link'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Chain } from 'viem'
@@ -89,7 +89,8 @@ function WalletSelector(): ReactElement {
 }
 
 function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
-  const { pathname } = useRouter()
+  const location = useLocation()
+  const pathname = location.pathname
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
   const { setShouldOpenCurtain, notificationStatus } = useNotifications()
 

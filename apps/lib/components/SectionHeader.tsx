@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '/src/components/Link'
 
 import type { FC, ReactElement } from 'react'
 

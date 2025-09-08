@@ -1,5 +1,5 @@
 import { IconShare } from '@lib/icons/IconShare'
-import Link from 'next/link'
+import Link from '/src/components/Link'
 
 import type { ReactElement } from 'react'
 

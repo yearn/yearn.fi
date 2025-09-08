@@ -1,6 +1,6 @@
 import { SectionHeader } from '@lib/components/SectionHeader'
-import Image from 'next/image'
-import Link from 'next/link'
+import Image from '/src/components/Image'
+import Link from '/src/components/Link'
 import type { FC } from 'react'
 import { useState } from 'react'
 

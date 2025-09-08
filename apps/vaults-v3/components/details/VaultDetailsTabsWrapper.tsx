@@ -1,3 +1,5 @@
+/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
+
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react'
 import { Renderable } from '@lib/components/Renderable'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -11,7 +13,7 @@ import { getNetwork } from '@lib/utils/wagmi/utils'
 import { VaultInfo } from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper'
 import { VaultDetailsAbout } from '@vaults-v3/components/details/tabs/VaultDetailsAbout'
 import { VaultDetailsStrategies } from '@vaults-v3/components/details/tabs/VaultDetailsStrategies'
-import { useRouter } from 'next/router'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { watchAsset } from 'viem/actions'
@@ -36,7 +38,10 @@ type TExplorerLinkProps = {
 }
 
 function Tabs({ hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutTabIndex }: TTabs): ReactElement {
-  const router = useRouter()
+  const navigate = useNavigate()
+const params = useParams()
+const location = useLocation()
+// TODO: Update router usage to use navigate, params, and location
 
   const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => {
     const tabs = [{ value: 0, label: 'About', slug: 'about' }]
@@ -69,7 +74,7 @@ function Tabs({ hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutT
                 router.replace(
                   {
                     query: {
-                      ...router.query,
+                      ...params /* TODO: Update to use params from useParams() */,
                       tab: tab.slug
                     }
                   },

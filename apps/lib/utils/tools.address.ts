@@ -115,7 +115,7 @@ export function toENS(address: string | null | undefined, format?: boolean, size
     return address || ''
   }
   const _address = toAddress(address)
-  const knownENS = process.env.KNOWN_ENS as unknown as TDict<string>
+  const knownENS = import.meta.env.VITE_KNOWN_ENS as unknown as TDict<string>
   if (knownENS?.[_address]) {
     return knownENS[_address]
   }

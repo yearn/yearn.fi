@@ -1,7 +1,7 @@
 import { cl } from '@lib/utils'
 import { useUpdateEffect } from '@react-hookz/web'
-import type { ImageProps } from 'next/image'
-import Image from 'next/image'
+import type { ImageProps } from '/src/components/Image'
+import Image from '/src/components/Image'
 import type { CSSProperties, ReactElement } from 'react'
 import { useState } from 'react'
 
