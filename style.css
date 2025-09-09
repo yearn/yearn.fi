@@ -122,7 +122,7 @@ html {
 
 body {
   color: var(--color-neutral-900);
-  font-family: "Aeonik", sans-serif;
+  font-family: aeonik, "aeonik Fallback", "Source Code Pro", "Source Code Pro Fallback", sans-serif;
 }
 
 #main {

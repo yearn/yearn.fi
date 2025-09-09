@@ -15,7 +15,7 @@ import { WithSolverContextApp } from '@vaults-v2/contexts/useSolver'
 import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHeader'
 import { motion } from 'framer-motion'
 import type { ReactElement } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 function Index(): ReactElement | null {
@@ -28,31 +28,55 @@ function Index(): ReactElement | null {
   // Use vault address as key to properly handle navigation
   const vaultKey = `${params.chainID}-${params.address}`
   const [currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
+  const [isInit, setIsInit] = useState(false)
   const [lastVaultKey, setLastVaultKey] = useState(vaultKey)
 
   // Reset state when vault changes
   useEffect(() => {
     if (vaultKey !== lastVaultKey) {
       setCurrentVault(undefined)
+      setIsInit(false)
       setLastVaultKey(vaultKey)
     }
   }, [vaultKey, lastVaultKey])
 
-  const { data: vault, isLoading: isLoadingVault } = useFetch<TYDaemonVault>({
-    endpoint: params.address
-      ? `${yDaemonBaseUri}/vaults/${toAddress(params.address as string)}?${new URLSearchParams({
-          strategiesDetails: 'withDetails',
-          strategiesCondition: 'inQueue'
-        })}`
-      : null,
-    schema: yDaemonVaultSchema
+  // Create a stable endpoint that includes the vault key to force SWR to refetch
+  const endpoint = useMemo(() => {
+    if (!params.address || !yDaemonBaseUri) return null
+    return `${yDaemonBaseUri}/vaults/${toAddress(params.address as string)}?${new URLSearchParams({
+      strategiesDetails: 'withDetails',
+      strategiesCondition: 'inQueue'
+    })}`
+  }, [params.address, yDaemonBaseUri])
+
+  const {
+    data: vault,
+    isLoading: isLoadingVault,
+    mutate
+  } = useFetch<TYDaemonVault>({
+    endpoint,
+    schema: yDaemonVaultSchema,
+    config: {
+      // Force re-fetch when vault key changes
+      revalidateOnMount: true,
+      keepPreviousData: false,
+      dedupingInterval: 0 // Disable deduping to ensure fresh fetch
+    }
   })
 
-  useEffect((): void => {
-    if (vault) {
-      setCurrentVault(vault)
+  // Force refetch when endpoint changes
+  useEffect(() => {
+    if (endpoint) {
+      mutate()
     }
-  }, [vault])
+  }, [endpoint, mutate])
+
+  useEffect((): void => {
+    if (vault && (!currentVault || vault.address !== currentVault.address)) {
+      setCurrentVault(vault)
+      setIsInit(true)
+    }
+  }, [vault, currentVault])
 
   useEffect((): void => {
     if (address && isActive) {
@@ -82,7 +106,7 @@ function Index(): ReactElement | null {
     currentVault?.staking.address
   ])
 
-  if (isLoadingVault || !params.address) {
+  if (isLoadingVault || !params.address || !isInit || !yDaemonBaseUri) {
     return (
       <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>
@@ -126,12 +150,14 @@ function Index(): ReactElement | null {
 
       <section className={'mt-4 grid w-full grid-cols-12 pb-10 md:mt-10'}>
         <VaultDetailsHeader currentVault={currentVault} />
-        <ActionFlowContextApp currentVault={currentVault}>
-          <WithSolverContextApp>
-            <VaultActionsTabsWrapper currentVault={currentVault} />
-          </WithSolverContextApp>
-        </ActionFlowContextApp>
-        <VaultDetailsTabsWrapper currentVault={currentVault} />
+        {currentVault && (
+          <ActionFlowContextApp currentVault={currentVault}>
+            <WithSolverContextApp>
+              <VaultActionsTabsWrapper currentVault={currentVault} />
+            </WithSolverContextApp>
+          </ActionFlowContextApp>
+        )}
+        {currentVault && <VaultDetailsTabsWrapper currentVault={currentVault} />}
       </section>
     </div>
   )

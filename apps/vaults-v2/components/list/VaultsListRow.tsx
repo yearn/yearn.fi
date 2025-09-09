@@ -409,7 +409,7 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
               </strong>
               <div className={'flex flex-row items-center gap-1'}>
                 <ImageWithFallback
-                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/logo-32.png`}
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chain/${currentVault.chainID}/logo-32.png`}
                   alt={`Chain ${currentVault.chainID}`}
                   width={14}
                   height={14}
