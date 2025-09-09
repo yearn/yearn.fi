@@ -1,6 +1,6 @@
 /*******************************************************************************
  ** RPC Rate Limiter for Base Chain
- ** 
+ **
  ** This module provides rate limiting functionality specifically for Base chain
  ** RPC calls to prevent 429 errors. It uses a token bucket algorithm to limit
  ** the number of requests per time window.
@@ -13,7 +13,8 @@ type RateLimiterConfig = {
 }
 
 const CHAIN_RATE_CONFIGS: Record<number, RateLimiterConfig> = {
-  8453: { // Base
+  8453: {
+    // Base
     maxRequests: 5,
     windowMs: 1000,
     delayMs: 200
@@ -37,21 +38,21 @@ class RateLimiter {
 
   async throttle(): Promise<void> {
     const now = Date.now()
-    
+
     // Remove old requests outside the window
-    this.requests = this.requests.filter(time => now - time < this.config.windowMs)
-    
+    this.requests = this.requests.filter((time) => now - time < this.config.windowMs)
+
     // If we're at the limit, wait
     if (this.requests.length >= this.config.maxRequests) {
       const oldestRequest = this.requests[0]
       const waitTime = oldestRequest + this.config.windowMs - now
-      
+
       if (waitTime > 0) {
-        await new Promise(resolve => setTimeout(resolve, waitTime + this.config.delayMs))
+        await new Promise((resolve) => setTimeout(resolve, waitTime + this.config.delayMs))
         return this.throttle() // Retry after waiting
       }
     }
-    
+
     // Add current request
     this.requests.push(now)
   }
@@ -64,10 +65,10 @@ class RateLimiter {
       await this.throttle()
       const next = this.queue.shift()
       if (next) next()
-      
+
       // Add delay between requests for Base chain
       if (this.config.delayMs > 0) {
-        await new Promise(resolve => setTimeout(resolve, this.config.delayMs))
+        await new Promise((resolve) => setTimeout(resolve, this.config.delayMs))
       }
     }
 
@@ -75,7 +76,7 @@ class RateLimiter {
   }
 
   enqueue(): Promise<void> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       this.queue.push(resolve)
       this.processQueue()
     })
@@ -95,15 +96,12 @@ export function getRateLimiter(chainId: number): RateLimiter {
 /*******************************************************************************
  ** Wrap RPC calls with rate limiting for Base chain
  ******************************************************************************/
-export async function rateLimitedRPC<T>(
-  chainId: number,
-  rpcCall: () => Promise<T>
-): Promise<T> {
+export async function rateLimitedRPC<T>(chainId: number, rpcCall: () => Promise<T>): Promise<T> {
   // Only rate limit Base chain aggressively
   if (chainId === 8453) {
     const limiter = getRateLimiter(chainId)
     await limiter.enqueue()
   }
-  
+
   return rpcCall()
 }

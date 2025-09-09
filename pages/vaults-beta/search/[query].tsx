@@ -2,10 +2,10 @@ import { AppCard } from '@lib/components/AppCard'
 import { useInitialQueryParam } from '@lib/hooks/useInitialQueryParam'
 import { cl } from '@lib/utils'
 import { ALL_APPS } from '@lib/utils/constants'
+import { type ReactElement, useMemo } from 'react'
 // Removed Next.js imports - using React Router instead
 import Image from '/src/components/Image'
 import Link from '/src/components/Link'
-import { type ReactElement, useMemo } from 'react'
 
 export default function SeachResults(): ReactElement {
   const searchValue = useInitialQueryParam('query')

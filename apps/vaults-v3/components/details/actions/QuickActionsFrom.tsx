@@ -19,9 +19,9 @@ import { calculateBoostFromVeYFI } from '@lib/utils/calculations'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useActionFlow } from '@vaults-v2/contexts/useActionFlow'
 import type { TStakingInfo } from '@vaults-v2/hooks/useVaultStakingData'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ChangeEvent, ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 
 function AmountWithOptionalTooltip(props: {
   canOnlyWithdrawSome: boolean

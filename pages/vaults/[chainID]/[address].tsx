@@ -1,5 +1,3 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -16,17 +14,13 @@ import { ActionFlowContextApp } from '@vaults-v2/contexts/useActionFlow'
 import { WithSolverContextApp } from '@vaults-v2/contexts/useSolver'
 import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHeader'
 import { motion } from 'framer-motion'
-
-import type { GetStaticPaths, GetStaticProps } from 'next'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
 
 function Index(): ReactElement | null {
   const { address, isActive } = useWeb3()
-  const navigate = useNavigate()
   const params = useParams()
-  const location = useLocation()
 
   const { onRefresh } = useWallet()
   const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: Number(params.chainID) })
@@ -128,19 +122,6 @@ function Index(): ReactElement | null {
       </section>
     </div>
   )
-}
-
-export const getStaticPaths = (async () => {
-  return {
-    paths: [],
-    fallback: true
-  }
-}) satisfies GetStaticPaths
-
-export const getStaticProps: GetStaticProps = async () => {
-  return {
-    props: {}
-  }
 }
 
 export default Index

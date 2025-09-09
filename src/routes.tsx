@@ -1,7 +1,6 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { lazy, Suspense } from 'react'
 import type { ReactElement } from 'react'
-import type { RouteObject } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 // Lazy load all page components
 const HomePage = lazy(() => import('../pages/index'))
@@ -70,10 +69,10 @@ export function AppRoutes(): ReactElement {
       <Routes>
         {/* Home page */}
         <Route path="/" element={<HomePage />} />
-        
+
         {/* Apps page */}
         <Route path="/apps" element={<AppsPage />} />
-        
+
         {/* Vaults routes */}
         <Route path="/vaults">
           <Route index element={<VaultsPage />} />
@@ -81,7 +80,7 @@ export function AppRoutes(): ReactElement {
           <Route path=":chainID/:address" element={<VaultsDetailPage />} />
           <Route path="factory/*" element={<ExternalRedirect to="https://factory.yearn.fi" />} />
         </Route>
-        
+
         {/* V3 routes */}
         <Route path="/v3">
           <Route index element={<V3Page />} />
@@ -90,13 +89,13 @@ export function AppRoutes(): ReactElement {
           {/* Redirect /v3/:chainId without address to /v3 */}
           <Route path=":chainID" element={<Navigate to="/v3" replace />} />
         </Route>
-        
+
         {/* Vaults Beta routes */}
         <Route path="/vaults-beta">
           <Route index element={<VaultsBetaPage />} />
           <Route path="search/:query" element={<VaultsBetaSearchPage />} />
         </Route>
-        
+
         {/* External redirects */}
         <Route path="/ybribe/*" element={<ExternalRedirect to="https://ybribe.yearn.fi" />} />
         <Route path="/ycrv/*" element={<ExternalRedirect to="https://ycrv.yearn.fi" />} />
@@ -107,7 +106,7 @@ export function AppRoutes(): ReactElement {
         <Route path="/governance" element={<ExternalRedirect to="https://gov.yearn.fi/" />} />
         <Route path="/snapshot" element={<ExternalRedirect to="https://snapshot.org/#/veyfi.eth" />} />
         <Route path="/github" element={<ExternalRedirect to="https://github.com/yearn/yearn.fi" />} />
-        
+
         {/* Catch all - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -1,5 +1,3 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
 import Link from '@components/Link'
 import { Popover, PopoverButton, PopoverPanel, Transition, TransitionChild } from '@headlessui/react'
 import { usePathname } from '@hooks/usePathname'
@@ -8,7 +6,7 @@ import type { AnimationProps } from 'framer-motion'
 import { motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { cloneElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { LogoYearn } from '../icons/LogoYearn'
 import { APPS } from './YearnApps'
 
@@ -53,8 +51,6 @@ function useIsMounted(): () => boolean {
 }
 
 function Logo({ currentHost }: { currentHost: string; isVaultPage: boolean }): ReactElement {
-  const navigate = useNavigate()
-  const params = useParams()
   const location = useLocation()
   const pathname = location.pathname
   const appsIcon = <LogoYearn className={'size-8! max-h-8! max-w-8!'} back={'text-primary'} front={'text-white'} />
@@ -154,7 +150,7 @@ export function LogoPopover(): ReactElement {
                 <div className={'grid grid-cols-2 gap-2'}>
                   {[...Object.values(APPS)].slice(0, 4).map(({ name, href, icon }): ReactElement => {
                     return (
-                      <Link prefetch={false} key={name} href={href} onClick={(): void => setIsShowing(false)}>
+                      <Link key={name} href={href} onClick={(): void => setIsShowing(false)}>
                         <div
                           onClick={(): void => setIsShowing(false)}
                           className={cl(
@@ -184,7 +180,7 @@ export function LogoPopover(): ReactElement {
                     .slice(4, isShowingMore ? 10 : 7)
                     .map(({ name, href, icon }): ReactElement => {
                       return (
-                        <Link prefetch={false} key={name} href={href} onClick={(): void => setIsShowing(false)}>
+                        <Link key={name} href={href} onClick={(): void => setIsShowing(false)}>
                           <div
                             onClick={(): void => setIsShowing(false)}
                             className={cl(

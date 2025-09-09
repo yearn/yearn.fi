@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import type { Abi } from 'viem'
-import { readContract, readContracts } from 'wagmi/actions'
 import type { ReadContractParameters, ReadContractsParameters } from 'wagmi/actions'
+import { readContract, readContracts } from 'wagmi/actions'
 import { retrieveConfig } from '../utils/wagmi'
 
 /*******************************************************************************
@@ -23,10 +23,9 @@ function getRateLimitConfig(chainId: number) {
 /*******************************************************************************
  ** Rate-limited single contract read hook
  ******************************************************************************/
-export function useRateLimitedReadContract<
-  TAbi extends Abi,
-  TFunctionName extends string
->(params: ReadContractParameters<TAbi, TFunctionName> & { enabled?: boolean }) {
+export function useRateLimitedReadContract<TAbi extends Abi, TFunctionName extends string>(
+  params: ReadContractParameters<TAbi, TFunctionName> & { enabled?: boolean }
+) {
   const { chainId, enabled = true, ...contractParams } = params
   const config = getRateLimitConfig(chainId || 1)
 
@@ -49,9 +48,10 @@ export function useRateLimitedReadContract<
 /*******************************************************************************
  ** Rate-limited multiple contracts read hook
  ******************************************************************************/
-export function useRateLimitedReadContracts<
-  TContracts extends ReadContractsParameters['contracts']
->(params: { contracts: TContracts; enabled?: boolean }) {
+export function useRateLimitedReadContracts<TContracts extends ReadContractsParameters['contracts']>(params: {
+  contracts: TContracts
+  enabled?: boolean
+}) {
   const { contracts, enabled = true } = params
   const chainId = contracts[0]?.chainId || 1
   const config = getRateLimitConfig(chainId)
@@ -61,7 +61,7 @@ export function useRateLimitedReadContracts<
     queryFn: async () => {
       // For Base chain, add a small delay between batched calls
       if (chainId === 8453) {
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise((resolve) => setTimeout(resolve, 100))
       }
       return await readContracts(retrieveConfig(), { contracts })
     },
@@ -78,12 +78,12 @@ export function useRateLimitedReadContracts<
  ******************************************************************************/
 export function useShouldUpdateOnBlock(blockNumber: bigint | undefined, chainId: number): boolean {
   if (!blockNumber) return false
-  
+
   // For Base chain, only update every 10 blocks
   if (chainId === 8453) {
     return Number(blockNumber) % 10 === 0
   }
-  
+
   // For other chains, update on every block
   return true
 }

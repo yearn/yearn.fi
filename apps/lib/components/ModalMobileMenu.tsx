@@ -3,11 +3,11 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { IconClose } from '@lib/icons/IconClose'
 import { IconDiscord } from '@lib/icons/IconDiscord'
 import { IconTwitter } from '@lib/icons/IconTwitter'
-import Link from '/src/components/Link'
 import type React from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment } from 'react'
 import type { Chain } from 'viem'
+import Link from '/src/components/Link'
 import type { TMenu } from './Header'
 
 const menu: TMenu[] = [

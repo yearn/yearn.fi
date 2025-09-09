@@ -1,9 +1,9 @@
 import { cl } from '@lib/utils'
 import { useUpdateEffect } from '@react-hookz/web'
-import type { ImageProps } from '/src/components/Image'
-import Image from '/src/components/Image'
 import type { CSSProperties, ReactElement } from 'react'
 import { useState } from 'react'
+import type { ImageProps } from '/src/components/Image'
+import Image from '/src/components/Image'
 
 function ImageWithFallback(props: ImageProps & { altSrc?: string }): ReactElement {
   const { alt, src, altSrc, className, ...rest } = props

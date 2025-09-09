@@ -1,4 +1,4 @@
-import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
+import { type UseQueryOptions, useQuery } from '@tanstack/react-query'
 import type { TAddress } from '../types/address'
 import type { TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
@@ -66,7 +66,7 @@ async function fetchTokenBalance(
   }
 
   const [balances, error] = await getBalances(chainId, userAddress, [token], false)
-  
+
   if (error) {
     throw error
   }
@@ -87,7 +87,7 @@ export function useBalanceQuery(
   >
 ) {
   const cacheConfig = getChainCacheConfig(chainId)
-  
+
   return useQuery({
     queryKey: balanceQueryKeys.byToken(chainId, userAddress, token.address),
     queryFn: () => fetchTokenBalance(chainId, userAddress, token),
@@ -115,13 +115,13 @@ async function fetchTokenBalances(
   }
 
   const validTokens = tokens.filter((token) => !isZeroAddress(token.address))
-  
+
   if (validTokens.length === 0) {
     return {}
   }
 
   const [balances, error] = await getBalances(chainId, userAddress, validTokens, false)
-  
+
   if (error) {
     throw error
   }
@@ -148,7 +148,7 @@ export function useBalancesQuery(
 ) {
   const cacheConfig = getChainCacheConfig(chainId)
   const tokenAddresses = tokens.map((t) => t.address)
-  
+
   return useQuery({
     queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses),
     queryFn: () => fetchTokenBalances(chainId, userAddress, tokens),

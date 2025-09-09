@@ -1,8 +1,7 @@
 import { SectionHeader } from '@lib/components/SectionHeader'
+import type { FC } from 'react'
 import Image from '/src/components/Image'
 import Link from '/src/components/Link'
-
-import type { FC } from 'react'
 
 type TIntegration = {
   name: string

@@ -1,7 +1,7 @@
 import { SectionHeader } from '@lib/components/SectionHeader'
-import Image from '/src/components/Image'
 import type { FC, ReactNode } from 'react'
 import { useState } from 'react'
+import Image from '/src/components/Image'
 
 type TFAQItem = {
   title: string

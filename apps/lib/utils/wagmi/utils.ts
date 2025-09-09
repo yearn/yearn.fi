@@ -146,11 +146,10 @@ function initIndexedWagmiChains(): TNDict<TExtendedChain> {
       }
 
       const newRPC = import.meta.env.VITE_RPC_URI_FOR?.[extendedChain.id] || ''
-      const oldRPC = import.meta.env.VITE_JSON_RPC_URI?.[extendedChain.id] || import.meta.env.VITE_JSON_RPC_URL?.[extendedChain.id]
+      const oldRPC =
+        import.meta.env.VITE_JSON_RPC_URI?.[extendedChain.id] || import.meta.env.VITE_JSON_RPC_URL?.[extendedChain.id]
       if (!newRPC && oldRPC) {
-        console.debug(
-          `JSON_RPC_URI[${extendedChain.id}] is deprecated. Please use RPC_URI_FOR[${extendedChain.id}]`
-        )
+        console.debug(`JSON_RPC_URI[${extendedChain.id}] is deprecated. Please use RPC_URI_FOR[${extendedChain.id}]`)
       }
       const defaultJsonRPCURL = extendedChain?.rpcUrls?.public?.http?.[0]
 

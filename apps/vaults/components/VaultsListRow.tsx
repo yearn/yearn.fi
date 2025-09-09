@@ -1,5 +1,4 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
+import Link from '@components/Link'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { IconLinkOut } from '@lib/icons/IconLinkOut'
@@ -7,10 +6,8 @@ import { cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi/utils'
 import { VaultChainTag } from '@vaults-v3/components/VaultChainTag'
-import Link from '/src/components/Link'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
-
 import type { FC } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { VaultForwardAPY, VaultRiskScoreTag } from './table'
 
 type TVaultsListRowProps = {
@@ -21,9 +18,8 @@ type TVaultsListRowProps = {
 
 export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, index = 0 }) => {
   const navigate = useNavigate()
-const params = useParams()
-const location = useLocation()
-// TODO: Update router usage to use navigate, params, and location
+
+  // TODO: Update router usage to use navigate, params, and location
   const href = isV2
     ? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
     : `/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`

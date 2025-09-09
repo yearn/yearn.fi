@@ -2,9 +2,8 @@ import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useYearnBalance } from '@lib/hooks/useYearnBalance'
 import { cl, formatAmount, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import Link from '/src/components/Link'
-
 import type { ReactElement } from 'react'
+import Link from '/src/components/Link'
 import { VaultChainTag } from '../VaultChainTag'
 
 export function VaultsListInternalMigrationRow({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {

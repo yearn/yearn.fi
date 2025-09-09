@@ -13,9 +13,9 @@ import type { TYDaemonReports } from '@vaults-v2/schemas/reportsSchema'
 import { yDaemonReportsSchema } from '@vaults-v2/schemas/reportsSchema'
 import { getChainBgColor } from '@vaults-v3/utils'
 import { motion } from 'framer-motion'
-import Link from '/src/components/Link'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
+import Link from '/src/components/Link'
 
 export function VaultsListStrategy({
   details,

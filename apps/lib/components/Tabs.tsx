@@ -1,11 +1,9 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 const variants = {
   initial: { y: 10, opacity: 0 },
@@ -27,7 +25,6 @@ type TTabsProps = {
 export function Tabs({ items, className }: TTabsProps): ReactElement {
   const [selectedTabId, setSelectedTabId] = useState(items[0]?.id)
   const navigate = useNavigate()
-  const params = useParams()
   const location = useLocation()
   const [searchParams] = useSearchParams()
 

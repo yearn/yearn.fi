@@ -13,8 +13,9 @@ export interface ImageProps extends ImgHTMLAttributes<HTMLImageElement> {
   loader?: (params: { src: string; width: number; quality?: number }) => string
   unoptimized?: boolean
 }
-import { useEffect, useRef, useState } from 'react'
+
 import type { CSSProperties, ReactElement } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export interface CustomImageProps extends ImageProps {
   fallbackSrc?: string
@@ -38,11 +39,6 @@ function Image(props: CustomImageProps): ReactElement {
     style,
     fill,
     priority,
-    quality,
-    placeholder,
-    blurDataURL,
-    loader,
-    unoptimized,
     ...rest
   } = props
 
@@ -86,7 +82,7 @@ function Image(props: CustomImageProps): ReactElement {
     setIsLoading(true)
   }, [src])
 
-  const handleLoadStart = (): void => {
+  const _handleLoadStart = (): void => {
     if (loading === 'lazy' && isVisible) {
       setIsLoading(true)
     }
@@ -102,12 +98,12 @@ function Image(props: CustomImageProps): ReactElement {
   const handleError = (): void => {
     setHasError(true)
     setIsLoading(false)
-    
+
     // Try fallback if available and not already using it
     if (fallbackSrc && imageSrc !== fallbackSrc) {
       setImageSrc(fallbackSrc)
     }
-    
+
     onError?.()
   }
 
@@ -129,10 +125,7 @@ function Image(props: CustomImageProps): ReactElement {
 
   // Loading placeholder - only show for lazy loaded images that haven't loaded yet
   const loadingPlaceholder = isLoading && isVisible && (
-    <div
-      className="absolute inset-0 bg-gray-200/50 dark:bg-gray-700/50 rounded"
-      style={{ zIndex: 1 }}
-    />
+    <div className="absolute inset-0 bg-gray-200/50 dark:bg-gray-700/50 rounded" style={{ zIndex: 1 }} />
   )
 
   // Error state
@@ -155,14 +148,18 @@ function Image(props: CustomImageProps): ReactElement {
           onError={handleError}
           width={!fill ? width : undefined}
           height={!fill ? height : undefined}
-          style={fill ? { 
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          } : undefined}
+          style={
+            fill
+              ? {
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }
+              : undefined
+          }
           decoding="async"
           {...rest}
         />

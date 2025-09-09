@@ -1,5 +1,3 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -15,17 +13,14 @@ import { VaultActionsTabsWrapper } from '@vaults-v3/components/details/VaultActi
 import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHeader'
 import { VaultDetailsTabsWrapper } from '@vaults-v3/components/details/VaultDetailsTabsWrapper'
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
-
-// Removed Next.js imports - using React Router instead
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
 function Index(): ReactElement | null {
   const { address, isActive } = useWeb3()
   const navigate = useNavigate()
   const params = useParams()
-  const location = useLocation()
   const { onRefresh } = useWallet()
   const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: Number(params.chainID) })
   const [_currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
@@ -170,7 +165,5 @@ function Index(): ReactElement | null {
     </div>
   )
 }
-
-// Static generation handled by Vite
 
 export default Index

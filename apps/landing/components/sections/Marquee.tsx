@@ -1,6 +1,6 @@
-import Image from '/src/components/Image'
 import type { ReactElement } from 'react'
 import Marquee from 'react-fast-marquee'
+import Image from '/src/components/Image'
 
 const PARTNERS = [
   { src: '/landing/partners/aave.png', width: 220 },

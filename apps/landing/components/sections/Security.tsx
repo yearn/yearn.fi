@@ -1,6 +1,6 @@
 import { SectionHeader } from '@lib/components/SectionHeader'
-import Link from '/src/components/Link'
 import { type FC, useRef, useState } from 'react'
+import Link from '/src/components/Link'
 
 enum SecurityCardType {
   Audits = 'audits',

@@ -1,4 +1,4 @@
-import { useQueries, type UseQueryOptions } from '@tanstack/react-query'
+import { type UseQueryOptions, useQueries } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import type { TAddress } from '../types/address'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
@@ -58,7 +58,7 @@ async function fetchTokenBalancesWithRateLimit(
   }
 
   const config = getChainConfig(chainId).rateLimit
-  
+
   // Wait for previous requests on this chain to complete with rate limiting
   if (chainQueues[chainId]) {
     await chainQueues[chainId]
@@ -70,13 +70,13 @@ async function fetchTokenBalancesWithRateLimit(
   })
 
   const validTokens = tokens.filter((token) => !isZeroAddress(token.address))
-  
+
   if (validTokens.length === 0) {
     return {}
   }
 
   const [balances, error] = await getBalances(chainId, userAddress, validTokens, false)
-  
+
   if (error) {
     throw error
   }
@@ -109,20 +109,20 @@ export function useBalancesQueries(
   const tokensByChain = useMemo(() => {
     const grouped: TNDict<TUseBalancesTokens[]> = {}
     const uniqueTokens: TNDict<Set<TAddress>> = {}
-    
+
     for (const token of tokens) {
       if (!grouped[token.chainID]) {
         grouped[token.chainID] = []
         uniqueTokens[token.chainID] = new Set()
       }
-      
+
       const tokenAddress = toAddress(token.address)
       if (!uniqueTokens[token.chainID].has(tokenAddress)) {
         uniqueTokens[token.chainID].add(tokenAddress)
         grouped[token.chainID].push(token)
       }
     }
-    
+
     return grouped
   }, [tokens])
 
@@ -132,7 +132,7 @@ export function useBalancesQueries(
       const chainId = Number(chainIdStr)
       const config = getChainConfig(chainId)
       const tokenAddresses = chainTokens.map((t) => t.address)
-      
+
       const queryOptions: UseQueryOptions<
         TDict<TToken>,
         Error,
@@ -142,10 +142,7 @@ export function useBalancesQueries(
         queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses),
         queryFn: () => fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens),
         enabled: Boolean(
-          options?.enabled !== false && 
-          userAddress && 
-          !isZeroAddress(userAddress) && 
-          chainTokens.length > 0
+          options?.enabled !== false && userAddress && !isZeroAddress(userAddress) && chainTokens.length > 0
         ),
         staleTime: config.cache.staleTime,
         gcTime: config.cache.gcTime,
@@ -154,7 +151,7 @@ export function useBalancesQueries(
         retry: 3,
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
       }
-      
+
       return queryOptions
     })
   })
@@ -163,14 +160,14 @@ export function useBalancesQueries(
   const data = useMemo(() => {
     const combined: TChainTokens = {}
     const chainIds = Object.keys(tokensByChain).map(Number)
-    
+
     queries.forEach((query, index) => {
       const chainId = chainIds[index]
       if (query.data) {
         combined[chainId] = query.data
       }
     })
-    
+
     return combined
   }, [queries, tokensByChain])
 
@@ -184,41 +181,43 @@ export function useBalancesQueries(
   const chainLoadingStatus = useMemo(() => {
     const status: TNDict<boolean> = {}
     const chainIds = Object.keys(tokensByChain).map(Number)
-    
+
     queries.forEach((query, index) => {
       const chainId = chainIds[index]
       status[chainId] = query.isLoading
     })
-    
+
     return status
   }, [queries, tokensByChain])
 
   const chainSuccessStatus = useMemo(() => {
     const status: TNDict<boolean> = {}
     const chainIds = Object.keys(tokensByChain).map(Number)
-    
+
     queries.forEach((query, index) => {
       const chainId = chainIds[index]
       status[chainId] = query.isSuccess
     })
-    
+
     return status
   }, [queries, tokensByChain])
 
   const chainErrorStatus = useMemo(() => {
     const status: TNDict<boolean> = {}
     const chainIds = Object.keys(tokensByChain).map(Number)
-    
+
     queries.forEach((query, index) => {
       const chainId = chainIds[index]
       status[chainId] = query.isError
     })
-    
+
     return status
   }, [queries, tokensByChain])
 
   const refetch = () => {
-    queries.forEach((q) => q.refetch())
+    queries.forEach((q) => {
+      q.refetch()
+    })
   }
 
   return {

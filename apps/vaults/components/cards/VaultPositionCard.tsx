@@ -4,8 +4,8 @@ import { formatAmount, formatPercent, toAddress } from '@lib/utils'
 import { replaceStrings } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VAULT_NAME_REPLACEMENTS } from '@vaults/constants'
-import Link from '/src/components/Link'
 import type { FC } from 'react'
+import Link from '/src/components/Link'
 
 export const VaultPositionCard: FC<{
   vault: TYDaemonVault & { totalBalance: TNormalizedBN; totalValue: number }

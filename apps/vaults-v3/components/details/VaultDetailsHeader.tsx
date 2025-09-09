@@ -724,11 +724,10 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
    ** For Base chain (8453), we limit updates to reduce RPC calls and prevent rate limiting.
    **********************************************************************************************/
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: refetch on block number change
   useEffect(() => {
     // For Base chain, only refetch every 10 blocks to reduce RPC load
     if (currentVault.chainID === 8453) {
-      if (blockNumber && blockNumber % 10 === 0) {
+      if (blockNumber && Number(blockNumber) % 10 === 0) {
         refetch()
       }
     } else {

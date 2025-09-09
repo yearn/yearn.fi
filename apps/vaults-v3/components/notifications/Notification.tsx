@@ -10,10 +10,10 @@ import type { TNotification, TNotificationStatus } from '@lib/types/notification
 import { cl, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { motion } from 'framer-motion'
-import Image from '/src/components/Image'
-import Link from '/src/components/Link'
 import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
+import Image from '/src/components/Image'
+import Link from '/src/components/Link'
 
 const STATUS: { [key: string]: [string, string, ReactElement] } = {
   success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} key={'success'} />],

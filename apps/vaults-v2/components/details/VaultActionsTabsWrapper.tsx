@@ -1,5 +1,4 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
+import Link from '@components/Link'
 import { InfoTooltip } from '@lib/components/InfoTooltip'
 import { Switch } from '@lib/components/Switch'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -25,11 +24,9 @@ import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/action
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import type { TTabsOptions } from '@vaults-v3/components/details/VaultActionsTabsWrapper'
 import { getCurrentTab, tabs, VaultDetailsTab } from '@vaults-v3/components/details/VaultActionsTabsWrapper'
-import Link from '/src/components/Link'
-import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
-
 import type { ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useBlockNumber, useReadContract } from 'wagmi'
 import { readContracts } from 'wagmi/actions'
 
@@ -67,9 +64,6 @@ function MobileTabButtons(props: {
  ** corresponding actions that can be taken.
  *************************************************************************************************/
 export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
-  const navigate = useNavigate()
-  const params = useParams()
-  const location = useLocation()
   const [searchParams] = useSearchParams()
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const { address } = useWeb3()
@@ -146,11 +140,10 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
    ** For Base chain (8453), we limit updates to reduce RPC calls and prevent rate limiting.
    **********************************************************************************************/
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetch data on block number change
   useEffect(() => {
     // For Base chain, only refetch every 10 blocks to reduce RPC load
     if (currentVault.chainID === 8453) {
-      if (blockNumber && blockNumber % 10 === 0) {
+      if (blockNumber && Number(blockNumber) % 10 === 0) {
         refetch()
       }
     } else {

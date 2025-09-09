@@ -1,7 +1,6 @@
 import { IconShare } from '@lib/icons/IconShare'
-import Link from '/src/components/Link'
-
 import type { ReactElement } from 'react'
+import Link from '/src/components/Link'
 
 type TCutawayProps = {
   title: string

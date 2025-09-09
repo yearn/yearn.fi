@@ -1,5 +1,3 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react'
 import { Renderable } from '@lib/components/Renderable'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -13,9 +11,9 @@ import { getNetwork } from '@lib/utils/wagmi/utils'
 import { VaultInfo } from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper'
 import { VaultDetailsAbout } from '@vaults-v3/components/details/tabs/VaultDetailsAbout'
 import { VaultDetailsStrategies } from '@vaults-v3/components/details/tabs/VaultDetailsStrategies'
-import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { watchAsset } from 'viem/actions'
 import { getConnectorClient } from 'wagmi/actions'
 import { VaultRiskInfo } from './tabs/VaultRiskInfo'
@@ -39,7 +37,6 @@ type TExplorerLinkProps = {
 
 function Tabs({ hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutTabIndex }: TTabs): ReactElement {
   const navigate = useNavigate()
-  const params = useParams()
   const location = useLocation()
   const [searchParams] = useSearchParams()
 

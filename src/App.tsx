@@ -1,7 +1,7 @@
+import { LandingAppHeader } from '@landing/components/common/Header'
 import AppHeader from '@lib/components/Header'
 import { Meta } from '@lib/components/Meta'
 import { WithFonts } from '@lib/components/WithFonts'
-import { HelmetProvider } from 'react-helmet-async'
 import { IndexedDB } from '@lib/contexts/useIndexedDB'
 import { WithNotifications } from '@lib/contexts/useNotifications'
 import { WithNotificationsActions } from '@lib/contexts/useNotificationsActions'
@@ -16,13 +16,13 @@ import { cl } from '@lib/utils'
 import { variants } from '@lib/utils/animations'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
-import { LandingAppHeader } from '@landing/components/common/Header'
 import { AnimatePresence, domAnimation, LazyMotion, motion } from 'framer-motion'
-import PlausibleProvider from './components/PlausibleProvider'
 import type { ReactElement } from 'react'
 import { memo } from 'react'
+import { HelmetProvider } from 'react-helmet-async'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router-dom'
+import PlausibleProvider from './components/PlausibleProvider'
 import { AppRoutes } from './routes'
 
 const WithLayout = memo(function WithLayout(): ReactElement {
@@ -74,7 +74,7 @@ const WithLayout = memo(function WithLayout(): ReactElement {
 function App(): ReactElement {
   const location = useLocation()
   const { manifest } = useCurrentApp()
-  
+
   // Determine dynamic meta for V3 vault detail pages
   const asPath = location.pathname
 
@@ -113,64 +113,64 @@ function App(): ReactElement {
     <HelmetProvider>
       <WithFonts>
         <Meta
-        title={manifest.name || 'Yearn'}
-        description={manifest.description || 'The yield protocol for digital assets'}
-        titleColor={'#ffffff'}
-        themeColor={'#000000'}
-        og={ogUrl}
-        uri={pageUri}
-      />
-      <main className={'font-aeonik size-full min-h-screen'}>
-        <PlausibleProvider domain={'yearn.fi'} enabled={true}>
-          <WithMom
-            supportedChains={SUPPORTED_NETWORKS}
-            tokenLists={[
-              'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/yearn.json',
-              'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/popular.json'
-            ]}
-          >
-            <AppSettingsContextApp>
-              <YearnContextApp>
-                <WalletContextApp>
-                  <IndexedDB>
-                    <WithNotifications>
-                      <WithNotificationsActions>
-                        <WithLayout />
-                      </WithNotificationsActions>
-                    </WithNotifications>
-                  </IndexedDB>
-                </WalletContextApp>
-              </YearnContextApp>
-            </AppSettingsContextApp>
-          </WithMom>
-        </PlausibleProvider>
-        <Toaster
-          toastOptions={{
-            duration: 5000,
-            className: 'toast',
-            error: {
-              icon: <IconAlertCritical className={'ml-3'} />,
-              style: {
-                backgroundColor: '#C73203',
-                color: 'white'
-              }
-            },
-            success: {
-              icon: <IconCheckmark className={'ml-3'} />,
-              style: {
-                backgroundColor: '#00796D',
-                color: 'white'
-              }
-            },
-            icon: <IconAlertError className={'ml-3'} />,
-            style: {
-              backgroundColor: '#0657F9',
-              color: 'white'
-            }
-          }}
-          position={'bottom-right'}
+          title={manifest.name || 'Yearn'}
+          description={manifest.description || 'The yield protocol for digital assets'}
+          titleColor={'#ffffff'}
+          themeColor={'#000000'}
+          og={ogUrl}
+          uri={pageUri}
         />
-      </main>
+        <main className={'font-aeonik size-full min-h-screen'}>
+          <PlausibleProvider domain={'yearn.fi'} enabled={true}>
+            <WithMom
+              supportedChains={SUPPORTED_NETWORKS}
+              tokenLists={[
+                'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/yearn.json',
+                'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/popular.json'
+              ]}
+            >
+              <AppSettingsContextApp>
+                <YearnContextApp>
+                  <WalletContextApp>
+                    <IndexedDB>
+                      <WithNotifications>
+                        <WithNotificationsActions>
+                          <WithLayout />
+                        </WithNotificationsActions>
+                      </WithNotifications>
+                    </IndexedDB>
+                  </WalletContextApp>
+                </YearnContextApp>
+              </AppSettingsContextApp>
+            </WithMom>
+          </PlausibleProvider>
+          <Toaster
+            toastOptions={{
+              duration: 5000,
+              className: 'toast',
+              error: {
+                icon: <IconAlertCritical className={'ml-3'} />,
+                style: {
+                  backgroundColor: '#C73203',
+                  color: 'white'
+                }
+              },
+              success: {
+                icon: <IconCheckmark className={'ml-3'} />,
+                style: {
+                  backgroundColor: '#00796D',
+                  color: 'white'
+                }
+              },
+              icon: <IconAlertError className={'ml-3'} />,
+              style: {
+                backgroundColor: '#0657F9',
+                color: 'white'
+              }
+            }}
+            position={'bottom-right'}
+          />
+        </main>
       </WithFonts>
     </HelmetProvider>
   )

@@ -1,8 +1,8 @@
 import { SectionHeader } from '@lib/components/SectionHeader'
-import Image from '/src/components/Image'
-import Link from '/src/components/Link'
 import type { FC } from 'react'
 import { useState } from 'react'
+import Image from '/src/components/Image'
+import Link from '/src/components/Link'
 
 type TPartner = {
   image: string

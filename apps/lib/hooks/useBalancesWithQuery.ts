@@ -1,9 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { useWeb3 } from '../contexts/useWeb3'
-import type { TAddress } from '../types/address'
 import type { TChainTokens, TDict, TToken } from '../types/mixed'
-import { toAddress } from '../utils/tools.address'
 import { isZeroAddress } from '../utils/tools.is'
 import type { TChainStatus, TUseBalancesReq, TUseBalancesRes, TUseBalancesTokens } from './useBalances.multichains'
 import { useBalancesQueries } from './useBalancesQueries'
@@ -16,7 +14,7 @@ import { balanceQueryKeys } from './useBalancesQuery'
 export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
   const { address: userAddress } = useWeb3()
   const queryClient = useQueryClient()
-  
+
   const tokens = useMemo(() => props?.tokens || [], [props?.tokens])
 
   // Use the new TanStack Query hook
@@ -42,12 +40,12 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
     async (shouldForceFetch?: boolean): Promise<TChainTokens> => {
       if (shouldForceFetch) {
         // Invalidate all balance queries to force a fresh fetch
-        await queryClient.invalidateQueries({ 
+        await queryClient.invalidateQueries({
           queryKey: balanceQueryKeys.byChainAndUser(1, userAddress),
           exact: false
         })
       }
-      
+
       await refetch()
       return balances
     },
@@ -60,7 +58,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
   const onUpdateSome = useCallback(
     async (tokenList: TUseBalancesTokens[], shouldForceFetch?: boolean): Promise<TChainTokens> => {
       const validTokens = tokenList.filter(({ address }) => !isZeroAddress(address))
-      
+
       if (validTokens.length === 0) {
         return {}
       }
@@ -79,7 +77,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
         for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
           const chainId = Number(chainIdStr)
           const tokenAddresses = chainTokens.map((t) => t.address)
-          
+
           await queryClient.invalidateQueries({
             queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses)
           })
@@ -91,18 +89,22 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
         queryKey: ['balances-batch', userAddress, validTokens],
         queryFn: async () => {
           const partialBalances: TChainTokens = {}
-          
+
           for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
             const chainId = Number(chainIdStr)
             const existingData = queryClient.getQueryData(
-              balanceQueryKeys.byTokens(chainId, userAddress, chainTokens.map((t) => t.address))
+              balanceQueryKeys.byTokens(
+                chainId,
+                userAddress,
+                chainTokens.map((t) => t.address)
+              )
             ) as TDict<TToken> | undefined
-            
+
             if (existingData) {
               partialBalances[chainId] = existingData
             }
           }
-          
+
           return partialBalances
         },
         staleTime: 0 // Always consider stale to trigger refetch
@@ -122,11 +124,14 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
   }, [isError, isLoading, isSuccess])
 
   // Build chain status object
-  const chainStatus = useMemo((): TChainStatus => ({
-    chainLoadingStatus,
-    chainSuccessStatus,
-    chainErrorStatus
-  }), [chainLoadingStatus, chainSuccessStatus, chainErrorStatus])
+  const chainStatus = useMemo(
+    (): TChainStatus => ({
+      chainLoadingStatus,
+      chainSuccessStatus,
+      chainErrorStatus
+    }),
+    [chainLoadingStatus, chainSuccessStatus, chainErrorStatus]
+  )
 
   // Return the same interface as useBalances
   return {

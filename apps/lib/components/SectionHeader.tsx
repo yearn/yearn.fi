@@ -1,6 +1,5 @@
-import Link from '/src/components/Link'
-
 import type { FC, ReactElement } from 'react'
+import Link from '/src/components/Link'
 
 export const SectionHeader: FC<{
   tagline?: string

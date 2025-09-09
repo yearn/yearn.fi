@@ -1,12 +1,14 @@
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
       '@lib': path.resolve(__dirname, './apps/lib'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@hooks': path.resolve(__dirname, './src/hooks'),
       '@vaults': path.resolve(__dirname, './apps/vaults'),
       '@vaults-v2': path.resolve(__dirname, './apps/vaults-v2'),
       '@vaults-v3': path.resolve(__dirname, './apps/vaults-v3'),
@@ -18,7 +20,7 @@ export default defineConfig({
   },
   define: {
     'process.env': {},
-    'global': 'globalThis',
+    global: 'globalThis'
   },
   server: {
     port: 3000,
@@ -41,7 +43,7 @@ export default defineConfig({
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'wagmi-vendor': ['wagmi', 'viem', '@wagmi/core', '@wagmi/connectors'],
-          'rainbowkit': ['@rainbow-me/rainbowkit'],
+          rainbowkit: ['@rainbow-me/rainbowkit'],
           'ui-vendor': ['@headlessui/react', 'framer-motion', 'recharts']
         }
       }

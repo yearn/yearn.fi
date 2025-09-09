@@ -1,9 +1,7 @@
 import { cl } from '@lib/utils/cl'
-import { useLocation } from 'react-router-dom'
-import { usePathname } from '/src/hooks/usePathname'
-
 import type { ReactNode } from 'react'
 import type { NameType, Payload, ValueType } from 'recharts/types/component/DefaultTooltipContent'
+import { usePathname } from '/src/hooks/usePathname'
 
 export function AllocationTooltip({
   active,

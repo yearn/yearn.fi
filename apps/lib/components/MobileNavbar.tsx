@@ -3,11 +3,9 @@ import { IconParagraph } from '@lib/icons/IconParagraph'
 import { IconTwitter } from '@lib/icons/IconTwitter'
 import { cl } from '@lib/utils'
 import { iconsDict, LANDING_SIDEBAR_LINKS, MENU_TABS } from '@lib/utils/constants'
-import Link from '/src/components/Link'
-import { useLocation } from 'react-router-dom'
-import { usePathname } from '/src/hooks/usePathname'
-
 import type { ReactElement } from 'react'
+import Link from '/src/components/Link'
+import { usePathname } from '/src/hooks/usePathname'
 
 export function MobileNavbar({ onClose }: { onClose: VoidFunction }): ReactElement {
   const pathName = usePathname()

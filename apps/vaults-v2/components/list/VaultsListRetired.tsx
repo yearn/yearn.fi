@@ -3,10 +3,9 @@ import { useYearnBalance } from '@lib/hooks/useYearnBalance'
 import { formatAmount, toAddress } from '@lib/utils'
 import { getVaultName } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import Link from '/src/components/Link'
-
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
+import Link from '/src/components/Link'
 
 export function VaultsListRetired({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault])

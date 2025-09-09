@@ -21,12 +21,12 @@ function isExternalLink(url: string): boolean {
   }
 }
 
-export default function Link(props: LinkProps & { scroll?: boolean }): React.ReactElement {
-  const { href, to, children, className, target, rel, onClick, scroll, ...rest } = props
-  
+export default function Link(props: LinkProps): React.ReactElement {
+  const { href, to, children, className, target, rel, onClick, ...rest } = props
+
   // Use href or to, with href taking precedence
   const url = href || to || ''
-  
+
   // Check if it's an external link
   if (isExternalLink(url)) {
     return (
@@ -42,17 +42,10 @@ export default function Link(props: LinkProps & { scroll?: boolean }): React.Rea
       </a>
     )
   }
-  
+
   // Internal link using React Router
   return (
-    <RouterLink
-      to={url}
-      className={className}
-      target={target}
-      rel={rel}
-      onClick={onClick}
-      {...rest}
-    >
+    <RouterLink to={url} className={className} target={target} rel={rel} onClick={onClick} {...rest}>
       {children}
     </RouterLink>
   )

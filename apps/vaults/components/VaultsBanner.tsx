@@ -1,9 +1,8 @@
 import { SectionHeader } from '@lib/components/SectionHeader'
 import { useWeb3 } from '@lib/contexts/useWeb3'
+import type { ReactElement } from 'react'
 import Image from '/src/components/Image'
 import Link from '/src/components/Link'
-
-import type { ReactElement } from 'react'
 
 export function VaultsBanner(): ReactElement | null {
   const { address } = useWeb3()

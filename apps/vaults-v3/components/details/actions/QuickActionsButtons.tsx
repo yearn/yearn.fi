@@ -1,5 +1,4 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
+import { usePlausible } from '@hooks/usePlausible'
 import { Button } from '@lib/components/Button'
 import { useNotificationsActions } from '@lib/contexts/useNotificationsActions'
 import { useWallet } from '@lib/contexts/useWallet'
@@ -19,10 +18,9 @@ import { useSolver } from '@vaults-v2/contexts/useSolver'
 import { useVaultStakingData } from '@vaults-v2/hooks/useVaultStakingData'
 import { Solver } from '@vaults-v2/types/solvers'
 import { motion } from 'framer-motion'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { usePlausible } from '/src/hooks/usePlausible'
 import type { ReactElement } from 'react'
 import { useCallback, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import type { Hash, TransactionReceipt } from 'viem'
 import { maxUint256 } from 'viem'
 
@@ -92,6 +90,7 @@ export function VaultDetailsQuickActionsButtons({
         })
       }
 
+      // TODO: - UPGRADE - VERIFY THIS
       if (isDeposit) {
         plausible(PLAUSIBLE_EVENTS.DEPOSIT, {
           props: {

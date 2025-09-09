@@ -1,5 +1,4 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
+import Link from '@components/Link'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { Renderable } from '@lib/components/Renderable'
@@ -12,7 +11,6 @@ import { cl, formatAmount, isZero, toAddress, toNormalizedBN } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi/utils'
-import Link from '/src/components/Link'
 
 import type { ReactElement } from 'react'
 import { Fragment, useMemo } from 'react'
@@ -932,7 +930,7 @@ export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault 
   }, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address])
 
   return (
-    <Link href={`/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`} scroll={false}>
+    <Link href={`/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
       <div
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl',

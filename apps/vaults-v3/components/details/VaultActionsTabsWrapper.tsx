@@ -1,5 +1,3 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
 import { InfoTooltip } from '@lib/components/InfoTooltip'
 import { Switch } from '@lib/components/Switch'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -31,9 +29,9 @@ import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/ac
 import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
-import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useBlockNumber, useReadContract } from 'wagmi'
 import { readContracts } from 'wagmi/actions'
 
@@ -246,7 +244,6 @@ export function VaultDetailsTab(props: {
   onSwitchTab: (tab: TTabsOptions) => void
 }): ReactElement {
   const navigate = useNavigate()
-  const params = useParams()
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const isV3Page = location.pathname.startsWith('/v3')
@@ -309,9 +306,6 @@ export function VaultDetailsTab(props: {
 export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance } = useActionFlow()
   const { address } = useWeb3()
-  const navigate = useNavigate()
-  const params = useParams()
-  const location = useLocation()
   const [searchParams] = useSearchParams()
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })
@@ -414,11 +408,10 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
    ** For Base chain (8453), we limit updates to reduce RPC calls and prevent rate limiting.
    **********************************************************************************************/
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetch data on block number change
   useEffect(() => {
     // For Base chain, only refetch every 10 blocks to reduce RPC load
     if (currentVault.chainID === 8453) {
-      if (blockNumber && blockNumber % 10 === 0) {
+      if (blockNumber && Number(blockNumber) % 10 === 0) {
         refetch()
       }
     } else {

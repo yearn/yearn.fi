@@ -1,8 +1,7 @@
 import { APPS, AppName } from '@lib/components/Apps'
 import { MotionDiv } from '@lib/components/MotionDiv'
-
-import type { RouterType } from '/src/types/router'
 import type { ReactElement } from 'react'
+import type { RouterType } from '/src/types/router'
 
 type TProps = {
   pathname: RouterType['pathname']

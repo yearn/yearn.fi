@@ -1,5 +1,5 @@
-import { Helmet } from 'react-helmet-async'
 import type { ReactElement } from 'react'
+import { Helmet } from 'react-helmet-async'
 
 type TMeta = {
   title: string
@@ -16,7 +16,10 @@ export function Meta(meta: TMeta): ReactElement {
       <title>{meta.title}</title>
       <meta charSet="utf-8" />
       <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-      <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover" />
+      <meta
+        name="viewport"
+        content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover"
+      />
       <meta name="description" content={meta.description} />
       <meta name="msapplication-TileColor" content={meta.titleColor} />
       <meta name="theme-color" content={meta.themeColor} />
@@ -29,19 +32,19 @@ export function Meta(meta: TMeta): ReactElement {
       <meta name="msapplication-config" content="/favicons/browserconfig.xml" />
       <meta name="msapplication-tap-highlight" content="no" />
       <meta name="googlebot" content="index,nofollow" />
-      
+
       {/* Twitter */}
       <meta property="twitter:image" content={meta.og} />
       <meta property="twitter:card" content="summary_large_image" />
       <meta property="twitter:title" content={meta.title} />
       <meta property="twitter:description" content={meta.description} />
-      
+
       {/* Open Graph */}
       <meta property="og:image" content={meta.og} />
       <meta property="og:url" content={meta.uri} />
       <meta property="og:title" content={meta.title} />
       <meta property="og:description" content={meta.description} />
-      
+
       {/* Icons and Manifests */}
       <link rel="manifest" href="/manifest.json" />
       <link rel="mask-icon" href="/favicons/safari-pinned-tab.svg" color={meta.themeColor} />

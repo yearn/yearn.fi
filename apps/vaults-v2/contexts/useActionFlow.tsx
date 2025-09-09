@@ -1,5 +1,3 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
@@ -39,10 +37,9 @@ import { Solver } from '@vaults-v2/types/solvers'
 import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
 import { VEYFI_ABI } from '@vaults-v2/utils/abi/veYFI.abi'
 import { setZapOption } from '@vaults-v2/utils/zapOptions'
-import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
-
 import type { ReactNode } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { serialize, useReadContract } from 'wagmi'
 import { readContracts, simulateContract } from 'wagmi/actions'
 

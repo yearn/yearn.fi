@@ -1,12 +1,9 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
 import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@lib/types'
 import { useMountEffect } from '@react-hookz/web'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
-import { useSearchParams } from 'react-router-dom'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { useCallback, useState, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 type TQueryArgs = {
   search: string | null | undefined
@@ -32,9 +29,7 @@ function useQueryArguments(props: {
   const allChains = useSupportedChains().map((chain): number => chain.id)
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-const params = useParams()
-const location = useLocation()
-// TODO: Update router usage to use navigate, params, and location
+  const location = useLocation()
   const [search, setSearch] = useState<string | null>(null)
   const [types, setTypes] = useState<string[] | null>(props.defaultTypes || [])
   const [categories, setCategories] = useState<string[] | null>(props.defaultCategories || [])
@@ -45,20 +40,23 @@ const location = useLocation()
   const [sortBy, setSortBy] = useState<string | null>(defaultSortBy)
 
   const pathname = location.pathname
-  
-  const updateSearchParams = useCallback((queryArgs: TDict<string | string[] | undefined>): void => {
-    const newSearchParams = new URLSearchParams()
-    Object.entries(queryArgs).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        if (Array.isArray(value)) {
-          newSearchParams.set(key, value.join('_'))
-        } else {
-          newSearchParams.set(key, value as string)
+
+  const updateSearchParams = useCallback(
+    (queryArgs: TDict<string | string[] | undefined>): void => {
+      const newSearchParams = new URLSearchParams()
+      Object.entries(queryArgs).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            newSearchParams.set(key, value.join('_'))
+          } else {
+            newSearchParams.set(key, value as string)
+          }
         }
-      }
-    })
-    navigate(`${pathname}?${newSearchParams.toString()}`, { replace: true })
-  }, [navigate, pathname])
+      })
+      navigate(`${pathname}?${newSearchParams.toString()}`, { replace: true })
+    },
+    [navigate, pathname]
+  )
 
   const handleQuery = useCallback(
     (_searchParams: URLSearchParams): void => {
@@ -166,7 +164,7 @@ const location = useLocation()
   // Track if we've already processed the current search params to avoid loops
   const lastProcessedSearch = useRef<string>('')
   const searchString = searchParams.toString()
-  
+
   useEffect((): void => {
     // Only process if search params actually changed
     if (lastProcessedSearch.current !== searchString) {
@@ -187,7 +185,7 @@ const location = useLocation()
     onSearch: (value): void => {
       setSearch(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
-      
+
       // Get current search params
       searchParams.forEach((val, key) => {
         if (key !== 'search') {
@@ -200,13 +198,13 @@ const location = useLocation()
       } else {
         queryArgs.search = value
       }
-      
+
       updateSearchParams(queryArgs)
     },
     onChangeTypes: (value): void => {
       setTypes(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
-      
+
       // Get current search params
       searchParams.forEach((val, key) => {
         if (key !== 'types') {
@@ -226,13 +224,13 @@ const location = useLocation()
       } else {
         queryArgs.types = value.join('_')
       }
-      
+
       updateSearchParams(queryArgs)
     },
     onChangeCategories: (value): void => {
       setCategories(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
-      
+
       // Get current search params
       searchParams.forEach((val, key) => {
         if (key !== 'categories') {
@@ -252,13 +250,13 @@ const location = useLocation()
       } else {
         queryArgs.categories = value.join('_')
       }
-      
+
       updateSearchParams(queryArgs)
     },
     onChangeChains: (value): void => {
       setChains(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
-      
+
       // Get current search params
       searchParams.forEach((val, key) => {
         if (key !== 'chains') {
@@ -278,13 +276,13 @@ const location = useLocation()
       } else {
         queryArgs.chains = value.join('_')
       }
-      
+
       updateSearchParams(queryArgs)
     },
     onChangeSortDirection: (value): void => {
       setSortDirection(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
-      
+
       // Get current search params
       searchParams.forEach((val, key) => {
         if (key !== 'sortDirection') {
@@ -297,13 +295,13 @@ const location = useLocation()
       } else {
         queryArgs.sortDirection = value as string
       }
-      
+
       updateSearchParams(queryArgs)
     },
     onChangeSortBy: (value): void => {
       setSortBy(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
-      
+
       // Get current search params
       searchParams.forEach((val, key) => {
         if (key !== 'sortBy') {
@@ -316,7 +314,7 @@ const location = useLocation()
       } else {
         queryArgs.sortBy = value
       }
-      
+
       updateSearchParams(queryArgs)
     },
     onReset: (): void => {
@@ -326,9 +324,9 @@ const location = useLocation()
       setChains(allChains || [])
       setSortDirection('desc')
       setSortBy(defaultSortBy)
-      
+
       const queryArgs: TDict<string | string[] | undefined> = {}
-      
+
       // Get current search params but exclude the ones we're resetting
       searchParams.forEach((val, key) => {
         if (
@@ -342,7 +340,7 @@ const location = useLocation()
           queryArgs[key] = val
         }
       })
-      
+
       updateSearchParams(queryArgs)
     }
   }

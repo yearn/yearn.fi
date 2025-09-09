@@ -1,7 +1,5 @@
-/* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
-
-import { useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 
 /************************************************************************************************
  ** useInitialQueryParam Hook

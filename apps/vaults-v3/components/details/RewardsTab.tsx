@@ -27,11 +27,11 @@ import {
   unstakeVeYFIGauge as unstakeVeYFIAction
 } from '@vaults-v2/utils/actions'
 import { stakeYBold, unstakeYBold } from '@vaults-v3/utils/actions'
-import Image from '/src/components/Image'
-import Link from '/src/components/Link'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { ChangeEvent, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import Image from '/src/components/Image'
+import Link from '/src/components/Link'
 
 /**************************************************************************************************
  ** The BoostMessage component will display a message to the user if the current vault has staking
