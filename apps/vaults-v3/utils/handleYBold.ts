@@ -53,8 +53,7 @@ export const fetchYBoldVault = async (
       }
     }
   } catch (error) {
-    console.log('error', error)
-    console.error(error)
+    console.error('Error handling yBold vault:', error)
     return undefined
   }
 }

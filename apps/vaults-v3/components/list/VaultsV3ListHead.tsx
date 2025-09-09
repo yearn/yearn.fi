@@ -1,4 +1,4 @@
-import { IconChevronPlain } from '@lib/icons/IconChevronPlain'
+import { IconChevron } from '@lib/icons/IconChevron'
 import type { TSortDirection } from '@lib/types'
 import { cl } from '@lib/utils'
 
@@ -36,13 +36,13 @@ export function VaultsV3ListHead({ items, sortBy, sortDirection, onSort }: TList
   const renderChevron = useCallback(
     (shouldSortBy: boolean): ReactElement => {
       if (shouldSortBy && sortDirection === 'desc') {
-        return <IconChevronPlain className={'size-4 min-w-[16px] cursor-pointer text-neutral-800'} />
+        return <IconChevron className={'size-4 min-w-[16px] cursor-pointer text-neutral-800'} />
       }
       if (shouldSortBy && sortDirection === 'asc') {
-        return <IconChevronPlain className={'size-4 min-w-[16px] rotate-180 cursor-pointer text-neutral-800'} />
+        return <IconChevron className={'size-4 min-w-[16px] cursor-pointer text-neutral-800'} direction="up" />
       }
       return (
-        <IconChevronPlain
+        <IconChevron
           className={
             'size-4 min-w-[16px] cursor-pointer text-neutral-800/60 transition-colors group-hover:text-neutral-800'
           }

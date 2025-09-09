@@ -53,12 +53,6 @@ export function LandingAppHeader(): ReactElement {
             <Link href={'/'}>
               <TypeMarkYearn className={'h-6 w-auto'} color={'#E1E1E1'} />
             </Link>
-            {/* <LogoYearn
-								className={'size-7'}
-								front={'text-black'}
-								back={'text-neutral-900'}
-							/>
-						<span>{'Yearn'}</span> */}
           </div>
           <Navbar currentPathName={pathname || ''} nav={menu} />
           <div className={'flex md:hidden'}>

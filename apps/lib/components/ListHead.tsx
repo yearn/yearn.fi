@@ -1,4 +1,4 @@
-import { IconChevronPlain } from '@lib/icons/IconChevronPlain'
+import { IconChevron } from '@lib/icons/IconChevron'
 import type { TSortDirection } from '@lib/types'
 import { cl } from '@lib/utils'
 
@@ -36,12 +36,12 @@ export function ListHead({
   const renderChevron = useCallback(
     (shouldSortBy: boolean): ReactElement => {
       if (shouldSortBy && sortDirection === 'desc') {
-        return <IconChevronPlain className={'yearn--sort-chevron'} />
+        return <IconChevron className={'yearn--sort-chevron'} />
       }
       if (shouldSortBy && sortDirection === 'asc') {
-        return <IconChevronPlain className={'yearn--sort-chevron rotate-180'} />
+        return <IconChevron className={'yearn--sort-chevron'} direction="up" />
       }
-      return <IconChevronPlain className={'yearn--sort-chevron--off text-neutral-300 group-hover:text-neutral-500'} />
+      return <IconChevron className={'yearn--sort-chevron--off text-neutral-300 group-hover:text-neutral-500'} />
     },
     [sortDirection]
   )

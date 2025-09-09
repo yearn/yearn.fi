@@ -1,3 +1,4 @@
+import { Button } from '@lib/components/Button'
 import { SectionHeader } from '@lib/components/SectionHeader'
 import { TvlStat } from '@lib/components/TvlStat'
 import { useFetch } from '@lib/hooks/useFetch'
@@ -5,7 +6,6 @@ import type { ReactElement } from 'react'
 import { z } from 'zod'
 import Image from '/src/components/Image'
 import Link from '/src/components/Link'
-import { Button } from '../common/Button'
 
 function AnimatedLogos(): ReactElement {
   return (
@@ -104,15 +104,10 @@ export function Hero(): ReactElement {
               />
               <div className={'flex flex-row items-center justify-center gap-4'}>
                 <Link href={'/v3'}>
-                  <Button className={'md:text-[18px]'}>{'Explore Vaults'}</Button>
+                  <Button className={'md:text-[18px]'} variant={'filled'}>
+                    {'Explore Vaults'}
+                  </Button>
                 </Link>
-                {/* <Link href={'/apps'}>
-									<Button
-										className={'md:text-[18px]'}
-										variant={'secondary'}>
-										{'View Apps'}
-									</Button>
-								</Link> */}
               </div>
             </div>
           </div>
@@ -146,19 +141,10 @@ export function Hero(): ReactElement {
             />
             <div className={'flex flex-col items-center justify-center gap-4'}>
               <Link href={'/v3'} className={'block w-full'}>
-                <Button className={'max-w-xs'} variant={'primary'}>
+                <Button className={'max-w-xs'} variant={'filled'}>
                   {'Explore Vaults'}
                 </Button>
               </Link>
-              {/* <Link
-								href={'/apps'}
-								className={'block w-full'}>
-								<Button
-									className={'max-w-xs'}
-									variant={'secondary'}>
-									{'View Apps'}
-								</Button>
-							</Link> */}
             </div>
           </div>
         </div>
