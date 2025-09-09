@@ -1,16 +1,14 @@
 /* TODO: This file has been migrated from Next.js. Please review the TODOs below. */
 
-'use client'
-
+import Link from '@components/Link'
 import { Popover, PopoverButton, PopoverPanel, Transition, TransitionChild } from '@headlessui/react'
+import { usePathname } from '@hooks/usePathname'
 import { cl } from '@lib/utils'
 import type { AnimationProps } from 'framer-motion'
 import { motion } from 'framer-motion'
-import Link from '/src/components/Link'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { usePathname } from '/src/hooks/usePathname'
 import type { ReactElement } from 'react'
 import { cloneElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { LogoYearn } from '../icons/LogoYearn'
 import { APPS } from './YearnApps'
 

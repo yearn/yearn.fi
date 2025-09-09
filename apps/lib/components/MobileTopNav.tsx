@@ -4,8 +4,8 @@ import { useSearch } from '@lib/contexts/useSearch'
 import { IconBurgerPlain } from '@lib/icons/IconBurgerPlain'
 import { IconSearch } from '@lib/icons/IconSearch'
 import { LogoYearn } from '@lib/icons/LogoYearn'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { type ReactElement, useCallback } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { SearchBar } from './SearchBar'
 
@@ -20,9 +20,9 @@ export function MobileTopNav({
 }): ReactElement {
   const { configuration, dispatch } = useSearch()
   const navigate = useNavigate()
-const params = useParams()
-const location = useLocation()
-// TODO: Update router usage to use navigate, params, and location
+  const params = useParams()
+  const location = useLocation()
+  // TODO: Update router usage to use navigate, params, and location
 
   const onSearchClick = useCallback(() => {
     if (!configuration.searchValue) {
@@ -30,7 +30,7 @@ const location = useLocation()
       return
     }
     navigate(`/apps/search/${encodeURIComponent(configuration.searchValue)}`)
-  }, [configuration.searchValue, router])
+  }, [configuration.searchValue, router, navigate])
 
   return (
     <div className={'z-50 bg-gray-900'}>

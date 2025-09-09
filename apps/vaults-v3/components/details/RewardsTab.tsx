@@ -242,7 +242,11 @@ function VeYFIBoostMessage(props: {
     </Link>
   )
 
-  const apps = [OneUp, Cove, StakeDAO]
+  const apps = [
+    { id: 'oneup', element: OneUp },
+    { id: 'cove', element: Cove },
+    { id: 'stakedao', element: StakeDAO }
+  ]
 
   if (props.shouldForceUnstake) {
     return (
@@ -282,8 +286,8 @@ function VeYFIBoostMessage(props: {
         <p>{"Don't have veYFI? Deposit with a liquid locker to earn boosted rewards today!"}</p>
       </div>
       <div className={'grid grid-cols-2 gap-2 pt-6 md:grid-cols-3'}>
-        {apps.map((item) => (
-          <Fragment key={item.toString()}>{item}</Fragment>
+        {apps.map((app) => (
+          <Fragment key={app.id}>{app.element}</Fragment>
         ))}
       </div>
     </div>

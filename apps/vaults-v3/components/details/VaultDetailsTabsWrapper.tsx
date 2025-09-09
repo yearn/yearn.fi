@@ -15,7 +15,7 @@ import { VaultDetailsAbout } from '@vaults-v3/components/details/tabs/VaultDetai
 import { VaultDetailsStrategies } from '@vaults-v3/components/details/tabs/VaultDetailsStrategies'
 import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import type { ReactElement } from 'react'
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { watchAsset } from 'viem/actions'
 import { getConnectorClient } from 'wagmi/actions'
 import { VaultRiskInfo } from './tabs/VaultRiskInfo'
@@ -111,7 +111,6 @@ function Tabs({ hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutT
                 </div>
               </ListboxButton>
               <Transition
-                as={Fragment}
                 show={open}
                 enter={'transition duration-100 ease-out'}
                 enterFrom={'transform scale-95 opacity-0'}
