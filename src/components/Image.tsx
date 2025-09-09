@@ -115,11 +115,6 @@ function Image(props: CustomImageProps): ReactElement {
     .filter(Boolean)
     .join(' ')
 
-  // Loading placeholder - only show for lazy loaded images that haven't loaded yet
-  const loadingPlaceholder = isLoading && isVisible && (
-    <div className="absolute inset-0 bg-gray-200/50 dark:bg-gray-700/50 rounded" style={{ zIndex: 1 }} />
-  )
-
   // Error state
   const errorPlaceholder = hasError && imageSrc === fallbackSrc && (
     <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
@@ -129,7 +124,6 @@ function Image(props: CustomImageProps): ReactElement {
 
   return (
     <div ref={imageRef} style={containerStyle} className="relative overflow-hidden">
-      {loadingPlaceholder}
       {errorPlaceholder}
       {isVisible && (
         <img
