@@ -1,7 +1,6 @@
 /* External Dependencies */
 /** biome-ignore-all lint/complexity/noImportantStyles: overriding some library styles */
 @import "@rainbow-me/rainbowkit/styles.css";
-@import "/fonts/fonts.css";
 /* Tailwind CSS */
 @import "tailwindcss";
 
@@ -123,6 +122,7 @@ html {
 
 body {
   color: var(--color-neutral-900);
+  font-family: "Aeonik", sans-serif;
 }
 
 #main {
