@@ -44,13 +44,13 @@ const CHAIN_CACHE_CONFIG: Record<
   // Arbitrum
   42161: { staleTime: 3 * 60 * 1000, gcTime: 7 * 60 * 1000 },
   // Base - shorter cache due to rate limiting issues
-  8453: { staleTime: 10 * 60 * 1000, gcTime: 15 * 60 * 1000 },
-  // Default for other chains
-  default: { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000 }
+  8453: { staleTime: 10 * 60 * 1000, gcTime: 15 * 60 * 1000 }
 }
 
+const DEFAULT_CACHE_CONFIG = { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000 }
+
 function getChainCacheConfig(chainId: number) {
-  return CHAIN_CACHE_CONFIG[chainId] || CHAIN_CACHE_CONFIG.default
+  return CHAIN_CACHE_CONFIG[chainId] || DEFAULT_CACHE_CONFIG
 }
 
 /*******************************************************************************

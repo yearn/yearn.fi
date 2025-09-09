@@ -31,7 +31,6 @@ function Image(props: CustomImageProps): ReactElement {
     width,
     height,
     fallbackSrc = '/placeholder.png',
-    onLoadStart,
     onLoadComplete,
     onError,
     loading = 'lazy',
@@ -81,13 +80,6 @@ function Image(props: CustomImageProps): ReactElement {
     setHasError(false)
     setIsLoading(true)
   }, [src])
-
-  const _handleLoadStart = (): void => {
-    if (loading === 'lazy' && isVisible) {
-      setIsLoading(true)
-    }
-    onLoadStart?.()
-  }
 
   const handleLoadComplete = (): void => {
     setIsLoading(false)

@@ -18,10 +18,10 @@ const CHAIN_RATE_LIMITS: Record<number, { maxConcurrent: number; delayMs: number
   10: { maxConcurrent: 3, delayMs: 200 },
   56: { maxConcurrent: 3, delayMs: 200 },
   137: { maxConcurrent: 3, delayMs: 200 },
-  42161: { maxConcurrent: 3, delayMs: 200 },
-  // Default
-  default: { maxConcurrent: 3, delayMs: 200 }
+  42161: { maxConcurrent: 3, delayMs: 200 }
 }
+
+const DEFAULT_RATE_LIMIT = { maxConcurrent: 3, delayMs: 200 }
 
 /*******************************************************************************
  ** Cache configuration per chain
@@ -32,14 +32,15 @@ const CHAIN_CACHE_CONFIG: Record<number, { staleTime: number; gcTime: number }> 
   56: { staleTime: 3 * 60 * 1000, gcTime: 7 * 60 * 1000 },
   137: { staleTime: 3 * 60 * 1000, gcTime: 7 * 60 * 1000 },
   42161: { staleTime: 3 * 60 * 1000, gcTime: 7 * 60 * 1000 },
-  8453: { staleTime: 10 * 60 * 1000, gcTime: 15 * 60 * 1000 },
-  default: { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000 }
+  8453: { staleTime: 10 * 60 * 1000, gcTime: 15 * 60 * 1000 }
 }
+
+const DEFAULT_CACHE_CONFIG = { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000 }
 
 function getChainConfig(chainId: number) {
   return {
-    cache: CHAIN_CACHE_CONFIG[chainId] || CHAIN_CACHE_CONFIG.default,
-    rateLimit: CHAIN_RATE_LIMITS[chainId] || CHAIN_RATE_LIMITS.default
+    cache: CHAIN_CACHE_CONFIG[chainId] || DEFAULT_CACHE_CONFIG,
+    rateLimit: CHAIN_RATE_LIMITS[chainId] || DEFAULT_RATE_LIMIT
   }
 }
 
@@ -60,6 +61,7 @@ async function fetchTokenBalancesWithRateLimit(
   const config = getChainConfig(chainId).rateLimit
 
   // Wait for previous requests on this chain to complete with rate limiting
+  // @ts-expect-error - This is checking for an existing promise
   if (chainQueues[chainId]) {
     await chainQueues[chainId]
   }

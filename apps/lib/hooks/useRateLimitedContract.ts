@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import type { Abi } from 'viem'
+import type { Abi, ContractFunctionName } from 'viem'
 import type { ReadContractParameters, ReadContractsParameters } from 'wagmi/actions'
 import { readContract, readContracts } from 'wagmi/actions'
 import { retrieveConfig } from '../utils/wagmi'
@@ -9,23 +9,25 @@ import { retrieveConfig } from '../utils/wagmi'
  ******************************************************************************/
 const CHAIN_RATE_LIMITS: Record<number, { staleTime: number; gcTime: number }> = {
   8453: { staleTime: 30 * 1000, gcTime: 5 * 60 * 1000 }, // Base: 30s stale, 5min cache
-  1: { staleTime: 5 * 1000, gcTime: 60 * 1000 }, // Mainnet: 5s stale, 1min cache
-  default: { staleTime: 5 * 1000, gcTime: 60 * 1000 }
+  1: { staleTime: 5 * 1000, gcTime: 60 * 1000 } // Mainnet: 5s stale, 1min cache
 }
+
+const DEFAULT_RATE_LIMIT = { staleTime: 5 * 1000, gcTime: 60 * 1000 }
 
 /*******************************************************************************
  ** Get rate limit config for a specific chain
  ******************************************************************************/
 function getRateLimitConfig(chainId: number) {
-  return CHAIN_RATE_LIMITS[chainId] || CHAIN_RATE_LIMITS.default
+  return CHAIN_RATE_LIMITS[chainId] || DEFAULT_RATE_LIMIT
 }
 
 /*******************************************************************************
  ** Rate-limited single contract read hook
  ******************************************************************************/
-export function useRateLimitedReadContract<TAbi extends Abi, TFunctionName extends string>(
-  params: ReadContractParameters<TAbi, TFunctionName> & { enabled?: boolean }
-) {
+export function useRateLimitedReadContract<
+  TAbi extends Abi,
+  TFunctionName extends ContractFunctionName<TAbi, 'pure' | 'view'>
+>(params: ReadContractParameters<TAbi, TFunctionName> & { enabled?: boolean }) {
   const { chainId, enabled = true, ...contractParams } = params
   const config = getRateLimitConfig(chainId || 1)
 
@@ -63,7 +65,7 @@ export function useRateLimitedReadContracts<TContracts extends ReadContractsPara
       if (chainId === 8453) {
         await new Promise((resolve) => setTimeout(resolve, 100))
       }
-      return await readContracts(retrieveConfig(), { contracts })
+      return await readContracts(retrieveConfig(), { contracts } as any)
     },
     enabled,
     staleTime: config.staleTime,

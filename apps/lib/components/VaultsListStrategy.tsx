@@ -219,7 +219,7 @@ export function VaultsListStrategy({
                   ) : null}
                   <Link
                     href={`${getNetwork(chainId)?.defaultBlockExplorer}/address/${address}`}
-                    onClick={(event): void => event.stopPropagation()}
+                    onClick={(event: React.MouseEvent): void => event.stopPropagation()}
                     style={{ background: chainBgColor }} // needed for polygon vaults
                     className={cl(
                       'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80'

@@ -15,11 +15,7 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
   })
 
   return (
-    <Link
-      prefetch={false}
-      href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}
-      className={'w-full'}
-    >
+    <Link href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`} className={'w-full'}>
       <div className={'yearn--table-wrapper bg-neutral-900 text-neutral-0'}>
         <div className={'yearn--table-token-section'}>
           <div className={'yearn--table-token-section-item inline'}>

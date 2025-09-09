@@ -8,7 +8,9 @@
       "@lib/*": ["apps/lib/*"],
       "@vaults/*": ["apps/vaults/*"],
       "@vaults-v2/*": ["apps/vaults-v2/*"],
-      "@vaults-v3/*": ["apps/vaults-v3/*"]
+      "@vaults-v3/*": ["apps/vaults-v3/*"],
+      "@landing/*": ["apps/landing/*"],
+      "/src/*": ["src/*"]
     },
     /* Basic Options */
     "target": "ESNext",
@@ -28,7 +30,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "inlineSourceMap": true,

@@ -18,12 +18,13 @@ const CHAIN_RATE_CONFIGS: Record<number, RateLimiterConfig> = {
     maxRequests: 5,
     windowMs: 1000,
     delayMs: 200
-  },
-  default: {
-    maxRequests: 20,
-    windowMs: 1000,
-    delayMs: 50
   }
+}
+
+const DEFAULT_RATE_CONFIG: RateLimiterConfig = {
+  maxRequests: 20,
+  windowMs: 1000,
+  delayMs: 50
 }
 
 class RateLimiter {
@@ -33,7 +34,7 @@ class RateLimiter {
   private processing = false
 
   constructor(chainId: number) {
-    this.config = CHAIN_RATE_CONFIGS[chainId] || CHAIN_RATE_CONFIGS.default
+    this.config = CHAIN_RATE_CONFIGS[chainId] || DEFAULT_RATE_CONFIG
   }
 
   async throttle(): Promise<void> {

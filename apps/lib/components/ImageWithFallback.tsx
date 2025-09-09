@@ -5,7 +5,9 @@ import { useState } from 'react'
 import type { ImageProps } from '/src/components/Image'
 import Image from '/src/components/Image'
 
-function ImageWithFallback(props: ImageProps & { altSrc?: string }): ReactElement {
+function ImageWithFallback(
+  props: Omit<ImageProps, 'onError' | 'onLoadStart' | 'onLoadComplete'> & { altSrc?: string }
+): ReactElement {
   const { alt, src, altSrc, className, ...rest } = props
   const [imageSrc, setImageSrc] = useState(altSrc ? src : `${src}?fallback=true`)
   const [imageStyle, setImageStyle] = useState<CSSProperties>({})
