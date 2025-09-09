@@ -33,7 +33,7 @@ export const VaultPositionCard: FC<{
             <div className={'flex items-center gap-2'}>
               <div className={'rounded-full'}>
                 <ImageWithFallback
-                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${vault.chainID}/${vault.token.address}/logo-128.png`}
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${vault.chainID}/${vault.token.address}/logo-128.png`}
                   alt={vault.symbol}
                   width={28}
                   height={28}

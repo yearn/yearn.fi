@@ -133,7 +133,7 @@ export const APPS: { [key in AppName]: TApp } = {
         width={64}
         height={64}
         className={'size-8'}
-        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
+        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
         loading={'eager'}
         priority
       />
@@ -150,7 +150,7 @@ export const APPS: { [key in AppName]: TApp } = {
         width={64}
         height={64}
         className={'size-8'}
-        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
+        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
         loading={'eager'}
         priority
       />
@@ -167,7 +167,7 @@ export const APPS: { [key in AppName]: TApp } = {
         width={64}
         height={64}
         className={'size-8'}
-        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
+        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
         loading={'eager'}
         priority
       />

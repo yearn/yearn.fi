@@ -346,7 +346,7 @@ export default async function handler(req: NextRequest) {
     const historicalAPY = calculateHistoricalAPY(vaultData, yBoldApr)
 
     displayData = {
-      icon: `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${chainID}/${vaultData.token.address}/logo-128.png`,
+      icon: `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${chainID}/${vaultData.token.address}/logo-128.png`,
       name: vaultData.name?.replace(/\s+Vault$/, '') || 'Yearn Vault',
       estimatedApy: `${(estimatedAPY * 100).toFixed(2)}%`,
       historicalApy: historicalAPY === -1 ? '--%' : `${(historicalAPY * 100).toFixed(2)}%`,
@@ -356,7 +356,7 @@ export default async function handler(req: NextRequest) {
   } else {
     // Fallback data if vault fetch fails
     displayData = {
-      icon: `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-128.png`,
+      icon: `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${chainID}/${address}/logo-128.png`,
       name: 'Yearn Vault',
       estimatedApy: '0.00%',
       historicalApy: '0.00%',

@@ -394,7 +394,7 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
           <div className={'flex flex-row gap-6 overflow-hidden'}>
             <div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
                 alt={''}
                 width={32}
                 height={32}
@@ -409,7 +409,7 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
               </strong>
               <div className={'flex flex-row items-center gap-1'}>
                 <ImageWithFallback
-                  src={`${import.meta.env.VITE_BASE_YEARN_CHAIN_URI}/${currentVault.chainID}/logo-32.png`}
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/logo-32.png`}
                   alt={`Chain ${currentVault.chainID}`}
                   width={14}
                   height={14}

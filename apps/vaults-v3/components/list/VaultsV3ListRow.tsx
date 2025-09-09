@@ -239,7 +239,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -259,7 +259,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -294,7 +294,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -314,7 +314,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -333,7 +333,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_CHAIN_URI}/${props.currentVault.chainID}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -950,7 +950,7 @@ export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault 
           <div className={'flex flex-row gap-6 overflow-hidden pr-10'}>
             <div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
                 alt={''}
                 width={32}
                 height={32}
