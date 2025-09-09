@@ -18,14 +18,13 @@ import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
 import { AnimatePresence, domAnimation, LazyMotion, motion } from 'framer-motion'
 import type { ReactElement } from 'react'
-import { memo } from 'react'
 import { HelmetProvider } from 'react-helmet-async'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router-dom'
 import PlausibleProvider from './components/PlausibleProvider'
 import { AppRoutes } from './routes'
 
-const WithLayout = memo(function WithLayout(): ReactElement {
+function WithLayout(): ReactElement {
   const location = useLocation()
   const isAppsPage = location.pathname?.startsWith('/apps')
   const isHomePage = location.pathname === '/'
@@ -69,7 +68,7 @@ const WithLayout = memo(function WithLayout(): ReactElement {
       </div>
     </>
   )
-})
+}
 
 function App(): ReactElement {
   const location = useLocation()

@@ -12,7 +12,7 @@ import { VaultInfo } from '@vaults-v2/components/details/tabs/VaultDetailsTabsWr
 import { VaultDetailsAbout } from '@vaults-v3/components/details/tabs/VaultDetailsAbout'
 import { VaultDetailsStrategies } from '@vaults-v3/components/details/tabs/VaultDetailsStrategies'
 import type { ReactElement } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { watchAsset } from 'viem/actions'
 import { getConnectorClient } from 'wagmi/actions'
@@ -35,7 +35,12 @@ type TExplorerLinkProps = {
   currentVaultAddress: string
 }
 
-function Tabs({ hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutTabIndex }: TTabs): ReactElement {
+const Tabs = React.memo(function Tabs({
+  hasStrategies,
+  hasRisk,
+  selectedAboutTabIndex,
+  setSelectedAboutTabIndex
+}: TTabs): ReactElement {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -132,48 +137,58 @@ function Tabs({ hasStrategies, hasRisk, selectedAboutTabIndex, setSelectedAboutT
       </div>
     </>
   )
-}
+})
 
-function AddToWalletLink({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+const AddToWalletLink = React.memo(function AddToWalletLink({
+  currentVault
+}: {
+  currentVault: TYDaemonVault
+}): ReactElement {
   const { provider } = useWeb3()
 
-  async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
-    try {
-      assert(provider, 'Provider is not set')
-      const walletClient = await getConnectorClient(retrieveConfig())
-      watchAsset(walletClient, {
-        type: 'ERC20',
-        options: {
-          address: toAddress(address),
-          decimals: decimals,
-          symbol: symbol,
-          image: image
-        }
-      })
-    } catch (error) {
-      console.error(error)
-      // Token has not been added to MetaMask.
-    }
-  }
+  const onAddTokenToMetamask = useCallback(
+    async (address: string, symbol: string, decimals: number, image: string): Promise<void> => {
+      try {
+        assert(provider, 'Provider is not set')
+        const walletClient = await getConnectorClient(retrieveConfig())
+        watchAsset(walletClient, {
+          type: 'ERC20',
+          options: {
+            address: toAddress(address),
+            decimals: decimals,
+            symbol: symbol,
+            image: image
+          }
+        })
+      } catch (error) {
+        console.error(error)
+        // Token has not been added to MetaMask.
+      }
+    },
+    [provider]
+  )
+
+  const handleClick = useCallback(() => {
+    onAddTokenToMetamask(
+      currentVault.address,
+      currentVault.symbol,
+      currentVault.decimals,
+      `https://token-assets-one.vercel.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
+    )
+  }, [currentVault.address, currentVault.symbol, currentVault.decimals, currentVault.chainID, onAddTokenToMetamask])
 
   return (
-    <button
-      onClick={(): void => {
-        onAddTokenToMetamask(
-          currentVault.address,
-          currentVault.symbol,
-          currentVault.decimals,
-          `https://token-assets-one.vercel.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
-        )
-      }}
-    >
+    <button onClick={handleClick}>
       <span className={'sr-only'}>{'Add to wallet'}</span>
       <IconAddToMetamask className={'size-5 text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'} />
     </button>
   )
-}
+})
 
-function ExplorerLink({ explorerBaseURI, currentVaultAddress }: TExplorerLinkProps): ReactElement | null {
+const ExplorerLink = React.memo(function ExplorerLink({
+  explorerBaseURI,
+  currentVaultAddress
+}: TExplorerLinkProps): ReactElement | null {
   return (
     <a href={`${explorerBaseURI}/address/${currentVaultAddress}`} target={'_blank'} rel={'noopener noreferrer'}>
       <span className={'sr-only'}>{'Open in explorer'}</span>
@@ -182,9 +197,9 @@ function ExplorerLink({ explorerBaseURI, currentVaultAddress }: TExplorerLinkPro
       />
     </a>
   )
-}
+})
 
-export function VaultDetailsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+function VaultDetailsTabsWrapperComponent({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0)
   const hasStrategies = Number(currentVault.strategies?.length || 0) > 0
 
@@ -227,3 +242,5 @@ export function VaultDetailsTabsWrapper({ currentVault }: { currentVault: TYDaem
     </div>
   )
 }
+
+export const VaultDetailsTabsWrapper = React.memo(VaultDetailsTabsWrapperComponent)

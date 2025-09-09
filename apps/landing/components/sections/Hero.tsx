@@ -104,7 +104,7 @@ export function Hero(): ReactElement {
               />
               <div className={'flex flex-row items-center justify-center gap-4'}>
                 <Link href={'/v3'}>
-                  <Button className={'md:text-[18px]'} variant={'filled'}>
+                  <Button className={'md:text-[20px] max-w-xs !rounded-full !bg-primary'} variant={'primary'}>
                     {'Explore Vaults'}
                   </Button>
                 </Link>
@@ -141,9 +141,7 @@ export function Hero(): ReactElement {
             />
             <div className={'flex flex-col items-center justify-center gap-4'}>
               <Link href={'/v3'} className={'block w-full'}>
-                <Button className={'max-w-xs'} variant={'filled'}>
-                  {'Explore Vaults'}
-                </Button>
+                <Button className={'max-w-xs !rounded-full !bg-primary'}>{'Explore Vaults'}</Button>
               </Link>
             </div>
           </div>

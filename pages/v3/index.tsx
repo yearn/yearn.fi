@@ -14,22 +14,12 @@ import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
 import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import { V3Mask } from '@vaults-v3/Mark'
-import { motion } from 'framer-motion'
 import type { ReactElement, ReactNode } from 'react'
 import { Children, Fragment, useMemo, useState } from 'react'
 
 function Background(): ReactElement {
   return (
-    <motion.div
-      transition={{ duration: 10, delay: 0, repeat: Infinity, ease: 'linear' }}
-      animate={{
-        background: [
-          'linear-gradient(0deg, #D21162 24.91%, #2C3DA6 99.66%)',
-          'linear-gradient(360deg, #D21162 24.91%, #2C3DA6 99.66%)'
-        ]
-      }}
-      className={cl('absolute inset-0', 'pointer-events-none')}
-    />
+    <div className={cl('absolute inset-0', 'pointer-events-none', 'bg-gradient-to-r from-[#D21162] to-[#2C3DA6]')} />
   )
 }
 function BrandNewVaultCard(): ReactElement {

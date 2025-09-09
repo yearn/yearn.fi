@@ -1,3 +1,4 @@
+import { cl } from '@lib/utils'
 import type React from 'react'
 import type { ForwardedRef, ReactElement, ReactNode } from 'react'
 import { forwardRef } from 'react'
@@ -23,18 +24,14 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
     shouldStopPropagation = false,
     isBusy = false,
     isDisabled = false,
+    className,
     ...rest
   } = props
 
   if (rest.as === 'a') {
     return (
       <a tabIndex={-1} {...(rest as React.ComponentPropsWithoutRef<'a'>)}>
-        <button
-          ref={ref}
-          data-variant={variant}
-          className={`yearn--button flex-center ${rest.className}`}
-          type="button"
-        >
+        <button ref={ref} data-variant={variant} className={cl('yearn--button flex-center', className)} type="button">
           {children}
         </button>
       </a>
@@ -45,7 +42,7 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
       {...(rest as React.ComponentPropsWithoutRef<'button'>)}
       ref={ref}
       data-variant={variant}
-      className={`yearn--button ${rest.className}`}
+      className={cl('yearn--button', className)}
       aria-busy={isBusy}
       disabled={isDisabled || (rest as React.ComponentPropsWithoutRef<'button'>).disabled}
       onClick={(event: TMouseEvent): void => {

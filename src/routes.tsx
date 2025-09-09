@@ -82,13 +82,11 @@ export function AppRoutes(): ReactElement {
         </Route>
 
         {/* V3 routes */}
-        <Route path="/v3">
-          <Route index element={<V3Page />} />
-          <Route path="about" element={<V3AboutPage />} />
-          <Route path=":chainID/:address" element={<V3DetailPage />} />
-          {/* Redirect /v3/:chainId without address to /v3 */}
-          <Route path=":chainID" element={<Navigate to="/v3" replace />} />
-        </Route>
+        <Route path="/v3" element={<V3Page />} />
+        <Route path="/v3/about" element={<V3AboutPage />} />
+        <Route path="/v3/:chainID/:address" element={<V3DetailPage />} />
+        {/* Redirect /v3/:chainId without address to /v3 */}
+        <Route path="/v3/:chainID" element={<Navigate to="/v3" replace />} />
 
         {/* Vaults Beta routes */}
         <Route path="/vaults-beta">

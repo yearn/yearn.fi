@@ -30,7 +30,7 @@ import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/action
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
 import type { ReactElement } from 'react'
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useBlockNumber, useReadContract } from 'wagmi'
 import { readContracts } from 'wagmi/actions'
@@ -206,18 +206,20 @@ export function BoostMessage(props: {
  ** The MobileTabButtons component will be used to display the tab buttons to navigate between the
  ** different tabs on mobile devices.
  *************************************************************************************************/
-function MobileTabButtons(props: {
+const MobileTabButtons = React.memo(function MobileTabButtons(props: {
   currentTab: TTabsOptions
   selectedTab: TTabsOptions
   setCurrentTab: (tab: TTabsOptions) => void
   onSwitchSelectedOptions: (flow: Flow) => void
 }): ReactElement {
+  const handleClick = useCallback(() => {
+    props.setCurrentTab(props.currentTab)
+    props.onSwitchSelectedOptions(props.currentTab.flowAction)
+  }, [props])
+
   return (
     <button
-      onClick={() => {
-        props.setCurrentTab(props.currentTab)
-        props.onSwitchSelectedOptions(props.currentTab.flowAction)
-      }}
+      onClick={handleClick}
       className={cl(
         'flex h-10 pr-4 transition-all duration-300 flex-row items-center border-0 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden',
         props.selectedTab.value === props.currentTab.value
@@ -228,7 +230,7 @@ function MobileTabButtons(props: {
       {props.currentTab.label}
     </button>
   )
-}
+})
 
 /**************************************************************************************************
  ** The Tab component will be used to display the tab buttons to navigate between the different
@@ -236,7 +238,7 @@ function MobileTabButtons(props: {
  ** A special case exists when the current vault has staking rewards, because the name of the tab
  ** will be different depending on the source of the rewards.
  *************************************************************************************************/
-export function VaultDetailsTab(props: {
+export const VaultDetailsTab = React.memo(function VaultDetailsTab(props: {
   currentVault: TYDaemonVault
   tab: TTabsOptions
   selectedTab: TTabsOptions
@@ -264,16 +266,15 @@ export function VaultDetailsTab(props: {
     return props.tab.label
   }, [props.tab.label, stakingRewardSource])
 
+  const handleClick = useCallback((): void => {
+    const newSearchParams = new URLSearchParams(searchParams)
+    newSearchParams.set('action', props.tab.slug || '')
+    navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true })
+    props.onSwitchTab(props.tab)
+  }, [searchParams, props.tab, location.pathname, navigate, props.onSwitchTab])
+
   return (
-    <button
-      key={`desktop-${props.tab.value}`}
-      onClick={(): void => {
-        const newSearchParams = new URLSearchParams(searchParams)
-        newSearchParams.set('action', props.tab.slug || '')
-        navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true })
-        props.onSwitchTab(props.tab)
-      }}
-    >
+    <button key={`desktop-${props.tab.value}`} onClick={handleClick}>
       <p
         title={tabLabel}
         aria-selected={props.selectedTab.value === props.tab.value}
@@ -296,14 +297,14 @@ export function VaultDetailsTab(props: {
       </p>
     </button>
   )
-}
+})
 
 /**************************************************************************************************
  ** The VaultActionsTabsWrapper wraps the different components that are part of the Vault Actions
  ** section. It will display the different tabs available for the current vault and the
  ** corresponding actions that can be taken.
  *************************************************************************************************/
-export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance } = useActionFlow()
   const { address } = useWeb3()
   const [searchParams] = useSearchParams()
@@ -350,26 +351,31 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
   })
   const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0
 
+  const stakingSource = currentVault.staking.source
   const getTabLabel = useCallback((): string => {
-    if (currentVault.staking.source === 'VeYFI') {
+    if (stakingSource === 'VeYFI') {
       return 'veYFI BOOST'
     }
-    if (currentVault.staking.source === 'OP Boost') {
+    if (stakingSource === 'OP Boost') {
       return '$OP BOOST'
     }
-    if (currentVault.staking.source === 'Juiced') {
+    if (stakingSource === 'Juiced') {
       return 'Juiced BOOST'
     }
-    if (currentVault.staking.source === 'V3 Staking') {
+    if (stakingSource === 'V3 Staking') {
       return 'Staking BOOST'
     }
-    if (currentVault.staking.source === 'yBOLD') {
+    if (stakingSource === 'yBOLD') {
       return 'yBOLD Staking'
     }
     return 'Staking'
-  }, [currentVault.staking.source])
+  }, [stakingSource])
 
   const { data: blockNumber } = useBlockNumber({ watch: true })
+
+  // Track last refetch time to implement debouncing
+  const lastRefetchTime = useRef(0)
+  const REFETCH_DEBOUNCE_TIME = 5000 // 5 seconds debounce
 
   /**********************************************************************************************
    ** Retrieve some data from the vault and the staking contract to display a comprehensive view
@@ -406,15 +412,25 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
    ** As we want live data, we want the data to be refreshed every time the block number changes.
    ** This way, the user will always have the most up-to-date data.
    ** For Base chain (8453), we limit updates to reduce RPC calls and prevent rate limiting.
+   ** We also implement debouncing to avoid too frequent updates.
    **********************************************************************************************/
-
   useEffect(() => {
+    const now = Date.now()
+    const timeSinceLastRefetch = now - lastRefetchTime.current
+
+    // Debounce refetch to avoid excessive calls
+    if (timeSinceLastRefetch < REFETCH_DEBOUNCE_TIME) {
+      return
+    }
+
     // For Base chain, only refetch every 10 blocks to reduce RPC load
     if (currentVault.chainID === 8453) {
       if (blockNumber && Number(blockNumber) % 10 === 0) {
+        lastRefetchTime.current = now
         refetch()
       }
     } else {
+      lastRefetchTime.current = now
       refetch()
     }
   }, [blockNumber, refetch, currentVault.chainID])
@@ -465,6 +481,12 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
     }
   }, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards])
 
+  const hasStakingRewardsEndedOverAWeekAgo = useMemo(() => {
+    return currentVault.staking.rewards?.some(
+      (el) => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
+    )
+  }, [currentVault.staking.rewards])
+
   /************************************************************************************************
    * This effect manages the auto-staking feature based on staking rewards availability.
    * It disables auto-staking if there are no staking rewards and the last reward ended over a week ago.
@@ -474,21 +496,21 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
    * for vaults with expired or long-inactive staking programs.
    ************************************************************************************************/
   useEffect(() => {
-    const hasStakingRewardsEndedOverAWeekAgo = currentVault.staking.rewards?.some(
-      (el) => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
-    )
     if (!hasStakingRewards && hasStakingRewardsEndedOverAWeekAgo) {
       setIsAutoStakingEnabled(false)
       return
     }
     setIsAutoStakingEnabled(true)
-  }, [currentVault.staking.rewards, hasStakingRewards, setIsAutoStakingEnabled])
+  }, [hasStakingRewardsEndedOverAWeekAgo, hasStakingRewards, setIsAutoStakingEnabled])
 
-  const isSonneRetiredVault =
-    toAddress(currentVault.address) === toAddress('0x5b977577eb8a480f63e11fc615d6753adb8652ae') ||
-    toAddress(currentVault.address) === toAddress('0xad17a225074191d5c8a37b50fda1ae278a2ee6a2') ||
-    toAddress(currentVault.address) === toAddress('0x65343f414ffd6c97b0f6add33d16f6845ac22bac') ||
-    toAddress(currentVault.address) === toAddress('0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de')
+  const isSonneRetiredVault = useMemo(
+    () =>
+      toAddress(currentVault.address) === toAddress('0x5b977577eb8a480f63e11fc615d6753adb8652ae') ||
+      toAddress(currentVault.address) === toAddress('0xad17a225074191d5c8a37b50fda1ae278a2ee6a2') ||
+      toAddress(currentVault.address) === toAddress('0x65343f414ffd6c97b0f6add33d16f6845ac22bac') ||
+      toAddress(currentVault.address) === toAddress('0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de'),
+    [currentVault.address]
+  )
 
   const tooltipText = useMemo(() => {
     if (isAutoStakingEnabled) {
@@ -702,3 +724,5 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
     </>
   )
 }
+
+export const VaultActionsTabsWrapper = React.memo(VaultActionsTabsWrapperComponent)
