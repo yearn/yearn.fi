@@ -24,7 +24,20 @@ function Index(): ReactElement | null {
 
   const { onRefresh } = useWallet()
   const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: Number(params.chainID) })
+  
+  // Use vault address as key to properly handle navigation
+  const vaultKey = `${params.chainID}-${params.address}`
   const [currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
+  const [lastVaultKey, setLastVaultKey] = useState(vaultKey)
+  
+  // Reset state when vault changes
+  useEffect(() => {
+    if (vaultKey !== lastVaultKey) {
+      setCurrentVault(undefined)
+      setLastVaultKey(vaultKey)
+    }
+  }, [vaultKey, lastVaultKey])
+  
   const { data: vault, isLoading: isLoadingVault } = useFetch<TYDaemonVault>({
     endpoint: params.address
       ? `${yDaemonBaseUri}/vaults/${toAddress(params.address as string)}?${new URLSearchParams({
@@ -36,10 +49,10 @@ function Index(): ReactElement | null {
   })
 
   useEffect((): void => {
-    if (vault && !currentVault) {
+    if (vault) {
       setCurrentVault(vault)
     }
-  }, [currentVault, vault])
+  }, [vault])
 
   useEffect((): void => {
     if (address && isActive) {

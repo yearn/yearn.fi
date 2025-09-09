@@ -23,8 +23,24 @@ function Index(): ReactElement | null {
   const params = useParams()
   const { onRefresh } = useWallet()
   const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: Number(params.chainID) })
+  
+  // Use vault address as key to reset state
+  const vaultKey = `${params.chainID}-${params.address}`
   const [_currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
   const [isInit, setIsInit] = useState(false)
+  const [overrideVault, setOverrideVault] = useState<TYDaemonVault | undefined>(undefined)
+  const [lastVaultKey, setLastVaultKey] = useState(vaultKey)
+  
+  // Reset state when vault changes
+  useEffect(() => {
+    if (vaultKey !== lastVaultKey) {
+      setCurrentVault(undefined)
+      setOverrideVault(undefined)
+      setIsInit(false)
+      setLastVaultKey(vaultKey)
+    }
+  }, [vaultKey, lastVaultKey])
+  
   const { data: vault, isLoading: isLoadingVault } = useFetch<TYDaemonVault>({
     endpoint: params.address
       ? `${yDaemonBaseUri}/vaults/${toAddress(params.address as string)}?${new URLSearchParams({
@@ -37,25 +53,24 @@ function Index(): ReactElement | null {
 
   // TODO: remove this workaround when possible
   // <WORKAROUND>
-  const [overrideVault, setOverrideVault] = useState<TYDaemonVault | undefined>(undefined)
   const currentVault = overrideVault ?? _currentVault
 
   useEffect(() => {
-    if (!overrideVault) {
+    if (!overrideVault && _currentVault) {
       fetchYBoldVault(yDaemonBaseUri, _currentVault).then((_vault) => {
         setOverrideVault(_vault)
       })
     }
-  }, [yDaemonBaseUri, overrideVault, _currentVault])
+  }, [yDaemonBaseUri, _currentVault]) // Removed overrideVault from deps to prevent loop
   // </WORKAROUND>
 
   useEffect((): void => {
-    if (vault && !currentVault) {
+    if (vault) {
       console.log('set currentVault')
       setCurrentVault(vault)
       setIsInit(true)
     }
-  }, [currentVault, vault])
+  }, [vault])
 
   useEffect((): void => {
     if (address && isActive) {

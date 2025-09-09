@@ -211,7 +211,7 @@ export function MultiSelectDropdown({
   }, [options, areAllSelected, onSelect])
 
   return (
-    <Combobox as={Fragment} key={selectedValues.join(',')} ref={componentRef} value={selectedValues} multiple>
+    <Combobox key={selectedValues.join(',')} ref={componentRef} value={selectedValues} multiple>
       <div className={'relative w-full'}>
         {customRender ? (
           <ComboboxButton
