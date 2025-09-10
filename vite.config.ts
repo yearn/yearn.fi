@@ -1,9 +1,49 @@
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
+
+function envRemapper() {
+  return {
+    name: 'env-remapper',
+    config(_: any, { mode }: any) {
+      const env = loadEnv(mode, process.cwd(), '')
+      const remappedEnv: Record<string, string | any> = {}
+      const rpcUriFor: Record<string, string> = {}
+
+      // Map non-VITE_ prefixed env vars to VITE_ prefixed ones
+      Object.keys(env).forEach((key) => {
+        if (!key.startsWith('VITE_')) {
+          // Special handling for RPC_URI_FOR_* variables
+          if (key.startsWith('RPC_URI_FOR_')) {
+            const chainId = key.replace('RPC_URI_FOR_', '')
+            rpcUriFor[chainId] = env[key]
+          } else if (key === 'INFURA_KEY') {
+            // Map INFURA_KEY to VITE_INFURA_PROJECT_ID for compatibility
+            // biome-ignore lint/complexity/useLiteralKeys: it's ok
+            remappedEnv['VITE_INFURA_PROJECT_ID'] = env[key]
+          } else {
+            remappedEnv[`VITE_${key}`] = env[key]
+          }
+        }
+      })
+
+      // Add the aggregated RPC_URI_FOR object
+      if (Object.keys(rpcUriFor).length > 0) {
+        // biome-ignore lint/complexity/useLiteralKeys: it's ok
+        remappedEnv['VITE_RPC_URI_FOR'] = rpcUriFor
+      }
+
+      return {
+        define: Object.fromEntries(
+          Object.entries(remappedEnv).map(([key, value]) => [`import.meta.env.${key}`, JSON.stringify(value)])
+        )
+      }
+    }
+  }
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), envRemapper()],
   resolve: {
     alias: {
       '@lib': path.resolve(__dirname, './apps/lib'),

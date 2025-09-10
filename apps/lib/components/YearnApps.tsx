@@ -33,7 +33,7 @@ export const APPS = {
         className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
-        src={`${import.meta.env.VITE_SMOL_ASSETS_URL}/token/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
+        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
         loading={'eager'}
         priority
       />
@@ -50,7 +50,7 @@ export const APPS = {
         className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
-        src={`${import.meta.env.VITE_SMOL_ASSETS_URL}/token/1/${VEYFI_DYFI_ADDRESS}/logo-128.png`}
+        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/${VEYFI_DYFI_ADDRESS}/logo-128.png`}
         loading={'eager'}
         priority
       />
@@ -81,7 +81,7 @@ export const APPS = {
         className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
-        src={`${import.meta.env.VITE_SMOL_ASSETS_URL}/token/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
+        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
         loading={'eager'}
         priority
       />
@@ -95,7 +95,7 @@ export const APPS = {
     icon: (
       <Image
         priority
-        src={`${import.meta.env.VITE_SMOL_ASSETS_URL}/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
+        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
         className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}

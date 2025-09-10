@@ -116,7 +116,7 @@ export const APPS: { [key in AppName]: TApp } = {
         className={'size-8'}
         width={64}
         height={64}
-        src={`${import.meta.env.VITE_SMOL_ASSETS_URL}/token/1/${VEYFI_DYFI_ADDRESS}/logo-128.png`}
+        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/${VEYFI_DYFI_ADDRESS}/logo-128.png`}
         loading={'eager'}
         priority
       />
