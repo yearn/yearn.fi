@@ -1,4 +1,3 @@
-import actualAssert from 'assert'
 import type { TAddress } from '../types/address'
 import { ZERO_ADDRESS } from './constants'
 import { toAddress } from './tools.address'
@@ -9,9 +8,8 @@ export function assert(
   message?: string | Error,
   doSomething?: (error: unknown) => void
 ): asserts expression {
-  try {
-    actualAssert(expression, message)
-  } catch (error) {
+  if (!expression) {
+    const error = message instanceof Error ? message : new Error(message || 'Assertion failed')
     doSomething?.(error)
     throw error
   }
