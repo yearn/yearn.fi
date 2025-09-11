@@ -5,7 +5,6 @@ import { IconDiscord } from '@lib/icons/IconDiscord'
 import { IconTwitter } from '@lib/icons/IconTwitter'
 import type React from 'react'
 import type { ReactElement, ReactNode } from 'react'
-import { Fragment } from 'react'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
 import type { TMenu } from './Header'
@@ -91,11 +90,11 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
   const { isOpen, onClose } = props
 
   return (
-    <Transition show={isOpen} as={Fragment}>
+    <Transition show={isOpen} as={'div'}>
       <Dialog as={'div'} className={'fixed inset-0 overflow-y-auto'} style={{ zIndex: 88 }} onClose={onClose}>
         <div className={'relative flex h-screen items-stretch justify-end px-0 pb-0 text-center'}>
           <TransitionChild
-            as={Fragment}
+            as={'div'}
             enter={'ease-out duration-300'}
             enterFrom={'opacity-0'}
             enterTo={'opacity-100'}
@@ -110,7 +109,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
             &#8203;
           </span>
           <TransitionChild
-            as={Fragment}
+            as={'div'}
             enter={'ease-out duration-200'}
             enterFrom={'opacity-0 translate-y-full'}
             enterTo={'opacity-100 translate-y-0'}

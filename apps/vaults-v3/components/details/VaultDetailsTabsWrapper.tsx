@@ -110,6 +110,7 @@ const Tabs = React.memo(function Tabs({
                 </div>
               </ListboxButton>
               <Transition
+                as={'div'}
                 show={open}
                 enter={'transition duration-100 ease-out'}
                 enterFrom={'transform scale-95 opacity-0'}

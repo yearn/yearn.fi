@@ -3,7 +3,7 @@ import { IconChevron } from '@lib/icons/IconChevron'
 import { cl } from '@lib/utils'
 import { useThrottledState } from '@react-hookz/web'
 import type { ReactElement } from 'react'
-import { Fragment, useState } from 'react'
+import { useState } from 'react'
 import { ImageWithFallback } from './ImageWithFallback'
 
 const DropdownOption = (option: TDropdownOption): ReactElement => {
@@ -149,7 +149,7 @@ export const Dropdown = ({
               </div>
             </ComboboxButton>
             <Transition
-              as={Fragment}
+              as={'div'}
               show={isOpen}
               enter={'transition duration-100 ease-out'}
               enterFrom={'transform scale-95 opacity-0'}

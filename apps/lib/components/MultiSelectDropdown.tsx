@@ -5,7 +5,7 @@ import { IconChevron } from '@lib/icons/IconChevron'
 import { cl } from '@lib/utils'
 import { useClickOutside, useThrottledState } from '@react-hookz/web'
 import type { ReactElement, RefObject } from 'react'
-import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 export type TMultiSelectOptionProps = {
   label: string
@@ -245,7 +245,7 @@ export function MultiSelectDropdown({
           </ComboboxButton>
         )}
         <Transition
-          as={Fragment}
+          as={'div'}
           show={isOpen}
           enter={'transition duration-100 ease-out'}
           enterFrom={'transform scale-95 opacity-0'}

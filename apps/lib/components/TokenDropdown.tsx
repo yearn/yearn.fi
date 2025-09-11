@@ -8,7 +8,7 @@ import { cl, formatAmount } from '@lib/utils'
 import { useThrottledState } from '@react-hookz/web'
 
 import type { ReactElement } from 'react'
-import { cloneElement, Fragment, useState } from 'react'
+import { cloneElement, useState } from 'react'
 
 function DropdownItem({ option }: TDropdownItemProps): ReactElement {
   const { getBalance } = useWallet()
@@ -135,7 +135,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
           </div>
         </ComboboxButton>
         <Transition
-          as={Fragment}
+          as={'div'}
           show={isOpen}
           enter={'transition duration-100 ease-out'}
           enterFrom={'transform scale-95 opacity-0'}
