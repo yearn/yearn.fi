@@ -29,6 +29,7 @@ import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/ac
 import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
+import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
 import type { ReactElement } from 'react'
 import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
@@ -373,7 +374,6 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
 
   const { data: blockNumber } = useBlockNumber({ watch: true })
 
-  // Track last refetch time to implement debouncing
   const lastRefetchTime = useRef(0)
   const REFETCH_DEBOUNCE_TIME = 5000 // 5 seconds debounce
 
@@ -418,12 +418,10 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
     const now = Date.now()
     const timeSinceLastRefetch = now - lastRefetchTime.current
 
-    // Debounce refetch to avoid excessive calls
     if (timeSinceLastRefetch < REFETCH_DEBOUNCE_TIME) {
       return
     }
 
-    // For Base chain, only refetch every 10 blocks to reduce RPC load
     if (currentVault.chainID === 8453) {
       if (blockNumber && Number(blockNumber) % 10 === 0) {
         lastRefetchTime.current = now
@@ -521,7 +519,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
 
   return (
     <>
-      {currentVault?.chainID === 747474 && (
+      {currentVault?.chainID === KATANA_CHAIN_ID && (
         <div aria-label={'Rewards Claim Notification'} className={'col-span-12 mt-10'}>
           <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
             <div>

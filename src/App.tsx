@@ -13,10 +13,10 @@ import { IconAlertCritical } from '@lib/icons/IconAlertCritical'
 import { IconAlertError } from '@lib/icons/IconAlertError'
 import { IconCheckmark } from '@lib/icons/IconCheckmark'
 import { cl } from '@lib/utils'
-import { variants } from '@lib/utils/animations'
+// import { variants } from '@lib/utils/animations'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
-import { AnimatePresence, domAnimation, LazyMotion, motion } from 'framer-motion'
+// import { AnimatePresence, domAnimation, LazyMotion, motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { HelmetProvider } from 'react-helmet-async'
 import { Toaster } from 'react-hot-toast'
@@ -51,19 +51,19 @@ function WithLayout(): ReactElement {
       </div>
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>
-          <LazyMotion features={domAnimation}>
-            <AnimatePresence mode={'wait'}>
+          {/* <LazyMotion features={domAnimation}>
+            <AnimatePresence mode={'sync'} initial={false}>
               <motion.div
                 key={location.pathname}
-                initial={'initial'}
+                initial={false}
                 animate={'enter'}
                 exit={'exit'}
                 variants={variants}
-              >
-                <AppRoutes />
-              </motion.div>
+              > */}
+          <AppRoutes />
+          {/* </motion.div>
             </AnimatePresence>
-          </LazyMotion>
+          </LazyMotion> */}
         </div>
       </div>
     </>
@@ -81,30 +81,20 @@ function App(): ReactElement {
   let ogUrl = manifest.og || 'https://yearn.fi/og.png'
   let pageUri = manifest.uri || 'https://yearn.fi'
 
-  // Determine base URL for dynamic OG API based on environment
-  let baseUrl = 'https://yearn.fi' // Default to production
-  if (import.meta.env.VITE_VERCEL_ENV === 'production') {
-    baseUrl = 'https://yearn.fi'
-  } else if (import.meta.env.VITE_VERCEL_URL) {
-    // Vercel preview/development builds
-    baseUrl = `https://${import.meta.env.VITE_VERCEL_URL}`
-  } else if (typeof window !== 'undefined') {
-    // Local development fallback
-    baseUrl = window.location.origin
-  } else {
-    // Server-side fallback for localhost
-    baseUrl = 'http://localhost:3000'
-  }
-  // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
+  const ogBaseUrl = 'https://og.yearn.fi'
+
   if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
+    // Default to production
+
+    // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
     const [, , chainID, address] = asPath.split('/')
-    ogUrl = `${baseUrl}/api/og/${chainID}/${address}`
+    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`
   }
-  // Use dynamic OG API for v2 vault pages: /vaults/[chainID]/[address]
   if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
+    // Use dynamic OG API for v2 vault pages: /vaults/[chainID]/[address]
     const [, , chainID, address] = asPath.split('/')
-    ogUrl = `${baseUrl}/api/og/${chainID}/${address}`
+    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`
   }
 

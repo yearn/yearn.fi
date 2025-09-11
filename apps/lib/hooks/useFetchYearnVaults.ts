@@ -84,62 +84,47 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
   const YBOLD_STAKING_ADDRESS: Address = '0x23346B04a7f55b8760E5860AA5A77383D63491cD'
 
   const patchedVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
-    // Create a copy of the vaultsObject to avoid mutating the original object
     const vaultsWithWorkaround = { ...vaultsObject }
-
     const yBoldVault = vaultsWithWorkaround[YBOLD_VAULT_ADDRESS]
     const stYBoldVault = vaultsWithWorkaround[YBOLD_STAKING_ADDRESS]
 
-    if (yBoldVault && stYBoldVault) {
-      try {
-        vaultsWithWorkaround[YBOLD_VAULT_ADDRESS] = {
-          ...yBoldVault,
-          staking: {
-            address: YBOLD_STAKING_ADDRESS,
-            available: true,
-            source: 'yBOLD',
-            rewards: [
-              {
-                address: zeroAddress,
-                name: 'null',
-                symbol: 'null',
-                decimals: 18,
-                price: 0,
-                isFinished: false,
-                finishedAt: 9748476800,
-                apr: null,
-                perWeek: 0
+    if (!yBoldVault || !stYBoldVault) return vaultsWithWorkaround
+
+    vaultsWithWorkaround[YBOLD_VAULT_ADDRESS] = {
+      ...yBoldVault,
+      staking: {
+        address: YBOLD_STAKING_ADDRESS,
+        available: true,
+        source: 'yBOLD',
+        rewards: [
+          {
+            address: zeroAddress,
+            name: 'null',
+            symbol: 'null',
+            decimals: 18,
+            price: 0,
+            isFinished: false,
+            finishedAt: 9748476800,
+            apr: null,
+            perWeek: 0
+          }
+        ]
+      },
+      apr:
+        yBoldVault.apr && stYBoldVault.apr
+          ? {
+              ...yBoldVault.apr,
+              netAPR: stYBoldVault.apr.netAPR ?? yBoldVault.apr.netAPR ?? 0,
+              points: { ...(stYBoldVault.apr.points ?? yBoldVault.apr.points ?? {}) },
+              pricePerShare: {
+                ...(stYBoldVault.apr.pricePerShare ?? yBoldVault.apr.pricePerShare ?? {})
+              },
+              fees: {
+                ...yBoldVault.apr.fees,
+                performance: stYBoldVault.apr.fees.performance ?? yBoldVault.apr.fees.performance ?? 0
               }
-            ]
-          },
-          // Create immutable copy of APR data
-          apr:
-            yBoldVault.apr && stYBoldVault.apr
-              ? {
-                  ...yBoldVault.apr,
-                  netAPR: stYBoldVault.apr.netAPR ?? yBoldVault.apr.netAPR ?? 0,
-                  points: { ...(stYBoldVault.apr.points ?? yBoldVault.apr.points ?? {}) },
-                  pricePerShare: {
-                    ...(stYBoldVault.apr.pricePerShare ?? yBoldVault.apr.pricePerShare ?? {})
-                  },
-                  fees: {
-                    ...yBoldVault.apr.fees,
-                    performance: stYBoldVault.apr.fees.performance ?? yBoldVault.apr.fees.performance ?? 0
-                  }
-                }
-              : yBoldVault.apr
-        }
-      } catch (error) {
-        console.error('yBOLD vault workaround failed:', error)
-        // Return original object if patching fails
-        return vaultsObject
-      }
-    } else {
-      console.warn('yBOLD vault workaround: Required vaults not found', {
-        yBoldFound: !!yBoldVault,
-        stYBoldFound: !!stYBoldVault,
-        availableVaults: Object.keys(vaultsWithWorkaround).length
-      })
+            }
+          : yBoldVault.apr
     }
 
     return vaultsWithWorkaround
