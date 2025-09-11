@@ -13,10 +13,10 @@ import { IconAlertCritical } from '@lib/icons/IconAlertCritical'
 import { IconAlertError } from '@lib/icons/IconAlertError'
 import { IconCheckmark } from '@lib/icons/IconCheckmark'
 import { cl } from '@lib/utils'
-import { variants } from '@lib/utils/animations'
+// import { variants } from '@lib/utils/animations'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
-import { AnimatePresence, domAnimation, LazyMotion, motion } from 'framer-motion'
+// import { AnimatePresence, domAnimation, LazyMotion, motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { HelmetProvider } from 'react-helmet-async'
 import { Toaster } from 'react-hot-toast'
@@ -51,7 +51,7 @@ function WithLayout(): ReactElement {
       </div>
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>
-          <LazyMotion features={domAnimation}>
+          {/* <LazyMotion features={domAnimation}>
             <AnimatePresence mode={'sync'} initial={false}>
               <motion.div
                 key={location.pathname}
@@ -59,11 +59,11 @@ function WithLayout(): ReactElement {
                 animate={'enter'}
                 exit={'exit'}
                 variants={variants}
-              >
-                <AppRoutes />
-              </motion.div>
+              > */}
+          <AppRoutes />
+          {/* </motion.div>
             </AnimatePresence>
-          </LazyMotion>
+          </LazyMotion> */}
         </div>
       </div>
     </>
