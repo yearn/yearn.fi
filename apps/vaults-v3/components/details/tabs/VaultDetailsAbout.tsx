@@ -22,7 +22,11 @@ export function YearnFeesLineItem({ children, label, tooltip }: TYearnFeesLineIt
       >
         {tooltip ? (
           <span suppressHydrationWarning className={'tooltipFees bottom-full'}>
-            <div className={'w-96 rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'}>
+            <div
+              className={
+                'w-96 rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'
+              }
+            >
               {tooltip}
             </div>
           </span>

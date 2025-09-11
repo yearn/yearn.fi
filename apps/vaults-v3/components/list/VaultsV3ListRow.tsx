@@ -1,18 +1,16 @@
 import Link from '@components/Link'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
-import { Renderable } from '@lib/components/Renderable'
 import { IconLinkOut } from '@lib/icons/IconLinkOut'
 import { cl, isZero, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import type { ReactElement } from 'react'
-import { useMemo } from 'react'
-import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { VaultForwardAPY } from '@vaults-v3/components/table/VaultForwardAPY'
+import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
 import { VaultStakedAmount } from '@vaults-v3/components/table/VaultStakedAmount'
 import { getExplorerAddressUrl } from '@vaults-v3/utils/explorer'
 import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
+import type { ReactElement } from 'react'
 import { VaultChainTag } from '../VaultChainTag'
 
 // Inline tooltip/components moved to v3 table components
@@ -67,7 +65,11 @@ export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault 
                   type={'button'}
                   onClick={(event): void => {
                     event.stopPropagation()
-                    window.open(getExplorerAddressUrl(currentVault.chainID, currentVault.address), '_blank', 'noopener,noreferrer')
+                    window.open(
+                      getExplorerAddressUrl(currentVault.chainID, currentVault.address),
+                      '_blank',
+                      'noopener,noreferrer'
+                    )
                   }}
                   className={'text-neutral-900/50 transition-opacity hover:text-neutral-900 cursor-pointer'}
                 >
@@ -155,7 +157,11 @@ export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault 
             type={'button'}
             onClick={(event): void => {
               event.stopPropagation()
-              window.open(getExplorerAddressUrl(currentVault.chainID, currentVault.address), '_blank', 'noopener,noreferrer')
+              window.open(
+                getExplorerAddressUrl(currentVault.chainID, currentVault.address),
+                '_blank',
+                'noopener,noreferrer'
+              )
             }}
             className={'text-neutral-900/50 transition-opacity hover:text-neutral-900 cursor-pointer'}
           >

@@ -1,14 +1,14 @@
-import { cl, formatAmount } from '@lib/utils';
-import type { FC } from 'react';
-import { Fragment } from 'react';
+import { cl, formatAmount } from '@lib/utils'
+import type { FC } from 'react'
+import { Fragment } from 'react'
 
 type TAPYSublineProps = {
-  hasPendleArbRewards: boolean;
-  hasKelpNEngenlayer: boolean;
-  hasKelp: boolean;
-  isEligibleForSteer?: boolean;
-  steerPointsPerDollar?: number;
-};
+  hasPendleArbRewards: boolean
+  hasKelpNEngenlayer: boolean
+  hasKelp: boolean
+  isEligibleForSteer?: boolean
+  steerPointsPerDollar?: number
+}
 
 export const APYSubline: FC<TAPYSublineProps> = ({
   hasPendleArbRewards,
@@ -24,13 +24,17 @@ export const APYSubline: FC<TAPYSublineProps> = ({
         <br />
         {'+1x EigenLayer Points'}
       </small>
-    );
+    )
   }
   if (hasKelp) {
-    return <small className={cl('whitespace-nowrap text-sm text-neutral-500 self-end -mb-1')}>{'+ 1x Kelp Miles'}</small>;
+    return (
+      <small className={cl('whitespace-nowrap text-sm text-neutral-500 self-end -mb-1')}>{'+ 1x Kelp Miles'}</small>
+    )
   }
   if (hasPendleArbRewards) {
-    return <small className={cl('whitespace-nowrap text-sm text-neutral-500 self-end -mb-1')}>{'+ 2500 ARB/week'}</small>;
+    return (
+      <small className={cl('whitespace-nowrap text-sm text-neutral-500 self-end -mb-1')}>{'+ 2500 ARB/week'}</small>
+    )
   }
   if (isEligibleForSteer && (steerPointsPerDollar || 0) > 0) {
     return (
@@ -66,8 +70,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
           </div>
         </span>
       </span>
-    );
+    )
   }
-  return <Fragment />;
-};
-
+  return <Fragment />
+}

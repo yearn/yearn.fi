@@ -29,12 +29,12 @@ import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/ac
 import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
+import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
 import type { ReactElement } from 'react'
 import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useBlockNumber, useReadContract } from 'wagmi'
 import { readContracts } from 'wagmi/actions'
-import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug

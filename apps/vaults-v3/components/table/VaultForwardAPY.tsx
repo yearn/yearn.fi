@@ -1,17 +1,17 @@
-import { RenderAmount } from '@lib/components/RenderAmount';
-import { Renderable } from '@lib/components/Renderable';
-import { formatAmount, isZero } from '@lib/utils';
-import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas';
-import type { ReactElement } from 'react';
-import { Fragment } from 'react';
-import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses';
-import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData';
-import { APYSubline } from './APYSubline';
-import { APYTooltip } from './APYTooltip';
-import { KatanaApyTooltip } from './KatanaApyTooltip';
+import { RenderAmount } from '@lib/components/RenderAmount'
+import { Renderable } from '@lib/components/Renderable'
+import { formatAmount, isZero } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
+import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
+import type { ReactElement } from 'react'
+import { Fragment } from 'react'
+import { APYSubline } from './APYSubline'
+import { APYTooltip } from './APYTooltip'
+import { KatanaApyTooltip } from './KatanaApyTooltip'
 
 export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
-  const data = useVaultApyData(currentVault);
+  const data = useVaultApyData(currentVault)
 
   // Katana
   if (currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined) {
@@ -21,7 +21,11 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
           <b className={'yearn--table-data-section-item-value'}>
             <Renderable shouldRender={true} fallback={'NEW'}>
               {'⚔️ '}
-              <span className={'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'}>
+              <span
+                className={
+                  'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                }
+              >
                 <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
               </span>
             </Renderable>
@@ -44,14 +48,14 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
           steerPointsPerDollar={data.steerPointsPerDollar}
         />
       </div>
-    );
+    )
   }
 
   // No forward APY (or Katana with no extras)
   if (data.mode === 'noForward' || currentVault.chainID === KATANA_CHAIN_ID) {
-    const hasZeroAPY = isZero(data.netApr) || Number((data.netApr || 0).toFixed(2)) === 0;
-    const boostedAPY = data.rewardsAprSum + data.netApr;
-    const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
+    const hasZeroAPY = isZero(data.netApr) || Number((data.netApr || 0).toFixed(2)) === 0
+    const boostedAPY = data.rewardsAprSum + data.netApr
+    const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 
     if (data.rewardsAprSum > 0) {
       return (
@@ -60,8 +64,17 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
             <b className={'yearn--table-data-section-item-value'}>
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 {'⚡️ '}
-                <span className={'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'}>
-                  <RenderAmount shouldHideTooltip={hasZeroBoostedAPY} value={boostedAPY} symbol={'percent'} decimals={6} />
+                <span
+                  className={
+                    'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                  }
+                >
+                  <RenderAmount
+                    shouldHideTooltip={hasZeroBoostedAPY}
+                    value={boostedAPY}
+                    symbol={'percent'}
+                    decimals={6}
+                  />
                 </span>
               </Renderable>
             </b>
@@ -73,9 +86,13 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
               rewardsAPY={data.rewardsAprSum}
             />
           </span>
-          <APYSubline hasPendleArbRewards={data.hasPendleArbRewards} hasKelpNEngenlayer={data.hasKelpNEngenlayer} hasKelp={data.hasKelp} />
+          <APYSubline
+            hasPendleArbRewards={data.hasPendleArbRewards}
+            hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+            hasKelp={data.hasKelp}
+          />
         </div>
-      );
+      )
     }
 
     return (
@@ -85,20 +102,33 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
             <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
           </Renderable>
         </b>
-        <APYSubline hasPendleArbRewards={data.hasPendleArbRewards} hasKelpNEngenlayer={data.hasKelpNEngenlayer} hasKelp={data.hasKelp} />
+        <APYSubline
+          hasPendleArbRewards={data.hasPendleArbRewards}
+          hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+          hasKelp={data.hasKelp}
+        />
       </div>
-    );
+    )
   }
 
   // Boosted
   if (data.mode === 'boosted' && data.isBoosted) {
-    const unBoostedAPY = data.unboostedApr || 0;
+    const unBoostedAPY = data.unboostedApr || 0
     return (
       <span className={'tooltip'}>
         <div className={'flex flex-col items-end md:text-right'}>
-          <b className={'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'}>
+          <b
+            className={
+              'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+            }
+          >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-              <RenderAmount shouldHideTooltip value={currentVault.apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+              <RenderAmount
+                shouldHideTooltip
+                value={currentVault.apr.forwardAPR.netAPR}
+                symbol={'percent'}
+                decimals={6}
+              />
             </Renderable>
           </b>
           <small className={'text-xs text-neutral-800'}>
@@ -113,25 +143,25 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
           />
         </div>
       </span>
-    );
+    )
   }
 
   // Rewards (VeYFI or generic)
   if (data.mode === 'rewards') {
-    const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
-    let veYFIRange: [number, number] | undefined;
-    let estAPYRange: [number, number] | undefined;
-    let boostedAPY: number;
-    let hasZeroBoostedAPY: boolean;
+    const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
+    let veYFIRange: [number, number] | undefined
+    let estAPYRange: [number, number] | undefined
+    let boostedAPY: number
+    let hasZeroBoostedAPY: boolean
 
     if (isSourceVeYFI) {
-      veYFIRange = data.veYfiRange;
-      boostedAPY = (veYFIRange?.[0] || 0) + data.baseForwardApr;
-      hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
-      estAPYRange = data.estAprRange;
+      veYFIRange = data.veYfiRange
+      boostedAPY = (veYFIRange?.[0] || 0) + data.baseForwardApr
+      hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
+      estAPYRange = data.estAprRange
     } else {
-      boostedAPY = data.rewardsAprSum + data.baseForwardApr;
-      hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
+      boostedAPY = data.rewardsAprSum + data.baseForwardApr
+      hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
     }
 
     return (
@@ -140,7 +170,11 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
           <b className={'yearn--table-data-section-item-value whitespace-nowrap'}>
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               {'⚡️ '}
-              <span className={'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'}>
+              <span
+                className={
+                  'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                }
+              >
                 {estAPYRange ? (
                   <Fragment>
                     <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
@@ -148,7 +182,12 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
                     <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
                   </Fragment>
                 ) : (
-                  <RenderAmount shouldHideTooltip={hasZeroBoostedAPY} value={boostedAPY} symbol={'percent'} decimals={6} />
+                  <RenderAmount
+                    shouldHideTooltip={hasZeroBoostedAPY}
+                    value={boostedAPY}
+                    symbol={'percent'}
+                    decimals={6}
+                  />
                 )}
               </span>
             </Renderable>
@@ -162,9 +201,13 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
             range={veYFIRange}
           />
         </span>
-        <APYSubline hasPendleArbRewards={data.hasPendleArbRewards} hasKelp={data.hasKelp} hasKelpNEngenlayer={data.hasKelpNEngenlayer} />
+        <APYSubline
+          hasPendleArbRewards={data.hasPendleArbRewards}
+          hasKelp={data.hasKelp}
+          hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+        />
       </div>
-    );
+    )
   }
 
   // Spot forward APY
@@ -177,23 +220,33 @@ export function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault 
             <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
           </Renderable>
         </b>
-        <APYSubline hasPendleArbRewards={data.hasPendleArbRewards} hasKelp={data.hasKelp} hasKelpNEngenlayer={data.hasKelpNEngenlayer} />
+        <APYSubline
+          hasPendleArbRewards={data.hasPendleArbRewards}
+          hasKelp={data.hasKelp}
+          hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+        />
       </div>
-    );
+    )
   }
 
   // Fallback historical APY
-  const hasZeroAPY = isZero(data.netApr) || Number((data.netApr || 0).toFixed(2)) === 0;
+  const hasZeroAPY = isZero(data.netApr) || Number((data.netApr || 0).toFixed(2)) === 0
   return (
     <div className={'relative flex flex-col items-end md:text-right'}>
       <b className={'yearn--table-data-section-item-value'}>
-        <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')} fallback={'NEW'}>
+        <Renderable
+          shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')}
+          fallback={'NEW'}
+        >
           {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
           <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
         </Renderable>
       </b>
-      <APYSubline hasPendleArbRewards={data.hasPendleArbRewards} hasKelp={data.hasKelp} hasKelpNEngenlayer={data.hasKelpNEngenlayer} />
+      <APYSubline
+        hasPendleArbRewards={data.hasPendleArbRewards}
+        hasKelp={data.hasKelp}
+        hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+      />
     </div>
-  );
+  )
 }
-

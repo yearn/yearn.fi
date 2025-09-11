@@ -1,9 +1,9 @@
-import { cl } from '@lib/utils';
-import type { ReactElement } from 'react';
+import { cl } from '@lib/utils'
+import type { ReactElement } from 'react'
 
 export function VaultRiskScoreTag({ riskLevel }: { riskLevel: number }): ReactElement {
-  const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel;
-  const riskColor = ['transparent', '#63C532', '#F8A908', '#F8A908', '#C73203', '#C73203'];
+  const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel
+  const riskColor = ['transparent', '#63C532', '#F8A908', '#F8A908', '#C73203', '#C73203']
   return (
     <div className={'md:justify-centere col-span-2 flex flex-row items-end justify-between md:flex-col md:pt-4'}>
       <p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>{'Risk Score'}</p>
@@ -17,8 +17,16 @@ export function VaultRiskScoreTag({ riskLevel }: { riskLevel: number }): ReactEl
             }}
           />
         </div>
-        <span suppressHydrationWarning className={'tooltiptext top-full mt-1 !text-[10px]'} style={{ marginRight: 'calc(-94px + 50%)' }}>
-          <div className={'font-number relative border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-neutral-900'}>
+        <span
+          suppressHydrationWarning
+          className={'tooltiptext top-full mt-1 !text-[10px]'}
+          style={{ marginRight: 'calc(-94px + 50%)' }}
+        >
+          <div
+            className={
+              'font-number relative border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-neutral-900'
+            }
+          >
             <p>
               <b className={'font-semibold'}>{`${level} / 5 :`}</b>
               {
@@ -29,6 +37,5 @@ export function VaultRiskScoreTag({ riskLevel }: { riskLevel: number }): ReactEl
         </span>
       </div>
     </div>
-  );
+  )
 }
-

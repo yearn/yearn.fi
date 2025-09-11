@@ -161,7 +161,12 @@ function VaultAPY({
                 >
                   <p>{'• Base APY '}</p>
                   <span className={'font-number'}>
-                    <RenderAmount shouldHideTooltip value={apyData.baseForwardApr || apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                    <RenderAmount
+                      shouldHideTooltip
+                      value={apyData.baseForwardApr || apr.forwardAPR.netAPR}
+                      symbol={'percent'}
+                      decimals={6}
+                    />
                   </span>
                 </div>
 
@@ -172,7 +177,12 @@ function VaultAPY({
                 >
                   <p>{'• Rewards APY '}</p>
                   <span className={'font-number'}>
-                    <RenderAmount shouldHideTooltip value={apyData.rewardsAprSum || extraAPY} symbol={'percent'} decimals={6} />
+                    <RenderAmount
+                      shouldHideTooltip
+                      value={apyData.rewardsAprSum || extraAPY}
+                      symbol={'percent'}
+                      decimals={6}
+                    />
                   </span>
                 </div>
               </div>
@@ -189,8 +199,14 @@ function VaultAPY({
 
   if (isSourceVeYFI) {
     const sumOfRewardsAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
-    const veYFIRange = [apr.extra.stakingRewardsAPR / 10 + apr.extra.gammaRewardAPR, sumOfRewardsAPY] as [number, number]
-    const estAPYRange = [veYFIRange[0] + apr.forwardAPR.netAPR, veYFIRange[1] + apr.forwardAPR.netAPR] as [number, number]
+    const veYFIRange = [apr.extra.stakingRewardsAPR / 10 + apr.extra.gammaRewardAPR, sumOfRewardsAPY] as [
+      number,
+      number
+    ]
+    const estAPYRange = [veYFIRange[0] + apr.forwardAPR.netAPR, veYFIRange[1] + apr.forwardAPR.netAPR] as [
+      number,
+      number
+    ]
     return (
       <VaultHeaderLineItem
         label={'Historical APY'}
@@ -225,7 +241,12 @@ function VaultAPY({
                 >
                   <p>{'• Base APY '}</p>
                   <span className={'font-number'}>
-                    <RenderAmount shouldHideTooltip value={apyData.baseForwardApr || apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                    <RenderAmount
+                      shouldHideTooltip
+                      value={apyData.baseForwardApr || apr.forwardAPR.netAPR}
+                      symbol={'percent'}
+                      decimals={6}
+                    />
                   </span>
                 </div>
 
@@ -358,11 +379,15 @@ function ValueInVaultAsToken(props: {
             <IconQuestion className={'hidden md:block'} />
           </div>
           <span className={'tooltipLight top-full mt-2'}>
-              <div className={'-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-xs text-neutral-900'}>
-                <p className={'flex w-full flex-row justify-between text-neutral-700 md:text-xs'}>
-                  {'Your yield is accruing every single block. Go you!'}
-                </p>
-              </div>
+            <div
+              className={
+                '-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-xs text-neutral-900'
+              }
+            >
+              <p className={'flex w-full flex-row justify-between text-neutral-700 md:text-xs'}>
+                {'Your yield is accruing every single block. Go you!'}
+              </p>
+            </div>
           </span>
         </span>
       }
@@ -402,11 +427,15 @@ function ValueEarned(props: {
             <IconQuestion className={'hidden md:block'} />
           </div>
           <span className={'tooltipLight top-full mt-2'}>
-              <div className={'-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'}>
-                <p className={'flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
-                  {'Your yield is accruing every single block. Go you!'}
-                </p>
-              </div>
+            <div
+              className={
+                '-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'
+              }
+            >
+              <p className={'flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
+                {'Your yield is accruing every single block. Go you!'}
+              </p>
+            </div>
           </span>
         </span>
       }

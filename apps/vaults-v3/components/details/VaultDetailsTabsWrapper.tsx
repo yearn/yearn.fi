@@ -7,10 +7,10 @@ import { IconLinkOut } from '@lib/icons/IconLinkOut'
 import { assert, cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { retrieveConfig } from '@lib/utils/wagmi'
-import { getExplorerAddressUrl } from '@vaults-v3/utils/explorer'
 import { VaultInfo } from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper'
 import { VaultDetailsAbout } from '@vaults-v3/components/details/tabs/VaultDetailsAbout'
 import { VaultDetailsStrategies } from '@vaults-v3/components/details/tabs/VaultDetailsStrategies'
+import { getExplorerAddressUrl } from '@vaults-v3/utils/explorer'
 import type { ReactElement } from 'react'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
@@ -200,9 +200,15 @@ function VaultDetailsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
 
         <div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
           <AddToWalletLink currentVault={currentVault} />
-          <a href={getExplorerAddressUrl(currentVault.chainID, currentVault.address)} target={'_blank'} rel={'noopener noreferrer'}>
+          <a
+            href={getExplorerAddressUrl(currentVault.chainID, currentVault.address)}
+            target={'_blank'}
+            rel={'noopener noreferrer'}
+          >
             <span className={'sr-only'}>{'Open in explorer'}</span>
-            <IconLinkOut className={'size-5 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'} />
+            <IconLinkOut
+              className={'size-5 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'}
+            />
           </a>
         </div>
       </div>
