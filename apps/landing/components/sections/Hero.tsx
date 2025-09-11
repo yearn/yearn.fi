@@ -140,8 +140,10 @@ export function Hero(): ReactElement {
               description={"DeFi's most battle tested yield aggregator"}
             />
             <div className={'flex flex-col items-center justify-center gap-4'}>
-              <Link href={'/v3'} className={'block w-full'}>
-                <Button className={'max-w-xs !rounded-full !bg-primary'}>{'Explore Vaults'}</Button>
+              <Link href={'/v3'} className={'block'}>
+                <Button className={'!text-[16px] max-w-xs !px-4 !py-5 !rounded-full !bg-primary'} variant={'primary'}>
+                  {'Explore Vaults'}
+                </Button>{' '}
               </Link>
             </div>
           </div>
