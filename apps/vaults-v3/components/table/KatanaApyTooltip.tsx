@@ -40,7 +40,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
+                src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${props.currentVault.chainID}/${props.currentVault.token.address.toLowerCase()}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -62,7 +62,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${props.currentVault.chainID}/${props.currentVault.token.address}/logo-32.png`}
+                src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${props.currentVault.chainID}/${props.currentVault.token.address.toLowerCase()}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -97,7 +97,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/logo-32.png`}
+                src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/chains/${props.currentVault.chainID}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -119,7 +119,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/logo-32.png`}
+                src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/chains/${props.currentVault.chainID}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -140,7 +140,7 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/${props.currentVault.chainID}/logo-32.png`}
+                src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/chains/${props.currentVault.chainID}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}

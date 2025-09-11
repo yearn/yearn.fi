@@ -138,9 +138,7 @@ function Index(): ReactElement | null {
         >
           <ImageWithFallback
             className={'size-12 md:size-[72px]'}
-            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${currentVault.chainID}/${toAddress(
-              currentVault.token.address
-            )}/logo-128.png`}
+            src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`}
             alt={''}
             width={72}
             height={72}

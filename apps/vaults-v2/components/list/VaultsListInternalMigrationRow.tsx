@@ -21,7 +21,7 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
           <div className={'yearn--table-token-section-item inline'}>
             <div className={'yearn--table-token-section-item-image'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${currentVault.chainID}/${toAddress(
+                src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${currentVault.chainID}/${toAddress(
                   currentVault.token.address
                 )}/logo-32.png`}
                 alt={''}

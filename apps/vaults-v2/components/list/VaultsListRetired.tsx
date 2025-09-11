@@ -24,9 +24,7 @@ export function VaultsListRetired({ currentVault }: { currentVault: TYDaemonVaul
           <div className={'yearn--table-token-section-item'}>
             <div className={'yearn--table-token-section-item-image'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${currentVault.chainID}/${toAddress(
-                  currentVault.token.address
-                )}/logo-32.png`}
+                src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-32.png`}
                 alt={''}
                 width={32}
                 height={32}

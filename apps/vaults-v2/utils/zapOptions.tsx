@@ -28,7 +28,7 @@ export function setZapOption({
     chainID,
     icon: (
       <ImageWithFallback
-        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${chainID}/${address}/logo-32.png`}
+        src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${chainID}/${address.toLowerCase()}/logo-32.png`}
         alt={name}
         width={24}
         height={24}

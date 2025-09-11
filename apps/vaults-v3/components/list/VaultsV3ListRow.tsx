@@ -36,8 +36,10 @@ export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault 
         <div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between')}>
           <div className={'flex flex-row gap-6 overflow-hidden pr-10'}>
             <div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
+              {/* TODO:add env for asset address */}
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
+                src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-32.png`}
+                // src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
                 alt={''}
                 width={32}
                 height={32}

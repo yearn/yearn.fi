@@ -111,8 +111,8 @@ function NotificationContent({
           <ImageWithFallback
             alt={notification.fromTokenName || 'Token'}
             unoptimized
-            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${notification.chainId}/${notification.fromAddress || '0x0'}/logo-128.png`}
-            altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${notification.chainId}/${notification.fromAddress || '0x0'}/logo-128.png`}
+            src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+            altSrc={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
             quality={90}
             width={32}
             height={32}

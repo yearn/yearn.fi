@@ -65,10 +65,10 @@ export const APPS = {
   },
   analytics: {
     name: 'Analytics',
-    href: 'https://yearn-powerglove.vercel.app/',
-    host: ['yearn-powerglove.vercel.app'],
+    href: 'https://powerglove.yearn.fi/',
+    host: ['powerglove.yearn.fi'],
     pathname: 'unused',
-    icon: <LogoYearn className={'size-6! max-h-6! max-w-6!'} back={'text-neutral-900'} front={'text-black'} />
+    icon: <LogoYearn className={'size-6! max-h-6! max-w-6!'} back={'text-neutral-100'} front={'text-primary'} />
   },
   yETH: {
     name: 'yETH',
@@ -81,7 +81,7 @@ export const APPS = {
         className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
-        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
+        src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/1/0x1bed97cbc3c24a4fb5c069c6e311a967386131f7/logo-128.png`}
         loading={'eager'}
         priority
       />
@@ -95,7 +95,7 @@ export const APPS = {
     icon: (
       <Image
         priority
-        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
+        src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
         className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}

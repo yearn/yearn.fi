@@ -116,7 +116,9 @@ export const APPS: { [key in AppName]: TApp } = {
         className={'size-8'}
         width={64}
         height={64}
-        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/${VEYFI_DYFI_ADDRESS}/logo-128.png`}
+        src={
+          'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/1/0x41252e8691e964f7de35156b68493bab6797a275/logo-128.png'
+        }
         loading={'eager'}
         priority
       />
@@ -133,7 +135,9 @@ export const APPS: { [key in AppName]: TApp } = {
         width={64}
         height={64}
         className={'size-8'}
-        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
+        src={
+          'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/1/0xfcc5c47be19d06bf83eb04298b026f81069ff65b/logo-128.png'
+        }
         loading={'eager'}
         priority
       />
@@ -150,7 +154,9 @@ export const APPS: { [key in AppName]: TApp } = {
         width={64}
         height={64}
         className={'size-8'}
-        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
+        src={
+          'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/1/0x1bed97cbc3c24a4fb5c069c6e311a967386131f7/logo-128.png'
+        }
         loading={'eager'}
         priority
       />
@@ -167,7 +173,9 @@ export const APPS: { [key in AppName]: TApp } = {
         width={64}
         height={64}
         className={'size-8'}
-        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
+        src={
+          'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png'
+        }
         loading={'eager'}
         priority
       />
