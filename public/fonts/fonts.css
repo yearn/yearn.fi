@@ -1,0 +1,86 @@
+/* Aeonik Font Family */
+@font-face {
+  font-family: "Aeonik";
+  src: url("./Aeonik-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aeonik";
+  src:
+    url("./Aeonik-Regular.woff2") format("woff2"),
+    url("./Aeonik-Regular.woff") format("woff"),
+    url("./Aeonik-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aeonik";
+  src:
+    url("./Aeonik-Bold.woff2") format("woff2"),
+    url("./Aeonik-Bold.woff") format("woff"),
+    url("./Aeonik-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aeonik";
+  src: url("./Aeonik-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Aeonik Fono Font Family */
+@font-face {
+  font-family: "Aeonik Fono";
+  src: url("./AeonikFono-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aeonik Fono";
+  src: url("./AeonikFono-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Aeonik Mono Font Family */
+@font-face {
+  font-family: "Aeonik Mono";
+  src:
+    url("./AeonikMono-Regular.woff2") format("woff2"),
+    url("./AeonikMono-Regular.woff") format("woff"),
+    url("./AeonikMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aeonik Mono";
+  src:
+    url("./AeonikMono-Bold.woff2") format("woff2"),
+    url("./AeonikMono-Bold.woff") format("woff"),
+    url("./AeonikMono-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* CSS Variables for Fonts */
+:root {
+  --font-aeonik: "Aeonik", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-aeonik-fono:
+    "Aeonik Fono", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --scp-font: "Source Code Pro", "Aeonik Mono", Consolas, "Courier New", monospace;
+}
