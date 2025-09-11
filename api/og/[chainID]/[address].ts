@@ -1,10 +1,7 @@
 /** biome-ignore-all lint/performance/noImgElement: <img> elements are required for OG image generation because Next.js ImageResponse does not support the Next.js <Image> component, and <img> is the only way to render external images in the generated OG image. */
 
-import { TypeMarkYearnNaughty } from '@lib/icons/TypeMarkYearn-naughty'
-import { ImageResponse } from 'next/og'
-import type { NextRequest } from 'next/server'
-
-export const runtime = 'edge'
+import { ImageResponse } from '@vercel/og'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 /**
  * There are over-rides for Katana and yBOLD that should be removed if the way those assets work is changed.
@@ -79,6 +76,19 @@ type TKatanaAprs = {
   }
 }
 
+// TypeMarkYearn component (simplified for serverless function)
+const TypeMarkYearnNaughty = ({ width, height, color }: { width: number; height: number; color: string }) => (
+  <svg width={width} height={height} viewBox="0 0 300 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M30 15L45 35V55L30 75L15 55V35L30 15Z"
+      fill={color}
+    />
+    <text x="70" y="55" fontSize="40" fontWeight="bold" fill={color} fontFamily="Aeonik">
+      YEARN
+    </text>
+  </svg>
+)
+
 // Chain identification functions
 const ALLOWED_CHAIN_IDS = [1, 10, 137, 250, 8453, 42161, 747474]
 
@@ -127,8 +137,8 @@ function formatUSD(amount: number): string {
 }
 
 async function fetchVaultData(chainID: string, address: string) {
-  // Additional security: ensure base URI is a trusted external service
-  const baseUri = import.meta.env.VITE_YDAEMON_BASE_URI
+  // Use environment variable for base URI
+  const baseUri = process.env.VITE_YDAEMON_BASE_URI || process.env.YDAEMON_BASE_URI || 'https://ydaemon.yearn.fi'
   if (!baseUri || !baseUri.startsWith('https://')) {
     console.error('Invalid or missing YDAEMON_BASE_URI')
     return null
@@ -160,7 +170,7 @@ async function fetchVaultData(chainID: string, address: string) {
 }
 
 async function fetchKatanaAprs(): Promise<TKatanaAprs | null> {
-  const apiUrl = import.meta.env.VITE_KATANA_APR_SERVICE_API
+  const apiUrl = process.env.VITE_KATANA_APR_SERVICE_API || process.env.KATANA_APR_SERVICE_API
   if (!apiUrl) {
     console.error('KATANA_APR_SERVICE_API environment variable is not set')
     return null
@@ -192,7 +202,7 @@ async function fetchYBoldApr(chainID: string): Promise<{ estimatedAPY: number; h
     return null
   }
 
-  const baseUri = import.meta.env.VITE_YDAEMON_BASE_URI
+  const baseUri = process.env.VITE_YDAEMON_BASE_URI || process.env.YDAEMON_BASE_URI || 'https://ydaemon.yearn.fi'
   if (!baseUri || !baseUri.startsWith('https://')) {
     console.error('Invalid or missing YDAEMON_BASE_URI')
     return null
@@ -311,16 +321,13 @@ function calculateHistoricalAPY(
   return monthlyAPY > 0 ? monthlyAPY : weeklyAPY
 }
 
-export default async function handler(req: NextRequest) {
-  const url = req.url || req.nextUrl?.pathname || ''
-  // Extract chainID and address from the URL pattern: /api/og/{chainID}/{address}
-  const match = url.match(/\/api\/og\/(\d+)\/([a-fA-F0-9x]+)/i)
-  const chainID = match?.[1] || '1'
-  const address = match?.[2] || ''
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Extract chainID and address from query parameters
+  const { chainID, address } = req.query as { chainID: string; address: string }
+
   // SSRF protection: validate chainID and address
   if (!isValidChainID(chainID) || !isValidEthereumAddress(address)) {
-    // Optionally, return a 400 error or a default response
-    return new Response('Invalid chainID or address', { status: 400 })
+    return res.status(400).send('Invalid chainID or address')
   }
 
   // Fetch real vault data
@@ -346,7 +353,7 @@ export default async function handler(req: NextRequest) {
     const historicalAPY = calculateHistoricalAPY(vaultData, yBoldApr)
 
     displayData = {
-      icon: `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${chainID}/${vaultData.token.address}/logo-128.png`,
+      icon: `${process.env.VITE_BASE_YEARN_ASSETS_URI || 'https://assets.yearn.fi'}/token/${chainID}/${vaultData.token.address}/logo-128.png`,
       name: vaultData.name?.replace(/\s+Vault$/, '') || 'Yearn Vault',
       estimatedApy: `${(estimatedAPY * 100).toFixed(2)}%`,
       historicalApy: historicalAPY === -1 ? '--%' : `${(historicalAPY * 100).toFixed(2)}%`,
@@ -356,7 +363,7 @@ export default async function handler(req: NextRequest) {
   } else {
     // Fallback data if vault fetch fails
     displayData = {
-      icon: `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${chainID}/${address}/logo-128.png`,
+      icon: `${process.env.VITE_BASE_YEARN_ASSETS_URI || 'https://assets.yearn.fi'}/token/${chainID}/${address}/logo-128.png`,
       name: 'Yearn Vault',
       estimatedApy: '0.00%',
       historicalApy: '0.00%',
@@ -364,13 +371,14 @@ export default async function handler(req: NextRequest) {
       chainName: getChainName(parseInt(chainID, 10))
     }
   }
+
   // Whitelist of allowed hostnames
   const allowedHosts = ['yearn.fi', 'localhost:3000', 'localhost', 'app.yearn.fi']
-  const rawOrigin = req.headers.get('x-forwarded-host') || req.headers.get('host') || ''
+  const rawOrigin = req.headers['x-forwarded-host'] || req.headers['host'] || ''
   // Extract hostname (strip port if present)
-  const originHost = rawOrigin.split(':')[0]
-  const originPort = rawOrigin.split(':')[1]
-  const validatedOrigin = allowedHosts.includes(rawOrigin)
+  const originHost = (rawOrigin as string).split(':')[0]
+  const originPort = (rawOrigin as string).split(':')[1]
+  const validatedOrigin = allowedHosts.includes(rawOrigin as string)
     ? rawOrigin
     : allowedHosts.includes(originHost)
       ? originHost + (originPort ? ':' + originPort : '')
@@ -398,8 +406,9 @@ export default async function handler(req: NextRequest) {
     }
     aeonikMono = await monoRes.arrayBuffer()
   } catch (err) {
-    return new Response(`Font loading error: ${err instanceof Error ? err.message : String(err)}`, { status: 500 })
+    return res.status(500).send(`Font loading error: ${err instanceof Error ? err.message : String(err)}`)
   }
+
   const vaultName = displayData.name
   const vaultIcon = displayData.icon
   const estimatedApyValue = displayData.estimatedApy
@@ -408,64 +417,66 @@ export default async function handler(req: NextRequest) {
   const footerText = `${displayData.chainName} | ${address.slice(0, 6)}...${address.slice(-4)}`
   const earnWithYearnText = 'Earn With Yearn'
 
-  return new ImageResponse(
-    <div style={styles.container}>
-      <div style={styles.mainPanel}>
-        {/* Info Panel */}
-        <div style={styles.infoPanel}>
-          {/* content */}
-          <div style={styles.contentWrapper}>
-            {/* Vault Info */}
-            <div style={styles.vaultInfoContainer}>
-              {/* Title block */}
-              <div style={styles.titleBlock}>
-                {/* Token Logo and Name */}
-                <div style={styles.tokenHeader}>
-                  {/* Token Logo */}
-                  <img src={vaultIcon} alt={vaultName} width="48" height="48" style={styles.tokenIcon} />
-                  {/* Token Name */}
-                  <div style={styles.tokenName}>{vaultName}</div>
+  const imageResponse = new ImageResponse(
+    (
+      <div style={styles.container}>
+        <div style={styles.mainPanel}>
+          {/* Info Panel */}
+          <div style={styles.infoPanel}>
+            {/* content */}
+            <div style={styles.contentWrapper}>
+              {/* Vault Info */}
+              <div style={styles.vaultInfoContainer}>
+                {/* Title block */}
+                <div style={styles.titleBlock}>
+                  {/* Token Logo and Name */}
+                  <div style={styles.tokenHeader}>
+                    {/* Token Logo */}
+                    <img src={vaultIcon} alt={vaultName} width="48" height="48" style={styles.tokenIcon} />
+                    {/* Token Name */}
+                    <div style={styles.tokenName}>{vaultName}</div>
+                  </div>
+                  {/* Chain and Address */}
+                  <div style={styles.chainAddress}>{footerText}</div>
                 </div>
-                {/* Chain and Address */}
-                <div style={styles.chainAddress}>{footerText}</div>
-              </div>
 
-              {/* Stats */}
-              <div style={styles.statsContainer}>
-                {/* Estimated APY */}
-                <div style={styles.statRow}>
-                  <div style={styles.statLabel}>Estimated APY:</div>
-                  <div style={styles.statValue}>{estimatedApyValue}</div>
-                </div>
-                {/* Historical APY */}
-                <div style={styles.statRow}>
-                  <div style={styles.statLabel}>Historical APY:</div>
-                  <div style={styles.secondaryStatValue}>{historicalApyValue}</div>
-                </div>
-                {/* Vault TVL */}
-                <div style={styles.statRow}>
-                  <div style={styles.statLabel}>Vault TVL:</div>
-                  <div style={styles.tvlContainer}>
-                    <div style={styles.secondaryStatValue}>{tvlValue}</div>
+                {/* Stats */}
+                <div style={styles.statsContainer}>
+                  {/* Estimated APY */}
+                  <div style={styles.statRow}>
+                    <div style={styles.statLabel}>Estimated APY:</div>
+                    <div style={styles.statValue}>{estimatedApyValue}</div>
+                  </div>
+                  {/* Historical APY */}
+                  <div style={styles.statRow}>
+                    <div style={styles.statLabel}>Historical APY:</div>
+                    <div style={styles.secondaryStatValue}>{historicalApyValue}</div>
+                  </div>
+                  {/* Vault TVL */}
+                  <div style={styles.statRow}>
+                    <div style={styles.statLabel}>Vault TVL:</div>
+                    <div style={styles.tvlContainer}>
+                      <div style={styles.secondaryStatValue}>{tvlValue}</div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div style={styles.footer}>
-          {/* TypeMark Logo */}
-          <div style={styles.logoWrapper}>
-            <TypeMarkYearnNaughty width={300} height={90} color="#FFFFFF" />
+          {/* Footer */}
+          <div style={styles.footer}>
+            {/* TypeMark Logo */}
+            <div style={styles.logoWrapper}>
+              <TypeMarkYearnNaughty width={300} height={90} color="#FFFFFF" />
+            </div>
+
+            {/* Call to action */}
+            <div style={styles.callToAction}>{earnWithYearnText}</div>
           </div>
-
-          {/* Call to action */}
-          <div style={styles.callToAction}>{earnWithYearnText}</div>
         </div>
       </div>
-    </div>,
+    ),
     {
       width: 1200,
       height: 630,
@@ -491,6 +502,13 @@ export default async function handler(req: NextRequest) {
       ]
     }
   )
+
+  // Set appropriate headers and return the image
+  res.setHeader('Content-Type', 'image/png')
+  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate')
+  
+  const arrayBuffer = await imageResponse.arrayBuffer()
+  res.send(Buffer.from(arrayBuffer))
 }
 
 // CSS styles for OG image components
