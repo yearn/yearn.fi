@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/performance/noImgElement: <img> elements are required for OG image generation because Next.js ImageResponse does not support the Next.js <Image> component, and <img> is the only way to render external images in the generated OG image. */
 
-import { ImageResponse } from '@vercel/og'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { ImageResponse } from '@vercel/og'
 
 /**
  * There are over-rides for Katana and yBOLD that should be removed if the way those assets work is changed.
@@ -374,7 +374,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Whitelist of allowed hostnames
   const allowedHosts = ['yearn.fi', 'localhost:3000', 'localhost', 'app.yearn.fi']
-  const rawOrigin = req.headers['x-forwarded-host'] || req.headers['host'] || ''
+  const rawOrigin = req.headers['x-forwarded-host'] || req.headers.host || ''
   // Extract hostname (strip port if present)
   const originHost = (rawOrigin as string).split(':')[0]
   const originPort = (rawOrigin as string).split(':')[1]
