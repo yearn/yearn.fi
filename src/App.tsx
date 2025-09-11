@@ -52,10 +52,10 @@ function WithLayout(): ReactElement {
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>
           <LazyMotion features={domAnimation}>
-            <AnimatePresence mode={'wait'}>
+            <AnimatePresence mode={'sync'} initial={false}>
               <motion.div
                 key={location.pathname}
-                initial={'initial'}
+                initial={false}
                 animate={'enter'}
                 exit={'exit'}
                 variants={variants}
