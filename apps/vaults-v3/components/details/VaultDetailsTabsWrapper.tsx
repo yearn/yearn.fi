@@ -30,8 +30,6 @@ type TTabs = {
   setSelectedAboutTabIndex: (arg0: number) => void
 }
 
-// Explorer link inlined with getExplorerAddressUrl
-
 const Tabs = React.memo(function Tabs({
   hasStrategies,
   hasRisk,
@@ -182,8 +180,6 @@ const AddToWalletLink = React.memo(function AddToWalletLink({
     </button>
   )
 })
-
-// (Removed ExplorerLink component)
 
 function VaultDetailsTabsWrapperComponent({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0)

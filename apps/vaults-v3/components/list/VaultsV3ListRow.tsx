@@ -13,14 +13,6 @@ import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
 import { VaultChainTag } from '../VaultChainTag'
 
-// Inline tooltip/components moved to v3 table components
-
-/* VaultHistoricalAPY moved to table */
-
-/* VaultRiskScoreTag moved to table */
-
-/* VaultStakedAmount moved to table */
-
 export function VaultsV3ListRow({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const availableToDeposit = useAvailableToDeposit(currentVault)
 

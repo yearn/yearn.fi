@@ -374,7 +374,6 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
 
   const { data: blockNumber } = useBlockNumber({ watch: true })
 
-  // Track last refetch time to implement debouncing
   const lastRefetchTime = useRef(0)
   const REFETCH_DEBOUNCE_TIME = 5000 // 5 seconds debounce
 
@@ -419,12 +418,10 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
     const now = Date.now()
     const timeSinceLastRefetch = now - lastRefetchTime.current
 
-    // Debounce refetch to avoid excessive calls
     if (timeSinceLastRefetch < REFETCH_DEBOUNCE_TIME) {
       return
     }
 
-    // For Base chain, only refetch every 10 blocks to reduce RPC load
     if (currentVault.chainID === 8453) {
       if (blockNumber && Number(blockNumber) % 10 === 0) {
         lastRefetchTime.current = now

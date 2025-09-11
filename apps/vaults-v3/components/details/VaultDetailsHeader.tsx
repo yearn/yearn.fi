@@ -726,7 +726,6 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
    **********************************************************************************************/
 
   useEffect(() => {
-    // For Base chain, only refetch every 10 blocks to reduce RPC load
     if (currentVault.chainID === 8453) {
       if (blockNumber && Number(blockNumber) % 10 === 0) {
         refetch()
