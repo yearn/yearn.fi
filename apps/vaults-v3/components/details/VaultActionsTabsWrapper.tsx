@@ -34,6 +34,7 @@ import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } fr
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useBlockNumber, useReadContract } from 'wagmi'
 import { readContracts } from 'wagmi/actions'
+import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug
@@ -521,7 +522,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
 
   return (
     <>
-      {currentVault?.chainID === 747474 && (
+      {currentVault?.chainID === KATANA_CHAIN_ID && (
         <div aria-label={'Rewards Claim Notification'} className={'col-span-12 mt-10'}>
           <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
             <div>

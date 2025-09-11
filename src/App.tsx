@@ -81,30 +81,20 @@ function App(): ReactElement {
   let ogUrl = manifest.og || 'https://yearn.fi/og.png'
   let pageUri = manifest.uri || 'https://yearn.fi'
 
-  // Determine base URL for dynamic OG API based on environment
-  let baseUrl = 'https://yearn.fi' // Default to production
-  if (import.meta.env.VITE_VERCEL_ENV === 'production') {
-    baseUrl = 'https://yearn.fi'
-  } else if (import.meta.env.VITE_VERCEL_URL) {
-    // Vercel preview/development builds
-    baseUrl = `https://${import.meta.env.VITE_VERCEL_URL}`
-  } else if (typeof window !== 'undefined') {
-    // Local development fallback
-    baseUrl = window.location.origin
-  } else {
-    // Server-side fallback for localhost
-    baseUrl = 'http://localhost:3000'
-  }
-  // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
+  const ogBaseUrl = 'https://og.yearn.fi'
+
   if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
+    // Default to production
+
+    // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
     const [, , chainID, address] = asPath.split('/')
-    ogUrl = `${baseUrl}/api/og/${chainID}/${address}`
+    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`
   }
-  // Use dynamic OG API for v2 vault pages: /vaults/[chainID]/[address]
   if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
+    // Use dynamic OG API for v2 vault pages: /vaults/[chainID]/[address]
     const [, , chainID, address] = asPath.split('/')
-    ogUrl = `${baseUrl}/api/og/${chainID}/${address}`
+    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`
   }
 

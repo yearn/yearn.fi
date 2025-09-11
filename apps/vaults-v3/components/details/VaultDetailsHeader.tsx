@@ -31,7 +31,8 @@ import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
 import { V3_STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/V3StakingRewards.abi'
 import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
 import { VEYFI_GAUGE_ABI } from '@vaults-v2/utils/abi/veYFIGauge.abi'
-import { KatanaApyTooltip } from '@vaults-v3/components/list/VaultsV3ListRow'
+import { KatanaApyTooltip } from '@vaults-v3/components/table/KatanaApyTooltip'
+import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { erc20Abi, zeroAddress } from 'viem'
@@ -75,6 +76,7 @@ function VaultAPY({
   katanaExtras?: TKatanaAprData
   currentVault: TYDaemonVault
 }): ReactElement {
+  const apyData = useVaultApyData(currentVault)
   const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
   const monthlyAPY = apr.points.monthAgo
   const weeklyAPY = apr.points.weekAgo
@@ -82,17 +84,7 @@ function VaultAPY({
   const currentAPY = apr.forwardAPR.netAPR + extraAPY
   const isSourceVeYFI = source === 'VeYFI'
 
-  const katanaNetAPY = useMemo(() => {
-    if (!katanaExtras) return 0
-    // Exclude legacy katanaRewardsAPR, bonusAPR, and non-APR "steerPointsPerDollar" from totals
-    const {
-      katanaRewardsAPR: _katanaRewardsAPR,
-      steerPointsPerDollar: _points,
-      katanaBonusAPY: _bonus,
-      ...relevantAprs
-    } = katanaExtras ?? {}
-    return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
-  }, [katanaExtras])
+  const katanaNetAPY = useMemo(() => apyData.katanaTotalApr || 0, [apyData.katanaTotalApr])
 
   if (katanaExtras) {
     return (
@@ -136,7 +128,7 @@ function VaultAPY({
   }
 
   if (apr.forwardAPR.type !== '' && extraAPY !== 0 && !isSourceVeYFI) {
-    const boostedAPY = apr.forwardAPR.netAPR + extraAPY
+    const boostedAPY = (apyData.baseForwardApr || apr.forwardAPR.netAPR) + (apyData.rewardsAprSum || extraAPY)
     return (
       <VaultHeaderLineItem
         label={'Historical APY'}
@@ -168,7 +160,9 @@ function VaultAPY({
                   }
                 >
                   <p>{'• Base APY '}</p>
-                  <RenderAmount shouldHideTooltip value={apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                  <span className={'font-number'}>
+                    <RenderAmount shouldHideTooltip value={apyData.baseForwardApr || apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                  </span>
                 </div>
 
                 <div
@@ -177,7 +171,9 @@ function VaultAPY({
                   }
                 >
                   <p>{'• Rewards APY '}</p>
-                  <RenderAmount shouldHideTooltip value={extraAPY} symbol={'percent'} decimals={6} />
+                  <span className={'font-number'}>
+                    <RenderAmount shouldHideTooltip value={apyData.rewardsAprSum || extraAPY} symbol={'percent'} decimals={6} />
+                  </span>
                 </div>
               </div>
             </span>
@@ -193,14 +189,8 @@ function VaultAPY({
 
   if (isSourceVeYFI) {
     const sumOfRewardsAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
-    const veYFIRange = [apr.extra.stakingRewardsAPR / 10 + apr.extra.gammaRewardAPR, sumOfRewardsAPY] as [
-      number,
-      number
-    ]
-    const estAPYRange = [veYFIRange[0] + apr.forwardAPR.netAPR, veYFIRange[1] + apr.forwardAPR.netAPR] as [
-      number,
-      number
-    ]
+    const veYFIRange = [apr.extra.stakingRewardsAPR / 10 + apr.extra.gammaRewardAPR, sumOfRewardsAPY] as [number, number]
+    const estAPYRange = [veYFIRange[0] + apr.forwardAPR.netAPR, veYFIRange[1] + apr.forwardAPR.netAPR] as [number, number]
     return (
       <VaultHeaderLineItem
         label={'Historical APY'}
@@ -234,7 +224,9 @@ function VaultAPY({
                   }
                 >
                   <p>{'• Base APY '}</p>
-                  <RenderAmount shouldHideTooltip value={apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                  <span className={'font-number'}>
+                    <RenderAmount shouldHideTooltip value={apyData.baseForwardApr || apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+                  </span>
                 </div>
 
                 <div
@@ -244,9 +236,13 @@ function VaultAPY({
                 >
                   <p>{'• Rewards APY '}</p>
                   <div>
-                    <RenderAmount shouldHideTooltip value={veYFIRange[0]} symbol={'percent'} decimals={6} />
+                    <span className={'font-number'}>
+                      <RenderAmount shouldHideTooltip value={veYFIRange?.[0] || 0} symbol={'percent'} decimals={6} />
+                    </span>
                     &nbsp;&rarr;&nbsp;
-                    <RenderAmount shouldHideTooltip value={veYFIRange[1]} symbol={'percent'} decimals={6} />
+                    <span className={'font-number'}>
+                      <RenderAmount shouldHideTooltip value={veYFIRange?.[1] || 0} symbol={'percent'} decimals={6} />
+                    </span>
                   </div>
                 </div>
               </div>
@@ -362,15 +358,11 @@ function ValueInVaultAsToken(props: {
             <IconQuestion className={'hidden md:block'} />
           </div>
           <span className={'tooltipLight top-full mt-2'}>
-            <div
-              className={
-                'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-              }
-            >
-              <p className={'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
-                {'Your yield is accruing every single block. Go you!'}
-              </p>
-            </div>
+              <div className={'-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-xs text-neutral-900'}>
+                <p className={'flex w-full flex-row justify-between text-neutral-700 md:text-xs'}>
+                  {'Your yield is accruing every single block. Go you!'}
+                </p>
+              </div>
           </span>
         </span>
       }
@@ -410,15 +402,11 @@ function ValueEarned(props: {
             <IconQuestion className={'hidden md:block'} />
           </div>
           <span className={'tooltipLight top-full mt-2'}>
-            <div
-              className={
-                'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-              }
-            >
-              <p className={'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
-                {'Your yield is accruing every single block. Go you!'}
-              </p>
-            </div>
+              <div className={'-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'}>
+                <p className={'flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
+                  {'Your yield is accruing every single block. Go you!'}
+                </p>
+              </div>
           </span>
         </span>
       }
@@ -437,7 +425,7 @@ function ValueEarned(props: {
 
 export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { address } = useWeb3()
-  const { getPrice, katanaAprs } = useYearn()
+  const { getPrice } = useYearn()
   const { data: blockNumber } = useBlockNumber({ watch: true })
   const { apr, tvl, decimals, symbol = 'token' } = currentVault
   const [vaultData, setVaultData] = useState({
@@ -449,28 +437,12 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
     earnedValue: 0
   })
 
-  // Override for Katana
-  const shouldUseKatanaAPRs = currentVault.chainID === 747474
-
-  const katanaAprData = useMemo(
-    () =>
-      shouldUseKatanaAPRs
-        ? (katanaAprs?.[toAddress(currentVault.address)]?.apr?.extra as TKatanaAprData | undefined)
-        : undefined,
-    [shouldUseKatanaAPRs, katanaAprs, currentVault.address]
-  )
-
-  const totalAPR = useMemo(
-    () => (katanaAprData ? Object.values(katanaAprData).reduce((sum, value) => sum + value, 0) : 0),
-    [katanaAprData]
-  )
+  const apyData = useVaultApyData(currentVault)
 
   const displayApr = useMemo((): TYDaemonVault['apr'] => {
-    if (!katanaAprData) return apr
-    // Override netAPR with the calculated totalAPR from Katana data
-    const overrideNetAPR = totalAPR
-    return { ...apr, netAPR: overrideNetAPR }
-  }, [apr, katanaAprData, totalAPR])
+    if (apyData.katanaTotalApr === undefined) return apr
+    return { ...apr, netAPR: apyData.katanaTotalApr }
+  }, [apr, apyData.katanaTotalApr])
 
   const tokenPrice =
     useYearnTokenPrice({
@@ -789,7 +761,7 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
             apr={displayApr}
             source={currentVault.staking.source}
             chain={currentVault.chainID}
-            katanaExtras={katanaAprData}
+            katanaExtras={apyData.katanaExtras}
             currentVault={currentVault}
           />
         </div>
