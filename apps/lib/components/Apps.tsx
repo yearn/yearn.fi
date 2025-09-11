@@ -1,7 +1,6 @@
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import vaultsManifest from '@lib/data/vaults-manifest.json'
 import { LogoYearn } from '@lib/icons/LogoYearn'
-import { VEYFI_DYFI_ADDRESS, YCRV_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { VAULTS_BETA_MENU } from '@vaults/constants/menu'
 import { VAULTS_MENU } from '@vaults-v2/constants/menu'
 import { VAULTS_V3_MENU } from '@vaults-v3/constants/menu'
