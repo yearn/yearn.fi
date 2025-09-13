@@ -139,13 +139,12 @@ export function LogoPopover(): ReactElement {
           leaveTo={'opacity-0 translate-y-1'}
           className={'relative z-9999999'}
         >
-          <PopoverPanel className={'absolute left-0 top-10 z-20 w-[345px] scale-[115%] bg-transparent px-4 sm:px-0'}>
-            <div className={cl('overflow-hidden shadow-xl', isVaultPage ? 'pt-4' : 'pt-0')}>
+          <PopoverPanel className={'absolute left-0 top-6 z-20 w-[345px] scale-[115%] bg-transparent px-4 sm:px-0'}>
+            <div className={cl('overflow-hidden shadow-xl rounded-lg pt-4')}>
               <div
                 className={cl(
-                  'relative gap-2 border p-4 rounded-md',
-                  'border-transparent ',
-                  // 'bg-white',
+                  'relative gap-2 p-4  ',
+                  'border border-neutral-100',
                   isV3 ? 'border-[#151C40] bg-[#000520]' : 'dark:border-[#010A3B] dark:bg-neutral-300 bg-white'
                 )}
               >
