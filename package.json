@@ -1,16 +1,18 @@
 {
-	"private": true,
-	"scripts": {
-		"legacy": "(cd packages/legacy && bun dev)",
-		"nextgen": "(cd packages/nextgen && bun dev)",
-		"clean": "bash clean.sh"
-	},
-	"workspaces": ["packages/*"],
-	"devDependencies": {
-		"@biomejs/biome": "^2.1.2",
-		"typescript": "^5.5.4"
-	},
-	"overrides": {
-		"ox": "0.6.9"
-	}
+  "private": true,
+  "scripts": {
+    "legacy": "(cd packages/legacy && bun dev)",
+    "nextgen": "(cd packages/nextgen && bun dev)",
+    "clean": "bash clean.sh"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@biomejs/biome": "2.2.4",
+    "typescript": "5.9.2"
+  },
+  "overrides": {
+    "ox": "0.9.3"
+  }
 }
