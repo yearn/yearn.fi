@@ -115,27 +115,27 @@ export const yDaemonVaultSchema = z.object({
         withdrawal: z.number().default(0).catch(0),
         management: z.number().default(0).catch(0)
       })
-      .default({}),
+      .default({ performance: 0, withdrawal: 0, management: 0 }),
     extra: z
       .object({
         stakingRewardsAPR: z.number().default(0).catch(0),
         gammaRewardAPR: z.number().default(0).catch(0)
       })
-      .default({}),
+      .default({ stakingRewardsAPR: 0, gammaRewardAPR: 0 }),
     points: z
       .object({
         weekAgo: z.number().default(0).catch(0),
         monthAgo: z.number().default(0).catch(0),
         inception: z.number().default(0).catch(0)
       })
-      .default({}),
+      .default({ weekAgo: 0, monthAgo: 0, inception: 0 }),
     pricePerShare: z
       .object({
         today: z.number().default(0).catch(0),
         weekAgo: z.number().default(0).catch(0),
         monthAgo: z.number().default(0).catch(0)
       })
-      .default({}),
+      .default({ today: 0, weekAgo: 0, monthAgo: 0 }),
     forwardAPR: z
       .object({
         type: z.string().default('unknown').catch('unknown'),
@@ -154,9 +154,37 @@ export const yDaemonVaultSchema = z.object({
             keepVELO: z.number().default(0).catch(0),
             cvxKeepCRV: z.number().default(0).catch(0)
           })
-          .default({})
+          .default({
+            boost: 0,
+            poolAPY: 0,
+            boostedAPR: 0,
+            baseAPR: 0,
+            cvxAPR: 0,
+            rewardsAPR: 0,
+            v3OracleCurrentAPR: 0,
+            v3OracleStratRatioAPR: 0,
+            keepCRV: 0,
+            keepVELO: 0,
+            cvxKeepCRV: 0
+          })
       })
-      .default({})
+      .default({
+        type: 'unknown',
+        netAPR: 0,
+        composite: {
+          boost: 0,
+          poolAPY: 0,
+          boostedAPR: 0,
+          baseAPR: 0,
+          cvxAPR: 0,
+          rewardsAPR: 0,
+          v3OracleCurrentAPR: 0,
+          v3OracleStratRatioAPR: 0,
+          keepCRV: 0,
+          keepVELO: 0,
+          cvxKeepCRV: 0
+        }
+      })
   }),
   featuringScore: z.number().default(0).catch(0),
   strategies: z.array(yDaemonVaultStrategySchema).nullable().default([]),

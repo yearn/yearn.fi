@@ -74,8 +74,8 @@ export function GraphForStrategyReports({
               dataKey={'value'}
               stroke={'currentcolor'}
               dot={false}
-              activeDot={(e: unknown): ReactElement => {
-                const dotProps = e as React.SVGProps<SVGCircleElement> & { dataKey?: string }
+              activeDot={(e: any): ReactElement<SVGElement> => {
+                const dotProps = e as unknown as React.SVGProps<SVGCircleElement> & { dataKey?: string }
                 dotProps.className = `${dotProps.className} activeDot`
                 delete dotProps.dataKey
                 return <circle {...dotProps}></circle>
@@ -114,7 +114,7 @@ export function GraphForStrategyReports({
                   return (
                     <div className={'recharts-tooltip'}>
                       <div className={'mb-4'}>
-                        <p className={'text-xs'}>{formatDate(label)}</p>
+                        <p className={'text-xs'}>{formatDate(Number(label ?? 0))}</p>
                       </div>
                       <div className={'flex flex-row items-center justify-between'}>
                         <p className={'text-xs text-neutral-600'}>{'APY'}</p>

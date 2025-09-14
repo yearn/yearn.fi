@@ -2,7 +2,6 @@
 
 import { Popover, PopoverButton, PopoverPanel, Transition, TransitionChild } from '@headlessui/react'
 import { cl } from '@lib/utils'
-import type { AnimationProps } from 'framer-motion'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -13,12 +12,11 @@ import { LogoYearn } from '../icons/LogoYearn'
 import { APPS } from './YearnApps'
 
 type TMotionDiv = {
-  animate: AnimationProps['animate']
+  animate: 'enter' | 'exit'
   name: string
   children: ReactElement
 }
-
-const transition = { duration: 0.4, ease: 'easeInOut' }
+const transition = { duration: 0.4, ease: [0.42, 0, 0.58, 1] as const }
 const variants = {
   initial: { opacity: 0, transition },
   enter: { opacity: 1, transition },

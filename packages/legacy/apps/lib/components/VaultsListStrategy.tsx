@@ -72,7 +72,7 @@ export function VaultsListStrategy({
       scale: 1,
       transition: {
         duration: 0.3,
-        ease: [0.33, 1, 0.68, 1], // cubic-bezier easing for a smooth feel
+        ease: [0.33, 1, 0.68, 1] as const, // cubic-bezier easing for a smooth feel
         staggerChildren: 0.05,
         when: 'beforeChildren'
       }
@@ -84,7 +84,7 @@ export function VaultsListStrategy({
       scale: 0.95,
       transition: {
         duration: 0.2,
-        ease: [0.33, 0, 0.67, 0]
+        ease: [0.33, 0, 0.67, 0] as const
       }
     }
   }

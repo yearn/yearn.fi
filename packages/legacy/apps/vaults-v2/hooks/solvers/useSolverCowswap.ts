@@ -22,7 +22,7 @@ import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
 import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
 import { Solver } from '@vaults-v2/types/solvers'
 import axios from 'axios'
-import { ethers } from 'ethers'
+import { formatUnits, parseUnits } from 'ethers'
 import { useCallback, useMemo, useRef } from 'react'
 import type { Hash, TransactionReceipt } from 'viem'
 import { BaseError, maxUint256 } from 'viem'
@@ -96,8 +96,8 @@ export function useSolverCowswap(): TSolverContext {
         return '0'
       }
       const { quote } = currentQuote
-      const buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, decimals))
-      const withSlippage = ethers.utils.parseUnits(
+      const buyAmount = Number(formatUnits(quote.buyAmount, decimals))
+      const withSlippage = parseUnits(
         (buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals),
         decimals
       )
@@ -207,7 +207,7 @@ export function useSolverCowswap(): TSolverContext {
           sellAmount: (toBigInt(quote.sellAmount) + toBigInt(quote.feeAmount)).toString()
         },
         chainID,
-        signer
+        signer as any
       )
       return rawSignature
     },

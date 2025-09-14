@@ -1,5 +1,4 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
-import type { _chains } from '@rainbow-me/rainbowkit/dist/config/getDefaultConfig'
 import {
   coinbaseWallet,
   frameWallet,
@@ -105,7 +104,7 @@ export function getConfig({ chains }: { chains: Chain[] }): ResolvedRegister['co
   const config = getDefaultConfig({
     appName: (process.env.WALLETCONNECT_PROJECT_NAME as string) || '',
     projectId: process.env.WALLETCONNECT_PROJECT_ID as string,
-    chains: chains as unknown as _chains,
+    chains: chains as any,
     ssr: true,
     wallets: [
       {

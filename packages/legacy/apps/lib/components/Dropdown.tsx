@@ -100,9 +100,9 @@ export const Dropdown = ({
           ) : null}
           <Combobox
             value={selected}
-            onChange={(option: TDropdownOption): void => {
+            onChange={(option: TDropdownOption | null): void => {
               if (onChange) {
-                onChange(option)
+                if (option) onChange(option)
               }
               setIsOpen(false)
             }}

@@ -24,8 +24,8 @@ export function GraphForVaultTVL({ messariData, height = 312 }: TGraphForVaultTV
           dataKey={'tvl'}
           stroke={'currentcolor'}
           dot={false}
-          activeDot={(e: unknown): ReactElement => {
-            const dotProps = e as React.SVGProps<SVGCircleElement> & { dataKey?: string }
+          activeDot={(e: any): ReactElement<SVGElement> => {
+            const dotProps = e as unknown as React.SVGProps<SVGCircleElement> & { dataKey?: string }
             dotProps.className = `${dotProps.className} activeDot`
             delete dotProps.dataKey
             return <circle {...dotProps}></circle>
