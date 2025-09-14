@@ -3,12 +3,14 @@
 	"scripts": {
 		"legacy": "(cd packages/legacy && bun dev)",
 		"nextgen": "(cd packages/nextgen && bun dev)",
-		"clean": "bash clean.sh"
+		"clean": "bash clean.sh",
+		"build": "echo 'Use package builds'",
+		"vercel-build": "bun install --frozen-lockfile"
 	},
 	"workspaces": ["packages/*"],
 	"devDependencies": {
-		"@biomejs/biome": "^2.1.2",
-		"typescript": "^5.5.4"
+		"@biomejs/biome": "2.1.2",
+		"typescript": "5.5.4"
 	},
 	"overrides": {
 		"ox": "0.6.9"

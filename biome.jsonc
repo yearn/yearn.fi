@@ -10,8 +10,12 @@
         "noExtraBooleanCast": "off"
       },
       "security": {
-        // Rules that are relevant to the legacy app
-        "noDangerouslySetInnerHtml": "off"
+        // Security rules
+        "noDangerouslySetInnerHtml": "error",
+        "noGlobalEval": "error"
+      },
+      "correctness": {
+        "noUnusedVariables": "warn"
       },
       "suspicious": {
         "noExplicitAny": "off",

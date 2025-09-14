@@ -10,22 +10,24 @@
     "build": "tsc -b && vite build",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "install": "bun install --frozen-lockfile",
+    "vercel-build": "bun install --frozen-lockfile && bun run build"
   },
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-icons": "^5.5.0"
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-icons": "5.5.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.1.2",
-    "@tailwindcss/vite": "^4.1.11",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.6.0",
-    "tailwind-merge": "^3.3.1",
-    "tailwindcss": "^4.1.11",
-    "vite": "^7.0.4"
+    "@biomejs/biome": "2.1.2",
+    "@tailwindcss/vite": "4.1.11",
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "@vitejs/plugin-react": "4.6.0",
+    "tailwind-merge": "3.3.1",
+    "tailwindcss": "4.1.11",
+    "vite": "7.0.4"
   },
   "exports": {
     ".": {
