@@ -95,9 +95,7 @@ export function LogoPopover(): ReactElement {
     }
 
     const isVaultPage =
-      typeof window !== 'undefined' &&
-      window.location.pathname.startsWith('/vaults/') &&
-      window.location.pathname.split('/').length === 4
+      window?.location.pathname.startsWith('/vaults/') && window.location.pathname.split('/').length === 4
     return isVaultPage
   }, [])
 

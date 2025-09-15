@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/complexity/noImportantStyles: resetting css */
 /* External Dependencies */
 @import "@rainbow-me/rainbowkit/styles.css";
 @import "./legacy.css";

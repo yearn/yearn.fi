@@ -7,14 +7,17 @@
         "noExcessiveCognitiveComplexity": "off",
         "noVoid": "off",
         "noForEach": "off",
-        "noExtraBooleanCast": "off"
+        "noExtraBooleanCast": "off",
+        "noImportantStyles": "error"
       },
       "security": {
         // Rules that are relevant to the legacy app
         "noDangerouslySetInnerHtml": "off"
       },
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        // Allow Tailwind CSS at-rules like @apply and @theme
+        "noUnknownAtRules": "off"
       },
       "a11y": {
         "noSvgWithoutTitle": "off",

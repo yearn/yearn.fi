@@ -17,7 +17,6 @@ export function clientToProvider(client: Client<Transport, Chain>): JsonRpcProvi
       (transport.transports as ReturnType<Transport>[]).map(({ value }) => new JsonRpcProvider(value?.url, network))
     )
   }
-  // @ts-ignore viem transport typing
   return new JsonRpcProvider((transport as any).url, network)
 }
 
@@ -39,9 +38,7 @@ export function clientToSigner(client: Client<Transport, Chain, Account>): JsonR
   }
   // BrowserProvider in ethers v6 accepts EIP-1193 providers
   // Note: getSigner is async in v6, but we keep the signature by casting.
-  // @ts-ignore transport is EIP-1193 provider
   const provider = new BrowserProvider(transport as any, network)
-  // @ts-ignore compat: treat as sync for existing usage (callers await upstream wrapper)
   const signer = (provider as any).getSigner(account.address)
   return signer as unknown as JsonRpcSigner
 }

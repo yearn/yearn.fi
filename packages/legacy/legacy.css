@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/complexity/noImportantStyles: overriding some library styles for tailwind */
 /* 🔵 - Yearn Finance ******************************************************************************
 ** Header an navbar
 ***************************************************************************************************/
@@ -146,6 +147,7 @@
     @apply opacity-40 cursor-not-allowed;
   }
 
+  /* biome-ignore lint/style/noDescendingSpecificity: Base switch thumb, order is intentional */
   & > div {
     @apply mx-1 pointer-events-none inline-block h-2 w-2 rounded-full transition ease-in-out duration-200;
   }
