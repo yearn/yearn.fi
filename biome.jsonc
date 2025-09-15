@@ -14,8 +14,7 @@
         "noDangerouslySetInnerHtml": "off"
       },
       "suspicious": {
-        "noExplicitAny": "off",
-        "noUnknownAtRules": "off"
+        "noExplicitAny": "off"
       },
       "a11y": {
         "noSvgWithoutTitle": "off",
@@ -33,7 +32,6 @@
         "useEnumInitializers": "off",
 
         // Rules that are relevant to the legacy app
-        "noDescendingSpecificity": "off",
         "useNodejsImportProtocol": "off"
       }
     }

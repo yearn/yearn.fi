@@ -97,10 +97,7 @@ export function useSolverCowswap(): TSolverContext {
       }
       const { quote } = currentQuote
       const buyAmount = Number(formatUnits(quote.buyAmount, decimals))
-      const withSlippage = parseUnits(
-        (buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals),
-        decimals
-      )
+      const withSlippage = parseUnits((buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals), decimals)
       return withSlippage.toString()
     },
     [zapSlippage]

@@ -5,9 +5,7 @@ import type { Account, Chain, Client, Transport } from 'viem'
 import { type Config, useConnectorClient } from 'wagmi'
 import { getClient, getConnectorClient } from 'wagmi/actions'
 
-export function clientToProvider(
-  client: Client<Transport, Chain>
-): JsonRpcProvider | FallbackProvider {
+export function clientToProvider(client: Client<Transport, Chain>): JsonRpcProvider | FallbackProvider {
   const { chain, transport } = client
   const network = {
     chainId: chain.id,
@@ -48,20 +46,13 @@ export function clientToSigner(client: Client<Transport, Chain, Account>): JsonR
   return signer as unknown as JsonRpcSigner
 }
 
-export async function getEthersSigner(
-  config: Config,
-  { chainId }: { chainId?: number } = {}
-): Promise<JsonRpcSigner> {
+export async function getEthersSigner(config: Config, { chainId }: { chainId?: number } = {}): Promise<JsonRpcSigner> {
   const client = await getConnectorClient(config, { chainId })
   return clientToSigner(client)
 }
 
 /** Hook to convert a Viem Client to an ethers.js Signer. */
-export async function useEthersSigner({
-  chainId
-}: {
-  chainId?: number
-} = {}): Promise<JsonRpcSigner | undefined> {
+export async function useEthersSigner({ chainId }: { chainId?: number } = {}): Promise<JsonRpcSigner | undefined> {
   const { data: client } = useConnectorClient({ chainId })
   return useMemo(() => (client ? clientToSigner(client) : undefined), [client])
 }

@@ -4,7 +4,6 @@ export function TypeMarkYearnNaughty(props: React.SVGProps<SVGSVGElement> & { co
   const { color = '#0657F9', ...svgProps } = props
   return (
     <svg width="309" height="89" viewBox="0 0 309 89" fill="none" xmlns="http://www.w3.org/2000/svg" {...svgProps}>
-      {/** biome-ignore lint/correctness/useUniqueElementIds: svg */}
       <mask id="mask0_7_177" maskUnits="userSpaceOnUse" x="0" y="0" width="309" height="85">
         <path d="M309 0H0V85H309V0Z" fill={color} />
       </mask>

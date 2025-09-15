@@ -1,5 +1,4 @@
 /* External Dependencies */
-/** biome-ignore-all lint/complexity/noImportantStyles: overriding some library styles */
 @import "@rainbow-me/rainbowkit/styles.css";
 @import "./legacy.css";
 @import "./public/fonts/fonts.css";
