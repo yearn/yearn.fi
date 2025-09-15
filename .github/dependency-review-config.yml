@@ -1,33 +1,10 @@
 # Dependency Review Action configuration
 # https://github.com/actions/dependency-review-action
 
-# Vulnerability severity threshold
 fail-on-severity: moderate
 
-# Deny specific licenses (optional)
-# deny-licenses:
-#   - GPL-3.0
-#   - AGPL-3.0
-
-# Allow specific GitHub Advisory Database IDs (optional)
-# allow-ghsas:
-#   - GHSA-abcd-1234-5678
-
-# Deny specific packages (optional)
-# deny-packages:
-#   - pkg:npm/example-package
-
-# Allow packages with specific vulnerabilities (use with caution)
-# allow-vulnerabilities:
-#   - GHSA-1234-5678-abcd
-
-# Comment settings
 comment-summary-in-pr: always
 warn-only: false
-
-# Scope configuration
-base-ref: ${{ github.event.pull_request.base.sha }}
-head-ref: ${{ github.event.pull_request.head.sha }}
 
 # Additional settings
 vulnerability-check: true
