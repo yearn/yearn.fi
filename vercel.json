@@ -1,6 +1,6 @@
 {
-  "installCommand": "yarn install --frozen-lockfile",
-  "buildCommand": "yarn build",
+  "installCommand": "bun install --frozen-lockfile",
+  "buildCommand": "bun build",
   "outputDirectory": "dist",
   "headers": [
     {
@@ -16,7 +16,7 @@
         },
         {
           "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
+          "value": "DENY"
         },
         {
           "key": "X-XSS-Protection",
@@ -25,10 +25,6 @@
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
         }
       ]
     }
