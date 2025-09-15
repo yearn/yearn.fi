@@ -16,11 +16,12 @@ import { cl } from '@lib/utils'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
 import type { ReactElement } from 'react'
+import { useEffect } from 'react'
 import { HelmetProvider } from 'react-helmet-async'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router-dom'
 import PlausibleProvider from './components/PlausibleProvider'
-import { AppRoutes } from './routes'
+import { AppRoutes, loadAppsPage, loadV3Page, loadVaultsPage } from './routes'
 
 function WithLayout(): ReactElement {
   const location = useLocation()
@@ -96,6 +97,8 @@ function App(): ReactElement {
           uri={pageUri}
         />
         <main className={'font-aeonik size-full min-h-screen'}>
+          {/** Warm common route chunks shortly after mount to speed up first navigations */}
+          <PreloadCommonRoutes />
           <PlausibleProvider domain={'yearn.fi'} enabled={true}>
             <WithMom
               supportedChains={SUPPORTED_NETWORKS}
@@ -152,3 +155,20 @@ function App(): ReactElement {
 }
 
 export default App
+
+function PreloadCommonRoutes(): null {
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      // Best-effort: prefetch a few commonly visited top-level routes
+      try {
+        loadAppsPage()
+        loadVaultsPage()
+        loadV3Page()
+      } catch {
+        // ignore
+      }
+    }, 0)
+    return () => window.clearTimeout(id)
+  }, [])
+  return null
+}

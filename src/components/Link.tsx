@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { LinkProps as RouterLinkProps } from 'react-router-dom'
 import { Link as RouterLink } from 'react-router-dom'
+import { preloadRoute } from '../routes'
 
 export type LinkProps = {
   href?: string
@@ -45,7 +46,23 @@ export default function Link(props: LinkProps): React.ReactElement {
 
   // Internal link using React Router
   return (
-    <RouterLink to={url} className={className} target={target} rel={rel} onClick={onClick} {...rest}>
+    <RouterLink
+      to={url}
+      className={className}
+      target={target}
+      rel={rel}
+      onClick={onClick}
+      onMouseEnter={(): void => {
+        if (url) preloadRoute(url)
+      }}
+      onFocus={(): void => {
+        if (url) preloadRoute(url)
+      }}
+      onTouchStart={(): void => {
+        if (url) preloadRoute(url)
+      }}
+      {...rest}
+    >
       {children}
     </RouterLink>
   )

@@ -2,17 +2,48 @@ import type { ReactElement } from 'react'
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
-// Lazy load all page components
-const HomePage = lazy(() => import('../pages/index'))
-const AppsPage = lazy(() => import('../pages/apps/index'))
-const VaultsPage = lazy(() => import('../pages/vaults/index'))
-const VaultsAboutPage = lazy(() => import('../pages/vaults/about'))
-const VaultsDetailPage = lazy(() => import('../pages/vaults/[chainID]/[address]'))
-const V3Page = lazy(() => import('../pages/v3/index'))
-const V3AboutPage = lazy(() => import('../pages/v3/about'))
-const V3DetailPage = lazy(() => import('../pages/v3/[chainID]/[address]'))
-const VaultsBetaPage = lazy(() => import('../pages/vaults-beta/index'))
-const VaultsBetaSearchPage = lazy(() => import('../pages/vaults-beta/search/[query]'))
+// Lazy load all page components, and expose loaders for prefetching
+export const loadHomePage = () => import('../pages/index')
+export const loadAppsPage = () => import('../pages/apps/index')
+export const loadVaultsPage = () => import('../pages/vaults/index')
+export const loadVaultsAboutPage = () => import('../pages/vaults/about')
+export const loadVaultsDetailPage = () => import('../pages/vaults/[chainID]/[address]')
+export const loadV3Page = () => import('../pages/v3/index')
+export const loadV3AboutPage = () => import('../pages/v3/about')
+export const loadV3DetailPage = () => import('../pages/v3/[chainID]/[address]')
+export const loadVaultsBetaPage = () => import('../pages/vaults-beta/index')
+export const loadVaultsBetaSearchPage = () => import('../pages/vaults-beta/search/[query]')
+
+const HomePage = lazy(loadHomePage)
+const AppsPage = lazy(loadAppsPage)
+const VaultsPage = lazy(loadVaultsPage)
+const VaultsAboutPage = lazy(loadVaultsAboutPage)
+const VaultsDetailPage = lazy(loadVaultsDetailPage)
+const V3Page = lazy(loadV3Page)
+const V3AboutPage = lazy(loadV3AboutPage)
+const V3DetailPage = lazy(loadV3DetailPage)
+const VaultsBetaPage = lazy(loadVaultsBetaPage)
+const VaultsBetaSearchPage = lazy(loadVaultsBetaSearchPage)
+
+// Prefetch helper for internal routes. Import in Link to warm chunks.
+export function preloadRoute(pathname: string): void {
+  // Normalize and strip trailing slashes
+  const p = pathname.replace(/\/$/, '')
+  try {
+    if (p === '' || p === '/') return void loadHomePage()
+    if (p === '/apps') return void loadAppsPage()
+    if (p === '/vaults') return void loadVaultsPage()
+    if (p === '/vaults/about') return void loadVaultsAboutPage()
+    if (p.startsWith('/vaults/')) return void loadVaultsDetailPage()
+    if (p === '/v3') return void loadV3Page()
+    if (p === '/v3/about') return void loadV3AboutPage()
+    if (p.startsWith('/v3/')) return void loadV3DetailPage()
+    if (p === '/vaults-beta') return void loadVaultsBetaPage()
+    if (p.startsWith('/vaults-beta/search/')) return void loadVaultsBetaSearchPage()
+  } catch {
+    // Best-effort prefetch; ignore failures
+  }
+}
 
 // Loading component
 const PageLoader = (): ReactElement => (
