@@ -82,7 +82,7 @@ export function getConfig({ chains }: { chains: Chain[] }): ResolvedRegister['co
     }
 
     const shouldUseWindowInjected = false
-    if (typeof window !== 'undefined' && window.ethereum && shouldUseWindowInjected) {
+    if (window?.ethereum && shouldUseWindowInjected) {
       transports[chain.id] = fallback([
         unstable_connector(safe),
         ...availableTransports,

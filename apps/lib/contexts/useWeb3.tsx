@@ -94,7 +94,7 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
 
     try {
       if (isIframe() && connector && connector?.id !== 'safe' && !connector?.id?.toLowerCase().includes('ledger')) {
-        const ancestorOrigin = typeof window !== 'undefined' && window.location.ancestorOrigins[0]
+        const ancestorOrigin = window?.location.ancestorOrigins[0]
         if (!ancestorOrigin.toString().includes('safe')) {
           const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
           if (ledgerConnector) {
@@ -114,7 +114,7 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
           }
         }
       } else if (isIframe() && !connector) {
-        const ancestorOrigin = typeof window !== 'undefined' && window.location.ancestorOrigins[0]
+        const ancestorOrigin = window?.location.ancestorOrigins[0]
         if (!ancestorOrigin.toString().includes('safe')) {
           const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
           if (ledgerConnector) {
