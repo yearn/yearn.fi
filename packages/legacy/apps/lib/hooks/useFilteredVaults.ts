@@ -26,6 +26,9 @@ export function useVaultFilter(
   activeVaults: TYDaemonVault[]
   retiredVaults: TYDaemonVault[]
   migratableVaults: TYDaemonVault[]
+  holdingsVaults: TYDaemonVault[]
+  multiVaults: TYDaemonVault[]
+  singleVaults: TYDaemonVault[]
 } {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice } = useYearn()
   const { getBalance } = useWallet()
@@ -114,7 +117,7 @@ export function useVaultFilter(
       ((version || '')?.split('.')?.[0] === '3' && kind === 'Single Strategy') ||
       ((version || '')?.split('.')?.[0] === '~3' && kind === 'Single Strategy')
   )
-  const MultiVaults = useFilteredVaults(
+  const multiVaults = useFilteredVaults(
     vaults,
     ({ version, kind }): boolean =>
       ((version || '')?.split('.')?.[0] === '3' && kind === 'Multi Strategy') ||
@@ -149,7 +152,7 @@ export function useVaultFilter(
         _vaultList = [..._vaultList, ...singleVaults]
       }
       if (categories?.includes('multi')) {
-        _vaultList = [..._vaultList, ...MultiVaults]
+        _vaultList = [..._vaultList, ...multiVaults]
       }
 
       //Remove duplicates
@@ -237,7 +240,7 @@ export function useVaultFilter(
     holdingsV3Vaults,
     highlightedVaults,
     singleVaults,
-    MultiVaults,
+    multiVaults,
     curveFactoryVaults,
     curveVaults,
     prismaVaults,
@@ -249,5 +252,12 @@ export function useVaultFilter(
     cryptoVaults
   ])
 
-  return { activeVaults, migratableVaults, retiredVaults }
+  return {
+    activeVaults,
+    holdingsVaults: v3 ? holdingsV3Vaults : holdingsVaults,
+    migratableVaults,
+    retiredVaults,
+    multiVaults,
+    singleVaults
+  }
 }

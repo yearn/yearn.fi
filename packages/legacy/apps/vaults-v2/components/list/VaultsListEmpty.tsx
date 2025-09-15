@@ -1,11 +1,8 @@
 import { Button } from '@lib/components/Button'
-import { isZero } from '@lib/utils'
-import type { TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { ALL_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
 import type { ReactElement } from 'react'
 
 type TVaultListEmpty = {
-  sortedVaultsToDisplay: TYDaemonVaults
   currentSearch: string
   currentCategories: string[] | null
   currentChains: number[] | null
@@ -14,7 +11,6 @@ type TVaultListEmpty = {
   defaultCategories?: string[]
 }
 export function VaultsListEmpty({
-  sortedVaultsToDisplay,
   currentSearch,
   currentCategories,
   currentChains,
@@ -22,7 +18,7 @@ export function VaultsListEmpty({
   isLoading,
   defaultCategories = ALL_VAULTS_CATEGORIES_KEYS
 }: TVaultListEmpty): ReactElement {
-  if (isLoading && isZero(sortedVaultsToDisplay.length)) {
+  if (isLoading) {
     return (
       <div
         className={
@@ -37,12 +33,7 @@ export function VaultsListEmpty({
     )
   }
 
-  if (
-    !isLoading &&
-    isZero(sortedVaultsToDisplay.length) &&
-    currentCategories?.length === 1 &&
-    currentCategories?.includes('holdings')
-  ) {
+  if (!isLoading && currentCategories?.length === 1 && currentCategories?.includes('holdings')) {
     return (
       <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
         <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
@@ -53,7 +44,7 @@ export function VaultsListEmpty({
     )
   }
 
-  if (!isLoading && isZero(sortedVaultsToDisplay.length)) {
+  if (!isLoading) {
     return (
       <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
         <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>

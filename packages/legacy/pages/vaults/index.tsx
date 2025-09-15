@@ -194,7 +194,6 @@ function ListOfVaults(): ReactElement {
       return (
         <VaultsListEmpty
           isLoading={isLoadingVaultList}
-          sortedVaultsToDisplay={filteredByChains}
           currentSearch={search || ''}
           currentCategories={types}
           currentChains={chains}

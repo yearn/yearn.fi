@@ -3,7 +3,7 @@ import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
 import type { TSortDirection } from '@lib/types'
-import { cl, formatAmount, isZero, toNormalizedBN } from '@lib/utils'
+import { cl, formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
@@ -16,7 +16,7 @@ import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v
 import { V3Mask } from '@vaults-v3/Mark'
 import { motion } from 'framer-motion'
 import type { ReactElement, ReactNode } from 'react'
-import { Children, Fragment, useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 
 function Background(): ReactElement {
   return (
@@ -135,8 +135,7 @@ function PortfolioCard(): ReactElement {
   )
 }
 function ListOfVaults(): ReactElement {
-  const { getBalance } = useWallet()
-  const { getPrice, isLoadingVaultList } = useYearn()
+  const { isLoadingVaultList } = useYearn()
   const {
     search,
     types,
@@ -156,7 +155,7 @@ function ListOfVaults(): ReactElement {
     defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
     defaultPathname: '/v3'
   })
-  const { activeVaults, retiredVaults, migratableVaults } = useVaultFilter(types, chains, true)
+  const { activeVaults, retiredVaults, migratableVaults, holdingsVaults } = useVaultFilter(types, chains, true)
 
   /**********************************************************************************************
    **	Then, on the activeVaults list, we apply the search filter. The search filter is
@@ -204,89 +203,85 @@ function ListOfVaults(): ReactElement {
    **	The VaultList component is memoized to prevent it from being re-created on every render.
    **	It contains either the list of vaults, is some are available, or a message to the user.
    *********************************************************************************************/
-  const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
-    const filteredByChains = sortedVaultsToDisplay.filter(({ chainID }): boolean => chains?.includes(chainID) || false)
-    const filteredByCategories = filteredByChains.filter(
-      ({ category }): boolean => categories?.includes(category) || false
+  const vaultLists = useMemo((): {
+    holdings: TYDaemonVault[]
+    multi: TYDaemonVault[]
+    single: TYDaemonVault[]
+    all: TYDaemonVault[]
+  } | null => {
+    // Apply chain and category filters
+    const filterVault = (vault: TYDaemonVault): boolean => {
+      if (chains && !chains.includes(vault.chainID)) {
+        return false
+      }
+      if (categories && !categories.includes(vault.category)) {
+        return false
+      }
+      return true
+    }
+
+    // Combine holdings from various sources
+    const combinedHoldings = new Map<string, TYDaemonVault>()
+
+    // Add from holdingsVaults (these are already filtered for holdings in useVaultFilter)
+    for (const vault of holdingsVaults) {
+      if (
+        (categories?.length === ALL_VAULTSV3_CATEGORIES_KEYS.length && chains?.includes(vault.chainID)) ||
+        filterVault(vault)
+      ) {
+        combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
+      }
+    }
+
+    // Add migratable vaults with balance
+    for (const vault of migratableVaults) {
+      if (filterVault(vault)) {
+        combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
+      }
+    }
+
+    // Add retired vaults with balance
+    for (const vault of retiredVaults) {
+      if (filterVault(vault)) {
+        combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
+      }
+    }
+
+    const holdingsArray = Array.from(combinedHoldings.values())
+
+    // Filter sorted vaults to get non-holdings and apply chain/category filters
+    const holdingsSet = new Set(combinedHoldings.keys())
+    const nonHoldingsVaults = sortedVaultsToDisplay.filter(
+      (vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`) && filterVault(vault)
     )
 
-    const holdings: ReactNode[] = []
-    const multi: ReactNode[] = []
-    const single: ReactNode[] = []
-    const all: ReactNode[] = []
-    const processedForHoldings = new Set<string>()
-
-    // Add migratable vaults to holdings (guaranteed to have balance)
-    for (const vault of migratableVaults) {
-      const key = `${vault.chainID}_${vault.address}`
-      const balance = getBalance({ address: vault.address, chainID: vault.chainID })
-      const stakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID })
-      const hasBalance = balance.raw > 0n
-      const hasStakingBalance = stakingBalance.raw > 0n
-      if (hasBalance || hasStakingBalance) {
-        holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
-        processedForHoldings.add(key)
-      }
-    }
-
-    // Add retired vaults to holdings (guaranteed to have balance)
-    for (const vault of retiredVaults) {
-      const key = `${vault.chainID}_${vault.address}`
-      if (!processedForHoldings.has(key)) {
-        // Avoid duplicates
-        const hasBalance = getBalance({ address: vault.address, chainID: vault.chainID }).raw > 0n
-        const hasStakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID }).raw > 0n
-        if (hasBalance || hasStakingBalance) {
-          holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
-          processedForHoldings.add(key)
-        }
-      }
-    }
-
-    for (const vault of filteredByCategories) {
-      // Process active vaults
-      const key = `${vault.chainID}_${vault.address}`
-
-      if (processedForHoldings.has(key)) {
-        // This vault was already added to holdings from migratable/retired lists.
-        // Skip adding to multi, single, or all.
-        continue
-      }
-
-      const balance = getBalance({ address: vault.address, chainID: vault.chainID })
-      const stakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID })
-      const price = getPrice({ address: vault.address, chainID: vault.chainID })
-
-      const holdingsValue =
-        toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized
-
-      if (holdingsValue > 0.5) {
-        holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
-        // No need to add to processedForHoldings here again as `continue` prevents further processing for this vault.
-        continue
-      }
-
-      // If not a holding, categorize into multi, single, and all
-      if (vault.kind === 'Multi Strategy') {
-        multi.push(<VaultsV3ListRow key={key} currentVault={vault} />)
-      }
-      if (vault.kind === 'Single Strategy') {
-        single.push(<VaultsV3ListRow key={key} currentVault={vault} />)
-      }
-      all.push(
-        // `all` contains active, non-holding vaults
-        <VaultsV3ListRow key={key} currentVault={vault} />
-      )
-    }
+    // Categorize non-holdings vaults
+    const multiArray = nonHoldingsVaults.filter((vault) => vault.kind === 'Multi Strategy')
+    const singleArray = nonHoldingsVaults.filter((vault) => vault.kind === 'Single Strategy')
 
     const shouldShowEmptyState =
-      isLoadingVaultList || !chains || chains.length === 0 || (isZero(holdings.length) && isZero(all.length)) // Show empty if no holdings and no other active vaults
+      isLoadingVaultList ||
+      !chains ||
+      chains.length === 0 ||
+      (isZero(holdingsArray.length) && isZero(nonHoldingsVaults.length))
 
     if (shouldShowEmptyState) {
+      return null
+    }
+
+    return {
+      holdings: holdingsArray,
+      multi: multiArray,
+      single: singleArray,
+      all: nonHoldingsVaults
+    }
+  }, [sortedVaultsToDisplay, isLoadingVaultList, chains, categories, migratableVaults, retiredVaults, holdingsVaults])
+
+  function renderVaultList(): ReactNode {
+    if (!vaultLists) {
       return (
         <VaultsListEmpty
           isLoading={isLoadingVaultList}
-          sortedVaultsToDisplay={filteredByCategories} // Represents the set of vaults filters were applied to
           currentSearch={search || ''}
           currentCategories={types}
           currentChains={chains}
@@ -296,29 +291,10 @@ function ListOfVaults(): ReactElement {
       )
     }
 
-    return [holdings, multi, single, all]
-  }, [
-    sortedVaultsToDisplay,
-    isLoadingVaultList,
-    chains,
-    categories,
-    migratableVaults,
-    getBalance,
-    retiredVaults,
-    getPrice,
-    search,
-    types,
-    onReset
-  ])
+    const { holdings, multi, single, all } = vaultLists
+    const hasHoldings = holdings.length > 0
 
-  function renderVaultList(): ReactNode {
-    if (Children.count(VaultList) === 1) {
-      return VaultList as ReactNode
-    }
-    const possibleLists = VaultList as [ReactNode, ReactNode, ReactNode, ReactNode]
-    const hasHoldings = Children.count(possibleLists[0]) > 0
-
-    if (sortBy !== 'featuringScore' && possibleLists[3]) {
+    if (sortBy !== 'featuringScore' && all.length > 0) {
       return (
         <Fragment>
           {hasHoldings && (
@@ -326,16 +302,19 @@ function ListOfVaults(): ReactElement {
               <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
                 &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
               </p>
-              {possibleLists[0]}
+              {holdings.map((vault) => (
+                <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
+              ))}
             </div>
           )}
-          {Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[3]) > 0 ? (
-            <div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
-          ) : null}
-          {possibleLists[3]}
+          {hasHoldings && all.length > 0 ? <div className={'my-2 h-1 rounded-lg bg-neutral-200'} /> : null}
+          {all.map((vault) => (
+            <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
+          ))}
         </Fragment>
       )
     }
+
     return (
       <Fragment>
         {hasHoldings && (
@@ -343,17 +322,19 @@ function ListOfVaults(): ReactElement {
             <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
               &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
             </p>
-            {possibleLists[0]}
+            {holdings.map((vault) => (
+              <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
+            ))}
           </div>
         )}
-        {Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[1]) > 0 ? (
-          <div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
-        ) : null}
-        {possibleLists[1]}
-        {Children.count(possibleLists[1]) > 1 && Children.count(possibleLists[2]) > 0 ? (
-          <div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
-        ) : null}
-        {possibleLists[2]}
+        {hasHoldings && multi.length > 0 ? <div className={'my-2 h-1 rounded-lg bg-neutral-200'} /> : null}
+        {multi.map((vault) => (
+          <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
+        ))}
+        {multi.length > 0 && single.length > 0 ? <div className={'my-2 h-1 rounded-lg bg-neutral-200'} /> : null}
+        {single.map((vault) => (
+          <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
+        ))}
       </Fragment>
     )
   }
