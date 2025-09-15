@@ -8,4 +8,3 @@ warn-only: false
 
 # Additional settings
 vulnerability-check: true
-license-check: true
