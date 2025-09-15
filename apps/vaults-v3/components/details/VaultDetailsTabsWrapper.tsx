@@ -169,7 +169,7 @@ const AddToWalletLink = React.memo(function AddToWalletLink({
       currentVault.address,
       currentVault.symbol,
       currentVault.decimals,
-      `https://token-assets-one.vercel.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
+      `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.address}/logo-32.png`
     )
   }, [currentVault.address, currentVault.symbol, currentVault.decimals, currentVault.chainID, onAddTokenToMetamask])
 

@@ -92,7 +92,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
   return (
     <Transition show={isOpen} as={'div'}>
       <Dialog as={'div'} className={'fixed inset-0 overflow-y-auto'} style={{ zIndex: 88 }} onClose={onClose}>
-        <div className={'relative flex h-screen items-stretch justify-end px-0 pb-0 text-center'}>
+        <div className={'relative flex h-screen w-screen items-stretch justify-start px-0 pb-0 text-center'}>
           <TransitionChild
             as={'div'}
             enter={'ease-out duration-300'}
@@ -116,9 +116,10 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
             leave={'ease-in duration-200'}
             leaveFrom={'opacity-100 translate-y-0'}
             leaveTo={'opacity-0 translate-y-full'}
+            style={{ width: '100%' }}
           >
             <div className={'w-full h-full max-w-full flex flex-col bg-neutral-0 overflow-hidden relative z-50'}>
-              <div className={'flex items-center justify-between border-b border-gray-600 p-4'}>
+              <div className={'flex items-center justify-end border-b border-gray-600 p-4 pt-6'}>
                 <button onClick={onClose}>
                   <IconClose />
                 </button>

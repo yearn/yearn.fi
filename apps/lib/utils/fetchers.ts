@@ -1,4 +1,4 @@
-import type { AxiosRequestConfig } from 'axios'
+import type { AxiosInstance, AxiosRequestConfig } from 'axios'
 import axios from 'axios'
 import { serialize } from 'wagmi'
 import type { z } from 'zod'
@@ -11,13 +11,21 @@ type TFetchProps = {
 
 export type TFetchReturn<T> = Promise<{ data: T | null; error?: Error }>
 
+// Create a shared axios instance with sane defaults to avoid long hangs
+const http: AxiosInstance = axios.create({
+  // Fail faster on bad networks instead of hanging indefinitely
+  timeout: 15000,
+  // Always request JSON
+  headers: { Accept: 'application/json' }
+})
+
 export async function fetch<T>({ endpoint, schema, config }: TFetchProps): TFetchReturn<T> {
   if (!endpoint) {
     return { data: null, error: new Error('No endpoint provided') }
   }
 
   try {
-    const { data } = await axios.get<T>(endpoint, config)
+    const { data } = await http.get<T>(endpoint, config)
 
     if (!data) {
       return { data: null, error: new Error('No data') }
@@ -41,9 +49,9 @@ export async function fetch<T>({ endpoint, schema, config }: TFetchProps): TFetc
 }
 
 export async function curveFetcher<T>(url: string): Promise<T> {
-  return axios.get(url).then((res): T => res.data?.data)
+  return http.get(url).then((res): T => res.data?.data)
 }
 
 export async function baseFetcher<T>(url: string): Promise<T> {
-  return axios.get(url).then((res): T => res.data)
+  return http.get(url).then((res): T => res.data)
 }

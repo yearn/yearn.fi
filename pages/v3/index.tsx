@@ -214,7 +214,7 @@ function ListOfVaults(): ReactElement {
       const hasBalance = balance.raw > 0n
       const hasStakingBalance = stakingBalance.raw > 0n
       if (hasBalance || hasStakingBalance) {
-        holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
+        holdings.push(<VaultsV3ListRow key={key} currentVault={vault} isHoldings={true} />)
         processedForHoldings.add(key)
       }
     }
@@ -227,7 +227,7 @@ function ListOfVaults(): ReactElement {
         const hasBalance = getBalance({ address: vault.address, chainID: vault.chainID }).raw > 0n
         const hasStakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID }).raw > 0n
         if (hasBalance || hasStakingBalance) {
-          holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
+          holdings.push(<VaultsV3ListRow key={key} currentVault={vault} isHoldings={true} />)
           processedForHoldings.add(key)
         }
       }
@@ -251,7 +251,7 @@ function ListOfVaults(): ReactElement {
         toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized
 
       if (holdingsValue > 0.5) {
-        holdings.push(<VaultsV3ListRow key={key} currentVault={vault} />)
+        holdings.push(<VaultsV3ListRow key={key} currentVault={vault} isHoldings={true} />)
         // No need to add to processedForHoldings here again as `continue` prevents further processing for this vault.
         continue
       }

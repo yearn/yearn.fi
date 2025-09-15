@@ -139,7 +139,7 @@ export const YEARN_APPS: TApp[] = [
   {
     name: 'veYFI',
     description: 'Stake YFI to earn yield, boost gauges, and take part in governance.',
-    logoURI: 'https://token-assets-one.vercel.app/api/token/1/0x41252E8691e964f7DE35156B68493bAb6797a275/logo-128.png',
+    logoURI: `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/1/0x41252E8691e964f7DE35156B68493bAb6797a275/logo-128.png`,
     appURI: 'https://veyfi.yearn.fi'
   },
   {
@@ -281,7 +281,7 @@ export const OLD_APPS: TApp[] = [
   {
     name: 'yPrisma',
     description: 'Put your yPRISMA to work.',
-    logoURI: 'https://token-assets-one.vercel.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png',
+    logoURI: `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`,
     appURI: 'https://yprisma.yearn.fi'
   }
 ]

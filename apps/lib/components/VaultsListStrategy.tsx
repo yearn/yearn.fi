@@ -136,7 +136,7 @@ export function VaultsListStrategy({
           </div>
           <div className={'rounded-full'}>
             <ImageWithFallback
-              src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
               alt={''}
               width={24}
               height={24}

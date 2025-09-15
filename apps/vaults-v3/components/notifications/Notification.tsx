@@ -111,8 +111,8 @@ function NotificationContent({
           <ImageWithFallback
             alt={notification.fromTokenName || 'Token'}
             unoptimized
-            src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-            altSrc={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+            altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
             quality={90}
             width={32}
             height={32}
@@ -122,7 +122,7 @@ function NotificationContent({
               width={14}
               height={14}
               alt={'chain'}
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chain/${notification.chainId}/logo.svg`}
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${notification.chainId}/logo.svg`}
             />
           </div>
         </div>
@@ -134,8 +134,8 @@ function NotificationContent({
             <ImageWithFallback
               alt={notification.toTokenName || 'Token'}
               unoptimized
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${notification.chainId}/${notification.toAddress}/logo-128.png`}
-              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/token/${notification.chainId}/${notification.toAddress}/logo-128.png`}
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress}/logo-128.png`}
+              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress}/logo-128.png`}
               quality={90}
               width={32}
               height={32}
@@ -145,7 +145,7 @@ function NotificationContent({
                 width={14}
                 height={14}
                 alt={'chain'}
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chain/${notification.chainId}/logo.svg`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${notification.chainId}/logo.svg`}
               />
             </div>
           </div>

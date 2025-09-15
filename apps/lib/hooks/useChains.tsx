@@ -37,7 +37,7 @@ export function useChainOptions(chains: number[] | null): TMultiSelectOptionProp
         isSelected: chains?.includes(chain.id) || false,
         icon: (
           <ImageWithFallback
-            src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/chains/${chain.id}/logo-32.png`}
+            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo-32.png`}
             alt={chain.name}
             width={32}
             height={32}
