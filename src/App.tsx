@@ -13,10 +13,8 @@ import { IconAlertCritical } from '@lib/icons/IconAlertCritical'
 import { IconAlertError } from '@lib/icons/IconAlertError'
 import { IconCheckmark } from '@lib/icons/IconCheckmark'
 import { cl } from '@lib/utils'
-// import { variants } from '@lib/utils/animations'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
-// import { AnimatePresence, domAnimation, LazyMotion, motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { HelmetProvider } from 'react-helmet-async'
 import { Toaster } from 'react-hot-toast'
@@ -51,19 +49,7 @@ function WithLayout(): ReactElement {
       </div>
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>
-          {/* <LazyMotion features={domAnimation}>
-            <AnimatePresence mode={'sync'} initial={false}>
-              <motion.div
-                key={location.pathname}
-                initial={false}
-                animate={'enter'}
-                exit={'exit'}
-                variants={variants}
-              > */}
           <AppRoutes />
-          {/* </motion.div>
-            </AnimatePresence>
-          </LazyMotion> */}
         </div>
       </div>
     </>
@@ -114,8 +100,8 @@ function App(): ReactElement {
             <WithMom
               supportedChains={SUPPORTED_NETWORKS}
               tokenLists={[
-                'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/yearn.json',
-                'https://raw.githubusercontent.com/yearn/tokenLists/main/lists/popular.json'
+                'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
+                'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
               ]}
             >
               <AppSettingsContextApp>

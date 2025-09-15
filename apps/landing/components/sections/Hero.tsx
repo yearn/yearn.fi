@@ -143,7 +143,7 @@ export function Hero(): ReactElement {
               <Link href={'/v3'} className={'block'}>
                 <Button className={'!text-[16px] max-w-xs !px-4 !py-5 !rounded-full !bg-primary'} variant={'primary'}>
                   {'Explore Vaults'}
-                </Button>{' '}
+                </Button>
               </Link>
             </div>
           </div>
