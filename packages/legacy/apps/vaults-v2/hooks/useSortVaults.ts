@@ -135,13 +135,13 @@ export function useSortVaults(
       return vaultList
     }
     return vaultList.toSorted((a, b): number => {
+      // Get deposited balance (vault tokens)
       const aDepositedBalance = Number(getBalance({ address: a.address, chainID: a.chainID })?.normalized || 0)
       const bDepositedBalance = Number(getBalance({ address: b.address, chainID: b.chainID })?.normalized || 0)
+
+      // Get staking balance if available
       let aStakedBalance = 0
       let bStakedBalance = 0
-
-      let aStakedValue = 0
-      let bStakedValue = 0
 
       if (a.staking.available) {
         aStakedBalance = Number(getBalance({ address: a.staking.address, chainID: a.chainID })?.normalized || 0)
@@ -150,20 +150,19 @@ export function useSortVaults(
         bStakedBalance = Number(getBalance({ address: b.staking.address, chainID: b.chainID })?.normalized || 0)
       }
 
-      if (aStakedBalance) {
-        const aPrice = getPrice({ address: a.address, chainID: a.chainID }).normalized || 0
-        aStakedValue = aPrice * (aDepositedBalance + aStakedBalance)
-      }
+      // Get vault token price (always, not just when staking exists)
+      const aPrice = getPrice({ address: a.address, chainID: a.chainID }).normalized || 0
+      const bPrice = getPrice({ address: b.address, chainID: b.chainID }).normalized || 0
 
-      if (bStakedBalance) {
-        const bPrice = getPrice({ address: b.address, chainID: b.chainID }).normalized || 0
-        bStakedValue = bPrice * (bDepositedBalance + bStakedBalance)
-      }
+      // Calculate total USD value (deposited + staked)
+      const aTotalValue = aPrice * (aDepositedBalance + aStakedBalance)
+      const bTotalValue = bPrice * (bDepositedBalance + bStakedBalance)
 
-      if (sortDirection === 'asc') {
-        return aStakedValue - bStakedValue
-      }
-      return bStakedValue - aStakedValue
+      return numberSort({
+        a: aTotalValue,
+        b: bTotalValue,
+        sortDirection
+      })
     })
   }, [vaultList, getBalance, sortDirection, getPrice, sortBy])
 
