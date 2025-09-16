@@ -159,10 +159,6 @@ function ListOfVaults(): ReactElement {
   })
   const { activeVaults, retiredVaults, migratableVaults, holdingsVaults, multiVaults, singleVaults, hiddenHoldings } =
     useVaultFilter(types, chains, true, search || '', categories)
-  /**********************************************************************************************
-   **	Apply sorting to the filtered active vaults
-   *********************************************************************************************/
-  const sortedVaultsToDisplay = useSortVaults([...activeVaults], sortBy, sortDirection)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Reset show all holdings when filters change
   useMemo(() => {
@@ -208,9 +204,7 @@ function ListOfVaults(): ReactElement {
 
     // Get non-holdings vaults from sorted display
     const holdingsSet = new Set(combinedHoldings.keys())
-    const nonHoldingsVaults = sortedVaultsToDisplay.filter(
-      (vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`)
-    )
+    const nonHoldingsVaults = activeVaults.filter((vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`))
 
     const shouldShowEmptyState =
       isLoadingVaultList ||
@@ -230,9 +224,9 @@ function ListOfVaults(): ReactElement {
       hiddenCount: showAllHoldings ? 0 : hiddenHoldings.length
     }
   }, [
-    sortedVaultsToDisplay,
     isLoadingVaultList,
     chains,
+    activeVaults,
     migratableVaults,
     retiredVaults,
     holdingsVaults,
@@ -242,15 +236,16 @@ function ListOfVaults(): ReactElement {
     showAllHoldings
   ])
 
-  const { holdings, multi, single, all, hiddenCount } = vaultLists || {
+  const { holdings, all, hiddenCount } = vaultLists || {
     holdings: [],
-    multi: [],
-    single: [],
     all: [],
     hiddenCount: 0
   }
   const hasHoldings = holdings.length > 0
   const hasHiddenHoldings = hiddenCount > 0
+
+  const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
+  const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
 
   const handleDisplayAll = useCallback((): void => {
     setShowAllHoldings(true)
@@ -308,28 +303,6 @@ function ListOfVaults(): ReactElement {
         />
       )
     }
-
-    if (sortBy !== 'featuringScore' && all.length > 0) {
-      return (
-        <Fragment>
-          {hasHoldings && (
-            <div className={'relative grid h-fit gap-4'}>
-              <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
-                &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
-              </p>
-              {holdings.map((vault) => (
-                <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
-              ))}
-            </div>
-          )}
-          {hasHoldings && all.length > 0 ? <div className={'my-2 h-1 rounded-lg bg-neutral-200'} /> : null}
-          {all.map((vault) => (
-            <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
-          ))}
-        </Fragment>
-      )
-    }
-
     return (
       <Fragment>
         {hasHoldings && (
@@ -337,17 +310,13 @@ function ListOfVaults(): ReactElement {
             <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
               &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
             </p>
-            {holdings.map((vault) => (
+            {sortedHoldings.map((vault) => (
               <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
             ))}
           </div>
         )}
-        {hasHoldings && multi.length > 0 ? <div className={'my-2 h-1 rounded-lg bg-neutral-200'} /> : null}
-        {multi.map((vault) => (
-          <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
-        ))}
-        {multi.length > 0 && single.length > 0 ? <div className={'my-2 h-1 rounded-lg bg-neutral-200'} /> : null}
-        {single.map((vault) => (
+        {hasHoldings && all.length > 0 ? <div className={'my-2 h-1 rounded-lg bg-neutral-200'} /> : null}
+        {sortedNonHoldings.map((vault) => (
           <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
         ))}
       </Fragment>
