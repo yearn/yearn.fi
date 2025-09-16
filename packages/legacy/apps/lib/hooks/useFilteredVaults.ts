@@ -31,6 +31,7 @@ export function useVaultFilter(
   holdingsVaults: TYDaemonVault[]
   multiVaults: TYDaemonVault[]
   singleVaults: TYDaemonVault[]
+  hiddenHoldings: TYDaemonVault[]
 } {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice } = useYearn()
   const { getBalance } = useWallet()
@@ -321,7 +322,6 @@ export function useVaultFilter(
 
   const filteredHoldingsVaults = useDeepCompareMemo((): TYDaemonVault[] => {
     const holdings = v3 ? holdingsV3Vaults : holdingsVaults
-    console.log(holdings)
     return holdings.filter(applyAllFilters)
   }, [holdingsVaults, holdingsV3Vaults, v3, applyAllFilters])
 
@@ -330,9 +330,37 @@ export function useVaultFilter(
   }, [migratableVaults, applyAllFilters])
 
   const filteredRetiredVaults = useDeepCompareMemo((): TYDaemonVault[] => {
-    console.log(retiredVaults)
     return retiredVaults.filter(applyAllFilters)
   }, [retiredVaults, applyAllFilters])
+
+  // Calculate hidden holdings - vaults that exist but were filtered out
+  const hiddenHoldings = useDeepCompareMemo((): TYDaemonVault[] => {
+    const hidden: TYDaemonVault[] = []
+
+    // Check holdings vaults
+    const holdings = v3 ? holdingsV3Vaults : holdingsVaults
+    holdings.forEach((vault) => {
+      if (!applyAllFilters(vault)) {
+        hidden.push(vault)
+      }
+    })
+
+    // Check migratable vaults
+    migratableVaults.forEach((vault) => {
+      if (!applyAllFilters(vault)) {
+        hidden.push(vault)
+      }
+    })
+
+    // Check retired vaults
+    retiredVaults.forEach((vault) => {
+      if (!applyAllFilters(vault)) {
+        hidden.push(vault)
+      }
+    })
+
+    return hidden
+  }, [holdingsVaults, holdingsV3Vaults, v3, migratableVaults, retiredVaults, applyAllFilters])
 
   // Create categorized lists for v3
   const filteredMultiVaults = useDeepCompareMemo((): TYDaemonVault[] => {
@@ -351,6 +379,7 @@ export function useVaultFilter(
     migratableVaults: filteredMigratableVaults,
     retiredVaults: filteredRetiredVaults,
     multiVaults: filteredMultiVaults,
-    singleVaults: filteredSingleVaults
+    singleVaults: filteredSingleVaults,
+    hiddenHoldings
   }
 }
