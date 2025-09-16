@@ -146,8 +146,8 @@ body {
 }
 
 @layer components {
-  [role="button"],
-  button {
+  [role="button"]:not(:disabled),
+  button:not(:disabled) {
     @apply cursor-pointer;
   }
 }

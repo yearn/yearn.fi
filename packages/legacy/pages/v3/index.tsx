@@ -351,7 +351,7 @@ function ListOfVaults(): ReactElement {
             onChangeSortDirection(newSortDirection as TSortDirection)
           }}
           items={[
-            { label: 'Vault', value: 'name', sortable: true, className: 'col-span-4' },
+            { label: 'Vault', value: 'name', sortable: false, className: 'col-span-4' },
             { label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2' },
             { label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2' },
             {
