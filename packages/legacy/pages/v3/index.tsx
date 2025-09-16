@@ -155,53 +155,21 @@ function ListOfVaults(): ReactElement {
     defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
     defaultPathname: '/v3'
   })
-  const { activeVaults, retiredVaults, migratableVaults, holdingsVaults } = useVaultFilter(types, chains, true)
-
+  const { activeVaults, retiredVaults, migratableVaults, holdingsVaults, multiVaults, singleVaults } = useVaultFilter(
+    types,
+    chains,
+    true,
+    search || '',
+    categories
+  )
+  console.log(migratableVaults, retiredVaults)
   /**********************************************************************************************
-   **	Then, on the activeVaults list, we apply the search filter. The search filter is
-   **	implemented as a simple string.includes() on the vault name.
+   **	Apply sorting to the filtered active vaults
    *********************************************************************************************/
-  const searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
-    if (!search) {
-      return activeVaults
-    }
-
-    /**********************************************************************************************
-     * Create a regex pattern from the search term, escaping special regex characters to prevent
-     * errors and enabling case-insensitive matching for better user experience
-     *********************************************************************************************/
-    let searchRegex: RegExp
-    try {
-      // Escape special regex characters but allow basic wildcard functionality
-      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      searchRegex = new RegExp(escapedSearch, 'i') // 'i' flag for case-insensitive
-    } catch {
-      // Fallback to simple case-insensitive search if regex creation fails
-      const lowercaseSearch = search.toLowerCase()
-      return activeVaults.filter((vault: TYDaemonVault): boolean => {
-        const searchableText =
-          `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase()
-        return searchableText.includes(lowercaseSearch)
-      })
-    }
-
-    const filtered = activeVaults.filter((vault: TYDaemonVault): boolean => {
-      const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
-      return searchRegex.test(searchableText)
-    })
-    return filtered
-  }, [activeVaults, search])
+  const sortedVaultsToDisplay = useSortVaults([...activeVaults], sortBy, sortDirection)
 
   /**********************************************************************************************
-   **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
-   **	is done via a custom method that will sort the vaults based on the sortBy and
-   **	sortDirection values.
-   *********************************************************************************************/
-  const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection)
-
-  /**********************************************************************************************
-   **	The VaultList component is memoized to prevent it from being re-created on every render.
-   **	It contains either the list of vaults, is some are available, or a message to the user.
+   **	Prepare vault lists for rendering. All filtering is now done in useVaultFilter.
    *********************************************************************************************/
   const vaultLists = useMemo((): {
     holdings: TYDaemonVault[]
@@ -209,61 +177,37 @@ function ListOfVaults(): ReactElement {
     single: TYDaemonVault[]
     all: TYDaemonVault[]
   } | null => {
-    // Apply chain and category filters
-    const filterVault = (vault: TYDaemonVault): boolean => {
-      if (chains && !chains.includes(vault.chainID)) {
-        return false
-      }
-      if (categories && !categories.includes(vault.category)) {
-        return false
-      }
-      return true
-    }
-
-    // Combine holdings from various sources
+    // Combine holdings from various sources (all already filtered)
     const combinedHoldings = new Map<string, TYDaemonVault>()
 
-    // Add from holdingsVaults (these are already filtered for holdings in useVaultFilter)
+    // Add from holdingsVaults
     for (const vault of holdingsVaults) {
-      if (
-        (categories?.length === ALL_VAULTSV3_CATEGORIES_KEYS.length && chains?.includes(vault.chainID)) ||
-        filterVault(vault)
-      ) {
-        combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-      }
+      combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
     }
 
-    // Add migratable vaults with balance
+    // Add migratable vaults
     for (const vault of migratableVaults) {
-      if (filterVault(vault)) {
-        combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-      }
+      combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
     }
 
-    // Add retired vaults with balance
+    // Add retired vaults
     for (const vault of retiredVaults) {
-      if (filterVault(vault)) {
-        combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-      }
+      combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
     }
 
     const holdingsArray = Array.from(combinedHoldings.values())
 
-    // Filter sorted vaults to get non-holdings and apply chain/category filters
+    // Get non-holdings vaults from sorted display
     const holdingsSet = new Set(combinedHoldings.keys())
     const nonHoldingsVaults = sortedVaultsToDisplay.filter(
-      (vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`) && filterVault(vault)
+      (vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`)
     )
-
-    // Categorize non-holdings vaults
-    const multiArray = nonHoldingsVaults.filter((vault) => vault.kind === 'Multi Strategy')
-    const singleArray = nonHoldingsVaults.filter((vault) => vault.kind === 'Single Strategy')
 
     const shouldShowEmptyState =
       isLoadingVaultList ||
       !chains ||
       chains.length === 0 ||
-      (isZero(holdingsArray.length) && isZero(nonHoldingsVaults.length))
+      (isZero(holdingsArray.length) && isZero(multiVaults.length) && isZero(singleVaults.length))
 
     if (shouldShowEmptyState) {
       return null
@@ -271,11 +215,20 @@ function ListOfVaults(): ReactElement {
 
     return {
       holdings: holdingsArray,
-      multi: multiArray,
-      single: singleArray,
+      multi: multiVaults,
+      single: singleVaults,
       all: nonHoldingsVaults
     }
-  }, [sortedVaultsToDisplay, isLoadingVaultList, chains, categories, migratableVaults, retiredVaults, holdingsVaults])
+  }, [
+    sortedVaultsToDisplay,
+    isLoadingVaultList,
+    chains,
+    migratableVaults,
+    retiredVaults,
+    holdingsVaults,
+    multiVaults,
+    singleVaults
+  ])
 
   function renderVaultList(): ReactNode {
     if (!vaultLists) {

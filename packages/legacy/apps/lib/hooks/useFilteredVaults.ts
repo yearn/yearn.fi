@@ -19,9 +19,11 @@ export function useFilteredVaults(
 }
 
 export function useVaultFilter(
-  categories: string[] | null,
-  _chains: number[] | null,
-  v3?: boolean
+  types: string[] | null,
+  chains: number[] | null,
+  v3?: boolean,
+  search?: string,
+  categories?: string[] | null
 ): {
   activeVaults: TYDaemonVault[]
   retiredVaults: TYDaemonVault[]
@@ -33,6 +35,66 @@ export function useVaultFilter(
   const { vaults, vaultsMigrations, vaultsRetired, getPrice } = useYearn()
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
+
+  // Comprehensive filter function that applies all filters
+  const applyAllFilters = useCallback(
+    (vault: TYDaemonVault): boolean => {
+      // Chain filter
+      if (chains && !chains.includes(vault.chainID)) {
+        return false
+      }
+
+      // Category filter (vault categories like 'Curve', 'Stablecoin', etc.)
+      if (categories && categories.length > 0 && !categories.includes(vault.category)) {
+        return false
+      }
+
+      // Type filter (highlight, multi, single) - for v3 vaults only
+      if (v3 && types && types.length > 0) {
+        const hasHighlight = types.includes('highlight')
+        const hasMulti = types.includes('multi')
+        const hasSingle = types.includes('single')
+
+        let matchesType = false
+
+        if (hasHighlight && vault.info?.isHighlighted) {
+          matchesType = true
+        }
+        if (hasMulti && vault.kind === 'Multi Strategy') {
+          matchesType = true
+        }
+        if (hasSingle && vault.kind === 'Single Strategy') {
+          matchesType = true
+        }
+
+        if (!matchesType) {
+          return false
+        }
+      }
+
+      // Search filter
+      if (search) {
+        let searchRegex: RegExp
+        try {
+          const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          searchRegex = new RegExp(escapedSearch, 'i')
+        } catch {
+          const lowercaseSearch = search.toLowerCase()
+          const searchableText =
+            `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase()
+          return searchableText.includes(lowercaseSearch)
+        }
+
+        const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
+        if (!searchRegex.test(searchableText)) {
+          return false
+        }
+      }
+
+      return true
+    },
+    [chains, categories, search, types, v3]
+  )
 
   const filterHoldingsCallback = useCallback(
     (vault: TYDaemonVault, isFactoryOnly: boolean, isForV3: boolean): boolean => {
@@ -145,13 +207,13 @@ export function useVaultFilter(
   const activeVaults = useDeepCompareMemo((): TYDaemonVault[] => {
     let _vaultList: TYDaemonVault[] = []
     if (v3) {
-      if (categories?.includes('highlight')) {
+      if (types?.includes('highlight')) {
         _vaultList = [..._vaultList, ...highlightedVaults]
       }
-      if (categories?.includes('single')) {
+      if (types?.includes('single')) {
         _vaultList = [..._vaultList, ...singleVaults]
       }
-      if (categories?.includes('multi')) {
+      if (types?.includes('multi')) {
         _vaultList = [..._vaultList, ...multiVaults]
       }
 
@@ -175,40 +237,40 @@ export function useVaultFilter(
       return [..._vaultList]
     }
 
-    if (categories?.includes('featured')) {
+    if (types?.includes('featured')) {
       _vaultList.sort(
         (a, b): number => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0)
       )
       _vaultList = _vaultList.slice(0, 10)
     }
-    if (categories?.includes('curveF')) {
+    if (types?.includes('curveF')) {
       _vaultList = [..._vaultList, ...curveFactoryVaults]
     }
-    if (categories?.includes('curve')) {
+    if (types?.includes('curve')) {
       _vaultList = [..._vaultList, ...curveVaults]
     }
-    if (categories?.includes('prisma')) {
+    if (types?.includes('prisma')) {
       _vaultList = [..._vaultList, ...prismaVaults]
     }
-    if (categories?.includes('balancer')) {
+    if (types?.includes('balancer')) {
       _vaultList = [..._vaultList, ...balancerVaults]
     }
-    if (categories?.includes('velodrome')) {
+    if (types?.includes('velodrome')) {
       _vaultList = [..._vaultList, ...velodromeVaults]
     }
-    if (categories?.includes('aerodrome')) {
+    if (types?.includes('aerodrome')) {
       _vaultList = [..._vaultList, ...aerodromeVaults]
     }
-    if (categories?.includes('boosted')) {
+    if (types?.includes('boosted')) {
       _vaultList = [..._vaultList, ...boostedVaults]
     }
-    if (categories?.includes('stables')) {
+    if (types?.includes('stables')) {
       _vaultList = [..._vaultList, ...stablesVaults]
     }
-    if (categories?.includes('crypto')) {
+    if (types?.includes('crypto')) {
       _vaultList = [..._vaultList, ...cryptoVaults]
     }
-    if (categories?.includes('holdings')) {
+    if (types?.includes('holdings')) {
       _vaultList = [..._vaultList, ...holdingsVaults]
     }
 
@@ -235,7 +297,7 @@ export function useVaultFilter(
     return _vaultList
   }, [
     v3,
-    categories,
+    types,
     holdingsVaults,
     holdingsV3Vaults,
     highlightedVaults,
@@ -252,12 +314,43 @@ export function useVaultFilter(
     cryptoVaults
   ])
 
+  // Apply comprehensive filtering to all vault lists
+  const filteredActiveVaults = useDeepCompareMemo((): TYDaemonVault[] => {
+    return activeVaults.filter(applyAllFilters)
+  }, [activeVaults, applyAllFilters])
+
+  const filteredHoldingsVaults = useDeepCompareMemo((): TYDaemonVault[] => {
+    const holdings = v3 ? holdingsV3Vaults : holdingsVaults
+    console.log(holdings)
+    return holdings.filter(applyAllFilters)
+  }, [holdingsVaults, holdingsV3Vaults, v3, applyAllFilters])
+
+  const filteredMigratableVaults = useDeepCompareMemo((): TYDaemonVault[] => {
+    return migratableVaults.filter(applyAllFilters)
+  }, [migratableVaults, applyAllFilters])
+
+  const filteredRetiredVaults = useDeepCompareMemo((): TYDaemonVault[] => {
+    console.log(retiredVaults)
+    return retiredVaults.filter(applyAllFilters)
+  }, [retiredVaults, applyAllFilters])
+
+  // Create categorized lists for v3
+  const filteredMultiVaults = useDeepCompareMemo((): TYDaemonVault[] => {
+    if (!v3) return []
+    return filteredActiveVaults.filter((vault) => vault.kind === 'Multi Strategy')
+  }, [filteredActiveVaults, v3])
+
+  const filteredSingleVaults = useDeepCompareMemo((): TYDaemonVault[] => {
+    if (!v3) return []
+    return filteredActiveVaults.filter((vault) => vault.kind === 'Single Strategy')
+  }, [filteredActiveVaults, v3])
+
   return {
-    activeVaults,
-    holdingsVaults: v3 ? holdingsV3Vaults : holdingsVaults,
-    migratableVaults,
-    retiredVaults,
-    multiVaults,
-    singleVaults
+    activeVaults: filteredActiveVaults,
+    holdingsVaults: filteredHoldingsVaults,
+    migratableVaults: filteredMigratableVaults,
+    retiredVaults: filteredRetiredVaults,
+    multiVaults: filteredMultiVaults,
+    singleVaults: filteredSingleVaults
   }
 }
