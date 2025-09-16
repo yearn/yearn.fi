@@ -5,6 +5,13 @@
 @import "tailwindcss";
 
 @theme {
+  /* Font families */
+  --font-family-aeonik: Aeonik, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family-aeonik-fono:
+    "Aeonik Fono", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family-aeonik-mono: "Aeonik Mono", Consolas, "Courier New", monospace;
+  --font-family-source-code-pro: "Source Code Pro", "Aeonik Mono", Consolas, "Courier New", monospace;
+
   --color-black: hsl(0 0% 0%);
   --color-white: hsl(0 0% 100%);
   --color-fallback: hsl(0 0% 80%);

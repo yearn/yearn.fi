@@ -154,7 +154,7 @@ export function VaultDetailsStrategies({ currentVault }: { currentVault: TYDaemo
     <>
       <div className={cl(isFilteredVaultListEmpty ? 'hidden ' : 'flex md:p-8 lg:pr-0 p-4 ')}>
         <div className={'grid w-full grid-cols-1 place-content-start md:gap-x-6 lg:max-w-[846px] lg:grid-cols-9'}>
-          <div className={'col-span-9 w-full border border-fallback'}>
+          <div className={'col-span-9 w-full'}>
             <VaultsV3ListHead
               sortBy={sortBy}
               sortDirection={sortDirection}
