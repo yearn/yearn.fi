@@ -260,7 +260,7 @@ function ListOfVaults(): ReactElement {
     if (!hasHiddenHoldings && !showAllHoldings) return null
 
     return (
-      <div className={'mb-4 flex items-center justify-between rounded-2xl bg-neutral-100 px-6 py-3'}>
+      <div className={'mb-4 flex items-center gap-2 justify-between rounded-2xl bg-neutral-100 px-6 py-3'}>
         {showAllHoldings ? (
           <>
             <p className={'text-sm text-neutral-600'}>
@@ -268,7 +268,9 @@ function ListOfVaults(): ReactElement {
             </p>
             <Button
               onClick={() => setShowAllHoldings(false)}
-              className={'yearn--button-smaller rounded-md bg-neutral-900 text-sm  text-white hover:bg-neutral-800'}
+              className={
+                'yearn--button-smaller rounded-md max-w-18! w-full! bg-neutral-900 text-sm text-white hover:bg-neutral-800'
+              }
             >
               Hide
             </Button>
@@ -277,11 +279,13 @@ function ListOfVaults(): ReactElement {
           <>
             <p className={'text-sm text-neutral-600'}>
               {hiddenCount} vault{hiddenCount > 1 ? 's' : ''} you have holdings in {hiddenCount > 1 ? 'are' : 'is'}{' '}
-              hidden by current filters
+              hidden by filters
             </p>
             <Button
               onClick={handleDisplayAll}
-              className={'yearn--button-smaller rounded-md bg-neutral-900 text-sm text-white hover:bg-neutral-800'}
+              className={
+                'yearn--button-smaller rounded-md max-w-18! w-full! bg-neutral-900 text-sm text-white hover:bg-neutral-800'
+              }
             >
               Display All
             </Button>
