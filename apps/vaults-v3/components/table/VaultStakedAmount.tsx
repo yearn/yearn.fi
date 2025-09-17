@@ -37,20 +37,21 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
         className={`yearn--table-data-section-item-value ${isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'}`}
       >
         <RenderAmount
+          value={staked.normalized * tokenPrice.normalized}
+          symbol={'USD'}
+          decimals={0}
+          options={{ shouldCompactValue: true, maximumFractionDigits: 2, minimumFractionDigits: 2 }}
+        />
+      </p>
+      <small className={cl('text-xs text-neutral-900/40 flex flex-row', staked.raw === 0n ? 'invisible' : 'visible')}>
+        <RenderAmount
           shouldFormatDust
           value={staked.normalized}
           symbol={currentVault.token.symbol}
           decimals={currentVault.token.decimals}
           options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
         />
-      </p>
-      <small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
-        <RenderAmount
-          value={staked.normalized * tokenPrice.normalized}
-          symbol={'USD'}
-          decimals={0}
-          options={{ shouldCompactValue: true, maximumFractionDigits: 2, minimumFractionDigits: 2 }}
-        />
+        <p className="pl-1">{currentVault.token.symbol}</p>
       </small>
     </div>
   )

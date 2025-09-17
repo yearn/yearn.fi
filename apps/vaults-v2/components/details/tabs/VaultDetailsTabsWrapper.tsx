@@ -272,7 +272,7 @@ export function VaultDetailsTabsWrapper({ currentVault }: { currentVault: TYDaem
                 currentVault.address,
                 currentVault.symbol,
                 currentVault.decimals,
-                `https://token-assets-one.vercel.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
+                `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.address}/logo-32.png`
               )
             }}
           >

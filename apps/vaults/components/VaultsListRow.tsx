@@ -54,7 +54,7 @@ export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, ind
         <div className={'flex w-full flex-row items-center gap-3'}>
           <div className={'relative flex size-8 min-h-8 min-w-8 items-center justify-center rounded-full'}>
             <ImageWithFallback
-              src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-32.png`}
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-32.png`}
               alt={''}
               width={24}
               height={24}

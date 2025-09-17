@@ -25,7 +25,7 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
         <div className={'flex flex-row space-x-6'}>
           <div className={'mt-2.5 size-8 rounded-full md:flex'}>
             <ImageWithFallback
-              src={`https://cdn.jsdelivr.net/gh/yearn/tokenassets@main/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-32.png`}
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-32.png`}
               alt={''}
               width={32}
               height={32}

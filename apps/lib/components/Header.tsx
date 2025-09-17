@@ -154,12 +154,6 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
               <LogoPopover />
             </div>
             <Navbar currentPathName={pathname || ''} nav={menu} />
-            <div className={'flex md:hidden text-neutral-500'}>
-              <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
-                <span className={'sr-only'}>{'Open menu'}</span>
-                <IconBurgerPlain />
-              </button>
-            </div>
           </div>
           <div className={'flex w-1/3 items-center justify-end'}>
             <button
@@ -171,6 +165,12 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
               <div className={cl('absolute right-1 top-1 size-2 rounded-full', notificationDotColor)} />
             </button>
             <WalletSelector />
+            <div className={'flex md:hidden pl-4 text-neutral-500'}>
+              <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
+                <span className={'sr-only'}>{'Open menu'}</span>
+                <IconBurgerPlain />
+              </button>
+            </div>
           </div>
         </header>
       </div>
