@@ -66,6 +66,7 @@
     "ts-loader": "^9.5.1",
     "typescript": "^5.9.2",
     "vite": "^7.1.5",
+    "vite-plugin-webfont-dl": "^3.11.1",
     "vitest": "^1.6.0",
     "webpack": "^5.92.1"
   }

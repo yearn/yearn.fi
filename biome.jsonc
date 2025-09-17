@@ -10,8 +10,8 @@
         "noExtraBooleanCast": "off"
       },
       "security": {
-        "noDangerouslySetInnerHtml": "off",
-        "noGlobalEval": "off"
+        "noDangerouslySetInnerHtml": "error",
+        "noGlobalEval": "error"
       },
       "suspicious": {
         "noExplicitAny": "off",

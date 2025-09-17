@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { defineConfig, loadEnv } from 'vite'
+import webfontDownload from 'vite-plugin-webfont-dl'
 
 function envRemapper() {
   return {
@@ -43,7 +44,19 @@ function envRemapper() {
 }
 
 export default defineConfig({
-  plugins: [react(), envRemapper()],
+  plugins: [
+    react(),
+    envRemapper(),
+    webfontDownload([
+      'https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600;700&display=swap',
+    ], {
+      injectAsStyleTag: true,
+      minifyCss: true,
+      async: true,
+      cache: true,
+      proxy: false,
+    })
+  ],
   resolve: {
     alias: {
       '@lib': path.resolve(__dirname, './apps/lib'),
