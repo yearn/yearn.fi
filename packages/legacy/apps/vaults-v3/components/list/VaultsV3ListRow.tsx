@@ -14,7 +14,6 @@ import Link from 'next/link'
 
 import type { ReactElement } from 'react'
 import { Fragment, useMemo } from 'react'
-import type { TKatanaAprData } from '../../../lib/hooks/useKatanaAprs'
 import { VaultChainTag } from '../VaultChainTag'
 
 type TAPYSublineProps = {
@@ -280,10 +279,7 @@ function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): Rea
 
   // Memoize the Katana APR data to avoid unnecessary recalculations
   const katanaAprData = useMemo(
-    () =>
-      shouldUseKatanaAPRs
-        ? (katanaAprs?.[toAddress(currentVault.address)]?.apr?.extra as TKatanaAprData | undefined)
-        : undefined,
+    () => (shouldUseKatanaAPRs ? katanaAprs?.[toAddress(currentVault.address)]?.apr?.extra : undefined),
     [shouldUseKatanaAPRs, katanaAprs, currentVault.address]
   )
 

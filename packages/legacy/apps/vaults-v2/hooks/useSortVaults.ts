@@ -26,7 +26,7 @@ export function useSortVaults(
   sortDirection: TSortDirection
 ): TYDaemonVaults {
   const { getBalance } = useWallet()
-  const { getPrice } = useYearn()
+  const { getPrice, katanaAprs } = useYearn()
 
   const sortedByName = useCallback((): TYDaemonVaults => {
     if (sortBy !== 'estAPY') {
@@ -47,7 +47,20 @@ export function useSortVaults(
     }
     return vaultList.toSorted((a, b): number => {
       let aAPY = 0
-      if (a.apr?.forwardAPR.type === '') {
+      // Handle Katana vaults (chainID 747474)
+      if (a.chainID === 747474) {
+        const katanaAprData = katanaAprs?.[toAddress(a.address)]?.apr?.extra
+        if (katanaAprData) {
+          // Calculate total APR excluding legacy katanaRewardsAPR
+          aAPY =
+            (katanaAprData.extrinsicYield || 0) +
+            (katanaAprData.katanaNativeYield || 0) +
+            (katanaAprData.FixedRateKatanaRewards || 0) +
+            (katanaAprData.katanaAppRewardsAPR || 0) +
+            (katanaAprData.katanaBonusAPY || 0) +
+            (katanaAprData.steerPointsPerDollar || 0)
+        }
+      } else if (a.apr?.forwardAPR.type === '') {
         aAPY = a.apr.extra.stakingRewardsAPR + a.apr.netAPR
       } else if (a.chainID === 1 && a.apr.forwardAPR.composite.boost > 0 && !a.apr.extra.stakingRewardsAPR) {
         aAPY = a.apr.forwardAPR.netAPR
@@ -64,7 +77,20 @@ export function useSortVaults(
       }
 
       let bAPY = 0
-      if (b.apr?.forwardAPR.type === '') {
+      // Handle Katana vaults (chainID 747474)
+      if (b.chainID === 747474) {
+        const katanaAprData = katanaAprs?.[toAddress(b.address)]?.apr?.extra
+        if (katanaAprData) {
+          // Calculate total APR excluding legacy katanaRewardsAPR
+          bAPY =
+            (katanaAprData.extrinsicYield || 0) +
+            (katanaAprData.katanaNativeYield || 0) +
+            (katanaAprData.FixedRateKatanaRewards || 0) +
+            (katanaAprData.katanaAppRewardsAPR || 0) +
+            (katanaAprData.katanaBonusAPY || 0) +
+            (katanaAprData.steerPointsPerDollar || 0)
+        }
+      } else if (b.apr?.forwardAPR.type === '') {
         bAPY = b.apr?.extra.stakingRewardsAPR + b.apr?.netAPR
       } else if (b.chainID === 1 && b.apr?.forwardAPR.composite.boost > 0 && !b.apr?.extra.stakingRewardsAPR) {
         bAPY = b.apr?.forwardAPR.netAPR
@@ -79,14 +105,13 @@ export function useSortVaults(
           bAPY = b.apr?.netAPR
         }
       }
-
       return numberSort({
         a: aAPY,
         b: bAPY,
         sortDirection
       })
     })
-  }, [sortDirection, vaultList, sortBy])
+  }, [sortDirection, vaultList, sortBy, katanaAprs])
 
   const sortedByAPY = useCallback((): TYDaemonVaults => {
     if (sortBy !== 'APY') {

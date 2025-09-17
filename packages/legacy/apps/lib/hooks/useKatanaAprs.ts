@@ -20,6 +20,7 @@ export type TKatanaAprData = {
   katanaBonusAPY: number // bonus APR from Katana for not leaving the vault
   extrinsicYield: number // yield from underlying assets in bridge
   katanaNativeYield: number // yield from katana markets (the netAPR). This is subsidized if low.
+  steerPointsPerDollar: number // yield from steer points
 }
 
 type TCacheData = {
