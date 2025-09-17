@@ -66,12 +66,14 @@ function VaultHeaderLineItem({ label, children, legend }: TVaultHeaderLineItemPr
 function VaultAPY({
   apr,
   source,
-  katanaExtras
+  katanaExtras,
+  currentVault
 }: {
   apr: TYDaemonVault['apr']
   source: string
   chain: number
   katanaExtras?: TKatanaAprData
+  currentVault: TYDaemonVault
 }): ReactElement {
   const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
   const monthlyAPY = apr.points.monthAgo
@@ -79,6 +81,18 @@ function VaultAPY({
   const netAPY = apr.netAPR + extraAPY
   const currentAPY = apr.forwardAPR.netAPR + extraAPY
   const isSourceVeYFI = source === 'VeYFI'
+
+  const katanaNetAPY = useMemo(() => {
+    if (!katanaExtras) return 0
+    // Exclude legacy katanaRewardsAPR, bonusAPR, and non-APR "steerPointsPerDollar" from totals
+    const {
+      katanaRewardsAPR: _katanaRewardsAPR,
+      steerPointsPerDollar: _points,
+      katanaBonusAPY: _bonus,
+      ...relevantAprs
+    } = katanaExtras ?? {}
+    return Object.values(relevantAprs).reduce((sum, value) => sum + value, 0)
+  }, [katanaExtras])
 
   if (katanaExtras) {
     return (
@@ -96,14 +110,16 @@ function VaultAPY({
               fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards}
               katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR}
               katanaBonusAPR={katanaExtras.katanaBonusAPY}
+              steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
+              currentVault={currentVault}
               position="top"
-              maxWidth="min-w-[280px] max-w-[320px] w-max"
+              maxWidth="w-max"
             />
           </span>
         }
       >
         <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
-          <RenderAmount value={netAPY} symbol={'percent'} decimals={6} />
+          <RenderAmount value={katanaNetAPY} symbol={'percent'} decimals={6} />
         </Renderable>
       </VaultHeaderLineItem>
     )
@@ -767,6 +783,7 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
             source={currentVault.staking.source}
             chain={currentVault.chainID}
             katanaExtras={katanaAprData}
+            currentVault={currentVault}
           />
         </div>
 
