@@ -33,6 +33,18 @@ export function Filters({
   onChangeChains
 }: TListHero): ReactElement {
   const [shouldExpandFilters, setShouldExpandFilters] = useState(false)
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+
+  const handleDropdownOpenChange = (dropdownId: string, isOpen: boolean) => {
+    if (isOpen) {
+      // Close any other open dropdown and open this one
+      setActiveDropdown(dropdownId)
+    } else if (activeDropdown === dropdownId) {
+      // Only close if this dropdown was the active one
+      setActiveDropdown(null)
+    }
+  }
+
   const chainOptions = useChainOptions(chains).filter(
     (option): boolean =>
       option.value === 1 ||
@@ -105,6 +117,8 @@ export function Filters({
             comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
             options={chainOptions}
             placeholder={'Select chain'}
+            isOpen={activeDropdown === 'chains'}
+            onOpenChange={(isOpen): void => handleDropdownOpenChange('chains', isOpen)}
             onSelect={(options): void => {
               const selectedChains = options
                 .filter((o): boolean => o.isSelected)
@@ -121,6 +135,8 @@ export function Filters({
             comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
             options={categoryOptions}
             placeholder={'Filter categories'}
+            isOpen={activeDropdown === 'categories'}
+            onOpenChange={(isOpen): void => handleDropdownOpenChange('categories', isOpen)}
             onSelect={(options): void => {
               const selectedCategories = options
                 .filter((o): boolean => o.isSelected)
@@ -137,6 +153,8 @@ export function Filters({
             comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
             options={typeOptions}
             placeholder={'Filter list'}
+            isOpen={activeDropdown === 'types'}
+            onOpenChange={(isOpen): void => handleDropdownOpenChange('types', isOpen)}
             onSelect={(options): void => {
               const selectedTypes = options
                 .filter((o): boolean => o.isSelected)

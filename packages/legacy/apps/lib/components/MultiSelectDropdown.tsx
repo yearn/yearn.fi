@@ -24,6 +24,8 @@ type TMultiSelectProps = {
   comboboxOptionsClassName?: string
   customRender?: ReactElement
   customDefaultLabel?: string
+  isOpen?: boolean
+  onOpenChange?: (isOpen: boolean) => void
 }
 
 function SelectAllOption({
@@ -139,10 +141,16 @@ export function MultiSelectDropdown({
   placeholder = '',
   customDefaultLabel = 'All',
   customRender,
+  isOpen: externalIsOpen,
+  onOpenChange,
   ...props
 }: TMultiSelectProps): ReactElement {
-  const [isOpen, setIsOpen] = useThrottledState(false, 400)
+  const [internalIsOpen, setInternalIsOpen] = useThrottledState(false, 400)
   const [query, setQuery] = useState('')
+
+  // Use external state if provided, otherwise use internal state
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
+  const setIsOpen = onOpenChange || setInternalIsOpen
   const areAllSelected = useMemo((): boolean => options.every(({ isSelected }): boolean => isSelected), [options])
   const componentRef = useRef<HTMLDivElement | null>(null)
 
@@ -151,7 +159,9 @@ export function MultiSelectDropdown({
   }, [options])
 
   useClickOutside(componentRef as RefObject<HTMLElement>, (): void => {
-    setIsOpen(false)
+    if (isOpen) {
+      setIsOpen(false)
+    }
   })
 
   const filteredOptions = useMemo(
@@ -214,15 +224,12 @@ export function MultiSelectDropdown({
     <Combobox as={Fragment} key={selectedValues.join(',')} ref={componentRef} value={selectedValues} multiple>
       <div className={'relative w-full'}>
         {customRender ? (
-          <ComboboxButton
-            className={'flex items-center justify-between'}
-            onClick={(): void => setIsOpen((o: boolean): boolean => !o)}
-          >
+          <ComboboxButton className={'flex items-center justify-between'} onClick={(): void => setIsOpen(!isOpen)}>
             {customRender}
           </ComboboxButton>
         ) : (
           <ComboboxButton
-            onClick={(): void => setIsOpen((o: boolean): boolean => !o)}
+            onClick={(): void => setIsOpen(!isOpen)}
             className={cl(
               props.buttonClassName,
               'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
