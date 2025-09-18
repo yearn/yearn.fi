@@ -13,6 +13,7 @@ const V3AboutPage = lazy(() => import('../pages/v3/about'))
 const V3DetailPage = lazy(() => import('../pages/v3/[chainID]/[address]'))
 const VaultsBetaPage = lazy(() => import('../pages/vaults-beta/index'))
 const VaultsBetaSearchPage = lazy(() => import('../pages/vaults-beta/search/[query]'))
+const DemoPage = lazy(() => import('../pages/demo/index'))
 
 // Loading component
 const PageLoader = (): ReactElement => (
@@ -59,7 +60,8 @@ export const routeConfig = {
     governance: '/governance',
     snapshot: '/snapshot',
     github: '/github'
-  }
+  },
+  demo: '/demo-nextgen'
 }
 
 // Main routes component
@@ -69,6 +71,9 @@ export function AppRoutes(): ReactElement {
       <Routes>
         {/* Home page */}
         <Route path="/" element={<HomePage />} />
+
+        {/* Demo page */}
+        <Route path="/demo-nextgen" element={<DemoPage />} />
 
         {/* Apps page */}
         <Route path="/apps" element={<AppsPage />} />
