@@ -1,7 +1,7 @@
-import { erc4626Abi } from '@lib/utils/abi/4626.abi'
+import { useWithdraw } from '@nextgen/hooks/actions/useWithdraw'
 import type { FC } from 'react'
-import { type Address, zeroAddress } from 'viem'
-import { type UseSimulateContractReturnType, useAccount, useSimulateContract } from 'wagmi'
+import type { Address } from 'viem'
+import { useAccount } from 'wagmi'
 import { useInput } from '../../hooks/useInput'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { TxButton } from '../TxButton'
@@ -9,10 +9,11 @@ import { TxButton } from '../TxButton'
 interface Props {
   account: Address
   handleWithdrawSuccess?: () => void
+  vaultType: 'v2' | 'v3'
   vaultAddress?: `0x${string}`
 }
 
-export const WidgetWithdraw: FC<Props> = ({ vaultAddress, handleWithdrawSuccess }) => {
+export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, handleWithdrawSuccess }) => {
   const { address } = useAccount()
 
   const vaultDetails = {
@@ -27,18 +28,21 @@ export const WidgetWithdraw: FC<Props> = ({ vaultAddress, handleWithdrawSuccess 
     }
   }
 
+  // ** PERIPHERY ** //
+
   const input = useInput(vaultDetails?.asset?.decimals)
   const [amount] = input
 
   // ** ACTIONS ** //
-  const prepareWithdraw: UseSimulateContractReturnType = useSimulateContract({
-    abi: erc4626Abi,
-    functionName: 'withdraw',
-    address: vaultDetails?.address,
-    args: amount.bn > 0n ? [amount.bn, address!, address!] : undefined,
-    query: {
-      enabled: Boolean(amount.bn > 0n && vaultDetails?.address !== zeroAddress)
-    }
+
+  const {
+    actions: { prepareWithdraw },
+    periphery: { prepareWithdrawEnabled }
+  } = useWithdraw({
+    vaultType: vaultType,
+    vaultAddress: vaultDetails?.address as Address,
+    amount: amount.bn,
+    account: address!
   })
 
   return (
@@ -56,7 +60,7 @@ export const WidgetWithdraw: FC<Props> = ({ vaultAddress, handleWithdrawSuccess 
         prepareWrite={prepareWithdraw}
         onSuccess={handleWithdrawSuccess}
         transactionName="Withdraw"
-        disabled={!prepareWithdraw.data || amount.bn === 0n}
+        disabled={!prepareWithdrawEnabled}
         className="w-full"
         style={{
           backgroundColor: '#401BE4',
