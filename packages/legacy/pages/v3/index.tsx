@@ -3,6 +3,7 @@ import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
+import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TSortDirection } from '@lib/types'
 import { cl, formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -138,6 +139,8 @@ function PortfolioCard(): ReactElement {
 function ListOfVaults(): ReactElement {
   const { isLoadingVaultList } = useYearn()
   const [showAllHoldings, setShowAllHoldings] = useState(false)
+  const allChains = useSupportedChains().map((chain): number => chain.id)
+
   const {
     search,
     types,
@@ -151,14 +154,24 @@ function ListOfVaults(): ReactElement {
     onChangeChains,
     onChangeSortDirection,
     onChangeSortBy,
-    onReset
+    onResetMultiSelect
   } = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
     defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
     defaultPathname: '/v3'
   })
+
   const { activeVaults, retiredVaults, migratableVaults, holdingsVaults, multiVaults, singleVaults, hiddenHoldings } =
     useVaultFilter(types, chains, true, search || '', categories)
+
+  // Get potential results with all filters but keeping the search
+  const { activeVaults: allFilteredVaults } = useVaultFilter(
+    ALL_VAULTSV3_KINDS_KEYS,
+    allChains,
+    true,
+    search || '',
+    ALL_VAULTSV3_CATEGORIES_KEYS
+  )
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Reset show all holdings when filters change
   useMemo(() => {
@@ -298,8 +311,9 @@ function ListOfVaults(): ReactElement {
           currentSearch={search || ''}
           currentCategories={types}
           currentChains={chains}
-          onReset={onReset}
+          onReset={onResetMultiSelect}
           defaultCategories={ALL_VAULTSV3_KINDS_KEYS}
+          potentialResultsCount={allFilteredVaults.length}
         />
       )
     }

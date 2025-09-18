@@ -1,8 +1,8 @@
 import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@lib/types'
-import { useDeepCompareEffect, useMountEffect } from '@react-hookz/web'
+import { useMountEffect } from '@react-hookz/web'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
-import { useSearchParams } from 'next/navigation'
+import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import { useRouter } from 'next/router'
 import { useCallback, useState } from 'react'
 
@@ -20,6 +20,7 @@ type TQueryArgs = {
   onChangeSortDirection: (value: TSortDirection | '') => void
   onChangeSortBy: (value: TPossibleSortBy | '') => void
   onReset: () => void
+  onResetMultiSelect: () => void
 }
 function useQueryArguments(props: {
   defaultTypes?: string[]
@@ -28,7 +29,6 @@ function useQueryArguments(props: {
   defaultPathname?: string
 }): TQueryArgs {
   const allChains = useSupportedChains().map((chain): number => chain.id)
-  const searchParams = useSearchParams()
   const router = useRouter()
   const [search, setSearch] = useState<string | null>(null)
   const [types, setTypes] = useState<string[] | null>(props.defaultTypes || [])
@@ -141,12 +141,6 @@ function useQueryArguments(props: {
     const currentPage = new URL(window.location.href)
     handleQuery(new URLSearchParams(currentPage.search))
   })
-
-  useDeepCompareEffect((): void => {
-    if (!props.defaultPathname || props.defaultPathname === router.pathname) {
-      handleQuery(searchParams)
-    }
-  }, [searchParams])
 
   return {
     search,
@@ -343,6 +337,18 @@ function useQueryArguments(props: {
           key !== 'sortDirection' &&
           key !== 'sortBy'
         ) {
+          queryArgs[key] = router.query[key]
+        }
+      }
+      router.replace({ pathname: router.pathname, query: queryArgs }, undefined, { shallow: true })
+    },
+    onResetMultiSelect: (): void => {
+      setTypes(ALL_VAULTSV3_KINDS_KEYS)
+      setCategories(ALL_VAULTSV3_CATEGORIES_KEYS)
+      setChains(allChains || [])
+      const queryArgs: TDict<string | string[] | undefined> = {}
+      for (const key in router.query) {
+        if (key !== 'types' && key !== 'categories' && key !== 'chains') {
           queryArgs[key] = router.query[key]
         }
       }
