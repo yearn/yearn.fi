@@ -18,7 +18,7 @@ import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v
 import { V3Mask } from '@vaults-v3/Mark'
 import { motion } from 'framer-motion'
 import type { ReactElement, ReactNode } from 'react'
-import { Fragment, useCallback, useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 
 function Background(): ReactElement {
   return (
@@ -138,7 +138,6 @@ function PortfolioCard(): ReactElement {
 }
 function ListOfVaults(): ReactElement {
   const { isLoadingVaultList } = useYearn()
-  const [showAllHoldings, setShowAllHoldings] = useState(false)
   const allChains = useSupportedChains().map((chain): number => chain.id)
 
   const {
@@ -161,8 +160,13 @@ function ListOfVaults(): ReactElement {
     defaultPathname: '/v3'
   })
 
-  const { activeVaults, retiredVaults, migratableVaults, holdingsVaults, multiVaults, singleVaults, hiddenHoldings } =
-    useVaultFilter(types, chains, true, search || '', categories)
+  const { activeVaults, retiredVaults, migratableVaults, holdingsVaults, multiVaults, singleVaults } = useVaultFilter(
+    types,
+    chains,
+    true,
+    search || '',
+    categories
+  )
 
   // Get potential results with all filters but keeping the search
   const { activeVaults: allFilteredVaults } = useVaultFilter(
@@ -173,11 +177,6 @@ function ListOfVaults(): ReactElement {
     ALL_VAULTSV3_CATEGORIES_KEYS
   )
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Reset show all holdings when filters change
-  useMemo(() => {
-    setShowAllHoldings(false)
-  }, [search, types, chains, categories])
-
   /**********************************************************************************************
    **	Prepare vault lists for rendering. All filtering is now done in useVaultFilter.
    *********************************************************************************************/
@@ -186,7 +185,6 @@ function ListOfVaults(): ReactElement {
     multi: TYDaemonVault[]
     single: TYDaemonVault[]
     all: TYDaemonVault[]
-    hiddenCount: number
   } | null => {
     // Combine holdings from various sources (all already filtered)
     const combinedHoldings = new Map<string, TYDaemonVault>()
@@ -204,13 +202,6 @@ function ListOfVaults(): ReactElement {
     // Add retired vaults
     for (const vault of retiredVaults) {
       combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-
-    // If showing all holdings, add hidden holdings too
-    if (showAllHoldings) {
-      for (const vault of hiddenHoldings) {
-        combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-      }
     }
 
     const holdingsArray = Array.from(combinedHoldings.values())
@@ -233,8 +224,7 @@ function ListOfVaults(): ReactElement {
       holdings: holdingsArray,
       multi: multiVaults,
       single: singleVaults,
-      all: nonHoldingsVaults,
-      hiddenCount: showAllHoldings ? 0 : hiddenHoldings.length
+      all: nonHoldingsVaults
     }
   }, [
     isLoadingVaultList,
@@ -244,61 +234,40 @@ function ListOfVaults(): ReactElement {
     retiredVaults,
     holdingsVaults,
     multiVaults,
-    singleVaults,
-    hiddenHoldings,
-    showAllHoldings
+    singleVaults
   ])
 
-  const { holdings, all, hiddenCount } = vaultLists || {
+  const { holdings, all } = vaultLists || {
     holdings: [],
-    all: [],
-    hiddenCount: 0
+    all: []
   }
   const hasHoldings = holdings.length > 0
-  const hasHiddenHoldings = hiddenCount > 0
 
   const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
   const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
 
-  const handleDisplayAll = useCallback((): void => {
-    setShowAllHoldings(true)
-  }, [])
+  // Calculate potential hidden results due to filters
+  const currentResultsCount = activeVaults.length
+  const potentialResultsCount = allFilteredVaults.length
+  const hiddenByFiltersCount = potentialResultsCount - currentResultsCount
+  const hasHiddenResults = search && hiddenByFiltersCount > 0
 
   const renderHiddenBadge = (): ReactNode => {
-    if (!hasHiddenHoldings && !showAllHoldings) return null
+    if (!hasHiddenResults) return null
 
     return (
       <div className={'mb-4 flex items-center gap-2 justify-between rounded-2xl bg-neutral-100 px-6 py-3'}>
-        {showAllHoldings ? (
-          <>
-            <p className={'text-sm text-neutral-600'}>
-              Showing {hiddenHoldings.length} additional vault{hiddenHoldings.length > 1 ? 's' : ''} hidden by filters
-            </p>
-            <Button
-              onClick={() => setShowAllHoldings(false)}
-              className={
-                'yearn--button-smaller rounded-md max-w-18! w-full! bg-neutral-900 text-sm text-white hover:bg-neutral-800'
-              }
-            >
-              Hide
-            </Button>
-          </>
-        ) : (
-          <>
-            <p className={'text-sm text-neutral-600'}>
-              {hiddenCount} vault{hiddenCount > 1 ? 's' : ''} you have holdings in {hiddenCount > 1 ? 'are' : 'is'}{' '}
-              hidden by filters
-            </p>
-            <Button
-              onClick={handleDisplayAll}
-              className={
-                'yearn--button-smaller rounded-md max-w-18! w-full! bg-neutral-900 text-sm text-white hover:bg-neutral-800'
-              }
-            >
-              Display All
-            </Button>
-          </>
-        )}
+        <p className={'text-sm text-neutral-600'}>
+          {hiddenByFiltersCount} vault{hiddenByFiltersCount > 1 ? 's' : ''} hidden by current filters
+        </p>
+        <Button
+          onClick={onResetMultiSelect}
+          className={
+            'yearn--button-smaller rounded-md max-w-18! w-full! bg-neutral-900 text-sm text-white hover:bg-neutral-800'
+          }
+        >
+          Show all
+        </Button>
       </div>
     )
   }
