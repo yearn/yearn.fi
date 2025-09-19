@@ -1,10 +1,27 @@
-name: notify telegram
+name: PR Checks
 
 on:
   pull_request:
-    types: [opened, review_requested]
+    types: [opened, synchronize, reopened, review_requested]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          comment-summary-in-pr: always
+          allow-licenses: MIT, Apache-2.0, BSD-3-Clause, BSD-2-Clause, ISC, CC0-1.0, CC-BY-3.0, CC-BY-4.0, Unlicense
+
   notify:
     runs-on: ubuntu-latest
     steps:
