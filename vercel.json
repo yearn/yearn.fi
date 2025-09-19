@@ -4,6 +4,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/proxy/plausible/:path*",
+      "destination": "https://plausible.io/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

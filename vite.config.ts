@@ -78,13 +78,10 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/js/script.js': {
+      '/proxy/plausible': {
         target: 'https://plausible.io',
-        changeOrigin: true
-      },
-      '/api/event': {
-        target: 'https://plausible.io',
-        changeOrigin: true
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/proxy/plausible', '')
       }
     }
   },
