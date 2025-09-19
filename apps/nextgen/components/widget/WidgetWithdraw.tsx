@@ -1,29 +1,37 @@
+import { cl } from '@lib/utils'
+import { TxButton } from '@nextgen/components/TxButton'
 import { useWithdraw } from '@nextgen/hooks/actions/useWithdraw'
+import { useInput } from '@nextgen/hooks/useInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import type { FC } from 'react'
+import { useState } from 'react'
 import type { Address } from 'viem'
-import { useInput } from '../../hooks/useInput'
 import { InputTokenAmount } from '../InputTokenAmount'
-import { TxButton } from '../TxButton'
 
 interface Props {
   account: Address
   vaultType: 'v2' | 'v3'
+  assetAddress: `0x${string}`
   vaultAddress: `0x${string}`
   handleWithdrawSuccess?: () => void
 }
 
-export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, account, handleWithdrawSuccess }) => {
-  const { tokens } = useTokens([vaultAddress], account)
+export const WidgetWithdraw: FC<Props> = ({
+  vaultType,
+  vaultAddress,
+  assetAddress,
+  account,
+  handleWithdrawSuccess
+}) => {
+  const { tokens } = useTokens([assetAddress, vaultAddress], account)
+  const [unstakeAndWithdraw, setUnstakeAndWithdraw] = useState(false)
 
   // ** PERIPHERY ** //
-
-  const vault = tokens?.[0]
+  const [asset, vault] = [tokens?.[0], tokens?.[1]]
   const input = useInput(vault?.decimals ?? 18)
   const [amount] = input
 
   // ** ACTIONS ** //
-
   const {
     actions: { prepareWithdraw },
     periphery: { prepareWithdrawEnabled }
@@ -35,8 +43,7 @@ export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, account, ha
   })
 
   return (
-    <div className="space-y-3">
-      {/* Amount Section */}
+    <div className="p-6 pb-0 space-y-4">
       <InputTokenAmount
         title="Amount to Withdraw"
         input={input}
@@ -45,23 +52,40 @@ export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, account, ha
         symbol={vault?.symbol}
         balance={vault?.balance}
       />
-      {/* Action Button */}
-      {input[0].touched ? (
+
+      <div className="space-y-1 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">You will receive</span>
+          <span className="text-gray-900 font-medium">x.xx {asset?.symbol}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setUnstakeAndWithdraw(!unstakeAndWithdraw)}
+          className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          style={{ backgroundColor: unstakeAndWithdraw ? '#1D4ED8' : '#E4E4E7' }}
+        >
+          <span
+            className={cl(
+              'inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition duration-200 ease-in-out',
+              unstakeAndWithdraw ? 'translate-x-5' : 'translate-x-0.5'
+            )}
+          />
+        </button>
+        <span className="ml-3 text-sm font-medium text-gray-900">Unstake & Withdraw</span>
+      </div>
+
+      <div className="pb-6 pt-2">
         <TxButton
           prepareWrite={prepareWithdraw}
           onSuccess={handleWithdrawSuccess}
-          transactionName="Withdraw"
+          transactionName={'Withdraw'}
           disabled={!prepareWithdrawEnabled}
           className="w-full"
         />
-      ) : (
-        <TxButton
-          prepareWrite={prepareWithdraw}
-          transactionName="Enter an amount"
-          disabled={!prepareWithdrawEnabled}
-          className="w-full"
-        />
-      )}
+      </div>
     </div>
   )
 }

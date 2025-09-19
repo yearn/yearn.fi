@@ -1,10 +1,12 @@
+import { cl } from '@lib/utils'
+import { TxButton } from '@nextgen/components/TxButton'
 import { useDeposit } from '@nextgen/hooks/actions/useDeposit'
+import { useInput } from '@nextgen/hooks/useInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import type { FC } from 'react'
+import { useState } from 'react'
 import type { Address } from 'viem'
-import { useInput } from '../../hooks/useInput'
 import { InputTokenAmount } from '../InputTokenAmount'
-import { TxButton } from '../TxButton'
 
 interface Props {
   account: Address
@@ -16,15 +18,14 @@ interface Props {
 
 export const WidgetDeposit: FC<Props> = ({ account, vaultType, vaultAddress, assetAddress, handleDepositSuccess }) => {
   const { tokens } = useTokens([assetAddress, vaultAddress], account)
+  const [depositAndStake, setDepositAndStake] = useState(false)
 
   // ** PERIPHERY ** //
-
   const [asset, vault] = [tokens?.[0], tokens?.[1]]
   const input = useInput(asset?.decimals ?? 18)
   const [amount] = input
 
   // ** ACTIONS ** //
-
   const {
     actions: { prepareApprove, prepareDeposit },
     periphery: { prepareApproveEnabled, prepareDepositEnabled }
@@ -37,8 +38,7 @@ export const WidgetDeposit: FC<Props> = ({ account, vaultType, vaultAddress, ass
   })
 
   return (
-    <div className="space-y-3">
-      {/* Amount Section */}
+    <div className="p-6 pb-0 space-y-4">
       <InputTokenAmount
         title="Amount to Deposit"
         input={input}
@@ -48,9 +48,32 @@ export const WidgetDeposit: FC<Props> = ({ account, vaultType, vaultAddress, ass
         balance={asset?.balance}
       />
 
-      {/* Action Button */}
-      {input[0].touched ? (
-        <div className="flex gap-1">
+      <div className="space-y-1 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">You will receive</span>
+          <span className="text-gray-900 font-medium">x.xx {vault?.symbol}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setDepositAndStake(!depositAndStake)}
+          className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          style={{ backgroundColor: depositAndStake ? '#1D4ED8' : '#E4E4E7' }}
+        >
+          <span
+            className={cl(
+              'inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition duration-200 ease-in-out',
+              depositAndStake ? 'translate-x-5' : 'translate-x-0.5'
+            )}
+          />
+        </button>
+        <span className="ml-3 text-sm font-medium text-gray-900">Deposit & Stake</span>
+      </div>
+
+      <div className="pb-6 pt-2">
+        <div className="flex gap-2">
           <TxButton
             prepareWrite={prepareApprove}
             transactionName="Approve"
@@ -65,14 +88,7 @@ export const WidgetDeposit: FC<Props> = ({ account, vaultType, vaultAddress, ass
             className="w-full"
           />
         </div>
-      ) : (
-        <TxButton
-          prepareWrite={prepareApprove}
-          transactionName="Enter an amount"
-          disabled={!prepareApproveEnabled}
-          className="w-full"
-        />
-      )}
+      </div>
     </div>
   )
 }

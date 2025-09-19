@@ -37,7 +37,12 @@ export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions }) => {
         )
       case ActionType.Withdraw:
         return (
-          <WidgetWithdraw account={zeroAddress} vaultAddress={vaultAddress as `0x${string}`} vaultType={vaultType} />
+          <WidgetWithdraw
+            account={zeroAddress}
+            assetAddress={assetToken as Address}
+            vaultAddress={vaultAddress as `0x${string}`}
+            vaultType={vaultType}
+          />
         )
       case ActionType.Stake:
         return <WidgetStake />
@@ -47,22 +52,22 @@ export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions }) => {
   }, [mode, vaultAddress, vaultType, assetToken])
 
   return (
-    <div className="flex flex-col gap-4 mt-16">
-      <div className="bg-black/5 rounded-2xl p-1">
-        <div className="bg-black/15 p-0.5 rounded-xl flex gap-1 mb-2">
+    <div className="flex flex-col gap-0 mt-16">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gray-100 rounded-lg flex h-12">
           {actions.map((title) => (
-            <Button key={title} onClick={() => setMode(title)} isActive={mode === title} className="capitalize">
+            <TabButton key={title} isActive={mode === title} onClick={() => setMode(title)}>
               {title}
-            </Button>
+            </TabButton>
           ))}
         </div>
-        <div className="bg-white rounded-xl p-2">{SelectedComponent}</div>
+        {SelectedComponent}
       </div>
     </div>
   )
 }
 
-const Button: FC<{
+const TabButton: FC<{
   className?: string
   children: React.ReactNode
   onClick: () => void
@@ -73,8 +78,10 @@ const Button: FC<{
       type="button"
       onClick={onClick}
       className={cl(
-        'flex-1 px-4 py-2 rounded-[10px] font-semibold text-base transition-all duration-200 cursor-pointer',
-        isActive ? 'bg-white text-black shadow-sm' : 'bg-transparent text-white/80 hover:text-white',
+        'flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 capitalize',
+        isActive
+          ? 'bg-white text-gray-900 rounded-bl-none rounded-br-none'
+          : 'bg-transparent text-gray-500 hover:text-gray-700',
         className
       )}
     >
