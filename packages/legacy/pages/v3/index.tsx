@@ -410,7 +410,7 @@ function Index(): ReactElement {
     onResetMultiSelect
   } = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
-    defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS.filter((c) => c !== 'Holdings'),
+    defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
     defaultPathname: '/v3'
   })
 
