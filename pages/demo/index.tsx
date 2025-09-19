@@ -20,7 +20,7 @@ function Index(): ReactElement {
             <Widget
               vaultType="v3"
               vaultAddress="0x182863131F9a4630fF9E27830d945B1413e347E8"
-              actions={[WidgetActionType.Stake, WidgetActionType.Unstake]}
+              actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
             />
           </div>
         </div>
