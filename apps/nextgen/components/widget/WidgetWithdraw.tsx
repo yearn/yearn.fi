@@ -1,36 +1,25 @@
 import { useWithdraw } from '@nextgen/hooks/actions/useWithdraw'
+import { useTokens } from '@nextgen/hooks/useTokens'
 import type { FC } from 'react'
 import type { Address } from 'viem'
-import { useAccount } from 'wagmi'
 import { useInput } from '../../hooks/useInput'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { TxButton } from '../TxButton'
 
 interface Props {
   account: Address
-  handleWithdrawSuccess?: () => void
   vaultType: 'v2' | 'v3'
-  vaultAddress?: `0x${string}`
+  vaultAddress: `0x${string}`
+  handleWithdrawSuccess?: () => void
 }
 
-export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, handleWithdrawSuccess }) => {
-  const { address } = useAccount()
-
-  const vaultDetails = {
-    address: vaultAddress,
-    asset: {
-      address: '0x0000000000000000000000000000000000000000',
-      symbol: 'ETH',
-      decimals: 18
-    },
-    user: {
-      assets: 0n
-    }
-  }
+export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, account, handleWithdrawSuccess }) => {
+  const { tokens } = useTokens([vaultAddress], account)
 
   // ** PERIPHERY ** //
 
-  const input = useInput(vaultDetails?.asset?.decimals)
+  const vault = tokens?.[0]
+  const input = useInput(vault?.decimals ?? 18)
   const [amount] = input
 
   // ** ACTIONS ** //
@@ -40,9 +29,9 @@ export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, handleWithd
     periphery: { prepareWithdrawEnabled }
   } = useWithdraw({
     vaultType: vaultType,
-    vaultAddress: vaultDetails?.address as Address,
+    vaultAddress: vaultAddress as Address,
     amount: amount.bn,
-    account: address!
+    account
   })
 
   return (
@@ -53,24 +42,26 @@ export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, handleWithd
         input={input}
         placeholder="0.00"
         className="flex-1"
-        symbol={vaultDetails?.asset?.symbol}
-        balance={vaultDetails?.user?.assets}
+        symbol={vault?.symbol}
+        balance={vault?.balance}
       />
-      <TxButton
-        prepareWrite={prepareWithdraw}
-        onSuccess={handleWithdrawSuccess}
-        transactionName="Withdraw"
-        disabled={!prepareWithdrawEnabled}
-        className="w-full"
-        style={{
-          backgroundColor: '#401BE4',
-          color: 'white',
-          padding: '12px',
-          borderRadius: '12px',
-          fontWeight: 500,
-          fontSize: '16px'
-        }}
-      />
+      {/* Action Button */}
+      {input[0].touched ? (
+        <TxButton
+          prepareWrite={prepareWithdraw}
+          onSuccess={handleWithdrawSuccess}
+          transactionName="Withdraw"
+          disabled={!prepareWithdrawEnabled}
+          className="w-full"
+        />
+      ) : (
+        <TxButton
+          prepareWrite={prepareWithdraw}
+          transactionName="Enter an amount"
+          disabled={!prepareWithdrawEnabled}
+          className="w-full"
+        />
+      )}
     </div>
   )
 }

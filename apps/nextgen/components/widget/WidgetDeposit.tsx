@@ -17,10 +17,9 @@ interface Props {
 export const WidgetDeposit: FC<Props> = ({ account, vaultType, vaultAddress, assetAddress, handleDepositSuccess }) => {
   const { tokens } = useTokens([assetAddress, vaultAddress], account)
 
-  const [asset, vault] = [tokens?.[0], tokens?.[1]]
-
   // ** PERIPHERY ** //
 
+  const [asset, vault] = [tokens?.[0], tokens?.[1]]
   const input = useInput(asset?.decimals ?? 18)
   const [amount] = input
 
