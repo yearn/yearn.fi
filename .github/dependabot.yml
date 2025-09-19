@@ -10,3 +10,16 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      patch-updates:
+        applies-to: version-updates
+        update-types:
+          - "patch"
+      minor-updates:
+        applies-to: version-updates
+        update-types:
+          - "minor"
