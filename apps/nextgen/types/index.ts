@@ -24,3 +24,10 @@ export type UseWithdrawReturn = T<
     prepareWithdrawEnabled: boolean
   }
 >
+
+export enum WidgetActionType {
+  Deposit = 'deposit',
+  Withdraw = 'withdraw',
+  Stake = 'stake',
+  Unstake = 'unstake'
+}
