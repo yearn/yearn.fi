@@ -11,6 +11,9 @@ prefer-offline = true
 # Auto-install peer dependencies
 auto = true
 
+# Disable install scripts for security
+scripts = false
+
 [install.cache]
 # Cache packages for faster subsequent installs
 dir = "~/.bun/install/cache"
