@@ -279,6 +279,7 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
             <b className={'text-lg'}>{'Oh look, an important message for you to read!'}</b>
             <p
               className={'mt-2'}
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled vault config content, not user input
               dangerouslySetInnerHTML={{
                 __html: parseMarkdown(currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol))
               }}

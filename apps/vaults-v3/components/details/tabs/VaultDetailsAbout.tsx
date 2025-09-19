@@ -89,6 +89,7 @@ export function VaultDetailsAbout({ currentVault }: { currentVault: TYDaemonVaul
           <b className={'text-neutral-900'}>{'Description'}</b>
           <div className={'mt-4 text-neutral-900/50'}>
             {typeof getVaultDescription() === 'string' ? (
+              /* biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled vault description content */
               <p dangerouslySetInnerHTML={{ __html: getVaultDescription() as string }} />
             ) : (
               <p>{getVaultDescription()}</p>
