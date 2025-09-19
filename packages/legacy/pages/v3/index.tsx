@@ -209,7 +209,7 @@ function ListOfVaults({
     allChains,
     true,
     search || '',
-    ALL_VAULTSV3_CATEGORIES_KEYS.filter((c) => c !== 'Holdings')
+    ALL_VAULTSV3_CATEGORIES_KEYS
   )
 
   /**********************************************************************************************
@@ -283,7 +283,7 @@ function ListOfVaults({
   const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
 
   // Calculate potential hidden results due to filters
-  const currentResultsCount = activeVaults.length
+  const currentResultsCount = (shouldShowHoldings ? sortedHoldings.length : 0) + sortedNonHoldings.length
   const potentialResultsCount = allFilteredVaults.length
   const hiddenByFiltersCount = potentialResultsCount - currentResultsCount
   const hasHiddenResults = search && hiddenByFiltersCount > 0

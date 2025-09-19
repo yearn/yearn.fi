@@ -345,7 +345,7 @@ function useQueryArguments(props: {
     onResetMultiSelect: (): void => {
       const isV3 = props.defaultPathname === '/v3'
       setTypes(isV3 ? ALL_VAULTSV3_KINDS_KEYS : props.defaultTypes || [])
-      setCategories(isV3 ? ALL_VAULTSV3_CATEGORIES_KEYS.filter((c) => c !== 'Holdings') : props.defaultCategories || [])
+      setCategories(isV3 ? ALL_VAULTSV3_CATEGORIES_KEYS : props.defaultCategories || [])
       setChains(allChains || [])
       const queryArgs: TDict<string | string[] | undefined> = {}
       for (const key in router.query) {
