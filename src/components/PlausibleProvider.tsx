@@ -9,8 +9,7 @@ interface PlausibleProviderProps {
 }
 
 const plausible = Plausible({
-  domain: 'yearn.fi',
-  apiHost: '/proxy/plausible'
+  domain: 'yearn.fi'
 })
 
 export function PlausibleProvider({ enabled = true, children }: PlausibleProviderProps): ReactElement {

@@ -1,8 +1,7 @@
 import Plausible from 'plausible-tracker'
 
 const plausible = Plausible({
-  domain: 'yearn.fi',
-  apiHost: '/proxy/plausible'
+  domain: 'yearn.fi'
 })
 
 export function usePlausible() {
