@@ -76,7 +76,13 @@ function V3Card(): ReactElement {
   )
 }
 
-function PortfolioCard(): ReactElement {
+function PortfolioCard({
+  categories,
+  onChangeCategories
+}: {
+  categories: string[]
+  onChangeCategories: (categories: string[]) => void
+}): ReactElement {
   const { cumulatedValueInV3Vaults, isLoading } = useWallet()
   const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
 
@@ -120,45 +126,74 @@ function PortfolioCard(): ReactElement {
       <strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
         {'Portfolio'}
       </strong>
-      <div className={'flex flex-col gap-4 md:flex-row md:gap-32'}>
-        <div>
-          <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Deposited'}</p>
-          {isLoading ? (
-            <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
-          ) : (
-            <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
-              {'$'}
-              <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
-            </b>
-          )}
+      <div className={'flex flex-col gap-4'}>
+        <div className={'flex flex-col gap-4 md:flex-row md:gap-32'}>
+          <div>
+            <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Deposited'}</p>
+            {isLoading ? (
+              <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
+            ) : (
+              <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
+                {'$'}
+                <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
+              </b>
+            )}
+          </div>
+        </div>
+        <div className={'flex items-center gap-2 pt-2'}>
+          <label className={'flex cursor-pointer items-center gap-2 text-sm text-neutral-900'}>
+            <input
+              type={'checkbox'}
+              className={'rounded border-neutral-400'}
+              checked={categories.includes('Holdings')}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  if (!categories.includes('Holdings')) {
+                    onChangeCategories([...categories, 'Holdings'])
+                  }
+                } else {
+                  onChangeCategories(categories.filter((c) => c !== 'Holdings'))
+                }
+              }}
+            />
+            <span>{'Show holdings'}</span>
+          </label>
         </div>
       </div>
     </div>
   )
 }
-function ListOfVaults(): ReactElement {
+function ListOfVaults({
+  search,
+  types,
+  chains,
+  categories,
+  sortDirection,
+  sortBy,
+  onSearch,
+  onChangeTypes,
+  onChangeCategories,
+  onChangeChains,
+  onChangeSortDirection,
+  onChangeSortBy,
+  onResetMultiSelect
+}: {
+  search: string | null | undefined
+  types: string[]
+  chains: number[]
+  categories: string[]
+  sortDirection: TSortDirection
+  sortBy: TPossibleSortBy
+  onSearch: (value: string) => void
+  onChangeTypes: (value: string[] | null) => void
+  onChangeCategories: (value: string[] | null) => void
+  onChangeChains: (value: number[] | null) => void
+  onChangeSortDirection: (value: TSortDirection | '') => void
+  onChangeSortBy: (value: TPossibleSortBy | '') => void
+  onResetMultiSelect: () => void
+}): ReactElement {
   const { isLoadingVaultList } = useYearn()
   const allChains = useSupportedChains().map((chain): number => chain.id)
-
-  const {
-    search,
-    types,
-    chains,
-    categories,
-    sortDirection,
-    sortBy,
-    onSearch,
-    onChangeTypes,
-    onChangeCategories,
-    onChangeChains,
-    onChangeSortDirection,
-    onChangeSortBy,
-    onResetMultiSelect
-  } = useQueryArguments({
-    defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
-    defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
-    defaultPathname: '/v3'
-  })
 
   const { activeVaults, retiredVaults, migratableVaults, holdingsVaults, multiVaults, singleVaults } = useVaultFilter(
     types,
@@ -174,7 +209,7 @@ function ListOfVaults(): ReactElement {
     allChains,
     true,
     search || '',
-    ALL_VAULTSV3_CATEGORIES_KEYS
+    ALL_VAULTSV3_CATEGORIES_KEYS.filter((c) => c !== 'Holdings')
   )
 
   /**********************************************************************************************
@@ -242,6 +277,7 @@ function ListOfVaults(): ReactElement {
     all: []
   }
   const hasHoldings = holdings.length > 0
+  const shouldShowHoldings = categories.includes('Holdings')
 
   const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
   const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
@@ -288,7 +324,7 @@ function ListOfVaults(): ReactElement {
     }
     return (
       <Fragment>
-        {hasHoldings && (
+        {hasHoldings && shouldShowHoldings && (
           <div className={'relative grid h-fit gap-4'}>
             <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
               &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
@@ -298,7 +334,9 @@ function ListOfVaults(): ReactElement {
             ))}
           </div>
         )}
-        {hasHoldings && all.length > 0 ? <div className={'my-2 h-1 rounded-lg bg-neutral-200'} /> : null}
+        {hasHoldings && shouldShowHoldings && all.length > 0 ? (
+          <div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
+        ) : null}
         {sortedNonHoldings.map((vault) => (
           <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
         ))}
@@ -356,6 +394,25 @@ function ListOfVaults(): ReactElement {
 
 function Index(): ReactElement {
   const [isCollapsed, setIsCollapsed] = useState(true)
+  const {
+    search,
+    types,
+    chains,
+    categories,
+    sortDirection,
+    sortBy,
+    onSearch,
+    onChangeTypes,
+    onChangeCategories,
+    onChangeChains,
+    onChangeSortDirection,
+    onChangeSortBy,
+    onResetMultiSelect
+  } = useQueryArguments({
+    defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
+    defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS.filter((c) => c !== 'Holdings'),
+    defaultPathname: '/v3'
+  })
 
   function onClick(): void {
     setIsCollapsed(!isCollapsed)
@@ -419,8 +476,22 @@ function Index(): ReactElement {
           </div>
 
           <div className={'grid grid-cols-12 gap-4 pt-6 md:gap-6'}>
-            <PortfolioCard />
-            <ListOfVaults />
+            <PortfolioCard categories={categories || []} onChangeCategories={onChangeCategories} />
+            <ListOfVaults
+              search={search}
+              types={types || []}
+              chains={chains || []}
+              categories={categories || []}
+              sortDirection={sortDirection}
+              sortBy={sortBy}
+              onSearch={onSearch}
+              onChangeTypes={onChangeTypes}
+              onChangeCategories={onChangeCategories}
+              onChangeChains={onChangeChains}
+              onChangeSortDirection={onChangeSortDirection}
+              onChangeSortBy={onChangeSortBy}
+              onResetMultiSelect={onResetMultiSelect}
+            />
           </div>
         </div>
       </div>
