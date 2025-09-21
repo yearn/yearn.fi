@@ -4,6 +4,7 @@ import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens, TDict, TToken } from '../types/mixed'
 import { isZeroAddress } from '../utils/tools.is'
 import type { TChainStatus, TUseBalancesReq, TUseBalancesRes, TUseBalancesTokens } from './useBalances.multichains'
+import { getBalances } from './useBalances.multichains'
 import { useBalancesQueries } from './useBalancesQueries'
 import { balanceQueryKeys } from './useBalancesQuery'
 
@@ -46,7 +47,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
         })
       }
 
-      await refetch()
+      refetch()
       return balances
     },
     [queryClient, userAddress, refetch, balances]
@@ -60,7 +61,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
       const validTokens = tokenList.filter(({ address }) => !isZeroAddress(address))
 
       if (validTokens.length === 0) {
-        return {}
+        return balances
       }
 
       // Group tokens by chain
@@ -72,47 +73,44 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
         tokensByChain[token.chainID].push(token)
       }
 
-      // Invalidate specific queries if force fetching
-      if (shouldForceFetch) {
-        for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
-          const chainId = Number(chainIdStr)
-          const tokenAddresses = chainTokens.map((t) => t.address)
+      // Create a copy of current balances to update
+      const updatedBalances: TChainTokens = { ...balances }
 
+      // Fetch updated balances for each chain
+      for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
+        const chainId = Number(chainIdStr)
+        const tokenAddresses = chainTokens.map((t) => t.address)
+
+        if (shouldForceFetch) {
           await queryClient.invalidateQueries({
-            queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses)
+            queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses),
+            exact: true
           })
+        }
+
+        // Fetch fresh balances for this chain's tokens
+        const freshBalances = await queryClient.fetchQuery({
+          queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses),
+          queryFn: async () => {
+            const [fetchedBalances, error] = await getBalances(chainId, userAddress, chainTokens, false)
+            if (error) {
+              throw error
+            }
+            return fetchedBalances
+          },
+          staleTime: 0 // Force fresh fetch
+        })
+
+        // Update the balances for this chain
+        updatedBalances[chainId] = {
+          ...(updatedBalances[chainId] || {}),
+          ...freshBalances
         }
       }
 
-      // Fetch the specific tokens
-      const results = await queryClient.fetchQuery({
-        queryKey: ['balances-batch', userAddress, validTokens],
-        queryFn: async () => {
-          const partialBalances: TChainTokens = {}
-
-          for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
-            const chainId = Number(chainIdStr)
-            const existingData = queryClient.getQueryData(
-              balanceQueryKeys.byTokens(
-                chainId,
-                userAddress,
-                chainTokens.map((t) => t.address)
-              )
-            ) as TDict<TToken> | undefined
-
-            if (existingData) {
-              partialBalances[chainId] = existingData
-            }
-          }
-
-          return partialBalances
-        },
-        staleTime: 0 // Always consider stale to trigger refetch
-      })
-
-      return results
+      return updatedBalances
     },
-    [queryClient, userAddress]
+    [queryClient, userAddress, balances]
   )
 
   // Determine overall status
