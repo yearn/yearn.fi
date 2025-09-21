@@ -69,10 +69,10 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
       if (tokenToUpdate) {
-        const updatedBalances = await onUpdateSome(tokenToUpdate)
+        const updatedBalances = await onUpdateSome(tokenToUpdate, true)
         return updatedBalances as TYChainTokens
       }
-      const updatedBalances = await onUpdate()
+      const updatedBalances = await onUpdate(true)
       return updatedBalances as TYChainTokens
     },
     [onUpdate, onUpdateSome]
