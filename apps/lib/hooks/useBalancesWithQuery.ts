@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { useWeb3 } from '../contexts/useWeb3'
-import type { TChainTokens, TDict, TToken } from '../types/mixed'
+import type { TChainTokens } from '../types/mixed'
 import { isZeroAddress } from '../utils/tools.is'
 import type { TChainStatus, TUseBalancesReq, TUseBalancesRes, TUseBalancesTokens } from './useBalances.multichains'
 import { getBalances } from './useBalances.multichains'
