@@ -90,7 +90,8 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 
       <Combobox
         value={props.selected}
-        onChange={(_selected: TDropdownOption): void => {
+        onChange={(_selected: TDropdownOption | null): void => {
+          if (!_selected) return
           props.onSelect(_selected)
           setIsOpen(false)
         }}
