@@ -106,11 +106,22 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
           ...(updatedBalances[chainId] || {}),
           ...freshBalances
         }
+
+        // IMPORTANT: Update the query cache with the merged data
+        // This ensures that useBalancesQueries will see the updated balances
+        const allTokensForChain = tokens.filter((t) => t.chainID === chainId)
+        const allTokenAddresses = allTokensForChain.map((t) => t.address)
+
+        // Set the updated data in the cache for the full token list of this chain
+        queryClient.setQueryData(
+          balanceQueryKeys.byTokens(chainId, userAddress, allTokenAddresses),
+          updatedBalances[chainId]
+        )
       }
 
       return updatedBalances
     },
-    [queryClient, userAddress, balances]
+    [queryClient, userAddress, balances, tokens]
   )
 
   // Determine overall status
