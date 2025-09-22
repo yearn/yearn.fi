@@ -114,13 +114,14 @@ export async function handleTx(args: TWriteTransaction, props: TPrepareWriteCont
       value: toBigInt(props.value)
     })
     const hash = await writeContract(config, simulateContractConfig.request)
+    console.log('hash', hash)
     args.txHashHandler?.(hash)
     const receipt = await waitForTransactionReceipt(config, {
       chainId: wagmiProvider.chainId,
       hash,
       confirmations: props.confirmation || 2
     })
-
+    console.log('receipt', receipt)
     if (receipt.status === 'success') {
       args.statusHandler?.({ ...defaultTxStatus, success: true })
     } else if (receipt.status === 'reverted') {
