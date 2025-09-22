@@ -218,20 +218,9 @@ export function useBalancesQueries(
   }, [queries, tokensByChain])
 
   const refetch = async () => {
-    const results = await Promise.all(queries.map((q) => q.refetch()))
-
-    // Combine the refetched data
-    const combined: TChainTokens = {}
-    const chainIds = Object.keys(tokensByChain).map(Number)
-
-    results.forEach((result, index) => {
-      const chainId = chainIds[index]
-      if (result.data) {
-        combined[chainId] = result.data
-      }
+    queries.forEach((q) => {
+      q.refetch()
     })
-
-    return { data: combined }
   }
 
   return {
