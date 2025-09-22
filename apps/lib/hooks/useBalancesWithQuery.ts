@@ -4,7 +4,7 @@ import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens } from '../types/mixed'
 import { isZeroAddress } from '../utils/tools.is'
 import type { TChainStatus, TUseBalancesReq, TUseBalancesRes, TUseBalancesTokens } from './useBalances.multichains'
-import { fetchTokenBalancesWithRateLimit, useBalancesQueries } from './useBalancesQueries'
+import { useBalancesQueries } from './useBalancesQueries'
 import { balanceQueryKeys } from './useBalancesQuery'
 
 /*******************************************************************************
@@ -56,7 +56,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
    ** onUpdateSome takes a list of tokens and updates only those balances
    **************************************************************************/
   const onUpdateSome = useCallback(
-    async (tokenList: TUseBalancesTokens[], shouldForceFetch?: boolean): Promise<TChainTokens> => {
+    async (tokenList: TUseBalancesTokens[]): Promise<TChainTokens> => {
       const validTokens = tokenList.filter(({ address }) => !isZeroAddress(address))
 
       if (validTokens.length === 0) {
@@ -72,39 +72,19 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
         tokensByChain[token.chainID].push(token)
       }
 
-      // Create a copy of current balances to update
-      const updatedBalances: TChainTokens = { ...balances }
-
-      // Fetch updated balances for each chain
-      for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
+      // Simply invalidate queries for each chain and let React Query handle the rest
+      for (const [chainIdStr] of Object.entries(tokensByChain)) {
         const chainId = Number(chainIdStr)
-        const tokenAddresses = chainTokens.map((t) => t.address)
 
-        if (shouldForceFetch) {
-          await queryClient.invalidateQueries({
-            queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses),
-            exact: true
-          })
-        }
-
-        const freshBalances = await queryClient.fetchQuery({
-          queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses),
-          queryFn: () => fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens, shouldForceFetch),
-          staleTime: 0 // Force fresh fetch
-        })
-
-        // Update the balances for this chain
-        updatedBalances[chainId] = {
-          ...(updatedBalances[chainId] || {}),
-          ...freshBalances
-        }
-
+        // Invalidate all balance queries for this chain and user
+        // React Query will automatically refetch the invalidated queries
         await queryClient.invalidateQueries({
           queryKey: balanceQueryKeys.byChainAndUser(chainId, userAddress),
           exact: false
         })
       }
-      return updatedBalances
+
+      return balances
     },
     [queryClient, userAddress, balances]
   )
