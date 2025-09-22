@@ -52,7 +52,8 @@ const chainQueues: Record<number, Promise<void>> = {}
 export async function fetchTokenBalancesWithRateLimit(
   chainId: number,
   userAddress: TAddress | undefined,
-  tokens: TUseBalancesTokens[]
+  tokens: TUseBalancesTokens[],
+  shouldForceFetch: boolean = false
 ): Promise<TDict<TToken>> {
   if (!userAddress || isZeroAddress(userAddress) || tokens.length === 0) {
     return {}
@@ -77,7 +78,7 @@ export async function fetchTokenBalancesWithRateLimit(
     return {}
   }
 
-  const [balances, error] = await getBalances(chainId, userAddress, validTokens, false)
+  const [balances, error] = await getBalances(chainId, userAddress, validTokens, shouldForceFetch)
 
   if (error) {
     throw error
@@ -218,18 +219,18 @@ export function useBalancesQueries(
 
   const refetch = async () => {
     const results = await Promise.all(queries.map((q) => q.refetch()))
-    
+
     // Combine the refetched data
     const combined: TChainTokens = {}
     const chainIds = Object.keys(tokensByChain).map(Number)
-    
+
     results.forEach((result, index) => {
       const chainId = chainIds[index]
       if (result.data) {
         combined[chainId] = result.data
       }
     })
-    
+
     return { data: combined }
   }
 

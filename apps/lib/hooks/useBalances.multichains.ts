@@ -274,6 +274,9 @@ export async function getBalances(
   }
 
   try {
+    console.log('calls', calls)
+    console.log('tokens', tokens)
+    console.log('ownerAddress', ownerAddress)
     const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress))
     console.log('callResult', callResult)
     result = { ...result, ...callResult }
