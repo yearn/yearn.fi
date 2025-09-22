@@ -57,9 +57,7 @@ export function VaultRiskScoreTag({
           </span>
         </div>
       </div>
-      {onMobileToggle ? null : mobileOpen ? (
-        <RiskScoreInlineDetails riskLevel={riskLevel} />
-      ) : null}
+      {onMobileToggle ? null : mobileOpen ? <RiskScoreInlineDetails riskLevel={riskLevel} /> : null}
     </div>
   )
 }
