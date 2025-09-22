@@ -1,4 +1,3 @@
-import { connectorsForWallets } from '@rainbow-me/rainbowkit'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { useWeb3 } from '../contexts/useWeb3'
