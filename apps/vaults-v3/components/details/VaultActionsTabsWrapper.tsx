@@ -1,5 +1,6 @@
 import { InfoTooltip } from '@lib/components/InfoTooltip'
 import { Switch } from '@lib/components/Switch'
+import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
@@ -308,12 +309,14 @@ export const VaultDetailsTab = React.memo(function VaultDetailsTab(props: {
 function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance } = useActionFlow()
   const { address } = useWeb3()
+  const { onRefresh } = useWallet()
   const [searchParams] = useSearchParams()
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })
   const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined)
   const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]])
   const [hasStakingRewardsLive, setHasStakingRewardsLive] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [currentTab, setCurrentTab] = useState<TTabsOptions>(
     getCurrentTab({
       isDepositing,
@@ -636,6 +639,43 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
           </div>
 
           <div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
+            <button
+              onClick={async () => {
+                setIsRefreshing(true)
+                const { chainID } = currentVault
+                const toRefresh = [
+                  { address: toAddress(actionParams?.selectedOptionFrom?.value), chainID },
+                  { address: toAddress(actionParams?.selectedOptionTo?.value), chainID },
+                  { address: toAddress(currentVault.address), chainID }
+                ]
+                await onRefresh(toRefresh)
+                setIsRefreshing(false)
+              }}
+              className={cl(
+                'flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 border font-medium',
+                isRefreshing 
+                  ? 'bg-neutral-200 border-neutral-300 text-neutral-500 cursor-not-allowed' 
+                  : 'bg-yearn-blue border-yearn-blue hover:bg-yearn-blue/90 text-white hover:shadow-lg'
+              )}
+              title="Refresh token balances"
+              disabled={isRefreshing}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className={cl('w-4 h-4', isRefreshing ? 'animate-spin' : '')}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                />
+              </svg>
+              <span className="hidden md:inline">Refresh</span>
+            </button>
             <SettingsPopover vault={currentVault} />
           </div>
         </div>
