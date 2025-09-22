@@ -4,8 +4,7 @@ import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens } from '../types/mixed'
 import { isZeroAddress } from '../utils/tools.is'
 import type { TChainStatus, TUseBalancesReq, TUseBalancesRes, TUseBalancesTokens } from './useBalances.multichains'
-import { getBalances } from './useBalances.multichains'
-import { useBalancesQueries } from './useBalancesQueries'
+import { useBalancesQueries, fetchTokenBalancesWithRateLimit } from './useBalancesQueries'
 import { balanceQueryKeys } from './useBalancesQuery'
 
 /*******************************************************************************
@@ -88,18 +87,11 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
           })
         }
 
-        // Fetch fresh balances for this chain's tokens
+        // Use the same fetch function as useBalancesQueries for consistency
+        // This includes rate limiting and proper error handling
         const freshBalances = await queryClient.fetchQuery({
           queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses),
-          queryFn: async () => {
-            const [fetchedBalances, error] = await getBalances(chainId, userAddress, chainTokens, false)
-            console.log('fetchedBalances', fetchedBalances)
-            console.log('error', error)
-            if (error) {
-              throw error
-            }
-            return fetchedBalances
-          },
+          queryFn: () => fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens),
           staleTime: 0 // Force fresh fetch
         })
         console.log('freshBalances', freshBalances)

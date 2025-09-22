@@ -49,7 +49,7 @@ function getChainConfig(chainId: number) {
  ******************************************************************************/
 const chainQueues: Record<number, Promise<void>> = {}
 
-async function fetchTokenBalancesWithRateLimit(
+export async function fetchTokenBalancesWithRateLimit(
   chainId: number,
   userAddress: TAddress | undefined,
   tokens: TUseBalancesTokens[]
