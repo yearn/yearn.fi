@@ -91,7 +91,7 @@ export function VaultDetailsQuickActionsFrom(props: {
   gaugeTotalSupply: number
 }): ReactElement {
   const { address, isActive } = useWeb3()
-  const { getToken, getBalance, balances } = useWallet()
+  const { getToken, getBalance } = useWallet()
   const { getPrice } = useYearn()
   const location = useLocation()
 
