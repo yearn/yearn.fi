@@ -93,6 +93,8 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
           queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses),
           queryFn: async () => {
             const [fetchedBalances, error] = await getBalances(chainId, userAddress, chainTokens, false)
+            console.log('fetchedBalances', fetchedBalances)
+            console.log('error', error)
             if (error) {
               throw error
             }
@@ -100,7 +102,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
           },
           staleTime: 0 // Force fresh fetch
         })
-
+        console.log('freshBalances', freshBalances)
         // Update the balances for this chain
         updatedBalances[chainId] = {
           ...(updatedBalances[chainId] || {}),
@@ -118,7 +120,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
           updatedBalances[chainId]
         )
       }
-
+      console.log('updatedBalances', updatedBalances)
       return updatedBalances
     },
     [queryClient, userAddress, balances, tokens]

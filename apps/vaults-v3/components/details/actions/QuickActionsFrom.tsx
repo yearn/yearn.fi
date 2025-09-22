@@ -91,7 +91,7 @@ export function VaultDetailsQuickActionsFrom(props: {
   gaugeTotalSupply: number
 }): ReactElement {
   const { address, isActive } = useWeb3()
-  const { getToken, getBalance } = useWallet()
+  const { getToken, getBalance, balances } = useWallet()
   const { getPrice } = useYearn()
   const location = useLocation()
 
@@ -130,6 +130,14 @@ export function VaultDetailsQuickActionsFrom(props: {
     if (!isAddress(address)) {
       return zeroNormalizedBN
     }
+    console.log('balances', balances)
+    console.log(
+      'balace :',
+      getBalance({
+        address: toAddress(actionParams?.selectedOptionFrom?.value),
+        chainID: Number(actionParams?.selectedOptionFrom?.chainID)
+      })
+    )
     return getBalance({
       address: toAddress(actionParams?.selectedOptionFrom?.value),
       chainID: Number(actionParams?.selectedOptionFrom?.chainID)
