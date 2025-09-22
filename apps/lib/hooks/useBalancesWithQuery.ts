@@ -1,3 +1,4 @@
+import { connectorsForWallets } from '@rainbow-me/rainbowkit'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { useWeb3 } from '../contexts/useWeb3'
@@ -114,11 +115,24 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
         const allTokensForChain = tokens.filter((t) => t.chainID === chainId)
         const allTokenAddresses = allTokensForChain.map((t) => t.address)
 
+        // Get the existing cache data for this chain's query
+        const existingQueryKey = balanceQueryKeys.byTokens(chainId, userAddress, allTokenAddresses)
+        const existingData = queryClient.getQueryData(existingQueryKey) || {}
+
+        // Merge the fresh balances with existing data
+        const mergedData = {
+          ...existingData,
+          ...freshBalances
+        }
+        console.log('mergedData', mergedData)
         // Set the updated data in the cache for the full token list of this chain
-        queryClient.setQueryData(
-          balanceQueryKeys.byTokens(chainId, userAddress, allTokenAddresses),
-          updatedBalances[chainId]
-        )
+        queryClient.setQueryData(existingQueryKey, mergedData)
+
+        // Also invalidate the query to trigger a re-render
+        queryClient.invalidateQueries({
+          queryKey: existingQueryKey,
+          exact: true
+        })
       }
       console.log('updatedBalances', updatedBalances)
       return updatedBalances
