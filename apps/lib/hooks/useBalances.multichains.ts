@@ -85,10 +85,6 @@ export async function performCall(
   tokens: TUseBalancesTokens[],
   ownerAddress: TAddress
 ): Promise<[TDict<TToken>, Error | undefined]> {
-  console.log('chainID', chainID)
-  console.log('chunckCalls', chunckCalls)
-  console.log('tokens', tokens)
-  console.log('ownerAddress', ownerAddress)
   let results: (
     | {
         error?: undefined
@@ -274,11 +270,7 @@ export async function getBalances(
   }
 
   try {
-    console.log('calls', calls)
-    console.log('tokens', tokens)
-    console.log('ownerAddress', ownerAddress)
     const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress))
-    console.log('callResult', callResult)
     result = { ...result, ...callResult }
     return [result, undefined]
   } catch (_error) {

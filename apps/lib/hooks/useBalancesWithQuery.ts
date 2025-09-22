@@ -87,29 +87,23 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
           })
         }
 
-        // Use the same fetch function as useBalancesQueries for consistency
-        // This includes rate limiting and proper error handling
         const freshBalances = await queryClient.fetchQuery({
           queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses),
           queryFn: () => fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens, shouldForceFetch),
           staleTime: 0 // Force fresh fetch
         })
-        console.log('freshBalances', freshBalances)
+
         // Update the balances for this chain
         updatedBalances[chainId] = {
           ...(updatedBalances[chainId] || {}),
           ...freshBalances
         }
 
-        // IMPORTANT: Invalidate all balance queries for this chain and user
-        // This is more reliable than trying to manually update cache keys
-        // React Query will automatically refetch the invalidated queries
         await queryClient.invalidateQueries({
           queryKey: balanceQueryKeys.byChainAndUser(chainId, userAddress),
           exact: false
         })
       }
-      console.log('updatedBalances', updatedBalances)
       return updatedBalances
     },
     [queryClient, userAddress, balances]

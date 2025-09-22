@@ -160,15 +160,12 @@ export function useSolverVanilla(): TSolverContext {
           statusHandler: txStatusSetter,
           txHashHandler: txHashSetter
         })
-        console.log('result', result)
         if (result.isSuccessful && result.receipt) {
           onSuccess(result.receipt)
-          console.log('succcess')
         } else {
           onError?.(result.error as Error)
         }
       } catch (error) {
-        console.log('error', error)
         onError?.(error as Error)
       }
     },
