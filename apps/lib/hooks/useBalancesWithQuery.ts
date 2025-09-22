@@ -109,28 +109,12 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
           ...freshBalances
         }
 
-        // IMPORTANT: Update the query cache with the merged data
-        // This ensures that useBalancesQueries will see the updated balances
-        const allTokensForChain = tokens.filter((t) => t.chainID === chainId)
-        const allTokenAddresses = allTokensForChain.map((t) => t.address)
-
-        // Get the existing cache data for this chain's query
-        const existingQueryKey = balanceQueryKeys.byTokens(chainId, userAddress, allTokenAddresses)
-        const existingData = queryClient.getQueryData(existingQueryKey) || {}
-
-        // Merge the fresh balances with existing data
-        const mergedData = {
-          ...existingData,
-          ...freshBalances
-        }
-        console.log('mergedData', mergedData)
-        // Set the updated data in the cache for the full token list of this chain
-        queryClient.setQueryData(existingQueryKey, mergedData)
-
-        // Also invalidate the query to trigger a re-render
-        queryClient.invalidateQueries({
-          queryKey: existingQueryKey,
-          exact: true
+        // IMPORTANT: Invalidate all balance queries for this chain and user
+        // This is more reliable than trying to manually update cache keys
+        // React Query will automatically refetch the invalidated queries
+        await queryClient.invalidateQueries({
+          queryKey: balanceQueryKeys.byChainAndUser(chainId, userAddress),
+          exact: false
         })
       }
       console.log('updatedBalances', updatedBalances)
