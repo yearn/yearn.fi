@@ -104,11 +104,11 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
         }
         tokensByChain[token.chainID].push(token)
       }
+      let freshBalances: TDict<TToken> = {}
 
       for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
         const chainId = Number(chainIdStr)
-
-        const freshBalances = await fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens, shouldForceFetch)
+        freshBalances = await fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens, shouldForceFetch)
 
         const allChainTokens = tokens.filter((t) => t.chainID === chainId)
         const fullKey = balanceQueryKeys.byTokens(
@@ -122,6 +122,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
           ...freshBalances
         }))
       }
+      return freshBalances
     },
     [queryClient, userAddress, tokens]
   )
