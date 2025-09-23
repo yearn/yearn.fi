@@ -92,9 +92,9 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
   // )
 
   const onUpdateSome = useCallback(
-    async (tokenList: TUseBalancesTokens[], shouldForceFetch?: boolean) => {
+    async (tokenList: TUseBalancesTokens[], shouldForceFetch?: boolean): Promise<TChainTokens> => {
       const validTokens = tokenList.filter(({ address }) => !isZeroAddress(address))
-      if (validTokens.length === 0) return
+      if (validTokens.length === 0) return {}
       console.info('onUpdateSome')
       // Group tokens by chain
       const tokensByChain: Record<number, TUseBalancesTokens[]> = {}
@@ -104,11 +104,11 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
         }
         tokensByChain[token.chainID].push(token)
       }
-      let freshBalances: TDict<TToken> = {}
+      const updatedBalances: TChainTokens = {}
 
       for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
         const chainId = Number(chainIdStr)
-        freshBalances = await fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens, shouldForceFetch)
+        const freshBalances = await fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens, shouldForceFetch)
 
         const allChainTokens = tokens.filter((t) => t.chainID === chainId)
         const fullKey = balanceQueryKeys.byTokens(
@@ -117,12 +117,13 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
           allChainTokens.map((t) => t.address)
         )
 
-        queryClient.setQueryData<TDict<TToken>>(fullKey, (oldBalances = {}) => ({
-          ...oldBalances,
-          ...freshBalances
-        }))
+        queryClient.setQueryData<TDict<TToken>>(fullKey, (oldBalances = {}) => {
+          const merged = { ...oldBalances, ...freshBalances }
+          updatedBalances[chainId] = merged // ✅ populate return object
+          return merged
+        })
       }
-      return freshBalances
+      return updatedBalances
     },
     [queryClient, userAddress, tokens]
   )
