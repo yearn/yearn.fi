@@ -19,7 +19,7 @@ export const balanceQueryKeys = {
     [
       ...balanceQueryKeys.byChainAndUser(chainId, userAddress),
       'tokens',
-      tokenAddresses.map(toAddress).sort().join(',')
+      tokenAddresses.map(toAddress).toSorted().join(',')
     ] as const
 }
 

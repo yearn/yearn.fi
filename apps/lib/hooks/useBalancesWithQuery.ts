@@ -119,7 +119,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
 
         queryClient.setQueryData<TDict<TToken>>(fullKey, (oldBalances = {}) => {
           const merged = { ...oldBalances, ...freshBalances }
-          updatedBalances[chainId] = merged // ✅ populate return object
+          updatedBalances[chainId] = merged
           return merged
         })
       }
