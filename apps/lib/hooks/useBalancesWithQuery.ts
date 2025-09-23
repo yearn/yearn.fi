@@ -95,7 +95,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
     async (tokenList: TUseBalancesTokens[], shouldForceFetch?: boolean) => {
       const validTokens = tokenList.filter(({ address }) => !isZeroAddress(address))
       if (validTokens.length === 0) return
-      console.log('onUpdateSome')
+      console.info('onUpdateSome')
       // Group tokens by chain
       const tokensByChain: Record<number, TUseBalancesTokens[]> = {}
       for (const token of validTokens) {

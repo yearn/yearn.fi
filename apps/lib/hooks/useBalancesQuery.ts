@@ -64,7 +64,7 @@ async function fetchTokenBalance(
   if (!userAddress || isZeroAddress(userAddress) || isZeroAddress(token.address)) {
     return null
   }
-  console.log('fetchTokenBalance', chainId, userAddress, token)
+  console.info('fetchTokenBalance', chainId, userAddress, token)
   const [balances, error] = await getBalances(chainId, userAddress, [token], false)
 
   if (error) {
@@ -119,7 +119,7 @@ async function fetchTokenBalances(
   if (validTokens.length === 0) {
     return {}
   }
-  console.log('fetchTokenBalances', chainId, userAddress, validTokens)
+  console.info('fetchTokenBalances', chainId, userAddress, validTokens)
   const [balances, error] = await getBalances(chainId, userAddress, validTokens, false)
 
   if (error) {

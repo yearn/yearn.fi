@@ -1001,8 +1001,8 @@ export function RewardsTab(props: {
       </div>
     )
   }
-  console.log(vaultData)
-  console.log(getBalance({ address: vaultData.address, chainID: props.currentVault.chainID }))
+  console.info(vaultData)
+  console.info(getBalance({ address: vaultData.address, chainID: props.currentVault.chainID }))
   return (
     <div className={'grid grid-cols-1 md:grid-cols-2'}>
       <div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8 md:pr-0'}>

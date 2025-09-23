@@ -98,7 +98,7 @@ export async function performCall(
       }
   )[] = []
   try {
-    console.log('performCall', chunckCalls)
+    console.info('performCall', chunckCalls)
     results = await multicall(retrieveConfig(), {
       contracts: chunckCalls as never[],
       chainId: chainID
@@ -272,7 +272,7 @@ export async function getBalances(
 
   try {
     const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress))
-    console.log('callResult', tokens, callResult)
+    console.info('callResult', tokens, callResult)
     result = { ...result, ...callResult }
     return [result, undefined]
   } catch (_error) {
@@ -398,7 +398,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
       }
 
       const allPromises = chunks.map(async (chunkTokens) => {
-        console.log('chunkTokens', chunkTokens)
+        console.info('chunkTokens', chunkTokens)
         const [newRawData, err] = await getBalances(chainID, userAddress, chunkTokens, shouldForceFetch)
         if (err) {
           options.setError(err)

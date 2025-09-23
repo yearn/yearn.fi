@@ -89,7 +89,7 @@ export function VaultDetailsQuickActionsButtons({
           idToUpdate: notificationIdToUpdate
         })
       }
-      console.log('onSucess')
+      console.info('onSucess')
       // TODO: - UPGRADE - VERIFY THIS
       if (isDeposit) {
         plausible(PLAUSIBLE_EVENTS.DEPOSIT, {
