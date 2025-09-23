@@ -91,7 +91,12 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
     async (tokenList: TUseBalancesTokens[], shouldForceFetch?: boolean): Promise<TChainTokens> => {
       const validTokens = tokenList.filter(({ address }) => !isZeroAddress(address))
       if (validTokens.length === 0) return {}
-      console.info('onUpdateSome')
+      console.info('onUpdateSome called with:', {
+        tokenList: tokenList.map(t => ({ address: t.address, chainID: t.chainID, symbol: t.symbol })),
+        shouldForceFetch,
+        userAddress
+      })
+      
       // Group tokens by chain
       const tokensByChain: Record<number, TUseBalancesTokens[]> = {}
       for (const token of validTokens) {
@@ -100,36 +105,42 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
         }
         tokensByChain[token.chainID].push(token)
       }
+      
       const updatedBalances: TChainTokens = {}
 
+      // Process each chain's tokens
       for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
         const chainId = Number(chainIdStr)
-        const freshBalances = await fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens, shouldForceFetch)
-        console.info('freshBalances', freshBalances)
+        console.info(`Fetching balances for chain ${chainId}, tokens:`, chainTokens.map(t => t.symbol))
         
-        // Get the current cached data for this chain
-        const allChainTokens = tokens.filter((t) => t.chainID === chainId)
-        const fullKey = balanceQueryKeys.byTokens(
-          chainId,
-          userAddress,
-          allChainTokens.map((t) => t.address)
-        )
-        console.info('fullKey', fullKey)
+        // Fetch fresh balances for the requested tokens
+        const freshBalances = await fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens, true)
+        console.info('Fresh balances received:', Object.keys(freshBalances).length, 'tokens')
         
-        // Get existing balances from cache
-        const existingBalances = queryClient.getQueryData<TDict<TToken>>(fullKey) || {}
+        // Update ALL possible query keys that might contain these tokens
+        const allQueries = queryClient.getQueriesData<TDict<TToken>>({ 
+          queryKey: balanceQueryKeys.byChainAndUser(chainId, userAddress),
+          exact: false
+        })
         
-        // Merge with fresh balances
-        const merged = { ...existingBalances, ...freshBalances }
-        updatedBalances[chainId] = merged
+        console.info(`Found ${allQueries.length} queries to update for chain ${chainId}`)
         
-        // Update the cache
-        queryClient.setQueryData<TDict<TToken>>(fullKey, merged)
+        allQueries.forEach(([queryKey, queryData]) => {
+          if (queryData) {
+            const updated = { ...queryData, ...freshBalances }
+            queryClient.setQueryData(queryKey, updated)
+            console.info('Updated query:', queryKey, 'with', Object.keys(freshBalances).length, 'fresh balances')
+          }
+        })
+        
+        // Store the updated balances for this chain
+        updatedBalances[chainId] = freshBalances
       }
-      console.info('updatedBalances', updatedBalances)
+      
+      console.info('All updates complete, returning updatedBalances')
       return updatedBalances
     },
-    [queryClient, userAddress, tokens]
+    [queryClient, userAddress]
   )
 
   // Determine overall status
