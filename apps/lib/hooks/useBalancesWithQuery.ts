@@ -36,20 +36,16 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
   /***************************************************************************
    ** onUpdate will refetch all balances, with optional force refresh
    **************************************************************************/
+
   const onUpdate = useCallback(
     async (shouldForceFetch?: boolean): Promise<TChainTokens> => {
       if (shouldForceFetch) {
-        // Invalidate all balance queries to force a fresh fetch
-        await queryClient.invalidateQueries({
-          queryKey: balanceQueryKeys.byChainAndUser(1, userAddress),
-          exact: false
-        })
+        refetch()
       }
 
-      refetch()
       return balances
     },
-    [queryClient, userAddress, refetch, balances]
+    [balances, refetch]
   )
 
   /***************************************************************************
