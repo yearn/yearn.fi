@@ -2,6 +2,7 @@ import { Button } from '@lib/components/Button'
 import { Counter } from '@lib/components/Counter'
 import { FakeInput } from '@lib/components/Input'
 import { useNotificationsActions } from '@lib/contexts/useNotificationsActions'
+import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnToken } from '@lib/hooks/useYearnToken'
@@ -307,6 +308,7 @@ export function RewardsTab(props: {
 }): ReactElement {
   const { provider, isActive } = useWeb3()
   const { getPrice } = useYearn()
+  const { getBalance } = useWallet()
   const { vaultData, updateVaultData } = props
   const { handleApproveNotification, handleStakeNotification, handleUnstakeNotification, handleClaimNotification } =
     useNotificationsActions()
@@ -999,7 +1001,8 @@ export function RewardsTab(props: {
       </div>
     )
   }
-
+  console.log(vaultData)
+  console.log(getBalance({ address: vaultData.address, chainID: props.currentVault.chainID }))
   return (
     <div className={'grid grid-cols-1 md:grid-cols-2'}>
       <div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8 md:pr-0'}>
