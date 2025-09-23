@@ -106,6 +106,8 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
         const chainId = Number(chainIdStr)
         const freshBalances = await fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens, shouldForceFetch)
         console.info('freshBalances', freshBalances)
+        
+        // Get the current cached data for this chain
         const allChainTokens = tokens.filter((t) => t.chainID === chainId)
         const fullKey = balanceQueryKeys.byTokens(
           chainId,
@@ -113,11 +115,16 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
           allChainTokens.map((t) => t.address)
         )
         console.info('fullKey', fullKey)
-        queryClient.setQueryData<TDict<TToken>>(fullKey, (oldBalances = {}) => {
-          const merged = { ...oldBalances, ...freshBalances }
-          updatedBalances[chainId] = merged
-          return merged
-        })
+        
+        // Get existing balances from cache
+        const existingBalances = queryClient.getQueryData<TDict<TToken>>(fullKey) || {}
+        
+        // Merge with fresh balances
+        const merged = { ...existingBalances, ...freshBalances }
+        updatedBalances[chainId] = merged
+        
+        // Update the cache
+        queryClient.setQueryData<TDict<TToken>>(fullKey, merged)
       }
       console.info('updatedBalances', updatedBalances)
       return updatedBalances
