@@ -779,9 +779,9 @@ export function RewardsTab(props: {
 
   useEffect(() => {
     if (!isStakeAmountDirty) {
-      setStakeAmount(vaultData.stakedBalanceOf.display)
+      setStakeAmount(vaultData.vaultBalanceOf.display)
     }
-  }, [isStakeAmountDirty, vaultData.stakedBalanceOf.display])
+  }, [isStakeAmountDirty, vaultData.vaultBalanceOf.display])
 
   if (props.currentVault.staking.rewards?.length === 0) {
     return (
