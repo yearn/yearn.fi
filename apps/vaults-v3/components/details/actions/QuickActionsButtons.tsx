@@ -118,8 +118,7 @@ export function VaultDetailsQuickActionsButtons({
           }
         })
       }
-      console.info('onSucess')
-      console.log(currentSolver)
+
       if (
         Solver.enum.Vanilla === currentSolver ||
         Solver.enum.PartnerContract === currentSolver ||
@@ -137,18 +136,14 @@ export function VaultDetailsQuickActionsButtons({
         if (currentVault.staking.available) {
           toRefresh.push({ address: toAddress(currentVault.staking.address), chainID })
         }
-        console.log('toRefresh', toRefresh)
         onRefresh(toRefresh)
       } else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver) {
         if (isDepositing) {
-          console.log('isDepositing')
           onRefresh([{ address: toAddress(actionParams?.selectedOptionTo?.value), chainID }])
         } else {
-          console.log('isWithdrawing')
           onRefresh([{ address: toAddress(actionParams?.selectedOptionFrom?.value), chainID }])
         }
       } else {
-        console.log('else')
         onRefresh([
           { address: toAddress(ETH_TOKEN_ADDRESS), chainID },
           { address: toAddress(actionParams?.selectedOptionFrom?.value), chainID },

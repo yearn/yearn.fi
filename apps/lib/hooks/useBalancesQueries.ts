@@ -77,7 +77,6 @@ export async function fetchTokenBalancesWithRateLimit(
   if (validTokens.length === 0) {
     return {}
   }
-  console.info('validTokens', validTokens)
   const [balances, error] = await getBalances(chainId, userAddress, validTokens, shouldForceFetch)
 
   if (error) {
