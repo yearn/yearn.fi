@@ -1,6 +1,5 @@
 import { InfoTooltip } from '@lib/components/InfoTooltip'
 import { Switch } from '@lib/components/Switch'
-import useWallet from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
@@ -322,8 +321,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
       isRetired: currentVault?.info?.isRetired
     })
   )
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const { onRefresh } = useWallet()
+
   const hasStakingRewards = Boolean(currentVault.staking.available)
 
   const shouldForceDisplayBoostTab = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
