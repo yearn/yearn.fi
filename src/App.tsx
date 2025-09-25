@@ -16,6 +16,7 @@ import { cl } from '@lib/utils'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
 import type { ReactElement } from 'react'
+import { HelmetProvider } from 'react-helmet-async'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router-dom'
 import PlausibleProvider from './components/PlausibleProvider'
@@ -84,7 +85,7 @@ function App(): ReactElement {
   }
 
   return (
-    <>
+    <HelmetProvider>
       <Meta
         title={manifest.name || 'Yearn'}
         description={manifest.description || 'The yield protocol for digital assets'}
@@ -146,7 +147,7 @@ function App(): ReactElement {
           />
         </main>
       </WithFonts>
-    </>
+    </HelmetProvider>
   )
 }
 
