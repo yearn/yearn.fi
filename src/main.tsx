@@ -10,18 +10,10 @@ if (import.meta.env.DEV) {
   void disableServiceWorkerDev()
 }
 
-// react-helmet-async has issues with StrictMode's double-rendering in development
-// but works fine in production where StrictMode doesn't double-render
-const AppWithRouter = (
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
-)
-
 createRoot(document.getElementById('root')!).render(
-  import.meta.env.PROD ? (
-    <StrictMode>{AppWithRouter}</StrictMode>
-  ) : (
-    AppWithRouter
-  )
+  <StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </StrictMode>
 )

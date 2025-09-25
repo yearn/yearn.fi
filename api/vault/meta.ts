@@ -1,11 +1,12 @@
-const { readFileSync } = require('fs')
-const { join } = require('path')
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
-module.exports = async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { chainId, address } = req.query
 
-  if (!chainId || !address) {
-    return res.status(400).json({ error: 'Missing chainId or address' })
+  if (!chainId || !address || typeof chainId !== 'string' || typeof address !== 'string') {
+    return res.status(400).json({ error: 'Missing or invalid chainId or address' })
   }
 
   try {
@@ -19,7 +20,7 @@ module.exports = async function handler(req, res) {
     const canonicalUrl = `https://yearn.fi/v3/${chainId}/${address}`
     
     const title = 'Yearn Vault'
-    const description = 'Earn yield on your crypto with Yearn\'s automated vault strategies'
+    const description = "Earn yield on your crypto with Yearn's automated vault strategies"
 
     // Inject meta tags
     const metaTags = `
@@ -43,8 +44,13 @@ module.exports = async function handler(req, res) {
     <link rel="canonical" href="${canonicalUrl}" />
     `
 
-    // Replace existing title and inject meta tags
-    html = html.replace(/<title>.*?<\/title>/i, '')
+    // Remove existing meta tags that we're replacing
+    html = html.replace(/<title>.*?<\/title>/gi, '')
+    html = html.replace(/<meta property="og:.*?".*?>/gi, '')
+    html = html.replace(/<meta name="twitter:.*?".*?>/gi, '')
+    html = html.replace(/<meta name="description".*?>/gi, '')
+    
+    // Inject new meta tags
     html = html.replace('</head>', `${metaTags}\n  </head>`)
 
     res.setHeader('Content-Type', 'text/html')

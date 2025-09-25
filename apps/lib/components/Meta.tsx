@@ -1,5 +1,5 @@
+import { useEffect } from 'react'
 import type { ReactElement } from 'react'
-import { Helmet } from 'react-helmet-async'
 
 type TMeta = {
   title: string
@@ -11,8 +11,12 @@ type TMeta = {
 }
 
 export function Meta(meta: TMeta): ReactElement {
+  useEffect(() => {
+    document.title = meta.title
+  }, [meta.title])
+
   return (
-    <Helmet>
+    <>
       <title>{meta.title}</title>
       <meta charSet="utf-8" />
       <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
@@ -58,6 +62,6 @@ export function Meta(meta: TMeta): ReactElement {
       <link rel="apple-touch-icon" sizes="152x152" href="/favicons/apple-icon-152x152.png" />
       <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-icon-180x180.png" />
       <link rel="apple-touch-icon" sizes="167x167" href="/favicons/apple-icon-167x167.png" />
-    </Helmet>
+    </>
   )
 }
