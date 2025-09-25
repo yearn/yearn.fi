@@ -8,6 +8,7 @@ type TAPYSublineProps = {
   hasKelp: boolean
   isEligibleForSteer?: boolean
   steerPointsPerDollar?: number
+  onMobileToggle?: boolean
 }
 
 export const APYSubline: FC<TAPYSublineProps> = ({
@@ -15,7 +16,8 @@ export const APYSubline: FC<TAPYSublineProps> = ({
   hasKelpNEngenlayer,
   hasKelp,
   isEligibleForSteer,
-  steerPointsPerDollar
+  steerPointsPerDollar,
+  onMobileToggle
 }) => {
   if (hasKelpNEngenlayer) {
     return (
@@ -41,34 +43,36 @@ export const APYSubline: FC<TAPYSublineProps> = ({
       <span className={'tooltip'}>
         <small
           className={cl(
-            'whitespace-nowrap text-sm text-neutral-500 self-end -mb-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+            'whitespace-nowrap text-sm text-neutral-500 self-end -mb-1 sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
           )}
         >
           {'Eligible for Steer Points'}
         </small>
-        <span className={'tooltipLight top-full left-4 '}>
-          <div
-            className={
-              'min-w-[360px] rounded-xl border border-neutral-300 bg-neutral-200 p-4 pb-1 text-center text-sm text-neutral-900'
-            }
-          >
-            <p className={'-mt-1 mb-2 w-full text-left text-sm text-neutral-700 break-words whitespace-normal'}>
-              {'This vault earns '}
-              <span className={'font-number'}>{formatAmount(steerPointsPerDollar || 0, 2, 2)}</span>
-              {' Steer Points / dollar deposited, but you must '}
-              <a
-                href={'https://app.steer.finance/points'}
-                target={'_blank'}
-                rel={'noopener noreferrer'}
-                className={
-                  'font-bold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 hover:decoration-neutral-600'
-                }
-              >
-                {'register here to earn them.'}
-              </a>
-            </p>
-          </div>
-        </span>
+        {!onMobileToggle && (
+          <span className={'tooltipLight top-full left-4 '}>
+            <div
+              className={
+                'min-w-[360px] rounded-xl border border-neutral-300 bg-neutral-200 p-4 pb-1 text-center text-sm text-neutral-900'
+              }
+            >
+              <p className={'-mt-1 mb-2 w-full text-left text-sm text-neutral-700 break-words whitespace-normal'}>
+                {'This vault earns '}
+                <span className={'font-number'}>{formatAmount(steerPointsPerDollar || 0, 2, 2)}</span>
+                {' Steer Points / dollar deposited, but you must '}
+                <a
+                  href={'https://app.steer.finance/points'}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className={
+                    'font-bold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 hover:decoration-neutral-600'
+                  }
+                >
+                  {'register here to earn them.'}
+                </a>
+              </p>
+            </div>
+          </span>
+        )}
       </span>
     )
   }

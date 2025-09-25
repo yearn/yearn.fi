@@ -54,7 +54,6 @@ export function KatanaApyTooltip(props: {
           <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
             {'Yield Earned from underlying bridged assets'}
           </p>
-
           <div
             className={
               'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-sm text-bold pb-2'
@@ -76,11 +75,9 @@ export function KatanaApyTooltip(props: {
           <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
             {'Yield Earned on Katana'}
           </p>
-
           <p className={'mb-2 w-full text-left text-xs italic text-neutral-500 break-words whitespace-normal'}>
             {'*This yield is guaranteed but may be paid in KAT tokens if actual rates are lower.'}
           </p>
-
           {/* Rewards APR */}
           <div className={'my-2 h-px w-full bg-neutral-300/60'} />
           <p
@@ -111,7 +108,6 @@ export function KatanaApyTooltip(props: {
           <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
             {'Limited time fixed KAT rewards'}
           </p>
-
           <div
             className={
               'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-700 md:text-sm text-bold pb-2'
@@ -155,6 +151,27 @@ export function KatanaApyTooltip(props: {
             {'Applied if you deposited before Sept. 1st and hold for 90 days'}
           </p>
 
+          <div className={'mt-2 p-3 pb-0 text-neutral-700 md:text-xs text-bold'}>
+            <li className={'-mt-1 mb-2 w-full text-left break-words'}>
+              {'KAT tokens are locked until no later than Feb. 20 2026.'}
+            </li>
+            <li className={'-mt-1 mb-2 w-full text-left break-words'}>
+              {'KAT APR is calculated using an assumed $1B Fully Diluted Valuation.'}
+            </li>
+            <li className={'-mt-1 mb-2 w-full text-left break-words'}>
+              {'Read more about KAT tokenomics '}
+              <a
+                href={'https://katana.network/blog/the-network-is-katana-the-token-is-kat'}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'font-bold underline sm:decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                }
+              >
+                {'here.'}
+              </a>
+            </li>
+          </div>
           {/* Steer Points (metadata) */}
           {props.steerPointsPerDollar && props.steerPointsPerDollar > 0 ? (
             <>
