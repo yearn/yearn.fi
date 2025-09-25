@@ -34,7 +34,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
                 unoptimized
                 width={240}
                 height={240}
-                className={'size-[80px] max-w-[60%] rounded-full border object-contain'}
+                className={'size-[48px] rounded-full object-contain'}
               />
             </div>
           ) : (
@@ -44,7 +44,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
               unoptimized
               width={240}
               height={240}
-              className={'size-[80px] rounded-full border object-contain'}
+              className={'size-[80px] rounded-full border border-transparent object-contain'}
             />
           )}
         </div>
