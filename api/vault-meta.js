@@ -1,7 +1,7 @@
 const { readFileSync } = require('fs')
 const { join } = require('path')
 
-module.exports = async function handler(req: any, res: any) {
+module.exports = async function handler(req, res) {
   const { chainId, address } = req.query
 
   if (!chainId || !address) {
