@@ -4,6 +4,17 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(bot|crawl|spider|facebookexternalhit|discordbot|twitterbot|slackbot|whatsapp|linkedinbot).*"
+        }
+      ],
+      "destination": "/api/og-head"
+    },
+    {
       "source": "/proxy/plausible/:path*",
       "destination": "https://plausible.io/:path*"
     },

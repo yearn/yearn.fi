@@ -14,6 +14,7 @@ import { IconAlertError } from '@lib/icons/IconAlertError'
 import { IconCheckmark } from '@lib/icons/IconCheckmark'
 import { cl } from '@lib/utils'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
+import { resolveRouteMeta } from '@lib/utils/ogMeta'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
 import type { ReactElement } from 'react'
 import { HelmetProvider } from 'react-helmet-async'
@@ -59,41 +60,19 @@ function WithLayout(): ReactElement {
 function App(): ReactElement {
   const location = useLocation()
   const { manifest } = useCurrentApp()
-
-  // Determine dynamic meta for V3 vault detail pages
-  const asPath = location.pathname
-
-  // Get most basic og and uri info
-  let ogUrl = manifest.og || 'https://yearn.fi/og.png'
-  let pageUri = manifest.uri || 'https://yearn.fi'
-
-  const ogBaseUrl = 'https://og.yearn.fi'
-
-  if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
-    // Default to production
-
-    // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
-    const [, , chainID, address] = asPath.split('/')
-    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
-    pageUri = `https://yearn.fi${asPath}`
-  }
-  if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
-    // Use dynamic OG API for v2 vault pages: /vaults/[chainID]/[address]
-    const [, , chainID, address] = asPath.split('/')
-    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
-    pageUri = `https://yearn.fi${asPath}`
-  }
+  const origin = typeof window !== 'undefined' ? window.location.origin : undefined
+  const routeMeta = resolveRouteMeta({ pathname: location.pathname, manifest, origin })
 
   return (
     <HelmetProvider>
       <WithFonts>
         <Meta
-          title={manifest.name || 'Yearn'}
-          description={manifest.description || 'The yield protocol for digital assets'}
-          titleColor={'#ffffff'}
-          themeColor={'#000000'}
-          og={ogUrl}
-          uri={pageUri}
+          title={routeMeta.title}
+          description={routeMeta.description}
+          titleColor={routeMeta.titleColor}
+          themeColor={routeMeta.themeColor}
+          og={routeMeta.og}
+          uri={routeMeta.uri}
         />
         <main className={'font-aeonik size-full min-h-screen'}>
           <PlausibleProvider domain={'yearn.fi'} enabled={true}>
