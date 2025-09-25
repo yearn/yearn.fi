@@ -2,9 +2,10 @@ import homeManifest from '../data/home-manifest.json'
 import landingManifest from '../data/landing-manifest.json'
 import vaultsManifest from '../data/vaults-manifest.json'
 
-export type Manifest = typeof homeManifest & {
+export type Manifest = Partial<typeof homeManifest> & {
   twitter?: string
   theme_color?: string
+  title_color?: string
 }
 
 export type RouteMeta = {
