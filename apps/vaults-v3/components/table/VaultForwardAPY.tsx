@@ -135,7 +135,7 @@ export function VaultForwardAPY({
           hasKelp={false}
           isEligibleForSteer={data.isEligibleForSteer}
           steerPointsPerDollar={data.steerPointsPerDollar}
-          onMobileToggle={onMobileToggle}
+          onMobileToggle={!!onMobileToggle}
         />
       </div>
     )
