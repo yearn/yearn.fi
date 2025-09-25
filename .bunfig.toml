@@ -1,0 +1,31 @@
+[install]
+# Faster installs by skipping optional dependencies
+optional = false
+
+# Use exact versions for lockfile consistency
+exact = true
+
+# Prefer offline cache when available
+prefer-offline = true
+
+# Auto-install peer dependencies
+auto = true
+
+# Disable install scripts for security
+scripts = false
+
+[install.cache]
+# Cache packages for faster subsequent installs
+dir = "~/.bun/install/cache"
+
+[install.lockfile]
+# Save exact versions in lockfile
+save = true
+
+[install.registry]
+# Default to npm registry
+url = "https://registry.npmjs.org"
+
+[run]
+# Show full command output
+silent = false

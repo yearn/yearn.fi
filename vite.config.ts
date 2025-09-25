@@ -47,14 +47,12 @@ export default defineConfig({
   plugins: [
     react(),
     envRemapper(),
-    webfontDownload([
-      'https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600;700&display=swap',
-    ], {
+    webfontDownload(['https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600;700&display=swap'], {
       injectAsStyleTag: true,
       minifyCss: true,
       async: true,
       cache: true,
-      proxy: false,
+      proxy: false
     })
   ],
   resolve: {

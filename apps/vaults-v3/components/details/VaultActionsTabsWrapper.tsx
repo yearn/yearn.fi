@@ -574,6 +574,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
             <b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
             <p
               className={'mt-2'}
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled vault config content, not user input
               dangerouslySetInnerHTML={{
                 __html: parseMarkdown(currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol))
               }}
@@ -590,6 +591,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
             <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
               <p
                 className={'mt-2'}
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled vault config content, not user input
                 dangerouslySetInnerHTML={{
                   __html: parseMarkdown(currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol))
                 }}
