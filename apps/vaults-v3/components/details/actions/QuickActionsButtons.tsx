@@ -136,7 +136,7 @@ export function VaultDetailsQuickActionsButtons({
         if (currentVault.staking.available) {
           toRefresh.push({ address: toAddress(currentVault.staking.address), chainID })
         }
-        await onRefresh(toRefresh)
+        onRefresh(toRefresh)
       } else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver) {
         if (isDepositing) {
           onRefresh([{ address: toAddress(actionParams?.selectedOptionTo?.value), chainID }])

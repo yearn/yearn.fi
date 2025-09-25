@@ -173,7 +173,7 @@ export function VaultDetailsQuickActionsTo(props: {
   function renderMultipleOptionsFallback(): ReactElement {
     return (
       <Dropdown
-        className={isV3Page ? 'w-fit! rounded-lg bg-neutral-300' : 'rounded-lg'}
+        className={isV3Page ? 'rounded-lg bg-neutral-300' : 'rounded-lg'}
         comboboxOptionsClassName={
           isV3Page ? 'bg-neutral-300 w-full rounded-lg scrollbar-none' : 'rounded-lg scrollbar-none'
         }

@@ -49,10 +49,11 @@ function getChainConfig(chainId: number) {
  ******************************************************************************/
 const chainQueues: Record<number, Promise<void>> = {}
 
-async function fetchTokenBalancesWithRateLimit(
+export async function fetchTokenBalancesWithRateLimit(
   chainId: number,
   userAddress: TAddress | undefined,
-  tokens: TUseBalancesTokens[]
+  tokens: TUseBalancesTokens[],
+  shouldForceFetch: boolean = false
 ): Promise<TDict<TToken>> {
   if (!userAddress || isZeroAddress(userAddress) || tokens.length === 0) {
     return {}
@@ -76,8 +77,7 @@ async function fetchTokenBalancesWithRateLimit(
   if (validTokens.length === 0) {
     return {}
   }
-
-  const [balances, error] = await getBalances(chainId, userAddress, validTokens, false)
+  const [balances, error] = await getBalances(chainId, userAddress, validTokens, shouldForceFetch)
 
   if (error) {
     throw error
@@ -216,7 +216,7 @@ export function useBalancesQueries(
     return status
   }, [queries, tokensByChain])
 
-  const refetch = () => {
+  const refetch = async () => {
     queries.forEach((q) => {
       q.refetch()
     })

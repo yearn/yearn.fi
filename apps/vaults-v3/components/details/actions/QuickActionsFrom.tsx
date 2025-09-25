@@ -130,6 +130,7 @@ export function VaultDetailsQuickActionsFrom(props: {
     if (!isAddress(address)) {
       return zeroNormalizedBN
     }
+
     return getBalance({
       address: toAddress(actionParams?.selectedOptionFrom?.value),
       chainID: Number(actionParams?.selectedOptionFrom?.chainID)

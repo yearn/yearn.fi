@@ -63,6 +63,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   })
   const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
     const _tokens = { ...tokensRaw }
+
     return _tokens as TYChainTokens
   }, [tokensRaw])
 
@@ -72,7 +73,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         const updatedBalances = await onUpdateSome(tokenToUpdate)
         return updatedBalances as TYChainTokens
       }
-      const updatedBalances = await onUpdate()
+      const updatedBalances = await onUpdate(true)
       return updatedBalances as TYChainTokens
     },
     [onUpdate, onUpdateSome]

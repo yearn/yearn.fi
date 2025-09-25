@@ -120,7 +120,6 @@ export async function handleTx(args: TWriteTransaction, props: TPrepareWriteCont
       hash,
       confirmations: props.confirmation || 2
     })
-
     if (receipt.status === 'success') {
       args.statusHandler?.({ ...defaultTxStatus, success: true })
     } else if (receipt.status === 'reverted') {

@@ -26,7 +26,7 @@ function WithLayout(): ReactElement {
   const location = useLocation()
   const isAppsPage = location.pathname?.startsWith('/apps')
   const isHomePage = location.pathname === '/'
-  console.log('test')
+
   if (isAppsPage) {
     return (
       <>

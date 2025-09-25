@@ -19,7 +19,7 @@ export const balanceQueryKeys = {
     [
       ...balanceQueryKeys.byChainAndUser(chainId, userAddress),
       'tokens',
-      tokenAddresses.map(toAddress).sort().join(',')
+      tokenAddresses.map(toAddress).toSorted().join(',')
     ] as const
 }
 
@@ -64,7 +64,6 @@ async function fetchTokenBalance(
   if (!userAddress || isZeroAddress(userAddress) || isZeroAddress(token.address)) {
     return null
   }
-
   const [balances, error] = await getBalances(chainId, userAddress, [token], false)
 
   if (error) {
@@ -119,7 +118,6 @@ async function fetchTokenBalances(
   if (validTokens.length === 0) {
     return {}
   }
-
   const [balances, error] = await getBalances(chainId, userAddress, validTokens, false)
 
   if (error) {

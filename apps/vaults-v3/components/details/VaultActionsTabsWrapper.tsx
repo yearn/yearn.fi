@@ -321,6 +321,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
       isRetired: currentVault?.info?.isRetired
     })
   )
+
   const hasStakingRewards = Boolean(currentVault.staking.available)
 
   const shouldForceDisplayBoostTab = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
