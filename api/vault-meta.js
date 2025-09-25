@@ -1,8 +1,7 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+const { readFileSync } = require('fs')
+const { join } = require('path')
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = async function handler(req: any, res: any) {
   const { chainId, address } = req.query
 
   if (!chainId || !address) {
