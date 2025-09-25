@@ -18,7 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ogBaseUrl = 'https://og.yearn.fi'
     const ogImageUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainId}/${address}`
     const canonicalUrl = `https://yearn.fi/v3/${chainId}/${address}`
-    
+
     const title = 'Yearn Vault'
     const description = "Earn yield on your crypto with Yearn's automated vault strategies"
 
@@ -49,17 +49,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     html = html.replace(/<meta property="og:.*?".*?>/gi, '')
     html = html.replace(/<meta name="twitter:.*?".*?>/gi, '')
     html = html.replace(/<meta name="description".*?>/gi, '')
-    
+
     // Inject new meta tags
     html = html.replace('</head>', `${metaTags}\n  </head>`)
 
     res.setHeader('Content-Type', 'text/html')
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300')
-    
+
     return res.status(200).send(html)
   } catch (error) {
     console.error('Error generating meta tags:', error)
-    
+
     // Fallback to regular SPA
     try {
       const indexPath = join(process.cwd(), 'dist', 'index.html')
