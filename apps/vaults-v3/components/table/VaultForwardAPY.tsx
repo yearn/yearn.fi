@@ -576,7 +576,7 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
                   'font-bold underline sm:decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
                 }
               >
-                {'here'}
+                {'here.'}
               </a>
             </li>
             {data.katanaExtras.steerPointsPerDollar && data.katanaExtras.steerPointsPerDollar > 0 ? (
