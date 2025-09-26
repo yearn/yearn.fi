@@ -245,6 +245,7 @@ export function MultiSelectDropdown({
           </ComboboxButton>
         )}
         <Transition
+          as={'div'}
           show={isOpen}
           enter={'transition-all duration-300 ease-out'}
           enterFrom={'opacity-0 translate-y-[-4px]'}
