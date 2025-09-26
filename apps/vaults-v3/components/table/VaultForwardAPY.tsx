@@ -46,15 +46,17 @@ export function VaultForwardAPY({
               </span>
             </Renderable>
           </b>
-          <KatanaApyTooltip
-            extrinsicYield={data.katanaExtras.extrinsicYield}
-            katanaNativeYield={data.katanaExtras.katanaNativeYield}
-            fixedRateKatanRewardsAPR={data.katanaExtras.FixedRateKatanaRewards}
-            katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR}
-            katanaBonusAPR={data.katanaExtras.katanaBonusAPY}
-            steerPointsPerDollar={data.katanaExtras.steerPointsPerDollar}
-            currentVault={currentVault}
-          />
+          {!onMobileToggle && (
+            <KatanaApyTooltip
+              extrinsicYield={data.katanaExtras.extrinsicYield}
+              katanaNativeYield={data.katanaExtras.katanaNativeYield}
+              fixedRateKatanRewardsAPR={data.katanaExtras.FixedRateKatanaRewards}
+              katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR}
+              katanaBonusAPR={data.katanaExtras.katanaBonusAPY}
+              steerPointsPerDollar={data.katanaExtras.steerPointsPerDollar}
+              currentVault={currentVault}
+            />
+          )}
         </span>
         {onMobileToggle ? null : mobileOpen ? (
           <div
@@ -133,6 +135,7 @@ export function VaultForwardAPY({
           hasKelp={false}
           isEligibleForSteer={data.isEligibleForSteer}
           steerPointsPerDollar={data.steerPointsPerDollar}
+          onMobileToggle={!!onMobileToggle}
         />
       </div>
     )
@@ -556,6 +559,42 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
               <span className={'font-number'}>{data.katanaExtras.steerPointsPerDollar.toFixed(2)}</span>
             </div>
           ) : null}
+          <div className={'mt-2 p-3 pb-0 text-neutral-700 md:text-xs text-bold'}>
+            <li className={'-mt-1 mb-2 w-full text-left text-xs break-words'}>
+              {'KAT tokens are locked until no later than Feb. 20 2026.'}
+            </li>
+            <li className={'-mt-1 mb-2 w-full text-left text-xs break-words'}>
+              {'KAT APR is calculated using an assumed $1B Fully Diluted Valuation.'}
+            </li>
+            <li className={'-mt-1 mb-2 w-full text-left text-xs break-words'}>
+              {'Read more about KAT tokenomics '}
+              <a
+                href={'https://katana.network/blog/the-network-is-katana-the-token-is-kat'}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'font-bold underline sm:decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                }
+              >
+                {'here.'}
+              </a>
+            </li>
+            {data.katanaExtras.steerPointsPerDollar && data.katanaExtras.steerPointsPerDollar > 0 ? (
+              <li className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
+                {'This vault earns Steer Points, but you must '}
+                <a
+                  href={'https://app.steer.finance/points'}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className={
+                    'font-bold underline sm:decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                  }
+                >
+                  {'register here to earn them.'}
+                </a>
+              </li>
+            ) : null}
+          </div>
         </div>
       </div>
     )
