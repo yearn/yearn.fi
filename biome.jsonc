@@ -10,8 +10,8 @@
         "noExtraBooleanCast": "off"
       },
       "security": {
-        // Rules that are relevant to the legacy app
-        "noDangerouslySetInnerHtml": "off"
+        "noDangerouslySetInnerHtml": "error",
+        "noGlobalEval": "error"
       },
       "suspicious": {
         "noExplicitAny": "off",
@@ -35,6 +35,9 @@
         // Rules that are relevant to the legacy app
         "noDescendingSpecificity": "off",
         "useNodejsImportProtocol": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "warn"
       }
     }
   },
