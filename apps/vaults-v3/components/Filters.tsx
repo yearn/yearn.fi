@@ -3,11 +3,13 @@ import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
 import { SearchBar } from '@lib/components/SearchBar'
 import { useChainOptions } from '@lib/hooks/useChains'
 import { IconChevron } from '@lib/icons/IconChevron'
-import { cl } from '@lib/utils'
+import { cl, formatAmount } from '@lib/utils'
 import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constants'
 
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
+import useWallet from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
 
 type TListHero = {
   types: string[] | null
@@ -19,6 +21,55 @@ type TListHero = {
   onChangeChains: (chains: number[] | null) => void
   onChangeCategories: (categories: string[] | null) => void
   onSearch: (searchValue: string) => void
+}
+
+function PortfolioCard(): ReactElement {
+  const { cumulatedValueInV3Vaults, isLoading } = useWallet()
+  const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
+
+  if (!isActive) {
+    return (
+      <div className={'flex flex-row items-center mb-4 gap-4 h-18'}>
+        <button
+          className={cl('rounded-lg overflow-hidden flex', 'px-[42px] py-2', 'relative group', 'border-none')}
+          onClick={(): void => {
+            if (!isActive && address) {
+              onSwitchChain(1)
+            } else {
+              openLoginModal()
+            }
+          }}
+        >
+          <div
+            className={cl(
+              'absolute inset-0',
+              'opacity-80 transition-opacity group-hover:opacity-100 pointer-events-none',
+              'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
+            )}
+          />
+          <p className={'z-10 text-neutral-900'}>{'Connect Wallet'}</p>
+        </button>
+        <p className={'text-[#757CA6] p-2'}>{'It looks like you need to connect your wallet.'}</p>
+      </div>
+    )
+  }
+  return (
+    <div className={'flex flex-row justify-between mb-4'}>
+      <div className={'flex flex-row gap-4 md:flex-row md:gap-32'}>
+        <div>
+          <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Amount Deposited'}</p>
+          {isLoading ? (
+            <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
+          ) : (
+            <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
+              {'$'}
+              <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
+            </b>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function Filters({
@@ -66,9 +117,7 @@ export function Filters({
 
   return (
     <div className={'relative col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-8'}>
-      <strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
-        {'Filters'}
-      </strong>
+      <PortfolioCard />
 
       <div className={'absolute right-10 top-10 block md:hidden'}>
         <button onClick={(): void => setShouldExpandFilters((prev): boolean => !prev)}>

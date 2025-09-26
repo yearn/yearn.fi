@@ -28,22 +28,22 @@ function BrandNewVaultCard(): ReactElement {
       className={cl(
         'h-full rounded-3xl relative overflow-hidden',
         'pr-2 pl-4 pb-4 pt-6 md:p-10',
-        'col-span-75 md:col-span-46'
+        'col-span-75 md:col-span-60'
       )}
     >
       <div className={'relative z-10'}>
         <h1
           className={cl(
-            'mb-2 md:mb-4 lg:mb-10 font-black text-neutral-900',
+            'mb-2 md:mb-4 font-black text-neutral-900',
             'text-[48px] lg:text-[56px] lg:leading-[64px] leading-[48px]',
             'whitespace-break-spaces uppercase'
           )}
         >
-          {'A brave new\nworld for Yield'}
+          {'Yearn Automated Vaults'}
         </h1>
-        <p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
+        {/* <p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
           {'Yearn v3 is a new yield paradigm offering better automation,\ncomposability and flexibility. Enjoy!'}
-        </p>
+        </p> */}
       </div>
       <Background />
     </div>
@@ -51,7 +51,7 @@ function BrandNewVaultCard(): ReactElement {
 }
 function V3Card(): ReactElement {
   return (
-    <div className={'col-span-75 mb-4 mr-0 hidden md:col-span-29 md:mb-0 md:mr-6 md:block'}>
+    <div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-2 hidden md:block md:col-span-4'}>
       <div
         className={cl(
           'flex h-full w-full flex-col items-center justify-center',
@@ -64,66 +64,6 @@ function V3Card(): ReactElement {
   )
 }
 
-function PortfolioCard(): ReactElement {
-  const { cumulatedValueInV3Vaults, isLoading } = useWallet()
-  const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
-
-  if (!isActive) {
-    return (
-      <div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'}>
-        <strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
-          {'Portfolio'}
-        </strong>
-        <div className={'flex'}>
-          <div>
-            <p className={'pb-0 text-[#757CA6] md:pb-2'}>
-              {'Looks like you need to connect your wallet. And call your mum. Always important.'}
-            </p>
-            <button
-              className={cl('rounded-lg overflow-hidden flex', 'px-[42px] py-2 mt-16', 'relative group', 'border-none')}
-              onClick={(): void => {
-                if (!isActive && address) {
-                  onSwitchChain(1)
-                } else {
-                  openLoginModal()
-                }
-              }}
-            >
-              <div
-                className={cl(
-                  'absolute inset-0',
-                  'opacity-80 transition-opacity group-hover:opacity-100 pointer-events-none',
-                  'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
-                )}
-              />
-              <p className={'z-10 text-neutral-900'}>{'Connect Wallet'}</p>
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-  return (
-    <div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'}>
-      <strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
-        {'Portfolio'}
-      </strong>
-      <div className={'flex flex-col gap-4 md:flex-row md:gap-32'}>
-        <div>
-          <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Deposited'}</p>
-          {isLoading ? (
-            <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
-          ) : (
-            <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
-              {'$'}
-              <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
-            </b>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
 function ListOfVaults(): ReactElement {
   const { getBalance } = useWallet()
   const { getPrice, isLoadingVaultList } = useYearn()
@@ -390,7 +330,7 @@ function ListOfVaults(): ReactElement {
             { label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2 justify-end' }
           ]}
         />
-        <div className={'grid gap-4'}>{renderVaultList()}</div>
+        <div className={'grid gap-3'}>{renderVaultList()}</div>
       </div>
     </Fragment>
   )
@@ -407,23 +347,16 @@ function Index(): ReactElement {
     <div className={'z-50 w-full bg-neutral-100 pt-20'}>
       <div className={'relative mx-auto w-full max-w-[1232px]'}>
         <div className={'absolute inset-x-0 top-0 w-full px-4 pt-6 md:pt-16'}>
-          <div className={'grid grid-cols-75'}>
+          {/* <div className={'grid grid-cols-75'}>
             <V3Card />
             <BrandNewVaultCard />
-          </div>
+          </div> */}
         </div>
       </div>
 
-      <div
-        className={cl(
-          'relative pb-8 bg-neutral-0 z-50',
-          'min-h-screen',
-          'transition-transform duration-300',
-          isCollapsed ? 'translate-y-[354px] md:translate-y-[464px]' : 'translate-y-[24px] md:translate-y-[40px]'
-        )}
-      >
+      <div className={cl('relative pb-8 bg-neutral-0 z-50')}>
         <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-          <div
+          {/* <div
             onClick={onClick}
             className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}
           >
@@ -458,10 +391,11 @@ function Index(): ReactElement {
                 </svg>
               </div>
             </div>
-          </div>
+          </div> */}
 
           <div className={'grid grid-cols-12 gap-4 pt-6 md:gap-6'}>
-            <PortfolioCard />
+            <V3Card />
+
             <ListOfVaults />
           </div>
         </div>
