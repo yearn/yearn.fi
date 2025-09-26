@@ -119,17 +119,6 @@ export function Filters({
     <div className={'relative col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-8'}>
       <PortfolioCard />
 
-      <div className={'absolute right-10 top-10 block md:hidden'}>
-        <button onClick={(): void => setShouldExpandFilters((prev): boolean => !prev)}>
-          <IconChevron
-            className={cl(
-              'size-4 text-neutral-400 transition-all hover:text-neutral-900',
-              !shouldExpandFilters ? '-rotate-90' : 'rotate-0'
-            )}
-          />
-        </button>
-      </div>
-
       <div className={'mb-5 w-full'}>
         <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
         <SearchBar
@@ -141,6 +130,14 @@ export function Filters({
           shouldDebounce={shouldDebounce || false}
         />
       </div>
+      <button
+        onClick={(): void => setShouldExpandFilters((prev): boolean => !prev)}
+        className={
+          'w-full py-2 cursor-pointer rounded-[4px] bg-neutral-800/20 text-sm text-neutral-900 transition-colors hover:bg-neutral-800/50 sm:hidden'
+        }
+      >
+        {'Filter Vaults'}
+      </button>
       <div
         className={cl(
           'grid grid-cols-1 gap-6 md:grid-cols-3',
