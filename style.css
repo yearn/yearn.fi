@@ -1,0 +1,502 @@
+/* External Dependencies */
+/** biome-ignore-all lint/complexity/noImportantStyles: overriding some library styles */
+@import "@rainbow-me/rainbowkit/styles.css";
+/* Tailwind CSS */
+@import "tailwindcss";
+
+@theme {
+  /* Font families */
+  --font-family-aeonik: Aeonik, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family-aeonik-fono:
+    "Aeonik Fono", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family-aeonik-mono: "Aeonik Mono", Consolas, "Courier New", monospace;
+  --font-family-source-code-pro: "Source Code Pro", "Aeonik Mono", Consolas, "Courier New", monospace;
+
+  --color-black: hsl(0 0% 0%);
+  --color-white: hsl(0 0% 100%);
+  --color-fallback: hsl(0 0% 80%);
+  --color-red: hsl(0 100% 45%);
+
+  --color-primary: hsl(220 95% 50%);
+  --color-neutral-0: hsl(0 0% 100%);
+  --color-neutral-100: hsl(0 0% 96%);
+  --color-neutral-200: hsl(0 0% 92%);
+  --color-neutral-300: hsl(0 0% 88%);
+  --color-neutral-400: hsl(0 0% 62%);
+  --color-neutral-500: hsl(0 0% 50%);
+  --color-neutral-600: hsl(0 0% 36%);
+  --color-neutral-700: hsl(0 0% 26%);
+  --color-neutral-800: hsl(0 0% 16%);
+  --color-neutral-900: hsl(0 0% 5%);
+
+  /* Disco Salmon */
+  --color-pink-50: hsl(351 100% 96%);
+  --color-pink-100: hsl(351 100% 78%);
+  --color-pink-200: hsl(333 98% 68%);
+  --color-pink-300: hsl(326 95% 60%);
+  --color-pink-400: hsl(336 83% 61%);
+  --color-pink-500: hsl(350 69% 60%);
+  --color-pink-600: hsl(341 59% 51%);
+  --color-pink-700: hsl(332 76% 41%);
+  --color-pink-800: hsl(332 81% 33%);
+  --color-pink-900: hsl(332 100% 21%);
+
+  --color-gray-300: hsl(0 0% 88%);
+  --color-gray-400: hsl(0 0% 62%);
+  --color-gray-500: hsl(0 0% 26%);
+  --color-gray-600: hsl(0 0% 16%);
+  --color-gray-700: hsl(0 0% 16%);
+  --color-gray-800: hsl(0 0% 9%);
+  --color-gray-900: hsl(0 0% 5%);
+
+  /* 🔵 - Yearn Finance ******************************************************
+   **	These are the splashes of color that should appear the most in your UI,
+   **	and are the ones that determine the overall "look" of the site. Use
+   **	these for things like primary actions, links, navigation items, icons,
+   **	accent borders, or text you want to emphasize.
+   **************************************************************************/
+  --color-primary-100: hsl(220 100% 94%);
+  --color-primary-200: hsl(220 81% 88%);
+  --color-primary-500: hsl(220 95% 50%);
+  --color-primary-600: hsl(220 100% 44%);
+  --color-accent-500: hsl(220 95% 50%);
+  --color-accent-600: hsl(220 100% 44%);
+
+  /* 🔵 - Yearn Finance
+  /* These colors should be used fairly conservatively throughout your UI to
+  avoid overpowering your primary colors. Use them when you need an
+  element to stand out, or to reinforce things like error states or
+  positive trends with the appropriate semantic color.
+  **************************************************************************/
+  --color-red-900: hsl(0 100% 45%);
+  --color-red-300: hsl(0 100% 95%);
+  --color-red-200: hsl(0 100% 90%);
+
+  --color-blue-500: hsl(220 95% 50%);
+  --color-blue-800: hsl(230 93% 38%);
+  --color-blue-900: hsl(231 100% 11%);
+  --color-steel-gray-500: hsl(218 14% 71%);
+  --color-light-blue-500: hsl(220 100% 67%);
+  --default-rounded: 0rem;
+
+  /* Custom Font Sizes */
+  --text-xxs: 0.625rem; /* 10px */
+  --text-xxs--line-height: 1rem; /* 16px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-2xl--line-height: 2rem; /* 32px */
+  --text-3xl: 2rem; /* 32px */
+  --text-3xl--line-height: 2.5rem; /* 40px */
+  --text-7xl: 4rem; /* 64px */
+  --text-7xl--line-height: 4.5rem; /* 72px */
+  --text-8xl: 5.5rem; /* 88px */
+  --text-8xl--line-height: 6.5rem; /* 104px */
+}
+
+@layer theme {
+  .dark {
+    --color-primary: hsl(220 95% 50%);
+    --color-neutral-900: hsl(0 0% 100%);
+    --color-neutral-800: hsl(0 0% 96%);
+    --color-neutral-700: hsl(0 0% 92%);
+    --color-neutral-600: hsl(0 0% 88%);
+    --color-neutral-500: hsl(0 0% 62%);
+    --color-neutral-400: hsl(0 0% 50%);
+    --color-neutral-300: hsl(0 0% 36%);
+    --color-neutral-200: hsl(0 0% 26%);
+    --color-neutral-100: hsl(0 0% 16%);
+    --color-neutral-0: hsl(0 0% 5%);
+  }
+
+  .v3 {
+    --color-primary: hsl(220 95% 50%);
+    --color-neutral-900: hsl(0 0% 96%);
+    --color-neutral-800: hsl(0 0% 96%);
+    --color-neutral-700: hsl(0 0% 92%);
+    --color-neutral-600: hsl(0 0% 88%);
+    --color-neutral-500: hsl(0 0% 62%);
+    --color-neutral-400: hsl(0 0% 50%);
+    --color-neutral-300: hsl(231 51% 19%);
+    --color-neutral-200: hsl(242 54% 27%);
+    --color-neutral-100: hsl(231 100% 11%);
+    --color-neutral-0: hsl(231 100% 6%);
+  }
+}
+
+html {
+  overflow: auto !important;
+  padding-right: 0 !important;
+}
+
+body {
+  color: var(--color-neutral-900);
+  font-family: aeonik, "aeonik Fallback", "Source Code Pro", "Source Code Pro Fallback", sans-serif;
+}
+
+#main {
+  @apply flex flex-col w-full h-full min-h-screen bg-neutral-0;
+}
+
+@layer utilities {
+  .font-number {
+    font-family:
+      "Aeonik Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+}
+
+@layer components {
+  [role="button"]:not(:disabled),
+  button:not(:disabled) {
+    @apply cursor-pointer;
+  }
+}
+
+/* 🔵 - Yearn Finance ******************************************************************************
+** Header an navbar
+***************************************************************************************************/
+.yearn--header {
+  @apply inset-x-0 top-0 z-50 mb-5 flex h-20 w-full max-w-[1200px] flex-row items-center justify-between p-4 text-xs sm:text-sm md:inset-x-auto md:mb-0 md:px-0 md:text-base;
+}
+.yearn--nav {
+  @apply hidden flex-row items-center space-x-3 md:flex md:space-x-6;
+}
+.yearn--header-nav-item {
+  @apply relative cursor-pointer transition-colors text-neutral-500 hover:text-neutral-900 font-normal text-sm;
+
+  &.active {
+    @apply text-neutral-900 font-bold;
+  }
+}
+
+/* 🔵 - Yearn Finance ******************************************************************************
+** Tooltip
+** In some place we need a tooltip to display some information on hover. This style controls the
+** display of that tooltip.
+**
+** Usage:
+**	<div className={'tooltip'}>
+**		{'Something displayed'}
+** 		<span className={'tooltiptext text-xs'}>
+** 			<p>{'Tooltip content'}</p>
+** 		</span>
+** 	</div>
+***************************************************************************************************/
+.tooltip {
+  @apply relative;
+}
+.tooltip .tooltipLight {
+  @apply invisible inset-x-0 absolute z-50 opacity-0 transition-opacity flex justify-center items-center;
+}
+.tooltip .tooltipFees {
+  @apply invisible right-0 absolute z-50 opacity-0 transition-opacity;
+}
+.tooltip .tooltiptext {
+  @apply text-xs text-center invisible bg-neutral-0 text-neutral-900 absolute z-50 -right-7 opacity-0 transition-opacity;
+  width: 15rem;
+  top: 130%;
+  margin-right: calc(-122px + 50%);
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
+}
+.tooltip:hover .tooltiptext {
+  @apply visible opacity-100;
+}
+.tooltip:hover .tooltipLight {
+  @apply visible opacity-100;
+}
+.tooltip:hover .tooltipFees {
+  @apply visible opacity-100;
+}
+
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  bottom: 98%;
+  right: 50%;
+  margin-right: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--color-neutral-0) transparent transparent transparent;
+  transform: rotate(180deg);
+}
+
+.tooltip.top .tooltiptext {
+  top: -105%;
+  bottom: unset;
+}
+.tooltip.top .tooltiptext::after {
+  top: 98%;
+  transform: rotate(0deg);
+}
+
+/* 🔵 - Yearn Finance ******************************************************************************
+** Table
+** Fake table properties
+***************************************************************************************************/
+.yearn--table-head-label {
+  @apply text-start text-base;
+}
+.yearn--table-head-label-wrapper {
+  @apply flex flex-row items-center justify-start space-x-1;
+  &[datatype="number"] {
+    justify-content: flex-end;
+    & > .yearn--table-head-label {
+      text-align: right;
+    }
+  }
+}
+
+.yearn--table-wrapper {
+  @apply grid w-full grid-cols-1 border-t border-neutral-200 py-2 px-4 md:grid-cols-[64px_repeat(7,_minmax(0,_1fr))] md:border-none md:px-10;
+}
+.yearn--table-token-section {
+  @apply col-span-2 mb-2 flex flex-row items-center justify-between py-4 md:mb-0 md:py-0;
+}
+.yearn--table-token-section-item {
+  @apply flex flex-row items-center space-x-4 md:space-x-6;
+}
+.yearn--table-token-section-item-image {
+  @apply h-8 min-h-[32px] w-8 min-w-[32px] rounded-full md:flex;
+}
+.yearn--table-data-section {
+  @apply col-span-5 grid grid-cols-1 gap-x-0 md:gap-x-7 md:grid-cols-8 gap-y-0;
+}
+.yearn--table-data-section-item-label {
+  @apply inline text-start text-neutral-500 md:hidden text-sm;
+}
+.yearn--table-data-section-item-value {
+  @apply text-neutral-900;
+}
+.yearn--table-data-section-item {
+  @apply flex h-min flex-row md:items-start justify-between pt-0 px-0 md:min-h-14 md:pt-4;
+  &[datatype="number"] {
+    @apply md:text-right md:justify-end;
+    & > .yearn--table-data-section-item-value {
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}
+
+.yearn--table-label {
+  @apply inline text-start text-neutral-500 md:hidden;
+}
+
+.yearn--next-switch {
+  @apply relative flex h-[18px] w-8 border-neutral-500 rounded-full cursor-pointer transition-colors ease-in-out duration-200 p-0 items-center border-2;
+  &[aria-checked="true"] {
+    @apply bg-neutral-400 border-neutral-900;
+    & > div {
+      @apply bg-neutral-900;
+    }
+  }
+  &[aria-checked="false"] {
+    @apply bg-transparent border-neutral-600;
+    & > div {
+      @apply bg-neutral-600;
+    }
+  }
+
+  &[disabled] {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  & > div {
+    @apply mx-1 pointer-events-none inline-block h-2 w-2 rounded-full transition ease-in-out duration-200;
+  }
+}
+
+/*************************************************************************************************
+ * Button Component Styles
+ * Provides consistent button styling across all variants with proper state management
+ *************************************************************************************************/
+.yearn--button {
+  /* Base button styles */
+  @apply cursor-pointer px-5 flex justify-center items-center h-10 text-base transition-all relative;
+  @apply font-normal border border-transparent;
+  @apply rounded-lg;
+
+  /* Global state styles */
+  &[aria-busy="true"] {
+    @apply cursor-wait;
+    color: transparent !important;
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  /* Variant: Filled (Primary) */
+  &[data-variant="filled"] {
+    @apply text-neutral-0 bg-neutral-900;
+
+    &:disabled {
+      @apply bg-neutral-700;
+    }
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-800;
+    }
+  }
+
+  /* Variant: Light */
+  &[data-variant="light"] {
+    @apply text-neutral-900 bg-neutral-100;
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-200;
+    }
+  }
+
+  /* Variant: Outlined */
+  &[data-variant="outlined"] {
+    @apply text-neutral-900 bg-transparent border-neutral-900;
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-900 text-neutral-0;
+    }
+  }
+
+  /* Variant: Reverted */
+  &[data-variant="reverted"] {
+    @apply text-neutral-900 bg-neutral-0;
+
+    &:disabled {
+      @apply bg-neutral-200;
+    }
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-200;
+    }
+
+    &[aria-busy="true"] svg {
+      @apply text-neutral-900;
+    }
+  }
+
+  /* Variant: V3 (Special variant) */
+  &[data-variant="v3"] {
+    @apply text-neutral-900 bg-pink-600;
+
+    &:disabled {
+      @apply bg-pink-600;
+    }
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-pink-600/80;
+    }
+  }
+}
+.yearn--button-smaller {
+  @apply h-8 text-xs py-2 px-2;
+}
+.yearn--button-smaller.reverted {
+  @apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
+  &:disabled {
+    @apply bg-neutral-200 opacity-40;
+  }
+  &:not(:disabled):not([aria-busy="true"]):hover {
+    @apply bg-neutral-200;
+  }
+
+  &[aria-busy="true"] svg {
+    @apply text-neutral-900;
+  }
+}
+
+/*************************************************************************************************
+ * Dropdown Component Styles
+ *************************************************************************************************/
+.yearn--dropdown-menu {
+  @apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60;
+  @apply text-neutral-400 border border-neutral-300 bg-neutral-100;
+  @apply rounded-lg;
+}
+
+.yearn--dropdown-menu-item {
+  @apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
+
+  &[data-active="true"] {
+    @apply bg-neutral-0/40;
+  }
+
+  &:hover {
+    @apply bg-neutral-0/20;
+  }
+}
+
+.yearn--listbox-menu {
+  @apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60 text-neutral-900 bg-neutral-0;
+}
+.yearn--listbox-menu-item {
+  @apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
+  &[data-active="true"] {
+    @apply bg-neutral-0/40;
+  }
+}
+
+/*************************************************************************************************
+ * Tab Component Styles
+ *************************************************************************************************/
+.tab {
+  @apply font-normal text-neutral-600 transition-colors hover:text-neutral-900 cursor-pointer border-b-2 border-transparent pb-4 z-20;
+  &[aria-selected="true"] {
+    @apply font-bold text-neutral-900 border-neutral-900;
+  }
+}
+
+/* 🔵 - Yearn Finance ******************************************************
+** Modal
+**************************************************************************/
+.yearn--modal-wrapper {
+  @apply flex justify-center items-end px-4 pt-4 pb-20 min-h-screen text-center sm:block sm:p-0;
+}
+.yearn--modal-overlay {
+  @apply fixed inset-0 z-10 bg-neutral-900/90 transition-opacity;
+}
+.yearn--modal {
+  @apply inline-block overflow-hidden relative z-50 w-full text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-[1200px] sm:align-middle md:mb-96 bg-neutral-0;
+
+  border-radius: var(--default-rounded);
+}
+
+/* 🔵 - Yearn Finance ******************************************************************************
+	** Recharts custom css overwrite
+	***************************************************************************************************/
+.recharts-tooltip {
+  @apply p-2 bg-neutral-0 flex flex-col min-w-[160px];
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
+}
+.activeDot {
+  stroke: var(--color-neutral-900);
+  fill: var(--color-neutral-0);
+}
+
+/* 🔵 - Yearn Finance ******************************************************
+** Overwriting the defaults to match our needs
+**************************************************************************/
+input[type="number"] {
+  /* Firefox: Remove increment/decrement buttons */
+  -moz-appearance: textfield;
+
+  /* WebKit/Chrome/Safari: Remove increment/decrement buttons */
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+:focus {
+  outline: none;
+}
+[type="checkbox"],
+[type="checkbox"]:focus {
+  @apply outline-none focus:border-0 focus:outline-none focus:ring-0 active:border-0 active:ring-0;
+  box-shadow: none !important;
+}
