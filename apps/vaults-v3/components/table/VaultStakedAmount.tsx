@@ -34,7 +34,7 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
   return (
     <div className={'flex flex-col pt-0 text-right'}>
       <p
-        className={`yearn--table-data-section-item-value ${isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'}`}
+        className={`yearn--table-data-section-item-value ${isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900 font-bold'}`}
       >
         <RenderAmount
           value={staked.normalized * tokenPrice.normalized}
