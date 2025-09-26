@@ -1,0 +1,42 @@
+{
+  "installCommand": "bun install --frozen-lockfile",
+  "buildCommand": "bun run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/proxy/plausible/:path*",
+      "destination": "https://plausible.io/:path*"
+    },
+    {
+      "source": "/v3/:chainId/:address",
+      "destination": "/api/vault/meta?chainId=$1&address=$2"
+    },
+    {
+      "source": "/vaults/:chainId/:address",
+      "destination": "/api/vault/meta?chainId=$1&address=$2"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ]
+}
