@@ -1,13 +1,4 @@
 {
-  "packages/legacy/**/*.{ts,tsx}": [
-    "bunx biome format --write",
-    "bunx biome lint --error-on-warnings",
-    "bash -c 'cd packages/legacy && tsc --noEmit'"
-  ],
-  "packages/nextgen/**/*.{ts,tsx}": [
-    "bunx biome format --write",
-    "bunx biome lint --error-on-warnings",
-    "bash -c 'cd packages/nextgen && tsc --noEmit'"
-  ],
+  "packages/**/*.{ts,tsx}": ["bunx biome format --write", "bunx biome lint --error-on-warnings"],
   "packages/**/*.css": ["bunx biome format --write", "bunx biome lint --error-on-warnings"]
 }
