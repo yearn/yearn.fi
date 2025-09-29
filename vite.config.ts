@@ -3,35 +3,61 @@ import path from 'path'
 import { defineConfig, loadEnv } from 'vite'
 import webfontDownload from 'vite-plugin-webfont-dl'
 
+const PUBLIC_ENV_ALLOWLIST = new Set([
+  'NODE_ENV',
+  'BASE_YEARN_ASSETS_URI',
+  'YDAEMON_BASE_URI',
+  'KATANA_APR_SERVICE_API',
+  'PARTNER_ID_ADDRESS',
+  'KNOWN_ENS',
+  'SHOULD_USE_FORKNET',
+  'ALCHEMY_KEY',
+  'INFURA_KEY',
+  'WALLETCONNECT_PROJECT_ID',
+  'WALLETCONNECT_PROJECT_NAME',
+  'JSON_RPC_URI',
+  'JSON_RPC_URL'
+])
+
 function envRemapper() {
   return {
     name: 'env-remapper',
-    config(_: any, { mode }: any) {
+    config(_: unknown, { mode }: { mode: string }) {
       const env = loadEnv(mode, process.cwd(), '')
-      const remappedEnv: Record<string, string | any> = {}
+      const remappedEnv: Record<string, string | Record<string, string>> = {}
       const rpcUriFor: Record<string, string> = {}
 
-      // Map non-VITE_ prefixed env vars to VITE_ prefixed ones
-      Object.keys(env).forEach((key) => {
-        if (!key.startsWith('VITE_')) {
-          // Special handling for RPC_URI_FOR_* variables
-          if (key.startsWith('RPC_URI_FOR_')) {
-            const chainId = key.replace('RPC_URI_FOR_', '')
-            rpcUriFor[chainId] = env[key]
-          } else if (key === 'INFURA_KEY') {
-            // Map INFURA_KEY to VITE_INFURA_PROJECT_ID for compatibility
-            // biome-ignore lint/complexity/useLiteralKeys: it's ok
-            remappedEnv['VITE_INFURA_PROJECT_ID'] = env[key]
-          } else {
-            remappedEnv[`VITE_${key}`] = env[key]
-          }
+      Object.entries(env).forEach(([key, value]) => {
+        if (key.startsWith('VITE_')) {
+          return
         }
+
+        if (key.startsWith('RPC_URI_FOR_')) {
+          const chainId = key.replace('RPC_URI_FOR_', '')
+          if (/^\d+$/.test(chainId) && typeof value === 'string' && value.length > 0) {
+            rpcUriFor[chainId] = value
+          }
+          return
+        }
+
+        if (!PUBLIC_ENV_ALLOWLIST.has(key) || typeof value !== 'string') {
+          return
+        }
+
+        if (key === 'INFURA_KEY') {
+          remappedEnv.VITE_INFURA_PROJECT_ID = value
+          return
+        }
+
+        remappedEnv[`VITE_${key}`] = value
       })
 
-      // Add the aggregated RPC_URI_FOR object
       if (Object.keys(rpcUriFor).length > 0) {
-        // biome-ignore lint/complexity/useLiteralKeys: it's ok
-        remappedEnv['VITE_RPC_URI_FOR'] = rpcUriFor
+        remappedEnv.VITE_RPC_URI_FOR = rpcUriFor
+      }
+
+      if (Object.keys(remappedEnv).length === 0) {
+        return {}
       }
 
       return {
