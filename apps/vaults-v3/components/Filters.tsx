@@ -96,12 +96,13 @@ export function Filters({
       <div className={'mb-5 w-full'}>
         <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
         <SearchBar
-          className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 md:w-full'}
+          className={'max-w-none rounded-lg text-neutral-900 md:w-full transition-all'}
           iconClassName={'text-neutral-900'}
           searchPlaceholder={'YFI Vault'}
           searchValue={searchValue}
           onSearch={onSearch}
           shouldDebounce={shouldDebounce || false}
+          highlightWhenActive={true}
         />
       </div>
       <div

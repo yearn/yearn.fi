@@ -1,3 +1,4 @@
+import { IconCross } from '@lib/icons/IconCross'
 import { IconEnter } from '@lib/icons/IconEnter'
 import { IconSearch } from '@lib/icons/IconSearch'
 import { cl } from '@lib/utils'
@@ -14,6 +15,7 @@ type TSearchBar = {
   shouldSearchByClick?: boolean
   shouldDebounce?: boolean
   onSearchClick?: () => void
+  highlightWhenActive?: boolean
 }
 
 export function SearchBar(props: TSearchBar): ReactElement {
@@ -61,8 +63,13 @@ export function SearchBar(props: TSearchBar): ReactElement {
   return (
     <div
       className={cl(
-        props.className,
-        'flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'
+        'flex h-10 w-full max-w-md items-center pl-2 pr-1 py-2 md:w-2/3',
+        props.highlightWhenActive
+          ? localSearchValue
+            ? 'bg-neutral-300/70 border-2 border-neutral-600'
+            : 'border-2 border-transparent bg-neutral-300 focus-within:bg-neutral-300/70 focus-within:border-neutral-400'
+          : 'border border-neutral-0 bg-neutral-0',
+        props.className
       )}
     >
       <div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
@@ -89,16 +96,29 @@ export function SearchBar(props: TSearchBar): ReactElement {
           }}
         />
         <div
-          role={props.shouldSearchByClick ? 'button' : 'div'}
-          onClick={() => props.onSearchClick?.()}
-          className={cl(props.iconClassName, 'absolute right-[10px] top-[12px] text-neutral-400')}
+          role={localSearchValue ? 'button' : 'div'}
+          onClick={() => {
+            if (props.shouldSearchByClick && localSearchValue) {
+              return props.onSearchClick?.()
+            }
+            if (!props.shouldSearchByClick && localSearchValue) {
+              handleSearchChange('')
+            }
+          }}
+          className={cl(
+            props.iconClassName,
+            'absolute right-0 top-1/2 -translate-y-1/2 text-neutral-400 p-3',
+            localSearchValue && !props.shouldSearchByClick ? 'cursor-pointer hover:text-neutral-600 group' : ''
+          )}
         >
-          {props.shouldSearchByClick && props.searchValue ? (
+          {props.shouldSearchByClick && localSearchValue ? (
             <div className={'rounded-md border border-gray-500 p-[6px]'}>
               <IconEnter className={'size-3'} />
             </div>
+          ) : localSearchValue && !props.shouldSearchByClick ? (
+            <IconCross className={'size-3 text-neutral-600 group-hover:text-neutral-500 transition-all'} />
           ) : (
-            <IconSearch className={'size-4'} />
+            <IconSearch className={'size-4 text-neutral-400'} />
           )}
         </div>
       </div>
