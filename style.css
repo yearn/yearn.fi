@@ -162,7 +162,7 @@ body {
 ** Header an navbar
 ***************************************************************************************************/
 .yearn--header {
-  @apply inset-x-0 top-0 z-50 mb-5 flex h-20 w-full max-w-[1200px] flex-row items-center justify-between p-4 text-xs sm:text-sm md:inset-x-auto md:mb-0 md:px-0 md:text-base;
+  @apply inset-x-0 top-0 z-50 flex h-20 w-full max-w-[1200px] flex-row items-center justify-between p-4 text-xs sm:text-sm md:inset-x-auto md:mb-0 md:px-0 md:text-base;
 }
 .yearn--nav {
   @apply hidden flex-row items-center space-x-3 md:flex md:space-x-6;
