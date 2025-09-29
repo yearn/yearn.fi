@@ -3,6 +3,7 @@ import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
+import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TSortDirection } from '@lib/types'
 import { cl, formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -13,10 +14,10 @@ import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
 import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
-import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
+import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
-import { Fragment, useCallback, useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 
 function Background(): ReactElement {
   return (
@@ -65,7 +66,13 @@ function V3Card(): ReactElement {
   )
 }
 
-function PortfolioCard(): ReactElement {
+function PortfolioCard({
+  categories,
+  onChangeCategories
+}: {
+  categories: string[]
+  onChangeCategories: (categories: string[]) => void
+}): ReactElement {
   const { cumulatedValueInV3Vaults, isLoading } = useWallet()
   const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
 
@@ -109,51 +116,91 @@ function PortfolioCard(): ReactElement {
       <strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
         {'Portfolio'}
       </strong>
-      <div className={'flex flex-col gap-4 md:flex-row md:gap-32'}>
-        <div>
-          <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Deposited'}</p>
-          {isLoading ? (
-            <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
-          ) : (
-            <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
-              {'$'}
-              <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
-            </b>
-          )}
+      <div className={'flex flex-col gap-4'}>
+        <div className={'flex flex-col gap-4 md:flex-row md:gap-32'}>
+          <div>
+            <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Deposited'}</p>
+            {isLoading ? (
+              <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
+            ) : (
+              <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
+                {'$'}
+                <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
+              </b>
+            )}
+          </div>
+        </div>
+        <div className={'flex items-center gap-2 pt-2'}>
+          <label className={'flex cursor-pointer items-center gap-2 text-sm text-neutral-900'}>
+            <input
+              type={'checkbox'}
+              className={'rounded border-neutral-400'}
+              checked={categories.includes('Your Holdings')}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  if (!categories.includes('Your Holdings')) {
+                    onChangeCategories([...categories, 'Your Holdings'])
+                  }
+                } else {
+                  onChangeCategories(categories.filter((c) => c !== 'Your Holdings'))
+                }
+              }}
+            />
+            <span>{'Show holdings'}</span>
+          </label>
         </div>
       </div>
     </div>
   )
 }
-function ListOfVaults(): ReactElement {
+function ListOfVaults({
+  search,
+  types,
+  chains,
+  categories,
+  sortDirection,
+  sortBy,
+  onSearch,
+  onChangeTypes,
+  onChangeCategories,
+  onChangeChains,
+  onChangeSortDirection,
+  onChangeSortBy,
+  onResetMultiSelect
+}: {
+  search: string | null | undefined
+  types: string[]
+  chains: number[]
+  categories: string[]
+  sortDirection: TSortDirection
+  sortBy: TPossibleSortBy
+  onSearch: (value: string) => void
+  onChangeTypes: (value: string[] | null) => void
+  onChangeCategories: (value: string[] | null) => void
+  onChangeChains: (value: number[] | null) => void
+  onChangeSortDirection: (value: TSortDirection | '') => void
+  onChangeSortBy: (value: TPossibleSortBy | '') => void
+  onResetMultiSelect: () => void
+}): ReactElement {
   const { isLoadingVaultList } = useYearn()
-  const [showAllHoldings, setShowAllHoldings] = useState(false)
-  const {
-    search,
+  const allChains = useSupportedChains().map((chain): number => chain.id)
+
+  const { activeVaults, retiredVaults, migratableVaults, holdingsVaults, multiVaults, singleVaults } = useVaultFilter(
     types,
     chains,
-    categories,
-    sortDirection,
-    sortBy,
-    onSearch,
-    onChangeTypes,
-    onChangeCategories,
-    onChangeChains,
-    onChangeSortDirection,
-    onChangeSortBy,
-    onReset
-  } = useQueryArguments({
-    defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
-    defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
-    defaultPathname: '/v3'
-  })
-  const { activeVaults, retiredVaults, migratableVaults, holdingsVaults, multiVaults, singleVaults, hiddenHoldings } =
-    useVaultFilter(types, chains, true, search || '', categories)
+    true,
+    search || '',
+    categories
+  )
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Reset show all holdings when filters change
-  useMemo(() => {
-    setShowAllHoldings(false)
-  }, [search, types, chains, categories])
+  // Get potential results with all filters but keeping the search
+  const { activeVaults: allFilteredVaults } = useVaultFilter(
+    ALL_VAULTSV3_KINDS_KEYS,
+    allChains,
+    true,
+    search || '',
+    ALL_VAULTSV3_CATEGORIES_KEYS
+  )
 
   /**********************************************************************************************
    **	Prepare vault lists for rendering. All filtering is now done in useVaultFilter.
@@ -163,7 +210,6 @@ function ListOfVaults(): ReactElement {
     multi: TYDaemonVault[]
     single: TYDaemonVault[]
     all: TYDaemonVault[]
-    hiddenCount: number
   } | null => {
     // Combine holdings from various sources (all already filtered)
     const combinedHoldings = new Map<string, TYDaemonVault>()
@@ -181,13 +227,6 @@ function ListOfVaults(): ReactElement {
     // Add retired vaults
     for (const vault of retiredVaults) {
       combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-
-    // If showing all holdings, add hidden holdings too
-    if (showAllHoldings) {
-      for (const vault of hiddenHoldings) {
-        combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-      }
     }
 
     const holdingsArray = Array.from(combinedHoldings.values())
@@ -210,8 +249,7 @@ function ListOfVaults(): ReactElement {
       holdings: holdingsArray,
       multi: multiVaults,
       single: singleVaults,
-      all: nonHoldingsVaults,
-      hiddenCount: showAllHoldings ? 0 : hiddenHoldings.length
+      all: nonHoldingsVaults
     }
   }, [
     isLoadingVaultList,
@@ -221,61 +259,42 @@ function ListOfVaults(): ReactElement {
     retiredVaults,
     holdingsVaults,
     multiVaults,
-    singleVaults,
-    hiddenHoldings,
-    showAllHoldings
+    singleVaults
   ])
 
-  const { holdings, all, hiddenCount } = vaultLists || {
+  const { holdings, all } = vaultLists || {
     holdings: [],
-    all: [],
-    hiddenCount: 0
+    all: []
   }
   const hasHoldings = holdings.length > 0
-  const hasHiddenHoldings = hiddenCount > 0
+  const shouldShowHoldings = categories.includes('Your Holdings')
 
   const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
   const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
 
-  const handleDisplayAll = useCallback((): void => {
-    setShowAllHoldings(true)
-  }, [])
+  // Calculate potential hidden results due to filters
+  const currentResultsCount = (shouldShowHoldings ? sortedHoldings.length : 0) + sortedNonHoldings.length
+  const potentialResultsCount = allFilteredVaults.length
+  const hiddenByFiltersCount = potentialResultsCount - currentResultsCount
+  const hasHiddenResults = search && hiddenByFiltersCount > 0
 
   const renderHiddenBadge = (): ReactNode => {
-    if (!hasHiddenHoldings && !showAllHoldings) return null
+    if (!hasHiddenResults) return null
 
     return (
       <div className={'mb-4 flex items-center gap-2 justify-between rounded-2xl bg-neutral-100 px-6 py-3'}>
-        {showAllHoldings ? (
-          <>
-            <p className={'text-sm text-neutral-600'}>
-              Showing {hiddenHoldings.length} additional vault{hiddenHoldings.length > 1 ? 's' : ''} hidden by filters
-            </p>
-            <Button
-              onClick={() => setShowAllHoldings(false)}
-              className={
-                'yearn--button-smaller rounded-md max-w-18! w-full! bg-neutral-900 text-sm text-white hover:bg-neutral-800'
-              }
-            >
-              Hide
-            </Button>
-          </>
-        ) : (
-          <>
-            <p className={'text-sm text-neutral-600'}>
-              {hiddenCount} vault{hiddenCount > 1 ? 's' : ''} you have holdings in {hiddenCount > 1 ? 'are' : 'is'}{' '}
-              hidden by filters
-            </p>
-            <Button
-              onClick={handleDisplayAll}
-              className={
-                'yearn--button-smaller rounded-md max-w-18! w-full! bg-neutral-900 text-sm text-white hover:bg-neutral-800'
-              }
-            >
-              Display All
-            </Button>
-          </>
-        )}
+        <p className={'text-sm text-neutral-600'}>
+          {hiddenByFiltersCount} vault{hiddenByFiltersCount > 1 ? 's' : ''} that match search parameters hidden by
+          current filters
+        </p>
+        <Button
+          onClick={onResetMultiSelect}
+          className={
+            'yearn--button-smaller rounded-md max-w-18! w-full! bg-neutral-900 text-sm text-white hover:bg-neutral-800'
+          }
+        >
+          Show all
+        </Button>
       </div>
     )
   }
@@ -288,14 +307,15 @@ function ListOfVaults(): ReactElement {
           currentSearch={search || ''}
           currentCategories={types}
           currentChains={chains}
-          onReset={onReset}
+          onReset={onResetMultiSelect}
           defaultCategories={ALL_VAULTSV3_KINDS_KEYS}
+          potentialResultsCount={allFilteredVaults.length}
         />
       )
     }
     return (
       <Fragment>
-        {hasHoldings && (
+        {hasHoldings && shouldShowHoldings && (
           <div className={'relative grid h-fit gap-4'}>
             <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
               &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
@@ -305,7 +325,9 @@ function ListOfVaults(): ReactElement {
             ))}
           </div>
         )}
-        {hasHoldings && all.length > 0 ? <div className={'my-2 h-1 rounded-lg bg-neutral-200'} /> : null}
+        {hasHoldings && shouldShowHoldings && all.length > 0 ? (
+          <div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
+        ) : null}
         {sortedNonHoldings.map((vault) => (
           <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
         ))}
@@ -363,6 +385,25 @@ function ListOfVaults(): ReactElement {
 
 function Index(): ReactElement {
   const [isCollapsed, setIsCollapsed] = useState(true)
+  const {
+    search,
+    types,
+    chains,
+    categories,
+    sortDirection,
+    sortBy,
+    onSearch,
+    onChangeTypes,
+    onChangeCategories,
+    onChangeChains,
+    onChangeSortDirection,
+    onChangeSortBy,
+    onResetMultiSelect
+  } = useQueryArguments({
+    defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
+    defaultCategories: Object.values(ALL_VAULTSV3_CATEGORIES),
+    defaultPathname: '/v3'
+  })
 
   function onClick(): void {
     setIsCollapsed(!isCollapsed)
@@ -426,8 +467,22 @@ function Index(): ReactElement {
           </div>
 
           <div className={'grid grid-cols-12 gap-4 pt-6 md:gap-6'}>
-            <PortfolioCard />
-            <ListOfVaults />
+            <PortfolioCard categories={categories || []} onChangeCategories={onChangeCategories} />
+            <ListOfVaults
+              search={search}
+              types={types || []}
+              chains={chains || []}
+              categories={categories || []}
+              sortDirection={sortDirection}
+              sortBy={sortBy}
+              onSearch={onSearch}
+              onChangeTypes={onChangeTypes}
+              onChangeCategories={onChangeCategories}
+              onChangeChains={onChangeChains}
+              onChangeSortDirection={onChangeSortDirection}
+              onChangeSortBy={onChangeSortBy}
+              onResetMultiSelect={onResetMultiSelect}
+            />
           </div>
         </div>
       </div>

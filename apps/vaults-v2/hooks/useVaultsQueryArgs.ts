@@ -2,6 +2,7 @@ import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@lib/types'
 import { useMountEffect } from '@react-hookz/web'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
+import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -19,6 +20,7 @@ type TQueryArgs = {
   onChangeSortDirection: (value: TSortDirection | '') => void
   onChangeSortBy: (value: TPossibleSortBy | '') => void
   onReset: () => void
+  onResetMultiSelect: () => void
 }
 function useQueryArguments(props: {
   defaultTypes?: string[]
@@ -340,7 +342,19 @@ function useQueryArguments(props: {
           queryArgs[key] = val
         }
       })
-
+      updateSearchParams(queryArgs)
+    },
+    onResetMultiSelect: (): void => {
+      const isV3 = props.defaultPathname === '/v3'
+      setTypes(isV3 ? ALL_VAULTSV3_KINDS_KEYS : props.defaultTypes || [])
+      setCategories(isV3 ? ALL_VAULTSV3_CATEGORIES_KEYS : props.defaultCategories || [])
+      setChains(allChains || [])
+      const queryArgs: TDict<string | string[] | undefined> = {}
+      searchParams.forEach((val, key) => {
+        if (key !== 'types' && key !== 'categories' && key !== 'chains') {
+          queryArgs[key] = val
+        }
+      })
       updateSearchParams(queryArgs)
     }
   }

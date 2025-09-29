@@ -31,23 +31,54 @@ export function useVaultFilter(
   holdingsVaults: TYDaemonVault[]
   multiVaults: TYDaemonVault[]
   singleVaults: TYDaemonVault[]
-  hiddenHoldings: TYDaemonVault[]
 } {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice } = useYearn()
   const { getBalance } = useWallet()
-  const { shouldHideDust } = useAppSettings()
+  const { shouldHideDust: _shouldHideDust } = useAppSettings()
+  const shouldHideDust = v3 ? true : _shouldHideDust
 
   // Comprehensive filter function that applies all filters
   const applyAllFilters = useCallback(
-    (vault: TYDaemonVault): boolean => {
+    (vault: TYDaemonVault, hasHoldings?: boolean): boolean => {
       // Chain filter
       if (chains && !chains.includes(vault.chainID)) {
         return false
       }
 
-      // Category filter (vault categories like 'Curve', 'Stablecoin', etc.)
-      if (categories && categories.length > 0 && !categories.includes(vault.category)) {
-        return false
+      // Holdings vs Non-holdings filter logic
+      if (categories && categories.length > 0) {
+        const hasHoldingsCategory = categories.includes('Your Holdings')
+        const otherCategories = categories.filter((c) => c !== 'Your Holdings')
+        const onlyHoldingsSelected = hasHoldingsCategory && otherCategories.length === 0
+
+        // If only Holdings is selected
+        if (onlyHoldingsSelected) {
+          // Only allow vaults that have holdings
+          if (!hasHoldings) {
+            return false
+          }
+        }
+        // If Holdings is not selected at all
+        else if (!hasHoldingsCategory) {
+          // Only allow vaults that don't have holdings, and match the category filter
+          if (hasHoldings) {
+            return false
+          }
+          if (otherCategories.length > 0 && !otherCategories.includes(vault.category)) {
+            return false
+          }
+        }
+        // If Holdings + other categories are selected
+        else {
+          // Allow holdings vaults regardless of category, OR non-holdings that match category
+          const allowedByHoldings = hasHoldings
+          const allowedByCategory =
+            !hasHoldings && (otherCategories.length === 0 || otherCategories.includes(vault.category))
+
+          if (!allowedByHoldings && !allowedByCategory) {
+            return false
+          }
+        }
       }
 
       // Type filter (highlight, multi, single) - for v3 vaults only
@@ -317,50 +348,27 @@ export function useVaultFilter(
 
   // Apply comprehensive filtering to all vault lists
   const filteredActiveVaults = useDeepCompareMemo((): TYDaemonVault[] => {
-    return activeVaults.filter(applyAllFilters)
+    const holdings = v3 ? holdingsV3Vaults : holdingsVaults
+    return activeVaults.filter((vault) =>
+      applyAllFilters(
+        vault,
+        holdings.some((v) => v.address === vault.address)
+      )
+    )
   }, [activeVaults, applyAllFilters])
 
   const filteredHoldingsVaults = useDeepCompareMemo((): TYDaemonVault[] => {
     const holdings = v3 ? holdingsV3Vaults : holdingsVaults
-    return holdings.filter(applyAllFilters)
+    return holdings.filter((vault) => applyAllFilters(vault, true))
   }, [holdingsVaults, holdingsV3Vaults, v3, applyAllFilters])
 
   const filteredMigratableVaults = useDeepCompareMemo((): TYDaemonVault[] => {
-    return migratableVaults.filter(applyAllFilters)
+    return migratableVaults.filter((vault) => applyAllFilters(vault, true))
   }, [migratableVaults, applyAllFilters])
 
   const filteredRetiredVaults = useDeepCompareMemo((): TYDaemonVault[] => {
-    return retiredVaults.filter(applyAllFilters)
+    return retiredVaults.filter((vault) => applyAllFilters(vault, true))
   }, [retiredVaults, applyAllFilters])
-
-  // Calculate hidden holdings - vaults that exist but were filtered out
-  const hiddenHoldings = useDeepCompareMemo((): TYDaemonVault[] => {
-    const hidden: TYDaemonVault[] = []
-
-    // Check holdings vaults
-    const holdings = v3 ? holdingsV3Vaults : holdingsVaults
-    holdings.forEach((vault) => {
-      if (!applyAllFilters(vault)) {
-        hidden.push(vault)
-      }
-    })
-
-    // Check migratable vaults
-    migratableVaults.forEach((vault) => {
-      if (!applyAllFilters(vault)) {
-        hidden.push(vault)
-      }
-    })
-
-    // Check retired vaults
-    retiredVaults.forEach((vault) => {
-      if (!applyAllFilters(vault)) {
-        hidden.push(vault)
-      }
-    })
-
-    return hidden
-  }, [holdingsVaults, holdingsV3Vaults, v3, migratableVaults, retiredVaults, applyAllFilters])
 
   // Create categorized lists for v3
   const filteredMultiVaults = useDeepCompareMemo((): TYDaemonVault[] => {
@@ -379,7 +387,6 @@ export function useVaultFilter(
     migratableVaults: filteredMigratableVaults,
     retiredVaults: filteredRetiredVaults,
     multiVaults: filteredMultiVaults,
-    singleVaults: filteredSingleVaults,
-    hiddenHoldings
+    singleVaults: filteredSingleVaults
   }
 }

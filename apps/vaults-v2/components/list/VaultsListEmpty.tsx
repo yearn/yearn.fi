@@ -9,6 +9,7 @@ type TVaultListEmpty = {
   onReset: () => void
   isLoading: boolean
   defaultCategories?: string[]
+  potentialResultsCount?: number
 }
 export function VaultsListEmpty({
   currentSearch,
@@ -16,7 +17,8 @@ export function VaultsListEmpty({
   currentChains,
   onReset,
   isLoading,
-  defaultCategories = ALL_VAULTS_CATEGORIES_KEYS
+  defaultCategories = ALL_VAULTS_CATEGORIES_KEYS,
+  potentialResultsCount = 0
 }: TVaultListEmpty): ReactElement {
   if (isLoading) {
     return (
@@ -52,11 +54,23 @@ export function VaultsListEmpty({
           <p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
         ) : (currentCategories?.length || 0) < defaultCategories.length && currentSearch !== '' ? (
           <>
-            <p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist.`}</p>
-            <p className={'text-center font-normal text-neutral-600'}>{'No vaults found that match your filters.'}</p>
-            <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
-              {'Search all vaults'}
-            </Button>
+            <p
+              className={'text-center text-neutral-600'}
+            >{`No results for "${currentSearch}" with current filters.`}</p>
+            {potentialResultsCount > 0 ? (
+              <>
+                <p className={'text-center font-normal text-neutral-600'}>
+                  {`Found ${potentialResultsCount} vault${potentialResultsCount > 1 ? 's' : ''} when searching all categories.`}
+                </p>
+                <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
+                  {'Show all results'}
+                </Button>
+              </>
+            ) : (
+              <p className={'text-center font-normal text-neutral-600'}>
+                {`The vault "${currentSearch}" does not exist.`}
+              </p>
+            )}
           </>
         ) : (
           <>
