@@ -11,7 +11,7 @@
         "@tanstack/react-query": "5.85.3",
         "@wagmi/connectors": "5.9.3",
         "@wagmi/core": "2.19.0",
-        "axios": "^1.12.0",
+        "axios": "1.12.2",
         "cross-fetch": "4.1.0",
         "ethers": "5.7.2",
         "framer-motion": "11.18.2",
