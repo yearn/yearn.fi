@@ -10,7 +10,6 @@ import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { VaultChainTag } from '../VaultChainTag'
 import { getNetwork } from '../../../lib/utils/wagmi'
 
 export function VaultsV3ListRow({
@@ -36,8 +35,6 @@ export function VaultsV3ListRow({
       navigate(href)
     }
   }
-
-  // Separate mobile and desktop layouts
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation
@@ -80,7 +77,6 @@ export function VaultsV3ListRow({
             >
               {currentVault.name}
             </strong>
-            {/* <p className={'mb-0 block text-sm text-neutral-800/60 md:mb-2'}>{currentVault.token.name}</p> */}
             <div className={'flex flex-row items-center gap-1'}>
               <ImageWithFallback
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`}

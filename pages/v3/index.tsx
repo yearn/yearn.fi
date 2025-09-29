@@ -1,9 +1,8 @@
 import { useWallet } from '@lib/contexts/useWallet'
-import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
 import type { TSortDirection } from '@lib/types'
-import { cl, formatAmount, isZero, toNormalizedBN } from '@lib/utils'
+import { cl, isZero, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
@@ -15,40 +14,8 @@ import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
 import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
-import { Children, Fragment, useMemo, useState } from 'react'
+import { Children, Fragment, useMemo } from 'react'
 
-function Background(): ReactElement {
-  return (
-    <div className={cl('absolute inset-0', 'pointer-events-none', 'bg-gradient-to-r from-[#D21162] to-[#2C3DA6]')} />
-  )
-}
-function BrandNewVaultCard(): ReactElement {
-  return (
-    <div
-      className={cl(
-        'h-full rounded-3xl relative overflow-hidden',
-        'pr-2 pl-4 pb-4 pt-6 md:p-10',
-        'col-span-75 md:col-span-60'
-      )}
-    >
-      <div className={'relative z-10'}>
-        <h1
-          className={cl(
-            'mb-2 md:mb-4 font-black text-neutral-900',
-            'text-[48px] lg:text-[56px] lg:leading-[64px] leading-[48px]',
-            'whitespace-break-spaces uppercase'
-          )}
-        >
-          {'Yearn Automated Vaults'}
-        </h1>
-        {/* <p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
-          {'Yearn v3 is a new yield paradigm offering better automation,\ncomposability and flexibility. Enjoy!'}
-        </p> */}
-      </div>
-      <Background />
-    </div>
-  )
-}
 function V3Card(): ReactElement {
   return (
     <div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-2 hidden md:block md:col-span-4'}>
@@ -337,69 +304,14 @@ function ListOfVaults(): ReactElement {
 }
 
 function Index(): ReactElement {
-  const [isCollapsed, setIsCollapsed] = useState(true)
-
-  function onClick(): void {
-    setIsCollapsed(!isCollapsed)
-  }
-
   return (
-    <div className={'z-50 w-full bg-neutral-100 pt-20'}>
-      <div className={'relative mx-auto w-full max-w-[1232px]'}>
-        <div className={'absolute inset-x-0 top-0 w-full px-4 pt-6 md:pt-16'}>
-          {/* <div className={'grid grid-cols-75'}>
-            <V3Card />
-            <BrandNewVaultCard />
-          </div> */}
-        </div>
-      </div>
-
-      <div className={cl('relative pb-8 bg-neutral-0 z-50')}>
-        <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-          {/* <div
-            onClick={onClick}
-            className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}
-          >
-            <div className={'relative -mt-8 flex justify-center rounded-t-3xl'}>
-              <svg
-                xmlns={'http://www.w3.org/2000/svg'}
-                width={'113'}
-                height={'32'}
-                viewBox={'0 0 113 32'}
-                fill={'none'}
-              >
-                <path d={'M0 32C37.9861 32 20.9837 0 56 0C91.0057 0 74.388 32 113 32H0Z'} fill={'#000520'} />
-              </svg>
-              <div
-                className={`absolute mt-2 flex justify-center transition-transform ${isCollapsed ? '' : '-rotate-180'}`}
-              >
-                <svg
-                  xmlns={'http://www.w3.org/2000/svg'}
-                  width={'24'}
-                  height={'24'}
-                  viewBox={'0 0 24 24'}
-                  fill={'none'}
-                >
-                  <path
-                    fillRule={'evenodd'}
-                    clipRule={'evenodd'}
-                    d={
-                      'M4.34151 16.7526C3.92587 16.3889 3.88375 15.7571 4.24744 15.3415L11.2474 7.34148C11.4373 7.12447 11.7117 6.99999 12 6.99999C12.2884 6.99999 12.5627 7.12447 12.7526 7.34148L19.7526 15.3415C20.1163 15.7571 20.0742 16.3889 19.6585 16.7526C19.2429 17.1162 18.6111 17.0741 18.2474 16.6585L12 9.51858L5.75259 16.6585C5.38891 17.0741 4.75715 17.1162 4.34151 16.7526Z'
-                    }
-                    fill={'white'}
-                  />
-                </svg>
-              </div>
-            </div>
-          </div> */}
-
-          <div className={'grid grid-cols-12 gap-4 pt-6 md:gap-6'}>
-            <V3Card />
-
-            <ListOfVaults />
-          </div>
-        </div>
-      </div>
+    <div
+      className={
+        'relative mx-auto z-50 w-full max-w-[1232px] grid grid-cols-12 gap-4 md:gap-6 bg-neutral-0 pt-20 px-4 pb-8'
+      }
+    >
+      <V3Card />
+      <ListOfVaults />
     </div>
   )
 }
