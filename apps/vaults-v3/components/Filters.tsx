@@ -7,7 +7,7 @@ import { cl } from '@lib/utils'
 import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constants'
 
 import type { ReactElement } from 'react'
-import { useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 type TListHero = {
   types: string[] | null
@@ -126,6 +126,19 @@ export function Filters({
                 .map((option): number => Number(option.value))
               onChangeChains(selectedChains)
             }}
+            customMultipleRender={(selectedOptions): ReactElement => (
+              <div className="flex items-center">
+                {selectedOptions.map((option, index) => (
+                  <div
+                    key={option.value}
+                    className={cl('size-6 overflow-hidden rounded-full', option.label === 'Sonic' ? 'bg-white' : '')}
+                    style={{ marginLeft: index > 0 ? '-8px' : '0', zIndex: selectedOptions.length - index }}
+                  >
+                    {option.icon}
+                  </div>
+                ))}
+              </div>
+            )}
           />
         </div>
 
