@@ -34,7 +34,8 @@ export function useVaultFilter(
 } {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice } = useYearn()
   const { getBalance } = useWallet()
-  const { shouldHideDust } = useAppSettings()
+  const { shouldHideDust: _shouldHideDust } = useAppSettings()
+  const shouldHideDust = v3 ? true : _shouldHideDust
 
   // Comprehensive filter function that applies all filters
   const applyAllFilters = useCallback(
@@ -46,8 +47,8 @@ export function useVaultFilter(
 
       // Holdings vs Non-holdings filter logic
       if (categories && categories.length > 0) {
-        const hasHoldingsCategory = categories.includes('Holdings')
-        const otherCategories = categories.filter((c) => c !== 'Holdings')
+        const hasHoldingsCategory = categories.includes('Your Holdings')
+        const otherCategories = categories.filter((c) => c !== 'Your Holdings')
         const onlyHoldingsSelected = hasHoldingsCategory && otherCategories.length === 0
 
         // If only Holdings is selected

@@ -14,7 +14,7 @@ import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
 import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
-import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
+import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment, useMemo, useState } from 'react'
@@ -135,14 +135,14 @@ function PortfolioCard({
             <input
               type={'checkbox'}
               className={'rounded border-neutral-400'}
-              checked={categories.includes('Holdings')}
+              checked={categories.includes('Your Holdings')}
               onChange={(e) => {
                 if (e.target.checked) {
-                  if (!categories.includes('Holdings')) {
-                    onChangeCategories([...categories, 'Holdings'])
+                  if (!categories.includes('Your Holdings')) {
+                    onChangeCategories([...categories, 'Your Holdings'])
                   }
                 } else {
-                  onChangeCategories(categories.filter((c) => c !== 'Holdings'))
+                  onChangeCategories(categories.filter((c) => c !== 'Your Holdings'))
                 }
               }}
             />
@@ -267,7 +267,7 @@ function ListOfVaults({
     all: []
   }
   const hasHoldings = holdings.length > 0
-  const shouldShowHoldings = categories.includes('Holdings')
+  const shouldShowHoldings = categories.includes('Your Holdings')
 
   const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
   const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
@@ -401,7 +401,7 @@ function Index(): ReactElement {
     onResetMultiSelect
   } = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
-    defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
+    defaultCategories: Object.values(ALL_VAULTSV3_CATEGORIES),
     defaultPathname: '/v3'
   })
 
