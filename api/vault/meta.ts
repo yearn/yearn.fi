@@ -2,10 +2,48 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
+const HTML_ESCAPE_LOOKUP: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+}
+
+const CHAIN_ID_PATTERN = /^\d+$/
+const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/
+
+function escapeHtmlAttr(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => HTML_ESCAPE_LOOKUP[char] ?? char)
+}
+
+function normalizeChainId(chainId: string): string | null {
+  const trimmed = chainId.trim()
+  if (!CHAIN_ID_PATTERN.test(trimmed)) {
+    return null
+  }
+  return trimmed.replace(/^0+(?!$)/, '')
+}
+
+function normalizeAddress(address: string): string | null {
+  const trimmed = address.trim()
+  if (!ADDRESS_PATTERN.test(trimmed)) {
+    return null
+  }
+  return trimmed.toLowerCase()
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { chainId, address } = req.query
 
   if (!chainId || !address || typeof chainId !== 'string' || typeof address !== 'string') {
+    return res.status(400).json({ error: 'Missing or invalid chainId or address' })
+  }
+
+  const normalizedChainId = normalizeChainId(chainId)
+  const normalizedAddress = normalizeAddress(address)
+
+  if (!normalizedChainId || !normalizedAddress) {
     return res.status(400).json({ error: 'Missing or invalid chainId or address' })
   }
 
@@ -16,32 +54,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Generate dynamic meta tags
     const ogBaseUrl = 'https://og.yearn.fi'
-    const ogImageUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainId}/${address}`
-    const canonicalUrl = `https://yearn.fi/v3/${chainId}/${address}`
+    const ogImageUrl = `${ogBaseUrl}/api/og/yearn/vault/${encodeURIComponent(normalizedChainId)}/${encodeURIComponent(normalizedAddress)}`
+    const canonicalUrl = `https://yearn.fi/v3/${encodeURIComponent(normalizedChainId)}/${encodeURIComponent(normalizedAddress)}`
 
     const title = 'Yearn Vault'
     const description = "Earn yield on your crypto with Yearn's automated vault strategies"
 
     // Inject meta tags
     const metaTags = `
-    <title>${title}</title>
-    <meta name="description" content="${description}" />
+    <title>${escapeHtmlAttr(title)}</title>
+    <meta name="description" content="${escapeHtmlAttr(description)}" />
     
     <!-- Open Graph -->
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />
-    <meta property="og:image" content="${ogImageUrl}" />
-    <meta property="og:url" content="${canonicalUrl}" />
+    <meta property="og:title" content="${escapeHtmlAttr(title)}" />
+    <meta property="og:description" content="${escapeHtmlAttr(description)}" />
+    <meta property="og:image" content="${escapeHtmlAttr(ogImageUrl)}" />
+    <meta property="og:url" content="${escapeHtmlAttr(canonicalUrl)}" />
     <meta property="og:type" content="website" />
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${title}" />
-    <meta name="twitter:description" content="${description}" />
-    <meta name="twitter:image" content="${ogImageUrl}" />
+    <meta name="twitter:title" content="${escapeHtmlAttr(title)}" />
+    <meta name="twitter:description" content="${escapeHtmlAttr(description)}" />
+    <meta name="twitter:image" content="${escapeHtmlAttr(ogImageUrl)}" />
     
     <!-- Additional SEO -->
-    <link rel="canonical" href="${canonicalUrl}" />
+    <link rel="canonical" href="${escapeHtmlAttr(canonicalUrl)}" />
     `
 
     // Remove existing meta tags that we're replacing
@@ -66,7 +104,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const html = readFileSync(indexPath, 'utf-8')
       res.setHeader('Content-Type', 'text/html')
       return res.status(200).send(html)
-    } catch (fallbackError) {
+    } catch (_fallbackError) {
       return res.status(500).json({ error: 'Failed to serve page' })
     }
   }
