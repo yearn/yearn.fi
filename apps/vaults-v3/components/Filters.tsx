@@ -2,12 +2,15 @@ import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdow
 import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
 import { SearchBar } from '@lib/components/SearchBar'
 import { useChainOptions } from '@lib/hooks/useChains'
-import { IconChevron } from '@lib/icons/IconChevron'
-import { cl } from '@lib/utils'
+import { IconCross } from '@lib/icons/IconCross'
+import { cl, formatAmount } from '@lib/utils'
 import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constants'
+import { Drawer } from 'vaul'
 
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
+import useWallet from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
 
 type TListHero = {
   types: string[] | null
@@ -21,6 +24,55 @@ type TListHero = {
   onSearch: (searchValue: string) => void
 }
 
+function PortfolioCard(): ReactElement {
+  const { cumulatedValueInV3Vaults, isLoading } = useWallet()
+  const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
+
+  if (!isActive) {
+    return (
+      <div className={'flex flex-row items-center mb-4 gap-4 h-18'}>
+        <button
+          className={cl('rounded-lg overflow-hidden flex', 'px-[42px] py-2', 'relative group', 'border-none')}
+          onClick={(): void => {
+            if (!isActive && address) {
+              onSwitchChain(1)
+            } else {
+              openLoginModal()
+            }
+          }}
+        >
+          <div
+            className={cl(
+              'absolute inset-0',
+              'opacity-80 transition-opacity group-hover:opacity-100 pointer-events-none',
+              'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
+            )}
+          />
+          <p className={'z-10 text-neutral-900'}>{'Connect Wallet'}</p>
+        </button>
+        <p className={'text-[#757CA6] p-2'}>{'It looks like you need to connect your wallet.'}</p>
+      </div>
+    )
+  }
+  return (
+    <div className={'flex flex-row justify-between mb-4'}>
+      <div className={'flex flex-row gap-4 md:flex-row md:gap-32'}>
+        <div>
+          <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Amount Deposited'}</p>
+          {isLoading ? (
+            <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
+          ) : (
+            <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
+              {'$'}
+              <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
+            </b>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Filters({
   types,
   onChangeTypes,
@@ -32,7 +84,7 @@ export function Filters({
   shouldDebounce,
   onChangeChains
 }: TListHero): ReactElement {
-  const [shouldExpandFilters, setShouldExpandFilters] = useState(false)
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const chainOptions = useChainOptions(chains).filter(
     (option): boolean =>
       option.value === 1 ||
@@ -66,20 +118,7 @@ export function Filters({
 
   return (
     <div className={'relative col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-8'}>
-      <strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
-        {'Filters'}
-      </strong>
-
-      <div className={'absolute right-10 top-10 block md:hidden'}>
-        <button onClick={(): void => setShouldExpandFilters((prev): boolean => !prev)}>
-          <IconChevron
-            className={cl(
-              'size-4 text-neutral-400 transition-all hover:text-neutral-900',
-              !shouldExpandFilters ? '-rotate-90' : 'rotate-0'
-            )}
-          />
-        </button>
-      </div>
+      <PortfolioCard />
 
       <div className={'mb-5 w-full'}>
         <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
@@ -92,59 +131,125 @@ export function Filters({
           shouldDebounce={shouldDebounce || false}
         />
       </div>
-      <div
-        className={cl(
-          'grid grid-cols-1 gap-6 md:grid-cols-3',
-          shouldExpandFilters ? 'h-auto' : 'h-0 overflow-hidden md:h-auto md:overflow-visible'
-        )}
-      >
-        <div className={'w-full'}>
-          <p className={'pb-2 text-[#757CA6]'}>{'Select Blockchain'}</p>
-          <MultiSelectDropdown
-            buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
-            comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
-            options={chainOptions}
-            placeholder={'Select chain'}
-            onSelect={(options): void => {
-              const selectedChains = options
-                .filter((o): boolean => o.isSelected)
-                .map((option): number => Number(option.value))
-              onChangeChains(selectedChains)
-            }}
-          />
-        </div>
+      <div className={'md:hidden'}>
+        <Drawer.Root open={isMobileFiltersOpen} onOpenChange={setIsMobileFiltersOpen} direction={'bottom'}>
+          <Drawer.Trigger asChild>
+            <button
+              className={
+                'w-full cursor-pointer rounded-[4px] bg-neutral-800/20 py-2 text-sm text-neutral-900 transition-colors hover:bg-neutral-800/50'
+              }
+            >
+              {'Filter Vaults'}
+            </button>
+          </Drawer.Trigger>
+          <Drawer.Portal>
+            <Drawer.Overlay className={'fixed inset-0 z-99998 bg-black/40 backdrop-blur-xs transition-opacity'} />
+            <Drawer.Content className={'fixed inset-x-0 bottom-0 z-99999 flex justify-center outline-hidden'}>
+              <div
+                className={
+                  'w-full max-w-[520px] rounded-t-3xl bg-neutral-100 p-6 shadow-[0_-16px_60px_rgba(15,23,42,0.35)]'
+                }
+                style={{ height: '75vh', overflowY: 'auto' }}
+              >
+                <div className={'mb-4 flex items-center justify-between'}>
+                  <p className={'text-base font-medium text-neutral-900'}>{'Filter Vaults'}</p>
+                  <Drawer.Close
+                    className={'rounded-full p-2 text-neutral-900 transition-colors hover:text-neutral-600'}
+                  >
+                    <IconCross className={'size-4'} />
+                  </Drawer.Close>
+                </div>
+                <FilterControls
+                  chainOptions={chainOptions}
+                  onChangeChains={onChangeChains}
+                  categoryOptions={categoryOptions}
+                  onChangeCategories={onChangeCategories}
+                  typeOptions={typeOptions}
+                  onChangeTypes={onChangeTypes}
+                />
+              </div>
+            </Drawer.Content>
+          </Drawer.Portal>
+        </Drawer.Root>
+      </div>
 
-        <div className={'w-full'}>
-          <p className={'pb-2 text-[#757CA6]'}>{'Select Category'}</p>
-          <MultiSelectDropdown
-            buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
-            comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
-            options={categoryOptions}
-            placeholder={'Filter categories'}
-            onSelect={(options): void => {
-              const selectedCategories = options
-                .filter((o): boolean => o.isSelected)
-                .map((option): string => String(option.value))
-              onChangeCategories(selectedCategories)
-            }}
-          />
-        </div>
+      <div className={'hidden md:block'}>
+        <FilterControls
+          chainOptions={chainOptions}
+          onChangeChains={onChangeChains}
+          categoryOptions={categoryOptions}
+          onChangeCategories={onChangeCategories}
+          typeOptions={typeOptions}
+          onChangeTypes={onChangeTypes}
+        />
+      </div>
+    </div>
+  )
+}
 
-        <div className={'w-full'}>
-          <p className={'pb-2 text-[#757CA6]'}>{'Select Type'}</p>
-          <MultiSelectDropdown
-            buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
-            comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
-            options={typeOptions}
-            placeholder={'Filter list'}
-            onSelect={(options): void => {
-              const selectedTypes = options
-                .filter((o): boolean => o.isSelected)
-                .map((option): string => String(option.value))
-              onChangeTypes(selectedTypes)
-            }}
-          />
-        </div>
+function FilterControls({
+  chainOptions,
+  onChangeChains,
+  categoryOptions,
+  onChangeCategories,
+  typeOptions,
+  onChangeTypes
+}: {
+  chainOptions: TMultiSelectOptionProps[]
+  onChangeChains: (chains: number[] | null) => void
+  categoryOptions: TMultiSelectOptionProps[]
+  onChangeCategories: (categories: string[] | null) => void
+  typeOptions: TMultiSelectOptionProps[]
+  onChangeTypes: (types: string[] | null) => void
+}): ReactElement {
+  return (
+    <div className={'grid grid-cols-1 gap-6 md:grid-cols-3'}>
+      <div className={'w-full'}>
+        <p className={'pb-2 text-[#757CA6]'}>{'Select Blockchain'}</p>
+        <MultiSelectDropdown
+          buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
+          comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
+          options={chainOptions}
+          placeholder={'Select chain'}
+          onSelect={(options): void => {
+            const selectedChains = options
+              .filter((o): boolean => o.isSelected)
+              .map((option): number => Number(option.value))
+            onChangeChains(selectedChains)
+          }}
+        />
+      </div>
+
+      <div className={'w-full'}>
+        <p className={'pb-2 text-[#757CA6]'}>{'Select Category'}</p>
+        <MultiSelectDropdown
+          buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
+          comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
+          options={categoryOptions}
+          placeholder={'Filter categories'}
+          onSelect={(options): void => {
+            const selectedCategories = options
+              .filter((o): boolean => o.isSelected)
+              .map((option): string => String(option.value))
+            onChangeCategories(selectedCategories)
+          }}
+        />
+      </div>
+
+      <div className={'w-full'}>
+        <p className={'pb-2 text-[#757CA6]'}>{'Select Type'}</p>
+        <MultiSelectDropdown
+          buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
+          comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
+          options={typeOptions}
+          placeholder={'Filter list'}
+          onSelect={(options): void => {
+            const selectedTypes = options
+              .filter((o): boolean => o.isSelected)
+              .map((option): string => String(option.value))
+            onChangeTypes(selectedTypes)
+          }}
+        />
       </div>
     </div>
   )
