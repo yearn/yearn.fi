@@ -1,4 +1,3 @@
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { retrieveConfig } from '@lib/utils/wagmi'
 import { useCustomCompareMemo, useDeepCompareMemo } from '@react-hookz/web'
@@ -36,10 +35,7 @@ export function useChainOptions(chains: number[] | null): TMultiSelectOptionProp
         value: chain.id,
         isSelected: chains?.includes(chain.id) || false,
         icon: (
-          <ImageWithFallback
-            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo-128.png`}
-            alt={chain.name}
-          />
+          <img src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo-128.png`} alt={chain.name} />
         )
       })
     }
