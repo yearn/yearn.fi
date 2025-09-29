@@ -143,6 +143,7 @@ function App(): ReactElement {
               }
             }}
             position={'bottom-right'}
+            containerStyle={{ maxWidth: 'calc(100vw - 32px)', width: '100%' }}
           />
         </main>
       </WithFonts>
