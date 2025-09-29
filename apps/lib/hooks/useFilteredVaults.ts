@@ -44,7 +44,7 @@ export function useVaultFilter(
       if (chains && !chains.includes(vault.chainID)) {
         return false
       }
-
+      console.log(categories)
       // Holdings vs Non-holdings filter logic
       if (categories && categories.length > 0) {
         const hasHoldingsCategory = categories.includes('Your Holdings')
@@ -153,10 +153,7 @@ export function useVaultFilter(
       }
 
       const hasValidBalance = vaultBalance.raw > 0n
-      const balanceValue = vaultBalance.normalized * vaultPrice.normalized
-      if (shouldHideDust && balanceValue < 0.01) {
-        return false
-      }
+
       if (hasValidBalance) {
         if (isFactoryOnly) {
           if (vault.category === 'Curve' && isAutomatedVault(vault)) {

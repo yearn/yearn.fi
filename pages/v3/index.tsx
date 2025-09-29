@@ -14,7 +14,7 @@ import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
 import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
-import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
+import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment, useMemo, useState } from 'react'
@@ -199,7 +199,7 @@ function ListOfVaults({
     allChains,
     true,
     search || '',
-    ALL_VAULTSV3_CATEGORIES_KEYS
+    Object.values(ALL_VAULTSV3_CATEGORIES)
   )
 
   /**********************************************************************************************
@@ -267,6 +267,7 @@ function ListOfVaults({
     all: []
   }
   const hasHoldings = holdings.length > 0
+  console.log(holdings.length)
   const shouldShowHoldings = categories.includes('Your Holdings')
 
   const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
@@ -308,7 +309,7 @@ function ListOfVaults({
           currentCategories={types}
           currentChains={chains}
           onReset={onResetMultiSelect}
-          defaultCategories={ALL_VAULTSV3_KINDS_KEYS}
+          defaultCategories={Object.values(ALL_VAULTSV3_CATEGORIES)}
           potentialResultsCount={allFilteredVaults.length}
         />
       )
