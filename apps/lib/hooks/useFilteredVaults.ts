@@ -44,7 +44,7 @@ export function useVaultFilter(
       if (chains && !chains.includes(vault.chainID)) {
         return false
       }
-      console.log(categories)
+
       // Holdings vs Non-holdings filter logic
       if (categories && categories.length > 0) {
         const hasHoldingsCategory = categories.includes('Your Holdings')

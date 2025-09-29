@@ -3,7 +3,7 @@ import type { TDict, TSortDirection } from '@lib/types'
 import { useMountEffect } from '@react-hookz/web'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
 import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 type TQueryArgs = {
@@ -162,20 +162,6 @@ function useQueryArguments(props: {
     const currentPage = new URL(window.location.href)
     handleQuery(new URLSearchParams(currentPage.search))
   })
-
-  // Track if we've already processed the current search params to avoid loops
-  const lastProcessedSearch = useRef<string>('')
-  const searchString = searchParams.toString()
-
-  useEffect((): void => {
-    // Only process if search params actually changed
-    if (lastProcessedSearch.current !== searchString) {
-      lastProcessedSearch.current = searchString
-      if (!props.defaultPathname || props.defaultPathname === pathname) {
-        handleQuery(searchParams as URLSearchParams)
-      }
-    }
-  }, [searchString, props.defaultPathname, pathname, handleQuery, searchParams])
 
   return {
     search,

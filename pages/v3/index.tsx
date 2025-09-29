@@ -202,6 +202,13 @@ function ListOfVaults({
     Object.values(ALL_VAULTSV3_CATEGORIES)
   )
 
+  // Get all holdings
+  const {
+    holdingsVaults: allHoldingsVaults,
+    retiredVaults: allRetiredVaults,
+    migratableVaults: allMigratableVaults
+  } = useVaultFilter(ALL_VAULTSV3_KINDS_KEYS, allChains, true, '', Object.values(ALL_VAULTSV3_CATEGORIES))
+
   /**********************************************************************************************
    **	Prepare vault lists for rendering. All filtering is now done in useVaultFilter.
    *********************************************************************************************/
@@ -267,7 +274,6 @@ function ListOfVaults({
     all: []
   }
   const hasHoldings = holdings.length > 0
-  console.log(holdings.length)
   const shouldShowHoldings = categories.includes('Your Holdings')
 
   const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
@@ -279,6 +285,14 @@ function ListOfVaults({
   const hiddenByFiltersCount = potentialResultsCount - currentResultsCount
   const hasHiddenResults = search && hiddenByFiltersCount > 0
 
+  // Calculate hidden holdings due to filters (regardless of search)
+  const hiddenHoldingsCount =
+    allHoldingsVaults.length +
+    allRetiredVaults.length +
+    allMigratableVaults.length -
+    (shouldShowHoldings ? holdings.length : 0)
+  const hasHiddenHoldings = hiddenHoldingsCount > 0 && shouldShowHoldings
+
   const renderHiddenBadge = (): ReactNode => {
     if (!hasHiddenResults) return null
 
@@ -287,6 +301,26 @@ function ListOfVaults({
         <p className={'text-sm text-neutral-600'}>
           {hiddenByFiltersCount} vault{hiddenByFiltersCount > 1 ? 's' : ''} that match search parameters hidden by
           current filters
+        </p>
+        <Button
+          onClick={onResetMultiSelect}
+          className={
+            'yearn--button-smaller rounded-md max-w-18! w-full! bg-neutral-900 text-sm text-white hover:bg-neutral-800'
+          }
+        >
+          Show all
+        </Button>
+      </div>
+    )
+  }
+
+  const renderHiddenHoldingsBadge = (): ReactNode => {
+    if (!hasHiddenHoldings || search) return null
+
+    return (
+      <div className={'mb-4 flex items-center gap-2 justify-between rounded-2xl bg-neutral-100 px-6 py-3'}>
+        <p className={'text-sm text-neutral-600'}>
+          {hiddenHoldingsCount} vault{hiddenHoldingsCount > 1 ? 's' : ''} with holdings hidden by current filters
         </p>
         <Button
           onClick={onResetMultiSelect}
@@ -351,6 +385,7 @@ function ListOfVaults({
       />
       <div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
         {renderHiddenBadge()}
+        {renderHiddenHoldingsBadge()}
         <VaultsV3ListHead
           sortBy={sortBy}
           sortDirection={sortDirection}

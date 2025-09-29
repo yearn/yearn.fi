@@ -102,7 +102,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
               return props.onSearchClick?.()
             }
             if (!props.shouldSearchByClick && localSearchValue) {
-              handleSearchChange('')
+              props.onSearch('')
             }
           }}
           className={cl(
