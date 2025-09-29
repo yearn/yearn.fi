@@ -284,7 +284,8 @@ function ListOfVaults({
     return (
       <div className={'mb-4 flex items-center gap-2 justify-between rounded-2xl bg-neutral-100 px-6 py-3'}>
         <p className={'text-sm text-neutral-600'}>
-          {hiddenByFiltersCount} vault{hiddenByFiltersCount > 1 ? 's' : ''} hidden by current filters
+          {hiddenByFiltersCount} vault{hiddenByFiltersCount > 1 ? 's' : ''} that match search parameters hidden by
+          current filters
         </p>
         <Button
           onClick={onResetMultiSelect}
