@@ -149,7 +149,7 @@ export function Filters({
                 className={
                   'w-full max-w-[520px] rounded-t-3xl bg-neutral-100 p-6 shadow-[0_-16px_60px_rgba(15,23,42,0.35)]'
                 }
-                style={{ height: '85vh', overflowY: 'auto' }}
+                style={{ height: '70vh', overflowY: 'auto' }}
               >
                 <div className={'mb-4 flex items-center justify-between'}>
                   <p className={'text-base font-medium text-neutral-900'}>{'Filter Vaults'}</p>
