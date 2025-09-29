@@ -240,25 +240,24 @@ export function MultiSelectDropdown({
             />
             <IconChevron
               aria-hidden={'true'}
-              className={`size-6 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
+              className={`size-6 transition-transform duration-300 ease-in-out ${isOpen ? '-rotate-180' : 'rotate-0'}`}
             />
           </ComboboxButton>
         )}
         <Transition
-          as={'div'}
           show={isOpen}
-          enter={'transition duration-100 ease-out'}
-          enterFrom={'transform scale-95 opacity-0'}
-          enterTo={'transform scale-100 opacity-100'}
-          leave={'transition duration-75 ease-out'}
-          leaveFrom={'transform scale-100 opacity-100'}
-          leaveTo={'transform scale-95 opacity-0'}
+          enter={'transition-all duration-300 ease-out'}
+          enterFrom={'opacity-0 translate-y-[-4px]'}
+          enterTo={'opacity-100 translate-y-0'}
+          leave={'transition-all duration-200 ease-in'}
+          leaveFrom={'opacity-100 translate-y-0'}
+          leaveTo={'opacity-0 translate-y-[-4px]'}
           afterLeave={(): void => setQuery('')}
         >
           <ComboboxOptions
             className={cl(
               props.comboboxOptionsClassName,
-              'absolute top-12 z-50 flex w-full min-w-[256px] cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'
+              'absolute top-12 z-50 flex w-full min-w-[256px] cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none origin-top will-change-[opacity,transform] transform-gpu'
             )}
           >
             <SelectAllOption

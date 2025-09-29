@@ -16,7 +16,6 @@ import { cl } from '@lib/utils'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
 import type { ReactElement } from 'react'
-import { HelmetProvider } from 'react-helmet-async'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router-dom'
 import PlausibleProvider from './components/PlausibleProvider'
@@ -85,16 +84,16 @@ function App(): ReactElement {
   }
 
   return (
-    <HelmetProvider>
+    <>
+      <Meta
+        title={manifest.name || 'Yearn'}
+        description={manifest.description || 'The yield protocol for digital assets'}
+        titleColor={'#ffffff'}
+        themeColor={'#000000'}
+        og={ogUrl}
+        uri={pageUri}
+      />
       <WithFonts>
-        <Meta
-          title={manifest.name || 'Yearn'}
-          description={manifest.description || 'The yield protocol for digital assets'}
-          titleColor={'#ffffff'}
-          themeColor={'#000000'}
-          og={ogUrl}
-          uri={pageUri}
-        />
         <main className={'font-aeonik size-full min-h-screen'}>
           <PlausibleProvider domain={'yearn.fi'} enabled={true}>
             <WithMom
@@ -144,11 +143,10 @@ function App(): ReactElement {
               }
             }}
             position={'bottom-right'}
-            containerStyle={{ maxWidth: 'calc(100vw - 32px)', width: '100%' }}
           />
         </main>
       </WithFonts>
-    </HelmetProvider>
+    </>
   )
 }
 

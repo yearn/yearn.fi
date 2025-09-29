@@ -10,7 +10,7 @@ import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getNetwork } from '../../../lib/utils/wagmi'
+import { getNetwork } from '@lib/utils/wagmi'
 
 export function VaultsV3ListRow({
   currentVault,

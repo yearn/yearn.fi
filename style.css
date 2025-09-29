@@ -1,18 +1,16 @@
 /* External Dependencies */
 /** biome-ignore-all lint/complexity/noImportantStyles: overriding some library styles */
-@import '@rainbow-me/rainbowkit/styles.css';
+@import "@rainbow-me/rainbowkit/styles.css";
 /* Tailwind CSS */
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme {
   /* Font families */
-  --font-family-aeonik: Aeonik, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, Helvetica, Arial, sans-serif;
-  --font-family-aeonik-fono: 'Aeonik Fono', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-family-aeonik-mono: 'Aeonik Mono', Consolas, 'Courier New', monospace;
-  --font-family-source-code-pro: 'Source Code Pro', 'Aeonik Mono', Consolas,
-    'Courier New', monospace;
+  --font-family-aeonik: Aeonik, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family-aeonik-fono:
+    "Aeonik Fono", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family-aeonik-mono: "Aeonik Mono", Consolas, "Courier New", monospace;
+  --font-family-source-code-pro: "Source Code Pro", "Aeonik Mono", Consolas, "Courier New", monospace;
 
   --color-black: hsl(0 0% 0%);
   --color-white: hsl(0 0% 100%);
@@ -131,8 +129,7 @@ html {
 
 body {
   color: var(--color-neutral-900);
-  font-family: aeonik, 'aeonik Fallback', 'Source Code Pro',
-    'Source Code Pro Fallback', sans-serif;
+  font-family: aeonik, "aeonik Fallback", "Source Code Pro", "Source Code Pro Fallback", sans-serif;
 }
 
 #main {
@@ -141,8 +138,8 @@ body {
 
 @layer utilities {
   .font-number {
-    font-family: 'Aeonik Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
-      Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-family:
+      "Aeonik Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
 
   .scrollbar-none {
@@ -155,7 +152,7 @@ body {
 }
 
 @layer components {
-  [role='button'],
+  [role="button"],
   button {
     @apply cursor-pointer;
   }
@@ -165,7 +162,7 @@ body {
 ** Header an navbar
 ***************************************************************************************************/
 .yearn--header {
-  @apply inset-x-0 top-0 z-50 mb-5 flex h-20 w-full max-w-[1200px] flex-row items-center justify-between p-4 text-xs sm:text-sm md:inset-x-auto md:mb-0 md:px-0 md:text-base;
+  @apply inset-x-0 top-0 z-50 flex h-20 w-full max-w-[1200px] flex-row items-center justify-between p-4 text-xs sm:text-sm md:inset-x-auto md:mb-0 md:px-0 md:text-base;
 }
 .yearn--nav {
   @apply flex flex-row items-center space-x-3 md:space-x-6;
