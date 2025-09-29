@@ -3,7 +3,7 @@ import { useYearn } from '@lib/contexts/useYearn'
 import { IconCross } from '@lib/icons/IconCross'
 import { cl } from '@lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
-import { type ReactElement, useEffect } from 'react'
+import { type CSSProperties, type ReactElement, useEffect, useState } from 'react'
 import { Drawer } from 'vaul'
 
 import { Notification } from './Notification'
@@ -13,11 +13,20 @@ export function NotificationsCurtain(props: {
   isOpen: boolean
   variant: 'v2' | 'v3'
 }): ReactElement {
+  const isDesktop = useIsMdUp()
+  const drawerDirection = isDesktop ? 'right' : 'bottom'
   const { cachedEntries, setNotificationStatus, isLoading, error } = useNotifications()
   const { vaults, vaultsMigrations, vaultsRetired } = useYearn()
   const allVaults = { ...vaults, ...vaultsMigrations, ...vaultsRetired }
 
   const isEmpty = cachedEntries.length === 0
+
+  const scrollAreaStyle: CSSProperties = {
+    scrollbarColor: '#9E9E9E transparent',
+    scrollbarWidth: 'thin',
+    scrollbarGutter: 'stable',
+    ...(drawerDirection === 'right' ? {} : { maxHeight: 'calc(90vh - 96px)' })
+  }
 
   /*************************************************************************************
    * Clear top bar notification status when drawer is triggered
@@ -39,14 +48,26 @@ export function NotificationsCurtain(props: {
   }, [props.isOpen, setNotificationStatus])
 
   return (
-    <Drawer.Root direction={'right'} open={props.isOpen} onOpenChange={props.setShouldOpenCurtain}>
+    <Drawer.Root direction={drawerDirection} open={props.isOpen} onOpenChange={props.setShouldOpenCurtain}>
       <Drawer.Portal>
         <Drawer.Overlay className={'fixed inset-0 z-999998 bg-black/40 backdrop-blur-xs transition-all duration-300'} />
-        <Drawer.Content className={'fixed inset-y-0 right-0 z-999999 flex w-full outline-hidden md:w-[386px]'}>
+        <Drawer.Content
+          className={cl(
+            'fixed z-999999 outline-hidden',
+            drawerDirection === 'right'
+              ? 'inset-y-0 right-0 flex w-full md:w-[386px]'
+              : 'inset-x-0 bottom-0 flex w-full justify-center'
+          )}
+        >
           <div
             className={cl(
-              'flex w-full grow flex-col py-5 pl-5 md:my-2 md:mr-2 shadow-2xl',
-              props.variant === 'v3' ? 'bg-neutral-100 md:rounded-3xl' : 'bg-neutral-0'
+              'flex w-full grow flex-col shadow-2xl',
+              drawerDirection === 'right' ? 'py-5 pl-5 md:my-2 md:mr-2' : 'rounded-t-3xl px-5 pb-6 pt-5 max-h-[90vh]',
+              props.variant === 'v3'
+                ? drawerDirection === 'right'
+                  ? 'bg-neutral-100 md:rounded-3xl'
+                  : 'bg-neutral-100'
+                : 'bg-neutral-0'
             )}
           >
             <div className={'h-full'}>
@@ -57,12 +78,11 @@ export function NotificationsCurtain(props: {
                 </Drawer.Close>
               </div>
               <div
-                className={'h-[94.5%] overflow-y-auto overflow-x-hidden pt-2'}
-                style={{
-                  scrollbarColor: '#9E9E9E transparent',
-                  scrollbarWidth: 'thin',
-                  scrollbarGutter: 'stable'
-                }}
+                className={cl(
+                  'overflow-y-auto overflow-x-hidden pt-2',
+                  drawerDirection === 'right' ? 'h-[94.5%]' : 'max-h-full'
+                )}
+                style={scrollAreaStyle}
               >
                 {isLoading ? (
                   <div className={'flex h-full items-center justify-center'}>
@@ -108,4 +128,35 @@ export function NotificationsCurtain(props: {
       </Drawer.Portal>
     </Drawer.Root>
   )
+}
+
+function useIsMdUp(): boolean {
+  const [isMdUp, setIsMdUp] = useState(true)
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return
+    }
+
+    const mediaQuery = window.matchMedia('(min-width: 768px)')
+    const handler = (): void => setIsMdUp(mediaQuery.matches)
+
+    handler()
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handler)
+    } else if (typeof mediaQuery.addListener === 'function') {
+      mediaQuery.addListener(handler)
+    }
+
+    return () => {
+      if (typeof mediaQuery.removeEventListener === 'function') {
+        mediaQuery.removeEventListener('change', handler)
+      } else if (typeof mediaQuery.removeListener === 'function') {
+        mediaQuery.removeListener(handler)
+      }
+    }
+  }, [])
+
+  return isMdUp
 }
