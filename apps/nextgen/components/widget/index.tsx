@@ -2,7 +2,7 @@ import { cl } from '@lib/utils'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { WidgetActionType as ActionType } from '@nextgen/types'
 import { type FC, useMemo, useState } from 'react'
-import { type Address, erc4626Abi, zeroAddress } from 'viem'
+import { type Address, erc4626Abi } from 'viem'
 import { useReadContract } from 'wagmi'
 import { WidgetDeposit } from './WidgetDeposit'
 import { WidgetStake } from './WidgetStake'
@@ -24,12 +24,13 @@ export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions }) => {
     functionName: vaultType === 'v2' ? 'token' : 'asset'
   })
 
+  const gaugeAddress = '0x622fA41799406B120f9a40dA843D358b7b2CFEE3'
+
   const SelectedComponent = useMemo(() => {
     switch (mode) {
       case ActionType.Deposit:
         return (
           <WidgetDeposit
-            account={zeroAddress}
             vaultAddress={vaultAddress as `0x${string}`}
             vaultType={vaultType}
             assetAddress={assetToken as Address}
@@ -38,21 +39,20 @@ export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions }) => {
       case ActionType.Withdraw:
         return (
           <WidgetWithdraw
-            account={zeroAddress}
             assetAddress={assetToken as Address}
             vaultAddress={vaultAddress as `0x${string}`}
             vaultType={vaultType}
           />
         )
       case ActionType.Stake:
-        return <WidgetStake />
+        return <WidgetStake vaultAddress={vaultAddress as `0x${string}`} gaugeAddress={gaugeAddress as `0x${string}`} />
       case ActionType.Unstake:
         return <WidgetUnstake />
     }
   }, [mode, vaultAddress, vaultType, assetToken])
 
   return (
-    <div className="flex flex-col gap-0 mt-16">
+    <div className="flex flex-col gap-0 mt-4">
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="bg-gray-100 rounded-lg flex h-12">
           {actions.map((title) => (

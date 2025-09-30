@@ -2,7 +2,7 @@ import { erc4626Abi } from '@lib/utils/abi/4626.abi'
 import { vaultAbi as _vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import type { UseDepositReturn } from '@nextgen/types'
 import { type Abi, type Address, erc20Abi } from 'viem'
-import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
+import { type UseSimulateContractReturnType, useReadContracts, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
   vaultAddress: Address
   assetAddress: Address
   amount: bigint
-  account: Address
+  account?: Address
 }
 
 // ** Deposit Action for V2 & V3 ** //
@@ -21,6 +21,24 @@ export const useDeposit = ({ vaultType, vaultAddress, assetAddress, amount, acco
     token: assetAddress,
     spender: vaultAddress,
     watch: true
+  })
+
+  const { data: [expectedDepositAmount, balanceOf] = [0n, 0n] } = useReadContracts({
+    contracts: [
+      {
+        abi: erc4626Abi,
+        address: vaultAddress,
+        functionName: 'previewDeposit',
+        args: [amount]
+      },
+      {
+        abi: erc4626Abi,
+        address: assetAddress,
+        functionName: 'balanceOf',
+        args: account ? [account] : undefined
+      }
+    ],
+    query: { select: (data) => [data[0]?.result ?? 0n, data[1]?.result ?? 0n], enabled: !!account }
   })
 
   const isValidInput = amount > 0n
@@ -67,7 +85,9 @@ export const useDeposit = ({ vaultType, vaultAddress, assetAddress, amount, acco
     },
     periphery: {
       prepareApproveEnabled,
-      prepareDepositEnabled
+      prepareDepositEnabled,
+      expectedDepositAmount,
+      balanceOf
     }
   }
 }

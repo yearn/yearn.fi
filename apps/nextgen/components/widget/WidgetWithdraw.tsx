@@ -1,4 +1,4 @@
-import { cl } from '@lib/utils'
+import { cl, exactToSimple, formatAmount } from '@lib/utils'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useWithdraw } from '@nextgen/hooks/actions/useWithdraw'
 import { useInput } from '@nextgen/hooks/useInput'
@@ -6,24 +6,19 @@ import { useTokens } from '@nextgen/hooks/useTokens'
 import type { FC } from 'react'
 import { useState } from 'react'
 import type { Address } from 'viem'
+import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
 
 interface Props {
-  account: Address
   vaultType: 'v2' | 'v3'
   assetAddress: `0x${string}`
   vaultAddress: `0x${string}`
   handleWithdrawSuccess?: () => void
 }
 
-export const WidgetWithdraw: FC<Props> = ({
-  vaultType,
-  vaultAddress,
-  assetAddress,
-  account,
-  handleWithdrawSuccess
-}) => {
-  const { tokens } = useTokens([assetAddress, vaultAddress], account)
+export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, assetAddress, handleWithdrawSuccess }) => {
+  const { address: account } = useAccount()
+  const { tokens } = useTokens([assetAddress, vaultAddress])
   const [unstakeAndWithdraw, setUnstakeAndWithdraw] = useState(false)
 
   // ** PERIPHERY ** //
@@ -34,7 +29,7 @@ export const WidgetWithdraw: FC<Props> = ({
   // ** ACTIONS ** //
   const {
     actions: { prepareWithdraw },
-    periphery: { prepareWithdrawEnabled }
+    periphery: { prepareWithdrawEnabled, expectedWithdrawAmount, balanceOf }
   } = useWithdraw({
     vaultType: vaultType,
     vaultAddress: vaultAddress as Address,
@@ -50,16 +45,16 @@ export const WidgetWithdraw: FC<Props> = ({
         placeholder="0.00"
         className="flex-1"
         symbol={vault?.symbol}
-        balance={vault?.balance}
+        balance={balanceOf}
       />
-
       <div className="space-y-1 text-sm">
         <div className="flex items-center justify-between">
           <span className="text-gray-500">You will receive</span>
-          <span className="text-gray-900 font-medium">x.xx {asset?.symbol}</span>
+          <span className="text-gray-900 font-medium">
+            {formatAmount(exactToSimple(expectedWithdrawAmount, vault?.decimals ?? 18))} {asset?.symbol}
+          </span>
         </div>
       </div>
-
       <div className="flex items-center justify-between">
         <button
           type="button"
@@ -76,7 +71,6 @@ export const WidgetWithdraw: FC<Props> = ({
         </button>
         <span className="ml-3 text-sm font-medium text-gray-900">Unstake & Withdraw</span>
       </div>
-
       <div className="pb-6 pt-2">
         <TxButton
           prepareWrite={prepareWithdraw}

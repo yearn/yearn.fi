@@ -1,4 +1,4 @@
-import { cl } from '@lib/utils'
+import { cl, exactToSimple, formatAmount } from '@lib/utils'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useDeposit } from '@nextgen/hooks/actions/useDeposit'
 import { useInput } from '@nextgen/hooks/useInput'
@@ -6,18 +6,19 @@ import { useTokens } from '@nextgen/hooks/useTokens'
 import type { FC } from 'react'
 import { useState } from 'react'
 import type { Address } from 'viem'
+import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
 
 interface Props {
-  account: Address
   vaultType: 'v2' | 'v3'
   vaultAddress: `0x${string}`
   assetAddress: `0x${string}`
   handleDepositSuccess?: () => void
 }
 
-export const WidgetDeposit: FC<Props> = ({ account, vaultType, vaultAddress, assetAddress, handleDepositSuccess }) => {
-  const { tokens } = useTokens([assetAddress, vaultAddress], account)
+export const WidgetDeposit: FC<Props> = ({ vaultType, vaultAddress, assetAddress, handleDepositSuccess }) => {
+  const { address: account } = useAccount()
+  const { tokens } = useTokens([assetAddress, vaultAddress])
   const [depositAndStake, setDepositAndStake] = useState(false)
 
   // ** PERIPHERY ** //
@@ -28,7 +29,7 @@ export const WidgetDeposit: FC<Props> = ({ account, vaultType, vaultAddress, ass
   // ** ACTIONS ** //
   const {
     actions: { prepareApprove, prepareDeposit },
-    periphery: { prepareApproveEnabled, prepareDepositEnabled }
+    periphery: { prepareApproveEnabled, prepareDepositEnabled, expectedDepositAmount, balanceOf }
   } = useDeposit({
     vaultType,
     assetAddress: asset?.address as Address,
@@ -45,13 +46,15 @@ export const WidgetDeposit: FC<Props> = ({ account, vaultType, vaultAddress, ass
         placeholder="0.00"
         className="flex-1"
         symbol={asset?.symbol}
-        balance={asset?.balance}
+        balance={balanceOf}
       />
 
       <div className="space-y-1 text-sm">
         <div className="flex items-center justify-between">
           <span className="text-gray-500">You will receive</span>
-          <span className="text-gray-900 font-medium">x.xx {vault?.symbol}</span>
+          <span className="text-gray-900 font-medium">
+            {formatAmount(exactToSimple(expectedDepositAmount, vault?.decimals ?? 18))} {vault?.symbol}
+          </span>
         </div>
       </div>
 
