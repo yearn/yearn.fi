@@ -28,12 +28,148 @@ export async function hash(message: string): Promise<string> {
  ** a md parser and add some heavy dependencies, just use regex to replace
  ** the strings to some class and inject that to the code.
  **************************************************************************/
+function escapeHtmlChar(char: string): string {
+  switch (char) {
+    case '&':
+      return '&amp;'
+    case '<':
+      return '&lt;'
+    case '>':
+      return '&gt;'
+    case '"':
+      return '&quot;'
+    case "'":
+      return '&#39;'
+    default:
+      return char
+  }
+}
+
+function escapeHtml(value: string): string {
+  let escaped = ''
+  for (let index = 0; index < value.length; index++) {
+    escaped += escapeHtmlChar(value[index] ?? '')
+  }
+  return escaped
+}
+
+function escapeAttribute(value: string): string {
+  return escapeHtml(value)
+}
+
+function sanitizeUrl(rawUrl: string): string | null {
+  const trimmed = rawUrl.trim()
+  if (trimmed.length === 0) {
+    return null
+  }
+
+  if (trimmed.startsWith('/')) {
+    return escapeAttribute(trimmed)
+  }
+
+  const lower = trimmed.toLowerCase()
+  if (lower.startsWith('http://') || lower.startsWith('https://')) {
+    return escapeAttribute(trimmed)
+  }
+
+  if (lower.startsWith('mailto:')) {
+    return escapeAttribute(trimmed)
+  }
+
+  return null
+}
+
+function parseInlineMarkdown(text: string, allowLinks: boolean = true): string {
+  let output = ''
+  let index = 0
+
+  while (index < text.length) {
+    const char = text[index]
+
+    if (char === '\r') {
+      index += 1
+      continue
+    }
+
+    if (char === '\n') {
+      output += '<br />'
+      index += 1
+      continue
+    }
+
+    if (char === '<') {
+      const tokens = ['<br>', '<br/>', '<br />']
+      let matched = false
+      for (const token of tokens) {
+        const candidate = text.slice(index, index + token.length)
+        if (candidate.toLowerCase() === token) {
+          output += '<br />'
+          index += token.length
+          matched = true
+          break
+        }
+      }
+      if (matched) {
+        continue
+      }
+    }
+
+    if (allowLinks && char === '[') {
+      const closingBracket = text.indexOf(']', index + 1)
+      const openingParen = closingBracket !== -1 ? text.indexOf('(', closingBracket) : -1
+      if (closingBracket !== -1 && openingParen === closingBracket + 1) {
+        const closingParen = text.indexOf(')', openingParen + 1)
+        if (closingParen !== -1) {
+          const label = text.slice(index + 1, closingBracket)
+          const href = text.slice(openingParen + 1, closingParen)
+          const safeUrl = sanitizeUrl(href)
+          const renderedLabel = parseInlineMarkdown(label, false)
+
+          if (safeUrl) {
+            output += `<a class='link' target='_blank' rel='noopener noreferrer' href='${safeUrl}'>${renderedLabel}</a>`
+          } else {
+            output += renderedLabel
+          }
+
+          index = closingParen + 1
+          continue
+        }
+      }
+    }
+
+    if (text.startsWith('**', index)) {
+      const closing = text.indexOf('**', index + 2)
+      if (closing !== -1) {
+        const content = text.slice(index + 2, closing)
+        output += `<span class='font-bold'>${parseInlineMarkdown(content, allowLinks)}</span>`
+        index = closing + 2
+        continue
+      }
+    }
+
+    if (text.startsWith('~~', index)) {
+      const closing = text.indexOf('~~', index + 2)
+      if (closing !== -1) {
+        const content = text.slice(index + 2, closing)
+        output += `<span class='line-through'>${parseInlineMarkdown(content, allowLinks)}</span>`
+        index = closing + 2
+        continue
+      }
+    }
+
+    output += escapeHtmlChar(char ?? '')
+    index += 1
+  }
+
+  return output
+}
+
 export function parseMarkdown(markdownText: string): string {
-  const htmlText = markdownText
-    .replace(/\[(.*?)\]\((.*?)\)/gim, "<a class='link' target='_blank' href='$2'>$1</a>")
-    .replace(/~~(.*?)~~/gim, "<span class='line-through'>$1</span>")
-    .replace(/\*\*(.*?)\*\*/gim, "<span class='font-bold'>$1</span>")
-  return htmlText.trim()
+  if (!markdownText) {
+    return ''
+  }
+
+  return parseInlineMarkdown(markdownText, true).trim()
 }
 
 export function copyToClipboard(value: string): void {
