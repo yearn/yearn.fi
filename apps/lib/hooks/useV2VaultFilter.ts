@@ -19,8 +19,6 @@ type TOptimizedV2VaultFilterResult = {
   // Main filtered results
   activeVaults: TYDaemonVault[]
   holdingsVaults: TYDaemonVault[]
-  migratableVaults: TYDaemonVault[]
-  retiredVaults: TYDaemonVault[]
 
   // All holdings across categories (before filters)
   allHoldingsVaults: TYDaemonVault[]
@@ -72,81 +70,70 @@ export function useV2VaultFilter(
   const processedVaults = useDeepCompareMemo(() => {
     const vaultMap = new Map<string, TVaultWithMetadata>()
 
-    // Process main vaults
-    Object.values(vaults).forEach((vault) => {
-      // Only v2 vaults (exclude v3)
-      if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
+    const upsertVault = (vault: TYDaemonVault, updates: Partial<Omit<TVaultWithMetadata, 'vault'>> = {}): void => {
+      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      const hasHoldings = checkHasHoldings(vault)
+      const existing = vaultMap.get(key)
+
+      if (existing) {
+        vaultMap.set(key, {
+          ...existing,
+          hasHoldings: existing.hasHoldings || hasHoldings,
+          isHoldingsVault: existing.isHoldingsVault || hasHoldings,
+          ...updates
+        })
         return
       }
-
-      const hasHoldings = checkHasHoldings(vault)
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
 
       vaultMap.set(key, {
         vault,
         hasHoldings,
         isHoldingsVault: hasHoldings,
         isMigratableVault: false,
-        isRetiredVault: false
+        isRetiredVault: false,
+        ...updates
       })
+    }
+
+    // Process main vaults
+    Object.values(vaults).forEach((vault) => {
+      if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
+        return
+      }
+
+      upsertVault(vault)
     })
 
     // Process migratable vaults
     Object.values(vaultsMigrations).forEach((vault) => {
-      // Only v2 vaults
       if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
         return
       }
 
-      const hasHoldings = checkHasHoldings(vault)
-      if (!hasHoldings) return // Only include if has holdings
-
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
-
-      // Update if already exists, otherwise add
-      const existing = vaultMap.get(key)
-      if (existing) {
-        existing.isMigratableVault = true
-        existing.hasHoldings = true
-        existing.isHoldingsVault = true
-      } else {
-        vaultMap.set(key, {
-          vault,
-          hasHoldings: true,
-          isHoldingsVault: false,
-          isMigratableVault: true,
-          isRetiredVault: false
-        })
+      if (!checkHasHoldings(vault)) {
+        return
       }
+
+      upsertVault(vault, {
+        isMigratableVault: true,
+        isHoldingsVault: true
+      })
     })
 
     // Process retired vaults
     Object.values(vaultsRetired).forEach((vault) => {
-      // Only v2 vaults
       if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
         return
       }
 
-      const hasHoldings = checkHasHoldings(vault)
-      if (!hasHoldings) return // Only include if has holdings
-
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
-
-      // Update if already exists, otherwise add
-      const existing = vaultMap.get(key)
-      if (existing) {
-        existing.isRetiredVault = true
-        existing.hasHoldings = true
-        existing.isHoldingsVault = true
-      } else {
-        vaultMap.set(key, {
-          vault,
-          hasHoldings: true,
-          isHoldingsVault: false,
-          isMigratableVault: false,
-          isRetiredVault: true
-        })
+      if (!checkHasHoldings(vault)) {
+        return
       }
+
+      upsertVault(vault, {
+        isRetiredVault: true,
+        isHoldingsVault: true
+      })
     })
 
     return vaultMap
@@ -228,13 +215,11 @@ export function useV2VaultFilter(
         return
       }
 
-      // Add to appropriate lists
       if (isRetiredVault) {
         results.retiredVaults.push(vault)
       } else if (isMigratableVault) {
         results.migratableVaults.push(vault)
       } else {
-        // Active vault - categorize it
         categorizedVaults.all.push(vault)
 
         if (vault.info?.isHighlighted) {
@@ -272,8 +257,7 @@ export function useV2VaultFilter(
         }
       }
 
-      // Add to holdings if applicable
-      if (isHoldingsVault) {
+      if (isHoldingsVault || hasHoldings) {
         results.holdingsVaults.push(vault)
       }
     })

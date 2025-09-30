@@ -72,8 +72,6 @@ function ListOfVaults(): ReactElement {
   })
   const {
     activeVaults,
-    migratableVaults,
-    retiredVaults,
     holdingsVaults,
     allHoldingsVaults,
     allMigratableHoldings,
@@ -96,47 +94,21 @@ function ListOfVaults(): ReactElement {
     holdings: TYDaemonVault[]
     all: TYDaemonVault[]
   } | null => {
-    // Combine holdings from various sources (all already filtered)
-    const combinedHoldings = new Map<string, TYDaemonVault>()
-
-    // Add from holdingsVaults
-    for (const vault of holdingsVaults) {
-      combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-
-    // Add migratable vaults
-    for (const vault of migratableVaults) {
-      combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-
-    // Add retired vaults
-    for (const vault of retiredVaults) {
-      combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-
-    const holdingsArray = Array.from(combinedHoldings.values())
-
-    // Get non-holdings vaults from sorted display
-    const holdingsSet = new Set(combinedHoldings.keys())
+    const holdingsSet = new Set(holdingsVaults.map((v) => `${v.chainID}_${v.address}`))
     const nonHoldingsVaults = sortedVaultsToDisplay.filter(
       (vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`)
     )
 
-    const shouldShowEmptyState =
-      isLoadingVaultList ||
-      !chains ||
-      chains.length === 0 ||
-      (holdingsArray.length === 0 && nonHoldingsVaults.length === 0)
-
+    const shouldShowEmptyState = isLoadingVaultList || (holdingsVaults.length === 0 && nonHoldingsVaults.length === 0)
     if (shouldShowEmptyState) {
       return null
     }
 
     return {
-      holdings: holdingsArray,
+      holdings: holdingsVaults,
       all: nonHoldingsVaults
     }
-  }, [sortedVaultsToDisplay, isLoadingVaultList, chains, migratableVaults, retiredVaults, holdingsVaults])
+  }, [sortedVaultsToDisplay, isLoadingVaultList, holdingsVaults])
 
   const { holdings, all } = vaultLists || { holdings: [], all: [] }
   const holdingsFilterSelected = Boolean(types?.includes('holdings'))
@@ -315,6 +287,7 @@ function ListOfVaults(): ReactElement {
       />
 
       <div className={'mt-4'} />
+
       <ListHead
         dataClassName={'grid-cols-10'}
         sortBy={sortBy}
