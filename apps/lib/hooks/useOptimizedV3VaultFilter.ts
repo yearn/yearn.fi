@@ -118,7 +118,7 @@ export function useOptimizedV3VaultFilter(
         vaultMap.set(key, {
           vault,
           hasHoldings: true,
-          isHoldingsVault: true,
+          isHoldingsVault: false,
           isMigratableVault: true,
           isRetiredVault: false
         })
@@ -142,7 +142,7 @@ export function useOptimizedV3VaultFilter(
       if (existing) {
         existing.isRetiredVault = true
         existing.hasHoldings = true
-        existing.isHoldingsVault = true
+        existing.isHoldingsVault = false
       } else {
         vaultMap.set(key, {
           vault,
@@ -181,7 +181,6 @@ export function useOptimizedV3VaultFilter(
     processedVaults.forEach(({ vault, hasHoldings, isHoldingsVault, isMigratableVault, isRetiredVault }) => {
       // Count totals before filtering
       if (isHoldingsVault) {
-        console.log('isHoldingsVault', isHoldingsVault, vault.name)
         totalHoldingsBeforeFilters++
       }
       if (isMigratableVault) {
