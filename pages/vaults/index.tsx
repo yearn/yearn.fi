@@ -15,10 +15,7 @@ import { ListHero } from '@vaults-v2/components/ListHero'
 import { VaultListOptions } from '@vaults-v2/components/list/VaultListOptions'
 import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
 import { VaultsListRow } from '@vaults-v2/components/list/VaultsListRow'
-import {
-  ALL_VAULTS_CATEGORIES,
-  ALL_VAULTS_CATEGORIES_KEYS,
-} from '@vaults-v2/constants'
+import { ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
@@ -32,9 +29,7 @@ function HeaderUserPosition(): ReactElement {
   if (!isActive) {
     return (
       <div className={'col-span-12 h-auto w-full md:col-span-8 md:h-[136px]'}>
-        <p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>
-          {'Wallet not connected'}
-        </p>
+        <p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Wallet not connected'}</p>
         <Button
           onClick={(): void => {
             if (!isActive && address) {
@@ -51,9 +46,7 @@ function HeaderUserPosition(): ReactElement {
   }
   return (
     <div className={'col-span-12 w-full md:col-span-8'}>
-      <p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>
-        {'Deposited'}
-      </p>
+      <p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Deposited'}</p>
       <b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
         {'$'}
         <Counter value={Number(cumulatedValueInV2Vaults)} decimals={2} />
@@ -76,24 +69,22 @@ function ListOfVaults(): ReactElement {
     onChangeChains,
     onChangeSortDirection,
     onChangeSortBy,
-    onReset,
+    onReset
   } = useQueryArguments({
     defaultTypes: ALL_VAULTS_CATEGORIES_KEYS,
-    defaultPathname: '/vaults',
+    defaultPathname: '/vaults'
   })
-  const { activeVaults, migratableVaults, retiredVaults, holdingsVaults } =
-    useVaultFilter(types, chains, false, search || '')
+  const { activeVaults, migratableVaults, retiredVaults, holdingsVaults } = useVaultFilter(
+    types,
+    chains,
+    false,
+    search || ''
+  )
   const {
     holdingsVaults: allHoldingsVaults,
     migratableVaults: allMigratableHoldings,
-    retiredVaults: allRetiredHoldings,
-  } = useVaultFilter(
-    ALL_VAULTS_CATEGORIES_KEYS,
-    allChainsSupported,
-    false,
-    '',
-    ALL_VAULTS_CATEGORIES_KEYS
-  )
+    retiredVaults: allRetiredHoldings
+  } = useVaultFilter(ALL_VAULTS_CATEGORIES_KEYS, allChainsSupported, false, '', ALL_VAULTS_CATEGORIES_KEYS)
   const [page, setPage] = useState(0)
   const [showHiddenHoldings, setShowHiddenHoldings] = useState(false)
   const chainOptions = useChainOptions(chains)
@@ -101,11 +92,7 @@ function ListOfVaults(): ReactElement {
   /**********************************************************************************************
    **	Apply sorting to the filtered active vaults
    *********************************************************************************************/
-  const sortedVaultsToDisplay = useSortVaults(
-    [...activeVaults],
-    sortBy,
-    sortDirection
-  )
+  const sortedVaultsToDisplay = useSortVaults([...activeVaults], sortBy, sortDirection)
 
   /**********************************************************************************************
    **	Prepare vault lists for rendering. All filtering is now done in useVaultFilter.
@@ -152,16 +139,9 @@ function ListOfVaults(): ReactElement {
 
     return {
       holdings: holdingsArray,
-      all: nonHoldingsVaults,
+      all: nonHoldingsVaults
     }
-  }, [
-    sortedVaultsToDisplay,
-    isLoadingVaultList,
-    chains,
-    migratableVaults,
-    retiredVaults,
-    holdingsVaults,
-  ])
+  }, [sortedVaultsToDisplay, isLoadingVaultList, chains, migratableVaults, retiredVaults, holdingsVaults])
 
   const { holdings, all } = vaultLists || { holdings: [], all: [] }
   const holdingsFilterSelected = Boolean(types?.includes('holdings'))
@@ -175,9 +155,7 @@ function ListOfVaults(): ReactElement {
       return []
     }
 
-    const visibleKeys = new Set(
-      holdings.map((vault) => `${vault.chainID}_${vault.address}`)
-    )
+    const visibleKeys = new Set(holdings.map((vault) => `${vault.chainID}_${vault.address}`))
     const combined = new Map<string, TYDaemonVault>()
 
     for (const vault of allHoldingsVaults) {
@@ -193,23 +171,13 @@ function ListOfVaults(): ReactElement {
     return Array.from(combined.entries())
       .filter(([key]) => !visibleKeys.has(key))
       .map(([, vault]) => vault)
-  }, [
-    holdingsFilterSelected,
-    holdings,
-    allHoldingsVaults,
-    allMigratableHoldings,
-    allRetiredHoldings,
-  ])
+  }, [holdingsFilterSelected, holdings, allHoldingsVaults, allMigratableHoldings, allRetiredHoldings])
 
   const hiddenHoldingsCount = hiddenHoldingsVaultsList.length
   const hasHiddenHoldings = holdingsFilterSelected && hiddenHoldingsCount > 0
 
   const filtersSignature = useMemo(() => {
-    return [
-      search ?? '',
-      (types || []).join('_'),
-      (chains || []).join('_'),
-    ].join('|')
+    return [search ?? '', (types || []).join('_'), (chains || []).join('_')].join('|')
   }, [search, types, chains])
   const lastFiltersSignature = useRef(filtersSignature)
 
@@ -231,16 +199,13 @@ function ListOfVaults(): ReactElement {
       return null
     }
 
-    const shouldShowToggle =
-      hasHiddenHoldings && hiddenHoldingsVaultsList.length > 0
+    const shouldShowToggle = hasHiddenHoldings && hiddenHoldingsVaultsList.length > 0
 
     return (
       <div className={'mb-2 rounded-2xl shadow-sm'}>
         <div className={'flex flex-wrap items-center justify-between gap-3'}>
           <div className={'flex items-center gap-2 px-6 pt-4'}>
-            <p className={'text-sm font-semibold text-neutral-900 '}>
-              {'Your holdings'}
-            </p>
+            <p className={'text-sm font-semibold text-neutral-900 '}>{'Your holdings'}</p>
             {shouldShowHoldings ? (
               <span className={'text-xs text-neutral-500'}>
                 {sortedHoldings.length} vault
@@ -273,27 +238,15 @@ function ListOfVaults(): ReactElement {
         {shouldShowHoldings ? (
           <div className={'mt-3 grid gap-0'}>
             {sortedHoldings.map((vault) => (
-              <VaultsListRow
-                key={`${vault.chainID}_${vault.address}`}
-                currentVault={vault}
-              />
+              <VaultsListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
             ))}
           </div>
         ) : null}
         {showHiddenHoldings && hiddenHoldingsVaultsList.length > 0 ? (
           <div className={'mt-4 grid gap-0'}>
-            <p
-              className={
-                'pb-2 text-xs uppercase tracking-wide text-neutral-500'
-              }
-            >
-              {'Filtered holdings'}
-            </p>
+            <p className={'pb-2 text-xs uppercase tracking-wide text-neutral-500'}>{'Filtered holdings'}</p>
             {hiddenHoldingsVaultsList.map((vault) => (
-              <VaultsListRow
-                key={`filtered_${vault.chainID}_${vault.address}`}
-                currentVault={vault}
-              />
+              <VaultsListRow key={`filtered_${vault.chainID}_${vault.address}`} currentVault={vault} />
             ))}
           </div>
         ) : null}
@@ -323,14 +276,9 @@ function ListOfVaults(): ReactElement {
     return (
       <>
         {renderHoldingsCard()}
-        {sortedNonHoldings
-          .slice(page * pageSize, (page + 1) * pageSize)
-          .map((vault) => (
-            <VaultsListRow
-              key={`${vault.chainID}_${vault.address}`}
-              currentVault={vault}
-            />
-          ))}
+        {sortedNonHoldings.slice(page * pageSize, (page + 1) * pageSize).map((vault) => (
+          <VaultsListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
+        ))}
       </>
     )
   }
@@ -385,39 +333,39 @@ function ListOfVaults(): ReactElement {
             label: <IconChain />,
             value: 'chain',
             sortable: false,
-            className: 'col-span-1',
+            className: 'col-span-1'
           },
           { label: 'Token', value: 'name', sortable: false },
           {
             label: 'Est. APY',
             value: 'estAPY',
             sortable: true,
-            className: 'col-span-2',
+            className: 'col-span-2'
           },
           {
             label: 'Hist. APY',
             value: 'APY',
             sortable: true,
-            className: 'col-span-2',
+            className: 'col-span-2'
           },
           {
             label: 'Available',
             value: 'available',
             sortable: true,
-            className: 'col-span-2',
+            className: 'col-span-2'
           },
           {
             label: 'Holdings',
             value: 'deposited',
             sortable: true,
-            className: 'col-span-2',
+            className: 'col-span-2'
           },
           {
             label: 'Deposits',
             value: 'tvl',
             sortable: true,
-            className: 'col-span-2',
-          },
+            className: 'col-span-2'
+          }
         ]}
       />
 
@@ -441,11 +389,7 @@ function ListOfVaults(): ReactElement {
 function Index(): ReactElement {
   return (
     <div className={'mx-auto my-0 max-w-[1232px] pt-4 md:mb-0 md:mt-16 px-4'}>
-      <section
-        className={
-          'mt-16 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'
-        }
-      >
+      <section className={'mt-16 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
         <HeaderUserPosition />
         <ListOfVaults />
       </section>

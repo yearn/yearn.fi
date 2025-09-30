@@ -237,8 +237,10 @@ function ListOfVaults({
   onResetMultiSelect: () => void
 }): ReactElement {
   const { isLoadingVaultList } = useYearn()
+  const { isActive, address, openLoginModal } = useWeb3()
   const allChains = useSupportedChains().map((chain): number => chain.id)
   const [showHiddenHoldings, setShowHiddenHoldings] = useState(false)
+  const [isHoldingsCollapsed, setIsHoldingsCollapsed] = useState(false)
 
   const {
     activeVaults,
@@ -358,6 +360,10 @@ function ListOfVaults({
     allMigratableVaults.length -
     (shouldShowHoldings ? holdings.length : 0)
   const hasHiddenHoldings = hiddenHoldingsCount > 0 && shouldShowHoldings
+  const totalWalletHoldingsCount =
+    allHoldingsVaults.length +
+    allRetiredVaults.length +
+    allMigratableVaults.length
 
   const hiddenHoldingsVaultsList = useMemo((): TYDaemonVault[] => {
     if (!hasHiddenHoldings) {
@@ -439,85 +445,172 @@ function ListOfVaults({
   }
 
   const renderHoldingsCard = (): ReactNode => {
-    if (!shouldShowHoldings && !hasHiddenHoldings) {
+    const walletConnected = isActive && Boolean(address)
+    const walletDisconnected = !walletConnected
+
+    if (walletConnected && totalWalletHoldingsCount === 0) {
       return null
     }
 
     const shouldShowToggle =
       hasHiddenHoldings && hiddenHoldingsVaultsList.length > 0
 
-    return (
-      <div
-        className={
-          'mb-2 rounded-3xl border border-neutral-200/60 bg-neutral-0 shadow-sm'
-        }
-      >
-        <div className={'flex flex-wrap items-center justify-between gap-3'}>
-          <div className={'flex items-center gap-2'}>
-            <p className={'text-sm font-semibold text-neutral-900'}>
-              {'Your holdings'}
-            </p>
-            {shouldShowHoldings ? (
-              <span className={'text-xs text-neutral-500'}>
-                {sortedHoldings.length} vault
-                {sortedHoldings.length === 1 ? '' : 's'}
-              </span>
-            ) : null}
-          </div>
-          {shouldShowToggle ? (
-            <div className={'flex items-center gap-2 text-xs text-neutral-600'}>
-              <span>{hiddenHoldingsCount} hidden by filters</span>
+    if (walletDisconnected) {
+      return (
+        <div className={'relative mb-2 rounded-3xl'}>
+          <div
+            className={
+              'pointer-events-none absolute -inset-[2px] z-1 rounded-3xl border border-neutral-300'
+            }
+          />
+          <div
+            className={
+              'pointer-events-none absolute -inset-[2px] z-0 rounded-3xl bg-[linear-gradient(80deg,#2C3DA6,#D21162)] opacity-25 blur-xl'
+            }
+          />
+          <div className={'relative z-10 rounded-3xl px-6 py-5'}>
+            <div
+              className={'flex flex-wrap items-center justify-between gap-3'}
+            >
+              <div className={'flex flex-col gap-1'}>
+                <p className={'text-sm font-semibold text-neutral-900'}>
+                  {'Your holdings'}
+                </p>
+                <p className={'text-xs text-neutral-500'}>
+                  {'Connect your wallet to view your vault deposits.'}
+                </p>
+              </div>
               <Button
-                onClick={(): void => setShowHiddenHoldings((prev) => !prev)}
+                onClick={openLoginModal}
                 className={
-                  'yearn--button-smaller rounded-md bg-neutral-900 px-3 py-1 text-xs text-white hover:bg-neutral-800'
+                  'yearn--button-smaller rounded-md bg-neutral-900 px-3 py-2 text-xs text-white hover:bg-neutral-800'
                 }
               >
-                {showHiddenHoldings ? 'Hide' : 'Show'}
-              </Button>
-              <Button
-                onClick={onResetMultiSelect}
-                className={
-                  'yearn--button-smaller rounded-md border border-neutral-200 px-3 py-1 text-xs text-neutral-900'
-                }
-              >
-                Reset filters
+                {'Connect wallet'}
               </Button>
             </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (!shouldShowHoldings && hiddenHoldingsCount === 0) {
+      return null
+    }
+
+    const hasVisibleHoldingsRows =
+      shouldShowHoldings && sortedHoldings.length > 0 && !isHoldingsCollapsed
+    const shouldShowBorder = !hasVisibleHoldingsRows
+    const canCollapseHoldings =
+      totalWalletHoldingsCount > 0 && shouldShowHoldings
+
+    return (
+      <div className={'relative mb-2 rounded-3xl'}>
+        {/* Border should be off when holdings are visible and add border when empty */}
+        <div
+          className={cl(
+            'pointer-events-none absolute -inset-[2px] z-1 rounded-3xl',
+            shouldShowBorder ? 'border border-neutral-300' : 'border-0'
+          )}
+        />
+        <div
+          className={
+            'pointer-events-none absolute -inset-[2px] z-0 rounded-3xl bg-[linear-gradient(80deg,#2C3DA6,#D21162)] opacity-20 blur xl'
+          }
+        />
+        <div className={'relative z-10 rounded-3xl'}>
+          <div
+            className={
+              'flex flex-wrap items-center justify-between gap-3 px-6 py-4'
+            }
+          >
+            <div className={'flex items-center gap-2'}>
+              <p className={'text-sm font-semibold text-neutral-900'}>
+                {'Your holdings'}
+              </p>
+              {shouldShowHoldings ? (
+                <span className={'text-xs text-neutral-500'}>
+                  {sortedHoldings.length} vault
+                  {sortedHoldings.length === 1 ? '' : 's'}
+                </span>
+              ) : null}
+            </div>
+            <div className={'flex flex-wrap items-center justify-end gap-2'}>
+              {canCollapseHoldings ? (
+                <Button
+                  onClick={(): void => setIsHoldingsCollapsed((prev) => !prev)}
+                  className={
+                    'yearn--button-smaller rounded-md border border-neutral-200 px-3 py-1 text-xs text-neutral-900 hover:bg-neutral-100'
+                  }
+                >
+                  {isHoldingsCollapsed ? 'Show holdings' : 'Hide holdings'}
+                </Button>
+              ) : null}
+              {shouldShowToggle ? (
+                <div
+                  className={'flex items-center gap-2 text-xs text-neutral-600'}
+                >
+                  <span>{hiddenHoldingsCount} hidden by filters</span>
+                  <Button
+                    onClick={(): void => setShowHiddenHoldings((prev) => !prev)}
+                    className={
+                      'yearn--button-smaller rounded-md bg-neutral-900 px-3 py-1 text-xs text-white hover:bg-neutral-800'
+                    }
+                  >
+                    {showHiddenHoldings ? 'Hide' : 'Show'}
+                  </Button>
+                  <Button
+                    onClick={onResetMultiSelect}
+                    className={
+                      'yearn--button-smaller rounded-md border border-neutral-200 px-3 py-1 text-xs text-neutral-900'
+                    }
+                  >
+                    {'Reset filters'}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+          {hasVisibleHoldingsRows ? (
+            <div className={'grid gap-4 py-2'}>
+              {sortedHoldings.map((vault) => (
+                <VaultsV3ListRow
+                  key={`${vault.chainID}_${vault.address}`}
+                  currentVault={vault}
+                />
+              ))}
+            </div>
+          ) : null}
+          {!isHoldingsCollapsed &&
+          showHiddenHoldings &&
+          hiddenHoldingsVaultsList.length > 0 ? (
+            <div className={'mt-4 grid gap-0 px-6 pb-6'}>
+              <p
+                className={
+                  'pb-2 text-xs uppercase tracking-wide text-neutral-500'
+                }
+              >
+                {'Filtered holdings'}
+              </p>
+              {hiddenHoldingsVaultsList.map((vault) => (
+                <VaultsV3ListRow
+                  key={`filtered_${vault.chainID}_${vault.address}`}
+                  currentVault={vault}
+                />
+              ))}
+            </div>
+          ) : null}
+          {!shouldShowHoldings &&
+          shouldShowToggle &&
+          !showHiddenHoldings &&
+          !isHoldingsCollapsed ? (
+            <p className={'mt-3 px-6 pb-6 text-xs text-neutral-500'}>
+              {
+                'Use the buttons above to review or reset your filtered holdings.'
+              }
+            </p>
           ) : null}
         </div>
-        {shouldShowHoldings ? (
-          <div className={'mt-3 grid gap-0'}>
-            {sortedHoldings.map((vault) => (
-              <VaultsV3ListRow
-                key={`${vault.chainID}_${vault.address}`}
-                currentVault={vault}
-              />
-            ))}
-          </div>
-        ) : null}
-        {showHiddenHoldings && hiddenHoldingsVaultsList.length > 0 ? (
-          <div className={'mt-4 grid gap-0'}>
-            <p
-              className={
-                'pb-2 text-xs uppercase tracking-wide text-neutral-500'
-              }
-            >
-              {'Filtered holdings'}
-            </p>
-            {hiddenHoldingsVaultsList.map((vault) => (
-              <VaultsV3ListRow
-                key={`filtered_${vault.chainID}_${vault.address}`}
-                currentVault={vault}
-              />
-            ))}
-          </div>
-        ) : null}
-        {!shouldShowHoldings && shouldShowToggle && !showHiddenHoldings ? (
-          <p className={'mt-3 text-xs text-neutral-500'}>
-            {'Use the buttons above to review or reset your filtered holdings.'}
-          </p>
-        ) : null}
       </div>
     )
   }
