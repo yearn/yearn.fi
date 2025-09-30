@@ -1,9 +1,7 @@
 import { Button } from '@lib/components/Button'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { useWeb3 } from '@lib/contexts/useWeb3'
-import { useYearn } from '@lib/contexts/useYearn'
-import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
-import { useSupportedChains } from '@lib/hooks/useSupportedChains'
+import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import { IconChevron } from '@lib/icons/IconChevron'
 import type { TSortDirection } from '@lib/types'
 import { cl, formatAmount, isZero, toAddress } from '@lib/utils'
@@ -153,9 +151,9 @@ type TListOfVaultsProps = {
 
 function ListOfVaults({
   search,
-  types = [],
-  chains = [],
-  categories = [],
+  types,
+  chains,
+  categories,
   sortDirection,
   sortBy,
   onSearch,
@@ -166,32 +164,23 @@ function ListOfVaults({
   onChangeSortBy,
   onResetMultiSelect
 }: TListOfVaultsProps): ReactElement {
-  const { isLoadingVaultList } = useYearn()
+  // Single optimized hook call that returns all needed data
   const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
-  const allChains = useSupportedChains().map((chain): number => chain.id)
-  const [isHoldingsCollapsed, setIsHoldingsCollapsed] = useState(false)
-
-  const { activeVaults, retiredVaults, migratableVaults, holdingsVaults, multiVaults, singleVaults } = useVaultFilter(
-    types,
-    chains,
-    true,
-    search || '',
-    categories
-  )
-
-  const { activeVaults: allFilteredVaults } = useVaultFilter(
-    ALL_VAULTSV3_KINDS_KEYS,
-    allChains,
-    true,
-    search || '',
-    Object.values(ALL_VAULTSV3_CATEGORIES)
-  )
-
   const {
-    holdingsVaults: allHoldingsVaults,
-    retiredVaults: allRetiredVaults,
-    migratableVaults: allMigratableVaults
-  } = useVaultFilter(ALL_VAULTSV3_KINDS_KEYS, allChains, true, '', Object.values(ALL_VAULTSV3_CATEGORIES))
+    activeVaults,
+    retiredVaults,
+    migratableVaults,
+    holdingsVaults,
+    multiVaults,
+    singleVaults,
+    totalPotentialVaults,
+    totalHoldingsVaults,
+    totalMigratableVaults,
+    totalRetiredVaults,
+    isLoading: isLoadingVaultList
+  } = useV3VaultFilter(types, chains, search || '', categories)
+  const [isHoldingsCollapsed, setIsHoldingsCollapsed] = useState(true)
+  const normalizedCategories = categories ?? []
 
   const vaultLists = useMemo((): {
     holdings: TYDaemonVault[]
@@ -236,39 +225,25 @@ function ListOfVaults({
     holdings: [],
     all: []
   }
-  const shouldShowHoldings = categories?.includes('Your Holdings') ?? false
+  const shouldShowHoldings = normalizedCategories.includes('Your Holdings')
 
-  const sortedFilteredHoldings = useSortVaults(holdings, sortBy, sortDirection)
+  const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
   const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
+  const walletHoldingsCount = sortedHoldings.length
+  const sortedAllHoldings = sortedHoldings
 
-  const allHoldingsList = useMemo((): TYDaemonVault[] => {
-    const combined = new Map<string, TYDaemonVault>()
-    for (const vault of allHoldingsVaults) {
-      combined.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-    for (const vault of allRetiredVaults) {
-      combined.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-    for (const vault of allMigratableVaults) {
-      combined.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-    for (const vault of holdings) {
-      combined.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-    return Array.from(combined.values())
-  }, [allHoldingsVaults, allRetiredVaults, allMigratableVaults, holdings])
+  // Calculate potential hidden results due to filters
+  const currentResultsCount = (shouldShowHoldings ? sortedHoldings.length : 0) + sortedNonHoldings.length
+  const hiddenByFiltersCount = totalPotentialVaults - currentResultsCount
+  const hasHiddenResults = search && hiddenByFiltersCount > 0
 
-  const sortedAllHoldings = useSortVaults(allHoldingsList, sortBy, sortDirection)
-  const walletHoldingsCount = sortedAllHoldings.length
-  const potentialResultsCount = allFilteredVaults.length
-  const currentResultsCount = (shouldShowHoldings ? sortedFilteredHoldings.length : 0) + sortedNonHoldings.length
-  const hiddenByFiltersCount = potentialResultsCount - currentResultsCount
-  const hasHiddenResults = Boolean(search) && hiddenByFiltersCount > 0
+  // Calculate hidden holdings due to filters (regardless of search)
+  const hiddenHoldingsCount =
+    totalHoldingsVaults + totalRetiredVaults + totalMigratableVaults - (shouldShowHoldings ? holdings.length : 0)
+  const hasHiddenHoldings = hiddenHoldingsCount > 0 && shouldShowHoldings
 
-  const renderHiddenSearchAlert = (): ReactNode => {
-    if (!hasHiddenResults) {
-      return null
-    }
+  const renderHiddenBadge = (): ReactNode => {
+    if (!hasHiddenResults) return null
 
     return (
       <div className={'flex items-center gap-2 rounded-lg px-3 py-1 text-xs text-neutral-700'}>
@@ -281,6 +256,23 @@ function ListOfVaults({
         >
           {'Show all'}
         </Button>
+      </div>
+    )
+  }
+
+  const renderHiddenSearchAlert = (): ReactNode => {
+    if (!hasHiddenResults && !hasHiddenHoldings) {
+      return null
+    }
+
+    return (
+      <div className={'flex flex-wrap items-center gap-2 text-xs text-neutral-600'}>
+        {renderHiddenBadge()}
+        {hasHiddenHoldings ? (
+          <span>
+            {hiddenHoldingsCount} {`holding${hiddenHoldingsCount > 1 ? 's' : ''} hidden by filters`}
+          </span>
+        ) : null}
       </div>
     )
   }
@@ -400,7 +392,7 @@ function ListOfVaults({
           currentChains={chains}
           onReset={onResetMultiSelect}
           defaultCategories={Object.values(ALL_VAULTSV3_CATEGORIES)}
-          potentialResultsCount={potentialResultsCount}
+          potentialResultsCount={totalPotentialVaults}
         />
       )
     }
