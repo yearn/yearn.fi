@@ -40,16 +40,6 @@ function SelectAllOption({
     <button type={'button'} onClick={onSelectAll} className={'mb-2 cursor-pointer border-b border-neutral-100 pb-2'}>
       <div className={'flex w-full items-center justify-between p-2 transition-colors hover:bg-neutral-100'}>
         <p className={'pl-0 font-normal text-neutral-900'}>{option.label}</p>
-        <input
-          type={'checkbox'}
-          checked={option.isSelected}
-          onChange={(): void => {}}
-          onClick={(e): void => {
-            e.stopPropagation()
-            onSelectAll()
-          }}
-          className={'checkbox'}
-        />
       </div>
     </button>
   )
@@ -220,11 +210,11 @@ export function MultiSelectDropdown({
     const newState = options.map(
       (option): TMultiSelectOptionProps => ({
         ...option,
-        isSelected: !areAllSelected
+        isSelected: true
       })
     )
     onSelect(newState)
-  }, [options, areAllSelected, onSelect])
+  }, [options, onSelect])
 
   return (
     <Combobox key={selectedValues.join(',')} ref={componentRef} value={selectedValues} multiple>
@@ -281,7 +271,7 @@ export function MultiSelectDropdown({
           >
             <SelectAllOption
               option={{
-                label: areAllSelected ? 'Unselect All' : 'Select All',
+                label: 'Select All',
                 isSelected: areAllSelected,
                 value: 'select_all'
               }}
