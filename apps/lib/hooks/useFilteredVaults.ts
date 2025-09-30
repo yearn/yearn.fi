@@ -6,6 +6,7 @@ import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { isAutomatedVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useAppSettings } from '@vaults-v2/contexts/useAppSettings'
+import { ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import { useCallback } from 'react'
 
 export function useFilteredVaults(
@@ -41,7 +42,7 @@ export function useVaultFilter(
   const applyAllFilters = useCallback(
     (vault: TYDaemonVault, hasHoldings?: boolean): boolean => {
       // Chain filter
-      if (chains && !chains.includes(vault.chainID)) {
+      if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {
         return false
       }
 
@@ -122,7 +123,6 @@ export function useVaultFilter(
           return false
         }
       }
-
       return true
     },
     [chains, categories, search, types, v3]
@@ -244,6 +244,9 @@ export function useVaultFilter(
       }
       if (types?.includes('multi')) {
         _vaultList = [..._vaultList, ...multiVaults]
+      }
+      if (types?.length === 0) {
+        _vaultList = [...highlightedVaults, ...singleVaults, ...multiVaults]
       }
 
       //Remove duplicates
