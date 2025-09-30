@@ -243,10 +243,7 @@ function ListOfVaults({
     const nonHoldingsVaults = activeVaults.filter((vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`))
 
     const shouldShowEmptyState =
-      isLoadingVaultList ||
-      !chains ||
-      chains.length === 0 ||
-      (isZero(holdingsArray.length) && isZero(multiVaults.length) && isZero(singleVaults.length))
+      isLoadingVaultList || (isZero(holdingsArray.length) && isZero(multiVaults.length) && isZero(singleVaults.length))
 
     if (shouldShowEmptyState) {
       return null
@@ -258,16 +255,7 @@ function ListOfVaults({
       single: singleVaults,
       all: nonHoldingsVaults
     }
-  }, [
-    isLoadingVaultList,
-    chains,
-    activeVaults,
-    migratableVaults,
-    retiredVaults,
-    holdingsVaults,
-    multiVaults,
-    singleVaults
-  ])
+  }, [isLoadingVaultList, activeVaults, migratableVaults, retiredVaults, holdingsVaults, multiVaults, singleVaults])
 
   const { holdings, all } = vaultLists || {
     holdings: [],
