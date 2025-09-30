@@ -41,6 +41,7 @@ _app
 
 # docs
 /docs
+AGENTS.md
 
 # playwright
 .playwright-mcp

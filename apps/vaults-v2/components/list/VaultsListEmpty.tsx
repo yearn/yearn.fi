@@ -1,4 +1,5 @@
 import { Button } from '@lib/components/Button'
+import type { TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { ALL_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
 import type { ReactElement } from 'react'
 
@@ -10,6 +11,8 @@ type TVaultListEmpty = {
   isLoading: boolean
   defaultCategories?: string[]
   potentialResultsCount?: number
+  // @deprecated: retained for compatibility with existing usages in worktrees being cleaned up
+  sortedVaultsToDisplay?: TYDaemonVaults
 }
 export function VaultsListEmpty({
   currentSearch,

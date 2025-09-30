@@ -3,7 +3,7 @@ import { IconEnter } from '@lib/icons/IconEnter'
 import { IconSearch } from '@lib/icons/IconSearch'
 import { cl } from '@lib/utils'
 import { useDebouncedCallback } from '@react-hookz/web'
-import { type ChangeEvent, type ReactElement, useEffect, useState } from 'react'
+import { type ChangeEvent, type ReactElement, type ReactNode, useEffect, useState } from 'react'
 
 type TSearchBar = {
   searchPlaceholder: string
@@ -16,6 +16,7 @@ type TSearchBar = {
   shouldDebounce?: boolean
   onSearchClick?: () => void
   highlightWhenActive?: boolean
+  alertContent?: ReactNode
 }
 
 export function SearchBar(props: TSearchBar): ReactElement {
@@ -63,7 +64,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
   return (
     <div
       className={cl(
-        'flex h-10 w-full max-w-md items-center pl-2 pr-1 py-2 md:w-2/3',
+        'flex h-10 w-full max-w-md items-center gap-2 px-2 md:w-2/3',
         props.highlightWhenActive
           ? localSearchValue
             ? 'bg-neutral-300/70 border-2 border-neutral-600'
@@ -72,13 +73,14 @@ export function SearchBar(props: TSearchBar): ReactElement {
         props.className
       )}
     >
-      <div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
+      <div className={'flex h-full w-full items-center gap-2 overflow-hidden'}>
+        <IconSearch className={'size-4 shrink-0 text-neutral-600'} />
         <input
           id={'search'}
           suppressHydrationWarning
           className={cl(
             props.inputClassName,
-            'text-[14px] h-10 w-full overflow-x-scroll border-none bg-transparent pl-2 px-0 py-2 text-base outline-hidden scrollbar-none placeholder:text-neutral-400'
+            'h-full flex-1 border-none bg-transparent py-2 text-base text-neutral-900 outline-hidden placeholder:text-neutral-400'
           )}
           type={'text'}
           placeholder={props.searchPlaceholder}
@@ -95,6 +97,9 @@ export function SearchBar(props: TSearchBar): ReactElement {
             }
           }}
         />
+        {props.alertContent ? (
+          <div className={'flex shrink-0 items-center gap-2 text-xs text-neutral-700'}>{props.alertContent}</div>
+        ) : null}
         <div
           role={localSearchValue ? 'button' : 'div'}
           onClick={() => {
@@ -107,8 +112,8 @@ export function SearchBar(props: TSearchBar): ReactElement {
           }}
           className={cl(
             props.iconClassName,
-            'absolute right-0 top-1/2 -translate-y-1/2 text-neutral-400 p-3',
-            localSearchValue && !props.shouldSearchByClick ? 'cursor-pointer hover:text-neutral-600 group' : ''
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded text-neutral-400 transition-colors',
+            localSearchValue && !props.shouldSearchByClick ? 'cursor-pointer hover:text-neutral-600' : 'cursor-default'
           )}
         >
           {props.shouldSearchByClick && localSearchValue ? (
@@ -116,7 +121,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
               <IconEnter className={'size-3'} />
             </div>
           ) : localSearchValue && !props.shouldSearchByClick ? (
-            <IconCross className={'size-3 text-neutral-600 group-hover:text-neutral-500 transition-all'} />
+            <IconCross className={'size-3 text-neutral-600 transition-all hover:text-neutral-500'} />
           ) : (
             <IconSearch className={'size-4 text-neutral-400'} />
           )}

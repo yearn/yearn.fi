@@ -14,14 +14,23 @@ import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
 import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
-import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
+import {
+  ALL_VAULTSV3_CATEGORIES,
+  ALL_VAULTSV3_KINDS_KEYS,
+} from '@vaults-v3/constants'
 import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 
 function Background(): ReactElement {
   return (
-    <div className={cl('absolute inset-0', 'pointer-events-none', 'bg-gradient-to-r from-[#D21162] to-[#2C3DA6]')} />
+    <div
+      className={cl(
+        'absolute inset-0',
+        'pointer-events-none',
+        'bg-gradient-to-r from-[#D21162] to-[#2C3DA6]'
+      )}
+    />
   )
 }
 function BrandNewVaultCard(): ReactElement {
@@ -43,8 +52,14 @@ function BrandNewVaultCard(): ReactElement {
         >
           {'A brave new\nworld for Yield'}
         </h1>
-        <p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
-          {'Yearn v3 is a new yield paradigm offering better automation,\ncomposability and flexibility. Enjoy!'}
+        <p
+          className={
+            'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'
+          }
+        >
+          {
+            'Yearn v3 is a new yield paradigm offering better automation,\ncomposability and flexibility. Enjoy!'
+          }
         </p>
       </div>
       <Background />
@@ -53,7 +68,11 @@ function BrandNewVaultCard(): ReactElement {
 }
 function V3Card(): ReactElement {
   return (
-    <div className={'col-span-75 mb-4 mr-0 hidden md:col-span-29 md:mb-0 md:mr-6 md:block'}>
+    <div
+      className={
+        'col-span-75 mb-4 mr-0 hidden md:col-span-29 md:mb-0 md:mr-6 md:block'
+      }
+    >
       <div
         className={cl(
           'flex h-full w-full flex-col items-center justify-center',
@@ -68,7 +87,7 @@ function V3Card(): ReactElement {
 
 function PortfolioCard({
   categories,
-  onChangeCategories
+  onChangeCategories,
 }: {
   categories: string[]
   onChangeCategories: (categories: string[]) => void
@@ -78,17 +97,32 @@ function PortfolioCard({
 
   if (!isActive) {
     return (
-      <div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'}>
-        <strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
+      <div
+        className={
+          'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'
+        }
+      >
+        <strong
+          className={
+            'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'
+          }
+        >
           {'Portfolio'}
         </strong>
         <div className={'flex'}>
           <div>
             <p className={'pb-0 text-[#757CA6] md:pb-2'}>
-              {'Looks like you need to connect your wallet. And call your mum. Always important.'}
+              {
+                'Looks like you need to connect your wallet. And call your mum. Always important.'
+              }
             </p>
             <button
-              className={cl('rounded-lg overflow-hidden flex', 'px-[42px] py-2 mt-16', 'relative group', 'border-none')}
+              className={cl(
+                'rounded-lg overflow-hidden flex',
+                'px-[42px] py-2 mt-16',
+                'relative group',
+                'border-none'
+              )}
               onClick={(): void => {
                 if (!isActive && address) {
                   onSwitchChain(1)
@@ -112,8 +146,16 @@ function PortfolioCard({
     )
   }
   return (
-    <div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'}>
-      <strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
+    <div
+      className={
+        'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'
+      }
+    >
+      <strong
+        className={
+          'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'
+        }
+      >
         {'Portfolio'}
       </strong>
       <div className={'flex flex-col gap-4'}>
@@ -121,17 +163,27 @@ function PortfolioCard({
           <div>
             <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Deposited'}</p>
             {isLoading ? (
-              <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
+              <div
+                className={
+                  'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'
+                }
+              />
             ) : (
               <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
                 {'$'}
-                <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
+                <span suppressHydrationWarning>
+                  {formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}
+                </span>
               </b>
             )}
           </div>
         </div>
         <div className={'flex items-center gap-2 pt-2'}>
-          <label className={'flex cursor-pointer items-center gap-2 text-sm text-neutral-900'}>
+          <label
+            className={
+              'flex cursor-pointer items-center gap-2 text-sm text-neutral-900'
+            }
+          >
             <input
               type={'checkbox'}
               className={'rounded border-neutral-400'}
@@ -142,7 +194,9 @@ function PortfolioCard({
                     onChangeCategories([...categories, 'Your Holdings'])
                   }
                 } else {
-                  onChangeCategories(categories.filter((c) => c !== 'Your Holdings'))
+                  onChangeCategories(
+                    categories.filter((c) => c !== 'Your Holdings')
+                  )
                 }
               }}
             />
@@ -166,7 +220,7 @@ function ListOfVaults({
   onChangeChains,
   onChangeSortDirection,
   onChangeSortBy,
-  onResetMultiSelect
+  onResetMultiSelect,
 }: {
   search: string | null | undefined
   types: string[]
@@ -184,14 +238,16 @@ function ListOfVaults({
 }): ReactElement {
   const { isLoadingVaultList } = useYearn()
   const allChains = useSupportedChains().map((chain): number => chain.id)
+  const [showHiddenHoldings, setShowHiddenHoldings] = useState(false)
 
-  const { activeVaults, retiredVaults, migratableVaults, holdingsVaults, multiVaults, singleVaults } = useVaultFilter(
-    types,
-    chains,
-    true,
-    search || '',
-    categories
-  )
+  const {
+    activeVaults,
+    retiredVaults,
+    migratableVaults,
+    holdingsVaults,
+    multiVaults,
+    singleVaults,
+  } = useVaultFilter(types, chains, true, search || '', categories)
 
   // Get potential results with all filters but keeping the search
   const { activeVaults: allFilteredVaults } = useVaultFilter(
@@ -206,8 +262,14 @@ function ListOfVaults({
   const {
     holdingsVaults: allHoldingsVaults,
     retiredVaults: allRetiredVaults,
-    migratableVaults: allMigratableVaults
-  } = useVaultFilter(ALL_VAULTSV3_KINDS_KEYS, allChains, true, '', Object.values(ALL_VAULTSV3_CATEGORIES))
+    migratableVaults: allMigratableVaults,
+  } = useVaultFilter(
+    ALL_VAULTSV3_KINDS_KEYS,
+    allChains,
+    true,
+    '',
+    Object.values(ALL_VAULTSV3_CATEGORIES)
+  )
 
   /**********************************************************************************************
    **	Prepare vault lists for rendering. All filtering is now done in useVaultFilter.
@@ -240,13 +302,17 @@ function ListOfVaults({
 
     // Get non-holdings vaults from sorted display
     const holdingsSet = new Set(combinedHoldings.keys())
-    const nonHoldingsVaults = activeVaults.filter((vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`))
+    const nonHoldingsVaults = activeVaults.filter(
+      (vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`)
+    )
 
     const shouldShowEmptyState =
       isLoadingVaultList ||
       !chains ||
       chains.length === 0 ||
-      (isZero(holdingsArray.length) && isZero(multiVaults.length) && isZero(singleVaults.length))
+      (isZero(holdingsArray.length) &&
+        isZero(multiVaults.length) &&
+        isZero(singleVaults.length))
 
     if (shouldShowEmptyState) {
       return null
@@ -256,7 +322,7 @@ function ListOfVaults({
       holdings: holdingsArray,
       multi: multiVaults,
       single: singleVaults,
-      all: nonHoldingsVaults
+      all: nonHoldingsVaults,
     }
   }, [
     isLoadingVaultList,
@@ -266,21 +332,21 @@ function ListOfVaults({
     retiredVaults,
     holdingsVaults,
     multiVaults,
-    singleVaults
+    singleVaults,
   ])
 
   const { holdings, all } = vaultLists || {
     holdings: [],
-    all: []
+    all: [],
   }
-  const hasHoldings = holdings.length > 0
   const shouldShowHoldings = categories.includes('Your Holdings')
 
   const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
   const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
 
   // Calculate potential hidden results due to filters
-  const currentResultsCount = (shouldShowHoldings ? sortedHoldings.length : 0) + sortedNonHoldings.length
+  const currentResultsCount =
+    (shouldShowHoldings ? sortedHoldings.length : 0) + sortedNonHoldings.length
   const potentialResultsCount = allFilteredVaults.length
   const hiddenByFiltersCount = potentialResultsCount - currentResultsCount
   const hasHiddenResults = search && hiddenByFiltersCount > 0
@@ -293,43 +359,165 @@ function ListOfVaults({
     (shouldShowHoldings ? holdings.length : 0)
   const hasHiddenHoldings = hiddenHoldingsCount > 0 && shouldShowHoldings
 
-  const renderHiddenBadge = (): ReactNode => {
+  const hiddenHoldingsVaultsList = useMemo((): TYDaemonVault[] => {
+    if (!hasHiddenHoldings) {
+      return []
+    }
+
+    const visibleKeys = new Set(
+      holdings.map((vault) => `${vault.chainID}_${vault.address}`)
+    )
+    const combined = new Map<string, TYDaemonVault>()
+
+    for (const vault of allHoldingsVaults) {
+      combined.set(`${vault.chainID}_${vault.address}`, vault)
+    }
+    for (const vault of allRetiredVaults) {
+      combined.set(`${vault.chainID}_${vault.address}`, vault)
+    }
+    for (const vault of allMigratableVaults) {
+      combined.set(`${vault.chainID}_${vault.address}`, vault)
+    }
+
+    return Array.from(combined.entries())
+      .filter(([key]) => !visibleKeys.has(key))
+      .map(([, vault]) => vault)
+  }, [
+    hasHiddenHoldings,
+    holdings,
+    allHoldingsVaults,
+    allRetiredVaults,
+    allMigratableVaults,
+  ])
+
+  const filtersSignature = useMemo(() => {
+    return [
+      search ?? '',
+      (types || []).join('_'),
+      (categories || []).join('_'),
+      (chains || []).join('_'),
+    ].join('|')
+  }, [search, types, categories, chains])
+  const lastFiltersSignature = useRef(filtersSignature)
+
+  useEffect(() => {
+    if (lastFiltersSignature.current !== filtersSignature) {
+      lastFiltersSignature.current = filtersSignature
+      setShowHiddenHoldings(false)
+    }
+  }, [filtersSignature])
+
+  useEffect(() => {
+    if (!hasHiddenHoldings) {
+      setShowHiddenHoldings(false)
+    }
+  }, [hasHiddenHoldings])
+
+  const renderHiddenSearchAlert = (): ReactNode => {
     if (!hasHiddenResults) return null
 
     return (
-      <div className={'mb-4 flex items-center gap-2 justify-between rounded-2xl bg-neutral-100 px-6 py-3'}>
-        <p className={'text-sm text-neutral-600'}>
-          {hiddenByFiltersCount} vault{hiddenByFiltersCount > 1 ? 's' : ''} that match search parameters hidden by
-          current filters
-        </p>
+      <div
+        className={
+          'flex items-center gap-2 rounded-lg px-3 py-1 text-xs text-neutral-700'
+        }
+      >
+        <span>
+          {hiddenByFiltersCount}{' '}
+          {`vault${hiddenByFiltersCount > 1 ? 's' : ''} hidden by filters`}
+        </span>
         <Button
           onClick={onResetMultiSelect}
           className={
-            'yearn--button-smaller rounded-md max-w-18! w-full! bg-neutral-900 text-sm text-white hover:bg-neutral-800'
+            'yearn--button-smaller h-6 rounded-md px-3 py-1 text-xs text-white hover:bg-neutral-800'
           }
         >
-          Show all
+          {'Show all'}
         </Button>
       </div>
     )
   }
 
-  const renderHiddenHoldingsBadge = (): ReactNode => {
-    if (!hasHiddenHoldings || search) return null
+  const renderHoldingsCard = (): ReactNode => {
+    if (!shouldShowHoldings && !hasHiddenHoldings) {
+      return null
+    }
+
+    const shouldShowToggle =
+      hasHiddenHoldings && hiddenHoldingsVaultsList.length > 0
 
     return (
-      <div className={'mb-4 flex items-center gap-2 justify-between rounded-2xl bg-neutral-100 px-6 py-3'}>
-        <p className={'text-sm text-neutral-600'}>
-          {hiddenHoldingsCount} vault{hiddenHoldingsCount > 1 ? 's' : ''} with holdings hidden by current filters
-        </p>
-        <Button
-          onClick={onResetMultiSelect}
-          className={
-            'yearn--button-smaller rounded-md max-w-18! w-full! bg-neutral-900 text-sm text-white hover:bg-neutral-800'
-          }
-        >
-          Show all
-        </Button>
+      <div
+        className={
+          'mb-2 rounded-3xl border border-neutral-200/60 bg-neutral-0 shadow-sm'
+        }
+      >
+        <div className={'flex flex-wrap items-center justify-between gap-3'}>
+          <div className={'flex items-center gap-2'}>
+            <p className={'text-sm font-semibold text-neutral-900'}>
+              {'Your holdings'}
+            </p>
+            {shouldShowHoldings ? (
+              <span className={'text-xs text-neutral-500'}>
+                {sortedHoldings.length} vault
+                {sortedHoldings.length === 1 ? '' : 's'}
+              </span>
+            ) : null}
+          </div>
+          {shouldShowToggle ? (
+            <div className={'flex items-center gap-2 text-xs text-neutral-600'}>
+              <span>{hiddenHoldingsCount} hidden by filters</span>
+              <Button
+                onClick={(): void => setShowHiddenHoldings((prev) => !prev)}
+                className={
+                  'yearn--button-smaller rounded-md bg-neutral-900 px-3 py-1 text-xs text-white hover:bg-neutral-800'
+                }
+              >
+                {showHiddenHoldings ? 'Hide' : 'Show'}
+              </Button>
+              <Button
+                onClick={onResetMultiSelect}
+                className={
+                  'yearn--button-smaller rounded-md border border-neutral-200 px-3 py-1 text-xs text-neutral-900'
+                }
+              >
+                Reset filters
+              </Button>
+            </div>
+          ) : null}
+        </div>
+        {shouldShowHoldings ? (
+          <div className={'mt-3 grid gap-0'}>
+            {sortedHoldings.map((vault) => (
+              <VaultsV3ListRow
+                key={`${vault.chainID}_${vault.address}`}
+                currentVault={vault}
+              />
+            ))}
+          </div>
+        ) : null}
+        {showHiddenHoldings && hiddenHoldingsVaultsList.length > 0 ? (
+          <div className={'mt-4 grid gap-0'}>
+            <p
+              className={
+                'pb-2 text-xs uppercase tracking-wide text-neutral-500'
+              }
+            >
+              {'Filtered holdings'}
+            </p>
+            {hiddenHoldingsVaultsList.map((vault) => (
+              <VaultsV3ListRow
+                key={`filtered_${vault.chainID}_${vault.address}`}
+                currentVault={vault}
+              />
+            ))}
+          </div>
+        ) : null}
+        {!shouldShowHoldings && shouldShowToggle && !showHiddenHoldings ? (
+          <p className={'mt-3 text-xs text-neutral-500'}>
+            {'Use the buttons above to review or reset your filtered holdings.'}
+          </p>
+        ) : null}
       </div>
     )
   }
@@ -350,21 +538,12 @@ function ListOfVaults({
     }
     return (
       <Fragment>
-        {hasHoldings && shouldShowHoldings && (
-          <div className={'relative grid h-fit gap-4'}>
-            <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
-              &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
-            </p>
-            {sortedHoldings.map((vault) => (
-              <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
-            ))}
-          </div>
-        )}
-        {hasHoldings && shouldShowHoldings && all.length > 0 ? (
-          <div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
-        ) : null}
+        {renderHoldingsCard()}
         {sortedNonHoldings.map((vault) => (
-          <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
+          <VaultsV3ListRow
+            key={`${vault.chainID}_${vault.address}`}
+            currentVault={vault}
+          />
         ))}
       </Fragment>
     )
@@ -382,14 +561,16 @@ function ListOfVaults({
         onChangeTypes={onChangeTypes}
         onChangeCategories={onChangeCategories}
         onSearch={onSearch}
+        searchAlertContent={renderHiddenSearchAlert()}
       />
       <div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
-        {renderHiddenBadge()}
-        {renderHiddenHoldingsBadge()}
         <VaultsV3ListHead
           sortBy={sortBy}
           sortDirection={sortDirection}
-          onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+          onSort={(
+            newSortBy: string,
+            newSortDirection: TSortDirection
+          ): void => {
             if (newSortDirection === '') {
               onChangeSortBy('featuringScore')
               onChangeSortDirection('')
@@ -399,18 +580,48 @@ function ListOfVaults({
             onChangeSortDirection(newSortDirection as TSortDirection)
           }}
           items={[
-            { label: 'Vault', value: 'name', sortable: false, className: 'col-span-4' },
-            { label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2' },
-            { label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2' },
+            {
+              label: 'Vault',
+              value: 'name',
+              sortable: false,
+              className: 'col-span-4',
+            },
+            {
+              label: 'Est. APY',
+              value: 'estAPY',
+              sortable: true,
+              className: 'col-span-2',
+            },
+            {
+              label: 'Hist. APY',
+              value: 'APY',
+              sortable: true,
+              className: 'col-span-2',
+            },
             {
               label: 'Risk Level',
               value: 'score',
               sortable: true,
-              className: 'col-span-2 whitespace-nowrap'
+              className: 'col-span-2 whitespace-nowrap',
             },
-            { label: 'Available', value: 'available', sortable: true, className: 'col-span-2' },
-            { label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2' },
-            { label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2 justify-end' }
+            {
+              label: 'Available',
+              value: 'available',
+              sortable: true,
+              className: 'col-span-2',
+            },
+            {
+              label: 'Holdings',
+              value: 'deposited',
+              sortable: true,
+              className: 'col-span-2',
+            },
+            {
+              label: 'Deposits',
+              value: 'tvl',
+              sortable: true,
+              className: 'col-span-2 justify-end',
+            },
           ]}
         />
         <div className={'grid gap-4'}>{renderVaultList()}</div>
@@ -434,11 +645,11 @@ function Index(): ReactElement {
     onChangeChains,
     onChangeSortDirection,
     onChangeSortBy,
-    onResetMultiSelect
+    onResetMultiSelect,
   } = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
     defaultCategories: Object.values(ALL_VAULTSV3_CATEGORIES),
-    defaultPathname: '/v3'
+    defaultPathname: '/v3',
   })
 
   function onClick(): void {
@@ -461,13 +672,17 @@ function Index(): ReactElement {
           'relative pb-8 bg-neutral-0 z-50',
           'min-h-screen',
           'transition-transform duration-300',
-          isCollapsed ? 'translate-y-[354px] md:translate-y-[464px]' : 'translate-y-[24px] md:translate-y-[40px]'
+          isCollapsed
+            ? 'translate-y-[354px] md:translate-y-[464px]'
+            : 'translate-y-[24px] md:translate-y-[40px]'
         )}
       >
         <div className={'mx-auto w-full max-w-[1232px] px-4'}>
           <div
             onClick={onClick}
-            className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}
+            className={
+              'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'
+            }
           >
             <div className={'relative -mt-8 flex justify-center rounded-t-3xl'}>
               <svg
@@ -477,10 +692,17 @@ function Index(): ReactElement {
                 viewBox={'0 0 113 32'}
                 fill={'none'}
               >
-                <path d={'M0 32C37.9861 32 20.9837 0 56 0C91.0057 0 74.388 32 113 32H0Z'} fill={'#000520'} />
+                <path
+                  d={
+                    'M0 32C37.9861 32 20.9837 0 56 0C91.0057 0 74.388 32 113 32H0Z'
+                  }
+                  fill={'#000520'}
+                />
               </svg>
               <div
-                className={`absolute mt-2 flex justify-center transition-transform ${isCollapsed ? '' : '-rotate-180'}`}
+                className={`absolute mt-2 flex justify-center transition-transform ${
+                  isCollapsed ? '' : '-rotate-180'
+                }`}
               >
                 <svg
                   xmlns={'http://www.w3.org/2000/svg'}
@@ -503,7 +725,10 @@ function Index(): ReactElement {
           </div>
 
           <div className={'grid grid-cols-12 gap-4 pt-6 md:gap-6'}>
-            <PortfolioCard categories={categories || []} onChangeCategories={onChangeCategories} />
+            <PortfolioCard
+              categories={categories || []}
+              onChangeCategories={onChangeCategories}
+            />
             <ListOfVaults
               search={search}
               types={types || []}

@@ -6,8 +6,8 @@ import { IconChevron } from '@lib/icons/IconChevron'
 import { cl } from '@lib/utils'
 import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constants'
 
-import type { ReactElement } from 'react'
-import React, { useMemo, useState } from 'react'
+import type { ReactElement, ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 
 type TListHero = {
   types: string[] | null
@@ -19,6 +19,7 @@ type TListHero = {
   onChangeChains: (chains: number[] | null) => void
   onChangeCategories: (categories: string[] | null) => void
   onSearch: (searchValue: string) => void
+  searchAlertContent?: ReactNode
 }
 
 export function Filters({
@@ -30,7 +31,8 @@ export function Filters({
   chains,
   onSearch,
   shouldDebounce,
-  onChangeChains
+  onChangeChains,
+  searchAlertContent
 }: TListHero): ReactElement {
   const [shouldExpandFilters, setShouldExpandFilters] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -103,6 +105,7 @@ export function Filters({
           onSearch={onSearch}
           shouldDebounce={shouldDebounce || false}
           highlightWhenActive={true}
+          alertContent={searchAlertContent}
         />
       </div>
       <div
