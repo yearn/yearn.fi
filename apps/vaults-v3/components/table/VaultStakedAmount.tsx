@@ -47,7 +47,7 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
           options={{ shouldCompactValue: true, maximumFractionDigits: 2, minimumFractionDigits: 2 }}
         />
       </p>
-      <small className={cl('text-xs text-neutral-900/40 flex flex-row', staked.raw === 0n ? 'invisible' : 'visible')}>
+      <small className={cl('text-xs text-neutral-900/40 flex flex-row', isDusty ? 'invisible' : 'visible')}>
         <RenderAmount
           shouldFormatDust
           value={isDusty ? 0 : staked.normalized}
