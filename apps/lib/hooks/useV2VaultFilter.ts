@@ -10,17 +10,12 @@ import { useCallback, useMemo } from 'react'
 type TVaultWithMetadata = {
   vault: TYDaemonVault
   hasHoldings: boolean
-  isHoldingsVault: boolean
-  isMigratableVault: boolean
-  isRetiredVault: boolean
 }
 
 type TOptimizedV2VaultFilterResult = {
   // Main filtered results
   activeVaults: TYDaemonVault[]
   holdingsVaults: TYDaemonVault[]
-  migratableVaults: TYDaemonVault[]
-  retiredVaults: TYDaemonVault[]
 
   // Utility data
   isLoading: boolean
@@ -68,7 +63,7 @@ export function useV2VaultFilter(
     const vaultMap = new Map<string, TVaultWithMetadata>()
 
     // Process main vaults
-    Object.values(vaults).forEach((vault) => {
+    Object.values({ ...vaults, ...vaultsMigrations, ...vaultsRetired }).forEach((vault) => {
       // Only v2 vaults (exclude v3)
       if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
         return
@@ -79,69 +74,8 @@ export function useV2VaultFilter(
 
       vaultMap.set(key, {
         vault,
-        hasHoldings,
-        isHoldingsVault: hasHoldings,
-        isMigratableVault: false,
-        isRetiredVault: false
+        hasHoldings
       })
-    })
-
-    // Process migratable vaults
-    Object.values(vaultsMigrations).forEach((vault) => {
-      // Only v2 vaults
-      if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
-        return
-      }
-
-      const hasHoldings = checkHasHoldings(vault)
-      if (!hasHoldings) return // Only include if has holdings
-
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
-
-      // Update if already exists, otherwise add
-      const existing = vaultMap.get(key)
-      if (existing) {
-        existing.isMigratableVault = true
-        existing.hasHoldings = true
-        existing.isHoldingsVault = true
-      } else {
-        vaultMap.set(key, {
-          vault,
-          hasHoldings: true,
-          isHoldingsVault: false,
-          isMigratableVault: true,
-          isRetiredVault: false
-        })
-      }
-    })
-
-    // Process retired vaults
-    Object.values(vaultsRetired).forEach((vault) => {
-      // Only v2 vaults
-      if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
-        return
-      }
-
-      const hasHoldings = checkHasHoldings(vault)
-      if (!hasHoldings) return // Only include if has holdings
-
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
-
-      // Update if already exists, otherwise add
-      const existing = vaultMap.get(key)
-      if (existing) {
-        existing.isRetiredVault = true
-        existing.hasHoldings = true
-        existing.isHoldingsVault = true
-      } else {
-        vaultMap.set(key, {
-          vault,
-          hasHoldings: true,
-          isHoldingsVault: false,
-          isMigratableVault: false,
-          isRetiredVault: true
-        })
-      }
     })
 
     return vaultMap
@@ -152,8 +86,7 @@ export function useV2VaultFilter(
     const results = {
       activeVaults: [] as TYDaemonVault[],
       holdingsVaults: [] as TYDaemonVault[],
-      migratableVaults: [] as TYDaemonVault[],
-      retiredVaults: [] as TYDaemonVault[]
+      migratableVaults: [] as TYDaemonVault[]
     }
 
     // Pre-categorize vaults for type filtering
@@ -172,7 +105,7 @@ export function useV2VaultFilter(
       all: [] as TYDaemonVault[]
     }
 
-    processedVaults.forEach(({ vault, hasHoldings, isHoldingsVault, isMigratableVault, isRetiredVault }) => {
+    processedVaults.forEach(({ vault, hasHoldings }) => {
       // Apply search filter
       if (search) {
         const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
@@ -197,52 +130,44 @@ export function useV2VaultFilter(
         return
       }
 
-      // Add to appropriate lists
-      if (isRetiredVault) {
-        results.retiredVaults.push(vault)
-      } else if (isMigratableVault) {
-        results.migratableVaults.push(vault)
-      } else {
-        // Active vault - categorize it
-        categorizedVaults.all.push(vault)
+      categorizedVaults.all.push(vault)
 
-        if (vault.info?.isHighlighted) {
-          categorizedVaults.highlighted.push(vault)
-        }
-        if (vault.category === 'Curve' && isAutomatedVault(vault)) {
-          categorizedVaults.curveFactory.push(vault)
-        }
-        if (vault.category === 'Curve') {
-          categorizedVaults.curve.push(vault)
-        }
-        if (vault.category === 'Prisma') {
-          categorizedVaults.prisma.push(vault)
-        }
-        if (vault.category === 'Balancer') {
-          categorizedVaults.balancer.push(vault)
-        }
-        if (vault.category === 'Velodrome') {
-          categorizedVaults.velodrome.push(vault)
-        }
-        if (vault.category === 'Aerodrome') {
-          categorizedVaults.aerodrome.push(vault)
-        }
-        if (vault.apr.extra.stakingRewardsAPR > 0) {
-          categorizedVaults.boosted.push(vault)
-        }
-        if (vault.category === 'Stablecoin') {
-          categorizedVaults.stables.push(vault)
-        }
-        if (vault.category === 'Volatile') {
-          categorizedVaults.crypto.push(vault)
-        }
-        if (hasHoldings) {
-          categorizedVaults.holdings.push(vault)
-        }
+      if (vault.info?.isHighlighted) {
+        categorizedVaults.highlighted.push(vault)
+      }
+      if (vault.category === 'Curve' && isAutomatedVault(vault)) {
+        categorizedVaults.curveFactory.push(vault)
+      }
+      if (vault.category === 'Curve') {
+        categorizedVaults.curve.push(vault)
+      }
+      if (vault.category === 'Prisma') {
+        categorizedVaults.prisma.push(vault)
+      }
+      if (vault.category === 'Balancer') {
+        categorizedVaults.balancer.push(vault)
+      }
+      if (vault.category === 'Velodrome') {
+        categorizedVaults.velodrome.push(vault)
+      }
+      if (vault.category === 'Aerodrome') {
+        categorizedVaults.aerodrome.push(vault)
+      }
+      if (vault.apr.extra.stakingRewardsAPR > 0) {
+        categorizedVaults.boosted.push(vault)
+      }
+      if (vault.category === 'Stablecoin') {
+        categorizedVaults.stables.push(vault)
+      }
+      if (vault.category === 'Volatile') {
+        categorizedVaults.crypto.push(vault)
+      }
+      if (hasHoldings) {
+        categorizedVaults.holdings.push(vault)
       }
 
       // Add to holdings if applicable
-      if (isHoldingsVault) {
+      if (hasHoldings) {
         results.holdingsVaults.push(vault)
       }
     })
