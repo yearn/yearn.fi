@@ -6,7 +6,6 @@ import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { isAutomatedVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useAppSettings } from '@vaults-v2/contexts/useAppSettings'
-import { ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import { useCallback } from 'react'
 
 export function useFilteredVaults(
