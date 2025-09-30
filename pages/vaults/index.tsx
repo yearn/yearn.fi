@@ -65,8 +65,7 @@ function ListOfVaults(): ReactElement {
     onChangeChains,
     onChangeSortDirection,
     onChangeSortBy,
-    onReset,
-    onResetMultiSelect
+    onReset
   } = useQueryArguments({
     defaultTypes: ALL_VAULTS_CATEGORIES_KEYS,
     defaultPathname: '/vaults'
