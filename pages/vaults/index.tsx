@@ -4,9 +4,8 @@ import { ListHead } from '@lib/components/ListHead'
 import { Pagination } from '@lib/components/Pagination'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
-import { useYearn } from '@lib/contexts/useYearn'
 import { useChainOptions } from '@lib/hooks/useChains'
-import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
+import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
 import { IconChain } from '@lib/icons/IconChain'
 import type { TSortDirection } from '@lib/types'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -55,7 +54,6 @@ function HeaderUserPosition(): ReactElement {
 }
 
 function ListOfVaults(): ReactElement {
-  const { isLoadingVaultList } = useYearn()
   const {
     search,
     types,
@@ -72,12 +70,13 @@ function ListOfVaults(): ReactElement {
     defaultTypes: ALL_VAULTS_CATEGORIES_KEYS,
     defaultPathname: '/vaults'
   })
-  const { activeVaults, migratableVaults, retiredVaults, holdingsVaults } = useVaultFilter(
-    types,
-    chains,
-    false,
-    search || ''
-  )
+  const {
+    activeVaults,
+    migratableVaults,
+    retiredVaults,
+    holdingsVaults,
+    isLoading: isLoadingVaultList
+  } = useV2VaultFilter(types, chains, search || '')
   const [page, setPage] = useState(0)
   const chainOptions = useChainOptions(chains)
 

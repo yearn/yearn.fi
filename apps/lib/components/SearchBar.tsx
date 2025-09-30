@@ -63,7 +63,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
   return (
     <div
       className={cl(
-        'flex h-10 w-full max-w-md items-center pl-2 pr-1 py-2 md:w-2/3',
+        'flex h-10 w-full items-center pl-2 pr-1 py-2',
         props.highlightWhenActive
           ? localSearchValue
             ? 'bg-neutral-300/70 border-2 border-neutral-600'
