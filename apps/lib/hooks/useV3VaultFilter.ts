@@ -33,7 +33,7 @@ type TOptimizedVaultFilterResult = {
   isLoading: boolean
 }
 
-export function useOptimizedV3VaultFilter(
+export function useV3VaultFilter(
   types: string[] | null,
   chains: number[] | null,
   search?: string,
@@ -104,7 +104,6 @@ export function useOptimizedV3VaultFilter(
 
       const hasHoldings = checkHasHoldings(vault)
       if (!hasHoldings) return // Only include if has holdings
-      console.log('vault', vault.name)
 
       const key = `${vault.chainID}_${toAddress(vault.address)}`
 
@@ -134,7 +133,6 @@ export function useOptimizedV3VaultFilter(
 
       const hasHoldings = checkHasHoldings(vault)
       if (!hasHoldings) return // Only include if has holdings
-      console.log('vault', vault.name)
       const key = `${vault.chainID}_${toAddress(vault.address)}`
 
       // Update if already exists, otherwise add
@@ -297,7 +295,6 @@ export function useOptimizedV3VaultFilter(
     results.totalHoldingsVaults = totalHoldingsBeforeFilters
     results.totalMigratableVaults = totalMigratableBeforeFilters
     results.totalRetiredVaults = totalRetiredBeforeFilters
-    console.log(results)
     return results
   }, [processedVaults, types, chains, search, categories])
 

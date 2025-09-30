@@ -1,7 +1,7 @@
 import { Button } from '@lib/components/Button'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
-import { useOptimizedV3VaultFilter } from '@lib/hooks/useOptimizedV3VaultFilter'
+import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
 import { cl, formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -193,7 +193,7 @@ function ListOfVaults({
     totalMigratableVaults,
     totalRetiredVaults,
     isLoading: isLoadingVaultList
-  } = useOptimizedV3VaultFilter(types, chains, search || '', categories)
+  } = useV3VaultFilter(types, chains, search || '', categories)
 
   /**********************************************************************************************
    **	Prepare vault lists for rendering. All filtering is now done in useVaultFilter.
