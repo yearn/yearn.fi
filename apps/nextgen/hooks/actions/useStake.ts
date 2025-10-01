@@ -1,10 +1,10 @@
+import { toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
 import { gaugeV2Abi } from '@lib/utils/abi/gaugeV2.abi'
 import { useTokenBalance } from '@nextgen/hooks/useTokenBalance'
 import type { UseStakeReturn } from '@nextgen/types'
 import { type Address, erc20Abi } from 'viem'
 import { type UseSimulateContractReturnType, useReadContract, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
-import { toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
 
 interface Props {
   vaultAddress: Address

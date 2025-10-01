@@ -15,10 +15,10 @@ interface Props {
 
 export const WidgetUnstake: FC<Props> = ({ vaultAddress, gaugeAddress, handleStakeSuccess }) => {
   const { address: account } = useAccount()
-  const { tokens } = useTokens([vaultAddress, gaugeAddress])
+  const { tokens } = useTokens([vaultAddress])
 
   // ** PERIPHERY ** //
-  const [vault, gauge] = [tokens?.[0], tokens?.[1]]
+  const vault = tokens?.[0]
   const input = useInput(vault?.decimals ?? 18)
   const [amount, _, setAmount] = input
 
