@@ -1,7 +1,6 @@
 import { formatAmount } from '@lib/utils/format'
 import { InputTokenAmount } from '@nextgen/components/InputTokenAmount'
 import { TxButton } from '@nextgen/components/TxButton'
-import { useStake } from '@nextgen/hooks/actions/useStake'
 import { useUnstake } from '@nextgen/hooks/actions/useUnstake'
 import { useInput } from '@nextgen/hooks/useInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
@@ -47,7 +46,7 @@ export const WidgetUnstake: FC<Props> = ({ vaultAddress, gaugeAddress, handleSta
         input={input}
         placeholder="0.00"
         className="flex-1"
-        symbol={gauge?.symbol}
+        symbol={vault?.symbol}
         balance={balance.raw}
       />
 

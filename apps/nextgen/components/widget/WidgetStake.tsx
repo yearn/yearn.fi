@@ -19,7 +19,6 @@ export const WidgetStake: FC<Props> = ({ vaultAddress, gaugeAddress, handleStake
 
   // ** PERIPHERY ** //
   const [vault, gauge] = [tokens?.[0], tokens?.[1]]
-  // Note 10-01-25: Vault decimals here to keep input decimals same as gauge decimals.
   const input = useInput(vault?.decimals ?? 18)
   const [amount, _, setAmount] = input
 
