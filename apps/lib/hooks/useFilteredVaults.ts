@@ -104,8 +104,8 @@ export function useVaultFilter(
         }
       }
 
-      // Search filter
-      if (search) {
+      // Search filter (skip for holdings so they stay visible during search)
+      if (search && !hasHoldings) {
         let searchRegex: RegExp
         try {
           const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

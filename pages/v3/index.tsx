@@ -4,6 +4,7 @@ import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
 import { useSupportedChains } from '@lib/hooks/useSupportedChains'
+import { IconChevron } from '@lib/icons/IconChevron'
 import type { TSortDirection } from '@lib/types'
 import { cl, formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -20,7 +21,7 @@ import {
 } from '@vaults-v3/constants'
 import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 
 function Background(): ReactElement {
   return (
@@ -85,13 +86,7 @@ function V3Card(): ReactElement {
   )
 }
 
-function PortfolioCard({
-  categories,
-  onChangeCategories,
-}: {
-  categories: string[]
-  onChangeCategories: (categories: string[]) => void
-}): ReactElement {
+function PortfolioCard(): ReactElement {
   const { cumulatedValueInV3Vaults, isLoading } = useWallet()
   const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
 
@@ -178,31 +173,6 @@ function PortfolioCard({
             )}
           </div>
         </div>
-        <div className={'flex items-center gap-2 pt-2'}>
-          <label
-            className={
-              'flex cursor-pointer items-center gap-2 text-sm text-neutral-900'
-            }
-          >
-            <input
-              type={'checkbox'}
-              className={'rounded border-neutral-400'}
-              checked={categories.includes('Your Holdings')}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  if (!categories.includes('Your Holdings')) {
-                    onChangeCategories([...categories, 'Your Holdings'])
-                  }
-                } else {
-                  onChangeCategories(
-                    categories.filter((c) => c !== 'Your Holdings')
-                  )
-                }
-              }}
-            />
-            <span>{'Show holdings'}</span>
-          </label>
-        </div>
       </div>
     </div>
   )
@@ -239,7 +209,6 @@ function ListOfVaults({
   const { isLoadingVaultList } = useYearn()
   const { isActive, address, openLoginModal } = useWeb3()
   const allChains = useSupportedChains().map((chain): number => chain.id)
-  const [showHiddenHoldings, setShowHiddenHoldings] = useState(false)
   const [isHoldingsCollapsed, setIsHoldingsCollapsed] = useState(false)
 
   const {
@@ -346,81 +315,20 @@ function ListOfVaults({
   const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
   const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
 
-  // Calculate potential hidden results due to filters
-  const currentResultsCount =
-    (shouldShowHoldings ? sortedHoldings.length : 0) + sortedNonHoldings.length
-  const potentialResultsCount = allFilteredVaults.length
-  const hiddenByFiltersCount = potentialResultsCount - currentResultsCount
-  const hasHiddenResults = search && hiddenByFiltersCount > 0
-
-  // Calculate hidden holdings due to filters (regardless of search)
-  const hiddenHoldingsCount =
-    allHoldingsVaults.length +
-    allRetiredVaults.length +
-    allMigratableVaults.length -
-    (shouldShowHoldings ? holdings.length : 0)
-  const hasHiddenHoldings = hiddenHoldingsCount > 0 && shouldShowHoldings
   const totalWalletHoldingsCount =
     allHoldingsVaults.length +
     allRetiredVaults.length +
     allMigratableVaults.length
-
-  const hiddenHoldingsVaultsList = useMemo((): TYDaemonVault[] => {
-    if (!hasHiddenHoldings) {
-      return []
-    }
-
-    const visibleKeys = new Set(
-      holdings.map((vault) => `${vault.chainID}_${vault.address}`)
-    )
-    const combined = new Map<string, TYDaemonVault>()
-
-    for (const vault of allHoldingsVaults) {
-      combined.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-    for (const vault of allRetiredVaults) {
-      combined.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-    for (const vault of allMigratableVaults) {
-      combined.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-
-    return Array.from(combined.entries())
-      .filter(([key]) => !visibleKeys.has(key))
-      .map(([, vault]) => vault)
-  }, [
-    hasHiddenHoldings,
-    holdings,
-    allHoldingsVaults,
-    allRetiredVaults,
-    allMigratableVaults,
-  ])
-
-  const filtersSignature = useMemo(() => {
-    return [
-      search ?? '',
-      (types || []).join('_'),
-      (categories || []).join('_'),
-      (chains || []).join('_'),
-    ].join('|')
-  }, [search, types, categories, chains])
-  const lastFiltersSignature = useRef(filtersSignature)
-
-  useEffect(() => {
-    if (lastFiltersSignature.current !== filtersSignature) {
-      lastFiltersSignature.current = filtersSignature
-      setShowHiddenHoldings(false)
-    }
-  }, [filtersSignature])
-
-  useEffect(() => {
-    if (!hasHiddenHoldings) {
-      setShowHiddenHoldings(false)
-    }
-  }, [hasHiddenHoldings])
+  const potentialResultsCount = allFilteredVaults.length
+  const currentResultsCount =
+    (shouldShowHoldings ? sortedHoldings.length : 0) + sortedNonHoldings.length
+  const hiddenByFiltersCount = potentialResultsCount - currentResultsCount
+  const hasHiddenResults = Boolean(search) && hiddenByFiltersCount > 0
 
   const renderHiddenSearchAlert = (): ReactNode => {
-    if (!hasHiddenResults) return null
+    if (!hasHiddenResults) {
+      return null
+    }
 
     return (
       <div
@@ -448,12 +356,13 @@ function ListOfVaults({
     const walletConnected = isActive && Boolean(address)
     const walletDisconnected = !walletConnected
 
-    if (walletConnected && totalWalletHoldingsCount === 0) {
+    if (!shouldShowHoldings) {
       return null
     }
 
-    const shouldShowToggle =
-      hasHiddenHoldings && hiddenHoldingsVaultsList.length > 0
+    if (walletConnected && totalWalletHoldingsCount === 0) {
+      return null
+    }
 
     if (walletDisconnected) {
       return (
@@ -468,44 +377,51 @@ function ListOfVaults({
               'pointer-events-none absolute -inset-[2px] z-0 rounded-3xl bg-[linear-gradient(80deg,#2C3DA6,#D21162)] opacity-25 blur-xl'
             }
           />
-          <div className={'relative z-10 rounded-3xl px-6 py-5'}>
-            <div
-              className={'flex flex-wrap items-center justify-between gap-3'}
-            >
-              <div className={'flex flex-col gap-1'}>
-                <p className={'text-sm font-semibold text-neutral-900'}>
-                  {'Your holdings'}
-                </p>
-                <p className={'text-xs text-neutral-500'}>
-                  {'Connect your wallet to view your vault deposits.'}
-                </p>
-              </div>
-              <Button
-                onClick={openLoginModal}
-                className={
-                  'yearn--button-smaller rounded-md bg-neutral-900 px-3 py-2 text-xs text-white hover:bg-neutral-800'
-                }
+          <div className={'relative z-10 rounded-3xl px-6 py-6'}>
+            <div className={'flex justify-center'}>
+              <button
+                type={'button'}
+                className={cl(
+                  'rounded-lg overflow-hidden flex items-center justify-center text-center',
+                  'px-6 py-3',
+                  'relative group',
+                  'border-none'
+                )}
+                onClick={(): void => {
+                  if (!isActive && address) {
+                    onSwitchChain(1)
+                  } else {
+                    openLoginModal()
+                  }
+                }}
               >
-                {'Connect wallet'}
-              </Button>
+                <div
+                  className={cl(
+                    'absolute inset-0',
+                    'opacity-80 transition-opacity group-hover:opacity-100 pointer-events-none',
+                    'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
+                  )}
+                />
+                <span
+                  className={
+                    'z-10 px-2 text-sm font-medium text-white md:text-base'
+                  }
+                >
+                  {'Connect wallet to view your vault balances.'}
+                </span>
+              </button>
             </div>
           </div>
         </div>
       )
     }
 
-    if (!shouldShowHoldings && hiddenHoldingsCount === 0) {
-      return null
-    }
-
     const hasVisibleHoldingsRows =
       shouldShowHoldings && sortedHoldings.length > 0 && !isHoldingsCollapsed
     const shouldShowBorder = !hasVisibleHoldingsRows
-    const canCollapseHoldings =
-      totalWalletHoldingsCount > 0 && shouldShowHoldings
 
     return (
-      <div className={'relative mb-2 rounded-3xl'}>
+      <div className={'relative rounded-3xl'}>
         {/* Border should be off when holdings are visible and add border when empty */}
         <div
           className={cl(
@@ -524,55 +440,31 @@ function ListOfVaults({
               'flex flex-wrap items-center justify-between gap-3 px-6 py-4'
             }
           >
-            <div className={'flex items-center gap-2'}>
-              <p className={'text-sm font-semibold text-neutral-900'}>
-                {'Your holdings'}
-              </p>
-              {shouldShowHoldings ? (
-                <span className={'text-xs text-neutral-500'}>
-                  {sortedHoldings.length} vault
-                  {sortedHoldings.length === 1 ? '' : 's'}
-                </span>
-              ) : null}
-            </div>
-            <div className={'flex flex-wrap items-center justify-end gap-2'}>
-              {canCollapseHoldings ? (
-                <Button
-                  onClick={(): void => setIsHoldingsCollapsed((prev) => !prev)}
-                  className={
-                    'yearn--button-smaller rounded-md border border-neutral-200 px-3 py-1 text-xs text-neutral-900 hover:bg-neutral-100'
-                  }
-                >
-                  {isHoldingsCollapsed ? 'Show holdings' : 'Hide holdings'}
-                </Button>
-              ) : null}
-              {shouldShowToggle ? (
-                <div
-                  className={'flex items-center gap-2 text-xs text-neutral-600'}
-                >
-                  <span>{hiddenHoldingsCount} hidden by filters</span>
-                  <Button
-                    onClick={(): void => setShowHiddenHoldings((prev) => !prev)}
-                    className={
-                      'yearn--button-smaller rounded-md bg-neutral-900 px-3 py-1 text-xs text-white hover:bg-neutral-800'
-                    }
-                  >
-                    {showHiddenHoldings ? 'Hide' : 'Show'}
-                  </Button>
-                  <Button
-                    onClick={onResetMultiSelect}
-                    className={
-                      'yearn--button-smaller rounded-md border border-neutral-200 px-3 py-1 text-xs text-neutral-900'
-                    }
-                  >
-                    {'Reset filters'}
-                  </Button>
-                </div>
-              ) : null}
-            </div>
+            <button
+              type={'button'}
+              onClick={(): void => setIsHoldingsCollapsed((prev) => !prev)}
+              className={
+                'flex items-center gap-2 text-sm font-semibold text-neutral-900'
+              }
+              aria-expanded={!isHoldingsCollapsed}
+            >
+              <IconChevron
+                direction={isHoldingsCollapsed ? 'right' : 'down'}
+                className={
+                  'size-4 text-neutral-600 transition-all duration-200'
+                }
+              />
+              <span>{'Your Vault Holdings'}</span>
+            </button>
+            {shouldShowHoldings ? (
+              <span className={'text-xs text-neutral-500'}>
+                {sortedHoldings.length} vault
+                {sortedHoldings.length === 1 ? '' : 's'}
+              </span>
+            ) : null}
           </div>
           {hasVisibleHoldingsRows ? (
-            <div className={'grid gap-4 py-2'}>
+            <div className={'grid gap-4 pt-2 pb-4'}>
               {sortedHoldings.map((vault) => (
                 <VaultsV3ListRow
                   key={`${vault.chainID}_${vault.address}`}
@@ -581,34 +473,8 @@ function ListOfVaults({
               ))}
             </div>
           ) : null}
-          {!isHoldingsCollapsed &&
-          showHiddenHoldings &&
-          hiddenHoldingsVaultsList.length > 0 ? (
-            <div className={'mt-4 grid gap-0 px-6 pb-6'}>
-              <p
-                className={
-                  'pb-2 text-xs uppercase tracking-wide text-neutral-500'
-                }
-              >
-                {'Filtered holdings'}
-              </p>
-              {hiddenHoldingsVaultsList.map((vault) => (
-                <VaultsV3ListRow
-                  key={`filtered_${vault.chainID}_${vault.address}`}
-                  currentVault={vault}
-                />
-              ))}
-            </div>
-          ) : null}
-          {!shouldShowHoldings &&
-          shouldShowToggle &&
-          !showHiddenHoldings &&
-          !isHoldingsCollapsed ? (
-            <p className={'mt-3 px-6 pb-6 text-xs text-neutral-500'}>
-              {
-                'Use the buttons above to review or reset your filtered holdings.'
-              }
-            </p>
+          {!isHoldingsCollapsed && sortedHoldings.length > 0 ? (
+            <div className={'border-t-4 border-neutral-200'} />
           ) : null}
         </div>
       </div>
@@ -625,7 +491,7 @@ function ListOfVaults({
           currentChains={chains}
           onReset={onResetMultiSelect}
           defaultCategories={Object.values(ALL_VAULTSV3_CATEGORIES)}
-          potentialResultsCount={allFilteredVaults.length}
+          potentialResultsCount={potentialResultsCount}
         />
       )
     }
@@ -818,10 +684,7 @@ function Index(): ReactElement {
           </div>
 
           <div className={'grid grid-cols-12 gap-4 pt-6 md:gap-6'}>
-            <PortfolioCard
-              categories={categories || []}
-              onChangeCategories={onChangeCategories}
-            />
+            <PortfolioCard />
             <ListOfVaults
               search={search}
               types={types || []}
