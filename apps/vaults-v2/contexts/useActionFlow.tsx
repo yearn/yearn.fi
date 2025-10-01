@@ -182,7 +182,7 @@ function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext)
 export function ActionFlowContextApp(props: { children: ReactNode; currentVault: TYDaemonVault }): React.ReactElement {
   const { address } = useWeb3()
-  const { getBalance } = useWallet()
+  const { getBalance, getToken } = useWallet()
   const { maxLoss } = useYearn()
   const { tokenLists } = useTokenList()
   const { zapProvider, isAutoStakingEnabled } = useYearn()
@@ -533,6 +533,41 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
     isDepositing,
     isUsingPartnerContract,
     zapProvider
+  ])
+
+  const wrappedSelectedOptionTo = useMemo(() => {
+    if (
+      isDepositing &&
+      isAutoStakingEnabled &&
+      props.currentVault.staking.available &&
+      (currentSolver === Solver.enum.GaugeStakingBooster ||
+        currentSolver === Solver.enum.OptimismBooster ||
+        currentSolver === Solver.enum.JuicedStakingBooster ||
+        currentSolver === Solver.enum.V3StakingBooster)
+    ) {
+      const stakingToken = getToken({
+        address: toAddress(props.currentVault.staking.address),
+        chainID: props.currentVault.chainID
+      })
+      return setZapOption({
+        name: stakingToken.name,
+        symbol: stakingToken.symbol,
+        address: toAddress(props.currentVault.staking.address),
+        chainID: stakingToken.chainID,
+        decimals: stakingToken.decimals
+      })
+    }
+
+    return actionParams.selectedOptionTo
+  }, [
+    isDepositing,
+    isAutoStakingEnabled,
+    currentSolver,
+    actionParams.selectedOptionTo,
+    props.currentVault.staking.available,
+    props.currentVault.chainID,
+    props.currentVault.staking.address,
+    getToken
   ])
 
   /**********************************************************************************************
@@ -996,7 +1031,7 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
       currentVault: props.currentVault,
       possibleOptionsFrom: cleanPossibleOptionsFrom,
       possibleOptionsTo: [...actionParams.possibleOptionsTo, ...possibleZapOptionsTo],
-      actionParams,
+      actionParams: { ...actionParams, selectedOptionTo: wrappedSelectedOptionTo },
       onChangeAmount,
       onUpdateSelectedOptionFrom: (newSelectedOptionFrom: TDropdownOption): void => {
         updateParams(newSelectedOptionFrom, actionParams?.selectedOptionTo as TDropdownOption)
@@ -1025,7 +1060,8 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
       currentSolver,
       veYFIBalance,
       hasVeYFIBalance,
-      updateParams
+      updateParams,
+      wrappedSelectedOptionTo
     ]
   )
 

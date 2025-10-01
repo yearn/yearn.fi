@@ -394,7 +394,7 @@ export function useVaultStakingData(props: { currentVault: TYDaemonVault }): {
       decimalsResult = await readContracts(retrieveConfig(), {
         contracts: [
           {
-            address: stakingToken,
+            address: toAddress(stakingAddress),
             abi: erc20Abi,
             chainId: props.currentVault.chainID,
             functionName: 'decimals'
@@ -413,7 +413,7 @@ export function useVaultStakingData(props: { currentVault: TYDaemonVault }): {
             functionName: 'decimals'
           },
           {
-            address: stakingToken,
+            address: toAddress(stakingAddress),
             abi: erc20Abi,
             chainId: props.currentVault.chainID,
             functionName: 'decimals'

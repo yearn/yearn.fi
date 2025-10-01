@@ -1,19 +1,43 @@
 import { useNotifications } from '@lib/contexts/useNotifications'
 import { useWeb3 } from '@lib/contexts/useWeb3'
-import type { TDict, TNormalizedBN } from '@lib/types'
+import type { TAddress, TDict, TNormalizedBN } from '@lib/types'
 import { assert, toAddress, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
 import { YGAUGES_ZAP_ADDRESS } from '@lib/utils/constants'
 import { allowanceKey } from '@lib/utils/helpers'
 import type { TTxStatus } from '@lib/utils/wagmi'
-import { allowanceOf, approveERC20 } from '@lib/utils/wagmi'
+import { allowanceOf, approveERC20, retrieveConfig } from '@lib/utils/wagmi'
 import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
 import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
 import { Solver } from '@vaults-v2/types/solvers'
+import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
 import { depositAndStake } from '@vaults-v2/utils/actions'
-import { getVaultEstimateOut } from '@vaults-v2/utils/getVaultEstimateOut'
 import { useCallback, useMemo, useRef } from 'react'
 import type { Hash, TransactionReceipt } from 'viem'
 import { maxUint256 } from 'viem'
+import { readContract } from 'wagmi/actions'
+
+type TGetVaultEstimateOutProps = {
+  vaultTokenAddress: TAddress
+  inputAmount: bigint
+  chainID: number
+  outputToken: TAddress
+  inputToken: TAddress
+  inputDecimals: number
+  outputDecimals: number
+  isDepositing: boolean
+  version: string
+  from: TAddress
+}
+const getEstimageOut = async (request: TGetVaultEstimateOutProps): Promise<TNormalizedBN | undefined> => {
+  const shares = await readContract(retrieveConfig(), {
+    abi: VAULT_V3_ABI,
+    address: toAddress(request.vaultTokenAddress),
+    functionName: 'convertToShares',
+    chainId: request.chainID,
+    args: [request.inputAmount]
+  })
+  return toNormalizedBN(shares, request.outputDecimals)
+}
 
 export function useSolverGaugeStakingBooster(): TSolverContext {
   const { provider } = useWeb3()
@@ -31,10 +55,13 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
     if (isSolverDisabled(Solver.enum.GaugeStakingBooster)) {
       return undefined
     }
+
     request.current = _request
-    const estimateOut = await getVaultEstimateOut({
+    const estimateOut = await getEstimageOut({
       inputToken: toAddress(_request.inputToken.value),
-      outputToken: toAddress(_request.outputToken.value),
+      // We should pass vaultTokenAddress to calculate the estimate out. It's 1:1 with staking token.
+      outputToken: toAddress(_request.vaultTokenAddress),
+      vaultTokenAddress: toAddress(_request.vaultTokenAddress),
       inputDecimals: _request.inputToken.decimals,
       outputDecimals: _request.outputToken.decimals,
       inputAmount: _request.inputAmount,
@@ -43,6 +70,7 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
       version: _request.version,
       from: toAddress(_request.from)
     })
+
     latestQuote.current = estimateOut
     return latestQuote.current
   }, [])
@@ -78,7 +106,6 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
     },
     [provider]
   )
-
   /**********************************************************************************************
    ** Trigger an approve web3 action
    ** This approve can not be triggered if the wallet is not active (not connected) or if the tx
@@ -140,7 +167,7 @@ export function useSolverGaugeStakingBooster(): TSolverContext {
           connector: provider,
           chainID: request.current.chainID,
           contractAddress: YGAUGES_ZAP_ADDRESS,
-          vaultAddress: request.current.outputToken.value,
+          vaultAddress: request.current.vaultTokenAddress,
           vaultVersion: request.current.version,
           stakingPoolAddress: request.current.stakingPoolAddress,
           amount: request.current.inputAmount,

@@ -81,7 +81,9 @@ export function WithSolverContextApp({ children }: { children: React.ReactElemen
       if (currentNonce !== executionNonce.current) {
         return
       }
-      const requestHash = await hash(serialize({ ...request, solver, expectedOut: toBigInt(quote.value?.raw) }))
+      const requestHash = await hash(
+        `${request.chainID}-${request.from}-${request.inputToken?.value}-${request.outputToken?.value}-${request.inputAmount}-${solver}-${toBigInt(quote.value?.raw)}`
+      )
       setCurrentSolverState({
         ...ctx,
         quote: quote.value,
@@ -118,6 +120,10 @@ export function WithSolverContextApp({ children }: { children: React.ReactElemen
           currentVault.staking.available &&
           (currentVault.staking.source === 'VeYFI' || currentVault.staking.source === 'Juiced')
             ? toAddress(currentVault.staking.address)
+            : undefined,
+        vaultTokenAddress:
+          currentVault.staking.available && currentVault.staking.source === 'VeYFI'
+            ? toAddress(currentVault.address)
             : undefined
       }
 
@@ -347,7 +353,8 @@ export function WithSolverContextApp({ children }: { children: React.ReactElemen
       v3StakingBooster,
       partnerContract,
       internalMigration,
-      v3Router
+      v3Router,
+      currentVault.address
     ]
   )
 
