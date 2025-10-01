@@ -16,7 +16,6 @@ import { useSolverVanilla } from '@vaults-v2/hooks/solvers/useSolverVanilla'
 import type { TInitSolverArgs, TSolver, TSolverContext, TWithSolver } from '@vaults-v2/types/solvers'
 import { Solver } from '@vaults-v2/types/solvers'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { serialize } from 'wagmi'
 
 export const isSolverDisabled = (key: TSolver): boolean => {
   const solverStatus = {
