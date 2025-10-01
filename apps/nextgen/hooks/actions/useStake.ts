@@ -2,8 +2,9 @@ import { gaugeV2Abi } from '@lib/utils/abi/gaugeV2.abi'
 import { useTokenBalance } from '@nextgen/hooks/useTokenBalance'
 import type { UseStakeReturn } from '@nextgen/types'
 import { type Address, erc20Abi } from 'viem'
-import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
+import { type UseSimulateContractReturnType, useReadContract, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
+import { toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
 
 interface Props {
   vaultAddress: Address
@@ -32,6 +33,14 @@ export const useStake = ({ vaultAddress, gaugeAddress, amount, account }: Props)
   const prepareApproveEnabled = Boolean(!isStakeAllowanceSufficient && isValidInput)
   const prepareStakeEnabled = Boolean(isStakeAllowanceSufficient && isValidInput)
 
+  const { data: expectedStakeAmount = zeroNormalizedBN } = useReadContract({
+    abi: gaugeV2Abi,
+    functionName: 'previewDeposit',
+    address: gaugeAddress,
+    args: [amount],
+    query: { enabled: amount > 0n, select: (data) => toNormalizedBN(data, balance.decimals) }
+  })
+
   const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
     abi: erc20Abi,
     functionName: 'approve',
@@ -57,7 +66,8 @@ export const useStake = ({ vaultAddress, gaugeAddress, amount, account }: Props)
     periphery: {
       prepareApproveEnabled,
       prepareStakeEnabled,
-      balance
+      balance,
+      expectedStakeAmount
     }
   }
 }

@@ -15,6 +15,17 @@ export type UseStakeReturn = T<
     prepareApproveEnabled: boolean
     prepareStakeEnabled: boolean
     balance: TNormalizedBN
+    expectedStakeAmount: TNormalizedBN
+  }
+>
+
+export type UseUnstakeReturn = T<
+  {
+    prepareUnstake: UseSimulateContractReturnType
+  },
+  {
+    prepareUnstakeEnabled: boolean
+    balance: TNormalizedBN
   }
 >
 

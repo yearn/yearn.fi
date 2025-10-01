@@ -19,13 +19,14 @@ export const WidgetStake: FC<Props> = ({ vaultAddress, gaugeAddress, handleStake
 
   // ** PERIPHERY ** //
   const [vault, gauge] = [tokens?.[0], tokens?.[1]]
+  // Note 10-01-25: Vault decimals here to keep input decimals same as gauge decimals.
   const input = useInput(vault?.decimals ?? 18)
   const [amount, _, setAmount] = input
 
   // ** ACTIONS ** //
   const {
     actions: { prepareApprove, prepareStake },
-    periphery: { prepareApproveEnabled, prepareStakeEnabled, balance }
+    periphery: { prepareApproveEnabled, prepareStakeEnabled, balance, expectedStakeAmount }
   } = useStake({
     gaugeAddress,
     vaultAddress,
@@ -55,7 +56,7 @@ export const WidgetStake: FC<Props> = ({ vaultAddress, gaugeAddress, handleStake
         <div className="flex items-center justify-between">
           <span className="text-gray-500">You will receive</span>
           <span className="text-gray-900 font-medium">
-            {formatAmount(balance.display)} {gauge?.symbol}
+            {formatAmount(expectedStakeAmount.display)} {gauge?.symbol}
           </span>
         </div>
       </div>
@@ -70,7 +71,7 @@ export const WidgetStake: FC<Props> = ({ vaultAddress, gaugeAddress, handleStake
           />
           <TxButton
             prepareWrite={prepareStake}
-            transactionName={`Deposit ${vault?.symbol || ''}`}
+            transactionName={`Stake`}
             disabled={!prepareStakeEnabled}
             onSuccess={handleStakeSuccess}
             className="w-full"

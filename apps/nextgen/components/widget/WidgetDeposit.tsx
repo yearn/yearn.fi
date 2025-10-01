@@ -85,7 +85,7 @@ export const WidgetDeposit: FC<Props> = ({ vaultType, vaultAddress, assetAddress
           />
           <TxButton
             prepareWrite={prepareDeposit}
-            transactionName={`Deposit ${asset?.symbol || ''}`}
+            transactionName={`Deposit`}
             disabled={!prepareDepositEnabled}
             onSuccess={handleDepositSuccess}
             className="w-full"

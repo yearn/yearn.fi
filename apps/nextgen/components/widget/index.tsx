@@ -47,7 +47,9 @@ export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions }) => {
       case ActionType.Stake:
         return <WidgetStake vaultAddress={vaultAddress as `0x${string}`} gaugeAddress={gaugeAddress as `0x${string}`} />
       case ActionType.Unstake:
-        return <WidgetUnstake />
+        return (
+          <WidgetUnstake vaultAddress={vaultAddress as `0x${string}`} gaugeAddress={gaugeAddress as `0x${string}`} />
+        )
     }
   }, [mode, vaultAddress, vaultType, assetToken])
 
