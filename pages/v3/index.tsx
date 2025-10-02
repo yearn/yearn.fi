@@ -586,19 +586,11 @@ function ListOfVaults({
       )
     }
 
-    const shouldShowBorder = !(
-      shouldShowHoldings &&
-      sortedAllHoldings.length > 0 &&
-      !isHoldingsCollapsed
-    )
-
     return (
       <div className={'relative mb-2 rounded-3xl'}>
-        {/* Border should be off when holdings are visible and add border when empty */}
         <div
           className={cl(
-            'pointer-events-none absolute -inset-[2px] z-1 rounded-3xl',
-            shouldShowBorder ? 'border border-neutral-300' : 'border-0'
+            'pointer-events-none absolute -inset-[2px] z-1 rounded-3xl'
           )}
         />
         <div
@@ -612,7 +604,11 @@ function ListOfVaults({
               'flex flex-wrap items-center justify-between gap-3 px-6 py-4'
             }
           >
-            <div className={'flex min-w-0 flex-1 flex-wrap items-center gap-3'}>
+            <div
+              className={
+                'flex min-w-0 min-h-10 flex-1 flex-wrap items-center gap-3'
+              }
+            >
               <button
                 type={'button'}
                 onClick={(): void => setIsHoldingsCollapsed((prev) => !prev)}
@@ -648,7 +644,7 @@ function ListOfVaults({
             ) : null}
           </div>
           {!isHoldingsCollapsed && walletHoldingsCount > 0 ? (
-            <div className={'grid gap-4 pt-2 pb-4'}>
+            <div className={'grid gap-4 pt-2'}>
               {sortedAllHoldings.map((vault) => (
                 <VaultsV3ListRow
                   key={`${vault.chainID}_${vault.address}`}
@@ -656,9 +652,6 @@ function ListOfVaults({
                 />
               ))}
             </div>
-          ) : null}
-          {!isHoldingsCollapsed && walletHoldingsCount > 0 ? (
-            <div className={'h-px w-full bg-neutral-200'} />
           ) : null}
         </div>
       </div>
@@ -681,7 +674,9 @@ function ListOfVaults({
     }
     return (
       <Fragment>
-        {renderHoldingsCard()}
+        <div className={'border-b-4 border-neutral-200 pb-2'}>
+          {renderHoldingsCard()}
+        </div>
         {sortedNonHoldings.map((vault) => (
           <VaultsV3ListRow
             key={`${vault.chainID}_${vault.address}`}
