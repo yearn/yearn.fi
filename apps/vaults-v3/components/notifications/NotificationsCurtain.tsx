@@ -3,7 +3,12 @@ import { useYearn } from '@lib/contexts/useYearn'
 import { IconCross } from '@lib/icons/IconCross'
 import { cl } from '@lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
-import { type CSSProperties, type ReactElement, useEffect, useState } from 'react'
+import {
+  type CSSProperties,
+  type ReactElement,
+  useEffect,
+  useState,
+} from 'react'
 import { Drawer } from 'vaul'
 
 import { Notification } from './Notification'
@@ -15,7 +20,8 @@ export function NotificationsCurtain(props: {
 }): ReactElement {
   const isDesktop = useIsMdUp()
   const drawerDirection = isDesktop ? 'right' : 'bottom'
-  const { cachedEntries, setNotificationStatus, isLoading, error } = useNotifications()
+  const { cachedEntries, setNotificationStatus, isLoading, error } =
+    useNotifications()
   const { vaults, vaultsMigrations, vaultsRetired } = useYearn()
   const allVaults = { ...vaults, ...vaultsMigrations, ...vaultsRetired }
 
@@ -25,7 +31,7 @@ export function NotificationsCurtain(props: {
     scrollbarColor: '#9E9E9E transparent',
     scrollbarWidth: 'thin',
     scrollbarGutter: 'stable',
-    ...(drawerDirection === 'right' ? {} : { maxHeight: 'calc(90vh - 96px)' })
+    ...(drawerDirection === 'right' ? {} : { maxHeight: 'calc(90vh - 96px)' }),
   }
 
   /*************************************************************************************
@@ -48,9 +54,17 @@ export function NotificationsCurtain(props: {
   }, [props.isOpen, setNotificationStatus])
 
   return (
-    <Drawer.Root direction={drawerDirection} open={props.isOpen} onOpenChange={props.setShouldOpenCurtain}>
+    <Drawer.Root
+      direction={drawerDirection}
+      open={props.isOpen}
+      onOpenChange={props.setShouldOpenCurtain}
+    >
       <Drawer.Portal>
-        <Drawer.Overlay className={'fixed inset-0 z-999998 bg-black/40 backdrop-blur-xs transition-all duration-300'} />
+        <Drawer.Overlay
+          className={
+            'fixed inset-0 z-999998 bg-black/40 backdrop-blur-xs transition-all duration-300'
+          }
+        />
         <Drawer.Content
           className={cl(
             'fixed z-999999 outline-hidden',
@@ -62,7 +76,9 @@ export function NotificationsCurtain(props: {
           <div
             className={cl(
               'flex w-full grow flex-col shadow-2xl',
-              drawerDirection === 'right' ? 'py-5 pl-5 md:my-2 md:mr-2' : 'rounded-t-3xl px-5 pb-6 pt-5 max-h-[90vh]',
+              drawerDirection === 'right'
+                ? 'py-5 pl-5 md:my-2 md:mr-2'
+                : 'rounded-t-3xl px-5 pb-6 pt-5 max-h-[90vh]',
               props.variant === 'v3'
                 ? drawerDirection === 'right'
                   ? 'bg-neutral-100 md:rounded-3xl'
@@ -72,8 +88,14 @@ export function NotificationsCurtain(props: {
           >
             <div className={'h-full'}>
               <div className={'mb-4 flex items-center justify-between pr-4'}>
-                <Drawer.Title className={'font-bold text-neutral-900'}>{'Notifications'}</Drawer.Title>
-                <Drawer.Close className={'rounded-full p-1 text-neutral-900 transition-colors hover:text-neutral-600'}>
+                <Drawer.Title className={'font-bold text-neutral-900'}>
+                  {'Notifications'}
+                </Drawer.Title>
+                <Drawer.Close
+                  className={
+                    'rounded-full p-1 text-neutral-900 transition-colors hover:text-neutral-600'
+                  }
+                >
                   <IconCross className={'size-4'} />
                 </Drawer.Close>
               </div>
@@ -88,18 +110,30 @@ export function NotificationsCurtain(props: {
                   <div className={'flex h-full items-center justify-center'}>
                     <div className={'flex flex-col items-center gap-2'}>
                       <div
-                        className={'size-8 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900'}
+                        className={
+                          'size-8 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900'
+                        }
                       />
-                      <p className={'text-sm text-neutral-600'}>{'Loading notifications...'}</p>
+                      <p className={'text-sm text-neutral-600'}>
+                        {'Loading notifications...'}
+                      </p>
                     </div>
                   </div>
                 ) : error ? (
                   <div className={'mx-auto mt-40 text-center'}>
-                    <p className={'text-red-600 font-medium'}>{'Error loading notifications'}</p>
+                    <p className={'text-red-600 font-medium'}>
+                      {'Error loading notifications'}
+                    </p>
                     <p className={'mt-2 text-sm text-neutral-600'}>{error}</p>
                   </div>
                 ) : isEmpty ? (
-                  <p className={'mx-auto mt-40 text-center text-neutral-800'}>{'Nothing here yet!'}</p>
+                  <p
+                    className={
+                      'mx-auto my-20 sm:mt-40 text-center text-neutral-800'
+                    }
+                  >
+                    {'No transactions to show.'}
+                  </p>
                 ) : (
                   <motion.div
                     layout
@@ -112,8 +146,16 @@ export function NotificationsCurtain(props: {
                       {cachedEntries.toReversed().map((entry) => (
                         <Notification
                           key={`notification-${entry.id}`}
-                          fromVault={entry.fromAddress ? allVaults[entry.fromAddress] : undefined}
-                          toVault={entry.toAddress ? allVaults[entry.toAddress] : undefined}
+                          fromVault={
+                            entry.fromAddress
+                              ? allVaults[entry.fromAddress]
+                              : undefined
+                          }
+                          toVault={
+                            entry.toAddress
+                              ? allVaults[entry.toAddress]
+                              : undefined
+                          }
                           notification={entry}
                           variant={props.variant}
                         />
@@ -134,7 +176,10 @@ function useIsMdUp(): boolean {
   const [isMdUp, setIsMdUp] = useState(true)
 
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    if (
+      typeof window === 'undefined' ||
+      typeof window.matchMedia !== 'function'
+    ) {
       return
     }
 
