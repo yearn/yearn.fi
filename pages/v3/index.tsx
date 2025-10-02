@@ -11,18 +11,25 @@ import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
 import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
-import { ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
+import {
+  ALL_VAULTSV3_CATEGORIES_KEYS,
+  ALL_VAULTSV3_KINDS_KEYS,
+} from '@vaults-v3/constants'
 import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
 import { Children, Fragment, useMemo } from 'react'
 
 function V3Card(): ReactElement {
   return (
-    <div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-2 hidden md:block md:col-span-4'}>
+    <div
+      className={
+        'col-span-12 w-full rounded-3xl bg-neutral-100 p-2 hidden md:block md:col-span-4'
+      }
+    >
       <div
         className={cl(
           'flex h-full w-full flex-col items-center justify-center',
-          'gap-y-0 rounded-3xl bg-neutral-200 md:gap-y-6 p-2'
+          'gap-y-0 rounded-2xl bg-neutral-200 md:gap-y-6 p-2'
         )}
       >
         <V3Mask className={'size-[90%]'} />
@@ -47,13 +54,17 @@ function ListOfVaults(): ReactElement {
     onChangeChains,
     onChangeSortDirection,
     onChangeSortBy,
-    onReset
+    onReset,
   } = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
     defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
-    defaultPathname: '/v3'
+    defaultPathname: '/v3',
   })
-  const { activeVaults, retiredVaults, migratableVaults } = useVaultFilter(types, chains, true)
+  const { activeVaults, retiredVaults, migratableVaults } = useVaultFilter(
+    types,
+    chains,
+    true
+  )
 
   /**********************************************************************************************
    **	Then, on the activeVaults list, we apply the search filter. The search filter is
@@ -95,14 +106,22 @@ function ListOfVaults(): ReactElement {
    **	is done via a custom method that will sort the vaults based on the sortBy and
    **	sortDirection values.
    *********************************************************************************************/
-  const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection)
+  const sortedVaultsToDisplay = useSortVaults(
+    [...searchedVaultsToDisplay],
+    sortBy,
+    sortDirection
+  )
 
   /**********************************************************************************************
    **	The VaultList component is memoized to prevent it from being re-created on every render.
    **	It contains either the list of vaults, is some are available, or a message to the user.
    *********************************************************************************************/
-  const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
-    const filteredByChains = sortedVaultsToDisplay.filter(({ chainID }): boolean => chains?.includes(chainID) || false)
+  const VaultList = useMemo(():
+    | [ReactNode, ReactNode, ReactNode, ReactNode]
+    | ReactNode => {
+    const filteredByChains = sortedVaultsToDisplay.filter(
+      ({ chainID }): boolean => chains?.includes(chainID) || false
+    )
     const filteredByCategories = filteredByChains.filter(
       ({ category }): boolean => categories?.includes(category) || false
     )
@@ -116,12 +135,20 @@ function ListOfVaults(): ReactElement {
     // Add migratable vaults to holdings (guaranteed to have balance)
     for (const vault of migratableVaults) {
       const key = `${vault.chainID}_${vault.address}`
-      const balance = getBalance({ address: vault.address, chainID: vault.chainID })
-      const stakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID })
+      const balance = getBalance({
+        address: vault.address,
+        chainID: vault.chainID,
+      })
+      const stakingBalance = getBalance({
+        address: vault.staking.address,
+        chainID: vault.chainID,
+      })
       const hasBalance = balance.raw > 0n
       const hasStakingBalance = stakingBalance.raw > 0n
       if (hasBalance || hasStakingBalance) {
-        holdings.push(<VaultsV3ListRow key={key} currentVault={vault} isHoldings={true} />)
+        holdings.push(
+          <VaultsV3ListRow key={key} currentVault={vault} isHoldings={true} />
+        )
         processedForHoldings.add(key)
       }
     }
@@ -131,10 +158,16 @@ function ListOfVaults(): ReactElement {
       const key = `${vault.chainID}_${vault.address}`
       if (!processedForHoldings.has(key)) {
         // Avoid duplicates
-        const hasBalance = getBalance({ address: vault.address, chainID: vault.chainID }).raw > 0n
-        const hasStakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID }).raw > 0n
+        const hasBalance =
+          getBalance({ address: vault.address, chainID: vault.chainID }).raw >
+          0n
+        const hasStakingBalance =
+          getBalance({ address: vault.staking.address, chainID: vault.chainID })
+            .raw > 0n
         if (hasBalance || hasStakingBalance) {
-          holdings.push(<VaultsV3ListRow key={key} currentVault={vault} isHoldings={true} />)
+          holdings.push(
+            <VaultsV3ListRow key={key} currentVault={vault} isHoldings={true} />
+          )
           processedForHoldings.add(key)
         }
       }
@@ -150,15 +183,24 @@ function ListOfVaults(): ReactElement {
         continue
       }
 
-      const balance = getBalance({ address: vault.address, chainID: vault.chainID })
-      const stakingBalance = getBalance({ address: vault.staking.address, chainID: vault.chainID })
+      const balance = getBalance({
+        address: vault.address,
+        chainID: vault.chainID,
+      })
+      const stakingBalance = getBalance({
+        address: vault.staking.address,
+        chainID: vault.chainID,
+      })
       const price = getPrice({ address: vault.address, chainID: vault.chainID })
 
       const holdingsValue =
-        toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals).normalized * price.normalized
+        toNormalizedBN(balance.raw + stakingBalance.raw, vault.decimals)
+          .normalized * price.normalized
 
       if (holdingsValue > 0.5) {
-        holdings.push(<VaultsV3ListRow key={key} currentVault={vault} isHoldings={true} />)
+        holdings.push(
+          <VaultsV3ListRow key={key} currentVault={vault} isHoldings={true} />
+        )
         // No need to add to processedForHoldings here again as `continue` prevents further processing for this vault.
         continue
       }
@@ -177,7 +219,10 @@ function ListOfVaults(): ReactElement {
     }
 
     const shouldShowEmptyState =
-      isLoadingVaultList || !chains || chains.length === 0 || (isZero(holdings.length) && isZero(all.length)) // Show empty if no holdings and no other active vaults
+      isLoadingVaultList ||
+      !chains ||
+      chains.length === 0 ||
+      (isZero(holdings.length) && isZero(all.length)) // Show empty if no holdings and no other active vaults
 
     if (shouldShowEmptyState) {
       return (
@@ -205,14 +250,19 @@ function ListOfVaults(): ReactElement {
     getPrice,
     search,
     types,
-    onReset
+    onReset,
   ])
 
   function renderVaultList(): ReactNode {
     if (Children.count(VaultList) === 1) {
       return VaultList as ReactNode
     }
-    const possibleLists = VaultList as [ReactNode, ReactNode, ReactNode, ReactNode]
+    const possibleLists = VaultList as [
+      ReactNode,
+      ReactNode,
+      ReactNode,
+      ReactNode
+    ]
     const hasHoldings = Children.count(possibleLists[0]) > 0
 
     if (sortBy !== 'featuringScore' && possibleLists[3]) {
@@ -220,13 +270,18 @@ function ListOfVaults(): ReactElement {
         <Fragment>
           {hasHoldings && (
             <div className={'relative grid h-fit gap-4'}>
-              <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
+              <p
+                className={
+                  'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'
+                }
+              >
                 &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
               </p>
               {possibleLists[0]}
             </div>
           )}
-          {Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[3]) > 0 ? (
+          {Children.count(possibleLists[0]) > 0 &&
+          Children.count(possibleLists[3]) > 0 ? (
             <div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
           ) : null}
           {possibleLists[3]}
@@ -237,17 +292,23 @@ function ListOfVaults(): ReactElement {
       <Fragment>
         {hasHoldings && (
           <div className={'relative grid h-fit gap-4'}>
-            <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
+            <p
+              className={
+                'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'
+              }
+            >
               &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
             </p>
             {possibleLists[0]}
           </div>
         )}
-        {Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[1]) > 0 ? (
+        {Children.count(possibleLists[0]) > 0 &&
+        Children.count(possibleLists[1]) > 0 ? (
           <div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
         ) : null}
         {possibleLists[1]}
-        {Children.count(possibleLists[1]) > 1 && Children.count(possibleLists[2]) > 0 ? (
+        {Children.count(possibleLists[1]) > 1 &&
+        Children.count(possibleLists[2]) > 0 ? (
           <div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
         ) : null}
         {possibleLists[2]}
@@ -273,7 +334,10 @@ function ListOfVaults(): ReactElement {
         <VaultsV3ListHead
           sortBy={sortBy}
           sortDirection={sortDirection}
-          onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+          onSort={(
+            newSortBy: string,
+            newSortDirection: TSortDirection
+          ): void => {
             if (newSortDirection === '') {
               onChangeSortBy('featuringScore')
               onChangeSortDirection('')
@@ -283,18 +347,48 @@ function ListOfVaults(): ReactElement {
             onChangeSortDirection(newSortDirection as TSortDirection)
           }}
           items={[
-            { label: 'Vault', value: 'name', sortable: true, className: 'col-span-4' },
-            { label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2' },
-            { label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2' },
+            {
+              label: 'Vault',
+              value: 'name',
+              sortable: true,
+              className: 'col-span-4',
+            },
+            {
+              label: 'Est. APY',
+              value: 'estAPY',
+              sortable: true,
+              className: 'col-span-2',
+            },
+            {
+              label: 'Hist. APY',
+              value: 'APY',
+              sortable: true,
+              className: 'col-span-2',
+            },
             {
               label: 'Risk Level',
               value: 'score',
               sortable: true,
-              className: 'col-span-2 whitespace-nowrap'
+              className: 'col-span-2 whitespace-nowrap',
             },
-            { label: 'Available', value: 'available', sortable: true, className: 'col-span-2' },
-            { label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2' },
-            { label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2 justify-end' }
+            {
+              label: 'Available',
+              value: 'available',
+              sortable: true,
+              className: 'col-span-2',
+            },
+            {
+              label: 'Holdings',
+              value: 'deposited',
+              sortable: true,
+              className: 'col-span-2',
+            },
+            {
+              label: 'Deposits',
+              value: 'tvl',
+              sortable: true,
+              className: 'col-span-2 justify-end',
+            },
           ]}
         />
         <div className={'grid gap-3'}>{renderVaultList()}</div>
