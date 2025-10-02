@@ -11,21 +11,24 @@ interface Props {
   gaugeAddress: Address
   amount: bigint
   account?: Address
+  chainId?: number
 }
 
 // ** Stake Action for V2 & V3 ** //
 
-export const useStake = ({ vaultAddress, gaugeAddress, amount, account }: Props): UseStakeReturn => {
+export const useStake = ({ vaultAddress, gaugeAddress, amount, account, chainId }: Props): UseStakeReturn => {
   const { allowance: depositAllowance = 0n } = useTokenAllowance({
     account,
     token: vaultAddress,
     spender: gaugeAddress,
-    watch: true
+    watch: true,
+    chainId
   })
 
   const { balance } = useTokenBalance({
     token: vaultAddress,
-    watch: true
+    watch: true,
+    chainId
   })
 
   const isValidInput = amount > 0n
@@ -38,6 +41,7 @@ export const useStake = ({ vaultAddress, gaugeAddress, amount, account }: Props)
     functionName: 'previewDeposit',
     address: gaugeAddress,
     args: [amount],
+    chainId,
     query: { enabled: amount > 0n, select: (data) => toNormalizedBN(data, balance.decimals) }
   })
 
@@ -46,6 +50,7 @@ export const useStake = ({ vaultAddress, gaugeAddress, amount, account }: Props)
     functionName: 'approve',
     address: vaultAddress,
     args: amount > 0n && vaultAddress ? [gaugeAddress, amount] : undefined,
+    chainId,
     query: { enabled: prepareApproveEnabled }
   })
 
@@ -55,6 +60,7 @@ export const useStake = ({ vaultAddress, gaugeAddress, amount, account }: Props)
     address: gaugeAddress,
     args: [amount],
     account,
+    chainId,
     query: { enabled: prepareStakeEnabled }
   })
 

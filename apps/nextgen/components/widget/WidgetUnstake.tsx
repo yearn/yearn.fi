@@ -10,12 +10,13 @@ import { useAccount } from 'wagmi'
 interface Props {
   vaultAddress: `0x${string}`
   gaugeAddress: `0x${string}`
+  chainId: number
   handleStakeSuccess?: () => void
 }
 
-export const WidgetUnstake: FC<Props> = ({ vaultAddress, gaugeAddress, handleStakeSuccess }) => {
+export const WidgetUnstake: FC<Props> = ({ vaultAddress, gaugeAddress, handleStakeSuccess, chainId }) => {
   const { address: account } = useAccount()
-  const { tokens } = useTokens([vaultAddress, gaugeAddress])
+  const { tokens } = useTokens([vaultAddress, gaugeAddress], chainId)
 
   // ** PERIPHERY ** //
   const [vault, gauge] = [tokens?.[0], tokens?.[1]]
@@ -30,7 +31,8 @@ export const WidgetUnstake: FC<Props> = ({ vaultAddress, gaugeAddress, handleSta
     gaugeAddress,
     amount: amount.bn,
     decimals: vault?.decimals ?? 18,
-    account
+    account,
+    chainId
   })
 
   useEffect(() => {

@@ -9,24 +9,27 @@ interface Props {
   vaultAddress: Address
   amount: bigint
   account?: Address
+  chainId?: number
 }
 
 // ** Withdraw Action for V2 & V3 ** //
 
-export const useWithdraw = ({ vaultType, vaultAddress, amount, account }: Props): UseWithdrawReturn => {
+export const useWithdraw = ({ vaultType, vaultAddress, amount, account, chainId }: Props): UseWithdrawReturn => {
   const { data: [expectedWithdrawAmount, maxRedeem] = [0n, 0n, 0n] } = useReadContracts({
     contracts: [
       {
         abi: erc4626Abi,
         address: vaultAddress,
         functionName: 'previewWithdraw',
-        args: [amount]
+        args: [amount],
+        chainId
       },
       {
         abi: erc4626Abi,
         address: vaultAddress,
         functionName: 'maxWithdraw',
-        args: account ? [account] : undefined
+        args: account ? [account] : undefined,
+        chainId
       }
     ],
     query: {
@@ -57,6 +60,7 @@ export const useWithdraw = ({ vaultType, vaultAddress, amount, account }: Props)
     functionName,
     address: vaultAddress,
     args,
+    chainId,
     query: {
       enabled: prepareWithdrawEnabled
     }

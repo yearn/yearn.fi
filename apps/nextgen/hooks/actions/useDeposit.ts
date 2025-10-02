@@ -11,16 +11,25 @@ interface Props {
   assetAddress: Address
   amount: bigint
   account?: Address
+  chainId?: number
 }
 
 // ** Deposit Action for V2 & V3 ** //
 
-export const useDeposit = ({ vaultType, vaultAddress, assetAddress, amount, account }: Props): UseDepositReturn => {
+export const useDeposit = ({
+  vaultType,
+  vaultAddress,
+  assetAddress,
+  amount,
+  account,
+  chainId
+}: Props): UseDepositReturn => {
   const { allowance: depositAllowance = 0n } = useTokenAllowance({
     account,
     token: assetAddress,
     spender: vaultAddress,
-    watch: true
+    watch: true,
+    chainId
   })
 
   const { data: [expectedDepositAmount, balanceOf] = [0n, 0n] } = useReadContracts({
@@ -29,13 +38,15 @@ export const useDeposit = ({ vaultType, vaultAddress, assetAddress, amount, acco
         abi: erc4626Abi,
         address: vaultAddress,
         functionName: 'previewDeposit',
-        args: [amount]
+        args: [amount],
+        chainId
       },
       {
         abi: erc4626Abi,
         address: assetAddress,
         functionName: 'balanceOf',
-        args: account ? [account] : undefined
+        args: account ? [account] : undefined,
+        chainId
       }
     ],
     query: { select: (data) => [data[0]?.result ?? 0n, data[1]?.result ?? 0n], enabled: !!account }
@@ -66,6 +77,7 @@ export const useDeposit = ({ vaultType, vaultAddress, assetAddress, amount, acco
     functionName: 'approve',
     address: assetAddress,
     args: amount > 0n && vaultAddress ? [vaultAddress, amount] : undefined,
+    chainId,
     query: { enabled: prepareApproveEnabled }
   })
 
@@ -75,6 +87,7 @@ export const useDeposit = ({ vaultType, vaultAddress, assetAddress, amount, acco
     address: vaultAddress,
     args,
     account,
+    chainId,
     query: { enabled: prepareDepositEnabled }
   })
 

@@ -13,11 +13,18 @@ interface Props {
   assetAddress: `0x${string}`
   vaultAddress: `0x${string}`
   handleWithdrawSuccess?: () => void
+  chainId?: number
 }
 
-export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, assetAddress, handleWithdrawSuccess }) => {
+export const WidgetWithdraw: FC<Props> = ({
+  vaultType,
+  vaultAddress,
+  assetAddress,
+  handleWithdrawSuccess,
+  chainId
+}) => {
   const { address: account } = useAccount()
-  const { tokens } = useTokens([assetAddress, vaultAddress])
+  const { tokens } = useTokens([assetAddress, vaultAddress], chainId)
 
   // ** PERIPHERY ** //
   const [asset, vault] = [tokens?.[0], tokens?.[1]]
@@ -32,7 +39,8 @@ export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, assetAddres
     vaultType: vaultType,
     vaultAddress: vaultAddress as Address,
     amount: amount.bn,
-    account
+    account,
+    chainId
   })
 
   return (

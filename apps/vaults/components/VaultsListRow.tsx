@@ -19,10 +19,7 @@ type TVaultsListRowProps = {
 export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, index = 0 }) => {
   const navigate = useNavigate()
 
-  // TODO: Update router usage to use navigate, params, and location
-  const href = isV2
-    ? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
-    : `/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`
+  const href = `/vaults-beta/${currentVault.chainID}/${toAddress(currentVault.address)}`
 
   const handleRowClick = (): void => {
     navigate(href)

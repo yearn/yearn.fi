@@ -12,8 +12,8 @@ const V3Page = lazy(() => import('../pages/v3/index'))
 const V3AboutPage = lazy(() => import('../pages/v3/about'))
 const V3DetailPage = lazy(() => import('../pages/v3/[chainID]/[address]'))
 const VaultsBetaPage = lazy(() => import('../pages/vaults-beta/index'))
+const VaultsBetaDetailPage = lazy(() => import('../pages/vaults-beta/[chainID]/[address]'))
 const VaultsBetaSearchPage = lazy(() => import('../pages/vaults-beta/search/[query]'))
-const DemoPage = lazy(() => import('../pages/demo/index'))
 
 // Loading component
 const PageLoader = (): ReactElement => (
@@ -30,8 +30,19 @@ const ExternalRedirect = ({ to }: { to: string }): ReactElement => {
   return <PageLoader />
 }
 
+const devConfig = import.meta.env.DEV
+  ? {
+      vaultsBeta: {
+        index: '/vaults-beta',
+        detail: '/vaults-beta/:chainID/:address',
+        search: '/vaults-beta/search/:query'
+      }
+    }
+  : {}
+
 // Route configuration for reference
 export const routeConfig = {
+  ...devConfig,
   home: '/',
   apps: '/apps',
   vaults: {
@@ -46,10 +57,6 @@ export const routeConfig = {
     detail: '/v3/:chainID/:address',
     chainOnly: '/v3/:chainID'
   },
-  vaultsBeta: {
-    index: '/vaults-beta',
-    search: '/vaults-beta/search/:query'
-  },
   external: {
     ybribe: '/ybribe/*',
     ycrv: '/ycrv/*',
@@ -60,8 +67,7 @@ export const routeConfig = {
     governance: '/governance',
     snapshot: '/snapshot',
     github: '/github'
-  },
-  demo: '/demo-nextgen'
+  }
 }
 
 // Main routes component
@@ -71,9 +77,6 @@ export function AppRoutes(): ReactElement {
       <Routes>
         {/* Home page */}
         <Route path="/" element={<HomePage />} />
-
-        {/* Demo page */}
-        <Route path="/demo-nextgen" element={<DemoPage />} />
 
         {/* Apps page */}
         <Route path="/apps" element={<AppsPage />} />
@@ -96,6 +99,7 @@ export function AppRoutes(): ReactElement {
         {/* Vaults Beta routes */}
         <Route path="/vaults-beta">
           <Route index element={<VaultsBetaPage />} />
+          <Route path=":chainID/:address" element={<VaultsBetaDetailPage />} />
           <Route path="search/:query" element={<VaultsBetaSearchPage />} />
         </Route>
 

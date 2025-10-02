@@ -12,12 +12,13 @@ interface Props {
   vaultType: 'v2' | 'v3'
   vaultAddress: `0x${string}`
   assetAddress: `0x${string}`
+  chainId?: number
   handleDepositSuccess?: () => void
 }
 
-export const WidgetDeposit: FC<Props> = ({ vaultType, vaultAddress, assetAddress, handleDepositSuccess }) => {
+export const WidgetDeposit: FC<Props> = ({ vaultType, vaultAddress, assetAddress, handleDepositSuccess, chainId }) => {
   const { address: account } = useAccount()
-  const { tokens } = useTokens([assetAddress, vaultAddress])
+  const { tokens } = useTokens([assetAddress, vaultAddress], chainId)
 
   // ** PERIPHERY ** //
   const [asset, vault] = [tokens?.[0], tokens?.[1]]
@@ -33,7 +34,8 @@ export const WidgetDeposit: FC<Props> = ({ vaultType, vaultAddress, assetAddress
     assetAddress: asset?.address as Address,
     vaultAddress: vault?.address as Address,
     amount: amount.bn,
-    account
+    account,
+    chainId
   })
 
   return (

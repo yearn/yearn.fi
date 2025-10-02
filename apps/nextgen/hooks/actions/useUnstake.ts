@@ -13,14 +13,16 @@ interface Props {
   // that logic. Though it isn't necessarily the correct logic..
   decimals: number
   account?: Address
+  chainId?: number
 }
 
 // ** Unstake Action for V2 & V3 ** //
 
-export const useUnstake = ({ gaugeAddress, amount, account, decimals }: Props): UseUnstakeReturn => {
+export const useUnstake = ({ gaugeAddress, amount, account, decimals, chainId }: Props): UseUnstakeReturn => {
   const { balance: _balance } = useTokenBalance({
     token: gaugeAddress,
-    watch: true
+    watch: true,
+    chainId
   })
 
   // Note 10-01-25: Adjustment here related to above note.
@@ -35,6 +37,7 @@ export const useUnstake = ({ gaugeAddress, amount, account, decimals }: Props): 
     args: account ? [amount, account, account, false] : undefined,
     address: gaugeAddress,
     account,
+    chainId,
     query: { enabled: prepareUnstakeEnabled }
   })
 

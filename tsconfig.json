@@ -6,7 +6,6 @@
       "@components/*": ["src/components/*"],
       "@hooks/*": ["src/hooks/*"],
       "@lib/*": ["apps/lib/*"],
-      "@demo/*": ["apps/demo/*"],
       "@vaults/*": ["apps/vaults/*"],
       "@vaults-v2/*": ["apps/vaults-v2/*"],
       "@vaults-v3/*": ["apps/vaults-v3/*"],

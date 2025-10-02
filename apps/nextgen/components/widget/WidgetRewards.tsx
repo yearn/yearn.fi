@@ -15,7 +15,7 @@ export const WidgetRewards: FC<Props> = ({ vaultAddress, merkleCampaign }) => {
   const hasMerkleCampaign = !!merkleCampaign
 
   return (
-    <div className="flex flex-col gap-0 mt-4">
+    <div className="flex flex-col gap-0">
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="flex flex-col gap-2 bg-gray-100 p-4">
           <h1 className="text-lg text-gray-900 font-medium">Claim rewards</h1>

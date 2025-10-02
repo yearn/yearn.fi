@@ -13,15 +13,17 @@ interface Props {
   vaultAddress?: `0x${string}`
   vaultType: 'v2' | 'v3'
   actions: ActionType[]
+  chainId: number
 }
 
-export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions }) => {
+export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions, chainId }) => {
   const [mode, setMode] = useState<ActionType>(actions[0])
 
   const { data: assetToken } = useReadContract({
     address: vaultAddress as Address,
     abi: vaultType === 'v2' ? vaultAbi : erc4626Abi,
-    functionName: vaultType === 'v2' ? 'token' : 'asset'
+    functionName: vaultType === 'v2' ? 'token' : 'asset',
+    chainId
   })
 
   const gaugeAddress = '0x622fA41799406B120f9a40dA843D358b7b2CFEE3'
@@ -34,6 +36,7 @@ export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions }) => {
             vaultAddress={vaultAddress as `0x${string}`}
             vaultType={vaultType}
             assetAddress={assetToken as Address}
+            chainId={chainId}
           />
         )
       case ActionType.Withdraw:
@@ -42,16 +45,27 @@ export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions }) => {
             assetAddress={assetToken as Address}
             vaultAddress={vaultAddress as `0x${string}`}
             vaultType={vaultType}
+            chainId={chainId}
           />
         )
       case ActionType.Stake:
-        return <WidgetStake vaultAddress={vaultAddress as `0x${string}`} gaugeAddress={gaugeAddress as `0x${string}`} />
+        return (
+          <WidgetStake
+            vaultAddress={vaultAddress as `0x${string}`}
+            gaugeAddress={gaugeAddress as `0x${string}`}
+            chainId={chainId}
+          />
+        )
       case ActionType.Unstake:
         return (
-          <WidgetUnstake vaultAddress={vaultAddress as `0x${string}`} gaugeAddress={gaugeAddress as `0x${string}`} />
+          <WidgetUnstake
+            vaultAddress={vaultAddress as `0x${string}`}
+            gaugeAddress={gaugeAddress as `0x${string}`}
+            chainId={chainId}
+          />
         )
     }
-  }, [mode, vaultAddress, vaultType, assetToken])
+  }, [mode, vaultAddress, vaultType, assetToken, chainId])
 
   return (
     <div className="flex flex-col gap-0 mt-4">
