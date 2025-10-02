@@ -152,8 +152,8 @@ body {
 }
 
 @layer components {
-  [role="button"],
-  button {
+  [role="button"]:not(:disabled),
+  button:not(:disabled) {
     @apply cursor-pointer;
   }
 }
@@ -393,7 +393,7 @@ body {
   }
 }
 .yearn--button-smaller {
-  @apply h-8 text-xs py-2 w-16 px-2;
+  @apply h-8 text-xs py-2 px-2;
 }
 .yearn--button-smaller.reverted {
   @apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;

@@ -43,7 +43,7 @@
     "isolatedModules": true,
     "types": ["vite/client"]
   },
-  "exclude": ["node_modules", "_app", "api"],
+  "exclude": ["node_modules", "_app", "api", "worktrees"],
   "include": [
     "**/*.css",
     "**/*.ts",

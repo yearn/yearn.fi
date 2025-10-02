@@ -1,28 +1,29 @@
 import { Button } from '@lib/components/Button'
-import { isZero } from '@lib/utils'
 import type { TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { ALL_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
 import type { ReactElement } from 'react'
 
 type TVaultListEmpty = {
-  sortedVaultsToDisplay: TYDaemonVaults
   currentSearch: string
   currentCategories: string[] | null
   currentChains: number[] | null
   onReset: () => void
   isLoading: boolean
   defaultCategories?: string[]
+  potentialResultsCount?: number
+  // @deprecated: retained for compatibility with existing usages in worktrees being cleaned up
+  sortedVaultsToDisplay?: TYDaemonVaults
 }
 export function VaultsListEmpty({
-  sortedVaultsToDisplay,
   currentSearch,
   currentCategories,
   currentChains,
   onReset,
   isLoading,
-  defaultCategories = ALL_VAULTS_CATEGORIES_KEYS
+  defaultCategories = ALL_VAULTS_CATEGORIES_KEYS,
+  potentialResultsCount = 0
 }: TVaultListEmpty): ReactElement {
-  if (isLoading && isZero(sortedVaultsToDisplay.length)) {
+  if (isLoading) {
     return (
       <div
         className={
@@ -37,12 +38,7 @@ export function VaultsListEmpty({
     )
   }
 
-  if (
-    !isLoading &&
-    isZero(sortedVaultsToDisplay.length) &&
-    currentCategories?.length === 1 &&
-    currentCategories?.includes('holdings')
-  ) {
+  if (!isLoading && currentCategories?.length === 1 && currentCategories?.includes('holdings')) {
     return (
       <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
         <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
@@ -53,7 +49,7 @@ export function VaultsListEmpty({
     )
   }
 
-  if (!isLoading && isZero(sortedVaultsToDisplay.length)) {
+  if (!isLoading) {
     return (
       <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
         <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
@@ -61,11 +57,23 @@ export function VaultsListEmpty({
           <p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
         ) : (currentCategories?.length || 0) < defaultCategories.length && currentSearch !== '' ? (
           <>
-            <p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist.`}</p>
-            <p className={'text-center font-normal text-neutral-600'}>{'No vaults found that match your filters.'}</p>
-            <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
-              {'Search all vaults'}
-            </Button>
+            <p
+              className={'text-center text-neutral-600'}
+            >{`No results for "${currentSearch}" with current filters.`}</p>
+            {potentialResultsCount > 0 ? (
+              <>
+                <p className={'text-center font-normal text-neutral-600'}>
+                  {`Found ${potentialResultsCount} vault${potentialResultsCount > 1 ? 's' : ''} when searching all categories.`}
+                </p>
+                <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
+                  {'Show all results'}
+                </Button>
+              </>
+            ) : (
+              <p className={'text-center font-normal text-neutral-600'}>
+                {`The vault "${currentSearch}" does not exist.`}
+              </p>
+            )}
           </>
         ) : (
           <>

@@ -24,6 +24,9 @@ type TMultiSelectProps = {
   comboboxOptionsClassName?: string
   customRender?: ReactElement
   customDefaultLabel?: string
+  isOpen?: boolean
+  onOpenChange?: (isOpen: boolean) => void
+  customMultipleRender?: (selectedOptions: TMultiSelectOptionProps[]) => ReactElement
 }
 
 function SelectAllOption({
@@ -61,7 +64,11 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
     >
       <div className={'flex w-full items-center justify-between p-2'}>
         <div className={'flex items-center'}>
-          {option?.icon ? <div className={'size-8 overflow-hidden rounded-full bg-white'}>{option.icon}</div> : null}
+          {option?.icon ? (
+            <div className={cl('size-8 overflow-hidden rounded-full', option.label === 'Sonic' ? 'bg-white' : '')}>
+              {option.icon}
+            </div>
+          ) : null}
           <p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
             {option.label}{' '}
             <span className={'pl-1 text-xs text-neutral-900 transition-opacity hover:opacity-100'}>{'(only)'}</span>
@@ -139,10 +146,17 @@ export function MultiSelectDropdown({
   placeholder = '',
   customDefaultLabel = 'All',
   customRender,
+  isOpen: externalIsOpen,
+  onOpenChange,
+  customMultipleRender,
   ...props
 }: TMultiSelectProps): ReactElement {
-  const [isOpen, setIsOpen] = useThrottledState(false, 400)
+  const [internalIsOpen, setInternalIsOpen] = useThrottledState(false, 400)
   const [query, setQuery] = useState('')
+
+  // Use external state if provided, otherwise use internal state
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
+  const setIsOpen = onOpenChange || setInternalIsOpen
   const areAllSelected = useMemo((): boolean => options.every(({ isSelected }): boolean => isSelected), [options])
   const componentRef = useRef<HTMLDivElement | null>(null)
 
@@ -151,7 +165,9 @@ export function MultiSelectDropdown({
   }, [options])
 
   useClickOutside(componentRef as RefObject<HTMLElement>, (): void => {
-    setIsOpen(false)
+    if (isOpen) {
+      setIsOpen(false)
+    }
   })
 
   const filteredOptions = useMemo(
@@ -161,11 +177,11 @@ export function MultiSelectDropdown({
 
   const getDisplayName = useCallback(
     (options: TMultiSelectOptionProps[]): string => {
+      const selectedOptions = options.filter(({ isSelected }): boolean => isSelected)
+
       if (areAllSelected) {
         return customDefaultLabel
       }
-
-      const selectedOptions = options.filter(({ isSelected }): boolean => isSelected)
 
       if (selectedOptions.length === 0) {
         return placeholder
@@ -175,7 +191,7 @@ export function MultiSelectDropdown({
         return selectedOptions[0].label
       }
 
-      return 'Multiple'
+      return `${selectedOptions.length} selected`
     },
     [areAllSelected, placeholder, customDefaultLabel]
   )
@@ -214,30 +230,33 @@ export function MultiSelectDropdown({
     <Combobox key={selectedValues.join(',')} ref={componentRef} value={selectedValues} multiple>
       <div className={'relative w-full'}>
         {customRender ? (
-          <ComboboxButton
-            className={'flex items-center justify-between'}
-            onClick={(): void => setIsOpen((o: boolean): boolean => !o)}
-          >
+          <ComboboxButton className={'flex items-center justify-between'} onClick={(): void => setIsOpen(!isOpen)}>
             {customRender}
           </ComboboxButton>
         ) : (
           <ComboboxButton
-            onClick={(): void => setIsOpen((o: boolean): boolean => !o)}
+            onClick={(): void => setIsOpen(!isOpen)}
             className={cl(
               props.buttonClassName,
               'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
             )}
           >
-            <ComboboxInput
-              className={cl(
-                'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-hidden scrollbar-none',
-                options.every(({ isSelected }): boolean => !isSelected) ? 'text-neutral-400' : 'text-neutral-900'
-              )}
-              displayValue={getDisplayName}
-              placeholder={placeholder}
-              spellCheck={false}
-              onChange={(event): void => setQuery(event.target.value)}
-            />
+            {customMultipleRender && options.filter((o) => o.isSelected).length > 1 && !areAllSelected ? (
+              <div className="flex-1 overflow-x-auto scrollbar-none">
+                {customMultipleRender(options.filter((o) => o.isSelected))}
+              </div>
+            ) : (
+              <ComboboxInput
+                className={cl(
+                  'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-hidden scrollbar-none',
+                  options.every(({ isSelected }): boolean => !isSelected) ? 'text-neutral-400' : 'text-neutral-900'
+                )}
+                displayValue={() => getDisplayName(options)}
+                placeholder={placeholder}
+                spellCheck={false}
+                onChange={(event): void => setQuery(event.target.value)}
+              />
+            )}
             <IconChevron
               aria-hidden={'true'}
               className={`size-6 transition-transform duration-300 ease-in-out ${isOpen ? '-rotate-180' : 'rotate-0'}`}
