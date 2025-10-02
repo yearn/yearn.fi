@@ -30,19 +30,8 @@ const ExternalRedirect = ({ to }: { to: string }): ReactElement => {
   return <PageLoader />
 }
 
-const devConfig = import.meta.env.DEV
-  ? {
-      vaultsBeta: {
-        index: '/vaults-beta',
-        detail: '/vaults-beta/:chainID/:address',
-        search: '/vaults-beta/search/:query'
-      }
-    }
-  : {}
-
 // Route configuration for reference
 export const routeConfig = {
-  ...devConfig,
   home: '/',
   apps: '/apps',
   vaults: {
@@ -56,6 +45,11 @@ export const routeConfig = {
     about: '/v3/about',
     detail: '/v3/:chainID/:address',
     chainOnly: '/v3/:chainID'
+  },
+  vaultsBeta: {
+    index: '/vaults-beta',
+    detail: '/vaults-beta/:chainID/:address',
+    search: '/vaults-beta/search/:query'
   },
   external: {
     ybribe: '/ybribe/*',
@@ -97,11 +91,13 @@ export function AppRoutes(): ReactElement {
         <Route path="/v3/:chainID" element={<Navigate to="/v3" replace />} />
 
         {/* Vaults Beta routes */}
-        <Route path="/vaults-beta">
-          <Route index element={<VaultsBetaPage />} />
-          <Route path=":chainID/:address" element={<VaultsBetaDetailPage />} />
-          <Route path="search/:query" element={<VaultsBetaSearchPage />} />
-        </Route>
+        {import.meta.env.DEV && (
+          <Route path="/vaults-beta">
+            <Route index element={<VaultsBetaPage />} />
+            <Route path=":chainID/:address" element={<VaultsBetaDetailPage />} />
+            <Route path="search/:query" element={<VaultsBetaSearchPage />} />
+          </Route>
+        )}
 
         {/* External redirects */}
         <Route path="/ybribe/*" element={<ExternalRedirect to="https://ybribe.yearn.fi" />} />

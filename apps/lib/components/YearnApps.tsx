@@ -1,7 +1,7 @@
 import { LogoGimme } from '@lib/icons/LogoGimme'
 import { toAddress } from '@lib/utils'
 import Image from '/src/components/Image'
-
+import { routeConfig } from '/src/routes'
 import { LogoYearn } from '../icons/LogoYearn'
 
 const YCRV_TOKEN_ADDRESS = toAddress('0xFCc5c47bE19d06BF83eB04298b026F81069ff65b')
@@ -112,9 +112,9 @@ export const APPS = {
   },
   Vaults_Beta: {
     name: 'Vaults_Beta',
-    href: '/vaults-beta',
+    href: `/${routeConfig.vaultsBeta}`,
     host: ['localhost:3000/vaults-beta', 'https://yearn.fi/vaults-beta'],
-    pathname: '/vaults-beta',
+    pathname: `/${routeConfig.vaultsBeta}`,
     icon: <LogoYearn className={'size-8'} back={'text-white'} front={'text-blue-500'} />
   }
 }
