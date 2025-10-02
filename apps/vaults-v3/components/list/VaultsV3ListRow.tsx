@@ -2,15 +2,9 @@ import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { cl, isZero, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import {
-  VaultForwardAPY,
-  VaultForwardAPYInlineDetails,
-} from '@vaults-v3/components/table/VaultForwardAPY'
+import { VaultForwardAPY, VaultForwardAPYInlineDetails } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
-import {
-  RiskScoreInlineDetails,
-  VaultRiskScoreTag,
-} from '@vaults-v3/components/table/VaultRiskScoreTag'
+import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
 import { VaultStakedAmount } from '@vaults-v3/components/table/VaultStakedAmount'
 import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
@@ -20,7 +14,7 @@ import { getNetwork } from '../../../lib/utils/wagmi'
 
 export function VaultsV3ListRow({
   currentVault,
-  isHoldings = false,
+  isHoldings = false
 }: {
   currentVault: TYDaemonVault
   isHoldings?: boolean
@@ -64,22 +58,11 @@ export function VaultsV3ListRow({
       />
 
       {/* TODO:on hover add list head categories */}
-      <div
-        className={cl(
-          'col-span-4 z-10',
-          'flex flex-row items-center justify-between sm:pt-0'
-        )}
-      >
+      <div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
         <div
-          className={
-            'flex flex-row-reverse sm:flex-row w-full justify-between sm:justify-normal gap-4 overflow-hidden'
-          }
+          className={'flex flex-row-reverse sm:flex-row w-full justify-between sm:justify-normal gap-4 overflow-hidden'}
         >
-          <div
-            className={
-              'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'
-            }
-          >
+          <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
             <ImageWithFallback
               src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
                 currentVault.chainID
@@ -92,24 +75,18 @@ export function VaultsV3ListRow({
           <div className={'truncate'}>
             <strong
               title={currentVault.name}
-              className={
-                'block truncate font-black text-neutral-800 md:-mb-0.5 text-lg'
-              }
+              className={'block truncate font-black text-neutral-800 md:-mb-0.5 text-lg'}
             >
               {currentVault.name}
             </strong>
             <div className={'flex flex-row items-center gap-1'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${
-                  currentVault.chainID
-                }/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`}
                 alt={`Chain ${currentVault.chainID}`}
                 width={14}
                 height={14}
               />
-              <p className={'block text-sm text-neutral-800/60'}>
-                {getNetwork(currentVault.chainID).name}
-              </p>
+              <p className={'block text-sm text-neutral-800/60'}>{getNetwork(currentVault.chainID).name}</p>
             </div>
             <p
               className={'mb-0 block text-sm text-neutral-800/60 md:mb-2'}
@@ -119,117 +96,44 @@ export function VaultsV3ListRow({
       </div>
 
       {/* Desktop metrics grid */}
-      <div
-        className={cl(
-          'col-span-8 z-10',
-          'hidden md:grid md:grid-cols-12 gap-4',
-          'mt-4 md:mt-0'
-        )}
-      >
-        <div
-          className={
-            'yearn--table-data-section-item col-span-2 flex-row md:flex-col'
-          }
-          datatype={'number'}
-        >
-          <p
-            className={
-              'inline text-start text-xs text-neutral-800/60 md:hidden'
-            }
-          >
-            {'Estimated APY'}
-          </p>
+      <div className={cl('col-span-8 z-10', 'hidden md:grid md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
+        <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
+          <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
           <VaultForwardAPY currentVault={currentVault} />
         </div>
-        <div
-          className={
-            'yearn--table-data-section-item col-span-2 flex-row md:flex-col'
-          }
-          datatype={'number'}
-        >
-          <p
-            className={
-              'inline text-start text-xs text-neutral-800/60 md:hidden'
-            }
-          >
-            {'Historical APY'}
-          </p>
+        <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
+          <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Historical APY'}</p>
           <VaultHistoricalAPY currentVault={currentVault} />
         </div>
         <div className={'col-span-2'}>
           <VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
         </div>
-        <div
-          className={
-            'yearn--table-data-section-item col-span-2 flex-row md:flex-col'
-          }
-          datatype={'number'}
-        >
-          <p
-            className={
-              'inline text-start text-xs text-neutral-800/60 md:hidden'
-            }
-          >
-            {'Available'}
-          </p>
+        <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
+          <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Available'}</p>
           <p
             className={`yearn--table-data-section-item-value ${
-              isZero(availableToDeposit)
-                ? 'text-neutral-400'
-                : 'text-neutral-900'
+              isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
             }`}
           >
             <RenderAmount
-              value={Number(
-                toNormalizedBN(availableToDeposit, currentVault.token.decimals)
-                  .normalized
-              )}
+              value={Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized)}
               symbol={currentVault.token.symbol}
               decimals={currentVault.token.decimals}
               shouldFormatDust
               options={{
                 shouldDisplaySymbol: false,
                 maximumFractionDigits:
-                  Number(
-                    toNormalizedBN(
-                      availableToDeposit,
-                      currentVault.token.decimals
-                    ).normalized
-                  ) > 1000
-                    ? 2
-                    : 4,
+                  Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized) > 1000 ? 2 : 4
               }}
             />
           </p>
         </div>
-        <div
-          className={
-            'yearn--table-data-section-item col-span-2 flex-row md:flex-col'
-          }
-          datatype={'number'}
-        >
-          <p
-            className={
-              'inline text-start text-xs text-neutral-800/60 md:hidden'
-            }
-          >
-            {'Deposited'}
-          </p>
+        <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
+          <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
           <VaultStakedAmount currentVault={currentVault} />
         </div>
-        <div
-          className={
-            'yearn--table-data-section-item col-span-2 flex-row md:flex-col'
-          }
-          datatype={'number'}
-        >
-          <p
-            className={
-              'inline text-start text-xs text-neutral-800/60 md:hidden'
-            }
-          >
-            {'TVL'}
-          </p>
+        <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
+          <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
           <div className={'flex flex-col pt-0 text-right'}>
             <p className={'yearn--table-data-section-item-value'}>
               <RenderAmount
@@ -239,25 +143,20 @@ export function VaultsV3ListRow({
                 options={{
                   shouldCompactValue: true,
                   maximumFractionDigits: 2,
-                  minimumFractionDigits: 0,
+                  minimumFractionDigits: 0
                 }}
               />
             </p>
             <small className={'text-xs flex flex-row text-neutral-900/40'}>
               <RenderAmount
-                value={Number(
-                  toNormalizedBN(
-                    currentVault.tvl.totalAssets,
-                    currentVault.token.decimals
-                  ).normalized
-                )}
+                value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
                 symbol={''}
                 decimals={6}
                 shouldFormatDust
                 options={{
                   shouldCompactValue: true,
                   maximumFractionDigits: 2,
-                  minimumFractionDigits: 2,
+                  minimumFractionDigits: 2
                 }}
               />
               <p className="pl-1">{currentVault.token.symbol}</p>
@@ -275,33 +174,16 @@ export function VaultsV3ListRow({
         )}
       >
         {isHoldings ? (
-          <div
-            className={
-              'yearn--table-data-section-item col-span-2 flex-row items-center'
-            }
-            datatype={'number'}
-          >
-            <p className={'inline text-start text-dm text-neutral-800'}>
-              {'Your Deposit'}
-            </p>
+          <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
+            <p className={'inline text-start text-dm text-neutral-800'}>{'Your Deposit'}</p>
             <VaultStakedAmount currentVault={currentVault} />
           </div>
         ) : null}
-        <div
-          className={'yearn--table-data-section-item col-span-2'}
-          datatype={'number'}
-        >
+        <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
           <div className={'w-full flex flex-col items-start'}>
-            <div
-              className={'flex w-full flex-row items-center justify-between'}
-            >
-              <p className={'inline text-start text-dm text-neutral-800'}>
-                {'Estimated APY'}
-              </p>
-              <VaultForwardAPY
-                currentVault={currentVault}
-                onMobileToggle={(): void => setIsApyOpen((v) => !v)}
-              />
+            <div className={'flex w-full flex-row items-center justify-between'}>
+              <p className={'inline text-start text-dm text-neutral-800'}>{'Estimated APY'}</p>
+              <VaultForwardAPY currentVault={currentVault} onMobileToggle={(): void => setIsApyOpen((v) => !v)} />
             </div>
             {isApyOpen ? (
               <div className={'mt-2 w-full'}>
@@ -310,26 +192,12 @@ export function VaultsV3ListRow({
             ) : null}
           </div>
         </div>
-        <div
-          className={
-            'yearn--table-data-section-item col-span-2 flex-row items-center'
-          }
-          datatype={'number'}
-        >
-          <p className={'inline text-start text-dm text-neutral-800'}>
-            {'Historical APY'}
-          </p>
+        <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
+          <p className={'inline text-start text-dm text-neutral-800'}>{'Historical APY'}</p>
           <VaultHistoricalAPY currentVault={currentVault} />
         </div>
-        <div
-          className={
-            'yearn--table-data-section-item col-span-2 flex-row items-center'
-          }
-          datatype={'number'}
-        >
-          <p className={'inline text-start text-dm text-neutral-800'}>
-            {'TVL'}
-          </p>
+        <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
+          <p className={'inline text-start text-dm text-neutral-800'}>{'TVL'}</p>
           <div className={'flex flex-col pt-0 text-right'}>
             <p className={'yearn--table-data-section-item-value'}>
               <RenderAmount
@@ -339,48 +207,35 @@ export function VaultsV3ListRow({
                 options={{
                   shouldCompactValue: true,
                   maximumFractionDigits: 2,
-                  minimumFractionDigits: 0,
+                  minimumFractionDigits: 0
                 }}
               />
             </p>
             <small className={'text-xs flex flex-row text-neutral-900/40'}>
               <RenderAmount
-                value={Number(
-                  toNormalizedBN(
-                    currentVault.tvl.totalAssets,
-                    currentVault.token.decimals
-                  ).normalized
-                )}
+                value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
                 symbol={''}
                 decimals={6}
                 shouldFormatDust
                 options={{
                   shouldCompactValue: true,
                   maximumFractionDigits: 2,
-                  minimumFractionDigits: 2,
+                  minimumFractionDigits: 2
                 }}
               />
               <p className="pl-1">{currentVault.token.symbol}</p>
             </small>
           </div>
         </div>
-        <div
-          className={'yearn--table-data-section-item col-span-2'}
-          datatype={'number'}
-        >
-          <div
-            className={'w-full flex flex-col items-start'}
-            onClick={(e): void => e.stopPropagation()}
-          >
+        <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
+          <div className={'w-full flex flex-col items-start'} onClick={(e): void => e.stopPropagation()}>
             <VaultRiskScoreTag
               riskLevel={currentVault.info.riskLevel}
               onMobileToggle={(): void => setIsRiskOpen((v) => !v)}
             />
             {isRiskOpen ? (
               <div className={'mt-2 w-full'}>
-                <RiskScoreInlineDetails
-                  riskLevel={currentVault.info.riskLevel}
-                />
+                <RiskScoreInlineDetails riskLevel={currentVault.info.riskLevel} />
               </div>
             ) : null}
           </div>

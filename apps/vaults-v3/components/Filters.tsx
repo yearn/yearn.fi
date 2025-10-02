@@ -1,19 +1,15 @@
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
 import { SearchBar } from '@lib/components/SearchBar'
+import useWallet from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useChainOptions } from '@lib/hooks/useChains'
 import { IconCross } from '@lib/icons/IconCross'
 import { cl, formatAmount } from '@lib/utils'
-import {
-  ALL_VAULTSV3_CATEGORIES,
-  ALL_VAULTSV3_KINDS,
-} from '@vaults-v3/constants'
-import { Drawer } from 'vaul'
-
+import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constants'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
-import useWallet from '@lib/contexts/useWallet'
-import { useWeb3 } from '@lib/contexts/useWeb3'
+import { Drawer } from 'vaul'
 
 type TListHero = {
   types: string[] | null
@@ -35,12 +31,7 @@ function PortfolioCard(): ReactElement {
     return (
       <div className={'flex flex-row items-center mb-4 gap-4 h-18'}>
         <button
-          className={cl(
-            'rounded-lg overflow-hidden flex',
-            'px-[42px] py-2',
-            'relative group',
-            'border-none'
-          )}
+          className={cl('rounded-lg overflow-hidden flex', 'px-[42px] py-2', 'relative group', 'border-none')}
           onClick={(): void => {
             if (!isActive && address) {
               onSwitchChain(1)
@@ -58,9 +49,7 @@ function PortfolioCard(): ReactElement {
           />
           <p className={'z-10 text-neutral-900'}>{'Connect Wallet'}</p>
         </button>
-        <p className={'text-[#757CA6] p-2'}>
-          {'It looks like you need to connect your wallet.'}
-        </p>
+        <p className={'text-[#757CA6] p-2'}>{'It looks like you need to connect your wallet.'}</p>
       </div>
     )
   }
@@ -70,17 +59,11 @@ function PortfolioCard(): ReactElement {
         <div>
           <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Amount Deposited'}</p>
           {isLoading ? (
-            <div
-              className={
-                'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'
-              }
-            />
+            <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
           ) : (
             <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
               {'$'}
-              <span suppressHydrationWarning>
-                {formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}
-              </span>
+              <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
             </b>
           )}
         </div>
@@ -98,7 +81,7 @@ export function Filters({
   chains,
   onSearch,
   shouldDebounce,
-  onChangeChains,
+  onChangeChains
 }: TListHero): ReactElement {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const chainOptions = useChainOptions(chains).filter(
@@ -111,45 +94,35 @@ export function Filters({
       option.value === 747474
   )
   const typeOptions = useMemo((): TMultiSelectOptionProps[] => {
-    const options: TMultiSelectOptionProps[] = Object.entries(
-      ALL_VAULTSV3_KINDS
-    ).map(
+    const options: TMultiSelectOptionProps[] = Object.entries(ALL_VAULTSV3_KINDS).map(
       ([key, value]): TMultiSelectOptionProps => ({
         value: key,
         label: value.replaceAll(' Vaults', ''),
-        isSelected: types?.includes(key) || false,
+        isSelected: types?.includes(key) || false
       })
     )
     return options
   }, [types])
 
   const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
-    const options: TMultiSelectOptionProps[] = Object.values(
-      ALL_VAULTSV3_CATEGORIES
-    ).map(
+    const options: TMultiSelectOptionProps[] = Object.values(ALL_VAULTSV3_CATEGORIES).map(
       (value): TMultiSelectOptionProps => ({
         value: value,
         label: value,
-        isSelected: categories?.includes(value) || false,
+        isSelected: categories?.includes(value) || false
       })
     )
     return options
   }, [categories])
 
   return (
-    <div
-      className={
-        'relative col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-8'
-      }
-    >
+    <div className={'relative col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-8'}>
       <PortfolioCard />
 
       <div className={'mb-5 w-full'}>
         <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
         <SearchBar
-          className={
-            'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 md:w-full'
-          }
+          className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 md:w-full'}
           iconClassName={'text-neutral-900'}
           searchPlaceholder={'YFI Vault'}
           searchValue={searchValue}
@@ -158,11 +131,7 @@ export function Filters({
         />
       </div>
       <div className={'md:hidden'}>
-        <Drawer.Root
-          open={isMobileFiltersOpen}
-          onOpenChange={setIsMobileFiltersOpen}
-          direction={'bottom'}
-        >
+        <Drawer.Root open={isMobileFiltersOpen} onOpenChange={setIsMobileFiltersOpen} direction={'bottom'}>
           <Drawer.Trigger asChild>
             <button
               className={
@@ -173,16 +142,8 @@ export function Filters({
             </button>
           </Drawer.Trigger>
           <Drawer.Portal>
-            <Drawer.Overlay
-              className={
-                'fixed inset-0 z-99998 bg-black/40 backdrop-blur-xs transition-opacity'
-              }
-            />
-            <Drawer.Content
-              className={
-                'fixed inset-x-0 bottom-0 z-99999 flex justify-center outline-hidden'
-              }
-            >
+            <Drawer.Overlay className={'fixed inset-0 z-99998 bg-black/40 backdrop-blur-xs transition-opacity'} />
+            <Drawer.Content className={'fixed inset-x-0 bottom-0 z-99999 flex justify-center outline-hidden'}>
               <div
                 className={
                   'w-full max-w-[520px] rounded-t-3xl bg-neutral-100 p-6 shadow-[0_-16px_60px_rgba(15,23,42,0.35)]'
@@ -190,13 +151,9 @@ export function Filters({
                 style={{ height: '75vh', overflowY: 'auto' }}
               >
                 <div className={'mb-4 flex items-center justify-between'}>
-                  <p className={'text-base font-medium text-neutral-900'}>
-                    {'Filter Vaults'}
-                  </p>
+                  <p className={'text-base font-medium text-neutral-900'}>{'Filter Vaults'}</p>
                   <Drawer.Close
-                    className={
-                      'rounded-full p-2 text-neutral-900 transition-colors hover:text-neutral-600'
-                    }
+                    className={'rounded-full p-2 text-neutral-900 transition-colors hover:text-neutral-600'}
                   >
                     <IconCross className={'size-4'} />
                   </Drawer.Close>
@@ -235,7 +192,7 @@ function FilterControls({
   categoryOptions,
   onChangeCategories,
   typeOptions,
-  onChangeTypes,
+  onChangeTypes
 }: {
   chainOptions: TMultiSelectOptionProps[]
   onChangeChains: (chains: number[] | null) => void
@@ -249,9 +206,7 @@ function FilterControls({
       <div className={'w-full'}>
         <p className={'pb-2 text-[#757CA6]'}>{'Select Blockchain'}</p>
         <MultiSelectDropdown
-          buttonClassName={
-            'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'
-          }
+          buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
           comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
           options={chainOptions}
           placeholder={'Select chain'}
@@ -267,9 +222,7 @@ function FilterControls({
       <div className={'w-full'}>
         <p className={'pb-2 text-[#757CA6]'}>{'Select Category'}</p>
         <MultiSelectDropdown
-          buttonClassName={
-            'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'
-          }
+          buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
           comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
           options={categoryOptions}
           placeholder={'Filter categories'}
@@ -285,9 +238,7 @@ function FilterControls({
       <div className={'w-full'}>
         <p className={'pb-2 text-[#757CA6]'}>{'Select Type'}</p>
         <MultiSelectDropdown
-          buttonClassName={
-            'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'
-          }
+          buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
           comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
           options={typeOptions}
           placeholder={'Filter list'}
