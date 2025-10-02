@@ -204,11 +204,11 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       onClick={(): void => {
         void navigate(href)
       }}
-      className={'relative overflow-hidden rounded-full'}
+      className={'relative rounded-full'}
     >
       <div
         className={
-          'pointer-events-none absolute -inset-[3px] rounded-full bg-[radial-gradient(circle_at_top_left,rgba(210,17,98,.75),rgba(44,61,166,.75))] opacity-70 blur-md'
+          'pointer-events-none absolute -inset-[3px] rounded-full bg-[radial-gradient(circle_at_top_left,rgba(210,17,98,.75),rgba(44,61,166,.75))] opacity-50 blur-md'
         }
       />
       <div
