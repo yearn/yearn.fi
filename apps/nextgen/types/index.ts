@@ -49,7 +49,7 @@ export type UseWithdrawReturn = T<
   {
     prepareWithdrawEnabled: boolean
     expectedWithdrawAmount: bigint
-    balanceOf: bigint
+    maxRedeem: bigint
   }
 >
 

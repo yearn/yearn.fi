@@ -14,7 +14,7 @@ interface Props {
 // ** Withdraw Action for V2 & V3 ** //
 
 export const useWithdraw = ({ vaultType, vaultAddress, amount, account }: Props): UseWithdrawReturn => {
-  const { data: [expectedWithdrawAmount, balanceOf] = [0n, 0n] } = useReadContracts({
+  const { data: [expectedWithdrawAmount, maxRedeem] = [0n, 0n, 0n] } = useReadContracts({
     contracts: [
       {
         abi: erc4626Abi,
@@ -25,14 +25,15 @@ export const useWithdraw = ({ vaultType, vaultAddress, amount, account }: Props)
       {
         abi: erc4626Abi,
         address: vaultAddress,
-        functionName: 'balanceOf',
+        functionName: 'maxWithdraw',
         args: account ? [account] : undefined
       }
     ],
-    query: { select: (data) => [data[0]?.result ?? 0n, data[1]?.result ?? 0n], enabled: !!account }
+    query: {
+      select: (data) => [data[0]?.result ?? 0n, data[1]?.result ?? 0n],
+      enabled: !!account
+    }
   })
-
-  console.log('vaultAddress, account', vaultAddress, account)
 
   const { abi, args, functionName } = (() => {
     if (vaultType === 'v2') {
@@ -68,7 +69,7 @@ export const useWithdraw = ({ vaultType, vaultAddress, amount, account }: Props)
     periphery: {
       prepareWithdrawEnabled,
       expectedWithdrawAmount,
-      balanceOf
+      maxRedeem
     }
   }
 }

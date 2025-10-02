@@ -1,10 +1,9 @@
-import { cl, exactToSimple, formatAmount } from '@lib/utils'
+import { exactToSimple, formatAmount } from '@lib/utils'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useDeposit } from '@nextgen/hooks/actions/useDeposit'
 import { useInput } from '@nextgen/hooks/useInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import type { FC } from 'react'
-import { useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
@@ -19,7 +18,6 @@ interface Props {
 export const WidgetDeposit: FC<Props> = ({ vaultType, vaultAddress, assetAddress, handleDepositSuccess }) => {
   const { address: account } = useAccount()
   const { tokens } = useTokens([assetAddress, vaultAddress])
-  const [depositAndStake, setDepositAndStake] = useState(false)
 
   // ** PERIPHERY ** //
   const [asset, vault] = [tokens?.[0], tokens?.[1]]
@@ -51,14 +49,13 @@ export const WidgetDeposit: FC<Props> = ({ vaultType, vaultAddress, assetAddress
 
       <div className="space-y-1 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-gray-500">You will receive</span>
-          <span className="text-gray-900 font-medium">
+          <span className="text-gray-400">You will receive</span>
+          <span className="text-gray-500 font-medium">
             {formatAmount(exactToSimple(expectedDepositAmount, vault?.decimals ?? 18))} {vault?.symbol}
           </span>
         </div>
       </div>
-
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={() => setDepositAndStake(!depositAndStake)}
@@ -73,8 +70,7 @@ export const WidgetDeposit: FC<Props> = ({ vaultType, vaultAddress, assetAddress
           />
         </button>
         <span className="ml-3 text-sm font-medium text-gray-900">Deposit & Stake</span>
-      </div>
-
+      </div> */}
       <div className="pb-6 pt-2">
         <div className="flex gap-2">
           <TxButton

@@ -1,10 +1,9 @@
-import { cl, exactToSimple, formatAmount } from '@lib/utils'
+import { exactToSimple, formatAmount } from '@lib/utils'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useWithdraw } from '@nextgen/hooks/actions/useWithdraw'
 import { useInput } from '@nextgen/hooks/useInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import type { FC } from 'react'
-import { useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
@@ -19,7 +18,6 @@ interface Props {
 export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, assetAddress, handleWithdrawSuccess }) => {
   const { address: account } = useAccount()
   const { tokens } = useTokens([assetAddress, vaultAddress])
-  const [unstakeAndWithdraw, setUnstakeAndWithdraw] = useState(false)
 
   // ** PERIPHERY ** //
   const [asset, vault] = [tokens?.[0], tokens?.[1]]
@@ -29,7 +27,7 @@ export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, assetAddres
   // ** ACTIONS ** //
   const {
     actions: { prepareWithdraw },
-    periphery: { prepareWithdrawEnabled, expectedWithdrawAmount, balanceOf }
+    periphery: { prepareWithdrawEnabled, expectedWithdrawAmount, maxRedeem }
   } = useWithdraw({
     vaultType: vaultType,
     vaultAddress: vaultAddress as Address,
@@ -44,18 +42,18 @@ export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, assetAddres
         input={input}
         placeholder="0.00"
         className="flex-1"
-        symbol={vault?.symbol}
-        balance={balanceOf}
+        symbol={asset?.symbol}
+        balance={maxRedeem}
       />
       <div className="space-y-1 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-gray-500">You will receive</span>
-          <span className="text-gray-900 font-medium">
-            {formatAmount(exactToSimple(expectedWithdrawAmount, vault?.decimals ?? 18))} {asset?.symbol}
+          <span className="text-gray-400">You will burn</span>
+          <span className="text-gray-500 font-medium">
+            {formatAmount(exactToSimple(expectedWithdrawAmount, vault?.decimals ?? 18))} {vault?.symbol}
           </span>
         </div>
       </div>
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={() => setUnstakeAndWithdraw(!unstakeAndWithdraw)}
@@ -70,7 +68,7 @@ export const WidgetWithdraw: FC<Props> = ({ vaultType, vaultAddress, assetAddres
           />
         </button>
         <span className="ml-3 text-sm font-medium text-gray-900">Unstake & Withdraw</span>
-      </div>
+      </div> */}
       <div className="pb-6 pt-2">
         <TxButton
           prepareWrite={prepareWithdraw}

@@ -11,7 +11,7 @@ interface Props {
   merkleCampaign?: `0x${string}`
   handleRewardsSuccess?: () => void
 }
-export const WidgetRewards: FC<Props> = ({ vaultType, vaultAddress, merkleCampaign }) => {
+export const WidgetRewards: FC<Props> = ({ vaultAddress, merkleCampaign }) => {
   const hasMerkleCampaign = !!merkleCampaign
 
   return (
@@ -21,7 +21,6 @@ export const WidgetRewards: FC<Props> = ({ vaultType, vaultAddress, merkleCampai
           <h1 className="text-lg text-gray-900 font-medium">Claim rewards</h1>
         </div>
         <div className="p-4">
-          <h2>Vault Type: {vaultType}</h2>
           <h2 className="text-gray-500">Vault Address: {vaultAddress}</h2>
           <h2 className="text-gray-500">Merkle Campaign: {merkleCampaign}</h2>
           <h2 className="text-gray-500">{hasMerkleCampaign ? 'Merkle campaign' : 'No merkle campaign'}</h2>

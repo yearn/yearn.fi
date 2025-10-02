@@ -57,14 +57,14 @@ export const useDeposit = ({ vaultType, vaultAddress, assetAddress, amount, acco
     return {
       abi: erc4626Abi,
       functionName: 'deposit',
-      args: [amount]
+      args: [amount, account]
     }
   })()
 
   const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
     abi: erc20Abi,
     functionName: 'approve',
-    address: vaultAddress,
+    address: assetAddress,
     args: amount > 0n && vaultAddress ? [vaultAddress, amount] : undefined,
     query: { enabled: prepareApproveEnabled }
   })
@@ -77,6 +77,8 @@ export const useDeposit = ({ vaultType, vaultAddress, assetAddress, amount, acco
     account,
     query: { enabled: prepareDepositEnabled }
   })
+
+  console.log('prepareDeposit', prepareDeposit.error)
 
   return {
     actions: {

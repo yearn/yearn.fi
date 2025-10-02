@@ -15,10 +15,10 @@ interface Props {
 
 export const WidgetUnstake: FC<Props> = ({ vaultAddress, gaugeAddress, handleStakeSuccess }) => {
   const { address: account } = useAccount()
-  const { tokens } = useTokens([vaultAddress])
+  const { tokens } = useTokens([vaultAddress, gaugeAddress])
 
   // ** PERIPHERY ** //
-  const vault = tokens?.[0]
+  const [vault, gauge] = [tokens?.[0], tokens?.[1]]
   const input = useInput(vault?.decimals ?? 18)
   const [amount, _, setAmount] = input
 
@@ -52,9 +52,9 @@ export const WidgetUnstake: FC<Props> = ({ vaultAddress, gaugeAddress, handleSta
 
       <div className="space-y-1 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-gray-500">You will receive</span>
-          <span className="text-gray-900 font-medium">
-            {formatAmount(balance.display)} {vault?.symbol}
+          <span className="text-gray-400">You will burn</span>
+          <span className="text-gray-500 font-medium">
+            {formatAmount(balance.display)} {gauge?.symbol}
           </span>
         </div>
       </div>
