@@ -1,6 +1,7 @@
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
 import { SearchBar } from '@lib/components/SearchBar'
+import { SearchChip } from '@lib/components/SearchChip'
 import useWallet from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useChainOptions } from '@lib/hooks/useChains'
@@ -9,7 +10,7 @@ import { cl, formatAmount } from '@lib/utils'
 import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constants'
 
 import type { ReactElement, ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Drawer } from 'vaul'
 
 type TListHero = {
@@ -88,6 +89,26 @@ export function Filters({
 }: TListHero): ReactElement {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+  const [searchChips, setSearchChips] = useState<string[]>([])
+
+  useEffect(() => {
+    const normalized = (searchValue || '').trim()
+
+    if (!normalized) {
+      if (searchChips.length > 0) {
+        setSearchChips([])
+      }
+      return
+    }
+
+    const tokens = normalized.split(/\s+/)
+    const isSameLength = tokens.length === searchChips.length
+    const isIdentical = isSameLength && tokens.every((token, index) => token === searchChips[index])
+
+    if (!isIdentical) {
+      setSearchChips(tokens)
+    }
+  }, [searchValue, searchChips])
 
   const handleDropdownOpenChange = (dropdownId: string, isOpen: boolean): void => {
     if (isOpen) {
@@ -96,6 +117,33 @@ export function Filters({
       setActiveDropdown(null)
     }
   }
+
+  const handleAddChip = useCallback((value: string): void => {
+    const trimmedValue = value.trim()
+    if (!trimmedValue) {
+      return
+    }
+
+    setSearchChips((previous) => {
+      if (previous.includes(trimmedValue)) {
+        return previous
+      }
+      const next = [...previous, trimmedValue]
+      onSearch(next.join(' '))
+      return next
+    })
+  }, [onSearch])
+
+  const handleRemoveChip = useCallback(
+    (value: string): void => {
+      setSearchChips((previous) => {
+        const next = previous.filter((chip) => chip !== value)
+        onSearch(next.join(' '))
+        return next
+      })
+    },
+    [onSearch]
+  )
 
   const chainOptions = useChainOptions(chains).filter(
     (option): boolean =>
@@ -142,7 +190,16 @@ export function Filters({
           shouldDebounce={shouldDebounce || false}
           highlightWhenActive={true}
           alertContent={searchAlertContent}
+          onSubmit={handleAddChip}
+          shouldClearOnSubmit={true}
         />
+        {searchChips.length > 0 ? (
+          <div className={'mt-3 flex flex-wrap gap-2'}>
+            {searchChips.map((chip) => (
+              <SearchChip key={chip} label={chip} onRemove={(): void => handleRemoveChip(chip)} />
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className={'md:hidden'}>

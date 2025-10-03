@@ -39,8 +39,6 @@ _app
 # Sentry Auth Token
 .sentryclirc
 
-# docs
-/docs
 AGENTS.md
 
 # playwright

@@ -3,7 +3,7 @@ import { IconEnter } from '@lib/icons/IconEnter'
 import { IconSearch } from '@lib/icons/IconSearch'
 import { cl } from '@lib/utils'
 import { useDebouncedCallback } from '@react-hookz/web'
-import { type ChangeEvent, type ReactElement, type ReactNode, useEffect, useState } from 'react'
+import { type ChangeEvent, type ReactElement, type ReactNode, useEffect, useRef, useState } from 'react'
 
 type TSearchBar = {
   searchPlaceholder: string
@@ -17,6 +17,8 @@ type TSearchBar = {
   onSearchClick?: () => void
   highlightWhenActive?: boolean
   alertContent?: ReactNode
+  onSubmit?: (searchValue: string) => void
+  shouldClearOnSubmit?: boolean
 }
 
 export function SearchBar(props: TSearchBar): ReactElement {
@@ -32,8 +34,14 @@ export function SearchBar(props: TSearchBar): ReactElement {
    ** This prevents excessive filtering and URL updates while the user is actively typing,
    ** improving both performance and user experience.
    *********************************************************************************************/
+  const shouldSkipNextDebouncedCall = useRef(false)
+
   const debouncedSearch = useDebouncedCallback(
     (searchValue: string) => {
+      if (shouldSkipNextDebouncedCall.current) {
+        shouldSkipNextDebouncedCall.current = false
+        return
+      }
       props.onSearch(searchValue)
     },
     [props.onSearch],
@@ -53,13 +61,35 @@ export function SearchBar(props: TSearchBar): ReactElement {
     props.onSearch(searchValue)
   }
 
+  const handleSubmit = (): void => {
+    const trimmedValue = (localSearchValue || '').trim()
+    if (!trimmedValue) {
+      return
+    }
+
+    props.onSubmit?.(trimmedValue)
+
+    if (props.shouldClearOnSubmit) {
+      if (props.shouldDebounce) {
+        shouldSkipNextDebouncedCall.current = true
+      }
+      setLocalSearchValue('')
+    }
+  }
+
   /**********************************************************************************************
    ** Synchronize local search state when the search prop changes from external sources
    ** such as URL navigation, browser back/forward, or programmatic updates.
    *********************************************************************************************/
   useEffect(() => {
+    if (props.shouldClearOnSubmit) {
+      if (!props.searchValue) {
+        setLocalSearchValue('')
+      }
+      return
+    }
     setLocalSearchValue(props.searchValue || '')
-  }, [props.searchValue])
+  }, [props.searchValue, props.shouldClearOnSubmit])
 
   return (
     <div
@@ -89,12 +119,17 @@ export function SearchBar(props: TSearchBar): ReactElement {
             handleSearchChange(e.target.value)
           }}
           onKeyDown={(e) => {
-            if (!props.shouldSearchByClick) {
+            if (e.key !== 'Enter') {
               return
             }
-            if (e.key === 'Enter') {
-              return props.onSearchClick?.()
+
+            e.preventDefault()
+
+            if (props.shouldSearchByClick) {
+              props.onSearchClick?.()
             }
+
+            handleSubmit()
           }}
         />
         {props.alertContent ? (

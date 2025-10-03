@@ -1,5 +1,6 @@
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
+import { VaultFilterKey } from '@lib/constants/filters'
 import type { TDict } from '@lib/types'
 import { toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -106,20 +107,29 @@ export function useVaultFilter(
 
       // Search filter (skip for holdings so they stay visible during search)
       if (search && !hasHoldings) {
-        let searchRegex: RegExp
-        try {
-          const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-          searchRegex = new RegExp(escapedSearch, 'i')
-        } catch {
-          const lowercaseSearch = search.toLowerCase()
-          const searchableText =
-            `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase()
-          return searchableText.includes(lowercaseSearch)
-        }
+        const tokens = search
+          .split(/\s+/)
+          .map((token) => token.trim())
+          .filter((token) => token.length > 0)
 
-        const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
-        if (!searchRegex.test(searchableText)) {
-          return false
+        if (tokens.length > 0) {
+          const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
+
+          const matchesAtLeastOneToken = tokens.some((token) => {
+            try {
+              const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+              const tokenRegex = new RegExp(escapedToken, 'i')
+              return tokenRegex.test(searchableText)
+            } catch {
+              const lowercaseSearchable = searchableText.toLowerCase()
+              const lowercaseToken = token.toLowerCase()
+              return lowercaseSearchable.includes(lowercaseToken)
+            }
+          })
+
+          if (!matchesAtLeastOneToken) {
+            return false
+          }
         }
       }
 
