@@ -112,9 +112,9 @@ export const APPS = {
   },
   Vaults_Beta: {
     name: 'Vaults_Beta',
-    href: `/${routeConfig.vaultsBeta}`,
+    href: `${routeConfig.vaultsBeta.index}`,
     host: ['localhost:3000/vaults-beta', 'https://yearn.fi/vaults-beta'],
-    pathname: `/${routeConfig.vaultsBeta}`,
+    pathname: `${routeConfig.vaultsBeta.index}`,
     icon: <LogoYearn className={'size-8'} back={'text-white'} front={'text-blue-500'} />
   }
 }

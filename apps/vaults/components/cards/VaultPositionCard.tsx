@@ -17,7 +17,7 @@ export const VaultPositionCard: FC<{
 
   const title = replaceStrings(vault.name, VAULT_NAME_REPLACEMENTS, '')
   const apr = vault.apr?.forwardAPR?.netAPR || 0
-  const href = `/${routeConfig.vaultsBeta}/${vault.chainID}/${toAddress(vault.address)}`
+  const href = `${routeConfig.vaultsBeta.index}/${vault.chainID}/${toAddress(vault.address)}`
 
   return (
     <Link href={href}>

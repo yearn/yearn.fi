@@ -155,7 +155,7 @@ function Index(): ReactElement | null {
     <div className={'mx-auto w-full max-w-[1232px] pt-20 md:pt-32 px-4'}>
       {/* Mobile Back Button */}
       <nav className={'mb-4 self-start md:mb-2 md:hidden'}>
-        <Link href={`/${routeConfig.vaultsBeta}`} className={'z-50 w-fit block'}>
+        <Link href={`${routeConfig.vaultsBeta.index}`} className={'z-50 w-fit block'}>
           <p className={'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'}>
             <span className={'pr-2 leading-[normal]'}>&#10229;</span>
             {'  Back'}
@@ -172,7 +172,7 @@ function Index(): ReactElement | null {
         )}
       >
         <nav className={'mb-4 hidden self-start md:mb-2 md:block'}>
-          <Link href={`/${routeConfig.vaultsBeta}`} className={'w-fit block'}>
+          <Link href={`${routeConfig.vaultsBeta.index}`} className={'w-fit block'}>
             <p
               className={'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'}
             >
