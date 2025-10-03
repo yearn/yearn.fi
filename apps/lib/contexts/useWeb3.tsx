@@ -1,8 +1,10 @@
 import { Clusters, getImageUrl } from '@clustersxyz/sdk'
+import { setGlobalAdapter } from '@cowprotocol/cow-sdk'
+import { ViemAdapter, type ViemAdapterOptions } from '@cowprotocol/sdk-viem-adapter'
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import { useIsMounted, useUpdateEffect } from '@react-hookz/web'
 import type { ReactElement } from 'react'
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { Chain } from 'viem'
 import { mainnet } from 'viem/chains'
 import type { Connector } from 'wagmi'
@@ -82,6 +84,23 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
     const noFork = config.chains.filter(({ id }): boolean => id !== 1337)
     return noFork.map(({ id }): number => id)
   }, [connectors])
+
+  useEffect(() => {
+    if (!publicClient) {
+      return
+    }
+
+    const adapterOptions: Partial<ViemAdapterOptions> = {
+      provider: publicClient
+    }
+
+    if (walletClient) {
+      adapterOptions.walletClient = walletClient
+    }
+
+    const adapter = new ViemAdapter(adapterOptions as ViemAdapterOptions)
+    setGlobalAdapter(adapter)
+  }, [publicClient, walletClient])
 
   useUpdateEffect((): void => {
     setCurrentChainID(chain?.id)

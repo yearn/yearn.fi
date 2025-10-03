@@ -16,16 +16,15 @@ import { assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNorm
 import { SOLVER_COW_VAULT_RELAYER_ADDRESS } from '@lib/utils/constants'
 import { allowanceKey } from '@lib/utils/helpers'
 import type { TTxResponse, TTxStatus } from '@lib/utils/wagmi'
-import { allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20, retrieveConfig } from '@lib/utils/wagmi'
-import { getEthersSigner } from '@lib/utils/wagmi/ethersAdapter'
+import { allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20 } from '@lib/utils/wagmi'
 import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
 import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
 import { Solver } from '@vaults-v2/types/solvers'
 import axios from 'axios'
-import { ethers } from 'ethers'
 import { useCallback, useMemo, useRef } from 'react'
 import type { Hash, TransactionReceipt } from 'viem'
-import { BaseError, maxUint256 } from 'viem'
+import { BaseError, formatUnits, maxUint256, parseUnits } from 'viem'
+import { useWalletClient } from 'wagmi'
 
 const orderBookApi = new OrderBookApi({ chainId: 1 })
 
@@ -79,6 +78,7 @@ export function useSolverCowswap(): TSolverContext {
   const { zapSlippage } = useYearn()
   const { provider } = useWeb3()
   const { setShouldOpenCurtain } = useNotifications()
+  const { data: walletClient } = useWalletClient({ chainId: 1 })
   const maxIterations = 1000 // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
   const shouldUsePresign = false //Debug only
   const latestQuote = useRef<OrderQuoteResponse | undefined>(undefined)
@@ -96,11 +96,8 @@ export function useSolverCowswap(): TSolverContext {
         return '0'
       }
       const { quote } = currentQuote
-      const buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, decimals))
-      const withSlippage = ethers.utils.parseUnits(
-        (buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals),
-        decimals
-      )
+      const buyAmount = Number(formatUnits(BigInt(quote.buyAmount), decimals))
+      const withSlippage = parseUnits((buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals), decimals)
       return withSlippage.toString()
     },
     [zapSlippage]
@@ -196,7 +193,7 @@ export function useSolverCowswap(): TSolverContext {
       }
 
       assert(provider, 'Provider is not set')
-      const signer = await getEthersSigner(retrieveConfig(), { chainId: 1 })
+      const signer = walletClient
       assert(signer, 'No signer available')
 
       const rawSignature = await OrderSigningUtils.signOrder(
@@ -211,7 +208,7 @@ export function useSolverCowswap(): TSolverContext {
       )
       return rawSignature
     },
-    [provider]
+    [provider, walletClient]
   )
 
   /**********************************************************************************************
