@@ -118,21 +118,24 @@ export function Filters({
     }
   }
 
-  const handleAddChip = useCallback((value: string): void => {
-    const trimmedValue = value.trim()
-    if (!trimmedValue) {
-      return
-    }
-
-    setSearchChips((previous) => {
-      if (previous.includes(trimmedValue)) {
-        return previous
+  const handleAddChip = useCallback(
+    (value: string): void => {
+      const trimmedValue = value.trim()
+      if (!trimmedValue) {
+        return
       }
-      const next = [...previous, trimmedValue]
-      onSearch(next.join(' '))
-      return next
-    })
-  }, [onSearch])
+
+      setSearchChips((previous) => {
+        if (previous.includes(trimmedValue)) {
+          return previous
+        }
+        const next = [...previous, trimmedValue]
+        onSearch(next.join(' '))
+        return next
+      })
+    },
+    [onSearch]
+  )
 
   const handleRemoveChip = useCallback(
     (value: string): void => {
