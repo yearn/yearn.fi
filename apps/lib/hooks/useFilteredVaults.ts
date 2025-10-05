@@ -1,4 +1,3 @@
-import { VaultFilterKey } from '@lib/constants/filters'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
 import type { TDict } from '@lib/types'

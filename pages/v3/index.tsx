@@ -248,7 +248,7 @@ function ListOfVaults({
     holdings: [],
     all: []
   }
-  const shouldShowHoldings = categories.includes('Your Holdings')
+  const shouldShowHoldings = Boolean(categories?.includes('Your Holdings'))
 
   const sortedFilteredHoldings = useSortVaults(holdings, sortBy, sortDirection)
   const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
