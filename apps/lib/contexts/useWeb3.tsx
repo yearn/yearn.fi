@@ -222,7 +222,7 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
         const [clustersName] = clustersTag.split('/')
         const profileImage = getClusterImageUrl(clustersName)
         console.log('Resolved Clusters tag', clustersTag, profileImage)
-        setClusters({ name: `${clustersName}/`, avatar: profileImage })
+        setClusters({ name: `${clustersTag}`, avatar: profileImage })
         return
       }
     }
