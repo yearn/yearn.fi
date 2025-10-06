@@ -6,30 +6,54 @@ import type {
   SigningScheme,
   UnsignedOrder
 } from '@cowprotocol/cow-sdk'
-import { OrderBookApi, OrderQuoteSideKindSell, OrderSigningUtils } from '@cowprotocol/cow-sdk'
+import {
+  COW_PROTOCOL_VAULT_RELAYER_ADDRESS,
+  OrderBookApi,
+  OrderQuoteSideKindSell,
+  OrderSigningUtils,
+  SupportedChainId
+} from '@cowprotocol/cow-sdk'
 import { toast } from '@lib/components/yToast'
 import { useNotifications } from '@lib/contexts/useNotifications'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import type { TDict, TNormalizedBN } from '@lib/types'
 import { assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
-import { SOLVER_COW_VAULT_RELAYER_ADDRESS } from '@lib/utils/constants'
 import { allowanceKey } from '@lib/utils/helpers'
+import { toAddress } from '@lib/utils/tools.address'
 import type { TTxResponse, TTxStatus } from '@lib/utils/wagmi'
 import { allowanceOf, approveERC20, defaultTxStatus, isApprovedERC20 } from '@lib/utils/wagmi'
 import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
 import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
 import { Solver } from '@vaults-v2/types/solvers'
-import axios from 'axios'
 import { useCallback, useMemo, useRef } from 'react'
 import type { Hash, TransactionReceipt } from 'viem'
 import { BaseError, formatUnits, maxUint256, parseUnits } from 'viem'
 import { useWalletClient } from 'wagmi'
 
-const orderBookApi = new OrderBookApi({ chainId: 1 })
+const SUPPORTED_COWSWAP_CHAIN_IDS: SupportedChainId[] = [
+  SupportedChainId.MAINNET,
+  SupportedChainId.GNOSIS_CHAIN,
+  SupportedChainId.ARBITRUM_ONE,
+  SupportedChainId.BASE,
+  SupportedChainId.POLYGON
+]
+
+const SUPPORTED_COWSWAP_CHAIN_ID_SET = new Set<number>(SUPPORTED_COWSWAP_CHAIN_IDS)
+
+function toSupportedChainId(chainId: number): SupportedChainId | undefined {
+  return SUPPORTED_COWSWAP_CHAIN_IDS.find((supportedChainId) => supportedChainId === chainId)
+}
+
+function getRelayerAddress(chainId: SupportedChainId): ReturnType<typeof toAddress> {
+  const relayer = COW_PROTOCOL_VAULT_RELAYER_ADDRESS[chainId]
+  assert(relayer, 'Cowswap relayer not configured for chain')
+  return toAddress(relayer)
+}
 
 async function getQuote(
-  request: TInitSolverArgs
+  request: TInitSolverArgs,
+  chainId: SupportedChainId
 ): Promise<{ data: OrderQuoteResponse | undefined; error: Error | undefined }> {
   const YEARN_APP_DATA = '0x5d22bf49b708de1d2d9547a6cca9faccbdc2b162012e8573811c07103b163d4b'
   const quoteRequest = {
@@ -59,7 +83,7 @@ async function getQuote(
 
   quoteRequest.validTo = Math.round(new Date().setMinutes(new Date().getMinutes() + 10) / 1000)
   try {
-    const result = await orderBookApi.getQuote(quoteRequest)
+    const result = await new OrderBookApi({ chainId }).getQuote(quoteRequest)
     return { data: result, error: undefined }
   } catch (error) {
     return { data: undefined, error: error as Error }
@@ -78,7 +102,7 @@ export function useSolverCowswap(): TSolverContext {
   const { zapSlippage } = useYearn()
   const { provider } = useWeb3()
   const { setShouldOpenCurtain } = useNotifications()
-  const { data: walletClient } = useWalletClient({ chainId: 1 })
+  const { data: walletClient } = useWalletClient()
   const maxIterations = 1000 // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
   const shouldUsePresign = false //Debug only
   const latestQuote = useRef<OrderQuoteResponse | undefined>(undefined)
@@ -124,9 +148,11 @@ export function useSolverCowswap(): TSolverContext {
       /******************************************************************************************
        ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
        ******************************************************************************************/
-      if (_request.chainID !== 1) {
+      if (!SUPPORTED_COWSWAP_CHAIN_ID_SET.has(_request.chainID)) {
         return undefined
       }
+      const supportedChainId = toSupportedChainId(_request.chainID)
+      assert(supportedChainId, 'Unsupported CoWSwap chain')
 
       /******************************************************************************************
        ** Then, we check if the solver can be used for this specific sellToken. If it can't, we
@@ -153,7 +179,7 @@ export function useSolverCowswap(): TSolverContext {
        ** to get the current quote for the provided request.current.
        ******************************************************************************************/
       request.current = _request
-      const { data, error } = await getQuote(_request)
+      const { data, error } = await getQuote(_request, supportedChainId)
       if (!data) {
         type TCowRequestError = { body: { description: string } }
         const err = error as unknown as TCowRequestError
@@ -195,6 +221,11 @@ export function useSolverCowswap(): TSolverContext {
       assert(provider, 'Provider is not set')
       const signer = walletClient
       assert(signer, 'No signer available')
+      const supportedChainId = toSupportedChainId(chainID)
+      assert(supportedChainId, 'Unsupported CoWSwap chain')
+      if (signer.chain?.id && signer.chain.id !== chainID) {
+        console.warn(`Wallet client chain (${signer.chain.id}) does not match requested CoWSwap chain (${chainID}).`)
+      }
 
       const rawSignature = await OrderSigningUtils.signOrder(
         {
@@ -203,7 +234,7 @@ export function useSolverCowswap(): TSolverContext {
           buyAmount: buyAmountWithSlippage,
           sellAmount: (toBigInt(quote.sellAmount) + toBigInt(quote.feeAmount)).toString()
         },
-        chainID,
+        supportedChainId,
         signer
       )
       return rawSignature
@@ -218,18 +249,28 @@ export function useSolverCowswap(): TSolverContext {
    ** It will timeout once the order is no longer valid or after 50 minutes (max should be 30mn)
    *********************************************************************************************/
   const checkOrderStatus = useCallback(
-    async (orderUID: string, validTo: number): Promise<{ isSuccessful: boolean; error?: Error }> => {
+    async (
+      orderUID: string,
+      validTo: number,
+      chainId: SupportedChainId
+    ): Promise<{ isSuccessful: boolean; error?: Error }> => {
+      const orderBookApi = new OrderBookApi({ chainId })
       for (let i = 0; i < maxIterations; i++) {
-        const { data: order } = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`)
-        if (order?.status === 'fulfilled') {
-          return { isSuccessful: true }
-        }
-        if (order?.status === 'cancelled' || order?.status === 'expired') {
-          return {
-            isSuccessful: false,
-            error: new Error('TX fail because the order was not fulfilled')
+        try {
+          const order = await orderBookApi.getOrder(orderUID)
+          if (order?.status === 'fulfilled') {
+            return { isSuccessful: true }
           }
+          if (order?.status === 'cancelled' || order?.status === 'expired') {
+            return {
+              isSuccessful: false,
+              error: new Error('TX fail because the order was not fulfilled')
+            }
+          }
+        } catch (error) {
+          console.error(error)
         }
+
         if (validTo.valueOf() < Date.now() / 1000) {
           return {
             isSuccessful: false,
@@ -253,7 +294,12 @@ export function useSolverCowswap(): TSolverContext {
    ** not.
    *********************************************************************************************/
   const execute = useCallback(async (): Promise<TTxResponse> => {
-    if (!request?.current || request.current.chainID !== 1) {
+    if (!request?.current) {
+      return { isSuccessful: false }
+    }
+
+    const supportedChainId = toSupportedChainId(request.current.chainID)
+    if (!supportedChainId) {
       return { isSuccessful: false }
     }
 
@@ -281,9 +327,10 @@ export function useSolverCowswap(): TSolverContext {
       signingScheme: (shouldUsePresign ? 'presign' : signingScheme) as string as SigningScheme
     }
 
+    const orderBookApi = new OrderBookApi({ chainId: supportedChainId })
     const orderUID = await orderBookApi.sendOrder(orderCreation)
     if (orderUID) {
-      const { isSuccessful, error } = await checkOrderStatus(orderUID, quote.validTo)
+      const { isSuccessful, error } = await checkOrderStatus(orderUID, quote.validTo, supportedChainId)
       if (error) {
         console.error(error)
         return {
@@ -302,7 +349,11 @@ export function useSolverCowswap(): TSolverContext {
    ** process and displayed to the user.
    **************************************************************************/
   const expectedOut = useMemo((): TNormalizedBN => {
-    if (!latestQuote?.current?.quote?.buyAmount || !request?.current || request.current.chainID !== 1) {
+    if (
+      !latestQuote?.current?.quote?.buyAmount ||
+      !request?.current ||
+      !SUPPORTED_COWSWAP_CHAIN_ID_SET.has(request.current.chainID)
+    ) {
       return zeroNormalizedBN
     }
     return toNormalizedBN(
@@ -317,7 +368,7 @@ export function useSolverCowswap(): TSolverContext {
    **************************************************************************/
   const onRetrieveAllowance = useCallback(
     async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-      if (!request?.current || request.current.chainID !== 1 || !provider) {
+      if (!request?.current || !SUPPORTED_COWSWAP_CHAIN_ID_SET.has(request.current.chainID) || !provider) {
         return zeroNormalizedBN
       }
       assert(request.current, 'Request is not defined')
@@ -325,6 +376,9 @@ export function useSolverCowswap(): TSolverContext {
         request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap),
         'Input token is not supported by Cowswap'
       )
+      const supportedChainId = toSupportedChainId(request.current.chainID)
+      assert(supportedChainId, 'Unsupported CoWSwap chain')
+      const relayerAddress = getRelayerAddress(supportedChainId)
 
       const key = allowanceKey(
         request.current.chainID,
@@ -339,7 +393,7 @@ export function useSolverCowswap(): TSolverContext {
         connector: provider,
         chainID: request.current.inputToken.chainID,
         tokenAddress: request.current.inputToken.value,
-        spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS
+        spenderAddress: relayerAddress
       })
       existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals)
       return existingAllowances.current[key]
@@ -361,9 +415,9 @@ export function useSolverCowswap(): TSolverContext {
       onError?: (error: Error) => Promise<void>
     ): Promise<void> => {
       try {
-        if (!request?.current || request.current.chainID !== 1) {
+        if (!request?.current || !SUPPORTED_COWSWAP_CHAIN_ID_SET.has(request.current.chainID)) {
           if (onError) {
-            await onError(new Error('Cowswap only supports Ethereum mainnet'))
+            await onError(new Error('Cowswap solver not available on this network'))
           }
           return
         }
@@ -372,12 +426,15 @@ export function useSolverCowswap(): TSolverContext {
           request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap),
           'Input token is not supported by Cowswap'
         )
+        const supportedChainId = toSupportedChainId(request.current.chainID)
+        assert(supportedChainId, 'Unsupported CoWSwap chain')
+        const relayerAddress = getRelayerAddress(supportedChainId)
 
         const isApproved = await isApprovedERC20(
           provider,
           request.current.inputToken.chainID,
           request.current.inputToken.value, //token to approve
-          SOLVER_COW_VAULT_RELAYER_ADDRESS, //Cowswap relayer
+          relayerAddress, //Cowswap relayer
           toBigInt(amount)
         )
         if (isApproved) {
@@ -387,7 +444,7 @@ export function useSolverCowswap(): TSolverContext {
           connector: provider,
           chainID: request.current.chainID,
           contractAddress: request.current.inputToken.value,
-          spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS,
+          spenderAddress: relayerAddress,
           amount: toBigInt(amount),
           statusHandler: txStatusSetter,
           txHashHandler: txHashSetter,
