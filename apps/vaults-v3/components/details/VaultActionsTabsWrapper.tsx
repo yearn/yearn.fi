@@ -222,7 +222,7 @@ const MobileTabButtons = React.memo(function MobileTabButtons(props: {
     <button
       onClick={handleClick}
       className={cl(
-        'flex h-10 pr-4 transition-all duration-300 flex-row items-center border-0 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden',
+        'flex h-10 px-2 transition-all duration-300 flex-row items-center border-0 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden',
         props.selectedTab.value === props.currentTab.value
           ? 'border-b-2 border-neutral-900'
           : 'border-b-2 border-neutral-300'
@@ -280,7 +280,7 @@ export const VaultDetailsTab = React.memo(function VaultDetailsTab(props: {
         title={tabLabel}
         aria-selected={props.selectedTab.value === props.tab.value}
         className={cl(
-          'hover-fix tab relative',
+          'hover-fix tab relative px-2',
           isV3Page
             ? props.selectedTab.value === props.tab.value
               ? 'text-neutral-900!'
