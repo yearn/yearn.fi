@@ -79,7 +79,7 @@ const Tabs = React.memo(function Tabs({
                 title={tab.label}
                 aria-selected={selectedAboutTabIndex === tab.value}
                 className={cl(
-                  'hover-fix tab',
+                  'hover-fix tab px-2',
                   selectedAboutTabIndex === tab.value
                     ? 'text-neutral-900!'
                     : 'text-neutral-900/50! hover:text-neutral-900!'
