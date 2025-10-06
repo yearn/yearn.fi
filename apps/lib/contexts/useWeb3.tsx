@@ -1,4 +1,3 @@
-import { Clusters, getImageUrl } from '@clustersxyz/sdk'
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import { useIsMounted, useUpdateEffect } from '@react-hookz/web'
 import type { ReactElement } from 'react'
@@ -17,7 +16,7 @@ import {
 } from 'wagmi'
 import { useAsyncTrigger } from '../hooks/useAsyncTrigger'
 import type { TAddress } from '../types/address'
-import { isAddress } from '../utils'
+import { fetchClusterName, getClusterImageUrl, isAddress } from '../utils'
 import { isIframe } from '../utils/helpers'
 import { toAddress } from '../utils/tools.address'
 import { retrieveConfig } from '../utils/wagmi'
@@ -66,7 +65,10 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
   const { connectors, connectAsync } = useConnect()
   const { disconnect, disconnectAsync } = useDisconnect()
   const { switchChain } = useSwitchChain()
-  const { data: ensName } = useEnsName({ address: address, chainId: mainnet.id })
+  const { data: ensName } = useEnsName({
+    address: address,
+    chainId: mainnet.id
+  })
   const { data: walletClient } = useWalletClient()
   const [currentChainID, setCurrentChainID] = useState(chain?.id)
   const publicClient = usePublicClient()
@@ -134,7 +136,10 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
   const onConnect = useCallback(async (): Promise<void> => {
     const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
     if (isIframe() && ledgerConnector) {
-      await connectAsync({ connector: ledgerConnector, chainId: currentChainID })
+      await connectAsync({
+        connector: ledgerConnector,
+        chainId: currentChainID
+      })
       return
     }
 
@@ -180,7 +185,10 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
     } else {
       const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
       if (isIframe() && ledgerConnector) {
-        await connectAsync({ connector: ledgerConnector, chainId: currentChainID })
+        await connectAsync({
+          connector: ledgerConnector,
+          chainId: currentChainID
+        })
         return
       }
 
@@ -208,11 +216,12 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
 
   useAsyncTrigger(async (): Promise<void> => {
     if (isAddress(address)) {
-      const clusters = new Clusters()
-      const clustersTag = await clusters.getName(address)
+      console.log('Resolving Clusters tag for', address)
+      const clustersTag = await fetchClusterName(address)
       if (clustersTag) {
         const [clustersName] = clustersTag.split('/')
-        const profileImage = getImageUrl(clustersName)
+        const profileImage = getClusterImageUrl(clustersName)
+        console.log('Resolved Clusters tag', clustersTag, profileImage)
         setClusters({ name: `${clustersName}/`, avatar: profileImage })
         return
       }
@@ -229,10 +238,18 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
     isActive: isConnected && [...supportedChainsID, 1337].includes(chain?.id || -1) && isMounted(),
     isWalletSafe:
       connector?.id === 'safe' ||
-      (connector as Record<string, unknown> & { _wallets?: Array<{ id?: string }> })?._wallets?.[0]?.id === 'safe',
+      (
+        connector as Record<string, unknown> & {
+          _wallets?: Array<{ id?: string }>
+        }
+      )?._wallets?.[0]?.id === 'safe',
     isWalletLedger:
       connector?.id.toLowerCase().includes('ledger') ||
-      (connector as Record<string, unknown> & { _wallets?: Array<{ id?: string }> })?._wallets?.[0]?.id === 'ledger',
+      (
+        connector as Record<string, unknown> & {
+          _wallets?: Array<{ id?: string }>
+        }
+      )?._wallets?.[0]?.id === 'ledger',
     lensProtocolHandle: '',
     hasProvider: !!(walletClient || publicClient),
     provider: connector,

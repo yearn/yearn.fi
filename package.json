@@ -14,7 +14,6 @@
     "clean": "bash clean.sh"
   },
   "dependencies": {
-    "@clustersxyz/sdk": "0.2.3",
     "@cowprotocol/cow-sdk": "5.10.3",
     "@headlessui/react": "2.2.7",
     "@rainbow-me/rainbowkit": "2.2.5",
