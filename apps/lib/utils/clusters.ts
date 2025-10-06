@@ -5,9 +5,7 @@ const clusterNameCache = new Map<string, string | null>()
 
 const getApiBaseUrl = (): string => {
   const envUrl = import.meta.env.VITE_CLUSTERS_API_URL
-  return (
-    envUrl && envUrl.trim().length > 0 ? envUrl : DEFAULT_API_URL
-  ).replace(/\/$/, '')
+  return (envUrl && envUrl.trim().length > 0 ? envUrl : DEFAULT_API_URL).replace(/\/$/, '')
 }
 
 const getApiKey = (): string | undefined => {
@@ -55,9 +53,7 @@ const parseClusterNameResponse = (payload: unknown): string | null => {
   return null
 }
 
-export async function fetchClusterName(
-  address: string
-): Promise<string | null> {
+export async function fetchClusterName(address: string): Promise<string | null> {
   if (!address) {
     return null
   }
@@ -68,12 +64,9 @@ export async function fetchClusterName(
   }
 
   try {
-    const response = await fetch(
-      `${getApiBaseUrl()}/names/address/${normalizedAddress}`,
-      {
-        headers: buildRequestHeaders(),
-      }
-    )
+    const response = await fetch(`${getApiBaseUrl()}/names/address/${normalizedAddress}`, {
+      headers: buildRequestHeaders()
+    })
 
     if (!response.ok) {
       if (response.status === 404) {

@@ -1,17 +1,7 @@
-import {
-  useAccountModal,
-  useChainModal,
-  useConnectModal,
-} from '@rainbow-me/rainbowkit'
+import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import { useIsMounted, useUpdateEffect } from '@react-hookz/web'
 import type { ReactElement } from 'react'
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { Chain } from 'viem'
 import { mainnet } from 'viem/chains'
 import type { Connector } from 'wagmi'
@@ -22,11 +12,10 @@ import {
   useEnsName,
   usePublicClient,
   useSwitchChain,
-  useWalletClient,
+  useWalletClient
 } from 'wagmi'
 import { useAsyncTrigger } from '../hooks/useAsyncTrigger'
 import type { TAddress } from '../types/address'
-import { fetchClusterName, getClusterImageUrl, isAddress } from '../utils'
 import { fetchClusterName, getClusterImageUrl, isAddress } from '../utils'
 import { isIframe } from '../utils/helpers'
 import { toAddress } from '../utils/tools.address'
@@ -67,28 +56,18 @@ const defaultState: TWeb3Context = {
   onConnect: async (): Promise<void> => undefined,
   onSwitchChain: (): void => undefined,
   openLoginModal: (): void => undefined,
-  onDesactivate: (): void => undefined,
+  onDesactivate: (): void => undefined
 }
 
 const Web3Context = createContext<TWeb3Context>(defaultState)
-export const Web3ContextApp = (props: {
-  children: ReactElement
-  defaultNetwork?: Chain
-}): ReactElement => {
-  const {
-    address,
-    isConnecting,
-    isConnected,
-    isDisconnected,
-    connector,
-    chain,
-  } = useAccount()
+export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?: Chain }): ReactElement => {
+  const { address, isConnecting, isConnected, isDisconnected, connector, chain } = useAccount()
   const { connectors, connectAsync } = useConnect()
   const { disconnect, disconnectAsync } = useDisconnect()
   const { switchChain } = useSwitchChain()
   const { data: ensName } = useEnsName({
     address: address,
-    chainId: mainnet.id,
+    chainId: mainnet.id
   })
   const { data: walletClient } = useWalletClient()
   const [currentChainID, setCurrentChainID] = useState(chain?.id)
@@ -97,9 +76,7 @@ export const Web3ContextApp = (props: {
   const { openAccountModal } = useAccountModal()
   const { openConnectModal } = useConnectModal()
   const { openChainModal } = useChainModal()
-  const [clusters, setClusters] = useState<
-    { name: string; avatar: string } | undefined
-  >(undefined)
+  const [clusters, setClusters] = useState<{ name: string; avatar: string } | undefined>(undefined)
 
   const supportedChainsID = useMemo((): number[] => {
     connectors //Hard trigger re-render when connectors change
@@ -118,18 +95,10 @@ export const Web3ContextApp = (props: {
     }
 
     try {
-      if (
-        isIframe() &&
-        connector &&
-        connector?.id !== 'safe' &&
-        !connector?.id?.toLowerCase().includes('ledger')
-      ) {
-        const ancestorOrigin =
-          typeof window !== 'undefined' && window.location.ancestorOrigins[0]
+      if (isIframe() && connector && connector?.id !== 'safe' && !connector?.id?.toLowerCase().includes('ledger')) {
+        const ancestorOrigin = typeof window !== 'undefined' && window.location.ancestorOrigins[0]
         if (!ancestorOrigin.toString().includes('safe')) {
-          const ledgerConnector = connectors.find((c): boolean =>
-            c.id.toLowerCase().includes('ledger')
-          )
+          const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
           if (ledgerConnector) {
             await disconnectAsync({ connector: connector })
             const isAuth = await ledgerConnector.isAuthorized()
@@ -147,12 +116,9 @@ export const Web3ContextApp = (props: {
           }
         }
       } else if (isIframe() && !connector) {
-        const ancestorOrigin =
-          typeof window !== 'undefined' && window.location.ancestorOrigins[0]
+        const ancestorOrigin = typeof window !== 'undefined' && window.location.ancestorOrigins[0]
         if (!ancestorOrigin.toString().includes('safe')) {
-          const ledgerConnector = connectors.find((c): boolean =>
-            c.id.toLowerCase().includes('ledger')
-          )
+          const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
           if (ledgerConnector) {
             await connectAsync({ connector: ledgerConnector })
           }
@@ -168,13 +134,11 @@ export const Web3ContextApp = (props: {
   }, [connectAsync, connectors, disconnectAsync, connector])
 
   const onConnect = useCallback(async (): Promise<void> => {
-    const ledgerConnector = connectors.find((c): boolean =>
-      c.id.toLowerCase().includes('ledger')
-    )
+    const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
     if (isIframe() && ledgerConnector) {
       await connectAsync({
         connector: ledgerConnector,
-        chainId: currentChainID,
+        chainId: currentChainID
       })
       return
     }
@@ -188,13 +152,7 @@ export const Web3ContextApp = (props: {
       }
       console.warn('Impossible to open login modal')
     }
-  }, [
-    connectAsync,
-    connectors,
-    currentChainID,
-    openChainModal,
-    openConnectModal,
-  ])
+  }, [connectAsync, connectors, currentChainID, openChainModal, openConnectModal])
 
   const onDesactivate = useCallback((): void => {
     disconnect()
@@ -225,13 +183,11 @@ export const Web3ContextApp = (props: {
         console.warn('Impossible to open account modal')
       }
     } else {
-      const ledgerConnector = connectors.find((c): boolean =>
-        c.id.toLowerCase().includes('ledger')
-      )
+      const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
       if (isIframe() && ledgerConnector) {
         await connectAsync({
           connector: ledgerConnector,
-          chainId: currentChainID,
+          chainId: currentChainID
         })
         return
       }
@@ -255,7 +211,7 @@ export const Web3ContextApp = (props: {
     isConnected,
     openAccountModal,
     openChainModal,
-    openConnectModal,
+    openConnectModal
   ])
 
   useAsyncTrigger(async (): Promise<void> => {
@@ -277,10 +233,7 @@ export const Web3ContextApp = (props: {
     isDisconnected,
     ens: ensName || '',
     clusters,
-    isActive:
-      isConnected &&
-      [...supportedChainsID, 1337].includes(chain?.id || -1) &&
-      isMounted(),
+    isActive: isConnected && [...supportedChainsID, 1337].includes(chain?.id || -1) && isMounted(),
     isWalletSafe:
       connector?.id === 'safe' ||
       (
@@ -304,14 +257,10 @@ export const Web3ContextApp = (props: {
     onConnect,
     onSwitchChain,
     openLoginModal,
-    onDesactivate: onDesactivate,
+    onDesactivate: onDesactivate
   }
 
-  return (
-    <Web3Context.Provider value={contextValue}>
-      {props.children}
-    </Web3Context.Provider>
-  )
+  return <Web3Context.Provider value={contextValue}>{props.children}</Web3Context.Provider>
 }
 
 export const useWeb3 = (): TWeb3Context => useContext(Web3Context)
