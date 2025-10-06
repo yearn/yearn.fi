@@ -3,9 +3,9 @@ import axios from 'axios'
 import { serialize } from 'wagmi'
 import type { z } from 'zod'
 
-type TFetchProps = {
+type TFetchProps<T> = {
   endpoint: string | null
-  schema: z.ZodSchema
+  schema: z.Schema<T>
   config?: AxiosRequestConfig<unknown>
 }
 
@@ -19,7 +19,7 @@ const http: AxiosInstance = axios.create({
   headers: { Accept: 'application/json' }
 })
 
-export async function fetch<T>({ endpoint, schema, config }: TFetchProps): TFetchReturn<T> {
+export async function fetch<T>({ endpoint, schema, config }: TFetchProps<T>): TFetchReturn<T> {
   if (!endpoint) {
     return { data: null, error: new Error('No endpoint provided') }
   }
@@ -35,10 +35,10 @@ export async function fetch<T>({ endpoint, schema, config }: TFetchProps): TFetc
 
     if (!parsedData.success) {
       console.error(endpoint, parsedData.error)
-      return { data, error: parsedData.error }
+      return { data: null, error: parsedData.error }
     }
 
-    return { ...data, data: parsedData.data }
+    return { data: parsedData.data }
   } catch (error) {
     console.error(endpoint, error)
     if (error instanceof Error) {

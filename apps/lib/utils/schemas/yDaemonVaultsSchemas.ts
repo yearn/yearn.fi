@@ -4,6 +4,49 @@ import { z } from 'zod'
 import { addressSchema } from '../../types'
 import { toBigInt } from '../../utils'
 
+const createAprFeesDefault = () => ({
+  performance: 0,
+  withdrawal: 0,
+  management: 0
+})
+
+const createAprExtraDefault = () => ({
+  stakingRewardsAPR: 0,
+  gammaRewardAPR: 0
+})
+
+const createAprPointsDefault = () => ({
+  weekAgo: 0,
+  monthAgo: 0,
+  inception: 0
+})
+
+const createAprPricePerShareDefault = () => ({
+  today: 0,
+  weekAgo: 0,
+  monthAgo: 0
+})
+
+const createAprCompositeDefault = () => ({
+  boost: 0,
+  poolAPY: 0,
+  boostedAPR: 0,
+  baseAPR: 0,
+  cvxAPR: 0,
+  rewardsAPR: 0,
+  v3OracleCurrentAPR: 0,
+  v3OracleStratRatioAPR: 0,
+  keepCRV: 0,
+  keepVELO: 0,
+  cvxKeepCRV: 0
+})
+
+const createForwardAprDefault = () => ({
+  type: 'unknown',
+  netAPR: 0,
+  composite: createAprCompositeDefault()
+})
+
 const yDaemonVaultStrategySchema = z.object({
   address: addressSchema,
   name: z.string(),
@@ -115,27 +158,31 @@ export const yDaemonVaultSchema = z.object({
         withdrawal: z.number().default(0).catch(0),
         management: z.number().default(0).catch(0)
       })
-      .default({}),
+      .default(createAprFeesDefault)
+      .catch(createAprFeesDefault),
     extra: z
       .object({
         stakingRewardsAPR: z.number().default(0).catch(0),
         gammaRewardAPR: z.number().default(0).catch(0)
       })
-      .default({}),
+      .default(createAprExtraDefault)
+      .catch(createAprExtraDefault),
     points: z
       .object({
         weekAgo: z.number().default(0).catch(0),
         monthAgo: z.number().default(0).catch(0),
         inception: z.number().default(0).catch(0)
       })
-      .default({}),
+      .default(createAprPointsDefault)
+      .catch(createAprPointsDefault),
     pricePerShare: z
       .object({
         today: z.number().default(0).catch(0),
         weekAgo: z.number().default(0).catch(0),
         monthAgo: z.number().default(0).catch(0)
       })
-      .default({}),
+      .default(createAprPricePerShareDefault)
+      .catch(createAprPricePerShareDefault),
     forwardAPR: z
       .object({
         type: z.string().default('unknown').catch('unknown'),
@@ -154,9 +201,11 @@ export const yDaemonVaultSchema = z.object({
             keepVELO: z.number().default(0).catch(0),
             cvxKeepCRV: z.number().default(0).catch(0)
           })
-          .default({})
+          .default(createAprCompositeDefault)
+          .catch(createAprCompositeDefault)
       })
-      .default({})
+      .default(createForwardAprDefault)
+      .catch(createForwardAprDefault)
   }),
   featuringScore: z.number().default(0).catch(0),
   strategies: z.array(yDaemonVaultStrategySchema).nullable().default([]),
