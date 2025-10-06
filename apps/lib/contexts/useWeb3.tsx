@@ -1,4 +1,3 @@
-import { Clusters, getImageUrl } from '@clustersxyz/sdk'
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import { useIsMounted, useUpdateEffect } from '@react-hookz/web'
 import type { ReactElement } from 'react'
@@ -17,7 +16,7 @@ import {
 } from 'wagmi'
 import { useAsyncTrigger } from '../hooks/useAsyncTrigger'
 import type { TAddress } from '../types/address'
-import { isAddress } from '../utils'
+import { fetchClusterName, getClusterImageUrl, isAddress } from '../utils'
 import { isIframe } from '../utils/helpers'
 import { toAddress } from '../utils/tools.address'
 import { retrieveConfig } from '../utils/wagmi'
@@ -208,11 +207,10 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
 
   useAsyncTrigger(async (): Promise<void> => {
     if (isAddress(address)) {
-      const clusters = new Clusters()
-      const clustersTag = await clusters.getName(address)
+      const clustersTag = await fetchClusterName(address)
       if (clustersTag) {
         const [clustersName] = clustersTag.split('/')
-        const profileImage = getImageUrl(clustersName)
+        const profileImage = getClusterImageUrl(clustersName)
         setClusters({ name: `${clustersName}/`, avatar: profileImage })
         return
       }
