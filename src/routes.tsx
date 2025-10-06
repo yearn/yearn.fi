@@ -15,6 +15,8 @@ const VaultsBetaPage = lazy(() => import('../pages/vaults-beta/index'))
 const VaultsBetaDetailPage = lazy(() => import('../pages/vaults-beta/[chainID]/[address]'))
 const VaultsBetaSearchPage = lazy(() => import('../pages/vaults-beta/search/[query]'))
 
+const isVaultsBetaEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_VAULTS_BETA !== 'false'
+
 // Loading component
 const PageLoader = (): ReactElement => (
   <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
@@ -91,7 +93,7 @@ export function AppRoutes(): ReactElement {
         <Route path="/v3/:chainID" element={<Navigate to="/v3" replace />} />
 
         {/* Vaults Beta routes */}
-        {import.meta.env.DEV && (
+        {isVaultsBetaEnabled && (
           <Route path="/vaults-beta">
             <Route index element={<VaultsBetaPage />} />
             <Route path=":chainID/:address" element={<VaultsBetaDetailPage />} />
