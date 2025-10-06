@@ -5,13 +5,7 @@ import { hash } from '@lib/utils/helpers'
 import { useActionFlow } from '@vaults-v2/contexts/useActionFlow'
 import { useSolverCowswap } from '@vaults-v2/hooks/solvers/useSolverCowswap'
 import { useSolverGaugeStakingBooster } from '@vaults-v2/hooks/solvers/useSolverGaugeStakingBooster'
-import { useSolverInternalMigration } from '@vaults-v2/hooks/solvers/useSolverInternalMigration'
-import { useSolverJuicedStakingBooster } from '@vaults-v2/hooks/solvers/useSolverJuicedStakingBooster'
-import { useSolverOptimismBooster } from '@vaults-v2/hooks/solvers/useSolverOptimismBooster'
-import { useSolverPartnerContract } from '@vaults-v2/hooks/solvers/useSolverPartnerContract'
 import { useSolverPortals } from '@vaults-v2/hooks/solvers/useSolverPortals'
-import { useSolverV3Router } from '@vaults-v2/hooks/solvers/useSolverV3Router'
-import { useSolverV3StakingBooster } from '@vaults-v2/hooks/solvers/useSolverV3StakingBooster'
 import { useSolverVanilla } from '@vaults-v2/hooks/solvers/useSolverVanilla'
 import type { TInitSolverArgs, TSolver, TSolverContext, TWithSolver } from '@vaults-v2/types/solvers'
 import { Solver } from '@vaults-v2/types/solvers'
@@ -20,14 +14,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 export const isSolverDisabled = (key: TSolver): boolean => {
   const solverStatus = {
     [Solver.enum.Vanilla]: false,
-    [Solver.enum.PartnerContract]: false,
+    [Solver.enum.PartnerContract]: true,
     [Solver.enum.ChainCoin]: true,
-    [Solver.enum.InternalMigration]: false,
-    [Solver.enum.OptimismBooster]: false,
+    [Solver.enum.InternalMigration]: true,
+    [Solver.enum.OptimismBooster]: true,
     [Solver.enum.GaugeStakingBooster]: false,
-    [Solver.enum.JuicedStakingBooster]: false,
-    [Solver.enum.V3StakingBooster]: false,
-    [Solver.enum.Cowswap]: true,
+    [Solver.enum.JuicedStakingBooster]: true,
+    [Solver.enum.V3StakingBooster]: true,
+    [Solver.enum.Cowswap]: false,
     [Solver.enum.Portals]: false,
     [Solver.enum.None]: false
   }
@@ -62,13 +56,7 @@ export function WithSolverContextApp({ children }: { children: React.ReactElemen
   const cowswap = useSolverCowswap()
   const vanilla = useSolverVanilla()
   const portals = useSolverPortals()
-  const partnerContract = useSolverPartnerContract()
-  const internalMigration = useSolverInternalMigration()
-  const optimismBooster = useSolverOptimismBooster()
   const veYFIGaugeStakingBooster = useSolverGaugeStakingBooster()
-  const juicedStakingBooster = useSolverJuicedStakingBooster()
-  const v3StakingBooster = useSolverV3StakingBooster()
-  const v3Router = useSolverV3Router()
   const [currentSolverState, setCurrentSolverState] = useState<TSolverContext & { hash?: string }>(vanilla)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -137,125 +125,60 @@ export function WithSolverContextApp({ children }: { children: React.ReactElemen
       }
 
       switch (currentSolver) {
-        case Solver.enum.Portals: {
-          const [portalsQuote] = await Promise.allSettled([
-            portals.init(request, currentSolver === Solver.enum.Portals)
-          ])
-
-          const solvers: {
-            [key in TSolver]?: {
-              quote: PromiseSettledResult<TNormalizedBN | undefined>
-              ctx: TSolverContext
-            }
-          } = {}
-
-          ;[
-            {
-              solver: Solver.enum.Portals,
-              quote: portalsQuote,
-              ctx: portals
-            }
-          ].forEach(({ solver, quote, ctx }): void => {
-            if (isValidSolver({ quote, solver })) {
-              solvers[solver] = { quote, ctx }
-            }
-          })
-
-          solvers[Solver.enum.None] = {
-            quote: { status: 'fulfilled', value: zeroNormalizedBN },
-            ctx: vanilla
-          }
-
-          const solverPriority = [Solver.enum.Portals, Solver.enum.None]
-          const newSolverPriority = [
-            currentSolver,
-            ...solverPriority.filter((solver): boolean => solver !== currentSolver)
-          ]
-
-          for (const solver of newSolverPriority) {
-            if (!solvers[solver]) {
-              continue
-            }
-
-            const result = solvers[solver] ?? solvers[Solver.enum.None]
-            if (result) {
-              const { quote, ctx } = result
-              await handleUpdateSolver({
-                currentNonce,
-                request,
-                quote,
-                solver,
-                ctx
-              })
-            }
-            return
-          }
-          break
-        }
+        case Solver.enum.Portals:
         case Solver.enum.Cowswap: {
-          const [cowswapQuote] = await Promise.allSettled([
-            cowswap.init(request, currentSolver === Solver.enum.Cowswap)
-          ])
+          // Chain-based solver selection:
+          // - Mainnet (chainID 1): Use Cowswap
+          // - Other chains: Use Portals
+          const isMainnet = currentVault.chainID === 1
 
-          const solvers: {
-            [key in TSolver]?: {
-              quote: PromiseSettledResult<TNormalizedBN | undefined>
-              ctx: TSolverContext
-            }
-          } = {}
+          if (isMainnet) {
+            // Mainnet: Only use Cowswap
+            const [cowswapQuote] = await Promise.allSettled([cowswap.init(request, true)])
 
-          ;[
-            {
-              solver: Solver.enum.Cowswap,
-              quote: cowswapQuote,
-              ctx: cowswap
-            }
-          ].forEach(({ solver, quote, ctx }): void => {
-            if (isValidSolver({ quote, solver })) {
-              solvers[solver] = { quote, ctx }
-            }
-          })
-
-          solvers[Solver.enum.None] = {
-            quote: { status: 'fulfilled', value: zeroNormalizedBN },
-            ctx: vanilla
-          }
-
-          const solverPriority = [Solver.enum.Cowswap, Solver.enum.None]
-          const newSolverPriority = [
-            currentSolver,
-            ...solverPriority.filter((solver): boolean => solver !== currentSolver)
-          ]
-
-          for (const solver of newSolverPriority) {
-            if (!solvers[solver]) {
-              continue
-            }
-
-            const result = solvers[solver] ?? solvers[Solver.enum.None]
-            if (result) {
-              const { quote, ctx } = result
+            if (isValidSolver({ quote: cowswapQuote, solver: Solver.enum.Cowswap })) {
               await handleUpdateSolver({
                 currentNonce,
                 request,
-                quote,
-                solver,
-                ctx
+                quote: cowswapQuote,
+                solver: Solver.enum.Cowswap,
+                ctx: cowswap
+              })
+            } else {
+              // Fallback to vanilla if Cowswap fails
+              const [vanillaQuote] = await Promise.allSettled([vanilla.init(request)])
+              await handleUpdateSolver({
+                currentNonce,
+                request,
+                quote: vanillaQuote,
+                solver: Solver.enum.Vanilla,
+                ctx: vanilla
               })
             }
-            return
+          } else {
+            // Non-mainnet: Only use Portals
+            const [portalsQuote] = await Promise.allSettled([portals.init(request, true)])
+
+            if (isValidSolver({ quote: portalsQuote, solver: Solver.enum.Portals })) {
+              await handleUpdateSolver({
+                currentNonce,
+                request,
+                quote: portalsQuote,
+                solver: Solver.enum.Portals,
+                ctx: portals
+              })
+            } else {
+              // Fallback to vanilla if Portals fails
+              const [vanillaQuote] = await Promise.allSettled([vanilla.init(request)])
+              await handleUpdateSolver({
+                currentNonce,
+                request,
+                quote: vanillaQuote,
+                solver: Solver.enum.Vanilla,
+                ctx: vanilla
+              })
+            }
           }
-          break
-        }
-        case Solver.enum.OptimismBooster: {
-          const [quote] = await Promise.allSettled([optimismBooster.init(request)])
-          await handleUpdateSolver({
-            currentNonce,
-            request,
-            quote,
-            solver: Solver.enum.OptimismBooster,
-            ctx: optimismBooster
-          })
           break
         }
         case Solver.enum.GaugeStakingBooster: {
@@ -266,53 +189,6 @@ export function WithSolverContextApp({ children }: { children: React.ReactElemen
             quote,
             solver: Solver.enum.GaugeStakingBooster,
             ctx: veYFIGaugeStakingBooster
-          })
-          break
-        }
-        case Solver.enum.JuicedStakingBooster: {
-          const [quote] = await Promise.allSettled([juicedStakingBooster.init(request)])
-          await handleUpdateSolver({
-            currentNonce,
-            request,
-            quote,
-            solver: Solver.enum.JuicedStakingBooster,
-            ctx: juicedStakingBooster
-          })
-          break
-        }
-        case Solver.enum.V3StakingBooster: {
-          const [quote] = await Promise.allSettled([v3StakingBooster.init(request)])
-          await handleUpdateSolver({
-            currentNonce,
-            request,
-            quote,
-            solver: Solver.enum.V3StakingBooster,
-            ctx: v3StakingBooster
-          })
-          break
-        }
-        case Solver.enum.PartnerContract: {
-          const [quote] = await Promise.allSettled([partnerContract.init(request)])
-          await handleUpdateSolver({
-            currentNonce,
-            request,
-            quote,
-            solver: Solver.enum.PartnerContract,
-            ctx: partnerContract
-          })
-          break
-        }
-        case Solver.enum.InternalMigration: {
-          request.migrator = currentVault.migration.contract
-          request.asset = currentVault.token.address
-          const ctx = currentVault.version.startsWith('3') ? v3Router : internalMigration
-          const [quote] = await Promise.allSettled([ctx.init(request)])
-          await handleUpdateSolver({
-            currentNonce,
-            request,
-            quote,
-            solver: Solver.enum.InternalMigration,
-            ctx
           })
           break
         }
@@ -337,8 +213,6 @@ export function WithSolverContextApp({ children }: { children: React.ReactElemen
       currentVault.staking.available,
       currentVault.staking.source,
       currentVault.staking.address,
-      currentVault.migration.contract,
-      currentVault.token.address,
       address,
       isDepositing,
       currentSolver,
@@ -346,13 +220,8 @@ export function WithSolverContextApp({ children }: { children: React.ReactElemen
       cowswap,
       portals,
       handleUpdateSolver,
-      optimismBooster,
       veYFIGaugeStakingBooster,
-      juicedStakingBooster,
-      v3StakingBooster,
-      partnerContract,
-      internalMigration,
-      v3Router,
+
       currentVault.address
     ]
   )

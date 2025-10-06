@@ -135,12 +135,12 @@ export function VaultDetailsQuickActionsTo(props: {
     chainID: Number(actionParams?.selectedOptionTo?.chainID)
   })
   const selectedOptionToSymbol = useMemo(() => {
-    if (isAutoStakingEnabled) {
+    if (isDepositing && isAutoStakingEnabled) {
       return props.vaultData.stakedGaugeSymbol || actionParams?.selectedOptionTo?.symbol
     }
 
     return actionParams?.selectedOptionTo?.symbol
-  }, [actionParams?.selectedOptionTo?.symbol, isAutoStakingEnabled, props.vaultData.stakedGaugeSymbol])
+  }, [actionParams?.selectedOptionTo?.symbol, isAutoStakingEnabled, props.vaultData.stakedGaugeSymbol, isDepositing])
 
   const currentVaultBoost = useMemo(
     () =>

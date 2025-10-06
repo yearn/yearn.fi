@@ -129,28 +129,11 @@ export function useSolverPortals(): TSolverContext {
         if (isSolverDisabled(Solver.enum.Portals)) {
           return undefined
         }
-        /******************************************************************************************
-         ** First we need to know which token we are selling to the zap. When we are depositing, we
-         ** are selling the inputToken, when we are withdrawing, we are selling the outputToken.
-         ** based on that token, different checks are required to determine if the solver can be
-         ** used.
-         ******************************************************************************************/
-        const sellToken = _request.isDepositing ? _request.inputToken : _request.outputToken
 
         /******************************************************************************************
          ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
          ******************************************************************************************/
         if (isSolverDisabled(Solver.enum.Portals)) {
-          return undefined
-        }
-
-        /******************************************************************************************
-         ** Then, we check if the solver can be used for this specific sellToken. If it can't, we
-         ** return 0.
-         ** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
-         ** a token, you can contact the yDaemon team to add it.
-         ******************************************************************************************/
-        if (!sellToken.solveVia?.includes(Solver.enum.Portals)) {
           return undefined
         }
 
