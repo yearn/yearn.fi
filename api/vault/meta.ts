@@ -66,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const html = readFileSync(indexPath, 'utf-8')
       res.setHeader('Content-Type', 'text/html')
       return res.status(200).send(html)
-    } catch (fallbackError) {
+    } catch (_fallbackError) {
       return res.status(500).json({ error: 'Failed to serve page' })
     }
   }

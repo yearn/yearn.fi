@@ -28,7 +28,7 @@ export const isSolverDisabled = (key: TSolver): boolean => {
     [Solver.enum.GaugeStakingBooster]: false,
     [Solver.enum.JuicedStakingBooster]: false,
     [Solver.enum.V3StakingBooster]: false,
-    [Solver.enum.Cowswap]: true,
+    [Solver.enum.Cowswap]: false,
     [Solver.enum.Portals]: false,
     [Solver.enum.None]: false
   }
@@ -81,7 +81,13 @@ export function WithSolverContextApp({ children }: { children: React.ReactElemen
       if (currentNonce !== executionNonce.current) {
         return
       }
-      const requestHash = await hash(serialize({ ...request, solver, expectedOut: toBigInt(quote.value?.raw) }))
+      const requestHash = await hash(
+        serialize({
+          ...request,
+          solver,
+          expectedOut: toBigInt(quote.value?.raw)
+        })
+      )
       setCurrentSolverState({
         ...ctx,
         quote: quote.value,
