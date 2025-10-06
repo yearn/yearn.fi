@@ -260,12 +260,10 @@ export const Web3ContextApp = (props: {
 
   useAsyncTrigger(async (): Promise<void> => {
     if (isAddress(address)) {
-      console.log('Resolving Clusters tag for', address)
       const clustersTag = await fetchClusterName(address)
       if (clustersTag) {
         const [clustersName] = clustersTag.split('/')
         const profileImage = getClusterImageUrl(clustersName)
-        console.log('Resolved Clusters tag', clustersTag, profileImage)
         setClusters({ name: `${clustersTag}`, avatar: profileImage })
         return
       }

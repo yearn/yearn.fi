@@ -64,7 +64,6 @@ export async function fetchClusterName(
 
   const normalizedAddress = address.toLowerCase()
   if (clusterNameCache.has(normalizedAddress)) {
-    console.log('Clusters cache hit', normalizedAddress)
     return clusterNameCache.get(normalizedAddress) ?? null
   }
 
@@ -85,9 +84,7 @@ export async function fetchClusterName(
     }
 
     const payload = await response.json()
-    console.log('Clusters API response for', normalizedAddress, payload)
     const clusterName = parseClusterNameResponse(payload)
-    console.log('Clusters resolved name', normalizedAddress, clusterName)
     clusterNameCache.set(normalizedAddress, clusterName)
     return clusterName
   } catch (error) {
