@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 
 /*******************************************************************************
  ** TAddress is used to represent a checksummed address
