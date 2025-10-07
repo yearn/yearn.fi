@@ -14,22 +14,19 @@ type TVaultWithMetadata = {
   isRetiredVault: boolean
 }
 
-type TOptimizedVaultFilterResult = {
-  // Main filtered results
-  activeVaults: TYDaemonVault[]
-  holdingsVaults: TYDaemonVault[]
-  migratableVaults: TYDaemonVault[]
-  retiredVaults: TYDaemonVault[]
-  multiVaults: TYDaemonVault[]
-  singleVaults: TYDaemonVault[]
+type TVaultFlags = {
+  hasHoldings: boolean
+  isMigratable: boolean
+  isRetired: boolean
+}
 
-  // Counts for showing hidden items
-  totalPotentialVaults: number
-  totalHoldingsVaults: number
-  totalMigratableVaults: number
-  totalRetiredVaults: number
-
-  // Utility data
+type TV3VaultFilterResult = {
+  filteredVaults: TYDaemonVault[]
+  vaultFlags: Record<string, TVaultFlags>
+  totalMatchingVaults: number
+  totalHoldingsMatching: number
+  totalMigratableMatching: number
+  totalRetiredMatching: number
   isLoading: boolean
 }
 
@@ -38,7 +35,7 @@ export function useV3VaultFilter(
   chains: number[] | null,
   search?: string,
   categories?: string[] | null
-): TOptimizedVaultFilterResult {
+): TV3VaultFilterResult {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
   const { shouldHideDust: _shouldHideDust } = useAppSettings()
@@ -157,38 +154,16 @@ export function useV3VaultFilter(
 
   // Apply filters
   const filteredResults = useMemo(() => {
-    const results = {
-      activeVaults: [] as TYDaemonVault[],
-      holdingsVaults: [] as TYDaemonVault[],
-      migratableVaults: [] as TYDaemonVault[],
-      retiredVaults: [] as TYDaemonVault[],
-      multiVaults: [] as TYDaemonVault[],
-      singleVaults: [] as TYDaemonVault[],
+    const filteredVaults: TYDaemonVault[] = []
+    const vaultFlags: Record<string, TVaultFlags> = {}
 
-      totalPotentialVaults: 0,
-      totalHoldingsVaults: 0,
-      totalMigratableVaults: 0,
-      totalRetiredVaults: 0
-    }
-
-    // Track totals before filtering
-    let totalHoldingsBeforeFilters = 0
-    let totalMigratableBeforeFilters = 0
-    let totalRetiredBeforeFilters = 0
+    let totalMatchingVaults = 0
+    let totalHoldingsMatching = 0
+    let totalMigratableMatching = 0
+    let totalRetiredMatching = 0
 
     processedVaults.forEach(({ vault, hasHoldings, isHoldingsVault, isMigratableVault, isRetiredVault }) => {
-      // Count totals before filtering
-      if (isHoldingsVault) {
-        totalHoldingsBeforeFilters++
-      }
-      if (isMigratableVault) {
-        totalMigratableBeforeFilters++
-      }
-      if (isRetiredVault) {
-        totalRetiredBeforeFilters++
-      }
-
-      // Apply search filter first (affects potential counts)
+      // Apply search filter
       if (search) {
         const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
 
@@ -199,7 +174,6 @@ export function useV3VaultFilter(
             return
           }
         } catch {
-          // Fallback to simple string matching if regex fails
           const lowercaseSearch = search.toLowerCase()
           if (!searchableText.toLowerCase().includes(lowercaseSearch)) {
             return
@@ -207,42 +181,9 @@ export function useV3VaultFilter(
         }
       }
 
-      // Count after search filter (for potential results)
-      if (!isMigratableVault && !isRetiredVault) {
-        results.totalPotentialVaults++
-      }
-
       // Chain filter
       if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {
         return
-      }
-
-      // Category filter (including holdings logic)
-      if (categories && categories.length > 0) {
-        const hasHoldingsCategory = categories.includes('Your Holdings')
-        const otherCategories = categories.filter((c) => c !== 'Your Holdings')
-        const onlyHoldingsSelected = hasHoldingsCategory && otherCategories.length === 0
-
-        if (onlyHoldingsSelected) {
-          if (!hasHoldings) {
-            return
-          }
-        } else if (!hasHoldingsCategory) {
-          if (hasHoldings) {
-            return
-          }
-          if (otherCategories.length > 0 && !otherCategories.includes(vault.category)) {
-            return
-          }
-        } else {
-          const allowedByHoldings = hasHoldings
-          const allowedByCategory =
-            !hasHoldings && (otherCategories.length === 0 || otherCategories.includes(vault.category))
-
-          if (!allowedByHoldings && !allowedByCategory) {
-            return
-          }
-        }
       }
 
       // Type filter (highlight, multi, single)
@@ -251,51 +192,65 @@ export function useV3VaultFilter(
         const hasMulti = types.includes('multi')
         const hasSingle = types.includes('single')
 
-        let matchesType = false
+        const matchesHighlight = hasHighlight && Boolean(vault.info?.isHighlighted)
+        const matchesMulti = hasMulti && vault.kind === 'Multi Strategy'
+        const matchesSingle = hasSingle && vault.kind === 'Single Strategy'
 
-        if (hasHighlight && vault.info?.isHighlighted) {
-          matchesType = true
-        }
-        if (hasMulti && vault.kind === 'Multi Strategy') {
-          matchesType = true
-        }
-        if (hasSingle && vault.kind === 'Single Strategy') {
-          matchesType = true
-        }
-
-        if (!matchesType) {
+        if (!(matchesHighlight || matchesMulti || matchesSingle)) {
           return
         }
       }
 
-      // Add to appropriate lists
-      if (isRetiredVault) {
-        results.retiredVaults.push(vault)
-      } else if (isMigratableVault) {
-        results.migratableVaults.push(vault)
-      } else {
-        // Active vault
-        results.activeVaults.push(vault)
+      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      const hasUserHoldings = Boolean(hasHoldings || isHoldingsVault)
 
-        // Add to categorized lists
-        if (vault.kind === 'Multi Strategy') {
-          results.multiVaults.push(vault)
-        } else if (vault.kind === 'Single Strategy') {
-          results.singleVaults.push(vault)
-        }
+      vaultFlags[key] = {
+        hasHoldings: hasUserHoldings,
+        isMigratable: isMigratableVault,
+        isRetired: isRetiredVault
       }
 
-      // Add to holdings if applicable
-      if (isHoldingsVault && !isMigratableVault && !isRetiredVault) {
-        results.holdingsVaults.push(vault)
+      totalMatchingVaults++
+      if (hasUserHoldings) {
+        totalHoldingsMatching++
+      }
+      if (isMigratableVault) {
+        totalMigratableMatching++
+      }
+      if (isRetiredVault) {
+        totalRetiredMatching++
+      }
+
+      const vaultCategorySet = new Set<string>()
+      if (vault.category) {
+        vaultCategorySet.add(vault.category)
+      }
+      if (hasUserHoldings) {
+        vaultCategorySet.add('Your Holdings')
+      }
+      if (isMigratableVault) {
+        vaultCategorySet.add('Migratable')
+      }
+      if (isRetiredVault) {
+        vaultCategorySet.add('Retired')
+      }
+
+      const shouldIncludeByCategory =
+        !categories || categories.length === 0 || categories.some((category) => vaultCategorySet.has(category))
+
+      if (shouldIncludeByCategory) {
+        filteredVaults.push(vault)
       }
     })
 
-    // Set total counts (before chain/category/type filters)
-    results.totalHoldingsVaults = totalHoldingsBeforeFilters
-    results.totalMigratableVaults = totalMigratableBeforeFilters
-    results.totalRetiredVaults = totalRetiredBeforeFilters
-    return results
+    return {
+      filteredVaults,
+      vaultFlags,
+      totalMatchingVaults,
+      totalHoldingsMatching,
+      totalMigratableMatching,
+      totalRetiredMatching
+    }
   }, [processedVaults, types, chains, search, categories])
 
   return {

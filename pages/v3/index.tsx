@@ -1,11 +1,7 @@
 import { Button } from '@lib/components/Button'
-import { RenderAmount } from '@lib/components/RenderAmount'
-import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
-import { IconChevron } from '@lib/icons/IconChevron'
 import type { TSortDirection } from '@lib/types'
-import { cl, formatAmount, isZero, toAddress } from '@lib/utils'
-import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { cl, toAddress } from '@lib/utils'
 import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
@@ -13,12 +9,14 @@ import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
 import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
-import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
-import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
+import {
+  ALL_VAULTSV3_CATEGORIES,
+  ALL_VAULTSV3_KINDS_KEYS,
+  DEFAULT_SELECTED_VAULTSV3_CATEGORIES
+} from '@vaults-v3/constants'
 import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
-import { Fragment, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Fragment } from 'react'
 
 function V3Card(): ReactElement {
   return (
@@ -32,104 +30,6 @@ function V3Card(): ReactElement {
         <V3Mask className={'size-[90%]'} />
       </div>
     </div>
-  )
-}
-
-function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
-  const data = useVaultApyData(vault)
-  const navigate = useNavigate()
-  const href = `/v3/${vault.chainID}/${toAddress(vault.address)}`
-
-  const isVeYfi = vault.staking.source === 'VeYFI'
-  const boostedApr = data.baseForwardApr + data.rewardsAprSum
-  const katanaApr = data.katanaTotalApr ?? data.baseForwardApr
-
-  const apyContent: ReactNode = (() => {
-    if (data.mode === 'katana' && data.katanaTotalApr !== undefined) {
-      return (
-        <>
-          <span>{'⚔️ '}</span>
-          <RenderAmount shouldHideTooltip value={katanaApr} symbol={'percent'} decimals={6} />
-        </>
-      )
-    }
-
-    if (data.mode === 'rewards') {
-      if (isVeYfi && data.estAprRange) {
-        return (
-          <>
-            <span>{'⚡️ '}</span>
-            <RenderAmount shouldHideTooltip value={data.estAprRange[0]} symbol={'percent'} decimals={6} />
-            <span>{' → '}</span>
-            <RenderAmount shouldHideTooltip value={data.estAprRange[1]} symbol={'percent'} decimals={6} />
-          </>
-        )
-      }
-
-      return (
-        <>
-          <span>{'⚡️ '}</span>
-          <RenderAmount shouldHideTooltip value={boostedApr} symbol={'percent'} decimals={6} />
-        </>
-      )
-    }
-
-    if (data.mode === 'boosted' && data.isBoosted) {
-      return (
-        <>
-          <span>{'🚀 '}</span>
-          <RenderAmount shouldHideTooltip value={vault.apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
-          {data.boost ? (
-            <span className={'text-[0.65rem] uppercase tracking-wide text-neutral-100/70'}>
-              {` • Boost ${formatAmount(data.boost, 2, 2)}x`}
-            </span>
-          ) : null}
-        </>
-      )
-    }
-
-    if (!isZero(data.baseForwardApr)) {
-      return (
-        <>
-          <span>{'APY '}</span>
-          <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
-        </>
-      )
-    }
-
-    return (
-      <>
-        <span>{'Hist. '}</span>
-        <RenderAmount shouldHideTooltip value={data.netApr} symbol={'percent'} decimals={6} />
-      </>
-    )
-  })()
-
-  return (
-    <button
-      type={'button'}
-      onClick={(): void => {
-        void navigate(href)
-      }}
-      className={'relative rounded-full'}
-    >
-      <div
-        className={
-          'pointer-events-none absolute -inset-[3px] rounded-full bg-[radial-gradient(circle_at_top_left,rgba(210,17,98,.75),rgba(44,61,166,.75))] opacity-50 blur-md'
-        }
-      />
-      <div
-        className={
-          'relative z-10 flex items-center gap-2 rounded-full border border-[#D21162]/50 bg-[#2a1956eb] px-3 py-2 text-xs text-neutral-50 backdrop-blur-lg transition-colors hover:bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
-        }
-      >
-        <span className={'max-w-[168px] truncate text-sm font-semibold text-neutral-50'}>{vault.name}</span>
-        <span className={'flex flex-wrap items-center gap-1 text-xs text-neutral-50'}>
-          <span className={'text-neutral-50/60'}>{'|'}</span>
-          {apyContent}
-        </span>
-      </div>
-    </button>
   )
 }
 
@@ -164,83 +64,45 @@ function ListOfVaults({
   onChangeSortBy,
   onResetMultiSelect
 }: TListOfVaultsProps): ReactElement {
-  // Single optimized hook call that returns all needed data
-  const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
   const {
-    activeVaults,
-    retiredVaults,
-    migratableVaults,
-    holdingsVaults,
-    multiVaults,
-    singleVaults,
-    totalPotentialVaults,
-    totalHoldingsVaults,
-    totalMigratableVaults,
-    totalRetiredVaults,
+    filteredVaults,
+    vaultFlags,
+    totalMatchingVaults,
+    totalHoldingsMatching,
+    totalMigratableMatching,
+    totalRetiredMatching,
     isLoading: isLoadingVaultList
   } = useV3VaultFilter(types, chains, search || '', categories)
-  const [isHoldingsCollapsed, setIsHoldingsCollapsed] = useState(true)
-  const normalizedCategories = categories ?? []
 
-  const vaultLists = useMemo((): {
-    holdings: TYDaemonVault[]
-    multi: TYDaemonVault[]
-    single: TYDaemonVault[]
-    all: TYDaemonVault[]
-  } | null => {
-    const combinedHoldings = new Map<string, TYDaemonVault>()
+  const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
 
-    for (const vault of holdingsVaults) {
-      combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-    }
+  const visibleFlagCounts = sortedVaults.reduce(
+    (counts, vault) => {
+      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      const flags = vaultFlags[key]
 
-    for (const vault of migratableVaults) {
-      combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-    }
+      if (flags?.hasHoldings) {
+        counts.holdings += 1
+      }
+      if (flags?.isMigratable) {
+        counts.migratable += 1
+      }
+      if (flags?.isRetired) {
+        counts.retired += 1
+      }
 
-    for (const vault of retiredVaults) {
-      combinedHoldings.set(`${vault.chainID}_${vault.address}`, vault)
-    }
+      return counts
+    },
+    { holdings: 0, migratable: 0, retired: 0 }
+  )
 
-    const holdingsArray = Array.from(combinedHoldings.values())
-    const holdingsSet = new Set(combinedHoldings.keys())
-    const nonHoldingsVaults = activeVaults.filter((vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`))
+  const hiddenHoldingsCount = Math.max(totalHoldingsMatching - visibleFlagCounts.holdings, 0)
+  const hiddenMigratableCount = Math.max(totalMigratableMatching - visibleFlagCounts.migratable, 0)
+  const hiddenRetiredCount = Math.max(totalRetiredMatching - visibleFlagCounts.retired, 0)
 
-    const shouldShowEmptyState =
-      isLoadingVaultList || (isZero(holdingsArray.length) && isZero(multiVaults.length) && isZero(singleVaults.length))
-
-    if (shouldShowEmptyState) {
-      return null
-    }
-
-    return {
-      holdings: holdingsArray,
-      multi: multiVaults,
-      single: singleVaults,
-      all: nonHoldingsVaults
-    }
-  }, [isLoadingVaultList, activeVaults, migratableVaults, retiredVaults, holdingsVaults, multiVaults, singleVaults])
-
-  const { holdings, all } = vaultLists || {
-    holdings: [],
-    all: []
-  }
-  const shouldShowHoldings = normalizedCategories.includes('Your Holdings')
-
-  const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
-  const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
-  const walletHoldingsCount = sortedHoldings.length
-  const sortedAllHoldings = sortedHoldings
-
-  // Calculate potential hidden results due to filters
-  const currentResultsCount = (shouldShowHoldings ? sortedHoldings.length : 0) + sortedNonHoldings.length
-  const hiddenByFiltersCount = totalPotentialVaults - currentResultsCount
-  const hasHiddenResults = search && hiddenByFiltersCount > 0
-
-  // Calculate hidden holdings due to filters (regardless of search)
-  const hiddenHoldingsCount =
-    totalHoldingsVaults + totalRetiredVaults + totalMigratableVaults - (shouldShowHoldings ? holdings.length : 0)
-  const hasHiddenHoldings = hiddenHoldingsCount > 0 && shouldShowHoldings
+  const hiddenByFiltersCount = Math.max(totalMatchingVaults - sortedVaults.length, 0)
+  const hasHiddenResults = hiddenByFiltersCount > 0
+  const hasHiddenFlagged = hiddenHoldingsCount > 0 || hiddenMigratableCount > 0 || hiddenRetiredCount > 0
 
   const renderHiddenBadge = (): ReactNode => {
     if (!hasHiddenResults) return null
@@ -261,150 +123,50 @@ function ListOfVaults({
   }
 
   const renderHiddenSearchAlert = (): ReactNode => {
-    if (!hasHiddenResults && !hasHiddenHoldings) {
+    if (!hasHiddenResults && !hasHiddenFlagged) {
       return null
     }
 
     return (
       <div className={'flex flex-wrap items-center gap-2 text-xs text-neutral-600'}>
         {renderHiddenBadge()}
-        {hasHiddenHoldings ? (
+        {hiddenHoldingsCount > 0 ? (
           <span>
             {hiddenHoldingsCount} {`holding${hiddenHoldingsCount > 1 ? 's' : ''} hidden by filters`}
+          </span>
+        ) : null}
+        {hiddenMigratableCount > 0 ? (
+          <span>
+            {hiddenMigratableCount} {`migratable vault${hiddenMigratableCount > 1 ? 's are' : ' is'} hidden`}
+          </span>
+        ) : null}
+        {hiddenRetiredCount > 0 ? (
+          <span>
+            {hiddenRetiredCount} {`retired vault${hiddenRetiredCount > 1 ? 's are' : ' is'} hidden`}
           </span>
         ) : null}
       </div>
     )
   }
-
-  const renderHoldingsCard = (): ReactNode => {
-    const walletConnected = isActive && Boolean(address)
-    if (!shouldShowHoldings) {
-      return null
-    }
-
-    if (walletConnected && walletHoldingsCount === 0) {
-      return null
-    }
-
-    if (!walletConnected) {
-      return (
-        <div className={'relative mb-2 rounded-3xl'}>
-          <div className={'pointer-events-none absolute -inset-[2px] z-1 rounded-3xl border border-neutral-300'} />
-          <div
-            className={
-              'pointer-events-none absolute -inset-[2px] z-0 rounded-3xl bg-[linear-gradient(80deg,#2C3DA6,#D21162)] opacity-25 blur-xl'
-            }
-          />
-          <div className={'relative z-10 rounded-3xl px-6 py-6'}>
-            <div className={'flex justify-center'}>
-              <button
-                type={'button'}
-                className={cl(
-                  'relative flex items-center justify-center overflow-hidden rounded-lg border-none px-6 py-3 text-center',
-                  'group'
-                )}
-                onClick={(): void => {
-                  if (!isActive && address) {
-                    onSwitchChain(1)
-                  } else {
-                    openLoginModal()
-                  }
-                }}
-              >
-                <div
-                  className={cl(
-                    'absolute inset-0',
-                    'pointer-events-none opacity-80 transition-opacity group-hover:opacity-100',
-                    'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
-                  )}
-                />
-                <span className={'z-10 px-2 text-sm font-medium text-white md:text-base'}>
-                  {'Connect wallet to view your vault balances.'}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )
-    }
-
-    if (walletHoldingsCount === 0) {
-      return null
-    }
-
-    return (
-      <div className={'relative mb-2 rounded-3xl'}>
-        <div className={'pointer-events-none absolute -inset-[2px] z-1 rounded-3xl'} />
-        <div
-          className={
-            'pointer-events-none absolute -inset-[2px] z-0 rounded-3xl bg-[linear-gradient(80deg,#2C3DA6,#D21162)] opacity-20'
-          }
-        />
-        <div className={'relative z-10 rounded-3xl'}>
-          <div className={'flex flex-wrap items-center justify-between gap-3 px-6 py-4'}>
-            <div className={'flex min-h-10 min-w-0 flex-1 flex-wrap items-center gap-3'}>
-              <button
-                type={'button'}
-                onClick={(): void => setIsHoldingsCollapsed((prev) => !prev)}
-                className={'flex items-center gap-2 text-sm font-semibold text-neutral-900'}
-                aria-expanded={!isHoldingsCollapsed}
-              >
-                <IconChevron
-                  direction={isHoldingsCollapsed ? 'right' : 'down'}
-                  className={'size-4 text-neutral-600 transition-all duration-200'}
-                />
-                <span>{'Your Vault Holdings'}</span>
-              </button>
-              {isHoldingsCollapsed && walletHoldingsCount > 0 ? (
-                <div className={'flex flex-wrap items-center gap-2'}>
-                  {sortedAllHoldings.map((vault) => (
-                    <HoldingsPill key={`pill_${vault.chainID}_${vault.address}`} vault={vault} />
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            {shouldShowHoldings ? (
-              <span className={'text-xs text-neutral-500'}>
-                {walletHoldingsCount} vault{walletHoldingsCount === 1 ? '' : 's'}
-              </span>
-            ) : null}
-          </div>
-          {!isHoldingsCollapsed && walletHoldingsCount > 0 ? (
-            <div className={'grid gap-4 pt-2'}>
-              {sortedAllHoldings.map((vault) => (
-                <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </div>
-    )
-  }
-
   function renderVaultList(): ReactNode {
-    if (!vaultLists) {
+    if (isLoadingVaultList || sortedVaults.length === 0) {
       return (
         <VaultsListEmpty
           isLoading={isLoadingVaultList}
           currentSearch={search || ''}
-          currentCategories={types}
+          currentCategories={categories}
           currentChains={chains}
           onReset={onResetMultiSelect}
           defaultCategories={Object.values(ALL_VAULTSV3_CATEGORIES)}
-          potentialResultsCount={totalPotentialVaults}
+          potentialResultsCount={totalMatchingVaults}
         />
       )
     }
 
-    return (
-      <Fragment>
-        <div className={'border-b-4 border-neutral-200 pb-2'}>{renderHoldingsCard()}</div>
-        {sortedNonHoldings.map((vault) => (
-          <VaultsV3ListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
-        ))}
-      </Fragment>
-    )
+    return sortedVaults.map((vault) => {
+      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
+    })
   }
 
   return (
@@ -488,8 +250,9 @@ function ListOfVaults({
 function Index(): ReactElement {
   const queryArgs = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
-    defaultCategories: Object.values(ALL_VAULTSV3_CATEGORIES),
-    defaultPathname: '/v3'
+    defaultCategories: DEFAULT_SELECTED_VAULTSV3_CATEGORIES,
+    defaultPathname: '/v3',
+    defaultSortBy: 'featuringScore'
   })
 
   return (
