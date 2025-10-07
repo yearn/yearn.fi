@@ -88,6 +88,12 @@ export function VaultsV3ListRow({
               />
               <p className={'block text-sm text-neutral-800/60'}>{getNetwork(currentVault.chainID).name}</p>
             </div>
+            {/* <p className={'mt-0.5 text-xs text-neutral-500'}>
+              {'Featuring score: '}
+              <span className={'font-semibold text-neutral-800'}>
+                {formatAmount(currentVault.featuringScore || 0, 2, 2)}
+              </span>
+            </p> */}
             <p
               className={'mb-0 block text-sm text-neutral-800/60 md:mb-2'}
             >{`${currentVault.kind} - ${currentVault.category}`}</p>

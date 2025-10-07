@@ -436,8 +436,8 @@ function ListOfVaults({
           }}
           items={[
             {
-              label: 'Vault',
-              value: 'name',
+              label: 'Vault / Featuring Score',
+              value: 'featuringScore',
               sortable: true,
               className: 'col-span-4'
             },
