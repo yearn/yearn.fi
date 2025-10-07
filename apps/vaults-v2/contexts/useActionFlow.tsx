@@ -451,7 +451,7 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
     if (
       isDepositing &&
       toAddress(actionParams?.selectedOptionFrom?.value) !== toAddress(props.currentVault.token.address) &&
-      toAddress(actionParams?.selectedOptionTo?.value) === toAddress(props.currentVault.address)
+      toAddress(actionParams?.selectedOptionTo?.value) === toAddress(props.currentVault.address) // TODO: remove if cowswap doesn't work for yG-Token
     ) {
       return props.currentVault.chainID === 1 ? Solver.enum.Cowswap : Solver.enum.Portals
     }
