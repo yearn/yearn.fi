@@ -1,7 +1,7 @@
 import { addressSchema, type TAddress } from '@lib/types'
 import type { TFetchReturn } from '@lib/utils/fetchers'
 import { fetch } from '@lib/utils/fetchers'
-import { z } from 'zod'
+import * as z from 'zod'
 
 export const portalsEstimateResponseSchema = z.object({
   outputToken: z.string(),

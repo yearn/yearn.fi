@@ -37,7 +37,7 @@ export const DEFAULT_ERC20: TToken = {
   decimals: 18,
   chainID: 1,
   value: 0,
-  balance: { raw: 0n, normalized: 0, display: '0' }
+  balance: { raw: 0n, normalized: 0, display: '0', decimals: 18 }
 }
 
 // Theses constants are used by the yCRV app
