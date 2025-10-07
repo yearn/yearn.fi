@@ -3,7 +3,6 @@
   "workspaces": {
     "": {
       "dependencies": {
-        "@clustersxyz/sdk": "0.2.3",
         "@cowprotocol/cow-sdk": "5.10.3",
         "@headlessui/react": "2.2.9",
         "@rainbow-me/rainbowkit": "2.2.8",
@@ -29,7 +28,7 @@
         "viem": "2.37.13",
         "wagmi": "2.16.3",
         "xxhashjs": "0.2.2",
-        "zod": "3.23.8",
+        "zod": "4.1.11",
       },
       "devDependencies": {
         "@biomejs/biome": "2.2.5",
@@ -125,8 +124,6 @@
     "@cacheable/memory": ["@cacheable/memory@2.0.1", "", { "dependencies": { "@cacheable/memoize": "^2.0.1", "@cacheable/utils": "^2.0.1", "@keyv/bigmap": "^1.0.0", "hookified": "^1.12.0", "keyv": "^5.5.1" } }, "sha512-Ufc7iQnRKFC8gjZVGOTOsMwM/vZtmsw3LafvctVXPm835ElgK3DpMe1U5i9sd6OieSkyJhXbAT2Q2FosXBBbAQ=="],
 
     "@cacheable/utils": ["@cacheable/utils@2.0.1", "", {}, "sha512-sxHjO6wKn4/0wHCFYbh6tljj+ciP9BKgyBi09NLsor3sN+nu/Rt3FwLw6bYp7bp8usHpmcwUozrB/u4RuSw/eg=="],
-
-    "@clustersxyz/sdk": ["@clustersxyz/sdk@0.2.3", "", {}, "sha512-aXvJgcwtYgRWZ4oKuG2Ih4GVMCdShcRjlnF32WEzfU3EBJYniu2kJcppows95G4YcyaRY4/4YVZZkCcsCVLwxQ=="],
 
     "@coinbase/wallet-sdk": ["@coinbase/wallet-sdk@4.3.6", "", { "dependencies": { "@noble/hashes": "1.4.0", "clsx": "1.2.1", "eventemitter3": "5.0.1", "idb-keyval": "6.2.1", "ox": "0.6.9", "preact": "10.24.2", "viem": "^2.27.2", "zustand": "5.0.3" } }, "sha512-4q8BNG1ViL4mSAAvPAtpwlOs1gpC+67eQtgIwNvT3xyeyFFd+guwkc8bcX5rTmQhXpqnhzC4f0obACbP9CqMSA=="],
 
@@ -1826,7 +1823,7 @@
 
     "yocto-queue": ["yocto-queue@1.2.1", "", {}, "sha512-AyeEbWOu/TAXdxlV9wmGcR0+yh2j3vYPGOECcIj2S7MkrLyC7ne+oye2BKTItt0ii2PHk4cDy+95+LshzbXnGg=="],
 
-    "zod": ["zod@3.23.8", "", {}, "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="],
+    "zod": ["zod@4.1.11", "", {}, "sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg=="],
 
     "zustand": ["zustand@5.0.0", "", { "peerDependencies": { "@types/react": ">=18.0.0", "immer": ">=9.0.6", "react": ">=18.0.0", "use-sync-external-store": ">=1.2.0" }, "optionalPeers": ["@types/react", "immer", "react", "use-sync-external-store"] }, "sha512-LE+VcmbartOPM+auOjCCLQOsQ05zUTp8RkgwRzefUk+2jISdMMFnxvyTjA4YNWr5ZGXYbVsEMZosttuxUBkojQ=="],
 

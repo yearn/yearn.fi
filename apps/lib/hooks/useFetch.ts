@@ -11,7 +11,7 @@ import { baseFetcher } from '../utils/fetchers'
 
 type TUseZodProps<T> = {
   endpoint: string | null
-  schema: z.ZodSchema
+  schema: z.Schema<T>
   config?: Parameters<typeof useSWR<T>>[2] & {
     /** Cache duration in milliseconds (default: 2 minutes) */
     cacheDuration?: number

@@ -14,7 +14,6 @@
     "clean": "bash clean.sh"
   },
   "dependencies": {
-    "@clustersxyz/sdk": "0.2.3",
     "@cowprotocol/cow-sdk": "5.10.3",
     "@headlessui/react": "2.2.9",
     "@rainbow-me/rainbowkit": "2.2.8",
@@ -40,7 +39,7 @@
     "viem": "2.37.13",
     "wagmi": "2.16.3",
     "xxhashjs": "0.2.2",
-    "zod": "3.23.8"
+    "zod": "4.1.11"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.5",

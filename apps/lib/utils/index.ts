@@ -1,5 +1,6 @@
 export * from './assert'
 export * from './cl'
+export * from './clusters'
 export * from './constants'
 export * from './decoder'
 export * from './fetchers'
