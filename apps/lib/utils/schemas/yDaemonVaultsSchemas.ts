@@ -1,5 +1,5 @@
 import { zeroAddress } from 'viem'
-import { z } from 'zod'
+import * as z from 'zod'
 
 import { addressSchema } from '../../types'
 import { toBigInt } from '../../utils'

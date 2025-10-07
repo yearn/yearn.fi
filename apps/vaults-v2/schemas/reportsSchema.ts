@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 
 const resultSchema = z.object({
   duration: z.coerce.number().optional(),
