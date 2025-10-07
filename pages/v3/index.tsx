@@ -15,10 +15,7 @@ import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
 import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
-import {
-  ALL_VAULTSV3_CATEGORIES,
-  ALL_VAULTSV3_KINDS_KEYS,
-} from '@vaults-v3/constants'
+import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
@@ -54,12 +51,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'⚔️ '}</span>
-          <RenderAmount
-            shouldHideTooltip
-            value={katanaApr}
-            symbol={'percent'}
-            decimals={6}
-          />
+          <RenderAmount shouldHideTooltip value={katanaApr} symbol={'percent'} decimals={6} />
         </>
       )
     }
@@ -69,19 +61,9 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
         return (
           <>
             <span>{'⚡️ '}</span>
-            <RenderAmount
-              shouldHideTooltip
-              value={data.estAprRange[0]}
-              symbol={'percent'}
-              decimals={6}
-            />
+            <RenderAmount shouldHideTooltip value={data.estAprRange[0]} symbol={'percent'} decimals={6} />
             <span>{' → '}</span>
-            <RenderAmount
-              shouldHideTooltip
-              value={data.estAprRange[1]}
-              symbol={'percent'}
-              decimals={6}
-            />
+            <RenderAmount shouldHideTooltip value={data.estAprRange[1]} symbol={'percent'} decimals={6} />
           </>
         )
       }
@@ -89,12 +71,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'⚡️ '}</span>
-          <RenderAmount
-            shouldHideTooltip
-            value={boostedApr}
-            symbol={'percent'}
-            decimals={6}
-          />
+          <RenderAmount shouldHideTooltip value={boostedApr} symbol={'percent'} decimals={6} />
         </>
       )
     }
@@ -103,12 +80,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'🚀 '}</span>
-          <RenderAmount
-            shouldHideTooltip
-            value={vault.apr.forwardAPR.netAPR}
-            symbol={'percent'}
-            decimals={6}
-          />
+          <RenderAmount shouldHideTooltip value={vault.apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
           {data.boost ? (
             <span className={'text-[0.65rem] uppercase tracking-wide text-neutral-100/70'}>
               {` • Boost ${formatAmount(data.boost, 2, 2)}x`}
@@ -122,12 +94,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'APY '}</span>
-          <RenderAmount
-            shouldHideTooltip
-            value={data.baseForwardApr}
-            symbol={'percent'}
-            decimals={6}
-          />
+          <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
         </>
       )
     }
@@ -135,12 +102,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
     return (
       <>
         <span>{'Hist. '}</span>
-        <RenderAmount
-          shouldHideTooltip
-          value={data.netApr}
-          symbol={'percent'}
-          decimals={6}
-        />
+        <RenderAmount shouldHideTooltip value={data.netApr} symbol={'percent'} decimals={6} />
       </>
     )
   })()
@@ -202,21 +164,20 @@ function ListOfVaults({
   onChangeChains,
   onChangeSortDirection,
   onChangeSortBy,
-  onResetMultiSelect,
+  onResetMultiSelect
 }: TListOfVaultsProps): ReactElement {
   const { isLoadingVaultList } = useYearn()
   const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
   const allChains = useSupportedChains().map((chain): number => chain.id)
   const [isHoldingsCollapsed, setIsHoldingsCollapsed] = useState(false)
 
-  const {
-    activeVaults,
-    retiredVaults,
-    migratableVaults,
-    holdingsVaults,
-    multiVaults,
-    singleVaults,
-  } = useVaultFilter(types, chains, true, search || '', categories)
+  const { activeVaults, retiredVaults, migratableVaults, holdingsVaults, multiVaults, singleVaults } = useVaultFilter(
+    types,
+    chains,
+    true,
+    search || '',
+    categories
+  )
 
   const { activeVaults: allFilteredVaults } = useVaultFilter(
     ALL_VAULTSV3_KINDS_KEYS,
@@ -229,14 +190,8 @@ function ListOfVaults({
   const {
     holdingsVaults: allHoldingsVaults,
     retiredVaults: allRetiredVaults,
-    migratableVaults: allMigratableVaults,
-  } = useVaultFilter(
-    ALL_VAULTSV3_KINDS_KEYS,
-    allChains,
-    true,
-    '',
-    Object.values(ALL_VAULTSV3_CATEGORIES)
-  )
+    migratableVaults: allMigratableVaults
+  } = useVaultFilter(ALL_VAULTSV3_KINDS_KEYS, allChains, true, '', Object.values(ALL_VAULTSV3_CATEGORIES))
 
   const vaultLists = useMemo((): {
     holdings: TYDaemonVault[]
@@ -260,17 +215,13 @@ function ListOfVaults({
 
     const holdingsArray = Array.from(combinedHoldings.values())
     const holdingsSet = new Set(combinedHoldings.keys())
-    const nonHoldingsVaults = activeVaults.filter(
-      (vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`)
-    )
+    const nonHoldingsVaults = activeVaults.filter((vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`))
 
     const shouldShowEmptyState =
       isLoadingVaultList ||
       !chains ||
       chains.length === 0 ||
-      (isZero(holdingsArray.length) &&
-        isZero(multiVaults.length) &&
-        isZero(singleVaults.length))
+      (isZero(holdingsArray.length) && isZero(multiVaults.length) && isZero(singleVaults.length))
 
     if (shouldShowEmptyState) {
       return null
@@ -280,7 +231,7 @@ function ListOfVaults({
       holdings: holdingsArray,
       multi: multiVaults,
       single: singleVaults,
-      all: nonHoldingsVaults,
+      all: nonHoldingsVaults
     }
   }, [
     isLoadingVaultList,
@@ -290,14 +241,14 @@ function ListOfVaults({
     retiredVaults,
     holdingsVaults,
     multiVaults,
-    singleVaults,
+    singleVaults
   ])
 
   const { holdings, all } = vaultLists || {
     holdings: [],
-    all: [],
+    all: []
   }
-  const shouldShowHoldings = categories.includes('Your Holdings')
+  const shouldShowHoldings = categories?.includes('Your Holdings') ?? false
 
   const sortedFilteredHoldings = useSortVaults(holdings, sortBy, sortDirection)
   const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
@@ -319,16 +270,10 @@ function ListOfVaults({
     return Array.from(combined.values())
   }, [allHoldingsVaults, allRetiredVaults, allMigratableVaults, holdings])
 
-  const sortedAllHoldings = useSortVaults(
-    allHoldingsList,
-    sortBy,
-    sortDirection
-  )
+  const sortedAllHoldings = useSortVaults(allHoldingsList, sortBy, sortDirection)
   const walletHoldingsCount = sortedAllHoldings.length
   const potentialResultsCount = allFilteredVaults.length
-  const currentResultsCount =
-    (shouldShowHoldings ? sortedFilteredHoldings.length : 0) +
-    sortedNonHoldings.length
+  const currentResultsCount = (shouldShowHoldings ? sortedFilteredHoldings.length : 0) + sortedNonHoldings.length
   const hiddenByFiltersCount = potentialResultsCount - currentResultsCount
   const hasHiddenResults = Boolean(search) && hiddenByFiltersCount > 0
 
@@ -340,8 +285,7 @@ function ListOfVaults({
     return (
       <div className={'flex items-center gap-2 rounded-lg px-3 py-1 text-xs text-neutral-700'}>
         <span>
-          {hiddenByFiltersCount}{' '}
-          {`vault${hiddenByFiltersCount > 1 ? 's' : ''} hidden by filters`}
+          {hiddenByFiltersCount} {`vault${hiddenByFiltersCount > 1 ? 's' : ''} hidden by filters`}
         </span>
         <Button
           onClick={onResetMultiSelect}
@@ -367,7 +311,11 @@ function ListOfVaults({
       return (
         <div className={'relative mb-2 rounded-3xl'}>
           <div className={'pointer-events-none absolute -inset-[2px] z-1 rounded-3xl border border-neutral-300'} />
-          <div className={'pointer-events-none absolute -inset-[2px] z-0 rounded-3xl bg-[linear-gradient(80deg,#2C3DA6,#D21162)] opacity-25 blur-xl'} />
+          <div
+            className={
+              'pointer-events-none absolute -inset-[2px] z-0 rounded-3xl bg-[linear-gradient(80deg,#2C3DA6,#D21162)] opacity-25 blur-xl'
+            }
+          />
           <div className={'relative z-10 rounded-3xl px-6 py-6'}>
             <div className={'flex justify-center'}>
               <button
@@ -408,7 +356,11 @@ function ListOfVaults({
     return (
       <div className={'relative mb-2 rounded-3xl'}>
         <div className={'pointer-events-none absolute -inset-[2px] z-1 rounded-3xl'} />
-        <div className={'pointer-events-none absolute -inset-[2px] z-0 rounded-3xl bg-[linear-gradient(80deg,#2C3DA6,#D21162)] opacity-20'} />
+        <div
+          className={
+            'pointer-events-none absolute -inset-[2px] z-0 rounded-3xl bg-[linear-gradient(80deg,#2C3DA6,#D21162)] opacity-20'
+          }
+        />
         <div className={'relative z-10 rounded-3xl'}>
           <div className={'flex flex-wrap items-center justify-between gap-3 px-6 py-4'}>
             <div className={'flex min-h-10 min-w-0 flex-1 flex-wrap items-center gap-3'}>
@@ -507,44 +459,44 @@ function ListOfVaults({
               label: 'Vault',
               value: 'name',
               sortable: true,
-              className: 'col-span-4',
+              className: 'col-span-4'
             },
             {
               label: 'Est. APY',
               value: 'estAPY',
               sortable: true,
-              className: 'col-span-2',
+              className: 'col-span-2'
             },
             {
               label: 'Hist. APY',
               value: 'APY',
               sortable: true,
-              className: 'col-span-2',
+              className: 'col-span-2'
             },
             {
               label: 'Risk Level',
               value: 'score',
               sortable: true,
-              className: 'col-span-2 whitespace-nowrap',
+              className: 'col-span-2 whitespace-nowrap'
             },
             {
               label: 'Available',
               value: 'available',
               sortable: true,
-              className: 'col-span-2',
+              className: 'col-span-2'
             },
             {
               label: 'Holdings',
               value: 'deposited',
               sortable: true,
-              className: 'col-span-2',
+              className: 'col-span-2'
             },
             {
               label: 'Deposits',
               value: 'tvl',
               sortable: true,
-              className: 'col-span-2 justify-end',
-            },
+              className: 'col-span-2 justify-end'
+            }
           ]}
         />
         <div className={'grid gap-3'}>{renderVaultList()}</div>
@@ -557,7 +509,7 @@ function Index(): ReactElement {
   const queryArgs = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
     defaultCategories: Object.values(ALL_VAULTSV3_CATEGORIES),
-    defaultPathname: '/v3',
+    defaultPathname: '/v3'
   })
 
   return (
