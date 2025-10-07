@@ -458,6 +458,12 @@ export function VaultsListRow({ currentVault, flags }: TVaultRowProps): ReactEle
                   {currentVault.chainID === 10 ? 'Optimism' : getNetwork(currentVault.chainID).name}
                 </p>
               </div>
+              <p className={'mt-0.5 text-xs text-neutral-500'}>
+                {'Featuring score: '}
+                <span className={'font-semibold text-neutral-800'}>
+                  {formatAmount(currentVault.featuringScore || 0, 2, 2)}
+                </span>
+              </p>
               {badgeDefinitions.length > 0 ? (
                 <div className={'mt-1 flex flex-wrap gap-2'}>
                   {badgeDefinitions.map(({ label, className }) => (

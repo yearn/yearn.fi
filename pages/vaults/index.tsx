@@ -150,7 +150,11 @@ function ListOfVaults(): ReactElement {
             sortable: false,
             className: 'col-span-1'
           },
-          { label: 'Token', value: 'name', sortable: false },
+          {
+            label: 'Vault / Featuring Score',
+            value: 'featuringScore',
+            sortable: true
+          },
           {
             label: 'Est. APY',
             value: 'estAPY',
