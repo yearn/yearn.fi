@@ -4,16 +4,7 @@ import { useYearn } from '@lib/contexts/useYearn'
 import { useTokenList } from '@lib/contexts/WithTokenList'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
 import type { TAddress, TDropdownOption, TNormalizedBN } from '@lib/types'
-import {
-  decodeAsBigInt,
-  isEthAddress,
-  isZero,
-  isZeroAddress,
-  toAddress,
-  toBigInt,
-  toNormalizedBN,
-  zeroNormalizedBN
-} from '@lib/utils'
+import { decodeAsBigInt, isZeroAddress, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
 import { VAULT_ABI } from '@lib/utils/abi/vault.abi'
 import {
   ETH_TOKEN_ADDRESS,
@@ -27,6 +18,7 @@ import {
   YVWFTM_ADDRESS
 } from '@lib/utils/constants'
 import externalzapOutTokenList from '@lib/utils/externalZapOutTokenList.json'
+
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { createUniqueID } from '@lib/utils/tools.identifier'
 import { retrieveConfig } from '@lib/utils/wagmi'
@@ -114,14 +106,12 @@ type TUseContextualIs = {
  ** vault, and if the partner contract should be used.
  ** It's a simple helper to make the code more readable in the main context.
  *************************************************************************************************/
-function useContextualIs({ selectedTo, currentVault }: TUseContextualIs): [boolean, boolean] {
+function useContextualIs({ currentVault }: TUseContextualIs): [boolean, boolean] {
   const [searchParams] = useSearchParams()
 
   const isDepositing = useMemo(
-    (): boolean =>
-      (!searchParams.get('action') || searchParams.get('action') === 'deposit') &&
-      (!selectedTo?.value || toAddress(selectedTo?.value) === toAddress(currentVault.address)),
-    [selectedTo?.value, currentVault.address, searchParams]
+    (): boolean => !searchParams.get('action') || searchParams.get('action') === 'deposit',
+    [searchParams]
   )
 
   const isPartnerAddressValid = useMemo(
@@ -182,14 +172,20 @@ function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext)
 export function ActionFlowContextApp(props: { children: ReactNode; currentVault: TYDaemonVault }): React.ReactElement {
   const { address } = useWeb3()
-  const { getBalance } = useWallet()
+  const { getBalance, getToken } = useWallet()
   const { maxLoss } = useYearn()
   const { tokenLists } = useTokenList()
-  const { zapProvider, isAutoStakingEnabled } = useYearn()
+  const { isAutoStakingEnabled } = useYearn()
   const [possibleOptionsFrom, setPossibleOptionsFrom] = useState<TDropdownOption[]>([])
   const [possibleZapOptionsFrom, setPossibleZapOptionsFrom] = useState<TDropdownOption[]>([])
   const [possibleOptionsTo, setPossibleOptionsTo] = useState<TDropdownOption[]>([])
   const [possibleZapOptionsTo, setPossibleZapOptionsTo] = useState<TDropdownOption[]>([])
+
+  const stakingToken = getToken({
+    address: toAddress(props.currentVault.staking.address),
+    chainID: props.currentVault.chainID
+  })
+
   const [limits, setLimits] = useState<{ maxDeposit: bigint; maxRedeem: bigint } | undefined>(undefined)
 
   /**********************************************************************************************
@@ -339,8 +335,7 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
    ** Simple helper to determine if the user is depositing or withdrawing from the vault, and if
    ** the partner contract should be used.
    *********************************************************************************************/
-  const [isDepositing, isUsingPartnerContract] = useContextualIs({
-    selectedTo: actionParams?.selectedOptionTo,
+  const [isDepositing] = useContextualIs({
     currentVault: props.currentVault
   })
 
@@ -433,15 +428,12 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
     const isUnderlyingToken =
       toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(props.currentVault.token.address)
 
-    // Only use OptimismBooster if the user chose to stake automatically and the vault is staking with OP Boost
     if (
-      props.currentVault.staking.available &&
-      props.currentVault.staking.source === 'OP Boost' &&
-      isAutoStakingEnabled &&
       isDepositing &&
-      isUnderlyingToken
+      isUnderlyingToken &&
+      actionParams?.selectedOptionTo?.value === toAddress(props.currentVault.address)
     ) {
-      return Solver.enum.OptimismBooster
+      return Solver.enum.Vanilla
     }
 
     // Only use GaugeStakingBooster if the user chose to stake automatically, the vault is staking with VeYFI, and user has veYFI balance
@@ -450,91 +442,41 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
       props.currentVault.staking.source === 'VeYFI' &&
       isAutoStakingEnabled &&
       isDepositing &&
-      isUnderlyingToken
+      isUnderlyingToken &&
+      actionParams?.selectedOptionTo?.value === toAddress(props.currentVault.staking.address)
     ) {
       return Solver.enum.GaugeStakingBooster
     }
 
-    // Only use JuicedStakingBooster if the user chose to stake automatically and the vault is staking with Juiced
-    // Disabled until we figure out the zap
-    const canUseJuicedDirectDeposits = false
-    if (
-      props.currentVault.staking.available &&
-      props.currentVault.staking.source === 'Juiced' &&
-      isAutoStakingEnabled &&
-      isDepositing &&
-      isUnderlyingToken &&
-      canUseJuicedDirectDeposits
-    ) {
-      return Solver.enum.JuicedStakingBooster
-    }
-
-    // Only use V3StakingBooster if the user chose to stake automatically and the vault is staking with V3 Staking
-    if (
-      props.currentVault.staking.available &&
-      props.currentVault.staking.source === 'V3 Staking' &&
-      isAutoStakingEnabled &&
-      isDepositing &&
-      isUnderlyingToken
-    ) {
-      return Solver.enum.V3StakingBooster
-    }
-
-    const isV3 =
-      props.currentVault?.version.split('.')?.[0] === '3' || props.currentVault?.version.split('.')?.[0] === '~3'
-    if (
-      props.currentVault?.migration?.available &&
-      toAddress(actionParams?.selectedOptionTo?.value) === toAddress(props.currentVault?.migration?.address)
-    ) {
-      return Solver.enum.InternalMigration
-    }
     if (
       isDepositing &&
-      toAddress(actionParams?.selectedOptionTo?.value) === toAddress(props.currentVault?.token?.address)
+      toAddress(actionParams?.selectedOptionFrom?.value) !== toAddress(props.currentVault.token.address) &&
+      toAddress(actionParams?.selectedOptionTo?.value) === toAddress(props.currentVault.address) // TODO: remove if cowswap doesn't work for yG-Token
     ) {
-      return Solver.enum.Vanilla
-    }
-    if (
-      isDepositing &&
-      actionParams?.selectedOptionFrom?.solveVia &&
-      (actionParams.selectedOptionFrom.solveVia.length || 0) > 0
-    ) {
-      if (actionParams.selectedOptionFrom.solveVia.includes(zapProvider)) {
-        return zapProvider
-      }
-      return actionParams?.selectedOptionFrom?.solveVia[0]
+      return props.currentVault.chainID === 1 ? Solver.enum.Cowswap : Solver.enum.Portals
     }
     if (
       !isDepositing &&
-      actionParams?.selectedOptionTo?.solveVia &&
-      (actionParams.selectedOptionTo.solveVia.length || 0) > 0
+      toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(props.currentVault.address) &&
+      toAddress(actionParams?.selectedOptionTo?.value) !== toAddress(props.currentVault.token.address)
     ) {
-      if (actionParams.selectedOptionTo.solveVia.includes(zapProvider)) {
-        return zapProvider
-      }
-      return actionParams?.selectedOptionTo?.solveVia[0]
-    }
-    if (isDepositing && isUsingPartnerContract && !isV3) {
-      return Solver.enum.PartnerContract
+      return props.currentVault.chainID === 1 ? Solver.enum.Cowswap : Solver.enum.Portals
     }
     return Solver.enum.Vanilla
   }, [
     actionParams.selectedOptionFrom?.value,
-    actionParams.selectedOptionFrom?.solveVia,
     actionParams.selectedOptionTo?.value,
-    actionParams.selectedOptionTo?.solveVia,
     props.currentVault.token.address,
     props.currentVault.staking.available,
     props.currentVault.staking.source,
-    props.currentVault?.version,
-    props.currentVault?.migration?.available,
-    props.currentVault?.migration?.address,
+    props.currentVault.chainID,
     isAutoStakingEnabled,
     isDepositing,
-    isUsingPartnerContract,
-    zapProvider
+    props.currentVault.address,
+    props.currentVault.staking.address
   ])
 
+  console.log(currentSolver)
   /**********************************************************************************************
    ** The onSwitchSelectedOptions function is a callback function used to switch the selected
    ** options from and to in the actionParams state variable, and adapt the possibleOptionsFrom
@@ -550,11 +492,10 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
         const _selectedOptionTo = actionParams?.selectedOptionTo
         const _possibleOptionsTo = possibleOptionsTo
         let _selectedOptionFrom = actionParams?.selectedOptionFrom
-        if (isDepositing && (actionParams?.selectedOptionFrom?.solveVia || []).length > 0) {
+        if (isDepositing && actionParams?.selectedOptionFrom) {
           // We don't want to be able to withdraw to exotic tokens. If the current from is one of them, take another one.
           _selectedOptionFrom = possibleOptionsFrom.find(
-            (option: TDropdownOption): boolean =>
-              option.value !== actionParams?.selectedOptionFrom?.value && isZero((option.solveVia || []).length)
+            (option: TDropdownOption): boolean => option.value !== actionParams?.selectedOptionFrom?.value
           )
         }
         actionParamsDispatcher({
@@ -652,6 +593,63 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
       getBalance
     ]
   )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: actionParams shouldn't be in deps as they cause infinite re-renders
+  useEffect(() => {
+    if (
+      isAutoStakingEnabled &&
+      isDepositing &&
+      props.currentVault.staking.available &&
+      !isZeroAddress(stakingToken.address)
+    ) {
+      const _selectedOptionTo = setZapOption({
+        name: stakingToken.name,
+        symbol: stakingToken.symbol,
+        address: toAddress(props.currentVault.staking.address),
+        chainID: stakingToken.chainID,
+        decimals: stakingToken.decimals
+      })
+
+      actionParamsDispatcher({
+        type: 'options',
+        payload: {
+          selectedOptionTo: _selectedOptionTo,
+          possibleOptionsTo: possibleOptionsTo,
+          possibleOptionsFrom: possibleOptionsFrom,
+          selectedOptionFrom: actionParams.selectedOptionFrom
+        }
+      })
+      return
+    }
+
+    const _selectedTo = setZapOption({
+      name: props.currentVault?.name,
+      symbol: props.currentVault.symbol,
+      address: toAddress(props.currentVault.address),
+      chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
+      decimals: props.currentVault?.decimals || 18
+    })
+    actionParamsDispatcher({
+      type: 'options',
+      payload: {
+        selectedOptionTo: _selectedTo,
+        possibleOptionsTo: possibleOptionsTo,
+        possibleOptionsFrom: possibleOptionsFrom,
+        selectedOptionFrom: actionParams.selectedOptionFrom
+      }
+    })
+  }, [
+    isAutoStakingEnabled,
+    isDepositing,
+    props.currentVault.staking.available,
+    props.currentVault.staking.address,
+    possibleOptionsFrom,
+    possibleOptionsTo,
+    stakingToken.address,
+    stakingToken.chainID,
+    stakingToken.decimals,
+    stakingToken.name,
+    stakingToken.symbol
+  ])
 
   /**********************************************************************************************
    ** FLOW: Update From/To/Amount in one unique re-render
@@ -708,7 +706,7 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
       payload: { amount: newAmount }
     })
   }, [])
-
+  console.log(stakingToken)
   /**********************************************************************************************
    ** FLOW: Init the possibleOptionsFrom and possibleOptionsTo arrays and the selectedOptionFrom
    ** and selectedOptionTo.
@@ -739,8 +737,7 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
             symbol: 'ETH',
             address: ETH_TOKEN_ADDRESS,
             chainID: props.currentVault.chainID,
-            decimals: 18,
-            solveVia: ['Portals']
+            decimals: 18
           }),
           setZapOption({
             name: 'wETH',
@@ -764,8 +761,7 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
             symbol: 'FTM',
             address: ETH_TOKEN_ADDRESS,
             chainID: props.currentVault.chainID,
-            decimals: 18,
-            solveVia: ['Portals']
+            decimals: 18
           }),
           setZapOption({
             name: 'wFTM',
@@ -789,8 +785,7 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
             symbol: 'ETH',
             address: ETH_TOKEN_ADDRESS,
             chainID: props.currentVault.chainID,
-            decimals: 18,
-            solveVia: ['Portals']
+            decimals: 18
           }),
           setZapOption({
             name: 'wETH',
@@ -832,6 +827,7 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
       chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
       decimals: props.currentVault?.token?.decimals || 18
     })
+
     const _selectedTo = setZapOption({
       name: props.currentVault?.name,
       symbol: props.currentVault.symbol,
@@ -839,6 +835,28 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
       chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
       decimals: props.currentVault?.decimals || 18
     })
+    // if (isAutoStakingEnabled && isDepositing && props.currentVault.staking.available) {
+    //   const stakingToken = getToken({
+    //     address: toAddress(props.currentVault.staking.address),
+    //     chainID: props.currentVault?.chainID
+    //   })
+
+    //   _selectedTo = setZapOption({
+    //     name: stakingToken.name,
+    //     symbol: stakingToken.symbol,
+    //     address: toAddress(props.currentVault.staking.address),
+    //     chainID: stakingToken.chainID,
+    //     decimals: stakingToken.decimals
+    //   })
+    // } else {
+    //   _selectedTo = setZapOption({
+    //     name: props.currentVault?.name,
+    //     symbol: props.currentVault.symbol,
+    //     address: toAddress(props.currentVault.address),
+    //     chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
+    //     decimals: props.currentVault?.decimals || 18
+    //   })
+    // }
 
     /* 🔵 - Yearn Finance **********************************************************************
      ** Update the possibleOptions local state and the actionParams global state.
@@ -912,8 +930,7 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
           symbol: tokenData.symbol,
           address: toAddress(tokenData.address),
           chainID: tokenData.chainID,
-          decimals: tokenData.decimals,
-          solveVia: tokenData.chainID === 1 && !isEthAddress(tokenData.address) ? ['Portals', 'Cowswap'] : ['Portals']
+          decimals: tokenData.decimals
         })
       )
     })
@@ -934,8 +951,7 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
         symbol: props.currentVault.token.symbol,
         address: toAddress(props.currentVault.token.address),
         chainID: props.currentVault.chainID,
-        decimals: props.currentVault.token.decimals,
-        solveVia: ['Vanilla']
+        decimals: props.currentVault.token.decimals
       }),
       ..._possibleZapOptionsFrom
     ])
@@ -962,8 +978,7 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
             symbol: tokenListData?.symbol,
             address: toAddress(tokenListData?.address),
             chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
-            decimals: tokenListData?.decimals,
-            solveVia: (tokenListData?.supportedZaps as TSolver[]) || []
+            decimals: tokenListData?.decimals
           })
         )
       })
@@ -1016,7 +1031,6 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
       props.currentVault,
       cleanPossibleOptionsFrom,
       actionParams,
-      possibleZapOptionsTo,
       onChangeAmount,
       onSwitchSelectedOptions,
       isDepositing,
@@ -1025,7 +1039,8 @@ export function ActionFlowContextApp(props: { children: ReactNode; currentVault:
       currentSolver,
       veYFIBalance,
       hasVeYFIBalance,
-      updateParams
+      updateParams,
+      possibleZapOptionsTo
     ]
   )
 

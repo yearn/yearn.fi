@@ -947,7 +947,7 @@ export function RewardsTab(props: {
                 </div>
                 <legend className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'} suppressHydrationWarning>
                   <div className={'flex items-center justify-between'}>
-                    <p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ysyBOLD staked`}</p>
+                    <p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ysyBOLD available to unstake`}</p>
                     <p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
                   </div>
                 </legend>
@@ -1082,7 +1082,7 @@ export function RewardsTab(props: {
               </div>
               <legend className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'} suppressHydrationWarning>
                 <div className={'flex items-center justify-between'}>
-                  <p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${vaultData.stakedGaugeSymbol || props.currentVault.symbol} staked`}</p>
+                  <p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${vaultData.stakedGaugeSymbol || props.currentVault.symbol} available to unstake`}</p>
                   <p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
                 </div>
               </legend>
