@@ -29,6 +29,8 @@
     cp .env.example .env
     ```
 
+-   Configure `CLUSTERS_API_URL` and optionally `CLUSTERS_API_KEY` in `.env` if you need to resolve Clusters names via the public API.
+
 ### Install and run
 
 1. Run `bun install`

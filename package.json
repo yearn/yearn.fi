@@ -14,12 +14,11 @@
     "clean": "bash clean.sh"
   },
   "dependencies": {
-    "@clustersxyz/sdk": "0.2.3",
     "@cowprotocol/cow-sdk": "5.10.3",
     "@headlessui/react": "2.2.7",
     "@rainbow-me/rainbowkit": "2.2.5",
     "@react-hookz/web": "24.0.4",
-    "@tanstack/react-query": "5.85.3",
+    "@tanstack/react-query": "5.90.2",
     "@wagmi/connectors": "5.9.3",
     "@wagmi/core": "2.19.0",
     "axios": "1.12.2",
@@ -37,7 +36,7 @@
     "swr": "2.3.6",
     "use-indexeddb": "2.0.2",
     "vaul": "1.1.2",
-    "viem": "2.31.7",
+    "viem": "2.37.8",
     "wagmi": "2.16.3",
     "xxhashjs": "0.2.2",
     "zod": "4.1.11"
