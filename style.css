@@ -392,6 +392,93 @@ body {
     }
   }
 }
+
+.yearn--button--nextgen {
+  /* Base button styles */
+  @apply cursor-pointer px-5 flex justify-center items-center h-10 text-base transition-all relative;
+  @apply font-normal border border-transparent;
+  @apply rounded-lg;
+
+  /* Global state styles */
+  &[aria-busy="true"] {
+    @apply cursor-wait;
+
+    color: transparent !important;
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  /* Variant: Filled (Primary) */
+  &[data-variant="filled"] {
+    @apply text-neutral-900 bg-blue-600;
+
+    &:disabled {
+      @apply bg-neutral-700 text-neutral-0;
+    }
+
+    &[aria-busy="true"] {
+      @apply bg-blue-700;
+    }
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-blue-700;
+    }
+  }
+
+  &[data-variant="busy"] {
+    @apply bg-neutral-300;
+  }
+
+  /* Variant: Light */
+  &[data-variant="light"] {
+    @apply text-neutral-900 bg-neutral-100;
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-200;
+    }
+  }
+
+  /* Variant: Outlined */
+  &[data-variant="outlined"] {
+    @apply text-neutral-900 bg-transparent border-neutral-900;
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-900 text-neutral-0;
+    }
+  }
+
+  /* Variant: Reverted */
+  &[data-variant="reverted"] {
+    @apply text-neutral-900 bg-neutral-0;
+
+    &:disabled {
+      @apply bg-neutral-200;
+    }
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-neutral-200;
+    }
+
+    &[aria-busy="true"] svg {
+      @apply text-neutral-900;
+    }
+  }
+
+  /* Variant: V3 (Special variant) */
+  &[data-variant="v3"] {
+    @apply text-neutral-900 bg-pink-600;
+
+    &:disabled {
+      @apply bg-pink-600;
+    }
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-pink-600/80;
+    }
+  }
+}
 .yearn--button-smaller {
   @apply h-8 text-xs py-2 w-16 px-2;
 }

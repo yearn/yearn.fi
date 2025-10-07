@@ -7,12 +7,13 @@ import { IconLoader } from '../icons/IconLoader'
 export type TButtonVariant = 'filled' | 'outlined' | 'light' | 'inherit' | string
 
 export type TButton = {
-  children: ReactNode
+  children?: ReactNode
   as?: 'a' | 'button'
   variant?: TButtonVariant
   shouldStopPropagation?: boolean
   isBusy?: boolean
   isDisabled?: boolean
+  classNameOverride?: string
 } & React.ComponentPropsWithoutRef<'button' | 'a'>
 
 export type TMouseEvent = React.MouseEvent<HTMLButtonElement> & React.MouseEvent<HTMLAnchorElement>
@@ -25,13 +26,19 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
     isBusy = false,
     isDisabled = false,
     className,
+    classNameOverride,
     ...rest
   } = props
 
   if (rest.as === 'a') {
     return (
       <a tabIndex={-1} {...(rest as React.ComponentPropsWithoutRef<'a'>)}>
-        <button ref={ref} data-variant={variant} className={cl('yearn--button flex-center', className)} type="button">
+        <button
+          ref={ref}
+          data-variant={variant}
+          className={classNameOverride ?? cl('yearn--button flex-center', className)}
+          type="button"
+        >
           {children}
         </button>
       </a>
@@ -42,7 +49,7 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
       {...(rest as React.ComponentPropsWithoutRef<'button'>)}
       ref={ref}
       data-variant={variant}
-      className={cl('yearn--button', className)}
+      className={classNameOverride ?? cl('yearn--button', className)}
       aria-busy={isBusy}
       disabled={isDisabled || (rest as React.ComponentPropsWithoutRef<'button'>).disabled}
       onClick={(event: TMouseEvent): void => {
@@ -54,7 +61,7 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
         }
       }}
     >
-      {children}
+      {children && children}
       {isBusy ? (
         <div className={'absolute inset-0 flex items-center justify-center'}>
           <IconLoader className={'size-6 animate-spin text-neutral-0'} />
