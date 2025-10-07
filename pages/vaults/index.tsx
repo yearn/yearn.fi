@@ -8,17 +8,17 @@ import { useChainOptions } from '@lib/hooks/useChains'
 import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
 import { IconChain } from '@lib/icons/IconChain'
 import type { TSortDirection } from '@lib/types'
-import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { toAddress } from '@lib/utils'
 import { ListHero } from '@vaults-v2/components/ListHero'
 import { VaultListOptions } from '@vaults-v2/components/list/VaultListOptions'
 import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
 import { VaultsListRow } from '@vaults-v2/components/list/VaultsListRow'
-import { ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
+import { ALL_VAULTS_CATEGORIES, DEFAULT_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
 import type { ReactElement, ReactNode } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 function HeaderUserPosition(): ReactElement {
   const { cumulatedValueInV2Vaults } = useWallet()
@@ -67,167 +67,19 @@ function ListOfVaults(): ReactElement {
     onChangeSortBy,
     onReset
   } = useQueryArguments({
-    defaultTypes: ALL_VAULTS_CATEGORIES_KEYS,
+    defaultTypes: DEFAULT_VAULTS_CATEGORIES_KEYS,
     defaultPathname: '/vaults'
   })
-  const {
-    activeVaults,
-    holdingsVaults,
-    allHoldingsVaults,
-    allMigratableHoldings,
-    allRetiredHoldings,
-    isLoading: isLoadingVaultList
-  } = useV2VaultFilter(types, chains, search || '')
+  const { filteredVaults, vaultFlags, isLoading: isLoadingVaultList } = useV2VaultFilter(types, chains, search || '')
   const [page, setPage] = useState(0)
-  const [showHiddenHoldings, setShowHiddenHoldings] = useState(false)
   const chainOptions = useChainOptions(chains)
+  const pageSize = 20
 
-  /**********************************************************************************************
-   **	Apply sorting to the filtered active vaults
-   *********************************************************************************************/
-  const sortedVaultsToDisplay = useSortVaults([...activeVaults], sortBy, sortDirection)
+  const sortedVaultsToDisplay = useSortVaults(filteredVaults, sortBy, sortDirection)
+  const totalVaults = sortedVaultsToDisplay.length
 
-  /**********************************************************************************************
-   **	Prepare vault lists for rendering. All filtering is now done in useVaultFilter.
-   *********************************************************************************************/
-  const vaultLists = useMemo((): {
-    holdings: TYDaemonVault[]
-    all: TYDaemonVault[]
-  } | null => {
-    const holdingsSet = new Set(holdingsVaults.map((v) => `${v.chainID}_${v.address}`))
-    const nonHoldingsVaults = sortedVaultsToDisplay.filter(
-      (vault) => !holdingsSet.has(`${vault.chainID}_${vault.address}`)
-    )
-
-    const shouldShowEmptyState = isLoadingVaultList || (holdingsVaults.length === 0 && nonHoldingsVaults.length === 0)
-    if (shouldShowEmptyState) {
-      return null
-    }
-
-    return {
-      holdings: holdingsVaults,
-      all: nonHoldingsVaults
-    }
-  }, [sortedVaultsToDisplay, isLoadingVaultList, holdingsVaults])
-
-  const { holdings, all } = vaultLists || { holdings: [], all: [] }
-  const holdingsFilterSelected = Boolean(types?.includes('holdings'))
-  const shouldShowHoldings = holdingsFilterSelected && holdings.length > 0
-
-  const sortedHoldings = useSortVaults(holdings, sortBy, sortDirection)
-  const sortedNonHoldings = useSortVaults(all, sortBy, sortDirection)
-
-  const hiddenHoldingsVaultsList = useMemo((): TYDaemonVault[] => {
-    if (!holdingsFilterSelected) {
-      return []
-    }
-
-    const visibleKeys = new Set(holdings.map((vault) => `${vault.chainID}_${vault.address}`))
-    const combined = new Map<string, TYDaemonVault>()
-
-    for (const vault of allHoldingsVaults) {
-      combined.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-    for (const vault of allMigratableHoldings) {
-      combined.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-    for (const vault of allRetiredHoldings) {
-      combined.set(`${vault.chainID}_${vault.address}`, vault)
-    }
-
-    return Array.from(combined.entries())
-      .filter(([key]) => !visibleKeys.has(key))
-      .map(([, vault]) => vault)
-  }, [holdingsFilterSelected, holdings, allHoldingsVaults, allMigratableHoldings, allRetiredHoldings])
-
-  const hiddenHoldingsCount = hiddenHoldingsVaultsList.length
-  const hasHiddenHoldings = holdingsFilterSelected && hiddenHoldingsCount > 0
-
-  const filtersSignature = useMemo(() => {
-    return [search ?? '', (types || []).join('_'), (chains || []).join('_')].join('|')
-  }, [search, types, chains])
-  const lastFiltersSignature = useRef(filtersSignature)
-
-  useEffect(() => {
-    if (lastFiltersSignature.current !== filtersSignature) {
-      lastFiltersSignature.current = filtersSignature
-      setShowHiddenHoldings(false)
-    }
-  }, [filtersSignature])
-
-  useEffect(() => {
-    if (!hasHiddenHoldings) {
-      setShowHiddenHoldings(false)
-    }
-  }, [hasHiddenHoldings])
-
-  const renderHoldingsCard = (): ReactNode => {
-    if (!shouldShowHoldings && !hasHiddenHoldings) {
-      return null
-    }
-
-    const shouldShowToggle = hasHiddenHoldings && hiddenHoldingsVaultsList.length > 0
-
-    return (
-      <div className={'mb-2 rounded-2xl shadow-sm'}>
-        <div className={'flex flex-wrap items-center justify-between gap-3'}>
-          <div className={'flex items-center gap-2 px-6 pt-4'}>
-            <p className={'text-sm font-semibold text-neutral-900 '}>{'Your holdings'}</p>
-            {shouldShowHoldings ? (
-              <span className={'text-xs text-neutral-500'}>
-                {sortedHoldings.length} vault
-                {sortedHoldings.length === 1 ? '' : 's'}
-              </span>
-            ) : null}
-          </div>
-          {shouldShowToggle ? (
-            <div className={'flex items-center gap-2 text-xs text-neutral-600'}>
-              <span>{hiddenHoldingsCount} hidden by filters</span>
-              <Button
-                onClick={(): void => setShowHiddenHoldings((prev) => !prev)}
-                className={
-                  'yearn--button-smaller rounded-md bg-neutral-900 px-3 py-1 text-xs text-white hover:bg-neutral-800'
-                }
-              >
-                {showHiddenHoldings ? 'Hide' : 'Show'}
-              </Button>
-              <Button
-                onClick={onReset}
-                className={
-                  'yearn--button-smaller rounded-md border border-neutral-200 px-3 py-1 text-xs text-neutral-900'
-                }
-              >
-                Reset filters
-              </Button>
-            </div>
-          ) : null}
-        </div>
-        {shouldShowHoldings ? (
-          <div className={'mt-3 grid gap-0'}>
-            {sortedHoldings.map((vault) => (
-              <VaultsListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
-            ))}
-          </div>
-        ) : null}
-        {showHiddenHoldings && hiddenHoldingsVaultsList.length > 0 ? (
-          <div className={'mt-4 grid gap-0'}>
-            <p className={'pb-2 text-xs uppercase tracking-wide text-neutral-500'}>{'Filtered holdings'}</p>
-            {hiddenHoldingsVaultsList.map((vault) => (
-              <VaultsListRow key={`filtered_${vault.chainID}_${vault.address}`} currentVault={vault} />
-            ))}
-          </div>
-        ) : null}
-        {!shouldShowHoldings && shouldShowToggle && !showHiddenHoldings ? (
-          <p className={'mt-3 text-xs text-neutral-500'}>
-            {'Use the buttons above to inspect or reset the filtered holdings.'}
-          </p>
-        ) : null}
-      </div>
-    )
-  }
-
-  function renderVaultList(): ReactNode {
-    if (!vaultLists) {
+  const renderVaultList = (): ReactNode => {
+    if (isLoadingVaultList || totalVaults === 0) {
       return (
         <VaultsListEmpty
           isLoading={isLoadingVaultList}
@@ -235,23 +87,18 @@ function ListOfVaults(): ReactElement {
           currentCategories={types}
           currentChains={chains}
           onReset={onReset}
-          defaultCategories={ALL_VAULTS_CATEGORIES_KEYS}
+          defaultCategories={DEFAULT_VAULTS_CATEGORIES_KEYS}
         />
       )
     }
 
-    return (
-      <>
-        {renderHoldingsCard()}
-        {sortedNonHoldings.slice(page * pageSize, (page + 1) * pageSize).map((vault) => (
-          <VaultsListRow key={`${vault.chainID}_${vault.address}`} currentVault={vault} />
-        ))}
-      </>
-    )
-  }
+    const paginatedVaults = sortedVaultsToDisplay.slice(page * pageSize, (page + 1) * pageSize)
 
-  const totalVaults = sortedNonHoldings.length
-  const pageSize = 20
+    return paginatedVaults.map((vault) => {
+      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      return <VaultsListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
+    })
+  }
 
   /* 🔵 - Yearn Finance **************************************************************************
    **	This effect ensures that the pagination resets properly when search results change,
@@ -343,7 +190,7 @@ function ListOfVaults(): ReactElement {
         <div className={'border-t border-neutral-200/60 p-4'}>
           <Pagination
             range={[0, totalVaults]}
-            pageCount={totalVaults / pageSize}
+            pageCount={Math.ceil(totalVaults / pageSize)}
             numberOfItems={totalVaults}
             currentPage={page}
             onPageChange={(newPage): void => setPage(newPage.selected)}

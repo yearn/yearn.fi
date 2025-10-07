@@ -9,8 +9,13 @@ export const ALL_VAULTS_CATEGORIES = {
   // balancer: 'Balancer Vaults',
   boosted: 'Boosted Vaults',
   velodrome: 'Velodrome Vaults',
-  aerodrome: 'Aerodrome Vaults'
+  aerodrome: 'Aerodrome Vaults',
+  migratable: 'Migratable Vaults',
+  retired: 'Retired Vaults'
 }
 export const ALL_VAULTS_CATEGORIES_KEYS = Object.keys(ALL_VAULTS_CATEGORIES)
+export const DEFAULT_VAULTS_CATEGORIES_KEYS = ALL_VAULTS_CATEGORIES_KEYS.filter(
+  (key) => key !== 'migratable' && key !== 'retired'
+)
 
 export const ALL_CHAINS = [1, 10, 137, 250, 8453, 42161]

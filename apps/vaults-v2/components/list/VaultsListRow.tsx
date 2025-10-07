@@ -13,6 +13,17 @@ import { getNetwork } from '@lib/utils/wagmi'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 
+type TVaultRowFlags = {
+  hasHoldings?: boolean
+  isMigratable?: boolean
+  isRetired?: boolean
+}
+
+type TVaultRowProps = {
+  currentVault: TYDaemonVault
+  flags?: TVaultRowFlags
+}
+
 function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const isEthMainnet = currentVault.chainID === 1
   const extraAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
@@ -358,7 +369,7 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
   )
 }
 
-export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+export function VaultsListRow({ currentVault, flags }: TVaultRowProps): ReactElement {
   const balanceOfWant = useYearnBalance({
     chainID: currentVault.chainID,
     address: currentVault.token.address
@@ -380,6 +391,35 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
     }
     return balanceOfWant.raw
   }, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address])
+
+  const badgeDefinitions = useMemo(() => {
+    if (!flags) {
+      return [] as { label: string; className: string }[]
+    }
+
+    const definitions: { label: string; className: string }[] = []
+
+    if (flags.hasHoldings) {
+      definitions.push({
+        label: 'Holding',
+        className: 'border-blue-200 bg-blue-100 text-blue-800'
+      })
+    }
+    if (flags.isMigratable) {
+      definitions.push({
+        label: 'Migratable',
+        className: 'border-amber-200 bg-amber-100 text-amber-800'
+      })
+    }
+    if (flags.isRetired) {
+      definitions.push({
+        label: 'Retired',
+        className: 'border-rose-200 bg-rose-100 text-rose-800'
+      })
+    }
+
+    return definitions
+  }, [flags])
 
   return (
     <Link key={`${currentVault.address}`} href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
@@ -418,6 +458,21 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
                   {currentVault.chainID === 10 ? 'Optimism' : getNetwork(currentVault.chainID).name}
                 </p>
               </div>
+              {badgeDefinitions.length > 0 ? (
+                <div className={'mt-1 flex flex-wrap gap-2'}>
+                  {badgeDefinitions.map(({ label, className }) => (
+                    <span
+                      key={label}
+                      className={cl(
+                        'inline-flex items-center rounded-full border px-2 py-0.5 text-xxs font-semibold uppercase tracking-wide',
+                        className
+                      )}
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

@@ -15,17 +15,15 @@ type TVaultWithMetadata = {
   isRetiredVault: boolean
 }
 
+type TVaultFlags = {
+  hasHoldings: boolean
+  isMigratable: boolean
+  isRetired: boolean
+}
+
 type TOptimizedV2VaultFilterResult = {
-  // Main filtered results
-  activeVaults: TYDaemonVault[]
-  holdingsVaults: TYDaemonVault[]
-
-  // All holdings across categories (before filters)
-  allHoldingsVaults: TYDaemonVault[]
-  allMigratableHoldings: TYDaemonVault[]
-  allRetiredHoldings: TYDaemonVault[]
-
-  // Utility data
+  filteredVaults: TYDaemonVault[]
+  vaultFlags: Record<string, TVaultFlags>
   isLoading: boolean
 }
 
@@ -141,20 +139,25 @@ export function useV2VaultFilter(
 
   // Apply filters and categorize
   const filteredResults = useMemo(() => {
-    const results = {
-      activeVaults: [] as TYDaemonVault[],
-      holdingsVaults: [] as TYDaemonVault[],
-      migratableVaults: [] as TYDaemonVault[],
-      retiredVaults: [] as TYDaemonVault[],
-
-      allHoldingsVaults: [] as TYDaemonVault[],
-      allMigratableHoldings: [] as TYDaemonVault[],
-      allRetiredHoldings: [] as TYDaemonVault[]
-    }
+    const vaultFlags: Record<string, TVaultFlags> = {}
 
     const holdingsSet = new Set<string>()
     const migratableSet = new Set<string>()
     const retiredSet = new Set<string>()
+
+    const categorySets = {
+      all: new Set<string>(),
+      highlighted: new Set<string>(),
+      curveFactory: new Set<string>(),
+      curve: new Set<string>(),
+      prisma: new Set<string>(),
+      balancer: new Set<string>(),
+      velodrome: new Set<string>(),
+      aerodrome: new Set<string>(),
+      boosted: new Set<string>(),
+      stables: new Set<string>(),
+      crypto: new Set<string>()
+    }
 
     const addUnique = (set: Set<string>, list: TYDaemonVault[], vault: TYDaemonVault): void => {
       const key = `${vault.chainID}_${toAddress(vault.address)}`
@@ -164,7 +167,6 @@ export function useV2VaultFilter(
       }
     }
 
-    // Pre-categorize vaults for type filtering
     const categorizedVaults = {
       highlighted: [] as TYDaemonVault[],
       curveFactory: [] as TYDaemonVault[],
@@ -177,20 +179,12 @@ export function useV2VaultFilter(
       stables: [] as TYDaemonVault[],
       crypto: [] as TYDaemonVault[],
       holdings: [] as TYDaemonVault[],
+      migratable: [] as TYDaemonVault[],
+      retired: [] as TYDaemonVault[],
       all: [] as TYDaemonVault[]
     }
 
     processedVaults.forEach(({ vault, hasHoldings, isHoldingsVault, isMigratableVault, isRetiredVault }) => {
-      if (isHoldingsVault) {
-        addUnique(holdingsSet, results.allHoldingsVaults, vault)
-      }
-      if (isMigratableVault) {
-        addUnique(migratableSet, results.allMigratableHoldings, vault)
-      }
-      if (isRetiredVault) {
-        addUnique(retiredSet, results.allRetiredHoldings, vault)
-      }
-
       // Apply search filter
       if (search) {
         const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
@@ -215,76 +209,88 @@ export function useV2VaultFilter(
         return
       }
 
-      if (isRetiredVault) {
-        results.retiredVaults.push(vault)
-      } else if (isMigratableVault) {
-        results.migratableVaults.push(vault)
-      } else {
-        categorizedVaults.all.push(vault)
-
-        if (vault.info?.isHighlighted) {
-          categorizedVaults.highlighted.push(vault)
-        }
-        if (vault.category === 'Curve' && isAutomatedVault(vault)) {
-          categorizedVaults.curveFactory.push(vault)
-        }
-        if (vault.category === 'Curve') {
-          categorizedVaults.curve.push(vault)
-        }
-        if (vault.category === 'Prisma') {
-          categorizedVaults.prisma.push(vault)
-        }
-        if (vault.category === 'Balancer') {
-          categorizedVaults.balancer.push(vault)
-        }
-        if (vault.category === 'Velodrome') {
-          categorizedVaults.velodrome.push(vault)
-        }
-        if (vault.category === 'Aerodrome') {
-          categorizedVaults.aerodrome.push(vault)
-        }
-        if (vault.apr.extra.stakingRewardsAPR > 0) {
-          categorizedVaults.boosted.push(vault)
-        }
-        if (vault.category === 'Stablecoin') {
-          categorizedVaults.stables.push(vault)
-        }
-        if (vault.category === 'Volatile') {
-          categorizedVaults.crypto.push(vault)
-        }
-        if (hasHoldings) {
-          categorizedVaults.holdings.push(vault)
-        }
+      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      vaultFlags[key] = {
+        hasHoldings: Boolean(hasHoldings || isHoldingsVault),
+        isMigratable: isMigratableVault,
+        isRetired: isRetiredVault
       }
 
-      if (isHoldingsVault || hasHoldings) {
-        results.holdingsVaults.push(vault)
+      if (isMigratableVault) {
+        addUnique(migratableSet, categorizedVaults.migratable, vault)
+      }
+      if (isRetiredVault) {
+        addUnique(retiredSet, categorizedVaults.retired, vault)
+      }
+      if (hasHoldings || isHoldingsVault) {
+        addUnique(holdingsSet, categorizedVaults.holdings, vault)
+      }
+
+      addUnique(categorySets.all, categorizedVaults.all, vault)
+
+      if (vault.info?.isHighlighted) {
+        addUnique(categorySets.highlighted, categorizedVaults.highlighted, vault)
+      }
+      if (vault.category === 'Curve' && isAutomatedVault(vault)) {
+        addUnique(categorySets.curveFactory, categorizedVaults.curveFactory, vault)
+      }
+      if (vault.category === 'Curve') {
+        addUnique(categorySets.curve, categorizedVaults.curve, vault)
+      }
+      if (vault.category === 'Prisma') {
+        addUnique(categorySets.prisma, categorizedVaults.prisma, vault)
+      }
+      if (vault.category === 'Balancer') {
+        addUnique(categorySets.balancer, categorizedVaults.balancer, vault)
+      }
+      if (vault.category === 'Velodrome') {
+        addUnique(categorySets.velodrome, categorizedVaults.velodrome, vault)
+      }
+      if (vault.category === 'Aerodrome') {
+        addUnique(categorySets.aerodrome, categorizedVaults.aerodrome, vault)
+      }
+      if (vault.apr.extra.stakingRewardsAPR > 0) {
+        addUnique(categorySets.boosted, categorizedVaults.boosted, vault)
+      }
+      if (vault.category === 'Stablecoin') {
+        addUnique(categorySets.stables, categorizedVaults.stables, vault)
+      }
+      if (vault.category === 'Volatile') {
+        addUnique(categorySets.crypto, categorizedVaults.crypto, vault)
       }
     })
 
-    // Build active vaults based on selected types
     const seenVaults = new Set<string>()
+    const filteredVaults: TYDaemonVault[] = []
+
+    const appendVaults = (vaults: TYDaemonVault[]): void => {
+      vaults.forEach((vault) => {
+        const uniqueKey = `${vault.chainID}_${toAddress(vault.address)}`
+        if (!seenVaults.has(uniqueKey)) {
+          seenVaults.add(uniqueKey)
+          filteredVaults.push(vault)
+        }
+      })
+    }
 
     if (!types || types.length === 0) {
-      // If no types selected, return all active vaults
-      results.activeVaults = categorizedVaults.all
+      appendVaults(categorizedVaults.all)
+      appendVaults(categorizedVaults.migratable)
+      appendVaults(categorizedVaults.retired)
     } else {
-      // Featured logic - special case
       if (types.includes('featured')) {
         const featured = [...categorizedVaults.all]
+          .filter((vault) => {
+            const flagKey = `${vault.chainID}_${toAddress(vault.address)}`
+            const flags = vaultFlags[flagKey]
+            return !(flags?.isMigratable || flags?.isRetired)
+          })
           .sort((a, b) => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0))
           .slice(0, 10)
 
-        featured.forEach((vault) => {
-          const key = `${vault.chainID}_${toAddress(vault.address)}`
-          if (!seenVaults.has(key)) {
-            results.activeVaults.push(vault)
-            seenVaults.add(key)
-          }
-        })
+        appendVaults(featured)
       }
 
-      // Add vaults from selected categories
       const categoryMap: Record<string, TYDaemonVault[]> = {
         curveF: categorizedVaults.curveFactory,
         curve: categorizedVaults.curve,
@@ -295,22 +301,24 @@ export function useV2VaultFilter(
         boosted: categorizedVaults.boosted,
         stables: categorizedVaults.stables,
         crypto: categorizedVaults.crypto,
-        holdings: categorizedVaults.holdings
+        holdings: categorizedVaults.holdings,
+        migratable: categorizedVaults.migratable,
+        retired: categorizedVaults.retired
       }
 
       types.forEach((type) => {
+        if (type === 'featured') {
+          return
+        }
         const vaultsForType = categoryMap[type] || []
-        vaultsForType.forEach((vault) => {
-          const key = `${vault.chainID}_${toAddress(vault.address)}`
-          if (!seenVaults.has(key)) {
-            results.activeVaults.push(vault)
-            seenVaults.add(key)
-          }
-        })
+        appendVaults(vaultsForType)
       })
     }
 
-    return results
+    return {
+      filteredVaults,
+      vaultFlags
+    }
   }, [processedVaults, types, chains, search])
 
   return {
