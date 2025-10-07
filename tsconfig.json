@@ -10,6 +10,8 @@
       "@vaults-v2/*": ["apps/vaults-v2/*"],
       "@vaults-v3/*": ["apps/vaults-v3/*"],
       "@landing/*": ["apps/landing/*"],
+      "@nextgen/*": ["apps/nextgen/*"],
+      "@utils/*": ["apps/nextgen/utils/*"],
       "/src/*": ["src/*"]
     },
     /* Basic Options */
