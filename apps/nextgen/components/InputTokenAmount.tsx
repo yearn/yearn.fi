@@ -1,6 +1,7 @@
-import { cl, exactToSimple, simpleToExact } from '@lib/utils'
+import { cl, exactToSimple, parseUnits, simpleToExact } from '@lib/utils'
 import type { useInput } from 'apps/nextgen/hooks/useInput'
 import type { ChangeEvent, FC } from 'react'
+import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 
 interface Props {
@@ -56,7 +57,13 @@ export const InputTokenAmount: FC<Props> = ({
               'font-xs flex-center text-xs px-2 py-1 bg-neutral-700 text-neutral-400 rounded-xl  hover:bg-neutral-800 transition-colors cursor-pointer whitespace-nowrap'
             }
             type="button"
-            onClick={() => setFormValue?.(exactToSimple(balance, input[0]?.decimals).toString())}
+            onClick={() => {
+              if (!balance || balance === 0n) {
+                setFormValue?.('0')
+                return
+              }
+              setFormValue?.(formatUnits(balance, 18))
+            }}
           >
             Max
           </button>

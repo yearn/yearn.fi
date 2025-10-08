@@ -208,16 +208,33 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
 
         if (prepareWrite.isSuccess && prepareWrite.data?.request) {
           setOverride('loading')
-          writeContract
-            .writeContractAsync({ ...prepareWrite.data.request, ...overrides })
-            .then((hash) => {
-              addNotification?.('pending', hash, transactionName)
-            })
-            .catch((error) => {
-              setOverride(undefined)
-              addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
-              console.error('Transaction failed:', error)
-            })
+          
+          // Check if this is a Cowswap order
+          if ((prepareWrite.data.request as any).__isCowswapOrder) {
+            const customWriteAsync = (prepareWrite.data.request as any).writeContractAsync
+            customWriteAsync()
+              .then((result: any) => {
+                addNotification?.('success', result.orderUID, transactionName)
+                setOverride('success')
+                setTimeout(() => setOverride(undefined), 1500)
+              })
+              .catch((error: Error) => {
+                setOverride(undefined)
+                addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
+                console.error('Transaction failed:', error)
+              })
+          } else {
+            writeContract
+              .writeContractAsync({ ...prepareWrite.data.request, ...overrides })
+              .then((hash) => {
+                addNotification?.('pending', hash, transactionName)
+              })
+              .catch((error) => {
+                setOverride(undefined)
+                addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
+                console.error('Transaction failed:', error)
+              })
+          }
         }
       }}
       {...props}
