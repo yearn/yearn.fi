@@ -128,24 +128,24 @@ export function Filters({
   }, [categories])
 
   return (
-    <div className={'relative col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-8'}>
+    <div className={'relative col-span-12 w-full rounded-3xl bg-neutral-100 p-3 md:col-span-9'}>
       <PortfolioCard />
 
-      <div className={'mb-5 w-full'}>
-        <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
-        <SearchBar
-          className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 transition-all md:w-full'}
-          iconClassName={'text-neutral-900'}
-          searchPlaceholder={'YFI Vault'}
-          searchValue={searchValue}
-          onSearch={onSearch}
-          shouldDebounce={shouldDebounce || false}
-          highlightWhenActive={true}
-          alertContent={searchAlertContent}
-        />
-      </div>
-
       <div className={'md:hidden'}>
+        <div className={'mb-5 w-full'}>
+          <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
+          <SearchBar
+            className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 transition-all md:w-full'}
+            iconClassName={'text-neutral-900'}
+            searchPlaceholder={'YFI Vault'}
+            searchValue={searchValue}
+            onSearch={onSearch}
+            shouldDebounce={shouldDebounce || false}
+            highlightWhenActive={true}
+            alertContent={searchAlertContent}
+          />
+        </div>
+
         <Drawer.Root
           open={isMobileFiltersOpen}
           onOpenChange={(isOpen): void => {
@@ -199,16 +199,33 @@ export function Filters({
       </div>
 
       <div className={'hidden md:block'}>
-        <FilterControls
-          chainOptions={chainOptions}
-          onChangeChains={onChangeChains}
-          categoryOptions={categoryOptions}
-          onChangeCategories={onChangeCategories}
-          typeOptions={typeOptions}
-          onChangeTypes={onChangeTypes}
-          activeDropdown={activeDropdown}
-          onDropdownOpenChange={handleDropdownOpenChange}
-        />
+        <div className={'grid grid-cols-1 gap-6 md:grid-cols-9'}>
+          <div className={'md:col-span-6'}>
+            <FilterControls
+              chainOptions={chainOptions}
+              onChangeChains={onChangeChains}
+              categoryOptions={categoryOptions}
+              onChangeCategories={onChangeCategories}
+              typeOptions={typeOptions}
+              onChangeTypes={onChangeTypes}
+              activeDropdown={activeDropdown}
+              onDropdownOpenChange={handleDropdownOpenChange}
+            />
+          </div>
+          <div className={'md:col-span-3'}>
+            <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
+            <SearchBar
+              className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 transition-all md:w-full'}
+              iconClassName={'text-neutral-900'}
+              searchPlaceholder={'YFI Vault'}
+              searchValue={searchValue}
+              onSearch={onSearch}
+              shouldDebounce={shouldDebounce || false}
+              highlightWhenActive={true}
+              alertContent={searchAlertContent}
+            />
+          </div>
+        </div>
       </div>
     </div>
   )
