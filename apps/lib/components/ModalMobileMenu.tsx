@@ -7,8 +7,8 @@ import type React from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
-import type { TMenu } from './Header'
 import { LogoGithub } from '../icons/LogoGithub'
+import type { TMenu } from './Header'
 
 const menu: TMenu[] = [
   { path: '/apps', label: 'Apps' },
