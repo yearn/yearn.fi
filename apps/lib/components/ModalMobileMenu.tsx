@@ -8,6 +8,7 @@ import type { ReactElement, ReactNode } from 'react'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
 import type { TMenu } from './Header'
+import { LogoGithub } from '../icons/LogoGithub'
 
 const menu: TMenu[] = [
   { path: '/apps', label: 'Apps' },
@@ -56,6 +57,15 @@ export function FooterNav({ onClose }: { onClose?: () => void }): ReactElement {
           }
         >
           <IconDiscord className={'size-7 text-white'} />
+        </Link>
+        <Link
+          href={'https://github.com/yearn'}
+          target={'_blank'}
+          className={
+            'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
+          }
+        >
+          <LogoGithub className={'size-7 text-white'} />
         </Link>
         <Link
           href={'https://x.com/yearnfi'}
