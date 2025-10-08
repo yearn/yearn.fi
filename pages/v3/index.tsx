@@ -20,7 +20,7 @@ import { Fragment } from 'react'
 
 function V3Card(): ReactElement {
   return (
-    <div className={'col-span-12 hidden w-full rounded-3xl bg-neutral-100 p-2 md:col-span-4 md:block'}>
+    <div className={'col-span-24 hidden w-full rounded-3xl bg-neutral-100 p-2 md:col-span-5 md:block'}>
       <div
         className={cl(
           'flex h-full w-full flex-col items-center justify-center',
@@ -183,7 +183,7 @@ function ListOfVaults({
         onSearch={onSearch}
         searchAlertContent={renderHiddenSearchAlert()}
       />
-      <div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
+      <div className={'col-span-24 flex min-h-[240px] w-full flex-col'}>
         <VaultsV3ListHead
           sortBy={sortBy}
           sortDirection={sortDirection}
@@ -258,7 +258,7 @@ function Index(): ReactElement {
   return (
     <div
       className={
-        'relative z-50 mx-auto grid w-full max-w-[1232px] grid-cols-12 gap-4 bg-neutral-0 px-4 pb-8 pt-20 md:gap-6'
+        'relative z-50 mx-auto grid w-full max-w-[1232px] grid-cols-24 gap-4 bg-neutral-0 px-4 pb-8 pt-20 md:gap-2'
       }
     >
       <V3Card />
