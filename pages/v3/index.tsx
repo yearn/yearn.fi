@@ -21,15 +21,13 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 
 function V3Card(): ReactElement {
   return (
-    <div className={'col-span-24 hidden w-full rounded-3xl bg-neutral-100 p-2 md:col-span-5 md:block'}>
-      <div
-        className={cl(
-          'flex h-full w-full flex-col items-center justify-center',
-          'gap-y-0 rounded-2xl bg-neutral-200 p-2 md:gap-y-6'
-        )}
-      >
-        <V3Mask className={'size-[90%]'} />
-      </div>
+    <div
+      className={cl(
+        'flex h-full w-full flex-col items-center justify-center',
+        'gap-y-0 rounded-2xl bg-neutral-200 p-4 md:gap-y-6'
+      )}
+    >
+      <V3Mask className={'size-34'} />
     </div>
   )
 }
@@ -48,6 +46,7 @@ type TListOfVaultsProps = {
   onChangeSortDirection: (value: TSortDirection | '') => void
   onChangeSortBy: (value: TPossibleSortBy | '') => void
   onResetMultiSelect: () => void
+  children?: (renderProps: { filters: ReactNode; list: ReactNode }) => ReactNode
 }
 
 const AVAILABLE_TOGGLE_VALUE = 'available'
@@ -66,7 +65,8 @@ function ListOfVaults({
   onChangeChains,
   onChangeSortDirection,
   onChangeSortBy,
-  onResetMultiSelect
+  onResetMultiSelect,
+  children
 }: TListOfVaultsProps): ReactElement {
   const {
     filteredVaults,
@@ -272,99 +272,111 @@ function ListOfVaults({
     )
   }
 
+  const filtersElement = (
+    <Filters
+      types={types}
+      shouldDebounce={true}
+      categories={categories}
+      searchValue={search || ''}
+      chains={chains}
+      onChangeChains={onChangeChains}
+      onChangeTypes={onChangeTypes}
+      onChangeCategories={onChangeCategories}
+      onSearch={onSearch}
+      searchAlertContent={renderHiddenSearchAlert()}
+    />
+  )
+
+  const listElement = (
+    <div className={'col-span-48 flex min-h-[240px] w-full flex-col gap-px'}>
+      <VaultsV3ListHead
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+          let targetSortBy = newSortBy as TPossibleSortBy
+          let targetSortDirection = newSortDirection as TSortDirection
+
+          if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
+            targetSortBy = 'featuringScore'
+            targetSortDirection = 'desc'
+          }
+
+          onChangeSortBy(targetSortBy)
+          onChangeSortDirection(targetSortDirection)
+        }}
+        onToggle={(value): void => {
+          setActiveToggleValues((prev) => {
+            if (prev.includes(value)) {
+              return prev.filter((entry) => entry !== value)
+            }
+            return [value]
+          })
+        }}
+        activeToggleValues={activeToggleValues}
+        items={[
+          {
+            type: 'sort',
+            label: 'Vault / Featuring Score',
+            value: 'featuringScore',
+            sortable: true,
+            className: 'col-span-4'
+          },
+          {
+            type: 'sort',
+            label: 'Est. APY',
+            value: 'estAPY',
+            sortable: true,
+            className: 'col-span-2'
+          },
+          {
+            type: 'sort',
+            label: 'Hist. APY',
+            value: 'APY',
+            sortable: true,
+            className: 'col-span-2'
+          },
+          {
+            type: 'sort',
+            label: 'Risk Level',
+            value: 'score',
+            sortable: true,
+            className: 'col-span-2 whitespace-nowrap'
+          },
+          {
+            type: 'toggle',
+            label: 'Available',
+            value: AVAILABLE_TOGGLE_VALUE,
+            className: 'col-span-2',
+            disabled: availableVaults.length === 0
+          },
+          {
+            type: 'toggle',
+            label: 'Holdings',
+            value: HOLDINGS_TOGGLE_VALUE,
+            className: 'col-span-2',
+            disabled: holdingsVaults.length === 0
+          },
+          {
+            type: 'sort',
+            label: 'Deposits',
+            value: 'tvl',
+            sortable: true,
+            className: 'col-span-2 justify-end'
+          }
+        ]}
+      />
+      {renderVaultList()}
+    </div>
+  )
+
+  if (typeof children === 'function') {
+    return <>{children({ filters: filtersElement, list: listElement })}</>
+  }
+
   return (
     <Fragment>
-      <Filters
-        types={types}
-        shouldDebounce={true}
-        categories={categories}
-        searchValue={search || ''}
-        chains={chains}
-        onChangeChains={onChangeChains}
-        onChangeTypes={onChangeTypes}
-        onChangeCategories={onChangeCategories}
-        onSearch={onSearch}
-        searchAlertContent={renderHiddenSearchAlert()}
-      />
-      <div className={'col-span-24 flex min-h-[240px] w-full flex-col gap-4'}>
-        <VaultsV3ListHead
-          sortBy={sortBy}
-          sortDirection={sortDirection}
-          onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-            let targetSortBy = newSortBy as TPossibleSortBy
-            let targetSortDirection = newSortDirection as TSortDirection
-
-            if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
-              targetSortBy = 'featuringScore'
-              targetSortDirection = 'desc'
-            }
-
-            onChangeSortBy(targetSortBy)
-            onChangeSortDirection(targetSortDirection)
-          }}
-          onToggle={(value): void => {
-            setActiveToggleValues((prev) => {
-              if (prev.includes(value)) {
-                return prev.filter((entry) => entry !== value)
-              }
-              return [value]
-            })
-          }}
-          activeToggleValues={activeToggleValues}
-          items={[
-            {
-              type: 'sort',
-              label: 'Vault / Featuring Score',
-              value: 'featuringScore',
-              sortable: true,
-              className: 'col-span-4'
-            },
-            {
-              type: 'sort',
-              label: 'Est. APY',
-              value: 'estAPY',
-              sortable: true,
-              className: 'col-span-2'
-            },
-            {
-              type: 'sort',
-              label: 'Hist. APY',
-              value: 'APY',
-              sortable: true,
-              className: 'col-span-2'
-            },
-            {
-              type: 'sort',
-              label: 'Risk Level',
-              value: 'score',
-              sortable: true,
-              className: 'col-span-2 whitespace-nowrap'
-            },
-            {
-              type: 'toggle',
-              label: 'Available',
-              value: AVAILABLE_TOGGLE_VALUE,
-              className: 'col-span-2',
-              disabled: availableVaults.length === 0
-            },
-            {
-              type: 'toggle',
-              label: 'Holdings',
-              value: HOLDINGS_TOGGLE_VALUE,
-              className: 'col-span-2',
-              disabled: holdingsVaults.length === 0
-            },
-            {
-              type: 'sort',
-              label: 'Deposits',
-              value: 'tvl',
-              sortable: true,
-              className: 'col-span-2 justify-end'
-            }
-          ]}
-        />
-        {renderVaultList()}
-      </div>
+      {filtersElement}
+      {listElement}
     </Fragment>
   )
 }
@@ -380,11 +392,20 @@ function Index(): ReactElement {
   return (
     <div
       className={
-        'relative z-50 mx-auto grid w-full max-w-[1232px] grid-cols-24 gap-4 bg-neutral-0 px-4 pb-8 pt-20 md:gap-2'
+        'relative z-50 mx-auto grid w-full max-w-[1232px] grid-cols-48 gap-4 bg-neutral-0 px-4 pb-8 pt-20 md:gap-2'
       }
     >
-      <V3Card />
-      <ListOfVaults {...queryArgs} />
+      <ListOfVaults {...queryArgs}>
+        {({ filters, list }) => (
+          <Fragment>
+            <div className={'col-span-48 hidden h-full w-full rounded-3xl bg-neutral-100 p-2 md:col-span-8 md:block'}>
+              <V3Card />
+            </div>
+            <div className={'col-span-48 flex flex-col md:col-span-40'}>{filters}</div>
+            {list}
+          </Fragment>
+        )}
+      </ListOfVaults>
     </div>
   )
 }
