@@ -11,7 +11,8 @@
     "tslint": "tsc -p tsconfig.json --noEmit",
     "bump": "bump",
     "test": "vitest run",
-    "clean": "bash clean.sh"
+    "clean": "bash clean.sh",
+    "prepare": "husky"
   },
   "dependencies": {
     "@cowprotocol/cow-sdk": "5.10.3",
