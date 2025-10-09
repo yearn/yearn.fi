@@ -1,6 +1,7 @@
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { formatAmount } from '@lib/utils'
+import { VAULT_ADDRESSES } from '../../constants/addresses'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 
@@ -21,7 +22,8 @@ export function KatanaApyTooltip(props: {
 
   // Check if this is the T-Bill vault
   const isTBillVault =
-    props.currentVault.address.toLowerCase() === '0x93fec6639717b6215a48e5a72a162c50dcc40d68'.toLowerCase()
+    props.currentVault.address.toLowerCase() ===
+    VAULT_ADDRESSES.AUSD.toLowerCase()
   const extrinsicYieldLabel = isTBillVault ? 'T-Bill Yield' : 'Extrinsic Yield'
   const extrinsicYieldDescription = isTBillVault
     ? 'Interest from U.S. treasury bills'
@@ -58,10 +60,19 @@ export function KatanaApyTooltip(props: {
               <p>{extrinsicYieldLabel} </p>
             </div>
             <span className={'font-number'}>
-              <RenderAmount shouldHideTooltip value={props.extrinsicYield} symbol={'percent'} decimals={6} />
+              <RenderAmount
+                shouldHideTooltip
+                value={props.extrinsicYield}
+                symbol={'percent'}
+                decimals={6}
+              />
             </span>
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
+          <p
+            className={
+              '-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'
+            }
+          >
             {extrinsicYieldDescription}
           </p>
           <div
@@ -81,14 +92,29 @@ export function KatanaApyTooltip(props: {
               <p>{'Katana APY '}</p>
             </div>
             <span className={'font-number'}>
-              <RenderAmount shouldHideTooltip value={props.katanaNativeYield} symbol={'percent'} decimals={6} />
+              <RenderAmount
+                shouldHideTooltip
+                value={props.katanaNativeYield}
+                symbol={'percent'}
+                decimals={6}
+              />
             </span>
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
+          <p
+            className={
+              '-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'
+            }
+          >
             {'Yield Earned on Katana'}
           </p>
-          <p className={'mb-2 w-full text-left text-xs italic text-neutral-500 break-words whitespace-normal'}>
-            {'*This yield is guaranteed but may be paid in KAT tokens if actual rates are lower.'}
+          <p
+            className={
+              'mb-2 w-full text-left text-xs italic text-neutral-500 break-words whitespace-normal'
+            }
+          >
+            {
+              '*This yield is guaranteed but may be paid in KAT tokens if actual rates are lower.'
+            }
           </p>
           {/* Rewards APR */}
           <div className={'my-2 h-px w-full bg-neutral-300/60'} />
@@ -106,7 +132,9 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${props.currentVault.chainID}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${
+                  props.currentVault.chainID
+                }/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -114,10 +142,19 @@ export function KatanaApyTooltip(props: {
               <p>{'Base Rewards APR '}</p>
             </div>
             <span className={'font-number'}>
-              <RenderAmount shouldHideTooltip value={props.fixedRateKatanRewardsAPR} symbol={'percent'} decimals={6} />
+              <RenderAmount
+                shouldHideTooltip
+                value={props.fixedRateKatanRewardsAPR}
+                symbol={'percent'}
+                decimals={6}
+              />
             </span>
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
+          <p
+            className={
+              '-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'
+            }
+          >
             {'Limited time fixed KAT rewards'}
           </p>
           <div
@@ -127,7 +164,9 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${props.currentVault.chainID}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${
+                  props.currentVault.chainID
+                }/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -135,10 +174,19 @@ export function KatanaApyTooltip(props: {
               <p>{'App Rewards APR '}</p>
             </div>
             <span className={'font-number'}>
-              <RenderAmount shouldHideTooltip value={props.katanaAppRewardsAPR} symbol={'percent'} decimals={6} />
+              <RenderAmount
+                shouldHideTooltip
+                value={props.katanaAppRewardsAPR}
+                symbol={'percent'}
+                decimals={6}
+              />
             </span>
           </div>
-          <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
+          <p
+            className={
+              '-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'
+            }
+          >
             {'Kat Rewards passed through from Apps'}
           </p>
           <div
@@ -148,7 +196,9 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${props.currentVault.chainID}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${
+                  props.currentVault.chainID
+                }/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
@@ -156,24 +206,39 @@ export function KatanaApyTooltip(props: {
               <p>{'Deposit Bonus APR '}</p>
             </div>
             <span className={'font-number'}>
-              <RenderAmount shouldHideTooltip value={props.katanaBonusAPR} symbol={'percent'} decimals={6} />
+              <RenderAmount
+                shouldHideTooltip
+                value={props.katanaBonusAPR}
+                symbol={'percent'}
+                decimals={6}
+              />
             </span>
           </div>
-          <p className={'-mt-1 mb-0 w-full text-left text-xs text-neutral-700/35 break-words'}>
+          <p
+            className={
+              '-mt-1 mb-0 w-full text-left text-xs text-neutral-700/35 break-words'
+            }
+          >
             {'Applied if you deposited before Sept. 1st and hold for 90 days'}
           </p>
 
-          <div className={'mt-2 p-3 pb-0 text-neutral-700 md:text-xs text-bold'}>
+          <div
+            className={'mt-2 p-3 pb-0 text-neutral-700 md:text-xs text-bold'}
+          >
             <li className={'-mt-1 mb-2 w-full text-left break-words'}>
               {'KAT tokens are locked until no later than Feb. 20 2026.'}
             </li>
             <li className={'-mt-1 mb-2 w-full text-left break-words'}>
-              {'KAT APR is calculated using an assumed $1B Fully Diluted Valuation.'}
+              {
+                'KAT APR is calculated using an assumed $1B Fully Diluted Valuation.'
+              }
             </li>
             <li className={'-mt-1 mb-2 w-full text-left break-words'}>
               {'Read more about KAT tokenomics '}
               <a
-                href={'https://katana.network/blog/the-network-is-katana-the-token-is-kat'}
+                href={
+                  'https://katana.network/blog/the-network-is-katana-the-token-is-kat'
+                }
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 className={
@@ -195,9 +260,15 @@ export function KatanaApyTooltip(props: {
               >
                 {'Steer Points'}
               </p>
-              <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
+              <p
+                className={
+                  '-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'
+                }
+              >
                 {'This vault earns '}
-                <span className={'font-number'}>{formatAmount(props.steerPointsPerDollar, 2, 2)}</span>
+                <span className={'font-number'}>
+                  {formatAmount(props.steerPointsPerDollar, 2, 2)}
+                </span>
                 {' Steer Points / dollar deposited, but you must '}
                 <a
                   href={'https://app.steer.finance/points'}
