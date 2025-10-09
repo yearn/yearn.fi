@@ -23,6 +23,7 @@ type TVaultFlags = {
 
 type TOptimizedV2VaultFilterResult = {
   filteredVaults: TYDaemonVault[]
+  holdingsVaults: TYDaemonVault[]
   vaultFlags: Record<string, TVaultFlags>
   isLoading: boolean
 }
@@ -136,6 +137,12 @@ export function useV2VaultFilter(
 
     return vaultMap
   }, [vaults, vaultsMigrations, vaultsRetired, checkHasHoldings])
+
+  const holdingsVaults = useMemo(() => {
+    return Array.from(processedVaults.values())
+      .filter(({ hasHoldings }) => hasHoldings)
+      .map(({ vault }) => vault)
+  }, [processedVaults])
 
   // Apply filters and categorize
   const filteredResults = useMemo(() => {
@@ -323,6 +330,7 @@ export function useV2VaultFilter(
 
   return {
     ...filteredResults,
+    holdingsVaults,
     isLoading: isLoadingVaultList
   }
 }

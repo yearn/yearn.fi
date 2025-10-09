@@ -347,14 +347,6 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
         }`}
       >
         <RenderAmount
-          value={staked.raw}
-          symbol={currentVault.token.symbol}
-          decimals={currentVault.token.decimals}
-          options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
-        />
-      </p>
-      <small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
-        <RenderAmount
           value={staked.normalized * tokenPrice.normalized}
           symbol={'USD'}
           decimals={0}
@@ -363,6 +355,14 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
             maximumFractionDigits: 2,
             minimumFractionDigits: 2
           }}
+        />
+      </p>
+      <small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
+        <RenderAmount
+          value={staked.raw}
+          symbol={currentVault.token.symbol}
+          decimals={currentVault.token.decimals}
+          options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
         />
       </small>
     </div>
@@ -391,6 +391,10 @@ export function VaultsListRow({ currentVault, flags }: TVaultRowProps): ReactEle
     }
     return balanceOfWant.raw
   }, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address])
+
+  const availableToDepositUSD = useMemo((): bigint => {
+    return (availableToDeposit * BigInt(Math.floor(currentVault.tvl.price * 1e6))) / 1_000_000n
+  }, [availableToDeposit, currentVault.tvl.price])
 
   const badgeDefinitions = useMemo(() => {
     if (!flags) {
@@ -494,36 +498,19 @@ export function VaultsListRow({ currentVault, flags }: TVaultRowProps): ReactEle
             <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Historical APY'}</p>
             <VaultHistoricalAPY currentVault={currentVault} />
           </div>
-
+          {/* Available */}
           <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
             <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Available'}</p>
-            <p
-              className={`yearn--table-data-section-item-value ${
-                isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
-              }`}
-            >
-              <RenderAmount
-                value={availableToDeposit}
-                symbol={currentVault.token.symbol}
-                decimals={currentVault.token.decimals}
-                options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
-              />
-            </p>
-          </div>
-
-          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
-            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Deposited'}</p>
-            <VaultStakedAmount currentVault={currentVault} />
-          </div>
-
-          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
-            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'TVL'}</p>
             <div className={'flex flex-col text-right'}>
-              <p className={'yearn--table-data-section-item-value'}>
+              <p
+                className={`yearn--table-data-section-item-value ${
+                  isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
+                }`}
+              >
                 <RenderAmount
-                  value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
-                  symbol={''}
-                  decimals={6}
+                  value={Number(toNormalizedBN(availableToDepositUSD, currentVault.token.decimals).normalized)}
+                  symbol={'USD'}
+                  decimals={0}
                   options={{
                     shouldCompactValue: true,
                     maximumFractionDigits: 2,
@@ -533,6 +520,31 @@ export function VaultsListRow({ currentVault, flags }: TVaultRowProps): ReactEle
               </p>
               <small className={'text-xs text-neutral-900/40'}>
                 <RenderAmount
+                  value={Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized)}
+                  symbol={currentVault.token.symbol}
+                  decimals={currentVault.token.decimals}
+                  options={{
+                    shouldCompactValue: true,
+                    shouldDisplaySymbol: false,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 2
+                  }}
+                  // options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
+                />
+              </small>
+            </div>
+          </div>
+          {/* Holdings */}
+          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
+            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Deposited'}</p>
+            <VaultStakedAmount currentVault={currentVault} />
+          </div>
+          {/* TVL */}
+          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
+            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'TVL'}</p>
+            <div className={'flex flex-col text-right'}>
+              <p className={'yearn--table-data-section-item-value'}>
+                <RenderAmount
                   value={currentVault.tvl?.tvl}
                   symbol={'USD'}
                   decimals={0}
@@ -540,6 +552,18 @@ export function VaultsListRow({ currentVault, flags }: TVaultRowProps): ReactEle
                     shouldCompactValue: true,
                     maximumFractionDigits: 2,
                     minimumFractionDigits: 0
+                  }}
+                />
+              </p>
+              <small className={'text-xs text-neutral-900/40'}>
+                <RenderAmount
+                  value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
+                  symbol={''}
+                  decimals={6}
+                  options={{
+                    shouldCompactValue: true,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 2
                   }}
                 />
               </small>

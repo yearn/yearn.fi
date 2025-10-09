@@ -67,6 +67,7 @@
       "!**/wagmi.ts",
       "!**/wagmi.d.ts",
       "!**/bun.lock",
+      "!style.css",
       "!**/apps/lib/style.css"
     ]
   }

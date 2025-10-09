@@ -13,12 +13,13 @@ import { ListHero } from '@vaults-v2/components/ListHero'
 import { VaultListOptions } from '@vaults-v2/components/list/VaultListOptions'
 import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
 import { VaultsListRow } from '@vaults-v2/components/list/VaultsListRow'
+import { VaultsV2AuxiliaryList } from '@vaults-v2/components/list/VaultsV2AuxiliaryList'
 import { ALL_VAULTS_CATEGORIES, DEFAULT_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
 import type { ReactElement, ReactNode } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 function HeaderUserPosition(): ReactElement {
   const { cumulatedValueInV2Vaults } = useWallet()
@@ -53,6 +54,8 @@ function HeaderUserPosition(): ReactElement {
   )
 }
 
+const HOLDINGS_TOGGLE_VALUE = 'holdings'
+
 function ListOfVaults(): ReactElement {
   const {
     search,
@@ -70,16 +73,50 @@ function ListOfVaults(): ReactElement {
     defaultTypes: DEFAULT_VAULTS_CATEGORIES_KEYS,
     defaultPathname: '/vaults'
   })
-  const { filteredVaults, vaultFlags, isLoading: isLoadingVaultList } = useV2VaultFilter(types, chains, search || '')
+  const {
+    filteredVaults,
+    holdingsVaults,
+    vaultFlags,
+    isLoading: isLoadingVaultList
+  } = useV2VaultFilter(types, chains, search || '')
   const [page, setPage] = useState(0)
   const chainOptions = useChainOptions(chains)
   const pageSize = 20
 
-  const sortedVaultsToDisplay = useSortVaults(filteredVaults, sortBy, sortDirection)
-  const totalVaults = sortedVaultsToDisplay.length
+  const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
+  const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
+
+  useEffect(() => {
+    if (holdingsVaults.length === 0 && isHoldingsPinned) {
+      setActiveToggleValues((prev) => prev.filter((value) => value !== HOLDINGS_TOGGLE_VALUE))
+    }
+  }, [holdingsVaults.length, isHoldingsPinned])
+
+  const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
+  const sortedHoldingsVaults = useSortVaults(holdingsVaults, sortBy, sortDirection)
+
+  const pinnedHoldingsVaults = useMemo(
+    () => (isHoldingsPinned ? sortedHoldingsVaults : []),
+    [isHoldingsPinned, sortedHoldingsVaults]
+  )
+
+  const pinnedHoldingsKeys = useMemo(
+    () => new Set(pinnedHoldingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
+    [pinnedHoldingsVaults]
+  )
+
+  const mainVaults = useMemo(() => {
+    if (!isHoldingsPinned) {
+      return sortedVaults
+    }
+    return sortedVaults.filter((vault) => !pinnedHoldingsKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
+  }, [isHoldingsPinned, pinnedHoldingsKeys, sortedVaults])
+
+  const totalMainVaults = mainVaults.length
+  const paginatedVaults = useMemo(() => mainVaults.slice(page * pageSize, (page + 1) * pageSize), [mainVaults, page])
 
   const renderVaultList = (): ReactNode => {
-    if (isLoadingVaultList || totalVaults === 0) {
+    if (isLoadingVaultList) {
       return (
         <VaultsListEmpty
           isLoading={isLoadingVaultList}
@@ -92,12 +129,32 @@ function ListOfVaults(): ReactElement {
       )
     }
 
-    const paginatedVaults = sortedVaultsToDisplay.slice(page * pageSize, (page + 1) * pageSize)
+    if (pinnedHoldingsVaults.length === 0 && totalMainVaults === 0) {
+      return (
+        <VaultsListEmpty
+          isLoading={false}
+          currentSearch={search || ''}
+          currentCategories={types}
+          currentChains={chains}
+          onReset={onReset}
+          defaultCategories={DEFAULT_VAULTS_CATEGORIES_KEYS}
+        />
+      )
+    }
 
-    return paginatedVaults.map((vault) => {
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
-      return <VaultsListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
-    })
+    return (
+      <div className={'flex flex-col gap-px'}>
+        <VaultsV2AuxiliaryList vaults={pinnedHoldingsVaults} vaultFlags={vaultFlags} />
+        {paginatedVaults.length > 0 ? (
+          <div className={'grid gap-px'}>
+            {paginatedVaults.map((vault) => {
+              const key = `${vault.chainID}_${toAddress(vault.address)}`
+              return <VaultsListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
+            })}
+          </div>
+        ) : null}
+      </div>
+    )
   }
 
   /* 🔵 - Yearn Finance **************************************************************************
@@ -105,13 +162,13 @@ function ListOfVaults(): ReactElement {
    **	especially when a search returns fewer results than would fill the current page.
    **********************************************************************************************/
   useEffect(() => {
-    const totalPages = Math.ceil(totalVaults / pageSize)
+    const totalPages = Math.ceil(totalMainVaults / pageSize)
 
     // If current page is beyond available pages, reset to first page
     if (page >= totalPages && totalPages > 0) {
       setPage(0)
     }
-  }, [page, totalVaults])
+  }, [page, totalMainVaults])
 
   return (
     <div
@@ -143,6 +200,15 @@ function ListOfVaults(): ReactElement {
           onChangeSortBy(newSortBy as TPossibleSortBy)
           onChangeSortDirection(newSortDirection as TSortDirection)
         }}
+        onToggle={(value): void => {
+          setActiveToggleValues((prev) => {
+            if (prev.includes(value)) {
+              return prev.filter((entry) => entry !== value)
+            }
+            return [...prev, value]
+          })
+        }}
+        activeToggleValues={activeToggleValues}
         items={[
           {
             label: <IconChain />,
@@ -151,35 +217,41 @@ function ListOfVaults(): ReactElement {
             className: 'col-span-1'
           },
           {
+            type: 'sort',
             label: 'Vault / Featuring Score',
             value: 'featuringScore',
             sortable: true
           },
           {
+            type: 'sort',
             label: 'Est. APY',
             value: 'estAPY',
             sortable: true,
             className: 'col-span-2'
           },
           {
+            type: 'sort',
             label: 'Hist. APY',
             value: 'APY',
             sortable: true,
             className: 'col-span-2'
           },
           {
+            type: 'sort',
             label: 'Available',
             value: 'available',
             sortable: true,
             className: 'col-span-2'
           },
           {
+            type: 'toggle',
             label: 'Holdings',
-            value: 'deposited',
-            sortable: true,
-            className: 'col-span-2'
+            value: HOLDINGS_TOGGLE_VALUE,
+            className: 'col-span-2',
+            disabled: holdingsVaults.length === 0
           },
           {
+            type: 'sort',
             label: 'Deposits',
             value: 'tvl',
             sortable: true,
@@ -188,19 +260,21 @@ function ListOfVaults(): ReactElement {
         ]}
       />
 
-      <div className={'grid gap-0'}>{renderVaultList()}</div>
+      {renderVaultList()}
 
-      <div className={'mt-4'}>
-        <div className={'border-t border-neutral-200/60 p-4'}>
-          <Pagination
-            range={[0, totalVaults]}
-            pageCount={Math.ceil(totalVaults / pageSize)}
-            numberOfItems={totalVaults}
-            currentPage={page}
-            onPageChange={(newPage): void => setPage(newPage.selected)}
-          />
+      {totalMainVaults > 0 ? (
+        <div className={'mt-4'}>
+          <div className={'border-t border-neutral-200/60 p-4'}>
+            <Pagination
+              range={[0, totalMainVaults]}
+              pageCount={Math.ceil(totalMainVaults / pageSize)}
+              numberOfItems={totalMainVaults}
+              currentPage={page}
+              onPageChange={(newPage): void => setPage(newPage.selected)}
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   )
 }

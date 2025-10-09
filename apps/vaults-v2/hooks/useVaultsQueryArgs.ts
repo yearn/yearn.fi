@@ -38,7 +38,7 @@ function useQueryArguments(props: {
   const [chains, setChains] = useState<number[] | null>(allChains || [])
   const [sortDirection, setSortDirection] = useState<string | null>(null)
 
-  const defaultSortBy = props.defaultSortBy || 'deposited'
+  const defaultSortBy = props.defaultSortBy || 'featuringScore'
   const [sortBy, setSortBy] = useState<string | null>(defaultSortBy)
 
   const pathname = location.pathname

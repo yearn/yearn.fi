@@ -188,6 +188,7 @@ export function VaultsV3ListRow({
           <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
           <VaultStakedAmount currentVault={currentVault} />
         </div>
+        {/* TVL */}
         <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
           <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
           <div className={'flex flex-col pt-0 text-right'}>
