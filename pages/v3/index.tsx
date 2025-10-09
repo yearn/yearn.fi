@@ -188,13 +188,16 @@ function ListOfVaults({
           sortBy={sortBy}
           sortDirection={sortDirection}
           onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-            if (newSortDirection === '') {
-              onChangeSortBy('featuringScore')
-              onChangeSortDirection('')
-              return
+            let targetSortBy = newSortBy as TPossibleSortBy
+            let targetSortDirection = newSortDirection as TSortDirection
+
+            if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
+              targetSortBy = 'featuringScore'
+              targetSortDirection = 'desc'
             }
-            onChangeSortBy(newSortBy as TPossibleSortBy)
-            onChangeSortDirection(newSortDirection as TSortDirection)
+
+            onChangeSortBy(targetSortBy)
+            onChangeSortDirection(targetSortDirection)
           }}
           items={[
             {

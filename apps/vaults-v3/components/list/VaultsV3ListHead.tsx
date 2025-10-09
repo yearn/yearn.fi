@@ -20,15 +20,7 @@ export type TListHead = {
 export function VaultsV3ListHead({ items, sortBy, sortDirection, onSort }: TListHead): ReactElement {
   const toggleSortDirection = (newSortBy: string): TSortDirection => {
     if (sortBy === newSortBy) {
-      if (sortDirection === '') {
-        return 'desc'
-      }
-      if (sortDirection === 'desc') {
-        return 'asc'
-      }
-      if (sortDirection === 'asc') {
-        return ''
-      }
+      return sortDirection === 'desc' ? 'asc' : 'desc'
     }
     return 'desc'
   }
