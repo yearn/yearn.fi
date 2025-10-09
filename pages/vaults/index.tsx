@@ -54,6 +54,7 @@ function HeaderUserPosition(): ReactElement {
   )
 }
 
+const AVAILABLE_TOGGLE_VALUE = 'available'
 const HOLDINGS_TOGGLE_VALUE = 'holdings'
 
 function ListOfVaults(): ReactElement {
@@ -76,6 +77,7 @@ function ListOfVaults(): ReactElement {
   const {
     filteredVaults,
     holdingsVaults,
+    availableVaults,
     vaultFlags,
     isLoading: isLoadingVaultList
   } = useV2VaultFilter(types, chains, search || '')
@@ -85,6 +87,7 @@ function ListOfVaults(): ReactElement {
 
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
+  const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
 
   useEffect(() => {
     if (holdingsVaults.length === 0 && isHoldingsPinned) {
@@ -92,25 +95,37 @@ function ListOfVaults(): ReactElement {
     }
   }, [holdingsVaults.length, isHoldingsPinned])
 
+  useEffect(() => {
+    if (availableVaults.length === 0 && isAvailablePinned) {
+      setActiveToggleValues((prev) => prev.filter((value) => value !== AVAILABLE_TOGGLE_VALUE))
+    }
+  }, [availableVaults.length, isAvailablePinned])
+
   const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
   const sortedHoldingsVaults = useSortVaults(holdingsVaults, sortBy, sortDirection)
+  const sortedAvailableVaults = useSortVaults(availableVaults, sortBy, sortDirection)
 
-  const pinnedHoldingsVaults = useMemo(
-    () => (isHoldingsPinned ? sortedHoldingsVaults : []),
-    [isHoldingsPinned, sortedHoldingsVaults]
-  )
+  const pinnedVaults = useMemo(() => {
+    if (isHoldingsPinned) {
+      return sortedHoldingsVaults
+    }
+    if (isAvailablePinned) {
+      return sortedAvailableVaults
+    }
+    return [] as typeof sortedVaults
+  }, [isHoldingsPinned, sortedHoldingsVaults, isAvailablePinned, sortedAvailableVaults])
 
-  const pinnedHoldingsKeys = useMemo(
-    () => new Set(pinnedHoldingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
-    [pinnedHoldingsVaults]
+  const pinnedVaultKeys = useMemo(
+    () => new Set(pinnedVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
+    [pinnedVaults]
   )
 
   const mainVaults = useMemo(() => {
-    if (!isHoldingsPinned) {
+    if (pinnedVaults.length === 0) {
       return sortedVaults
     }
-    return sortedVaults.filter((vault) => !pinnedHoldingsKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
-  }, [isHoldingsPinned, pinnedHoldingsKeys, sortedVaults])
+    return sortedVaults.filter((vault) => !pinnedVaultKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
+  }, [pinnedVaultKeys, pinnedVaults, sortedVaults])
 
   const totalMainVaults = mainVaults.length
   const paginatedVaults = useMemo(() => mainVaults.slice(page * pageSize, (page + 1) * pageSize), [mainVaults, page])
@@ -129,7 +144,7 @@ function ListOfVaults(): ReactElement {
       )
     }
 
-    if (pinnedHoldingsVaults.length === 0 && totalMainVaults === 0) {
+    if (pinnedVaults.length === 0 && totalMainVaults === 0) {
       return (
         <VaultsListEmpty
           isLoading={false}
@@ -144,7 +159,7 @@ function ListOfVaults(): ReactElement {
 
     return (
       <div className={'flex flex-col gap-px'}>
-        <VaultsV2AuxiliaryList vaults={pinnedHoldingsVaults} vaultFlags={vaultFlags} />
+        <VaultsV2AuxiliaryList vaults={pinnedVaults} vaultFlags={vaultFlags} />
         {paginatedVaults.length > 0 ? (
           <div className={'grid gap-px'}>
             {paginatedVaults.map((vault) => {
@@ -205,7 +220,7 @@ function ListOfVaults(): ReactElement {
             if (prev.includes(value)) {
               return prev.filter((entry) => entry !== value)
             }
-            return [...prev, value]
+            return [value]
           })
         }}
         activeToggleValues={activeToggleValues}
@@ -237,11 +252,11 @@ function ListOfVaults(): ReactElement {
             className: 'col-span-2'
           },
           {
-            type: 'sort',
+            type: 'toggle',
             label: 'Available',
-            value: 'available',
-            sortable: true,
-            className: 'col-span-2'
+            value: AVAILABLE_TOGGLE_VALUE,
+            className: 'col-span-2',
+            disabled: availableVaults.length === 0
           },
           {
             type: 'toggle',

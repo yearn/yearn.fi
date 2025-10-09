@@ -1,15 +1,18 @@
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
 import { toAddress } from '@lib/utils'
+import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { isAutomatedVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useAppSettings } from '@vaults-v2/contexts/useAppSettings'
+import { getNativeTokenWrapperContract } from '@vaults-v2/utils'
 import { useCallback, useMemo } from 'react'
 
 type TVaultWithMetadata = {
   vault: TYDaemonVault
   hasHoldings: boolean
+  hasAvailableBalance: boolean
   isHoldingsVault: boolean
   isMigratableVault: boolean
   isRetiredVault: boolean
@@ -24,6 +27,7 @@ type TVaultFlags = {
 type TOptimizedV2VaultFilterResult = {
   filteredVaults: TYDaemonVault[]
   holdingsVaults: TYDaemonVault[]
+  availableVaults: TYDaemonVault[]
   vaultFlags: Record<string, TVaultFlags>
   isLoading: boolean
 }
@@ -65,6 +69,26 @@ export function useV2VaultFilter(
     [getBalance, getPrice, shouldHideDust]
   )
 
+  const checkHasAvailableBalance = useCallback(
+    (vault: TYDaemonVault): boolean => {
+      const wantBalance = getBalance({ address: vault.token.address, chainID: vault.chainID })
+      if (wantBalance.raw > 0n) {
+        return true
+      }
+
+      const nativeWrapper = getNativeTokenWrapperContract(vault.chainID)
+      if (toAddress(vault.token.address) === toAddress(nativeWrapper)) {
+        const nativeBalance = getBalance({ address: ETH_TOKEN_ADDRESS, chainID: vault.chainID })
+        if (nativeBalance.raw > 0n) {
+          return true
+        }
+      }
+
+      return false
+    },
+    [getBalance]
+  )
+
   // Main processing function - single pass through all vaults
   const processedVaults = useDeepCompareMemo(() => {
     const vaultMap = new Map<string, TVaultWithMetadata>()
@@ -72,12 +96,14 @@ export function useV2VaultFilter(
     const upsertVault = (vault: TYDaemonVault, updates: Partial<Omit<TVaultWithMetadata, 'vault'>> = {}): void => {
       const key = `${vault.chainID}_${toAddress(vault.address)}`
       const hasHoldings = checkHasHoldings(vault)
+      const hasAvailableBalance = checkHasAvailableBalance(vault)
       const existing = vaultMap.get(key)
 
       if (existing) {
         vaultMap.set(key, {
           ...existing,
           hasHoldings: existing.hasHoldings || hasHoldings,
+          hasAvailableBalance: existing.hasAvailableBalance || hasAvailableBalance,
           isHoldingsVault: existing.isHoldingsVault || hasHoldings,
           ...updates
         })
@@ -87,6 +113,7 @@ export function useV2VaultFilter(
       vaultMap.set(key, {
         vault,
         hasHoldings,
+        hasAvailableBalance,
         isHoldingsVault: hasHoldings,
         isMigratableVault: false,
         isRetiredVault: false,
@@ -136,11 +163,17 @@ export function useV2VaultFilter(
     })
 
     return vaultMap
-  }, [vaults, vaultsMigrations, vaultsRetired, checkHasHoldings])
+  }, [vaults, vaultsMigrations, vaultsRetired, checkHasHoldings, checkHasAvailableBalance])
 
   const holdingsVaults = useMemo(() => {
     return Array.from(processedVaults.values())
       .filter(({ hasHoldings }) => hasHoldings)
+      .map(({ vault }) => vault)
+  }, [processedVaults])
+
+  const availableVaults = useMemo(() => {
+    return Array.from(processedVaults.values())
+      .filter(({ hasAvailableBalance }) => hasAvailableBalance)
       .map(({ vault }) => vault)
   }, [processedVaults])
 
@@ -331,6 +364,7 @@ export function useV2VaultFilter(
   return {
     ...filteredResults,
     holdingsVaults,
+    availableVaults,
     isLoading: isLoadingVaultList
   }
 }
