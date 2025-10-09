@@ -22,6 +22,7 @@ type TVaultFlags = {
 
 type TV3VaultFilterResult = {
   filteredVaults: TYDaemonVault[]
+  holdingsVaults: TYDaemonVault[]
   vaultFlags: Record<string, TVaultFlags>
   totalMatchingVaults: number
   totalHoldingsMatching: number
@@ -153,6 +154,12 @@ export function useV3VaultFilter(
   }, [vaults, vaultsMigrations, vaultsRetired, checkHasHoldings])
 
   // Apply filters
+  const holdingsVaults = useMemo(() => {
+    return Array.from(processedVaults.values())
+      .filter(({ hasHoldings }) => hasHoldings)
+      .map(({ vault }) => vault)
+  }, [processedVaults])
+
   const filteredResults = useMemo(() => {
     const filteredVaults: TYDaemonVault[] = []
     const vaultFlags: Record<string, TVaultFlags> = {}
@@ -245,13 +252,14 @@ export function useV3VaultFilter(
 
     return {
       filteredVaults,
+      holdingsVaults,
       vaultFlags,
       totalMatchingVaults,
       totalHoldingsMatching,
       totalMigratableMatching,
       totalRetiredMatching
     }
-  }, [processedVaults, types, chains, search, categories])
+  }, [processedVaults, types, chains, search, categories, holdingsVaults])
 
   return {
     ...filteredResults,

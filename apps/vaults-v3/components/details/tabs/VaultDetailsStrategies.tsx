@@ -197,7 +197,7 @@ export function VaultDetailsStrategies({ currentVault }: { currentVault: TYDaemo
                 onChangeSortDirection(newSortDirection as TSortDirection)
               }}
               items={[
-                { label: 'Vault', value: 'name', sortable: false, className: 'ml-20' },
+                { label: 'Vault', value: 'name', sortable: false, className: '' },
                 {
                   label: 'Allocation %',
                   value: 'allocationPercentage',

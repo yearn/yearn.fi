@@ -7,6 +7,7 @@ import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
 import { Filters } from '@vaults-v3/components/Filters'
+import { VaultsV3AuxiliaryList } from '@vaults-v3/components/list/VaultsV3AuxiliaryList'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
 import {
@@ -16,7 +17,7 @@ import {
 } from '@vaults-v3/constants'
 import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
-import { Fragment } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 
 function V3Card(): ReactElement {
   return (
@@ -49,6 +50,8 @@ type TListOfVaultsProps = {
   onResetMultiSelect: () => void
 }
 
+const HOLDINGS_TOGGLE_VALUE = 'holdings'
+
 function ListOfVaults({
   search,
   types,
@@ -66,6 +69,7 @@ function ListOfVaults({
 }: TListOfVaultsProps): ReactElement {
   const {
     filteredVaults,
+    holdingsVaults,
     vaultFlags,
     totalMatchingVaults,
     totalHoldingsMatching,
@@ -74,9 +78,38 @@ function ListOfVaults({
     isLoading: isLoadingVaultList
   } = useV3VaultFilter(types, chains, search || '', categories)
 
-  const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
+  const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
+  const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
 
-  const visibleFlagCounts = sortedVaults.reduce(
+  useEffect(() => {
+    if (holdingsVaults.length === 0 && isHoldingsPinned) {
+      setActiveToggleValues((prev) => prev.filter((value) => value !== HOLDINGS_TOGGLE_VALUE))
+    }
+  }, [holdingsVaults.length, isHoldingsPinned])
+
+  const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
+  const sortedHoldingsVaults = useSortVaults(holdingsVaults, sortBy, sortDirection)
+
+  const pinnedHoldingsVaults = useMemo(
+    () => (isHoldingsPinned ? sortedHoldingsVaults : []),
+    [isHoldingsPinned, sortedHoldingsVaults]
+  )
+
+  const pinnedHoldingsKeys = useMemo(
+    () => new Set(pinnedHoldingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
+    [pinnedHoldingsVaults]
+  )
+
+  const mainVaults = useMemo(() => {
+    if (!isHoldingsPinned) {
+      return sortedVaults
+    }
+    return sortedVaults.filter((vault) => !pinnedHoldingsKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
+  }, [isHoldingsPinned, pinnedHoldingsKeys, sortedVaults])
+
+  const displayedVaults = useMemo(() => [...pinnedHoldingsVaults, ...mainVaults], [pinnedHoldingsVaults, mainVaults])
+
+  const visibleFlagCounts = displayedVaults.reduce(
     (counts, vault) => {
       const key = `${vault.chainID}_${toAddress(vault.address)}`
       const flags = vaultFlags[key]
@@ -148,8 +181,9 @@ function ListOfVaults({
       </div>
     )
   }
+
   function renderVaultList(): ReactNode {
-    if (isLoadingVaultList || sortedVaults.length === 0) {
+    if (isLoadingVaultList) {
       return (
         <VaultsListEmpty
           isLoading={isLoadingVaultList}
@@ -163,10 +197,33 @@ function ListOfVaults({
       )
     }
 
-    return sortedVaults.map((vault) => {
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
-      return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
-    })
+    if (pinnedHoldingsVaults.length === 0 && mainVaults.length === 0) {
+      return (
+        <VaultsListEmpty
+          isLoading={false}
+          currentSearch={search || ''}
+          currentCategories={categories}
+          currentChains={chains}
+          onReset={onResetMultiSelect}
+          defaultCategories={Object.values(ALL_VAULTSV3_CATEGORIES)}
+          potentialResultsCount={totalMatchingVaults}
+        />
+      )
+    }
+
+    return (
+      <div className={'flex flex-col gap-3'}>
+        <VaultsV3AuxiliaryList vaults={pinnedHoldingsVaults} vaultFlags={vaultFlags} />
+        {mainVaults.length > 0 ? (
+          <div className={'grid gap-3'}>
+            {mainVaults.map((vault) => {
+              const key = `${vault.chainID}_${toAddress(vault.address)}`
+              return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
+            })}
+          </div>
+        ) : null}
+      </div>
+    )
   }
 
   return (
@@ -183,7 +240,7 @@ function ListOfVaults({
         onSearch={onSearch}
         searchAlertContent={renderHiddenSearchAlert()}
       />
-      <div className={'col-span-24 flex min-h-[240px] w-full flex-col'}>
+      <div className={'col-span-24 flex min-h-[240px] w-full flex-col gap-4'}>
         <VaultsV3ListHead
           sortBy={sortBy}
           sortDirection={sortDirection}
@@ -199,44 +256,60 @@ function ListOfVaults({
             onChangeSortBy(targetSortBy)
             onChangeSortDirection(targetSortDirection)
           }}
+          onToggle={(value): void => {
+            setActiveToggleValues((prev) => {
+              if (prev.includes(value)) {
+                return prev.filter((entry) => entry !== value)
+              }
+              return [...prev, value]
+            })
+          }}
+          activeToggleValues={activeToggleValues}
           items={[
             {
+              type: 'sort',
               label: 'Vault / Featuring Score',
               value: 'featuringScore',
               sortable: true,
               className: 'col-span-4'
             },
             {
+              type: 'sort',
               label: 'Est. APY',
               value: 'estAPY',
               sortable: true,
               className: 'col-span-2'
             },
             {
+              type: 'sort',
               label: 'Hist. APY',
               value: 'APY',
               sortable: true,
               className: 'col-span-2'
             },
             {
+              type: 'sort',
               label: 'Risk Level',
               value: 'score',
               sortable: true,
               className: 'col-span-2 whitespace-nowrap'
             },
             {
+              type: 'sort',
               label: 'Available',
               value: 'available',
               sortable: true,
               className: 'col-span-2'
             },
             {
+              type: 'toggle',
               label: 'Holdings',
-              value: 'deposited',
-              sortable: true,
-              className: 'col-span-2'
+              value: HOLDINGS_TOGGLE_VALUE,
+              className: 'col-span-2',
+              disabled: holdingsVaults.length === 0
             },
             {
+              type: 'sort',
               label: 'Deposits',
               value: 'tvl',
               sortable: true,
@@ -244,7 +317,7 @@ function ListOfVaults({
             }
           ]}
         />
-        <div className={'grid gap-3'}>{renderVaultList()}</div>
+        {renderVaultList()}
       </div>
     </Fragment>
   )
