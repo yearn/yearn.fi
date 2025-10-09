@@ -50,6 +50,7 @@ type TListOfVaultsProps = {
   onResetMultiSelect: () => void
 }
 
+const AVAILABLE_TOGGLE_VALUE = 'available'
 const HOLDINGS_TOGGLE_VALUE = 'holdings'
 
 function ListOfVaults({
@@ -70,6 +71,7 @@ function ListOfVaults({
   const {
     filteredVaults,
     holdingsVaults,
+    availableVaults,
     vaultFlags,
     totalMatchingVaults,
     totalHoldingsMatching,
@@ -80,6 +82,7 @@ function ListOfVaults({
 
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
+  const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
 
   useEffect(() => {
     if (holdingsVaults.length === 0 && isHoldingsPinned) {
@@ -87,27 +90,68 @@ function ListOfVaults({
     }
   }, [holdingsVaults.length, isHoldingsPinned])
 
+  useEffect(() => {
+    if (availableVaults.length === 0 && isAvailablePinned) {
+      setActiveToggleValues((prev) => prev.filter((value) => value !== AVAILABLE_TOGGLE_VALUE))
+    }
+  }, [availableVaults.length, isAvailablePinned])
+
   const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
   const sortedHoldingsVaults = useSortVaults(holdingsVaults, sortBy, sortDirection)
+  const sortedAvailableVaults = useSortVaults(availableVaults, sortBy, sortDirection)
 
-  const pinnedHoldingsVaults = useMemo(
-    () => (isHoldingsPinned ? sortedHoldingsVaults : []),
-    [isHoldingsPinned, sortedHoldingsVaults]
-  )
+  const pinnedSections = useMemo(() => {
+    const sections: Array<{ key: string; vaults: typeof sortedVaults }> = []
+    const seen = new Set<string>()
 
-  const pinnedHoldingsKeys = useMemo(
-    () => new Set(pinnedHoldingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
-    [pinnedHoldingsVaults]
+    if (isAvailablePinned) {
+      const availableSectionVaults = sortedAvailableVaults.filter((vault) => {
+        const key = `${vault.chainID}_${toAddress(vault.address)}`
+        if (seen.has(key)) {
+          return false
+        }
+        seen.add(key)
+        return true
+      })
+
+      if (availableSectionVaults.length > 0) {
+        sections.push({ key: AVAILABLE_TOGGLE_VALUE, vaults: availableSectionVaults })
+      }
+    }
+
+    if (isHoldingsPinned) {
+      const holdingsSectionVaults = sortedHoldingsVaults.filter((vault) => {
+        const key = `${vault.chainID}_${toAddress(vault.address)}`
+        if (seen.has(key)) {
+          return false
+        }
+        seen.add(key)
+        return true
+      })
+
+      if (holdingsSectionVaults.length > 0) {
+        sections.push({ key: HOLDINGS_TOGGLE_VALUE, vaults: holdingsSectionVaults })
+      }
+    }
+
+    return sections
+  }, [isAvailablePinned, sortedAvailableVaults, isHoldingsPinned, sortedHoldingsVaults])
+
+  const pinnedVaults = useMemo(() => pinnedSections.flatMap((section) => section.vaults), [pinnedSections])
+
+  const pinnedVaultKeys = useMemo(
+    () => new Set(pinnedVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
+    [pinnedVaults]
   )
 
   const mainVaults = useMemo(() => {
-    if (!isHoldingsPinned) {
+    if (pinnedVaults.length === 0) {
       return sortedVaults
     }
-    return sortedVaults.filter((vault) => !pinnedHoldingsKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
-  }, [isHoldingsPinned, pinnedHoldingsKeys, sortedVaults])
+    return sortedVaults.filter((vault) => !pinnedVaultKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
+  }, [pinnedVaultKeys, pinnedVaults, sortedVaults])
 
-  const displayedVaults = useMemo(() => [...pinnedHoldingsVaults, ...mainVaults], [pinnedHoldingsVaults, mainVaults])
+  const displayedVaults = useMemo(() => [...pinnedVaults, ...mainVaults], [pinnedVaults, mainVaults])
 
   const visibleFlagCounts = displayedVaults.reduce(
     (counts, vault) => {
@@ -197,7 +241,7 @@ function ListOfVaults({
       )
     }
 
-    if (pinnedHoldingsVaults.length === 0 && mainVaults.length === 0) {
+    if (pinnedVaults.length === 0 && mainVaults.length === 0) {
       return (
         <VaultsListEmpty
           isLoading={false}
@@ -213,7 +257,9 @@ function ListOfVaults({
 
     return (
       <div className={'flex flex-col gap-3'}>
-        <VaultsV3AuxiliaryList vaults={pinnedHoldingsVaults} vaultFlags={vaultFlags} />
+        {pinnedSections.map((section) => (
+          <VaultsV3AuxiliaryList key={section.key} vaults={section.vaults} vaultFlags={vaultFlags} />
+        ))}
         {mainVaults.length > 0 ? (
           <div className={'grid gap-3'}>
             {mainVaults.map((vault) => {
@@ -261,7 +307,7 @@ function ListOfVaults({
               if (prev.includes(value)) {
                 return prev.filter((entry) => entry !== value)
               }
-              return [...prev, value]
+              return [value]
             })
           }}
           activeToggleValues={activeToggleValues}
@@ -295,11 +341,11 @@ function ListOfVaults({
               className: 'col-span-2 whitespace-nowrap'
             },
             {
-              type: 'sort',
+              type: 'toggle',
               label: 'Available',
-              value: 'available',
-              sortable: true,
-              className: 'col-span-2'
+              value: AVAILABLE_TOGGLE_VALUE,
+              className: 'col-span-2',
+              disabled: availableVaults.length === 0
             },
             {
               type: 'toggle',
