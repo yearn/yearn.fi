@@ -14,7 +14,7 @@ export interface Token {
 
 export const useTokens = (addresses: (Address | undefined)[], chainId?: number) => {
   const { address: account } = useAccount()
-  const { data, isLoading } = useReadContracts({
+  const { data, isLoading, refetch } = useReadContracts({
     allowFailure: false,
     contracts: _.chain(addresses)
       .map((address) => [
@@ -76,5 +76,5 @@ export const useTokens = (addresses: (Address | undefined)[], chainId?: number) 
         })()
       : []
 
-  return { tokens, isLoading }
+  return { tokens, isLoading, refetch }
 }

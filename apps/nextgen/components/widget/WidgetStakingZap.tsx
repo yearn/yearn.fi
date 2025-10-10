@@ -8,7 +8,7 @@ import { useSolverGaugeStakingBooster } from '@nextgen/hooks/solvers/useSolverGa
 import { useCowswapOrder } from '@nextgen/hooks/useCowswapOrder'
 import { useInput } from '@nextgen/hooks/useInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
-import { type FC, useEffect, useMemo, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
@@ -66,7 +66,7 @@ export const WidgetStakingZap: FC<Props> = ({
     chainId
   })
 
-  const { tokens } = useTokens(assetToken ? [assetToken, gaugeAddress] : [], chainId)
+  const { tokens, refetch: refetchTokens } = useTokens(assetToken ? [assetToken, gaugeAddress] : [], chainId)
 
   // ** PERIPHERY ** //
   const [asset, gauge] = tokens
@@ -181,6 +181,17 @@ export const WidgetStakingZap: FC<Props> = ({
     return null
   }, [activeTab, depositAmount.bn, isDepositAmountExceedsBalance])
 
+  // Success handlers that refetch balances
+  const handleDepositSuccess = useCallback(() => {
+    refetchTokens()
+    handleSuccess?.()
+  }, [refetchTokens, handleSuccess])
+
+  const handleWithdrawSuccess = useCallback(() => {
+    refetchTokens()
+    handleSuccess?.()
+  }, [refetchTokens, handleSuccess])
+
   const { prepareCowswapOrder } = useCowswapOrder({
     getCowswapOrderParams,
     enabled: !!quote && gaugeTokensNeeded > 0n
@@ -228,7 +239,7 @@ export const WidgetStakingZap: FC<Props> = ({
               transactionName="Deposit & Stake"
               disabled={!prepareZapInEnabled || isDepositAmountExceedsBalance}
               tooltip={depositError || undefined}
-              onSuccess={handleSuccess}
+              onSuccess={handleDepositSuccess}
               className="w-full"
             />
           </div>
@@ -247,7 +258,7 @@ export const WidgetStakingZap: FC<Props> = ({
       prepareZapInEnabled,
       isDepositAmountExceedsBalance,
       depositError,
-      handleSuccess
+      handleDepositSuccess
     ]
   )
 
@@ -305,7 +316,7 @@ export const WidgetStakingZap: FC<Props> = ({
               transactionName={isLoadingQuote || isLoadingAllowance ? 'Getting quote...' : `Withdraw ${asset?.symbol}`}
               disabled={isWithdrawButtonDisabled}
               tooltip={withdrawError || undefined}
-              onSuccess={handleSuccess}
+              onSuccess={handleWithdrawSuccess}
               className="w-full"
             />
           </div>
@@ -332,7 +343,7 @@ export const WidgetStakingZap: FC<Props> = ({
       prepareCowswapOrder,
       isWithdrawButtonDisabled,
       withdrawError,
-      handleSuccess
+      handleWithdrawSuccess
     ]
   )
 
