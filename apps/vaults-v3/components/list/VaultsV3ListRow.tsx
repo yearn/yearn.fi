@@ -80,7 +80,7 @@ export function VaultsV3ListRow({
       onKeyDown={handleKeyDown}
       className={cl(
         'grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl',
-        'p-6 sm:py-4 md:pr-10',
+        'p-6 sm:py-2 md:pr-10',
         'cursor-pointer relative group'
       )}
     >
