@@ -568,6 +568,10 @@ body {
   fill: var(--color-neutral-0);
 }
 
+.skeleton {
+  @apply bg-gray-200 rounded animate-pulse;
+}
+
 /* 🔵 - Yearn Finance ******************************************************
 ** Overwriting the defaults to match our needs
 **************************************************************************/

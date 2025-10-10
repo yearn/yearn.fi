@@ -1,4 +1,4 @@
-import { cl, exactToSimple, parseUnits, simpleToExact } from '@lib/utils'
+import { cl, exactToSimple, simpleToExact } from '@lib/utils'
 import type { useInput } from 'apps/nextgen/hooks/useInput'
 import type { ChangeEvent, FC } from 'react'
 import { formatUnits } from 'viem'

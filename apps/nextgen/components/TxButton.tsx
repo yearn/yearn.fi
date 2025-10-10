@@ -14,6 +14,8 @@ type Props = {
   transactionName: string
   isApproved?: boolean
   disabled?: boolean
+  loading?: boolean
+  tooltip?: string // TODO: Add
   onSuccess?: () => void
   showEmojisplosion?: boolean
   additionalComponent?: ReactNode
@@ -40,6 +42,8 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   prepareWrite,
   transactionName = 'Send',
   disabled: _disabled,
+  loading: _loading,
+  tooltip,
   isApproved,
   onSuccess,
   showEmojisplosion = false,
@@ -63,10 +67,16 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const { isSuccess: isTxSuccess, isError } = receipt
   const { isError: isSimulatedError, isFetching: isSimulating } = prepareWrite
 
-  const isLoading = override === 'loading'
+  const isLoading = override === 'loading' || _loading
   const isSuccess = override === 'success'
 
   const disabled = _disabled || !prepareWrite.isSuccess || isLoading || isSimulating
+  // Clear error override when prepareWrite state changes
+  useEffect(() => {
+    if (override === 'error' && !prepareWrite.isError) {
+      setOverride(undefined)
+    }
+  }, [prepareWrite.isError, override])
 
   const ButtonContentType: ButtonState | undefined = (() => {
     if (!account) return 'notConnected'
@@ -75,7 +85,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
     if (isSimulating) return 'simulating'
     if (isApproved) return 'approved'
     if (isSuccess) return 'success'
-    if (isError || isSimulatedError) return 'error'
+    if (override === 'error' || isError || isSimulatedError) return 'error'
     return 'default'
   })()
 
@@ -208,7 +218,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
 
         if (prepareWrite.isSuccess && prepareWrite.data?.request) {
           setOverride('loading')
-          
+
           // Check if this is a Cowswap order
           if ((prepareWrite.data.request as any).__isCowswapOrder) {
             const customWriteAsync = (prepareWrite.data.request as any).writeContractAsync
@@ -219,9 +229,10 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                 setTimeout(() => setOverride(undefined), 1500)
               })
               .catch((error: Error) => {
-                setOverride(undefined)
+                setOverride('error')
                 addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
                 console.error('Transaction failed:', error)
+                setTimeout(() => setOverride(undefined), 3000)
               })
           } else {
             writeContract
@@ -230,9 +241,10 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                 addNotification?.('pending', hash, transactionName)
               })
               .catch((error) => {
-                setOverride(undefined)
+                setOverride('error')
                 addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
                 console.error('Transaction failed:', error)
+                setTimeout(() => setOverride(undefined), 3000)
               })
           }
         }

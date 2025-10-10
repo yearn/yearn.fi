@@ -1,13 +1,13 @@
+import type { OrderCreation, OrderQuoteResponse, SigningScheme } from '@cowprotocol/cow-sdk'
 import { OrderBookApi, OrderQuoteSideKindSell } from '@cowprotocol/cow-sdk'
-import type { OrderQuoteResponse, OrderCreation, SigningScheme } from '@cowprotocol/cow-sdk'
+import type { TNormalizedBN } from '@lib/types'
 import { isZeroAddress, toBigInt, toNormalizedBN } from '@lib/utils'
 import { SOLVER_COW_VAULT_RELAYER_ADDRESS } from '@lib/utils/constants'
-import type { TNormalizedBN } from '@lib/types'
+import { useCallback, useState } from 'react'
 import type { Address } from 'viem'
+import { erc20Abi } from 'viem'
 import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
-import { erc20Abi } from 'viem'
-import { useCallback, useState } from 'react'
 
 const orderBookApi = new OrderBookApi({ chainId: 1 })
 
@@ -31,6 +31,7 @@ interface UseSolverCowswapReturn {
     allowance: bigint
     quote: OrderQuoteResponse | undefined
     isLoadingQuote: boolean
+    isLoadingAllowance: boolean
   }
   getQuote: () => Promise<void>
   getCowswapOrderParams: () => Promise<OrderCreation | undefined>
@@ -47,8 +48,8 @@ export const useSolverCowswap = ({
 }: UseSolverCowswapProps): UseSolverCowswapReturn => {
   const [quote, setQuote] = useState<OrderQuoteResponse | undefined>()
   const [isLoadingQuote, setIsLoadingQuote] = useState(false)
-  
-  const { allowance = 0n } = useTokenAllowance({
+
+  const { allowance = 0n, isLoading: isLoadingAllowance } = useTokenAllowance({
     account,
     token: sellToken,
     spender: SOLVER_COW_VAULT_RELAYER_ADDRESS,
@@ -58,7 +59,7 @@ export const useSolverCowswap = ({
 
   const getQuote = useCallback(async () => {
     if (!enabled || chainId !== 1 || !account || amount <= 0n) return
-    
+
     if (isZeroAddress(sellToken) || isZeroAddress(buyToken)) return
 
     setIsLoadingQuote(true)
@@ -127,7 +128,7 @@ export const useSolverCowswap = ({
     query: { enabled: prepareApproveEnabled }
   })
 
-  const expectedOut = quote?.quote 
+  const expectedOut = quote?.quote
     ? toNormalizedBN(toBigInt(quote.quote.buyAmount), decimals)
     : toNormalizedBN(0n, decimals)
 
@@ -140,7 +141,8 @@ export const useSolverCowswap = ({
       expectedOut,
       allowance,
       quote,
-      isLoadingQuote
+      isLoadingQuote,
+      isLoadingAllowance
     },
     getQuote,
     getCowswapOrderParams

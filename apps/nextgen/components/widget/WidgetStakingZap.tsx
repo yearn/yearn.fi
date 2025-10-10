@@ -57,7 +57,7 @@ export const WidgetStakingZap: FC<Props> = ({
 }) => {
   const { address: account } = useAccount()
   const [activeTab, setActiveTab] = useState<TabType>('deposit')
-  console.log(vaultType)
+
   // Get asset token from vault
   const { data: assetToken } = useReadContract({
     address: vaultAddress,
@@ -79,8 +79,7 @@ export const WidgetStakingZap: FC<Props> = ({
     chainId,
     query: { enabled: !!vaultAddress && !!asset }
   })
-  console.log(assetToken)
-  console.log(tokens)
+
   const depositInput = useInput(asset?.decimals ?? 18)
   const withdrawInput = useInput(asset?.decimals ?? 18) // Use asset decimals for withdraw input
   const [depositAmount] = depositInput
@@ -101,37 +100,40 @@ export const WidgetStakingZap: FC<Props> = ({
     enabled: !!assetToken && activeTab === 'deposit'
   })
 
-  // Calculate gauge tokens needed based on asset amount wanted using pricePerShare
-  const gaugeTokensNeeded = (() => {
+  const gaugeTokensNeeded = useMemo(() => {
     if (withdrawAmount.bn === 0n || pricePerShare === 0n) return 0n
 
-    // Both V2 and V3 now use the same pricePerShare function
-    // pricePerShare returns the asset amount per share unit
-    // gaugeTokens = (assetAmount * 1e18) / pricePerShare
     const oneUnit = 10n ** 18n // Always use 18 decimals for share calculations
     return (withdrawAmount.bn * oneUnit) / pricePerShare
-  })()
+  }, [withdrawAmount.bn, pricePerShare])
 
-  // Convert gauge balance to asset equivalent using pricePerShare
-  const gaugeBalanceInAssets = (() => {
+  const gaugeBalanceInAssets = useMemo(() => {
     if (!gauge?.balance.raw || gauge.balance.raw === 0n || pricePerShare === 0n) return 0n
 
-    // Convert gauge tokens to asset amount: assetAmount = (gaugeTokens * pricePerShare) / 1e18
     const oneUnit = 10n ** 18n
     return (gauge.balance.raw * pricePerShare) / oneUnit
-  })()
+  }, [gauge?.balance.raw, pricePerShare])
 
-  // Validation checks for overflow amounts
-  const isDepositAmountExceedsBalance = depositAmount.bn > (asset?.balance.raw || 0n)
-  const isWithdrawAmountExceedsBalance = withdrawAmount.bn > gaugeBalanceInAssets
-  console.log(isDepositAmountExceedsBalance, isWithdrawAmountExceedsBalance)
-  console.log(depositAmount.bn, asset?.balance.raw)
-  console.log(withdrawAmount.bn, gaugeBalanceInAssets)
+  const isDepositAmountExceedsBalance = useMemo(
+    () => depositAmount.bn > (asset?.balance.raw || 0n),
+    [depositAmount.bn, asset?.balance.raw]
+  )
 
-  // ** COWSWAP SOLVER FOR WITHDRAW (Gauge -> Asset) ** //
+  const isWithdrawAmountExceedsBalance = useMemo(
+    () => withdrawAmount.bn > gaugeBalanceInAssets,
+    [withdrawAmount.bn, gaugeBalanceInAssets]
+  )
+
   const {
     actions: { prepareApprove: prepareWithdrawApprove },
-    periphery: { prepareApproveEnabled: prepareWithdrawApproveEnabled, expectedOut, quote, isLoadingQuote },
+    periphery: {
+      prepareApproveEnabled: prepareWithdrawApproveEnabled,
+      quote,
+      isLoadingQuote,
+      allowance,
+      isLoadingAllowance,
+      expectedOut
+    },
     getQuote,
     getCowswapOrderParams
   } = useSolverCowswap({
@@ -143,10 +145,42 @@ export const WidgetStakingZap: FC<Props> = ({
     decimals: asset?.decimals ?? 18,
     enabled: !!assetToken && !!gauge && activeTab === 'withdraw'
   })
+  // Withdraw button state logic
+  const hasWithdrawAllowance = useMemo(() => allowance >= gaugeTokensNeeded, [allowance, gaugeTokensNeeded])
+  const canWithdraw = useMemo(
+    () => hasWithdrawAllowance && !!quote && gaugeTokensNeeded > 0n && !isWithdrawAmountExceedsBalance,
+    [hasWithdrawAllowance, quote, gaugeTokensNeeded, isWithdrawAmountExceedsBalance]
+  )
+  const isWithdrawButtonDisabled = useMemo(() => !canWithdraw, [canWithdraw])
 
-  // Gauge balance is now included in the tokens from useTokens
+  // Error detection for withdraw flow
+  const withdrawError = useMemo(() => {
+    if (activeTab !== 'withdraw') return null
+    if (withdrawAmount.bn === 0n) return null
 
-  // ** COWSWAP ORDER HOOK ** //
+    if (isWithdrawAmountExceedsBalance) {
+      return 'Insufficient balance to withdraw this amount'
+    }
+
+    if (gaugeTokensNeeded > 0n && !quote && !isLoadingQuote) {
+      return 'Unable to get quote from Cowswap'
+    }
+
+    return null
+  }, [activeTab, withdrawAmount.bn, isWithdrawAmountExceedsBalance, gaugeTokensNeeded, quote, isLoadingQuote])
+
+  // Error detection for deposit flow
+  const depositError = useMemo(() => {
+    if (activeTab !== 'deposit') return null
+    if (depositAmount.bn === 0n) return null
+
+    if (isDepositAmountExceedsBalance) {
+      return 'Insufficient balance to deposit this amount'
+    }
+
+    return null
+  }, [activeTab, depositAmount.bn, isDepositAmountExceedsBalance])
+
   const { prepareCowswapOrder } = useCowswapOrder({
     getCowswapOrderParams,
     enabled: !!quote && gaugeTokensNeeded > 0n
@@ -186,12 +220,14 @@ export const WidgetStakingZap: FC<Props> = ({
               prepareWrite={prepareDepositApprove}
               transactionName="Approve"
               disabled={!prepareDepositApproveEnabled || isDepositAmountExceedsBalance}
+              tooltip={depositError || undefined}
               className="w-full"
             />
             <TxButton
               prepareWrite={prepareZapIn}
               transactionName="Deposit & Stake"
               disabled={!prepareZapInEnabled || isDepositAmountExceedsBalance}
+              tooltip={depositError || undefined}
               onSuccess={handleSuccess}
               className="w-full"
             />
@@ -210,13 +246,14 @@ export const WidgetStakingZap: FC<Props> = ({
       prepareZapIn,
       prepareZapInEnabled,
       isDepositAmountExceedsBalance,
+      depositError,
       handleSuccess
     ]
   )
 
   const withdrawContent = useMemo(
     () => (
-      <div className="p-6 pb-0 space-y-4">
+      <div className="pt-6 px-6 pb-6 space-y-4">
         <InputTokenAmount
           title="Amount to Withdraw"
           input={withdrawInput}
@@ -239,52 +276,62 @@ export const WidgetStakingZap: FC<Props> = ({
               )}
             </span>
           </div>
-          {quote && (
+          {(isLoadingQuote || (quote && expectedOut.raw > 0n)) && (
             <div className="flex items-center justify-between">
-              <span className="text-gray-400">Via Cowswap</span>
-              <span className="text-gray-500 text-xs">Slippage protected</span>
+              <span className="text-gray-400">You will receive</span>
+              <span className="text-gray-500 font-medium">
+                {isLoadingQuote ? (
+                  <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  `${formatAmount(expectedOut.normalized)} ${asset?.symbol}`
+                )}
+              </span>
             </div>
           )}
         </div>
 
-        <div className="pb-6 pt-2">
+        <div className="pt-2">
           <div className="flex gap-2">
             <TxButton
               prepareWrite={prepareWithdrawApprove}
               transactionName="Approve"
-              disabled={!prepareWithdrawApproveEnabled || isWithdrawAmountExceedsBalance}
+              disabled={!prepareWithdrawApproveEnabled || !quote || isWithdrawAmountExceedsBalance}
+              tooltip={withdrawError || undefined}
               className="w-full"
+              loading={isLoadingQuote || isLoadingAllowance}
             />
             <TxButton
               prepareWrite={prepareCowswapOrder}
-              transactionName={`Withdraw ${asset?.symbol}`}
-              disabled={!quote || gaugeTokensNeeded === 0n || isWithdrawAmountExceedsBalance}
+              transactionName={isLoadingQuote || isLoadingAllowance ? 'Getting quote...' : `Withdraw ${asset?.symbol}`}
+              disabled={isWithdrawButtonDisabled}
+              tooltip={withdrawError || undefined}
               onSuccess={handleSuccess}
               className="w-full"
             />
           </div>
-          <div className="text-xs text-gray-500 text-center mt-2">
+          {/* <div className="text-xs text-gray-500 text-center my-1">
             Swap staked {gauge?.symbol} directly to {asset?.symbol} via Cowswap
-          </div>
+          </div> */}
         </div>
       </div>
     ),
     [
       withdrawInput,
-      withdrawAmount.bn,
       gaugeTokensNeeded,
       gauge?.symbol,
       gauge?.decimals,
       asset?.symbol,
-      asset?.decimals,
       gaugeBalanceInAssets,
       prepareWithdrawApprove,
       prepareWithdrawApproveEnabled,
-      expectedOut.raw,
-      isLoadingQuote,
-      quote,
-      prepareCowswapOrder,
       isWithdrawAmountExceedsBalance,
+      isLoadingQuote,
+      isLoadingAllowance,
+      quote,
+      expectedOut,
+      prepareCowswapOrder,
+      isWithdrawButtonDisabled,
+      withdrawError,
       handleSuccess
     ]
   )

@@ -1,9 +1,9 @@
 import { YGAUGES_ZAP_ADDRESS } from '@lib/utils/constants'
 import { YGAUGE_ZAP_ABI } from '@vaults-v3/utils/abi/yGaugeZap.abi'
 import type { Address } from 'viem'
+import { erc20Abi } from 'viem'
 import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
-import { erc20Abi } from 'viem'
 
 interface UseGaugeStakingBoosterProps {
   vaultAddress: Address
@@ -25,6 +25,7 @@ interface UseGaugeStakingBoosterReturn {
     prepareApproveEnabled: boolean
     prepareZapInEnabled: boolean
     allowance: bigint
+    isLoadingAllowance: boolean
   }
 }
 
@@ -38,7 +39,7 @@ export const useSolverGaugeStakingBooster = ({
   vaultVersion,
   enabled = true
 }: UseGaugeStakingBoosterProps): UseGaugeStakingBoosterReturn => {
-  const { allowance = 0n } = useTokenAllowance({
+  const { allowance = 0n, isLoading: isLoadingAllowance } = useTokenAllowance({
     account,
     token: tokenAddress,
     spender: YGAUGES_ZAP_ADDRESS,
@@ -61,7 +62,7 @@ export const useSolverGaugeStakingBooster = ({
   })
 
   // Determine function name based on vault version
-  const functionName = (vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3')) ? 'zapIn' : 'zapInLegacy'
+  const functionName = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3') ? 'zapIn' : 'zapInLegacy'
 
   const prepareZapIn: UseSimulateContractReturnType = useSimulateContract({
     abi: YGAUGE_ZAP_ABI,
@@ -81,7 +82,8 @@ export const useSolverGaugeStakingBooster = ({
     periphery: {
       prepareApproveEnabled,
       prepareZapInEnabled,
-      allowance
+      allowance,
+      isLoadingAllowance
     }
   }
 }
