@@ -103,16 +103,18 @@ export const WidgetStakingZap: FC<Props> = ({
   const gaugeTokensNeeded = useMemo(() => {
     if (withdrawAmount.bn === 0n || pricePerShare === 0n) return 0n
 
-    const oneUnit = 10n ** 18n // Always use 18 decimals for share calculations
+    // Use gauge token decimals for proper unit calculation
+    const oneUnit = 10n ** BigInt(gauge?.decimals ?? 18)
     return (withdrawAmount.bn * oneUnit) / pricePerShare
-  }, [withdrawAmount.bn, pricePerShare])
+  }, [withdrawAmount.bn, pricePerShare, gauge?.decimals])
 
   const gaugeBalanceInAssets = useMemo(() => {
     if (!gauge?.balance.raw || gauge.balance.raw === 0n || pricePerShare === 0n) return 0n
 
-    const oneUnit = 10n ** 18n
+    // Use gauge token decimals for proper unit calculation
+    const oneUnit = 10n ** BigInt(gauge?.decimals ?? 18)
     return (gauge.balance.raw * pricePerShare) / oneUnit
-  }, [gauge?.balance.raw, pricePerShare])
+  }, [gauge?.balance.raw, pricePerShare, gauge?.decimals])
 
   const isDepositAmountExceedsBalance = useMemo(
     () => depositAmount.bn > (asset?.balance.raw || 0n),
@@ -214,6 +216,7 @@ export const WidgetStakingZap: FC<Props> = ({
           className="flex-1"
           symbol={asset?.symbol}
           balance={asset?.balance.raw || 0n}
+          decimals={asset?.decimals}
         />
 
         <div className="space-y-1 text-sm">
@@ -252,6 +255,7 @@ export const WidgetStakingZap: FC<Props> = ({
       asset?.balance.raw,
       gauge?.symbol,
       gaugeAddress,
+      asset?.decimals,
       prepareDepositApprove,
       prepareDepositApproveEnabled,
       prepareZapIn,
@@ -272,6 +276,7 @@ export const WidgetStakingZap: FC<Props> = ({
           className="flex-1"
           symbol={asset?.symbol}
           balance={gaugeBalanceInAssets} // Show gauge balance converted to asset equivalent
+          decimals={asset?.decimals}
         />
 
         <div className="space-y-1 text-sm">
@@ -332,6 +337,7 @@ export const WidgetStakingZap: FC<Props> = ({
       gauge?.symbol,
       gauge?.decimals,
       asset?.symbol,
+      asset?.decimals,
       gaugeBalanceInAssets,
       prepareWithdrawApprove,
       prepareWithdrawApproveEnabled,

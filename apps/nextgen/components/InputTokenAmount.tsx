@@ -1,13 +1,13 @@
 import { cl, exactToSimple, simpleToExact } from '@lib/utils'
 import type { useInput } from 'apps/nextgen/hooks/useInput'
 import type { ChangeEvent, FC } from 'react'
-import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 
 interface Props {
   input: ReturnType<typeof useInput>
   className?: string
   balance?: bigint
+  decimals?: number
   defaultSymbol?: string
   symbol?: string
   placeholder?: string
@@ -22,6 +22,7 @@ export const InputTokenAmount: FC<Props> = ({
   input,
   className,
   balance,
+  decimals,
   symbol,
   placeholder,
   disabled: _disabled,
@@ -62,7 +63,8 @@ export const InputTokenAmount: FC<Props> = ({
                 setFormValue?.('0')
                 return
               }
-              setFormValue?.(formatUnits(balance, 18))
+              const tokenDecimals = decimals ?? input[0].decimals
+              setFormValue?.(exactToSimple(balance, tokenDecimals).toString())
             }}
           >
             Max
@@ -96,7 +98,7 @@ export const InputTokenAmount: FC<Props> = ({
         </div>
         <div className={cl('flex flex-row justify-between gap-2 items-center w-full min-w-0')}>
           <div className="text-xs text-gray-400 truncate min-w-0 flex-1">
-            {!symbol ? 'No Vault Selected' : `${exactToSimple(balance, input[0].decimals)} ${symbol}`}
+            {!symbol ? 'No Vault Selected' : `${exactToSimple(balance, decimals ?? input[0].decimals)} ${symbol}`}
           </div>
         </div>
         {errorMessage && <div className={cl('text-red-500 text-sm', className)}>{errorMessage}</div>}

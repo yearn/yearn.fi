@@ -218,13 +218,15 @@ function Index(): ReactElement | null {
                   vaultVersion={currentVault.version}
                   chainId={Number(params.chainID)}
                 /> */}
-                <WidgetStakingZap
-                  vaultAddress={currentVault.address}
-                  gaugeAddress={currentVault.staking.address}
-                  vaultType={isV3 ? 'v3' : 'v2'}
-                  vaultVersion={currentVault.version}
-                  chainId={Number(params.chainID)}
-                />
+                {currentVault.staking.available && Number(params.chainID) === 1 && (
+                  <WidgetStakingZap
+                    vaultAddress={currentVault.address}
+                    gaugeAddress={currentVault.staking.address}
+                    vaultType={isV3 ? 'v3' : 'v2'}
+                    vaultVersion={currentVault.version}
+                    chainId={Number(params.chainID)}
+                  />
+                )}
                 <Widget
                   vaultType={isV3 ? 'v3' : 'v2'}
                   vaultAddress={currentVault.address}
