@@ -5,14 +5,14 @@ import useWallet from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useChainOptions } from '@lib/hooks/useChains'
 import { IconCross } from '@lib/icons/IconCross'
-import { cl, formatAmount, toAddress } from '@lib/utils'
+import { cl, formatAmount } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constants'
 
 import type { ReactElement, ReactNode } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Drawer } from 'vaul'
-import HoldingsPill from './list/HoldingsPill'
+import HoldingsMarquee from './list/HoldingsMarquee'
 
 type TListHero = {
   types: string[] | null
@@ -26,144 +26,6 @@ type TListHero = {
   onSearch: (searchValue: string) => void
   searchAlertContent?: ReactNode
   holdingsVaults: TYDaemonVault[]
-}
-
-function HoldingsMarquee({ holdingsVaults }: { holdingsVaults: TYDaemonVault[] }): ReactElement | null {
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const contentRef = useRef<HTMLDivElement | null>(null)
-  const cloneRef = useRef<HTMLDivElement | null>(null)
-  const animationFrameRef = useRef<number | null>(null)
-  const [shouldScroll, setShouldScroll] = useState(false)
-  const holdingsSignature = useMemo(
-    () => holdingsVaults.map((vault) => `${vault.chainID}-${toAddress(vault.address)}`).join('|'),
-    [holdingsVaults]
-  )
-
-  useEffect(() => {
-    const container = containerRef.current
-    const content = contentRef.current
-    if (!container || !content) {
-      return
-    }
-
-    if (holdingsSignature.length === 0) {
-      setShouldScroll(false)
-    }
-
-    const update = (): void => {
-      if (!container || !content) {
-        return
-      }
-      setShouldScroll(content.scrollWidth > container.clientWidth)
-      const measuredHeight = content.getBoundingClientRect().height
-      if (measuredHeight) {
-        container.style.height = `${measuredHeight}px`
-      }
-    }
-
-    update()
-
-    if (typeof ResizeObserver !== 'undefined') {
-      const resizeObserver = new ResizeObserver(update)
-      resizeObserver.observe(container)
-      resizeObserver.observe(content)
-      return () => {
-        resizeObserver.disconnect()
-      }
-    }
-
-    window.addEventListener('resize', update)
-    return () => {
-      window.removeEventListener('resize', update)
-    }
-  }, [holdingsSignature])
-
-  useEffect(() => {
-    const container = containerRef.current
-    const content = contentRef.current
-
-    if (!shouldScroll || !container || !content || holdingsSignature.length === 0) {
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current)
-        animationFrameRef.current = null
-      }
-      if (content) content.style.transform = ''
-      if (cloneRef.current) {
-        cloneRef.current.remove()
-        cloneRef.current = null
-      }
-      return
-    }
-
-    if (cloneRef.current) {
-      cloneRef.current.remove()
-      cloneRef.current = null
-    }
-
-    const clone = content.cloneNode(true) as HTMLDivElement
-    clone.setAttribute('aria-hidden', 'true')
-    clone.style.pointerEvents = 'none'
-    clone.style.position = 'absolute'
-    clone.style.top = '0'
-    clone.style.left = '0'
-    clone.style.willChange = 'transform'
-    clone.style.paddingLeft = '0.5rem' // gap-2 = 0.5rem (8px)
-    container.appendChild(clone)
-    cloneRef.current = clone
-
-    let startTimestamp: number | null = null
-    const speed = 20 // pixels per second
-
-    const step = (timestamp: number): void => {
-      if (startTimestamp === null) {
-        startTimestamp = timestamp
-      }
-
-      const elapsed = timestamp - startTimestamp
-      const width = content.scrollWidth
-      if (width === 0) {
-        animationFrameRef.current = requestAnimationFrame(step)
-        return
-      }
-
-      const offset = ((elapsed / 1000) * speed) % width
-      content.style.transform = `translateX(${-offset}px)`
-      clone.style.transform = `translateX(${width - offset}px)`
-      animationFrameRef.current = requestAnimationFrame(step)
-    }
-
-    animationFrameRef.current = requestAnimationFrame(step)
-
-    return () => {
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current)
-        animationFrameRef.current = null
-      }
-      content.style.transform = ''
-      if (cloneRef.current) {
-        cloneRef.current.remove()
-        cloneRef.current = null
-      }
-    }
-  }, [shouldScroll, holdingsSignature])
-
-  if (holdingsVaults.length === 0) {
-    return null
-  }
-
-  return (
-    <div ref={containerRef} className={'relative h-[48px] overflow-hidden'}>
-      <div
-        ref={contentRef}
-        className={'absolute left-0 top-0 flex h-full flex-nowrap items-center gap-2'}
-        style={{ willChange: shouldScroll ? 'transform' : undefined }}
-      >
-        {holdingsVaults.map((vault) => (
-          <HoldingsPill key={`holdings-pill-${vault.chainID}-${toAddress(vault.address)}`} vault={vault} />
-        ))}
-      </div>
-    </div>
-  )
 }
 
 function PortfolioCard({ holdingsVaults }: { holdingsVaults: TYDaemonVault[] }): ReactElement {

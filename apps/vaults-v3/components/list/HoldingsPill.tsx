@@ -1,14 +1,11 @@
 import { RenderAmount } from '@lib/components/RenderAmount'
-import { formatAmount, isZero, toAddress } from '@lib/utils'
+import { formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import type { ReactElement, ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
   const data = useVaultApyData(vault)
-  const navigate = useNavigate()
-  const href = `/v3/${vault.chainID}/${toAddress(vault.address)}`
 
   const isVeYfi = vault.staking.source === 'VeYFI'
   const boostedApr = data.baseForwardApr + data.rewardsAprSum
@@ -76,21 +73,10 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
   })()
 
   return (
-    <button
-      type={'button'}
-      onClick={(): void => {
-        void navigate(href)
-      }}
-      className={'relative w-35'}
-    >
-      <div
-      // className={
-      //   'pointer-events-none absolute -inset-[3px]  bg-[radial-gradient(circle_at_top_left,rgba(210,17,98,.75),rgba(44,61,166,.75))] opacity-70 blur-md'
-      // }
-      />
+    <div className={'relative w-40'}>
       <div
         className={
-          'relative z-10 flex w-full min-w-0 items-start gap-2 bg-[#2a1956eb] px-3 py-2 text-xs text-neutral-50 backdrop-blur-lg transition-colors hover:bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
+          'relative z-10 flex w-full min-w-0 items-start gap-2 rounded-lg bg-[#2a1956eb] px-3 py-2 text-xs text-neutral-50 backdrop-blur-lg'
         }
       >
         <div className={'flex w-full min-w-0 flex-col items-start'}>
@@ -98,7 +84,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
           <div className={'flex flex-row items-center gap-1 text-xs text-neutral-50'}> {apyContent} </div>
         </div>
       </div>
-    </button>
+    </div>
   )
 }
 
