@@ -12,7 +12,10 @@ const V3Page = lazy(() => import('../pages/v3/index'))
 const V3AboutPage = lazy(() => import('../pages/v3/about'))
 const V3DetailPage = lazy(() => import('../pages/v3/[chainID]/[address]'))
 const VaultsBetaPage = lazy(() => import('../pages/vaults-beta/index'))
+const VaultsBetaDetailPage = lazy(() => import('../pages/vaults-beta/[chainID]/[address]'))
 const VaultsBetaSearchPage = lazy(() => import('../pages/vaults-beta/search/[query]'))
+
+const isVaultsBetaEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_VAULTS_BETA !== 'false'
 
 // Loading component
 const PageLoader = (): ReactElement => (
@@ -47,6 +50,7 @@ export const routeConfig = {
   },
   vaultsBeta: {
     index: '/vaults-beta',
+    detail: '/vaults-beta/:chainID/:address',
     search: '/vaults-beta/search/:query'
   },
   external: {
@@ -89,10 +93,13 @@ export function AppRoutes(): ReactElement {
         <Route path="/v3/:chainID" element={<Navigate to="/v3" replace />} />
 
         {/* Vaults Beta routes */}
-        <Route path="/vaults-beta">
-          <Route index element={<VaultsBetaPage />} />
-          <Route path="search/:query" element={<VaultsBetaSearchPage />} />
-        </Route>
+        {isVaultsBetaEnabled && (
+          <Route path="/vaults-beta">
+            <Route index element={<VaultsBetaPage />} />
+            <Route path=":chainID/:address" element={<VaultsBetaDetailPage />} />
+            <Route path="search/:query" element={<VaultsBetaSearchPage />} />
+          </Route>
+        )}
 
         {/* External redirects */}
         <Route path="/ybribe/*" element={<ExternalRedirect to="https://ybribe.yearn.fi" />} />
