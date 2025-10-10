@@ -131,11 +131,9 @@ function HoldingsMarquee({ holdingsVaults }: { holdingsVaults: TYDaemonVault[] }
   return (
     <button
       type={'button'}
-      aria-label={'View portfolio (coming soon)'}
+      aria-label={'View portfolio'}
       onClick={(): void => {}}
-      className={
-        'group relative flex w-full overflow-hidden rounded-lg border border-transparent bg-transparent p-0 text-left'
-      }
+      className={'group relative flex w-full overflow-hidden border border-transparent bg-transparent p-0 text-left'}
     >
       <div
         ref={containerRef}
@@ -153,7 +151,7 @@ function HoldingsMarquee({ holdingsVaults }: { holdingsVaults: TYDaemonVault[] }
       </div>
       <div
         className={
-          'pointer-events-none absolute inset-0 flex items-center justify-center bg-neutral-900/70 text-sm font-semibold uppercase tracking-wide text-neutral-50 opacity-0 transition-opacity duration-200 group-hover:opacity-100'
+          'pointer-events-none absolute inset-0 flex items-center justify-center bg-neutral-200/50 border-1 border-neutral-700/50 text-sm font-semibold uppercase tracking-wide text-neutral-50 opacity-0 transition-opacity duration-200 group-hover:opacity-100'
         }
       >
         {'view portfolio'}

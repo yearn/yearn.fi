@@ -8,7 +8,7 @@ import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components
 import { VaultStakedAmount } from '@vaults-v3/components/table/VaultStakedAmount'
 import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getNetwork } from '../../../lib/utils/wagmi'
 
@@ -31,34 +31,34 @@ export function VaultsV3ListRow({
   const [isApyOpen, setIsApyOpen] = useState(false)
   const [isRiskOpen, setIsRiskOpen] = useState(false)
 
-  const badgeDefinitions = useMemo(() => {
-    if (!flags) {
-      return [] as { label: string; className: string }[]
-    }
+  // const badgeDefinitions = useMemo(() => {
+  //   if (!flags) {
+  //     return [] as { label: string; className: string }[]
+  //   }
 
-    const definitions: { label: string; className: string }[] = []
+  //   const definitions: { label: string; className: string }[] = []
 
-    if (flags.hasHoldings) {
-      definitions.push({
-        label: 'Holding',
-        className: 'border-blue-200 bg-blue-100 text-blue-800'
-      })
-    }
-    if (flags.isMigratable) {
-      definitions.push({
-        label: 'Migratable',
-        className: 'border-amber-200 bg-amber-100 text-amber-800'
-      })
-    }
-    if (flags.isRetired) {
-      definitions.push({
-        label: 'Retired',
-        className: 'border-rose-200 bg-rose-100 text-rose-800'
-      })
-    }
+  //   if (flags.hasHoldings) {
+  //     definitions.push({
+  //       label: 'Holding',
+  //       className: 'border-blue-200 bg-blue-100 text-blue-800'
+  //     })
+  //   }
+  //   if (flags.isMigratable) {
+  //     definitions.push({
+  //       label: 'Migratable',
+  //       className: 'border-amber-200 bg-amber-100 text-amber-800'
+  //     })
+  //   }
+  //   if (flags.isRetired) {
+  //     definitions.push({
+  //       label: 'Retired',
+  //       className: 'border-rose-200 bg-rose-100 text-rose-800'
+  //     })
+  //   }
 
-    return definitions
-  }, [flags])
+  //   return definitions
+  // }, [flags])
 
   const handleRowClick = (): void => {
     navigate(href)
@@ -129,21 +129,6 @@ export function VaultsV3ListRow({
                 {formatAmount(currentVault.featuringScore || 0, 2, 2)}
               </span>
             </p> */}
-            {badgeDefinitions.length > 0 ? (
-              <div className={'mt-1 flex flex-wrap gap-2'}>
-                {badgeDefinitions.map(({ label, className }) => (
-                  <span
-                    key={label}
-                    className={cl(
-                      'inline-flex items-center rounded-full border px-2 py-0.5 text-xxs font-semibold uppercase tracking-wide',
-                      className
-                    )}
-                  >
-                    {label}
-                  </span>
-                ))}
-              </div>
-            ) : null}
             <p
               className={'mb-0 block text-sm text-neutral-800/60 md:mb-2'}
             >{`${currentVault.kind} - ${currentVault.category}`}</p>
