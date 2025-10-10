@@ -17,7 +17,11 @@ export const useTokenAllowance = ({
 }) => {
   const { data: blockNumber = 0n } = useBlockNumber({ watch, chainId })
 
-  const { data: allowance = 0n, refetch } = useReadContract({
+  const {
+    data: allowance = 0n,
+    refetch,
+    isLoading
+  } = useReadContract({
     abi: erc4626Abi,
     address: token,
     functionName: 'allowance',
@@ -34,5 +38,5 @@ export const useTokenAllowance = ({
     refetch()
   }, [blockNumber])
 
-  return { allowance, refetch }
+  return { allowance, refetch, isLoading }
 }

@@ -7,6 +7,7 @@ interface Props {
   input: ReturnType<typeof useInput>
   className?: string
   balance?: bigint
+  decimals?: number
   defaultSymbol?: string
   symbol?: string
   placeholder?: string
@@ -21,6 +22,7 @@ export const InputTokenAmount: FC<Props> = ({
   input,
   className,
   balance,
+  decimals,
   symbol,
   placeholder,
   disabled: _disabled,
@@ -56,7 +58,14 @@ export const InputTokenAmount: FC<Props> = ({
               'font-xs flex-center text-xs px-2 py-1 bg-neutral-700 text-neutral-400 rounded-xl  hover:bg-neutral-800 transition-colors cursor-pointer whitespace-nowrap'
             }
             type="button"
-            onClick={() => setFormValue?.(exactToSimple(balance, input[0]?.decimals).toString())}
+            onClick={() => {
+              if (!balance || balance === 0n) {
+                setFormValue?.('0')
+                return
+              }
+              const tokenDecimals = decimals ?? input[0].decimals
+              setFormValue?.(exactToSimple(balance, tokenDecimals).toString())
+            }}
           >
             Max
           </button>
@@ -89,7 +98,7 @@ export const InputTokenAmount: FC<Props> = ({
         </div>
         <div className={cl('flex flex-row justify-between gap-2 items-center w-full min-w-0')}>
           <div className="text-xs text-gray-400 truncate min-w-0 flex-1">
-            {!symbol ? 'No Vault Selected' : `${exactToSimple(balance, input[0].decimals)} ${symbol}`}
+            {!symbol ? 'No Vault Selected' : `${exactToSimple(balance, decimals ?? input[0].decimals)} ${symbol}`}
           </div>
         </div>
         {errorMessage && <div className={cl('text-red-500 text-sm', className)}>{errorMessage}</div>}
