@@ -5,12 +5,14 @@ import useWallet from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useChainOptions } from '@lib/hooks/useChains'
 import { IconCross } from '@lib/icons/IconCross'
-import { cl, formatAmount } from '@lib/utils'
+import { cl, formatAmount, toAddress } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constants'
 
 import type { ReactElement, ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Drawer } from 'vaul'
+import HoldingsPill from './list/HoldingsPill'
 
 type TListHero = {
   types: string[] | null
@@ -23,15 +25,154 @@ type TListHero = {
   onChangeCategories: (categories: string[] | null) => void
   onSearch: (searchValue: string) => void
   searchAlertContent?: ReactNode
+  holdingsVaults: TYDaemonVault[]
 }
 
-function PortfolioCard(): ReactElement {
+function HoldingsMarquee({ holdingsVaults }: { holdingsVaults: TYDaemonVault[] }): ReactElement | null {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const contentRef = useRef<HTMLDivElement | null>(null)
+  const cloneRef = useRef<HTMLDivElement | null>(null)
+  const animationFrameRef = useRef<number | null>(null)
+  const [shouldScroll, setShouldScroll] = useState(false)
+  const holdingsSignature = useMemo(
+    () => holdingsVaults.map((vault) => `${vault.chainID}-${toAddress(vault.address)}`).join('|'),
+    [holdingsVaults]
+  )
+
+  useEffect(() => {
+    const container = containerRef.current
+    const content = contentRef.current
+    if (!container || !content) {
+      return
+    }
+
+    if (holdingsSignature.length === 0) {
+      setShouldScroll(false)
+    }
+
+    const update = (): void => {
+      if (!container || !content) {
+        return
+      }
+      setShouldScroll(content.scrollWidth > container.clientWidth)
+      const measuredHeight = content.getBoundingClientRect().height
+      if (measuredHeight) {
+        container.style.height = `${measuredHeight}px`
+      }
+    }
+
+    update()
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const resizeObserver = new ResizeObserver(update)
+      resizeObserver.observe(container)
+      resizeObserver.observe(content)
+      return () => {
+        resizeObserver.disconnect()
+      }
+    }
+
+    window.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('resize', update)
+    }
+  }, [holdingsSignature])
+
+  useEffect(() => {
+    const container = containerRef.current
+    const content = contentRef.current
+
+    if (!shouldScroll || !container || !content || holdingsSignature.length === 0) {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
+      }
+      if (content) content.style.transform = ''
+      if (cloneRef.current) {
+        cloneRef.current.remove()
+        cloneRef.current = null
+      }
+      return
+    }
+
+    if (cloneRef.current) {
+      cloneRef.current.remove()
+      cloneRef.current = null
+    }
+
+    const clone = content.cloneNode(true) as HTMLDivElement
+    clone.setAttribute('aria-hidden', 'true')
+    clone.style.pointerEvents = 'none'
+    clone.style.position = 'absolute'
+    clone.style.top = '0'
+    clone.style.left = '0'
+    clone.style.willChange = 'transform'
+    clone.style.paddingLeft = '0.5rem' // gap-2 = 0.5rem (8px)
+    container.appendChild(clone)
+    cloneRef.current = clone
+
+    let startTimestamp: number | null = null
+    const speed = 20 // pixels per second
+
+    const step = (timestamp: number): void => {
+      if (startTimestamp === null) {
+        startTimestamp = timestamp
+      }
+
+      const elapsed = timestamp - startTimestamp
+      const width = content.scrollWidth
+      if (width === 0) {
+        animationFrameRef.current = requestAnimationFrame(step)
+        return
+      }
+
+      const offset = ((elapsed / 1000) * speed) % width
+      content.style.transform = `translateX(${-offset}px)`
+      clone.style.transform = `translateX(${width - offset}px)`
+      animationFrameRef.current = requestAnimationFrame(step)
+    }
+
+    animationFrameRef.current = requestAnimationFrame(step)
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
+      }
+      content.style.transform = ''
+      if (cloneRef.current) {
+        cloneRef.current.remove()
+        cloneRef.current = null
+      }
+    }
+  }, [shouldScroll, holdingsSignature])
+
+  if (holdingsVaults.length === 0) {
+    return null
+  }
+
+  return (
+    <div ref={containerRef} className={'relative h-[48px] overflow-hidden'}>
+      <div
+        ref={contentRef}
+        className={'absolute left-0 top-0 flex h-full flex-nowrap items-center gap-2'}
+        style={{ willChange: shouldScroll ? 'transform' : undefined }}
+      >
+        {holdingsVaults.map((vault) => (
+          <HoldingsPill key={`holdings-pill-${vault.chainID}-${toAddress(vault.address)}`} vault={vault} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PortfolioCard({ holdingsVaults }: { holdingsVaults: TYDaemonVault[] }): ReactElement {
   const { cumulatedValueInV3Vaults, isLoading } = useWallet()
   const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
 
   if (!isActive) {
     return (
-      <div className={'mb-4 flex h-18 flex-row items-center gap-4'}>
+      <div className={'mb-4 flex h-18 flex-row items-center gap-2'}>
         <button
           className={cl('relative flex overflow-hidden rounded-lg group', 'px-[42px] py-2', 'border-none')}
           onClick={(): void => {
@@ -56,20 +197,22 @@ function PortfolioCard(): ReactElement {
     )
   }
   return (
-    <div className={'mb-4 flex flex-row justify-between'}>
-      <div className={'flex flex-row gap-4 md:flex-row md:gap-32'}>
-        <div>
-          <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Amount Deposited'}</p>
+    <div className={'mb-2 flex flex-col gap-0 md:min-h-18'}>
+      <div className={'flex flex-row justify-between'}>
+        <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Your Deposits:'}</p>
+        <div className={'flex flex-row gap-4 md:flex-row md:gap-2 pr-4'}>
+          <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Value of your Deposits:'}</p>
           {isLoading ? (
             <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
           ) : (
-            <b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
+            <b className={'font-number text-neutral-900 '}>
               {'$'}
               <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
             </b>
           )}
         </div>
       </div>
+      <HoldingsMarquee holdingsVaults={holdingsVaults} />
     </div>
   )
 }
@@ -84,7 +227,8 @@ export function Filters({
   onSearch,
   shouldDebounce,
   onChangeChains,
-  searchAlertContent
+  searchAlertContent,
+  holdingsVaults
 }: TListHero): ReactElement {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -129,7 +273,7 @@ export function Filters({
 
   return (
     <div className={'relative col-span-24 w-full rounded-3xl bg-neutral-100 p-3 md:col-span-19'}>
-      <PortfolioCard />
+      <PortfolioCard holdingsVaults={holdingsVaults} />
 
       <div className={'md:hidden'}>
         <div className={'mb-5 w-full'}>

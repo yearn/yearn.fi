@@ -284,6 +284,7 @@ function ListOfVaults({
       onChangeCategories={onChangeCategories}
       onSearch={onSearch}
       searchAlertContent={renderHiddenSearchAlert()}
+      holdingsVaults={holdingsVaults}
     />
   )
 
