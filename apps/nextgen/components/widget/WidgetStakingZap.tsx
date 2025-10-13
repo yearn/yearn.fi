@@ -1,5 +1,5 @@
 import Link from '@components/Link'
-import { cl, exactToSimple, formatAmount } from '@lib/utils'
+import { cl, formatAmount, formatTAmount } from '@lib/utils'
 import { erc4626Abi } from '@lib/utils/abi/4626.abi'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { TxButton } from '@nextgen/components/TxButton'
@@ -70,7 +70,6 @@ export const WidgetStakingZap: FC<Props> = ({
 
   // ** PERIPHERY ** //
   const [asset, gauge] = tokens
-
   // Get price per share from vault (this works for both asset-shares and asset-gauge pairs)
   const { data: pricePerShare = 0n } = useReadContract({
     address: vaultAddress,
@@ -85,7 +84,6 @@ export const WidgetStakingZap: FC<Props> = ({
   const [depositAmount] = depositInput
   const [withdrawAmount] = withdrawInput
 
-  // ** DEPOSIT & STAKE ACTIONS ** //
   const {
     actions: { prepareApprove: prepareDepositApprove, prepareZapIn },
     periphery: { prepareApproveEnabled: prepareDepositApproveEnabled, prepareZapInEnabled }
@@ -103,18 +101,21 @@ export const WidgetStakingZap: FC<Props> = ({
   const gaugeTokensNeeded = useMemo(() => {
     if (withdrawAmount.bn === 0n || pricePerShare === 0n) return 0n
 
-    // Use gauge token decimals for proper unit calculation
-    const oneUnit = 10n ** BigInt(gauge?.decimals ?? 18)
-    return (withdrawAmount.bn * oneUnit) / pricePerShare
-  }, [withdrawAmount.bn, pricePerShare, gauge?.decimals])
+    const assetDecimals = asset?.decimals ?? 18
+    const assetUnit = 10n ** BigInt(assetDecimals)
+
+    return (withdrawAmount.bn * assetUnit) / pricePerShare
+  }, [withdrawAmount.bn, pricePerShare, asset?.decimals])
 
   const gaugeBalanceInAssets = useMemo(() => {
     if (!gauge?.balance.raw || gauge.balance.raw === 0n || pricePerShare === 0n) return 0n
 
-    // Use gauge token decimals for proper unit calculation
-    const oneUnit = 10n ** BigInt(gauge?.decimals ?? 18)
-    return (gauge.balance.raw * pricePerShare) / oneUnit
-  }, [gauge?.balance.raw, pricePerShare, gauge?.decimals])
+    const assetDecimals = asset?.decimals ?? 18
+
+    const assetUnit = 10n ** BigInt(assetDecimals)
+
+    return (gauge.balance.raw * pricePerShare) / assetUnit
+  }, [gauge?.balance.raw, pricePerShare, asset?.decimals])
 
   const isDepositAmountExceedsBalance = useMemo(
     () => depositAmount.bn > (asset?.balance.raw || 0n),
@@ -284,9 +285,7 @@ export const WidgetStakingZap: FC<Props> = ({
             <span className="text-gray-400">You will burn</span>
             <span className="text-gray-500 font-medium">
               {gaugeTokensNeeded > 0n ? (
-                <>
-                  {formatAmount(exactToSimple(gaugeTokensNeeded, gauge?.decimals ?? 18))} {gauge?.symbol}
-                </>
+                formatTAmount({ value: gaugeTokensNeeded, decimals: gauge?.decimals ?? 18 }) + ' ' + gauge?.symbol
               ) : (
                 <span className="text-gray-400">0 {gauge?.symbol}</span>
               )}
