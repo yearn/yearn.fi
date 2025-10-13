@@ -2,6 +2,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
+// Load HTML at module level (happens once per container cold start)
+const indexPath = join(process.cwd(), 'dist', 'index.html')
+const baseHtml = readFileSync(indexPath, 'utf-8')
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { chainId, address } = req.query
 
@@ -10,9 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Read the built index.html
-    const indexPath = join(process.cwd(), 'dist', 'index.html')
-    let html = readFileSync(indexPath, 'utf-8')
+    let html = baseHtml
 
     // Generate dynamic meta tags
     const ogBaseUrl = 'https://og.yearn.fi'
@@ -54,20 +56,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     html = html.replace('</head>', `${metaTags}\n  </head>`)
 
     res.setHeader('Content-Type', 'text/html')
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300')
+    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400')
 
     return res.status(200).send(html)
   } catch (error) {
     console.error('Error generating meta tags:', error)
-
-    // Fallback to regular SPA
-    try {
-      const indexPath = join(process.cwd(), 'dist', 'index.html')
-      const html = readFileSync(indexPath, 'utf-8')
-      res.setHeader('Content-Type', 'text/html')
-      return res.status(200).send(html)
-    } catch (_fallbackError) {
-      return res.status(500).json({ error: 'Failed to serve page' })
-    }
+    // Fallback to regular SPA with cached HTML
+    res.setHeader('Content-Type', 'text/html')
+    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400')
+    return res.status(200).send(baseHtml)
   }
 }
