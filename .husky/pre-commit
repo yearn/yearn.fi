@@ -1,7 +1,7 @@
 set -e
 
-echo 'husky: running bun run lint:fix'
-bun run lint:fix
+echo 'husky: lint error found'
+bun run lint
 
 echo 'husky: restaging changes'
 git add -A
