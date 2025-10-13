@@ -10,20 +10,55 @@ import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { VaultChainTag } from '../VaultChainTag'
+import { getNetwork } from '../../../lib/utils/wagmi'
+
+type TVaultRowFlags = {
+  hasHoldings?: boolean
+  isMigratable?: boolean
+  isRetired?: boolean
+}
 
 export function VaultsV3ListRow({
   currentVault,
-  isHoldings = false
+  flags
 }: {
   currentVault: TYDaemonVault
-  isHoldings?: boolean
+  flags?: TVaultRowFlags
 }): ReactElement {
   const navigate = useNavigate()
   const availableToDeposit = useAvailableToDeposit(currentVault)
   const href = `/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const [isApyOpen, setIsApyOpen] = useState(false)
   const [isRiskOpen, setIsRiskOpen] = useState(false)
+
+  // const badgeDefinitions = useMemo(() => {
+  //   if (!flags) {
+  //     return [] as { label: string; className: string }[]
+  //   }
+
+  //   const definitions: { label: string; className: string }[] = []
+
+  //   if (flags.hasHoldings) {
+  //     definitions.push({
+  //       label: 'Holding',
+  //       className: 'border-blue-200 bg-blue-100 text-blue-800'
+  //     })
+  //   }
+  //   if (flags.isMigratable) {
+  //     definitions.push({
+  //       label: 'Migratable',
+  //       className: 'border-amber-200 bg-amber-100 text-amber-800'
+  //     })
+  //   }
+  //   if (flags.isRetired) {
+  //     definitions.push({
+  //       label: 'Retired',
+  //       className: 'border-rose-200 bg-rose-100 text-rose-800'
+  //     })
+  //   }
+
+  //   return definitions
+  // }, [flags])
 
   const handleRowClick = (): void => {
     navigate(href)
@@ -36,8 +71,6 @@ export function VaultsV3ListRow({
     }
   }
 
-  // Separate mobile and desktop layouts
-
   return (
     // biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation
     <div
@@ -47,7 +80,7 @@ export function VaultsV3ListRow({
       onKeyDown={handleKeyDown}
       className={cl(
         'grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl',
-        'p-6 pt-2 md:pr-10',
+        'p-6 sm:py-2 md:pr-10',
         'cursor-pointer relative group'
       )}
     >
@@ -59,13 +92,17 @@ export function VaultsV3ListRow({
         )}
       />
 
-      <div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between')}>
-        <div className={'flex flex-row gap-6 overflow-hidden pr-10'}>
-          <div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
-            {/* TODO:add env for asset address */}
+      {/* TODO:on hover add list head categories */}
+      <div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
+        <div
+          className={'flex flex-row-reverse sm:flex-row w-full justify-between sm:justify-normal gap-4 overflow-hidden'}
+        >
+          <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
             <ImageWithFallback
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-32.png`}
-              alt={''}
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+                currentVault.chainID
+              }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
+              alt={currentVault.token.symbol || ''}
               width={32}
               height={32}
             />
@@ -73,18 +110,28 @@ export function VaultsV3ListRow({
           <div className={'truncate'}>
             <strong
               title={currentVault.name}
-              className={'block truncate font-black text-neutral-800 md:-mb-0.5 md:text-lg'}
+              className={'block truncate font-black text-neutral-800 md:-mb-0.5 text-lg'}
             >
               {currentVault.name}
             </strong>
-            <p className={'mb-0 block text-sm text-neutral-800/60 md:mb-2'}>{currentVault.token.name}</p>
-            {/* Chain tag under name on mobile */}
-            <div className={'flex flex-row items-center gap-2 pt-1 md:hidden'}>
-              <VaultChainTag chainID={currentVault.chainID} />
+            <div className={'flex flex-row items-center gap-1'}>
+              <ImageWithFallback
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`}
+                alt={`Chain ${currentVault.chainID}`}
+                width={14}
+                height={14}
+              />
+              <p className={'block text-sm text-neutral-800/60'}>{getNetwork(currentVault.chainID).name}</p>
             </div>
-            <div className={'hidden flex-row items-center md:flex'}>
-              <VaultChainTag chainID={currentVault.chainID} />
-            </div>
+            {/* <p className={'mt-0.5 text-xs text-neutral-500'}>
+              {'Featuring score: '}
+              <span className={'font-semibold text-neutral-800'}>
+                {formatAmount(currentVault.featuringScore || 0, 2, 2)}
+              </span>
+            </p> */}
+            <p
+              className={'mb-0 block text-sm text-neutral-800/60 md:mb-2'}
+            >{`${currentVault.kind} - ${currentVault.category}`}</p>
           </div>
         </div>
       </div>
@@ -105,7 +152,9 @@ export function VaultsV3ListRow({
         <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
           <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Available'}</p>
           <p
-            className={`yearn--table-data-section-item-value ${isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'}`}
+            className={`yearn--table-data-section-item-value ${
+              isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
+            }`}
           >
             <RenderAmount
               value={Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized)}
@@ -124,6 +173,7 @@ export function VaultsV3ListRow({
           <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
           <VaultStakedAmount currentVault={currentVault} />
         </div>
+        {/* TVL */}
         <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
           <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
           <div className={'flex flex-col pt-0 text-right'}>
@@ -158,11 +208,23 @@ export function VaultsV3ListRow({
       </div>
 
       {/* Mobile metrics grid; conditionally show Deposited if user has holdings */}
-      <div className={cl('col-span-8 z-10', 'grid grid-cols-2 gap-4 md:hidden', 'mt-4 md:mt-0')}>
+      <div
+        className={cl(
+          'col-span-8 z-10',
+          'grid grid-cols-2 gap-4 md:hidden',
+          'pt-2 mt-2 md:mt-0 md:pt-0 border-t border-neutral-800/20'
+        )}
+      >
+        {flags?.hasHoldings ? (
+          <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
+            <p className={'inline text-start text-dm text-neutral-800'}>{'Your Deposit'}</p>
+            <VaultStakedAmount currentVault={currentVault} />
+          </div>
+        ) : null}
         <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
-          <div className={'w-full flex flex-col items-start'} onClick={(e): void => e.stopPropagation()}>
+          <div className={'w-full flex flex-col items-start'}>
             <div className={'flex w-full flex-row items-center justify-between'}>
-              <p className={'inline text-start text-xs text-neutral-800/60'}>{'Estimated APY'}</p>
+              <p className={'inline text-start text-dm text-neutral-800'}>{'Estimated APY'}</p>
               <VaultForwardAPY currentVault={currentVault} onMobileToggle={(): void => setIsApyOpen((v) => !v)} />
             </div>
             {isApyOpen ? (
@@ -173,17 +235,11 @@ export function VaultsV3ListRow({
           </div>
         </div>
         <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-          <p className={'inline text-start text-xs text-neutral-800/60'}>{'Historical APY'}</p>
+          <p className={'inline text-start text-dm text-neutral-800'}>{'Historical APY'}</p>
           <VaultHistoricalAPY currentVault={currentVault} />
         </div>
-        {isHoldings ? (
-          <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-            <p className={'inline text-start text-xs text-neutral-800/60'}>{'Deposited'}</p>
-            <VaultStakedAmount currentVault={currentVault} />
-          </div>
-        ) : null}
         <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-          <p className={'inline text-start text-xs text-neutral-800/60'}>{'TVL'}</p>
+          <p className={'inline text-start text-dm text-neutral-800'}>{'TVL'}</p>
           <div className={'flex flex-col pt-0 text-right'}>
             <p className={'yearn--table-data-section-item-value'}>
               <RenderAmount

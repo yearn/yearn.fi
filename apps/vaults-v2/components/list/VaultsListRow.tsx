@@ -13,6 +13,17 @@ import { getNetwork } from '@lib/utils/wagmi'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 
+type TVaultRowFlags = {
+  hasHoldings?: boolean
+  isMigratable?: boolean
+  isRetired?: boolean
+}
+
+type TVaultRowProps = {
+  currentVault: TYDaemonVault
+  flags?: TVaultRowFlags
+}
+
 function VaultForwardAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const isEthMainnet = currentVault.chainID === 1
   const extraAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR
@@ -336,14 +347,6 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
         }`}
       >
         <RenderAmount
-          value={staked.raw}
-          symbol={currentVault.token.symbol}
-          decimals={currentVault.token.decimals}
-          options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
-        />
-      </p>
-      <small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
-        <RenderAmount
           value={staked.normalized * tokenPrice.normalized}
           symbol={'USD'}
           decimals={0}
@@ -353,12 +356,20 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
             minimumFractionDigits: 2
           }}
         />
+      </p>
+      <small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
+        <RenderAmount
+          value={staked.raw}
+          symbol={currentVault.token.symbol}
+          decimals={currentVault.token.decimals}
+          options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
+        />
       </small>
     </div>
   )
 }
 
-export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+export function VaultsListRow({ currentVault, flags }: TVaultRowProps): ReactElement {
   const balanceOfWant = useYearnBalance({
     chainID: currentVault.chainID,
     address: currentVault.token.address
@@ -380,6 +391,39 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
     }
     return balanceOfWant.raw
   }, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address])
+
+  const availableToDepositUSD = useMemo((): bigint => {
+    return (availableToDeposit * BigInt(Math.floor(currentVault.tvl.price * 1e6))) / 1_000_000n
+  }, [availableToDeposit, currentVault.tvl.price])
+
+  const badgeDefinitions = useMemo(() => {
+    if (!flags) {
+      return [] as { label: string; className: string }[]
+    }
+
+    const definitions: { label: string; className: string }[] = []
+
+    if (flags.hasHoldings) {
+      definitions.push({
+        label: 'Holding',
+        className: 'border-blue-200 bg-blue-100 text-blue-800'
+      })
+    }
+    if (flags.isMigratable) {
+      definitions.push({
+        label: 'Migratable',
+        className: 'border-amber-200 bg-amber-100 text-amber-800'
+      })
+    }
+    if (flags.isRetired) {
+      definitions.push({
+        label: 'Retired',
+        className: 'border-rose-200 bg-rose-100 text-rose-800'
+      })
+    }
+
+    return definitions
+  }, [flags])
 
   return (
     <Link key={`${currentVault.address}`} href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
@@ -418,6 +462,27 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
                   {currentVault.chainID === 10 ? 'Optimism' : getNetwork(currentVault.chainID).name}
                 </p>
               </div>
+              <p className={'mt-0.5 text-xs text-neutral-500'}>
+                {'Featuring score: '}
+                <span className={'font-semibold text-neutral-800'}>
+                  {formatAmount(currentVault.featuringScore || 0, 2, 2)}
+                </span>
+              </p>
+              {badgeDefinitions.length > 0 ? (
+                <div className={'mt-1 flex flex-wrap gap-2'}>
+                  {badgeDefinitions.map(({ label, className }) => (
+                    <span
+                      key={label}
+                      className={cl(
+                        'inline-flex items-center rounded-full border px-2 py-0.5 text-xxs font-semibold uppercase tracking-wide',
+                        className
+                      )}
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -433,36 +498,19 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
             <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Historical APY'}</p>
             <VaultHistoricalAPY currentVault={currentVault} />
           </div>
-
+          {/* Available */}
           <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
             <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Available'}</p>
-            <p
-              className={`yearn--table-data-section-item-value ${
-                isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
-              }`}
-            >
-              <RenderAmount
-                value={availableToDeposit}
-                symbol={currentVault.token.symbol}
-                decimals={currentVault.token.decimals}
-                options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
-              />
-            </p>
-          </div>
-
-          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
-            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Deposited'}</p>
-            <VaultStakedAmount currentVault={currentVault} />
-          </div>
-
-          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
-            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'TVL'}</p>
             <div className={'flex flex-col text-right'}>
-              <p className={'yearn--table-data-section-item-value'}>
+              <p
+                className={`yearn--table-data-section-item-value ${
+                  isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
+                }`}
+              >
                 <RenderAmount
-                  value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
-                  symbol={''}
-                  decimals={6}
+                  value={Number(toNormalizedBN(availableToDepositUSD, currentVault.token.decimals).normalized)}
+                  symbol={'USD'}
+                  decimals={0}
                   options={{
                     shouldCompactValue: true,
                     maximumFractionDigits: 2,
@@ -472,6 +520,31 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
               </p>
               <small className={'text-xs text-neutral-900/40'}>
                 <RenderAmount
+                  value={Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized)}
+                  symbol={currentVault.token.symbol}
+                  decimals={currentVault.token.decimals}
+                  options={{
+                    shouldCompactValue: true,
+                    shouldDisplaySymbol: false,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 2
+                  }}
+                  // options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
+                />
+              </small>
+            </div>
+          </div>
+          {/* Holdings */}
+          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
+            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Deposited'}</p>
+            <VaultStakedAmount currentVault={currentVault} />
+          </div>
+          {/* TVL */}
+          <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
+            <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'TVL'}</p>
+            <div className={'flex flex-col text-right'}>
+              <p className={'yearn--table-data-section-item-value'}>
+                <RenderAmount
                   value={currentVault.tvl?.tvl}
                   symbol={'USD'}
                   decimals={0}
@@ -479,6 +552,18 @@ export function VaultsListRow({ currentVault }: { currentVault: TYDaemonVault })
                     shouldCompactValue: true,
                     maximumFractionDigits: 2,
                     minimumFractionDigits: 0
+                  }}
+                />
+              </p>
+              <small className={'text-xs text-neutral-900/40'}>
+                <RenderAmount
+                  value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
+                  symbol={''}
+                  decimals={6}
+                  options={{
+                    shouldCompactValue: true,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 2
                   }}
                 />
               </small>

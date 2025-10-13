@@ -101,7 +101,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 
   return (
     <Transition show={isOpen} as={'div'}>
-      <Dialog as={'div'} className={'fixed inset-0 overflow-y-auto'} style={{ zIndex: 88 }} onClose={onClose}>
+      <Dialog as={'div'} className={'fixed w-screen inset-0 overflow-y-auto'} style={{ zIndex: 88 }} onClose={onClose}>
         <div className={'relative flex h-screen w-screen items-stretch justify-start px-0 pb-0 text-center'}>
           <TransitionChild
             as={'div'}
