@@ -1,22 +1,55 @@
-import { cl } from '@lib/utils'
+import type { TAddress } from '@lib/types'
+import { cl, toAddress } from '@lib/utils'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { WidgetActionType as ActionType } from '@nextgen/types'
 import { type FC, useMemo, useState } from 'react'
 import { type Address, erc4626Abi } from 'viem'
 import { useReadContract } from 'wagmi'
 import { WidgetDeposit } from './WidgetDeposit'
+import { WidgetDepositAndStake } from './WidgetDepositAndStake'
 import { WidgetStake } from './WidgetStake'
 import { WidgetUnstake } from './WidgetUnstake'
+import { WidgetUnstakeAndWithdraw } from './WidgetUnstakeAndWithdraw'
 import { WidgetWithdraw } from './WidgetWithdraw'
 
 interface Props {
-  vaultAddress?: `0x${string}`
+  vaultAddress?: TAddress
+  gaugeAddress?: TAddress
   vaultType: 'v2' | 'v3'
+  vaultVersion?: string
   actions: ActionType[]
   chainId: number
+  handleSuccess?: () => void
 }
 
-export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions, chainId }) => {
+const getActionLabel = (action: ActionType): string => {
+  switch (action) {
+    case ActionType.Deposit:
+      return 'Deposit'
+    case ActionType.Withdraw:
+      return 'Withdraw'
+    case ActionType.Stake:
+      return 'Stake'
+    case ActionType.Unstake:
+      return 'Unstake'
+    case ActionType.DepositAndStake:
+      return 'Deposit'
+    case ActionType.UnstakeAndWithdraw:
+      return 'Withdraw'
+    default:
+      return action
+  }
+}
+
+export const Widget: FC<Props> = ({
+  vaultAddress,
+  gaugeAddress,
+  vaultType,
+  vaultVersion,
+  actions,
+  chainId,
+  handleSuccess
+}) => {
   const [mode, setMode] = useState<ActionType>(actions[0])
 
   const { data: assetToken } = useReadContract({
@@ -25,25 +58,22 @@ export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions, chainId })
     functionName: vaultType === 'v2' ? 'token' : 'asset',
     chainId
   })
-
-  const gaugeAddress = '0x622fA41799406B120f9a40dA843D358b7b2CFEE3'
-
   const SelectedComponent = useMemo(() => {
     switch (mode) {
       case ActionType.Deposit:
         return (
           <WidgetDeposit
-            vaultAddress={vaultAddress as `0x${string}`}
+            vaultAddress={toAddress(vaultAddress)}
             vaultType={vaultType}
-            assetAddress={assetToken as Address}
+            assetAddress={toAddress(assetToken)}
             chainId={chainId}
           />
         )
       case ActionType.Withdraw:
         return (
           <WidgetWithdraw
-            assetAddress={assetToken as Address}
-            vaultAddress={vaultAddress as `0x${string}`}
+            assetAddress={toAddress(assetToken)}
+            vaultAddress={toAddress(vaultAddress)}
             vaultType={vaultType}
             chainId={chainId}
           />
@@ -51,29 +81,53 @@ export const Widget: FC<Props> = ({ vaultAddress, vaultType, actions, chainId })
       case ActionType.Stake:
         return (
           <WidgetStake
-            vaultAddress={vaultAddress as `0x${string}`}
-            gaugeAddress={gaugeAddress as `0x${string}`}
+            vaultAddress={toAddress(vaultAddress)}
+            gaugeAddress={toAddress(gaugeAddress)}
             chainId={chainId}
           />
         )
       case ActionType.Unstake:
         return (
           <WidgetUnstake
-            vaultAddress={vaultAddress as `0x${string}`}
-            gaugeAddress={gaugeAddress as `0x${string}`}
+            vaultAddress={toAddress(vaultAddress)}
+            gaugeAddress={toAddress(gaugeAddress)}
             chainId={chainId}
           />
         )
+      case ActionType.DepositAndStake:
+        return (
+          <WidgetDepositAndStake
+            vaultAddress={toAddress(vaultAddress)}
+            gaugeAddress={toAddress(gaugeAddress)}
+            assetAddress={toAddress(assetToken)}
+            vaultType={vaultType}
+            vaultVersion={vaultVersion}
+            chainId={chainId}
+            handleSuccess={handleSuccess}
+          />
+        )
+      case ActionType.UnstakeAndWithdraw:
+        return (
+          <WidgetUnstakeAndWithdraw
+            vaultAddress={toAddress(vaultAddress)}
+            gaugeAddress={toAddress(gaugeAddress)}
+            assetAddress={toAddress(assetToken)}
+            vaultType={vaultType}
+            vaultVersion={vaultVersion}
+            chainId={chainId}
+            handleSuccess={handleSuccess}
+          />
+        )
     }
-  }, [mode, vaultAddress, vaultType, assetToken, chainId])
+  }, [mode, vaultAddress, gaugeAddress, vaultType, vaultVersion, assetToken, chainId, handleSuccess])
 
   return (
     <div className="flex flex-col gap-0 mt-4">
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="bg-gray-100 rounded-lg flex h-12">
-          {actions.map((title) => (
-            <TabButton key={title} isActive={mode === title} onClick={() => setMode(title)}>
-              {title}
+          {actions.map((action) => (
+            <TabButton key={action} isActive={mode === action} onClick={() => setMode(action)}>
+              {getActionLabel(action)}
             </TabButton>
           ))}
         </div>

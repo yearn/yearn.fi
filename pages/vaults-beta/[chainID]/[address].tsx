@@ -8,7 +8,6 @@ import { cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { Widget } from '@nextgen/components/widget'
-import { WidgetStakingZap } from '@nextgen/components/widget/WidgetStakingZap'
 import { WidgetActionType } from '@nextgen/types'
 import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHeader'
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
@@ -219,17 +218,19 @@ function Index(): ReactElement | null {
                   chainId={Number(params.chainID)}
                 /> */}
                 {currentVault.staking.available && Number(params.chainID) === 1 && (
-                  <WidgetStakingZap
+                  <Widget
+                    vaultType={isV3 ? 'v3' : 'v2'}
                     vaultAddress={currentVault.address}
                     gaugeAddress={currentVault.staking.address}
-                    vaultType={isV3 ? 'v3' : 'v2'}
                     vaultVersion={currentVault.version}
+                    actions={[WidgetActionType.DepositAndStake, WidgetActionType.UnstakeAndWithdraw]}
                     chainId={Number(params.chainID)}
                   />
                 )}
                 <Widget
                   vaultType={isV3 ? 'v3' : 'v2'}
                   vaultAddress={currentVault.address}
+                  gaugeAddress={currentVault.staking.address}
                   actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
                   chainId={Number(params.chainID)}
                 />
@@ -238,6 +239,7 @@ function Index(): ReactElement | null {
                     chainId={Number(params.chainID)}
                     vaultType={isV3 ? 'v3' : 'v2'}
                     vaultAddress={currentVault.address}
+                    gaugeAddress={currentVault.staking.address}
                     actions={[WidgetActionType.Stake, WidgetActionType.Unstake]}
                   />
                 )}

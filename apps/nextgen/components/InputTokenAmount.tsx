@@ -1,10 +1,11 @@
 import { cl, exactToSimple, simpleToExact } from '@lib/utils'
+import type { useDebouncedInput } from 'apps/nextgen/hooks/useDebouncedInput'
 import type { useInput } from 'apps/nextgen/hooks/useInput'
 import type { ChangeEvent, FC } from 'react'
 import { useAccount } from 'wagmi'
 
 interface Props {
-  input: ReturnType<typeof useInput>
+  input: ReturnType<typeof useInput> | ReturnType<typeof useDebouncedInput>
   className?: string
   balance?: bigint
   decimals?: number
@@ -36,11 +37,15 @@ export const InputTokenAmount: FC<Props> = ({
   const [
     {
       formValue,
-      activity: [, setActive]
+      activity: [, setActive],
+      ...inputState
     },
     handleChangeInput,
     setFormValue
   ] = input
+
+  const isDebouncing = 'isDebouncing' in inputState ? inputState.isDebouncing : false
+
   const disabled = _disabled || !account
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -86,6 +91,11 @@ export const InputTokenAmount: FC<Props> = ({
               'placeholder:text-gray-400'
             )}
           />
+          {isDebouncing && (
+            <div className="flex items-center">
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
           {symbol && (
             <button
               type="button"
