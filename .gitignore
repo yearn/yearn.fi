@@ -45,3 +45,6 @@ AGENTS.md
 
 # playwright
 .playwright-mcp
+
+# local worktree clones
+yearn.fi-worktree-*
