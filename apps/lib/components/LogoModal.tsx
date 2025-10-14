@@ -50,6 +50,7 @@ export function LogoModal(): ReactElement {
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
   const previousPathname = useRef(location.pathname)
+  const pushedHistory = useRef(false)
 
   const currentHost = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -60,18 +61,44 @@ export function LogoModal(): ReactElement {
   }, [])
 
   const handleClose = useCallback((): void => {
-    setIsOpen(false)
+    if (pushedHistory.current) {
+      pushedHistory.current = false
+      window.history.back()
+    } else {
+      setIsOpen(false)
+    }
   }, [])
 
   useEffect(() => {
     if (previousPathname.current !== location.pathname && isOpen) {
       previousPathname.current = location.pathname
-      handleClose()
+      pushedHistory.current = false
+      setIsOpen(false)
       return
     }
 
     previousPathname.current = location.pathname
-  }, [handleClose, isOpen, location.pathname])
+  }, [isOpen, location.pathname])
+
+  useEffect(() => {
+    if (isOpen) {
+      window.history.pushState({ modal: 'logo' }, '')
+      pushedHistory.current = true
+
+      const handlePopState = (): void => {
+        pushedHistory.current = false
+        setIsOpen(false)
+      }
+
+      window.addEventListener('popstate', handlePopState)
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState)
+      }
+    }
+
+    return undefined
+  }, [isOpen])
 
   const handleLinkClick = useCallback(
     (event: React.MouseEvent<HTMLAnchorElement>): void => {
@@ -87,7 +114,15 @@ export function LogoModal(): ReactElement {
         return
       }
 
-      handleClose()
+      const href = event.currentTarget.getAttribute('href')
+      const isExternal = href && isExternalHref(href)
+
+      if (isExternal) {
+        handleClose()
+      } else {
+        pushedHistory.current = false
+        setIsOpen(false)
+      }
     },
     [handleClose]
   )
