@@ -124,12 +124,12 @@ export function LogoModal(): ReactElement {
 
             <TransitionChild
               as={Fragment}
-              enter={'ease-out duration-200'}
+              enter={'ease-out duration-150'}
               enterFrom={'opacity-0 translate-y-6'}
               enterTo={'opacity-100 translate-y-0'}
-              leave={'ease-in duration-150'}
+              leave={'ease-in duration-75'}
               leaveFrom={'opacity-100 translate-y-0'}
-              leaveTo={'opacity-0 translate-y-6'}
+              leaveTo={'opacity-0 translate-y-2'}
             >
               <Dialog.Panel
                 className={
