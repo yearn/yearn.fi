@@ -109,7 +109,7 @@ export function LogoModal(): ReactElement {
 
       <Transition show={isOpen} as={Fragment}>
         <Dialog as={'div'} className={'fixed inset-0 z-[9999] overflow-y-auto'} onClose={handleClose}>
-          <div className={'flex min-h-full items-center justify-center p-4 sm:p-6'}>
+          <div className={'flex min-h-full items-center justify-center sm:p-6'}>
             <TransitionChild
               as={Fragment}
               enter={'ease-out duration-150'}
@@ -164,7 +164,7 @@ export function LogoModal(): ReactElement {
                   </button>
                 </div>
 
-                <div className={'flex flex-col gap-6'}>
+                <div className={'flex flex-col gap-10'}>
                   {APP_GROUPS.map((group) => (
                     <section key={group.title} aria-label={group.title} className={'flex flex-col gap-2'}>
                       <h3
@@ -174,7 +174,7 @@ export function LogoModal(): ReactElement {
                       >
                         {group.title}
                       </h3>
-                      <div className={'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'}>
+                      <div className={'grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-4'}>
                         {group.items.map((item) => {
                           const active = isTileActive(item, location.pathname, currentHost)
                           const external = isExternalHref(item.href)
