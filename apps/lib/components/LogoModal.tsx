@@ -50,6 +50,7 @@ export function LogoModal(): ReactElement {
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
   const previousPathname = useRef(location.pathname)
+  const pushedHistory = useRef(false)
 
   const currentHost = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -60,18 +61,44 @@ export function LogoModal(): ReactElement {
   }, [])
 
   const handleClose = useCallback((): void => {
-    setIsOpen(false)
+    if (pushedHistory.current) {
+      pushedHistory.current = false
+      window.history.back()
+    } else {
+      setIsOpen(false)
+    }
   }, [])
 
   useEffect(() => {
     if (previousPathname.current !== location.pathname && isOpen) {
       previousPathname.current = location.pathname
-      handleClose()
+      pushedHistory.current = false
+      setIsOpen(false)
       return
     }
 
     previousPathname.current = location.pathname
-  }, [handleClose, isOpen, location.pathname])
+  }, [isOpen, location.pathname])
+
+  useEffect(() => {
+    if (isOpen) {
+      window.history.pushState({ modal: 'logo' }, '')
+      pushedHistory.current = true
+
+      const handlePopState = (): void => {
+        pushedHistory.current = false
+        setIsOpen(false)
+      }
+
+      window.addEventListener('popstate', handlePopState)
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState)
+      }
+    }
+
+    return undefined
+  }, [isOpen])
 
   const handleLinkClick = useCallback(
     (event: React.MouseEvent<HTMLAnchorElement>): void => {
@@ -87,7 +114,15 @@ export function LogoModal(): ReactElement {
         return
       }
 
-      handleClose()
+      const href = event.currentTarget.getAttribute('href')
+      const isExternal = href && isExternalHref(href)
+
+      if (isExternal) {
+        handleClose()
+      } else {
+        pushedHistory.current = false
+        setIsOpen(false)
+      }
     },
     [handleClose]
   )
@@ -109,7 +144,7 @@ export function LogoModal(): ReactElement {
 
       <Transition show={isOpen} as={Fragment}>
         <Dialog as={'div'} className={'fixed inset-0 z-[9999] overflow-y-auto'} onClose={handleClose}>
-          <div className={'flex min-h-full items-center justify-center p-4 sm:p-6'}>
+          <div className={'flex min-h-full items-center justify-center sm:p-6'}>
             <TransitionChild
               as={Fragment}
               enter={'ease-out duration-150'}
@@ -124,12 +159,12 @@ export function LogoModal(): ReactElement {
 
             <TransitionChild
               as={Fragment}
-              enter={'ease-out duration-200'}
+              enter={'ease-out duration-150'}
               enterFrom={'opacity-0 translate-y-6'}
               enterTo={'opacity-100 translate-y-0'}
-              leave={'ease-in duration-150'}
+              leave={'ease-in duration-75'}
               leaveFrom={'opacity-100 translate-y-0'}
-              leaveTo={'opacity-0 translate-y-6'}
+              leaveTo={'opacity-0 translate-y-2'}
             >
               <Dialog.Panel
                 className={
@@ -146,16 +181,25 @@ export function LogoModal(): ReactElement {
                   <button
                     type={'button'}
                     onClick={handleClose}
-                    className={
-                      'flex size-6 items-center justify-center rounded-full border border-transparent bg-transparent text-neutral-200 transition-colors hover:bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-neutral-700 dark:hover:bg-neutral-200'
-                    }
+                    className={cl(
+                      `flex size-6 items-center justify-center 
+                      rounded-full border border-transparent 
+                      text-neutral-200
+                      bg-neutral-0/70 dark:bg-[#070A1C] 
+                      hover:bg-primary/50
+                      active:bg-primary/25 active:bg-primary/25
+
+                      focus:outline-none focus-visible:ring-2 
+                      focus-visible:ring-primary 
+                      dark:text-neutral-700`
+                    )}
                   >
                     <span className={'sr-only'}>{'Close'}</span>
                     <IconClose className={'size-4'} />
                   </button>
                 </div>
 
-                <div className={'flex flex-col gap-6'}>
+                <div className={'flex flex-col gap-10'}>
                   {APP_GROUPS.map((group) => (
                     <section key={group.title} aria-label={group.title} className={'flex flex-col gap-2'}>
                       <h3
@@ -165,20 +209,21 @@ export function LogoModal(): ReactElement {
                       >
                         {group.title}
                       </h3>
-                      <div className={'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'}>
+                      <div className={'grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-4'}>
                         {group.items.map((item) => {
                           const active = isTileActive(item, location.pathname, currentHost)
                           const external = isExternalHref(item.href)
 
                           return (
                             <Link key={item.href} href={item.href} onClick={handleLinkClick}>
-                              <article
+                              <div
+                                data-active={active}
                                 className={cl(
-                                  'group relative flex flex-row items-center gap-2 rounded-xl border p-4 align-middle transition-all duration-150',
+                                  'group relative flex flex-row items-center gap-3 rounded-xl border p-4 align-middle',
                                   'bg-neutral-0/70 hover:border-primary/70 hover:bg-primary/5 dark:bg-[#070A1C]',
-                                  active
-                                    ? 'border-primary shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
-                                    : 'border-neutral-200 dark:border-[#1C264F]'
+                                  'border-neutral-200 dark:border-[#1C264F]',
+                                  'data-[active=true]:border-primary! data-[active=true]:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
+                                  'active:border-primary! active:bg-neutral-0/70 active:dark:bg-[#070A1C]'
                                 )}
                               >
                                 <TileIcon icon={item.icon} />
@@ -202,7 +247,7 @@ export function LogoModal(): ReactElement {
                                     {'Active'}
                                   </span>
                                 )}
-                              </article>
+                              </div>
                             </Link>
                           )
                         })}
