@@ -146,9 +146,18 @@ export function LogoModal(): ReactElement {
                   <button
                     type={'button'}
                     onClick={handleClose}
-                    className={
-                      'flex size-6 items-center justify-center rounded-full border border-transparent bg-transparent text-neutral-200 transition-colors hover:bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-neutral-700 dark:hover:bg-neutral-200'
-                    }
+                    className={cl(
+                      `flex size-6 items-center justify-center 
+                      rounded-full border border-transparent 
+                      text-neutral-200
+                      bg-neutral-0/70 dark:bg-[#070A1C] 
+                      hover:bg-primary/50
+                      active:bg-primary/25 active:bg-primary/25
+
+                      focus:outline-none focus-visible:ring-2 
+                      focus-visible:ring-primary 
+                      dark:text-neutral-700`
+                    )}
                   >
                     <span className={'sr-only'}>{'Close'}</span>
                     <IconClose className={'size-4'} />
@@ -172,13 +181,14 @@ export function LogoModal(): ReactElement {
 
                           return (
                             <Link key={item.href} href={item.href} onClick={handleLinkClick}>
-                              <article
+                              <div
+                                data-active={active}
                                 className={cl(
-                                  'group relative flex flex-row items-center gap-2 rounded-xl border p-4 align-middle transition-all duration-150',
+                                  'group relative flex flex-row items-center gap-3 rounded-xl border p-4 align-middle',
                                   'bg-neutral-0/70 hover:border-primary/70 hover:bg-primary/5 dark:bg-[#070A1C]',
-                                  active
-                                    ? 'border-primary shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
-                                    : 'border-neutral-200 dark:border-[#1C264F]'
+                                  'border-neutral-200 dark:border-[#1C264F]',
+                                  'data-[active=true]:border-primary! data-[active=true]:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
+                                  'active:border-primary! active:bg-neutral-0/70 active:dark:bg-[#070A1C]'
                                 )}
                               >
                                 <TileIcon icon={item.icon} />
@@ -202,7 +212,7 @@ export function LogoModal(): ReactElement {
                                     {'Active'}
                                   </span>
                                 )}
-                              </article>
+                              </div>
                             </Link>
                           )
                         })}
