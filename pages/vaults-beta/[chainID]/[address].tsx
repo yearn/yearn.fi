@@ -217,16 +217,14 @@ function Index(): ReactElement | null {
                   vaultVersion={currentVault.version}
                   chainId={Number(params.chainID)}
                 /> */}
-                {currentVault.staking.available && Number(params.chainID) === 1 && (
-                  <Widget
-                    vaultType={isV3 ? 'v3' : 'v2'}
-                    vaultAddress={currentVault.address}
-                    gaugeAddress={currentVault.staking.address}
-                    vaultVersion={currentVault.version}
-                    actions={[WidgetActionType.DepositAndStake, WidgetActionType.UnstakeAndWithdraw]}
-                    chainId={Number(params.chainID)}
-                  />
-                )}
+                <Widget
+                  vaultType={isV3 ? 'v3' : 'v2'}
+                  vaultAddress={currentVault.address}
+                  gaugeAddress={currentVault.staking.address}
+                  actions={[WidgetActionType.EnsoDeposit, WidgetActionType.EnsoWithdraw]}
+                  chainId={Number(params.chainID)}
+                />
+
                 <Widget
                   vaultType={isV3 ? 'v3' : 'v2'}
                   vaultAddress={currentVault.address}
@@ -234,15 +232,6 @@ function Index(): ReactElement | null {
                   actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
                   chainId={Number(params.chainID)}
                 />
-                {currentVault.staking.available && (
-                  <Widget
-                    chainId={Number(params.chainID)}
-                    vaultType={isV3 ? 'v3' : 'v2'}
-                    vaultAddress={currentVault.address}
-                    gaugeAddress={currentVault.staking.address}
-                    actions={[WidgetActionType.Stake, WidgetActionType.Unstake]}
-                  />
-                )}
               </div>
             </div>
           </div>

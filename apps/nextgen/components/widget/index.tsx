@@ -7,7 +7,8 @@ import { type Address, erc4626Abi } from 'viem'
 import { useReadContract } from 'wagmi'
 import { WidgetDeposit } from './WidgetDeposit'
 import { WidgetDepositAndStake } from './WidgetDepositAndStake'
-import { WidgetEnsoZap } from './WidgetEnsoZap'
+import { WidgetEnsoDeposit } from './WidgetEnsoDeposit'
+import { WidgetEnsoWithdraw } from './WidgetEnsoWithdraw'
 import { WidgetStake } from './WidgetStake'
 import { WidgetUnstake } from './WidgetUnstake'
 import { WidgetUnstakeAndWithdraw } from './WidgetUnstakeAndWithdraw'
@@ -37,8 +38,10 @@ const getActionLabel = (action: ActionType): string => {
       return 'Deposit'
     case ActionType.UnstakeAndWithdraw:
       return 'Withdraw'
-    case ActionType.EnsoZap:
-      return 'Zap'
+    case ActionType.EnsoDeposit:
+      return 'Zap In'
+    case ActionType.EnsoWithdraw:
+      return 'Zap Out'
     default:
       return action
   }
@@ -121,13 +124,22 @@ export const Widget: FC<Props> = ({
             handleSuccess={handleSuccess}
           />
         )
-      case ActionType.EnsoZap:
+      case ActionType.EnsoDeposit:
         return (
-          <WidgetEnsoZap
+          <WidgetEnsoDeposit
             vaultAddress={toAddress(vaultAddress)}
-            vaultType={vaultType}
+            assetAddress={toAddress(assetToken)}
             chainId={chainId}
-            handleSuccess={handleSuccess}
+            handleDepositSuccess={handleSuccess}
+          />
+        )
+      case ActionType.EnsoWithdraw:
+        return (
+          <WidgetEnsoWithdraw
+            vaultAddress={toAddress(vaultAddress)}
+            assetAddress={toAddress(assetToken)}
+            chainId={chainId}
+            handleWithdrawSuccess={handleSuccess}
           />
         )
     }

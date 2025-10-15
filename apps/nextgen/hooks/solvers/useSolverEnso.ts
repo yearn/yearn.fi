@@ -7,7 +7,7 @@ import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
 
 const ENSO_API_BASE = 'https://api.enso.finance/api/v1'
-const ENSO_API_KEY = process.env.NEXT_PUBLIC_ENSO_API_KEY || ''
+const ENSO_API_KEY = import.meta.env.VITE_ENSO_API_KEY
 
 interface EnsoRouteResponse {
   tx: {
@@ -65,7 +65,7 @@ export const useSolverEnso = ({
 }: UseSolverEnsoProps): UseSolverEnsoReturn => {
   const [route, setRoute] = useState<EnsoRouteResponse | undefined>()
   const [isLoadingRoute, setIsLoadingRoute] = useState(false)
-  
+
   const isCrossChain = destinationChainId !== undefined && destinationChainId !== chainId
   const routerAddress = route?.tx?.to
 
@@ -96,7 +96,7 @@ export const useSolverEnso = ({
 
       const response = await fetch(`${ENSO_API_BASE}/shortcuts/route?${params}`, {
         headers: {
-          'Authorization': `Bearer ${ENSO_API_KEY}`,
+          Authorization: `Bearer ${ENSO_API_KEY}`,
           'Content-Type': 'application/json'
         }
       })

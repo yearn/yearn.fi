@@ -60,5 +60,6 @@ export enum WidgetActionType {
   Unstake = 'unstake',
   DepositAndStake = 'deposit & stake',
   UnstakeAndWithdraw = 'unstake & withdraw',
-  EnsoZap = 'enso zap'
+  EnsoDeposit = 'enso deposit',
+  EnsoWithdraw = 'enso withdraw'
 }
