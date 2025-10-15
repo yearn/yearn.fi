@@ -45,7 +45,7 @@ const CORE_APPS: TAppTile[] = [
     name: 'V3 Vaults',
     href: '/v3',
     description: 'Single asset vaults',
-    icon: yearnGlyph({ gradient: { start: '#FB245A', end: '#0657F9' } }),
+    icon: yearnGlyph({ gradient: { start: '#FB245A', end: '#0657F9' }, front: 'text-white' }),
     pathnames: ['/v3'],
     hosts: ['yearn.fi']
   },
@@ -112,7 +112,7 @@ const CORE_APPS: TAppTile[] = [
     name: 'YearnX',
     href: 'https://yearn.space',
     description: 'Yearn Partner Pages',
-    icon: yearnGlyph({ gradient: { start: '#3b82f6', end: '#9333ea' } }),
+    icon: yearnGlyph({ back: 'text-black', front: 'text-white' }),
     hosts: ['yearn.space']
   },
   {

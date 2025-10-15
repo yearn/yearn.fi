@@ -9,12 +9,13 @@ import Link from '/src/components/Link'
 import { LogoYearn } from '../icons/LogoYearn'
 import { APP_GROUPS, type TAppTile } from './YearnApps'
 
-function TileIcon({ icon }: { icon?: ReactElement }): ReactElement {
+function TileIcon({ icon, forceDark }: { icon?: ReactElement; forceDark: boolean }): ReactElement {
   return (
     <div
-      className={
-        'flex size-8 items-center justify-center rounded-full bg-neutral-0 text-neutral-900 dark:bg-[#0F172A] dark:text-white'
-      }
+      className={cl(
+        'flex size-8 items-center justify-center rounded-full',
+        forceDark ? 'bg-[#0F172A] text-white' : 'bg-white text-neutral-900 dark:bg-[#0F172A] dark:text-white'
+      )}
     >
       {icon ?? <LogoYearn className={'size-10! max-h-10! max-w-10!'} front={'text-white'} back={'text-primary'} />}
     </div>
@@ -52,6 +53,8 @@ export function LaunchModal(): ReactElement {
   const previousPathname = useRef(location.pathname)
   const pushedHistory = useRef(false)
   const [activeGroupTitle, setActiveGroupTitle] = useState(APP_GROUPS[0]?.title ?? '')
+  const pathname = location.pathname
+  const forceDark = useMemo(() => pathname.startsWith('/v3'), [pathname])
 
   const currentHost = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -217,6 +220,7 @@ export function LaunchModal(): ReactElement {
       >
         <span className={'sr-only'}>{'Open Yearn navigation'}</span>
         <TileIcon
+          forceDark={forceDark}
           icon={<LogoYearn className={'size-8! max-h-8! max-w-8!'} front={'text-white'} back={'text-primary'} />}
         />
       </button>
@@ -246,9 +250,12 @@ export function LaunchModal(): ReactElement {
               leaveTo={'opacity-0 translate-y-2'}
             >
               <Dialog.Panel
-                className={
-                  'relative w-full max-w-6xl transform overflow-hidden rounded-3xl border border-neutral-100 bg-white p-6 text-neutral-900 shadow-2xl focus:outline-none dark:border-[#010A3B] dark:bg-neutral-0 dark:text-white sm:p-8'
-                }
+                className={cl(
+                  'relative w-full max-w-6xl transform overflow-hidden rounded-3xl border p-6 shadow-2xl focus:outline-none sm:p-8',
+                  forceDark
+                    ? 'border-primary/30 bg-[#050A29] text-white'
+                    : 'border-neutral-100 bg-white text-neutral-900 dark:border-primary/30 dark:bg-neutral-0 dark:text-white'
+                )}
               >
                 <div className={'flex w-full justify-end'}>
                   {/* <div>
@@ -261,16 +268,10 @@ export function LaunchModal(): ReactElement {
                     type={'button'}
                     onClick={handleClose}
                     className={cl(
-                      `flex size-6 items-center justify-center 
-                      rounded-full border border-transparent 
-                      text-neutral-200
-                      bg-neutral-0/70 dark:bg-[#070A1C] 
-                      hover:bg-primary/50
-                      active:bg-primary/25 active:bg-primary/25
-
-                      focus:outline-none focus-visible:ring-2 
-                      focus-visible:ring-primary 
-                      dark:text-neutral-700`
+                      'flex size-6 items-center justify-center rounded-full border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                      forceDark
+                        ? 'bg-[#070A1C] text-neutral-700 hover:bg-[#1a2e5e]'
+                        : 'bg-neutral-0 border-1 border-neutral-500 text-neutral-700 hover:bg-neutral-200 dark:hover:text-neutral-700'
                     )}
                   >
                     <span className={'sr-only'}>{'Close'}</span>
@@ -292,8 +293,12 @@ export function LaunchModal(): ReactElement {
                             'whitespace-nowrap rounded-2xl border px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.25em] transition-colors',
                             'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                             isActive
-                              ? 'border-primary bg-primary/10 text-primary'
-                              : 'border-transparent bg-transparent text-neutral-200 hover:bg-neutral-0/70 dark:text-neutral-700 dark:hover:bg-[#070A1C]'
+                              ? forceDark
+                                ? 'border-primary bg-primary/10 text-white'
+                                : 'border-primary bg-primary/10 text-primary dark:bg-primary/20 dark:text-white'
+                              : forceDark
+                                ? 'border-transparent bg-transparent text-neutral-500 hover:bg-primary/10 hover:border-primary/70 hover:text-white'
+                                : 'border-transparent bg-transparent text-neutral-600 hover:border-primary/70 hover:bg-neutral-50 dark:text-neutral-500 dark:hover:border-primary dark:hover:bg-primary/10'
                           )}
                           aria-pressed={isActive}
                         >
@@ -305,14 +310,15 @@ export function LaunchModal(): ReactElement {
 
                   <div
                     data-launch-scrollable={'true'}
-                    className={
-                      'flex-1 overflow-y-auto rounded-3xl border border-neutral-200 bg-neutral-0/70 p-4 dark:border-[#1C264F] dark:bg-[#070A1C] sm:p-6'
-                    }
+                    className={cl(
+                      'flex-1 overflow-y-auto rounded-3xl p-4 sm:p-6',
+                      forceDark ? 'border-[#1C264F] bg-[#050A29]' : 'border-neutral-200 bg-white dark:bg-neutral-0'
+                    )}
                     style={{ minHeight: '400px', maxHeight: '70vh' }}
                   >
                     <div className={'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'}>
                       {activeGroup?.items.map((item) => {
-                        const active = isTileActive(item, location.pathname, currentHost)
+                        const active = isTileActive(item, pathname, currentHost)
                         const external = isExternalHref(item.href)
 
                         return (
@@ -321,20 +327,27 @@ export function LaunchModal(): ReactElement {
                               data-active={active}
                               className={cl(
                                 'group relative flex flex-row items-center gap-3 rounded-xl border p-4 align-middle',
-                                'bg-neutral-0/90 hover:border-primary/70 hover:bg-primary/5 dark:bg-[#070A1C]',
-                                'border-neutral-200 dark:border-[#1C264F]',
+                                forceDark
+                                  ? 'border-primary/20 bg-transparent hover:bg-primary/5 hover:border-primary/70'
+                                  : 'border-neutral-200 bg-neutral-0 hover:border-primary/70 hover:bg-neutral-50 dark:border-neutral-100 dark:bg-neutral-0 dark:hover:bg-primary/10',
                                 'data-[active=true]:border-primary! data-[active=true]:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
-                                'active:border-primary! active:bg-neutral-0/70 active:dark:bg-[#070A1C]'
+                                'active:border-primary!',
+                                forceDark ? 'active:bg-[#0F172A]' : 'active:bg-neutral-100 dark:active:bg-[#070A1C]'
                               )}
                             >
-                              <TileIcon icon={item.icon} />
+                              <TileIcon icon={item.icon} forceDark={forceDark} />
                               <div className={'flex flex-1 flex-col justify-between gap-1'}>
                                 <div className={'flex items-center gap-2'}>
                                   <p className={'text-base font-semibold leading-tight'}>{item.name}</p>
                                   {external && <span className={'text-xs'}>{'↗'}</span>}
                                 </div>
                                 {item.description && (
-                                  <p className={'line-clamp-1 text-sm text-neutral-200 dark:text-neutral-700'}>
+                                  <p
+                                    className={cl(
+                                      'line-clamp-1 text-sm',
+                                      forceDark ? 'text-neutral-500' : 'text-neutral-600 dark:text-neutral-500'
+                                    )}
+                                  >
                                     {item.description}
                                   </p>
                                 )}
