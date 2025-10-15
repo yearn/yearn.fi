@@ -1,4 +1,4 @@
-import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
+import { type ComponentType, type LazyExoticComponent, lazy } from 'react'
 
 type Loader<TComponent extends ComponentType<any>> = () => Promise<{ default: TComponent }>
 
