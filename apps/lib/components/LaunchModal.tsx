@@ -46,7 +46,7 @@ function isTileActive(tile: TAppTile, pathname: string, currentHost: string): bo
   return matchesHost || matchesPath
 }
 
-export function LogoModal(): ReactElement {
+export function LaunchModal(): ReactElement {
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
   const previousPathname = useRef(location.pathname)
@@ -88,7 +88,7 @@ export function LogoModal(): ReactElement {
 
   useEffect(() => {
     if (isOpen) {
-      window.history.pushState({ modal: 'logo' }, '')
+      window.history.pushState({ modal: 'launch' }, '')
       pushedHistory.current = true
 
       const handlePopState = (): void => {
@@ -106,6 +106,73 @@ export function LogoModal(): ReactElement {
     }
 
     return undefined
+  }, [isOpen])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    if (!isOpen) {
+      return
+    }
+
+    const scrollY = window.scrollY
+    const blockedKeys = new Set([' ', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'])
+
+    const isScrollableTarget = (target: EventTarget | null): boolean => {
+      if (!(target instanceof Element)) {
+        return false
+      }
+      const scrollable = target.closest('[data-launch-scrollable="true"]')
+      if (!scrollable) {
+        return false
+      }
+      return scrollable.scrollHeight > scrollable.clientHeight
+    }
+
+    const handleScroll = (): void => {
+      if (window.scrollY !== scrollY) {
+        window.scrollTo(0, scrollY)
+      }
+    }
+
+    const handleWheel = (event: WheelEvent): void => {
+      if (isScrollableTarget(event.target)) {
+        return
+      }
+      event.preventDefault()
+    }
+
+    const handleTouchMove = (event: TouchEvent): void => {
+      if (isScrollableTarget(event.target)) {
+        return
+      }
+      event.preventDefault()
+    }
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (!blockedKeys.has(event.key)) {
+        return
+      }
+      if (isScrollableTarget(document.activeElement)) {
+        return
+      }
+      event.preventDefault()
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('wheel', handleWheel, { passive: false })
+    window.addEventListener('touchmove', handleTouchMove, { passive: false })
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('wheel', handleWheel)
+      window.removeEventListener('touchmove', handleTouchMove)
+      window.removeEventListener('keydown', handleKeyDown)
+      window.scrollTo(0, scrollY)
+    }
   }, [isOpen])
 
   const handleLinkClick = useCallback(
@@ -155,8 +222,8 @@ export function LogoModal(): ReactElement {
       </button>
 
       <Transition show={isOpen} as={Fragment}>
-        <Dialog as={'div'} className={'fixed inset-0 z-[9999] overflow-y-auto'} onClose={handleClose}>
-          <div className={'flex min-h-full items-center justify-center sm:p-6'}>
+        <Dialog as={'div'} className={'fixed inset-0 z-[9999] overflow-y-auto'} static onClose={handleClose}>
+          <div className={'flex min-h-full items-center justify-center py-6'}>
             <TransitionChild
               as={Fragment}
               enter={'ease-out duration-150'}
@@ -237,10 +304,11 @@ export function LogoModal(): ReactElement {
                   </div>
 
                   <div
+                    data-launch-scrollable={'true'}
                     className={
-                      'flex-1 rounded-3xl border border-neutral-200 bg-neutral-0/70 p-4 dark:border-[#1C264F] dark:bg-[#070A1C] sm:p-6'
+                      'flex-1 overflow-y-auto rounded-3xl border border-neutral-200 bg-neutral-0/70 p-4 dark:border-[#1C264F] dark:bg-[#070A1C] sm:p-6'
                     }
-                    style={{ minHeight: '360px' }}
+                    style={{ minHeight: '400px', maxHeight: '70vh' }}
                   >
                     <div className={'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'}>
                       {activeGroup?.items.map((item) => {
