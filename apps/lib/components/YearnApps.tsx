@@ -225,9 +225,33 @@ const RESOURCES: TAppTile[] = [
 
 const DEPRECATED: TAppTile[] = [
   {
+    name: 'Bearn',
+    href: 'https://bearn.sucks/',
+    description: 'BGT Liquid Locker',
+    icon: (
+      <Image
+        alt={'Bearn'}
+        className={'size-8! max-h-8! max-w-8!'}
+        width={64}
+        height={64}
+        src={'/bearn-logo.png'}
+        loading={'eager'}
+        priority
+      />
+    ),
+    hosts: ['bearn.sucks']
+  },
+  {
+    name: 'GIMME',
+    href: 'https://gimme.mom',
+    description: 'Easy Mode',
+    icon: <LogoGimme className={'size-10! max-h-10! max-w-10!'} />,
+    hosts: ['gimme.mom']
+  },
+  {
     name: 'yPrisma',
     href: 'https://yprisma.yearn.fi',
-    description: 'Liquidity for Prisma',
+    description: 'Prisma Liquid Locker',
     icon: (
       <Image
         alt={'yPrisma'}
@@ -240,13 +264,6 @@ const DEPRECATED: TAppTile[] = [
       />
     ),
     hosts: ['yprisma.yearn.fi']
-  },
-  {
-    name: 'GIMME',
-    href: 'https://gimme.mom',
-    description: 'Easy Mode',
-    icon: <LogoGimme className={'size-10! max-h-10! max-w-10!'} />,
-    hosts: ['gimme.mom']
   },
   {
     name: 'Seafood',
