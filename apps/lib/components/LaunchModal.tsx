@@ -298,7 +298,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                 </div>
 
                 <div className={'mt-6 flex flex-col gap-6 lg:flex-row'}>
-                  <div className={'flex flex-row gap-2 overflow-x-auto pb-2 lg:flex-col lg:gap-3 lg:pb-0 lg:pr-2'}>
+                  <div className={'flex flex-row gap-2 overflow-x-auto pb-2 pt-6 lg:flex-col lg:gap-3 lg:pb-0 lg:pr-2'}>
                     {APP_GROUPS.map((group) => {
                       const isActive = group.title === activeGroupTitle
 
