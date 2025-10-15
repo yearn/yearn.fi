@@ -9,6 +9,16 @@ import Link from '/src/components/Link'
 import { LogoYearn } from '../icons/LogoYearn'
 import { APP_GROUPS, type TAppTile } from './YearnApps'
 
+type LaunchModalTriggerProps = {
+  open: () => void
+  isOpen: boolean
+  forceDark: boolean
+}
+
+type LaunchModalProps = {
+  trigger?: (props: LaunchModalTriggerProps) => ReactElement
+}
+
 function TileIcon({ icon, forceDark }: { icon?: ReactElement; forceDark: boolean }): ReactElement {
   return (
     <div
@@ -47,14 +57,14 @@ function isTileActive(tile: TAppTile, pathname: string, currentHost: string): bo
   return matchesHost || matchesPath
 }
 
-export function LaunchModal(): ReactElement {
+export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
   const previousPathname = useRef(location.pathname)
   const pushedHistory = useRef(false)
   const [activeGroupTitle, setActiveGroupTitle] = useState(APP_GROUPS[0]?.title ?? '')
   const pathname = location.pathname
-  const forceDark = useMemo(() => pathname.startsWith('/v3'), [pathname])
+  const forceDark = useMemo(() => pathname.startsWith('/v3') || pathname === '/', [pathname])
 
   const currentHost = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -209,21 +219,29 @@ export function LaunchModal(): ReactElement {
     setActiveGroupTitle(title)
   }, [])
 
+  const handleOpen = useCallback((): void => {
+    setIsOpen(true)
+  }, [])
+
   return (
     <>
-      <button
-        type={'button'}
-        className={'z-20 flex size-8 items-center justify-center rounded-full transition-colors hover:opacity-80'}
-        aria-haspopup={'dialog'}
-        aria-expanded={isOpen}
-        onClick={(): void => setIsOpen(true)}
-      >
-        <span className={'sr-only'}>{'Open Yearn navigation'}</span>
-        <TileIcon
-          forceDark={forceDark}
-          icon={<LogoYearn className={'size-8! max-h-8! max-w-8!'} front={'text-white'} back={'text-primary'} />}
-        />
-      </button>
+      {trigger ? (
+        trigger({ open: handleOpen, isOpen, forceDark })
+      ) : (
+        <button
+          type={'button'}
+          className={'z-20 flex size-8 items-center justify-center rounded-full transition-opacity hover:opacity-80'}
+          aria-haspopup={'dialog'}
+          aria-expanded={isOpen}
+          onClick={handleOpen}
+        >
+          <span className={'sr-only'}>{'Open Yearn navigation'}</span>
+          <TileIcon
+            forceDark={forceDark}
+            icon={<LogoYearn className={'size-8! max-h-8! max-w-8!'} front={'text-white'} back={'text-primary'} />}
+          />
+        </button>
+      )}
 
       <Transition show={isOpen} as={Fragment}>
         <Dialog as={'div'} className={'fixed inset-0 z-[9999] overflow-y-auto'} static onClose={handleClose}>
