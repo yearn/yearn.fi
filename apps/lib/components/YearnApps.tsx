@@ -1,4 +1,7 @@
+import { IconDiscord } from '@lib/icons/IconDiscord'
+import { IconTwitter } from '@lib/icons/IconTwitter'
 import { LogoGimme } from '@lib/icons/LogoGimme'
+import { LogoGithub } from '@lib/icons/LogoGithub'
 import type { ReactElement } from 'react'
 import Image from '/src/components/Image'
 
@@ -61,7 +64,7 @@ const CORE_APPS: TAppTile[] = [
     icon: (
       <Image
         alt={'yCRV'}
-        className={'size-10! max-h-10! max-w-10!'}
+        className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
         src={`${BASE_YEARN_ASSET_URI}/tokens/1/0xfcc5c47be19d06bf83eb04298b026f81069ff65b/logo-128.png`}
@@ -78,7 +81,7 @@ const CORE_APPS: TAppTile[] = [
     icon: (
       <Image
         alt={'veYFI'}
-        className={'size-10! max-h-10! max-w-10!'}
+        className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
         src={`${BASE_YEARN_ASSET_URI}/tokens/1/0x41252e8691e964f7de35156b68493bab6797a275/logo-128.png`}
@@ -95,7 +98,7 @@ const CORE_APPS: TAppTile[] = [
     icon: (
       <Image
         alt={'yETH'}
-        className={'size-10! max-h-10! max-w-10!'}
+        className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
         src={`${BASE_YEARN_ASSET_URI}/tokens/1/0x1bed97cbc3c24a4fb5c069c6e311a967386131f7/logo-128.png`}
@@ -119,30 +122,23 @@ const CORE_APPS: TAppTile[] = [
     icon: yearnGlyph({ back: 'text-white', front: 'text-blue-500' }),
     pathnames: ['/vaults-beta'],
     hosts: ['yearn.fi']
-  },
-  {
-    name: 'Landing Page',
-    href: '/',
-    description: 'Learn about Yearn',
-    icon: yearnGlyph({ gradient: { start: '#1E40AF', end: '#0EA5E9' } }),
-    pathnames: ['/']
   }
 ]
 
 const TOOLS: TAppTile[] = [
+  {
+    name: 'yFactory',
+    href: 'https://factory.yearn.fi',
+    description: 'Deploy vaults',
+    icon: yearnGlyph({ back: 'text-neutral-0', front: 'text-neutral-900' }),
+    hosts: ['factory.yearn.fi']
+  },
   {
     name: 'PowerGlove',
     href: 'https://powerglove.yearn.fi',
     description: 'Analytics',
     icon: yearnGlyph({ back: 'text-neutral-100', front: 'text-primary' }),
     hosts: ['powerglove.yearn.fi']
-  },
-  {
-    name: 'Seafood',
-    href: 'https://seafood.yearn.watch',
-    description: 'Legacy dashboards',
-    icon: yearnGlyph({ back: 'text-[#14b8a6]', front: 'text-[#0f172a]' }),
-    hosts: ['seafood.yearn.watch']
   },
   {
     name: 'APR Oracle',
@@ -159,11 +155,11 @@ const TOOLS: TAppTile[] = [
     hosts: ['kong.yearn.fi']
   },
   {
-    name: 'yFactory',
-    href: 'https://factory.yearn.fi',
-    description: 'Deploy vaults',
-    icon: yearnGlyph({ back: 'text-neutral-0', front: 'text-neutral-900' }),
-    hosts: ['factory.yearn.fi']
+    name: 'Kalani',
+    href: 'https://kalani.yearn.farm',
+    description: 'Vault Manager',
+    icon: yearnGlyph({ back: 'text-neutral-900', front: 'text-neutral-0' }),
+    hosts: ['cms.yearn.fi']
   },
   {
     name: 'yCMS',
@@ -171,13 +167,6 @@ const TOOLS: TAppTile[] = [
     description: 'Vault metadata',
     icon: yearnGlyph({ back: 'text-neutral-900', front: 'text-neutral-0' }),
     hosts: ['cms.yearn.fi']
-  },
-  {
-    name: 'Brand Assets',
-    href: 'https://brand.yearn.fi',
-    description: 'Yearn Brand Resources',
-    icon: yearnGlyph({ back: 'text-[#0F172A]', front: 'text-[#38BDF8]' }),
-    hosts: ['brand.yearn.fi']
   },
   {
     name: 'Token Assets',
@@ -199,7 +188,19 @@ const RESOURCES: TAppTile[] = [
     name: 'Support',
     href: 'https://discord.gg/yearn',
     description: 'Yearn Discord',
-    icon: yearnGlyph({ back: 'text-[#0f172a]', front: 'text-[#38bdf8]' })
+    icon: <IconDiscord />
+  },
+  {
+    name: 'Github',
+    href: 'https://github.com/yearn',
+    description: 'Yearn Github',
+    icon: <LogoGithub />
+  },
+  {
+    name: 'X (Twitter)',
+    href: 'https://x.com/yearnfi',
+    description: 'Yearn X (Twitter)',
+    icon: <IconTwitter className={'size-8'} />
   },
   {
     name: 'Blog',
@@ -212,6 +213,13 @@ const RESOURCES: TAppTile[] = [
     href: 'https://gov.yearn.fi/',
     description: 'Governance forum',
     icon: yearnGlyph({ back: 'text-[#1e3a8a]', front: 'text-[#facc15]' })
+  },
+  {
+    name: 'Brand Assets',
+    href: 'https://brand.yearn.fi',
+    description: 'Yearn Brand Resources',
+    icon: yearnGlyph({ back: 'text-[#0F172A]', front: 'text-[#38BDF8]' }),
+    hosts: ['brand.yearn.fi']
   }
 ]
 
@@ -223,7 +231,7 @@ const DEPRECATED: TAppTile[] = [
     icon: (
       <Image
         alt={'yPrisma'}
-        className={'size-10! max-h-10! max-w-10!'}
+        className={'size-8! max-h-8! max-w-8!'}
         width={64}
         height={64}
         src={`${BASE_YEARN_ASSET_URI}/tokens/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
@@ -239,6 +247,13 @@ const DEPRECATED: TAppTile[] = [
     description: 'Easy Mode',
     icon: <LogoGimme className={'size-10! max-h-10! max-w-10!'} />,
     hosts: ['gimme.mom']
+  },
+  {
+    name: 'Seafood',
+    href: 'https://seafood.yearn.watch',
+    description: 'Legacy dashboards',
+    icon: yearnGlyph({ back: 'text-[#14b8a6]', front: 'text-[#0f172a]' }),
+    hosts: ['seafood.yearn.watch']
   }
 ]
 

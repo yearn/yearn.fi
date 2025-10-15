@@ -13,7 +13,7 @@ function TileIcon({ icon }: { icon?: ReactElement }): ReactElement {
   return (
     <div
       className={
-        'flex size-12 items-center justify-center rounded-full bg-neutral-0 text-neutral-900 dark:bg-[#0F172A] dark:text-white'
+        'flex size-8 items-center justify-center rounded-full bg-neutral-0 text-neutral-900 dark:bg-[#0F172A] dark:text-white'
       }
     >
       {icon ?? <LogoYearn className={'size-10! max-h-10! max-w-10!'} front={'text-white'} back={'text-primary'} />}
@@ -51,6 +51,7 @@ export function LogoModal(): ReactElement {
   const [isOpen, setIsOpen] = useState(false)
   const previousPathname = useRef(location.pathname)
   const pushedHistory = useRef(false)
+  const [activeGroupTitle, setActiveGroupTitle] = useState(APP_GROUPS[0]?.title ?? '')
 
   const currentHost = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -59,6 +60,11 @@ export function LogoModal(): ReactElement {
 
     return window.location.host.toLowerCase()
   }, [])
+
+  const activeGroup = useMemo(
+    () => APP_GROUPS.find((group) => group.title === activeGroupTitle) ?? APP_GROUPS[0],
+    [activeGroupTitle]
+  )
 
   const handleClose = useCallback((): void => {
     if (pushedHistory.current) {
@@ -95,6 +101,8 @@ export function LogoModal(): ReactElement {
       return () => {
         window.removeEventListener('popstate', handlePopState)
       }
+    } else {
+      setActiveGroupTitle(APP_GROUPS[0]?.title ?? '')
     }
 
     return undefined
@@ -126,6 +134,10 @@ export function LogoModal(): ReactElement {
     },
     [handleClose]
   )
+
+  const handleSelectGroup = useCallback((title: string): void => {
+    setActiveGroupTitle(title)
+  }, [])
 
   return (
     <>
@@ -199,61 +211,81 @@ export function LogoModal(): ReactElement {
                   </button>
                 </div>
 
-                <div className={'flex flex-col gap-10'}>
-                  {APP_GROUPS.map((group) => (
-                    <section key={group.title} aria-label={group.title} className={'flex flex-col gap-2'}>
-                      <h3
-                        className={
-                          'text-xs font-semibold uppercase tracking-[0.2em] text-neutral-200 dark:text-neutral-700'
-                        }
-                      >
-                        {group.title}
-                      </h3>
-                      <div className={'grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-4'}>
-                        {group.items.map((item) => {
-                          const active = isTileActive(item, location.pathname, currentHost)
-                          const external = isExternalHref(item.href)
+                <div className={'mt-6 flex flex-col gap-6 lg:flex-row'}>
+                  <div className={'flex flex-row gap-2 overflow-x-auto pb-2 lg:flex-col lg:gap-3 lg:pb-0 lg:pr-2'}>
+                    {APP_GROUPS.map((group) => {
+                      const isActive = group.title === activeGroupTitle
 
-                          return (
-                            <Link key={item.href} href={item.href} onClick={handleLinkClick}>
-                              <div
-                                data-active={active}
-                                className={cl(
-                                  'group relative flex flex-row items-center gap-3 rounded-xl border p-4 align-middle',
-                                  'bg-neutral-0/70 hover:border-primary/70 hover:bg-primary/5 dark:bg-[#070A1C]',
-                                  'border-neutral-200 dark:border-[#1C264F]',
-                                  'data-[active=true]:border-primary! data-[active=true]:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
-                                  'active:border-primary! active:bg-neutral-0/70 active:dark:bg-[#070A1C]'
-                                )}
-                              >
-                                <TileIcon icon={item.icon} />
-                                <div className={'flex flex-1 flex-col justify-between gap-1'}>
-                                  <div className={'flex items-center gap-2'}>
-                                    <p className={'text-base font-semibold leading-tight'}>{item.name}</p>
-                                    {external && <span className={'text-xs'}>{'↗'}</span>}
-                                  </div>
-                                  {item.description && (
-                                    <p className={'line-clamp-1 text-sm text-neutral-200 dark:text-neutral-700'}>
-                                      {item.description}
-                                    </p>
-                                  )}
+                      return (
+                        <button
+                          key={group.title}
+                          type={'button'}
+                          onClick={(): void => handleSelectGroup(group.title)}
+                          className={cl(
+                            'whitespace-nowrap rounded-2xl border px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.25em] transition-colors',
+                            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                            isActive
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-transparent bg-transparent text-neutral-200 hover:bg-neutral-0/70 dark:text-neutral-700 dark:hover:bg-[#070A1C]'
+                          )}
+                          aria-pressed={isActive}
+                        >
+                          {group.title}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div
+                    className={
+                      'flex-1 rounded-3xl border border-neutral-200 bg-neutral-0/70 p-4 dark:border-[#1C264F] dark:bg-[#070A1C] sm:p-6'
+                    }
+                    style={{ minHeight: '360px' }}
+                  >
+                    <div className={'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'}>
+                      {activeGroup?.items.map((item) => {
+                        const active = isTileActive(item, location.pathname, currentHost)
+                        const external = isExternalHref(item.href)
+
+                        return (
+                          <Link key={item.href} href={item.href} onClick={handleLinkClick}>
+                            <div
+                              data-active={active}
+                              className={cl(
+                                'group relative flex flex-row items-center gap-3 rounded-xl border p-4 align-middle',
+                                'bg-neutral-0/90 hover:border-primary/70 hover:bg-primary/5 dark:bg-[#070A1C]',
+                                'border-neutral-200 dark:border-[#1C264F]',
+                                'data-[active=true]:border-primary! data-[active=true]:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
+                                'active:border-primary! active:bg-neutral-0/70 active:dark:bg-[#070A1C]'
+                              )}
+                            >
+                              <TileIcon icon={item.icon} />
+                              <div className={'flex flex-1 flex-col justify-between gap-1'}>
+                                <div className={'flex items-center gap-2'}>
+                                  <p className={'text-base font-semibold leading-tight'}>{item.name}</p>
+                                  {external && <span className={'text-xs'}>{'↗'}</span>}
                                 </div>
-                                {active && (
-                                  <span
-                                    className={
-                                      'absolute right-4 top-4 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary'
-                                    }
-                                  >
-                                    {'Active'}
-                                  </span>
+                                {item.description && (
+                                  <p className={'line-clamp-1 text-sm text-neutral-200 dark:text-neutral-700'}>
+                                    {item.description}
+                                  </p>
                                 )}
                               </div>
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    </section>
-                  ))}
+                              {active && (
+                                <span
+                                  className={
+                                    'absolute right-4 top-4 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary'
+                                  }
+                                >
+                                  {'Active'}
+                                </span>
+                              )}
+                            </div>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
               </Dialog.Panel>
             </TransitionChild>
