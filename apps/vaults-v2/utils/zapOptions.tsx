@@ -9,13 +9,7 @@ type TSetZapOptionProps = {
   chainID: number
   decimals: number
 }
-export function setZapOption({
-  name,
-  symbol,
-  address,
-  chainID,
-  decimals
-}: TSetZapOptionProps): TDropdownOption {
+export function setZapOption({ name, symbol, address, chainID, decimals }: TSetZapOptionProps): TDropdownOption {
   return {
     label: name,
     symbol,
