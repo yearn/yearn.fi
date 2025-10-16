@@ -164,7 +164,7 @@ function BoostMessage(props: { currentVault: TYDaemonVault; hasStakingRewardsLiv
 
   return <span />
 }
-//TODO: change this message to be about the upgrade to stYFI
+
 function VeYFIBoostMessage(props: {
   currentVault: TYDaemonVault
   hasStakingRewardsLive: boolean
