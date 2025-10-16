@@ -312,7 +312,6 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })
   const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined)
-  const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]])
   const [hasStakingRewardsLive, setHasStakingRewardsLive] = useState(false)
   const [currentTab, setCurrentTab] = useState<TTabsOptions>(
     getCurrentTab({
@@ -326,6 +325,22 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
 
   const shouldForceDisplayBoostTab = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
     (vault) => vault.address === currentVault.address
+  )
+
+  const hasActiveRewardsProgram = useMemo((): boolean => {
+    return (currentVault.staking.rewards || []).some((reward) => !reward.isFinished)
+  }, [currentVault.staking.rewards])
+
+  const userHasStakedDeposit = vaultData.stakedBalanceOf.raw > 0n
+  const userHasClaimableRewards = vaultData.stakedEarned.raw > 0n
+
+  const shouldDisplayRewardsTab =
+    currentVault.staking.available && (userHasStakedDeposit || userHasClaimableRewards || hasActiveRewardsProgram)
+
+  const shouldRenderRewardsTab = shouldForceDisplayBoostTab || shouldDisplayRewardsTab
+
+  const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>(() =>
+    shouldRenderRewardsTab ? [tabs[0], tabs[1], tabs[3]] : [tabs[0], tabs[1]]
   )
 
   const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
@@ -459,7 +474,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
   useUpdateEffect((): void => {
     if (currentVault?.migration?.available && actionParams.isReady) {
       const tabsToDisplay = [tabs[1], tabs[2]]
-      if (hasStakingRewards) {
+      if (shouldRenderRewardsTab) {
         tabsToDisplay.push(tabs[3])
       }
       setPossibleTabs(tabsToDisplay)
@@ -467,18 +482,37 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
       onSwitchSelectedOptions(Flow.Migrate)
     } else if (currentVault?.info?.isRetired && actionParams.isReady) {
       const tabsToDisplay = [tabs[1]]
-      if (hasStakingRewards) {
+      if (shouldRenderRewardsTab) {
         tabsToDisplay.push(tabs[3])
       }
       setPossibleTabs(tabsToDisplay)
       setCurrentTab(tabs[1])
       onSwitchSelectedOptions(Flow.Withdraw)
-    } else if (hasStakingRewards) {
+    } else if (shouldRenderRewardsTab) {
       setPossibleTabs([tabs[0], tabs[1], tabs[3]])
     } else {
       setPossibleTabs([tabs[0], tabs[1]])
     }
-  }, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards])
+  }, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, shouldRenderRewardsTab])
+
+  useEffect(() => {
+    if (!shouldRenderRewardsTab && currentTab.value === tabs[3].value) {
+      const fallbackTab = getCurrentTab({
+        isDepositing,
+        hasMigration: currentVault?.migration?.available,
+        isRetired: currentVault?.info?.isRetired
+      })
+      setCurrentTab(fallbackTab)
+      onSwitchSelectedOptions(fallbackTab.flowAction)
+    }
+  }, [
+    shouldRenderRewardsTab,
+    currentTab.value,
+    isDepositing,
+    currentVault?.migration?.available,
+    currentVault?.info?.isRetired,
+    onSwitchSelectedOptions
+  ])
 
   const hasStakingRewardsEndedOverAWeekAgo = useMemo(() => {
     return currentVault.staking.rewards?.some(
@@ -644,7 +678,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
         </div>
         <div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-        {currentTab.value === 3 ? (
+        {currentTab.value === 3 && currentVault.staking.available ? (
           <RewardsTab
             currentVault={currentVault}
             hasStakingRewardsLive={hasStakingRewardsLive}
@@ -698,7 +732,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
             </div>
           </div>
         )}
-        {(currentTab.value !== 3 && currentVault.staking.rewards) || shouldForceDisplayBoostTab ? (
+        {currentTab.value !== 3 && shouldRenderRewardsTab ? (
           <Fragment>
             <div className={'flex flex-row items-center justify-between pl-4 md:px-8'}>
               <div
