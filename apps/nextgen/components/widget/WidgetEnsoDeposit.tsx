@@ -8,6 +8,7 @@ import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
+import { TokenSelector } from '../TokenSelector'
 
 interface Props {
   vaultAddress: Address
@@ -27,10 +28,10 @@ export const WidgetEnsoDeposit: FC<Props> = ({
   handleDepositSuccess
 }) => {
   const { address: account } = useAccount()
-  const [customTokenAddress, setCustomTokenAddress] = useState<string>('')
+  const [selectedToken, setSelectedToken] = useState<Address | undefined>(providedTokenIn || assetAddress)
 
   // Determine which token to use for deposits
-  const depositToken = providedTokenIn || (customTokenAddress as Address) || assetAddress
+  const depositToken = providedTokenIn || selectedToken || assetAddress
   const { tokens, refetch: refetchTokens } = useTokens([depositToken, vaultAddress], chainId)
   const [inputToken, vault] = tokens
 
@@ -40,14 +41,7 @@ export const WidgetEnsoDeposit: FC<Props> = ({
   // Deposit flow using Enso
   const {
     actions: { prepareApprove },
-    periphery: {
-      prepareApproveEnabled,
-      route,
-      isLoadingRoute,
-      expectedOut,
-      routerAddress,
-      isCrossChain
-    },
+    periphery: { prepareApproveEnabled, route, isLoadingRoute, expectedOut, routerAddress, isCrossChain },
     getRoute,
     getEnsoTransaction
   } = useSolverEnso({
@@ -63,11 +57,7 @@ export const WidgetEnsoDeposit: FC<Props> = ({
 
   // Transaction handling
   const ensoTx = getEnsoTransaction()
-  const {
-    sendTransaction,
-    data: txHash,
-    isPending
-  } = useSendTransaction()
+  const { sendTransaction, data: txHash, isPending } = useSendTransaction()
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
@@ -112,28 +102,19 @@ export const WidgetEnsoDeposit: FC<Props> = ({
       return 'Unable to find route'
     }
     return null
-  }, [depositAmount.bn, depositAmount.debouncedBn, depositAmount.isDebouncing, inputToken?.balance.raw, route, isLoadingRoute])
+  }, [
+    depositAmount.bn,
+    depositAmount.debouncedBn,
+    depositAmount.isDebouncing,
+    inputToken?.balance.raw,
+    route,
+    isLoadingRoute
+  ])
 
   const canDeposit = route && !depositError && depositAmount.bn > 0n
 
   return (
     <div className="p-6 pb-0 space-y-4">
-      {!providedTokenIn && (
-        <div className="space-y-2">
-          <label className="text-sm text-gray-600">Custom Token Address (optional)</label>
-          <input
-            type="text"
-            value={customTokenAddress}
-            onChange={(e) => setCustomTokenAddress(e.target.value)}
-            placeholder="0x..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="text-xs text-gray-500">
-            Leave empty to use vault's native token ({assetAddress && `${assetAddress.slice(0, 6)}...${assetAddress.slice(-4)}`})
-          </p>
-        </div>
-      )}
-
       <InputTokenAmount
         title="Amount to Deposit"
         input={depositInput}
@@ -142,9 +123,25 @@ export const WidgetEnsoDeposit: FC<Props> = ({
         symbol={inputToken?.symbol}
         balance={inputToken?.balance.raw || 0n}
         decimals={inputToken?.decimals}
+        showTokenSelector={!providedTokenIn}
+        tokenSelectorElement={
+          <TokenSelector
+            value={selectedToken}
+            onChange={(address) => {
+              setSelectedToken(address)
+            }}
+            chainId={chainId}
+            excludeTokens={[vaultAddress]}
+            onClose={() => {
+              // This will trigger the close through InputTokenAmount
+              const button = document.querySelector('[data-token-selector-button]') as HTMLButtonElement
+              button?.click()
+            }}
+          />
+        }
       />
 
-      <div className="space-y-1 text-sm">
+      <div className="space-y-1 text-sm h-8">
         <div className="flex items-center justify-between">
           <span className="text-gray-400">You will receive</span>
           <span className="text-gray-500 font-medium">
@@ -174,7 +171,7 @@ export const WidgetEnsoDeposit: FC<Props> = ({
       </div>
 
       <div className="pb-6 pt-2">
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full">
           <TxButton
             prepareWrite={prepareApprove}
             transactionName="Approve"
@@ -196,8 +193,10 @@ export const WidgetEnsoDeposit: FC<Props> = ({
             {isPending || isConfirming
               ? 'Processing...'
               : isLoadingRoute || depositAmount.isDebouncing
-              ? 'Finding route...'
-              : isCrossChain ? 'Cross-chain Deposit' : 'Zap In'}
+                ? 'Finding route...'
+                : isCrossChain
+                  ? 'Cross-chain Deposit'
+                  : 'Zap In'}
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { cl, exactToSimple, simpleToExact } from '@lib/utils'
 import type { useDebouncedInput } from 'apps/nextgen/hooks/useDebouncedInput'
 import type { useInput } from 'apps/nextgen/hooks/useInput'
-import type { ChangeEvent, FC } from 'react'
+import { type ChangeEvent, type FC, useState } from 'react'
 import { useAccount } from 'wagmi'
 
 interface Props {
@@ -17,6 +17,8 @@ interface Props {
   errorMessage?: string
   onInputChange?: (value: bigint) => void
   onButtonClick?: () => void
+  showTokenSelector?: boolean
+  tokenSelectorElement?: React.ReactNode
 }
 
 export const InputTokenAmount: FC<Props> = ({
@@ -31,9 +33,12 @@ export const InputTokenAmount: FC<Props> = ({
   onInputChange,
   onButtonClick,
   title,
-  defaultSymbol = 'Select Vault'
+  defaultSymbol = 'Select Vault',
+  showTokenSelector = false,
+  tokenSelectorElement
 }) => {
   const account = useAccount()
+  const [showSelector, setShowSelector] = useState(false)
   const [
     {
       formValue,
@@ -53,8 +58,16 @@ export const InputTokenAmount: FC<Props> = ({
     onInputChange?.(simpleToExact(event.target.value))
   }
 
+  const handleTokenButtonClick = () => {
+    if (showTokenSelector) {
+      setShowSelector(!showSelector)
+    } else if (onButtonClick) {
+      onButtonClick()
+    }
+  }
+
   return (
-    <div className={cl('flex flex-col w-full space-y-1', className)}>
+    <div className={cl('flex flex-col w-full space-y-1 h-30', className)}>
       {title && (
         <div className="flex items-center gap-2 p-1 justify-between">
           <label className="text-sm font-normal text-black">{title}</label>
@@ -96,13 +109,24 @@ export const InputTokenAmount: FC<Props> = ({
               <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
-          {symbol && (
+          {(symbol || showTokenSelector) && (
             <button
               type="button"
-              onClick={onButtonClick}
-              className="bg-blue-300 text-neutral-900 px-2 sm:px-3 py-1 rounded-xl  font-medium hover:bg-blue-300 transition-colors cursor-pointer whitespace-nowrap max-w-[120px] sm:max-w-none truncate flex-shrink-0"
+              onClick={handleTokenButtonClick}
+              data-token-selector-button
+              className={cl(
+                'px-2 sm:px-3 py-1 rounded-xl flex items-center font-medium transition-colors cursor-pointer whitespace-nowrap max-w-[120px] h-8 sm:max-w-none truncate flex-shrink-0',
+                showTokenSelector
+                  ? 'bg-white border border-gray-200 text-gray-900 hover:border-gray-300'
+                  : 'bg-blue-300 text-neutral-900 hover:bg-blue-300'
+              )}
             >
               {symbol ?? defaultSymbol}
+              {showTokenSelector && (
+                <svg className="w-3 h-3 ml-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
             </button>
           )}
         </div>
@@ -113,6 +137,26 @@ export const InputTokenAmount: FC<Props> = ({
         </div>
         {errorMessage && <div className={cl('text-red-500 text-sm', className)}>{errorMessage}</div>}
       </div>
+      {showTokenSelector && tokenSelectorElement && (
+        <>
+          {/* Semi-transparent backdrop with fade animation */}
+          <div
+            className={cl(
+              'absolute inset-0 bg-black/5 rounded-xl z-40 transition-opacity duration-200',
+              showSelector ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            )}
+          />
+          {/* Token selector overlay with slide and fade animation */}
+          <div
+            className={cl(
+              'absolute inset-0 z-50 transition-all duration-300 ease-out',
+              showSelector ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+            )}
+          >
+            {tokenSelectorElement}
+          </div>
+        </>
+      )}
     </div>
   )
 }

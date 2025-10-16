@@ -97,7 +97,7 @@ export const useDebouncedInput = (decimals = 18, debounceMs = 500): UseDebounced
     const simple = exactToSimple(bn, decimals) || 0
     const debouncedBn = tryParseString(debouncedFormValue, decimals) || 0n
     const debouncedSimple = exactToSimple(debouncedBn, decimals) || 0
-    
+
     return {
       formValue: formValue || '',
       decimals,

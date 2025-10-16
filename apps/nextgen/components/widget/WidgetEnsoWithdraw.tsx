@@ -4,10 +4,11 @@ import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
-import { type FC, useCallback, useEffect, useMemo } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
+import { ReceiveTokenSelector } from '../ReceiveTokenSelector'
 
 interface Props {
   vaultAddress: Address
@@ -25,9 +26,10 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
   handleWithdrawSuccess
 }) => {
   const { address: account } = useAccount()
+  const [selectedToken, setSelectedToken] = useState<Address | undefined>(tokenOut || assetAddress)
 
   // Determine which token to withdraw to
-  const withdrawToken = tokenOut || assetAddress
+  const withdrawToken = tokenOut || selectedToken || assetAddress
   const { tokens, refetch: refetchTokens } = useTokens([vaultAddress, withdrawToken], chainId)
   const [vault, outputToken] = tokens
 
@@ -37,13 +39,7 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
   // Withdraw flow using Enso
   const {
     actions: { prepareApprove },
-    periphery: {
-      prepareApproveEnabled,
-      route,
-      isLoadingRoute,
-      expectedOut,
-      routerAddress
-    },
+    periphery: { prepareApproveEnabled, route, isLoadingRoute, expectedOut, routerAddress },
     getRoute,
     getEnsoTransaction
   } = useSolverEnso({
@@ -58,11 +54,7 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
 
   // Transaction handling
   const ensoTx = getEnsoTransaction()
-  const {
-    sendTransaction,
-    data: txHash,
-    isPending
-  } = useSendTransaction()
+  const { sendTransaction, data: txHash, isPending } = useSendTransaction()
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
@@ -107,7 +99,14 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
       return 'Unable to find route'
     }
     return null
-  }, [withdrawAmount.bn, withdrawAmount.debouncedBn, withdrawAmount.isDebouncing, vault?.balance.raw, route, isLoadingRoute])
+  }, [
+    withdrawAmount.bn,
+    withdrawAmount.debouncedBn,
+    withdrawAmount.isDebouncing,
+    vault?.balance.raw,
+    route,
+    isLoadingRoute
+  ])
 
   const canWithdraw = route && !withdrawError && withdrawAmount.bn > 0n
 
@@ -123,17 +122,17 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
         decimals={vault?.decimals}
       />
 
-      <div className="space-y-1 text-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-gray-400">You will receive</span>
-          <span className="text-gray-500 font-medium">
-            {isLoadingRoute || withdrawAmount.isDebouncing ? (
-              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
-            ) : (
-              `${formatAmount(expectedOut.normalized)} ${outputToken?.symbol || 'tokens'}`
-            )}
-          </span>
-        </div>
+      <div className="space-y-1 text-sm h-8">
+        <ReceiveTokenSelector
+          amount={formatAmount(expectedOut.normalized)}
+          token={outputToken}
+          tokenAddress={selectedToken}
+          onTokenChange={setSelectedToken}
+          chainId={chainId}
+          excludeTokens={[vaultAddress]}
+          isLoading={isLoadingRoute || withdrawAmount.isDebouncing}
+          showSelector={!tokenOut}
+        />
         {routerAddress && (
           <div className="flex items-center justify-between">
             <span className="text-gray-400">Router</span>
@@ -147,7 +146,7 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
       </div>
 
       <div className="pb-6 pt-2">
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full">
           <TxButton
             prepareWrite={prepareApprove}
             transactionName="Approve"
@@ -169,8 +168,8 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
             {isPending || isConfirming
               ? 'Processing...'
               : isLoadingRoute || withdrawAmount.isDebouncing
-              ? 'Finding route...'
-              : 'Zap Out'}
+                ? 'Finding route...'
+                : 'Zap Out'}
           </button>
         </div>
       </div>
