@@ -16,7 +16,7 @@ export const isSolverDisabled = (key: TSolver): boolean => {
     [Solver.enum.Vanilla]: false,
     [Solver.enum.PartnerContract]: true,
     [Solver.enum.ChainCoin]: true,
-    [Solver.enum.InternalMigration]: true,
+    [Solver.enum.InternalMigration]: false,
     [Solver.enum.OptimismBooster]: true,
     [Solver.enum.GaugeStakingBooster]: false,
     [Solver.enum.JuicedStakingBooster]: true,
