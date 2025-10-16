@@ -132,16 +132,6 @@ export function useSolverCowswap(): TSolverContext {
       }
 
       /******************************************************************************************
-       ** Then, we check if the solver can be used for this specific sellToken. If it can't, we
-       ** return 0.
-       ** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
-       ** a token, you can contact the yDaemon team to add it.
-       ******************************************************************************************/
-      if (!sellToken.solveVia?.includes(Solver.enum.Cowswap)) {
-        return undefined
-      }
-
-      /******************************************************************************************
        ** Finally, we check if the sellToken is ETH. Indeed, the cowswap solver can't be used to
        ** sell ETH, but can be used to buy ETH. So, if we are selling ETH (aka depositing ETH vs
        ** a vault token) we return 0.
@@ -324,10 +314,6 @@ export function useSolverCowswap(): TSolverContext {
         return zeroNormalizedBN
       }
       assert(request.current, 'Request is not defined')
-      assert(
-        request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap),
-        'Input token is not supported by Cowswap'
-      )
 
       const key = allowanceKey(
         request.current.chainID,
@@ -371,10 +357,6 @@ export function useSolverCowswap(): TSolverContext {
           return
         }
         assert(request.current, 'Request is not defined')
-        assert(
-          request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap),
-          'Input token is not supported by Cowswap'
-        )
 
         const isApproved = await isApprovedERC20(
           provider,

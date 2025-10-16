@@ -49,6 +49,7 @@ export type TInitSolverArgs = {
   isDepositing: boolean
   migrator?: TAddress
   stakingPoolAddress?: TAddress //Address of the staking pool, for veYFI zap in
+  vaultTokenAddress?: TAddress //Address of the vault token, for veYFI zap in
   asset?: `0x${string}`
 }
 
