@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 
 export const coinGeckoPricesSchema = z.record(z.string(), z.object({ usd: z.number() }))
 

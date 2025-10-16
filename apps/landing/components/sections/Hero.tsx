@@ -3,7 +3,7 @@ import { SectionHeader } from '@lib/components/SectionHeader'
 import { TvlStat } from '@lib/components/TvlStat'
 import { useFetch } from '@lib/hooks/useFetch'
 import type { ReactElement } from 'react'
-import { z } from 'zod'
+import * as z from 'zod'
 import Image from '/src/components/Image'
 import Link from '/src/components/Link'
 
