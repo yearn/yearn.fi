@@ -192,14 +192,15 @@ function VeYFIBoostMessage(props: {
   return (
     <div className={cl('flex w-full flex-col rounded-2xl p-6', 'bg-neutral-900')}>
       <b className={cl('text-lg text-neutral-100')}>{'veYFI Gauges have been retired'}</b>
-      <div className={cl('flex flex-col gap-2 py-4', isV3Page ? 'text-neutral-300' : 'text-neutral-400')}>
-        <p>
-          {'All good things must come to and end. Please '}
+      <div className={cl('flex flex-col gap-2 py-2', isV3Page ? 'text-neutral-300' : 'text-neutral-400')}>
+        <p>{'All good things must come to an end!'}</p>
+        <span className={'flex flex-row flex-wrap gap-1'}>
+          <p>{'Please '}</p>
           <a className={'underline font-bold'} href={'https://x.com/yearnfi'} target={'_blank'} rel={'noreferrer'}>
             {'stayed tuned '}
           </a>
-          {' for what comes next!'}
-        </p>
+          <p>{'for what comes next!'}</p>
+        </span>
         <p>
           {
             "In the mean time, feel free to unstake your vault tokens and claim any dYFI rewards you have earned. There is no deadline so don't sweat it. The vault is still earning and auto-compounding yield."
