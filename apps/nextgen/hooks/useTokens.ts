@@ -43,7 +43,6 @@ export const useTokens = (addresses: (Address | undefined)[], chainId?: number) 
     scopeKey: `useTokens.${addresses?.map((a) => a?.toLowerCase()).join('.')}.${chainId}`
   })
 
-  console.log('data', data)
   const tokens: Token[] =
     addresses && data
       ? _.chunk(data, 3).map(([decimals, symbol, name], index) => ({
