@@ -2,7 +2,8 @@ import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@lib/types'
 import { useMountEffect } from '@react-hookz/web'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { ALL_VAULTSV3_KINDS_KEYS, DEFAULT_SELECTED_VAULTSV3_CATEGORIES } from '@vaults-v3/constants'
+import { useCallback, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 type TQueryArgs = {
@@ -19,6 +20,7 @@ type TQueryArgs = {
   onChangeSortDirection: (value: TSortDirection | '') => void
   onChangeSortBy: (value: TPossibleSortBy | '') => void
   onReset: () => void
+  onResetMultiSelect: () => void
 }
 function useQueryArguments(props: {
   defaultTypes?: string[]
@@ -36,7 +38,7 @@ function useQueryArguments(props: {
   const [chains, setChains] = useState<number[] | null>(allChains || [])
   const [sortDirection, setSortDirection] = useState<string | null>(null)
 
-  const defaultSortBy = props.defaultSortBy || 'deposited'
+  const defaultSortBy = props.defaultSortBy || 'featuringScore'
   const [sortBy, setSortBy] = useState<string | null>(defaultSortBy)
 
   const pathname = location.pathname
@@ -160,20 +162,6 @@ function useQueryArguments(props: {
     const currentPage = new URL(window.location.href)
     handleQuery(new URLSearchParams(currentPage.search))
   })
-
-  // Track if we've already processed the current search params to avoid loops
-  const lastProcessedSearch = useRef<string>('')
-  const searchString = searchParams.toString()
-
-  useEffect((): void => {
-    // Only process if search params actually changed
-    if (lastProcessedSearch.current !== searchString) {
-      lastProcessedSearch.current = searchString
-      if (!props.defaultPathname || props.defaultPathname === pathname) {
-        handleQuery(searchParams as URLSearchParams)
-      }
-    }
-  }, [searchString, props.defaultPathname, pathname, handleQuery, searchParams])
 
   return {
     search,
@@ -340,7 +328,19 @@ function useQueryArguments(props: {
           queryArgs[key] = val
         }
       })
-
+      updateSearchParams(queryArgs)
+    },
+    onResetMultiSelect: (): void => {
+      const isV3 = props.defaultPathname === '/v3'
+      setTypes(isV3 ? ALL_VAULTSV3_KINDS_KEYS : props.defaultTypes || [])
+      setCategories(isV3 ? DEFAULT_SELECTED_VAULTSV3_CATEGORIES : props.defaultCategories || [])
+      setChains(allChains || [])
+      const queryArgs: TDict<string | string[] | undefined> = {}
+      searchParams.forEach((val, key) => {
+        if (key !== 'types' && key !== 'categories' && key !== 'chains') {
+          queryArgs[key] = val
+        }
+      })
       updateSearchParams(queryArgs)
     }
   }
