@@ -26,10 +26,10 @@ import { maxUint256 } from 'viem'
 
 export function VaultDetailsQuickActionsButtons({
   currentVault,
-  hasStakingRewardsLive
+  isGaugeActive
 }: {
   currentVault: TYDaemonVault
-  hasStakingRewardsLive: boolean
+  isGaugeActive: boolean
 }): ReactElement {
   const plausible = usePlausible()
   const { onRefresh } = useWallet()
@@ -265,7 +265,7 @@ export function VaultDetailsQuickActionsButtons({
         currentSolver === Solver.enum.JuicedStakingBooster ||
         currentSolver === Solver.enum.V3StakingBooster) &&
       isAutoStakingEnabled &&
-      hasStakingRewardsLive
+      isGaugeActive
     ) {
       return (
         <Button
