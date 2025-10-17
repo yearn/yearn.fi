@@ -58,13 +58,22 @@ export const Widget: FC<Props> = ({
 }) => {
   const [mode, setMode] = useState<ActionType>(actions[0])
 
-  const { data: assetToken } = useReadContract({
+  const { data: assetToken, isLoading: isLoadingAsset } = useReadContract({
     address: vaultAddress as Address,
     abi: vaultType === 'v2' ? vaultAbi : erc4626Abi,
     functionName: vaultType === 'v2' ? 'token' : 'asset',
     chainId
   })
+
   const SelectedComponent = useMemo(() => {
+    // Don't render components until we have the asset token
+    if (!assetToken || isLoadingAsset) {
+      return (
+        <div className="p-6 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+        </div>
+      )
+    }
     switch (mode) {
       case ActionType.Deposit:
         return (
@@ -143,7 +152,7 @@ export const Widget: FC<Props> = ({
           />
         )
     }
-  }, [mode, vaultAddress, gaugeAddress, vaultType, vaultVersion, assetToken, chainId, handleSuccess])
+  }, [mode, vaultAddress, gaugeAddress, vaultType, vaultVersion, assetToken, chainId, handleSuccess, isLoadingAsset])
 
   return (
     <div className="flex flex-col gap-0 mt-4 w-full">
