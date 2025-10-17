@@ -41,6 +41,7 @@ const createUseInputHook =
   (useInputCtx = useState, formatter?: (v?: number) => number | undefined) =>
   (decimals = 18): UseInputReturnValue => {
     const [formValue, setFormValue] = useInputCtx<string>('')
+
     const activity = useState(false)
 
     // Handle callback, no change if number is invalid
