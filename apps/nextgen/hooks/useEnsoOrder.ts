@@ -35,11 +35,7 @@ export const useEnsoOrder = ({
   const [waitingForTx, setWaitingForTx] = useState(false)
   const publicClient = usePublicClient({ chainId })
   const { data: walletClient } = useWalletClient({ chainId })
-  const {
-    data: receipt,
-    isLoading: isWaitingForReceipt,
-    isSuccess: receiptSuccess
-  } = useWaitForTransactionReceipt({
+  const { data: receipt, isSuccess: receiptSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
     chainId
   })
@@ -74,8 +70,8 @@ export const useEnsoOrder = ({
     }
   }, [getEnsoTransaction, walletClient, publicClient])
 
-  // Clear states when transaction data changes
   const ensoTx = getEnsoTransaction()
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Clear states when transaction data changes
   useEffect(() => {
     setError(null)
     setTxHash(undefined)
@@ -131,7 +127,7 @@ export const useEnsoOrder = ({
       fetchStatus: 'idle',
       dataUpdatedAt: Date.now()
     } as UseSimulateContractReturnType
-  }, [enabled, error, isExecuting, executeOrder, getEnsoTransaction])
+  }, [enabled, error, isExecuting, executeOrder, ensoTx, txHash, waitingForTx])
 
   return {
     prepareEnsoOrder,
