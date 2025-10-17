@@ -67,6 +67,7 @@
       "!**/wagmi.ts",
       "!**/wagmi.d.ts",
       "!**/bun.lock",
+      "!**/yearn.fi-worktree-*",
       "!**/apps/lib/style.css"
     ]
   }

@@ -44,3 +44,6 @@ _app
 
 # playwright
 .playwright-mcp
+
+# local worktree clones
+yearn.fi-worktree-*
