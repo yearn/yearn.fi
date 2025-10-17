@@ -1,19 +1,19 @@
 import Link from '@components/Link'
-import { cl, formatAmount } from '@lib/utils'
+import { formatAmount } from '@lib/utils'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
+import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
-import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { ReceiveTokenSelector } from '../ReceiveTokenSelector'
 
 interface Props {
   vaultAddress: Address
   assetAddress: Address
-  tokenOut?: Address // Optional custom token to zap to
   chainId: number
   handleWithdrawSuccess?: () => void
 }
@@ -21,25 +21,24 @@ interface Props {
 export const WidgetEnsoWithdraw: FC<Props> = ({
   vaultAddress,
   assetAddress,
-  tokenOut,
   chainId,
-  handleWithdrawSuccess
+  handleWithdrawSuccess: onWithdrawSuccess
 }) => {
   const { address: account } = useAccount()
-  const [selectedToken, setSelectedToken] = useState<Address | undefined>(tokenOut || assetAddress)
+  const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
 
   // Determine which token to withdraw to
-  const withdrawToken = tokenOut || selectedToken || assetAddress
+  const withdrawToken = selectedToken || assetAddress
   const { tokens, refetch: refetchTokens } = useTokens([vaultAddress, withdrawToken], chainId)
   const [vault, outputToken] = tokens
-
+  console.log(withdrawToken)
   const withdrawInput = useDebouncedInput(vault?.decimals ?? 18)
-  const [withdrawAmount] = withdrawInput
+  const [withdrawAmount, , setWithdrawInput] = withdrawInput
 
   // Withdraw flow using Enso
   const {
     actions: { prepareApprove },
-    periphery: { prepareApproveEnabled, route, isLoadingRoute, expectedOut, routerAddress },
+    periphery: { prepareApproveEnabled, route, isLoadingRoute, expectedOut, routerAddress, allowance },
     getRoute,
     getEnsoTransaction
   } = useSolverEnso({
@@ -52,42 +51,12 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
     enabled: !!withdrawToken && !withdrawAmount.isDebouncing
   })
 
-  // Transaction handling
-  const ensoTx = getEnsoTransaction()
-  const { sendTransaction, data: txHash, isPending } = useSendTransaction()
-
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash: txHash,
-    chainId,
-    query: {
-      enabled: !!txHash
-    }
-  })
-
-  const executeWithdraw = useCallback(() => {
-    if (!ensoTx) return
-    sendTransaction({
-      to: ensoTx.to,
-      data: ensoTx.data,
-      value: BigInt(ensoTx.value || 0),
-      chainId: ensoTx.chainId
-    })
-  }, [ensoTx, sendTransaction])
-
   // Fetch route when debounced amount changes
   useEffect(() => {
     if (withdrawAmount.debouncedBn > 0n && !withdrawAmount.isDebouncing) {
       getRoute()
     }
   }, [withdrawAmount.debouncedBn, withdrawAmount.isDebouncing, getRoute])
-
-  // Handle success
-  useEffect(() => {
-    if (isSuccess) {
-      refetchTokens()
-      handleWithdrawSuccess?.()
-    }
-  }, [isSuccess, refetchTokens, handleWithdrawSuccess])
 
   // Error handling
   const withdrawError = useMemo(() => {
@@ -108,7 +77,29 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
     isLoadingRoute
   ])
 
-  const canWithdraw = route && !withdrawError && withdrawAmount.bn > 0n
+  const isAllowanceSufficient = !routerAddress || allowance >= withdrawAmount.bn
+  const canWithdraw = route && !withdrawError && withdrawAmount.bn > 0n && isAllowanceSufficient
+
+  // Use the new useEnsoOrder hook for cleaner integration with TxButton
+  const { prepareEnsoOrder, receiptSuccess, txHash } = useEnsoOrder({
+    getEnsoTransaction,
+    enabled: canWithdraw,
+    chainId
+  })
+
+  // Check if we're waiting for transaction
+  const isWaitingForTx = !!txHash && !receiptSuccess
+
+  // Handle successful transaction receipt
+  useEffect(() => {
+    console.log('withdraw success')
+    if (receiptSuccess && txHash) {
+      console.log('refetching tokens')
+      setWithdrawInput('')
+      refetchTokens()
+      onWithdrawSuccess?.()
+    }
+  }, [receiptSuccess, txHash, setWithdrawInput, refetchTokens, onWithdrawSuccess])
 
   return (
     <div className="p-6 pb-0 space-y-4">
@@ -120,18 +111,20 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
         symbol={vault?.symbol}
         balance={vault?.balance.raw || 0n}
         decimals={vault?.decimals}
+        disabled={isWaitingForTx}
       />
 
       <div className="space-y-1 text-sm h-8">
         <ReceiveTokenSelector
-          amount={formatAmount(expectedOut.normalized)}
+          amount={withdrawAmount.bn > 0n && route ? formatAmount(expectedOut.normalized) : '0.00'}
           token={outputToken}
           tokenAddress={selectedToken}
           onTokenChange={setSelectedToken}
           chainId={chainId}
           excludeTokens={[vaultAddress]}
           isLoading={isLoadingRoute || withdrawAmount.isDebouncing}
-          showSelector={!tokenOut}
+          showSelector={true}
+          disabled={isWaitingForTx}
         />
         {routerAddress && (
           <div className="flex items-center justify-between">
@@ -154,23 +147,20 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
             tooltip={withdrawError || undefined}
             className="w-full"
           />
-          <button
-            type="button"
-            onClick={executeWithdraw}
-            disabled={!canWithdraw || isPending || isConfirming}
-            className={cl(
-              'w-full px-4 py-2 rounded-md font-medium transition-colors',
-              canWithdraw && !isPending && !isConfirming
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            )}
-          >
-            {isPending || isConfirming
-              ? 'Processing...'
-              : isLoadingRoute || withdrawAmount.isDebouncing
+          <TxButton
+            prepareWrite={prepareEnsoOrder}
+            transactionName={
+              isLoadingRoute || withdrawAmount.isDebouncing
                 ? 'Finding route...'
-                : 'Zap Out'}
-          </button>
+                : !isAllowanceSufficient
+                  ? 'Approve First'
+                  : 'Zap Out'
+            }
+            disabled={!canWithdraw || isLoadingRoute || withdrawAmount.isDebouncing}
+            loading={isLoadingRoute || withdrawAmount.isDebouncing}
+            tooltip={withdrawError || (!isAllowanceSufficient ? 'Please approve token first' : undefined)}
+            className="w-full"
+          />
         </div>
       </div>
     </div>

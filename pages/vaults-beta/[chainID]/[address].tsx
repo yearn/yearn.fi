@@ -210,13 +210,7 @@ function Index(): ReactElement | null {
             <div className={'w-full h-[400px] bg-neutral-200 rounded-lg'}>
               <div className="flex flex-col gap-2">
                 {/* <WidgetRewards vaultType="v3" vaultAddress={currentVault.address} handleRewardsSuccess={() => {}} /> */}
-                {/* <WidgetDepositAndStake
-                  vaultAddress={currentVault.address}
-                  gaugeAddress={currentVault.staking.address}
-                  tokenAddress={currentVault.token.address}
-                  vaultVersion={currentVault.version}
-                  chainId={Number(params.chainID)}
-                /> */}
+
                 <Widget
                   vaultType={isV3 ? 'v3' : 'v2'}
                   vaultAddress={currentVault.address}
@@ -225,13 +219,13 @@ function Index(): ReactElement | null {
                   chainId={Number(params.chainID)}
                 />
 
-                <Widget
+                {/* <Widget
                   vaultType={isV3 ? 'v3' : 'v2'}
                   vaultAddress={currentVault.address}
                   gaugeAddress={currentVault.staking.address}
                   actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
                   chainId={Number(params.chainID)}
-                />
+                /> */}
               </div>
             </div>
           </div>

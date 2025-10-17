@@ -1,19 +1,19 @@
 import Link from '@components/Link'
-import { cl, formatAmount } from '@lib/utils'
+import { formatAmount } from '@lib/utils'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
+import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
-import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { TokenSelector } from '../TokenSelector'
 
 interface Props {
   vaultAddress: Address
   assetAddress: Address
-  tokenIn?: Address // Optional custom token to zap from
   chainId: number
   destinationChainId?: number // For cross-chain operations
   handleDepositSuccess?: () => void
@@ -22,26 +22,25 @@ interface Props {
 export const WidgetEnsoDeposit: FC<Props> = ({
   vaultAddress,
   assetAddress,
-  tokenIn: providedTokenIn,
   chainId,
   destinationChainId,
-  handleDepositSuccess
+  handleDepositSuccess: onDepositSuccess
 }) => {
   const { address: account } = useAccount()
-  const [selectedToken, setSelectedToken] = useState<Address | undefined>(providedTokenIn || assetAddress)
+  const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
 
   // Determine which token to use for deposits
-  const depositToken = providedTokenIn || selectedToken || assetAddress
+  const depositToken = selectedToken || assetAddress
   const { tokens, refetch: refetchTokens } = useTokens([depositToken, vaultAddress], chainId)
   const [inputToken, vault] = tokens
 
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
-  const [depositAmount] = depositInput
+  const [depositAmount, , setDepositInput] = depositInput
 
   // Deposit flow using Enso
   const {
     actions: { prepareApprove },
-    periphery: { prepareApproveEnabled, route, isLoadingRoute, expectedOut, routerAddress, isCrossChain },
+    periphery: { prepareApproveEnabled, route, isLoadingRoute, expectedOut, routerAddress, isCrossChain, allowance },
     getRoute,
     getEnsoTransaction
   } = useSolverEnso({
@@ -55,42 +54,12 @@ export const WidgetEnsoDeposit: FC<Props> = ({
     enabled: !!depositToken && !depositAmount.isDebouncing
   })
 
-  // Transaction handling
-  const ensoTx = getEnsoTransaction()
-  const { sendTransaction, data: txHash, isPending } = useSendTransaction()
-
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash: txHash,
-    chainId,
-    query: {
-      enabled: !!txHash
-    }
-  })
-
-  const executeDeposit = useCallback(() => {
-    if (!ensoTx) return
-    sendTransaction({
-      to: ensoTx.to,
-      data: ensoTx.data,
-      value: BigInt(ensoTx.value || 0),
-      chainId: ensoTx.chainId
-    })
-  }, [ensoTx, sendTransaction])
-
   // Fetch route when debounced amount changes
   useEffect(() => {
     if (depositAmount.debouncedBn > 0n && !depositAmount.isDebouncing) {
       getRoute()
     }
   }, [depositAmount.debouncedBn, depositAmount.isDebouncing, getRoute])
-
-  // Handle success
-  useEffect(() => {
-    if (isSuccess) {
-      refetchTokens()
-      handleDepositSuccess?.()
-    }
-  }, [isSuccess, refetchTokens, handleDepositSuccess])
 
   // Error handling
   const depositError = useMemo(() => {
@@ -111,7 +80,27 @@ export const WidgetEnsoDeposit: FC<Props> = ({
     isLoadingRoute
   ])
 
-  const canDeposit = route && !depositError && depositAmount.bn > 0n
+  const isAllowanceSufficient = !routerAddress || allowance >= depositAmount.bn
+  const canDeposit = route && !depositError && depositAmount.bn > 0n && isAllowanceSufficient
+
+  // Use the new useEnsoOrder hook for cleaner integration with TxButton
+  const { prepareEnsoOrder, receiptSuccess, txHash } = useEnsoOrder({
+    getEnsoTransaction,
+    enabled: canDeposit,
+    chainId
+  })
+
+  // Check if we're waiting for transaction
+  const isWaitingForTx = !!txHash && !receiptSuccess
+
+  // Handle successful transaction receipt
+  useEffect(() => {
+    if (receiptSuccess && txHash) {
+      setDepositInput('')
+      refetchTokens()
+      onDepositSuccess?.()
+    }
+  }, [receiptSuccess, txHash, setDepositInput, refetchTokens, onDepositSuccess])
 
   return (
     <div className="p-6 pb-0 space-y-4">
@@ -123,7 +112,8 @@ export const WidgetEnsoDeposit: FC<Props> = ({
         symbol={inputToken?.symbol}
         balance={inputToken?.balance.raw || 0n}
         decimals={inputToken?.decimals}
-        showTokenSelector={!providedTokenIn}
+        showTokenSelector={true}
+        disabled={isWaitingForTx}
         tokenSelectorElement={
           <TokenSelector
             value={selectedToken}
@@ -147,8 +137,10 @@ export const WidgetEnsoDeposit: FC<Props> = ({
           <span className="text-gray-500 font-medium">
             {isLoadingRoute || depositAmount.isDebouncing ? (
               <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
-            ) : (
+            ) : depositAmount.bn > 0n && route ? (
               `${formatAmount(expectedOut.normalized)} ${vault?.symbol}`
+            ) : (
+              `0.00 ${vault?.symbol || ''}`
             )}
           </span>
         </div>
@@ -179,25 +171,22 @@ export const WidgetEnsoDeposit: FC<Props> = ({
             tooltip={depositError || undefined}
             className="w-full"
           />
-          <button
-            type="button"
-            onClick={executeDeposit}
-            disabled={!canDeposit || isPending || isConfirming}
-            className={cl(
-              'w-full px-4 py-2 rounded-md font-medium transition-colors',
-              canDeposit && !isPending && !isConfirming
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            )}
-          >
-            {isPending || isConfirming
-              ? 'Processing...'
-              : isLoadingRoute || depositAmount.isDebouncing
+          <TxButton
+            prepareWrite={prepareEnsoOrder}
+            transactionName={
+              isLoadingRoute || depositAmount.isDebouncing
                 ? 'Finding route...'
-                : isCrossChain
-                  ? 'Cross-chain Deposit'
-                  : 'Zap In'}
-          </button>
+                : !isAllowanceSufficient
+                  ? 'Approve First'
+                  : isCrossChain
+                    ? 'Cross-chain Deposit'
+                    : 'Zap In'
+            }
+            disabled={!canDeposit || isLoadingRoute || depositAmount.isDebouncing}
+            loading={isLoadingRoute || depositAmount.isDebouncing}
+            tooltip={depositError || (!isAllowanceSufficient ? 'Please approve token first' : undefined)}
+            className="w-full"
+          />
         </div>
       </div>
     </div>

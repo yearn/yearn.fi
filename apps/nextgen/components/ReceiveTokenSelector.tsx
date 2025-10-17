@@ -14,6 +14,7 @@ interface Props {
   excludeTokens?: Address[]
   isLoading?: boolean
   showSelector?: boolean
+  disabled?: boolean
 }
 
 export const ReceiveTokenSelector: FC<Props> = ({
@@ -25,7 +26,8 @@ export const ReceiveTokenSelector: FC<Props> = ({
   chainId,
   excludeTokens,
   isLoading = false,
-  showSelector: allowSelector = true
+  showSelector: allowSelector = true,
+  disabled = false
 }) => {
   const [showDropdown, setShowDropdown] = useState(false)
 
@@ -42,9 +44,12 @@ export const ReceiveTokenSelector: FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setShowDropdown(!showDropdown)}
+                disabled={disabled}
                 className={cl(
                   'px-2 py-1 rounded-lg text-sm font-medium transition-colors flex items-center gap-1',
-                  'bg-white border border-gray-200 text-gray-900 hover:border-gray-300'
+                  disabled 
+                    ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed' 
+                    : 'bg-white border border-gray-200 text-gray-900 hover:border-gray-300'
                 )}
               >
                 {token?.symbol || 'Select Token'}

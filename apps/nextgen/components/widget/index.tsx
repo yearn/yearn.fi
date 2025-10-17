@@ -66,7 +66,6 @@ export const Widget: FC<Props> = ({
   })
 
   const SelectedComponent = useMemo(() => {
-    // Don't render components until we have the asset token
     if (!assetToken || isLoadingAsset) {
       return (
         <div className="p-6 flex items-center justify-center">
