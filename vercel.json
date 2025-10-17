@@ -8,6 +8,14 @@
       "destination": "https://plausible.io/:path*"
     },
     {
+      "source": "/assets/:path*",
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/:file*.(js|css|svg|png|jpg|jpeg|gif|ico|woff|woff2|ttf|eot)",
+      "destination": "/:file*.$1"
+    },
+    {
       "source": "/v3/:chainId/:address",
       "destination": "/api/vault/meta?chainId=$1&address=$2"
     },
