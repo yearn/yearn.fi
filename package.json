@@ -40,17 +40,17 @@
     "viem": "2.37.13",
     "wagmi": "2.16.3",
     "xxhashjs": "0.2.2",
-    "zod": "4.1.11"
+    "zod": "4.1.12"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.5",
+    "@biomejs/biome": "2.2.6",
     "@tailwindcss/postcss": "4.1.14",
     "@testing-library/react": "16.3.0",
     "@types/minimatch": "6.0.0",
     "@types/node": "20.19.10",
     "@types/react": "19.1.10",
     "@types/react-dom": "19.1.7",
-    "@vercel/node": "5.3.24",
+    "@vercel/node": "5.3.26",
     "@vitejs/plugin-react": "5.0.4",
     "bump": "0.2.5",
     "husky": "9.1.7",
