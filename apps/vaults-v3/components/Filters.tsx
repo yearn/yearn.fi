@@ -7,7 +7,7 @@ import { cl } from '@lib/utils'
 import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constants'
 
 import type { ReactElement } from 'react'
-import { useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 type TListHero = {
   types: string[] | null
@@ -33,6 +33,18 @@ export function Filters({
   onChangeChains
 }: TListHero): ReactElement {
   const [shouldExpandFilters, setShouldExpandFilters] = useState(false)
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+
+  const handleDropdownOpenChange = (dropdownId: string, isOpen: boolean) => {
+    if (isOpen) {
+      // Close any other open dropdown and open this one
+      setActiveDropdown(dropdownId)
+    } else if (activeDropdown === dropdownId) {
+      // Only close if this dropdown was the active one
+      setActiveDropdown(null)
+    }
+  }
+
   const chainOptions = useChainOptions(chains).filter(
     (option): boolean =>
       option.value === 1 ||
@@ -84,12 +96,13 @@ export function Filters({
       <div className={'mb-5 w-full'}>
         <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
         <SearchBar
-          className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 md:w-full'}
+          className={'max-w-none rounded-lg text-neutral-900 md:w-full transition-all'}
           iconClassName={'text-neutral-900'}
           searchPlaceholder={'YFI Vault'}
           searchValue={searchValue}
           onSearch={onSearch}
           shouldDebounce={shouldDebounce || false}
+          highlightWhenActive={true}
         />
       </div>
       <div
@@ -105,12 +118,27 @@ export function Filters({
             comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
             options={chainOptions}
             placeholder={'Select chain'}
+            isOpen={activeDropdown === 'chains'}
+            onOpenChange={(isOpen): void => handleDropdownOpenChange('chains', isOpen)}
             onSelect={(options): void => {
               const selectedChains = options
                 .filter((o): boolean => o.isSelected)
                 .map((option): number => Number(option.value))
               onChangeChains(selectedChains)
             }}
+            customMultipleRender={(selectedOptions): ReactElement => (
+              <div className="flex items-center">
+                {selectedOptions.map((option, index) => (
+                  <div
+                    key={option.value}
+                    className={cl('size-6 overflow-hidden rounded-full', option.label === 'Sonic' ? 'bg-white' : '')}
+                    style={{ marginLeft: index > 0 ? '-8px' : '0', zIndex: selectedOptions.length - index }}
+                  >
+                    {option.icon}
+                  </div>
+                ))}
+              </div>
+            )}
           />
         </div>
 
@@ -121,6 +149,8 @@ export function Filters({
             comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
             options={categoryOptions}
             placeholder={'Filter categories'}
+            isOpen={activeDropdown === 'categories'}
+            onOpenChange={(isOpen): void => handleDropdownOpenChange('categories', isOpen)}
             onSelect={(options): void => {
               const selectedCategories = options
                 .filter((o): boolean => o.isSelected)
@@ -137,6 +167,8 @@ export function Filters({
             comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
             options={typeOptions}
             placeholder={'Filter list'}
+            isOpen={activeDropdown === 'types'}
+            onOpenChange={(isOpen): void => handleDropdownOpenChange('types', isOpen)}
             onSelect={(options): void => {
               const selectedTypes = options
                 .filter((o): boolean => o.isSelected)
