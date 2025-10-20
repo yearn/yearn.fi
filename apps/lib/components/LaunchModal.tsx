@@ -7,6 +7,7 @@ import { useLocation } from 'react-router-dom'
 import Link from '/src/components/Link'
 
 import { LogoYearn } from '../icons/LogoYearn'
+import { LogoYearnOutline } from '../icons/LogoYearnOutline'
 import { APP_GROUPS, type TAppTile } from './YearnApps'
 
 type LaunchModalTriggerProps = {
@@ -23,7 +24,7 @@ function TileIcon({ icon, forceDark }: { icon?: ReactElement; forceDark: boolean
   return (
     <div
       className={cl(
-        'flex size-8 items-center justify-center rounded-full',
+        'flex size-8 items-center justify-center rounded-full hover:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
         forceDark ? 'bg-[#0F172A] text-white' : 'bg-white text-neutral-900 dark:bg-[#0F172A] dark:text-white'
       )}
     >
@@ -230,7 +231,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
       ) : (
         <button
           type={'button'}
-          className={'z-20 flex size-8 items-center justify-center rounded-full transition-opacity hover:opacity-80'}
+          className={'group z-20 flex size-8 items-center justify-center rounded-full'}
           aria-haspopup={'dialog'}
           aria-expanded={isOpen}
           onClick={handleOpen}
@@ -238,7 +239,20 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
           <span className={'sr-only'}>{'Open Yearn navigation'}</span>
           <TileIcon
             forceDark={forceDark}
-            icon={<LogoYearn className={'size-8! max-h-8! max-w-8!'} front={'text-white'} back={'text-primary'} />}
+            icon={
+              <>
+                <LogoYearn
+                  className={'size-8! max-h-8! max-w-8! group-hover:hidden'}
+                  front={'text-white'}
+                  back={'text-primary'}
+                />
+                <LogoYearnOutline
+                  className={'hidden size-8! max-h-8! max-w-8! group-hover:block'}
+                  fill={'text-primary'}
+                  stroke={'text-primary'}
+                />
+              </>
+            }
           />
         </button>
       )}
@@ -308,15 +322,15 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                           type={'button'}
                           onClick={(): void => handleSelectGroup(group.title)}
                           className={cl(
-                            'whitespace-nowrap rounded-2xl border px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.25em] transition-colors',
+                            'whitespace-nowrap rounded-xl border px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.25em] transition-colors',
                             'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                             isActive
                               ? forceDark
-                                ? 'border-primary bg-primary/10 text-white'
-                                : 'border-primary bg-primary/10 text-primary dark:bg-primary/20 dark:text-white'
+                                ? 'border-primary text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
+                                : 'border-primary text-neutral-900 font-bold dark:text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
                               : forceDark
                                 ? 'border-transparent bg-transparent text-neutral-500 hover:bg-primary/10 hover:border-primary/70 hover:text-white'
-                                : 'border-transparent bg-transparent text-neutral-600 hover:border-primary/70 hover:bg-neutral-50 dark:text-neutral-500 dark:hover:border-primary dark:hover:bg-primary/10'
+                                : 'border-transparent bg-transparent text-neutral-500 hover:border-primary/70 dark:text-neutral-500 dark:hover:border-primary '
                           )}
                           aria-pressed={isActive}
                         >
@@ -346,8 +360,8 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                               className={cl(
                                 'group relative flex flex-row items-center gap-3 rounded-xl border p-4 align-middle',
                                 forceDark
-                                  ? 'border-primary/20 bg-transparent hover:bg-primary/5 hover:border-primary/70'
-                                  : 'border-neutral-200 bg-neutral-0 hover:border-primary/70 hover:bg-neutral-50 dark:border-neutral-100 dark:bg-neutral-0 dark:hover:bg-primary/10',
+                                  ? 'border-primary/20 bg-transparent hover:bg-primary/5 hover:border-primary'
+                                  : 'border-neutral-200 hover:border-primary dark:border-neutral-100 dark:bg-neutral-0',
                                 'data-[active=true]:border-primary! data-[active=true]:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
                                 'active:border-primary!',
                                 forceDark ? 'active:bg-[#0F172A]' : 'active:bg-neutral-100 dark:active:bg-[#070A1C]'
