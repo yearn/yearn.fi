@@ -107,18 +107,24 @@ function NotificationContent({
   return (
     <div className={'flex gap-4'}>
       <div className={'flex flex-col items-center gap-3'}>
-        <div className={'relative'}>
+        <div className={'relative flex size-10 items-center justify-center'}>
           <ImageWithFallback
             alt={notification.fromTokenName || 'Token'}
             unoptimized
+            className={'size-8 rounded-full border border-neutral-300 bg-neutral-200/40 object-cover'}
             src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
             altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
             quality={90}
             width={32}
             height={32}
           />
-          <div className={'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
+          <div
+            className={
+              'absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-white shadow-sm'
+            }
+          >
             <Image
+              className={'object-contain'}
               width={14}
               height={14}
               alt={'chain'}
@@ -130,18 +136,24 @@ function NotificationContent({
         {notification.toTokenName && <IconArrow className={'size-4 rotate-135'} />}
 
         {notification.toTokenName && notification.toAddress && (
-          <div className={'relative'}>
+          <div className={'relative flex size-10 items-center justify-center'}>
             <ImageWithFallback
               alt={notification.toTokenName || 'Token'}
               unoptimized
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress}/logo-128.png`}
-              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress}/logo-128.png`}
+              className={'size-8 rounded-full border border-neutral-300 bg-neutral-200/40 object-cover'}
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
+              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
               quality={90}
               width={32}
               height={32}
             />
-            <div className={'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
+            <div
+              className={
+                'absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-white shadow-sm'
+              }
+            >
               <Image
+                className={'object-contain'}
                 width={14}
                 height={14}
                 alt={'chain'}

@@ -22,9 +22,11 @@ function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
   return (
     <nav className={'yearn--nav'}>
       {nav.map(
-        (option): ReactElement => (
+        (option, index): ReactElement => (
           <Link key={option.path} target={option.target} href={option.path}>
-            <p className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}>
+            <p
+              className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''} ${index > 0 ? 'hidden md:block' : ''}`}
+            >
               {option?.label || 'Unknown'}
             </p>
           </Link>
@@ -157,12 +159,12 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
           </div>
           <div className={'flex w-1/3 items-center justify-end'}>
             <button
-              className={'yearn--header-nav-item relative rounded-full p-2 transition-colors'}
+              className={'yearn--header-nav-item relative rounded-full p-4 transition-colors'}
               onClick={(): void => setShouldOpenCurtain(true)}
             >
               <IconBell className={'size-4 font-bold transition-colors'} />
 
-              <div className={cl('absolute right-1 top-1 size-2 rounded-full', notificationDotColor)} />
+              <div className={cl('absolute right-4 top-4 size-2 rounded-full', notificationDotColor)} />
             </button>
             <WalletSelector />
             <div className={'flex md:hidden pl-4 text-neutral-500'}>
