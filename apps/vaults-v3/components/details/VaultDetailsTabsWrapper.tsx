@@ -13,7 +13,7 @@ import { VaultDetailsStrategies } from '@vaults-v3/components/details/tabs/Vault
 import { getExplorerAddressUrl } from '@vaults-v3/utils/explorer'
 import type { ReactElement } from 'react'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { watchAsset } from 'viem/actions'
 import { getConnectorClient } from 'wagmi/actions'
 import { VaultRiskInfo } from './tabs/VaultRiskInfo'

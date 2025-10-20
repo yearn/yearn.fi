@@ -21,7 +21,7 @@ import { useActionFlow } from '@vaults-v2/contexts/useActionFlow'
 import type { TStakingInfo } from '@vaults-v2/hooks/useVaultStakingData'
 import type { ChangeEvent, ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 
 function AmountWithOptionalTooltip(props: {
   canOnlyWithdrawSome: boolean

@@ -26,7 +26,7 @@ import type { TTabsOptions } from '@vaults-v3/components/details/VaultActionsTab
 import { getCurrentTab, tabs, VaultDetailsTab } from '@vaults-v3/components/details/VaultActionsTabsWrapper'
 import type { ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router'
 import { useBlockNumber, useReadContract } from 'wagmi'
 import { readContracts } from 'wagmi/actions'
 

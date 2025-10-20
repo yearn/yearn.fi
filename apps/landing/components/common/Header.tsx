@@ -2,7 +2,7 @@ import { ModalMobileMenu } from '@lib/components/ModalMobileMenu'
 import { IconBurgerPlain } from '@lib/icons/IconBurgerPlain'
 import { TypeMarkYearn } from '@lib/icons/TypeMarkYearn'
 import { type ReactElement, useMemo, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import Link from '/src/components/Link'
 
 type TMenu = { path: string; label: string | ReactElement; target?: string }
