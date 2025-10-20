@@ -37,7 +37,6 @@ function mapToCombinedVaultList(
         <VaultsListEmpty
           key={'empty-list'}
           isLoading={isLoadingVaultList}
-          sortedVaultsToDisplay={sortedVaults}
           currentSearch={''}
           currentCategories={[]}
           currentChains={[]}
