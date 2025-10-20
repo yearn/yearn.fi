@@ -1,7 +1,7 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { IconClose } from '@lib/icons/IconClose'
 import { cl } from '@lib/utils'
-import type { ReactElement } from 'react'
+import type { MouseEvent, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import Link from '/src/components/Link'
@@ -56,6 +56,67 @@ function isTileActive(tile: TAppTile, pathname: string, currentHost: string): bo
   const matchesPath = matchesPathname(tile.pathnames, pathname)
 
   return matchesHost || matchesPath
+}
+
+function LaunchTile({
+  item,
+  forceDark,
+  pathname,
+  currentHost,
+  onLinkClick
+}: {
+  item: TAppTile
+  forceDark: boolean
+  pathname: string
+  currentHost: string
+  onLinkClick: (event: MouseEvent<HTMLAnchorElement>) => void
+}): ReactElement {
+  const active = isTileActive(item, pathname, currentHost)
+  const external = isExternalHref(item.href)
+
+  return (
+    <Link href={item.href} onClick={onLinkClick}>
+      <div
+        data-active={active}
+        className={cl(
+          'group relative flex flex-row items-center gap-3 rounded-xl border p-4 align-middle',
+          forceDark
+            ? 'border-primary/20 bg-transparent hover:bg-primary/5 hover:border-primary'
+            : 'border-neutral-200 hover:border-primary dark:border-neutral-100 dark:bg-neutral-0',
+          'data-[active=true]:border-primary! data-[active=true]:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
+          'active:border-primary!',
+          forceDark ? 'active:bg-[#0F172A]' : 'active:bg-neutral-100 dark:active:bg-[#070A1C]'
+        )}
+      >
+        <TileIcon icon={item.icon} forceDark={forceDark} />
+        <div className={'flex flex-1 flex-col justify-between gap-1'}>
+          <div className={'flex items-center gap-2'}>
+            <p className={'text-base font-semibold leading-tight'}>{item.name}</p>
+            {external && <span className={'text-xs'}>{'↗'}</span>}
+          </div>
+          {item.description && (
+            <p
+              className={cl(
+                'line-clamp-1 text-sm',
+                forceDark ? 'text-neutral-500' : 'text-neutral-600 dark:text-neutral-500'
+              )}
+            >
+              {item.description}
+            </p>
+          )}
+        </div>
+        {active && (
+          <span
+            className={
+              'absolute right-4 top-4 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary'
+            }
+          >
+            {'Active'}
+          </span>
+        )}
+      </div>
+    </Link>
+  )
 }
 
 export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
@@ -259,7 +320,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
 
       <Transition show={isOpen} as={Fragment}>
         <Dialog as={'div'} className={'fixed inset-0 z-[9999] overflow-y-auto'} static onClose={handleClose}>
-          <div className={'flex min-h-full items-center justify-center py-6'}>
+          <div className={'flex min-h-svh items-end justify-center px-0 py-0 sm:items-center sm:px-4 sm:py-6'}>
             <TransitionChild
               as={Fragment}
               enter={'ease-out duration-150'}
@@ -283,19 +344,15 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
             >
               <Dialog.Panel
                 className={cl(
-                  'relative w-full max-w-6xl transform overflow-hidden rounded-3xl border p-6 shadow-2xl focus:outline-none sm:p-8',
+                  'relative flex h-svh w-full transform flex-col overflow-hidden rounded-none p-6 focus:outline-none',
+                  'sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl sm:rounded-3xl sm:border sm:p-8 sm:shadow-2xl',
                   forceDark
-                    ? 'border-primary/30 bg-[#050A29] text-white'
-                    : 'border-neutral-100 bg-white text-neutral-900 dark:border-primary/30 dark:bg-neutral-0 dark:text-white'
+                    ? 'bg-[#050A29] text-white sm:border-primary/30'
+                    : 'bg-white text-neutral-900 dark:bg-neutral-0 dark:text-white sm:border-neutral-100 dark:border-primary/30'
                 )}
               >
-                <div className={'flex w-full justify-end'}>
-                  {/* <div>
-                    <Dialog.Title className={'text-xl font-semibold sm:text-2xl'}>{'Explore Yearn'}</Dialog.Title>
-                    <p className={'mt-1 text-sm text-neutral-200 dark:text-neutral-700'}>
-                      {'Jump to Yearn apps, internal tools, or community resources.'}
-                    </p>
-                  </div> */}
+                <div className={'flex w-full justify-between'}>
+                  <div className={'text-xl sm:pl-8'}>Yearn App Launcher</div>
                   <button
                     type={'button'}
                     onClick={handleClose}
@@ -311,93 +368,87 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                   </button>
                 </div>
 
-                <div className={'mt-6 flex flex-col gap-6 lg:flex-row'}>
-                  <div className={'flex flex-row gap-2 overflow-x-auto pb-2 pt-6 lg:flex-col lg:gap-3 lg:pb-0 lg:pr-2'}>
-                    {APP_GROUPS.map((group) => {
-                      const isActive = group.title === activeGroupTitle
-
-                      return (
-                        <button
-                          key={group.title}
-                          type={'button'}
-                          onClick={(): void => handleSelectGroup(group.title)}
-                          className={cl(
-                            'whitespace-nowrap rounded-xl border px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.25em] transition-colors',
-                            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                            isActive
-                              ? forceDark
-                                ? 'border-primary text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
-                                : 'border-primary text-neutral-900 font-bold dark:text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
-                              : forceDark
-                                ? 'border-transparent bg-transparent text-neutral-500 hover:bg-primary/10 hover:border-primary/70 hover:text-white'
-                                : 'border-transparent bg-transparent text-neutral-500 hover:border-primary/70 dark:text-neutral-500 dark:hover:border-primary '
-                          )}
-                          aria-pressed={isActive}
-                        >
-                          {group.title}
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  <div
-                    data-launch-scrollable={'true'}
-                    className={cl(
-                      'flex-1 overflow-y-auto rounded-3xl p-4 sm:p-6',
-                      forceDark ? 'border-[#1C264F] bg-[#050A29]' : 'border-neutral-200 bg-white dark:bg-neutral-0'
-                    )}
-                    style={{ minHeight: '400px', maxHeight: '70vh' }}
-                  >
-                    <div className={'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'}>
-                      {activeGroup?.items.map((item) => {
-                        const active = isTileActive(item, pathname, currentHost)
-                        const external = isExternalHref(item.href)
+                <div
+                  data-launch-scrollable={'true'}
+                  className={cl(
+                    'mt-6 flex-1 overflow-y-auto',
+                    'lg:min-h-[400px] lg:max-h-[70vh]',
+                    forceDark
+                      ? 'lg:rounded-3xl lg:border lg:border-[#1C264F] lg:bg-[#050A29]'
+                      : 'lg:rounded-3xl lg:border lg:border-neutral-200 lg:bg-white lg:dark:bg-neutral-0'
+                  )}
+                >
+                  <div className={'hidden h-full flex-col gap-6 p-0 lg:flex lg:flex-row lg:gap-6 lg:p-6'}>
+                    <div className={'flex shrink-0 flex-col gap-3 lg:max-h-full lg:overflow-y-auto lg:pr-2'}>
+                      {APP_GROUPS.map((group) => {
+                        const isActive = group.title === activeGroupTitle
 
                         return (
-                          <Link key={item.href} href={item.href} onClick={handleLinkClick}>
-                            <div
-                              data-active={active}
-                              className={cl(
-                                'group relative flex flex-row items-center gap-3 rounded-xl border p-4 align-middle',
-                                forceDark
-                                  ? 'border-primary/20 bg-transparent hover:bg-primary/5 hover:border-primary'
-                                  : 'border-neutral-200 hover:border-primary dark:border-neutral-100 dark:bg-neutral-0',
-                                'data-[active=true]:border-primary! data-[active=true]:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
-                                'active:border-primary!',
-                                forceDark ? 'active:bg-[#0F172A]' : 'active:bg-neutral-100 dark:active:bg-[#070A1C]'
-                              )}
-                            >
-                              <TileIcon icon={item.icon} forceDark={forceDark} />
-                              <div className={'flex flex-1 flex-col justify-between gap-1'}>
-                                <div className={'flex items-center gap-2'}>
-                                  <p className={'text-base font-semibold leading-tight'}>{item.name}</p>
-                                  {external && <span className={'text-xs'}>{'↗'}</span>}
-                                </div>
-                                {item.description && (
-                                  <p
-                                    className={cl(
-                                      'line-clamp-1 text-sm',
-                                      forceDark ? 'text-neutral-500' : 'text-neutral-600 dark:text-neutral-500'
-                                    )}
-                                  >
-                                    {item.description}
-                                  </p>
-                                )}
-                              </div>
-                              {active && (
-                                <span
-                                  className={
-                                    'absolute right-4 top-4 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary'
-                                  }
-                                >
-                                  {'Active'}
-                                </span>
-                              )}
-                            </div>
-                          </Link>
+                          <button
+                            key={group.title}
+                            type={'button'}
+                            onClick={(): void => handleSelectGroup(group.title)}
+                            className={cl(
+                              'rounded-xl border px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.25em] transition-colors',
+                              'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                              isActive
+                                ? forceDark
+                                  ? 'border-primary text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
+                                  : 'border-primary text-neutral-900 font-bold dark:text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
+                                : forceDark
+                                  ? 'border-transparent bg-transparent text-neutral-500 hover:bg-primary/10 hover:border-primary/70 hover:text-white'
+                                  : 'border-transparent bg-transparent text-neutral-500 hover:border-primary/70 dark:text-neutral-500 dark:hover:border-primary'
+                            )}
+                            aria-pressed={isActive}
+                          >
+                            {group.title}
+                          </button>
                         )
                       })}
                     </div>
+
+                    <div className={'flex-1'}>
+                      <div className={'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'}>
+                        {activeGroup?.items.map((item) => (
+                          <LaunchTile
+                            key={item.href}
+                            item={item}
+                            forceDark={forceDark}
+                            pathname={pathname}
+                            currentHost={currentHost}
+                            onLinkClick={handleLinkClick}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={'flex flex-col gap-8 pb-6 lg:hidden'}>
+                    {APP_GROUPS.map((group) => (
+                      <section key={group.title} aria-labelledby={`launch-group-${group.title}`}>
+                        <h2
+                          id={`launch-group-${group.title}`}
+                          className={cl(
+                            'text-xs font-semibold uppercase tracking-[0.25em]',
+                            forceDark ? 'text-neutral-400' : 'text-neutral-500 dark:text-neutral-400'
+                          )}
+                        >
+                          {group.title}
+                        </h2>
+                        <div className={'mt-3 grid grid-cols-1 gap-3'}>
+                          {group.items.map((item) => (
+                            <LaunchTile
+                              key={item.href}
+                              item={item}
+                              forceDark={forceDark}
+                              pathname={pathname}
+                              currentHost={currentHost}
+                              onLinkClick={handleLinkClick}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    ))}
                   </div>
                 </div>
               </Dialog.Panel>
