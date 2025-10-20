@@ -9,7 +9,7 @@ import { VaultStakedAmount } from '@vaults-v3/components/table/VaultStakedAmount
 import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { VaultChainTag } from '../VaultChainTag'
 
 export function VaultsV3ListRow({

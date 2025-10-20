@@ -6,7 +6,7 @@ import type { AnimationProps } from 'framer-motion'
 import { motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { cloneElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import { LogoYearn } from '../icons/LogoYearn'
 import { APPS } from './YearnApps'
 

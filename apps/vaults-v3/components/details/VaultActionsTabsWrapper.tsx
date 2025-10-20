@@ -32,7 +32,7 @@ import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
 import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
 import type { ReactElement } from 'react'
 import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { useBlockNumber, useReadContract } from 'wagmi'
 import { readContracts } from 'wagmi/actions'
 
