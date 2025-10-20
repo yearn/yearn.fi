@@ -272,7 +272,7 @@ export const VaultDetailsTab = React.memo(function VaultDetailsTab(props: {
     newSearchParams.set('action', props.tab.slug || '')
     navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true })
     props.onSwitchTab(props.tab)
-  }, [searchParams, props.tab, location.pathname, navigate, props.onSwitchTab])
+  }, [searchParams, props.tab, location.pathname, navigate, props.onSwitchTab, props])
 
   return (
     <button key={`desktop-${props.tab.value}`} onClick={handleClick}>
