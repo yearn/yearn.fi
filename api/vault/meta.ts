@@ -56,14 +56,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     html = html.replace('</head>', `${metaTags}\n  </head>`)
 
     res.setHeader('Content-Type', 'text/html')
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400')
+    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800')
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
 
     return res.status(200).send(html)
   } catch (error) {
     console.error('Error generating meta tags:', error)
     // Fallback to regular SPA with cached HTML
     res.setHeader('Content-Type', 'text/html')
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400')
+    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800')
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
     return res.status(200).send(baseHtml)
   }
 }
