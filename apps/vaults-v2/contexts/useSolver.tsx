@@ -28,7 +28,7 @@ export const isSolverDisabled = (key: TSolver): boolean => {
     [Solver.enum.GaugeStakingBooster]: false,
     [Solver.enum.JuicedStakingBooster]: false,
     [Solver.enum.V3StakingBooster]: false,
-    [Solver.enum.Cowswap]: true,
+    [Solver.enum.Cowswap]: false,
     [Solver.enum.Portals]: false,
     [Solver.enum.None]: false
   }
