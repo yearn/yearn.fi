@@ -29,18 +29,8 @@ import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/ac
 import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
-import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
+import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@vaults-v3/constants/addresses'
 import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
-
-/**************************************************************************************************
- ** Vault addresses eligible for Spectra boost on Katana chain
- *************************************************************************************************/
-const SPECTRA_BOOST_VAULT_ADDRESSES = [
-  '0x80c34BD3A3569E126e7055831036aa7b212cB159',
-  '0xE007CA01894c863d7898045ed5A3B4Abf0b18f37',
-  '0x9A6bd7B6Fd5C4F87eb66356441502fc7dCdd185B',
-  '0x93Fec6639717b6215A48E5a72a162C50DCC40d68'
-].map((addr) => addr.toLowerCase())
 
 import type { ReactElement } from 'react'
 import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
