@@ -3,20 +3,25 @@ import type { TNormalizedBN, TNumberish } from '../types/mixed'
 import { MAX_UINT_256 } from './constants'
 import { isZero } from './tools.is'
 
-export const DefaultTNormalizedBN: TNormalizedBN = { raw: 0n, normalized: 0, display: '0' }
+export const DefaultTNormalizedBN: TNormalizedBN = { raw: 0n, normalized: 0, display: '0', decimals: 18 }
 
-export const toSafeAmount = (value: `${number}`, max: bigint, d = 18): bigint => {
-  if (value === formatUnits(max || 0n, d)) {
-    return max
-  }
+export const simpleToExact = (value: number | string = 0, d = 18): bigint => {
   return parseUnits(value || '0', d)
 }
 
-export const toSafeValue = (v: string | number): number => {
-  if (!v || v === 'NaN') {
-    return 0
+export const exactToSimple = (bn?: bigint | string | number, scale?: number) => {
+  // BigNumbers can be returned by wagmi's query cache. This should happen
+  // once per-browser sesion until wagmi's localStorage is cleared or overwritten.
+  let res = bn
+  if (typeof bn === 'object') {
+    if ((bn as { hex?: string }).hex) {
+      res = BigInt((bn as { hex: string }).hex)
+    } else {
+      console.log('unknown object type', bn, Object.entries(bn))
+      return 0
+    }
   }
-  return Number(v)
+  return Number.parseFloat(formatUnits(BigInt(res ?? 0), scale ?? 18))
 }
 
 /***************************************************************************
@@ -67,7 +72,8 @@ export function toNormalizedBN(value: TNumberish, decimals: number): TNormalized
   return {
     raw: toBigInt(value),
     normalized: Number(formatUnits(toBigInt(value), decimals ?? 18)),
-    display: formatUnits(toBigInt(value), decimals ?? 18)
+    display: formatUnits(toBigInt(value), decimals ?? 18),
+    decimals
   }
 }
 export const zeroNormalizedBN: TNormalizedBN = toNormalizedBN(0, 18)

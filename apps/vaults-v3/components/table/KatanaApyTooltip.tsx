@@ -3,6 +3,7 @@ import { RenderAmount } from '@lib/components/RenderAmount'
 import { formatAmount } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
+import { VAULT_ADDRESSES } from '../../constants/addresses'
 
 export function KatanaApyTooltip(props: {
   extrinsicYield: number
@@ -18,6 +19,13 @@ export function KatanaApyTooltip(props: {
   const position = props.position || 'bottom'
   const positionClass = position === 'bottom' ? 'bottom-full' : 'top-full '
   const maxWidth = props.maxWidth || 'min-w-[360px] w-max'
+
+  // Check if this is the T-Bill vault
+  const isTBillVault = props.currentVault.address.toLowerCase() === VAULT_ADDRESSES.AUSD.toLowerCase()
+  const extrinsicYieldLabel = isTBillVault ? 'T-Bill Yield' : 'Extrinsic Yield'
+  const extrinsicYieldDescription = isTBillVault
+    ? 'Interest from U.S. treasury bills'
+    : 'Yield Earned from underlying bridged assets'
 
   return (
     <span className={`tooltipLight ${positionClass}`}>
@@ -40,19 +48,21 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${props.currentVault.chainID}/${props.currentVault.token.address.toLowerCase()}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+                  props.currentVault.chainID
+                }/${props.currentVault.token.address.toLowerCase()}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}
               />
-              <p>{'Extrinsic Yield '}</p>
+              <p>{extrinsicYieldLabel} </p>
             </div>
             <span className={'font-number'}>
               <RenderAmount shouldHideTooltip value={props.extrinsicYield} symbol={'percent'} decimals={6} />
             </span>
           </div>
           <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
-            {'Yield Earned from underlying bridged assets'}
+            {extrinsicYieldDescription}
           </p>
           <div
             className={
@@ -61,7 +71,9 @@ export function KatanaApyTooltip(props: {
           >
             <div className={'flex flex-row items-center space-x-2'}>
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${props.currentVault.chainID}/${props.currentVault.token.address.toLowerCase()}/logo-32.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+                  props.currentVault.chainID
+                }/${props.currentVault.token.address.toLowerCase()}/logo-32.png`}
                 alt={''}
                 width={16}
                 height={16}

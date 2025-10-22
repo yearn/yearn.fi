@@ -1,6 +1,7 @@
 import { CategorySection } from '@lib/components/CategorySection'
 import { Cutaway } from '@lib/components/Cutaway'
 import { LogoDiscord } from '@lib/icons/LogoDiscord'
+import { LogoGithub } from '@lib/icons/LogoGithub'
 import { LogoTwitter } from '@lib/icons/LogoTwitter'
 import { INTEGRATIONS_APPS, OLD_APPS, VAULTS_APPS, YEARN_APPS, YEARN_X_APPS } from '@lib/utils/constants'
 import type { ReactElement } from 'react'
@@ -28,6 +29,11 @@ export default function Home(): ReactElement {
             title={'Join our Discord'}
             icon={<LogoDiscord className={'text-neutral-800'} />}
             link={'https://discord.com/invite/yearn'}
+          />
+          <Cutaway
+            title={'View our GitHub'}
+            icon={<LogoGithub className={'text-neutral-800'} />}
+            link={'https://github.com/yearn'}
           />
         </div>
       </div>
