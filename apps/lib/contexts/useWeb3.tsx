@@ -1,4 +1,3 @@
-
 import { setGlobalAdapter } from '@cowprotocol/cow-sdk'
 import { ViemAdapter, type ViemAdapterOptions } from '@cowprotocol/sdk-viem-adapter'
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
