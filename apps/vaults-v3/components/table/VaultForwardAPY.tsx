@@ -2,7 +2,7 @@ import { RenderAmount } from '@lib/components/RenderAmount'
 import { Renderable } from '@lib/components/Renderable'
 import { formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
+import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@vaults-v3/constants/addresses'
 import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import type { ReactElement } from 'react'
 import { Fragment, useState } from 'react'
@@ -19,6 +19,11 @@ export function VaultForwardAPY({
 }): ReactElement {
   const data = useVaultApyData(currentVault)
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Check if vault is eligible for Spectra boost (Katana chain only)
+  const isEligibleForSpectraBoost =
+    currentVault.chainID === KATANA_CHAIN_ID &&
+    SPECTRA_BOOST_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
   const handleToggle = (e: React.MouseEvent): void => {
     e.stopPropagation()
     if (onMobileToggle) {
@@ -135,6 +140,7 @@ export function VaultForwardAPY({
           hasKelp={false}
           isEligibleForSteer={data.isEligibleForSteer}
           steerPointsPerDollar={data.steerPointsPerDollar}
+          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
           onMobileToggle={!!onMobileToggle}
         />
       </div>
@@ -227,6 +233,9 @@ export function VaultForwardAPY({
             hasPendleArbRewards={data.hasPendleArbRewards}
             hasKelpNEngenlayer={data.hasKelpNEngenlayer}
             hasKelp={data.hasKelp}
+            isEligibleForSteer={data.isEligibleForSteer}
+            steerPointsPerDollar={data.steerPointsPerDollar}
+            isEligibleForSpectraBoost={isEligibleForSpectraBoost}
           />
         </div>
       )
@@ -243,6 +252,9 @@ export function VaultForwardAPY({
           hasPendleArbRewards={data.hasPendleArbRewards}
           hasKelpNEngenlayer={data.hasKelpNEngenlayer}
           hasKelp={data.hasKelp}
+          isEligibleForSteer={data.isEligibleForSteer}
+          steerPointsPerDollar={data.steerPointsPerDollar}
+          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
         />
       </div>
     )
@@ -443,6 +455,9 @@ export function VaultForwardAPY({
           hasPendleArbRewards={data.hasPendleArbRewards}
           hasKelp={data.hasKelp}
           hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+          isEligibleForSteer={data.isEligibleForSteer}
+          steerPointsPerDollar={data.steerPointsPerDollar}
+          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
         />
       </div>
     )
@@ -462,6 +477,9 @@ export function VaultForwardAPY({
           hasPendleArbRewards={data.hasPendleArbRewards}
           hasKelp={data.hasKelp}
           hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+          isEligibleForSteer={data.isEligibleForSteer}
+          steerPointsPerDollar={data.steerPointsPerDollar}
+          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
         />
       </div>
     )
@@ -484,6 +502,9 @@ export function VaultForwardAPY({
         hasPendleArbRewards={data.hasPendleArbRewards}
         hasKelp={data.hasKelp}
         hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+        isEligibleForSteer={data.isEligibleForSteer}
+        steerPointsPerDollar={data.steerPointsPerDollar}
+        isEligibleForSpectraBoost={isEligibleForSpectraBoost}
       />
     </div>
   )
@@ -492,6 +513,11 @@ export function VaultForwardAPY({
 // Inline details for mobile accordion rendering controlled by parent
 export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: TYDaemonVault }): ReactElement | null {
   const data = useVaultApyData(currentVault)
+
+  // Check if vault is eligible for Spectra boost (Katana chain only)
+  const isEligibleForSpectraBoost =
+    currentVault.chainID === KATANA_CHAIN_ID &&
+    SPECTRA_BOOST_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
 
   if (currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined) {
     return (
@@ -579,6 +605,22 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
                 {'here.'}
               </a>
             </li>
+            {isEligibleForSpectraBoost && (
+              <li className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
+                {'Earn boosted yield on Spectra if you '}
+                <a
+                  href={'https://app.spectra.finance/pools'}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className={
+                    'font-bold underline sm:decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                  }
+                >
+                  {'deposit to their protocol'}
+                </a>
+                {'.'}
+              </li>
+            )}
             {data.katanaExtras.steerPointsPerDollar && data.katanaExtras.steerPointsPerDollar > 0 ? (
               <li className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
                 {'This vault earns Steer Points, but you must '}
