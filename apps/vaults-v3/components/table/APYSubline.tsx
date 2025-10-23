@@ -60,7 +60,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
               {'Boosted yield on Spectra'}
             </small>
             {!onMobileToggle && (
-              <span className={'tooltipLight top-full left-0'}>
+              <span className={'tooltipLight top-full right-0'}>
                 <div
                   className={
                     'min-w-[360px] rounded-xl border border-neutral-300 bg-neutral-200 p-4 pb-1 text-center text-sm text-neutral-900'

@@ -134,7 +134,7 @@ export function BoostMessage(props: {
               className={'underline'}
               href={'https://docs.yearn.fi/contributing/governance/veyfi-intro'}
               target={'_blank'}
-              rel={'noreferrer'}
+              rel={'noopener noreferrer'}
             >
               {'FAQ'}
             </a>
@@ -153,7 +153,7 @@ export function BoostMessage(props: {
           </b>
           <b className={'block text-neutral-900'}>
             {'Visit '}
-            <a className={'underline'} href={'https://juiced.app'} target={'_blank'} rel={'noreferrer'}>
+            <a className={'underline'} href={'https://juiced.app'} target={'_blank'} rel={'noopener noreferrer'}>
               {'juiced.app'}
             </a>
             {' to learn more'}
@@ -514,7 +514,12 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
               <div>
                 <b>{'Get more yield on Spectra: '}</b>
                 {'deposit yv token to '}
-                <a href="https://app.spectra.finance/pools" target="_blank" rel="noreferrer" className="underline">
+                <a
+                  href="https://app.spectra.finance/pools"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
                   {'https://app.spectra.finance/pools'}
                 </a>
                 {'.'}
@@ -523,20 +528,35 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
             {isEligibleForSteerPoints && (
               <div>
                 <b>{`Eligible for ${formatAmount(steerRewardPoints, 2, 2)} STEER points / dollar deposited: `}</b>
-                <a href="https://app.steer.finance/points" target="_blank" rel="noreferrer" className="underline">
+                <a
+                  href="https://app.steer.finance/points"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
                   {'https://app.steer.finance/points'}
                 </a>
               </div>
             )}
             <div>
               <b>{'Bridge to Katana at: '}</b>
-              <a className={'underline'} href={'https://bridge.katana.network/'} target={'_blank'} rel={'noreferrer'}>
+              <a
+                className={'underline'}
+                href={'https://bridge.katana.network/'}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+              >
                 {'https://bridge.katana.network/'}
               </a>
             </div>
             <div>
               <b>{'KAT Rewards earned by Katana Vaults can be claimed at: '}</b>
-              <a className={'underline'} href={'https://katana.yearn.space'} target={'_blank'} rel={'noreferrer'}>
+              <a
+                className={'underline'}
+                href={'https://katana.yearn.space'}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+              >
                 {'https://katana.yearn.space'}
               </a>
             </div>
