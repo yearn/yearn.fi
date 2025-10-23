@@ -513,7 +513,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
             {isEligibleForSpectraBoost && (
               <div>
                 <b>{'Get more yield on Spectra: '}</b>
-                {'deposit yv token to '}
+                {'deposit vault tokens to '}
                 <a
                   href="https://app.spectra.finance/pools"
                   target="_blank"
