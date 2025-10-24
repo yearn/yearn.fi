@@ -84,8 +84,7 @@ function LaunchTile({
             ? 'border-primary/20 bg-transparent hover:bg-primary/5 hover:border-primary'
             : 'border-neutral-200 hover:border-primary dark:border-neutral-100 dark:bg-neutral-0',
           'data-[active=true]:border-primary! data-[active=true]:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
-          'active:border-primary!',
-          forceDark ? 'active:bg-[#0F172A]' : 'active:bg-neutral-100 dark:active:bg-[#070A1C]'
+          'active:border-primary!'
         )}
       >
         <TileIcon icon={item.icon} forceDark={forceDark} />
@@ -396,7 +395,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                                   ? 'border-primary text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
                                   : 'border-primary text-neutral-900 font-bold dark:text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
                                 : forceDark
-                                  ? 'border-transparent bg-transparent text-neutral-500 hover:bg-primary/10 hover:border-primary/70 hover:text-white'
+                                  ? 'border-primary/20 bg-transparent text-neutral-500 hover:bg-primary/10 hover:border-primary/70 hover:text-white'
                                   : 'border-transparent bg-transparent text-neutral-500 hover:border-primary/70 dark:text-neutral-500 dark:hover:border-primary'
                             )}
                             aria-pressed={isActive}
