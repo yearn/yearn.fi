@@ -344,14 +344,14 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
             >
               <Dialog.Panel
                 className={cl(
-                  'relative flex h-svh w-full transform flex-col overflow-hidden rounded-none p-6 focus:outline-none',
+                  'relative flex h-svh w-full transform flex-col overflow-hidden rounded-none py-6 focus:outline-none',
                   'sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl sm:rounded-3xl sm:border sm:p-8 sm:shadow-2xl',
                   forceDark
                     ? 'bg-[#050A29] text-white sm:border-primary/30'
                     : 'bg-white text-neutral-900 dark:bg-neutral-0 dark:text-white sm:border-neutral-100 dark:border-primary/30'
                 )}
               >
-                <div className={'flex w-full justify-between'}>
+                <div className={'flex w-full px-6 justify-between'}>
                   <div className={'text-xl sm:pl-8'}>Yearn App Launcher</div>
                   <button
                     type={'button'}
@@ -371,7 +371,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                 <div
                   data-launch-scrollable={'true'}
                   className={cl(
-                    'mt-6 flex-1 overflow-y-auto',
+                    'mt-6 px-6 flex-1 overflow-y-auto',
                     'lg:min-h-[400px] lg:max-h-[70vh]',
                     forceDark
                       ? 'lg:rounded-3xl lg:border lg:border-[#1C264F] lg:bg-[#050A29]'

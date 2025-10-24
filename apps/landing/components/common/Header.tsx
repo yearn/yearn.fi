@@ -47,44 +47,24 @@ export function LandingAppHeader(): ReactElement {
   return (
     <div id={'head'} className={'inset-x-0 top-0 z-50 mt-4 w-full md:mt-7'}>
       <div className={'w-full'}>
-        <header className={'flex max-w-[1232px] items-center gap-4 py-1 md:justify-between md:px-10! md:py-4'}>
-          <div className={'hidden flex-row items-center gap-x-3 md:flex'}>
-            <Link href={'/'}>
-              <TypeMarkYearn className={'h-6 w-auto'} color={'#E1E1E1'} />
-            </Link>
+        <header className={'flex max-w-[1232px] items-center justify-between gap-4 py-1 md:px-10! md:py-4'}>
+          <div className={'flex items-center gap-2'}>
+            <div className={'md:hidden'}>
+              <LaunchModal />
+            </div>
+            <div className={'hidden flex-row items-center gap-x-3 md:flex'}>
+              <Link href={'/'}>
+                <TypeMarkYearn className={'h-6 w-auto'} color={'#E1E1E1'} />
+              </Link>
+            </div>
           </div>
           <div className={'hidden items-center gap-6 md:flex'}>
-            <LaunchModal
-              trigger={({ open, isOpen }) => (
-                <button
-                  type={'button'}
-                  className={'yearn--header-nav-item'}
-                  aria-haspopup={'dialog'}
-                  aria-expanded={isOpen}
-                  onClick={open}
-                >
-                  {'Apps'}
-                </button>
-              )}
-            />
+            <LaunchModal />
             <nav className={'flex items-center gap-6'}>
               <Navbar currentPathName={pathname || ''} nav={menu} />
             </nav>
           </div>
-          <div className={'flex items-center gap-2 md:hidden'}>
-            <LaunchModal
-              trigger={({ open, isOpen }) => (
-                <button
-                  type={'button'}
-                  className={'yearn--header-nav-item'}
-                  aria-haspopup={'dialog'}
-                  aria-expanded={isOpen}
-                  onClick={open}
-                >
-                  {'Apps'}
-                </button>
-              )}
-            />
+          <div className={'flex items-center md:hidden'}>
             <button
               className={'flex size-8 items-center justify-center rounded-full bg-neutral-900/20 p-1.5'}
               onClick={(): void => setIsMenuOpen(!isMenuOpen)}
