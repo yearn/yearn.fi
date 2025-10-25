@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router'
 
 // Lazy load all page components
 const HomePage = lazy(() => import('../pages/index'))

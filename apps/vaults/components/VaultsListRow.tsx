@@ -7,7 +7,7 @@ import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi/utils'
 import { VaultChainTag } from '@vaults-v3/components/VaultChainTag'
 import type { FC } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { VaultForwardAPY, VaultRiskScoreTag } from './table'
 
 type TVaultsListRowProps = {

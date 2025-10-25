@@ -19,7 +19,7 @@ import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
 import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
 import type { ReactElement } from 'react'
 import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { useReadContract } from 'wagmi'
 
 /**************************************************************************************************
@@ -258,7 +258,7 @@ export const VaultDetailsTab = React.memo(function VaultDetailsTab(props: {
     newSearchParams.set('action', props.tab.slug || '')
     navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true })
     props.onSwitchTab(props.tab)
-  }, [searchParams, props.tab, location.pathname, navigate, props.onSwitchTab])
+  }, [searchParams, props.tab, location.pathname, navigate, props.onSwitchTab, props])
 
   return (
     <button key={`desktop-${props.tab.value}`} onClick={handleClick}>

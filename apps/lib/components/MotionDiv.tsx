@@ -1,10 +1,10 @@
 import { variants } from '@lib/utils/animations'
-import type { AnimationProps } from 'framer-motion'
+import type { MotionProps } from 'framer-motion'
 import { motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 
 type TMotionDiv = {
-  animate: AnimationProps['animate']
+  animate: MotionProps['animate']
   name: string
   children: ReactElement
 }

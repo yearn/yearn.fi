@@ -17,7 +17,7 @@ import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
 import type { ReactElement } from 'react'
 import { Toaster } from 'react-hot-toast'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import PlausibleProvider from './components/PlausibleProvider'
 import { AppRoutes } from './routes'
 

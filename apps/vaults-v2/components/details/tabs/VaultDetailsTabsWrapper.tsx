@@ -15,7 +15,7 @@ import { VaultDetailsHistorical } from '@vaults-v2/components/details/tabs/Vault
 import { VaultDetailsStrategies } from '@vaults-v2/components/details/tabs/VaultDetailsStrategies'
 import type { ReactElement } from 'react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { watchAsset } from 'viem/actions'
 import { getConnectorClient } from 'wagmi/actions'
 

@@ -3,7 +3,7 @@ import type { TNotification, TNotificationStatus, TNotificationsContext } from '
 import { NotificationsCurtain } from '@vaults-v3/components/notifications/NotificationsCurtain'
 import type React from 'react'
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import { useIndexedDBStore } from 'use-indexeddb'
 
 const defaultProps: TNotificationsContext = {

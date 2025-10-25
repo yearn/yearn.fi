@@ -2,22 +2,22 @@ import Link from '@components/Link'
 import { Popover, PopoverButton, PopoverPanel, Transition, TransitionChild } from '@headlessui/react'
 import { usePathname } from '@hooks/usePathname'
 import { cl } from '@lib/utils'
-import type { AnimationProps } from 'framer-motion'
+import type { MotionProps, Transition as MotionTransition, Variants } from 'framer-motion'
 import { motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { cloneElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import { LogoYearn } from '../icons/LogoYearn'
 import { APPS } from './YearnApps'
 
 type TMotionDiv = {
-  animate: AnimationProps['animate']
+  animate: MotionProps['animate']
   name: string
   children: ReactElement
 }
 
-const transition = { duration: 0.4, ease: 'easeInOut' }
-const variants = {
+const transition: MotionTransition = { duration: 0.4, ease: 'easeInOut' }
+const variants: Variants = {
   initial: { opacity: 0, transition },
   enter: { opacity: 1, transition },
   exit: { opacity: 0, transition }

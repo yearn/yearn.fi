@@ -12,7 +12,7 @@ import { findLatestAPY } from '@vaults-v2/components/details/tabs/findLatestAPY'
 import type { TYDaemonReports } from '@vaults-v2/schemas/reportsSchema'
 import { yDaemonReportsSchema } from '@vaults-v2/schemas/reportsSchema'
 import { getChainBgColor } from '@vaults-v3/utils'
-import { motion } from 'framer-motion'
+import { motion, type Variants } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 import Link from '/src/components/Link'
@@ -57,7 +57,7 @@ export function VaultsListStrategy({
 
   const finalApr = apr || latestApr
 
-  const expandAnimation = {
+  const expandAnimation: Variants = {
     initial: {
       opacity: 0,
       height: 0,
@@ -72,7 +72,7 @@ export function VaultsListStrategy({
       scale: 1,
       transition: {
         duration: 0.3,
-        ease: [0.33, 1, 0.68, 1], // cubic-bezier easing for a smooth feel
+        ease: [0.33, 1, 0.68, 1] as const, // cubic-bezier easing for a smooth feel
         staggerChildren: 0.05,
         when: 'beforeChildren'
       }
@@ -84,7 +84,7 @@ export function VaultsListStrategy({
       scale: 0.95,
       transition: {
         duration: 0.2,
-        ease: [0.33, 0, 0.67, 0]
+        ease: [0.33, 0, 0.67, 0] as const
       }
     }
   }

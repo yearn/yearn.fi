@@ -91,8 +91,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'wagmi-vendor': ['wagmi', 'viem', '@wagmi/core', '@wagmi/connectors'],
+          'react-vendor': ['react', 'react-dom', 'react-router'],
+          'wagmi-vendor': ['wagmi', 'viem'],
           rainbowkit: ['@rainbow-me/rainbowkit'],
           'ui-vendor': ['@headlessui/react', 'framer-motion', 'recharts']
         }
@@ -103,7 +103,7 @@ export default defineConfig({
     include: [
       'react',
       'react-dom',
-      'react-router-dom',
+      'react-router',
       'viem',
       'viem/chains',
       'viem/actions',

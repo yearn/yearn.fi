@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import type { LinkProps as RouterLinkProps } from 'react-router-dom'
-import { Link as RouterLink } from 'react-router-dom'
+import type { LinkProps as RouterLinkProps } from 'react-router'
+import { Link as RouterLink } from 'react-router'
 
 export type LinkProps = {
   href?: string

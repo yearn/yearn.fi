@@ -20,7 +20,7 @@ import { Solver } from '@vaults-v2/types/solvers'
 import { motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { useCallback, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import type { Hash, TransactionReceipt } from 'viem'
 import { maxUint256 } from 'viem'
 

@@ -6,7 +6,7 @@ import type { TDict } from '@lib/types'
 import { VaultsHeader } from '@vaults-v2/components/header/VaultsHeader'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 
 type TCurrentApp = {
   name: AppName | 'Home' | string
