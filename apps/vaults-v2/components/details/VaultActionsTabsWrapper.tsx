@@ -1,20 +1,16 @@
 import Link from '@components/Link'
 import { InfoTooltip } from '@lib/components/InfoTooltip'
 import { Switch } from '@lib/components/Switch'
-import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
-import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
 import type { TNormalizedBN } from '@lib/types'
-import { cl, decodeAsBigInt, toAddress, toNormalizedBN, toNormalizedValue } from '@lib/utils'
-import { VEYFI_ADDRESS } from '@lib/utils/constants'
+import { cl, toAddress, toNormalizedValue } from '@lib/utils'
+import { DISABLED_VEYFI_GAUGES_VAULTS_LIST, VEYFI_ADDRESS } from '@lib/utils/constants'
 import { parseMarkdown } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { retrieveConfig } from '@lib/utils/wagmi'
 import { useUpdateEffect } from '@react-hookz/web'
 import { SettingsPopover } from '@vaults-v2/components/SettingsPopover'
 import { Flow, useActionFlow } from '@vaults-v2/contexts/useActionFlow'
 import { useVaultStakingData } from '@vaults-v2/hooks/useVaultStakingData'
-import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
 import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
 import { VEYFI_ABI } from '@vaults-v2/utils/abi/veYFI.abi'
 import { VaultDetailsQuickActionsButtons } from '@vaults-v3/components/details/actions/QuickActionsButtons'
@@ -27,8 +23,7 @@ import { getCurrentTab, tabs, VaultDetailsTab } from '@vaults-v3/components/deta
 import type { ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { useBlockNumber, useReadContract } from 'wagmi'
-import { readContracts } from 'wagmi/actions'
+import { useReadContract } from 'wagmi'
 
 /**************************************************************************************************
  ** The MobileTabButtons component will be used to display the tab buttons to navigate between the
@@ -66,12 +61,10 @@ function MobileTabButtons(props: {
 export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const [searchParams] = useSearchParams()
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
-  const { address } = useWeb3()
   const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })
   const { onSwitchSelectedOptions, isDepositing, actionParams, hasVeYFIBalance, veYFIBalance } = useActionFlow()
   const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]])
   const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined)
-  const [hasStakingRewardsLive, setHasStakingRewardsLive] = useState(false)
   const [currentTab, setCurrentTab] = useState<TTabsOptions>(
     getCurrentTab({
       isDepositing,
@@ -80,6 +73,15 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
     })
   )
   const hasStakingRewards = Boolean(currentVault.staking.available)
+  const hasActiveRewardsProgram = useMemo((): boolean => {
+    return (currentVault.staking.rewards || []).some((reward) => !reward.isFinished)
+  }, [currentVault.staking.rewards])
+  const stakingSource = currentVault.staking.source
+  const isVeYFIGauge = stakingSource === 'VeYFI'
+  const isGaugeDisabled = isVeYFIGauge
+    ? !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find((vault) => vault.address === currentVault.address)
+    : false
+  const isGaugeActive = currentVault.staking.available && (isVeYFIGauge ? !isGaugeDisabled : hasActiveRewardsProgram)
   const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
   /**********************************************************************************************
    ** Retrieve some data for correct display of APR
@@ -104,52 +106,13 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
   })
   const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0
 
-  const { data: blockNumber } = useBlockNumber({ watch: true })
-  /**********************************************************************************************
-   ** Retrieve some data from the vault and the staking contract to display a comprehensive view
-   ** of the user's holdings in the vault.
-   **********************************************************************************************/
-  const refetch = useAsyncTrigger(async (): Promise<void> => {
-    if (!currentVault.staking.available) {
-      return
-    }
-    const result = await readContracts(retrieveConfig(), {
-      contracts: [
-        {
-          address: toAddress(currentVault.address),
-          abi: VAULT_V3_ABI,
-          chainId: currentVault.chainID,
-          functionName: 'balanceOf',
-          args: [toAddress(address)]
-        },
-        {
-          address: toAddress(currentVault.staking.address),
-          abi: STAKING_REWARDS_ABI,
-          chainId: currentVault.chainID,
-          functionName: 'periodFinish'
-        }
-      ]
-    })
-    setUnstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals))
-    setHasStakingRewardsLive(decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000))
-  }, [currentVault, address])
-
-  /**********************************************************************************************
-   ** As we want live data, we want the data to be refreshed every time the block number changes.
-   ** This way, the user will always have the most up-to-date data.
-   ** For Base chain (8453), we limit updates to reduce RPC calls and prevent rate limiting.
-   **********************************************************************************************/
+  const userHasStakedDeposit = vaultData.stakedBalanceOf.raw > 0n
+  const userHasClaimableRewards = vaultData.stakedEarned.raw > 0n
+  const canShowVeYFIRewards = !isVeYFIGauge ? true : userHasStakedDeposit || userHasClaimableRewards
 
   useEffect(() => {
-    // For Base chain, only refetch every 10 blocks to reduce RPC load
-    if (currentVault.chainID === 8453) {
-      if (blockNumber && Number(blockNumber) % 10 === 0) {
-        refetch()
-      }
-    } else {
-      refetch()
-    }
-  }, [blockNumber, refetch, currentVault.chainID])
+    setUnstakedBalance(vaultData.vaultBalanceOf)
+  }, [vaultData.vaultBalanceOf])
 
   /**********************************************************************************************
    ** Update the current state based on the query parameter action. This will allow the user to
@@ -197,6 +160,13 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
     }
   }, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards])
 
+  useEffect(() => {
+    if (currentTab.value === 3 && isVeYFIGauge && !canShowVeYFIRewards) {
+      setCurrentTab(tabs[0])
+      onSwitchSelectedOptions(Flow.Deposit)
+    }
+  }, [currentTab.value, isVeYFIGauge, canShowVeYFIRewards, onSwitchSelectedOptions])
+
   /************************************************************************************************
    * This effect manages the auto-staking feature based on staking rewards availability.
    * It disables auto-staking if there are no staking rewards and the last reward ended over a week ago.
@@ -209,12 +179,16 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
     const hasStakingRewardsEndedOverAWeekAgo = currentVault.staking.rewards?.some(
       (el) => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
     )
+    if (!isGaugeActive) {
+      setIsAutoStakingEnabled(false)
+      return
+    }
     if (!hasStakingRewards && hasStakingRewardsEndedOverAWeekAgo) {
       setIsAutoStakingEnabled(false)
       return
     }
     setIsAutoStakingEnabled(true)
-  }, [currentVault.staking.rewards, hasStakingRewards, setIsAutoStakingEnabled])
+  }, [currentVault.staking.rewards, hasStakingRewards, isGaugeActive, setIsAutoStakingEnabled])
 
   const isSonneRetiredVault =
     toAddress(currentVault.address) === toAddress('0x5b977577eb8a480f63e11fc615d6753adb8652ae') ||
@@ -348,12 +322,14 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
         <div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
         {currentTab.value === 3 ? (
-          <RewardsTab
-            currentVault={currentVault}
-            vaultData={vaultData}
-            updateVaultData={updateVaultData}
-            hasStakingRewardsLive={hasStakingRewardsLive}
-          />
+          !isVeYFIGauge || canShowVeYFIRewards ? (
+            <RewardsTab
+              currentVault={currentVault}
+              vaultData={vaultData}
+              updateVaultData={updateVaultData}
+              isGaugeActive={isGaugeActive}
+            />
+          ) : null
         ) : (
           <div
             className={
@@ -376,7 +352,7 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
             />
             <div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
               <div>
-                {hasStakingRewardsLive && isDepositing ? (
+                {isGaugeActive && isDepositing ? (
                   <div className={cl('mt-1 flex justify-between pb-[10px]')}>
                     <div className={'flex items-center gap-5'}>
                       <InfoTooltip
@@ -397,15 +373,12 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
                 ) : (
                   <div className={'h-8'} />
                 )}
-                <VaultDetailsQuickActionsButtons
-                  currentVault={currentVault}
-                  hasStakingRewardsLive={hasStakingRewardsLive}
-                />
+                <VaultDetailsQuickActionsButtons currentVault={currentVault} isGaugeActive={isGaugeActive} />
               </div>
             </div>
           </div>
         )}
-        {currentTab.value !== 3 && currentVault.staking.rewards && (
+        {currentTab.value !== 3 && currentVault.staking.rewards && (!isVeYFIGauge || canShowVeYFIRewards) && (
           <Fragment>
             <div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
               <div
@@ -423,7 +396,7 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
                 currentVault={currentVault}
                 vaultData={vaultData}
                 updateVaultData={updateVaultData}
-                hasStakingRewardsLive={hasStakingRewardsLive}
+                isGaugeActive={isGaugeActive}
               />
             </div>
           </Fragment>

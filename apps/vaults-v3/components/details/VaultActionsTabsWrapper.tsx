@@ -1,26 +1,13 @@
 import { InfoTooltip } from '@lib/components/InfoTooltip'
 import { Switch } from '@lib/components/Switch'
-import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
-import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
 import type { TNormalizedBN } from '@lib/types'
-import {
-  cl,
-  decodeAsBigInt,
-  formatAmount,
-  parseMarkdown,
-  toAddress,
-  toBigInt,
-  toNormalizedBN,
-  toNormalizedValue
-} from '@lib/utils'
+import { cl, formatAmount, parseMarkdown, toAddress, toBigInt, toNormalizedValue } from '@lib/utils'
 import { DISABLED_VEYFI_GAUGES_VAULTS_LIST, VEYFI_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { retrieveConfig } from '@lib/utils/wagmi'
 import { useUpdateEffect } from '@react-hookz/web'
 import { Flow, useActionFlow } from '@vaults-v2/contexts/useActionFlow'
 import { useVaultStakingData } from '@vaults-v2/hooks/useVaultStakingData'
-import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
 import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
 import { VEYFI_ABI } from '@vaults-v2/utils/abi/veYFI.abi'
 import { VaultDetailsQuickActionsButtons } from '@vaults-v3/components/details/actions/QuickActionsButtons'
@@ -31,10 +18,9 @@ import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
 import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
 import type { ReactElement } from 'react'
-import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router'
-import { useBlockNumber, useReadContract } from 'wagmi'
-import { readContracts } from 'wagmi/actions'
+import { useReadContract } from 'wagmi'
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug
@@ -96,14 +82,14 @@ export function getCurrentTab(props: {
 export function BoostMessage(props: {
   currentVault: TYDaemonVault
   currentTab: number
-  hasStakingRewardsLive: boolean
+  canStake: boolean
 }): ReactElement {
   const { isAutoStakingEnabled } = useYearn()
   const hasStakingRewards = Boolean(props.currentVault.staking.available)
   const stakingRewardSource = props.currentVault.staking.source
   const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR
 
-  if (props.currentTab === 0 && hasStakingRewards && !props.hasStakingRewardsLive && stakingRewardSource !== 'VeYFI') {
+  if (props.currentTab === 0 && hasStakingRewards && !props.canStake && stakingRewardSource !== 'VeYFI') {
     return <Fragment />
   }
 
@@ -307,13 +293,10 @@ export const VaultDetailsTab = React.memo(function VaultDetailsTab(props: {
  *************************************************************************************************/
 function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance } = useActionFlow()
-  const { address } = useWeb3()
   const [searchParams] = useSearchParams()
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })
   const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined)
-  const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]])
-  const [hasStakingRewardsLive, setHasStakingRewardsLive] = useState(false)
   const [currentTab, setCurrentTab] = useState<TTabsOptions>(
     getCurrentTab({
       isDepositing,
@@ -326,6 +309,32 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
 
   const shouldForceDisplayBoostTab = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
     (vault) => vault.address === currentVault.address
+  )
+
+  const hasActiveRewardsProgram = useMemo((): boolean => {
+    return (currentVault.staking.rewards || []).some((reward) => !reward.isFinished)
+  }, [currentVault.staking.rewards])
+
+  const userHasStakedDeposit = vaultData.stakedBalanceOf.raw > 0n
+  const userHasClaimableRewards = vaultData.stakedEarned.raw > 0n
+
+  const stakingSource = currentVault.staking.source
+  const isVeYFIGauge = stakingSource === 'VeYFI'
+  const isGaugeDisabled = isVeYFIGauge && shouldForceDisplayBoostTab
+
+  const canShowVeYFIRewards = userHasStakedDeposit || userHasClaimableRewards
+
+  const shouldDisplayRewardsTab =
+    currentVault.staking.available &&
+    (isVeYFIGauge ? canShowVeYFIRewards : userHasStakedDeposit || userHasClaimableRewards || hasActiveRewardsProgram)
+
+  const shouldRenderRewardsTab = isVeYFIGauge
+    ? canShowVeYFIRewards
+    : shouldForceDisplayBoostTab || shouldDisplayRewardsTab
+  const isGaugeActive = currentVault.staking.available && (isVeYFIGauge ? !isGaugeDisabled : hasActiveRewardsProgram)
+
+  const [possibleTabs, setPossibleTabs] = useState<TTabsOptions[]>(() =>
+    shouldRenderRewardsTab ? [tabs[0], tabs[1], tabs[3]] : [tabs[0], tabs[1]]
   )
 
   const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
@@ -353,7 +362,6 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
   })
   const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0
 
-  const stakingSource = currentVault.staking.source
   const getTabLabel = useCallback((): string => {
     if (stakingSource === 'VeYFI') {
       return 'veYFI BOOST'
@@ -373,66 +381,9 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
     return 'Staking'
   }, [stakingSource])
 
-  const { data: blockNumber } = useBlockNumber({ watch: true })
-
-  const lastRefetchTime = useRef(0)
-  const REFETCH_DEBOUNCE_TIME = 5000 // 5 seconds debounce
-
-  /**********************************************************************************************
-   ** Retrieve some data from the vault and the staking contract to display a comprehensive view
-   ** of the user's holdings in the vault.
-   **********************************************************************************************/
-  const refetch = useAsyncTrigger(async (): Promise<void> => {
-    if (!currentVault.staking.available) {
-      return
-    }
-    const result = await readContracts(retrieveConfig(), {
-      contracts: [
-        {
-          address: toAddress(currentVault.address),
-          abi: VAULT_V3_ABI,
-          chainId: currentVault.chainID,
-          functionName: 'balanceOf',
-          args: [toAddress(address)]
-        },
-        {
-          address: toAddress(currentVault.staking.address),
-          abi: STAKING_REWARDS_ABI,
-          chainId: currentVault.chainID,
-          functionName: 'periodFinish',
-          args: []
-        }
-      ]
-    })
-
-    const hasLiveRewards = decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000)
-    setUnstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals))
-    setHasStakingRewardsLive(hasLiveRewards)
-  }, [currentVault, address])
-  /**********************************************************************************************
-   ** As we want live data, we want the data to be refreshed every time the block number changes.
-   ** This way, the user will always have the most up-to-date data.
-   ** For Base chain (8453), we limit updates to reduce RPC calls and prevent rate limiting.
-   ** We also implement debouncing to avoid too frequent updates.
-   **********************************************************************************************/
   useEffect(() => {
-    const now = Date.now()
-    const timeSinceLastRefetch = now - lastRefetchTime.current
-
-    if (timeSinceLastRefetch < REFETCH_DEBOUNCE_TIME) {
-      return
-    }
-
-    if (currentVault.chainID === 8453) {
-      if (blockNumber && Number(blockNumber) % 10 === 0) {
-        lastRefetchTime.current = now
-        refetch()
-      }
-    } else {
-      lastRefetchTime.current = now
-      refetch()
-    }
-  }, [blockNumber, refetch, currentVault.chainID])
+    setUnstakedBalance(vaultData.vaultBalanceOf)
+  }, [vaultData.vaultBalanceOf])
 
   /**********************************************************************************************
    ** Update the current state based on the query parameter action. This will allow the user to
@@ -459,7 +410,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
   useUpdateEffect((): void => {
     if (currentVault?.migration?.available && actionParams.isReady) {
       const tabsToDisplay = [tabs[1], tabs[2]]
-      if (hasStakingRewards) {
+      if (shouldRenderRewardsTab) {
         tabsToDisplay.push(tabs[3])
       }
       setPossibleTabs(tabsToDisplay)
@@ -467,18 +418,37 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
       onSwitchSelectedOptions(Flow.Migrate)
     } else if (currentVault?.info?.isRetired && actionParams.isReady) {
       const tabsToDisplay = [tabs[1]]
-      if (hasStakingRewards) {
+      if (shouldRenderRewardsTab) {
         tabsToDisplay.push(tabs[3])
       }
       setPossibleTabs(tabsToDisplay)
       setCurrentTab(tabs[1])
       onSwitchSelectedOptions(Flow.Withdraw)
-    } else if (hasStakingRewards) {
+    } else if (shouldRenderRewardsTab) {
       setPossibleTabs([tabs[0], tabs[1], tabs[3]])
     } else {
       setPossibleTabs([tabs[0], tabs[1]])
     }
-  }, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards])
+  }, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, shouldRenderRewardsTab])
+
+  useEffect(() => {
+    if (!shouldRenderRewardsTab && currentTab.value === tabs[3].value) {
+      const fallbackTab = getCurrentTab({
+        isDepositing,
+        hasMigration: currentVault?.migration?.available,
+        isRetired: currentVault?.info?.isRetired
+      })
+      setCurrentTab(fallbackTab)
+      onSwitchSelectedOptions(fallbackTab.flowAction)
+    }
+  }, [
+    shouldRenderRewardsTab,
+    currentTab.value,
+    isDepositing,
+    currentVault?.migration?.available,
+    currentVault?.info?.isRetired,
+    onSwitchSelectedOptions
+  ])
 
   const hasStakingRewardsEndedOverAWeekAgo = useMemo(() => {
     return currentVault.staking.rewards?.some(
@@ -495,12 +465,16 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
    * for vaults with expired or long-inactive staking programs.
    ************************************************************************************************/
   useEffect(() => {
+    if (!isGaugeActive) {
+      setIsAutoStakingEnabled(false)
+      return
+    }
     if (!hasStakingRewards && hasStakingRewardsEndedOverAWeekAgo) {
       setIsAutoStakingEnabled(false)
       return
     }
     setIsAutoStakingEnabled(true)
-  }, [hasStakingRewardsEndedOverAWeekAgo, hasStakingRewards, setIsAutoStakingEnabled])
+  }, [isGaugeActive, hasStakingRewardsEndedOverAWeekAgo, hasStakingRewards, setIsAutoStakingEnabled])
 
   const isSonneRetiredVault = useMemo(
     () =>
@@ -644,10 +618,10 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
         </div>
         <div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-        {currentTab.value === 3 ? (
+        {currentTab.value === 3 && currentVault.staking.available ? (
           <RewardsTab
             currentVault={currentVault}
-            hasStakingRewardsLive={hasStakingRewardsLive}
+            isGaugeActive={isGaugeActive}
             vaultData={vaultData}
             updateVaultData={updateVaultData}
           />
@@ -673,7 +647,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
             />
             <div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
               <div>
-                {hasStakingRewardsLive && isDepositing ? (
+                {isGaugeActive && isDepositing ? (
                   <div className={cl('mt-1 flex justify-between pb-[10px]')}>
                     <div className={'flex items-center gap-5'}>
                       <InfoTooltip className={'max-sm:left'} text={tooltipText} size={'sm'} />
@@ -690,15 +664,12 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
                 ) : (
                   <div className={'h-8'} />
                 )}
-                <VaultDetailsQuickActionsButtons
-                  currentVault={currentVault}
-                  hasStakingRewardsLive={hasStakingRewardsLive}
-                />
+                <VaultDetailsQuickActionsButtons currentVault={currentVault} isGaugeActive={isGaugeActive} />
               </div>
             </div>
           </div>
         )}
-        {(currentTab.value !== 3 && currentVault.staking.rewards) || shouldForceDisplayBoostTab ? (
+        {currentTab.value !== 3 && shouldRenderRewardsTab ? (
           <Fragment>
             <div className={'flex flex-row items-center justify-between pl-4 md:px-8'}>
               <div
@@ -714,7 +685,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
               <div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
               <RewardsTab
                 currentVault={currentVault}
-                hasStakingRewardsLive={hasStakingRewardsLive}
+                isGaugeActive={isGaugeActive}
                 vaultData={vaultData}
                 updateVaultData={updateVaultData}
               />
