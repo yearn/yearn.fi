@@ -35,34 +35,40 @@ export function VaultForwardAPY({
 
   // Katana
   if (currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined) {
+    const katanaTrigger = (
+      <b className={'yearn--table-data-section-item-value'}>
+        <Renderable shouldRender={true} fallback={'NEW'}>
+          {'⚔️ '}
+          <span
+            className={
+              'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+            }
+            onClick={handleToggle}
+          >
+            <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
+          </span>
+        </Renderable>
+      </b>
+    )
+
     return (
       <div className={'relative flex flex-col items-end md:text-right'}>
-        <span className={onMobileToggle ? 'tooltip' : 'tooltip w-full justify-end'}>
-          <b className={'yearn--table-data-section-item-value'}>
-            <Renderable shouldRender={true} fallback={'NEW'}>
-              {'⚔️ '}
-              <span
-                className={
-                  'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                }
-                onClick={handleToggle}
-              >
-                <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
-              </span>
-            </Renderable>
-          </b>
-          {!onMobileToggle && (
-            <KatanaApyTooltip
-              extrinsicYield={data.katanaExtras.extrinsicYield}
-              katanaNativeYield={data.katanaExtras.katanaNativeYield}
-              fixedRateKatanRewardsAPR={data.katanaExtras.FixedRateKatanaRewards}
-              katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR}
-              katanaBonusAPR={data.katanaExtras.katanaBonusAPY}
-              steerPointsPerDollar={data.katanaExtras.steerPointsPerDollar}
-              currentVault={currentVault}
-            />
-          )}
-        </span>
+        {onMobileToggle ? (
+          <span className={'flex w-full justify-end'}>{katanaTrigger}</span>
+        ) : (
+          <KatanaApyTooltip
+            extrinsicYield={data.katanaExtras.extrinsicYield}
+            katanaNativeYield={data.katanaExtras.katanaNativeYield}
+            fixedRateKatanRewardsAPR={data.katanaExtras.FixedRateKatanaRewards}
+            katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR}
+            katanaBonusAPR={data.katanaExtras.katanaBonusAPY}
+            steerPointsPerDollar={data.katanaExtras.steerPointsPerDollar}
+            currentVault={currentVault}
+            className={'w-full justify-end md:justify-end'}
+          >
+            {katanaTrigger}
+          </KatanaApyTooltip>
+        )}
         {onMobileToggle ? null : mobileOpen ? (
           <div
             className={'md:hidden mt-2 w-full rounded-xl border border-neutral-300 bg-neutral-100 p-3 text-neutral-900'}
@@ -156,8 +162,14 @@ export function VaultForwardAPY({
     if (data.rewardsAprSum > 0) {
       return (
         <div className={'relative flex flex-col items-end md:text-right'}>
-          <span className={'tooltip'} onClick={handleToggle}>
-            <b className={'yearn--table-data-section-item-value'}>
+          <APYTooltip
+            baseAPY={data.netApr}
+            hasPendleArbRewards={data.hasPendleArbRewards}
+            hasKelp={data.hasKelp}
+            hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+            rewardsAPY={data.rewardsAprSum}
+          >
+            <b className={'yearn--table-data-section-item-value'} onClick={handleToggle}>
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 {'⚡️ '}
                 <span
@@ -174,14 +186,7 @@ export function VaultForwardAPY({
                 </span>
               </Renderable>
             </b>
-            <APYTooltip
-              baseAPY={data.netApr}
-              hasPendleArbRewards={data.hasPendleArbRewards}
-              hasKelp={data.hasKelp}
-              hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-              rewardsAPY={data.rewardsAprSum}
-            />
-          </span>
+          </APYTooltip>
           {onMobileToggle ? null : mobileOpen ? (
             <div
               className={
@@ -264,79 +269,80 @@ export function VaultForwardAPY({
   if (data.mode === 'boosted' && data.isBoosted) {
     const unBoostedAPY = data.unboostedApr || 0
     return (
-      <span className={'tooltip'} onClick={handleToggle}>
-        <div className={'flex flex-col items-end md:text-right'}>
-          <b
-            className={
-              'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-            }
-          >
-            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-              <RenderAmount
-                shouldHideTooltip
-                value={currentVault.apr.forwardAPR.netAPR}
-                symbol={'percent'}
-                decimals={6}
-              />
-            </Renderable>
-          </b>
-          <small className={'text-xs text-neutral-800'}>
-            <Renderable shouldRender={data.isBoosted}>{`BOOST ${formatAmount(data.boost || 0, 2, 2)}x`}</Renderable>
-          </small>
-          <APYTooltip
-            baseAPY={unBoostedAPY}
-            hasPendleArbRewards={data.hasPendleArbRewards}
-            hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-            hasKelp={data.hasKelp}
-            boost={data.boost}
-          />
-          {mobileOpen ? (
-            <div
+      <APYTooltip
+        baseAPY={unBoostedAPY}
+        hasPendleArbRewards={data.hasPendleArbRewards}
+        hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+        hasKelp={data.hasKelp}
+        boost={data.boost}
+      >
+        <span onClick={handleToggle}>
+          <div className={'flex flex-col items-end md:text-right'}>
+            <b
               className={
-                'md:hidden mt-2 w-full rounded-xl border border-neutral-300 bg-neutral-100 p-3 text-neutral-900'
+                'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
               }
-              onClick={(e): void => e.stopPropagation()}
             >
-              <div className={'flex flex-col gap-2'}>
-                <div className={'flex items-center justify-between'}>
-                  <p className={'text-xs text-neutral-800'}>{'Base APY'}</p>
-                  <span className={'font-number'}>
-                    <RenderAmount shouldHideTooltip value={unBoostedAPY} symbol={'percent'} decimals={6} />
-                  </span>
-                </div>
-                <div className={'flex items-center justify-between'}>
-                  <p className={'text-xs text-neutral-800'}>{'Boost'}</p>
-                  <span className={'font-number'}>{formatAmount(data.boost || 0, 2, 2)}x</span>
-                </div>
-                {data.hasPendleArbRewards ? (
+              <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
+                <RenderAmount
+                  shouldHideTooltip
+                  value={currentVault.apr.forwardAPR.netAPR}
+                  symbol={'percent'}
+                  decimals={6}
+                />
+              </Renderable>
+            </b>
+            <small className={'text-xs text-neutral-800'}>
+              <Renderable shouldRender={data.isBoosted}>{`BOOST ${formatAmount(data.boost || 0, 2, 2)}x`}</Renderable>
+            </small>
+            {mobileOpen ? (
+              <div
+                className={
+                  'md:hidden mt-2 w-full rounded-xl border border-neutral-300 bg-neutral-100 p-3 text-neutral-900'
+                }
+                onClick={(e): void => e.stopPropagation()}
+              >
+                <div className={'flex flex-col gap-2'}>
                   <div className={'flex items-center justify-between'}>
-                    <p className={'text-xs text-neutral-800'}>{'Extra ARB'}</p>
-                    <span className={'font-number'}>{'2 500/week'}</span>
+                    <p className={'text-xs text-neutral-800'}>{'Base APY'}</p>
+                    <span className={'font-number'}>
+                      <RenderAmount shouldHideTooltip value={unBoostedAPY} symbol={'percent'} decimals={6} />
+                    </span>
                   </div>
-                ) : null}
-                {data.hasKelp ? (
                   <div className={'flex items-center justify-between'}>
-                    <p className={'text-xs text-neutral-800'}>{'Extra Kelp Miles'}</p>
-                    <span className={'font-number'}>{'1x'}</span>
+                    <p className={'text-xs text-neutral-800'}>{'Boost'}</p>
+                    <span className={'font-number'}>{formatAmount(data.boost || 0, 2, 2)}x</span>
                   </div>
-                ) : null}
-                {data.hasKelpNEngenlayer ? (
-                  <>
+                  {data.hasPendleArbRewards ? (
+                    <div className={'flex items-center justify-between'}>
+                      <p className={'text-xs text-neutral-800'}>{'Extra ARB'}</p>
+                      <span className={'font-number'}>{'2 500/week'}</span>
+                    </div>
+                  ) : null}
+                  {data.hasKelp ? (
                     <div className={'flex items-center justify-between'}>
                       <p className={'text-xs text-neutral-800'}>{'Extra Kelp Miles'}</p>
                       <span className={'font-number'}>{'1x'}</span>
                     </div>
-                    <div className={'flex items-center justify-between'}>
-                      <p className={'text-xs text-neutral-800'}>{'Extra EigenLayer Points'}</p>
-                      <span className={'font-number'}>{'1x'}</span>
-                    </div>
-                  </>
-                ) : null}
+                  ) : null}
+                  {data.hasKelpNEngenlayer ? (
+                    <>
+                      <div className={'flex items-center justify-between'}>
+                        <p className={'text-xs text-neutral-800'}>{'Extra Kelp Miles'}</p>
+                        <span className={'font-number'}>{'1x'}</span>
+                      </div>
+                      <div className={'flex items-center justify-between'}>
+                        <p className={'text-xs text-neutral-800'}>{'Extra EigenLayer Points'}</p>
+                        <span className={'font-number'}>{'1x'}</span>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          ) : null}
-        </div>
-      </span>
+            ) : null}
+          </div>
+        </span>
+      </APYTooltip>
     )
   }
 
@@ -360,8 +366,15 @@ export function VaultForwardAPY({
 
     return (
       <div className={'relative flex flex-col items-end md:text-right'}>
-        <span className={'tooltip'} onClick={handleToggle}>
-          <b className={'yearn--table-data-section-item-value whitespace-nowrap'}>
+        <APYTooltip
+          baseAPY={data.baseForwardApr}
+          rewardsAPY={veYFIRange ? undefined : data.rewardsAprSum}
+          hasPendleArbRewards={data.hasPendleArbRewards}
+          hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+          hasKelp={data.hasKelp}
+          range={veYFIRange}
+        >
+          <b className={'yearn--table-data-section-item-value whitespace-nowrap'} onClick={handleToggle}>
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               {'⚡️ '}
               <span
@@ -371,9 +384,9 @@ export function VaultForwardAPY({
               >
                 {estAPYRange ? (
                   <Fragment>
-                    <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
+                    <RenderAmount shouldHideTooltip value={estAPYRange![0]} symbol={'percent'} decimals={6} />
                     &nbsp;&rarr;&nbsp;
-                    <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
+                    <RenderAmount shouldHideTooltip value={estAPYRange![1]} symbol={'percent'} decimals={6} />
                   </Fragment>
                 ) : (
                   <RenderAmount
@@ -386,15 +399,7 @@ export function VaultForwardAPY({
               </span>
             </Renderable>
           </b>
-          <APYTooltip
-            baseAPY={data.baseForwardApr}
-            rewardsAPY={veYFIRange ? undefined : data.rewardsAprSum}
-            hasPendleArbRewards={data.hasPendleArbRewards}
-            hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-            hasKelp={data.hasKelp}
-            range={veYFIRange}
-          />
-        </span>
+        </APYTooltip>
         {mobileOpen ? (
           <div
             className={'md:hidden mt-2 w-full rounded-xl border border-neutral-300 bg-neutral-100 p-3 text-neutral-900'}
@@ -411,9 +416,9 @@ export function VaultForwardAPY({
                 <div className={'flex items-center justify-between'}>
                   <p className={'text-xs text-neutral-800'}>{'Rewards APR'}</p>
                   <span className={'font-number'}>
-                    <RenderAmount shouldHideTooltip value={veYFIRange[0]} symbol={'percent'} decimals={6} />
+                    <RenderAmount shouldHideTooltip value={veYFIRange![0]} symbol={'percent'} decimals={6} />
                     {' → '}
-                    <RenderAmount shouldHideTooltip value={veYFIRange[1]} symbol={'percent'} decimals={6} />
+                    <RenderAmount shouldHideTooltip value={veYFIRange![1]} symbol={'percent'} decimals={6} />
                   </span>
                 </div>
               ) : (
@@ -485,7 +490,7 @@ export function VaultForwardAPY({
     )
   }
 
-  // Fallback historical APY
+  // Fallback historical APY - This will always be reached for any unhandled case
   const hasZeroAPY = isZero(data.netApr) || Number((data.netApr || 0).toFixed(2)) === 0
   return (
     <div className={'relative flex flex-col items-end md:text-right'}>

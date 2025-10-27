@@ -41,12 +41,13 @@ export const Tooltip: FC<{
         typeof window !== 'undefined' &&
         createPortal(
           <div
-            className={'pointer-events-none fixed z-9999'}
             style={{
+              position: 'fixed',
               left: tooltipPosition.x,
               top: tooltipPosition.y,
               transform: 'translateX(-50%)',
-              width: '15rem'
+              zIndex: 9999,
+              pointerEvents: 'none'
             }}
           >
             {tooltip}
