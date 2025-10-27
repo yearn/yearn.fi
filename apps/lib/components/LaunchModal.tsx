@@ -388,7 +388,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                             type={'button'}
                             onClick={(): void => handleSelectGroup(group.title)}
                             className={cl(
-                              'rounded-xl border px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.25em] transition-colors',
+                              'rounded-xl border px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.25em]',
                               'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                               isActive
                                 ? forceDark
