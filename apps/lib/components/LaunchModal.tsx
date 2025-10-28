@@ -37,25 +37,47 @@ function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href)
 }
 
-function matchesPathname(pathnames: string[] | undefined, pathname: string): boolean {
-  if (!pathnames) {
-    return false
+function normalizeHost(host: string): string {
+  const lower = host.toLowerCase()
+
+  if (lower === 'localhost' || lower === '127.0.0.1' || lower === '::1') {
+    return 'yearn.fi'
   }
 
-  return pathnames.some((path) => {
-    if (path === '/') {
-      return pathname === '/'
-    }
+  if (lower.endsWith('.vercel.app')) {
+    return 'yearn.fi'
+  }
 
-    return pathname.startsWith(path)
+  return lower
+}
+
+function matchesPathname(pathnames: string[] | undefined, pathname: string): boolean {
+  if (!pathnames?.length) return false
+
+  const norm = (p: string) => {
+    const base = p.split('?')[0]
+    return base.length > 1 && base.endsWith('/') ? base.slice(0, -1) : base || '/'
+  }
+
+  const current = norm(pathname)
+
+  return pathnames.some((p) => {
+    const target = norm(p)
+    if (target === '/') return current === '/'
+    // exact or with a slash boundary ("/v3" matches "/v3" and "/v3/…", not "/v33")
+    return current === target || current.startsWith(`${target}/`)
   })
 }
 
 function isTileActive(tile: TAppTile, pathname: string, currentHost: string): boolean {
-  const matchesHost = tile.hosts?.some((host) => currentHost.includes(host.toLowerCase())) ?? false
+  // If tile specifies hosts, they must match; otherwise treat host as unconstrained (true).
+  const matchesHost = tile.hosts?.some((host) => currentHost === normalizeHost(host)) ?? true
+
+  // If tile specifies pathnames, they must match; otherwise treat path as unconstrained (false).
+  // This keeps tiles with no pathnames from ever being “active”.
   const matchesPath = matchesPathname(tile.pathnames, pathname)
 
-  return matchesHost || matchesPath
+  return matchesHost && matchesPath
 }
 
 function LaunchTile({
@@ -132,7 +154,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
       return ''
     }
 
-    return window.location.host.toLowerCase()
+    return normalizeHost(window.location.hostname)
   }, [])
 
   const activeGroup = useMemo(
