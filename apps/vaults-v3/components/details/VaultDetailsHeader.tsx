@@ -91,23 +91,23 @@ function VaultAPY({
       <VaultHeaderLineItem
         label={'Estimated APR'}
         legend={
-          <span className={'tooltip'}>
+          <KatanaApyTooltip
+            extrinsicYield={katanaExtras.extrinsicYield}
+            katanaNativeYield={katanaExtras.katanaNativeYield}
+            fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards}
+            katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR}
+            katanaBonusAPR={katanaExtras.katanaBonusAPY}
+            steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
+            currentVault={currentVault}
+            position="top"
+            maxWidth="w-max"
+            className={'items-center justify-center md:justify-center'}
+          >
             <div className={'flex flex-row items-center space-x-2'}>
               <div>{'APR Breakdown '}</div>
               <IconQuestion className={'hidden md:block'} />
             </div>
-            <KatanaApyTooltip
-              extrinsicYield={katanaExtras.extrinsicYield}
-              katanaNativeYield={katanaExtras.katanaNativeYield}
-              fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards}
-              katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR}
-              katanaBonusAPR={katanaExtras.katanaBonusAPY}
-              steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
-              currentVault={currentVault}
-              position="top"
-              maxWidth="w-max"
-            />
-          </span>
+          </KatanaApyTooltip>
         }
       >
         <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
