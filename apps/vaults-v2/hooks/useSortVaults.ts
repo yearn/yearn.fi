@@ -26,13 +26,13 @@ export function useSortVaults(
   sortDirection: TSortDirection
 ): TYDaemonVaults {
   const { getBalance } = useWallet()
-  const { getPrice } = useYearn()
+  const { getPrice, katanaAprs } = useYearn()
 
   const sortedByName = useCallback((): TYDaemonVaults => {
     if (sortBy !== 'estAPY') {
       return vaultList
     }
-    return vaultList.sort((a, b): number =>
+    return vaultList.toSorted((a, b): number =>
       stringSort({
         a: getVaultName(a),
         b: getVaultName(b),
@@ -45,9 +45,22 @@ export function useSortVaults(
     if (sortBy !== 'estAPY') {
       return vaultList
     }
-    return vaultList.sort((a, b): number => {
+    return vaultList.toSorted((a, b): number => {
       let aAPY = 0
-      if (a.apr?.forwardAPR.type === '') {
+      // Handle Katana vaults (chainID 747474)
+      if (a.chainID === 747474) {
+        const katanaAprData = katanaAprs?.[toAddress(a.address)]?.apr?.extra
+        if (katanaAprData) {
+          // Calculate total APR excluding legacy katanaRewardsAPR
+          aAPY =
+            (katanaAprData.extrinsicYield || 0) +
+            (katanaAprData.katanaNativeYield || 0) +
+            (katanaAprData.FixedRateKatanaRewards || 0) +
+            (katanaAprData.katanaAppRewardsAPR || 0) +
+            (katanaAprData.katanaBonusAPY || 0) +
+            (katanaAprData.steerPointsPerDollar || 0)
+        }
+      } else if (a.apr?.forwardAPR.type === '') {
         aAPY = a.apr.extra.stakingRewardsAPR + a.apr.netAPR
       } else if (a.chainID === 1 && a.apr.forwardAPR.composite.boost > 0 && !a.apr.extra.stakingRewardsAPR) {
         aAPY = a.apr.forwardAPR.netAPR
@@ -64,7 +77,20 @@ export function useSortVaults(
       }
 
       let bAPY = 0
-      if (b.apr?.forwardAPR.type === '') {
+      // Handle Katana vaults (chainID 747474)
+      if (b.chainID === 747474) {
+        const katanaAprData = katanaAprs?.[toAddress(b.address)]?.apr?.extra
+        if (katanaAprData) {
+          // Calculate total APR excluding legacy katanaRewardsAPR
+          bAPY =
+            (katanaAprData.extrinsicYield || 0) +
+            (katanaAprData.katanaNativeYield || 0) +
+            (katanaAprData.FixedRateKatanaRewards || 0) +
+            (katanaAprData.katanaAppRewardsAPR || 0) +
+            (katanaAprData.katanaBonusAPY || 0) +
+            (katanaAprData.steerPointsPerDollar || 0)
+        }
+      } else if (b.apr?.forwardAPR.type === '') {
         bAPY = b.apr?.extra.stakingRewardsAPR + b.apr?.netAPR
       } else if (b.chainID === 1 && b.apr?.forwardAPR.composite.boost > 0 && !b.apr?.extra.stakingRewardsAPR) {
         bAPY = b.apr?.forwardAPR.netAPR
@@ -79,20 +105,19 @@ export function useSortVaults(
           bAPY = b.apr?.netAPR
         }
       }
-
       return numberSort({
         a: aAPY,
         b: bAPY,
         sortDirection
       })
     })
-  }, [sortDirection, vaultList, sortBy])
+  }, [sortDirection, vaultList, sortBy, katanaAprs])
 
   const sortedByAPY = useCallback((): TYDaemonVaults => {
     if (sortBy !== 'APY') {
       return vaultList
     }
-    return vaultList.sort((a, b): number =>
+    return vaultList.toSorted((a, b): number =>
       numberSort({
         a: a.apr?.netAPR || 0,
         b: b.apr?.netAPR || 0,
@@ -105,14 +130,14 @@ export function useSortVaults(
     if (sortBy !== 'tvl') {
       return vaultList
     }
-    return vaultList.sort((a, b): number => numberSort({ a: a.tvl.tvl, b: b.tvl.tvl, sortDirection }))
+    return vaultList.toSorted((a, b): number => numberSort({ a: a.tvl.tvl, b: b.tvl.tvl, sortDirection }))
   }, [sortDirection, vaultList, sortBy])
 
   const sortedByAllocation = useCallback((): TYDaemonVaults => {
     if (sortBy !== 'allocation') {
       return vaultList
     }
-    return vaultList.sort((a, b): number =>
+    return vaultList.toSorted((a, b): number =>
       numberSort({
         a: toNormalizedBN(a.details?.totalDebt || 0, a.token?.decimals).normalized,
         b: toNormalizedBN(b.details?.totalDebt || 0, b.token?.decimals).normalized,
@@ -125,7 +150,7 @@ export function useSortVaults(
     if (sortBy !== 'allocationPercentage') {
       return vaultList
     }
-    return vaultList.sort((a, b): number =>
+    return vaultList.toSorted((a, b): number =>
       numberSort({ a: a.details?.debtRatio, b: b.details?.debtRatio, sortDirection })
     )
   }, [sortDirection, vaultList, sortBy])
@@ -134,14 +159,14 @@ export function useSortVaults(
     if (sortBy !== 'deposited') {
       return vaultList
     }
-    return vaultList.sort((a, b): number => {
+    return vaultList.toSorted((a, b): number => {
+      // Get deposited balance (vault tokens)
       const aDepositedBalance = Number(getBalance({ address: a.address, chainID: a.chainID })?.normalized || 0)
       const bDepositedBalance = Number(getBalance({ address: b.address, chainID: b.chainID })?.normalized || 0)
+
+      // Get staking balance if available
       let aStakedBalance = 0
       let bStakedBalance = 0
-
-      let aStakedValue = 0
-      let bStakedValue = 0
 
       if (a.staking.available) {
         aStakedBalance = Number(getBalance({ address: a.staking.address, chainID: a.chainID })?.normalized || 0)
@@ -150,20 +175,19 @@ export function useSortVaults(
         bStakedBalance = Number(getBalance({ address: b.staking.address, chainID: b.chainID })?.normalized || 0)
       }
 
-      if (aStakedBalance) {
-        const aPrice = getPrice({ address: a.address, chainID: a.chainID }).normalized || 0
-        aStakedValue = aPrice * (aDepositedBalance + aStakedBalance)
-      }
+      // Get vault token price (always, not just when staking exists)
+      const aPrice = getPrice({ address: a.address, chainID: a.chainID }).normalized || 0
+      const bPrice = getPrice({ address: b.address, chainID: b.chainID }).normalized || 0
 
-      if (bStakedBalance) {
-        const bPrice = getPrice({ address: b.address, chainID: b.chainID }).normalized || 0
-        bStakedValue = bPrice * (bDepositedBalance + bStakedBalance)
-      }
+      // Calculate total USD value (deposited + staked)
+      const aTotalValue = aPrice * (aDepositedBalance + aStakedBalance)
+      const bTotalValue = bPrice * (bDepositedBalance + bStakedBalance)
 
-      if (sortDirection === 'asc') {
-        return aStakedValue - bStakedValue
-      }
-      return bStakedValue - aStakedValue
+      return numberSort({
+        a: aTotalValue,
+        b: bTotalValue,
+        sortDirection
+      })
     })
   }, [vaultList, getBalance, sortDirection, getPrice, sortBy])
 
@@ -171,7 +195,7 @@ export function useSortVaults(
     if (sortBy !== 'available') {
       return vaultList
     }
-    return vaultList.sort((a, b): number => {
+    return vaultList.toSorted((a, b): number => {
       let aBalance = Number(getBalance({ address: a.token.address, chainID: a.chainID })?.normalized || 0)
       let bBalance = Number(getBalance({ address: b.token.address, chainID: b.chainID })?.normalized || 0)
       if ([WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(a.token.address))) {
@@ -191,14 +215,14 @@ export function useSortVaults(
     if (sortBy !== 'featuringScore') {
       return vaultList
     }
-    return vaultList.sort((a, b): number => numberSort({ a: a.featuringScore, b: b.featuringScore, sortDirection }))
+    return vaultList.toSorted((a, b): number => numberSort({ a: a.featuringScore, b: b.featuringScore, sortDirection }))
   }, [sortBy, sortDirection, vaultList])
 
   const sortByScore = useCallback((): TYDaemonVaults => {
     if (sortBy !== 'score') {
       return vaultList
     }
-    return vaultList.sort((a, b): number => {
+    return vaultList.toSorted((a, b): number => {
       const aScore = a.info.riskLevel
       const bScore = b.info.riskLevel
       if (sortDirection === 'asc') {

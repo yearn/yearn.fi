@@ -73,7 +73,7 @@ export function ListHero({
         <div className={'w-full md:w-1/3'}>
           <small>{'Search'}</small>
           <SearchBar
-            className={'md:w-full'}
+            className={'md:w-full md:max-w-md'}
             searchPlaceholder={'YFI Vault'}
             searchValue={searchValue}
             onSearch={onSearch}
