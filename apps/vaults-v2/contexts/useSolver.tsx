@@ -81,7 +81,13 @@ export function WithSolverContextApp({ children }: { children: React.ReactElemen
       if (currentNonce !== executionNonce.current) {
         return
       }
-      const requestHash = await hash(serialize({ ...request, solver, expectedOut: toBigInt(quote.value?.raw) }))
+      const requestHash = await hash(
+        serialize({
+          ...request,
+          solver,
+          expectedOut: toBigInt(quote.value?.raw)
+        })
+      )
       setCurrentSolverState({
         ...ctx,
         quote: quote.value,
