@@ -156,10 +156,10 @@ const TOOLS: TAppTile[] = [
   },
   {
     name: 'Kalani',
-    href: 'https://kalani.yearn.farm',
+    href: 'https://kalani.yearn.fi',
     description: 'Vault Manager',
     icon: yearnGlyph({ back: 'text-neutral-900', front: 'text-neutral-0' }),
-    hosts: ['cms.yearn.fi']
+    hosts: ['kalani.yearn.fi']
   },
   {
     name: 'yCMS',
