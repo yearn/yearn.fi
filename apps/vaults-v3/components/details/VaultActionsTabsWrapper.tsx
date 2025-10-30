@@ -16,7 +16,9 @@ import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/ac
 import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
 import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
-import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
+import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@vaults-v3/constants/addresses'
+import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
+
 import type { ReactElement } from 'react'
 import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router'
@@ -132,7 +134,7 @@ export function BoostMessage(props: {
               className={'underline'}
               href={'https://docs.yearn.fi/contributing/governance/veyfi-intro'}
               target={'_blank'}
-              rel={'noreferrer'}
+              rel={'noopener noreferrer'}
             >
               {'FAQ'}
             </a>
@@ -151,7 +153,7 @@ export function BoostMessage(props: {
           </b>
           <b className={'block text-neutral-900'}>
             {'Visit '}
-            <a className={'underline'} href={'https://juiced.app'} target={'_blank'} rel={'noreferrer'}>
+            <a className={'underline'} href={'https://juiced.app'} target={'_blank'} rel={'noopener noreferrer'}>
               {'juiced.app'}
             </a>
             {' to learn more'}
@@ -296,6 +298,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
   const [searchParams] = useSearchParams()
   const { isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const { vaultData, updateVaultData } = useVaultStakingData({ currentVault })
+  const apyData = useVaultApyData(currentVault)
   const [unstakedBalance, setUnstakedBalance] = useState<TNormalizedBN | undefined>(undefined)
   const [currentTab, setCurrentTab] = useState<TTabsOptions>(
     getCurrentTab({
@@ -492,20 +495,68 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
     return 'Deposit your tokens without automatically staking them for additional rewards.'
   }, [isAutoStakingEnabled])
 
+  const isEligibleForSpectraBoost = useMemo(() => {
+    return (
+      currentVault?.chainID === KATANA_CHAIN_ID &&
+      SPECTRA_BOOST_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
+    )
+  }, [currentVault?.chainID, currentVault.address])
+
+  const steerRewardPoints = apyData?.steerPointsPerDollar ?? 0
+  const isEligibleForSteerPoints = steerRewardPoints > 0
+
   return (
     <>
       {currentVault?.chainID === KATANA_CHAIN_ID && (
         <div aria-label={'Rewards Claim Notification'} className={'col-span-12 mt-10'}>
           <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+            {isEligibleForSpectraBoost && (
+              <div>
+                <b>{'Get more yield on Spectra: '}</b>
+                {'deposit vault tokens to '}
+                <a
+                  href="https://app.spectra.finance/pools"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  {'https://app.spectra.finance/pools'}
+                </a>
+                {'.'}
+              </div>
+            )}
+            {isEligibleForSteerPoints && (
+              <div>
+                <b>{`Eligible for ${formatAmount(steerRewardPoints, 2, 2)} STEER points / dollar deposited: `}</b>
+                <a
+                  href="https://app.steer.finance/points"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  {'https://app.steer.finance/points'}
+                </a>
+              </div>
+            )}
             <div>
               <b>{'Bridge to Katana at: '}</b>
-              <a className={'underline'} href={'https://bridge.katana.network/'} target={'_blank'} rel={'noreferrer'}>
+              <a
+                className={'underline'}
+                href={'https://bridge.katana.network/'}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+              >
                 {'https://bridge.katana.network/'}
               </a>
             </div>
             <div>
               <b>{'KAT Rewards earned by Katana Vaults can be claimed at: '}</b>
-              <a className={'underline'} href={'https://katana.yearn.space'} target={'_blank'} rel={'noreferrer'}>
+              <a
+                className={'underline'}
+                href={'https://katana.yearn.space'}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+              >
                 {'https://katana.yearn.space'}
               </a>
             </div>
