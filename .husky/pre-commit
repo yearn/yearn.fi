@@ -1,6 +1,6 @@
 set -e
 
-echo 'husky: lint error found'
+echo 'husky: running linter'
 bun run lint
 
 echo 'husky: running bun run tslint'
