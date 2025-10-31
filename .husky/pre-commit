@@ -3,9 +3,6 @@ set -e
 echo 'husky: lint error found'
 bun run lint
 
-echo 'husky: restaging changes'
-git add -A
-
 echo 'husky: running bun run tslint'
 bun run tslint
 

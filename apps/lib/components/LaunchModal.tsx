@@ -3,7 +3,7 @@ import { IconClose } from '@lib/icons/IconClose'
 import { cl } from '@lib/utils'
 import type { MouseEvent, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import Link from '/src/components/Link'
 
 import { LogoYearn } from '../icons/LogoYearn'
