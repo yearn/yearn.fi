@@ -3,7 +3,7 @@ import { IconChevron } from '@lib/icons/IconChevron'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 
 const variants = {
   initial: { y: 10, opacity: 0 },

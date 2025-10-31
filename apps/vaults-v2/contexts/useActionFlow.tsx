@@ -39,7 +39,7 @@ import { VEYFI_ABI } from '@vaults-v2/utils/abi/veYFI.abi'
 import { setZapOption } from '@vaults-v2/utils/zapOptions'
 import type { ReactNode } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router'
 import { serialize, useReadContract } from 'wagmi'
 import { readContracts, simulateContract } from 'wagmi/actions'
 
