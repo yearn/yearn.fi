@@ -15,7 +15,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@cowprotocol/cow-sdk": "5.10.3",
+    "@cowprotocol/cow-sdk": "7.0.13",
     "@headlessui/react": "2.2.9",
     "@rainbow-me/rainbowkit": "2.2.9",
     "@react-hookz/web": "24.0.4",
