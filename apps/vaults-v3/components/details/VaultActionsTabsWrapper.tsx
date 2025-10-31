@@ -515,7 +515,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
                 <b>{'Get more yield on Spectra: '}</b>
                 {'deposit vault tokens to '}
                 <a
-                  href="https://app.spectra.finance/pools"
+                  href="https://app.spectra.finance/pools?networks=katana"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline"

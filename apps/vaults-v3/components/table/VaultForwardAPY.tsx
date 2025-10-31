@@ -64,7 +64,7 @@ export function VaultForwardAPY({
             katanaBonusAPR={data.katanaExtras.katanaBonusAPY}
             steerPointsPerDollar={data.katanaExtras.steerPointsPerDollar}
             currentVault={currentVault}
-            className={'w-full justify-end md:justify-end'}
+            className={'justify-end md:justify-end'}
           >
             {katanaTrigger}
           </KatanaApyTooltip>
@@ -614,7 +614,7 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
               <li className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
                 {'Earn boosted yield on Spectra if you '}
                 <a
-                  href={'https://app.spectra.finance/pools'}
+                  href={'https://app.spectra.finance/pools?networks=katana'}
                   target={'_blank'}
                   rel={'noopener noreferrer'}
                   className={
