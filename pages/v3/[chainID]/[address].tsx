@@ -15,7 +15,7 @@ import { VaultDetailsTabsWrapper } from '@vaults-v3/components/details/VaultDeta
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router'
 import Link from '/src/components/Link'
 
 function Index(): ReactElement | null {
