@@ -16,7 +16,7 @@ import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHe
 import { motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router'
 
 function Index(): ReactElement | null {
   const { address, isActive } = useWeb3()

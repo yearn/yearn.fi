@@ -29,7 +29,7 @@ import {
 import { stakeYBold, unstakeYBold } from '@vaults-v3/utils/actions'
 import type { ChangeEvent, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 
 /**************************************************************************************************
  ** The BoostMessage component will display a message to the user if the current vault has staking

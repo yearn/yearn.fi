@@ -49,7 +49,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
 
   if (hasSpectraBoost || hasSteerPoints) {
     return (
-      <div className={cl('flex flex-col gap-1 text-sm text-neutral-500 self-end -mb-1')}>
+      <div className={cl('flex flex-col gap-0 text-sm text-neutral-500 self-end items-end')}>
         {/* Spectra boost - show first */}
         {hasSpectraBoost && !onMobileToggle && (
           <Tooltip
@@ -62,7 +62,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
                 <p className={'-mt-1 mb-2 w-full text-left text-sm text-neutral-700 break-words whitespace-normal'}>
                   {'Earn boosted yield on Spectra if you '}
                   <a
-                    href={'https://app.spectra.finance/pools'}
+                    href={'https://app.spectra.finance/pools?networks=katana'}
                     target={'_blank'}
                     rel={'noopener noreferrer'}
                     className={
@@ -78,7 +78,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
           >
             <small
               className={cl(
-                'whitespace-nowrap text-sm text-neutral-500 self-end -mb-1 sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
+                'whitespace-nowrap text-sm text-neutral-500 self-end sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
               )}
             >
               {'Boosted yield on Spectra'}
@@ -88,7 +88,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
         {hasSpectraBoost && onMobileToggle && (
           <small
             className={cl(
-              'whitespace-nowrap text-sm text-neutral-500 self-end -mb-1 sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
+              'whitespace-nowrap text-sm text-neutral-500 self-end sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
             )}
           >
             {'Boosted yield on Spectra'}
@@ -124,7 +124,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
           >
             <small
               className={cl(
-                'whitespace-nowrap text-sm text-neutral-500 self-end -mb-1 sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
+                'whitespace-nowrap text-sm text-neutral-500 self-end sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
               )}
             >
               {'Eligible for Steer Points'}
@@ -134,7 +134,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
         {hasSteerPoints && onMobileToggle && (
           <small
             className={cl(
-              'whitespace-nowrap text-sm text-neutral-500 self-end -mb-1 sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
+              'whitespace-nowrap text-sm text-neutral-500 self-end sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
             )}
           >
             {'Eligible for Steer Points'}
