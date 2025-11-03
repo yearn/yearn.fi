@@ -2,6 +2,13 @@
   "installCommand": "bun install --frozen-lockfile",
   "buildCommand": "bun run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/_next/image/:path*",
+      "destination": "https://localhost",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/proxy/plausible/:path*",
