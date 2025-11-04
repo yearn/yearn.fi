@@ -256,7 +256,7 @@ function ListOfVaults({
     }
 
     return (
-      <div className={'flex flex-col gap-px'}>
+      <div className={'flex flex-col gap-3'}>
         {pinnedSections.map((section) => (
           <VaultsV3AuxiliaryList key={section.key} vaults={section.vaults} vaultFlags={vaultFlags} />
         ))}

@@ -2,6 +2,7 @@ import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { cl, isZero, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { getNetwork } from '@lib/utils/wagmi'
 import { VaultForwardAPY, VaultForwardAPYInlineDetails } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
@@ -10,7 +11,6 @@ import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { getNetwork } from '@lib/utils/wagmi'
 
 type TVaultRowFlags = {
   hasHoldings?: boolean
