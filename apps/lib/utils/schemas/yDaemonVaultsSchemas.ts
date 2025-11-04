@@ -256,7 +256,8 @@ export const yDaemonVaultSchema = z.object({
     uiNotice: z.string().optional().default('').catch(''),
     isRetired: z.boolean().default(false).catch(false),
     isBoosted: z.boolean().default(false).catch(false),
-    isHighlighted: z.boolean().default(false).catch(false)
+    isHighlighted: z.boolean().default(false).catch(false),
+    isHidden: z.boolean().default(false).catch(false)
   })
 })
 
