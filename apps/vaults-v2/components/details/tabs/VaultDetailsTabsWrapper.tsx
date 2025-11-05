@@ -152,7 +152,7 @@ export function VaultInfo({
     getNetwork(currentVault.chainID).blockExplorers?.default.url
 
   return (
-    <div className={'grid w-2/3 grid-cols-1 gap-10 p-4 md:p-8'}>
+    <div className={'grid w-full grid-cols-1 gap-10 p-4 md:p-8'}>
       <div className={'col-span-1 grid w-full gap-1'}>
         <div className={'flex flex-col items-center md:flex-row'}>
           <p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Vault Contract Address'}</p>
