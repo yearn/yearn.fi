@@ -1,6 +1,7 @@
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react'
 import { Renderable } from '@lib/components/Renderable'
 import { useWeb3 } from '@lib/contexts/useWeb3'
+import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
 import { IconAddToMetamask } from '@lib/icons/IconAddToMetamask'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { IconLinkOut } from '@lib/icons/IconLinkOut'
@@ -183,6 +184,7 @@ const AddToWalletLink = React.memo(function AddToWalletLink({
 
 function VaultDetailsTabsWrapperComponent({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const [selectedAboutTabIndex, setSelectedAboutTabIndex] = useState(0)
+  const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: currentVault.chainID })
   const hasStrategies = Number(currentVault.strategies?.length || 0) > 0
 
   return (
@@ -221,7 +223,7 @@ function VaultDetailsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
       </Renderable>
 
       <Renderable shouldRender={currentVault && selectedAboutTabIndex === 2}>
-        <VaultInfo currentVault={currentVault} />
+        <VaultInfo currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
       </Renderable>
 
       <Renderable shouldRender={currentVault && selectedAboutTabIndex === 3}>

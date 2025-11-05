@@ -140,13 +140,19 @@ function ExplorerLink({ explorerBaseURI, currentVaultAddress }: TExplorerLinkPro
   )
 }
 
-export function VaultInfo({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+export function VaultInfo({
+  currentVault,
+  yDaemonBaseUri
+}: {
+  currentVault: TYDaemonVault
+  yDaemonBaseUri: string
+}): ReactElement {
   const blockExplorer =
     getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
     getNetwork(currentVault.chainID).blockExplorers?.default.url
 
   return (
-    <div className={'grid w-2/3 grid-cols-1 gap-10 p-4 md:p-8'}>
+    <div className={'grid w-full grid-cols-1 gap-10 p-4 md:p-8'}>
       <div className={'col-span-1 grid w-full gap-1'}>
         <div className={'flex flex-col items-center md:flex-row'}>
           <p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Vault Contract Address'}</p>
@@ -218,6 +224,26 @@ export function VaultInfo({ currentVault }: { currentVault: TYDaemonVault }): Re
             </a>
           </div>
         ) : null}
+
+        <div className={'flex flex-col items-center md:flex-row'}>
+          <p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Price Per Share'}</p>
+          <p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
+            {currentVault.apr.pricePerShare.today}
+          </p>
+        </div>
+
+        <div className={'flex flex-col items-center md:flex-row'}>
+          <p className={'w-full text-sm text-neutral-500 md:w-44'}>{'yDaemon Vault Data'}</p>
+          <a
+            href={`${yDaemonBaseUri}/vaults/${currentVault.address}`}
+            target={'_blank'}
+            rel={'noopener noreferrer'}
+            className={'font-number text-sm text-neutral-900 hover:underline'}
+            suppressHydrationWarning
+          >
+            {`${yDaemonBaseUri}/vaults/${currentVault.address}`}
+          </a>
+        </div>
       </div>
     </div>
   )
@@ -303,7 +329,7 @@ export function VaultDetailsTabsWrapper({ currentVault }: { currentVault: TYDaem
       </Renderable>
 
       <Renderable shouldRender={currentVault && selectedAboutTabIndex === 3}>
-        <VaultInfo currentVault={currentVault} />
+        <VaultInfo currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
       </Renderable>
     </div>
   )
