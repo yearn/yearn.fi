@@ -44,6 +44,7 @@ function BrandNewVaultCard(): ReactElement {
         <p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
           {'Yearn v3 is a new yield paradigm offering better automation,\ncomposability and flexibility. Enjoy!'}
         </p>
+        <p>{'this is a test do not merge'}</p>
       </div>
       <Background />
     </div>
