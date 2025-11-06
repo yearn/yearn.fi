@@ -9,6 +9,7 @@ const VaultsPage = lazy(() => import('../pages/vaults/index'))
 const VaultsAboutPage = lazy(() => import('../pages/vaults/about'))
 const VaultsDetailPage = lazy(() => import('../pages/vaults/[chainID]/[address]'))
 const V3Page = lazy(() => import('../pages/v3/index'))
+const V3HomePage = lazy(() => import('../pages/v3/home'))
 const V3AboutPage = lazy(() => import('../pages/v3/about'))
 const V3DetailPage = lazy(() => import('../pages/v3/[chainID]/[address]'))
 const VaultsBetaPage = lazy(() => import('../pages/vaults-beta/index'))
@@ -41,6 +42,7 @@ export const routeConfig = {
   },
   v3: {
     index: '/v3',
+    home: '/v3/home',
     about: '/v3/about',
     detail: '/v3/:chainID/:address',
     chainOnly: '/v3/:chainID'
@@ -83,6 +85,7 @@ export function AppRoutes(): ReactElement {
 
         {/* V3 routes */}
         <Route path="/v3" element={<V3Page />} />
+        <Route path="/v3/home" element={<V3HomePage />} />
         <Route path="/v3/about" element={<V3AboutPage />} />
         <Route path="/v3/:chainID/:address" element={<V3DetailPage />} />
         {/* Redirect /v3/:chainId without address to /v3 */}
