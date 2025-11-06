@@ -312,7 +312,7 @@ function ListOfVaults(): ReactElement {
       return (
         <Fragment>
           {hasHoldings && (
-            <div className={'relative grid h-fit gap-4'}>
+            <div className={'relative grid h-fit gap-3'}>
               <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
                 &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
               </p>
@@ -329,7 +329,7 @@ function ListOfVaults(): ReactElement {
     return (
       <Fragment>
         {hasHoldings && (
-          <div className={'relative grid h-fit gap-4'}>
+          <div className={'relative grid h-fit gap-3'}>
             <p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
               &nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
             </p>
@@ -390,7 +390,7 @@ function ListOfVaults(): ReactElement {
             { label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2 justify-end' }
           ]}
         />
-        <div className={'grid gap-4'}>{renderVaultList()}</div>
+        <div className={'grid gap-3'}>{renderVaultList()}</div>
       </div>
     </Fragment>
   )

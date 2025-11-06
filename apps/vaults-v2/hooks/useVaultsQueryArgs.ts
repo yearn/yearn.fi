@@ -3,7 +3,7 @@ import type { TDict, TSortDirection } from '@lib/types'
 import { useMountEffect } from '@react-hookz/web'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 
 type TQueryArgs = {
   search: string | null | undefined

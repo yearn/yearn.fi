@@ -21,7 +21,7 @@ export function VaultRiskScoreTag({
     setMobileOpen((v) => !v)
   }
   return (
-    <div className={'col-span-2 w-full md:pt-4'}>
+    <div className={'col-span-2 w-full md:pt-1'}>
       <div className={'flex flex-row items-end justify-between md:flex-col'}>
         <p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>{'Risk Score'}</p>
         <div

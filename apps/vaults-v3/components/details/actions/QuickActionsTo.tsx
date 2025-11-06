@@ -12,7 +12,7 @@ import { useActionFlow } from '@vaults-v2/contexts/useActionFlow'
 import { useSolver } from '@vaults-v2/contexts/useSolver'
 import type { TStakingInfo } from '@vaults-v2/hooks/useVaultStakingData'
 import { Fragment, type ReactElement, useMemo } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 
 function VaultAPY({
   currentVault,

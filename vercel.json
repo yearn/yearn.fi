@@ -2,10 +2,25 @@
   "installCommand": "bun install --frozen-lockfile",
   "buildCommand": "bun run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/_next/image/:path*",
+      "destination": "https://localhost",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/proxy/plausible/:path*",
       "destination": "https://plausible.io/:path*"
+    },
+    {
+      "source": "/assets/:path*",
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/:file*.(js|css|svg|png|jpg|jpeg|gif|ico|woff|woff2|ttf|eot)",
+      "destination": "/:file*.$1"
     },
     {
       "source": "/v3/:chainId/:address",
@@ -17,7 +32,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ],
   "headers": [

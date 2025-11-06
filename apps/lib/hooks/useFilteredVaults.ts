@@ -6,7 +6,7 @@ import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { isAutomatedVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useAppSettings } from '@vaults-v2/contexts/useAppSettings'
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 
 export function useFilteredVaults(
   vaultMap: TDict<TYDaemonVault>,
@@ -30,6 +30,16 @@ export function useVaultFilter(
   const { vaults, vaultsMigrations, vaultsRetired, getPrice } = useYearn()
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
+
+  const visibleVaults = useMemo((): TDict<TYDaemonVault> => {
+    const filteredVaults: TDict<TYDaemonVault> = {}
+    for (const [address, vault] of Object.entries(vaults)) {
+      if (!vault.info.isHidden) {
+        filteredVaults[address] = vault
+      }
+    }
+    return filteredVaults
+  }, [vaults])
 
   const filterHoldingsCallback = useCallback(
     (vault: TYDaemonVault, isFactoryOnly: boolean, isForV3: boolean): boolean => {
@@ -103,34 +113,37 @@ export function useVaultFilter(
   )
 
   // Specific filter
-  const highlightedVaults = useFilteredVaults(vaults, ({ info }): boolean => info.isHighlighted)
+  const highlightedVaults = useFilteredVaults(visibleVaults, ({ info }): boolean => info.isHighlighted)
   const holdingsVaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false, false))
   const holdingsV3Vaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false, true))
 
   // V3 Filtered Vaults
   const singleVaults = useFilteredVaults(
-    vaults,
+    visibleVaults,
     ({ version, kind }): boolean =>
       ((version || '')?.split('.')?.[0] === '3' && kind === 'Single Strategy') ||
       ((version || '')?.split('.')?.[0] === '~3' && kind === 'Single Strategy')
   )
   const MultiVaults = useFilteredVaults(
-    vaults,
+    visibleVaults,
     ({ version, kind }): boolean =>
       ((version || '')?.split('.')?.[0] === '3' && kind === 'Multi Strategy') ||
       ((version || '')?.split('.')?.[0] === '~3' && kind === 'Multi Strategy')
   )
 
   //V2 Filtered Vaults
-  const boostedVaults = useFilteredVaults(vaults, ({ apr }) => apr.extra.stakingRewardsAPR > 0)
-  const curveVaults = useFilteredVaults(vaults, ({ category }) => category === 'Curve')
-  const prismaVaults = useFilteredVaults(vaults, ({ category }) => category === 'Prisma')
-  const velodromeVaults = useFilteredVaults(vaults, ({ category }) => category === 'Velodrome')
-  const aerodromeVaults = useFilteredVaults(vaults, ({ category }) => category === 'Aerodrome')
-  const stablesVaults = useFilteredVaults(vaults, ({ category }) => category === 'Stablecoin')
-  const balancerVaults = useFilteredVaults(vaults, ({ category }) => category === 'Balancer')
-  const cryptoVaults = useFilteredVaults(vaults, ({ category }) => category === 'Volatile')
-  const curveFactoryVaults = useFilteredVaults(vaults, (vault) => vault.category === 'Curve' && isAutomatedVault(vault))
+  const boostedVaults = useFilteredVaults(visibleVaults, ({ apr }) => apr.extra.stakingRewardsAPR > 0)
+  const curveVaults = useFilteredVaults(visibleVaults, ({ category }) => category === 'Curve')
+  const prismaVaults = useFilteredVaults(visibleVaults, ({ category }) => category === 'Prisma')
+  const velodromeVaults = useFilteredVaults(visibleVaults, ({ category }) => category === 'Velodrome')
+  const aerodromeVaults = useFilteredVaults(visibleVaults, ({ category }) => category === 'Aerodrome')
+  const stablesVaults = useFilteredVaults(visibleVaults, ({ category }) => category === 'Stablecoin')
+  const balancerVaults = useFilteredVaults(visibleVaults, ({ category }) => category === 'Balancer')
+  const cryptoVaults = useFilteredVaults(visibleVaults, ({ category }) => category === 'Volatile')
+  const curveFactoryVaults = useFilteredVaults(
+    visibleVaults,
+    (vault) => vault.category === 'Curve' && isAutomatedVault(vault)
+  )
   const migratableVaults = useFilteredVaults(vaultsMigrations, (v) => filterMigrationCallback(v))
   const retiredVaults = useFilteredVaults(vaultsRetired, (v) => filterMigrationCallback(v))
 

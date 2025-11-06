@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 
 // Lazy load all page components

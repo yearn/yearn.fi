@@ -29,9 +29,7 @@ import {
 import { stakeYBold, unstakeYBold } from '@vaults-v3/utils/actions'
 import type { ChangeEvent, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { useLocation } from 'react-router-dom'
-import Image from '/src/components/Image'
-import Link from '/src/components/Link'
+import { useLocation } from 'react-router'
 
 /**************************************************************************************************
  ** The BoostMessage component will display a message to the user if the current vault has staking
@@ -40,25 +38,25 @@ import Link from '/src/components/Link'
  ** An empty span will be returned if the current tab is not the 'Boost' tab or if no staking
  ** rewards are available.
  *************************************************************************************************/
-function BoostMessage(props: { currentVault: TYDaemonVault; hasStakingRewardsLive: boolean }): ReactElement {
+function BoostMessage(props: { currentVault: TYDaemonVault; canStake: boolean }): ReactElement {
   const hasVaultData = Boolean(props.currentVault.staking.available)
   const vaultDataSource = props.currentVault.staking.source
   const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR
   const location = useLocation()
   const isV3Page = location.pathname.startsWith('/v3')
 
-  if (hasVaultData && !props.hasStakingRewardsLive && vaultDataSource !== 'VeYFI') {
+  if (hasVaultData && !props.canStake && vaultDataSource !== 'VeYFI') {
     return (
       <div className={'col-span-12 mt-0'}>
         <div
           className={cl(
-            'w-full rounded-lg p-6 text-neutral-0',
+            'w-full rounded-lg p-3 text-neutral-0',
             isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
           )}
         >
-          <b className={'text-lg'}>{"Oh no... we're all out of rewards!"}</b>
-          <div className={'mt-2 flex flex-col gap-2'}>
-            <p>{"But fear not, you're still earning that juicy base yield so keep on staking."}</p>
+          <b className={'text-lg'}>{'The rewards program for this vault has ended'}</b>
+          <div className={'flex flex-col gap-2'}>
+            <p>{'You can unstake your vault tokens and claim any rewards at any time.'}</p>
           </div>
         </div>
       </div>
@@ -167,97 +165,10 @@ function BoostMessage(props: { currentVault: TYDaemonVault; hasStakingRewardsLiv
   return <span />
 }
 
-function VeYFIBoostMessage(props: {
-  currentVault: TYDaemonVault
-  hasStakingRewardsLive: boolean
-  shouldForceUnstake: boolean
-}): ReactElement {
+function VeYFIBoostMessage(props: { currentVault: TYDaemonVault }): ReactElement {
   const vaultDataource = props.currentVault.staking.source
-  const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR
   const location = useLocation()
   const isV3Page = location.pathname.startsWith('/v3')
-
-  const OneUp = (
-    <Link href={'https://1up.tokyo/stake'} target={'_blank'} rel={'noreferrer'}>
-      <div
-        className={cl(
-          'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
-          'bg-neutral-100/5'
-        )}
-      >
-        <Image
-          className={'rounded-full'}
-          src={'https://1up.tokyo/logo.svg'}
-          alt={'1UP'}
-          width={32}
-          height={32}
-          unoptimized
-        />
-        <p className={cl('text-base font-bold text-neutral-100')}>{'1UP'}</p>
-      </div>
-    </Link>
-  )
-
-  const Cove = (
-    <Link href={'https://boosties.cove.finance/boosties'} target={'_blank'} rel={'noreferrer'}>
-      <div
-        className={cl(
-          'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
-          'bg-neutral-100/5'
-        )}
-      >
-        <Image
-          className={'rounded-full'}
-          src={
-            'https://assets-global.website-files.com/651af12fcd3055636b6ac9ad/66242dbf1d6e7ff1b18336c4_Twitter%20pp%20-%20Logo%202.png'
-          }
-          alt={'Cove'}
-          width={32}
-          height={32}
-          unoptimized
-        />
-        <p className={cl('text-base font-bold text-neutral-100')}>{'Cove'}</p>
-      </div>
-    </Link>
-  )
-
-  const StakeDAO = (
-    <Link href={'https://www.stakedao.org/yield?protocol=yearn'} target={'_blank'} rel={'noreferrer'}>
-      <div
-        className={cl(
-          'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
-          'bg-neutral-100/5'
-        )}
-      >
-        <Image
-          className={'rounded-full'}
-          src={'https://www.stakedao.org/logo.png'}
-          alt={'StakeDAO'}
-          width={32}
-          height={32}
-          unoptimized
-        />
-        <p className={cl('text-base font-bold text-neutral-100')}>{'StakeDAO'}</p>
-      </div>
-    </Link>
-  )
-
-  const apps = [
-    { id: 'oneup', element: OneUp },
-    { id: 'cove', element: Cove },
-    { id: 'stakedao', element: StakeDAO }
-  ]
-
-  if (props.shouldForceUnstake) {
-    return (
-      <div className={cl('flex w-full flex-col rounded-2xl p-6 my-auto', 'bg-neutral-900')}>
-        <b className={cl('text-lg text-neutral-100')}>{'This gauge is no longer active'}</b>
-        <div className={cl('flex flex-col gap-2 py-4', isV3Page ? 'text-[#908FB4]' : 'text-neutral-400')}>
-          <p>{'This gauge has been removed and no longer brings any benefits. Please withdraw from it'}</p>
-        </div>
-      </div>
-    )
-  }
 
   if (vaultDataource !== 'VeYFI') {
     return <Fragment />
@@ -265,30 +176,21 @@ function VeYFIBoostMessage(props: {
 
   return (
     <div className={cl('flex w-full flex-col rounded-2xl p-6', 'bg-neutral-900')}>
-      <b className={cl('text-lg text-neutral-100')}>{'Yield is good, but more yield is good-er!'}</b>
-      <div className={cl('flex flex-col gap-2 py-4', isV3Page ? 'text-[#908FB4]' : 'text-neutral-400')}>
-        <p>
-          {'This Vault has an active veYFI gauge which boosts your APY from '}
-          <span className={cl('font-bold text-neutral-100')}>{`${formatAmount(extraAPY * 10)}%`}</span>
-          {' to '}
-          <span className={cl('font-bold text-neutral-100')}>{`${formatAmount(extraAPY * 100)}%`}</span>
-          {' depending on the veYFI you have locked. Simply deposit and stake to start earning. '}
-          <a
-            className={'underline'}
-            href={'https://docs.yearn.fi/contributing/governance/veyfi-intro'}
-            target={'_blank'}
-            rel={'noreferrer'}
-          >
-            {'Learn more'}
+      <b className={cl('text-lg text-neutral-100')}>{'veYFI Gauges have been retired'}</b>
+      <div className={cl('flex flex-col gap-2 py-2', isV3Page ? 'text-neutral-300' : 'text-neutral-400')}>
+        <p>{'All good things must come to an end!'}</p>
+        <span className={'flex flex-row flex-wrap gap-1'}>
+          <p>{'Please '}</p>
+          <a className={'underline font-bold'} href={'https://x.com/yearnfi'} target={'_blank'} rel={'noreferrer'}>
+            {'stayed tuned '}
           </a>
-          {'.'}
+          <p>{'for what comes next!'}</p>
+        </span>
+        <p>
+          {
+            "In the mean time, feel free to unstake your vault tokens and claim any dYFI rewards you have earned. There is no deadline so don't sweat it. The vault is still earning and auto-compounding yield."
+          }
         </p>
-        <p>{"Don't have veYFI? Deposit with a liquid locker to earn boosted rewards today!"}</p>
-      </div>
-      <div className={'grid grid-cols-2 gap-2 pt-6 md:grid-cols-3'}>
-        {apps.map((app) => (
-          <Fragment key={app.id}>{app.element}</Fragment>
-        ))}
       </div>
     </div>
   )
@@ -301,7 +203,7 @@ function VeYFIBoostMessage(props: {
  *************************************************************************************************/
 export function RewardsTab(props: {
   currentVault: TYDaemonVault
-  hasStakingRewardsLive: boolean
+  isGaugeActive: boolean
   vaultData: TStakingInfo
   updateVaultData: VoidFunction
 }): ReactElement {
@@ -336,9 +238,26 @@ export function RewardsTab(props: {
    ** Check if the current vault is in the list of disabled veYFI gauges. If it is, we should make
    ** it possible to withdraw the rewards and display a corresponding message to the user.
    *************************************************************************************************/
-  const shouldForceUnstake = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
+  const isGaugeDisabled = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
     (vault) => vault.address === props.currentVault.address
   )
+
+  const isYBoldVault = props.currentVault.address === toAddress('0x9F4330700a36B29952869fac9b33f45EEdd8A3d8')
+
+  const hasActiveRewardsProgram = useMemo((): boolean => {
+    return (props.currentVault.staking.rewards || []).some((reward) => !reward.isFinished)
+  }, [props.currentVault.staking.rewards])
+
+  const stakingSource = props.currentVault.staking.source
+  const isVeYFIGauge = stakingSource === 'VeYFI'
+  const hasStakedDeposit = vaultData.stakedBalanceOf.raw > 0n
+  const hasClaimableRewards = vaultData.stakedEarned.raw > 0n
+
+  const canShowVeYFIRewards = hasStakedDeposit || hasClaimableRewards
+
+  const shouldDisplayRewardsTab =
+    props.currentVault.staking.available &&
+    (isVeYFIGauge ? canShowVeYFIRewards : hasStakedDeposit || hasClaimableRewards || hasActiveRewardsProgram)
 
   /**************************************************************************************************
    ** Create action parameters for approve operations to integrate with the notification system.
@@ -621,7 +540,7 @@ export function RewardsTab(props: {
       type: notificationType
     })
 
-    if (props.currentVault.staking.source === 'VeYFI' || shouldForceUnstake) {
+    if (props.currentVault.staking.source === 'VeYFI' || isGaugeDisabled) {
       const result = await unstakeVeYFIAction({
         connector: provider,
         chainID: props.currentVault.chainID,
@@ -706,7 +625,7 @@ export function RewardsTab(props: {
     vaultData?.address,
     props.currentVault.staking.source,
     props.currentVault.chainID,
-    shouldForceUnstake,
+    isGaugeDisabled,
     provider,
     isUnstakingMax,
     refreshData,
@@ -781,61 +700,14 @@ export function RewardsTab(props: {
     }
   }, [isStakeAmountDirty, vaultData.vaultBalanceOf.display])
 
+  if (!isYBoldVault && !shouldDisplayRewardsTab) {
+    return <Fragment />
+  }
+
   if (props.currentVault.staking.rewards?.length === 0) {
     return (
       <div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
-        <BoostMessage hasStakingRewardsLive={props.hasStakingRewardsLive} currentVault={props.currentVault} />
-      </div>
-    )
-  }
-
-  if (shouldForceUnstake) {
-    return (
-      <div className={'grid grid-cols-1 md:grid-cols-2'}>
-        <div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8 md:pr-0'}>
-          <BoostMessage hasStakingRewardsLive={props.hasStakingRewardsLive} currentVault={props.currentVault} />
-
-          <div className={'flex flex-col gap-2'}>
-            <div>
-              <div className={'font-bold'}>{'Unstake'}</div>
-            </div>
-            <div className={'flex flex-col gap-4 md:flex-row'}>
-              <FakeInput
-                className={'w-full'}
-                legend={
-                  <div className={'flex items-center justify-between'}>
-                    <p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${vaultData.stakedGaugeSymbol || props.currentVault.symbol} staked`}</p>
-                    <p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
-                  </div>
-                }
-                value={
-                  toBigInt(vaultData.stakedBalanceOf.raw) === 0n ? undefined : (
-                    <Counter
-                      value={Number(vaultData.stakedBalanceOf.normalized)}
-                      decimals={vaultData.stakingDecimals || 18}
-                    />
-                  )
-                }
-              />
-
-              <Button
-                className={'w-full md:w-[180px] md:min-w-[180px]'}
-                onClick={onUnstake}
-                isBusy={unstakeStatus.pending}
-                isDisabled={!isActive || Number(vaultData.stakedBalanceOf.normalized) <= 0}
-              >
-                {'Claim & Exit'}
-              </Button>
-            </div>
-          </div>
-        </div>
-        <div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
-          <VeYFIBoostMessage
-            currentVault={props.currentVault}
-            hasStakingRewardsLive={props.hasStakingRewardsLive}
-            shouldForceUnstake={shouldForceUnstake}
-          />
-        </div>
+        <BoostMessage canStake={props.isGaugeActive} currentVault={props.currentVault} />
       </div>
     )
   }
@@ -843,7 +715,7 @@ export function RewardsTab(props: {
   /**********************************************************************************************
    ** Special case for yBold.
    *********************************************************************************************/
-  if (props.currentVault.address === toAddress('0x9F4330700a36B29952869fac9b33f45EEdd8A3d8')) {
+  if (isYBoldVault) {
     return (
       <div className={'grid grid-cols-1 md:grid-cols-2'}>
         <div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8 md:pr-0'}>
@@ -1000,46 +872,55 @@ export function RewardsTab(props: {
     )
   }
 
+  /**********************************************************************************************
+   ** default
+   *********************************************************************************************/
   return (
     <div className={'grid grid-cols-1 md:grid-cols-2'}>
       <div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8 md:pr-0'}>
-        <BoostMessage hasStakingRewardsLive={props.hasStakingRewardsLive} currentVault={props.currentVault} />
-        <div className={'flex flex-col gap-2'}>
-          <div>
-            <div className={'font-bold'}>{'Stake'}</div>
-          </div>
+        <BoostMessage canStake={props.isGaugeActive} currentVault={props.currentVault} />
 
-          <div className={'flex flex-col gap-4 md:flex-row'}>
-            <FakeInput
-              className={'w-full'}
-              legend={
-                <div className={'flex items-center justify-between'}>
-                  <p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} ${props.currentVault.symbol} available to stake`}</p>
-                  <p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
-                </div>
-              }
-              value={
-                toBigInt(vaultData.vaultBalanceOf.raw) === 0n ? undefined : (
-                  <Counter value={Number(vaultData.vaultBalanceOf.normalized)} decimals={18} />
-                )
-              }
-            />
+        {/* stake */}
+        {props.isGaugeActive && (
+          <div className={'flex flex-col gap-2'}>
             <div>
-              <Button
-                className={'w-full md:w-[180px] md:min-w-[180px]'}
-                onClick={(): unknown => (isApproved ? onStake() : onApprove())}
-                isBusy={stakeStatus.pending || approveStakeStatus.pending}
-                isDisabled={
-                  !isActive ||
-                  toBigInt(vaultData.vaultBalanceOf.raw) <= 0n ||
-                  (!props.hasStakingRewardsLive && props.currentVault.staking.source !== 'VeYFI')
+              <div className={'font-bold'}>{'Stake'}</div>
+            </div>
+
+            <div className={'flex flex-col gap-4 md:flex-row'}>
+              <FakeInput
+                className={'w-full'}
+                legend={
+                  <div className={'flex items-center justify-between'}>
+                    <p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} ${props.currentVault.symbol} available to stake`}</p>
+                    <p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
+                  </div>
                 }
-              >
-                {isApproved ? 'Stake' : 'Approve & Stake'}
-              </Button>
+                value={
+                  toBigInt(vaultData.vaultBalanceOf.raw) === 0n ? undefined : (
+                    <Counter value={Number(vaultData.vaultBalanceOf.normalized)} decimals={18} />
+                  )
+                }
+              />
+              <div>
+                <Button
+                  className={'w-full md:w-[180px] md:min-w-[180px]'}
+                  onClick={(): unknown => (isApproved ? onStake() : onApprove())}
+                  isBusy={stakeStatus.pending || approveStakeStatus.pending}
+                  isDisabled={
+                    !isActive ||
+                    toBigInt(vaultData.vaultBalanceOf.raw) <= 0n ||
+                    (!props.isGaugeActive && props.currentVault.staking.source !== 'VeYFI')
+                  }
+                >
+                  {isApproved ? 'Stake' : 'Approve & Stake'}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* unstake */}
         <div className={'flex flex-col gap-2'}>
           <div>
             <div className={'font-bold'}>{'Unstake'}</div>
@@ -1093,10 +974,12 @@ export function RewardsTab(props: {
               isBusy={unstakeStatus.pending}
               isDisabled={!isActive || Number(unstakeAmount) <= 0 || isLargerThanStakedBalance}
             >
-              {isUnstakingMax ? 'Claim & Exit' : 'Unstake'}
+              {'Unstake'}
             </Button>
           </div>
         </div>
+
+        {/* claim rewards */}
         <div className={'flex flex-col gap-2'}>
           <div>
             <div className={'font-bold'}>{'Claim Rewards'}</div>
@@ -1131,12 +1014,8 @@ export function RewardsTab(props: {
           </div>
         </div>
       </div>
-      <div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
-        <VeYFIBoostMessage
-          currentVault={props.currentVault}
-          hasStakingRewardsLive={props.hasStakingRewardsLive}
-          shouldForceUnstake={shouldForceUnstake}
-        />
+      <div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8 justify-center'}>
+        <VeYFIBoostMessage currentVault={props.currentVault} />
       </div>
     </div>
   )

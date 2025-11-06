@@ -91,23 +91,23 @@ function VaultAPY({
       <VaultHeaderLineItem
         label={'Estimated APR'}
         legend={
-          <span className={'tooltip'}>
+          <KatanaApyTooltip
+            extrinsicYield={katanaExtras.extrinsicYield}
+            katanaNativeYield={katanaExtras.katanaNativeYield}
+            fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards}
+            katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR}
+            katanaBonusAPR={katanaExtras.katanaBonusAPY}
+            steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
+            currentVault={currentVault}
+            position="top"
+            maxWidth="w-max"
+            className={'items-center justify-center md:justify-center'}
+          >
             <div className={'flex flex-row items-center space-x-2'}>
               <div>{'APR Breakdown '}</div>
               <IconQuestion className={'hidden md:block'} />
             </div>
-            <KatanaApyTooltip
-              extrinsicYield={katanaExtras.extrinsicYield}
-              katanaNativeYield={katanaExtras.katanaNativeYield}
-              fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards}
-              katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR}
-              katanaBonusAPR={katanaExtras.katanaBonusAPY}
-              steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
-              currentVault={currentVault}
-              position="top"
-              maxWidth="w-max"
-            />
-          </span>
+          </KatanaApyTooltip>
         }
       >
         <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
@@ -184,87 +184,6 @@ function VaultAPY({
                       decimals={6}
                     />
                   </span>
-                </div>
-              </div>
-            </span>
-          </span>
-        }
-      >
-        <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
-          <RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
-        </Renderable>
-      </VaultHeaderLineItem>
-    )
-  }
-
-  if (isSourceVeYFI) {
-    const sumOfRewardsAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
-    const veYFIRange = [apr.extra.stakingRewardsAPR / 10 + apr.extra.gammaRewardAPR, sumOfRewardsAPY] as [
-      number,
-      number
-    ]
-    const estAPYRange = [veYFIRange[0] + apr.forwardAPR.netAPR, veYFIRange[1] + apr.forwardAPR.netAPR] as [
-      number,
-      number
-    ]
-    return (
-      <VaultHeaderLineItem
-        label={'Historical APY'}
-        legend={
-          <span className={'tooltip'}>
-            <div className={'flex flex-row items-center space-x-2'}>
-              <div>
-                {'Est. APY: '}
-                <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
-                &nbsp;&rarr;&nbsp;
-                <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
-              </div>
-              <IconQuestion className={'hidden md:block'} />
-            </div>
-            <span className={'tooltipLight top-full mt-2'}>
-              <div
-                className={
-                  'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-                }
-              >
-                <p
-                  className={
-                    'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
-                  }
-                >
-                  {'Estimated APY for the next period based on current data.'}
-                </p>
-                <div
-                  className={
-                    'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
-                  }
-                >
-                  <p>{'• Base APY '}</p>
-                  <span className={'font-number'}>
-                    <RenderAmount
-                      shouldHideTooltip
-                      value={apyData.baseForwardApr || apr.forwardAPR.netAPR}
-                      symbol={'percent'}
-                      decimals={6}
-                    />
-                  </span>
-                </div>
-
-                <div
-                  className={
-                    'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                  }
-                >
-                  <p>{'• Rewards APY '}</p>
-                  <div>
-                    <span className={'font-number'}>
-                      <RenderAmount shouldHideTooltip value={veYFIRange?.[0] || 0} symbol={'percent'} decimals={6} />
-                    </span>
-                    &nbsp;&rarr;&nbsp;
-                    <span className={'font-number'}>
-                      <RenderAmount shouldHideTooltip value={veYFIRange?.[1] || 0} symbol={'percent'} decimals={6} />
-                    </span>
-                  </div>
                 </div>
               </div>
             </span>
@@ -775,7 +694,9 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
       <div
         className={cl(
           'grid grid-cols-2 gap-6 w-full md:px-10',
-          currentVault.staking.available && currentVault.staking.source !== 'yBOLD'
+          currentVault.staking.available &&
+            currentVault.staking.source !== 'yBOLD' &&
+            currentVault.staking.source !== 'VeYFI'
             ? 'md:grid-cols-4'
             : 'md:grid-cols-3'
         )}
@@ -802,7 +723,9 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
           />
         </div>
 
-        {currentVault.staking.available && currentVault.staking.source !== 'yBOLD' ? (
+        {currentVault.staking.available &&
+        currentVault.staking.source !== 'yBOLD' &&
+        currentVault.staking.source !== 'VeYFI' ? (
           <div className={'w-full'}>
             <ValueEarned
               currentVault={currentVault}
