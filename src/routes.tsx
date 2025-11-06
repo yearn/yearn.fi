@@ -1,18 +1,19 @@
 import type { ReactElement } from 'react'
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
+import { lazyWithRetry } from './utils/lazyWithRetry'
 
 // Lazy load all page components
-const HomePage = lazy(() => import('../pages/index'))
-const AppsPage = lazy(() => import('../pages/apps/index'))
-const VaultsPage = lazy(() => import('../pages/vaults/index'))
-const VaultsAboutPage = lazy(() => import('../pages/vaults/about'))
-const VaultsDetailPage = lazy(() => import('../pages/vaults/[chainID]/[address]'))
-const V3Page = lazy(() => import('../pages/v3/index'))
-const V3AboutPage = lazy(() => import('../pages/v3/about'))
-const V3DetailPage = lazy(() => import('../pages/v3/[chainID]/[address]'))
-const VaultsBetaPage = lazy(() => import('../pages/vaults-beta/index'))
-const VaultsBetaSearchPage = lazy(() => import('../pages/vaults-beta/search/[query]'))
+const HomePage = lazyWithRetry(() => import('../pages/index'))
+const AppsPage = lazyWithRetry(() => import('../pages/apps/index'))
+const VaultsPage = lazyWithRetry(() => import('../pages/vaults/index'))
+const VaultsAboutPage = lazyWithRetry(() => import('../pages/vaults/about'))
+const VaultsDetailPage = lazyWithRetry(() => import('../pages/vaults/[chainID]/[address]'))
+const V3Page = lazyWithRetry(() => import('../pages/v3/index'))
+const V3AboutPage = lazyWithRetry(() => import('../pages/v3/about'))
+const V3DetailPage = lazyWithRetry(() => import('../pages/v3/[chainID]/[address]'))
+const VaultsBetaPage = lazyWithRetry(() => import('../pages/vaults-beta/index'))
+const VaultsBetaSearchPage = lazyWithRetry(() => import('../pages/vaults-beta/search/[query]'))
 
 // Loading component
 const PageLoader = (): ReactElement => (
