@@ -268,7 +268,7 @@ function ListOfVaults(): ReactElement {
 
       <div className={'mt-4'} />
       <p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
-        {'this is a test do not merge'}
+        {'this is a test do not merge 2'}
       </p>
       <ListHead
         dataClassName={'grid-cols-10'}
