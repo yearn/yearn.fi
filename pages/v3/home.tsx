@@ -63,38 +63,38 @@ function BrandNewVaultCard({ className }: { className?: string }): ReactElement 
   )
 }
 
+const V3_CARD_BASE = cl(
+  'flex h-full w-full min-w-0 items-center justify-center rounded-3xl border border-transparent bg-neutral-200/80 p-4',
+  'transition-shadow hover:border-white/40 md:p-6',
+  'shadow-[0_12px_32px_rgba(4,8,32,0.45)]'
+)
+
 function V3Card({ className }: { className?: string }): ReactElement {
   return (
-    <div
-      className={cl(
-        'flex h-full w-full min-w-0 items-center justify-center rounded-3xl bg-neutral-200/80 p-4',
-        'shadow-[0_12px_32px_rgba(4,8,32,0.45)] md:p-6',
-        className
-      )}
-    >
+    <a className={cl(V3_CARD_BASE, className)} href={'/v3'}>
       <div className={'flex h-full w-full flex-col items-center justify-center gap-y-4'}>
         <V3Mask className={'h-auto w-[86%]'} />
-        <p className={'text-xs font-semibold uppercase tracking-[0.4em] text-white/70'}>{'Vaults across six chains'}</p>
       </div>
-    </div>
+    </a>
   )
 }
 
 function V3SecondaryCard({ className }: { className?: string }): ReactElement {
   return (
-    <div
+    <a
       className={cl(
-        'flex h-full w-full min-w-0 flex-col justify-center rounded-3xl border border-white/10 bg-[#0A1040]/80 p-6',
-        'text-white shadow-[0_12px_32px_rgba(4,8,32,0.35)] md:p-8',
+        V3_CARD_BASE,
+        'flex flex-col justify-center text-white shadow-[0_12px_32px_rgba(4,8,32,0.35)] md:p-8',
         className
       )}
+      href={'/vaults'}
     >
       <p className={'text-sm font-semibold uppercase tracking-[0.4em] text-white/60'}>{'Yearn v3'}</p>
       <h2 className={'mt-3 text-2xl font-bold uppercase'}>{'Personal dashboards'}</h2>
       <p className={'mt-3 text-sm text-white/70'}>
         {'Soon you’ll find curated highlights from v3 strategies, tailored to your wallet and preferred chains.'}
       </p>
-    </div>
+    </a>
   )
 }
 
