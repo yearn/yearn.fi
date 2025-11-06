@@ -32,7 +32,7 @@ function BrandNewVaultCard({ className }: { className?: string }): ReactElement 
         >
           {'A brave new\nworld for Yield'}
         </h1>
-        <p className={'max-w-[440px] whitespace-break-spaces text-base text-white/80 md:text-lg'}>
+        <p className={'max-w-[520px] whitespace-break-spaces text-base text-white/80 md:text-lg'}>
           {'Automation, composability, and personal dashboards — Yearn v3 keeps your capital working across chains.'}
         </p>
         <div className={'flex flex-wrap gap-3'}>
@@ -80,6 +80,24 @@ function V3Card({ className }: { className?: string }): ReactElement {
   )
 }
 
+function V3SecondaryCard({ className }: { className?: string }): ReactElement {
+  return (
+    <div
+      className={cl(
+        'flex h-full w-full min-w-0 flex-col justify-center rounded-3xl border border-white/10 bg-[#0A1040]/80 p-6',
+        'text-white shadow-[0_12px_32px_rgba(4,8,32,0.35)] md:p-8',
+        className
+      )}
+    >
+      <p className={'text-sm font-semibold uppercase tracking-[0.4em] text-white/60'}>{'Yearn v3'}</p>
+      <h2 className={'mt-3 text-2xl font-bold uppercase'}>{'Personal dashboards'}</h2>
+      <p className={'mt-3 text-sm text-white/70'}>
+        {'Soon you’ll find curated highlights from v3 strategies, tailored to your wallet and preferred chains.'}
+      </p>
+    </div>
+  )
+}
+
 function PortfolioCard({
   holdingsVaults,
   className
@@ -103,7 +121,7 @@ function PortfolioCard({
     return (
       <div
         className={cl(
-          'w-full rounded-3xl bg-neutral-100 p-6 text-white shadow-[0_12px_32px_rgba(4,8,32,0.55)]',
+          'w-full h-full rounded-3xl bg-neutral-100 p-6 text-white shadow-[0_12px_32px_rgba(4,8,32,0.55)]',
           'md:p-8',
           className
         )}
@@ -138,7 +156,7 @@ function PortfolioCard({
   return (
     <div
       className={cl(
-        'w-full rounded-3xl bg-neutral-100 p-6 text-white shadow-[0_12px_32px_rgba(4,8,32,0.55)]',
+        'w-full h-full rounded-3xl bg-neutral-100 p-6 text-white shadow-[0_12px_32px_rgba(4,8,32,0.55)]',
         'md:p-8',
         className
       )}
@@ -175,7 +193,7 @@ function DiscoverCard({ className }: { className?: string }): ReactElement {
   return (
     <div
       className={cl(
-        'w-full rounded-3xl bg-neutral-100 p-6 text-white shadow-[0_12px_32px_rgba(4,8,32,0.55)]',
+        'w-full h-full rounded-3xl bg-neutral-100 p-6 text-white shadow-[0_12px_32px_rgba(4,8,32,0.55)]',
         'md:p-8',
         className
       )}
@@ -242,17 +260,24 @@ function V3Home(): ReactElement {
   return (
     <div className={'min-h-screen w-full bg-neutral-0'}>
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-        <div className={'grid grid-cols-12 gap-4 overflow-x-hidden pt-12 md:gap-6 md:pt-20'}>
-          <div className={'col-span-12 min-w-0 md:order-1 md:col-span-5'}>
-            <V3Card />
+        <div
+          className={
+            'grid grid-cols-12 gap-4 overflow-x-hidden pt-12 md:max-h-[100vh] md:auto-rows-[minmax(0,1fr)] md:grid-cols-16 md:grid-rows-8 md:gap-6 md:pt-20 md:pb-6'
+          }
+        >
+          <div className={'col-span-12 min-w-0 md:order-1 md:col-span-4 md:col-start-1 md:row-span-2 md:row-start-1'}>
+            <V3Card className={'h-full'} />
           </div>
-          <div className={'col-span-12 min-w-0 md:order-2 md:col-span-7'}>
-            <BrandNewVaultCard />
+          <div className={'col-span-12 min-w-0 md:order-2 md:col-span-4 md:col-start-1 md:row-span-2 md:row-start-3'}>
+            <V3SecondaryCard className={'h-full'} />
           </div>
-          <div className={'col-span-12 min-w-0 md:order-3 md:col-span-7'}>
+          <div className={'col-span-12 min-w-0 md:order-3 md:col-span-12 md:col-start-5 md:row-span-4 md:row-start-1'}>
+            <BrandNewVaultCard className={'h-full'} />
+          </div>
+          <div className={'col-span-12 min-w-0 md:order-4 md:col-span-9 md:row-span-4 md:row-start-5'}>
             <PortfolioCard holdingsVaults={holdingsVaults} />
           </div>
-          <div className={'col-span-12 min-w-0 md:order-4 md:col-span-5'}>
+          <div className={'col-span-12 min-w-0 md:order-5 md:col-span-7 md:col-start-10 md:row-span-4 md:row-start-5'}>
             <DiscoverCard />
           </div>
         </div>
