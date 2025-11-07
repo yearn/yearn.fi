@@ -9,8 +9,8 @@ type TextAnimationProps = {
 
 export function TextAnimation({
   words = ['STAKE', 'INVEST', 'BUILD', 'CHILL', 'LOCK', 'EARN', 'APE'],
-  intervalMs = 3000,
-  startDelayMs = 3000
+  intervalMs = 6000,
+  startDelayMs = 6000
 }: TextAnimationProps): ReactElement {
   const hasBeenTriggered = useRef<boolean>(false)
   const intervalRef = useRef<number | undefined>(undefined)
@@ -54,23 +54,31 @@ export function TextAnimation({
     wordElements[currentWord].style.opacity = '1'
 
     for (const word of Array.from(wordElements)) {
-      const content = word.innerHTML
-      word.innerHTML = ''
-      const letters = []
-      for (let i = 0; i < content.length; i++) {
+      const isProcessed = word.getAttribute('data-text-animate-processed') === 'true'
+      if (isProcessed) {
+        const existingLetters = Array.from(word.getElementsByClassName('letter')) as HTMLSpanElement[]
+        wordArray.push(existingLetters)
+        continue
+      }
+
+      const content = word.textContent || ''
+      word.textContent = ''
+      const letters: HTMLSpanElement[] = []
+      for (const char of content.split('')) {
         const letter = document.createElement('span')
         letter.className = 'letter'
-        letter.innerHTML = content.charAt(i)
+        letter.textContent = char === ' ' ? '\u00A0' : char
         word.appendChild(letter)
         letters.push(letter)
       }
+      word.setAttribute('data-text-animate-processed', 'true')
       wordArray.push(letters)
     }
 
     function animateLetterOut(current: HTMLSpanElement[], index: number): void {
       window.setTimeout((): void => {
         current[index].className = 'letter out'
-      }, index * 80)
+      }, index * 40)
     }
 
     function animateLetterIn(nextLetters: HTMLSpanElement[], index: number): void {
@@ -78,7 +86,7 @@ export function TextAnimation({
         (): void => {
           nextLetters[index].className = 'letter in'
         },
-        340 + index * 80
+        600 + index * 40
       )
     }
 

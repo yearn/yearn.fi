@@ -616,7 +616,7 @@ input[type='number'] {
   margin: 0;
 }
 .text-animate-word {
-  @apply absolute text-neutral-900 font-bold text-xl md:text-xl uppercase text-center flex justify-center items-center w-[300px] md:w-[600px];
+  @apply absolute text-neutral-900 text-2xl md:text-[30px] text-left flex justify-start items-start w-[300px] md:w-[600px];
   opacity: 0;
 }
 .letter {

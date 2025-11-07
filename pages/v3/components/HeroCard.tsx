@@ -3,35 +3,38 @@ import { cl } from '@lib/utils'
 import type { ReactElement } from 'react'
 import { TextAnimation } from './TextAnimate'
 
+// import { TypeMarkYearn } from '../../../apps/lib/icons/TypeMarkYearn'
+
 const HERO_STORIES = [
   'Money Robots at Your Beck and Call',
-  'Kind of like AI, but also totally not',
-  'No Shitcoins, just Earn Yield on Shit',
-  'Transparency is a feature, not a footnote',
-  'We love vibes, but not when it comes to smart contracts.',
-  'Automation that never sleeps',
+  `Transparency doesn't have to be "nice to have"`,
+  'We love vibes, but not for smart contracts.',
   'Composable vaults are better vaults',
-  `Transparency doesn't have to be "nice to have"`
+  'Automation that never sleeps',
+  'Kind of like AI, but without the hallucinations',
+  'No Shitcoins, just Earn Yield on Shit',
 ]
 
 export function HeroCard({ className }: { className?: string }): ReactElement {
   return (
     <div
       className={cl(
-        'relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-3xl',
-        'bg-gradient-to-r from-[#D21162] to-[#2C3DA6] px-6 py-8 md:px-10 md:py-12',
+        'relative flex h-full w-full min-w-0 flex-col justify-center overflow-hidden rounded-3xl',
+        'bg-gradient-to-r from-[#D21162] to-[#2C3DA6] px-6 py-8 md:px-10',
         className
       )}
     >
+      {/* <div className={'flex h-14 items-start'}>
+        <TypeMarkYearnNaughty className={'h-full w-auto'} color={'white'} />
+      </div> */}
       <h2
-        className={'mt-4 text-[42px] font-black uppercase leading-[46px] text-white md:text-[56px] md:leading-[62px]'}
+        className={
+          'text-[42px] font-black uppercase leading-[46px] text-white md:text-[50px] md:leading-[62px]'
+        }
       >
-        {'A brave new world for yield'}
+        {'Yearn Vaults are a brave new world for yield'}
       </h2>
-      <p className={'mt-4 max-w-xl text-base text-white/80 md:text-lg'}>
-        {'Automation, composability, and personal dashboards—now shipping inside Yearn v3.'}
-      </p>
-      <div className={'mt-8 h-[84px] w-full'}>
+      <div className={'mt-8 h-9 w-full'}>
         <TextAnimation words={HERO_STORIES} />
       </div>
       <div className={'mt-10 flex flex-wrap gap-3'}>
