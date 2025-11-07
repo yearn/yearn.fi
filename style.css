@@ -279,7 +279,7 @@ body {
 }
 .yearn--table-data-section-item {
   @apply flex h-min flex-row md:items-start justify-between pt-0 px-0 md:min-h-14 md:pt-1;
-  &[datatype="number"] {
+  &[datatype='number'] {
     @apply md:text-right md:justify-end;
     & > .yearn--table-data-section-item-value {
       font-variant-numeric: tabular-nums;
@@ -593,7 +593,8 @@ input[type='number'] {
 }
 
 .brand-new-marquee {
-  animation: brandNewVaultMarquee var(--brand-new-marquee-duration, 24s) linear infinite;
+  animation: brandNewVaultMarquee var(--brand-new-marquee-duration, 24s) linear
+    infinite;
 }
 .brand-new-marquee > * {
   flex: 0 0 auto;

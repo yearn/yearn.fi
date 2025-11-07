@@ -68,7 +68,7 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
       )}
     >
       <strong className={'block pb-2 text-3xl font-black text-white md:pb-4 md:text-4xl md:leading-[48px]'}>
-        {'Portfolio'}
+        {'You Portfolio'}
       </strong>
       <div className={'flex flex-col gap-6 md:flex-row md:items-end md:gap-14'}>
         <div>

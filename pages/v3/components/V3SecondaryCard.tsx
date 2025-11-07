@@ -3,14 +3,27 @@ import { cl } from '@lib/utils'
 import type { ReactElement } from 'react'
 import { V3_CARD_BASE } from './v3CardBase'
 
-export function V3SecondaryCard({ className }: { className?: string }): ReactElement {
+export function ExploreV2Vaults({ className }: { className?: string }): ReactElement {
   return (
     <Link className={cl(V3_CARD_BASE, className)} href={'/vaults'}>
       <img
         alt={'Single asset vaults graphic'}
-        className={'h-full w-full max-h-[260px] object-contain'}
+        className={' max-h-[260px] object-contain m-4'}
         draggable={false}
         src={'/LP-3.svg'}
+      />
+    </Link>
+  )
+}
+
+export function ExploreOurVaults({ className }: { className?: string }): ReactElement {
+  return (
+    <Link className={cl(V3_CARD_BASE, className)} href={'/v3'}>
+      <img
+        alt={'Explore Our Vaults graphic'}
+        className={'w-full h-full object-cover rounded-2xl'}
+        draggable={false}
+        src={'/explore-our-vaults2.png'}
       />
     </Link>
   )
