@@ -1,9 +1,8 @@
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { ReactElement } from 'react'
-import { BrandNewVaultCard } from './components/BrandNewVaultCard'
 import { DiscoverCard } from './components/DiscoverCard'
+import { HeroCard } from './components/HeroCard'
 import { PortfolioCard } from './components/PortfolioCard'
-// import { V3Card } from './components/V3Card'
 import { ExploreOurVaults } from './components/V3SecondaryCard'
 
 function V3Home(): ReactElement {
@@ -24,7 +23,7 @@ function V3Home(): ReactElement {
             <ExploreOurVaults className={'h-full'} />
           </div>
           <div className={'col-span-12 min-w-0 md:order-3 md:col-span-20 md:col-start-13 md:row-span-4 md:row-start-1'}>
-            <BrandNewVaultCard className={'h-full'} />
+            <HeroCard className={'h-full'} />
           </div>
           <div className={'col-span-12 min-w-0 md:order-4 md:col-span-18 md:row-span-4 md:row-start-5'}>
             <PortfolioCard holdingsVaults={holdingsVaults} />
