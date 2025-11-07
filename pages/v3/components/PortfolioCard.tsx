@@ -226,18 +226,20 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
       )}
     >
       <strong className={'block pb-2 text-3xl font-black text-white md:pb-4 md:text-4xl md:leading-[48px]'}>
-        {'Your Portfolio'}
+        {'Your Deposits'}
       </strong>
       <div className={'flex flex-col gap-6 md:flex-row md:items-end md:gap-14'}>
-        <div>
-          <p className={'pb-1 text-sm uppercase tracking-[0.35em] text-white/60'}>{'Deposited'}</p>
+        <div className={'flex items-end gap-2'}>
           {isLoading ? (
             <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-white/20'} />
           ) : (
-            <b className={'font-number text-3xl text-white md:text-4xl'}>
-              {'$'}
-              <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
-            </b>
+            <>
+              <b className={'font-number text-3xl text-white md:text-4xl'}>
+                {'$'}
+                <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
+              </b>
+              <p className={'pb-0.5 text-sm uppercase text-white/60'}>{'Deposited'}</p>
+            </>
           )}
         </div>
       </div>
