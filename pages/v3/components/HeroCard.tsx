@@ -7,12 +7,12 @@ import { TextAnimation } from './TextAnimate'
 
 const HERO_STORIES = [
   'Money Robots at Your Beck and Call.',
-  `Transparency doesn't have to be "nice to have."`,
+  `Transparency shouldn't be "nice to have."`,
   'We love vibes, but not for smart contracts.',
   'Composable vaults are better vaults.',
   'Automation that never sleeps.',
   'Kind of like AI, but without the hallucinations.',
-  'No Shitcoins, just Earn Yield on Shit.',
+  'No Shitcoins, just Earn Yield on Shit.'
 ]
 
 export function HeroCard({ className }: { className?: string }): ReactElement {
@@ -27,11 +27,7 @@ export function HeroCard({ className }: { className?: string }): ReactElement {
       {/* <div className={'flex h-14 items-start'}>
         <TypeMarkYearnNaughty className={'h-full w-auto'} color={'white'} />
       </div> */}
-      <h2
-        className={
-          'text-[42px] font-black uppercase leading-[46px] text-white md:text-[50px] md:leading-[62px]'
-        }
-      >
+      <h2 className={'text-[42px] font-black uppercase leading-[46px] text-white md:text-[50px] md:leading-[62px]'}>
         {'Yearn Vaults are a brave new world for yield'}
       </h2>
       <div className={'mt-8 h-9 w-full'}>
