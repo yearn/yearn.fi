@@ -591,3 +591,21 @@ input[type='number'] {
   @apply outline-none focus:border-0 focus:outline-none focus:ring-0 active:border-0 active:ring-0;
   box-shadow: none !important;
 }
+
+.brand-new-marquee {
+  animation: brandNewVaultMarquee var(--brand-new-marquee-duration, 24s) linear infinite;
+}
+.brand-new-marquee > * {
+  flex: 0 0 auto;
+}
+.brand-new-marquee--paused {
+  animation-play-state: paused;
+}
+@keyframes brandNewVaultMarquee {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
