@@ -11,11 +11,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
-import { APPS, AppName } from './Apps'
+import { TypeMarkYearn } from '../../../apps/lib/icons/TypeMarkYearn-text-only'
 import { LaunchModal } from './LaunchModal'
 import { ModalMobileMenu } from './ModalMobileMenu'
 
-export type TMenu = { path: string; label: string | ReactElement; target?: string }
+export type TMenu = {
+  path: string
+  label: string | ReactElement
+  target?: string
+}
 type TNavbar = { nav: TMenu[]; currentPathName: string }
 
 function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
@@ -39,8 +43,17 @@ function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
 function WalletSelector(): ReactElement {
   const { openAccountModal } = useAccountModal()
   const { openChainModal } = useChainModal()
-  const { isActive, address, ens, clusters, lensProtocolHandle, openLoginModal } = useWeb3()
-  const [walletIdentity, setWalletIdentity] = useState<string | undefined>(undefined)
+  const {
+    isActive,
+    address,
+    ens,
+    clusters,
+    lensProtocolHandle,
+    openLoginModal,
+  } = useWeb3()
+  const [walletIdentity, setWalletIdentity] = useState<string | undefined>(
+    undefined
+  )
 
   useEffect((): void => {
     if (!isActive && address) {
@@ -70,12 +83,17 @@ function WalletSelector(): ReactElement {
         }
       }}
     >
-      <p suppressHydrationWarning className={'yearn--header-nav-item text-xs! md:text-sm!'}>
+      <p
+        suppressHydrationWarning
+        className={'yearn--header-nav-item text-xs! md:text-sm!'}
+      >
         {walletIdentity ? (
           walletIdentity
         ) : (
           <span>
-            <IconWallet className={'yearn--header-nav-item mt-0.5 block size-4 md:hidden'} />
+            <IconWallet
+              className={'yearn--header-nav-item mt-0.5 block size-4 md:hidden'}
+            />
             <span
               className={
                 'text-neutral-0 relative hidden h-8 cursor-pointer items-center justify-center rounded-sm border border-transparent bg-neutral-900 px-2 text-xs font-normal transition-all hover:bg-neutral-800 md:flex'
@@ -97,40 +115,40 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
   const { setShouldOpenCurtain, notificationStatus } = useNotifications()
 
   const menu = useMemo((): TMenu[] => {
-    const HOME_MENU = { path: '/apps', label: 'Apps' }
+    // const HOME_MENU = { path: '/apps', label: 'Apps' }
 
-    if (pathname.startsWith('/ycrv')) {
-      return [...APPS[AppName.YCRV].menu]
-    }
+    // if (pathname.startsWith('/ycrv')) {
+    //   return [...APPS[AppName.YCRV].menu]
+    // }
 
-    if (pathname.startsWith('/v3')) {
-      return [...APPS[AppName.VAULTSV3].menu]
-    }
+    // if (pathname.startsWith('/v3')) {
+    //   return [...APPS[AppName.VAULTSV3].menu]
+    // }
 
-    if (pathname.startsWith('/vaults-beta')) {
-      return [...APPS[AppName.BETA].menu]
-    }
+    // if (pathname.startsWith('/vaults-beta')) {
+    //   return [...APPS[AppName.BETA].menu]
+    // }
 
-    if (pathname.startsWith('/vaults')) {
-      return [...APPS[AppName.VAULTS].menu]
-    }
+    // if (pathname.startsWith('/vaults')) {
+    //   return [...APPS[AppName.VAULTS].menu]
+    // }
 
-    if (pathname.startsWith('/veyfi')) {
-      return [...APPS[AppName.VEYFI].menu]
-    }
+    // if (pathname.startsWith('/veyfi')) {
+    //   return [...APPS[AppName.VEYFI].menu]
+    // }
 
     return [
-      HOME_MENU,
+      // HOME_MENU,
       { path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank' },
       { path: 'https://discord.gg/yearn', label: 'Support', target: '_blank' },
       { path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank' },
       {
         path: 'https://gov.yearn.fi/',
         label: 'Discourse',
-        target: '_blank'
-      }
+        target: '_blank',
+      },
     ]
-  }, [pathname])
+  }, [])
 
   const notificationDotColor = useMemo(() => {
     if (notificationStatus === 'error') {
@@ -151,20 +169,32 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     <div id={'head'} className={'inset-x-0 top-0 z-50 w-full'}>
       <div className={'w-full'}>
         <header className={'yearn--header mx-auto max-w-[1232px] px-0!'}>
-          <div className={'direction-row flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'}>
+          <div
+            className={
+              'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'
+            }
+          >
             <div className={'flex justify-center'}>
               <LaunchModal />
             </div>
-            <Navbar currentPathName={pathname || ''} nav={menu} />
+            <TypeMarkYearn className={'h-8 w-auto pt-1'} color={'white'} />
           </div>
-          <div className={'flex w-1/3 items-center justify-end'}>
+          <div className={'flex w-1/2 items-center justify-end'}>
+            <Navbar currentPathName={pathname || ''} nav={menu} />
             <button
-              className={'yearn--header-nav-item relative rounded-full p-4 transition-colors'}
+              className={
+                'yearn--header-nav-item relative rounded-full p-4 transition-colors'
+              }
               onClick={(): void => setShouldOpenCurtain(true)}
             >
               <IconBell className={'size-4 font-bold transition-colors'} />
 
-              <div className={cl('absolute right-4 top-4 size-2 rounded-full', notificationDotColor)} />
+              <div
+                className={cl(
+                  'absolute right-4 top-4 size-2 rounded-full',
+                  notificationDotColor
+                )}
+              />
             </button>
             <WalletSelector />
             <div className={'flex md:hidden pl-4 text-neutral-500'}>
@@ -186,7 +216,10 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
         {menu?.map(
           (option): ReactElement => (
             <Link key={option.path} href={option.path}>
-              <div className={'mobile-nav-item'} onClick={(): void => setIsMenuOpen(false)}>
+              <div
+                className={'mobile-nav-item'}
+                onClick={(): void => setIsMenuOpen(false)}
+              >
                 <p className={'font-bold'}>{option.label}</p>
               </div>
             </Link>
