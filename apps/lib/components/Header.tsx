@@ -43,17 +43,8 @@ function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
 function WalletSelector(): ReactElement {
   const { openAccountModal } = useAccountModal()
   const { openChainModal } = useChainModal()
-  const {
-    isActive,
-    address,
-    ens,
-    clusters,
-    lensProtocolHandle,
-    openLoginModal,
-  } = useWeb3()
-  const [walletIdentity, setWalletIdentity] = useState<string | undefined>(
-    undefined
-  )
+  const { isActive, address, ens, clusters, lensProtocolHandle, openLoginModal } = useWeb3()
+  const [walletIdentity, setWalletIdentity] = useState<string | undefined>(undefined)
 
   useEffect((): void => {
     if (!isActive && address) {
@@ -83,17 +74,12 @@ function WalletSelector(): ReactElement {
         }
       }}
     >
-      <p
-        suppressHydrationWarning
-        className={'yearn--header-nav-item text-xs! md:text-sm!'}
-      >
+      <p suppressHydrationWarning className={'yearn--header-nav-item text-xs! md:text-sm!'}>
         {walletIdentity ? (
           walletIdentity
         ) : (
           <span>
-            <IconWallet
-              className={'yearn--header-nav-item mt-0.5 block size-4 md:hidden'}
-            />
+            <IconWallet className={'yearn--header-nav-item mt-0.5 block size-4 md:hidden'} />
             <span
               className={
                 'text-neutral-0 relative hidden h-8 cursor-pointer items-center justify-center rounded-sm border border-transparent bg-neutral-900 px-2 text-xs font-normal transition-all hover:bg-neutral-800 md:flex'
@@ -145,8 +131,8 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
       {
         path: 'https://gov.yearn.fi/',
         label: 'Discourse',
-        target: '_blank',
-      },
+        target: '_blank'
+      }
     ]
   }, [])
 
@@ -169,11 +155,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     <div id={'head'} className={'inset-x-0 top-0 z-50 w-full'}>
       <div className={'w-full'}>
         <header className={'yearn--header mx-auto max-w-[1232px] px-0!'}>
-          <div
-            className={
-              'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'
-            }
-          >
+          <div className={'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'}>
             <div className={'flex justify-center'}>
               <LaunchModal />
             </div>
@@ -182,19 +164,12 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
           <div className={'flex w-1/2 items-center justify-end'}>
             <Navbar currentPathName={pathname || ''} nav={menu} />
             <button
-              className={
-                'yearn--header-nav-item relative rounded-full p-4 transition-colors'
-              }
+              className={'yearn--header-nav-item relative rounded-full p-4 transition-colors'}
               onClick={(): void => setShouldOpenCurtain(true)}
             >
               <IconBell className={'size-4 font-bold transition-colors'} />
 
-              <div
-                className={cl(
-                  'absolute right-4 top-4 size-2 rounded-full',
-                  notificationDotColor
-                )}
-              />
+              <div className={cl('absolute right-4 top-4 size-2 rounded-full', notificationDotColor)} />
             </button>
             <WalletSelector />
             <div className={'flex md:hidden pl-4 text-neutral-500'}>
@@ -216,10 +191,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
         {menu?.map(
           (option): ReactElement => (
             <Link key={option.path} href={option.path}>
-              <div
-                className={'mobile-nav-item'}
-                onClick={(): void => setIsMenuOpen(false)}
-              >
+              <div className={'mobile-nav-item'} onClick={(): void => setIsMenuOpen(false)}>
                 <p className={'font-bold'}>{option.label}</p>
               </div>
             </Link>
