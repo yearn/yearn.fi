@@ -10,6 +10,7 @@ import { Partners } from './components/Partners'
 import { PortfolioCard } from './components/PortfolioCard'
 import { Security } from './components/Security'
 import { ExploreOurVaults } from './components/V3SecondaryCard'
+import { VaultInfo } from './components/VaultInfo'
 
 function V3Home(): ReactElement {
   const { holdingsVaults } = useV3VaultFilter(null, null, '', null)
@@ -110,6 +111,9 @@ function V3Home(): ReactElement {
           </div>
           {isLearnMoreExpanded && (
             <>
+              <div {...buildLearnMoreProps(6)}>
+                <VaultInfo />
+              </div>
               <div {...buildLearnMoreProps(4)}>
                 <Security />
               </div>

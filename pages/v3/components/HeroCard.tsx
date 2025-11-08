@@ -12,7 +12,7 @@ const HERO_STORIES = [
   'Composable vaults are better vaults.',
   'Automation that never sleeps.',
   'Kind of like AI, but without the hallucinations.',
-  'No Shitcoins, just Earn Yield on Shit.'
+  'No Shitcoins, just earn yield on shit.'
 ]
 
 type HeroCardProps = {
@@ -41,7 +41,7 @@ export function HeroCard({ className, onLearnMore, isLearnMoreExpanded }: HeroCa
       <div className={'mt-8 h-9 w-full'}>
         <TextAnimation words={HERO_STORIES} />
       </div>
-      <div className={'mt-10 flex flex-wrap gap-3'}>
+      <div className={'mt-10 flex w-full flex-wrap items-center gap-3'}>
         <button
           type={'button'}
           className={cl(
@@ -60,7 +60,16 @@ export function HeroCard({ className, onLearnMore, isLearnMoreExpanded }: HeroCa
           )}
           href={'/v3'}
         >
-          {'Enter app'}
+          {'Explore Vaults'}
+        </Link>
+        <Link
+          className={cl(
+            'inline-flex items-center justify-center rounded-lg border border-white/60 px-6 py-2',
+            'text-sm font-semibold text-white transition hover:border-white hover:text-white'
+          )}
+          href={'https://docs.yearn.fi'}
+        >
+          {'Docs'}
         </Link>
       </div>
     </div>
