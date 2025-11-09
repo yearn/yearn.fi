@@ -166,14 +166,14 @@ export function VaultsV3ListHead({
     <div className={cl('mt-4 hidden w-full grid-cols-1 md:mt-0 md:grid', wrapperClassName)}>
       <div
         className={cl(
-          'grid w-full grid-cols-1 md:grid-cols-12 px-4 py-2 md:px-8',
+          'grid w-full grid-cols-1 md:grid-cols-24 px-4 py-2 md:px-8',
           'border-t border-neutral-200 md:border-none',
           containerClassName
         )}
       >
         <div
           className={cl(
-            'col-span-4',
+            'col-span-9',
             'flex flex-row items-center justify-between',
             'mb-2 py-4 md:mb-0 md:py-0',
             token.className
@@ -182,7 +182,7 @@ export function VaultsV3ListHead({
           {renderItem(token, !isToggleItem(token) && sortBy === token.value, false)}
         </div>
 
-        <div className={cl('col-span-8 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
+        <div className={cl('col-span-15 z-10', 'grid grid-cols-2 md:grid-cols-15 gap-4', 'mt-4 md:mt-0')}>
           {rest.map((item): ReactElement => renderItem(item, !isToggleItem(item) && sortBy === item.value, true))}
         </div>
       </div>

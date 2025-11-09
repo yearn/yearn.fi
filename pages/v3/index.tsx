@@ -289,10 +289,9 @@ function ListOfVaults({
   )
 
   const listElement = (
-    <div className={'col-span-48 flex min-h-[240px] w-full flex-col'}>
+    <div className={'flex min-h-[240px] w-full flex-col'}>
       <div className={'flex flex-col overflow-hidden rounded-t-3xl'}>
         <VaultsV3ListHead
-          wrapperClassName={'mt-0'}
           containerClassName={'rounded-t-3xl bg-neutral-100'}
           sortBy={sortBy}
           sortDirection={sortDirection}
@@ -323,49 +322,49 @@ function ListOfVaults({
               label: 'Vault / Featuring Score',
               value: 'featuringScore',
               sortable: true,
-              className: 'col-span-4'
+              className: 'col-span-9'
             },
             {
               type: 'sort',
               label: 'Est. APY',
               value: 'estAPY',
               sortable: true,
-              className: 'col-span-2'
+              className: 'col-span-3'
             },
             {
               type: 'sort',
               label: 'Hist. APY',
               value: 'APY',
               sortable: true,
-              className: 'col-span-2'
+              className: 'col-span-3'
             },
             {
               type: 'sort',
               label: 'Risk Level',
               value: 'score',
               sortable: true,
-              className: 'col-span-2 whitespace-nowrap'
+              className: 'col-span-3 whitespace-nowrap'
             },
-            {
-              type: 'toggle',
-              label: 'Available',
-              value: AVAILABLE_TOGGLE_VALUE,
-              className: 'col-span-2',
-              disabled: availableVaults.length === 0
-            },
+            // {
+            //   type: 'toggle',
+            //   label: 'Available',
+            //   value: AVAILABLE_TOGGLE_VALUE,
+            //   className: 'col-span-2',
+            //   disabled: availableVaults.length === 0
+            // },
             {
               type: 'toggle',
               label: 'Holdings',
               value: HOLDINGS_TOGGLE_VALUE,
-              className: 'col-span-2',
+              className: 'col-span-3',
               disabled: holdingsVaults.length === 0
             },
             {
               type: 'sort',
-              label: 'Deposits',
+              label: 'TVL',
               value: 'tvl',
               sortable: true,
-              className: 'col-span-2 justify-end'
+              className: 'col-span-3 justify-end'
             }
           ]}
         />
@@ -395,18 +394,14 @@ function Index(): ReactElement {
   })
 
   return (
-    <div
-      className={
-        'relative z-50 mx-auto grid w-full max-w-[1232px] grid-cols-48 gap-4 bg-neutral-0 px-4 pb-8 pt-20 md:gap-2'
-      }
-    >
+    <div className={'relative z-50 mx-auto grid w-full max-w-[1232px] gap-4 bg-neutral-0 px-4 pb-8 pt-20 md:gap-2'}>
       <ListOfVaults {...queryArgs}>
         {({ filters, list }) => (
           <Fragment>
             {/* <div className={'col-span-48 hidden h-full w-full rounded-3xl bg-neutral-100 p-2 md:col-span-8 md:block'}>
               <V3Card />
             </div> */}
-            <div className={'col-span-48 flex flex-col md:col-span-48'}>{filters}</div>
+            <div className={'flex flex-col'}>{filters}</div>
             {list}
           </Fragment>
         )}
