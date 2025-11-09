@@ -1,7 +1,6 @@
 import { SectionHeader } from '@lib/components/SectionHeader'
 import type { FC, ReactNode } from 'react'
 import { useState } from 'react'
-import Image from '/src/components/Image'
 
 type FAQItemProps = {
   title: string
@@ -11,14 +10,14 @@ type FAQItemProps = {
 }
 
 const FAQItem: FC<FAQItemProps> = ({ title, children, isOpen, onToggle }) => (
-  <div className={'w-full'}>
+  <div className={'w-full overflow-hidden rounded-lg bg-neutral-200/80 transition-colors'}>
     <button
       onClick={onToggle}
       className={
-        'flex w-full items-center justify-between rounded-lg bg-[#191919] px-6 py-5 text-neutral-900 transition-colors hover:bg-[#2a2a2a]'
+        'flex w-full items-center justify-between px-6 py-5 text-left text-neutral-700 transition-colors hover:text-neutral-500'
       }
     >
-      <span className={'text-lg'}>{title}</span>
+      <span className={'text-xl font-medium'}>{title}</span>
       <span
         className={'text-2xl transition-transform'}
         style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
@@ -26,7 +25,20 @@ const FAQItem: FC<FAQItemProps> = ({ title, children, isOpen, onToggle }) => (
         {'+'}
       </span>
     </button>
-    {isOpen && <div className={'mt-px rounded-b-lg bg-[#191919] px-6 py-4 text-base text-gray-300'}>{children}</div>}
+    {isOpen && (
+      <div className={'px-6 py-4 text-base text-neutral-600'}>
+        <div
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden'
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    )}
   </div>
 )
 
@@ -80,7 +92,7 @@ type FAQsProps = {
 }
 
 export const FAQs: FC<FAQsProps> = ({ sectionHeight }) => {
-  const [openFAQ, setOpenFAQ] = useState<number | null>(null)
+  const [openFAQ, setOpenFAQ] = useState<number | null>(0)
 
   const toggleFAQ = (index: number): void => {
     setOpenFAQ(openFAQ === index ? null : index)
@@ -89,34 +101,22 @@ export const FAQs: FC<FAQsProps> = ({ sectionHeight }) => {
   const sectionStyle = sectionHeight ? { minHeight: `${sectionHeight}px` } : undefined
 
   return (
-    <section className={'flex w-full justify-center pb-8 pt-0 lg:pt-0'} style={sectionStyle}>
-      <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between md:flex-row'}>
-        <div className={'w-full px-4'}>
-          <div className={'mb-10 flex flex-col justify-between gap-y-6 md:flex-row'}>
-            <SectionHeader
-              tagline={'Education'}
-              title={'FAQs'}
-              description={'Frequently asked questions about Yearn'}
-            />
-          </div>
-          <div className={'grid grid-cols-1 gap-8 md:grid-cols-2'}>
-            <div className={'hidden h-[400px] md:block'}>
-              <Image
-                src={'/landing/footer-background.png'}
-                width={600}
-                height={600}
-                alt={'Yearn Finance'}
-                className={'size-full rounded-lg object-cover'}
-              />
-            </div>
-            <div className={'flex flex-col space-y-2'}>
-              {faqData.map((faq, index) => (
-                <FAQItem key={faq.title} title={faq.title} isOpen={openFAQ === index} onToggle={() => toggleFAQ(index)}>
-                  {faq.content}
-                </FAQItem>
-              ))}
-            </div>
-          </div>
+    <section className={'flex w-full justify-center py-4'} style={sectionStyle}>
+      <div className={'flex w-full max-w-[1180px] flex-col gap-8 px-4 lg:flex-row'}>
+        <div className={'flex flex-col lg:w-1/3'}>
+          <SectionHeader
+            align={'left'}
+            tagline={'Education'}
+            title={'FAQs'}
+            description={'Frequently asked questions about Yearn'}
+          />
+        </div>
+        <div className={'flex flex-col space-y-2 lg:w-2/3'}>
+          {faqData.map((faq, index) => (
+            <FAQItem key={faq.title} title={faq.title} isOpen={openFAQ === index} onToggle={() => toggleFAQ(index)}>
+              {faq.content}
+            </FAQItem>
+          ))}
         </div>
       </div>
     </section>

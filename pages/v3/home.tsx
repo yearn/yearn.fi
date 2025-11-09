@@ -17,7 +17,7 @@ const LEARN_MORE_SECTIONS = [
   { key: 'security', Component: Security, rowSpan: 5 },
   { key: 'partners', Component: Partners, rowSpan: 4 },
   { key: 'integrations', Component: Integrations, rowSpan: 8 },
-  { key: 'faqs', Component: FAQs, rowSpan: 6 }
+  { key: 'faqs', Component: FAQs, rowSpan: 5 }
 ] as const
 
 function V3Home(): ReactElement {
