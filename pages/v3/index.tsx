@@ -256,12 +256,12 @@ function ListOfVaults({
     }
 
     return (
-      <div className={'flex flex-col gap-3'}>
+      <div className={'flex flex-col gap-px'}>
         {pinnedSections.map((section) => (
           <VaultsV3AuxiliaryList key={section.key} vaults={section.vaults} vaultFlags={vaultFlags} />
         ))}
         {mainVaults.length > 0 ? (
-          <div className={'grid gap-2'}>
+          <div className={'flex flex-col gap-px'}>
             {mainVaults.map((vault) => {
               const key = `${vault.chainID}_${toAddress(vault.address)}`
               return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
@@ -289,84 +289,88 @@ function ListOfVaults({
   )
 
   const listElement = (
-    <div className={'col-span-48 flex min-h-[240px] w-full flex-col gap-px'}>
-      <VaultsV3ListHead
-        sortBy={sortBy}
-        sortDirection={sortDirection}
-        onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-          let targetSortBy = newSortBy as TPossibleSortBy
-          let targetSortDirection = newSortDirection as TSortDirection
+    <div className={'col-span-48 flex min-h-[240px] w-full flex-col'}>
+      <div className={'flex flex-col overflow-hidden rounded-t-3xl bg-neutral-100'}>
+        <VaultsV3ListHead
+          wrapperClassName={'mt-0'}
+          containerClassName={'rounded-t-3xl bg-neutral-100'}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+            let targetSortBy = newSortBy as TPossibleSortBy
+            let targetSortDirection = newSortDirection as TSortDirection
 
-          if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
-            targetSortBy = 'featuringScore'
-            targetSortDirection = 'desc'
-          }
-
-          onChangeSortBy(targetSortBy)
-          onChangeSortDirection(targetSortDirection)
-        }}
-        onToggle={(value): void => {
-          setActiveToggleValues((prev) => {
-            if (prev.includes(value)) {
-              return prev.filter((entry) => entry !== value)
+            if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
+              targetSortBy = 'featuringScore'
+              targetSortDirection = 'desc'
             }
-            return [value]
-          })
-        }}
-        activeToggleValues={activeToggleValues}
-        items={[
-          {
-            type: 'sort',
-            label: 'Vault / Featuring Score',
-            value: 'featuringScore',
-            sortable: true,
-            className: 'col-span-4'
-          },
-          {
-            type: 'sort',
-            label: 'Est. APY',
-            value: 'estAPY',
-            sortable: true,
-            className: 'col-span-2'
-          },
-          {
-            type: 'sort',
-            label: 'Hist. APY',
-            value: 'APY',
-            sortable: true,
-            className: 'col-span-2'
-          },
-          {
-            type: 'sort',
-            label: 'Risk Level',
-            value: 'score',
-            sortable: true,
-            className: 'col-span-2 whitespace-nowrap'
-          },
-          {
-            type: 'toggle',
-            label: 'Available',
-            value: AVAILABLE_TOGGLE_VALUE,
-            className: 'col-span-2',
-            disabled: availableVaults.length === 0
-          },
-          {
-            type: 'toggle',
-            label: 'Holdings',
-            value: HOLDINGS_TOGGLE_VALUE,
-            className: 'col-span-2',
-            disabled: holdingsVaults.length === 0
-          },
-          {
-            type: 'sort',
-            label: 'Deposits',
-            value: 'tvl',
-            sortable: true,
-            className: 'col-span-2 justify-end'
-          }
-        ]}
-      />
-      {renderVaultList()}
+
+            onChangeSortBy(targetSortBy)
+            onChangeSortDirection(targetSortDirection)
+          }}
+          onToggle={(value): void => {
+            setActiveToggleValues((prev) => {
+              if (prev.includes(value)) {
+                return prev.filter((entry) => entry !== value)
+              }
+              return [value]
+            })
+          }}
+          activeToggleValues={activeToggleValues}
+          items={[
+            {
+              type: 'sort',
+              label: 'Vault / Featuring Score',
+              value: 'featuringScore',
+              sortable: true,
+              className: 'col-span-4'
+            },
+            {
+              type: 'sort',
+              label: 'Est. APY',
+              value: 'estAPY',
+              sortable: true,
+              className: 'col-span-2'
+            },
+            {
+              type: 'sort',
+              label: 'Hist. APY',
+              value: 'APY',
+              sortable: true,
+              className: 'col-span-2'
+            },
+            {
+              type: 'sort',
+              label: 'Risk Level',
+              value: 'score',
+              sortable: true,
+              className: 'col-span-2 whitespace-nowrap'
+            },
+            {
+              type: 'toggle',
+              label: 'Available',
+              value: AVAILABLE_TOGGLE_VALUE,
+              className: 'col-span-2',
+              disabled: availableVaults.length === 0
+            },
+            {
+              type: 'toggle',
+              label: 'Holdings',
+              value: HOLDINGS_TOGGLE_VALUE,
+              className: 'col-span-2',
+              disabled: holdingsVaults.length === 0
+            },
+            {
+              type: 'sort',
+              label: 'Deposits',
+              value: 'tvl',
+              sortable: true,
+              className: 'col-span-2 justify-end'
+            }
+          ]}
+        />
+        {renderVaultList()}
+      </div>
     </div>
   )
 

@@ -33,6 +33,8 @@ export type TListHead = {
   onSort: (sortBy: string, sortDirection: TSortDirection) => void
   onToggle?: (value: string) => void
   activeToggleValues?: Iterable<string>
+  wrapperClassName?: string
+  containerClassName?: string
 }
 
 function isToggleItem(item: TListHeadItem): item is TToggleListHeadItem {
@@ -45,7 +47,9 @@ export function VaultsV3ListHead({
   sortDirection,
   onSort,
   onToggle,
-  activeToggleValues
+  activeToggleValues,
+  wrapperClassName,
+  containerClassName
 }: TListHead): ReactElement {
   const activeToggles = useMemo(() => new Set(activeToggleValues || []), [activeToggleValues])
 
@@ -159,11 +163,12 @@ export function VaultsV3ListHead({
   }
 
   return (
-    <div className={'mt-4 hidden w-full grid-cols-1 md:mt-0 md:grid'}>
+    <div className={cl('mt-4 hidden w-full grid-cols-1 md:mt-0 md:grid', wrapperClassName)}>
       <div
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-12 px-4 py-2 md:px-8',
-          'border-t border-neutral-200 md:border-none'
+          'border-t border-neutral-200 md:border-none',
+          containerClassName
         )}
       >
         <div

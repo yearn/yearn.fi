@@ -79,14 +79,14 @@ export function VaultsV3ListRow({
       onClick={handleRowClick}
       onKeyDown={handleKeyDown}
       className={cl(
-        'grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl',
+        'grid w-full grid-cols-1 md:grid-cols-12 bg-neutral-100',
         'p-6 pt-2 pb-4 md:pr-10',
         'cursor-pointer relative group'
       )}
     >
       <div
         className={cl(
-          'absolute inset-0 rounded-3xl',
+          'absolute inset-0',
           'opacity-20 transition-opacity group-hover:opacity-100 pointer-events-none',
           'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
         )}
@@ -114,14 +114,15 @@ export function VaultsV3ListRow({
             >
               {currentVault.name}
             </strong>
-            <div className={'flex flex-row items-center gap-1'}>
+            <div className={'flex flex-row items-center gap-1 text-sm text-neutral-800/60'}>
               <ImageWithFallback
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`}
                 alt={`Chain ${currentVault.chainID}`}
                 width={14}
                 height={14}
               />
-              <p className={'block text-sm text-neutral-800/60'}>{getNetwork(currentVault.chainID).name}</p>
+              <p>{getNetwork(currentVault.chainID).name}</p>
+              <p>{` - ${currentVault.category} - ${currentVault.kind}`}</p>
             </div>
             {/* <p className={'mt-0.5 text-xs text-neutral-500'}>
               {'Featuring score: '}
@@ -129,9 +130,9 @@ export function VaultsV3ListRow({
                 {formatAmount(currentVault.featuringScore || 0, 2, 2)}
               </span>
             </p> */}
-            <p
+            {/* <p
               className={'mb-0 block text-sm text-neutral-800/60 md:mb-2'}
-            >{`${currentVault.kind} - ${currentVault.category}`}</p>
+            >{`${currentVault.kind} - ${currentVault.category}`}</p> */}
           </div>
         </div>
       </div>

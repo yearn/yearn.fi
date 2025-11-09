@@ -30,7 +30,7 @@ export function VaultsV3AuxiliaryList({ title, vaults, vaultFlags }: TVaultsV3Au
       {title ? (
         <p className={cl('px-4 text-xs font-semibold uppercase tracking-wide text-neutral-600 md:px-8')}>{title}</p>
       ) : null}
-      <div className={'grid gap-2'}>
+      <div className={'flex flex-col gap-px'}>
         {vaults.map((vault) => {
           const key = `${vault.chainID}_${toAddress(vault.address)}`
           return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
