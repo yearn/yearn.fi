@@ -87,7 +87,7 @@ export function VaultsV3ListRow({
       <div
         className={cl(
           'absolute inset-0',
-          'opacity-20 transition-opacity group-hover:opacity-100 pointer-events-none',
+          'opacity-0 transition-opacity duration-300 group-hover:opacity-20 group-focus-visible:opacity-20 pointer-events-none',
           'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
         )}
       />
