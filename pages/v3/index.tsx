@@ -290,7 +290,7 @@ function ListOfVaults({
 
   const listElement = (
     <div className={'col-span-48 flex min-h-[240px] w-full flex-col'}>
-      <div className={'flex flex-col overflow-hidden rounded-t-3xl bg-neutral-100'}>
+      <div className={'flex flex-col overflow-hidden rounded-t-3xl'}>
         <VaultsV3ListHead
           wrapperClassName={'mt-0'}
           containerClassName={'rounded-t-3xl bg-neutral-100'}
