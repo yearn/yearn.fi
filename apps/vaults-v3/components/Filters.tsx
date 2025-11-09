@@ -1,18 +1,19 @@
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
 import { SearchBar } from '@lib/components/SearchBar'
-import useWallet from '@lib/contexts/useWallet'
-import { useWeb3 } from '@lib/contexts/useWeb3'
+// import useWallet from '@lib/contexts/useWallet'
+// import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useChainOptions } from '@lib/hooks/useChains'
 import { IconCross } from '@lib/icons/IconCross'
-import { cl, formatAmount } from '@lib/utils'
+import { cl } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constants'
 
 import type { ReactElement, ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { Drawer } from 'vaul'
-import HoldingsMarquee from './list/HoldingsMarquee'
+
+// import HoldingsMarquee from './list/HoldingsMarquee'
 
 type TListHero = {
   types: string[] | null
@@ -28,56 +29,56 @@ type TListHero = {
   holdingsVaults: TYDaemonVault[]
 }
 
-function PortfolioCard({ holdingsVaults }: { holdingsVaults: TYDaemonVault[] }): ReactElement {
-  const { cumulatedValueInV3Vaults, isLoading } = useWallet()
-  const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
+// function PortfolioCard({ holdingsVaults }: { holdingsVaults: TYDaemonVault[] }): ReactElement {
+//   const { cumulatedValueInV3Vaults, isLoading } = useWallet()
+//   const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
 
-  if (!isActive) {
-    return (
-      <div className={'mb-4 flex h-18 flex-row items-center gap-2'}>
-        <button
-          className={cl('relative flex overflow-hidden rounded-lg group', 'px-[42px] py-2', 'border-none')}
-          onClick={(): void => {
-            if (!isActive && address) {
-              onSwitchChain(1)
-            } else {
-              openLoginModal()
-            }
-          }}
-        >
-          <div
-            className={cl(
-              'absolute inset-0',
-              'pointer-events-none opacity-80 transition-opacity group-hover:opacity-100',
-              'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
-            )}
-          />
-          <p className={'z-10 text-neutral-900'}>{'Connect Wallet'}</p>
-        </button>
-        <p className={'p-2 text-[#757CA6]'}>{'It looks like you need to connect your wallet.'}</p>
-      </div>
-    )
-  }
-  return (
-    <div className={'mb-2 flex flex-col gap-0 md:min-h-18'}>
-      <div className={'flex flex-row justify-between'}>
-        <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Your Deposits:'}</p>
-        <div className={'flex flex-row gap-4 md:flex-row md:gap-2 pr-4'}>
-          <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Value of your Deposits:'}</p>
-          {isLoading ? (
-            <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
-          ) : (
-            <b className={'font-number text-neutral-900 '}>
-              {'$'}
-              <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
-            </b>
-          )}
-        </div>
-      </div>
-      <HoldingsMarquee holdingsVaults={holdingsVaults} />
-    </div>
-  )
-}
+//   if (!isActive) {
+//     return (
+//       <div className={'mb-4 flex h-18 flex-row items-center gap-2'}>
+//         <button
+//           className={cl('relative flex overflow-hidden rounded-lg group', 'px-[42px] py-2', 'border-none')}
+//           onClick={(): void => {
+//             if (!isActive && address) {
+//               onSwitchChain(1)
+//             } else {
+//               openLoginModal()
+//             }
+//           }}
+//         >
+//           <div
+//             className={cl(
+//               'absolute inset-0',
+//               'pointer-events-none opacity-80 transition-opacity group-hover:opacity-100',
+//               'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
+//             )}
+//           />
+//           <p className={'z-10 text-neutral-900'}>{'Connect Wallet'}</p>
+//         </button>
+//         <p className={'p-2 text-[#757CA6]'}>{'It looks like you need to connect your wallet.'}</p>
+//       </div>
+//     )
+//   }
+//   return (
+//     <div className={'mb-2 flex flex-col gap-0 md:min-h-18'}>
+//       <div className={'flex flex-row justify-between'}>
+//         <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Your Deposits:'}</p>
+//         <div className={'flex flex-row gap-4 md:flex-row md:gap-2 pr-4'}>
+//           <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Value of your Deposits:'}</p>
+//           {isLoading ? (
+//             <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
+//           ) : (
+//             <b className={'font-number text-neutral-900 '}>
+//               {'$'}
+//               <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
+//             </b>
+//           )}
+//         </div>
+//       </div>
+//       <HoldingsMarquee holdingsVaults={holdingsVaults} />
+//     </div>
+//   )
+// }
 
 export function Filters({
   types,
@@ -89,8 +90,8 @@ export function Filters({
   onSearch,
   shouldDebounce,
   onChangeChains,
-  searchAlertContent,
-  holdingsVaults
+  searchAlertContent
+  // holdingsVaults
 }: TListHero): ReactElement {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -135,7 +136,7 @@ export function Filters({
 
   return (
     <div className={'relative col-span-24 w-full rounded-3xl bg-neutral-100 p-3 md:col-span-19'}>
-      <PortfolioCard holdingsVaults={holdingsVaults} />
+      {/* <PortfolioCard holdingsVaults={holdingsVaults} /> */}
 
       <div className={'md:hidden'}>
         <div className={'mb-5 w-full'}>

@@ -1,7 +1,7 @@
 import { Button } from '@lib/components/Button'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
-import { cl, toAddress } from '@lib/utils'
+import { toAddress } from '@lib/utils'
 import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
@@ -15,22 +15,22 @@ import {
   ALL_VAULTSV3_KINDS_KEYS,
   DEFAULT_SELECTED_VAULTSV3_CATEGORIES
 } from '@vaults-v3/constants'
-import { V3Mask } from '@vaults-v3/Mark'
+// import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 
-function V3Card(): ReactElement {
-  return (
-    <div
-      className={cl(
-        'flex h-full w-full flex-col items-center justify-center',
-        'gap-y-0 rounded-2xl bg-neutral-200 p-4 md:gap-y-6'
-      )}
-    >
-      <V3Mask className={'size-34'} />
-    </div>
-  )
-}
+// function V3Card(): ReactElement {
+//   return (
+//     <div
+//       className={cl(
+//         'flex h-full w-full flex-col items-center justify-center',
+//         'gap-y-0 rounded-2xl bg-neutral-200 p-4 md:gap-y-6'
+//       )}
+//     >
+//       <V3Mask className={'size-34'} />
+//     </div>
+//   )
+// }
 
 type TListOfVaultsProps = {
   search: string | null | undefined
@@ -399,10 +399,10 @@ function Index(): ReactElement {
       <ListOfVaults {...queryArgs}>
         {({ filters, list }) => (
           <Fragment>
-            <div className={'col-span-48 hidden h-full w-full rounded-3xl bg-neutral-100 p-2 md:col-span-8 md:block'}>
+            {/* <div className={'col-span-48 hidden h-full w-full rounded-3xl bg-neutral-100 p-2 md:col-span-8 md:block'}>
               <V3Card />
-            </div>
-            <div className={'col-span-48 flex flex-col md:col-span-40'}>{filters}</div>
+            </div> */}
+            <div className={'col-span-48 flex flex-col md:col-span-48'}>{filters}</div>
             {list}
           </Fragment>
         )}
