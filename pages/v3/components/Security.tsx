@@ -1,10 +1,13 @@
 import Link from '@components/Link'
 import { SectionHeader } from '@lib/components/SectionHeader'
-import { type FC, useRef, useState } from 'react'
+import { cl } from '@lib/utils'
+import type { FC } from 'react'
+import { useState } from 'react'
 
 enum SecurityCardType {
   Audits = 'audits',
-  BugBounties = 'bug-bounties'
+  BugBounties = 'bug-bounties',
+  MoreInfo = 'more-info'
 }
 
 const securityCards: {
@@ -16,80 +19,49 @@ const securityCards: {
   }
 } = {
   [SecurityCardType.Audits]: {
-    title: 'Audits',
-    description: 'Yearn Contracts are audited thoroughly by a variety of auditors.',
-    href: 'https://docs.yearn.fi/developers/security/',
-    bgColor: 'bg-[#6B2FEC]'
+    title: 'View our Audits →',
+    description: 'Yearn Contracts have been audited thoroughly by a variety of auditors.',
+    href: 'https://github.com/yearn/yearn-security/tree/master/audits',
+    bgColor: 'bg-gradient-to-r from-[#D21162] to-[#2C3DA6]'
   },
   [SecurityCardType.BugBounties]: {
-    title: 'Bug Bounties',
-    description: 'Security is our top priority. Report vulnerabilities and get rewarded.',
+    title: 'Explore Bug Bounties →',
+    description:
+      'Security is a continuous endeavor. Yearn has bug bounties where you can report vulnerabilities and get rewarded.',
     href: 'https://immunefi.com/bug-bounty/yearnfinance',
-    bgColor: 'bg-[#0B5DD0]'
+    bgColor: 'bg-gradient-to-r from-[#D21162] to-[#2C3DA6]'
+  },
+  [SecurityCardType.MoreInfo]: {
+    title: 'Learn more about Security Practices →',
+    description: '',
+    href: 'https://docs.yearn.fi/developers/security/',
+    bgColor: 'bg-gradient-to-r from-[#D21162] to-[#2C3DA6]'
   }
 }
 
-const SecurityCard: FC<{
-  type: SecurityCardType
-}> = ({ type }) => {
+const SecurityCard: FC<{ type: SecurityCardType }> = ({ type }) => {
   const { title, description, href, bgColor } = securityCards[type]
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  const [isHovered, setIsHovered] = useState(false)
-
-  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>): void => {
-    if (!cardRef.current) {
-      return
-    }
-
-    const rect = cardRef.current.getBoundingClientRect()
-    const x = event.clientX - rect.left
-    const y = event.clientY - rect.top
-
-    setMousePosition({ x, y })
-  }
-
-  const handleMouseEnter = (): void => setIsHovered(true)
-
-  const handleMouseLeave = (): void => {
-    setIsHovered(false)
-    setMousePosition({ x: 0, y: 0 })
-  }
+  const [isCtaHovered, setIsCtaHovered] = useState(false)
 
   return (
-    <Link href={href} className={'flex'}>
-      <div
-        ref={cardRef}
-        className={`${bgColor} group relative cursor-pointer overflow-hidden rounded-2xl transition-all duration-300`}
-        onMouseMove={handleMouseMove}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+    <div
+      className={cl(
+        `${bgColor}`,
+        'relative flex w-full flex-col rounded-2xl py-4 px-8 text-neutral-50 transition-all duration-300',
+        isCtaHovered ? 'brightness-110 shadow-xl' : ''
+      )}
+      style={{ transform: isCtaHovered ? 'translateY(-4px)' : undefined }}
+    >
+      <Link
+        href={href}
+        className={'text-2xl text-white transition-colors duration-200 hover:text-white'}
+        onMouseEnter={() => setIsCtaHovered(true)}
+        onMouseLeave={() => setIsCtaHovered(false)}
       >
-        {isHovered && (
-          <div
-            className={'pointer-events-none absolute inset-0 opacity-60 transition-opacity duration-300'}
-            style={{
-              background: `radial-gradient(200px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.25) 0%, transparent 100%)`
-            }}
-          />
-        )}
-        <div className={'relative z-10 p-8 transition-all duration-300'}>
-          <h3 className={'mb-4 text-3xl transition-colors duration-300 group-hover:text-neutral-900'}>{title}</h3>
-          <p
-            className={
-              'mb-4 text-[18px] text-neutral-900/70 transition-colors duration-300 group-hover:text-neutral-900/90'
-            }
-          >
-            {description}
-          </p>
-          <div
-            className={'flex items-center text-neutral-900 transition-colors duration-300 group-hover:text-blue-200'}
-          >
-            {'Learn More →'}
-          </div>
-        </div>
-      </div>
-    </Link>
+        {title}
+      </Link>
+      <p className={'text-[18px] text-white/80'}>{description}</p>
+    </div>
   )
 }
 
@@ -101,21 +73,29 @@ export const Security: FC<SecurityProps> = ({ sectionHeight }) => {
   const sectionStyle = sectionHeight ? { minHeight: `${sectionHeight}px` } : undefined
 
   return (
-    <section className={'flex w-full justify-center'} style={sectionStyle}>
-      <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between lg:flex-row'}>
-        <div className={'w-full px-4'}>
-          <div className={'px-2'}>
-            <SectionHeader
-              align={'left'}
-              tagline={'Audited, secure'}
-              title={'Security First'}
-              description={'Yearn prioritizes security to protect your assets.'}
-            />
-          </div>
-          <div className={'grid gap-6 pt-16 md:grid-cols-2'}>
-            <SecurityCard type={SecurityCardType.Audits} />
-            <SecurityCard type={SecurityCardType.BugBounties} />
-          </div>
+    <section className={'flex w-full justify-center py-4 lg:py-4'} style={sectionStyle}>
+      <div className={'flex w-full max-w-[1180px] flex-col gap-10 px-4 lg:flex-row lg:items-center'}>
+        <div className={'flex flex-1 flex-col gap-6'}>
+          <SectionHeader
+            align={'left'}
+            tagline={'Audited, secure'}
+            title={'Security First'}
+            description={'Yearn prioritizes security to protect your assets.'}
+          />
+          <ul className={'space-y-4 text-lg text-neutral-600 list-disc pl-6'}>
+            <li>Our Contracts are Battle-tested and heavily audited.</li>
+            <li>We perform continuous, active risk management and monitoring.</li>
+            <li>Vaults are fully non-custodial. Only you have access to your funds.</li>
+            <li>
+              All open source. Code is publicly accessible to review and users can interact with our contracts via
+              secondary (or their own) interfaces.
+            </li>
+          </ul>
+        </div>
+        <div className={'flex flex-1 flex-col gap-6'}>
+          <SecurityCard type={SecurityCardType.Audits} />
+          <SecurityCard type={SecurityCardType.BugBounties} />
+          <SecurityCard type={SecurityCardType.MoreInfo} />
         </div>
       </div>
     </section>
