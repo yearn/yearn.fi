@@ -12,6 +12,14 @@ import { Security } from './components/Security'
 import { ExploreOurVaults } from './components/V3SecondaryCard'
 import { VaultInfo } from './components/VaultInfo'
 
+const LEARN_MORE_SECTIONS = [
+  { key: 'vaultInfo', Component: VaultInfo, rowSpan: 6 },
+  { key: 'security', Component: Security, rowSpan: 4 },
+  { key: 'partners', Component: Partners, rowSpan: 4 },
+  { key: 'integrations', Component: Integrations, rowSpan: 8 },
+  { key: 'faqs', Component: FAQs, rowSpan: 6 }
+] as const
+
 function V3Home(): ReactElement {
   const { holdingsVaults } = useV3VaultFilter(null, null, '', null)
   const [isLearnMoreExpanded, setIsLearnMoreExpanded] = useState(false)
@@ -71,18 +79,27 @@ function V3Home(): ReactElement {
         } satisfies CSSProperties)
       : undefined
 
-  const buildLearnMoreProps = (rowSpan: number) => {
+  const getSectionHeight = (rowSpan: number): number | null => {
+    if (frozenRowHeight == null) {
+      return null
+    }
+    return frozenRowHeight * rowSpan + frozenRowGap * (rowSpan - 1)
+  }
+
+  const buildLearnMoreWrapperProps = (rowSpan: number) => {
+    const sectionHeight = getSectionHeight(rowSpan)
     const style: CSSProperties = {
       gridRow: `span ${rowSpan} / auto`
     }
 
-    if (frozenRowHeight != null) {
-      style.minHeight = `${frozenRowHeight * rowSpan + frozenRowGap * (rowSpan - 1)}px`
+    if (sectionHeight != null) {
+      style.minHeight = `${sectionHeight}px`
     }
 
     return {
       className: 'col-span-12 min-w-0 md:col-span-32 md:col-start-1',
-      style
+      style,
+      sectionHeight
     }
   }
 
@@ -109,25 +126,15 @@ function V3Home(): ReactElement {
           <div className={'col-span-12 min-w-0 md:order-2 md:col-span-11 md:col-start-22 md:row-span-4 md:row-start-1'}>
             <ExploreOurVaults className={'h-full'} />
           </div>
-          {isLearnMoreExpanded && (
-            <>
-              <div {...buildLearnMoreProps(6)}>
-                <VaultInfo />
-              </div>
-              <div {...buildLearnMoreProps(4)}>
-                <Security />
-              </div>
-              <div {...buildLearnMoreProps(4)}>
-                <Partners />
-              </div>
-              <div {...buildLearnMoreProps(7)}>
-                <Integrations />
-              </div>
-              <div {...buildLearnMoreProps(6)}>
-                <FAQs />
-              </div>
-            </>
-          )}
+          {isLearnMoreExpanded &&
+            LEARN_MORE_SECTIONS.map(({ key, Component, rowSpan }) => {
+              const { sectionHeight, ...wrapperProps } = buildLearnMoreWrapperProps(rowSpan)
+              return (
+                <div key={key} {...wrapperProps}>
+                  <Component sectionHeight={sectionHeight ?? undefined} />
+                </div>
+              )
+            })}
           <div
             className={cl(
               'col-span-12 min-w-0 md:order-4 md:col-span-14 md:col-start-1 md:row-span-4',

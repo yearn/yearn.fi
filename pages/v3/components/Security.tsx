@@ -93,23 +93,31 @@ const SecurityCard: FC<{
   )
 }
 
-export const Security: FC = () => (
-  <section className={'flex w-full justify-center'}>
-    <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between lg:flex-row'}>
-      <div className={'w-full px-4'}>
-        <div className={'px-2'}>
-          <SectionHeader
-            align={'center'}
-            tagline={'Audited, secure'}
-            title={'Security First'}
-            description={'Yearn prioritizes security to protect your assets.'}
-          />
-        </div>
-        <div className={'grid gap-6 pt-16 md:grid-cols-2'}>
-          <SecurityCard type={SecurityCardType.Audits} />
-          <SecurityCard type={SecurityCardType.BugBounties} />
+type SecurityProps = {
+  sectionHeight?: number
+}
+
+export const Security: FC<SecurityProps> = ({ sectionHeight }) => {
+  const sectionStyle = sectionHeight ? { minHeight: `${sectionHeight}px` } : undefined
+
+  return (
+    <section className={'flex w-full justify-center'} style={sectionStyle}>
+      <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between lg:flex-row'}>
+        <div className={'w-full px-4'}>
+          <div className={'px-2'}>
+            <SectionHeader
+              align={'left'}
+              tagline={'Audited, secure'}
+              title={'Security First'}
+              description={'Yearn prioritizes security to protect your assets.'}
+            />
+          </div>
+          <div className={'grid gap-6 pt-16 md:grid-cols-2'}>
+            <SecurityCard type={SecurityCardType.Audits} />
+            <SecurityCard type={SecurityCardType.BugBounties} />
+          </div>
         </div>
       </div>
-    </div>
-  </section>
-)
+    </section>
+  )
+}

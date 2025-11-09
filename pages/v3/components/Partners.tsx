@@ -88,34 +88,42 @@ const PartnerLogo: FC<Partner> = ({ image, alt, href, size = 40 }) => {
   )
 }
 
-export const Partners: FC = () => (
-  <section className={'flex w-full justify-center py-0 lg:py-0'}>
-    <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between lg:flex-row'}>
-      <div className={'flex w-full flex-col gap-4 px-4'}>
-        <SectionHeader
-          tagline={'Partners'}
-          title={'Yearn X'}
-          description={'Collaborations exploring yield opportunities with our partners'}
-        />
+type PartnersProps = {
+  sectionHeight?: number
+}
 
-        <div className={'flex flex-col gap-4 pt-8 lg:hidden'}>
-          <div className={'grid grid-cols-2 gap-2'}>
-            {partners.map((partner) => (
-              <PartnerLogo key={partner.href} {...partner} />
-            ))}
-          </div>
-        </div>
+export const Partners: FC<PartnersProps> = ({ sectionHeight }) => {
+  const sectionStyle = sectionHeight ? { minHeight: `${sectionHeight}px` } : undefined
 
-        <div className={'hidden gap-4 pt-8 md:pt-14 lg:flex lg:flex-row'}>
-          <div className={'flex size-full h-[128px] flex-col gap-2'}>
-            <div className={'flex flex-1 flex-row gap-2'}>
+  return (
+    <section className={'flex w-full justify-center  py-0 lg:py-0'} style={sectionStyle}>
+      <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between lg:flex-row'}>
+        <div className={'flex w-full flex-col gap-4 px-4'}>
+          <SectionHeader
+            tagline={'Partners'}
+            title={'Yearn X'}
+            description={'Collaborations exploring yield opportunities with our partners'}
+          />
+
+          <div className={'flex flex-col gap-4 pt-8 lg:hidden'}>
+            <div className={'grid grid-cols-2 gap-2'}>
               {partners.map((partner) => (
                 <PartnerLogo key={partner.href} {...partner} />
               ))}
             </div>
           </div>
+
+          <div className={'hidden gap-4 pt-8 md:pt-14 lg:flex lg:flex-row'}>
+            <div className={'flex size-full h-[128px] flex-col gap-2'}>
+              <div className={'flex flex-1 flex-row gap-2'}>
+                {partners.map((partner) => (
+                  <PartnerLogo key={partner.href} {...partner} />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
-)
+    </section>
+  )
+}

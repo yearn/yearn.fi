@@ -75,15 +75,21 @@ const faqData = [
   }
 ]
 
-export const FAQs: FC = () => {
+type FAQsProps = {
+  sectionHeight?: number
+}
+
+export const FAQs: FC<FAQsProps> = ({ sectionHeight }) => {
   const [openFAQ, setOpenFAQ] = useState<number | null>(null)
 
   const toggleFAQ = (index: number): void => {
     setOpenFAQ(openFAQ === index ? null : index)
   }
 
+  const sectionStyle = sectionHeight ? { minHeight: `${sectionHeight}px` } : undefined
+
   return (
-    <section className={'flex w-full justify-center pb-8 pt-0 lg:pt-0'}>
+    <section className={'flex w-full justify-center pb-8 pt-0 lg:pt-0'} style={sectionStyle}>
       <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between md:flex-row'}>
         <div className={'w-full px-4'}>
           <div className={'mb-10 flex flex-col justify-between gap-y-6 md:flex-row'}>

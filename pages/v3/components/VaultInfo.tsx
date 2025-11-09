@@ -2,9 +2,15 @@ import { SectionHeader } from '@lib/components/SectionHeader'
 import type { ReactElement } from 'react'
 import Image from '/src/components/Image'
 
-export function VaultInfo(): ReactElement {
+type VaultInfoProps = {
+  sectionHeight?: number
+}
+
+export function VaultInfo({ sectionHeight }: VaultInfoProps): ReactElement {
+  const sectionStyle = sectionHeight ? { minHeight: `${sectionHeight}px` } : undefined
+
   return (
-    <section className={'flex w-full justify-center bg-white/5 py-4 lg:py-4 '}>
+    <section className={'flex w-full justify-center  py-4 lg:py-4'} style={sectionStyle}>
       <div className={'flex w-full max-w-[1180px] flex-col gap-10 px-4 lg:flex-row lg:items-center'}>
         <div className={'flex flex-row grow gap-4'}>
           <div className={'w-1/2 flex flex-1 flex-col gap-8'}>

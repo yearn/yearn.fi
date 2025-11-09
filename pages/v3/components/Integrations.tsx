@@ -82,21 +82,29 @@ const IntegrationItem: FC<Integration & { index: number }> = ({ name, imageSrc, 
   </Link>
 )
 
-export const Integrations: FC = () => (
-  <section className={'flex w-full justify-center bg-white/5 py-0 lg:py-0'}>
-    <div className={'flex w-[1180px] flex-col items-center justify-between md:flex-row'}>
-      <div className={'w-full px-4'}>
-        <SectionHeader
-          tagline={'Partners'}
-          title={'Integrations'}
-          description={'External Yearn vaults available through our partners'}
-        />
-        <div className={'mt-8 grid overflow-hidden rounded-lg'}>
-          {integrations.map((integration, index) => (
-            <IntegrationItem index={index} key={integration.href} {...integration} />
-          ))}
+type IntegrationsProps = {
+  sectionHeight?: number
+}
+
+export const Integrations: FC<IntegrationsProps> = ({ sectionHeight }) => {
+  const sectionStyle = sectionHeight ? { minHeight: `${sectionHeight}px` } : undefined
+
+  return (
+    <section className={'flex w-full justify-center  py-0 lg:py-0'} style={sectionStyle}>
+      <div className={'flex w-[1180px] flex-col items-center justify-between md:flex-row'}>
+        <div className={'w-full px-4'}>
+          <SectionHeader
+            tagline={'Partners'}
+            title={'Integrations'}
+            description={'External Yearn vaults available through our partners'}
+          />
+          <div className={'mt-8 grid overflow-hidden rounded-lg'}>
+            {integrations.map((integration, index) => (
+              <IntegrationItem index={index} key={integration.href} {...integration} />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  </section>
-)
+    </section>
+  )
+}
