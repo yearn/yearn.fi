@@ -31,7 +31,9 @@ import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
 import { V3_STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/V3StakingRewards.abi'
 import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
 import { VEYFI_GAUGE_ABI } from '@vaults-v2/utils/abi/veYFIGauge.abi'
-import { KatanaApyTooltip } from '@vaults-v3/components/table/KatanaApyTooltip'
+import { APYDetailsModal } from '@vaults-v3/components/table/APYDetailsModal'
+import { APYTooltipContent } from '@vaults-v3/components/table/APYTooltip'
+import { KatanaApyTooltipContent } from '@vaults-v3/components/table/KatanaApyTooltip'
 import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
@@ -85,35 +87,52 @@ function VaultAPY({
   const isSourceVeYFI = source === 'VeYFI'
 
   const katanaNetAPY = useMemo(() => apyData.katanaTotalApr || 0, [apyData.katanaTotalApr])
+  const [isApyModalOpen, setIsApyModalOpen] = useState(false)
+  const openApyModal = (event?: React.MouseEvent): void => {
+    event?.stopPropagation()
+    setIsApyModalOpen(true)
+  }
+  const closeApyModal = (): void => setIsApyModalOpen(false)
 
   if (katanaExtras) {
+    const katanaModalContent = (
+      <KatanaApyTooltipContent
+        extrinsicYield={katanaExtras.extrinsicYield}
+        katanaNativeYield={katanaExtras.katanaNativeYield}
+        fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards}
+        katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR}
+        katanaBonusAPR={katanaExtras.katanaBonusAPY}
+        steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
+        currentVault={currentVault}
+        maxWidth={'w-full'}
+      />
+    )
+
     return (
-      <VaultHeaderLineItem
-        label={'Estimated APR'}
-        legend={
-          <KatanaApyTooltip
-            extrinsicYield={katanaExtras.extrinsicYield}
-            katanaNativeYield={katanaExtras.katanaNativeYield}
-            fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards}
-            katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR}
-            katanaBonusAPR={katanaExtras.katanaBonusAPY}
-            steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
-            currentVault={currentVault}
-            position="top"
-            maxWidth="w-max"
-            className={'items-center justify-center md:justify-center'}
-          >
-            <div className={'flex flex-row items-center space-x-2'}>
-              <div>{'APR Breakdown '}</div>
+      <>
+        <VaultHeaderLineItem
+          label={'Estimated APR'}
+          legend={
+            <button
+              type={'button'}
+              onClick={openApyModal}
+              className={
+                'flex flex-row items-center space-x-2 text-xs text-neutral-700 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:text-neutral-900 hover:decoration-neutral-600'
+              }
+            >
+              <div>{'APR breakdown'}</div>
               <IconQuestion className={'hidden md:block'} />
-            </div>
-          </KatanaApyTooltip>
-        }
-      >
-        <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
-          <RenderAmount value={katanaNetAPY} symbol={'percent'} decimals={6} />
-        </Renderable>
-      </VaultHeaderLineItem>
+            </button>
+          }
+        >
+          <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
+            <RenderAmount value={katanaNetAPY} symbol={'percent'} decimals={6} />
+          </Renderable>
+        </VaultHeaderLineItem>
+        <APYDetailsModal isOpen={isApyModalOpen} onClose={closeApyModal} title={'APR breakdown'}>
+          {katanaModalContent}
+        </APYDetailsModal>
+      </>
     )
   }
 
@@ -197,62 +216,45 @@ function VaultAPY({
     )
   }
 
+  const baseForwardApy = isZero(currentAPY) ? netAPY : currentAPY
+  const historicalModalContent = (
+    <div className={'space-y-3 text-sm text-neutral-700'}>
+      <p>{'Estimated APY for the next period based on current data.'}</p>
+      <APYTooltipContent baseAPY={baseForwardApy} />
+      <div className={'rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-sm text-neutral-700'}>
+        {'Rewards APY currently not available for this vault.'}
+      </div>
+    </div>
+  )
+
   return (
-    <VaultHeaderLineItem
-      label={'Historical APY'}
-      legend={
-        <span className={'tooltip'}>
-          <div className={'flex flex-row items-center space-x-2'}>
+    <>
+      <VaultHeaderLineItem
+        label={'Historical APY'}
+        legend={
+          <button
+            type={'button'}
+            onClick={openApyModal}
+            className={
+              'flex flex-row items-center space-x-2 text-xs text-neutral-700 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:text-neutral-900 hover:decoration-neutral-600'
+            }
+          >
             <div>
               {'Est. APY: '}
-              <RenderAmount value={isZero(currentAPY) ? netAPY : currentAPY} symbol={'percent'} decimals={6} />
+              <RenderAmount value={baseForwardApy} symbol={'percent'} decimals={6} />
             </div>
             <IconQuestion className={'hidden md:block'} />
-          </div>
-          <span className={'tooltipLight top-full mt-2'}>
-            <div
-              className={
-                'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-              }
-            >
-              <p
-                className={
-                  'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
-                }
-              >
-                {'Estimated APY for the next period based on current data.'}
-              </p>
-              <div
-                className={
-                  'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
-                }
-              >
-                <p>{'• Base APY '}</p>
-                <RenderAmount
-                  shouldHideTooltip
-                  value={isZero(currentAPY) ? netAPY : currentAPY}
-                  symbol={'percent'}
-                  decimals={6}
-                />
-              </div>
-
-              <div
-                className={
-                  'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                }
-              >
-                <p>{'• Rewards APY '}</p>
-                <p>{'N/A'}</p>
-              </div>
-            </div>
-          </span>
-        </span>
-      }
-    >
-      <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
-        <RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
-      </Renderable>
-    </VaultHeaderLineItem>
+          </button>
+        }
+      >
+        <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
+          <RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
+        </Renderable>
+      </VaultHeaderLineItem>
+      <APYDetailsModal isOpen={isApyModalOpen} onClose={closeApyModal} title={'Estimated APY'}>
+        {historicalModalContent}
+      </APYDetailsModal>
+    </>
   )
 }
 

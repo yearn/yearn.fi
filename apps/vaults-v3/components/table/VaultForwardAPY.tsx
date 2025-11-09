@@ -46,6 +46,7 @@ export function VaultForwardAPY({
         katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR}
         katanaBonusAPR={data.katanaExtras.katanaBonusAPY}
         steerPointsPerDollar={data.katanaExtras.steerPointsPerDollar}
+        isEligibleForSpectraBoost={isEligibleForSpectraBoost}
         currentVault={currentVault}
         maxWidth={'w-full'}
       />

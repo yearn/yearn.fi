@@ -13,6 +13,7 @@ type TKatanaTooltipProps = {
   katanaAppRewardsAPR: number
   katanaBonusAPR: number
   steerPointsPerDollar?: number
+  isEligibleForSpectraBoost?: boolean
   position?: 'bottom' | 'top'
   maxWidth?: string
   className?: string
@@ -27,6 +28,7 @@ export function KatanaApyTooltipContent({
   katanaAppRewardsAPR,
   katanaBonusAPR,
   steerPointsPerDollar,
+  isEligibleForSpectraBoost,
   maxWidth,
   currentVault
 }: Omit<TKatanaTooltipProps, 'children' | 'position' | 'className'>): ReactElement {
@@ -186,6 +188,32 @@ export function KatanaApyTooltipContent({
             </a>
           </li>
         </div>
+        {isEligibleForSpectraBoost && (
+          <>
+            <div className={'my-2 h-px w-full bg-neutral-300/60'} />
+            <p
+              className={
+                'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm text-bold pb-2'
+              }
+            >
+              {'Earn Boosted Yield with Spectra'}
+            </p>
+            <p className={'-mt-1 mb-2 w-full text-left text-sm text-neutral-700 break-words whitespace-normal'}>
+              {'Earn boosted yield on Spectra if you '}
+              <a
+                href={'https://app.spectra.finance/pools?networks=katana'}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'font-bold underline sm:decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                }
+              >
+                {'deposit to their protocol'}
+              </a>
+              {'.'}
+            </p>
+          </>
+        )}
         {steerPointsPerDollar && steerPointsPerDollar > 0 ? (
           <>
             <div className={'my-2 h-px w-full bg-neutral-300/60'} />
@@ -196,7 +224,7 @@ export function KatanaApyTooltipContent({
             >
               {'Steer Points'}
             </p>
-            <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
+            <p className={'-mt-1 mb-2 w-full text-left text-sm text-neutral-700 break-words whitespace-normal'}>
               {'This vault earns '}
               <span className={'font-number'}>{formatAmount(steerPointsPerDollar, 2, 2)}</span>
               {' Steer Points / dollar deposited, but you must '}
