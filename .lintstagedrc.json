@@ -1,10 +1,4 @@
 {
-  "{apps,src,pages,api}/**/*.{ts,tsx}": [
-    "bunx biome format --write",
-    "bunx biome lint --error-on-warnings"
-  ],
-  "{apps,src,pages,api}/**/*.css": [
-    "bunx biome format --write",
-    "bunx biome lint --error-on-warnings"
-  ]
+  "{apps,src,pages,api}/**/*.{ts,tsx}": ["bunx biome format --write", "bunx biome lint --error-on-warnings"],
+  "{apps,src,pages,api}/**/*.css": ["bunx biome format --write", "bunx biome lint --error-on-warnings"]
 }
