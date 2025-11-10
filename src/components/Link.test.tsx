@@ -1,39 +1,55 @@
-/**
- * Example usage of the Link component
- *
- * The Link component automatically detects whether a URL is internal or external
- * and renders the appropriate element (React Router Link or standard anchor tag)
- */
-
+import React, { type ReactNode } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Link from './Link'
 
-// Example usages:
-export function LinkExamples() {
-  return (
-    <div>
-      {/* Internal links - will use React Router */}
-      <Link href="/apps">Go to Apps</Link>
-      <Link href="/vaults">View Vaults</Link>
-      <Link to="/v3">V3 Vaults</Link>
+vi.mock('react-router', () => {
+  return {
+    Link: ({ children, to, ...rest }: { children: ReactNode; to: string }) => (
+      <a data-router-link href={to} {...rest}>
+        {children}
+      </a>
+    )
+  }
+})
 
-      {/* External links - will use standard anchor tags with target="_blank" */}
-      <Link href="https://twitter.com/yearnfi">Twitter</Link>
-      <Link href="https://github.com/yearn">GitHub</Link>
+describe('Link component', () => {
+  beforeEach(() => {
+    vi.stubGlobal('window', {
+      location: {
+        href: 'https://yearn.fi/',
+        hostname: 'yearn.fi'
+      }
+    })
+  })
 
-      {/* Custom styling */}
-      <Link href="/vaults/about" className="text-blue-600 hover:text-blue-800 underline">
-        Learn about Vaults
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('uses RouterLink for internal navigation', () => {
+    const markup = renderToStaticMarkup(<Link href="/vaults">Vaults</Link>)
+    expect(markup).toContain('data-router-link')
+    expect(markup).toContain('href="/vaults"')
+  })
+
+  it('falls back to anchor for external URLs with defaults', () => {
+    const markup = renderToStaticMarkup(<Link href="https://twitter.com/yearnfi">Twitter</Link>)
+    expect(markup).not.toContain('data-router-link')
+    expect(markup).toContain('href="https://twitter.com/yearnfi"')
+    expect(markup).toContain('target="_blank"')
+    expect(markup).toContain('rel="noopener noreferrer"')
+  })
+
+  it('allows overriding target/rel and prioritises href over to', () => {
+    const markup = renderToStaticMarkup(
+      <Link href="https://docs.yearn.fi" to="/apps" target="_self" rel="noopener">
+        Docs
       </Link>
-
-      {/* External link with custom target/rel */}
-      <Link href="https://docs.yearn.fi" target="_self" rel="noopener">
-        Documentation
-      </Link>
-
-      {/* With onClick handler */}
-      <Link href="/apps" onClick={(e) => console.log('Link clicked:', e)}>
-        Apps with tracking
-      </Link>
-    </div>
-  )
-}
+    )
+    expect(markup).not.toContain('data-router-link')
+    expect(markup).toContain('href="https://docs.yearn.fi"')
+    expect(markup).toContain('target="_self"')
+    expect(markup).toContain('rel="noopener"')
+  })
+})
