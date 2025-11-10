@@ -1,9 +1,7 @@
 set -e
 
-echo 'husky: running linter'
-bun run lint
-
-echo 'husky: running bun run tslint'
-bun run tslint
-
+echo 'husky: running lint-staged checks'
 bunx lint-staged
+
+echo 'husky: running type check'
+bun run tslint
