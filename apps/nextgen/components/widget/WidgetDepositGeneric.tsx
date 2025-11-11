@@ -1,4 +1,5 @@
 import { Dialog, Transition } from '@headlessui/react'
+import { useWallet } from '@lib/contexts/useWallet'
 import { cl, formatAmount, formatPercent, formatTAmount } from '@lib/utils'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
@@ -165,6 +166,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
   handleDepositSuccess: onDepositSuccess
 }) => {
   const { address: account } = useAccount()
+  const { onRefresh: refreshWalletBalances } = useWallet()
   const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
@@ -239,9 +241,14 @@ export const WidgetDepositGeneric: FC<Props> = ({
     if (receiptSuccess && txHash) {
       setDepositInput('')
       refetchTokens()
+      // Refresh wallet balances to update TokenSelector and other components
+      refreshWalletBalances([
+        { address: depositToken, chainID: chainId },
+        { address: vaultAddress, chainID: chainId }
+      ])
       onDepositSuccess?.()
     }
-  }, [receiptSuccess, txHash, setDepositInput, refetchTokens, onDepositSuccess])
+  }, [receiptSuccess, txHash, setDepositInput, refetchTokens, refreshWalletBalances, depositToken, vaultAddress, chainId, onDepositSuccess])
 
   const estimatedAnnualReturn = useMemo(() => {
     if (depositAmount.bn === 0n || vaultAPR === 0) return '0'

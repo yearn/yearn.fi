@@ -1,12 +1,9 @@
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
-import { cl } from '@lib/utils'
-import { type Token, useTokens } from '@nextgen/hooks/useTokens'
+import { useWallet } from '@lib/contexts/useWallet'
+import type { TToken } from '@lib/types'
+import { cl, toAddress } from '@lib/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { type Address, isAddress } from 'viem'
-
-interface TokenWithBalance extends Token {
-  costUsd?: number
-}
 
 interface TokenSelectorProps {
   value: Address | undefined
@@ -17,11 +14,7 @@ interface TokenSelectorProps {
   onClose?: () => void
 }
 
-const TokenItem: FC<{ token: TokenWithBalance; selected: boolean; onSelect: () => void }> = ({
-  token,
-  selected,
-  onSelect
-}) => {
+const TokenItem: FC<{ token: TToken; selected: boolean; onSelect: () => void }> = ({ token, selected, onSelect }) => {
   return (
     <button
       type="button"
@@ -62,6 +55,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 }) => {
   const [searchText, setSearchText] = useState('')
   const [customAddress, setCustomAddress] = useState<Address | undefined>()
+  const { getToken, isLoading } = useWallet()
 
   // Fetch common tokens based on chainId
   const commonTokenAddresses = useMemo(() => {
@@ -111,7 +105,13 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     return addresses.filter(Boolean) as Address[]
   }, [commonTokenAddresses, customAddress, value])
 
-  const { tokens, isLoading } = useTokens(allAddresses, chainId)
+  // Get tokens from wallet context
+  const tokens = useMemo(() => {
+    return allAddresses.map((address) => {
+      const token = getToken({ address: toAddress(address.toLowerCase()), chainID: chainId })
+      return token
+    })
+  }, [allAddresses, getToken, chainId])
 
   // Filter tokens based on search and limits
   const filteredTokens = useMemo(() => {
