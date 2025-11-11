@@ -7,6 +7,7 @@ import { type Address, erc4626Abi } from 'viem'
 import { useReadContract } from 'wagmi'
 import { WidgetDeposit } from './WidgetDeposit'
 import { WidgetDepositAndStake } from './WidgetDepositAndStake'
+import { WidgetDepositGeneric } from './WidgetDepositGeneric'
 import { WidgetEnsoDeposit } from './WidgetEnsoDeposit'
 import { WidgetEnsoWithdraw } from './WidgetEnsoWithdraw'
 import { WidgetStake } from './WidgetStake'
@@ -42,6 +43,10 @@ const getActionLabel = (action: ActionType): string => {
       return 'Zap In'
     case ActionType.EnsoWithdraw:
       return 'Zap Out'
+    case ActionType.DepositGeneric:
+      return 'Deposit'
+    case ActionType.WithdrawGeneric:
+      return 'Withdraw'
     default:
       return action
   }
@@ -148,6 +153,14 @@ export const Widget: FC<Props> = ({
             assetAddress={toAddress(assetToken)}
             chainId={chainId}
             handleWithdrawSuccess={handleSuccess}
+          />
+        )
+      case ActionType.DepositGeneric:
+        return (
+          <WidgetDepositGeneric
+            vaultAddress={toAddress(vaultAddress)}
+            assetAddress={toAddress(assetToken)}
+            chainId={chainId}
           />
         )
     }

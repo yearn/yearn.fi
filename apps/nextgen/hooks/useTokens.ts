@@ -6,6 +6,7 @@ import { useAccount, useReadContracts } from 'wagmi'
 
 export interface Token {
   address?: Address
+  chainID?: number
   decimals?: number
   symbol?: string
   name?: string
@@ -70,6 +71,7 @@ export const useTokens = (addresses: (Address | undefined)[], chainId?: number) 
               decimals: tokenDecimals,
               symbol: String(symbol),
               name: String(name),
+              chainID: chainId,
               balance: balance ? toNormalizedBN(balance as bigint, tokenDecimals) : toNormalizedBN(0n, tokenDecimals)
             }
           })

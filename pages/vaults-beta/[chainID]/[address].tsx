@@ -215,7 +215,7 @@ function Index(): ReactElement | null {
                   vaultType={isV3 ? 'v3' : 'v2'}
                   vaultAddress={currentVault.address}
                   gaugeAddress={currentVault.staking.address}
-                  actions={[WidgetActionType.EnsoDeposit, WidgetActionType.EnsoWithdraw]}
+                  actions={[WidgetActionType.DepositGeneric, WidgetActionType.EnsoWithdraw]}
                   chainId={Number(params.chainID)}
                 />
 

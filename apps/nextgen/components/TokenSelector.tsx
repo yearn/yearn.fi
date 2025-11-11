@@ -1,3 +1,4 @@
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { cl } from '@lib/utils'
 import { type Token, useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
@@ -16,25 +17,6 @@ interface TokenSelectorProps {
   onClose?: () => void
 }
 
-const TokenIcon: FC<{ token?: Token; size?: 'sm' | 'md' }> = ({ token, size = 'sm' }) => {
-  const sizeClass = size === 'sm' ? 'w-5 h-5' : 'w-6 h-6'
-
-  if (!token?.symbol) {
-    return <div className={cl('bg-gray-300 rounded-full', sizeClass)} />
-  }
-
-  return (
-    <div
-      className={cl(
-        'bg-gray-200 rounded-full flex items-center justify-center text-xs font-semibold text-gray-600',
-        sizeClass
-      )}
-    >
-      {token.symbol.slice(0, 2).toUpperCase()}
-    </div>
-  )
-}
-
 const TokenItem: FC<{ token: TokenWithBalance; selected: boolean; onSelect: () => void }> = ({
   token,
   selected,
@@ -50,7 +32,12 @@ const TokenItem: FC<{ token: TokenWithBalance; selected: boolean; onSelect: () =
       )}
     >
       <div className="flex items-center gap-2">
-        <TokenIcon token={token} />
+        <ImageWithFallback
+          src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${token.chainID}/${token.address?.toLowerCase()}/logo-32.png`}
+          alt={token.symbol ?? ''}
+          width={24}
+          height={24}
+        />
         <div className="text-left">
           <div className="text-sm font-medium text-gray-900">{token.symbol}</div>
           <div className="text-xs text-gray-500">{token.name}</div>
