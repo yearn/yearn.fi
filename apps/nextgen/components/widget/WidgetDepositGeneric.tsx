@@ -1,10 +1,11 @@
-import { cl, formatAmount, formatTAmount } from '@lib/utils'
+import { Dialog, Transition } from '@headlessui/react'
+import { cl, formatAmount, formatPercent, formatTAmount } from '@lib/utils'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
 import { useTokens } from '@nextgen/hooks/useTokens'
-import { type FC, useEffect, useMemo, useState } from 'react'
+import { type FC, Fragment, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount } from 'wagmi'
 import { TokenSelector } from '../TokenSelector'
@@ -13,20 +14,161 @@ interface Props {
   vaultAddress: Address
   assetAddress: Address
   chainId: number
+  vaultAPR: number // APR as a percentage (e.g., 10.5 for 10.5%)
+  vaultSymbol: string
   destinationChainId?: number // For cross-chain operations
   handleDepositSuccess?: () => void
+}
+
+interface InfoModalProps {
+  isOpen: boolean
+  onClose: () => void
+  title: string
+  children: React.ReactNode
+}
+
+const InfoModal: FC<InfoModalProps> = ({ isOpen, onClose, title, children }) => {
+  return (
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/25" />
+        </Transition.Child>
+
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-gray-900 mb-4">
+                  {title}
+                </Dialog.Title>
+                {children}
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    className="w-full inline-flex justify-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+                    onClick={onClose}
+                  >
+                    Got it, thanks!
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
+  )
+}
+
+interface VaultSharesModalProps {
+  isOpen: boolean
+  onClose: () => void
+  vaultSymbol: string
+  expectedShares: string
+}
+
+const VaultSharesModal: FC<VaultSharesModalProps> = ({ isOpen, onClose, vaultSymbol, expectedShares }) => {
+  return (
+    <InfoModal isOpen={isOpen} onClose={onClose} title="Vault Shares">
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          After depositing into the vault, you will receive vault tokens which serve as proof that you have deposited
+          into the vault.
+        </p>
+        <div className="space-y-3">
+          <p className="font-medium text-sm text-gray-900">Vault Token details:</p>
+          <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-2">
+            <li>Symbol: {vaultSymbol}</li>
+            <li>
+              Your shares: {expectedShares} {vaultSymbol}
+            </li>
+            <li>Redeemable for your deposited assets plus earnings</li>
+          </ul>
+        </div>
+        <p className="text-xs text-gray-500 mt-4">
+          You can use these tokens to withdraw your deposit and any accrued returns at any time.
+        </p>
+      </div>
+    </InfoModal>
+  )
+}
+
+interface AnnualReturnModalProps {
+  isOpen: boolean
+  onClose: () => void
+  depositAmount: string
+  tokenSymbol?: string
+  estimatedReturn: string
+  currentAPR: number
+}
+
+const AnnualReturnModal: FC<AnnualReturnModalProps> = ({
+  isOpen,
+  onClose,
+  depositAmount,
+  tokenSymbol,
+  estimatedReturn,
+  currentAPR
+}) => {
+  return (
+    <InfoModal isOpen={isOpen} onClose={onClose} title="Estimated Annual Return">
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          The estimated annual return is calculated based on the vault's historical performance and current market
+          conditions.
+        </p>
+        <div className="space-y-3">
+          <p className="font-medium text-sm text-gray-900">Calculation factors:</p>
+          <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-2">
+            <li>Current APR: {formatPercent(currentAPR * 100, 2, 2, 500)}</li>
+            <li>
+              Your deposit: {depositAmount} {tokenSymbol}
+            </li>
+            <li>
+              Expected annual yield: ~{estimatedReturn} {tokenSymbol}
+            </li>
+          </ul>
+        </div>
+        <p className="text-xs text-gray-500 mt-4">
+          Please note that past performance does not guarantee future results. Actual returns may vary based on market
+          volatility and vault strategy adjustments.
+        </p>
+      </div>
+    </InfoModal>
+  )
 }
 
 export const WidgetDepositGeneric: FC<Props> = ({
   vaultAddress,
   assetAddress,
   chainId,
+  vaultAPR,
+  vaultSymbol,
   destinationChainId,
   handleDepositSuccess: onDepositSuccess
 }) => {
   const { address: account } = useAccount()
   const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
+  const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
+  const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
 
   // Determine which token to use for deposits
   const depositToken = selectedToken || assetAddress
@@ -101,8 +243,14 @@ export const WidgetDepositGeneric: FC<Props> = ({
     }
   }, [receiptSuccess, txHash, setDepositInput, refetchTokens, onDepositSuccess])
 
-  // Mock annual return calculation - replace with actual logic
-  const estimatedAnnualReturn = depositAmount.bn > 0n ? formatAmount(expectedOut.normalized * 0.1) : '0'
+  const estimatedAnnualReturn = useMemo(() => {
+    if (depositAmount.bn === 0n || vaultAPR === 0) return '0'
+
+    const depositValue = formatTAmount({ value: depositAmount.debouncedBn, decimals: inputToken?.decimals ?? 18 })
+    const annualReturn = Number(depositValue) * vaultAPR
+
+    return annualReturn.toFixed(2)
+  }, [depositAmount.bn, depositAmount.debouncedBn, vaultAPR, inputToken?.decimals])
 
   return (
     <div className="flex flex-col relative">
@@ -181,21 +329,61 @@ export const WidgetDepositGeneric: FC<Props> = ({
           </div>
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">You will receive</p>
-            <p className="text-sm text-gray-900">
-              {isLoadingRoute || depositAmount.isDebouncing ? (
-                <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
-              ) : depositAmount.bn > 0n && route ? (
-                `${formatAmount(expectedOut.normalized)} ${vault?.symbol} (?)`
-              ) : (
-                `0 ${vault?.symbol || ''} (?)`
-              )}
-            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowVaultSharesModal(true)}
+                className="inline-flex items-center justify-center hover:bg-gray-100 rounded-full p-0.5 transition-colors"
+              >
+                <svg
+                  className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </button>
+              <p className="text-sm text-gray-900">
+                {isLoadingRoute || depositAmount.isDebouncing ? (
+                  <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                ) : depositAmount.bn > 0n && route ? (
+                  `${formatAmount(expectedOut.normalized)} ${vaultSymbol}`
+                ) : (
+                  `0 ${vaultSymbol}`
+                )}
+              </p>
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">Est. Annual Return</p>
-            <p className="text-sm text-gray-900">
-              {depositAmount.bn > 0n && route ? `~${estimatedAnnualReturn} ${inputToken?.symbol} (?)` : '~0 (?)'}
-            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowAnnualReturnModal(true)}
+                className="inline-flex items-center justify-center hover:bg-gray-100 rounded-full p-0.5 transition-colors"
+              >
+                <svg
+                  className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </button>
+              <p className="text-sm text-gray-900">
+                {depositAmount.bn > 0n && route ? `~${estimatedAnnualReturn} ${inputToken?.symbol}` : '~0'}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -228,6 +416,24 @@ export const WidgetDepositGeneric: FC<Props> = ({
           />
         </div>
       </div>
+
+      {/* Vault Shares Modal */}
+      <VaultSharesModal
+        isOpen={showVaultSharesModal}
+        onClose={() => setShowVaultSharesModal(false)}
+        vaultSymbol={vaultSymbol}
+        expectedShares={expectedOut.normalized ? formatAmount(expectedOut.normalized) : '0'}
+      />
+
+      {/* Annual Return Modal */}
+      <AnnualReturnModal
+        isOpen={showAnnualReturnModal}
+        onClose={() => setShowAnnualReturnModal(false)}
+        depositAmount={formatTAmount({ value: depositAmount.debouncedBn, decimals: inputToken?.decimals ?? 18 })}
+        tokenSymbol={inputToken?.symbol}
+        estimatedReturn={estimatedAnnualReturn}
+        currentAPR={vaultAPR}
+      />
 
       {/* Full-screen Token Selector Overlay */}
       <div

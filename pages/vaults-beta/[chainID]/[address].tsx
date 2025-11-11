@@ -214,6 +214,7 @@ function Index(): ReactElement | null {
                 <Widget
                   vaultType={isV3 ? 'v3' : 'v2'}
                   vaultAddress={currentVault.address}
+                  currentVault={currentVault}
                   gaugeAddress={currentVault.staking.address}
                   actions={[WidgetActionType.DepositGeneric, WidgetActionType.EnsoWithdraw]}
                   chainId={Number(params.chainID)}

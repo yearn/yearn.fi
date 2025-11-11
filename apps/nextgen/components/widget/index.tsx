@@ -1,6 +1,7 @@
 import type { TAddress } from '@lib/types'
 import { cl, toAddress } from '@lib/utils'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { WidgetActionType as ActionType } from '@nextgen/types'
 import { type FC, useMemo, useState } from 'react'
 import { type Address, erc4626Abi } from 'viem'
@@ -16,6 +17,7 @@ import { WidgetUnstakeAndWithdraw } from './WidgetUnstakeAndWithdraw'
 import { WidgetWithdraw } from './WidgetWithdraw'
 
 interface Props {
+  currentVault: TYDaemonVault
   vaultAddress?: TAddress
   gaugeAddress?: TAddress
   vaultType: 'v2' | 'v3'
@@ -53,6 +55,7 @@ const getActionLabel = (action: ActionType): string => {
 }
 
 export const Widget: FC<Props> = ({
+  currentVault,
   vaultAddress,
   gaugeAddress,
   vaultType,
@@ -161,10 +164,24 @@ export const Widget: FC<Props> = ({
             vaultAddress={toAddress(vaultAddress)}
             assetAddress={toAddress(assetToken)}
             chainId={chainId}
+            vaultAPR={currentVault?.apr?.forwardAPR?.netAPR || 0}
+            vaultSymbol={currentVault?.symbol || ''}
+            handleDepositSuccess={handleSuccess}
           />
         )
     }
-  }, [mode, vaultAddress, gaugeAddress, vaultType, vaultVersion, assetToken, chainId, handleSuccess, isLoadingAsset])
+  }, [
+    mode,
+    vaultAddress,
+    gaugeAddress,
+    currentVault,
+    vaultType,
+    vaultVersion,
+    assetToken,
+    chainId,
+    handleSuccess,
+    isLoadingAsset
+  ])
 
   return (
     <div className="flex flex-col gap-0 mt-4 w-full">
