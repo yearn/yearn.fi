@@ -240,7 +240,6 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
           // Check if this is a Cowswap or Enso order
           if ((prepareWrite.data.request as any).__isCowswapOrder || (prepareWrite.data.request as any).__isEnsoOrder) {
             const customWriteAsync = (prepareWrite.data.request as any).writeContractAsync
-            console.log('customWriteAsync', customWriteAsync)
             customWriteAsync()
               .then((result: any) => {
                 if (result.orderUID) {

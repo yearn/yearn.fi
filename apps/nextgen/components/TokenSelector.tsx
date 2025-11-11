@@ -55,63 +55,82 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 }) => {
   const [searchText, setSearchText] = useState('')
   const [customAddress, setCustomAddress] = useState<Address | undefined>()
-  const { getToken, isLoading } = useWallet()
+  const { getToken, isLoading, balances } = useWallet()
 
-  // Fetch common tokens based on chainId
-  const commonTokenAddresses = useMemo(() => {
-    const tokensByChain: Record<number, Address[]> = {
-      1: [
-        // Ethereum mainnet
-        '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
-        '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
-        '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
-        '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
-        '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' // WBTC
-      ],
-      10: [
-        // Optimism
-        '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', // USDC
-        '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', // USDT
-        '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', // DAI
-        '0x4200000000000000000000000000000000000006' // WETH
-      ],
-      137: [
-        // Polygon
-        '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // USDC
-        '0xc2132D05D31c914a87C6611C10748AEb04B58e8F', // USDT
-        '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063', // DAI
-        '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' // WMATIC
-      ],
-      42161: [
-        // Arbitrum
-        '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // USDC
-        '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // USDT
-        '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', // DAI
-        '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' // WETH
-      ]
-    }
-    return tokensByChain[chainId] || []
-  }, [chainId])
+  // Keep common tokens for future use (withdraw tab)
+  // const commonTokenAddresses = useMemo(() => {
+  //   const tokensByChain: Record<number, Address[]> = {
+  //     1: [
+  //       // Ethereum mainnet
+  //       '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+  //       '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
+  //       '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
+  //       '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
+  //       '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' // WBTC
+  //     ],
+  //     10: [
+  //       // Optimism
+  //       '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', // USDC
+  //       '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', // USDT
+  //       '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', // DAI
+  //       '0x4200000000000000000000000000000000000006' // WETH
+  //     ],
+  //     137: [
+  //       // Polygon
+  //       '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // USDC
+  //       '0xc2132D05D31c914a87C6611C10748AEb04B58e8F', // USDT
+  //       '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063', // DAI
+  //       '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' // WMATIC
+  //     ],
+  //     42161: [
+  //       // Arbitrum
+  //       '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // USDC
+  //       '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // USDT
+  //       '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', // DAI
+  //       '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' // WETH
+  //     ]
+  //   }
+  //   return tokensByChain[chainId] || []
+  // }, [chainId])
 
-  // Fetch all tokens including custom address if valid
-  const allAddresses = useMemo(() => {
-    const addresses = [...commonTokenAddresses]
-    if (customAddress && isAddress(customAddress)) {
-      addresses.push(customAddress)
-    }
-    if (value && !addresses.includes(value)) {
-      addresses.push(value)
-    }
-    return addresses.filter(Boolean) as Address[]
-  }, [commonTokenAddresses, customAddress, value])
-
-  // Get tokens from wallet context
+  // Get all tokens with balances from wallet context
   const tokens = useMemo(() => {
-    return allAddresses.map((address) => {
-      const token = getToken({ address: toAddress(address.toLowerCase()), chainID: chainId })
-      return token
+    const chainBalances = balances[chainId] || {}
+    const tokenList: TToken[] = []
+
+    // Add all tokens from wallet balances
+    Object.entries(chainBalances).forEach(([address, token]) => {
+      if (token.chainID === 137 && toAddress(address) === '0x0000000000000000000000000000000000001010') {
+        return // Skip MATIC
+      }
+
+      if (token.balance.raw > 0n) {
+        tokenList.push(token)
+      }
     })
-  }, [allAddresses, getToken, chainId])
+
+    // Also include the currently selected token even if it has no balance
+    if (value && !tokenList.some((t) => t.address?.toLowerCase() === value.toLowerCase())) {
+      const selectedToken = getToken({ address: toAddress(value), chainID: chainId })
+      if (selectedToken.symbol) {
+        tokenList.push(selectedToken)
+      }
+    }
+
+    // Include custom address if valid
+    if (
+      customAddress &&
+      isAddress(customAddress) &&
+      !tokenList.some((t) => t.address?.toLowerCase() === customAddress.toLowerCase())
+    ) {
+      const customToken = getToken({ address: toAddress(customAddress), chainID: chainId })
+      if (customToken.symbol) {
+        tokenList.push(customToken)
+      }
+    }
+
+    return tokenList
+  }, [balances, chainId, value, customAddress, getToken])
 
   // Filter tokens based on search and limits
   const filteredTokens = useMemo(() => {
@@ -162,7 +181,6 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     },
     [onChange, onClose]
   )
-
   return (
     <div className="absolute inset-0 bg-white rounded-lg z-50 flex flex-col shadow-xl">
       {/* Header with close button */}

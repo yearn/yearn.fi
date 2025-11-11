@@ -31,7 +31,6 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
   const withdrawToken = selectedToken || assetAddress
   const { tokens, refetch: refetchTokens } = useTokens([vaultAddress, withdrawToken], chainId)
   const [vault, outputToken] = tokens
-  console.log(withdrawToken)
   const withdrawInput = useDebouncedInput(vault?.decimals ?? 18)
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
 
@@ -92,9 +91,7 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
 
   // Handle successful transaction receipt
   useEffect(() => {
-    console.log('withdraw success')
     if (receiptSuccess && txHash) {
-      console.log('refetching tokens')
       setWithdrawInput('')
       refetchTokens()
       onWithdrawSuccess?.()
