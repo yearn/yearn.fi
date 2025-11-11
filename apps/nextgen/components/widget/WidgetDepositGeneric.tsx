@@ -320,7 +320,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
             <p className="text-sm text-gray-900">
               {depositAmount.bn > 0n
                 ? formatTAmount({
-                    value: depositAmount.debouncedBn,
+                    value: depositAmount.bn,
                     decimals: inputToken?.decimals ?? 18
                   })
                 : '0'}{' '}
