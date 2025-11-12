@@ -163,6 +163,7 @@ export const Widget: FC<Props> = ({
           <WidgetDepositGeneric
             vaultAddress={toAddress(vaultAddress)}
             assetAddress={toAddress(assetToken)}
+            stakingAddress={toAddress(gaugeAddress)}
             chainId={chainId}
             vaultAPR={currentVault?.apr?.forwardAPR?.netAPR || 0}
             vaultSymbol={currentVault?.symbol || ''}

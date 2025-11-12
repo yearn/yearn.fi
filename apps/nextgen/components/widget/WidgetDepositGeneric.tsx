@@ -16,6 +16,7 @@ import { SettingsPopover } from './SettingsPopover'
 interface Props {
   vaultAddress: Address
   assetAddress: Address
+  stakingAddress?: Address
   chainId: number
   vaultAPR: number // APR as a percentage (e.g., 10.5 for 10.5%)
   vaultSymbol: string
@@ -85,24 +86,37 @@ interface VaultSharesModalProps {
   onClose: () => void
   vaultSymbol: string
   expectedShares: string
+  stakingAddress?: Address
+  isAutoStakingEnabled: boolean
 }
 
-const VaultSharesModal: FC<VaultSharesModalProps> = ({ isOpen, onClose, vaultSymbol, expectedShares }) => {
+const VaultSharesModal: FC<VaultSharesModalProps> = ({
+  isOpen,
+  onClose,
+  vaultSymbol,
+  expectedShares,
+  stakingAddress,
+  isAutoStakingEnabled
+}) => {
   return (
     <InfoModal isOpen={isOpen} onClose={onClose} title="Vault Shares">
       <div className="space-y-4">
         <p className="text-sm text-gray-600">
-          After depositing into the vault, you will receive vault tokens which serve as proof that you have deposited
-          into the vault.
+          After depositing into the vault, you will receive{' '}
+          {isAutoStakingEnabled && stakingAddress ? 'staked vault' : 'vault'} tokens which serve as proof that you have
+          deposited into the vault.
         </p>
         <div className="space-y-3">
-          <p className="font-medium text-sm text-gray-900">Vault Token details:</p>
+          <p className="font-medium text-sm text-gray-900">Token details:</p>
           <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-2">
             <li>Symbol: {vaultSymbol}</li>
             <li>
               Your shares: {expectedShares} {vaultSymbol}
             </li>
             <li>Redeemable for your deposited assets plus earnings</li>
+            {stakingAddress && (
+              <li className={cl(isAutoStakingEnabled ? '' : 'line-through')}>Automatically staked for maximum APY</li>
+            )}
           </ul>
         </div>
         <p className="text-xs text-gray-500 mt-4">
@@ -161,6 +175,7 @@ const AnnualReturnModal: FC<AnnualReturnModalProps> = ({
 export const WidgetDepositGeneric: FC<Props> = ({
   vaultAddress,
   assetAddress,
+  stakingAddress,
   chainId,
   vaultAPR,
   vaultSymbol,
@@ -176,14 +191,26 @@ export const WidgetDepositGeneric: FC<Props> = ({
 
   // Determine which token to use for deposits
   const depositToken = selectedToken || assetAddress
-  const { tokens, refetch: refetchTokens } = useTokens([depositToken, vaultAddress], chainId)
-  const [inputToken, vault] = tokens
+  // Include staking token in the tokens list if available
+  const tokensToFetch = stakingAddress ? [depositToken, vaultAddress, stakingAddress] : [depositToken, vaultAddress]
+  const { tokens, refetch: refetchTokens } = useTokens(tokensToFetch, chainId)
+  const [inputToken, vault, stakingToken] = tokens
 
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
 
   // Get settings from Yearn context
   const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
+
+  // Determine destination token based on auto-staking setting
+  const destinationToken = useMemo(() => {
+    // If auto-staking is enabled and a staking address is available, use it
+    if (isAutoStakingEnabled && stakingAddress) {
+      return stakingAddress
+    }
+    // Otherwise, use the vault address
+    return vaultAddress
+  }, [isAutoStakingEnabled, stakingAddress, vaultAddress])
 
   // Deposit flow using Enso
   const {
@@ -193,7 +220,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
     getEnsoTransaction
   } = useSolverEnso({
     tokenIn: depositToken,
-    tokenOut: vaultAddress,
+    tokenOut: destinationToken,
     amountIn: depositAmount.debouncedBn,
     fromAddress: account,
     chainId,
@@ -248,10 +275,14 @@ export const WidgetDepositGeneric: FC<Props> = ({
       setDepositInput('')
       refetchTokens()
       // Refresh wallet balances to update TokenSelector and other components
-      refreshWalletBalances([
+      const walletsToRefresh = [
         { address: depositToken, chainID: chainId },
         { address: vaultAddress, chainID: chainId }
-      ])
+      ]
+      if (stakingAddress) {
+        walletsToRefresh.push({ address: stakingAddress, chainID: chainId })
+      }
+      refreshWalletBalances(walletsToRefresh)
       onDepositSuccess?.()
     }
   }, [
@@ -263,7 +294,8 @@ export const WidgetDepositGeneric: FC<Props> = ({
     depositToken,
     vaultAddress,
     chainId,
-    onDepositSuccess
+    onDepositSuccess,
+    stakingAddress
   ])
 
   const estimatedAnnualReturn = useMemo(() => {
@@ -274,7 +306,6 @@ export const WidgetDepositGeneric: FC<Props> = ({
 
     return annualReturn.toFixed(2)
   }, [depositAmount.bn, depositAmount.debouncedBn, vaultAPR, inputToken?.decimals])
-
 
   return (
     <div className="flex flex-col relative">
@@ -386,9 +417,9 @@ export const WidgetDepositGeneric: FC<Props> = ({
                 {isLoadingRoute || depositAmount.isDebouncing ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
                 ) : depositAmount.bn > 0n && route ? (
-                  `${formatAmount(expectedOut.normalized)} ${vaultSymbol}`
+                  `${formatAmount(expectedOut.normalized)} ${isAutoStakingEnabled && stakingAddress ? stakingToken?.symbol || vaultSymbol : vaultSymbol}`
                 ) : (
-                  `0 ${vaultSymbol}`
+                  `0 ${isAutoStakingEnabled && stakingAddress ? stakingToken?.symbol || vaultSymbol : vaultSymbol}`
                 )}
               </p>
             </div>
@@ -457,6 +488,8 @@ export const WidgetDepositGeneric: FC<Props> = ({
         onClose={() => setShowVaultSharesModal(false)}
         vaultSymbol={vaultSymbol}
         expectedShares={expectedOut.normalized ? formatAmount(expectedOut.normalized) : '0'}
+        stakingAddress={stakingAddress}
+        isAutoStakingEnabled={isAutoStakingEnabled}
       />
 
       {/* Annual Return Modal */}
