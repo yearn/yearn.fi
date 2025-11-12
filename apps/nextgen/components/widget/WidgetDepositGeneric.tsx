@@ -10,6 +10,7 @@ import { type FC, Fragment, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount } from 'wagmi'
 import { TokenSelector } from '../TokenSelector'
+import { SettingsPopover } from './SettingsPopover'
 
 interface Props {
   vaultAddress: Address
@@ -180,6 +181,10 @@ export const WidgetDepositGeneric: FC<Props> = ({
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
 
+  // Settings state
+  const [slippage, setSlippage] = useState(0.5)
+  const [maximizeYield, setMaximizeYield] = useState(true)
+
   // Deposit flow using Enso
   const {
     actions: { prepareApprove },
@@ -194,6 +199,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
     chainId,
     destinationChainId,
     decimalsOut: vault?.decimals ?? 18,
+    slippage: slippage * 100, // Convert percentage to basis points (e.g., 0.5% -> 50 basis points)
     enabled: !!depositToken && !depositAmount.isDebouncing
   })
 
@@ -248,7 +254,17 @@ export const WidgetDepositGeneric: FC<Props> = ({
       ])
       onDepositSuccess?.()
     }
-  }, [receiptSuccess, txHash, setDepositInput, refetchTokens, refreshWalletBalances, depositToken, vaultAddress, chainId, onDepositSuccess])
+  }, [
+    receiptSuccess,
+    txHash,
+    setDepositInput,
+    refetchTokens,
+    refreshWalletBalances,
+    depositToken,
+    vaultAddress,
+    chainId,
+    onDepositSuccess
+  ])
 
   const estimatedAnnualReturn = useMemo(() => {
     if (depositAmount.bn === 0n || vaultAPR === 0) return '0'
@@ -259,10 +275,21 @@ export const WidgetDepositGeneric: FC<Props> = ({
     return annualReturn.toFixed(2)
   }, [depositAmount.bn, depositAmount.debouncedBn, vaultAPR, inputToken?.decimals])
 
+
   return (
     <div className="flex flex-col relative">
+      {/* Header with Settings */}
+      <div className="px-6 pt-4 pb-2 flex justify-end">
+        <SettingsPopover
+          slippage={slippage}
+          setSlippage={setSlippage}
+          maximizeYield={maximizeYield}
+          setMaximizeYield={setMaximizeYield}
+        />
+      </div>
+
       {/* Amount Section */}
-      <div className="px-6 pt-6 pb-6">
+      <div className="px-6 pt-2 pb-6">
         {/* Amount Input */}
         <div className="flex flex-col gap-4">
           <div className="relative">
