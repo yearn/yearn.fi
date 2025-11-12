@@ -1,5 +1,6 @@
 import { Dialog, Transition } from '@headlessui/react'
 import { useWallet } from '@lib/contexts/useWallet'
+import { useYearn } from '@lib/contexts/useYearn'
 import { cl, formatAmount, formatPercent, formatTAmount } from '@lib/utils'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
@@ -181,9 +182,8 @@ export const WidgetDepositGeneric: FC<Props> = ({
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
 
-  // Settings state
-  const [slippage, setSlippage] = useState(0.5)
-  const [maximizeYield, setMaximizeYield] = useState(true)
+  // Get settings from Yearn context
+  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
 
   // Deposit flow using Enso
   const {
@@ -199,7 +199,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
     chainId,
     destinationChainId,
     decimalsOut: vault?.decimals ?? 18,
-    slippage: slippage * 100, // Convert percentage to basis points (e.g., 0.5% -> 50 basis points)
+    slippage: zapSlippage * 100, // Convert percentage to basis points (e.g., 0.5% -> 50 basis points)
     enabled: !!depositToken && !depositAmount.isDebouncing
   })
 
@@ -281,10 +281,10 @@ export const WidgetDepositGeneric: FC<Props> = ({
       {/* Header with Settings */}
       <div className="px-6 pt-4 pb-2 flex justify-end">
         <SettingsPopover
-          slippage={slippage}
-          setSlippage={setSlippage}
-          maximizeYield={maximizeYield}
-          setMaximizeYield={setMaximizeYield}
+          slippage={zapSlippage}
+          setSlippage={setZapSlippage}
+          maximizeYield={isAutoStakingEnabled}
+          setMaximizeYield={setIsAutoStakingEnabled}
         />
       </div>
 

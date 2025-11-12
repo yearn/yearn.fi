@@ -90,7 +90,8 @@ export const SettingsPopover: FC<SettingsPopoverProps> = ({
                 <label htmlFor="maximize-yield" className="text-sm text-black">
                   Maximize Yield
                 </label>
-                <p className="text-xs text-gray-500">Optimize for highest returns</p>
+                <p className="text-xs text-gray-500">Automatically stake to maximize APY.</p>
+                <p className="text-xs text-gray-500">No assets will be locked.</p>
               </div>
               <button
                 role="switch"
