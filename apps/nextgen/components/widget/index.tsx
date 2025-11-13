@@ -15,6 +15,7 @@ import { WidgetStake } from './WidgetStake'
 import { WidgetUnstake } from './WidgetUnstake'
 import { WidgetUnstakeAndWithdraw } from './WidgetUnstakeAndWithdraw'
 import { WidgetWithdraw } from './WidgetWithdraw'
+import { WidgetWithdrawGeneric } from './WidgetWithdrawGeneric'
 
 interface Props {
   currentVault: TYDaemonVault
@@ -168,6 +169,18 @@ export const Widget: FC<Props> = ({
             vaultAPR={currentVault?.apr?.forwardAPR?.netAPR || 0}
             vaultSymbol={currentVault?.symbol || ''}
             handleDepositSuccess={handleSuccess}
+          />
+        )
+      case ActionType.WithdrawGeneric:
+        return (
+          <WidgetWithdrawGeneric
+            vaultAddress={toAddress(vaultAddress)}
+            assetAddress={toAddress(assetToken)}
+            stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
+            chainId={chainId}
+            vaultSymbol={currentVault?.symbol || ''}
+            vaultType={vaultType}
+            handleWithdrawSuccess={handleSuccess}
           />
         )
     }
