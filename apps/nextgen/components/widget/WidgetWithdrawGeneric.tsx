@@ -294,7 +294,6 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     vault?.decimals,
     requiredVaultTokensFromReverseQuote
   ])
-  console.log(requiredVaultTokens)
   // Withdrawal flow using Enso - using calculated vault tokens
   const {
     actions: { prepareApprove },
@@ -394,7 +393,6 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     })
   }, [totalBalanceInUnderlying, assetToken])
 
-  console.log(prepareApproveEnabled, !!withdrawError, isLoadingRequiredTokens)
 
   return (
     <div className="flex flex-col relative">
@@ -438,9 +436,13 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                     }
                   }}
                   disabled={isFetchingMaxQuote}
-                  className="bg-white border border-gray-200 flex gap-2 h-9 items-center justify-center px-8 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-white border border-gray-200 flex gap-2 h-9 items-center justify-center px-8 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed w-[88px]"
                 >
-                  <span className="font-medium text-sm text-gray-900">{isFetchingMaxQuote ? 'Loading...' : 'Max'}</span>
+                  {isFetchingMaxQuote ? (
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                  ) : (
+                    <span className="font-medium text-sm text-gray-900">Max</span>
+                  )}
                 </button>
               </div>
             </div>

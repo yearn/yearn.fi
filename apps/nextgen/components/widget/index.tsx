@@ -199,7 +199,7 @@ export const Widget: FC<Props> = ({
 
   return (
     <div className="flex flex-col gap-0 mt-4 w-full">
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden relative min-h-[400px] w-full min-w-0">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden relative w-full min-w-0">
         <div className="bg-gray-100 rounded-lg flex h-12">
           {actions.map((action) => (
             <TabButton key={action} isActive={mode === action} onClick={() => setMode(action)}>
