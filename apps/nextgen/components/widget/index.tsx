@@ -1,5 +1,5 @@
 import type { TAddress } from '@lib/types'
-import { cl, toAddress } from '@lib/utils'
+import { cl, isZeroAddress, toAddress } from '@lib/utils'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { WidgetActionType as ActionType } from '@nextgen/types'
@@ -163,7 +163,7 @@ export const Widget: FC<Props> = ({
           <WidgetDepositGeneric
             vaultAddress={toAddress(vaultAddress)}
             assetAddress={toAddress(assetToken)}
-            stakingAddress={toAddress(gaugeAddress)}
+            stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
             chainId={chainId}
             vaultAPR={currentVault?.apr?.forwardAPR?.netAPR || 0}
             vaultSymbol={currentVault?.symbol || ''}

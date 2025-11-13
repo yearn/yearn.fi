@@ -1,4 +1,5 @@
 import { Dialog, Transition } from '@headlessui/react'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
 import { cl, formatAmount, formatPercent, formatTAmount } from '@lib/utils'
@@ -193,6 +194,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
   const depositToken = selectedToken || assetAddress
   // Include staking token in the tokens list if available
   const tokensToFetch = stakingAddress ? [depositToken, vaultAddress, stakingAddress] : [depositToken, vaultAddress]
+
   const { tokens, refetch: refetchTokens } = useTokens(tokensToFetch, chainId)
   const [inputToken, vault, stakingToken] = tokens
 
@@ -361,7 +363,19 @@ export const WidgetDepositGeneric: FC<Props> = ({
             onClick={() => setShowTokenSelector(!showTokenSelector)}
             className="bg-white border border-gray-200 rounded-md h-9 w-full flex items-center justify-between px-3 py-2"
           >
-            <span className="font-normal text-sm text-gray-900">{inputToken?.symbol || 'Select Token'}</span>
+            <div className="flex items-center gap-2">
+              {inputToken && (
+                <ImageWithFallback
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${inputToken.address?.toLowerCase()}/logo-32.png`}
+                  alt={inputToken.symbol ?? ''}
+                  width={20}
+                  height={20}
+                  className="rounded-full"
+                />
+              )}
+              <span className="font-normal text-sm text-gray-900">{inputToken?.symbol || 'Select Token'}</span>
+            </div>
+
             <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
