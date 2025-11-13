@@ -8,31 +8,40 @@ type TRiskScoreItem = {
   explanation: string
   isOpen: boolean
   onToggle: () => void
+  isOverall?: boolean
+  currentVault: TYDaemonVault
 }
 
-function RiskScoreItem({ label, score, explanation, isOpen, onToggle }: TRiskScoreItem): ReactElement {
+function RiskScoreItem({
+  label,
+  score,
+  explanation,
+  isOpen,
+  onToggle,
+  isOverall = false
+  // currentVault
+}: TRiskScoreItem): ReactElement {
   return (
     <div className={'w-full'}>
-      <div className={cl('grid w-1/3 grid-cols-6 items-center gap-6')}>
-        <div className={'col-span-4'}>
-          <button onClick={onToggle} className={'flex items-center gap-2 text-left transition-colors hover:opacity-70'}>
-            <p className={'font-medium'}>{label}</p>
-            <span
-              className={'text-lg transition-transform'}
-              style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
-            >
-              {'+'}
-            </span>
-          </button>
-        </div>
-        <div className={'col-span-2 flex items-center justify-center font-bold'}>
-          <p>{score}</p>
-          <span className={'text-neutral-900/40'}>{' / 5'}</span>
+      <div className={'flex items-center gap-8'}>
+        <button onClick={onToggle} className={'flex items-center gap-2 text-left transition-colors hover:opacity-70'}>
+          <span
+            className={cl('transition-transform', isOverall ? 'text-xl' : 'text-lg')}
+            style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
+          >
+            {'+'}
+          </span>
+          <p className={cl('font-medium', isOverall ? 'text-xl font-bold' : '')}>{label}</p>
+        </button>
+        <div className={'flex items-center font-bold'}>
+          <p className={cl('mr-2', isOverall ? 'text-xl' : 'text-lg')}>{score}</p>
+          <span className={'text-neutral-900/40'}> {' / 5'}</span>
         </div>
       </div>
       {isOpen && (
-        <div className={'mt-2 w-1/3 px-2'}>
-          <small className={'whitespace-break-spaces text-xs text-neutral-900/40'}>{explanation}</small>
+        <div className={'mt-2 w-full'}>
+          {/* {isOverall && <p className={'mt-2 text-md text-neutral-900/70'}>{currentVault.info.riskScoreComment}</p>} */}
+          <small className={'whitespace-break-spaces text-sm text-neutral-900/70'}>{explanation}</small>
         </div>
       )}
     </div>
@@ -143,16 +152,19 @@ export function SimpleRiskScore({
     <div className={'grid grid-cols-1 gap-4 p-4 md:grid-cols-12 md:gap-10 md:p-8'}>
       <div className={'col-span-12 mt-6 w-full md:mt-0'}>
         <div className={'flex flex-col mb-4 md:mb-10'}>
-          <div className={cl('flex flex-col gap-4', hasRiskScore ? '' : 'hidden')}>
+          <div className={cl('flex flex-col gap-2', hasRiskScore ? '' : 'hidden')}>
             {riskScoreData.map((item, index) => (
-              <RiskScoreItem
-                key={item.label}
-                label={item.label}
-                score={item.score}
-                explanation={item.explanation}
-                isOpen={openIndex === index}
-                onToggle={() => toggleItem(index)}
-              />
+              <div key={item.label} className={index === 0 ? 'border-b border-neutral-300 pb-2 mb-2' : ''}>
+                <RiskScoreItem
+                  label={item.label}
+                  score={item.score}
+                  explanation={item.explanation}
+                  isOpen={openIndex === index}
+                  onToggle={() => toggleItem(index)}
+                  isOverall={index === 0}
+                  currentVault={currentVault}
+                />
+              </div>
             ))}
           </div>
         </div>
