@@ -11,7 +11,6 @@ import { type FC, Fragment, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount } from 'wagmi'
 import { TokenSelector } from '../TokenSelector'
-import { SettingsPopover } from './SettingsPopover'
 
 interface Props {
   vaultAddress: Address
@@ -188,6 +187,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
 
   // Determine which token to use for deposits
   const depositToken = selectedToken || assetAddress
@@ -309,18 +309,8 @@ export const WidgetDepositGeneric: FC<Props> = ({
 
   return (
     <div className="flex flex-col relative">
-      {/* Header with Settings */}
-      <div className="px-6 pt-4 pb-2 flex justify-end">
-        <SettingsPopover
-          slippage={zapSlippage}
-          setSlippage={setZapSlippage}
-          maximizeYield={isAutoStakingEnabled}
-          setMaximizeYield={setIsAutoStakingEnabled}
-        />
-      </div>
-
       {/* Amount Section */}
-      <div className="px-6 pt-2 pb-6">
+      <div className="px-6 pt-6 pb-6">
         {/* Amount Input */}
         <div className="flex flex-col gap-4">
           <div className="relative">
@@ -454,7 +444,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="px-6 pb-6 pt-6">
+      <div className={cl('px-6 pt-6', showAdvancedSettings ? 'pb-6' : 'pb-2')}>
         <div className="flex gap-2 w-full">
           <TxButton
             prepareWrite={prepareApprove}
@@ -479,6 +469,73 @@ export const WidgetDepositGeneric: FC<Props> = ({
             tooltip={depositError || (!isAllowanceSufficient ? 'Please approve token first' : undefined)}
             className="w-full"
           />
+        </div>
+
+        {/* Advanced Settings */}
+        <div className="mt-1 flex flex-col items-center">
+          <button
+            onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg
+              className={cl('h-3 w-3 transition-transform', showAdvancedSettings ? 'rotate-180' : 'rotate-0')}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+            Advanced settings
+          </button>
+
+          {showAdvancedSettings && (
+            <div className="mt-3 w-full space-y-3">
+              <div className="flex items-center justify-between">
+                <label htmlFor="slippage" className="text-sm text-gray-600">
+                  Slippage Tolerance
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={zapSlippage}
+                    onChange={(e) => setZapSlippage(parseFloat(e.target.value) || 0)}
+                    className="w-16 px-2 py-1 text-sm border border-gray-200 text-gray-900 text-right rounded focus:outline-none focus:ring-1 focus:ring-gray-300"
+                    step="0.1"
+                    min="0"
+                    max="50"
+                  />
+                  <span className="text-sm text-gray-500">%</span>
+                </div>
+              </div>
+
+              {stakingAddress && (
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                  <div className="space-y-0.5">
+                    <label htmlFor="maximize-yield" className="text-sm text-gray-600">
+                      Maximize Yield
+                    </label>
+                    <p className="text-xs text-gray-400">Auto-stake for maximum APY</p>
+                  </div>
+                  <button
+                    role="switch"
+                    aria-checked={isAutoStakingEnabled}
+                    onClick={() => setIsAutoStakingEnabled(!isAutoStakingEnabled)}
+                    className={cl(
+                      'relative inline-flex h-5 w-10 items-center rounded-full transition-colors',
+                      isAutoStakingEnabled ? 'bg-gray-700' : 'bg-gray-300'
+                    )}
+                  >
+                    <span
+                      className={cl(
+                        'inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform',
+                        isAutoStakingEnabled ? 'translate-x-5' : 'translate-x-1'
+                      )}
+                    />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
