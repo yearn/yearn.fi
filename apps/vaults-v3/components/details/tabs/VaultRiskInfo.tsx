@@ -1,5 +1,6 @@
 import { cl } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
 import { type ReactElement, useMemo, useState } from 'react'
 
 type TRiskScoreItem = {
@@ -10,6 +11,7 @@ type TRiskScoreItem = {
   onToggle: () => void
   isOverall?: boolean
   currentVault: TYDaemonVault
+  rightContent?: ReactElement | null
 }
 
 function RiskScoreItem({
@@ -18,13 +20,14 @@ function RiskScoreItem({
   explanation,
   isOpen,
   onToggle,
-  isOverall = false
+  isOverall = false,
+  rightContent = null
   // currentVault
 }: TRiskScoreItem): ReactElement {
   return (
     <div className={'w-full'}>
-      <div className={'flex items-center gap-8'}>
-        <button onClick={onToggle} className={'flex items-center gap-2 text-left transition-colors hover:opacity-70'}>
+      <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
+        <button onClick={onToggle} className={'flex items-end gap-2 text-left transition-colors hover:opacity-70'}>
           <span
             className={cl('transition-transform', isOverall ? 'text-xl' : 'text-lg')}
             style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
@@ -33,10 +36,11 @@ function RiskScoreItem({
           </span>
           <p className={cl('font-medium', isOverall ? 'text-xl font-bold' : '')}>{label}</p>
         </button>
-        <div className={'flex items-center font-bold'}>
+        <div className={'flex items-end font-bold'}>
           <p className={cl('mr-2', isOverall ? 'text-xl' : 'text-lg')}>{score}</p>
           <span className={'text-neutral-900/40'}> {' / 5'}</span>
         </div>
+        {rightContent ? <div className={'flex items-end'}>{rightContent}</div> : null}
       </div>
       {isOpen && (
         <div className={'mt-2 w-full'}>
@@ -73,6 +77,13 @@ export function SimpleRiskScore({
   const toggleItem = (index: number): void => {
     setOpenIndex(openIndex === index ? null : index)
   }
+  const renderInlineRiskScoreTag = (): ReactElement => (
+    <VaultRiskScoreTag
+      riskLevel={currentVault.info.riskLevel}
+      variant={'inline'}
+      className={'w-auto flex-shrink-0 md:pt-0'}
+    />
+  )
 
   if (isMultiStrategy) {
     const multiStrategyRiskScore = {
@@ -88,13 +99,16 @@ export function SimpleRiskScore({
           <div className={'flex flex-col mb-4 md:mb-10'}>
             <div className={'flex flex-col gap-2'}>
               <div className={'border-b border-neutral-300 pb-2 mb-2'}>
-                <div className={'flex items-center gap-8'}>
-                  <div className={'flex items-center gap-2 text-left'}>
+                <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
+                  <div className={'flex items-end gap-2'}>
                     <p className={'font-medium text-xl font-bold'}>{multiStrategyRiskScore.label}</p>
                   </div>
-                  <div className={'flex items-center font-bold'}>
-                    <p className={'mr-2 text-xl'}>{multiStrategyRiskScore.score}</p>
-                    <span className={'text-neutral-900/40'}> {' / 5'}</span>
+                  <div className={'flex items-end gap-4'}>
+                    <div className={'flex items-center font-bold'}>
+                      <p className={'mr-2 text-xl'}>{multiStrategyRiskScore.score}</p>
+                      <span className={'text-neutral-900/40'}> {' / 5'}</span>
+                    </div>
+                    {renderInlineRiskScoreTag()}
                   </div>
                 </div>
                 <div className={'mt-2 w-full'}>
@@ -202,6 +216,7 @@ export function SimpleRiskScore({
                     onToggle={() => toggleItem(index)}
                     isOverall={index === 0}
                     currentVault={currentVault}
+                    rightContent={index === 0 ? renderInlineRiskScoreTag() : null}
                   />
                 </div>
               ))}
