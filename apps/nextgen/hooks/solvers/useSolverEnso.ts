@@ -18,6 +18,7 @@ interface EnsoRouteResponse {
     chainId: number
   }
   amountOut: string
+  minAmountOut: string
   gas: string
   route: any[]
 }
@@ -122,7 +123,7 @@ export const useSolverEnso = ({
   const isValidInput = amountIn > 0n
   const isAllowanceSufficient = !routerAddress || allowance >= amountIn
   const prepareApproveEnabled = routerAddress && !isAllowanceSufficient && isValidInput && enabled
-
+  console.log(routerAddress, !isAllowanceSufficient, isValidInput, enabled)
   const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
     abi: erc20Abi,
     functionName: 'approve',
@@ -131,11 +132,10 @@ export const useSolverEnso = ({
     chainId,
     query: { enabled: !!prepareApproveEnabled && !!routerAddress }
   })
-
+  console.log(prepareApprove)
   const expectedOut = route?.amountOut
     ? toNormalizedBN(BigInt(route.amountOut), decimalsOut)
     : toNormalizedBN(0n, decimalsOut)
-
   return {
     actions: {
       prepareApprove
