@@ -44,8 +44,7 @@
   "css": {
     "parser": {
       "cssModules": false,
-      "allowWrongLineComments": false,
-      "tailwindDirectives": true
+      "allowWrongLineComments": false
     }
   },
   "javascript": {
