@@ -10,7 +10,7 @@ import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { type Address, erc4626Abi } from 'viem'
+import type { Address } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
 import { TokenSelector } from '../TokenSelector'
 
@@ -275,7 +275,6 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
 
     // If withdrawing to asset token directly, calculate vault tokens needed
     if (withdrawToken === assetAddress && pricePerShare) {
-      const assetDecimals = assetToken?.decimals ?? 18
       const vaultDecimals = vault?.decimals ?? 18
 
       // Convert desired asset amount to vault tokens
@@ -290,7 +289,6 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     pricePerShare,
     withdrawToken,
     assetAddress,
-    assetToken?.decimals,
     vault?.decimals,
     requiredVaultTokensFromReverseQuote
   ])
@@ -392,7 +390,6 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
       decimals: assetToken.decimals ?? 18
     })
   }, [totalBalanceInUnderlying, assetToken])
-
 
   return (
     <div className="flex flex-col relative">

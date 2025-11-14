@@ -1,6 +1,6 @@
 import { Popover as HeadlessPopover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react'
 import { cl } from '@lib/utils'
-import type { FC, ReactElement, ReactNode } from 'react'
+import type { FC, ReactNode } from 'react'
 import { Fragment } from 'react'
 
 interface PopoverProps {
@@ -27,9 +27,9 @@ export const Popover: FC<PopoverProps> = ({ trigger, children, className, align 
         <PopoverPanel
           className={cl(
             'absolute z-50 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200',
-            align === 'start' && 'left-0',
-            align === 'center' && 'left-1/2 -translate-x-1/2',
-            align === 'end' && 'right-0',
+            align === 'start' ? 'left-0' : '',
+            align === 'center' ? 'left-1/2 -translate-x-1/2' : '',
+            align === 'end' ? 'right-0' : '',
             className
           )}
           style={{ top: `calc(100% + ${sideOffset}px)` }}
