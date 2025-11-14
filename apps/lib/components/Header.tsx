@@ -39,15 +39,24 @@ function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
 function WalletSelector(): ReactElement {
   const { openAccountModal } = useAccountModal()
   const { openChainModal } = useChainModal()
-  const { isActive, isUserConnecting, isIdentityLoading, address, ens, clusters, lensProtocolHandle, openLoginModal } =
-    useWeb3()
+  const {
+    isActive,
+    isUserConnecting,
+    isIdentityLoading,
+    isNetworkMismatch,
+    address,
+    ens,
+    clusters,
+    lensProtocolHandle,
+    openLoginModal
+  } = useWeb3()
   const { isLoading: isWalletLoading } = useWallet()
   const [walletIdentity, setWalletIdentity] = useState<string | undefined>(undefined)
 
   useEffect((): void => {
     if (isUserConnecting) {
       setWalletIdentity('Connecting...')
-    } else if (!isActive && address) {
+    } else if (isNetworkMismatch && address) {
       setWalletIdentity('Invalid Network')
     } else if (ens) {
       setWalletIdentity(ens)
@@ -60,7 +69,7 @@ function WalletSelector(): ReactElement {
     } else {
       setWalletIdentity(undefined)
     }
-  }, [ens, clusters, lensProtocolHandle, address, isActive, isUserConnecting])
+  }, [ens, clusters, lensProtocolHandle, address, isUserConnecting, isNetworkMismatch])
 
   const shouldShowSpinner = Boolean(
     address &&
@@ -73,9 +82,9 @@ function WalletSelector(): ReactElement {
   return (
     <div
       onClick={(): void => {
-        if (isActive) {
+        if (isActive && !isNetworkMismatch) {
           openAccountModal?.()
-        } else if (!isActive && address) {
+        } else if (isNetworkMismatch && address) {
           openChainModal?.()
         } else {
           openLoginModal()

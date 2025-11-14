@@ -32,6 +32,7 @@ type TWeb3Context = {
   isConnecting: boolean
   isUserConnecting: boolean
   isIdentityLoading: boolean
+  isNetworkMismatch: boolean
   isWalletSafe: boolean
   isWalletLedger: boolean
   hasProvider: boolean
@@ -53,6 +54,7 @@ const defaultState: TWeb3Context = {
   isConnecting: false,
   isUserConnecting: false,
   isIdentityLoading: false,
+  isNetworkMismatch: false,
   isWalletSafe: false,
   isWalletLedger: false,
   hasProvider: false,
@@ -74,7 +76,7 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
     chainId: mainnet.id
   })
   const { data: walletClient } = useWalletClient()
-  const [currentChainID, setCurrentChainID] = useState(chain?.id)
+  const [currentChainID, setCurrentChainID] = useState<number | undefined>(() => chain?.id ?? props.defaultNetwork?.id)
   const publicClient = usePublicClient()
   const { openAccountModal } = useAccountModal()
   const { openConnectModal } = useConnectModal()
@@ -92,8 +94,10 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
   }, [connectors])
 
   useUpdateEffect((): void => {
-    setCurrentChainID(chain?.id)
-  }, [chain])
+    if (typeof chain?.id === 'number') {
+      setCurrentChainID(chain.id)
+    }
+  }, [chain?.id])
 
   useAsyncTrigger(async () => {
     if (typeof window === 'undefined') {
@@ -262,7 +266,20 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
     }
   }, [hasUserRequestedConnection, isConnecting])
 
+  const resolvedChainId = chain?.id ?? currentChainID
+  const isChainResolved = typeof resolvedChainId === 'number'
+  const isSupportedNetwork = (chainId: number | undefined): boolean => {
+    if (typeof chainId !== 'number') {
+      return true
+    }
+    if (chainId === 1337) {
+      return true
+    }
+    return supportedChainsID.includes(chainId)
+  }
+  const isNetworkMismatch = Boolean(isConnected && isChainResolved && !isSupportedNetwork(resolvedChainId))
   const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
+  const derivedChainID = resolvedChainId ?? props.defaultNetwork?.id ?? 1
 
   const contextValue = {
     address: address ? toAddress(address) : undefined,
@@ -270,9 +287,10 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
     isDisconnected,
     isUserConnecting,
     isIdentityLoading,
+    isNetworkMismatch,
     ens: ensName || '',
     clusters,
-    isActive: isConnected && (supportedChainsID.includes(chain?.id ?? -1) || chain?.id === 1337),
+    isActive: Boolean(isConnected && isSupportedNetwork(resolvedChainId)),
     isWalletSafe:
       connector?.id === 'safe' ||
       (
@@ -290,9 +308,7 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
     lensProtocolHandle: '',
     hasProvider: !!(walletClient || publicClient),
     provider: connector,
-    chainID: isConnected
-      ? Number(chain?.id || props.defaultNetwork?.id || 1)
-      : Number(currentChainID || props.defaultNetwork?.id || 1),
+    chainID: Number(derivedChainID),
     onConnect,
     onSwitchChain,
     openLoginModal,
