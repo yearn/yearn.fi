@@ -1,5 +1,5 @@
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
-import { useIsMounted, useUpdateEffect } from '@react-hookz/web'
+import { useUpdateEffect } from '@react-hookz/web'
 import type { ReactElement } from 'react'
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { Chain } from 'viem'
@@ -72,7 +72,6 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
   const { data: walletClient } = useWalletClient()
   const [currentChainID, setCurrentChainID] = useState(chain?.id)
   const publicClient = usePublicClient()
-  const isMounted = useIsMounted()
   const { openAccountModal } = useAccountModal()
   const { openConnectModal } = useConnectModal()
   const { openChainModal } = useChainModal()
@@ -233,7 +232,7 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
     isDisconnected,
     ens: ensName || '',
     clusters,
-    isActive: isConnected && [...supportedChainsID, 1337].includes(chain?.id || -1) && isMounted(),
+    isActive: isConnected && (supportedChainsID.includes(chain?.id ?? -1) || chain?.id === 1337),
     isWalletSafe:
       connector?.id === 'safe' ||
       (
