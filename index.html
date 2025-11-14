@@ -1,71 +1,81 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="duration-150 bg-neutral-0 transition-colors">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="The yield protocol for digital assets" />
-    
+
     <!-- Open Graph -->
     <meta property="og:title" content="Yearn Finance" />
-    <meta property="og:description" content="The yield protocol for digital assets" />
+    <meta
+      property="og:description"
+      content="The yield protocol for digital assets"
+    />
     <meta property="og:image" content="https://yearn.fi/og.png" />
     <meta property="og:url" content="https://yearn.fi" />
     <meta property="og:type" content="website" />
-    
+
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Yearn Finance" />
-    <meta name="twitter:description" content="The yield protocol for digital assets" />
+    <meta
+      name="twitter:description"
+      content="The yield protocol for digital assets"
+    />
     <meta name="twitter:image" content="https://yearn.fi/og.png" />
-    
+
     <link rel="icon" href="/favicon.ico" />
     <title>Yearn Finance</title>
     <script>
-      let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const darkModeMediaQuery = window.matchMedia(
+        '(prefers-color-scheme: dark)'
+      )
 
-      updateMode();
-      darkModeMediaQuery.addEventListener('change', updateMode);
-      window.addEventListener('storage', updateMode);
-      window.addEventListener('beforeunload', updateMode);
+      updateMode()
+      darkModeMediaQuery.addEventListener('change', updateMode)
+      window.addEventListener('storage', updateMode)
+      window.addEventListener('beforeunload', updateMode)
 
       const observeUrlChange = () => {
-        let oldHref = document.location.href;
-        const body = document.querySelector("body");
-        const observer = new MutationObserver(mutations => {
+        let oldHref = document.location.href
+        const body = document.querySelector('body')
+        const observer = new MutationObserver((_mutations) => {
           if (oldHref !== document.location.href) {
-            oldHref = document.location.href;
-            updateMode();
+            oldHref = document.location.href
+            updateMode()
           }
-        });
-        observer.observe(body, { childList: true, subtree: true });
-      };
+        })
+        observer.observe(body, { childList: true, subtree: true })
+      }
 
       function updateMode() {
-        let isSystemDarkMode = darkModeMediaQuery.matches;
-        let isDarkMode = window.localStorage.isDarkMode === 'true' || (!('isDarkMode' in window.localStorage) && isSystemDarkMode);
-        let isV3 = window.location.pathname.includes('v3');
-        let isHomePage = window.location.pathname === '/';
+        const isSystemDarkMode = darkModeMediaQuery.matches
+        const isDarkMode =
+          window.localStorage.isDarkMode === 'true' ||
+          (!('isDarkMode' in window.localStorage) && isSystemDarkMode)
+        const isV3 = window.location.pathname.includes('v3')
+        const isHomePage = window.location.pathname === '/'
 
         if (isV3) {
-          document.documentElement.classList.add('v3');
-          document.documentElement.classList.remove('dark');
-          document.documentElement.classList.remove('light');
+          document.documentElement.classList.add('v3')
+          document.documentElement.classList.remove('dark')
+          document.documentElement.classList.remove('light')
         } else if (isDarkMode || isHomePage) {
-          document.documentElement.classList.add('dark');
-          document.documentElement.classList.remove('light');
-          document.documentElement.classList.remove('v3');
+          document.documentElement.classList.add('dark')
+          document.documentElement.classList.remove('light')
+          document.documentElement.classList.remove('v3')
         } else {
-          document.documentElement.classList.remove('v3');
-          document.documentElement.classList.remove('dark');
-          document.documentElement.classList.add('light');
+          document.documentElement.classList.remove('v3')
+          document.documentElement.classList.remove('dark')
+          document.documentElement.classList.add('light')
         }
 
         if (isDarkMode === isSystemDarkMode && !isHomePage) {
-          delete window.localStorage.isDarkMode;
+          delete window.localStorage.isDarkMode
         }
       }
-      window.onload = observeUrlChange;
+      window.onload = observeUrlChange
     </script>
   </head>
   <body>
