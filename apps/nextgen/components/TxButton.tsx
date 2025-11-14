@@ -75,7 +75,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const isSuccess = override === 'success'
 
   const disabled = _disabled || !prepareWrite.isSuccess || isLoading || isSimulating || override === 'error'
-  console.log(prepareWrite.isSuccess, isLoading, isSimulating, override)
+
   // Clear override states after timeout
   useEffect(() => {
     if (override === 'error' || override === 'success') {
