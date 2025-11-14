@@ -1,7 +1,7 @@
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import { useUpdateEffect } from '@react-hookz/web'
 import type { ReactElement } from 'react'
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { Chain } from 'viem'
 import { mainnet } from 'viem/chains'
 import type { Connector } from 'wagmi'
@@ -30,6 +30,8 @@ type TWeb3Context = {
   isDisconnected: boolean
   isActive: boolean
   isConnecting: boolean
+  isUserConnecting: boolean
+  isIdentityLoading: boolean
   isWalletSafe: boolean
   isWalletLedger: boolean
   hasProvider: boolean
@@ -49,6 +51,8 @@ const defaultState: TWeb3Context = {
   isDisconnected: false,
   isActive: false,
   isConnecting: false,
+  isUserConnecting: false,
+  isIdentityLoading: false,
   isWalletSafe: false,
   isWalletLedger: false,
   hasProvider: false,
@@ -65,7 +69,7 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
   const { connectors, connectAsync } = useConnect()
   const { disconnect, disconnectAsync } = useDisconnect()
   const { switchChain } = useSwitchChain()
-  const { data: ensName } = useEnsName({
+  const { data: ensName, isLoading: isEnsLoading } = useEnsName({
     address: address,
     chainId: mainnet.id
   })
@@ -76,6 +80,9 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
   const { openConnectModal } = useConnectModal()
   const { openChainModal } = useChainModal()
   const [clusters, setClusters] = useState<{ name: string; avatar: string } | undefined>(undefined)
+  const [hasUserRequestedConnection, setHasUserRequestedConnection] = useState(false)
+  const [isUserConnecting, setIsUserConnecting] = useState(false)
+  const [isFetchingClusters, setIsFetchingClusters] = useState(false)
 
   const supportedChainsID = useMemo((): number[] => {
     connectors //Hard trigger re-render when connectors change
@@ -135,6 +142,7 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
   const onConnect = useCallback(async (): Promise<void> => {
     const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
     if (isIframe() && ledgerConnector) {
+      setHasUserRequestedConnection(true)
       await connectAsync({
         connector: ledgerConnector,
         chainId: currentChainID
@@ -143,6 +151,7 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
     }
 
     if (openConnectModal) {
+      setHasUserRequestedConnection(true)
       openConnectModal()
     } else {
       if (openChainModal) {
@@ -184,6 +193,7 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
     } else {
       const ledgerConnector = connectors.find((c): boolean => c.id.toLowerCase().includes('ledger'))
       if (isIframe() && ledgerConnector) {
+        setHasUserRequestedConnection(true)
         await connectAsync({
           connector: ledgerConnector,
           chainId: currentChainID
@@ -192,6 +202,7 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
       }
 
       if (openConnectModal) {
+        setHasUserRequestedConnection(true)
         openConnectModal()
       } else {
         if (openChainModal) {
@@ -214,7 +225,13 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
   ])
 
   useAsyncTrigger(async (): Promise<void> => {
-    if (isAddress(address)) {
+    if (!isAddress(address)) {
+      setClusters(undefined)
+      setIsFetchingClusters(false)
+      return
+    }
+    setIsFetchingClusters(true)
+    try {
       const clustersTag = await fetchClusterName(address)
       if (clustersTag) {
         const [clustersName] = clustersTag.split('/')
@@ -222,14 +239,37 @@ export const Web3ContextApp = (props: { children: ReactElement; defaultNetwork?:
         setClusters({ name: `${clustersTag}`, avatar: profileImage })
         return
       }
+      setClusters(undefined)
+    } catch (error) {
+      console.error(error)
+      setClusters(undefined)
+    } finally {
+      setIsFetchingClusters(false)
     }
-    setClusters(undefined)
   }, [address])
+
+  useEffect(() => {
+    if (isConnecting) {
+      if (hasUserRequestedConnection) {
+        setIsUserConnecting(true)
+      }
+      return
+    }
+
+    setIsUserConnecting(false)
+    if (hasUserRequestedConnection) {
+      setHasUserRequestedConnection(false)
+    }
+  }, [hasUserRequestedConnection, isConnecting])
+
+  const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
 
   const contextValue = {
     address: address ? toAddress(address) : undefined,
     isConnecting,
     isDisconnected,
+    isUserConnecting,
+    isIdentityLoading,
     ens: ensName || '',
     clusters,
     isActive: isConnected && (supportedChainsID.includes(chain?.id ?? -1) || chain?.id === 1337),
