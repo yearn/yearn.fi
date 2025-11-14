@@ -2,7 +2,8 @@ import { Dialog, Transition } from '@headlessui/react'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
-import { cl, formatAmount, formatTAmount } from '@lib/utils'
+import type { TNormalizedBN } from '@lib/types'
+import { cl, formatAmount, formatTAmount, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
@@ -11,6 +12,7 @@ import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
+import { formatUnits } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
 import { TokenSelector } from '../TokenSelector'
 
@@ -105,7 +107,9 @@ const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
     <InfoModal isOpen={isOpen} onClose={onClose} title="Withdrawal Details">
       <div className="space-y-4">
         <p className="text-sm text-gray-600">
-          You are withdrawing {withdrawAmount} {withdrawalSource === 'staking' && stakingTokenSymbol ? stakingTokenSymbol : vaultSymbol} from the {withdrawalSource === 'staking' ? 'staking contract' : 'vault'}.
+          You are withdrawing {withdrawAmount}{' '}
+          {withdrawalSource === 'staking' && stakingTokenSymbol ? stakingTokenSymbol : vaultSymbol} from the{' '}
+          {withdrawalSource === 'staking' ? 'staking contract' : 'vault'}.
           {stakingAddress && withdrawalSource === 'staking' && ' Your tokens will be automatically unstaked.'}
         </p>
         <div className="space-y-3">
@@ -180,23 +184,26 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   }, [hasVaultBalance, hasStakingBalance, hasBothBalances])
 
   // Get the actual balance based on withdrawal source
-  const totalVaultBalance = useMemo(() => {
-    if (withdrawalSource === 'vault') {
-      return vault?.balance.raw || 0n
-    } else if (withdrawalSource === 'staking') {
-      return stakingToken?.balance.raw || 0n
+  const totalVaultBalance: TNormalizedBN = useMemo(() => {
+    if (withdrawalSource === 'vault' && vault) {
+      return vault.balance
+    } else if (withdrawalSource === 'staking' && stakingToken) {
+      return stakingToken.balance
     }
-    // If no source selected, return 0
-    return 0n
-  }, [withdrawalSource, vault?.balance.raw, stakingToken?.balance.raw])
+    // If no source selected, return empty balance
+    return zeroNormalizedBN
+  }, [withdrawalSource, vault, stakingToken])
 
   // Convert vault balance to underlying tokens
-  const totalBalanceInUnderlying = useMemo(() => {
-    if (!pricePerShare || totalVaultBalance === 0n) return 0n
+  const totalBalanceInUnderlying: TNormalizedBN = useMemo(() => {
+    if (!pricePerShare || totalVaultBalance.raw === 0n || !assetToken) {
+      return zeroNormalizedBN
+    }
 
     const vaultDecimals = vault?.decimals ?? 18
-    return (totalVaultBalance * (pricePerShare as bigint)) / 10n ** BigInt(vaultDecimals)
-  }, [totalVaultBalance, pricePerShare, vault?.decimals])
+    const underlyingAmount = (totalVaultBalance.raw * (pricePerShare as bigint)) / 10n ** BigInt(vaultDecimals)
+    return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
+  }, [totalVaultBalance.raw, pricePerShare, vault?.decimals, assetToken])
 
   // Use output token decimals for the input
   const withdrawInput = useDebouncedInput(outputToken?.decimals ?? 18)
@@ -218,7 +225,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
 
   // Function to fetch max quote from Enso
   const fetchMaxQuote = useCallback(async () => {
-    if (!account || totalVaultBalance === 0n || !outputToken) return
+    if (!account || totalVaultBalance.raw === 0n || !outputToken) return
     if (hasBothBalances && !withdrawalSource) return
 
     setIsFetchingMaxQuote(true)
@@ -231,7 +238,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
         chainId: chainId.toString(),
         tokenIn: sourceToken,
         tokenOut: withdrawToken,
-        amountIn: totalVaultBalance.toString(),
+        amountIn: totalVaultBalance.raw.toString(),
         slippage: (zapSlippage * 100).toString()
       })
 
@@ -292,7 +299,6 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   // Update required vault tokens from reverse quote
   useEffect(() => {
     if (reverseRoute?.minAmountOut && shouldFetchReverseQuote && BigInt(reverseRoute.minAmountOut) > 0n) {
-      // Add a small buffer (0.1%) to ensure we have enough vault tokens
       setRequiredVaultTokensFromReverseQuote(BigInt(reverseRoute.minAmountOut))
     } else if (!shouldFetchReverseQuote) {
       setRequiredVaultTokensFromReverseQuote(null)
@@ -332,7 +338,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   // Withdrawal flow using Enso - using calculated vault tokens
   const {
     actions: { prepareApprove },
-    periphery: { prepareApproveEnabled, route, isLoadingRoute, expectedOut, routerAddress, isCrossChain, allowance },
+    periphery: { prepareApproveEnabled, route, isLoadingRoute, minExpectedOut, routerAddress, isCrossChain, allowance },
     getRoute,
     getEnsoTransaction
   } = useSolverEnso({
@@ -359,7 +365,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
       return 'Please select withdrawal source'
     }
     if (withdrawAmount.bn === 0n) return null
-    if (requiredVaultTokens > totalVaultBalance) {
+    if (requiredVaultTokens > totalVaultBalance.raw) {
       return 'Insufficient balance'
     }
     if (!route && !isLoadingRoute && withdrawAmount.debouncedBn > 0n && !withdrawAmount.isDebouncing) {
@@ -380,10 +386,10 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
 
   // Check if we're still loading the required vault tokens for non-asset withdrawals
   const isLoadingRequiredTokens = withdrawToken !== assetAddress && isLoadingReverseRoute
-  
+
   // Unified loading state for UI elements
   const isLoadingAnyQuote = isLoadingRoute || isLoadingReverseRoute || withdrawAmount.isDebouncing
-  
+
   const isAllowanceSufficient = !routerAddress || allowance >= requiredVaultTokens
   const canWithdraw =
     route &&
@@ -431,15 +437,6 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     stakingAddress
   ])
 
-  // Format balance in underlying tokens for display
-  const totalBalanceInUnderlyingNormalized = useMemo(() => {
-    if (!assetToken) return '0'
-    return formatTAmount({
-      value: totalBalanceInUnderlying,
-      decimals: assetToken.decimals ?? 18
-    })
-  }, [totalBalanceInUnderlying, assetToken])
-
   return (
     <div className="flex flex-col relative">
       {/* Withdraw From Selector - shown when user has both balances */}
@@ -480,7 +477,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                 <label className="font-medium text-sm text-gray-900">Amount</label>
                 <p className="text-[10px] text-zinc-500 font-medium">
                   {withdrawalSource === 'staking' ? 'Staking' : 'Vault'} Balance:{' '}
-                  {formatAmount(Number(totalBalanceInUnderlyingNormalized))} {assetToken?.symbol || 'tokens'}
+                  {formatAmount(totalBalanceInUnderlying.normalized)} {assetToken?.symbol || 'tokens'}
                 </p>
               </div>
               <div className="relative flex items-center gap-2">
@@ -499,12 +496,11 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                 </div>
                 <button
                   onClick={() => {
-                    if (totalBalanceInUnderlying > 0n && assetToken) {
-                      // If withdrawing to asset token, use the underlying balance directly
+                    if (totalBalanceInUnderlying.raw > 0n && assetToken) {
                       if (withdrawToken === assetAddress) {
-                        withdrawInput[2](totalBalanceInUnderlyingNormalized)
+                        const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken.decimals ?? 18)
+                        withdrawInput[2](exactAmount)
                       } else {
-                        // For other tokens, fetch quote from Enso
                         fetchMaxQuote()
                       }
                     }
@@ -597,8 +593,8 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
               <p className="text-sm text-gray-900">
                 {isLoadingAnyQuote ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                ) : expectedOut && expectedOut.normalized > 0 ? (
-                  `${formatAmount(expectedOut.normalized, 3, 6)} ${outputToken?.symbol}`
+                ) : minExpectedOut && minExpectedOut.normalized > 0 ? (
+                  `${formatAmount(minExpectedOut.normalized, 3, 6)} ${outputToken?.symbol}`
                 ) : (
                   `0 ${outputToken?.symbol || 'tokens'}`
                 )}

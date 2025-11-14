@@ -42,6 +42,7 @@ interface UseSolverEnsoReturn {
   periphery: {
     prepareApproveEnabled: boolean
     expectedOut: TNormalizedBN
+    minExpectedOut: TNormalizedBN
     allowance: bigint
     route: EnsoRouteResponse | undefined
     isLoadingRoute: boolean
@@ -134,6 +135,10 @@ export const useSolverEnso = ({
   const expectedOut = route?.amountOut
     ? toNormalizedBN(BigInt(route.amountOut), decimalsOut)
     : toNormalizedBN(0n, decimalsOut)
+
+  const minExpectedOut = route?.minAmountOut
+    ? toNormalizedBN(BigInt(route.minAmountOut), decimalsOut)
+    : toNormalizedBN(0n, decimalsOut)
   return {
     actions: {
       prepareApprove
@@ -141,6 +146,7 @@ export const useSolverEnso = ({
     periphery: {
       prepareApproveEnabled: !!prepareApproveEnabled,
       expectedOut,
+      minExpectedOut,
       allowance,
       route,
       isLoadingRoute,

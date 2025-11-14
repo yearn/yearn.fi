@@ -10,6 +10,7 @@ import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, Fragment, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
+import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { TokenSelector } from '../TokenSelector'
 
@@ -340,8 +341,8 @@ export const WidgetDepositGeneric: FC<Props> = ({
                 <button
                   onClick={() => {
                     if (inputToken?.balance.raw) {
-                      const fullBalance = inputToken.balance.normalized.toString()
-                      depositInput[2](fullBalance)
+                      const exactAmount = formatUnits(inputToken.balance.raw, inputToken.decimals ?? 18)
+                      depositInput[2](exactAmount)
                     }
                   }}
                   className="bg-white border border-gray-200 flex gap-2 h-9 items-center justify-center px-8 py-2 rounded-md"
