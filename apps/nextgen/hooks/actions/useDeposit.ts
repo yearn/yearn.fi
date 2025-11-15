@@ -91,8 +91,6 @@ export const useDeposit = ({
     query: { enabled: prepareDepositEnabled }
   })
 
-  console.log('prepareDeposit', prepareDeposit.error)
-
   return {
     actions: {
       prepareApprove,
