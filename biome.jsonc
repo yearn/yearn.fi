@@ -41,6 +41,12 @@
       }
     }
   },
+  "css": {
+    "parser": {
+      "cssModules": false,
+      "allowWrongLineComments": false
+    }
+  },
   "javascript": {
     "formatter": {
       "quoteStyle": "single",

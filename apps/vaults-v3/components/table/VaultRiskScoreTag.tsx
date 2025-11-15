@@ -4,15 +4,22 @@ import { useState } from 'react'
 
 export function VaultRiskScoreTag({
   riskLevel,
-  onMobileToggle
+  onMobileToggle,
+  className,
+  variant = 'default'
 }: {
   riskLevel: number
   onMobileToggle?: (e: React.MouseEvent) => void
+  className?: string
+  variant?: 'default' | 'inline'
 }): ReactElement {
   const [mobileOpen, setMobileOpen] = useState(false)
   const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel
   const riskColor = ['transparent', '#63C532', '#F8A908', '#F8A908', '#C73203', '#C73203']
   const handleToggle = (e: React.MouseEvent): void => {
+    if (variant === 'inline') {
+      return
+    }
     e.stopPropagation()
     if (onMobileToggle) {
       onMobileToggle(e)
@@ -20,11 +27,21 @@ export function VaultRiskScoreTag({
     }
     setMobileOpen((v) => !v)
   }
+  const rootClasses = variant === 'inline' ? 'flex items-center' : 'col-span-2 w-full md:pt-1'
+  const contentClasses =
+    variant === 'inline' ? 'flex flex-row items-center gap-3' : 'flex flex-row items-end justify-between md:flex-col'
+  const onClick = variant === 'inline' ? undefined : handleToggle
+
   return (
-    <div className={'col-span-2 w-full md:pt-2'} onClick={handleToggle}>
-      <div className={'flex flex-row items-end justify-between md:flex-col'}>
-        <p className={'inline whitespace-nowrap text-start text-md text-neutral-800 md:hidden'}>{'Risk Score'}</p>
-        <div className={cl('flex w-fit items-center justify-end gap-4 md:justify-center', 'tooltip relative z-50 h-6')}>
+    <div className={cl(rootClasses, className)}>
+      <div className={contentClasses}>
+        {variant === 'inline' ? null : (
+          <p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>{'Risk Score'}</p>
+        )}
+        <div
+          className={cl('flex w-fit items-center justify-end gap-4 md:justify-center', 'tooltip relative z-50 h-6')}
+          onClick={onClick}
+        >
           <div className={'h-3 w-10 min-w-10 rounded-xs border-2 border-neutral-400 p-[2px]'}>
             <div
               className={'h-1 rounded-[1px]'}
@@ -54,7 +71,9 @@ export function VaultRiskScoreTag({
           </span>
         </div>
       </div>
-      {onMobileToggle ? null : mobileOpen ? <RiskScoreInlineDetails riskLevel={riskLevel} /> : null}
+      {variant === 'inline' || onMobileToggle ? null : mobileOpen ? (
+        <RiskScoreInlineDetails riskLevel={riskLevel} />
+      ) : null}
     </div>
   )
 }
