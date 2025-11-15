@@ -3,17 +3,55 @@ import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
 import type { TNormalizedBN } from '@lib/types'
-import { cl, formatAmount, formatTAmount, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
+import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
+import { gaugeV2Abi } from '@lib/utils/abi/gaugeV2.abi'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
+import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
 import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
-import { formatUnits } from 'viem'
-import { useAccount, useReadContract } from 'wagmi'
+import { formatUnits, parseUnits } from 'viem'
+import { type UseSimulateContractReturnType, useAccount, useReadContract, useSimulateContract } from 'wagmi'
 import { TokenSelector } from '../TokenSelector'
+
+const tokensByChain: Record<number, Address[]> = {
+  1: [
+    // Ethereum mainnet
+    ETH_TOKEN_ADDRESS, // ETH
+    '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+    '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
+    '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
+    '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
+    '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' // WBTC
+  ],
+  10: [
+    // Optimism
+    ETH_TOKEN_ADDRESS, // ETH
+    '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', // USDC
+    '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', // USDT
+    '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', // DAI
+    '0x4200000000000000000000000000000000000006' // WETH
+  ],
+  137: [
+    // Polygon
+    ETH_TOKEN_ADDRESS, // MATIC
+    '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // USDC
+    '0xc2132D05D31c914a87C6611C10748AEb04B58e8F', // USDT
+    '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063', // DAI
+    '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' // WMATIC
+  ],
+  42161: [
+    // Arbitrum
+    ETH_TOKEN_ADDRESS, // ETH
+    '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // USDC
+    '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // USDT
+    '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', // DAI
+    '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' // WETH
+  ]
+}
 
 interface Props {
   vaultAddress: Address
@@ -154,6 +192,15 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     chainId
   })
 
+  // Fetch staking contract pricePerShare if withdrawing from staking
+  const { data: stakingPricePerShare } = useReadContract({
+    address: stakingAddress,
+    abi: vaultAbi,
+    functionName: 'pricePerShare',
+    chainId,
+    query: { enabled: !!stakingAddress && withdrawalSource === 'staking' }
+  })
+
   // Determine which token to use for withdrawals
   const withdrawToken = selectedToken || assetAddress
 
@@ -171,6 +218,18 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     () => getToken({ address: assetAddress, chainID: chainId }),
     [getToken, assetAddress, chainId]
   )
+
+  // Define common tokens for withdrawals
+  const commonTokenAddresses = useMemo(() => {
+    const baseTokens = tokensByChain[chainId] || []
+
+    // Add vault token when withdrawing from staking
+    if (withdrawalSource === 'staking' && vaultAddress) {
+      return [...baseTokens, vaultAddress]
+    }
+
+    return baseTokens
+  }, [chainId, withdrawalSource, vaultAddress])
 
   // Determine available withdrawal sources
   const hasVaultBalance = vault?.balance.raw && vault.balance.raw > 0n
@@ -228,10 +287,15 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     return vaultAddress
   }, [withdrawalSource, vaultAddress, stakingAddress])
 
+  // Check if this is an unstake operation (withdrawing from staking to vault token)
+  const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
+
   // Function to fetch max quote from Enso
   const fetchMaxQuote = useCallback(async () => {
     if (!account || totalVaultBalance.raw === 0n || !outputToken) return
     if (hasBothBalances && !withdrawalSource) return
+    // Skip for unstake operations
+    if (isUnstake) return
 
     setIsFetchingMaxQuote(true)
     try {
@@ -281,11 +345,14 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     zapSlippage,
     setWithdrawInput,
     hasBothBalances,
-    withdrawalSource
+    withdrawalSource,
+    isUnstake
   ])
 
   // Reverse quote: For non-asset tokens, find how many vault tokens we need
-  const shouldFetchReverseQuote = withdrawToken !== assetAddress && withdrawAmount.debouncedBn > 0n && !!withdrawToken
+  // Skip reverse quote for unstake operations
+  const shouldFetchReverseQuote =
+    !isUnstake && withdrawToken !== assetAddress && withdrawAmount.debouncedBn > 0n && !!withdrawToken
 
   const {
     periphery: { route: reverseRoute, isLoadingRoute: isLoadingReverseRoute },
@@ -321,12 +388,17 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   const requiredVaultTokens = useMemo(() => {
     if (!withdrawAmount.debouncedBn || withdrawAmount.debouncedBn === 0n) return 0n
 
+    // For unstake operations, we need exactly the amount entered
+    if (isUnstake) {
+      return (
+        (withdrawAmount.debouncedBn * 10n ** BigInt(stakingToken?.decimals ?? 18)) / (stakingPricePerShare as bigint)
+      )
+    }
+
     // If withdrawing to asset token directly, calculate vault tokens needed
     if (withdrawToken === assetAddress && pricePerShare) {
       const vaultDecimals = vault?.decimals ?? 18
 
-      // Convert desired asset amount to vault tokens
-      // vaultTokens = assetAmount * 10^vaultDecimals / pricePerShare
       return (withdrawAmount.debouncedBn * 10n ** BigInt(vaultDecimals)) / (pricePerShare as bigint)
     }
 
@@ -334,7 +406,10 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     return requiredVaultTokensFromReverseQuote || 0n
   }, [
     withdrawAmount.debouncedBn,
+    isUnstake,
     pricePerShare,
+    stakingToken?.decimals,
+    stakingPricePerShare,
     withdrawToken,
     assetAddress,
     vault?.decimals,
@@ -395,18 +470,70 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   // Unified loading state for UI elements
   const isLoadingAnyQuote = isLoadingRoute || isLoadingReverseRoute || withdrawAmount.isDebouncing
 
-  const isAllowanceSufficient = !routerAddress || allowance >= requiredVaultTokens
-  const canWithdraw =
-    route &&
-    !withdrawError &&
-    withdrawAmount.bn > 0n &&
-    isAllowanceSufficient &&
-    !isLoadingRequiredTokens &&
-    (!hasBothBalances || !!withdrawalSource)
+  const isAllowanceSufficient = isUnstake || !routerAddress || allowance >= requiredVaultTokens
+
+  // Determine if withdrawal can proceed
+  const canWithdraw = useMemo(() => {
+    // Common checks
+    if (withdrawError || withdrawAmount.bn === 0n) {
+      return false
+    }
+
+    if (isUnstake) {
+      // Convert staking token balance into vault shares balance e.g ysyBOLD -> yBOLD
+      const stakingBalanceInVaultToken =
+        (totalVaultBalance.raw * (stakingPricePerShare as bigint)) / 10n ** BigInt(stakingToken?.decimals ?? 18)
+      // For unstaking, just check if amount is within balance
+      return withdrawAmount.bn <= stakingBalanceInVaultToken
+    }
+
+    // For regular withdrawals via Enso
+    if (!route) {
+      return false
+    }
+
+    if (!isAllowanceSufficient) {
+      return false
+    }
+
+    if (isLoadingRequiredTokens) {
+      return false
+    }
+
+    // If user has both vault and staking balances, they must select a source
+    if (hasBothBalances && !withdrawalSource) {
+      return false
+    }
+
+    return true
+  }, [
+    withdrawError,
+    withdrawAmount.bn,
+    isUnstake,
+    totalVaultBalance.raw,
+    route,
+    stakingPricePerShare,
+    stakingToken?.decimals,
+    isAllowanceSufficient,
+    isLoadingRequiredTokens,
+    hasBothBalances,
+    withdrawalSource
+  ])
+
+  // Prepare unstake transaction
+  const prepareUnstake: UseSimulateContractReturnType = useSimulateContract({
+    abi: gaugeV2Abi,
+    functionName: 'withdraw',
+    address: stakingAddress,
+    args: stakingAddress && account ? [withdrawAmount.bn, account, account] : undefined,
+    chainId,
+    query: { enabled: isUnstake && canWithdraw && !!stakingAddress && !!account }
+  })
+
   // Use the useEnsoOrder hook for cleaner integration with TxButton
   const { prepareEnsoOrder, receiptSuccess, txHash } = useEnsoOrder({
     getEnsoTransaction,
-    enabled: canWithdraw,
+    enabled: canWithdraw && !isUnstake,
     chainId
   })
 
@@ -499,7 +626,18 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                 </div>
                 <button
                   onClick={() => {
-                    if (totalBalanceInUnderlying.raw > 0n && assetToken) {
+                    if (isUnstake) {
+                      // For unstake, use the exact vault token balance
+                      if (totalVaultBalance.raw > 0n) {
+                        const amount =
+                          (totalVaultBalance.raw * (stakingPricePerShare as bigint)) /
+                          10n ** BigInt(stakingToken?.decimals ?? 18)
+
+                        const exactAmount = formatUnits(amount, stakingToken?.decimals ?? 18)
+                        withdrawInput[2](exactAmount)
+                      }
+                    } else if (totalBalanceInUnderlying.raw > 0n && assetToken) {
+                      // For regular withdrawals
                       if (withdrawToken === assetAddress) {
                         const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken.decimals ?? 18)
                         withdrawInput[2](exactAmount)
@@ -555,7 +693,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
         {/* Details */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">You will redeem</p>
+            <p className="text-sm text-gray-500">{isUnstake ? 'You will unstake' : 'You will redeem'}</p>
             <p className="text-sm text-gray-900">
               {isLoadingAnyQuote ? (
                 <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
@@ -564,7 +702,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                   {requiredVaultTokens > 0n
                     ? formatTAmount({
                         value: requiredVaultTokens,
-                        decimals: vault?.decimals ?? 18
+                        decimals: isUnstake ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)
                       })
                     : '0'}{' '}
                   {withdrawalSource === 'staking' && stakingToken ? stakingToken.symbol : vaultSymbol}
@@ -618,29 +756,43 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
       {/* Action Buttons */}
       <div className={cl('px-6 pt-6', showAdvancedSettings ? 'pb-6' : 'pb-2')}>
         <div className="flex gap-2 w-full">
-          <TxButton
-            prepareWrite={prepareApprove}
-            transactionName="Approve"
-            disabled={!prepareApproveEnabled || !!withdrawError || isLoadingAnyQuote}
-            tooltip={withdrawError || (isLoadingAnyQuote ? 'Calculating required amount...' : undefined)}
-            className="w-full"
-          />
-          <TxButton
-            prepareWrite={prepareEnsoOrder}
-            transactionName={
-              isLoadingAnyQuote
-                ? 'Finding route...'
-                : !isAllowanceSufficient
-                  ? 'Approve First'
-                  : isCrossChain
-                    ? 'Cross-chain Withdraw'
-                    : 'Withdraw'
-            }
-            disabled={!canWithdraw || isLoadingAnyQuote}
-            loading={isLoadingAnyQuote}
-            tooltip={withdrawError || (!isAllowanceSufficient ? 'Please approve token first' : undefined)}
-            className="w-full"
-          />
+          {isUnstake ? (
+            // For unstake operations, show single button
+            <TxButton
+              prepareWrite={prepareUnstake}
+              transactionName="Unstake"
+              disabled={!canWithdraw || !!withdrawError}
+              tooltip={withdrawError || undefined}
+              className="w-full"
+            />
+          ) : (
+            // For regular withdrawals, show approve + withdraw
+            <>
+              <TxButton
+                prepareWrite={prepareApprove}
+                transactionName="Approve"
+                disabled={!prepareApproveEnabled || !!withdrawError || isLoadingAnyQuote}
+                tooltip={withdrawError || (isLoadingAnyQuote ? 'Calculating required amount...' : undefined)}
+                className="w-full"
+              />
+              <TxButton
+                prepareWrite={prepareEnsoOrder}
+                transactionName={
+                  isLoadingAnyQuote
+                    ? 'Finding route...'
+                    : !isAllowanceSufficient
+                      ? 'Approve First'
+                      : isCrossChain
+                        ? 'Cross-chain Withdraw'
+                        : 'Withdraw'
+                }
+                disabled={!canWithdraw || isLoadingAnyQuote}
+                loading={isLoadingAnyQuote}
+                tooltip={withdrawError || (!isAllowanceSufficient ? 'Please approve token first' : undefined)}
+                className="w-full"
+              />
+            </>
+          )}
         </div>
 
         {/* Advanced Settings */}
@@ -732,7 +884,8 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
               setShowTokenSelector(false)
             }}
             chainId={chainId}
-            excludeTokens={stakingAddress ? [vaultAddress, stakingAddress] : [vaultAddress]}
+            limitTokens={commonTokenAddresses}
+            excludeTokens={stakingAddress ? [stakingAddress] : undefined}
             onClose={() => setShowTokenSelector(false)}
           />
         </div>
