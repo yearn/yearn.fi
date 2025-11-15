@@ -2,7 +2,8 @@ import { Dialog, Transition } from '@headlessui/react'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
-import { cl, formatAmount, formatPercent, formatTAmount } from '@lib/utils'
+import { cl, formatAmount, formatPercent, formatTAmount, toAddress } from '@lib/utils'
+import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
@@ -263,7 +264,11 @@ export const WidgetDepositGeneric: FC<Props> = ({
     isLoadingRoute
   ])
 
-  const isAllowanceSufficient = !routerAddress || allowance >= depositAmount.bn
+  // Check if the selected token is ETH (native token)
+  const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
+  
+  // Native tokens don't need approval
+  const isAllowanceSufficient = isNativeToken || !routerAddress || allowance >= depositAmount.bn
   const canDeposit = route && !depositError && depositAmount.bn > 0n && isAllowanceSufficient
 
   // Use the new useEnsoOrder hook for cleaner integration with TxButton
@@ -463,19 +468,21 @@ export const WidgetDepositGeneric: FC<Props> = ({
       {/* Action Buttons */}
       <div className={cl('px-6 pt-6', showAdvancedSettings ? 'pb-6' : 'pb-2')}>
         <div className="flex gap-2 w-full">
-          <TxButton
-            prepareWrite={prepareApprove}
-            transactionName="Approve"
-            disabled={!prepareApproveEnabled || !!depositError}
-            tooltip={depositError || undefined}
-            className="w-full"
-          />
+          {!isNativeToken && (
+            <TxButton
+              prepareWrite={prepareApprove}
+              transactionName="Approve"
+              disabled={!prepareApproveEnabled || !!depositError}
+              tooltip={depositError || undefined}
+              className="w-full"
+            />
+          )}
           <TxButton
             prepareWrite={prepareEnsoOrder}
             transactionName={
               isLoadingRoute || depositAmount.isDebouncing
                 ? 'Finding route...'
-                : !isAllowanceSufficient
+                : !isAllowanceSufficient && !isNativeToken
                   ? 'Approve First'
                   : isCrossChain
                     ? 'Cross-chain Deposit'
@@ -483,7 +490,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
             }
             disabled={!canDeposit || isLoadingRoute || depositAmount.isDebouncing}
             loading={isLoadingRoute || depositAmount.isDebouncing}
-            tooltip={depositError || (!isAllowanceSufficient ? 'Please approve token first' : undefined)}
+            tooltip={depositError || (!isAllowanceSufficient && !isNativeToken ? 'Please approve token first' : undefined)}
             className="w-full"
           />
         </div>
