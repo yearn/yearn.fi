@@ -1,7 +1,9 @@
 import { useNotifications } from '@lib/contexts/useNotifications'
+import useWallet from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { IconBell } from '@lib/icons/IconBell'
 import { IconBurgerPlain } from '@lib/icons/IconBurgerPlain'
+import { IconSpinner } from '@lib/icons/IconSpinner'
 import { IconWallet } from '@lib/icons/IconWallet'
 import { cl } from '@lib/utils'
 import { truncateHex } from '@lib/utils/tools.address'
@@ -37,11 +39,24 @@ function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
 function WalletSelector(): ReactElement {
   const { openAccountModal } = useAccountModal()
   const { openChainModal } = useChainModal()
-  const { isActive, address, ens, clusters, lensProtocolHandle, openLoginModal } = useWeb3()
+  const {
+    isActive,
+    isUserConnecting,
+    isIdentityLoading,
+    isNetworkMismatch,
+    address,
+    ens,
+    clusters,
+    lensProtocolHandle,
+    openLoginModal
+  } = useWeb3()
+  const { isLoading: isWalletLoading } = useWallet()
   const [walletIdentity, setWalletIdentity] = useState<string | undefined>(undefined)
 
   useEffect((): void => {
-    if (!isActive && address) {
+    if (isUserConnecting) {
+      setWalletIdentity('Connecting...')
+    } else if (isNetworkMismatch && address) {
       setWalletIdentity('Invalid Network')
     } else if (ens) {
       setWalletIdentity(ens)
@@ -54,14 +69,22 @@ function WalletSelector(): ReactElement {
     } else {
       setWalletIdentity(undefined)
     }
-  }, [ens, clusters, lensProtocolHandle, address, isActive])
+  }, [ens, clusters, lensProtocolHandle, address, isUserConnecting, isNetworkMismatch])
+
+  const shouldShowSpinner = Boolean(
+    address &&
+      walletIdentity &&
+      walletIdentity !== 'Invalid Network' &&
+      !isUserConnecting &&
+      (isIdentityLoading || isWalletLoading)
+  )
 
   return (
     <div
       onClick={(): void => {
-        if (isActive) {
+        if (isActive && !isNetworkMismatch) {
           openAccountModal?.()
-        } else if (!isActive && address) {
+        } else if (isNetworkMismatch && address) {
           openChainModal?.()
         } else {
           openLoginModal()
@@ -70,7 +93,12 @@ function WalletSelector(): ReactElement {
     >
       <p suppressHydrationWarning className={'yearn--header-nav-item text-xs! md:text-sm!'}>
         {walletIdentity ? (
-          walletIdentity
+          <span className={'inline-flex items-center gap-2'}>
+            <span>{walletIdentity}</span>
+            {shouldShowSpinner ? (
+              <IconSpinner className={'h-3.5 w-3.5 text-neutral-100 dark:text-neutral-700'} />
+            ) : null}
+          </span>
         ) : (
           <span>
             <IconWallet className={'yearn--header-nav-item mt-0.5 block size-4 md:hidden'} />

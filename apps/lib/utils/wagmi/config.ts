@@ -1,10 +1,10 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
 import {
-  coinbaseWallet,
+  baseAccount,
   frameWallet,
   injectedWallet,
   ledgerWallet,
-  metaMaskWallet,
+  rabbyWallet,
   rainbowWallet,
   safeWallet,
   walletConnectWallet
@@ -110,12 +110,12 @@ export function getConfig({ chains }: { chains: Chain[] }): ResolvedRegister['co
         groupName: 'Popular',
         wallets: [
           injectedWallet,
+          rabbyWallet,
           frameWallet,
-          metaMaskWallet,
           walletConnectWallet,
           rainbowWallet,
           ledgerWallet,
-          coinbaseWallet,
+          baseAccount,
           safeWallet
         ]
       }
