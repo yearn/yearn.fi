@@ -9,7 +9,6 @@ import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
-import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
@@ -138,7 +137,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   handleWithdrawSuccess: onWithdrawSuccess
 }) => {
   const { address: account } = useAccount()
-  const { onRefresh: refreshWalletBalances } = useWallet()
+  const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
@@ -157,15 +156,21 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
 
   // Determine which token to use for withdrawals
   const withdrawToken = selectedToken || assetAddress
-  // For withdrawals, we need to check both vault and staking balances, plus the asset token
-  const tokensToFetch = stakingAddress
-    ? [vaultAddress, stakingAddress, withdrawToken, assetAddress]
-    : [vaultAddress, withdrawToken, assetAddress]
 
-  const { tokens, refetch: refetchTokens } = useTokens(tokensToFetch, chainId)
-  const [vault, stakingToken, outputToken, assetToken] = stakingAddress
-    ? tokens
-    : [tokens[0], undefined, tokens[1], tokens[2]]
+  // Get tokens from wallet
+  const vault = useMemo(() => getToken({ address: vaultAddress, chainID: chainId }), [getToken, vaultAddress, chainId])
+  const stakingToken = useMemo(
+    () => (stakingAddress ? getToken({ address: stakingAddress, chainID: chainId }) : undefined),
+    [getToken, stakingAddress, chainId]
+  )
+  const outputToken = useMemo(
+    () => getToken({ address: withdrawToken, chainID: chainId }),
+    [getToken, withdrawToken, chainId]
+  )
+  const assetToken = useMemo(
+    () => getToken({ address: assetAddress, chainID: chainId }),
+    [getToken, assetAddress, chainId]
+  )
 
   // Determine available withdrawal sources
   const hasVaultBalance = vault?.balance.raw && vault.balance.raw > 0n
@@ -412,23 +417,21 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   useEffect(() => {
     if (receiptSuccess && txHash) {
       setWithdrawInput('')
-      refetchTokens()
       // Refresh wallet balances
-      const walletsToRefresh = [
+      const tokensToRefresh = [
         { address: withdrawToken, chainID: chainId },
         { address: vaultAddress, chainID: chainId }
       ]
       if (stakingAddress) {
-        walletsToRefresh.push({ address: stakingAddress, chainID: chainId })
+        tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
       }
-      refreshWalletBalances(walletsToRefresh)
+      refreshWalletBalances(tokensToRefresh)
       onWithdrawSuccess?.()
     }
   }, [
     receiptSuccess,
     txHash,
     setWithdrawInput,
-    refetchTokens,
     refreshWalletBalances,
     withdrawToken,
     vaultAddress,

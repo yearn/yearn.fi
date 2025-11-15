@@ -7,7 +7,6 @@ import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
-import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, Fragment, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
@@ -184,7 +183,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
   handleDepositSuccess: onDepositSuccess
 }) => {
   const { address: account } = useAccount()
-  const { onRefresh: refreshWalletBalances } = useWallet()
+  const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
@@ -193,12 +192,17 @@ export const WidgetDepositGeneric: FC<Props> = ({
 
   // Determine which token to use for deposits
   const depositToken = selectedToken || assetAddress
-  // Include staking token in the tokens list if available
-  const tokensToFetch = stakingAddress ? [depositToken, vaultAddress, stakingAddress] : [depositToken, vaultAddress]
 
-  const { tokens, refetch: refetchTokens } = useTokens(tokensToFetch, chainId)
-  const [inputToken, vault, stakingToken] = tokens
-
+  // Get tokens from wallet
+  const inputToken = useMemo(
+    () => getToken({ address: depositToken, chainID: chainId }),
+    [getToken, depositToken, chainId]
+  )
+  const vault = useMemo(() => getToken({ address: vaultAddress, chainID: chainId }), [getToken, vaultAddress, chainId])
+  const stakingToken = useMemo(
+    () => (stakingAddress ? getToken({ address: stakingAddress, chainID: chainId }) : undefined),
+    [getToken, stakingAddress, chainId]
+  )
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
 
@@ -276,23 +280,21 @@ export const WidgetDepositGeneric: FC<Props> = ({
   useEffect(() => {
     if (receiptSuccess && txHash) {
       setDepositInput('')
-      refetchTokens()
       // Refresh wallet balances to update TokenSelector and other components
-      const walletsToRefresh = [
+      const tokensToRefresh = [
         { address: depositToken, chainID: chainId },
         { address: vaultAddress, chainID: chainId }
       ]
       if (stakingAddress) {
-        walletsToRefresh.push({ address: stakingAddress, chainID: chainId })
+        tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
       }
-      refreshWalletBalances(walletsToRefresh)
+      refreshWalletBalances(tokensToRefresh)
       onDepositSuccess?.()
     }
   }, [
     receiptSuccess,
     txHash,
     setDepositInput,
-    refetchTokens,
     refreshWalletBalances,
     depositToken,
     vaultAddress,
