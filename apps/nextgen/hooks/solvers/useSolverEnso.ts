@@ -28,6 +28,7 @@ interface UseSolverEnsoProps {
   tokenOut: Address
   amountIn: bigint
   fromAddress?: Address
+  receiver?: Address
   chainId: number
   destinationChainId?: number
   slippage?: number // in basis points (e.g., 100 = 1%)
@@ -59,6 +60,7 @@ export const useSolverEnso = ({
   tokenOut,
   amountIn,
   fromAddress,
+  receiver,
   chainId,
   destinationChainId,
   slippage = 100, // 1% default
@@ -93,7 +95,8 @@ export const useSolverEnso = ({
         tokenOut,
         amountIn: amountIn.toString(),
         slippage: slippage.toString(),
-        ...(isCrossChain && { destinationChainId: destinationChainId!.toString() })
+        ...(isCrossChain && { destinationChainId: destinationChainId!.toString() }),
+        ...(receiver && { receiver })
       })
 
       const response = await fetch(`${ENSO_API_BASE}/shortcuts/route?${params}`, {
@@ -115,7 +118,7 @@ export const useSolverEnso = ({
     } finally {
       setIsLoadingRoute(false)
     }
-  }, [tokenIn, tokenOut, amountIn, fromAddress, chainId, destinationChainId, slippage, enabled, isCrossChain])
+  }, [tokenIn, tokenOut, amountIn, fromAddress, receiver, chainId, destinationChainId, slippage, enabled, isCrossChain])
 
   const getEnsoTransaction = useCallback((): EnsoRouteResponse['tx'] | undefined => {
     return route?.tx

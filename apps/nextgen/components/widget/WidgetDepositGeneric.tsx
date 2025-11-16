@@ -186,6 +186,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
   const { address: account } = useAccount()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
+  const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
@@ -194,10 +195,11 @@ export const WidgetDepositGeneric: FC<Props> = ({
   // Determine which token to use for deposits
   const depositToken = selectedToken || assetAddress
 
-  // Get tokens from wallet
+  // Get tokens from wallet - use selected chain or default to vault chain
+  const sourceChainId = selectedChainId || chainId
   const inputToken = useMemo(
-    () => getToken({ address: depositToken, chainID: chainId }),
-    [getToken, depositToken, chainId]
+    () => getToken({ address: depositToken, chainID: sourceChainId }),
+    [getToken, depositToken, sourceChainId]
   )
   const vault = useMemo(() => getToken({ address: vaultAddress, chainID: chainId }), [getToken, vaultAddress, chainId])
   const stakingToken = useMemo(
@@ -231,8 +233,9 @@ export const WidgetDepositGeneric: FC<Props> = ({
     tokenOut: destinationToken,
     amountIn: depositAmount.debouncedBn,
     fromAddress: account,
-    chainId,
-    destinationChainId,
+    receiver: account, // Same as fromAddress for deposits
+    chainId: sourceChainId,
+    destinationChainId: chainId, // Vault is always on the original chain
     decimalsOut: vault?.decimals ?? 18,
     slippage: zapSlippage * 100, // Convert percentage to basis points (e.g., 0.5% -> 50 basis points)
     enabled: !!depositToken && !depositAmount.isDebouncing
@@ -266,7 +269,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
 
   // Check if the selected token is ETH (native token)
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
-  
+
   // Native tokens don't need approval
   const isAllowanceSufficient = isNativeToken || !routerAddress || allowance >= depositAmount.bn
   const canDeposit = route && !depositError && depositAmount.bn > 0n && isAllowanceSufficient
@@ -275,7 +278,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
   const { prepareEnsoOrder, receiptSuccess, txHash } = useEnsoOrder({
     getEnsoTransaction,
     enabled: canDeposit,
-    chainId
+    chainId: sourceChainId // Execute transaction on source chain
   })
 
   // Check if we're waiting for transaction
@@ -287,7 +290,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
       setDepositInput('')
       // Refresh wallet balances to update TokenSelector and other components
       const tokensToRefresh = [
-        { address: depositToken, chainID: chainId },
+        { address: depositToken, chainID: sourceChainId },
         { address: vaultAddress, chainID: chainId }
       ]
       if (stakingAddress) {
@@ -374,7 +377,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
             <div className="flex items-center gap-2">
               {inputToken && (
                 <ImageWithFallback
-                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${inputToken.address?.toLowerCase()}/logo-32.png`}
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${inputToken.chainID}/${inputToken.address?.toLowerCase()}/logo-32.png`}
                   alt={inputToken.symbol ?? ''}
                   width={20}
                   height={20}
@@ -490,7 +493,9 @@ export const WidgetDepositGeneric: FC<Props> = ({
             }
             disabled={!canDeposit || isLoadingRoute || depositAmount.isDebouncing}
             loading={isLoadingRoute || depositAmount.isDebouncing}
-            tooltip={depositError || (!isAllowanceSufficient && !isNativeToken ? 'Please approve token first' : undefined)}
+            tooltip={
+              depositError || (!isAllowanceSufficient && !isNativeToken ? 'Please approve token first' : undefined)
+            }
             className="w-full"
           />
         </div>
@@ -611,8 +616,9 @@ export const WidgetDepositGeneric: FC<Props> = ({
         >
           <TokenSelector
             value={selectedToken}
-            onChange={(address) => {
+            onChange={(address, chainId) => {
               setSelectedToken(address)
+              setSelectedChainId(chainId)
               setShowTokenSelector(false)
             }}
             chainId={chainId}

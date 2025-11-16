@@ -7,7 +7,7 @@ import { type Address, isAddress } from 'viem'
 
 interface TokenSelectorProps {
   value: Address | undefined
-  onChange: (address: Address) => void
+  onChange: (address: Address, chainId?: number) => void
   chainId: number
   limitTokens?: Address[]
   excludeTokens?: Address[]
@@ -149,12 +149,13 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
   const handleSelect = useCallback(
     (address: Address) => {
-      onChange(address)
+      // Pass the selected chain ID when it's different from the original chain
+      onChange(address, selectedChainId !== chainId ? selectedChainId : undefined)
       if (onClose) {
         onClose()
       }
     },
-    [onChange, onClose]
+    [onChange, onClose, selectedChainId, chainId]
   )
   return (
     <div className="absolute inset-0 bg-white rounded-lg z-50 flex flex-col shadow-xl">

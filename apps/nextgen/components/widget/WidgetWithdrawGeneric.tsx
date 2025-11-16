@@ -177,6 +177,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   const { address: account } = useAccount()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
+  const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
@@ -203,6 +204,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
 
   // Determine which token to use for withdrawals
   const withdrawToken = selectedToken || assetAddress
+  const destinationChain = selectedChainId || chainId
 
   // Get tokens from wallet
   const vault = useMemo(() => getToken({ address: vaultAddress, chainID: chainId }), [getToken, vaultAddress, chainId])
@@ -211,8 +213,8 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     [getToken, stakingAddress, chainId]
   )
   const outputToken = useMemo(
-    () => getToken({ address: withdrawToken, chainID: chainId }),
-    [getToken, withdrawToken, chainId]
+    () => getToken({ address: withdrawToken, chainID: destinationChain }),
+    [getToken, withdrawToken, destinationChain]
   )
   const assetToken = useMemo(
     () => getToken({ address: assetAddress, chainID: chainId }),
@@ -304,11 +306,13 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
 
       const params = new URLSearchParams({
         fromAddress: account,
+        receiver: account, // Same as fromAddress for withdrawals
         chainId: chainId.toString(),
         tokenIn: sourceToken,
         tokenOut: withdrawToken,
         amountIn: totalVaultBalance.raw.toString(),
-        slippage: (zapSlippage * 100).toString()
+        slippage: (zapSlippage * 100).toString(),
+        ...(destinationChain !== chainId && { destinationChainId: destinationChain.toString() })
       })
 
       const response = await fetch(`${ENSO_API_BASE}/shortcuts/route?${params}`, {
@@ -346,7 +350,8 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     setWithdrawInput,
     hasBothBalances,
     withdrawalSource,
-    isUnstake
+    isUnstake,
+    destinationChain
   ])
 
   // Reverse quote: For non-asset tokens, find how many vault tokens we need
@@ -362,7 +367,8 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     tokenOut: sourceToken, // We want to know how many vault tokens
     amountIn: withdrawAmount.debouncedBn,
     fromAddress: account,
-    chainId,
+    receiver: account, // Same as fromAddress for withdrawals
+    chainId: destinationChain,
     decimalsOut: vault?.decimals ?? 18,
     slippage: zapSlippage * 100,
     enabled: shouldFetchReverseQuote && !withdrawAmount.isDebouncing
@@ -426,8 +432,9 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     tokenOut: withdrawToken,
     amountIn: requiredVaultTokens, // Use calculated vault tokens
     fromAddress: account,
+    receiver: account, // Same as fromAddress for withdrawals
     chainId,
-    destinationChainId,
+    destinationChainId: destinationChain,
     decimalsOut: outputToken?.decimals ?? 18,
     slippage: zapSlippage * 100, // Convert percentage to basis points
     enabled: !!withdrawToken && !withdrawAmount.isDebouncing && requiredVaultTokens > 0n
@@ -546,7 +553,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
       setWithdrawInput('')
       // Refresh wallet balances
       const tokensToRefresh = [
-        { address: withdrawToken, chainID: chainId },
+        { address: withdrawToken, chainID: destinationChain },
         { address: vaultAddress, chainID: chainId }
       ]
       if (stakingAddress) {
@@ -879,8 +886,9 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
         >
           <TokenSelector
             value={selectedToken}
-            onChange={(address) => {
+            onChange={(address, chainId) => {
               setSelectedToken(address)
+              setSelectedChainId(chainId)
               setShowTokenSelector(false)
             }}
             chainId={chainId}
