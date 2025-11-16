@@ -114,7 +114,7 @@ export function KatanaApyTooltip(props: {
                   width={16}
                   height={16}
                 />
-                <p>{'Base Rewards APR '}</p>
+                <p>{'Base Rewards APR* '}</p>
               </div>
               <span className={'font-number text-right'}>
                 <RenderAmount
@@ -127,6 +127,19 @@ export function KatanaApyTooltip(props: {
             </div>
             <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
               {'Limited time fixed KAT rewards'}
+            </p>
+            <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
+              {'* claimable after 28 days, subject to '}
+              <a
+                href={'https://x.com/katana/status/1961475531188126178'}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'font-bold underline sm:decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                }
+              >
+                {'haircut schedule.'}
+              </a>
             </p>
             <div
               className={

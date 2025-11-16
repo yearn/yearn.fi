@@ -1,10 +1,10 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
 import {
   baseAccount,
-  rabbyWallet,
   frameWallet,
   injectedWallet,
   ledgerWallet,
+  rabbyWallet,
   rainbowWallet,
   safeWallet,
   walletConnectWallet
