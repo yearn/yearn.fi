@@ -55,47 +55,22 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 }) => {
   const [searchText, setSearchText] = useState('')
   const [customAddress, setCustomAddress] = useState<Address | undefined>()
+  const [selectedChainId, setSelectedChainId] = useState(chainId)
   const { getToken, isLoading, balances } = useWallet()
 
-  // Keep common tokens for future use (withdraw tab)
-  // const commonTokenAddresses = useMemo(() => {
-  //   const tokensByChain: Record<number, Address[]> = {
-  //     1: [
-  //       // Ethereum mainnet
-  //       '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
-  //       '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
-  //       '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
-  //       '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
-  //       '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' // WBTC
-  //     ],
-  //     10: [
-  //       // Optimism
-  //       '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', // USDC
-  //       '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', // USDT
-  //       '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', // DAI
-  //       '0x4200000000000000000000000000000000000006' // WETH
-  //     ],
-  //     137: [
-  //       // Polygon
-  //       '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // USDC
-  //       '0xc2132D05D31c914a87C6611C10748AEb04B58e8F', // USDT
-  //       '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063', // DAI
-  //       '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' // WMATIC
-  //     ],
-  //     42161: [
-  //       // Arbitrum
-  //       '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // USDC
-  //       '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // USDT
-  //       '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', // DAI
-  //       '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' // WETH
-  //     ]
-  //   }
-  //   return tokensByChain[chainId] || []
-  // }, [chainId])
+  // Available chains - you can expand this list as needed
+  const availableChains = useMemo(() => [
+    { id: 1, name: 'Ethereum' },
+    { id: 10, name: 'Optimism' },
+    { id: 137, name: 'Polygon' },
+    { id: 42161, name: 'Arbitrum' },
+    { id: 8453, name: 'Base' },
+    { id: 747474, name: 'Katana' }
+  ], [])
 
   // Get all tokens with balances from wallet context
   const tokens = useMemo(() => {
-    const chainBalances = balances[chainId] || {}
+    const chainBalances = balances[selectedChainId] || {}
     const tokenList: TToken[] = []
 
     // Add all tokens from wallet balances
@@ -111,7 +86,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
     // Also include the currently selected token even if it has no balance
     if (value && !tokenList.some((t) => t.address?.toLowerCase() === value.toLowerCase())) {
-      const selectedToken = getToken({ address: toAddress(value), chainID: chainId })
+      const selectedToken = getToken({ address: toAddress(value), chainID: selectedChainId })
       if (selectedToken.symbol) {
         tokenList.push(selectedToken)
       }
@@ -123,14 +98,14 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       isAddress(customAddress) &&
       !tokenList.some((t) => t.address?.toLowerCase() === customAddress.toLowerCase())
     ) {
-      const customToken = getToken({ address: toAddress(customAddress), chainID: chainId })
+      const customToken = getToken({ address: toAddress(customAddress), chainID: selectedChainId })
       if (customToken.symbol) {
         tokenList.push(customToken)
       }
     }
 
     return tokenList
-  }, [balances, chainId, value, customAddress, getToken])
+  }, [balances, selectedChainId, value, customAddress, getToken])
 
   // Filter tokens based on search and limits
   const filteredTokens = useMemo(() => {
@@ -183,9 +158,31 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   )
   return (
     <div className="absolute inset-0 bg-white rounded-lg z-50 flex flex-col shadow-xl">
-      {/* Header with close button */}
+      {/* Header with chain selector and close button */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <h3 className="text-lg font-semibold">Select Token</h3>
+        <div className="flex items-center gap-2">
+          {availableChains.map((chain) => (
+            <button
+              key={chain.id}
+              onClick={() => setSelectedChainId(chain.id)}
+              className={cl(
+                'w-[42px] h-[42px] flex items-center justify-center rounded-lg transition-all',
+                selectedChainId === chain.id
+                  ? 'bg-gray-100 ring-2 ring-gray-300'
+                  : 'hover:bg-gray-50'
+              )}
+              type="button"
+            >
+              <ImageWithFallback
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo.svg`}
+                alt={chain.name}
+                width={24}
+                height={24}
+                className="rounded-full"
+              />
+            </button>
+          ))}
+        </div>
         <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors" type="button">
           <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
