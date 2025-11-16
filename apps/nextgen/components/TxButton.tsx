@@ -5,7 +5,8 @@ import {
   useChains,
   usePublicClient,
   useWaitForTransactionReceipt,
-  useWriteContract
+  useWriteContract,
+  useSwitchChain
 } from 'wagmi'
 import { Button } from '../../lib/components/Button'
 
@@ -53,6 +54,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
 }) => {
   const writeContract = useWriteContract()
   const chains = useChains()
+  const { switchChain } = useSwitchChain()
   const [ensoTxHash, setEnsoTxHash] = useState<`0x${string}` | undefined>()
   const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash })
   const [override, setOverride] = useState<ButtonState>()
@@ -74,7 +76,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const isLoading = override === 'loading' || _loading || (isWaitingForEnsoTx && !!ensoTxHash)
   const isSuccess = override === 'success'
 
-  const disabled = _disabled || !prepareWrite.isSuccess || isLoading || isSimulating || override === 'error'
+  const disabled = wrongNetwork ? false : (_disabled || !prepareWrite.isSuccess || isLoading || isSimulating || override === 'error')
 
   // Clear override states after timeout
   useEffect(() => {
@@ -216,9 +218,15 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
       variant={getVariant()}
       classNameOverride="yearn--button--nextgen w-full"
       className={props.className}
-      disabled={disabled || wrongNetwork}
+      disabled={disabled}
       onClick={async (event: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
         ref.current = [event?.clientX, event?.clientY]
+
+        // Handle chain switching
+        if (wrongNetwork && txChainId) {
+          switchChain({ chainId: txChainId })
+          return
+        }
 
         const overrides = await (async () => {
           if (!prepareWrite.data?.request || !client) return {}
