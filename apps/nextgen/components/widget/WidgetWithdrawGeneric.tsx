@@ -473,7 +473,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   const isLoadingRequiredTokens = withdrawToken !== assetAddress && isLoadingReverseRoute
 
   // Unified loading state for UI elements
-  const isLoadingAnyQuote = isLoadingRoute || isLoadingReverseRoute || withdrawAmount.isDebouncing
+  const isLoadingAnyQuote = isLoadingRoute || isLoadingReverseRoute
 
   const isAllowanceSufficient = isUnstake || !routerAddress || allowance >= requiredVaultTokens
 
@@ -576,7 +576,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   return (
     <div className="flex flex-col relative">
       {/* Withdraw From Selector - shown when user has both balances */}
-      {hasBothBalances && (
+      {hasBothBalances ? (
         <div className="px-6 pt-6 pb-4">
           <div className="flex flex-col gap-2">
             <label className="font-medium text-sm text-gray-900">Withdraw from</label>
@@ -601,7 +601,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Amount Section */}
       <div className={cl('px-6 pb-6', hasBothBalances ? 'pt-2' : 'pt-6')}>
@@ -701,7 +701,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">{isUnstake ? 'You will unstake' : 'You will redeem'}</p>
             <p className="text-sm text-gray-900">
-              {isLoadingAnyQuote ? (
+              {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
                 <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
               ) : (
                 <>
@@ -738,7 +738,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                 </svg>
               </button>
               <p className="text-sm text-gray-900">
-                {isLoadingAnyQuote ? (
+                {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
                 ) : minExpectedOut && minExpectedOut.normalized > 0 ? (
                   `${formatAmount(minExpectedOut.normalized, 3, 6)} ${outputToken?.symbol}`

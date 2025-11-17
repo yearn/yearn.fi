@@ -238,7 +238,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
     slippage: zapSlippage * 100, // Convert percentage to basis points (e.g., 0.5% -> 50 basis points)
     enabled: !!depositToken && !depositAmount.isDebouncing
   })
-
+  console.log(isLoadingRoute)
   // Fetch route when debounced amount changes
   useEffect(() => {
     if (depositAmount.debouncedBn > 0n && !depositAmount.isDebouncing) {
@@ -428,7 +428,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
                 </svg>
               </button>
               <p className="text-sm text-gray-900">
-                {isLoadingRoute || depositAmount.isDebouncing ? (
+                {isLoadingRoute || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
                 ) : depositAmount.bn > 0n && route ? (
                   `${formatAmount(expectedOut.normalized)} ${isAutoStakingEnabled && stakingAddress ? stakingToken?.symbol || vaultSymbol : vaultSymbol}`
