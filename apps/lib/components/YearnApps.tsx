@@ -4,7 +4,6 @@ import { LogoGimme } from '@lib/icons/LogoGimme'
 import { LogoGithub } from '@lib/icons/LogoGithub'
 import type { ReactElement } from 'react'
 import Image from '/src/components/Image'
-
 import { LogoYearn } from '../icons/LogoYearn'
 
 const BASE_YEARN_ASSET_URI = import.meta.env?.VITE_BASE_YEARN_ASSETS_URI ?? ''

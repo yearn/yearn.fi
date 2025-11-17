@@ -8,6 +8,7 @@ import { getNetwork } from '@lib/utils/wagmi/utils'
 import { VaultChainTag } from '@vaults-v3/components/VaultChainTag'
 import type { FC } from 'react'
 import { useNavigate } from 'react-router'
+import { routeConfig } from '/src/routes'
 import { VaultForwardAPY, VaultRiskScoreTag } from './table'
 
 type TVaultsListRowProps = {
@@ -19,10 +20,7 @@ type TVaultsListRowProps = {
 export const VaultsListRow: FC<TVaultsListRowProps> = ({ currentVault, isV2, index = 0 }) => {
   const navigate = useNavigate()
 
-  // TODO: Update router usage to use navigate, params, and location
-  const href = isV2
-    ? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
-    : `/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`
+  const href = `${routeConfig.vaultsBeta.index}/${currentVault.chainID}/${toAddress(currentVault.address)}`
 
   const handleRowClick = (): void => {
     navigate(href)

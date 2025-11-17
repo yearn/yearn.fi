@@ -4,6 +4,7 @@ import {
   useAccount,
   useChains,
   usePublicClient,
+  useSwitchChain,
   useWaitForTransactionReceipt,
   useWriteContract
 } from 'wagmi'
@@ -14,6 +15,8 @@ type Props = {
   transactionName: string
   isApproved?: boolean
   disabled?: boolean
+  loading?: boolean
+  tooltip?: string // TODO: Add
   onSuccess?: () => void
   showEmojisplosion?: boolean
   additionalComponent?: ReactNode
@@ -40,6 +43,8 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   prepareWrite,
   transactionName = 'Send',
   disabled: _disabled,
+  loading: _loading,
+  tooltip,
   isApproved,
   onSuccess,
   showEmojisplosion = false,
@@ -49,7 +54,9 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
 }) => {
   const writeContract = useWriteContract()
   const chains = useChains()
-  const receipt = useWaitForTransactionReceipt({ hash: writeContract.data })
+  const { switchChain } = useSwitchChain()
+  const [ensoTxHash, setEnsoTxHash] = useState<`0x${string}` | undefined>()
+  const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash })
   const [override, setOverride] = useState<ButtonState>()
   const client = usePublicClient()
   const ref = useRef<(number | undefined)[]>(undefined)
@@ -63,19 +70,41 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const { isSuccess: isTxSuccess, isError } = receipt
   const { isError: isSimulatedError, isFetching: isSimulating } = prepareWrite
 
-  const isLoading = override === 'loading'
+  // For Enso orders, check if we're waiting for transaction
+  const isEnsoOrder = !!(prepareWrite.data?.request as any)?.__isEnsoOrder
+  const isWaitingForEnsoTx = isEnsoOrder && !!(prepareWrite.data?.request as any)?.__waitingForTx
+  const isLoading = override === 'loading' || _loading || (isWaitingForEnsoTx && !!ensoTxHash)
   const isSuccess = override === 'success'
 
-  const disabled = _disabled || !prepareWrite.isSuccess || isLoading || isSimulating
+  const disabled = wrongNetwork
+    ? false
+    : _disabled || !prepareWrite.isSuccess || isLoading || isSimulating || override === 'error'
 
+  // Clear override states after timeout
+  useEffect(() => {
+    if (override === 'error' || override === 'success') {
+      const timeout = override === 'error' ? 3000 : 2000
+      const timer = setTimeout(() => {
+        setOverride(undefined)
+      }, timeout)
+      return () => clearTimeout(timer)
+    }
+    return undefined
+  }, [override])
   const ButtonContentType: ButtonState | undefined = (() => {
     if (!account) return 'notConnected'
     if (wrongNetwork) return 'wrongChain'
-    if (isLoading) return 'loading'
+    if (override === 'loading' || isLoading) return 'loading'
     if (isSimulating) return 'simulating'
+    if (override === 'success') return 'success'
+    if (override === 'error') return 'error'
     if (isApproved) return 'approved'
-    if (isSuccess) return 'success'
-    if (isError || isSimulatedError) return 'error'
+
+    // Only show transaction errors for non-custom orders
+    const isCustomOrder =
+      !!(prepareWrite.data?.request as any)?.__isCowswapOrder || !!(prepareWrite.data?.request as any)?.__isEnsoOrder
+    if (!isCustomOrder && (isError || isSimulatedError)) return 'error'
+
     return 'default'
   })()
 
@@ -98,9 +127,14 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
     error: (
       <div className="flex items-center gap-2">
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
-        Failed
+        Try Again
       </div>
     ),
     approved: (
@@ -145,7 +179,9 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           />
         </svg>
-        <span className="text-neutral-900">Loading</span>
+        <span className="text-neutral-900">
+          {_loading && transactionName.includes('...') ? transactionName : ensoTxHash ? 'Confirming...' : 'Signing...'}
+        </span>
       </div>
     ),
     wrongChain: txChainId
@@ -156,8 +192,8 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   // Determine button variant based on state
   const getVariant = (): string => {
     if (!account) return 'filled'
-    if (isError || isSimulatedError) return 'error'
-    if (isLoading || isSimulating) return 'busy'
+    if (ButtonContentType === 'error') return 'error'
+    if (ButtonContentType === 'loading' || ButtonContentType === 'simulating') return 'busy'
     return 'filled'
   }
 
@@ -172,24 +208,27 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
     if (isTxSuccess) {
       onSuccess?.()
       setOverride('success')
-
-      const timer = setTimeout(() => {
-        setOverride(undefined)
-      }, 1500)
-      return () => clearTimeout(timer)
+      // Clear Enso tx hash after success
+      if (ensoTxHash) {
+        setEnsoTxHash(undefined)
+      }
     }
-    setOverride(undefined)
-    return undefined
-  }, [isTxSuccess, onSuccess])
+  }, [isTxSuccess, onSuccess, ensoTxHash])
 
   return (
     <Button
       variant={getVariant()}
       classNameOverride="yearn--button--nextgen w-full"
       className={props.className}
-      disabled={disabled || wrongNetwork}
+      disabled={disabled}
       onClick={async (event: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
         ref.current = [event?.clientX, event?.clientY]
+
+        // Handle chain switching
+        if (wrongNetwork && txChainId) {
+          switchChain({ chainId: txChainId })
+          return
+        }
 
         const overrides = await (async () => {
           if (!prepareWrite.data?.request || !client) return {}
@@ -208,16 +247,40 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
 
         if (prepareWrite.isSuccess && prepareWrite.data?.request) {
           setOverride('loading')
-          writeContract
-            .writeContractAsync({ ...prepareWrite.data.request, ...overrides })
-            .then((hash) => {
-              addNotification?.('pending', hash, transactionName)
-            })
-            .catch((error) => {
-              setOverride(undefined)
-              addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
-              console.error('Transaction failed:', error)
-            })
+
+          // Check if this is a Cowswap or Enso order
+          if ((prepareWrite.data.request as any).__isCowswapOrder || (prepareWrite.data.request as any).__isEnsoOrder) {
+            const customWriteAsync = (prepareWrite.data.request as any).writeContractAsync
+            customWriteAsync()
+              .then((result: any) => {
+                if (result.orderUID) {
+                  // Cowswap order
+                  addNotification?.('success', result.orderUID, transactionName)
+                  setOverride('success')
+                } else if (result.hash) {
+                  // Enso transaction - store hash for receipt monitoring
+                  addNotification?.('pending', result.hash, transactionName)
+                  setEnsoTxHash(result.hash)
+                  // Keep loading state - will change to success when receipt arrives
+                }
+              })
+              .catch((error: Error) => {
+                setOverride('error')
+                addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
+                console.error('Transaction failed:', error)
+              })
+          } else {
+            writeContract
+              .writeContractAsync({ ...prepareWrite.data.request, ...overrides })
+              .then((hash) => {
+                addNotification?.('pending', hash, transactionName)
+              })
+              .catch((error) => {
+                setOverride('error')
+                addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
+                console.error('Transaction failed:', error)
+              })
+          }
         }
       }}
       {...props}

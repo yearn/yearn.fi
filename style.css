@@ -435,6 +435,10 @@ body {
     @apply bg-neutral-300;
   }
 
+  &[data-variant="error"] {
+    @apply bg-red-50 text-red-700 border-red-200;
+  }
+
   /* Variant: Light */
   &[data-variant='light'] {
     @apply text-neutral-900 bg-neutral-100;
@@ -566,6 +570,10 @@ body {
 .activeDot {
   stroke: var(--color-neutral-900);
   fill: var(--color-neutral-0);
+}
+
+.skeleton {
+  @apply bg-gray-200 rounded animate-pulse;
 }
 
 /* 🔵 - Yearn Finance ******************************************************

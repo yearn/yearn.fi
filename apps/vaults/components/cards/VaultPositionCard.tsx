@@ -6,6 +6,7 @@ import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VAULT_NAME_REPLACEMENTS } from '@vaults/constants'
 import type { FC } from 'react'
 import Link from '/src/components/Link'
+import { routeConfig } from '/src/routes'
 
 export const VaultPositionCard: FC<{
   vault: TYDaemonVault & { totalBalance: TNormalizedBN; totalValue: number }
@@ -16,10 +17,7 @@ export const VaultPositionCard: FC<{
 
   const title = replaceStrings(vault.name, VAULT_NAME_REPLACEMENTS, '')
   const apr = vault.apr?.forwardAPR?.netAPR || 0
-  const isV3 = vault.version.startsWith('3') || vault.version.startsWith('~3')
-  const href = isV3
-    ? `/v3/${vault.chainID}/${toAddress(vault.address)}`
-    : `/vaults/${vault.chainID}/${toAddress(vault.address)}`
+  const href = `${routeConfig.vaultsBeta.index}/${vault.chainID}/${toAddress(vault.address)}`
 
   return (
     <Link href={href}>

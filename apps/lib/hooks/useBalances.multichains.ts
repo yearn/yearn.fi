@@ -271,7 +271,9 @@ export async function getBalances(
 
   try {
     const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress))
+
     result = { ...result, ...callResult }
+
     return [result, undefined]
   } catch (_error) {
     console.error(_error)
@@ -290,7 +292,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
   const [error, setError] = useState<Error | undefined>(undefined)
   const [balances, setBalances] = useState<TChainTokens>({})
   const [chainStatus, setChainStatus] = useState<TChainStatus>(defaultChainStatus)
-
   const data = useRef<TDataRef>({ nonce: 0, address: toAddress(), balances: {} })
   const stringifiedTokens = useMemo((): string => serialize(props?.tokens || []), [props?.tokens])
   const currentlyConnectedAddress = useRef<TAddress | undefined>(undefined)
@@ -452,7 +453,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
       // Common logic for organizing tokens by chain
       const tokensPerChainID: TNDict<TUseBalancesTokens[]> = {}
       const alreadyAdded: TNDict<TDict<boolean>> = {}
-
       for (const token of tokens) {
         if (!tokensPerChainID[token.chainID]) {
           tokensPerChainID[token.chainID] = []
