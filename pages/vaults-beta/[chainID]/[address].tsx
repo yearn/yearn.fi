@@ -1,4 +1,3 @@
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import type { TUseBalancesTokens } from '@lib/hooks/useBalances.multichains'
@@ -13,15 +12,15 @@ import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHe
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import Link from '/src/components/Link'
-import { routeConfig } from '/src/routes'
+import { useParams } from 'react-router'
 
 function Index(): ReactElement | null {
   const { address, isActive } = useWeb3()
   const params = useParams()
   const { onRefresh } = useWallet()
-  const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: Number(params.chainID) })
+  const { yDaemonBaseUri } = useYDaemonBaseURI({
+    chainID: Number(params.chainID)
+  })
 
   // Use vault address as key to reset state
   const vaultKey = `${params.chainID}-${params.address}`
@@ -106,10 +105,16 @@ function Index(): ReactElement | null {
     if (address && isActive) {
       const tokensToRefresh: TUseBalancesTokens[] = []
       if (currentVault?.address) {
-        tokensToRefresh.push({ address: currentVault.address, chainID: currentVault.chainID })
+        tokensToRefresh.push({
+          address: currentVault.address,
+          chainID: currentVault.chainID
+        })
       }
       if (currentVault?.token?.address) {
-        tokensToRefresh.push({ address: currentVault.token.address, chainID: currentVault.chainID })
+        tokensToRefresh.push({
+          address: currentVault.token.address,
+          chainID: currentVault.chainID
+        })
       }
       if (currentVault?.staking.available) {
         tokensToRefresh.push({
@@ -152,50 +157,16 @@ function Index(): ReactElement | null {
 
   return (
     <div className={'mx-auto w-full max-w-[1232px] pt-20 md:pt-32 px-4'}>
-      {/* Mobile Back Button */}
-      <nav className={'mb-4 self-start md:mb-2 md:hidden'}>
-        <Link href={`${routeConfig.vaultsBeta.index}`} className={'z-50 w-fit block'}>
-          <p className={'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'}>
-            <span className={'pr-2 leading-[normal]'}>&#10229;</span>
-            {'  Back'}
-          </p>
-        </Link>
-      </nav>
       {/* Header with gradient background and vault logo */}
       <header
         className={cl(
-          'h-full rounded-3xl',
-          'pt-6 pb-6 md:pb-10 px-4 md:px-8',
-          'bg-[linear-gradient(73deg,#D21162_24.91%,#2C3DA6_99.66%)]',
+          'h-full rounded-3xl ',
+          'pt-6 pb-6 md:pb-10 px-4 md:px-0',
+          // 'bg-[linear-gradient(73deg,#D21162_24.91%,#2C3DA6_99.66%)]',
           'relative flex flex-col items-center justify-center'
         )}
       >
-        <nav className={'mb-4 hidden self-start md:mb-2 md:block'}>
-          <Link href={`${routeConfig.vaultsBeta.index}`} className={'w-fit block'}>
-            <p
-              className={'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'}
-            >
-              <span className={'pr-2 leading-[normal]'}>&#10229;</span>
-              {'  Back'}
-            </p>
-          </Link>
-        </nav>
-        <div className={'absolute -top-10 md:-top-6'}>
-          <div
-            className={cl(
-              'h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-[#FAD1ED7A] backdrop-blur-sm',
-              'flex justify-center items-center'
-            )}
-          >
-            <ImageWithFallback
-              className={'size-10 md:size-12'}
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`}
-              alt={''}
-              width={48}
-              height={48}
-            />
-          </div>
-        </div>
+        <div className={'absolute -top-10 md:-top-6'}></div>
         <VaultDetailsHeader currentVault={currentVault} />
       </header>
 

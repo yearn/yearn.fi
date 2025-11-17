@@ -1,6 +1,6 @@
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { Renderable } from '@lib/components/Renderable'
-import { formatAmount, isZero } from '@lib/utils'
+import { cl, formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@vaults-v3/constants/addresses'
 import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
@@ -13,10 +13,16 @@ import { KatanaApyTooltipContent } from './KatanaApyTooltip'
 
 export function VaultForwardAPY({
   currentVault,
-  onMobileToggle
+  onMobileToggle,
+  className,
+  valueClassName,
+  showSubline = true
 }: {
   currentVault: TYDaemonVault
   onMobileToggle?: (e: React.MouseEvent) => void
+  className?: string
+  valueClassName?: string
+  showSubline?: boolean
 }): ReactElement {
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -54,8 +60,8 @@ export function VaultForwardAPY({
 
     return (
       <Fragment>
-        <div className={'relative flex flex-col items-end md:text-right'}>
-          <b className={'yearn--table-data-section-item-value'} onClick={handleValueClick}>
+        <div className={cl('relative flex flex-col items-end md:text-right', className)}>
+          <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
             <Renderable shouldRender={true} fallback={'NEW'}>
               <div className={'flex items-center gap-2'}>
                 <span
@@ -69,15 +75,17 @@ export function VaultForwardAPY({
               </div>
             </Renderable>
           </b>
-          <APYSubline
-            hasPendleArbRewards={false}
-            hasKelpNEngenlayer={false}
-            hasKelp={false}
-            isEligibleForSteer={data.isEligibleForSteer}
-            steerPointsPerDollar={data.steerPointsPerDollar}
-            isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-            onExtraRewardsClick={handleInfoOpen}
-          />
+          {showSubline ? (
+            <APYSubline
+              hasPendleArbRewards={false}
+              hasKelpNEngenlayer={false}
+              hasKelp={false}
+              isEligibleForSteer={data.isEligibleForSteer}
+              steerPointsPerDollar={data.steerPointsPerDollar}
+              isEligibleForSpectraBoost={isEligibleForSpectraBoost}
+              onExtraRewardsClick={handleInfoOpen}
+            />
+          ) : null}
         </div>
         <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'Katana APY breakdown'}>
           {katanaDetails}
@@ -105,8 +113,8 @@ export function VaultForwardAPY({
 
       return (
         <Fragment>
-          <div className={'relative flex flex-col items-end md:text-right'}>
-            <b className={'yearn--table-data-section-item-value'} onClick={handleValueClick}>
+          <div className={cl('relative flex flex-col items-end md:text-right', className)}>
+            <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
                   <span
@@ -125,15 +133,17 @@ export function VaultForwardAPY({
                 </div>
               </Renderable>
             </b>
-            <APYSubline
-              hasPendleArbRewards={data.hasPendleArbRewards}
-              hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-              hasKelp={data.hasKelp}
-              isEligibleForSteer={data.isEligibleForSteer}
-              steerPointsPerDollar={data.steerPointsPerDollar}
-              isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-              onExtraRewardsClick={handleInfoOpen}
-            />
+            {showSubline ? (
+              <APYSubline
+                hasPendleArbRewards={data.hasPendleArbRewards}
+                hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+                hasKelp={data.hasKelp}
+                isEligibleForSteer={data.isEligibleForSteer}
+                steerPointsPerDollar={data.steerPointsPerDollar}
+                isEligibleForSpectraBoost={isEligibleForSpectraBoost}
+                onExtraRewardsClick={handleInfoOpen}
+              />
+            ) : null}
           </div>
           <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
             {modalContent}
@@ -143,20 +153,22 @@ export function VaultForwardAPY({
     }
 
     return (
-      <div className={'relative flex flex-col items-end md:text-right'}>
-        <b className={'yearn--table-data-section-item-value'} onClick={handleValueClick}>
+      <div className={cl('relative flex flex-col items-end md:text-right', className)}>
+        <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
           <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
             <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
           </Renderable>
         </b>
-        <APYSubline
-          hasPendleArbRewards={data.hasPendleArbRewards}
-          hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-          hasKelp={data.hasKelp}
-          isEligibleForSteer={data.isEligibleForSteer}
-          steerPointsPerDollar={data.steerPointsPerDollar}
-          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-        />
+        {showSubline ? (
+          <APYSubline
+            hasPendleArbRewards={data.hasPendleArbRewards}
+            hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+            hasKelp={data.hasKelp}
+            isEligibleForSteer={data.isEligibleForSteer}
+            steerPointsPerDollar={data.steerPointsPerDollar}
+            isEligibleForSpectraBoost={isEligibleForSpectraBoost}
+          />
+        ) : null}
       </div>
     )
   }
@@ -176,11 +188,12 @@ export function VaultForwardAPY({
 
     return (
       <Fragment>
-        <div className={'flex flex-col items-end md:text-right'}>
+        <div className={cl('flex flex-col items-end md:text-right', className)}>
           <b
-            className={
-              'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-            }
+            className={cl(
+              'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600',
+              valueClassName
+            )}
             onClick={handleValueClick}
           >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
@@ -197,15 +210,17 @@ export function VaultForwardAPY({
           <small className={'text-xs text-neutral-800'}>
             <Renderable shouldRender={data.isBoosted}>{`BOOST ${formatAmount(data.boost || 0, 2, 2)}x`}</Renderable>
           </small>
-          <APYSubline
-            hasPendleArbRewards={data.hasPendleArbRewards}
-            hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-            hasKelp={data.hasKelp}
-            isEligibleForSteer={data.isEligibleForSteer}
-            steerPointsPerDollar={data.steerPointsPerDollar}
-            isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-            onExtraRewardsClick={handleInfoOpen}
-          />
+          {showSubline ? (
+            <APYSubline
+              hasPendleArbRewards={data.hasPendleArbRewards}
+              hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+              hasKelp={data.hasKelp}
+              isEligibleForSteer={data.isEligibleForSteer}
+              steerPointsPerDollar={data.steerPointsPerDollar}
+              isEligibleForSpectraBoost={isEligibleForSpectraBoost}
+              onExtraRewardsClick={handleInfoOpen}
+            />
+          ) : null}
         </div>
         <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
           {modalContent}
@@ -245,8 +260,11 @@ export function VaultForwardAPY({
 
     return (
       <Fragment>
-        <div className={'relative flex flex-col items-end md:text-right'}>
-          <b className={'yearn--table-data-section-item-value whitespace-nowrap'} onClick={handleValueClick}>
+        <div className={cl('relative flex flex-col items-end md:text-right', className)}>
+          <b
+            className={cl('yearn--table-data-section-item-value whitespace-nowrap', valueClassName)}
+            onClick={handleValueClick}
+          >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <div className={'flex items-center gap-2'}>
                 <span
@@ -273,15 +291,17 @@ export function VaultForwardAPY({
               </div>
             </Renderable>
           </b>
-          <APYSubline
-            hasPendleArbRewards={data.hasPendleArbRewards}
-            hasKelp={data.hasKelp}
-            hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-            isEligibleForSteer={data.isEligibleForSteer}
-            steerPointsPerDollar={data.steerPointsPerDollar}
-            isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-            onExtraRewardsClick={handleInfoOpen}
-          />
+          {showSubline ? (
+            <APYSubline
+              hasPendleArbRewards={data.hasPendleArbRewards}
+              hasKelp={data.hasKelp}
+              hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+              isEligibleForSteer={data.isEligibleForSteer}
+              steerPointsPerDollar={data.steerPointsPerDollar}
+              isEligibleForSpectraBoost={isEligibleForSpectraBoost}
+              onExtraRewardsClick={handleInfoOpen}
+            />
+          ) : null}
         </div>
         <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
           {modalContent}
@@ -293,21 +313,23 @@ export function VaultForwardAPY({
   // Spot forward APY
   if (data.mode === 'spot') {
     return (
-      <div className={'relative flex flex-col items-end md:text-right'}>
-        <b className={'yearn--table-data-section-item-value'} onClick={handleValueClick}>
+      <div className={cl('relative flex flex-col items-end md:text-right', className)}>
+        <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
           <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
             {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
             <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
           </Renderable>
         </b>
-        <APYSubline
-          hasPendleArbRewards={data.hasPendleArbRewards}
-          hasKelp={data.hasKelp}
-          hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-          isEligibleForSteer={data.isEligibleForSteer}
-          steerPointsPerDollar={data.steerPointsPerDollar}
-          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-        />
+        {showSubline ? (
+          <APYSubline
+            hasPendleArbRewards={data.hasPendleArbRewards}
+            hasKelp={data.hasKelp}
+            hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+            isEligibleForSteer={data.isEligibleForSteer}
+            steerPointsPerDollar={data.steerPointsPerDollar}
+            isEligibleForSpectraBoost={isEligibleForSpectraBoost}
+          />
+        ) : null}
       </div>
     )
   }
@@ -315,8 +337,8 @@ export function VaultForwardAPY({
   // Fallback historical APY - This will always be reached for any unhandled case
   const hasZeroAPY = isZero(data.netApr) || Number((data.netApr || 0).toFixed(2)) === 0
   return (
-    <div className={'relative flex flex-col items-end md:text-right'}>
-      <b className={'yearn--table-data-section-item-value'} onClick={handleValueClick}>
+    <div className={cl('relative flex flex-col items-end md:text-right', className)}>
+      <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
         <Renderable
           shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')}
           fallback={'NEW'}
@@ -325,14 +347,16 @@ export function VaultForwardAPY({
           <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
         </Renderable>
       </b>
-      <APYSubline
-        hasPendleArbRewards={data.hasPendleArbRewards}
-        hasKelp={data.hasKelp}
-        hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-        isEligibleForSteer={data.isEligibleForSteer}
-        steerPointsPerDollar={data.steerPointsPerDollar}
-        isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-      />
+      {showSubline ? (
+        <APYSubline
+          hasPendleArbRewards={data.hasPendleArbRewards}
+          hasKelp={data.hasKelp}
+          hasKelpNEngenlayer={data.hasKelpNEngenlayer}
+          isEligibleForSteer={data.isEligibleForSteer}
+          steerPointsPerDollar={data.steerPointsPerDollar}
+          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
+        />
+      ) : null}
     </div>
   )
 }
