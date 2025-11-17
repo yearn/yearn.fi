@@ -21,7 +21,6 @@ interface Props {
   chainId: number
   vaultAPR: number // APR as a percentage (e.g., 10.5 for 10.5%)
   vaultSymbol: string
-  destinationChainId?: number // For cross-chain operations
   handleDepositSuccess?: () => void
 }
 
@@ -180,7 +179,6 @@ export const WidgetDepositGeneric: FC<Props> = ({
   chainId,
   vaultAPR,
   vaultSymbol,
-  destinationChainId,
   handleDepositSuccess: onDepositSuccess
 }) => {
   const { address: account } = useAccount()
@@ -305,6 +303,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
     setDepositInput,
     refreshWalletBalances,
     depositToken,
+    sourceChainId,
     vaultAddress,
     chainId,
     onDepositSuccess,

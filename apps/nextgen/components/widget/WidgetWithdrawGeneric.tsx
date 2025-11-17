@@ -13,7 +13,7 @@ import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
 import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
-import { formatUnits, parseUnits } from 'viem'
+import { formatUnits } from 'viem'
 import { type UseSimulateContractReturnType, useAccount, useReadContract, useSimulateContract } from 'wagmi'
 import { TokenSelector } from '../TokenSelector'
 
@@ -60,7 +60,6 @@ interface Props {
   chainId: number
   vaultSymbol: string
   vaultType?: 'v2' | 'v3'
-  destinationChainId?: number // For cross-chain operations
   handleWithdrawSuccess?: () => void
 }
 
@@ -171,7 +170,6 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   stakingAddress,
   chainId,
   vaultSymbol,
-  destinationChainId,
   handleWithdrawSuccess: onWithdrawSuccess
 }) => {
   const { address: account } = useAccount()
@@ -204,7 +202,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
 
   // Determine which token to use for withdrawals
   const withdrawToken = selectedToken || assetAddress
-  const destinationChain = selectedChainId || chainId
+  const destinationChainId = selectedChainId || chainId
 
   // Get tokens from wallet
   const vault = useMemo(() => getToken({ address: vaultAddress, chainID: chainId }), [getToken, vaultAddress, chainId])
@@ -213,8 +211,8 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     [getToken, stakingAddress, chainId]
   )
   const outputToken = useMemo(
-    () => getToken({ address: withdrawToken, chainID: destinationChain }),
-    [getToken, withdrawToken, destinationChain]
+    () => getToken({ address: withdrawToken, chainID: destinationChainId }),
+    [getToken, withdrawToken, destinationChainId]
   )
   const assetToken = useMemo(
     () => getToken({ address: assetAddress, chainID: chainId }),
@@ -312,7 +310,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
         tokenOut: withdrawToken,
         amountIn: totalVaultBalance.raw.toString(),
         slippage: (zapSlippage * 100).toString(),
-        ...(destinationChain !== chainId && { destinationChainId: destinationChain.toString() })
+        ...(destinationChainId !== chainId && { destinationChainId: destinationChainId.toString() })
       })
 
       const response = await fetch(`${ENSO_API_BASE}/shortcuts/route?${params}`, {
@@ -351,7 +349,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     hasBothBalances,
     withdrawalSource,
     isUnstake,
-    destinationChain
+    destinationChainId
   ])
 
   // Reverse quote: For non-asset tokens, find how many vault tokens we need
@@ -368,7 +366,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     amountIn: withdrawAmount.debouncedBn,
     fromAddress: account,
     receiver: account, // Same as fromAddress for withdrawals
-    chainId: destinationChain,
+    chainId: destinationChainId,
     decimalsOut: vault?.decimals ?? 18,
     slippage: zapSlippage * 100,
     enabled: shouldFetchReverseQuote && !withdrawAmount.isDebouncing
@@ -434,7 +432,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     fromAddress: account,
     receiver: account, // Same as fromAddress for withdrawals
     chainId,
-    destinationChainId: destinationChain,
+    destinationChainId,
     decimalsOut: outputToken?.decimals ?? 18,
     slippage: zapSlippage * 100, // Convert percentage to basis points
     enabled: !!withdrawToken && !withdrawAmount.isDebouncing && requiredVaultTokens > 0n
@@ -553,7 +551,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
       setWithdrawInput('')
       // Refresh wallet balances
       const tokensToRefresh = [
-        { address: withdrawToken, chainID: destinationChain },
+        { address: withdrawToken, chainID: destinationChainId },
         { address: vaultAddress, chainID: chainId }
       ]
       if (stakingAddress) {
@@ -566,6 +564,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
     receiptSuccess,
     txHash,
     setWithdrawInput,
+    destinationChainId,
     refreshWalletBalances,
     withdrawToken,
     vaultAddress,
