@@ -59,14 +59,17 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   const { getToken, isLoading, balances } = useWallet()
 
   // Available chains - you can expand this list as needed
-  const availableChains = useMemo(() => [
-    { id: 1, name: 'Ethereum' },
-    { id: 10, name: 'Optimism' },
-    { id: 137, name: 'Polygon' },
-    { id: 42161, name: 'Arbitrum' },
-    { id: 8453, name: 'Base' },
-    { id: 747474, name: 'Katana' }
-  ], [])
+  const availableChains = useMemo(
+    () => [
+      { id: 1, name: 'Ethereum' },
+      { id: 10, name: 'Optimism' },
+      { id: 137, name: 'Polygon' },
+      { id: 42161, name: 'Arbitrum' },
+      { id: 8453, name: 'Base' },
+      { id: 747474, name: 'Katana' }
+    ],
+    []
+  )
 
   // Get all tokens with balances from wallet context
   const tokens = useMemo(() => {
@@ -168,9 +171,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
               onClick={() => setSelectedChainId(chain.id)}
               className={cl(
                 'w-[42px] h-[42px] flex items-center justify-center rounded-lg transition-all',
-                selectedChainId === chain.id
-                  ? 'bg-gray-100 ring-2 ring-gray-300'
-                  : 'hover:bg-gray-50'
+                selectedChainId === chain.id ? 'bg-gray-100 ring-2 ring-gray-300' : 'hover:bg-gray-50'
               )}
               type="button"
             >

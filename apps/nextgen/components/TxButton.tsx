@@ -4,9 +4,9 @@ import {
   useAccount,
   useChains,
   usePublicClient,
+  useSwitchChain,
   useWaitForTransactionReceipt,
-  useWriteContract,
-  useSwitchChain
+  useWriteContract
 } from 'wagmi'
 import { Button } from '../../lib/components/Button'
 
@@ -76,7 +76,9 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const isLoading = override === 'loading' || _loading || (isWaitingForEnsoTx && !!ensoTxHash)
   const isSuccess = override === 'success'
 
-  const disabled = wrongNetwork ? false : (_disabled || !prepareWrite.isSuccess || isLoading || isSimulating || override === 'error')
+  const disabled = wrongNetwork
+    ? false
+    : _disabled || !prepareWrite.isSuccess || isLoading || isSimulating || override === 'error'
 
   // Clear override states after timeout
   useEffect(() => {
