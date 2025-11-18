@@ -64,7 +64,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
   return (
     <div
       className={cl(
-        'flex h-10 w-full max-w-md items-center gap-2 px-2 md:w-2/3',
+        'flex h-10 items-center gap-2 px-2',
         props.highlightWhenActive
           ? localSearchValue
             ? 'bg-neutral-300/70 border-2 border-neutral-600'
@@ -74,7 +74,6 @@ export function SearchBar(props: TSearchBar): ReactElement {
       )}
     >
       <div className={'flex h-full w-full items-center gap-2 overflow-hidden'}>
-        <IconSearch className={'size-4 shrink-0 text-neutral-600'} />
         <input
           id={'search'}
           suppressHydrationWarning

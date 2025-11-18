@@ -115,7 +115,10 @@ function ListOfVaults({
       })
 
       if (availableSectionVaults.length > 0) {
-        sections.push({ key: AVAILABLE_TOGGLE_VALUE, vaults: availableSectionVaults })
+        sections.push({
+          key: AVAILABLE_TOGGLE_VALUE,
+          vaults: availableSectionVaults
+        })
       }
     }
 
@@ -130,7 +133,10 @@ function ListOfVaults({
       })
 
       if (holdingsSectionVaults.length > 0) {
-        sections.push({ key: HOLDINGS_TOGGLE_VALUE, vaults: holdingsSectionVaults })
+        sections.push({
+          key: HOLDINGS_TOGGLE_VALUE,
+          vaults: holdingsSectionVaults
+        })
       }
     }
 
@@ -290,9 +296,9 @@ function ListOfVaults({
 
   const listElement = (
     <div className={'flex min-h-[240px] w-full flex-col'}>
-      <div className={'flex flex-col overflow-hidden rounded-t-3xl'}>
+      <div className={'flex flex-col overflow-hidden rounded-t-xl'}>
         <VaultsV3ListHead
-          containerClassName={'rounded-t-3xl bg-neutral-100'}
+          containerClassName={'rounded-t-lg bg-neutral-100'}
           sortBy={sortBy}
           sortDirection={sortDirection}
           onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {

@@ -35,7 +35,7 @@ function useQueryArguments(props: {
   const [search, setSearch] = useState<string | null>(null)
   const [types, setTypes] = useState<string[] | null>(props.defaultTypes || [])
   const [categories, setCategories] = useState<string[] | null>(props.defaultCategories || [])
-  const [chains, setChains] = useState<number[] | null>(allChains || [])
+  const [chains, setChains] = useState<number[] | null>([1]) // Default to Ethereum
   const [sortDirection, setSortDirection] = useState<string | null>(null)
 
   const defaultSortBy = props.defaultSortBy || 'featuringScore'
@@ -120,7 +120,7 @@ function useQueryArguments(props: {
         const chainsParam = _searchParams.get('chains')
         const chainsParamArray = chainsParam?.split('_') || []
         if (chainsParamArray.length === 0) {
-          setChains(allChains)
+          setChains([1])
           return
         }
         if (chainsParamArray.length === allChains.length) {
@@ -136,7 +136,7 @@ function useQueryArguments(props: {
         }
         setChains(chainsParamArray.map((chain): number => Number(chain)))
       } else {
-        setChains(allChains)
+        setChains([1])
       }
 
       if (_searchParams.has('sortDirection')) {
