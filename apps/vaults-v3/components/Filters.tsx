@@ -32,7 +32,9 @@ type TListHero = {
   holdingsVaults: TYDaemonVault[]
 }
 
-const PRIMARY_CHAIN_IDS = [1, 747474, 8453, 42161]
+const CHAIN_DISPLAY_ORDER = [1, 747474, 8453, 42161, 137, 146]
+const PRIMARY_CHAIN_IDS = [1, 747474]
+const DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161]
 
 const isPrimaryChain = (chainId: number): boolean => PRIMARY_CHAIN_IDS.includes(chainId)
 
@@ -110,7 +112,7 @@ TListHero): ReactElement {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
-  const [customChainIds, setCustomChainIds] = useState<number[]>([])
+  const [customChainIds, setCustomChainIds] = useState<number[]>(DEFAULT_SECONDARY_CHAIN_IDS)
   const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false)
 
   const handleDropdownOpenChange = (dropdownId: string, isOpen: boolean): void => {
@@ -169,12 +171,9 @@ TListHero): ReactElement {
     for (const id of pinnedChainIds) {
       push(id)
     }
-    for (const id of chains || []) {
-      push(id)
-    }
 
     return ordered
-  }, [chainOptionMap, pinnedChainIds, chains])
+  }, [chainOptionMap, pinnedChainIds])
 
   const selectedChainSet = useMemo(() => new Set(chains ?? []), [chains])
 
@@ -197,10 +196,24 @@ TListHero): ReactElement {
 
   const areAllChainsSelected = !chains || chains.length === 0
 
-  const chainModalOptions = useMemo(
-    () => chainOptions.filter((option) => !isPrimaryChain(Number(option.value))),
-    [chainOptions]
-  )
+  const chainOrderMap = useMemo(() => {
+    const map = new Map<number, number>()
+    CHAIN_DISPLAY_ORDER.forEach((chainId, index) => {
+      map.set(chainId, index)
+    })
+    return map
+  }, [])
+
+  const chainModalOptions = useMemo(() => {
+    return [...chainOptions].sort((a, b) => {
+      const rankA = chainOrderMap.get(Number(a.value)) ?? Number.MAX_SAFE_INTEGER
+      const rankB = chainOrderMap.get(Number(b.value)) ?? Number.MAX_SAFE_INTEGER
+      if (rankA === rankB) {
+        return String(a.label).localeCompare(String(b.label))
+      }
+      return rankA - rankB
+    })
+  }, [chainOptions, chainOrderMap])
 
   const handleSelectAllChains = (): void => {
     onChangeChains(null)
@@ -360,6 +373,7 @@ TListHero): ReactElement {
         onClose={(): void => setIsChainModalOpen(false)}
         options={chainModalOptions}
         selectedChainIds={pinnedChainIds}
+        lockedChainIds={PRIMARY_CHAIN_IDS}
         onApply={handleApplyAdditionalChains}
       />
     </>
@@ -409,7 +423,7 @@ function FilterControls({
     <div className={'flex flex-col gap-4'}>
       <div>
         <div className={'flex flex-col gap-2'}>
-          <div className={'flex w-full flex-nowrap items-center gap-3'}>
+          <div className={'flex w-full flex-nowrap justify-between items-center gap-3'}>
             <div
               className={
                 'flex shrink-0 flex-wrap items-center gap-px rounded-lg h-10 bg-neutral-200/80 px-1 py-1 text-sm text-neutral-900'
@@ -474,34 +488,36 @@ function FilterControls({
                 <span>{'More'}</span>
               </button>
             </div>
-            <button
-              type={'button'}
-              className={cl(
-                'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-500 bg-neutral-200/80 transition-colors',
-                'hover:border-neutral-400',
-                'data-[active=true]:border-neutral-900 data-[active=true]:text-neutral-900'
-              )}
-              data-active={isMoreFiltersOpen}
-              onClick={onToggleMoreFilters}
-              aria-expanded={isMoreFiltersOpen}
-            >
-              <IconFilter className={'size-4'} />
-              <span>{isMoreFiltersOpen ? 'Filters' : 'Filters'}</span>
-            </button>
-            {showInlineSearch ? (
-              <div className={'min-w-[200px] flex-1'}>
-                <SearchBar
-                  className={'w-full rounded-lg border-none bg-neutral-300 text-neutral-900 transition-all'}
-                  iconClassName={'text-neutral-900'}
-                  searchPlaceholder={'Find a Vault'}
-                  searchValue={searchValue}
-                  onSearch={onSearch}
-                  shouldDebounce={shouldDebounce || false}
-                  highlightWhenActive={true}
-                  alertContent={searchAlertContent}
-                />
-              </div>
-            ) : null}
+            <div className={'flex flex-row items-center gap-3 min-w-[300px] max-w-[500px] flex-1'}>
+              <button
+                type={'button'}
+                className={cl(
+                  'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-500 bg-neutral-200/80 transition-colors',
+                  'hover:border-neutral-400',
+                  'data-[active=true]:border-neutral-900 data-[active=true]:text-neutral-900'
+                )}
+                data-active={isMoreFiltersOpen}
+                onClick={onToggleMoreFilters}
+                aria-expanded={isMoreFiltersOpen}
+              >
+                <IconFilter className={'size-4'} />
+                <span>{isMoreFiltersOpen ? 'Filters' : 'Filters'}</span>
+              </button>
+              {showInlineSearch ? (
+                <div className={'min-w-[200px] flex-1'}>
+                  <SearchBar
+                    className={'w-full rounded-lg border-none bg-neutral-300 text-neutral-900 transition-all'}
+                    iconClassName={'text-neutral-900'}
+                    searchPlaceholder={'Find a Vault'}
+                    searchValue={searchValue}
+                    onSearch={onSearch}
+                    shouldDebounce={shouldDebounce || false}
+                    highlightWhenActive={true}
+                    alertContent={searchAlertContent}
+                  />
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
@@ -552,12 +568,14 @@ function ChainSelectionModal({
   onClose,
   options,
   selectedChainIds,
+  lockedChainIds,
   onApply
 }: {
   isOpen: boolean
   onClose: () => void
   options: TMultiSelectOptionProps[]
   selectedChainIds: number[]
+  lockedChainIds: number[]
   onApply: (chainIds: number[]) => void
 }): ReactElement {
   const [pendingSelection, setPendingSelection] = useState<number[]>(selectedChainIds)
@@ -569,6 +587,9 @@ function ChainSelectionModal({
   }, [isOpen, selectedChainIds])
 
   const toggleChain = (chainId: number): void => {
+    if (lockedChainIds.includes(chainId)) {
+      return
+    }
     setPendingSelection((prev) => {
       if (prev.includes(chainId)) {
         return prev.filter((id) => id !== chainId)
@@ -631,13 +652,15 @@ function ChainSelectionModal({
                   ) : (
                     options.map((option) => {
                       const chainId = Number(option.value)
-                      const isChecked = pendingSelection.includes(chainId)
+                      const isLocked = lockedChainIds.includes(chainId)
+                      const isChecked = isLocked || pendingSelection.includes(chainId)
                       return (
                         <label
                           key={chainId}
                           className={cl(
-                            'flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-neutral-200 px-3 py-2 transition-colors',
-                            'hover:border-neutral-300 hover:bg-neutral-50'
+                            'flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors',
+                            isChecked ? 'border-neutral-300 bg-neutral-300/80' : 'border-neutral-200',
+                            isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-neutral-300/50'
                           )}
                         >
                           <div className={'flex items-center gap-3'}>
@@ -657,6 +680,7 @@ function ChainSelectionModal({
                             type={'checkbox'}
                             className={'checkbox'}
                             checked={isChecked}
+                            disabled={isLocked}
                             onChange={(): void => toggleChain(chainId)}
                           />
                         </label>
@@ -682,7 +706,7 @@ function ChainSelectionModal({
                     onClick={handleApply}
                     disabled={options.length === 0}
                   >
-                    {'Add chains'}
+                    {'Save'}
                   </button>
                 </div>
               </Dialog.Panel>
