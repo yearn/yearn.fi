@@ -179,6 +179,20 @@ body {
   }
 }
 
+.yearn-typemark {
+  color: #fff;
+  transition: color 0.2s ease;
+}
+
+.light .yearn-typemark {
+  color: var(--color-primary);
+}
+
+.dark .yearn-typemark,
+.v3 .yearn-typemark {
+  color: #fff;
+}
+
 /* 🔵 - Yearn Finance ******************************************************************************
 ** Tooltip
 ** In some place we need a tooltip to display some information on hover. This style controls the

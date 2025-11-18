@@ -195,7 +195,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
               <LaunchModal />
             </div>
             <div className={'flex items-center gap-2 md:gap-4'}>
-              <TypeMarkYearn className={'h-8 w-auto pt-1'} color={'white'} />
+              <TypeMarkYearn className={'yearn-typemark h-8 w-auto pt-1'} />
               <div className={'flex items-center gap-4'}>
                 {PRIMARY_LINKS.map((link) => (
                   <Link key={link.path} href={link.path}>
