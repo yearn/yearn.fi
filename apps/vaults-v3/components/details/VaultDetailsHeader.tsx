@@ -1,5 +1,6 @@
 import { Counter } from '@lib/components/Counter'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { RenderAmount } from '@lib/components/RenderAmount'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
@@ -45,6 +46,49 @@ type TVaultHoldingsData = {
   earnedValue: number
 }
 
+const METRIC_VALUE_CLASS = 'font-number text-[32px] leading-tight md:text-[28px] font-normal'
+const METRIC_FOOTNOTE_CLASS = 'text-xs text-neutral-500'
+
+type TMetricBlock = {
+  key: string
+  header: ReactElement
+  value: ReactElement
+  footnote?: ReactElement
+  secondaryLabel?: ReactElement
+}
+
+function MetricsCard({ items }: { items: TMetricBlock[] }): ReactElement {
+  return (
+    <div
+      className={cl(
+        'rounded-xl border border-neutral-200 bg-neutral-0/90 text-neutral-900 shadow-xs shadow-neutral-900/10',
+        'backdrop-blur-sm'
+      )}
+    >
+      <div className={'divide-y divide-neutral-200 md:flex md:divide-y-0'}>
+        {items.map(
+          (item, index): ReactElement => (
+            <div
+              key={item.key}
+              className={cl(
+                'flex flex-1 flex-col gap-1 px-5 py-3',
+                index < items.length - 1 ? 'md:border-r md:border-neutral-200' : ''
+              )}
+            >
+              <div className={'flex items-center justify-between'}>
+                {item.header}
+                {item.secondaryLabel ?? <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>}
+              </div>
+              <div className={'[&_b.yearn--table-data-section-item-value]:text-left'}>{item.value}</div>
+              {item.footnote ? <div>{item.footnote}</div> : null}
+            </div>
+          )
+        )}
+      </div>
+    </div>
+  )
+}
+
 function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): ReactElement {
   return (
     <p className={'flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-neutral-600'}>
@@ -60,79 +104,62 @@ function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): 
 
 function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
-  const metrics = [
+  const metrics: TMetricBlock[] = [
     {
       key: 'est-apy',
-      label: 'Est. APY',
-      tooltip: 'Projected APY for the next period',
-      content: (
+      header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY for the next period'} />,
+      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
+      value: (
         <VaultForwardAPY
           currentVault={currentVault}
           showSubline={false}
           className={'items-start text-left'}
-          valueClassName={'text-[32px] leading-none md:text-[32px] font-normal'}
+          valueClassName={METRIC_VALUE_CLASS}
         />
-      ),
-      footnote: null
+      )
     },
     {
       key: 'historical-apy',
-      label: '30 Day APY',
-      tooltip: 'Average realized APY over the previous 30 days',
-      content: (
+      header: <MetricHeader label={'30 Day APY'} tooltip={'Average realized APY over the previous 30 days'} />,
+      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
+      value: (
         <VaultHistoricalAPY
           currentVault={currentVault}
           className={'items-start text-left'}
-          valueClassName={'text-[32px] leading-none md:text-[32px] font-normal'}
+          valueClassName={METRIC_VALUE_CLASS}
         />
-      ),
-      footnote: null
+      )
     },
     {
       key: 'tvl',
-      label: 'TVL',
-      tooltip: 'Total value currently deposited into this vault',
-      content: (
-        <p className={'font-number text-[32px] leading-none md:text-[32px]'} suppressHydrationWarning>
-          {formatUSD(currentVault.tvl?.tvl || 0)}
-        </p>
+      header: <MetricHeader label={'TVL'} tooltip={'Total value currently deposited into this vault'} />,
+      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
+      value: (
+        <span className={METRIC_VALUE_CLASS}>
+          <RenderAmount
+            value={currentVault.tvl?.tvl || 0}
+            symbol={'USD'}
+            decimals={0}
+            options={{
+              shouldCompactValue: true,
+              maximumFractionDigits: 2,
+              minimumFractionDigits: 0
+            }}
+          />
+        </span>
       ),
       footnote: (
-        <span className={'font-number text-xs text-neutral-500'} suppressHydrationWarning>
-          <Counter value={totalAssets} decimals={currentVault.decimals} decimalsToDisplay={[2, 6, 8, 10, 12]} />
+        <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
+          <span className={'font-number'}>
+            <Counter value={totalAssets} decimals={currentVault.decimals} decimalsToDisplay={[2, 6, 8, 10, 12]} />
+          </span>
           <span className={'pl-1'}>{currentVault.token.symbol || 'tokens'}</span>
-        </span>
+        </p>
       )
     }
   ]
 
-  return (
-    <div
-      className={cl(
-        'rounded-3xl border border-neutral-200 bg-neutral-0/90 text-neutral-900 shadow-lg shadow-neutral-900/10',
-        'backdrop-blur-sm'
-      )}
-    >
-      <div className={'divide-y divide-neutral-200 md:flex md:divide-y-0'}>
-        {metrics.map((metric, index) => (
-          <div
-            key={metric.key}
-            className={cl(
-              'flex flex-1 flex-col gap-2 px-5 py-4',
-              index < metrics.length - 1 ? 'md:border-r md:border-neutral-200' : ''
-            )}
-          >
-            <div className={'flex items-center justify-between'}>
-              <MetricHeader label={metric.label} tooltip={metric.tooltip} />
-              <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>
-            </div>
-            <div className={'[&_b.yearn--table-data-section-item-value]:text-left'}>{metric.content}</div>
-            {metric.footnote ? <div>{metric.footnote}</div> : null}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+  return <MetricsCard items={metrics} />
 }
 
 function UserHoldingsCard({
@@ -147,13 +174,12 @@ function UserHoldingsCard({
   const underlyingValueUSD = vaultData.valueInToken.normalized * tokenPrice
   const hasDeposits = vaultData.deposited.raw > 0n
 
-  const sections = [
+  const sections: TMetricBlock[] = [
     {
       key: 'underlying',
-      label: 'Underlying',
-      tooltip: 'Your redeemable balance of the vault’s underlying asset',
-      content: (
-        <span className={'font-number text-[32px] leading-none md:text-[32px] font-normal'} suppressHydrationWarning>
+      header: <MetricHeader label={'Underlying'} tooltip={'Your redeemable balance of the vault’s underlying asset'} />,
+      value: (
+        <span className={METRIC_VALUE_CLASS} suppressHydrationWarning>
           <Counter
             value={vaultData.valueInToken.normalized}
             decimals={currentVault.decimals}
@@ -162,14 +188,17 @@ function UserHoldingsCard({
           />
         </span>
       ),
-      footnote: formatUSD(underlyingValueUSD)
+      footnote: (
+        <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
+          {formatUSD(underlyingValueUSD)}
+        </p>
+      )
     },
     {
       key: 'deposited',
-      label: 'Deposited',
-      tooltip: 'Your total position denominated in vault tokens',
-      content: (
-        <span className={'font-number text-[32px] leading-none md:text-[32px] font-normal'} suppressHydrationWarning>
+      header: <MetricHeader label={'Deposited'} tooltip={'Your total position denominated in vault tokens'} />,
+      value: (
+        <span className={METRIC_VALUE_CLASS} suppressHydrationWarning>
           <Counter
             value={vaultData.deposited.normalized}
             decimals={currentVault.decimals}
@@ -178,36 +207,15 @@ function UserHoldingsCard({
           />
         </span>
       ),
-      footnote: hasDeposits ? `${currentVault.symbol || 'Vault'} tokens` : 'No deposits yet'
+      footnote: (
+        <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
+          {hasDeposits ? `${currentVault.symbol || 'Vault'} tokens` : 'No deposits yet'}
+        </p>
+      )
     }
   ]
 
-  return (
-    <div
-      className={cl(
-        'rounded-3xl border border-neutral-200 bg-neutral-0/90 text-neutral-900 shadow-lg shadow-neutral-900/10',
-        'backdrop-blur-sm'
-      )}
-    >
-      <div className={'divide-y divide-neutral-200 md:flex md:divide-y-0'}>
-        {sections.map((section, index) => (
-          <div
-            key={section.key}
-            className={cl(
-              'flex flex-1 flex-col gap-2 px-5 py-4',
-              index < sections.length - 1 ? 'md:border-r md:border-neutral-200' : ''
-            )}
-          >
-            <MetricHeader label={section.label} tooltip={section.tooltip} />
-            <div>{section.content}</div>
-            <p className={'text-xs text-neutral-500'} suppressHydrationWarning>
-              {section.footnote}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+  return <MetricsCard items={sections} />
 }
 
 export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
@@ -494,38 +502,38 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
 
   return (
     <div className={'col-span-12 mt-4 flex w-full flex-col text-left'}>
-      <div className={'flex flex-col gap-4'}>
+      <div className={'flex flex-col gap-0'}>
         <div className={'flex flex-col gap-4 md:flex-row md:items-center'}>
           <div className={'flex items-center gap-4'}>
-            <div className={'flex size-14 items-center justify-center rounded-full bg-neutral-0/70'}>
+            <div className={'flex size-14 items-center justify-start rounded-full bg-neutral-0/70'}>
               <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={56} height={56} />
             </div>
             <div className={'flex flex-col'}>
-              <strong className={'text-3xl font-black leading-tight text-neutral-700 md:text-[56px] md:leading-[64px]'}>
+              <strong className={'text-3xl font-black leading-tight text-neutral-700 md:text-[48px] md:leading-[56px]'}>
                 {getVaultName(currentVault)} {' yVault'}
               </strong>
-              {currentVault.address ? (
-                <button
-                  type={'button'}
-                  onClick={(): void => copyToClipboard(currentVault.address)}
-                  className={
-                    'text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm'
-                  }
-                >
-                  {currentVault.address}
-                </button>
-              ) : null}
             </div>
           </div>
         </div>
+        {currentVault.address ? (
+          <button
+            type={'button'}
+            onClick={(): void => copyToClipboard(currentVault.address)}
+            className={
+              'text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm pt-2'
+            }
+          >
+            {currentVault.address}
+          </button>
+        ) : null}
         {metadataLine ? <p className={'text-sm text-neutral-900/70 md:text-base'}>{metadataLine}</p> : null}
       </div>
 
-      <div className={'mt-8 grid w-full grid-cols-1 gap-4 md:grid-cols-5 md:items-start'}>
-        <div className={'md:col-span-3'}>
+      <div className={'mt-4 grid w-full grid-cols-1 gap-4 md:grid-cols-20 md:items-start'}>
+        <div className={'md:col-span-13'}>
           <VaultOverviewCard currentVault={currentVault} />
         </div>
-        <div className={'md:col-span-2'}>
+        <div className={'md:col-span-7'}>
           <UserHoldingsCard currentVault={currentVault} vaultData={vaultData} tokenPrice={tokenPrice} />
         </div>
       </div>

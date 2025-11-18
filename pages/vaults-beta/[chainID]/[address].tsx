@@ -156,12 +156,12 @@ function Index(): ReactElement | null {
   }
 
   return (
-    <div className={'mx-auto w-full max-w-[1232px] pt-20 md:pt-32 px-4'}>
+    <div className={'mx-auto w-full max-w-[1232px] pt-20 md:pt-20 px-4'}>
       {/* Header with gradient background and vault logo */}
       <header
         className={cl(
           'h-full rounded-3xl ',
-          'pt-6 pb-6 md:pb-10 px-4 md:px-0',
+          // 'pt-6 pb-6 md:pb-10 px-4 md:px-0',
           // 'bg-[linear-gradient(73deg,#D21162_24.91%,#2C3DA6_99.66%)]',
           'relative flex flex-col items-center justify-center'
         )}
