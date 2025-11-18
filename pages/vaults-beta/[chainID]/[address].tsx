@@ -7,6 +7,10 @@ import { cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { Widget } from '@nextgen/components/widget'
+import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
+import { VaultInfoSection } from '@nextgen/components/vaults-beta/VaultInfoSection'
+import { VaultRiskSection } from '@nextgen/components/vaults-beta/VaultRiskSection'
+import { VaultStrategiesSection } from '@nextgen/components/vaults-beta/VaultStrategiesSection'
 import { WidgetActionType } from '@nextgen/types'
 import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHeader'
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
@@ -170,39 +174,42 @@ function Index(): ReactElement | null {
         <VaultDetailsHeader currentVault={currentVault} />
       </header>
 
-      <div className={'relative mx-auto w-full max-w-[1232px]'}>
-        <section className={'flex flex-col-reverse md:flex-row gap-6 md:items-start mt-4'}>
-          <div className={'w-full md:w-[65%] h-[2000px]'}>
-            {/* <div className={'w-full h-full bg-neutral-200 rounded-lg'}>
-              <div className="h-[1000px]"></div>
-            </div> */}
-          </div>
-          <div className={'w-full md:w-[35%] md:sticky md:top-4 md:self-start'}>
-            <div className={'w-full h-[400px] bg-neutral-200 rounded-lg'}>
-              <div className="flex flex-col gap-2">
-                {/* <WidgetRewards vaultType="v3" vaultAddress={currentVault.address} handleRewardsSuccess={() => {}} /> */}
-
-                <Widget
-                  vaultType={isV3 ? 'v3' : 'v2'}
-                  vaultAddress={currentVault.address}
-                  currentVault={currentVault}
-                  gaugeAddress={currentVault.staking.address}
-                  actions={[WidgetActionType.DepositGeneric, WidgetActionType.WithdrawGeneric]}
-                  chainId={Number(params.chainID)}
-                />
-
-                {/* <Widget
-                  vaultType={isV3 ? 'v3' : 'v2'}
-                  vaultAddress={currentVault.address}
-                  gaugeAddress={currentVault.staking.address}
-                  actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
-                  chainId={Number(params.chainID)}
-                /> */}
+      <section className={'mt-6 grid grid-cols-1 gap-6 md:grid-cols-20'}>
+        <div className={'space-y-6 md:col-span-13'}>
+          {[
+            { key: 'about', shouldRender: true, content: <VaultAboutSection currentVault={currentVault} /> },
+            {
+              key: 'strategies',
+              shouldRender: Number(currentVault.strategies?.length || 0) > 0,
+              content: <VaultStrategiesSection currentVault={currentVault} />
+            },
+            {
+              key: 'info',
+              shouldRender: true,
+              content: <VaultInfoSection currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
+            },
+            { key: 'risk', shouldRender: true, content: <VaultRiskSection currentVault={currentVault} /> }
+          ]
+            .filter((section) => section.shouldRender)
+            .map((section) => (
+              <div key={section.key} className={'rounded-3xl bg-neutral-0 shadow-lg shadow-neutral-900/5'}>
+                {section.content}
               </div>
-            </div>
+            ))}
+        </div>
+        <div className={'md:col-span-7 md:sticky md:top-6'}>
+          <div className={'rounded-3xl border border-neutral-200 bg-neutral-0 p-4 shadow-lg shadow-neutral-900/10'}>
+            <Widget
+              vaultType={isV3 ? 'v3' : 'v2'}
+              vaultAddress={currentVault.address}
+              currentVault={currentVault}
+              gaugeAddress={currentVault.staking.address}
+              actions={[WidgetActionType.DepositGeneric, WidgetActionType.WithdrawGeneric]}
+              chainId={Number(params.chainID)}
+            />
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   )
 }
