@@ -63,5 +63,7 @@ export enum WidgetActionType {
   EnsoDeposit = 'enso deposit',
   EnsoWithdraw = 'enso withdraw',
   DepositGeneric = 'deposit generic',
-  WithdrawGeneric = 'withdraw generic'
+  WithdrawGeneric = 'withdraw generic',
+  DepositFinal = 'deposit final',
+  WithdrawFinal = 'withdraw final'
 }

@@ -216,7 +216,7 @@ function Index(): ReactElement | null {
                   vaultAddress={currentVault.address}
                   currentVault={currentVault}
                   gaugeAddress={currentVault.staking.address}
-                  actions={[WidgetActionType.DepositGeneric, WidgetActionType.WithdrawGeneric]}
+                  actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
                   chainId={Number(params.chainID)}
                 />
 
