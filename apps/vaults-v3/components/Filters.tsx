@@ -422,7 +422,7 @@ function FilterControls({
                   className={cl(
                     'flex items-center gap-2 rounded-lg px-3 py-1 font-medium transition-all',
                     'hover:bg-neutral-0/70',
-                    'data-[active=false]:text-neutral-500 data-[active=false]:opacity-60 data-[active=false]:hover:text-neutral-900 data-[active=false]:hover:opacity-100 data-[active=false]:bg-neutral-100/40',
+                    'data-[active=false]:text-neutral-500 data-[active=false]:opacity-60 data-[active=false]:hover:text-neutral-900 data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-neutral-100/40',
                     'data-[active=true]:bg-neutral-100/40 data-[active=true]:text-neutral-900 data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
                   )}
                   data-active={chain.isSelected}
@@ -447,7 +447,7 @@ function FilterControls({
                 className={cl(
                   'flex items-center gap-2 rounded-lg px-3 py-1 font-medium transition-all',
                   'hover:bg-neutral-0/70',
-                  'data-[active=false]:text-neutral-500 data-[active=false]:opacity-60 data-[active=false]:hover:text-neutral-900 data-[active=false]:hover:opacity-100 data-[active=false]:bg-neutral-100/40',
+                  'data-[active=false]:text-neutral-500 data-[active=false]:opacity-60 data-[active=false]:hover:text-neutral-900 data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-neutral-100/40',
                   'data-[active=true]:bg-neutral-100/40 data-[active=true]:text-neutral-900 data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
                 )}
                 data-active={areAllChainsSelected}
