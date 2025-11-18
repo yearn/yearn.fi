@@ -1,6 +1,5 @@
 import type { TAllocationChartData } from '@lib/components/AllocationChart'
 import { AllocationChart } from '@lib/components/AllocationChart'
-import { VaultsListStrategy } from '@lib/components/VaultsListStrategy'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import type { TSortDirection } from '@lib/types'
@@ -9,10 +8,11 @@ import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yD
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
-import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
+import { NextgenVaultsListHead } from './NextgenVaultsListHead'
+import { NextgenVaultsListStrategy } from './NextgenVaultsListStrategy'
 
 function UnallocatedStrategy({
   unallocatedPercentage,
@@ -173,8 +173,27 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
             'grid w-full grid-cols-1 place-content-start gap-y-6 md:gap-x-6 lg:max-w-[846px] lg:grid-cols-9 lg:gap-y-4'
           }
         >
-          <div className={'col-span-9 flex w-full flex-col'}>
-            <VaultsV3ListHead
+          <div className={'col-span-9 flex w-full flex-col'}></div>
+          <div className={'col-span-9 flex flex-col gap-3'}>
+            {allocationChartData.length > 0 ? <AllocationChart allocationChartData={allocationChartData} /> : null}
+            {unallocatedPercentage > 0 && unallocatedValue > 0 ? (
+              <UnallocatedStrategy
+                unallocatedPercentage={unallocatedPercentage}
+                unallocatedValue={toNormalizedBN(unallocatedValue, currentVault.token.decimals).display}
+              />
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className={'pb-2'}>
+        {isVaultListEmpty ? (
+          <div className={'border border-neutral-200 bg-neutral-100 p-4 text-center text-neutral-900'}>
+            {'No strategies found for this vault.'}
+          </div>
+        ) : (
+          <div className={'space-y-px'}>
+            <NextgenVaultsListHead
               sortBy={sortBy}
               sortDirection={sortDirection}
               onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
@@ -188,11 +207,6 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   sortable: false
                 },
                 {
-                  label: 'APY',
-                  value: 'netAPR',
-                  sortable: true
-                },
-                {
                   label: 'Allocation %',
                   value: 'allocationPercentage',
                   sortable: true
@@ -201,41 +215,29 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   label: 'Amount',
                   value: 'totalDebt',
                   sortable: true
+                },
+                {
+                  label: 'APY',
+                  value: 'netAPR',
+                  sortable: true
                 }
               ]}
             />
-          </div>
-          <div className={'col-span-9 flex flex-col gap-3'}>
-            {allocationChartData.length > 0 ? <AllocationChart allocationChartData={allocationChartData} /> : null}
-            {unallocatedPercentage > 0 && unallocatedValue > 0 ? (
-              <UnallocatedStrategy
-                unallocatedPercentage={unallocatedPercentage}
-                unallocatedValue={toNormalizedBN(unallocatedValue, currentVault.token.decimals).display}
-              />
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      <div className={'p-4 md:p-8'}>
-        {isVaultListEmpty ? (
-          <div className={'rounded-3xl border border-neutral-200 bg-neutral-100 p-4 text-center text-neutral-900'}>
-            {'No strategies found for this vault.'}
-          </div>
-        ) : (
-          <div className={'space-y-4'}>
             {sortedVaultsToDisplay.map((strategy) => (
-              <VaultsListStrategy
+              <NextgenVaultsListStrategy
                 key={strategy.address}
                 details={strategy.details}
                 chainId={currentVault.chainID}
-                allocation={formatPercent((strategy.details?.debtRatio || 0) / 100, 0)}
+                allocation={formatCounterValue(
+                  toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
+                  tokenPrice
+                )}
                 name={strategy.name}
                 tokenAddress={currentVault.token.address}
                 address={strategy.address}
                 isVault={!!vaults[strategy.address]}
                 variant="v3"
-                apr={strategy.apr?.netAPR}
+                apr={strategy.netAPR}
                 fees={currentVault.apr.fees}
               />
             ))}

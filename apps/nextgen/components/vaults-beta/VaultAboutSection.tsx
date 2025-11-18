@@ -83,69 +83,46 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
   }
 
   return (
-    <div className={'grid grid-cols-1 gap-4 p-4 md:grid-cols-12 md:gap-10 md:p-8'}>
-      <div className={'col-span-12 w-full pr-0 md:col-span-7 md:pr-28'}>
-        <div>
-          <b className={'text-neutral-900'}>{'Description'}</b>
-          <div className={'mt-4 text-neutral-900/50'}>
-            {typeof getVaultDescription() === 'string' ? (
+    <div className={'space-y-10 p-4 md:p-8'}>
+      <div className={'w-full'}>
+        <b className={'text-neutral-900'}>{'Description'}</b>
+        <div className={'mt-4 text-neutral-900/50'}>
+          {typeof getVaultDescription() === 'string' ? (
+            <p
               // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled description content
-              <p dangerouslySetInnerHTML={{ __html: getVaultDescription() as string }} />
-            ) : (
-              <p>{getVaultDescription()}</p>
-            )}
-          </div>
+              dangerouslySetInnerHTML={{
+                __html: getVaultDescription() as string
+              }}
+            />
+          ) : (
+            <p>{getVaultDescription()}</p>
+          )}
         </div>
       </div>
 
-      <div className={'col-span-12 mt-6 w-full space-y-10 md:col-span-5 md:mt-0'}>
-        <div className={'grid grid-cols-1 gap-x-12 md:grid-cols-1'}>
-          <div className={'mb-4 md:mb-10'}>
-            <b className={'text-neutral-900'}>{'APY'}</b>
-            <div className={'mt-4 grid grid-cols-3 gap-8'}>
-              <NextgenFeesLineItem label={'Last 7 days'}>
-                <b className={'font-number text-xl text-neutral-900'}>
-                  {apr.type.includes('new') ? 'New' : formatPercent(apr.points.weekAgo * 100, 0)}
-                </b>
-              </NextgenFeesLineItem>
-              <NextgenFeesLineItem label={'Last 30 days'}>
-                <b className={'font-number text-xl text-neutral-900'}>
-                  {apr.type.includes('new') ? '-' : formatPercent(apr.points.monthAgo * 100, 0)}
-                </b>
-              </NextgenFeesLineItem>
-
-              <NextgenFeesLineItem label={'Inception'}>
-                <b className={'font-number text-xl text-neutral-900'}>
-                  {apr.type.includes('new') ? '-' : formatPercent(apr.points.inception * 100, 0)}
-                </b>
-              </NextgenFeesLineItem>
-            </div>
-          </div>
-          <div>
-            <b className={'text-neutral-900'}>{'Fees'}</b>
-            <div className={'mt-4 grid grid-cols-4 gap-8'}>
-              <NextgenFeesLineItem label={'Management'}>
-                <b className={'font-number text-xl text-neutral-900'}>
-                  {formatPercent((apr.fees.management || 0) * 100, 0)}
-                </b>
-              </NextgenFeesLineItem>
-              <NextgenFeesLineItem label={'Performance'}>
-                <b className={'font-number text-xl text-neutral-900'}>
-                  {formatPercent((apr.fees.performance || 0) * 100, 0)}
-                </b>
-              </NextgenFeesLineItem>
-              {(currentVault.apr.forwardAPR.composite?.keepVELO || 0) > 0 ? (
-                <NextgenFeesLineItem
-                  label={'keepVELO'}
-                  tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}
-                >
-                  <b className={'font-number text-xl text-neutral-500'}>
-                    {`${formatAmount((currentVault.apr.forwardAPR.composite?.keepVELO || 0) * 100, 0, 2)} %`}
-                  </b>
-                </NextgenFeesLineItem>
-              ) : null}
-            </div>
-          </div>
+      <div className={'w-full'}>
+        <b className={'text-neutral-900'}>{'Fees'}</b>
+        <div className={'mt-4 grid grid-cols-4 gap-8'}>
+          <NextgenFeesLineItem label={'Management'}>
+            <b className={'font-number text-xl text-neutral-900'}>
+              {formatPercent((apr.fees.management || 0) * 100, 0)}
+            </b>
+          </NextgenFeesLineItem>
+          <NextgenFeesLineItem label={'Performance'}>
+            <b className={'font-number text-xl text-neutral-900'}>
+              {formatPercent((apr.fees.performance || 0) * 100, 0)}
+            </b>
+          </NextgenFeesLineItem>
+          {(currentVault.apr.forwardAPR.composite?.keepVELO || 0) > 0 ? (
+            <NextgenFeesLineItem
+              label={'keepVELO'}
+              tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}
+            >
+              <b className={'font-number text-xl text-neutral-500'}>
+                {`${formatAmount((currentVault.apr.forwardAPR.composite?.keepVELO || 0) * 100, 0, 2)} %`}
+              </b>
+            </NextgenFeesLineItem>
+          ) : null}
         </div>
       </div>
     </div>

@@ -6,11 +6,11 @@ import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
 import { cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { Widget } from '@nextgen/components/widget'
 import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
 import { VaultInfoSection } from '@nextgen/components/vaults-beta/VaultInfoSection'
 import { VaultRiskSection } from '@nextgen/components/vaults-beta/VaultRiskSection'
 import { VaultStrategiesSection } from '@nextgen/components/vaults-beta/VaultStrategiesSection'
+import { Widget } from '@nextgen/components/widget'
 import { WidgetActionType } from '@nextgen/types'
 import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHeader'
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
@@ -177,7 +177,11 @@ function Index(): ReactElement | null {
       <section className={'mt-6 grid grid-cols-1 gap-6 md:grid-cols-20'}>
         <div className={'space-y-6 md:col-span-13'}>
           {[
-            { key: 'about', shouldRender: true, content: <VaultAboutSection currentVault={currentVault} /> },
+            {
+              key: 'about',
+              shouldRender: true,
+              content: <VaultAboutSection currentVault={currentVault} />
+            },
             {
               key: 'strategies',
               shouldRender: Number(currentVault.strategies?.length || 0) > 0,
@@ -188,17 +192,21 @@ function Index(): ReactElement | null {
               shouldRender: true,
               content: <VaultInfoSection currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
             },
-            { key: 'risk', shouldRender: true, content: <VaultRiskSection currentVault={currentVault} /> }
+            {
+              key: 'risk',
+              shouldRender: true,
+              content: <VaultRiskSection currentVault={currentVault} />
+            }
           ]
             .filter((section) => section.shouldRender)
             .map((section) => (
-              <div key={section.key} className={'rounded-3xl bg-neutral-0 shadow-lg shadow-neutral-900/5'}>
+              <div key={section.key} className={'border border-neutral-200 rounded-lg bg-neutral-0'}>
                 {section.content}
               </div>
             ))}
         </div>
-        <div className={'md:col-span-7 md:sticky md:top-6'}>
-          <div className={'rounded-3xl border border-neutral-200 bg-neutral-0 p-4 shadow-lg shadow-neutral-900/10'}>
+        <div className={'md:col-span-7 md:sticky'}>
+          <div>
             <Widget
               vaultType={isV3 ? 'v3' : 'v2'}
               vaultAddress={currentVault.address}

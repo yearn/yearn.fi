@@ -1,5 +1,5 @@
-import { getNetwork } from '@lib/utils/wagmi/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { getNetwork } from '@lib/utils/wagmi/utils'
 import type { ReactElement } from 'react'
 
 export function VaultInfoSection({
