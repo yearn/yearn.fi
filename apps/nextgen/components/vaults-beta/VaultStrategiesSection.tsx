@@ -135,17 +135,25 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
     netAPR: TYDaemonVaultStrategy['netAPR']
   })[]
 
-  const allocationChartData = useMemo(() => {
-    const strategyData = filteredVaultList.map((strategy) => ({
-      id: strategy.address,
-      name: strategy.name,
-      value: (strategy.details?.debtRatio || 0) / 100,
-      amount: formatCounterValue(
-        toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
-        tokenPrice
-      )
-    }))
+  const activeStrategyData = useMemo(() => {
+    return filteredVaultList
+      .filter((strategy) => {
+        const hasAllocation =
+          strategy.details?.totalDebt && strategy.details.totalDebt !== '0' && strategy.details?.debtRatio
+        return hasAllocation
+      })
+      .map((strategy) => ({
+        id: strategy.address,
+        name: strategy.name,
+        value: (strategy.details?.debtRatio || 0) / 100,
+        amount: formatCounterValue(
+          toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
+          tokenPrice
+        )
+      }))
+  }, [filteredVaultList, currentVault.token.decimals, tokenPrice])
 
+  const allocationChartData = useMemo(() => {
     const unallocatedData =
       unallocatedValue > 0
         ? {
@@ -159,8 +167,8 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
           }
         : null
 
-    return [...strategyData, unallocatedData].filter(Boolean) as TAllocationChartData[]
-  }, [currentVault.token?.decimals, filteredVaultList, tokenPrice, unallocatedPercentage, unallocatedValue])
+    return [...activeStrategyData, unallocatedData].filter(Boolean) as TAllocationChartData[]
+  }, [activeStrategyData, currentVault.token?.decimals, tokenPrice, unallocatedPercentage, unallocatedValue])
 
   const isVaultListEmpty = mergedList.length === 0
   const isFilteredVaultListEmpty = filteredVaultList.length === 0
@@ -174,8 +182,26 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
           }
         >
           <div className={'col-span-9 flex w-full flex-col'}></div>
-          <div className={'col-span-9 flex flex-col gap-3'}>
-            {allocationChartData.length > 0 ? <AllocationChart allocationChartData={allocationChartData} /> : null}
+          <div className={'col-span-9 flex flex-col gap-6'}>
+            {allocationChartData.length > 0 ? (
+              <div className={'flex flex-col gap-4'}>
+                <div className={'flex flex-row items-center gap-8'}>
+                  <AllocationChart allocationChartData={allocationChartData} />
+                  <div className={'flex flex-col gap-2'}>
+                    {activeStrategyData.map((item, index) => {
+                      const colors = ['#ff6ba5', '#ffb3d1', '#ff8fbb', '#ffd6e7', '#d21162', '#ff4d94']
+                      const color = colors[index % colors.length]
+                      return (
+                        <div key={item.id} className={'flex flex-row items-center gap-2'}>
+                          <div className={'h-3 w-3 rounded-sm'} style={{ backgroundColor: color }} />
+                          <span className={'text-sm text-neutral-900'}>{item.name}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : null}
             {unallocatedPercentage > 0 && unallocatedValue > 0 ? (
               <UnallocatedStrategy
                 unallocatedPercentage={unallocatedPercentage}
@@ -226,6 +252,11 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
             {sortedVaultsToDisplay.map((strategy) => (
               <NextgenVaultsListStrategy
                 key={strategy.address}
+                isUnallocated={
+                  strategy.status === 'unallocated' ||
+                  strategy.details?.totalDebt === '0' ||
+                  !strategy.details?.debtRatio
+                }
                 details={strategy.details}
                 chainId={currentVault.chainID}
                 allocation={formatCounterValue(

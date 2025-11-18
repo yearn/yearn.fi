@@ -35,12 +35,12 @@ export function AllocationChart({
   allocationChartData,
   colors = ['#ff6ba5', '#ffb3d1', '#ff8fbb', '#ffd6e7', '#d21162', '#ff4d94'],
   textColor = 'fill-white',
-  strokeColor = 'hsl(231, 100%, 11%)',
+  strokeColor = '#ff6ba5',
   fillColor = 'white',
-  width = 200,
-  height = 200,
-  innerRadius = 80,
-  outerRadius = 100,
+  width = 150,
+  height = 150,
+  innerRadius = 50,
+  outerRadius = 75,
   paddingAngle = 5,
   startAngle = 90,
   endAngle = -270,
@@ -81,7 +81,10 @@ export function AllocationChart({
           )}
         />
       </Pie>
-      <Tooltip content={({ active, payload }) => <AllocationTooltip active={active || false} payload={payload} />} />
+      <Tooltip
+        position={{ y: -80 }}
+        content={({ active, payload }) => <AllocationTooltip active={active || false} payload={payload} />}
+      />
     </PieChart>
   )
 }

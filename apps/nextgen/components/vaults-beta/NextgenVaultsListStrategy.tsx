@@ -3,16 +3,17 @@ import { RenderAmount } from '@lib/components/RenderAmount'
 import { useFetch } from '@lib/hooks/useFetch'
 import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
 import { IconChevron } from '@lib/icons/IconChevron'
+import { IconCopy } from '@lib/icons/IconCopy'
 import { IconLinkOut } from '@lib/icons/IconLinkOut'
 import type { TAddress } from '@lib/types'
-import { cl, formatPercent, toAddress, truncateHex } from '@lib/utils'
+import { cl, formatPercent, toAddress } from '@lib/utils'
 import { formatDuration } from '@lib/utils/format.time'
+import { copyToClipboard } from '@lib/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi/utils'
 import { findLatestAPY } from '@vaults-v2/components/details/tabs/findLatestAPY'
 import type { TYDaemonReports } from '@vaults-v2/schemas/reportsSchema'
 import { yDaemonReportsSchema } from '@vaults-v2/schemas/reportsSchema'
-import { getChainBgColor } from '@vaults-v3/utils'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 import Link from '/src/components/Link'
@@ -57,23 +58,16 @@ export function NextgenVaultsListStrategy({
 
   const finalApr = apr || latestApr
 
-  const chainBgColor = getChainBgColor(chainId)
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
 
   return (
-    <div
-      className={cl(
-        'w-full',
-        'rounded-lg',
-        'transition-colors duration-200',
-        'hover:bg-neutral-100/50',
-        'text-neutral-900',
-        isUnallocated ? 'opacity-50' : ''
-      )}
-    >
+    <div className={cl('w-full', 'rounded-lg', 'text-neutral-900', isUnallocated ? 'opacity-50' : '')}>
       {/* Collapsible header - always visible */}
       <div
-        className={cl('grid grid-cols-1 md:grid-cols-24 items-center w-full gap-4 py-3 px-4 md:px-8 cursor-pointer')}
+        className={cl(
+          'grid grid-cols-1 md:grid-cols-24 items-center w-full gap-4 py-3 px-4 md:px-8 cursor-pointer',
+          'transition-colors duration-200 hover:bg-neutral-100/50'
+        )}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className={cl('col-span-9 flex flex-row items-center gap-4')}>
@@ -134,48 +128,58 @@ export function NextgenVaultsListStrategy({
           <div className={'h-px w-full bg-neutral-200 mb-4'} />
           <div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
             {/* First column */}
-            <div className={'flex flex-col gap-4'}>
-              <div className={'flex flex-wrap items-center gap-4'}>
-                {variant === 'v3' && isVault ? (
+            <div className={'flex flex-col gap-1'}>
+              <div className={'flex flex-row gap-2'}>
+                <span className={''}>{'Management Fee:'}</span>
+                <span>{formatPercent((fees?.management || 0) * 100, 0)}</span>
+              </div>
+              <div className={'flex flex-row gap-2'}>
+                <span className={''}>{'Performance Fee:'}</span>
+                <span>{formatPercent((details?.performanceFee || 0) / 100, 0)}</span>
+              </div>
+              <div className={'flex flex-row gap-2'}>
+                <span className={''}>{'Last Report:'}</span>
+                {lastReportTime}
+              </div>
+              {variant === 'v3' && isVault ? (
+                <div className={'flex flex-row gap-2'}>
                   <Link
                     href={`/v3/${chainId}/${toAddress(address)}`}
                     target={'_blank'}
-                    style={{ background: chainBgColor }}
-                    className={cl(
-                      'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80'
-                    )}
+                    className={cl('flex gap-1 items-center text-neutral-800 hover:text-neutral-600')}
                   >
-                    {'Vault'}
+                    {'View Vault Page'}
                     <IconLinkOut className={'inline-block size-4'} />
                   </Link>
-                ) : null}
+                </div>
+              ) : null}
+              <div className={'flex flex-row gap-2'}>
                 <Link
                   href={`${getNetwork(chainId)?.defaultBlockExplorer}/address/${address}`}
                   onClick={(event: React.MouseEvent): void => event.stopPropagation()}
-                  style={{ background: chainBgColor }}
-                  className={cl(
-                    'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80'
-                  )}
+                  className={cl('flex gap-1 items-center text-neutral-800 hover:text-neutral-600')}
                   target={'_blank'}
                   rel={'noopener noreferrer'}
                 >
-                  {truncateHex(address, 4)}
+                  {'View on Block Explorer'}
                   <IconLinkOut className={'inline-block size-4'} />
                 </Link>
               </div>
-
-              <div className={'flex flex-col gap-2'}>
-                <div className={'flex flex-row gap-2'}>
-                  <span className={''}>{'Management Fee:'}</span>
-                  <span>{formatPercent((fees?.management || 0) * 100, 0)}</span>
-                </div>
-                <div className={'flex flex-row gap-2'}>
-                  <span className={''}>{'Performance Fee:'}</span>
-                  <span>{formatPercent((details?.performanceFee || 0) / 100, 0)}</span>
-                </div>
-                <div className={'flex flex-row gap-2'}>
-                  <span className={''}>{'Last Report:'}</span>
-                  {lastReportTime}
+              <div className={'flex flex-row gap-2'}>
+                <span className={''}>{'Address:'}</span>
+                <div className={'flex items-center gap-2'}>
+                  <span className={'font-mono text-sm'}>{address}</span>
+                  <button
+                    type={'button'}
+                    onClick={(e): void => {
+                      e.stopPropagation()
+                      copyToClipboard(address)
+                    }}
+                    className={'text-neutral-600 hover:text-neutral-900 transition-colors'}
+                    aria-label={'Copy address'}
+                  >
+                    <IconCopy className={'size-4'} />
+                  </button>
                 </div>
               </div>
             </div>

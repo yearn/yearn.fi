@@ -5,6 +5,7 @@ import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
+import { IconCopy } from '@lib/icons/IconCopy'
 import { IconQuestion } from '@lib/icons/IconQuestion'
 import type { TAddress, TNormalizedBN } from '@lib/types'
 import {
@@ -509,7 +510,7 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
               <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={56} height={56} />
             </div>
             <div className={'flex flex-col'}>
-              <strong className={'text-3xl font-black leading-tight text-neutral-700 md:text-[48px] md:leading-[56px]'}>
+              <strong className={'text-3xl font-black leading-tight text-neutral-700 md:text-[48px] md:leading-14'}>
                 {getVaultName(currentVault)} {' yVault'}
               </strong>
             </div>
@@ -520,10 +521,11 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
             type={'button'}
             onClick={(): void => copyToClipboard(currentVault.address)}
             className={
-              'text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm pt-2'
+              'flex items-center gap-2 text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm pt-2'
             }
           >
-            {currentVault.address}
+            <span>{currentVault.address}</span>
+            <IconCopy className={'size-4'} />
           </button>
         ) : null}
         {metadataLine ? <p className={'text-sm text-neutral-900/70 md:text-base'}>{metadataLine}</p> : null}

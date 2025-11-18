@@ -19,7 +19,7 @@ export function AllocationTooltip({
       <div
         className={cl(
           'min-w-[180px] p-2 shadow-lg text-neutral-900',
-          isV3Page ? 'bg-neutral-300' : 'bg-neutral-900 dark:bg-neutral-300'
+          isV3Page ? 'bg-neutral-300' : 'bg-neutral-0 dark:bg-neutral-300'
         )}
       >
         <p className={'text-sm font-medium'}>{data.name}</p>

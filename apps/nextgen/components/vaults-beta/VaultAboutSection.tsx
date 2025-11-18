@@ -83,7 +83,7 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
   }
 
   return (
-    <div className={'space-y-10 p-4 md:p-8'}>
+    <div className={'space-y-10 p-4 md:p-8 md:py-4'}>
       <div className={'w-full'}>
         <b className={'text-neutral-900'}>{'Description'}</b>
         <div className={'mt-4 text-neutral-900/50'}>
