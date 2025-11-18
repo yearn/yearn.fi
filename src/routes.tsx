@@ -5,6 +5,7 @@ import { Navigate, Route, Routes } from 'react-router'
 // Lazy load all page components
 const HomePage = lazy(() => import('../pages/index'))
 const AppsPage = lazy(() => import('../pages/apps/index'))
+const PortfolioPage = lazy(() => import('../pages/portfolio/index'))
 const VaultsPage = lazy(() => import('../pages/vaults/index'))
 const VaultsAboutPage = lazy(() => import('../pages/vaults/about'))
 const VaultsDetailPage = lazy(() => import('../pages/vaults/[chainID]/[address]'))
@@ -78,6 +79,9 @@ export function AppRoutes(): ReactElement {
 
         {/* Apps page */}
         <Route path="/apps" element={<AppsPage />} />
+
+        {/* Portfolio page */}
+        <Route path="/portfolio" element={<PortfolioPage />} />
 
         {/* Vaults routes */}
         <Route path="/vaults">
