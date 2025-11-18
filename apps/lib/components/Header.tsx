@@ -24,6 +24,11 @@ export type TMenu = {
 }
 type TNavbar = { nav: TMenu[]; currentPathName: string }
 
+const PRIMARY_LINKS = [
+  { path: '/v3', label: 'Vaults' },
+  { path: '/portfolio', label: 'Portfolio' }
+]
+
 function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
   return (
     <nav className={'yearn--nav'}>
@@ -31,7 +36,9 @@ function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
         (option, index): ReactElement => (
           <Link key={option.path} target={option.target} href={option.path}>
             <p
-              className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''} ${index > 0 ? 'hidden md:block' : ''}`}
+              className={`yearn--header-nav-item ${
+                currentPathName.startsWith(option.path) ? 'active' : ''
+              } ${index > 0 ? 'hidden md:block' : ''}`}
             >
               {option?.label || 'Unknown'}
             </p>
@@ -187,7 +194,20 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
             <div className={'flex justify-center'}>
               <LaunchModal />
             </div>
-            <TypeMarkYearn className={'h-8 w-auto pt-1'} color={'white'} />
+            <div className={'flex items-center gap-2 md:gap-4'}>
+              <TypeMarkYearn className={'h-8 w-auto pt-1'} color={'white'} />
+              <div className={'flex items-center gap-4'}>
+                {PRIMARY_LINKS.map((link) => (
+                  <Link key={link.path} href={link.path}>
+                    <span
+                      className={cl('yearn--header-nav-item text-lg!', pathname.startsWith(link.path) ? 'active' : '')}
+                    >
+                      {link.label}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
           <div className={'flex w-1/2 items-center justify-end'}>
             <Navbar currentPathName={pathname || ''} nav={menu} />

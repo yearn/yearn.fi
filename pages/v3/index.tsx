@@ -1,3 +1,4 @@
+import Link from '@components/Link'
 import { Button } from '@lib/components/Button'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
@@ -401,6 +402,13 @@ function Index(): ReactElement {
 
   return (
     <div className={'relative z-50 mx-auto grid w-full max-w-[1232px] gap-4 bg-neutral-0 px-4 pb-8 pt-20 md:gap-2'}>
+      <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
+        <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
+          {'Home'}
+        </Link>
+        <span>{'>'}</span>
+        <span className={'font-medium text-neutral-900'}>{'Vaults v3'}</span>
+      </div>
       <ListOfVaults {...queryArgs}>
         {({ filters, list }) => (
           <Fragment>
