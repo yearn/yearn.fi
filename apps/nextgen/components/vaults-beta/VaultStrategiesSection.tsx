@@ -1,5 +1,5 @@
 import type { TAllocationChartData } from '@lib/components/AllocationChart'
-import { AllocationChart } from '@lib/components/AllocationChart'
+import { AllocationChart, DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@lib/components/AllocationChart'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import type { TSortDirection } from '@lib/types'
@@ -14,69 +14,9 @@ import { useMemo } from 'react'
 import { NextgenVaultsListHead } from './NextgenVaultsListHead'
 import { NextgenVaultsListStrategy } from './NextgenVaultsListStrategy'
 
-function UnallocatedStrategy({
-  unallocatedPercentage,
-  unallocatedValue
-}: {
-  unallocatedPercentage: number
-  unallocatedValue: string
-}): ReactElement {
-  return (
-    <div
-      className={cl('w-full group', 'relative transition-all duration-300 ease-in-out', 'text-white', 'rounded-3xl')}
-    >
-      <div
-        className={cl(
-          'absolute inset-0 rounded-2xl',
-          'opacity-20 transition-opacity  pointer-events-none',
-          'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
-        )}
-      />
-
-      <div
-        className={cl(
-          'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 md:px-8 px-4 justify-between'
-        )}
-      >
-        <div className={cl('col-span-5 flex flex-row items-center gap-4 z-10')}>
-          <div className={'flex items-center justify-center'}>
-            <button className={cl('text-sm font-bold transition-all duration-300 ease-in-out')}>{'●'}</button>
-          </div>
-
-          <strong title={'Unallocated'} className={'block truncate font-bold '}>
-            {'Unallocated'}
-          </strong>
-        </div>
-
-        <div
-          className={cl(
-            'md:col-span-7 z-10',
-            'grid grid-cols-1 sm:grid-cols-3 md:grid-cols-12 md:gap-4',
-            'mt-4 md:mt-0'
-          )}
-        >
-          <div
-            className={'items-right flex flex-row justify-between sm:flex-col md:col-span-3 md:text-right'}
-            datatype={'number'}
-          >
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Percentage'}</p>
-            <p>{formatPercent(unallocatedPercentage / 100, 0)}</p>
-          </div>
-          <div
-            className={'items-right flex flex-row justify-between sm:flex-col md:col-span-4 md:-mr-5 md:text-right'}
-            datatype={'number'}
-          >
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Amount'}</p>
-            <p>{unallocatedValue}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { vaults } = useYearn()
+  const isDark = useDarkMode()
   const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
     defaultSortBy: 'allocationPercentage',
     defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
@@ -189,7 +129,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   <AllocationChart allocationChartData={allocationChartData} />
                   <div className={'flex flex-col gap-2'}>
                     {activeStrategyData.map((item, index) => {
-                      const colors = ['#ff6ba5', '#ffb3d1', '#ff8fbb', '#ffd6e7', '#d21162', '#ff4d94']
+                      const colors = isDark ? DARK_MODE_COLORS : LIGHT_MODE_COLORS
                       const color = colors[index % colors.length]
                       return (
                         <div key={item.id} className={'flex flex-row items-center gap-2'}>
@@ -201,12 +141,6 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   </div>
                 </div>
               </div>
-            ) : null}
-            {unallocatedPercentage > 0 && unallocatedValue > 0 ? (
-              <UnallocatedStrategy
-                unallocatedPercentage={unallocatedPercentage}
-                unallocatedValue={toNormalizedBN(unallocatedValue, currentVault.token.decimals).display}
-              />
             ) : null}
           </div>
         </div>
@@ -249,29 +183,100 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                 }
               ]}
             />
-            {sortedVaultsToDisplay.map((strategy) => (
-              <NextgenVaultsListStrategy
-                key={strategy.address}
-                isUnallocated={
+            {sortedVaultsToDisplay
+              .filter(
+                (strategy) =>
+                  !(
+                    strategy.status === 'unallocated' ||
+                    strategy.details?.totalDebt === '0' ||
+                    !strategy.details?.debtRatio
+                  )
+              )
+              .map((strategy) => (
+                <NextgenVaultsListStrategy
+                  key={strategy.address}
+                  isUnallocated={false}
+                  details={strategy.details}
+                  chainId={currentVault.chainID}
+                  allocation={formatCounterValue(
+                    toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
+                    tokenPrice
+                  )}
+                  name={strategy.name}
+                  tokenAddress={currentVault.token.address}
+                  address={strategy.address}
+                  isVault={!!vaults[strategy.address]}
+                  variant="v3"
+                  apr={strategy.netAPR}
+                  fees={currentVault.apr.fees}
+                />
+              ))}
+            {unallocatedPercentage > 0 && unallocatedValue > 0 ? (
+              <div className={'w-full rounded-lg text-neutral-900 opacity-50'}>
+                <div className={'grid grid-cols-1 md:grid-cols-24 items-center w-full gap-4 py-3 px-4 md:px-8'}>
+                  <div className={'col-span-9 flex flex-row items-center gap-4'}>
+                    <div className={'rounded-full size-6'}>
+                      <div className={'flex items-center justify-center size-6 text-neutral-600'}>{'●'}</div>
+                    </div>
+                    <strong title={'Unallocated'} className={'block truncate font-bold'}>
+                      {'Unallocated'}
+                    </strong>
+                  </div>
+                  <div
+                    className={'md:col-span-14 grid grid-cols-1 sm:grid-cols-3 md:grid-cols-15 md:gap-4 mt-4 md:mt-0'}
+                  >
+                    <div
+                      className={'flex flex-row justify-between sm:flex-col md:col-span-5 md:text-right'}
+                      datatype={'number'}
+                    >
+                      <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Allocation %'}</p>
+                      <p>{formatPercent(unallocatedPercentage / 100, 0)}</p>
+                    </div>
+                    <div
+                      className={'flex flex-row justify-between sm:flex-col md:col-span-5 md:text-right'}
+                      datatype={'number'}
+                    >
+                      <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Amount'}</p>
+                      <p>{toNormalizedBN(unallocatedValue, currentVault.token.decimals).display}</p>
+                    </div>
+                    <div
+                      className={'flex flex-row justify-between sm:flex-col md:col-span-5 md:text-right'}
+                      datatype={'number'}
+                    >
+                      <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'APY'}</p>
+                      <p>{'—'}</p>
+                    </div>
+                  </div>
+                  <div className={'col-span-1'}></div>
+                </div>
+              </div>
+            ) : null}
+            {sortedVaultsToDisplay
+              .filter(
+                (strategy) =>
                   strategy.status === 'unallocated' ||
                   strategy.details?.totalDebt === '0' ||
                   !strategy.details?.debtRatio
-                }
-                details={strategy.details}
-                chainId={currentVault.chainID}
-                allocation={formatCounterValue(
-                  toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
-                  tokenPrice
-                )}
-                name={strategy.name}
-                tokenAddress={currentVault.token.address}
-                address={strategy.address}
-                isVault={!!vaults[strategy.address]}
-                variant="v3"
-                apr={strategy.netAPR}
-                fees={currentVault.apr.fees}
-              />
-            ))}
+              )
+              .map((strategy) => (
+                <NextgenVaultsListStrategy
+                  key={strategy.address}
+                  isUnallocated={true}
+                  details={strategy.details}
+                  chainId={currentVault.chainID}
+                  allocation={formatCounterValue(
+                    toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
+                    tokenPrice
+                  )}
+                  name={strategy.name}
+                  tokenAddress={currentVault.token.address}
+                  address={strategy.address}
+                  isVault={!!vaults[strategy.address]}
+                  variant="v3"
+                  apr={strategy.netAPR}
+                  fees={currentVault.apr.fees}
+                />
+              ))}
           </div>
         )}
       </div>

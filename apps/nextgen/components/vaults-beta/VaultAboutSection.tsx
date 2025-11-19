@@ -11,7 +11,7 @@ type TNextgenFeesLineItem = {
 
 export function NextgenFeesLineItem({ children, label, tooltip }: TNextgenFeesLineItem): ReactElement {
   return (
-    <div className={'flex flex-col space-y-0 md:space-y-2'}>
+    <div className={'flex flex-col space-y-0 md:space-y-0'}>
       <p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>
       <div
         className={cl(
@@ -83,10 +83,10 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
   }
 
   return (
-    <div className={'space-y-10 p-4 md:p-8 md:py-4'}>
+    <div className={'space-y-4 p-4 md:p-8 md:py-4'}>
       <div className={'w-full'}>
         <b className={'text-neutral-900'}>{'Description'}</b>
-        <div className={'mt-4 text-neutral-900/50'}>
+        <div className={'mt-2 text-neutral-900/50'}>
           {typeof getVaultDescription() === 'string' ? (
             <p
               // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled description content
@@ -102,16 +102,16 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
 
       <div className={'w-full'}>
         <b className={'text-neutral-900'}>{'Fees'}</b>
-        <div className={'mt-4 grid grid-cols-4 gap-8'}>
+        <div className={'mt-2 grid grid-cols-4 gap-8'}>
           <NextgenFeesLineItem label={'Management'}>
-            <b className={'font-number text-xl text-neutral-900'}>
+            <p className={'font-number text-xl text-neutral-900'}>
               {formatPercent((apr.fees.management || 0) * 100, 0)}
-            </b>
+            </p>
           </NextgenFeesLineItem>
           <NextgenFeesLineItem label={'Performance'}>
-            <b className={'font-number text-xl text-neutral-900'}>
+            <p className={'font-number text-xl text-neutral-900'}>
               {formatPercent((apr.fees.performance || 0) * 100, 0)}
-            </b>
+            </p>
           </NextgenFeesLineItem>
           {(currentVault.apr.forwardAPR.composite?.keepVELO || 0) > 0 ? (
             <NextgenFeesLineItem

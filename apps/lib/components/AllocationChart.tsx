@@ -1,6 +1,10 @@
 import type { ReactElement } from 'react'
+import { useEffect, useState } from 'react'
 import { Cell, Label, Pie, PieChart, Tooltip } from 'recharts'
 import { AllocationTooltip } from './AllocationTooltip'
+
+const LIGHT_MODE_COLORS = ['#0657f9', '#3d7bfa', '#5c93fb', '#7aabfc', '#99c3fd', '#b8dbfe']
+const DARK_MODE_COLORS = ['#ff6ba5', '#ffb3d1', '#ff8fbb', '#ffd6e7', '#d21162', '#ff4d94']
 
 export type TAllocationChartData = {
   id: string
@@ -31,11 +35,29 @@ type TAllocationChartProps = {
  * Supports both hex colors and Tailwind classes through the colors prop
  * All dimensions and styling are configurable through props
  ************************************************************************************************/
+function useDarkMode(): boolean {
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    const checkDarkMode = (): void => {
+      const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+      setIsDark(isDarkMode)
+    }
+
+    checkDarkMode()
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    mediaQuery.addEventListener('change', checkDarkMode)
+    return () => mediaQuery.removeEventListener('change', checkDarkMode)
+  }, [])
+
+  return isDark
+}
+
 export function AllocationChart({
   allocationChartData,
-  colors = ['#ff6ba5', '#ffb3d1', '#ff8fbb', '#ffd6e7', '#d21162', '#ff4d94'],
+  colors,
   textColor = 'fill-white',
-  strokeColor = '#ff6ba5',
+  strokeColor,
   fillColor = 'white',
   width = 150,
   height = 150,
@@ -47,6 +69,9 @@ export function AllocationChart({
   minAngle = 3,
   labelText = 'allocation %'
 }: TAllocationChartProps): ReactElement {
+  const isDark = useDarkMode()
+  const chartColors = colors || (isDark ? DARK_MODE_COLORS : LIGHT_MODE_COLORS)
+  const chartStroke = strokeColor || (isDark ? '#ff6ba5' : '#0657f9')
   return (
     <PieChart width={width} height={height}>
       <Pie
@@ -59,13 +84,13 @@ export function AllocationChart({
         outerRadius={outerRadius}
         paddingAngle={paddingAngle}
         fill={fillColor}
-        stroke={strokeColor}
+        stroke={chartStroke}
         startAngle={startAngle}
         minAngle={minAngle}
         endAngle={endAngle}
       >
         {allocationChartData.map(({ id }, index) => (
-          <Cell key={id} fill={colors[index % colors.length]} className={colors[index % colors.length]} />
+          <Cell key={id} fill={chartColors[index % chartColors.length]} />
         ))}
         <Label
           content={() => (
@@ -88,3 +113,5 @@ export function AllocationChart({
     </PieChart>
   )
 }
+
+export { LIGHT_MODE_COLORS, DARK_MODE_COLORS, useDarkMode }
