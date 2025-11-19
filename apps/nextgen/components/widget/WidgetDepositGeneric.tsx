@@ -238,7 +238,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
     slippage: zapSlippage * 100, // Convert percentage to basis points (e.g., 0.5% -> 50 basis points)
     enabled: !!depositToken && !depositAmount.isDebouncing
   })
-  console.log(isLoadingRoute)
+
   // Fetch route when debounced amount changes
   useEffect(() => {
     if (depositAmount.debouncedBn > 0n && !depositAmount.isDebouncing) {
@@ -497,73 +497,6 @@ export const WidgetDepositGeneric: FC<Props> = ({
             }
             className="w-full"
           />
-        </div>
-
-        {/* Advanced Settings */}
-        <div className="mt-1 flex flex-col items-center">
-          <button
-            onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg
-              className={cl('h-3 w-3 transition-transform', showAdvancedSettings ? 'rotate-180' : 'rotate-0')}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-            Advanced settings
-          </button>
-
-          {showAdvancedSettings && (
-            <div className="mt-3 w-full space-y-3">
-              <div className="flex items-center justify-between">
-                <label htmlFor="slippage" className="text-sm text-gray-600">
-                  Slippage Tolerance
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={zapSlippage}
-                    onChange={(e) => setZapSlippage(parseFloat(e.target.value) || 0)}
-                    className="w-16 px-2 py-1 text-sm border border-gray-200 text-gray-900 text-right rounded focus:outline-none focus:ring-1 focus:ring-gray-300"
-                    step="0.1"
-                    min="0"
-                    max="50"
-                  />
-                  <span className="text-sm text-gray-500">%</span>
-                </div>
-              </div>
-
-              {stakingAddress && (
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                  <div className="space-y-0.5">
-                    <label htmlFor="maximize-yield" className="text-sm text-gray-600">
-                      Maximize Yield
-                    </label>
-                    <p className="text-xs text-gray-400">Auto-stake for maximum APY</p>
-                  </div>
-                  <button
-                    role="switch"
-                    aria-checked={isAutoStakingEnabled}
-                    onClick={() => setIsAutoStakingEnabled(!isAutoStakingEnabled)}
-                    className={cl(
-                      'relative inline-flex h-5 w-10 items-center rounded-full transition-colors',
-                      isAutoStakingEnabled ? 'bg-gray-700' : 'bg-gray-300'
-                    )}
-                  >
-                    <span
-                      className={cl(
-                        'inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform',
-                        isAutoStakingEnabled ? 'translate-x-5' : 'translate-x-1'
-                      )}
-                    />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 

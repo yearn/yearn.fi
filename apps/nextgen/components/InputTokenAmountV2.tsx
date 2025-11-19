@@ -93,12 +93,18 @@ export const InputTokenAmountV2: FC<Props> = ({
       setFormValue?.('0')
       return
     }
+
     const tokenDecimals = decimals ?? input[0].decimals
+
+    if (percentage === 100) {
+      setFormValue?.(formatUnits(balance, tokenDecimals))
+      return
+    }
     const fullAmount = formatUnits(balance, tokenDecimals)
-    const percentageAmount = ((+fullAmount * percentage) / 100).toString()
+    const percentageAmount = ((+fullAmount * percentage) / 100).toFixed(tokenDecimals)
     setFormValue?.(percentageAmount)
   }
-  console.log(disabled)
+
   return (
     <div className={cl('flex flex-col w-full relative bg-gray-50 rounded-xl', className)}>
       <div className="py-2 px-3 flex flex-col gap-1">

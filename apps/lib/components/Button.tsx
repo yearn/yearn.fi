@@ -4,7 +4,7 @@ import type { ForwardedRef, ReactElement, ReactNode } from 'react'
 import { forwardRef } from 'react'
 import { IconLoader } from '../icons/IconLoader'
 
-export type TButtonVariant = 'filled' | 'outlined' | 'light' | 'inherit' | string
+export type TButtonVariant = 'filled' | 'outlined' | 'light' | 'inherit' | 'busy' | string
 
 export type TButton = {
   children?: ReactNode

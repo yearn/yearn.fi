@@ -179,7 +179,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
-  const [withdrawalSource, setWithdrawalSource] = useState<'vault' | 'staking' | null>(null)
+  const [withdrawalSource, setWithdrawalSource] = useState<'vault' | 'staking' | null>(stakingAddress ? null : 'vault') // Default to vault for smooth UI (prevents balance flickering)
 
   // Fetch pricePerShare to convert vault tokens to underlying
   const { data: pricePerShare } = useReadContract({
@@ -278,9 +278,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
 
   // Calculate required vault tokens based on desired output
   const requiredVaultTokens = useMemo(() => {
-    console.log(withdrawAmount.debouncedBn, vault?.decimals, pricePerShare)
     if (!withdrawAmount.debouncedBn || withdrawAmount.debouncedBn === 0n) return 0n
-    console.log(withdrawAmount.debouncedBn, vault?.decimals, pricePerShare)
 
     // For unstake operations, we need exactly the amount entered
     if (isUnstake) {
@@ -305,7 +303,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     stakingPricePerShare,
     vault?.decimals
   ])
-  console.log(requiredVaultTokens)
+
   // Withdrawal flow using Enso - using calculated vault tokens
   const {
     actions: { prepareApprove },
@@ -342,7 +340,6 @@ export const WidgetWithdrawFinal: FC<Props> = ({
 
   // Error handling
   const withdrawError = useMemo(() => {
-    console.log(requiredVaultTokens, totalVaultBalance)
     if (hasBothBalances && !withdrawalSource) {
       return 'Please select withdrawal source'
     }
@@ -558,8 +555,8 @@ export const WidgetWithdrawFinal: FC<Props> = ({
       <div className="px-6">
         {/* Details */}
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">{isUnstake ? 'You will unstake' : 'You will redeem'}</p>
+          <div className="flex items-center justify-between h-5">
+            <p className="text-sm text-gray-500 ">{isUnstake ? 'You will unstake' : 'You will redeem'}</p>
             <p className="text-sm text-gray-900">
               {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
                 <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
@@ -576,7 +573,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
               )}
             </p>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between h-5">
             <p className="text-sm text-gray-500">You will receive at least</p>
             <div className="flex items-center gap-1">
               <button
@@ -658,46 +655,6 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                 className="w-full"
               />
             </>
-          )}
-        </div>
-
-        {/* Advanced Settings */}
-        <div className="mt-1 flex flex-col items-center">
-          <button
-            onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg
-              className={cl('h-3 w-3 transition-transform', showAdvancedSettings ? 'rotate-180' : 'rotate-0')}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-            Advanced settings
-          </button>
-
-          {showAdvancedSettings && (
-            <div className="mt-3 w-full space-y-3">
-              <div className="flex items-center justify-between">
-                <label htmlFor="slippage" className="text-sm text-gray-600">
-                  Slippage Tolerance
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={zapSlippage}
-                    onChange={(e) => setZapSlippage(parseFloat(e.target.value) || 0)}
-                    className="w-16 px-2 py-1 text-sm border border-gray-200 text-gray-900 text-right rounded focus:outline-none focus:ring-1 focus:ring-gray-300"
-                    step="0.1"
-                    min="0"
-                    max="50"
-                  />
-                  <span className="text-sm text-gray-500">%</span>
-                </div>
-              </div>
-            </div>
           )}
         </div>
       </div>

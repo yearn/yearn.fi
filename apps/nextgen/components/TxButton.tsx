@@ -1,4 +1,4 @@
-import { type ComponentProps, type FC, type ReactNode, useEffect, useRef, useState } from 'react'
+import { type ComponentProps, type FC, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import {
   type UseSimulateContractReturnType,
   useAccount,
@@ -76,9 +76,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const isLoading = override === 'loading' || _loading || (isWaitingForEnsoTx && !!ensoTxHash)
   const isSuccess = override === 'success'
 
-  const disabled = wrongNetwork
-    ? false
-    : _disabled || !prepareWrite.isSuccess || isLoading || isSimulating || override === 'error'
+  const disabled = wrongNetwork ? false : _disabled || !prepareWrite.isSuccess || isLoading || override === 'error'
 
   // Clear override states after timeout
   useEffect(() => {
@@ -94,8 +92,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const ButtonContentType: ButtonState | undefined = (() => {
     if (!account) return 'notConnected'
     if (wrongNetwork) return 'wrongChain'
-    if (override === 'loading' || isLoading) return 'loading'
-    if (isSimulating) return 'simulating'
+    if (override === 'loading' || isLoading || isSimulating) return 'loading'
     if (override === 'success') return 'success'
     if (override === 'error') return 'error'
     if (isApproved) return 'approved'
@@ -137,6 +134,19 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
         Try Again
       </div>
     ),
+    simulating: (
+      <div className="flex items-center gap-2">
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        Simulating...
+      </div>
+    ),
     approved: (
       <div className="flex items-center gap-2">
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -150,25 +160,6 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
         Approved
       </div>
     ),
-    simulating: (
-      <div className="flex items-center justify-center gap-2">
-        <svg
-          aria-label="Loading"
-          style={spinnerStyle}
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          />
-        </svg>
-        <span>Simulating</span>
-      </div>
-    ),
     loading: (
       <div className="flex items-center justify-center gap-2">
         <svg style={spinnerStyle} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" color="#000000">
@@ -179,9 +170,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           />
         </svg>
-        <span className="text-neutral-900">
-          {_loading && transactionName.includes('...') ? transactionName : ensoTxHash ? 'Confirming...' : 'Signing...'}
-        </span>
+        <span className="text-neutral-900">{_loading && 'Loading...'}</span>
       </div>
     ),
     wrongChain: txChainId
@@ -190,12 +179,12 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   }
 
   // Determine button variant based on state
-  const getVariant = (): string => {
+  const getVariant = useCallback(() => {
     if (!account) return 'filled'
     if (ButtonContentType === 'error') return 'error'
-    if (ButtonContentType === 'loading' || ButtonContentType === 'simulating') return 'busy'
+    if (ButtonContentType === 'loading') return 'busy'
     return 'filled'
-  }
+  }, [account, ButtonContentType])
 
   useEffect(() => {
     if (isSuccess) {
