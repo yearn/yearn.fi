@@ -27,7 +27,7 @@ export function VaultsV3ListRow({
 }): ReactElement {
   const navigate = useNavigate()
   // const availableToDeposit = useAvailableToDeposit(currentVault)
-  const href = `/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`
+  const href = `/vaults-beta/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const [isApyOpen, setIsApyOpen] = useState(false)
   const [isRiskOpen, setIsRiskOpen] = useState(false)
 

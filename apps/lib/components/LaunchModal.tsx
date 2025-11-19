@@ -147,7 +147,10 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
   const pushedHistory = useRef(false)
   const [activeGroupTitle, setActiveGroupTitle] = useState(APP_GROUPS[0]?.title ?? '')
   const pathname = location.pathname
-  const forceDark = useMemo(() => pathname.startsWith('/v3') || pathname === '/', [pathname])
+  const forceDark = useMemo(
+    () => pathname.startsWith('/v3') || pathname.startsWith('/vaults-beta') || pathname === '/',
+    [pathname]
+  )
 
   const currentHost = useMemo(() => {
     if (typeof window === 'undefined') {

@@ -75,12 +75,7 @@ function NotificationContent({
       return `${explorerBaseURI}/address/${notification.fromAddress || '0x0'}`
     }
 
-    const isV3 = fromVault.version.startsWith('3') || fromVault.version.startsWith('~3')
-    const href = isV3
-      ? `/v3/${fromVault.chainID}/${toAddress(fromVault.address)}`
-      : `/vaults/${fromVault.chainID}/${toAddress(fromVault.address)}`
-
-    return href
+    return `/vaults-beta/${fromVault.chainID}/${toAddress(fromVault.address)}`
   }, [fromVault, explorerBaseURI, notification.fromAddress])
 
   const toTokenLabel = useMemo(() => {
@@ -96,12 +91,8 @@ function NotificationContent({
     if (!toVault) {
       return `${explorerBaseURI}/address/${notification.toAddress || '0x0'}`
     }
-    const isV3 = toVault.version.startsWith('3') || toVault.version.startsWith('~3')
-    const href = isV3
-      ? `/v3/${toVault.chainID}/${toAddress(toVault.address)}`
-      : `/vaults/${toVault.chainID}/${toAddress(toVault.address)}`
 
-    return href
+    return `/vaults-beta/${toVault.chainID}/${toAddress(toVault.address)}`
   }, [toVault, explorerBaseURI, notification.toAddress])
 
   return (

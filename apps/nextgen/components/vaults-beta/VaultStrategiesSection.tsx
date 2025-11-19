@@ -20,7 +20,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
   const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
     defaultSortBy: 'allocationPercentage',
     defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
-    defaultPathname: '/v3/[chainID]/[address]'
+    defaultPathname: '/vaults-beta/[chainID]/[address]'
   })
   const tokenPrice = useYearnTokenPrice({
     address: currentVault.token.address,

@@ -24,8 +24,10 @@ export type TMenu = {
 }
 type TNavbar = { nav: TMenu[]; currentPathName: string }
 
-const PRIMARY_LINKS = [
-  { path: '/v3', label: 'Vaults' },
+type TPrimaryLink = TMenu & { matchers?: string[] }
+
+const PRIMARY_LINKS: TPrimaryLink[] = [
+  { path: '/v3', label: 'Vaults', matchers: ['/', '/v3', '/vaults', '/vaults-beta'] },
   { path: '/portfolio', label: 'Portfolio' }
 ]
 
@@ -197,15 +199,20 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
             <div className={'flex items-center gap-2 md:gap-4'}>
               <TypeMarkYearn className={'yearn-typemark h-8 w-auto pt-1'} />
               <div className={'flex items-center gap-4'}>
-                {PRIMARY_LINKS.map((link) => (
-                  <Link key={link.path} href={link.path}>
-                    <span
-                      className={cl('yearn--header-nav-item text-lg!', pathname.startsWith(link.path) ? 'active' : '')}
-                    >
-                      {link.label}
-                    </span>
-                  </Link>
-                ))}
+                {PRIMARY_LINKS.map((link) => {
+                  const isActive =
+                    link.matchers?.some((matcher) =>
+                      matcher === '/' ? pathname === '/' : pathname.startsWith(matcher)
+                    ) ?? pathname.startsWith(link.path)
+
+                  return (
+                    <Link key={link.path} href={link.path}>
+                      <span className={cl('yearn--header-nav-item text-lg!', isActive ? 'active' : '')}>
+                        {link.label}
+                      </span>
+                    </Link>
+                  )
+                })}
               </div>
             </div>
           </div>

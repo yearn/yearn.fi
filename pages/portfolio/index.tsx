@@ -76,7 +76,7 @@ function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactElement {
 
   return (
     <Link
-      to={`/v3/${vault.chainID}/${toAddress(vault.address)}`}
+      to={`/vaults-beta/${vault.chainID}/${toAddress(vault.address)}`}
       className={
         'group flex h-full flex-col rounded-2xl border border-neutral-200 bg-neutral-0 p-5 shadow-[0_12px_32px_rgba(4,8,32,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(4,8,32,0.12)]'
       }

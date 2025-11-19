@@ -44,25 +44,25 @@ const FEATURED_VAULTS: TFeaturedVaultConfig[] = [
   {
     symbol: 'ETH',
     icon: '/landing/vaults/eth.png',
-    href: '/v3/1/0xAc37729B76db6438CE62042AE1270ee574CA7571',
+    href: '/vaults-beta/1/0xAc37729B76db6438CE62042AE1270ee574CA7571',
     address: '0xAc37729B76db6438CE62042AE1270ee574CA7571'
   },
   {
     symbol: 'USDS',
     icon: '/landing/vaults/usds.png',
-    href: '/v3/1/0x182863131F9a4630fF9E27830d945B1413e347E8',
+    href: '/vaults-beta/1/0x182863131F9a4630fF9E27830d945B1413e347E8',
     address: '0x182863131F9a4630fF9E27830d945B1413e347E8'
   },
   {
     symbol: 'USDC',
     icon: '/landing/vaults/usdc.png',
-    href: '/v3/1/0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
+    href: '/vaults-beta/1/0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
     address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204'
   },
   {
     symbol: 'crvUSD',
     icon: '/landing/vaults/crvusd.png',
-    href: '/v3/1/0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F',
+    href: '/vaults-beta/1/0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F',
     address: '0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F'
   }
 ]
@@ -128,7 +128,7 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
           symbol: vault.token.symbol || vault.symbol,
           name: vault.name,
           icon: iconSrc,
-          href: `/v3/${vault.chainID}/${vault.address}`,
+          href: `/vaults-beta/${vault.chainID}/${vault.address}`,
           valueUSD: totalValue
         }
       })

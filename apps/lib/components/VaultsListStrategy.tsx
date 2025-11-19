@@ -205,7 +205,7 @@ export function VaultsListStrategy({
                 <div className={'flex flex-wrap items-center gap-4'}>
                   {variant === 'v3' && isVault ? (
                     <Link
-                      href={`/v3/${chainId}/${toAddress(address)}`}
+                      href={`/vaults-beta/${chainId}/${toAddress(address)}`}
                       target={'_blank'}
                       // onClick={(event): void => event.stopPropagation()}
                       style={{ background: chainBgColor }} // needed for polygon vaults
