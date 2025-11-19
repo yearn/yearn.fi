@@ -67,9 +67,14 @@ const VAULT_CHARTS_QUERY = `
 `
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
-  response.setHeader('Access-Control-Allow-Origin', '*')
-  response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS')
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  const origin = request.headers.origin ?? '*'
+  const applyCorsHeaders = () => {
+    response.setHeader('Access-Control-Allow-Origin', origin)
+    response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS')
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  }
+
+  applyCorsHeaders()
 
   if (request.method === 'OPTIONS') {
     return response.status(204).end()
@@ -120,13 +125,18 @@ export default async function handler(request: VercelRequest, response: VercelRe
     if (!gqlResponse.ok || payload.errors) {
       const message = payload?.errors?.[0]?.message || 'Failed to fetch chart data'
       console.error('[api/vault/charts] GraphQL error:', message)
+      applyCorsHeaders()
+      response.setHeader('Cache-Control', 'no-store')
       return response.status(502).json({ error: message })
     }
 
-    response.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate=3600')
+    applyCorsHeaders()
+    response.setHeader('Cache-Control', 'no-store')
     return response.status(200).json(payload.data)
   } catch (error) {
     console.error('[api/vault/charts] Unexpected error:', error)
+    applyCorsHeaders()
+    response.setHeader('Cache-Control', 'no-store')
     return response.status(500).json({ error: 'Unable to fetch vault chart data' })
   }
 }

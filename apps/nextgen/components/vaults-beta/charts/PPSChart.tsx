@@ -1,7 +1,7 @@
 import type { TPpsChartData } from '@nextgen/types/charts'
 import { getTimeframeLimit } from '@nextgen/utils/charts'
 import { useMemo } from 'react'
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
+import { Line, LineChart, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
 import { ChartContainer, ChartTooltip } from './ChartPrimitives'
 
@@ -10,7 +10,6 @@ type PercentSeriesKey = 'derivedApr'
 type PPSChartProps = {
   chartData: TPpsChartData
   timeframe: string
-  hideAxes?: boolean
   hideTooltip?: boolean
   dataKey?: 'PPS' | PercentSeriesKey
 }
@@ -22,7 +21,7 @@ const PERCENT_SERIES_META: Record<PercentSeriesKey, { label: string; color: stri
   }
 }
 
-export function PPSChart({ chartData, timeframe, hideAxes, hideTooltip, dataKey = 'PPS' }: PPSChartProps) {
+export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }: PPSChartProps) {
   const filteredData = useMemo(() => {
     const limit = getTimeframeLimit(timeframe)
     if (!Number.isFinite(limit) || limit >= chartData.length) {
@@ -38,68 +37,30 @@ export function PPSChart({ chartData, timeframe, hideAxes, hideTooltip, dataKey 
       const meta = PERCENT_SERIES_META[dataKey as PercentSeriesKey]
       config[dataKey] = {
         label: meta.label,
-        color: hideAxes ? 'black' : meta.color
+        color: meta.color
       }
     } else {
       config.pps = {
         label: 'Price Per Share',
-        color: hideAxes ? 'black' : 'var(--chart-1)'
+        color: 'var(--chart-1)'
       }
     }
     return config
-  }, [dataKey, hideAxes, isPercentSeries])
+  }, [dataKey, isPercentSeries])
 
   return (
     <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
       <LineChart
         data={filteredData}
         margin={{
-          top: 20,
-          right: 30,
-          left: 10,
-          bottom: 20
+          top: 10,
+          right: 0,
+          left: 0,
+          bottom: 0
         }}
       >
-        <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey={'date'}
-          tick={
-            hideAxes
-              ? false
-              : {
-                  fill: 'var(--muted-foreground, #6b7280)'
-                }
-          }
-          axisLine={hideAxes ? false : { stroke: 'var(--muted-foreground, #6b7280)' }}
-          tickLine={hideAxes ? false : { stroke: 'var(--muted-foreground, #6b7280)' }}
-        />
-        <YAxis
-          domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']}
-          tickFormatter={(value) => (isPercentSeries ? `${value}%` : Number(value).toFixed(3))}
-          label={
-            hideAxes
-              ? undefined
-              : {
-                  value: isPercentSeries ? PERCENT_SERIES_META[dataKey as PercentSeriesKey].label : 'Price Per Share',
-                  angle: -90,
-                  position: 'insideLeft',
-                  offset: 10,
-                  style: {
-                    textAnchor: 'middle',
-                    fill: hideAxes ? 'transparent' : 'var(--muted-foreground, #6b7280)'
-                  }
-                }
-          }
-          tick={
-            hideAxes
-              ? false
-              : {
-                  fill: 'var(--muted-foreground, #6b7280)'
-                }
-          }
-          axisLine={hideAxes ? false : { stroke: 'var(--muted-foreground, #6b7280)' }}
-          tickLine={hideAxes ? false : { stroke: 'var(--muted-foreground, #6b7280)' }}
-        />
+        <XAxis dataKey={'date'} hide />
+        <YAxis domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']} hide />
         {!hideTooltip && (
           <ChartTooltip
             formatter={(value: number) =>

@@ -260,7 +260,6 @@ function UserHoldingsCard({
 }): ReactElement {
   const availableToDeposit = useAvailableToDeposit(currentVault)
   const availableAmount = toNormalizedBN(availableToDeposit, currentVault.token.decimals)
-  console.log('vaultData: ', vaultData)
   const depositedValueUSD = vaultData.valueInToken.normalized * tokenPrice
   const availableValueUSD = availableAmount.normalized * tokenPrice
 
@@ -538,7 +537,6 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
       pps = decodeAsBigInt(result[2])
     }
     const total = balanceOf + stakingBalance
-    console.log('total: ', total)
 
     /******************************************************************************************
      ** Some extra elements are required at this point to be able to display a comprehensive

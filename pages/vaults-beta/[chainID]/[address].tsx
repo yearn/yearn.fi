@@ -182,13 +182,7 @@ function Index(): ReactElement | null {
             {
               key: 'charts',
               shouldRender: Number.isInteger(chainId),
-              content: (
-                <VaultChartsSection
-                  chainId={chainId}
-                  vaultAddress={currentVault.address}
-                  vaultName={currentVault.name}
-                />
-              )
+              content: <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} />
             },
             {
               key: 'about',

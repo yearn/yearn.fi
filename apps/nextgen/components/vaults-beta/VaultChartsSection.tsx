@@ -16,7 +16,6 @@ import { TVLChart } from './charts/TVLChart'
 type VaultChartsSectionProps = {
   chainId: number
   vaultAddress: string
-  vaultName: string
 }
 
 type TimeframeOption = {
@@ -31,9 +30,15 @@ const TIMEFRAME_OPTIONS: TimeframeOption[] = [
   { label: 'All', value: 'all' }
 ]
 
-type ChartTab = 'historical-apy' | 'historical-pps' | 'historical-tvl'
+type ChartTab = 'historical-pps' | 'historical-apy' | 'historical-tvl'
 
-export function VaultChartsSection({ chainId, vaultAddress, vaultName }: VaultChartsSectionProps): ReactElement {
+const CHART_TABS: Array<{ id: ChartTab; label: string }> = [
+  { id: 'historical-pps', label: 'Performance' },
+  { id: 'historical-apy', label: 'APY' },
+  { id: 'historical-tvl', label: 'TVL' }
+]
+
+export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSectionProps): ReactElement {
   const normalizedAddress = vaultAddress ? toAddress(vaultAddress) : undefined
 
   const chartsApiBase = import.meta.env.VITE_CHARTS_API_BASE || (import.meta.env.DEV ? 'https://yearn.fi' : '')
@@ -42,7 +47,10 @@ export function VaultChartsSection({ chainId, vaultAddress, vaultName }: VaultCh
     if (!normalizedAddress || !Number.isInteger(chainId)) {
       return null
     }
-    const search = new URLSearchParams({ chainId: String(chainId), address: normalizedAddress }).toString()
+    const search = new URLSearchParams({
+      chainId: String(chainId),
+      address: normalizedAddress
+    }).toString()
     if (!chartsApiBase) {
       return `/api/vault/charts?${search}`
     }
@@ -64,30 +72,28 @@ export function VaultChartsSection({ chainId, vaultAddress, vaultName }: VaultCh
   const chartsLoading = isLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData
   const hasError = Boolean(error)
 
-  const [activeTab, setActiveTab] = useState<ChartTab>('historical-apy')
+  const [activeTab, setActiveTab] = useState<ChartTab>('historical-pps')
   const [timeframe, setTimeframe] = useState<TimeframeOption>(TIMEFRAME_OPTIONS[3])
 
-  const chartInfo: Record<ChartTab, { title: string; description: string }> = {
-    'historical-apy': {
-      title: 'Vault Performance',
-      description: `1-Day, 7-Day, and 30-Day APYs for ${vaultName}`
-    },
-    'historical-pps': {
-      title: 'Share Growth',
-      description: 'Price Per Share trends over time'
-    },
-    'historical-tvl': {
-      title: 'Total Value Locked',
-      description: 'Deposits in this vault'
-    }
-  }
-
   return (
-    <div className={'space-y-6 p-4 md:p-8 md:py-6'}>
-      <div className={'flex flex-col gap-4 md:flex-row md:items-center md:justify-between'}>
-        <div>
-          <p className={'text-sm font-semibold text-neutral-900'}>{'Performance charts'}</p>
-          <p className={'text-xs text-neutral-500'}>{'Live APR, PPS, and TVL pulled from Yearn Kong.'}</p>
+    <div className={'space-y-4 md:py-3'}>
+      <div className={'flex flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between'}>
+        <div className={'flex flex-wrap gap-2'}>
+          {CHART_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type={'button'}
+              onClick={() => setActiveTab(tab.id)}
+              className={cl(
+                'rounded-full border px-5 py-2 text-sm font-semibold transition-all',
+                activeTab === tab.id
+                  ? 'bg-white text-neutral-900 shadow-[0_8px_24px_rgba(15,23,42,0.12)] border-white'
+                  : 'bg-neutral-100 text-neutral-500 border-transparent hover:bg-neutral-50'
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
         <div className={'flex flex-wrap gap-2'}>
           {TIMEFRAME_OPTIONS.map((option) => (
@@ -95,10 +101,10 @@ export function VaultChartsSection({ chainId, vaultAddress, vaultName }: VaultCh
               key={option.value}
               type={'button'}
               className={cl(
-                'rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-colors',
+                'rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
                 option.value === timeframe.value
-                  ? 'bg-neutral-900 text-white'
-                  : 'border border-neutral-300 text-neutral-600 hover:bg-neutral-100'
+                  ? 'bg-white text-neutral-900 shadow-[0_6px_18px_rgba(15,23,42,0.12)] border-white'
+                  : 'bg-neutral-100 text-neutral-500 border-transparent hover:bg-neutral-50'
               )}
               onClick={() => setTimeframe(option)}
             >
@@ -106,30 +112,6 @@ export function VaultChartsSection({ chainId, vaultAddress, vaultName }: VaultCh
             </button>
           ))}
         </div>
-      </div>
-
-      <div className={'flex flex-wrap gap-2'}>
-        {(
-          [
-            { id: 'historical-apy', label: 'Historical Performance' },
-            { id: 'historical-pps', label: 'Historical Share Growth' },
-            { id: 'historical-tvl', label: 'Historical TVL' }
-          ] as Array<{ id: ChartTab; label: string }>
-        ).map((tab) => (
-          <button
-            key={tab.id}
-            type={'button'}
-            onClick={() => setActiveTab(tab.id)}
-            className={cl(
-              'rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-colors',
-              activeTab === tab.id
-                ? 'border-neutral-900 bg-neutral-900 text-white'
-                : 'border-neutral-300 text-neutral-500 hover:bg-neutral-100'
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {hasError ? (
@@ -142,65 +124,19 @@ export function VaultChartsSection({ chainId, vaultAddress, vaultName }: VaultCh
           <ChartsLoader loadingState={isLoading ? 'Loading charts' : 'Preparing charts'} />
         </div>
       ) : (
-        <div className={'space-y-4'}>
-          <div>
-            <p className={'text-sm font-semibold text-neutral-900'}>
-              {chartInfo[activeTab].title} ({timeframe.label})
-            </p>
-            <p className={'text-xs text-neutral-500'}>{chartInfo[activeTab].description}</p>
-          </div>
-
-          {activeTab === 'historical-apy' && transformed.aprApyData && transformed.tvlData ? (
-            <FixedHeightChartContainer>
-              <ChartErrorBoundary>
-                <APYChart chartData={transformed.aprApyData} timeframe={timeframe.value} />
-              </ChartErrorBoundary>
-              <div className={'pointer-events-none absolute inset-0 opacity-10'}>
-                <ChartErrorBoundary>
-                  <TVLChart chartData={transformed.tvlData} timeframe={timeframe.value} hideAxes hideTooltip />
-                </ChartErrorBoundary>
-              </div>
-            </FixedHeightChartContainer>
-          ) : null}
-
-          {activeTab === 'historical-pps' && transformed.ppsData && transformed.aprApyData ? (
-            <FixedHeightChartContainer>
-              <ChartErrorBoundary>
-                <PPSChart chartData={transformed.ppsData} timeframe={timeframe.value} />
-              </ChartErrorBoundary>
-              <div className={'pointer-events-none absolute inset-0 opacity-30'}>
-                <ChartErrorBoundary>
-                  <APYChart
-                    chartData={transformed.aprApyData}
-                    timeframe={timeframe.value}
-                    hideAxes
-                    hideTooltip
-                    defaultVisibleSeries={{ sevenDayApy: false, thirtyDayApy: false, derivedApy: true }}
-                  />
-                </ChartErrorBoundary>
-              </div>
-            </FixedHeightChartContainer>
-          ) : null}
-
-          {activeTab === 'historical-tvl' && transformed.tvlData && transformed.aprApyData ? (
-            <FixedHeightChartContainer>
-              <ChartErrorBoundary>
-                <TVLChart chartData={transformed.tvlData} timeframe={timeframe.value} />
-              </ChartErrorBoundary>
-              <div className={'pointer-events-none absolute inset-0 opacity-30'}>
-                <ChartErrorBoundary>
-                  <APYChart
-                    chartData={transformed.aprApyData}
-                    timeframe={timeframe.value}
-                    hideAxes
-                    hideTooltip
-                    defaultVisibleSeries={{ sevenDayApy: false, thirtyDayApy: true, derivedApy: false }}
-                  />
-                </ChartErrorBoundary>
-              </div>
-            </FixedHeightChartContainer>
-          ) : null}
-        </div>
+        <FixedHeightChartContainer>
+          <ChartErrorBoundary>
+            {activeTab === 'historical-pps' && transformed.ppsData ? (
+              <PPSChart chartData={transformed.ppsData} timeframe={timeframe.value} />
+            ) : null}
+            {activeTab === 'historical-apy' && transformed.aprApyData ? (
+              <APYChart chartData={transformed.aprApyData} timeframe={timeframe.value} />
+            ) : null}
+            {activeTab === 'historical-tvl' && transformed.tvlData ? (
+              <TVLChart chartData={transformed.tvlData} timeframe={timeframe.value} />
+            ) : null}
+          </ChartErrorBoundary>
+        </FixedHeightChartContainer>
       )}
     </div>
   )
