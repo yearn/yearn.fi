@@ -33,9 +33,9 @@ const TIMEFRAME_OPTIONS: TimeframeOption[] = [
 type ChartTab = 'historical-pps' | 'historical-apy' | 'historical-tvl'
 
 const CHART_TABS: Array<{ id: ChartTab; label: string }> = [
+  { id: 'historical-tvl', label: 'TVL' },
   { id: 'historical-pps', label: 'Performance' },
-  { id: 'historical-apy', label: 'APY' },
-  { id: 'historical-tvl', label: 'TVL' }
+  { id: 'historical-apy', label: 'APY' }
 ]
 
 export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSectionProps): ReactElement {
@@ -72,45 +72,49 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
   const chartsLoading = isLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData
   const hasError = Boolean(error)
 
-  const [activeTab, setActiveTab] = useState<ChartTab>('historical-pps')
+  const [activeTab, setActiveTab] = useState<ChartTab>('historical-tvl')
   const [timeframe, setTimeframe] = useState<TimeframeOption>(TIMEFRAME_OPTIONS[3])
 
   return (
-    <div className={'space-y-4 md:py-3'}>
+    <div className={'space-y-4 md:pt-3'}>
       <div className={'flex flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between'}>
-        <div className={'flex flex-wrap gap-2'}>
-          {CHART_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type={'button'}
-              onClick={() => setActiveTab(tab.id)}
-              className={cl(
-                'rounded-full border px-5 py-2 text-sm font-semibold transition-all',
-                activeTab === tab.id
-                  ? 'bg-white text-neutral-900 shadow-[0_8px_24px_rgba(15,23,42,0.12)] border-white'
-                  : 'bg-neutral-100 text-neutral-500 border-transparent hover:bg-neutral-50'
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className={'flex flex-wrap gap-3'}>
+          <div className={'flex items-center gap-1 rounded-lg bg-neutral-100 p-1'}>
+            {CHART_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type={'button'}
+                onClick={() => setActiveTab(tab.id)}
+                className={cl(
+                  'rounded-lg px-3 py-1 text-xs font-semibold transition-all',
+                  activeTab === tab.id
+                    ? 'bg-white text-neutral-900'
+                    : 'bg-transparent text-neutral-500 hover:text-neutral-700'
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className={'flex flex-wrap gap-2'}>
-          {TIMEFRAME_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type={'button'}
-              className={cl(
-                'rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                option.value === timeframe.value
-                  ? 'bg-white text-neutral-900 shadow-[0_6px_18px_rgba(15,23,42,0.12)] border-white'
-                  : 'bg-neutral-100 text-neutral-500 border-transparent hover:bg-neutral-50'
-              )}
-              onClick={() => setTimeframe(option)}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className={'flex flex-wrap gap-3'}>
+          <div className={'flex items-center gap-1 rounded-lg bg-neutral-100 p-1'}>
+            {TIMEFRAME_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type={'button'}
+                className={cl(
+                  'rounded-lg px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                  option.value === timeframe.value
+                    ? 'bg-white text-neutral-900'
+                    : 'bg-transparent text-neutral-500 hover:text-neutral-700'
+                )}
+                onClick={() => setTimeframe(option)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

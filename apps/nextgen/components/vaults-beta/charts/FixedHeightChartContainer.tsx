@@ -7,7 +7,7 @@ type FixedHeightChartContainerProps = {
 
 export function FixedHeightChartContainer({ children, className = '' }: FixedHeightChartContainerProps) {
   return (
-    <div className={`${className} relative h-[360px]`}>
+    <div className={`${className} relative h-[300px]`}>
       <div
         className={'absolute inset-0'}
         style={

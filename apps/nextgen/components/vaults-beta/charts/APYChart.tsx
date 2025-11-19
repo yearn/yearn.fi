@@ -1,7 +1,7 @@
 import type { TAprApyChartData } from '@nextgen/types/charts'
 import { getTimeframeLimit } from '@nextgen/utils/charts'
-import { useMemo } from 'react'
-import { Line, LineChart, XAxis, YAxis } from 'recharts'
+import { useId, useMemo } from 'react'
+import { Area, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
 import { ChartContainer, ChartTooltip } from './ChartPrimitives'
 
@@ -42,6 +42,7 @@ type APYChartProps = {
 }
 
 export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
+  const gradientId = useId().replace(/:/g, '')
   const filteredData = useMemo(() => {
     const limit = getTimeframeLimit(timeframe)
     if (!Number.isFinite(limit) || limit >= chartData.length) {
@@ -65,7 +66,7 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
   return (
     <div className={'relative h-full'}>
       <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
-        <LineChart
+        <ComposedChart
           data={filteredData}
           margin={{
             top: 10,
@@ -74,8 +75,23 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
             bottom: 0
           }}
         >
+          <defs>
+            <linearGradient id={`${gradientId}-apy`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="5%" stopColor="#0657f9" stopOpacity={0.5} />
+              <stop offset="95%" stopColor="#0657f9" stopOpacity={0} />
+            </linearGradient>
+          </defs>
           <XAxis dataKey={'date'} hide />
           <YAxis domain={[0, 'auto']} hide />
+          <Area
+            type={'monotone'}
+            dataKey={'thirtyDayApy'}
+            stroke="none"
+            fill={`url(#${gradientId}-apy)`}
+            fillOpacity={1}
+            connectNulls
+            isAnimationActive={false}
+          />
           {!hideTooltip && (
             <ChartTooltip
               formatter={(value: number, name: string) => {
@@ -111,7 +127,7 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
             dot={false}
             isAnimationActive={false}
           /> */}
-        </LineChart>
+        </ComposedChart>
       </ChartContainer>
     </div>
   )

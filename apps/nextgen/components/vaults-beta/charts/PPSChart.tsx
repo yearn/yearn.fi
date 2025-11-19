@@ -1,7 +1,7 @@
 import type { TPpsChartData } from '@nextgen/types/charts'
 import { getTimeframeLimit } from '@nextgen/utils/charts'
-import { useMemo } from 'react'
-import { Line, LineChart, XAxis, YAxis } from 'recharts'
+import { useId, useMemo } from 'react'
+import { Area, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
 import { ChartContainer, ChartTooltip } from './ChartPrimitives'
 
@@ -22,6 +22,7 @@ const PERCENT_SERIES_META: Record<PercentSeriesKey, { label: string; color: stri
 }
 
 export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }: PPSChartProps) {
+  const gradientId = useId().replace(/:/g, '')
   const filteredData = useMemo(() => {
     const limit = getTimeframeLimit(timeframe)
     if (!Number.isFinite(limit) || limit >= chartData.length) {
@@ -50,7 +51,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
 
   return (
     <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
-      <LineChart
+      <ComposedChart
         data={filteredData}
         margin={{
           top: 10,
@@ -59,6 +60,12 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           bottom: 0
         }}
       >
+        <defs>
+          <linearGradient id={`${gradientId}-pps`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="5%" stopColor="#0657f9" stopOpacity={0.5} />
+            <stop offset="95%" stopColor="#0657f9" stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <XAxis dataKey={'date'} hide />
         <YAxis domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']} hide />
         {!hideTooltip && (
@@ -68,9 +75,21 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
                 ? [`${(value ?? 0).toFixed(2)}%`, PERCENT_SERIES_META[dataKey as PercentSeriesKey].label]
                 : [(value ?? 0).toFixed(3), 'PPS']
             }
-            contentStyle={{ borderRadius: '12px', border: '1px solid rgba(0,0,0,0.08)' }}
+            contentStyle={{
+              borderRadius: '12px',
+              border: '1px solid rgba(0,0,0,0.08)'
+            }}
           />
         )}
+        <Area
+          type={'monotone'}
+          dataKey={dataKey}
+          stroke="none"
+          fill={`url(#${gradientId}-pps)`}
+          fillOpacity={1}
+          connectNulls
+          isAnimationActive={false}
+        />
         <Line
           type={'monotone'}
           dataKey={dataKey}
@@ -79,7 +98,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           dot={false}
           isAnimationActive={false}
         />
-      </LineChart>
+      </ComposedChart>
     </ChartContainer>
   )
 }
