@@ -8,6 +8,7 @@ import { type Address, erc4626Abi } from 'viem'
 import { useReadContract } from 'wagmi'
 import { WidgetDeposit } from './WidgetDeposit'
 import { WidgetDepositAndStake } from './WidgetDepositAndStake'
+import { WidgetDepositFinal } from './WidgetDepositFinal'
 import { WidgetDepositGeneric } from './WidgetDepositGeneric'
 import { WidgetEnsoDeposit } from './WidgetEnsoDeposit'
 import { WidgetEnsoWithdraw } from './WidgetEnsoWithdraw'
@@ -15,6 +16,7 @@ import { WidgetStake } from './WidgetStake'
 import { WidgetUnstake } from './WidgetUnstake'
 import { WidgetUnstakeAndWithdraw } from './WidgetUnstakeAndWithdraw'
 import { WidgetWithdraw } from './WidgetWithdraw'
+import { WidgetWithdrawFinal } from './WidgetWithdrawFinal'
 import { WidgetWithdrawGeneric } from './WidgetWithdrawGeneric'
 
 interface Props {
@@ -49,6 +51,10 @@ const getActionLabel = (action: ActionType): string => {
     case ActionType.DepositGeneric:
       return 'Deposit'
     case ActionType.WithdrawGeneric:
+      return 'Withdraw'
+    case ActionType.DepositFinal:
+      return 'Deposit'
+    case ActionType.WithdrawFinal:
       return 'Withdraw'
     default:
       return action
@@ -183,6 +189,30 @@ export const Widget: FC<Props> = ({
             handleWithdrawSuccess={handleSuccess}
           />
         )
+      case ActionType.DepositFinal:
+        return (
+          <WidgetDepositFinal
+            vaultAddress={toAddress(vaultAddress)}
+            assetAddress={toAddress(assetToken)}
+            stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
+            chainId={chainId}
+            vaultAPR={currentVault?.apr?.forwardAPR?.netAPR || 0}
+            vaultSymbol={currentVault?.symbol || ''}
+            handleDepositSuccess={handleSuccess}
+          />
+        )
+      case ActionType.WithdrawFinal:
+        return (
+          <WidgetWithdrawFinal
+            vaultAddress={toAddress(vaultAddress)}
+            assetAddress={toAddress(assetToken)}
+            stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
+            chainId={chainId}
+            vaultSymbol={currentVault?.symbol || ''}
+            vaultType={vaultType}
+            handleWithdrawSuccess={handleSuccess}
+          />
+        )
     }
   }, [
     mode,
@@ -198,7 +228,7 @@ export const Widget: FC<Props> = ({
   ])
 
   return (
-    <div className="flex flex-col gap-0 w-full">
+    <div className="flex flex-col gap-0 w-full h-full">
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden relative w-full min-w-0">
         <div className="bg-gray-100 rounded-lg flex h-12">
           {actions.map((action) => (

@@ -1,5 +1,5 @@
 import { Popover, PopoverContent } from '@lib/components/Popover'
-import { IconSettings } from '@lib/icons/IconSettings'
+import { IconSliders } from '@lib/icons/IconSliders'
 import { cl } from '@lib/utils'
 import type { FC } from 'react'
 
@@ -20,7 +20,7 @@ export const SettingsPopover: FC<SettingsPopoverProps> = ({
     <Popover
       trigger={
         <button className="inline-flex items-center justify-center hover:bg-gray-100 rounded-full p-1.5 transition-colors">
-          <IconSettings className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+          <IconSliders className="h-4 w-4 text-blue-600" />
         </button>
       }
       align="end"
