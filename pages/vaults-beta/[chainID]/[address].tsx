@@ -190,6 +190,11 @@ function Index(): ReactElement | null {
               content: <VaultAboutSection currentVault={currentVault} />
             },
             {
+              key: 'risk',
+              shouldRender: true,
+              content: <VaultRiskSection currentVault={currentVault} />
+            },
+            {
               key: 'strategies',
               shouldRender: Number(currentVault.strategies?.length || 0) > 0,
               content: <VaultStrategiesSection currentVault={currentVault} />
@@ -198,11 +203,6 @@ function Index(): ReactElement | null {
               key: 'info',
               shouldRender: true,
               content: <VaultInfoSection currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
-            },
-            {
-              key: 'risk',
-              shouldRender: true,
-              content: <VaultRiskSection currentVault={currentVault} />
             }
           ]
             .filter((section) => section.shouldRender)

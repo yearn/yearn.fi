@@ -610,11 +610,11 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
       <div className={'flex flex-col gap-0'}>
         <div className={'flex flex-col gap-4 md:flex-row md:items-center'}>
           <div className={'flex items-center gap-4'}>
-            <div className={'flex size-14 items-center justify-start rounded-full bg-neutral-0/70'}>
-              <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={56} height={56} />
+            <div className={'flex size-10 items-center justify-start rounded-full bg-neutral-0/70'}>
+              <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
             </div>
             <div className={'flex flex-col'}>
-              <strong className={'text-3xl font-black leading-tight text-neutral-700 md:text-[48px] md:leading-14'}>
+              <strong className={'text-2xl font-black leading-tight text-neutral-700 md:text-[48px] md:leading-14'}>
                 {getVaultName(currentVault)} {' yVault'}
               </strong>
             </div>
