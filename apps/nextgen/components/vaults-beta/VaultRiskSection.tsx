@@ -93,26 +93,24 @@ function SimpleRiskScore({
     return (
       <div className={'grid grid-cols-1 gap-4 p-4 md:grid-cols-12 md:gap-10 md:p-8'}>
         <div className={'col-span-12 mt-6 w-full md:mt-0'}>
-          <div className={'mb-4 flex flex-col md:mb-10'}>
+          <div className={'flex flex-col'}>
             <div className={'flex flex-col gap-2'}>
-              <div className={'mb-2 border-b border-neutral-300 pb-2'}>
-                <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
-                  <div className={'flex items-end gap-2'}>
-                    <p className={'text-xl font-bold'}>{multiStrategyRiskScore.label}</p>
-                  </div>
-                  <div className={'flex items-end gap-4'}>
-                    <div className={'flex items-center font-bold'}>
-                      <p className={'mr-2 text-xl'}>{multiStrategyRiskScore.score}</p>
-                      <span className={'text-neutral-900/40'}>{' / 5'}</span>
-                    </div>
-                    {renderInlineRiskScoreTag()}
-                  </div>
+              <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
+                <div className={'flex items-end gap-2'}>
+                  <p className={'text-xl font-bold'}>{multiStrategyRiskScore.label}</p>
                 </div>
-                <div className={'mt-2 w-full'}>
-                  <small className={'whitespace-break-spaces text-sm text-neutral-900/70'}>
-                    {multiStrategyRiskScore.explanation}
-                  </small>
+                <div className={'flex items-end gap-4'}>
+                  <div className={'flex items-center font-bold'}>
+                    <p className={'mr-2 text-xl'}>{multiStrategyRiskScore.score}</p>
+                    <span className={'text-neutral-900/40'}>{' / 5'}</span>
+                  </div>
+                  {renderInlineRiskScoreTag()}
                 </div>
+              </div>
+              <div className={'mt-2 w-full'}>
+                <small className={'whitespace-break-spaces text-sm text-neutral-900/70'}>
+                  {multiStrategyRiskScore.explanation}
+                </small>
               </div>
             </div>
           </div>
