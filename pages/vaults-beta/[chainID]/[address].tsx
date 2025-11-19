@@ -207,7 +207,7 @@ function Index(): ReactElement | null {
             </div> */}
           </div>
           <div className={'w-full md:w-[35%] md:sticky md:top-4 md:self-start'}>
-            <div className={'w-full h-[400px] bg-neutral-200 rounded-lg'}>
+            <div className={'w-full bg-neutral-200 rounded-lg'}>
               <div className="flex flex-col gap-2 h-full">
                 {/* <WidgetRewards vaultType="v3" vaultAddress={currentVault.address} handleRewardsSuccess={() => {}} /> */}
 

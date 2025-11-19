@@ -12,6 +12,7 @@ import type { Address } from 'viem'
 import { useAccount } from 'wagmi'
 import { InputTokenAmountV2 } from '../InputTokenAmountV2'
 import { TokenSelector } from '../TokenSelector'
+import { SettingsPopover } from './SettingsPopover'
 
 interface Props {
   vaultAddress: Address
@@ -186,7 +187,6 @@ export const WidgetDepositFinal: FC<Props> = ({
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
 
   // Determine which token to use for deposits
@@ -320,8 +320,18 @@ export const WidgetDepositFinal: FC<Props> = ({
 
   return (
     <div className="flex flex-col relative">
+      {/* Settings Popover */}
+      <div className="flex justify-end px-1 pt-1 h-6">
+        <SettingsPopover
+          slippage={zapSlippage}
+          setSlippage={setZapSlippage}
+          maximizeYield={isAutoStakingEnabled}
+          setMaximizeYield={setIsAutoStakingEnabled}
+        />
+      </div>
+
       {/* Amount Section */}
-      <div className="px-6 pt-6 pb-6">
+      <div className="px-6 pb-6">
         <InputTokenAmountV2
           input={depositInput}
           title="Amount"
@@ -417,7 +427,7 @@ export const WidgetDepositFinal: FC<Props> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className={cl('px-6 pt-6', showAdvancedSettings ? 'pb-6' : 'pb-2')}>
+      <div className="px-6 pt-6 pb-6">
         <div className="flex gap-2 w-full">
           {!isNativeToken && (
             <TxButton

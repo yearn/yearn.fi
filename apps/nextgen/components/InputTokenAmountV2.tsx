@@ -106,7 +106,7 @@ export const InputTokenAmountV2: FC<Props> = ({
   }
 
   return (
-    <div className={cl('flex flex-col w-full relative bg-gray-50 rounded-xl', className)}>
+    <div className={cl('flex flex-col w-full relative border border-gray-200 rounded-md', className)}>
       <div className="py-2 px-3 flex flex-col gap-1">
         {/* Top row - Title and percentage buttons */}
         <div className="flex items-center justify-between">
@@ -257,7 +257,7 @@ export const InputTokenAmountV2: FC<Props> = ({
           )}
 
           {/* Zap token display */}
-          <div className="bg-gray-50 rounded-xl py-2 px-3 flex flex-col gap-1">
+          <div className="rounded-md py-2 px-3 flex flex-col gap-1">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {zapToken.isLoading ? (

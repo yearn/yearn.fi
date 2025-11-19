@@ -5,7 +5,6 @@ import type { TNormalizedBN } from '@lib/types'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
 import { gaugeV2Abi } from '@lib/utils/abi/gaugeV2.abi'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
-import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
@@ -16,42 +15,7 @@ import { formatUnits } from 'viem'
 import { type UseSimulateContractReturnType, useAccount, useReadContract, useSimulateContract } from 'wagmi'
 import { InputTokenAmountV2 } from '../InputTokenAmountV2'
 import { TokenSelector } from '../TokenSelector'
-
-const tokensByChain: Record<number, Address[]> = {
-  1: [
-    // Ethereum mainnet
-    ETH_TOKEN_ADDRESS, // ETH
-    '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
-    '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
-    '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
-    '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
-    '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' // WBTC
-  ],
-  10: [
-    // Optimism
-    ETH_TOKEN_ADDRESS, // ETH
-    '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', // USDC
-    '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', // USDT
-    '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', // DAI
-    '0x4200000000000000000000000000000000000006' // WETH
-  ],
-  137: [
-    // Polygon
-    ETH_TOKEN_ADDRESS, // MATIC
-    '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // USDC
-    '0xc2132D05D31c914a87C6611C10748AEb04B58e8F', // USDT
-    '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063', // DAI
-    '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' // WMATIC
-  ],
-  42161: [
-    // Arbitrum
-    ETH_TOKEN_ADDRESS, // ETH
-    '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // USDC
-    '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // USDT
-    '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', // DAI
-    '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' // WETH
-  ]
-}
+import { SettingsPopover } from './SettingsPopover'
 
 interface Props {
   vaultAddress: Address
@@ -177,7 +141,6 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
   const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<'vault' | 'staking' | null>(stakingAddress ? null : 'vault') // Default to vault for smooth UI (prevents balance flickering)
 
@@ -260,7 +223,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
 
   // Get settings from Yearn context
-  const { zapSlippage, setZapSlippage } = useYearn()
+  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
 
   // Determine source token based on withdrawal source selection
   const sourceToken = useMemo(() => {
@@ -298,7 +261,6 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     withdrawAmount.debouncedBn,
     isUnstake,
     pricePerShare,
-    // assetToken?.decimals,
     stakingToken?.decimals,
     stakingPricePerShare,
     vault?.decimals
@@ -461,9 +423,19 @@ export const WidgetWithdrawFinal: FC<Props> = ({
 
   return (
     <div className="flex flex-col relative">
+      {/* Settings Popover */}
+      <div className="flex justify-end px-1 pt-1 h-6">
+        <SettingsPopover
+          slippage={zapSlippage}
+          setSlippage={setZapSlippage}
+          maximizeYield={isAutoStakingEnabled}
+          setMaximizeYield={setIsAutoStakingEnabled}
+        />
+      </div>
+
       {/* Withdraw From Selector - shown when user has both balances */}
       {hasBothBalances ? (
-        <div className="px-6 pt-6 pb-4">
+        <div className="px-6 pb-4">
           <div className="flex flex-col gap-2">
             <label className="font-medium text-sm text-gray-900">Withdraw from</label>
             <div className="relative">
@@ -490,7 +462,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
       ) : null}
 
       {/* Amount Section */}
-      <div className={cl('px-6 pb-6', hasBothBalances ? 'pt-2' : 'pt-6')}>
+      <div className={cl('px-6 pb-6')}>
         <div className="flex flex-col gap-4">
           <InputTokenAmountV2
             input={withdrawInput}
@@ -545,7 +517,11 @@ export const WidgetWithdrawFinal: FC<Props> = ({
               setSelectedChainId(chainId)
             }}
             zapNotificationText={
-              withdrawToken !== assetAddress && !isUnstake ? '⚡ This transaction will use Enso to Zap to:' : undefined
+              isUnstake
+                ? 'This transaction will unstake'
+                : withdrawToken !== assetAddress
+                  ? '⚡ This transaction will use Enso to Zap to:'
+                  : undefined
             }
           />
         </div>
@@ -605,19 +581,11 @@ export const WidgetWithdrawFinal: FC<Props> = ({
               </p>
             </div>
           </div>
-          {/* {stakingToken?.balance.raw && stakingToken.balance.raw > 0n && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-500">From staked</p>
-              <p className="text-sm text-gray-900">
-                {formatAmount(stakingToken.balance.normalized)} {vaultSymbol}
-              </p>
-            </div>
-          )} */}
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className={cl('px-6 pt-6', showAdvancedSettings ? 'pb-6' : 'pb-2')}>
+      <div className={'px-6 pt-6 pb-6'}>
         <div className="flex gap-2 w-full">
           {isUnstake ? (
             // For unstake operations, show single button
