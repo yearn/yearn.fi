@@ -32,6 +32,7 @@ interface Props {
     address: string
     chainId: number
     expectedAmount?: string
+    isLoading?: boolean
   }
   onRemoveZap?: () => void
   zapNotificationText?: string
@@ -100,140 +101,138 @@ export const InputTokenAmountV2: FC<Props> = ({
   console.log(disabled)
   return (
     <div className={cl('flex flex-col w-full relative bg-gray-50 rounded-xl', className)}>
-      <div className="py-2 px-3 flex flex-col gap-3">
-        {/* Main content row */}
-        <div className="flex items-center justify-between gap-4">
-          {/* Left side - Amount input and USD value */}
-          <div className="flex-1 min-w-0">
-            <label className="text-sm font-medium text-gray-700 block mb-1">{title}</label>
-            <div className="flex flex-col gap-1">
-              <input
-                disabled={disabled}
-                placeholder={placeholder ?? '0.00'}
-                value={formValue}
-                onChange={handleInputChange}
-                onFocus={() => setActive(true)}
-                onBlur={() => setActive(false)}
+      <div className="py-2 px-3 flex flex-col gap-1">
+        {/* Top row - Title and percentage buttons */}
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-gray-700">{title}</label>
+
+          {/* Percentage buttons */}
+          {!hidePercentageButtons && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handlePercentageClick(25)}
                 className={cl(
-                  'bg-transparent outline-none text-2xl font-medium min-w-0',
-                  disabled ? 'text-gray-400' : 'text-gray-900',
-                  'placeholder:text-gray-400'
+                  'px-2 py-0.5 text-xs font-medium rounded transition-colors',
+                  disabled
+                    ? 'text-gray-400 bg-transparent cursor-not-allowed'
+                    : 'text-gray-500 bg-transparent hover:bg-gray-100'
                 )}
-              />
-              <div className="text-sm text-gray-500">${usdValue}</div>
+                disabled={disabled}
+              >
+                25%
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePercentageClick(50)}
+                className={cl(
+                  'px-2 py-0.5 text-xs font-medium rounded transition-colors',
+                  disabled
+                    ? 'text-gray-400 bg-transparent cursor-not-allowed'
+                    : 'text-gray-500 bg-transparent hover:bg-gray-100'
+                )}
+                disabled={disabled}
+              >
+                50%
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePercentageClick(75)}
+                className={cl(
+                  'px-2 py-0.5 text-xs font-medium rounded transition-colors',
+                  disabled
+                    ? 'text-gray-400 bg-transparent cursor-not-allowed'
+                    : 'text-gray-500 bg-transparent hover:bg-gray-100'
+                )}
+                disabled={disabled}
+              >
+                75%
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePercentageClick(100)}
+                className={cl(
+                  'px-2 py-0.5 text-xs font-medium rounded transition-colors',
+                  disabled
+                    ? 'text-gray-400 bg-transparent cursor-not-allowed'
+                    : 'text-gray-500 bg-transparent hover:bg-gray-100'
+                )}
+                disabled={disabled}
+              >
+                Max
+              </button>
             </div>
-          </div>
-
-          {/* Right side - Percentage buttons, token selector, and balance */}
-          <div className="flex flex-col items-end gap-1">
-            {/* Percentage buttons row */}
-            {!hidePercentageButtons && (
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => handlePercentageClick(25)}
-                  className={cl(
-                    'px-2 py-0.5 text-xs font-medium rounded transition-colors',
-                    disabled
-                      ? 'text-gray-400 bg-transparent cursor-not-allowed'
-                      : 'text-gray-500 bg-transparent hover:bg-gray-100'
-                  )}
-                  disabled={disabled}
-                >
-                  25%
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handlePercentageClick(50)}
-                  className={cl(
-                    'px-2 py-0.5 text-xs font-medium rounded transition-colors',
-                    disabled
-                      ? 'text-gray-400 bg-transparent cursor-not-allowed'
-                      : 'text-gray-500 bg-transparent hover:bg-gray-100'
-                  )}
-                  disabled={disabled}
-                >
-                  50%
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handlePercentageClick(75)}
-                  className={cl(
-                    'px-2 py-0.5 text-xs font-medium rounded transition-colors',
-                    disabled
-                      ? 'text-gray-400 bg-transparent cursor-not-allowed'
-                      : 'text-gray-500 bg-transparent hover:bg-gray-100'
-                  )}
-                  disabled={disabled}
-                >
-                  75%
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handlePercentageClick(100)}
-                  className={cl(
-                    'px-2 py-0.5 text-xs font-medium rounded transition-colors',
-                    disabled
-                      ? 'text-gray-400 bg-transparent cursor-not-allowed'
-                      : 'text-gray-500 bg-transparent hover:bg-gray-100'
-                  )}
-                  disabled={disabled}
-                >
-                  Max
-                </button>
-              </div>
-            )}
-
-            {/* Token selector and balance */}
-            <div className="flex flex-col items-end gap-1">
-              {(symbol || showTokenSelector) && (
-                <button
-                  type="button"
-                  onClick={handleTokenButtonClick}
-                  data-token-selector-button
-                  disabled={!showTokenSelector && disabled}
-                  className={cl(
-                    'px-2 py-1 rounded-lg flex items-center gap-2 transition-colors',
-                    'text-gray-900 text-2xl font-medium', // Match input text size
-                    showTokenSelector
-                      ? 'bg-transparent hover:bg-gray-100'
-                      : disabled
-                        ? 'bg-transparent cursor-not-allowed'
-                        : 'bg-transparent'
-                  )}
-                >
-                  {tokenAddress && tokenChainId && (
-                    <ImageWithFallback
-                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${tokenChainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-                      alt={symbol ?? ''}
-                      width={28}
-                      height={28}
-                      className="rounded-full"
-                    />
-                  )}
-                  <span>{symbol ?? 'Select Token'}</span>
-                  {showTokenSelector && (
-                    <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  )}
-                </button>
-              )}
-              {balance !== undefined && symbol && (
-                <div className="text-xs text-gray-500">
-                  Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Loading indicator */}
-        {isDebouncing && (
-          <div className="absolute top-4 right-4">
-            <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
+        {/* Middle row - Input and token selector */}
+        <div className="flex items-center gap-2 relative">
+          <input
+            disabled={disabled}
+            placeholder={placeholder ?? '0.00'}
+            value={formValue}
+            onChange={handleInputChange}
+            onFocus={() => setActive(true)}
+            onBlur={() => setActive(false)}
+            className={cl(
+              'bg-transparent outline-none text-2xl font-medium flex-1 min-w-0',
+              disabled ? 'text-gray-400' : 'text-gray-900',
+              'placeholder:text-gray-400'
+            )}
+          />
+
+          {/* Token selector button */}
+          {(symbol || showTokenSelector) && (
+            <button
+              type="button"
+              onClick={handleTokenButtonClick}
+              data-token-selector-button
+              disabled={!showTokenSelector && disabled}
+              className={cl(
+                'px-2 py-1 rounded-lg flex items-center gap-2 transition-colors',
+                'text-gray-900 text-2xl font-medium', // Match input text size
+                showTokenSelector
+                  ? 'bg-transparent hover:bg-gray-100'
+                  : disabled
+                    ? 'bg-transparent cursor-not-allowed'
+                    : 'bg-transparent'
+              )}
+            >
+              {tokenAddress && tokenChainId && (
+                <ImageWithFallback
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${tokenChainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                  alt={symbol ?? ''}
+                  width={28}
+                  height={28}
+                  className="rounded-full"
+                />
+              )}
+              <span>{symbol ?? 'Select Token'}</span>
+              {showTokenSelector && (
+                <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </button>
+          )}
+
+          {/* Loading indicator */}
+          {isDebouncing && (
+            <div className="absolute -right-8">
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom row - USD value and balance */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-500">${usdValue}</div>
+          {balance !== undefined && symbol && (
+            <div className="text-sm text-gray-500">
+              Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
+            </div>
+          )}
+        </div>
 
         {/* Error message */}
         {errorMessage && <div className="text-red-500 text-sm mt-1">{errorMessage}</div>}
@@ -255,7 +254,11 @@ export const InputTokenAmountV2: FC<Props> = ({
           <div className="bg-gray-50 rounded-xl py-2 px-3 flex flex-col gap-1">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="text-gray-900 text-2xl font-medium">{zapToken.expectedAmount || '0'}</div>
+                {zapToken.isLoading ? (
+                  <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  <div className="text-gray-500 text-2xl font-medium">{zapToken.expectedAmount || '0'}</div>
+                )}
               </div>
 
               {/* Right side - Token info */}
@@ -292,7 +295,7 @@ export const InputTokenAmountV2: FC<Props> = ({
               {onRemoveZap && (
                 <button
                   onClick={onRemoveZap}
-                  className="text-sm text-gray-500 hover:text-gray-700 mt-2 transition-colors self-end"
+                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors self-end"
                 >
                   Remove Zap
                 </button>

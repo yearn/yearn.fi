@@ -538,7 +538,8 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                     address: outputToken?.address || '',
                     chainId: outputToken?.chainID || chainId,
                     expectedAmount:
-                      expectedOut && expectedOut.normalized > 0 ? formatAmount(expectedOut.normalized, 6, 6) : '0'
+                      expectedOut && expectedOut.normalized > 0 ? formatAmount(expectedOut.normalized, 6, 6) : '0',
+                    isLoading: isLoadingRoute || withdrawAmount.isDebouncing
                   }
                 : undefined
             }
