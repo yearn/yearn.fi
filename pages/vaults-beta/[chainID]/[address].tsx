@@ -7,6 +7,7 @@ import { cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
+import { VaultChartsSection } from '@nextgen/components/vaults-beta/VaultChartsSection'
 import { VaultDetailsHeader } from '@nextgen/components/vaults-beta/VaultDetailsHeader'
 import { VaultInfoSection } from '@nextgen/components/vaults-beta/VaultInfoSection'
 import { VaultRiskSection } from '@nextgen/components/vaults-beta/VaultRiskSection'
@@ -21,9 +22,10 @@ import { useParams } from 'react-router'
 function Index(): ReactElement | null {
   const { address, isActive } = useWeb3()
   const params = useParams()
+  const chainId = Number(params.chainID)
   const { onRefresh } = useWallet()
   const { yDaemonBaseUri } = useYDaemonBaseURI({
-    chainID: Number(params.chainID)
+    chainID: chainId
   })
 
   // Use vault address as key to reset state
@@ -178,6 +180,17 @@ function Index(): ReactElement | null {
         <div className={'space-y-6 md:col-span-13'}>
           {[
             {
+              key: 'charts',
+              shouldRender: Number.isInteger(chainId),
+              content: (
+                <VaultChartsSection
+                  chainId={chainId}
+                  vaultAddress={currentVault.address}
+                  vaultName={currentVault.name}
+                />
+              )
+            },
+            {
               key: 'about',
               shouldRender: true,
               content: <VaultAboutSection currentVault={currentVault} />
@@ -213,7 +226,7 @@ function Index(): ReactElement | null {
               currentVault={currentVault}
               gaugeAddress={currentVault.staking.address}
               actions={[WidgetActionType.DepositGeneric, WidgetActionType.WithdrawGeneric]}
-              chainId={Number(params.chainID)}
+              chainId={chainId}
             />
           </div>
         </div>
