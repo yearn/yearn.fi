@@ -99,13 +99,13 @@ export const InputTokenAmountV2: FC<Props> = ({
   }
   console.log(disabled)
   return (
-    <div className={cl('flex flex-col w-full relative', className)}>
-      <div className="bg-gray-50 rounded-xl py-2 px-3 flex flex-col gap-3">
+    <div className={cl('flex flex-col w-full relative bg-gray-50 rounded-xl', className)}>
+      <div className="py-2 px-3 flex flex-col gap-3">
         {/* Main content row */}
         <div className="flex items-center justify-between gap-4">
           {/* Left side - Amount input and USD value */}
           <div className="flex-1 min-w-0">
-            <label className="text-sm font-medium text-gray-700 block mb-2">{title}</label>
+            <label className="text-sm font-medium text-gray-700 block mb-1">{title}</label>
             <div className="flex flex-col gap-1">
               <input
                 disabled={disabled}
@@ -125,7 +125,7 @@ export const InputTokenAmountV2: FC<Props> = ({
           </div>
 
           {/* Right side - Percentage buttons, token selector, and balance */}
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-1">
             {/* Percentage buttons row */}
             {!hidePercentageButtons && (
               <div className="flex items-center gap-1">
@@ -241,16 +241,18 @@ export const InputTokenAmountV2: FC<Props> = ({
 
       {/* Zap Token Section */}
       {zapToken && (
-        <div className="mt-3">
+        <div className="mt-1">
           {/* Notification text */}
           {zapNotificationText && (
-            <div className="flex items-center gap-1 mb-2">
+            <div className="flex items-center gap-2 px-3">
+              <div className="flex-1 h-px bg-gray-200"></div>
               <span className="text-sm text-gray-600">{zapNotificationText}</span>
+              <div className="flex-1 h-px bg-gray-200"></div>
             </div>
           )}
 
           {/* Zap token display */}
-          <div className="bg-gray-50 rounded-xl py-2 px-3">
+          <div className="bg-gray-50 rounded-xl py-2 px-3 flex flex-col gap-1">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="text-gray-900 text-2xl font-medium">{zapToken.expectedAmount || '0'}</div>
@@ -284,16 +286,18 @@ export const InputTokenAmountV2: FC<Props> = ({
                 </button>
               </div>
             </div>
-
-            {/* Remove Zap button */}
-            {onRemoveZap && (
-              <button
-                onClick={onRemoveZap}
-                className="text-sm text-gray-500 hover:text-gray-700 mt-2 transition-colors"
-              >
-                Remove Zap
-              </button>
-            )}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-500">${usdValue}</div>
+              {/* Remove Zap button */}
+              {onRemoveZap && (
+                <button
+                  onClick={onRemoveZap}
+                  className="text-sm text-gray-500 hover:text-gray-700 mt-2 transition-colors self-end"
+                >
+                  Remove Zap
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

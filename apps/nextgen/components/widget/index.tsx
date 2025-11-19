@@ -52,6 +52,10 @@ const getActionLabel = (action: ActionType): string => {
       return 'Deposit'
     case ActionType.WithdrawGeneric:
       return 'Withdraw'
+    case ActionType.DepositFinal:
+      return 'Deposit'
+    case ActionType.WithdrawFinal:
+      return 'Withdraw'
     default:
       return action
   }

@@ -280,6 +280,8 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   const requiredVaultTokens = useMemo(() => {
     console.log(withdrawAmount.debouncedBn, vault?.decimals, pricePerShare)
     if (!withdrawAmount.debouncedBn || withdrawAmount.debouncedBn === 0n) return 0n
+    console.log(withdrawAmount.debouncedBn, vault?.decimals, pricePerShare)
+
     // For unstake operations, we need exactly the amount entered
     if (isUnstake) {
       return (
@@ -303,6 +305,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     stakingPricePerShare,
     vault?.decimals
   ])
+  console.log(requiredVaultTokens)
   // Withdrawal flow using Enso - using calculated vault tokens
   const {
     actions: { prepareApprove },
