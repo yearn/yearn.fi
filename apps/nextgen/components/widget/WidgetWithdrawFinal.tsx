@@ -272,6 +272,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     periphery: {
       prepareApproveEnabled,
       route,
+      error,
       isLoadingRoute,
       expectedOut,
       minExpectedOut,
@@ -309,7 +310,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     if (requiredVaultTokens > totalVaultBalance.raw) {
       return 'Insufficient balance'
     }
-    if (!route && !isLoadingRoute && withdrawAmount.debouncedBn > 0n && !withdrawAmount.isDebouncing) {
+    if (error && !route && !isLoadingRoute && withdrawAmount.debouncedBn > 0n && !withdrawAmount.isDebouncing) {
       return 'Unable to find route'
     }
     return null
@@ -320,6 +321,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     totalVaultBalance,
     requiredVaultTokens,
     route,
+    error,
     isLoadingRoute,
     hasBothBalances,
     withdrawalSource

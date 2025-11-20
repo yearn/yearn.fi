@@ -222,7 +222,16 @@ export const WidgetDepositFinal: FC<Props> = ({
   // Deposit flow using Enso
   const {
     actions: { prepareApprove },
-    periphery: { prepareApproveEnabled, route, isLoadingRoute, expectedOut, routerAddress, isCrossChain, allowance },
+    periphery: {
+      prepareApproveEnabled,
+      route,
+      error,
+      isLoadingRoute,
+      expectedOut,
+      routerAddress,
+      isCrossChain,
+      allowance
+    },
     getRoute,
     getEnsoTransaction
   } = useSolverEnso({
@@ -251,7 +260,7 @@ export const WidgetDepositFinal: FC<Props> = ({
     if (depositAmount.bn > (inputToken?.balance.raw || 0n)) {
       return 'Insufficient balance'
     }
-    if (!route && !isLoadingRoute && depositAmount.debouncedBn > 0n && !depositAmount.isDebouncing) {
+    if (error && !route && !isLoadingRoute && depositAmount.debouncedBn > 0n && !depositAmount.isDebouncing) {
       return 'Unable to find route'
     }
     return null
@@ -261,9 +270,9 @@ export const WidgetDepositFinal: FC<Props> = ({
     depositAmount.isDebouncing,
     inputToken?.balance.raw,
     route,
+    error,
     isLoadingRoute
   ])
-
   // Check if the selected token is ETH (native token)
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
 
