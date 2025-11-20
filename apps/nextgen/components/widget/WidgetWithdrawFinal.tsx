@@ -426,7 +426,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   return (
     <div className="flex flex-col relative">
       {/* Settings Popover */}
-      <div className="flex justify-end px-1 pt-1 h-6">
+      <div className="flex justify-end px-6 py-1 h-6">
         <SettingsPopover
           slippage={zapSlippage}
           setSlippage={setZapSlippage}
