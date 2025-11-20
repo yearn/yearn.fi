@@ -160,13 +160,27 @@ function Index(): ReactElement | null {
           </p>
         </Link>
       </nav>
+      <div className={'hidden md:block md:sticky md:top-24 md:z-30 bg-app py-2'}>
+        <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
+          <Link href={'/'} className={'transition-colors hover:text-neutral-900'}>
+            {'Home'}
+          </Link>
+          <span>{'>'}</span>
+          <Link href={'/v3'} className={'transition-colors hover:text-neutral-900'}>
+            {'Vaults'}
+          </Link>
+          <span>{'>'}</span>
+          <span className={'font-medium text-neutral-900'}>{currentVault.name}</span>
+        </div>
+      </div>
       {/* Header with gradient background and vault logo */}
       <header
         className={cl(
           'h-full rounded-3xl',
           'pt-6 pb-6 md:pb-10 px-4 md:px-8',
           'bg-[linear-gradient(73deg,#D21162_24.91%,#2C3DA6_99.66%)]',
-          'relative flex flex-col items-center justify-center'
+          'relative flex flex-col items-center justify-center',
+          'md:sticky md:top-20 md:z-30'
         )}
       >
         <nav className={'mb-4 hidden self-start md:mb-2 md:block'}>

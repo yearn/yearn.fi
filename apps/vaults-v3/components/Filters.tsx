@@ -1,3 +1,4 @@
+import Link from '@components/Link'
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
@@ -265,6 +266,13 @@ TListHero): ReactElement {
 
   return (
     <>
+      <div className={'mb-3 mt-2 flex items-center gap-2 text-sm text-neutral-500'}>
+        <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
+          {'Home'}
+        </Link>
+        <span>{'>'}</span>
+        <span className={'font-medium text-neutral-900'}>{'Vaults'}</span>
+      </div>
       <div className={'relative col-span-24 w-full rounded-lg bg-neutral-0 p-2 md:col-span-19'}>
         {/* <PortfolioCard holdingsVaults={holdingsVaults} /> */}
 
@@ -492,9 +500,9 @@ function FilterControls({
               <button
                 type={'button'}
                 className={cl(
-                  'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-500 bg-neutral-200/80 transition-colors',
-                  'hover:border-neutral-400',
-                  'data-[active=true]:border-neutral-900 data-[active=true]:text-neutral-900'
+                  'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-500 bg-neutral-0 transition-colors',
+                  'hover:text-neutral-700',
+                  'data-[active=true]:border-neutral-400 data-[active=true]:text-neutral-700'
                 )}
                 data-active={isMoreFiltersOpen}
                 onClick={onToggleMoreFilters}
@@ -506,7 +514,7 @@ function FilterControls({
               {showInlineSearch ? (
                 <div className={'min-w-[200px] flex-1'}>
                   <SearchBar
-                    className={'w-full rounded-lg border-none bg-neutral-300 text-neutral-900 transition-all'}
+                    className={'w-full rounded-lg border-neutral-300 bg-neutral-0 text-neutral-900 transition-all'}
                     iconClassName={'text-neutral-900'}
                     searchPlaceholder={'Find a Vault'}
                     searchValue={searchValue}
@@ -524,7 +532,7 @@ function FilterControls({
       {isMoreFiltersOpen ? (
         <div className={'grid grid-cols-1 gap-4 md:grid-cols-2'}>
           <div className={'w-full'}>
-            <p className={'pb-2 text-[#757CA6]'}>{'Select Category'}</p>
+            <p className={'pb-2 text-neutral-500'}>{'Select Category'}</p>
             <MultiSelectDropdown
               buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
               comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
@@ -541,7 +549,7 @@ function FilterControls({
             />
           </div>
           <div className={'w-full'}>
-            <p className={'pb-2 text-[#757CA6]'}>{'Select Type'}</p>
+            <p className={'pb-2 text-neutral-500'}>{'Select Type'}</p>
             <MultiSelectDropdown
               buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
               comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}

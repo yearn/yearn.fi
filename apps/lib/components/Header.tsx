@@ -206,7 +206,10 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     const observer = new MutationObserver(() => updateSurfaceBackground())
     const layoutHost = document.querySelector('.vaults-layout')
     if (layoutHost) {
-      observer.observe(layoutHost, { attributes: true, attributeFilter: ['class'] })
+      observer.observe(layoutHost, {
+        attributes: true,
+        attributeFilter: ['class']
+      })
     }
 
     return () => observer.disconnect()
@@ -220,9 +223,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
   return (
     <div
       id={'head'}
-      className={
-        'sticky inset-x-0 top-0 z-50 w-full bg-app backdrop-blur-md supports-[backdrop-filter]:backdrop-saturate-150'
-      }
+      className={'sticky inset-x-0 top-0 z-50 w-full bg-app backdrop-blur-md'}
       style={
         surfaceBackground
           ? ({
@@ -232,8 +233,8 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
           : undefined
       }
     >
-      <div className={'w-full'}>
-        <header className={'yearn--header mx-auto max-w-[1232px] px-0!'}>
+      <div className={'mx-auto w-full max-w-[1232px] px-4'}>
+        <header className={'yearn--header w-full px-0!'}>
           <div className={'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'}>
             <div className={'flex justify-center'}>
               <LaunchModal />

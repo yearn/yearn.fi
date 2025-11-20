@@ -23,10 +23,8 @@ import { AppRoutes } from './routes'
 function WithLayout(): ReactElement {
   return (
     <>
-      <div className={'sticky top-0 z-60 w-full bg-app'}>
-        <div className={'mx-auto flex max-w-[1232px] px-4'}>
-          <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
-        </div>
+      <div className={'sticky top-0 z-60 w-full'}>
+        <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
       </div>
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>

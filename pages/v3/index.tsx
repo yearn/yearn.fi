@@ -1,4 +1,3 @@
-import Link from '@components/Link'
 import { Button } from '@lib/components/Button'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
@@ -18,7 +17,7 @@ import {
 } from '@vaults-v3/constants'
 // import { V3Mask } from '@vaults-v3/Mark'
 import type { ReactElement, ReactNode } from 'react'
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 // function V3Card(): ReactElement {
 //   return (
@@ -262,6 +261,8 @@ function ListOfVaults({
       )
     }
 
+    const hasRows = pinnedSections.length > 0 || mainVaults.length > 0
+
     return (
       <div className={'flex flex-col gap-px bg-app'}>
         {pinnedSections.map((section) => (
@@ -275,31 +276,37 @@ function ListOfVaults({
             })}
           </div>
         ) : null}
+        {hasRows ? (
+          <div className={'shrink-0 border-t border-neutral-200 bg-surface px-4 py-3 md:px-8 rounded-b-xl'} />
+        ) : null}
       </div>
     )
   }
 
   const filtersElement = (
-    <Filters
-      types={types}
-      shouldDebounce={true}
-      categories={categories}
-      searchValue={search || ''}
-      chains={chains}
-      onChangeChains={onChangeChains}
-      onChangeTypes={onChangeTypes}
-      onChangeCategories={onChangeCategories}
-      onSearch={onSearch}
-      searchAlertContent={renderHiddenSearchAlert()}
-      holdingsVaults={holdingsVaults}
-    />
+    <div className={'w-full bg-app pb-2 shrink-0'}>
+      <Filters
+        types={types}
+        shouldDebounce={true}
+        categories={categories}
+        searchValue={search || ''}
+        chains={chains}
+        onChangeChains={onChangeChains}
+        onChangeTypes={onChangeTypes}
+        onChangeCategories={onChangeCategories}
+        onSearch={onSearch}
+        searchAlertContent={renderHiddenSearchAlert()}
+        holdingsVaults={holdingsVaults}
+      />
+    </div>
   )
 
   const listElement = (
-    <div className={'flex min-h-60 w-full flex-col'}>
-      <div className={'flex flex-col overflow-hidden rounded-t-xl border border-neutral-200 bg-surface'}>
+    <div className={'flex min-h-60 w-full flex-1 flex-col'} style={{ minHeight: 0 }}>
+      <div className={'flex h-full flex-col overflow-hidden rounded-xl border border-neutral-200 bg-surface'}>
         <VaultsV3ListHead
-          containerClassName={'rounded-t-lg bg-surface'}
+          containerClassName={'rounded-t-xl bg-surface'}
+          wrapperClassName={'sticky top-0 z-10 mt-0 bg-surface'}
           sortBy={sortBy}
           sortDirection={sortDirection}
           onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
@@ -375,21 +382,17 @@ function ListOfVaults({
             }
           ]}
         />
-        {renderVaultList()}
+        <div className={'flex flex-1 flex-col overflow-auto bg-app'}>{renderVaultList()}</div>
       </div>
     </div>
   )
 
   if (typeof children === 'function') {
-    return <>{children({ filters: filtersElement, list: listElement })}</>
+    const content = children({ filters: filtersElement, list: listElement })
+    return <div className={'flex h-full flex-col'}>{content}</div>
   }
 
-  return (
-    <Fragment>
-      {filtersElement}
-      {listElement}
-    </Fragment>
-  )
+  return <div className={'flex h-full flex-col'}>{[filtersElement, listElement]}</div>
 }
 
 function Index(): ReactElement {
@@ -402,23 +405,20 @@ function Index(): ReactElement {
 
   return (
     <div className={'vaults-layout vaults-layout--list'}>
-      <div className={'relative z-50 mx-auto grid w-full max-w-[1232px] gap-4 bg-transparent px-4 pb-8 pt-20 md:gap-2'}>
-        <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
-          <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
-            {'Home'}
-          </Link>
-          <span>{'>'}</span>
-          <span className={'font-medium text-neutral-900'}>{'Vaults v3'}</span>
-        </div>
+      <div
+        className={
+          'relative z-50 mx-auto flex w-full max-w-[1232px] flex-col gap-4 bg-transparent px-4 pb-4 md:gap-3 md:overflow-hidden'
+        }
+        style={{
+          height: '100vh - var(--header-height))'
+        }}
+      >
         <ListOfVaults {...queryArgs}>
           {({ filters, list }) => (
-            <Fragment>
-              {/* <div className={'col-span-48 hidden h-full w-full rounded-3xl bg-neutral-100 p-2 md:col-span-8 md:block'}>
-                <V3Card />
-              </div> */}
-              <div className={'flex flex-col'}>{filters}</div>
+            <div className={'flex h-full flex-col'}>
+              {filters}
               {list}
-            </Fragment>
+            </div>
           )}
         </ListOfVaults>
       </div>

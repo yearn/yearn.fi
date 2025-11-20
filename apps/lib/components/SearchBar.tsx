@@ -67,19 +67,19 @@ export function SearchBar(props: TSearchBar): ReactElement {
         'flex h-10 items-center gap-2 px-2',
         props.highlightWhenActive
           ? localSearchValue
-            ? 'bg-neutral-300/70 border-2 border-neutral-600'
-            : 'border-2 border-transparent bg-neutral-300 focus-within:bg-neutral-300/70 focus-within:border-neutral-400'
-          : 'border border-neutral-0 bg-neutral-0',
+            ? 'bg-neutral-100 border border-neutral-300'
+            : 'border border-neutral-300 bg-neutral-100 focus-within:bg-neutral-100 focus-within:border-neutral-400'
+          : 'border border-neutral-300 bg-neutral-0',
         props.className
       )}
     >
-      <div className={'flex h-full w-full items-center gap-2 overflow-hidden'}>
+      <div className={'flex h-full w-full items-center gap-2 overflow-hidden '}>
         <input
           id={'search'}
           suppressHydrationWarning
           className={cl(
             props.inputClassName,
-            'h-full flex-1 border-none bg-transparent py-2 text-base text-neutral-900 outline-hidden placeholder:text-neutral-400'
+            'h-full flex-1 bg-transparent py-2 text-base text-neutral-700 placeholder:text-neutral-400'
           )}
           type={'text'}
           placeholder={props.searchPlaceholder}

@@ -98,7 +98,7 @@
   --text-8xl--line-height: 6.5rem; /* 104px */
 
   /* Layout Heights */
-  --header-height: 3rem; /* 48px - matches h-12 */
+  --header-height: 3.25rem; /* 48px - matches h-12 */
 }
 
 @layer theme {
@@ -198,7 +198,7 @@ body {
 ** Header an navbar
 ***************************************************************************************************/
 .yearn--header {
-  @apply inset-x-0 top-0 z-50 flex w-full max-w-[1200px] flex-row items-center justify-between pt-4 text-xs sm:text-sm md:mb-0 md:px-0 md:text-base;
+  @apply inset-x-0 top-0 z-50 flex w-full max-w-[1200px] flex-row items-center justify-between pt-4 pb-1 text-xs sm:text-sm md:mb-0 md:px-0 md:text-base;
   height: var(--header-height);
 }
 .yearn--nav {
