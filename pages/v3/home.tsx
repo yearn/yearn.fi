@@ -106,14 +106,20 @@ function V3Home(): ReactElement {
     }
   }
 
+  const layoutStyle: CSSProperties = {
+    minHeight: 'calc(100vh - var(--header-height))',
+    height: isLearnMoreExpanded ? 'auto' : 'calc(100vh - var(--header-height))',
+    overflow: isLearnMoreExpanded ? 'auto' : 'hidden'
+  }
+
   return (
-    <div className={'min-h-screen w-full bg-neutral-0'}>
-      <div className={'mx-auto w-full max-w-[1232px]'}>
+    <div className={'vaults-layout vaults-layout--list'} style={layoutStyle}>
+      <div className={'mx-auto h-full w-full max-w-[1232px]'}>
         <div
           ref={gridRef}
           className={cl(
-            'grid grid-cols-12 gap-4 overflow-x-hidden pt-12 px-4 md:grid-cols-32 md:grid-rows-8 md:gap-6 md:pb-6',
-            isLearnMoreExpanded ? 'md:min-h-screen md:auto-rows-auto' : 'md:h-screen md:auto-rows-fr md:grid-rows-8'
+            'grid h-full grid-cols-12 gap-4 overflow-x-hidden pt-6 px-4 md:grid-cols-32 md:grid-rows-8 md:gap-6 md:pb-6',
+            isLearnMoreExpanded ? 'md:min-h-full md:auto-rows-auto' : 'md:h-full md:auto-rows-fr'
           )}
           style={expandedGridStyles}
         >
