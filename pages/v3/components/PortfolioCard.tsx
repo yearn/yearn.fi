@@ -1,12 +1,15 @@
 import Link from '@components/Link'
+import { RenderAmount } from '@lib/components/RenderAmount'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { cl, formatAmount, toAddress } from '@lib/utils'
 import { formatPercent } from '@lib/utils/format'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
+import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import type { ReactElement } from 'react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 type TFeaturedVaultConfig = {
   symbol: string
@@ -26,6 +29,7 @@ type THoldingDisplayRow = {
   icon: string
   href: string
   valueUSD: number
+  vault: TYDaemonVault
 }
 
 type PortfolioCardProps = {
@@ -129,7 +133,8 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
           name: vault.name,
           icon: iconSrc,
           href: `/vaults-beta/${vault.chainID}/${vault.address}`,
-          valueUSD: totalValue
+          valueUSD: totalValue,
+          vault
         }
       })
       .filter((entry) => entry.valueUSD > 0)
@@ -155,7 +160,6 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
       <div
         className={cl(
           'flex h-full w-full flex-col justify-center gap-6 rounded-xl border border-neutral-300 bg-neutral-100 p-6 text-neutral-900 shadow-lg',
-          'md:p-8',
           className
         )}
       >
@@ -191,8 +195,7 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
     return (
       <div
         className={cl(
-          'flex h-full w-full flex-col justify-center gap-6 rounded-3xl bg-neutral-100 p-6 text-neutral-900 shadow-lg',
-          'md:p-8',
+          'flex h-full w-full flex-col justify-center gap-6 rounded-xl border border-neutral-300 bg-neutral-100 p-6 text-neutral-900 shadow-lg',
           className
         )}
       >
@@ -220,31 +223,29 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
   return (
     <div
       className={cl(
-        'flex h-full w-full flex-col rounded-3xl bg-neutral-100 p-6 text-neutral-900 shadow-lg',
-        'md:p-8',
+        'flex h-full w-full flex-col rounded-xl border border-neutral-300 bg-neutral-100 p-6 text-neutral-900 shadow-lg',
         className
       )}
     >
-      <strong className={'block pb-2 text-3xl font-black text-neutral-700 md:pb-4 md:text-4xl md:leading-12'}>
-        {'Your Deposits'}
-      </strong>
-      <div className={'flex flex-col gap-6 md:flex-row md:items-end md:gap-14'}>
-        <div className={'flex items-end gap-2'}>
+      <div className={'flex flex-col gap-4 md:flex-row md:items-center md:justify-between'}>
+        <strong className={'text-2xl font-black text-neutral-700 md:text-3xl md:leading-10'}>{'Your Deposits'}</strong>
+        <div
+          className={
+            'min-w-[200px] max-w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-right shadow-sm md:min-w-[220px]'
+          }
+        >
           {isLoading ? (
-            <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-neutral-900/20'} />
+            <div className={'h-9 w-full animate-pulse rounded-sm bg-neutral-900/10'} />
           ) : (
-            <>
-              <b className={'font-number text-3xl text-neutral-900 md:text-4xl'}>
-                {'$'}
-                <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
-              </b>
-              <p className={'pb-0.5 text-sm uppercase text-neutral-900/60'}>{'Deposited'}</p>
-            </>
+            <b className={'font-number text-3xl text-neutral-900 md:text-[34px]'}>
+              {'$'}
+              <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
+            </b>
           )}
         </div>
       </div>
       {hasDisplayHoldings ? (
-        <div className={'mt-6'}>
+        <div className={'mt-6 flex-1 min-h-0'}>
           <HoldingsList rows={holdingRows} />
         </div>
       ) : (
@@ -253,6 +254,15 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
           {featuredSection}
         </div>
       )}
+      <Link
+        className={cl(
+          'mt-6 inline-flex w-full items-center justify-center rounded-xl border border-neutral-900/60 px-5 py-3 text-sm font-semibold text-neutral-900 transition',
+          'hover:border-neutral-900 hover:text-neutral-900'
+        )}
+        href={'/portfolio'}
+      >
+        {'Visit Account Overview Page'}
+      </Link>
     </div>
   )
 }
@@ -367,37 +377,166 @@ function PortfolioCtaRow({
   )
 }
 
+function ApyDisplay({ value, prefix }: { value: number; prefix?: string }): ReactElement {
+  return (
+    <div className={'flex items-center justify-end gap-2 whitespace-nowrap text-sm text-neutral-900'}>
+      {prefix ? <span>{prefix}</span> : null}
+      <RenderAmount shouldHideTooltip value={value} symbol={'percent'} decimals={6} />
+    </div>
+  )
+}
+
+function HoldingAprValue({ vault }: { vault: TYDaemonVault }): ReactElement {
+  const data = useVaultApyData(vault)
+  const isNewVault = vault.apr.forwardAPR?.type.includes('new') || vault.apr.type.includes('new')
+  const isKatanaWithExtras = vault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined
+
+  if (isNewVault) {
+    return <span className={'text-right text-xs font-semibold uppercase text-neutral-600'}>{'NEW'}</span>
+  }
+
+  if (isKatanaWithExtras && data.katanaTotalApr !== undefined) {
+    return <ApyDisplay prefix={'⚔️'} value={data.katanaTotalApr} />
+  }
+
+  if (data.mode === 'noForward' || vault.chainID === KATANA_CHAIN_ID) {
+    if (data.rewardsAprSum > 0) {
+      return <ApyDisplay prefix={'⚡️'} value={data.rewardsAprSum + data.netApr} />
+    }
+    return <ApyDisplay value={data.netApr} />
+  }
+
+  if (data.mode === 'boosted' && data.isBoosted) {
+    return <ApyDisplay value={data.baseForwardApr} />
+  }
+
+  if (data.mode === 'rewards') {
+    const isSourceVeYFI = vault.staking.source === 'VeYFI'
+
+    if (isSourceVeYFI && data.estAprRange) {
+      return (
+        <div className={'flex items-center justify-end gap-2 whitespace-nowrap text-sm text-neutral-900'}>
+          <span>{'⚡️'}</span>
+          <RenderAmount shouldHideTooltip value={data.estAprRange[0]} symbol={'percent'} decimals={6} />
+          <span>{'→'}</span>
+          <RenderAmount shouldHideTooltip value={data.estAprRange[1]} symbol={'percent'} decimals={6} />
+        </div>
+      )
+    }
+
+    return <ApyDisplay prefix={'⚡️'} value={data.rewardsAprSum + data.baseForwardApr} />
+  }
+
+  if (data.mode === 'spot') {
+    const prefix = vault?.info?.isBoosted ? '⚡️' : undefined
+    return <ApyDisplay prefix={prefix} value={data.baseForwardApr} />
+  }
+
+  const prefix = vault?.info?.isBoosted ? '⚡️' : undefined
+  return <ApyDisplay prefix={prefix} value={data.netApr} />
+}
+
 function HoldingsList({ rows }: { rows: THoldingDisplayRow[] }): ReactElement | null {
-  if (rows.length === 0) {
+  const hasRows = rows.length > 0
+  const columnsClass = 'grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-4'
+  const rowHeight = 64
+  const maxVisibleRows = 2
+  const visibleCount = hasRows ? Math.min(rows.length, maxVisibleRows) : 0
+  const shouldScroll = hasRows && rows.length > visibleCount
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(true)
+  const displayRows = useMemo(
+    () => (shouldScroll ? rows.concat(rows.slice(0, visibleCount)) : rows),
+    [rows, shouldScroll, visibleCount]
+  )
+
+  useEffect(() => {
+    if (!shouldScroll) return undefined
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => prev + 1)
+      setIsTransitioning(true)
+    }, 3500)
+    return () => clearInterval(interval)
+  }, [shouldScroll])
+
+  useEffect(() => {
+    if (!hasRows) {
+      return undefined
+    }
+    if (!shouldScroll) {
+      if (activeIndex !== 0) {
+        setActiveIndex(0)
+      }
+      return undefined
+    }
+    if (activeIndex >= rows.length) {
+      const timeout = setTimeout(() => {
+        setIsTransitioning(false)
+        setActiveIndex(0)
+      }, 800)
+      return () => clearTimeout(timeout)
+    }
+    if (!isTransitioning) {
+      setIsTransitioning(true)
+    }
+    return undefined
+  }, [activeIndex, hasRows, isTransitioning, rows.length, shouldScroll])
+
+  const translateY = shouldScroll ? -(activeIndex * rowHeight) : 0
+  const listHeight = shouldScroll
+    ? `clamp(${rowHeight}px, 28vh, ${rowHeight * maxVisibleRows}px)`
+    : `${rowHeight * visibleCount}px`
+
+  if (!hasRows) {
     return null
   }
 
   return (
     <div className={'flex flex-col gap-px rounded-2xl bg-neutral-900/10 p-px'}>
-      {rows.map((row, index) => (
-        <Link
-          key={row.id}
-          className={cl(
-            'flex items-center justify-between bg-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-300',
-            index === 0 ? 'rounded-t-2xl' : '',
-            index === rows.length - 1 ? 'rounded-b-2xl' : ''
-          )}
-          href={row.href}
+      <div
+        className={cl(
+          columnsClass,
+          'rounded-t-2xl bg-neutral-200 px-4 py-2 text-xs font-semibold uppercase text-neutral-600'
+        )}
+      >
+        <span>{'Asset'}</span>
+        <span className={'text-right'}>{'Est. APR'}</span>
+        <span className={'text-right'}>{'Value'}</span>
+      </div>
+      <div className={'overflow-hidden rounded-b-2xl'} style={{ height: listHeight, maxHeight: '100%' }}>
+        <div
+          className={'flex flex-col'}
+          style={{
+            transform: `translateY(${translateY}px)`,
+            transition: isTransitioning ? 'transform 0.8s ease-in-out' : 'none'
+          }}
         >
-          <div className={'flex items-center gap-3'}>
-            <div className={'rounded-2xl p-1'}>
-              <div className={'flex size-8 items-center justify-center rounded-2xl bg-neutral-900/10'}>
-                <img alt={`${row.symbol} icon`} className={'size-6 rounded-full object-contain'} src={row.icon} />
+          {displayRows.map((row, idx) => (
+            <Link
+              key={`${row.id}-${row.vault.address}-${idx}`}
+              className={cl(
+                columnsClass,
+                'h-16 bg-neutral-200 px-4 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-300'
+              )}
+              href={row.href}
+            >
+              <div className={'flex items-center gap-3'}>
+                <div className={'rounded-2xl p-1'}>
+                  <div className={'flex size-8 items-center justify-center rounded-2xl bg-neutral-900/10'}>
+                    <img alt={`${row.symbol} icon`} className={'size-6 rounded-full object-contain'} src={row.icon} />
+                  </div>
+                </div>
+                <div className={'flex min-w-0 flex-col'}>
+                  <span className={'truncate'}>{row.name}</span>
+                  <span className={'truncate text-xs text-neutral-900/60'}>{row.symbol}</span>
+                </div>
               </div>
-            </div>
-            <div className={'flex flex-col'}>
-              <span>{row.name}</span>
-              <span className={'text-xs text-neutral-900/60'}>{row.symbol}</span>
-            </div>
-          </div>
-          <span className={'text-base font-semibold'}>{currencyFormatter.format(row.valueUSD)}</span>
-        </Link>
-      ))}
+              <HoldingAprValue vault={row.vault} />
+              <span className={'text-right text-base font-semibold'}>{currencyFormatter.format(row.valueUSD)}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

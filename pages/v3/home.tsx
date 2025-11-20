@@ -107,12 +107,12 @@ function V3Home(): ReactElement {
   }
 
   return (
-    <div className={'min-h-screen w-full bg-neutral-100'}>
+    <div className={'min-h-screen w-full bg-neutral-0'}>
       <div className={'mx-auto w-full max-w-[1232px]'}>
         <div
           ref={gridRef}
           className={cl(
-            'grid grid-cols-12 gap-4 overflow-x-hidden pt-12 px-4 md:grid-cols-32 md:grid-rows-8 md:gap-6 md:pt-20 md:pb-6',
+            'grid grid-cols-12 gap-4 overflow-x-hidden pt-12 px-4 md:grid-cols-32 md:grid-rows-8 md:gap-6 md:pb-6',
             isLearnMoreExpanded ? 'md:min-h-screen md:auto-rows-auto' : 'md:h-screen md:auto-rows-fr md:grid-rows-8'
           )}
           style={expandedGridStyles}
@@ -152,7 +152,7 @@ function V3Home(): ReactElement {
               isLearnMoreExpanded ? '' : 'md:row-start-5'
             )}
           >
-            <PortfolioCard holdingsVaults={holdingsVaults} />
+            <PortfolioCard holdingsVaults={holdingsVaults} className={'p-4'} />
           </div>
         </div>
       </div>
