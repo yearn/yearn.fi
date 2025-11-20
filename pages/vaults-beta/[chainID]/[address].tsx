@@ -4,6 +4,7 @@ import type { TUseBalancesTokens } from '@lib/hooks/useBalances.multichains'
 import { useFetch } from '@lib/hooks/useFetch'
 import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
 import { cl, toAddress } from '@lib/utils'
+import { IconChevron } from '@lib/icons/IconChevron'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
@@ -35,6 +36,18 @@ function Index(): ReactElement | null {
   const [overrideVault, setOverrideVault] = useState<TYDaemonVault | undefined>(undefined)
   const [hasFetchedOverride, setHasFetchedOverride] = useState(false)
   const [lastVaultKey, setLastVaultKey] = useState(vaultKey)
+  const [openSections, setOpenSections] = useState<Record<'about' | 'risk' | 'strategies' | 'info', boolean>>({
+    about: true,
+    risk: true,
+    strategies: true,
+    info: true
+  })
+  const collapsibleTitles: Record<'about' | 'risk' | 'strategies' | 'info', string> = {
+    about: 'Description',
+    risk: 'Risk',
+    strategies: 'Strategies',
+    info: 'More Info'
+  }
 
   // Reset state when vault changes
   useEffect(() => {
@@ -205,11 +218,44 @@ function Index(): ReactElement | null {
               }
             ]
               .filter((section) => section.shouldRender)
-              .map((section) => (
-                <div key={section.key} className={'border border-neutral-300 rounded-lg bg-surface'}>
-                  {section.content}
-                </div>
-              ))}
+              .map((section) => {
+                const isCollapsible =
+                  section.key === 'about' ||
+                  section.key === 'risk' ||
+                  section.key === 'strategies' ||
+                  section.key === 'info'
+                if (isCollapsible) {
+                  const typedKey = section.key as 'about' | 'risk' | 'strategies' | 'info'
+                  const isOpen = openSections[typedKey]
+
+                  return (
+                    <div key={section.key} className={'border border-neutral-300 rounded-lg bg-surface'}>
+                      <button
+                        type={'button'}
+                        className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
+                        onClick={(): void =>
+                          setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                        }
+                      >
+                        <span className={'text-base font-semibold text-neutral-900'}>
+                          {collapsibleTitles[typedKey]}
+                        </span>
+                        <IconChevron
+                          className={'size-4 text-neutral-600 transition-transform duration-200'}
+                          direction={isOpen ? 'up' : 'down'}
+                        />
+                      </button>
+                      {isOpen ? <div>{section.content}</div> : null}
+                    </div>
+                  )
+                }
+
+                return (
+                  <div key={section.key} className={'border border-neutral-300 rounded-lg bg-surface'}>
+                    {section.content}
+                  </div>
+                )
+              })}
           </div>
           <div className={'md:col-span-7 md:col-start-14 md:sticky md:h-fit'} style={{ top: '193.5px' }}>
             <div>

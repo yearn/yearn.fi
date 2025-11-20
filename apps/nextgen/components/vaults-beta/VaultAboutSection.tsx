@@ -83,9 +83,8 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
   }
 
   return (
-    <div className={'space-y-4 p-4 md:p-8 md:py-4'}>
+    <div className={'space-y-4 p-8 pt-0'}>
       <div className={'w-full'}>
-        <b className={'text-neutral-900'}>{'Description'}</b>
         <div className={'mt-2 text-neutral-900/50'}>
           {typeof getVaultDescription() === 'string' ? (
             <p
