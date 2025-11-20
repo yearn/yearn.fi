@@ -15,6 +15,7 @@ import { cl } from '@lib/utils'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
 import type { ReactElement } from 'react'
+import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router'
 import PlausibleProvider from './components/PlausibleProvider'
@@ -38,6 +39,12 @@ function WithLayout(): ReactElement {
 function App(): ReactElement {
   const location = useLocation()
   const { manifest } = useCurrentApp()
+
+  // Scroll to top on route change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on pathname change only
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
 
   // Determine dynamic meta for vault detail pages
   const asPath = location.pathname
