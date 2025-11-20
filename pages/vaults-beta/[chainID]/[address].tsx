@@ -1,3 +1,4 @@
+import Link from '@components/Link'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import type { TUseBalancesTokens } from '@lib/hooks/useBalances.multichains'
@@ -164,6 +165,17 @@ function Index(): ReactElement | null {
   return (
     <div className={'vaults-layout vaults-layout--detail'}>
       <div className={'mx-auto w-full max-w-[1232px] pt-20 md:pt-20 px-4'}>
+        <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
+          <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
+            {'Home'}
+          </Link>
+          <span>{'>'}</span>
+          <Link to={'/v3'} className={'transition-colors hover:text-neutral-900'}>
+            {'Vaults'}
+          </Link>
+          <span>{'>'}</span>
+          <span className={'font-medium text-neutral-900'}>{currentVault.name}</span>
+        </div>
         {/* Header with gradient background and vault logo */}
         <header
           className={cl(
