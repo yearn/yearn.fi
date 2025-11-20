@@ -302,10 +302,10 @@ function ListOfVaults({
   )
 
   const listElement = (
-    <div className={'flex min-h-60 w-full flex-1 flex-col'} style={{ minHeight: 0 }}>
-      <div className={'flex h-full flex-col overflow-hidden rounded-xl border border-neutral-200 bg-surface'}>
+    <div className={'flex w-full flex-1 flex-col'} style={{ minHeight: 0 }}>
+      <div className={'flex flex-1 flex-col overflow-hidden rounded-xl border border-neutral-200 bg-surface'}>
         <VaultsV3ListHead
-          containerClassName={'rounded-t-xl bg-surface'}
+          containerClassName={'rounded-t-xl bg-surface shrink-0'}
           wrapperClassName={'sticky top-0 z-10 mt-0 bg-surface'}
           sortBy={sortBy}
           sortDirection={sortDirection}
@@ -406,11 +406,9 @@ function Index(): ReactElement {
   return (
     <div className={'vaults-layout vaults-layout--list'}>
       <div
-        className={
-          'relative z-50 mx-auto flex w-full max-w-[1232px] flex-col gap-4 bg-transparent px-4 pb-4 md:gap-3 md:overflow-hidden'
-        }
+        className={'relative z-50 mx-auto flex w-full max-w-[1232px] flex-col gap-4 bg-transparent px-4 pb-4 md:gap-3'}
         style={{
-          height: '100vh - var(--header-height))'
+          height: 'calc(100vh - var(--header-height))'
         }}
       >
         <ListOfVaults {...queryArgs}>
