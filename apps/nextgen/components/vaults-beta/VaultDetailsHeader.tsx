@@ -658,15 +658,25 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
           isCompressed ? 'md:col-span-5 md:row-start-2 md:justify-center' : 'md:col-span-20 md:row-start-2'
         )}
       >
-        <div className={'flex items-center gap-4'}>
-          <div className={'flex size-10 items-center justify-start rounded-full bg-neutral-0/70'}>
-            <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
+        <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
+          <div
+            className={cl(
+              'flex items-center justify-start rounded-full bg-neutral-0/70',
+              isCompressed ? 'size-8' : 'size-10'
+            )}
+          >
+            <ImageWithFallback
+              src={tokenLogoSrc}
+              alt={currentVault.token.symbol || ''}
+              width={isCompressed ? 32 : 40}
+              height={isCompressed ? 32 : 40}
+            />
           </div>
           <div className={'flex flex-col'}>
             <strong
               className={cl(
                 'text-lg font-black leading-tight text-neutral-700 md:text-3xl md:leading-10',
-                isCompressed ? 'md:text-2xl md:leading-9' : ''
+                isCompressed ? 'md:text-[30px] md:leading-9' : ''
               )}
             >
               {getVaultName(currentVault)} {' yVault'}
@@ -678,7 +688,7 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
             type={'button'}
             onClick={(): void => copyToClipboard(currentVault.address)}
             className={
-              'flex items-center gap-2 pt-2 text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm'
+              'flex items-center gap-2 text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm'
             }
           >
             <span className={cl(isCompressed ? 'flex-1 max-w-[260px] truncate whitespace-nowrap' : 'break-all')}>
@@ -687,7 +697,9 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
             <IconCopy className={'size-4 shrink-0'} />
           </button>
         ) : null}
-        {metadataLine ? <p className={'text-xs text-neutral-900/70 md:text-sm'}>{metadataLine}</p> : null}
+        {metadataLine && !isCompressed ? (
+          <p className={'text-xs text-neutral-900/70 md:text-sm'}>{metadataLine}</p>
+        ) : null}
       </div>
 
       <div
