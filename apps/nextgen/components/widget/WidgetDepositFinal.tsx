@@ -204,10 +204,7 @@ export const WidgetDepositFinal: FC<Props> = ({
     [getToken, depositToken, sourceChainId]
   )
   const vault = useMemo(() => getToken({ address: vaultAddress, chainID: chainId }), [getToken, vaultAddress, chainId])
-  const stakingToken = useMemo(
-    () => (stakingAddress ? getToken({ address: stakingAddress, chainID: chainId }) : undefined),
-    [getToken, stakingAddress, chainId]
-  )
+
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
 

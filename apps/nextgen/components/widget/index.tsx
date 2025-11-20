@@ -72,7 +72,6 @@ export const Widget: FC<Props> = ({
   handleSuccess
 }) => {
   const [mode, setMode] = useState<ActionType>(actions[0])
-
   const { data: assetToken, isLoading: isLoadingAsset } = useReadContract({
     address: vaultAddress as Address,
     abi: vaultType === 'v2' ? vaultAbi : erc4626Abi,
@@ -83,7 +82,7 @@ export const Widget: FC<Props> = ({
   const SelectedComponent = useMemo(() => {
     if (!assetToken || isLoadingAsset) {
       return (
-        <div className="p-6 flex items-center justify-center">
+        <div className="p-6 flex items-center justify-center h-[317px]">
           <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
         </div>
       )
