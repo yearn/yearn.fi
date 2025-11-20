@@ -53,35 +53,6 @@ export function VaultsV3ListRow({
   const [isExpanded, setIsExpanded] = useState(false)
   const [activeExpandedTab, setActiveExpandedTab] = useState<ExpandedTabId>('charts')
 
-  // const badgeDefinitions = useMemo(() => {
-  //   if (!flags) {
-  //     return [] as { label: string; className: string }[]
-  //   }
-
-  //   const definitions: { label: string; className: string }[] = []
-
-  //   if (flags.hasHoldings) {
-  //     definitions.push({
-  //       label: 'Holding',
-  //       className: 'border-blue-200 bg-blue-100 text-blue-800'
-  //     })
-  //   }
-  //   if (flags.isMigratable) {
-  //     definitions.push({
-  //       label: 'Migratable',
-  //       className: 'border-amber-200 bg-amber-100 text-amber-800'
-  //     })
-  //   }
-  //   if (flags.isRetired) {
-  //     definitions.push({
-  //       label: 'Retired',
-  //       className: 'border-rose-200 bg-rose-100 text-rose-800'
-  //     })
-  //   }
-
-  //   return definitions
-  // }, [flags])
-
   const handleRowClick = (): void => {
     navigate(href)
   }
@@ -135,7 +106,7 @@ export function VaultsV3ListRow({
             setIsExpanded((value) => !value)
           }}
           className={cl(
-            'absolute top-4 right-4 z-20 flex size-9 items-center justify-center rounded-full border border-white/30 bg-white/70 text-neutral-700 transition-colors duration-150',
+            'absolute top-4 right-4 z-20 flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-neutral-700 transition-colors duration-150',
             'hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
             'md:top-5 md:right-5'
           )}

@@ -500,7 +500,7 @@ function FilterControls({
               <button
                 type={'button'}
                 className={cl(
-                  'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-500 bg-neutral-0 transition-colors',
+                  'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-500 bg-surface transition-colors',
                   'hover:text-neutral-700',
                   'data-[active=true]:border-neutral-400 data-[active=true]:text-neutral-700'
                 )}
