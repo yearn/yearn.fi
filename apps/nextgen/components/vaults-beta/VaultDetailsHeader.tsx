@@ -37,6 +37,7 @@ import { Fragment, useEffect, useState } from 'react'
 import { erc20Abi, zeroAddress } from 'viem'
 import { useBlockNumber } from 'wagmi'
 import { readContract, readContracts } from 'wagmi/actions'
+import Link from '/src/components/Link'
 
 type TVaultHoldingsData = {
   deposited: TNormalizedBN
@@ -47,7 +48,7 @@ type TVaultHoldingsData = {
   earnedValue: number
 }
 
-const METRIC_VALUE_CLASS = 'font-number text-[24px] leading-tight md:text-[24px] font-normal'
+const METRIC_VALUE_CLASS = 'font-number text-[20px] leading-tight md:text-[22px] font-normal'
 const METRIC_FOOTNOTE_CLASS = 'text-xs text-neutral-500'
 
 type TMetricBlock = {
@@ -132,7 +133,13 @@ function MetricInfoModal({
   )
 }
 
-function MetricsCard({ items }: { items: TMetricBlock[] }): ReactElement {
+function MetricsCard({
+  hideFootnotes = false,
+  items
+}: {
+  items: TMetricBlock[]
+  hideFootnotes?: boolean
+}): ReactElement {
   return (
     <div className={cl('rounded-lg border border-neutral-300 bg-surface text-neutral-900', 'backdrop-blur-sm')}>
       <div className={'divide-y divide-neutral-300 md:flex md:divide-y-0'}>
@@ -150,7 +157,7 @@ function MetricsCard({ items }: { items: TMetricBlock[] }): ReactElement {
                 {item.secondaryLabel ?? <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>}
               </div>
               <div className={'[&_b.yearn--table-data-section-item-value]:text-left'}>{item.value}</div>
-              {item.footnote ? <div>{item.footnote}</div> : null}
+              {item.footnote && !hideFootnotes ? <div>{item.footnote}</div> : null}
             </div>
           )
         )}
@@ -189,7 +196,13 @@ function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): 
   )
 }
 
-function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+function VaultOverviewCard({
+  currentVault,
+  isCompressed
+}: {
+  currentVault: TYDaemonVault
+  isCompressed: boolean
+}): ReactElement {
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
   const metrics: TMetricBlock[] = [
     {
@@ -246,17 +259,19 @@ function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): R
     }
   ]
 
-  return <MetricsCard items={metrics} />
+  return <MetricsCard items={metrics} hideFootnotes={isCompressed} />
 }
 
 function UserHoldingsCard({
   currentVault,
   vaultData,
-  tokenPrice
+  tokenPrice,
+  isCompressed
 }: {
   currentVault: TYDaemonVault
   vaultData: TVaultHoldingsData
   tokenPrice: number
+  isCompressed: boolean
 }): ReactElement {
   const availableToDeposit = useAvailableToDeposit(currentVault)
   const availableAmount = toNormalizedBN(availableToDeposit, currentVault.token.decimals)
@@ -324,7 +339,7 @@ function UserHoldingsCard({
     }
   ]
 
-  return <MetricsCard items={sections} />
+  return <MetricsCard items={sections} hideFootnotes={isCompressed} />
 }
 
 export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
@@ -332,6 +347,7 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
   const { getPrice } = useYearn()
   const { data: blockNumber } = useBlockNumber({ watch: true })
   const { decimals } = currentVault
+  const [isCompressed, setIsCompressed] = useState(false)
   const [vaultData, setVaultData] = useState<TVaultHoldingsData>({
     deposited: zeroNormalizedBN,
     valueInToken: zeroNormalizedBN,
@@ -601,23 +617,60 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
 
   const chainName = getNetwork(currentVault.chainID).name
   const metadataLine = [chainName, currentVault.category, currentVault.kind].filter(Boolean).join(' • ')
+  const breadcrumbs = (
+    <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
+      <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
+        {'Home'}
+      </Link>
+      <span>{'>'}</span>
+      <Link to={'/v3'} className={'transition-colors hover:text-neutral-900'}>
+        {'Vaults'}
+      </Link>
+      <span>{'>'}</span>
+      <span className={'font-medium text-neutral-900'}>{currentVault.name}</span>
+    </div>
+  )
   const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
     currentVault.chainID
   }/${currentVault.token.address.toLowerCase()}/logo-128.png`
+  const displayAddress =
+    currentVault.address && isCompressed
+      ? `${currentVault.address.slice(0, 13)}...${currentVault.address.slice(-13)}`
+      : currentVault.address
+
+  useEffect(() => {
+    const handleScroll = (): void => {
+      const shouldCompress = window.scrollY > 40
+      setIsCompressed((prev) => (prev === shouldCompress ? prev : shouldCompress))
+    }
+
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return (): void => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
-    <div className={'col-span-12 mt-4 flex w-full flex-col text-left'}>
-      <div className={'flex flex-col gap-0'}>
-        <div className={'flex flex-col gap-4 md:flex-row md:items-center'}>
-          <div className={'flex items-center gap-4'}>
-            <div className={'flex size-10 items-center justify-start rounded-full bg-neutral-0/70'}>
-              <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
-            </div>
-            <div className={'flex flex-col'}>
-              <strong className={'text-2xl font-black leading-tight text-neutral-700 md:text-[48px] md:leading-14'}>
-                {getVaultName(currentVault)} {' yVault'}
-              </strong>
-            </div>
+    <div className={'col-span-12 grid w-full grid-cols-1 gap-4 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
+      <div className={'md:col-span-20 md:row-start-1 mt-2 w-full md:py-0'}>{breadcrumbs}</div>
+      <div
+        className={cl(
+          'flex flex-col gap-1',
+          isCompressed ? 'md:col-span-5 md:row-start-2 md:justify-center' : 'md:col-span-20 md:row-start-2'
+        )}
+      >
+        <div className={'flex items-center gap-4'}>
+          <div className={'flex size-10 items-center justify-start rounded-full bg-neutral-0/70'}>
+            <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
+          </div>
+          <div className={'flex flex-col'}>
+            <strong
+              className={cl(
+                'text-lg font-black leading-tight text-neutral-700 md:text-3xl md:leading-10',
+                isCompressed ? 'md:text-2xl md:leading-9' : ''
+              )}
+            >
+              {getVaultName(currentVault)} {' yVault'}
+            </strong>
           </div>
         </div>
         {currentVault.address ? (
@@ -625,23 +678,34 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
             type={'button'}
             onClick={(): void => copyToClipboard(currentVault.address)}
             className={
-              'flex items-center gap-2 text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm pt-2'
+              'flex items-center gap-2 pt-2 text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm'
             }
           >
-            <span>{currentVault.address}</span>
-            <IconCopy className={'size-4'} />
+            <span className={cl(isCompressed ? 'flex-1 max-w-[260px] truncate whitespace-nowrap' : 'break-all')}>
+              {displayAddress}
+            </span>
+            <IconCopy className={'size-4 shrink-0'} />
           </button>
         ) : null}
-        {metadataLine ? <p className={'text-sm text-neutral-900/70 md:text-base'}>{metadataLine}</p> : null}
+        {metadataLine ? <p className={'text-xs text-neutral-900/70 md:text-sm'}>{metadataLine}</p> : null}
       </div>
 
-      <div className={'mt-4 grid w-full grid-cols-1 gap-4 md:grid-cols-20 md:items-start'}>
-        <div className={'md:col-span-13'}>
-          <VaultOverviewCard currentVault={currentVault} />
-        </div>
-        <div className={'md:col-span-7'}>
-          <UserHoldingsCard currentVault={currentVault} vaultData={vaultData} tokenPrice={tokenPrice} />
-        </div>
+      <div
+        className={cl(isCompressed ? 'md:col-start-6 md:col-span-8 md:row-start-2' : 'md:col-span-13 md:row-start-3')}
+      >
+        <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
+      </div>
+      <div
+        className={cl(
+          isCompressed ? 'md:col-span-7 md:col-start-14 md:row-start-2' : 'md:col-span-7 md:col-start-14 md:row-start-3'
+        )}
+      >
+        <UserHoldingsCard
+          currentVault={currentVault}
+          vaultData={vaultData}
+          tokenPrice={tokenPrice}
+          isCompressed={isCompressed}
+        />
       </div>
     </div>
   )

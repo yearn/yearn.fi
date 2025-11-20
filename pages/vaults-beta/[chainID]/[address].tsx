@@ -1,4 +1,3 @@
-import Link from '@components/Link'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import type { TUseBalancesTokens } from '@lib/hooks/useBalances.multichains'
@@ -164,32 +163,19 @@ function Index(): ReactElement | null {
 
   return (
     <div className={'vaults-layout vaults-layout--detail'}>
-      <div className={'mx-auto w-full max-w-[1232px] pt-20 md:pt-20 px-4'}>
-        <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
-          <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
-            {'Home'}
-          </Link>
-          <span>{'>'}</span>
-          <Link to={'/v3'} className={'transition-colors hover:text-neutral-900'}>
-            {'Vaults'}
-          </Link>
-          <span>{'>'}</span>
-          <span className={'font-medium text-neutral-900'}>{currentVault.name}</span>
-        </div>
-        {/* Header with gradient background and vault logo */}
+      <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         <header
           className={cl(
-            'h-full rounded-3xl ',
-            // 'pt-6 pb-6 md:pb-10 px-4 md:px-0',
-            // 'bg-[linear-gradient(73deg,#D21162_24.91%,#2C3DA6_99.66%)]',
-            'relative flex flex-col items-center justify-center'
+            'h-full rounded-3xl',
+            'relative flex flex-col items-center justify-center',
+            'md:sticky md:z-30'
           )}
+          style={{ top: 'var(--header-height)' }}
         >
-          <div className={'absolute -top-10 md:-top-6'}></div>
           <VaultDetailsHeader currentVault={currentVault} />
         </header>
 
-        <section className={'mt-6 grid grid-cols-1 gap-6 md:grid-cols-20'}>
+        <section className={'mt-6 grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start'}>
           <div className={'space-y-4 md:col-span-13'}>
             {[
               {
@@ -225,7 +211,7 @@ function Index(): ReactElement | null {
                 </div>
               ))}
           </div>
-          <div className={'md:col-span-7 md:sticky'}>
+          <div className={'md:col-span-7 md:col-start-14 md:sticky md:top-32 md:h-fit'}>
             <div>
               <Widget
                 vaultType={isV3 ? 'v3' : 'v2'}

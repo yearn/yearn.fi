@@ -8,8 +8,8 @@ import { IconWallet } from '@lib/icons/IconWallet'
 import { cl } from '@lib/utils'
 import { truncateHex } from '@lib/utils/tools.address'
 import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
-import type { ReactElement } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import type { CSSProperties, ReactElement } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
@@ -27,7 +27,11 @@ type TNavbar = { nav: TMenu[]; currentPathName: string }
 type TPrimaryLink = TMenu & { matchers?: string[] }
 
 const PRIMARY_LINKS: TPrimaryLink[] = [
-  { path: '/v3', label: 'Vaults', matchers: ['/', '/v3', '/vaults', '/vaults-beta'] },
+  {
+    path: '/v3',
+    label: 'Vaults',
+    matchers: ['/', '/v3', '/vaults', '/vaults-beta']
+  },
   { path: '/portfolio', label: 'Portfolio' }
 ]
 
@@ -136,6 +140,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
   const pathname = location.pathname
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
   const { setShouldOpenCurtain, notificationStatus } = useNotifications()
+  const [surfaceBackground, setSurfaceBackground] = useState<string | undefined>(undefined)
 
   const menu = useMemo((): TMenu[] => {
     // const HOME_MENU = { path: '/apps', label: 'Apps' }
@@ -188,8 +193,45 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     return ''
   }, [notificationStatus])
 
+  const updateSurfaceBackground = useCallback((): void => {
+    const layoutHost = document.querySelector('.vaults-layout') as HTMLElement | null
+    const target = layoutHost ?? document.documentElement
+    const value = getComputedStyle(target).getPropertyValue('--surface-background').trim()
+    setSurfaceBackground(value || undefined)
+  }, [])
+
+  useEffect(() => {
+    updateSurfaceBackground()
+
+    const observer = new MutationObserver(() => updateSurfaceBackground())
+    const layoutHost = document.querySelector('.vaults-layout')
+    if (layoutHost) {
+      observer.observe(layoutHost, { attributes: true, attributeFilter: ['class'] })
+    }
+
+    return () => observer.disconnect()
+  }, [updateSurfaceBackground])
+
+  useEffect(() => {
+    updateSurfaceBackground()
+    void pathname
+  }, [updateSurfaceBackground, pathname])
+
   return (
-    <div id={'head'} className={'inset-x-0 top-0 z-50 w-full'}>
+    <div
+      id={'head'}
+      className={
+        'sticky inset-x-0 top-0 z-50 w-full bg-app backdrop-blur-md supports-[backdrop-filter]:backdrop-saturate-150'
+      }
+      style={
+        surfaceBackground
+          ? ({
+              backgroundColor: surfaceBackground,
+              '--surface-background': surfaceBackground
+            } as CSSProperties & { '--surface-background': string })
+          : undefined
+      }
+    >
       <div className={'w-full'}>
         <header className={'yearn--header mx-auto max-w-[1232px] px-0!'}>
           <div className={'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'}>
