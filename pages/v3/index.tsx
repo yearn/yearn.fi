@@ -296,10 +296,10 @@ function ListOfVaults({
   )
 
   const listElement = (
-    <div className={'flex min-h-[240px] w-full flex-col'}>
-      <div className={'flex flex-col overflow-hidden rounded-t-xl'}>
+    <div className={'flex min-h-60 w-full flex-col '}>
+      <div className={'flex flex-col overflow-hidden rounded-t-xl border border-neutral-200'}>
         <VaultsV3ListHead
-          containerClassName={'rounded-t-lg bg-neutral-100'}
+          containerClassName={'rounded-t-lg bg-neutral-0'}
           sortBy={sortBy}
           sortDirection={sortDirection}
           onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
@@ -401,7 +401,7 @@ function Index(): ReactElement {
   })
 
   return (
-    <div className={'relative z-50 mx-auto grid w-full max-w-[1232px] gap-4 bg-neutral-0 px-4 pb-8 pt-20 md:gap-2'}>
+    <div className={'relative z-50 mx-auto grid w-full max-w-[1232px] gap-4 bg-transparent px-4 pb-8 pt-20 md:gap-2'}>
       <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
         <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
           {'Home'}

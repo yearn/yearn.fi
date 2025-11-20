@@ -1,5 +1,5 @@
+import { useThemePreference } from '@hooks/useThemePreference'
 import type { ReactElement } from 'react'
-import { useEffect, useState } from 'react'
 import { Cell, Label, Pie, PieChart, Tooltip } from 'recharts'
 import { AllocationTooltip } from './AllocationTooltip'
 
@@ -36,21 +36,8 @@ type TAllocationChartProps = {
  * All dimensions and styling are configurable through props
  ************************************************************************************************/
 function useDarkMode(): boolean {
-  const [isDark, setIsDark] = useState(false)
-
-  useEffect(() => {
-    const checkDarkMode = (): void => {
-      const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
-      setIsDark(isDarkMode)
-    }
-
-    checkDarkMode()
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    mediaQuery.addEventListener('change', checkDarkMode)
-    return () => mediaQuery.removeEventListener('change', checkDarkMode)
-  }, [])
-
-  return isDark
+  const themePreference = useThemePreference()
+  return themePreference === 'dark'
 }
 
 export function AllocationChart({

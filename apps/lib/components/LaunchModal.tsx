@@ -1,4 +1,5 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
+import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { IconClose } from '@lib/icons/IconClose'
 import { cl } from '@lib/utils'
 import type { MouseEvent, ReactElement } from 'react'
@@ -13,23 +14,52 @@ import { APP_GROUPS, type TAppTile } from './YearnApps'
 type LaunchModalTriggerProps = {
   open: () => void
   isOpen: boolean
-  forceDark: boolean
+  isDark: boolean
 }
 
 type LaunchModalProps = {
   trigger?: (props: LaunchModalTriggerProps) => ReactElement
 }
 
-function TileIcon({ icon, forceDark }: { icon?: ReactElement; forceDark: boolean }): ReactElement {
+function TileIcon({ icon, isDark }: { icon?: ReactElement; isDark: boolean }): ReactElement {
   return (
     <div
       className={cl(
         'flex size-8 items-center justify-center rounded-full hover:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
-        forceDark ? 'bg-[#0F172A] text-white' : 'bg-white text-neutral-900 dark:bg-[#0F172A] dark:text-white'
+        isDark ? 'bg-[#0F172A] text-white' : 'bg-white text-neutral-900 dark:bg-[#0F172A] dark:text-white'
       )}
     >
       {icon ?? <LogoYearn className={'size-10! max-h-10! max-w-10!'} front={'text-white'} back={'text-primary'} />}
     </div>
+  )
+}
+
+function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => void }): ReactElement {
+  return (
+    <button
+      type={'button'}
+      onClick={onToggle}
+      aria-pressed={isDark}
+      className={cl(
+        'flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+        isDark
+          ? 'border-primary/40 text-white'
+          : 'border-neutral-200 text-neutral-700 dark:border-neutral-100 dark:text-neutral-100'
+      )}
+    >
+      <span className={'sr-only'}>{isDark ? 'Switch to light mode' : 'Switch to dark mode'}</span>
+      <span aria-hidden>{'Theme'}</span>
+      <span
+        aria-hidden
+        className={cl(
+          'relative flex h-6 w-12 items-center rounded-full px-1 transition-colors',
+          isDark ? 'bg-primary/60 justify-end' : 'bg-neutral-300 justify-start dark:bg-neutral-700'
+        )}
+      >
+        <span className={'size-4 rounded-full bg-white shadow transition-transform'} />
+      </span>
+      <span aria-hidden>{isDark ? 'Dark' : 'Light'}</span>
+    </button>
   )
 }
 
@@ -82,13 +112,13 @@ function isTileActive(tile: TAppTile, pathname: string, currentHost: string): bo
 
 function LaunchTile({
   item,
-  forceDark,
+  isDark,
   pathname,
   currentHost,
   onLinkClick
 }: {
   item: TAppTile
-  forceDark: boolean
+  isDark: boolean
   pathname: string
   currentHost: string
   onLinkClick: (event: MouseEvent<HTMLAnchorElement>) => void
@@ -102,14 +132,14 @@ function LaunchTile({
         data-active={active}
         className={cl(
           'group relative flex flex-row items-center gap-3 rounded-xl border p-4 align-middle',
-          forceDark
+          isDark
             ? 'border-primary/20 bg-transparent hover:bg-primary/5 hover:border-primary'
             : 'border-neutral-200 hover:border-primary dark:border-neutral-100 dark:bg-neutral-0',
           'data-[active=true]:border-primary! data-[active=true]:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
           'active:border-primary!'
         )}
       >
-        <TileIcon icon={item.icon} forceDark={forceDark} />
+        <TileIcon icon={item.icon} isDark={isDark} />
         <div className={'flex flex-1 flex-col justify-between gap-1'}>
           <div className={'flex items-center gap-2'}>
             <p className={'text-base font-semibold leading-tight'}>{item.name}</p>
@@ -119,7 +149,7 @@ function LaunchTile({
             <p
               className={cl(
                 'line-clamp-1 text-sm',
-                forceDark ? 'text-neutral-500' : 'text-neutral-600 dark:text-neutral-500'
+                isDark ? 'text-neutral-500' : 'text-neutral-600 dark:text-neutral-500'
               )}
             >
               {item.description}
@@ -147,10 +177,8 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
   const pushedHistory = useRef(false)
   const [activeGroupTitle, setActiveGroupTitle] = useState(APP_GROUPS[0]?.title ?? '')
   const pathname = location.pathname
-  const forceDark = useMemo(
-    () => pathname.startsWith('/v3') || pathname.startsWith('/vaults-beta') || pathname === '/',
-    [pathname]
-  )
+  const themePreference = useThemePreference()
+  const isDarkTheme = themePreference === 'dark'
 
   const currentHost = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -305,6 +333,10 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
     setActiveGroupTitle(title)
   }, [])
 
+  const handleThemeToggle = useCallback((): void => {
+    setThemePreference(isDarkTheme ? 'light' : 'dark')
+  }, [isDarkTheme])
+
   const handleOpen = useCallback((): void => {
     setIsOpen(true)
   }, [])
@@ -312,7 +344,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
   return (
     <>
       {trigger ? (
-        trigger({ open: handleOpen, isOpen, forceDark })
+        trigger({ open: handleOpen, isOpen, isDark: isDarkTheme })
       ) : (
         <button
           type={'button'}
@@ -323,7 +355,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
         >
           <span className={'sr-only'}>{'Open Yearn navigation'}</span>
           <TileIcon
-            forceDark={forceDark}
+            isDark={isDarkTheme}
             icon={
               <>
                 <LogoYearn
@@ -370,26 +402,29 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                 className={cl(
                   'relative flex h-svh w-full transform flex-col overflow-hidden rounded-none py-6 focus:outline-none',
                   'sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl sm:rounded-3xl sm:border sm:p-8 sm:shadow-2xl',
-                  forceDark
+                  isDarkTheme
                     ? 'bg-[#050A29] text-white sm:border-primary/30'
                     : 'bg-white text-neutral-900 dark:bg-neutral-0 dark:text-white sm:border-neutral-100 dark:border-primary/30'
                 )}
               >
                 <div className={'flex w-full px-6 justify-between'}>
                   <div className={'text-xl sm:pl-8'}>Yearn App Launcher</div>
-                  <button
-                    type={'button'}
-                    onClick={handleClose}
-                    className={cl(
-                      'flex size-6 items-center justify-center rounded-full border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                      forceDark
-                        ? 'bg-[#070A1C] text-neutral-700 hover:bg-[#1a2e5e]'
-                        : 'bg-neutral-0 border-1 border-neutral-500 text-neutral-700 hover:bg-neutral-200 dark:hover:text-neutral-700'
-                    )}
-                  >
-                    <span className={'sr-only'}>{'Close'}</span>
-                    <IconClose className={'size-4'} />
-                  </button>
+                  <div className={'flex items-center gap-3'}>
+                    <ThemeToggle isDark={isDarkTheme} onToggle={handleThemeToggle} />
+                    <button
+                      type={'button'}
+                      onClick={handleClose}
+                      className={cl(
+                        'flex size-6 items-center justify-center rounded-full border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                        isDarkTheme
+                          ? 'bg-[#070A1C] text-neutral-700 hover:bg-[#1a2e5e]'
+                          : 'bg-neutral-0 border-1 border-neutral-500 text-neutral-700 hover:bg-neutral-200 dark:hover:text-neutral-700'
+                      )}
+                    >
+                      <span className={'sr-only'}>{'Close'}</span>
+                      <IconClose className={'size-4'} />
+                    </button>
+                  </div>
                 </div>
 
                 <div
@@ -397,7 +432,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                   className={cl(
                     'mt-6 px-6 flex-1 overflow-y-auto',
                     'lg:min-h-[400px] lg:max-h-[70vh]',
-                    forceDark
+                    isDarkTheme
                       ? 'lg:rounded-3xl lg:border lg:border-[#1C264F] lg:bg-[#050A29]'
                       : 'lg:rounded-3xl lg:border lg:border-neutral-200 lg:bg-white lg:dark:bg-neutral-0'
                   )}
@@ -416,10 +451,10 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                               'rounded-xl border px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.25em]',
                               'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                               isActive
-                                ? forceDark
+                                ? isDarkTheme
                                   ? 'border-primary text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
                                   : 'border-primary text-neutral-900 font-bold dark:text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
-                                : forceDark
+                                : isDarkTheme
                                   ? 'border-primary/20 bg-transparent text-neutral-500 hover:bg-primary/10 hover:border-primary/70 hover:text-white'
                                   : 'border-transparent bg-transparent text-neutral-500 hover:border-primary/70 dark:text-neutral-500 dark:hover:border-primary'
                             )}
@@ -437,7 +472,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                           <LaunchTile
                             key={item.href}
                             item={item}
-                            forceDark={forceDark}
+                            isDark={isDarkTheme}
                             pathname={pathname}
                             currentHost={currentHost}
                             onLinkClick={handleLinkClick}
@@ -454,7 +489,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                           id={`launch-group-${group.title}`}
                           className={cl(
                             'text-xs font-semibold uppercase tracking-[0.25em]',
-                            forceDark ? 'text-neutral-400' : 'text-neutral-500 dark:text-neutral-400'
+                            isDarkTheme ? 'text-neutral-400' : 'text-neutral-500 dark:text-neutral-400'
                           )}
                         >
                           {group.title}
@@ -464,7 +499,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                             <LaunchTile
                               key={item.href}
                               item={item}
-                              forceDark={forceDark}
+                              isDark={isDarkTheme}
                               pathname={pathname}
                               currentHost={currentHost}
                               onLinkClick={handleLinkClick}

@@ -27,7 +27,7 @@ export function HeroCard({ className, onLearnMore, isLearnMoreExpanded }: HeroCa
   return (
     <div
       className={cl(
-        'relative flex h-full w-full min-w-0 flex-col justify-center overflow-hidden rounded-3xl',
+        'relative flex h-full w-full min-w-0 flex-col justify-center overflow-hidden rounded-xl shadow-md',
         'bg-gradient-to-r from-[#D21162] to-[#2C3DA6] px-6 py-8 md:px-10',
         className
       )}

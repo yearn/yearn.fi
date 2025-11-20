@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" class="duration-150 bg-neutral-0 transition-colors">
   <head>
     <meta charset="UTF-8" />
@@ -31,51 +31,42 @@
       const darkModeMediaQuery = window.matchMedia(
         '(prefers-color-scheme: dark)'
       )
+      const THEME_STORAGE_KEY = 'isDarkMode'
+      const THEME_EVENT_NAME = 'yearn-theme-change'
 
       updateMode()
       darkModeMediaQuery.addEventListener('change', updateMode)
       window.addEventListener('storage', updateMode)
       window.addEventListener('beforeunload', updateMode)
+      window.addEventListener(THEME_EVENT_NAME, updateMode)
 
-      const observeUrlChange = () => {
-        let oldHref = document.location.href
-        const body = document.querySelector('body')
-        const observer = new MutationObserver((_mutations) => {
-          if (oldHref !== document.location.href) {
-            oldHref = document.location.href
-            updateMode()
-          }
-        })
-        observer.observe(body, { childList: true, subtree: true })
+      function resolveTheme() {
+        const storedValue = window.localStorage.getItem(THEME_STORAGE_KEY)
+        if (storedValue === 'true') {
+          return 'dark'
+        }
+        if (storedValue === 'false') {
+          return 'light'
+        }
+
+        return darkModeMediaQuery.matches ? 'dark' : 'light'
+      }
+
+      function applyTheme(theme) {
+        const root = document.documentElement
+        root.classList.remove('dark', 'light', 'v3')
+        if (theme === 'dark') {
+          root.classList.add('dark')
+          root.classList.add('v3')
+        } else {
+          root.classList.add('light')
+        }
       }
 
       function updateMode() {
-        const isSystemDarkMode = darkModeMediaQuery.matches
-        const isDarkMode =
-          window.localStorage.isDarkMode === 'true' ||
-          (!('isDarkMode' in window.localStorage) && isSystemDarkMode)
-        const isV3 = window.location.pathname.includes('v3')
-        const isHomePage = window.location.pathname === '/'
-
-        if (isV3) {
-          document.documentElement.classList.add('v3')
-          document.documentElement.classList.remove('dark')
-          document.documentElement.classList.remove('light')
-        } else if (isDarkMode || isHomePage) {
-          document.documentElement.classList.add('dark')
-          document.documentElement.classList.remove('light')
-          document.documentElement.classList.remove('v3')
-        } else {
-          document.documentElement.classList.remove('v3')
-          document.documentElement.classList.remove('dark')
-          document.documentElement.classList.add('light')
-        }
-
-        if (isDarkMode === isSystemDarkMode && !isHomePage) {
-          delete window.localStorage.isDarkMode
-        }
+        const theme = resolveTheme()
+        applyTheme(theme)
       }
-      window.onload = observeUrlChange
     </script>
   </head>
   <body>

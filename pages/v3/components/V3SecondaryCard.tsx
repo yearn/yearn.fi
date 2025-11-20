@@ -21,7 +21,7 @@ export function ExploreOurVaults({ className }: { className?: string }): ReactEl
     <Link className={cl(V3_CARD_BASE, className)} href={'/v3'}>
       <img
         alt={'Explore Our Vaults graphic'}
-        className={'w-full h-full object-cover rounded-2xl'}
+        className={'w-full h-full object-cover rounded-lg'}
         draggable={false}
         src={'/explore-our-vaults2.png'}
       />

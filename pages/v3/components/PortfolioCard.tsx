@@ -119,9 +119,9 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
         }
 
         const totalValue = baseValue + stakingValue
-        const iconSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainID}/${toAddress(
-          vault.token.address
-        ).toLowerCase()}/logo-128.png`
+        const iconSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+          vault.chainID
+        }/${toAddress(vault.token.address).toLowerCase()}/logo-128.png`
 
         return {
           id: `${vault.chainID}-${toAddress(vault.address)}`,
@@ -154,7 +154,7 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
     return (
       <div
         className={cl(
-          'flex h-full w-full flex-col justify-center gap-6 rounded-3xl bg-neutral-100 p-6 text-white shadow-[0_12px_32px_rgba(4,8,32,0.55)]',
+          'flex h-full w-full flex-col justify-center gap-6 rounded-xl border border-neutral-300 bg-neutral-100 p-6 text-neutral-900 shadow-lg',
           'md:p-8',
           className
         )}
@@ -164,7 +164,7 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
           action={
             <button
               className={cl(
-                'group relative min-w-[200px] inline-flex items-center justify-center overflow-hidden rounded-lg px-12 py-3',
+                'group relative min-w-[200px] inline-flex items-center justify-center overflow-hidden rounded-xl px-12 py-3',
                 'border-none text-sm font-semibold text-white'
               )}
               onClick={handleConnect}
@@ -191,7 +191,7 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
     return (
       <div
         className={cl(
-          'flex h-full w-full flex-col justify-center gap-6 rounded-3xl bg-neutral-100 p-6 text-white shadow-[0_12px_32px_rgba(4,8,32,0.55)]',
+          'flex h-full w-full flex-col justify-center gap-6 rounded-3xl bg-neutral-100 p-6 text-neutral-900 shadow-lg',
           'md:p-8',
           className
         )}
@@ -201,8 +201,8 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
           action={
             <Link
               className={cl(
-                'inline-flex items-center justify-center rounded-lg border border-white/60 px-8 py-2',
-                'text-sm font-semibold text-white transition hover:border-white hover:text-white'
+                'inline-flex items-center justify-center rounded-xl border border-neutral-900/60 px-8 py-2',
+                'text-sm font-semibold text-neutral-900 transition hover:border-neutral-900 hover:text-neutral-900'
               )}
               href={'/v3'}
             >
@@ -220,25 +220,25 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
   return (
     <div
       className={cl(
-        'flex h-full w-full flex-col rounded-3xl bg-neutral-100 p-6 text-white shadow-[0_12px_32px_rgba(4,8,32,0.55)]',
+        'flex h-full w-full flex-col rounded-3xl bg-neutral-100 p-6 text-neutral-900 shadow-lg',
         'md:p-8',
         className
       )}
     >
-      <strong className={'block pb-2 text-3xl font-black text-white md:pb-4 md:text-4xl md:leading-[48px]'}>
+      <strong className={'block pb-2 text-3xl font-black text-neutral-700 md:pb-4 md:text-4xl md:leading-12'}>
         {'Your Deposits'}
       </strong>
       <div className={'flex flex-col gap-6 md:flex-row md:items-end md:gap-14'}>
         <div className={'flex items-end gap-2'}>
           {isLoading ? (
-            <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-white/20'} />
+            <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-neutral-900/20'} />
           ) : (
             <>
-              <b className={'font-number text-3xl text-white md:text-4xl'}>
+              <b className={'font-number text-3xl text-neutral-900 md:text-4xl'}>
                 {'$'}
                 <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
               </b>
-              <p className={'pb-0.5 text-sm uppercase text-white/60'}>{'Deposited'}</p>
+              <p className={'pb-0.5 text-sm uppercase text-neutral-900/60'}>{'Deposited'}</p>
             </>
           )}
         </div>
@@ -249,7 +249,7 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
         </div>
       ) : (
         <div className={'mt-6 flex flex-col gap-4'}>
-          <p className={'text-sm text-white/70'}>{'We didn’t find any Yearn deposits for this wallet yet.'}</p>
+          <p className={'text-sm text-neutral-900/70'}>{'We didn’t find any Yearn deposits for this wallet yet.'}</p>
           {featuredSection}
         </div>
       )}
@@ -260,23 +260,23 @@ export function PortfolioCard({ holdingsVaults, className }: PortfolioCardProps)
 function FeaturedVaultsPreview({ rows, isLoading }: { rows: TFeaturedVaultRow[]; isLoading: boolean }): ReactElement {
   return (
     <div className={'w-full'}>
-      <div className={'flex flex-col gap-px rounded-2xl bg-white/10 p-px'}>
+      <div className={'flex flex-col gap-px rounded-2xl bg-neutral-900/10 p-px'}>
         {isLoading
           ? rows.map((row) => (
               <div
                 key={row.address}
                 className={
-                  'flex h-12 items-center justify-between rounded-2xl bg-white/5 px-4 first:rounded-t-2xl last:rounded-b-2xl'
+                  'flex h-12 items-center justify-between rounded-2xl bg-neutral-900/5 px-4 first:rounded-t-2xl last:rounded-b-2xl'
                 }
               >
                 <div className={'flex items-center gap-3'}>
-                  <div className={'size-8 rounded-full bg-white/10'} />
+                  <div className={'size-8 rounded-full bg-neutral-900/10'} />
                   <div className={'flex flex-col'}>
-                    <span className={'text-sm font-semibold text-white'}>{row.symbol}</span>
-                    <span className={'text-xs text-white/60'}>{'Fetching APY…'}</span>
+                    <span className={'text-sm font-semibold text-neutral-900'}>{row.symbol}</span>
+                    <span className={'text-xs text-neutral-900/60'}>{'Fetching APY…'}</span>
                   </div>
                 </div>
-                <div className={'h-4 w-16 rounded-full bg-white/10'} />
+                <div className={'h-4 w-16 rounded-full bg-neutral-900/10'} />
               </div>
             ))
           : rows.map((row, index) => {
@@ -284,7 +284,7 @@ function FeaturedVaultsPreview({ rows, isLoading }: { rows: TFeaturedVaultRow[];
                 <Link
                   key={row.address}
                   className={cl(
-                    'flex items-center justify-between bg-[#0F1B4F] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#152566]',
+                    'flex items-center justify-between bg-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-300',
                     index === 0 ? 'rounded-t-2xl' : '',
                     index === rows.length - 1 ? 'rounded-b-2xl' : ''
                   )}
@@ -292,7 +292,7 @@ function FeaturedVaultsPreview({ rows, isLoading }: { rows: TFeaturedVaultRow[];
                 >
                   <div className={'flex items-center gap-3'}>
                     <div className={'rounded-2xl p-1'}>
-                      <div className={'flex size-8 items-center justify-center rounded-2xl bg-white/10'}>
+                      <div className={'flex size-8 items-center justify-center rounded-2xl bg-neutral-900/10'}>
                         <img
                           alt={`${row.symbol} icon`}
                           className={'size-6 rounded-full object-contain'}
@@ -306,7 +306,7 @@ function FeaturedVaultsPreview({ rows, isLoading }: { rows: TFeaturedVaultRow[];
                         : `Earn on ${row.symbol}`}
                     </span>
                   </div>
-                  <span className={'text-white/70'}>
+                  <span className={'text-neutral-900/70'}>
                     <svg
                       xmlns={'http://www.w3.org/2000/svg'}
                       className={'size-5'}
@@ -349,7 +349,7 @@ function PortfolioCtaRow({
     >
       <p
         className={cl(
-          'flex min-h-[48px] items-center text-sm text-white/70 md:mt-1 md:min-h-[52px] md:text-base',
+          'flex min-h-[48px] items-center text-sm text-neutral-900/70 md:mt-1 md:min-h-[52px] md:text-base',
           isActionLeft ? 'md:order-2' : 'md:order-1'
         )}
       >
@@ -373,12 +373,12 @@ function HoldingsList({ rows }: { rows: THoldingDisplayRow[] }): ReactElement | 
   }
 
   return (
-    <div className={'flex flex-col gap-px rounded-2xl bg-white/10 p-px'}>
+    <div className={'flex flex-col gap-px rounded-2xl bg-neutral-900/10 p-px'}>
       {rows.map((row, index) => (
         <Link
           key={row.id}
           className={cl(
-            'flex items-center justify-between bg-[#0F1B4F] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#152566]',
+            'flex items-center justify-between bg-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-300',
             index === 0 ? 'rounded-t-2xl' : '',
             index === rows.length - 1 ? 'rounded-b-2xl' : ''
           )}
@@ -386,13 +386,13 @@ function HoldingsList({ rows }: { rows: THoldingDisplayRow[] }): ReactElement | 
         >
           <div className={'flex items-center gap-3'}>
             <div className={'rounded-2xl p-1'}>
-              <div className={'flex size-8 items-center justify-center rounded-2xl bg-white/10'}>
+              <div className={'flex size-8 items-center justify-center rounded-2xl bg-neutral-900/10'}>
                 <img alt={`${row.symbol} icon`} className={'size-6 rounded-full object-contain'} src={row.icon} />
               </div>
             </div>
             <div className={'flex flex-col'}>
               <span>{row.name}</span>
-              <span className={'text-xs text-white/60'}>{row.symbol}</span>
+              <span className={'text-xs text-neutral-900/60'}>{row.symbol}</span>
             </div>
           </div>
           <span className={'text-base font-semibold'}>{currencyFormatter.format(row.valueUSD)}</span>

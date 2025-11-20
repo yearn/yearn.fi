@@ -88,7 +88,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
                 className={cl(
                   'rounded-lg px-3 py-1 text-xs font-semibold transition-all',
                   activeTab === tab.id
-                    ? 'bg-white text-neutral-900'
+                    ? 'bg-neutral-200 text-neutral-900'
                     : 'bg-transparent text-neutral-500 hover:text-neutral-700'
                 )}
               >
@@ -106,7 +106,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
                 className={cl(
                   'rounded-lg px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
                   option.value === timeframe.value
-                    ? 'bg-white text-neutral-900'
+                    ? 'bg-neutral-200 text-neutral-900'
                     : 'bg-transparent text-neutral-500 hover:text-neutral-700'
                 )}
                 onClick={() => setTimeframe(option)}

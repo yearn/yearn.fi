@@ -1,15 +1,27 @@
+import {
+  AllocationChart,
+  DARK_MODE_COLORS,
+  LIGHT_MODE_COLORS,
+  type TAllocationChartData,
+  useDarkMode
+} from '@lib/components/AllocationChart'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
-import { cl, toAddress, toNormalizedBN } from '@lib/utils'
-import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { useYearn } from '@lib/contexts/useYearn'
+import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
+import { IconChevron } from '@lib/icons/IconChevron'
+import { cl, formatCounterValue, toAddress, toNormalizedBN } from '@lib/utils'
+import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
+import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
+import { VaultChartsSection } from '@nextgen/components/vaults-beta/VaultChartsSection'
 import { VaultForwardAPY, VaultForwardAPYInlineDetails } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
 import { VaultStakedAmount } from '@vaults-v3/components/table/VaultStakedAmount'
 // import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 type TVaultRowFlags = {
@@ -17,6 +29,14 @@ type TVaultRowFlags = {
   isMigratable?: boolean
   isRetired?: boolean
 }
+
+const EXPANDED_TABS = [
+  { id: 'charts', label: 'Charts' },
+  { id: 'strategies', label: 'Strategies' },
+  { id: 'info', label: 'Vault Info' }
+] as const
+
+type ExpandedTabId = (typeof EXPANDED_TABS)[number]['id']
 
 export function VaultsV3ListRow({
   currentVault,
@@ -30,6 +50,8 @@ export function VaultsV3ListRow({
   const href = `/vaults-beta/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const [isApyOpen, setIsApyOpen] = useState(false)
   const [isRiskOpen, setIsRiskOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [activeExpandedTab, setActiveExpandedTab] = useState<ExpandedTabId>('charts')
 
   // const badgeDefinitions = useMemo(() => {
   //   if (!flags) {
@@ -71,217 +93,398 @@ export function VaultsV3ListRow({
     }
   }
 
+  useEffect(() => {
+    if (isExpanded) {
+      setActiveExpandedTab('charts')
+    }
+  }, [isExpanded])
+
   return (
-    // biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation
     <div
-      role={'link'}
-      tabIndex={0}
-      onClick={handleRowClick}
-      onKeyDown={handleKeyDown}
       className={cl(
-        'grid w-full grid-cols-1 md:grid-cols-24 bg-neutral-100',
-        'p-6 pt-2 pb-4 md:pr-10',
-        'cursor-pointer relative group'
+        'w-full overflow-hidden border border-transparent transition-colors',
+        isExpanded ? 'border-neutral-200 bg-neutral-0' : ''
       )}
     >
+      {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
       <div
+        role={'link'}
+        tabIndex={0}
+        onClick={handleRowClick}
+        onKeyDown={handleKeyDown}
         className={cl(
-          'absolute inset-0',
-          'opacity-0 transition-opacity duration-300 group-hover:opacity-20 group-focus-visible:opacity-20 pointer-events-none',
-          'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
-        )}
-      />
-
-      {/* TODO:on hover add list head categories */}
-      <div className={cl('col-span-9 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
-        <div
-          className={'flex flex-row-reverse sm:flex-row w-full justify-between sm:justify-normal gap-4 overflow-hidden'}
-        >
-          <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
-            <ImageWithFallback
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-                currentVault.chainID
-              }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
-              alt={currentVault.token.symbol || ''}
-              width={32}
-              height={32}
-            />
-          </div>
-          <div className={'truncate'}>
-            <strong
-              title={currentVault.name}
-              className={'block truncate font-black text-neutral-800 md:-mb-0.5 text-lg'}
-            >
-              {currentVault.name}
-            </strong>
-            <div className={'flex flex-row items-center gap-1 text-sm text-neutral-800/60'}>
-              <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`}
-                alt={`Chain ${currentVault.chainID}`}
-                width={14}
-                height={14}
-              />
-              <p>{getNetwork(currentVault.chainID).name}</p>
-              <p>{` - ${currentVault.category} - ${currentVault.kind}`}</p>
-            </div>
-            {/* <p className={'mt-0.5 text-xs text-neutral-500'}>
-              {'Featuring score: '}
-              <span className={'font-semibold text-neutral-800'}>
-                {formatAmount(currentVault.featuringScore || 0, 2, 2)}
-              </span>
-            </p> */}
-            {/* <p
-              className={'mb-0 block text-sm text-neutral-800/60 md:mb-2'}
-            >{`${currentVault.kind} - ${currentVault.category}`}</p> */}
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop metrics grid */}
-      <div className={cl('col-span-15 z-10 gap-4 grid grid-cols-15 mt-4 md:mt-0')}>
-        <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-          <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
-          <VaultForwardAPY currentVault={currentVault} />
-        </div>
-        <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-          <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Historical APY'}</p>
-          <VaultHistoricalAPY currentVault={currentVault} />
-        </div>
-        <div className={'col-span-3'}>
-          <VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
-        </div>
-        {/* <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
-          <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Available'}</p>
-          <p
-            className={`yearn--table-data-section-item-value ${
-              isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
-            }`}
-          >
-            <RenderAmount
-              value={Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized)}
-              symbol={currentVault.token.symbol}
-              decimals={currentVault.token.decimals}
-              shouldFormatDust
-              options={{
-                shouldDisplaySymbol: false,
-                maximumFractionDigits:
-                  Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized) > 1000 ? 2 : 4
-              }}
-            />
-          </p>
-        </div> */}
-        <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-          <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
-          <VaultStakedAmount currentVault={currentVault} />
-        </div>
-        {/* TVL */}
-        <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-          <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
-          <div className={'flex flex-col pt-0 text-right'}>
-            <p className={'yearn--table-data-section-item-value'}>
-              <RenderAmount
-                value={currentVault.tvl?.tvl}
-                symbol={'USD'}
-                decimals={0}
-                options={{
-                  shouldCompactValue: true,
-                  maximumFractionDigits: 2,
-                  minimumFractionDigits: 0
-                }}
-              />
-            </p>
-            <small className={'text-xs flex flex-row text-neutral-900/40'}>
-              <RenderAmount
-                value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
-                symbol={''}
-                decimals={6}
-                shouldFormatDust
-                options={{
-                  shouldCompactValue: true,
-                  maximumFractionDigits: 2,
-                  minimumFractionDigits: 2
-                }}
-              />
-              <p className="pl-1">{currentVault.token.symbol}</p>
-            </small>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile metrics grid; conditionally show Deposited if user has holdings */}
-      <div
-        className={cl(
-          'col-span-8 z-10',
-          'grid grid-cols-2 gap-4 md:hidden',
-          'pt-2 mt-2 md:mt-0 md:pt-0 border-t border-neutral-800/20'
+          'grid w-full grid-cols-1 md:grid-cols-24 bg-neutral-0',
+          'p-6 pt-2 pb-4 pr-14 md:pr-16',
+          'cursor-pointer relative group'
         )}
       >
-        {flags?.hasHoldings ? (
-          <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-            <p className={'inline text-start text-dm text-neutral-800'}>{'Your Deposit'}</p>
+        <div
+          className={cl(
+            'absolute inset-0',
+            'opacity-0 transition-opacity duration-300 group-hover:opacity-20 group-focus-visible:opacity-20 pointer-events-none',
+            'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
+          )}
+        />
+
+        <button
+          type={'button'}
+          aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+          aria-expanded={isExpanded}
+          onClick={(event): void => {
+            event.stopPropagation()
+            setIsExpanded((value) => !value)
+          }}
+          className={cl(
+            'absolute top-4 right-4 z-20 flex size-9 items-center justify-center rounded-full border border-white/30 bg-white/70 text-neutral-700 transition-colors duration-150',
+            'hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
+            'md:top-5 md:right-5'
+          )}
+        >
+          <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
+        </button>
+
+        {/* TODO:on hover add list head categories */}
+        <div className={cl('col-span-9 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
+          <div
+            className={
+              'flex flex-row-reverse sm:flex-row w-full justify-between sm:justify-normal gap-4 overflow-hidden'
+            }
+          >
+            <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
+              <ImageWithFallback
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+                  currentVault.chainID
+                }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
+                alt={currentVault.token.symbol || ''}
+                width={32}
+                height={32}
+              />
+            </div>
+            <div className={'truncate'}>
+              <strong
+                title={currentVault.name}
+                className={'block truncate font-black text-neutral-800 md:-mb-0.5 text-lg'}
+              >
+                {currentVault.name}
+              </strong>
+              <div className={'flex flex-row items-center gap-1 text-sm text-neutral-800/60'}>
+                <ImageWithFallback
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`}
+                  alt={`Chain ${currentVault.chainID}`}
+                  width={14}
+                  height={14}
+                />
+                <p>{getNetwork(currentVault.chainID).name}</p>
+                <p>{` - ${currentVault.category} - ${currentVault.kind}`}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop metrics grid */}
+        <div className={cl('col-span-15 z-10 gap-4 grid grid-cols-15 mt-4 md:mt-0')}>
+          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
+            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
+            <VaultForwardAPY currentVault={currentVault} />
+          </div>
+          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
+            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Historical APY'}</p>
+            <VaultHistoricalAPY currentVault={currentVault} />
+          </div>
+          <div className={'col-span-3'}>
+            <VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
+          </div>
+          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
+            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
             <VaultStakedAmount currentVault={currentVault} />
           </div>
-        ) : null}
-        <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
-          <div className={'w-full flex flex-col items-start'}>
-            <div className={'flex w-full flex-row items-center justify-between'}>
-              <p className={'inline text-start text-dm text-neutral-800'}>{'Estimated APY'}</p>
-              <VaultForwardAPY currentVault={currentVault} onMobileToggle={(): void => setIsApyOpen((v) => !v)} />
+          {/* TVL */}
+          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
+            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
+            <div className={'flex flex-col pt-0 text-right'}>
+              <p className={'yearn--table-data-section-item-value'}>
+                <RenderAmount
+                  value={currentVault.tvl?.tvl}
+                  symbol={'USD'}
+                  decimals={0}
+                  options={{
+                    shouldCompactValue: true,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 0
+                  }}
+                />
+              </p>
+              <small className={'text-xs flex flex-row text-neutral-900/40'}>
+                <RenderAmount
+                  value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
+                  symbol={''}
+                  decimals={6}
+                  shouldFormatDust
+                  options={{
+                    shouldCompactValue: true,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 2
+                  }}
+                />
+                <p className="pl-1">{currentVault.token.symbol}</p>
+              </small>
             </div>
-            {isApyOpen ? (
-              <div className={'mt-2 w-full'}>
-                <VaultForwardAPYInlineDetails currentVault={currentVault} />
+          </div>
+        </div>
+
+        {/* Mobile metrics grid; conditionally show Deposited if user has holdings */}
+        <div
+          className={cl(
+            'col-span-8 z-10',
+            'grid grid-cols-2 gap-4 md:hidden',
+            'pt-2 mt-2 md:mt-0 md:pt-0 border-t border-neutral-800/20'
+          )}
+        >
+          {flags?.hasHoldings ? (
+            <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
+              <p className={'inline text-start text-dm text-neutral-800'}>{'Your Deposit'}</p>
+              <VaultStakedAmount currentVault={currentVault} />
+            </div>
+          ) : null}
+          <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
+            <div className={'w-full flex flex-col items-start'}>
+              <div className={'flex w-full flex-row items-center justify-between'}>
+                <p className={'inline text-start text-dm text-neutral-800'}>{'Estimated APY'}</p>
+                <VaultForwardAPY currentVault={currentVault} onMobileToggle={(): void => setIsApyOpen((v) => !v)} />
+              </div>
+              {isApyOpen ? (
+                <div className={'mt-2 w-full'}>
+                  <VaultForwardAPYInlineDetails currentVault={currentVault} />
+                </div>
+              ) : null}
+            </div>
+          </div>
+          <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
+            <p className={'inline text-start text-dm text-neutral-800'}>{'Historical APY'}</p>
+            <VaultHistoricalAPY currentVault={currentVault} />
+          </div>
+          <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
+            <p className={'inline text-start text-dm text-neutral-800'}>{'TVL'}</p>
+            <div className={'flex flex-col pt-0 text-right'}>
+              <p className={'yearn--table-data-section-item-value'}>
+                <RenderAmount
+                  value={currentVault.tvl?.tvl}
+                  symbol={'USD'}
+                  decimals={0}
+                  options={{
+                    shouldCompactValue: true,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 0
+                  }}
+                />
+              </p>
+              <small className={'text-xs flex flex-row text-neutral-900/40'}>
+                <RenderAmount
+                  value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
+                  symbol={''}
+                  decimals={6}
+                  shouldFormatDust
+                  options={{
+                    shouldCompactValue: true,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 2
+                  }}
+                />
+                <p className="pl-1">{currentVault.token.symbol}</p>
+              </small>
+            </div>
+          </div>
+          <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
+            <div className={'w-full flex flex-col items-start'} onClick={(event): void => event.stopPropagation()}>
+              <VaultRiskScoreTag
+                riskLevel={currentVault.info.riskLevel}
+                onMobileToggle={(): void => setIsRiskOpen((v) => !v)}
+              />
+              {isRiskOpen ? (
+                <div className={'mt-2 w-full'}>
+                  <RiskScoreInlineDetails riskLevel={currentVault.info.riskLevel} />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {isExpanded ? (
+        <div className={'border-t border-neutral-200 bg-neutral-0'}>
+          <div className={'flex flex-wrap gap-2 px-6 pt-4'}>
+            <div className={'flex items-center gap-1 rounded-lg bg-neutral-0 p-1'}>
+              {EXPANDED_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type={'button'}
+                  className={cl(
+                    'rounded-lg px-4 py-1 text-xs font-semibold uppercase tracking-wide transition-colors',
+                    activeExpandedTab === tab.id
+                      ? 'bg-neutral-200 text-neutral-800'
+                      : 'bg-neutral-500 text-neutral-600 hover:bg-neutral-200'
+                  )}
+                  onClick={(): void => setActiveExpandedTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className={'px-2 pb-6 pt-4 md:px-6'}>
+            {activeExpandedTab === 'charts' ? (
+              <VaultChartsSection chainId={currentVault.chainID} vaultAddress={currentVault.address} />
+            ) : null}
+            {activeExpandedTab === 'strategies' ? (
+              <div className={'border border-neutral-200 bg-neutral-100 p-4 md:p-6'}>
+                <VaultStrategyAllocationPreview currentVault={currentVault} />
+              </div>
+            ) : null}
+            {activeExpandedTab === 'info' ? (
+              <div className={'border border-neutral-200 bg-neutral-100'}>
+                <VaultAboutSection currentVault={currentVault} />
               </div>
             ) : null}
           </div>
         </div>
-        <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-          <p className={'inline text-start text-dm text-neutral-800'}>{'Historical APY'}</p>
-          <VaultHistoricalAPY currentVault={currentVault} />
-        </div>
-        <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-          <p className={'inline text-start text-dm text-neutral-800'}>{'TVL'}</p>
-          <div className={'flex flex-col pt-0 text-right'}>
-            <p className={'yearn--table-data-section-item-value'}>
-              <RenderAmount
-                value={currentVault.tvl?.tvl}
-                symbol={'USD'}
-                decimals={0}
-                options={{
-                  shouldCompactValue: true,
-                  maximumFractionDigits: 2,
-                  minimumFractionDigits: 0
+      ) : null}
+    </div>
+  )
+}
+
+function VaultStrategyAllocationPreview({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+  const { vaults } = useYearn()
+  const tokenPrice = useYearnTokenPrice({
+    address: currentVault.token.address,
+    chainID: currentVault.chainID
+  })
+  const isDark = useDarkMode()
+
+  const vaultList = useMemo(() => {
+    const list: (TYDaemonVault & {
+      details: TYDaemonVaultStrategy['details']
+      status: TYDaemonVaultStrategy['status']
+    })[] = []
+
+    for (const strategy of currentVault?.strategies || []) {
+      const linkedVault = vaults[strategy.address]
+      if (linkedVault?.address) {
+        list.push({
+          ...linkedVault,
+          details: strategy.details,
+          status: strategy.status
+        })
+      }
+    }
+
+    return list
+  }, [currentVault?.strategies, vaults])
+
+  const strategyList = useMemo(() => {
+    const list: TYDaemonVaultStrategy[] = []
+
+    for (const strategy of currentVault?.strategies || []) {
+      if (!vaults[strategy.address]) {
+        list.push(strategy)
+      }
+    }
+
+    return list
+  }, [currentVault?.strategies, vaults])
+
+  const mergedList = useMemo(
+    () =>
+      [...vaultList, ...strategyList] as (TYDaemonVault & {
+        details: TYDaemonVaultStrategy['details']
+        status: TYDaemonVaultStrategy['status']
+      })[],
+    [vaultList, strategyList]
+  )
+
+  const filteredVaultList = useMemo(
+    () => mergedList.filter((strategy) => strategy.status !== 'not_active'),
+    [mergedList]
+  )
+
+  const activeStrategyData = useMemo(
+    () =>
+      filteredVaultList
+        .filter((strategy) => {
+          const hasAllocation =
+            strategy.details?.totalDebt && strategy.details.totalDebt !== '0' && strategy.details?.debtRatio
+          return hasAllocation
+        })
+        .map(
+          (strategy): TAllocationChartData => ({
+            id: strategy.address,
+            name: strategy.name,
+            value: (strategy.details?.debtRatio || 0) / 100,
+            amount: formatCounterValue(
+              toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
+              tokenPrice
+            )
+          })
+        ),
+    [filteredVaultList, currentVault.token.decimals, tokenPrice]
+  )
+
+  const unallocatedPercentage =
+    100 * 100 - mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
+  const unallocatedValue =
+    Number(currentVault.tvl?.totalAssets || 0) -
+    mergedList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0)
+
+  const unallocatedData = useMemo(() => {
+    if (unallocatedValue > 0 && unallocatedPercentage > 0) {
+      return {
+        id: 'unallocated',
+        name: 'Unallocated',
+        value: unallocatedPercentage / 100,
+        amount: formatCounterValue(toNormalizedBN(unallocatedValue, currentVault.token.decimals).display, tokenPrice)
+      }
+    }
+    return null
+  }, [currentVault.token.decimals, tokenPrice, unallocatedPercentage, unallocatedValue])
+
+  const allocationChartData = useMemo(
+    () => [...activeStrategyData, unallocatedData].filter(Boolean) as TAllocationChartData[],
+    [activeStrategyData, unallocatedData]
+  )
+
+  const legendColors = useMemo(() => (isDark ? DARK_MODE_COLORS : LIGHT_MODE_COLORS), [isDark])
+
+  if (allocationChartData.length === 0) {
+    return <div className={'text-sm text-neutral-600'}>{'No strategy allocation data available.'}</div>
+  }
+
+  return (
+    <div className={'flex flex-col gap-6'}>
+      <div className={'flex flex-col gap-6 lg:flex-row lg:items-center'}>
+        <AllocationChart allocationChartData={allocationChartData} />
+        <div className={'flex flex-col gap-3'}>
+          {activeStrategyData.map((item, index) => (
+            <div key={item.id} className={'flex flex-row items-center gap-3'}>
+              <div
+                className={'h-3 w-3 rounded-sm'}
+                style={{
+                  backgroundColor: legendColors[index % legendColors.length]
                 }}
               />
-            </p>
-            <small className={'text-xs flex flex-row text-neutral-900/40'}>
-              <RenderAmount
-                value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
-                symbol={''}
-                decimals={6}
-                shouldFormatDust
-                options={{
-                  shouldCompactValue: true,
-                  maximumFractionDigits: 2,
-                  minimumFractionDigits: 2
-                }}
-              />
-              <p className="pl-1">{currentVault.token.symbol}</p>
-            </small>
-          </div>
-        </div>
-        <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
-          <div className={'w-full flex flex-col items-start'} onClick={(e): void => e.stopPropagation()}>
-            <VaultRiskScoreTag
-              riskLevel={currentVault.info.riskLevel}
-              onMobileToggle={(): void => setIsRiskOpen((v) => !v)}
-            />
-            {isRiskOpen ? (
-              <div className={'mt-2 w-full'}>
-                <RiskScoreInlineDetails riskLevel={currentVault.info.riskLevel} />
+              <div className={'flex flex-col'}>
+                <span className={'text-sm text-neutral-900'}>{item.name}</span>
+                <span className={'text-xs text-neutral-600'}>{item.amount}</span>
               </div>
-            ) : null}
-          </div>
+            </div>
+          ))}
+          {unallocatedData ? (
+            <div className={'flex flex-row items-center gap-3'}>
+              <div className={'h-3 w-3 rounded-sm bg-neutral-300'} />
+              <div className={'flex flex-col'}>
+                <span className={'text-sm text-neutral-600'}>{'Unallocated'}</span>
+                <span className={'text-xs text-neutral-500'}>{unallocatedData.amount}</span>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

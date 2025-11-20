@@ -265,14 +265,14 @@ TListHero): ReactElement {
 
   return (
     <>
-      <div className={'relative col-span-24 w-full rounded-lg bg-neutral-100 p-2 md:col-span-19'}>
+      <div className={'relative col-span-24 w-full rounded-lg bg-neutral-0 p-2 md:col-span-19'}>
         {/* <PortfolioCard holdingsVaults={holdingsVaults} /> */}
 
         <div className={'md:hidden'}>
           <div className={'mb-5 w-full'}>
             <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
             <SearchBar
-              className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 transition-all md:w-full'}
+              className={'max-w-none rounded-lg border-none bg-neutral-100 text-neutral-900 transition-all md:w-full'}
               iconClassName={'text-neutral-900'}
               searchPlaceholder={'YFI Vault'}
               searchValue={searchValue}
@@ -307,7 +307,7 @@ TListHero): ReactElement {
               <Drawer.Content className={'fixed inset-x-0 bottom-0 z-99999 flex justify-center outline-hidden'}>
                 <div
                   className={
-                    'w-full max-w-[520px] rounded-t-3xl bg-neutral-100 p-6 shadow-[0_-16px_60px_rgba(15,23,42,0.35)]'
+                    'w-full max-w-[520px] rounded-t-3xl bg-neutral-100 p-6 border border-neutral-300 shadow-sm'
                   }
                   style={{ height: '75vh', overflowY: 'auto' }}
                 >
@@ -426,7 +426,7 @@ function FilterControls({
           <div className={'flex w-full flex-nowrap justify-between items-center gap-3'}>
             <div
               className={
-                'flex shrink-0 flex-wrap items-center gap-px rounded-lg h-10 bg-neutral-200/80 px-1 py-1 text-sm text-neutral-900'
+                'flex shrink-0 flex-wrap items-center gap-px rounded-lg h-10 bg-neutral-100 border border-neutral-200 px-2 py-1 text-sm text-neutral-900'
               }
             >
               {chainButtons.map((chain) => (
@@ -437,7 +437,7 @@ function FilterControls({
                     'flex items-center gap-2 rounded-lg px-3 py-1 font-medium transition-all',
                     'hover:bg-neutral-0/70',
                     'data-[active=false]:text-neutral-500 data-[active=false]:opacity-60 data-[active=false]:hover:text-neutral-900 data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-neutral-100/40',
-                    'data-[active=true]:bg-neutral-100/40 data-[active=true]:text-neutral-900 data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
+                    'data-[active=true]:bg-neutral-0 data-[active=true]:text-neutral-900 data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
                   )}
                   data-active={chain.isSelected}
                   onClick={(): void => onSelectChain(chain.id)}

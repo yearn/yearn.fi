@@ -130,7 +130,7 @@ export function BrandNewVaultCard({ className }: { className?: string }): ReactE
         key={`${story.id}-${keySuffix}`}
         className={cl(
           'group/story relative w-full text-left',
-          'rounded-2xl border border-transparent px-1 py-2 transition'
+          'rounded-xl border border-transparent px-1 py-2 transition'
           // isExpanded ? 'border-white/50 bg-white/10' : 'hover:border-white/30 hover:bg-white/5'
         )}
         onClick={(): void => toggleStory(story.id)}
@@ -208,7 +208,9 @@ export function BrandNewVaultCard({ className }: { className?: string }): ReactE
       )}
       style={
         !prefersReducedMotion
-          ? ({ ['--brand-new-marquee-duration' as string]: marqueeDuration } as CSSProperties)
+          ? ({
+              ['--brand-new-marquee-duration' as string]: marqueeDuration
+            } as CSSProperties)
           : undefined
       }
     >

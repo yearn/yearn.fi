@@ -177,7 +177,7 @@ function Index(): ReactElement | null {
       </header>
 
       <section className={'mt-6 grid grid-cols-1 gap-6 md:grid-cols-20'}>
-        <div className={'space-y-6 md:col-span-13'}>
+        <div className={'space-y-4 md:col-span-13'}>
           {[
             {
               key: 'charts',

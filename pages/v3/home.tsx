@@ -28,7 +28,10 @@ function V3Home(): ReactElement {
   const gridRef = useRef<HTMLDivElement>(null)
   const heroSectionRef = useRef<HTMLDivElement>(null)
 
-  const measureGridMetrics = (): { rowHeight: number; rowGap: number } | null => {
+  const measureGridMetrics = (): {
+    rowHeight: number
+    rowGap: number
+  } | null => {
     if (!gridRef.current) {
       return null
     }
@@ -105,11 +108,11 @@ function V3Home(): ReactElement {
 
   return (
     <div className={'min-h-screen w-full bg-neutral-0'}>
-      <div className={'mx-auto w-full max-w-[1232px] px-4'}>
+      <div className={'mx-auto w-full max-w-[1232px]'}>
         <div
           ref={gridRef}
           className={cl(
-            'grid grid-cols-12 gap-4 overflow-x-hidden pt-12 md:grid-cols-32 md:grid-rows-8 md:gap-6 md:pt-20 md:pb-6',
+            'grid grid-cols-12 gap-4 overflow-x-hidden pt-12 px-4 md:grid-cols-32 md:grid-rows-8 md:gap-6 md:pt-20 md:pb-6',
             isLearnMoreExpanded ? 'md:min-h-screen md:auto-rows-auto' : 'md:h-screen md:auto-rows-fr md:grid-rows-8'
           )}
           style={expandedGridStyles}

@@ -96,21 +96,7 @@
 }
 
 @layer theme {
-  .dark {
-    --color-primary: hsl(220 95% 50%);
-    --color-neutral-900: hsl(0 0% 100%);
-    --color-neutral-800: hsl(0 0% 96%);
-    --color-neutral-700: hsl(0 0% 92%);
-    --color-neutral-600: hsl(0 0% 88%);
-    --color-neutral-500: hsl(0 0% 62%);
-    --color-neutral-400: hsl(0 0% 50%);
-    --color-neutral-300: hsl(0 0% 36%);
-    --color-neutral-200: hsl(0 0% 26%);
-    --color-neutral-100: hsl(0 0% 16%);
-    --color-neutral-0: hsl(0 0% 5%);
-  }
-
-  .v3 {
+  :is(.dark, .v3) {
     --color-primary: hsl(220 95% 50%);
     --color-neutral-900: hsl(0 0% 96%);
     --color-neutral-800: hsl(0 0% 96%);
@@ -131,13 +117,9 @@ html {
 }
 
 body {
-  color: var(--color-neutral-900);
+  color: var(--color-neutral-800);
   font-family: aeonik, 'aeonik Fallback', 'Source Code Pro',
     'Source Code Pro Fallback', sans-serif;
-}
-
-#main {
-  @apply flex flex-col w-full h-full min-h-screen bg-neutral-0;
 }
 
 @layer utilities {
@@ -449,7 +431,7 @@ body {
     @apply bg-neutral-300;
   }
 
-  &[data-variant="error"] {
+  &[data-variant='error'] {
     @apply bg-red-50 text-red-700 border-red-200;
   }
 
@@ -638,7 +620,7 @@ input[type='number'] {
   margin: 0;
 }
 .text-animate-word {
-  @apply absolute text-neutral-900 text-2xl md:text-[30px] text-left flex justify-start items-start w-[300px] md:w-[600px];
+  @apply absolute text-white text-2xl md:text-[30px] text-left flex justify-start items-start w-[300px] md:w-[600px];
   opacity: 0;
 }
 .letter {
