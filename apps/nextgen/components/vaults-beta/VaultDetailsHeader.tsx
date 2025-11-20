@@ -134,15 +134,15 @@ function MetricInfoModal({
 
 function MetricsCard({ items }: { items: TMetricBlock[] }): ReactElement {
   return (
-    <div className={cl('rounded-xl border border-neutral-200 bg-neutral-0/90 text-neutral-900', 'backdrop-blur-sm')}>
-      <div className={'divide-y divide-neutral-200 md:flex md:divide-y-0'}>
+    <div className={cl('rounded-lg border border-neutral-300 bg-surface text-neutral-900', 'backdrop-blur-sm')}>
+      <div className={'divide-y divide-neutral-300 md:flex md:divide-y-0'}>
         {items.map(
           (item, index): ReactElement => (
             <div
               key={item.key}
               className={cl(
                 'flex flex-1 flex-col gap-1 px-5 py-3',
-                index < items.length - 1 ? 'md:border-r md:border-neutral-200' : ''
+                index < items.length - 1 ? 'md:border-r md:border-neutral-300' : ''
               )}
             >
               <div className={'flex items-center justify-between'}>
@@ -172,7 +172,7 @@ function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): 
             onClick={(): void => setIsModalOpen(true)}
             aria-label={`Learn more about ${label}`}
             className={
-              'inline-flex size-4 items-center justify-center rounded-full border border-neutral-300 text-[10px] font-semibold text-neutral-500 transition-colors hover:border-neutral-500 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300'
+              'inline-flex size-4 items-center justify-center rounded-full border bg-neutral-0 border-neutral-300 text-[10px] font-semibold text-neutral-500 transition-colors hover:border-neutral-500 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300'
             }
           >
             <span className={'leading-none'}>{'i'}</span>

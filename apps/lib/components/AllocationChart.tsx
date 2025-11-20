@@ -43,7 +43,7 @@ function useDarkMode(): boolean {
 export function AllocationChart({
   allocationChartData,
   colors,
-  textColor = 'fill-white',
+  textColor = 'bg-neutral-900',
   strokeColor,
   fillColor = 'white',
   width = 150,

@@ -107,7 +107,7 @@ function V3Home(): ReactElement {
   }
 
   return (
-    <div className={'min-h-screen w-full bg-neutral-0'}>
+    <div className={'min-h-screen w-full bg-neutral-100'}>
       <div className={'mx-auto w-full max-w-[1232px]'}>
         <div
           ref={gridRef}

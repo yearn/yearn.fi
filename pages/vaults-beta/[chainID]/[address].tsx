@@ -162,69 +162,71 @@ function Index(): ReactElement | null {
   }
 
   return (
-    <div className={'mx-auto w-full max-w-[1232px] pt-20 md:pt-20 px-4'}>
-      {/* Header with gradient background and vault logo */}
-      <header
-        className={cl(
-          'h-full rounded-3xl ',
-          // 'pt-6 pb-6 md:pb-10 px-4 md:px-0',
-          // 'bg-[linear-gradient(73deg,#D21162_24.91%,#2C3DA6_99.66%)]',
-          'relative flex flex-col items-center justify-center'
-        )}
-      >
-        <div className={'absolute -top-10 md:-top-6'}></div>
-        <VaultDetailsHeader currentVault={currentVault} />
-      </header>
+    <div className={'vaults-layout vaults-layout--detail'}>
+      <div className={'mx-auto w-full max-w-[1232px] pt-20 md:pt-20 px-4'}>
+        {/* Header with gradient background and vault logo */}
+        <header
+          className={cl(
+            'h-full rounded-3xl ',
+            // 'pt-6 pb-6 md:pb-10 px-4 md:px-0',
+            // 'bg-[linear-gradient(73deg,#D21162_24.91%,#2C3DA6_99.66%)]',
+            'relative flex flex-col items-center justify-center'
+          )}
+        >
+          <div className={'absolute -top-10 md:-top-6'}></div>
+          <VaultDetailsHeader currentVault={currentVault} />
+        </header>
 
-      <section className={'mt-6 grid grid-cols-1 gap-6 md:grid-cols-20'}>
-        <div className={'space-y-4 md:col-span-13'}>
-          {[
-            {
-              key: 'charts',
-              shouldRender: Number.isInteger(chainId),
-              content: <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} />
-            },
-            {
-              key: 'about',
-              shouldRender: true,
-              content: <VaultAboutSection currentVault={currentVault} />
-            },
-            {
-              key: 'risk',
-              shouldRender: true,
-              content: <VaultRiskSection currentVault={currentVault} />
-            },
-            {
-              key: 'strategies',
-              shouldRender: Number(currentVault.strategies?.length || 0) > 0,
-              content: <VaultStrategiesSection currentVault={currentVault} />
-            },
-            {
-              key: 'info',
-              shouldRender: true,
-              content: <VaultInfoSection currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
-            }
-          ]
-            .filter((section) => section.shouldRender)
-            .map((section) => (
-              <div key={section.key} className={'border border-neutral-200 rounded-lg bg-neutral-0'}>
-                {section.content}
-              </div>
-            ))}
-        </div>
-        <div className={'md:col-span-7 md:sticky'}>
-          <div>
-            <Widget
-              vaultType={isV3 ? 'v3' : 'v2'}
-              vaultAddress={currentVault.address}
-              currentVault={currentVault}
-              gaugeAddress={currentVault.staking.address}
-              actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
-              chainId={chainId}
-            />
+        <section className={'mt-6 grid grid-cols-1 gap-6 md:grid-cols-20'}>
+          <div className={'space-y-4 md:col-span-13'}>
+            {[
+              {
+                key: 'charts',
+                shouldRender: Number.isInteger(chainId),
+                content: <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} />
+              },
+              {
+                key: 'about',
+                shouldRender: true,
+                content: <VaultAboutSection currentVault={currentVault} />
+              },
+              {
+                key: 'risk',
+                shouldRender: true,
+                content: <VaultRiskSection currentVault={currentVault} />
+              },
+              {
+                key: 'strategies',
+                shouldRender: Number(currentVault.strategies?.length || 0) > 0,
+                content: <VaultStrategiesSection currentVault={currentVault} />
+              },
+              {
+                key: 'info',
+                shouldRender: true,
+                content: <VaultInfoSection currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
+              }
+            ]
+              .filter((section) => section.shouldRender)
+              .map((section) => (
+                <div key={section.key} className={'border border-neutral-300 rounded-lg bg-surface'}>
+                  {section.content}
+                </div>
+              ))}
           </div>
-        </div>
-      </section>
+          <div className={'md:col-span-7 md:sticky'}>
+            <div>
+              <Widget
+                vaultType={isV3 ? 'v3' : 'v2'}
+                vaultAddress={currentVault.address}
+                currentVault={currentVault}
+                gaugeAddress={currentVault.staking.address}
+                actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
+                chainId={chainId}
+              />
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   )
 }

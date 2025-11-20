@@ -81,6 +81,9 @@
   --color-steel-gray-500: hsl(218 14% 71%);
   --color-light-blue-500: hsl(220 100% 67%);
   --default-rounded: 0rem;
+  --surface-background: var(--color-neutral-0);
+  --surface-default: var(--color-neutral-0);
+  --surface-muted: var(--color-neutral-100);
 
   /* Custom Font Sizes */
   --text-xxs: 0.625rem; /* 10px */
@@ -104,10 +107,14 @@
     --color-neutral-600: hsl(0 0% 88%);
     --color-neutral-500: hsl(0 0% 62%);
     --color-neutral-400: hsl(0 0% 50%);
-    --color-neutral-300: hsl(231 51% 19%);
-    --color-neutral-200: hsl(242 54% 27%);
-    --color-neutral-100: hsl(231 100% 11%);
+    --color-neutral-300: hsl(231 50% 20%);
+    --color-neutral-200: hsl(231, 75%, 15%);
+    /* --color-neutral-100: hsl(231 100% 11%); */
+    --color-neutral-100: hsl(231, 100%, 10%);
     --color-neutral-0: hsl(231 100% 6%);
+    --surface-background: var(--color-neutral-0);
+    --surface-default: var(--color-neutral-100);
+    --surface-muted: var(--color-neutral-200);
   }
 }
 
@@ -123,6 +130,14 @@ body {
 }
 
 @layer utilities {
+  .bg-app {
+    background-color: var(--surface-background);
+  }
+
+  .bg-surface {
+    background-color: var(--surface-default);
+  }
+
   .font-number {
     font-family: 'Aeonik Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
       Consolas, 'Liberation Mono', 'Courier New', monospace;
@@ -138,6 +153,38 @@ body {
 }
 
 @layer components {
+  .vaults-layout {
+    min-height: 100vh;
+    width: 100%;
+    background-color: var(--surface-background);
+  }
+
+  .vaults-layout--list {
+    --surface-background: var(--color-neutral-100);
+    --surface-default: var(--color-neutral-0);
+    --surface-muted: var(--color-neutral-200);
+  }
+
+  .vaults-layout--detail {
+    --surface-background: var(--color-neutral-0);
+    --surface-default: var(--color-neutral-0);
+    --surface-muted: var(--color-neutral-200);
+  }
+
+  .dark .vaults-layout--list,
+  .v3 .vaults-layout--list {
+    --surface-background: var(--color-neutral-0);
+    --surface-default: var(--color-neutral-100);
+    --surface-muted: var(--color-neutral-300);
+  }
+
+  .dark .vaults-layout--detail,
+  .v3 .vaults-layout--detail {
+    --surface-background: var(--color-neutral-0);
+    --surface-default: var(--color-neutral-100);
+    --surface-muted: var(--color-neutral-300);
+  }
+
   [role='button']:not(:disabled),
   button:not(:disabled) {
     @apply cursor-pointer;

@@ -263,12 +263,12 @@ function ListOfVaults({
     }
 
     return (
-      <div className={'flex flex-col gap-px'}>
+      <div className={'flex flex-col gap-px bg-app'}>
         {pinnedSections.map((section) => (
           <VaultsV3AuxiliaryList key={section.key} vaults={section.vaults} vaultFlags={vaultFlags} />
         ))}
         {mainVaults.length > 0 ? (
-          <div className={'flex flex-col gap-px'}>
+          <div className={'flex flex-col gap-px bg-app'}>
             {mainVaults.map((vault) => {
               const key = `${vault.chainID}_${toAddress(vault.address)}`
               return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
@@ -296,10 +296,10 @@ function ListOfVaults({
   )
 
   const listElement = (
-    <div className={'flex min-h-60 w-full flex-col '}>
-      <div className={'flex flex-col overflow-hidden rounded-t-xl border border-neutral-200'}>
+    <div className={'flex min-h-60 w-full flex-col'}>
+      <div className={'flex flex-col overflow-hidden rounded-t-xl border border-neutral-200 bg-surface'}>
         <VaultsV3ListHead
-          containerClassName={'rounded-t-lg bg-neutral-0'}
+          containerClassName={'rounded-t-lg bg-surface'}
           sortBy={sortBy}
           sortDirection={sortDirection}
           onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
@@ -401,25 +401,27 @@ function Index(): ReactElement {
   })
 
   return (
-    <div className={'relative z-50 mx-auto grid w-full max-w-[1232px] gap-4 bg-transparent px-4 pb-8 pt-20 md:gap-2'}>
-      <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
-        <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
-          {'Home'}
-        </Link>
-        <span>{'>'}</span>
-        <span className={'font-medium text-neutral-900'}>{'Vaults v3'}</span>
+    <div className={'vaults-layout vaults-layout--list'}>
+      <div className={'relative z-50 mx-auto grid w-full max-w-[1232px] gap-4 bg-transparent px-4 pb-8 pt-20 md:gap-2'}>
+        <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
+          <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
+            {'Home'}
+          </Link>
+          <span>{'>'}</span>
+          <span className={'font-medium text-neutral-900'}>{'Vaults v3'}</span>
+        </div>
+        <ListOfVaults {...queryArgs}>
+          {({ filters, list }) => (
+            <Fragment>
+              {/* <div className={'col-span-48 hidden h-full w-full rounded-3xl bg-neutral-100 p-2 md:col-span-8 md:block'}>
+                <V3Card />
+              </div> */}
+              <div className={'flex flex-col'}>{filters}</div>
+              {list}
+            </Fragment>
+          )}
+        </ListOfVaults>
       </div>
-      <ListOfVaults {...queryArgs}>
-        {({ filters, list }) => (
-          <Fragment>
-            {/* <div className={'col-span-48 hidden h-full w-full rounded-3xl bg-neutral-100 p-2 md:col-span-8 md:block'}>
-              <V3Card />
-            </div> */}
-            <div className={'flex flex-col'}>{filters}</div>
-            {list}
-          </Fragment>
-        )}
-      </ListOfVaults>
     </div>
   )
 }

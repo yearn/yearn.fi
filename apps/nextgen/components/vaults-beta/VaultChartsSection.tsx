@@ -79,7 +79,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
     <div className={'space-y-4 md:pt-3'}>
       <div className={'flex flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between'}>
         <div className={'flex flex-wrap gap-3'}>
-          <div className={'flex items-center gap-1 rounded-lg bg-neutral-100 p-1'}>
+          <div className={'flex items-center gap-1 rounded-lg bg-neutral-100 p-1 border border-neutral-200'}>
             {CHART_TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -88,7 +88,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
                 className={cl(
                   'rounded-lg px-3 py-1 text-xs font-semibold transition-all',
                   activeTab === tab.id
-                    ? 'bg-neutral-200 text-neutral-900'
+                    ? 'bg-neutral-0 text-neutral-900'
                     : 'bg-transparent text-neutral-500 hover:text-neutral-700'
                 )}
               >
@@ -98,7 +98,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
           </div>
         </div>
         <div className={'flex flex-wrap gap-3'}>
-          <div className={'flex items-center gap-1 rounded-lg bg-neutral-100 p-1'}>
+          <div className={'flex items-center gap-1 rounded-lg bg-neutral-100 p-1 border border-neutral-200'}>
             {TIMEFRAME_OPTIONS.map((option) => (
               <button
                 key={option.value}
@@ -106,7 +106,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
                 className={cl(
                   'rounded-lg px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
                   option.value === timeframe.value
-                    ? 'bg-neutral-200 text-neutral-900'
+                    ? 'bg-neutral-0 text-neutral-900'
                     : 'bg-transparent text-neutral-500 hover:text-neutral-700'
                 )}
                 onClick={() => setTimeframe(option)}
@@ -119,7 +119,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
       </div>
 
       {hasError ? (
-        <div className={'rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700'}>
+        <div className={' bg-neutral-300 p-6 text-center text-sm text-red-700'}>
           {'Unable to load chart data right now.'}
         </div>
       ) : chartsLoading ? (

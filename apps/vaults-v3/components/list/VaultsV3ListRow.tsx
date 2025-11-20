@@ -102,8 +102,8 @@ export function VaultsV3ListRow({
   return (
     <div
       className={cl(
-        'w-full overflow-hidden border border-transparent transition-colors',
-        isExpanded ? 'border-neutral-200 bg-neutral-0' : ''
+        'w-full overflow-hidden border border-transparent transition-colors bg-surface',
+        isExpanded ? 'border-neutral-200' : ''
       )}
     >
       {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
@@ -113,7 +113,7 @@ export function VaultsV3ListRow({
         onClick={handleRowClick}
         onKeyDown={handleKeyDown}
         className={cl(
-          'grid w-full grid-cols-1 md:grid-cols-24 bg-neutral-0',
+          'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
           'p-6 pt-2 pb-4 pr-14 md:pr-16',
           'cursor-pointer relative group'
         )}
@@ -311,18 +311,18 @@ export function VaultsV3ListRow({
       </div>
 
       {isExpanded ? (
-        <div className={'border-t border-neutral-200 bg-neutral-0'}>
-          <div className={'flex flex-wrap gap-2 px-6 pt-4'}>
-            <div className={'flex items-center gap-1 rounded-lg bg-neutral-0 p-1'}>
+        <div className={'border-t border-neutral-200 bg-surface'}>
+          <div className={'flex flex-wrap gap-2 px-6'}>
+            <div className={'flex items-center gap-1 rounded-lg bg-app p-1'}>
               {EXPANDED_TABS.map((tab) => (
                 <button
                   key={tab.id}
                   type={'button'}
                   className={cl(
-                    'rounded-lg px-4 py-1 text-xs font-semibold uppercase tracking-wide transition-colors',
+                    'rounded-lg px-4 py-1 text-xs font-semibold tracking-wide transition-colors',
                     activeExpandedTab === tab.id
-                      ? 'bg-neutral-200 text-neutral-800'
-                      : 'bg-neutral-500 text-neutral-600 hover:bg-neutral-200'
+                      ? 'bg-surface text-neutral-800'
+                      : 'bg-transparent text-neutral-500 hover:text-neutral-700'
                   )}
                   onClick={(): void => setActiveExpandedTab(tab.id)}
                 >
@@ -331,17 +331,17 @@ export function VaultsV3ListRow({
               ))}
             </div>
           </div>
-          <div className={'px-2 pb-6 pt-4 md:px-6'}>
+          <div className={'pb-6 pt-2 px-2'}>
             {activeExpandedTab === 'charts' ? (
               <VaultChartsSection chainId={currentVault.chainID} vaultAddress={currentVault.address} />
             ) : null}
             {activeExpandedTab === 'strategies' ? (
-              <div className={'border border-neutral-200 bg-neutral-100 p-4 md:p-6'}>
+              <div className={'border border-neutral-200 bg-surface p-4 md:p-6'}>
                 <VaultStrategyAllocationPreview currentVault={currentVault} />
               </div>
             ) : null}
             {activeExpandedTab === 'info' ? (
-              <div className={'border border-neutral-200 bg-neutral-100'}>
+              <div className={'border border-neutral-200 bg-surface'}>
                 <VaultAboutSection currentVault={currentVault} />
               </div>
             ) : null}

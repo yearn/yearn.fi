@@ -119,7 +119,7 @@ export const InputTokenAmountV2: FC<Props> = ({
                 type="button"
                 onClick={() => handlePercentageClick(25)}
                 className={cl(
-                  'px-2 py-0.5 text-xs font-medium rounded transition-colors',
+                  'px-1 py-0.5 text-xs font-medium rounded transition-colors',
                   disabled
                     ? 'text-gray-400 bg-transparent cursor-not-allowed'
                     : 'text-gray-500 bg-transparent hover:bg-gray-100'
@@ -132,7 +132,7 @@ export const InputTokenAmountV2: FC<Props> = ({
                 type="button"
                 onClick={() => handlePercentageClick(50)}
                 className={cl(
-                  'px-2 py-0.5 text-xs font-medium rounded transition-colors',
+                  'px-1 py-0.5 text-xs font-medium rounded transition-colors',
                   disabled
                     ? 'text-gray-400 bg-transparent cursor-not-allowed'
                     : 'text-gray-500 bg-transparent hover:bg-gray-100'
@@ -145,7 +145,7 @@ export const InputTokenAmountV2: FC<Props> = ({
                 type="button"
                 onClick={() => handlePercentageClick(75)}
                 className={cl(
-                  'px-2 py-0.5 text-xs font-medium rounded transition-colors',
+                  'px-1 py-0.5 text-xs font-medium rounded transition-colors',
                   disabled
                     ? 'text-gray-400 bg-transparent cursor-not-allowed'
                     : 'text-gray-500 bg-transparent hover:bg-gray-100'
@@ -158,7 +158,7 @@ export const InputTokenAmountV2: FC<Props> = ({
                 type="button"
                 onClick={() => handlePercentageClick(100)}
                 className={cl(
-                  'px-2 py-0.5 text-xs font-medium rounded transition-colors',
+                  'px-1 py-0.5 text-xs font-medium rounded transition-colors',
                   disabled
                     ? 'text-gray-400 bg-transparent cursor-not-allowed'
                     : 'text-gray-500 bg-transparent hover:bg-gray-100'
@@ -196,7 +196,7 @@ export const InputTokenAmountV2: FC<Props> = ({
               disabled={!showTokenSelector && disabled}
               className={cl(
                 'px-2 py-1 rounded-lg flex items-center gap-2 transition-colors',
-                'text-gray-900 text-2xl font-medium', // Match input text size
+                'text-gray-900 text-xl font-medium', // Match input text size
                 showTokenSelector
                   ? 'bg-transparent hover:bg-gray-100'
                   : disabled
@@ -206,10 +206,12 @@ export const InputTokenAmountV2: FC<Props> = ({
             >
               {tokenAddress && tokenChainId && (
                 <ImageWithFallback
-                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${tokenChainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                  src={`${
+                    import.meta.env.VITE_BASE_YEARN_ASSETS_URI
+                  }/tokens/${tokenChainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                   alt={symbol ?? ''}
-                  width={28}
-                  height={28}
+                  width={24}
+                  height={24}
                   className="rounded-full"
                 />
               )}
@@ -281,7 +283,9 @@ export const InputTokenAmountV2: FC<Props> = ({
                 >
                   {zapToken.address && zapToken.chainId && (
                     <ImageWithFallback
-                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
+                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+                        zapToken.chainId
+                      }/${zapToken.address.toLowerCase()}/logo-32.png`}
                       alt={zapToken.symbol}
                       width={28}
                       height={28}
