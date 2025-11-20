@@ -266,7 +266,7 @@ TListHero): ReactElement {
 
   return (
     <>
-      <div className={'mb-3 mt-2 flex items-center gap-2 text-sm text-neutral-500'}>
+      <div className={'mb-3 mt-2 px-4 flex items-center gap-2 text-sm text-neutral-500'}>
         <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
           {'Home'}
         </Link>

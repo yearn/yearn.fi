@@ -173,166 +173,170 @@ function PortfolioPage(): ReactElement {
   const hasHoldings = sortedHoldings.length > 0
 
   return (
-    <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-10 bg-neutral-0 px-4 pb-16 pt-20'}>
-      <section className={'flex flex-col gap-6'}>
-        <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
-          <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
-            {'Home'}
-          </Link>
-          <span>{'>'}</span>
-          <span className={'font-medium text-neutral-900'}>{'Account Overview'}</span>
-        </div>
-        <div>
-          <h1 className={'text-4xl font-black text-neutral-900'}>{'Account Overview'}</h1>
-          <p className={'mt-2 text-base text-neutral-600'}>
-            {'Monitor your balances, returns, and discover new vaults.'}
-          </p>
-        </div>
-        <div className={'grid grid-cols-1 gap-4 md:grid-cols-3'}>
-          <div className={'rounded-3xl border border-neutral-200 bg-neutral-0 p-6 md:col-span-2'}>
-            <div className={'flex flex-wrap items-center justify-between gap-4'}>
-              <div>
-                <p className={'text-sm font-semibold uppercase tracking-wide text-neutral-500'}>{'Total balance'}</p>
-                <p className={'mt-1 text-3xl font-black text-neutral-900'}>
-                  {currencyFormatter.format(cumulatedValueInV3Vaults || 0)}
-                </p>
-              </div>
-              <div className={'flex flex-wrap gap-2'}>
-                {TIMEFRAMES.map((range) => (
-                  <button
-                    key={range}
-                    type={'button'}
-                    onClick={(): void => setSelectedRange(range)}
-                    className={cl(
-                      'rounded-full px-3 py-1 text-xs font-semibold transition-colors',
-                      selectedRange === range
-                        ? 'bg-neutral-900 text-neutral-0'
-                        : 'bg-neutral-100 text-neutral-600 hover:text-neutral-900'
-                    )}
-                  >
-                    {range}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div
-              className={
-                'mt-6 flex h-48 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#DCE6FF] via-[#F2EBFF] to-[#FFE7F3] text-sm text-neutral-600'
-              }
-            >
-              {'Performance chart coming soon'}
-            </div>
+    <div className={'vaults-layout vaults-layout--detail'}>
+      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-10 bg-neutral-0 px-4 pb-16'}>
+        <section className={'flex flex-col gap-4'}>
+          <div className={'flex items-center gap-2 mt-2 text-sm text-neutral-500'}>
+            <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
+              {'Home'}
+            </Link>
+            <span>{'>'}</span>
+            <span className={'font-medium text-neutral-900'}>{'Account Overview'}</span>
           </div>
-          <div className={'rounded-3xl border border-neutral-200 bg-neutral-0 p-6'}>
-            <p className={'text-sm font-semibold uppercase tracking-wide text-neutral-500'}>{'Total return'}</p>
-            <p className={'mt-3 text-3xl font-black text-neutral-900'}>{'—'}</p>
-            <p className={'mt-2 text-sm text-neutral-600'}>
-              {'Return insights will appear here once this data becomes available.'}
+          <div>
+            <h1 className={'text-4xl font-black text-neutral-900'}>{'Account Overview'}</h1>
+            <p className={'mt-2 text-base text-neutral-600'}>
+              {'Monitor your balances, returns, and discover new vaults.'}
             </p>
           </div>
-        </div>
-      </section>
-
-      <section className={'flex flex-col gap-4'}>
-        <div className={'flex flex-wrap items-center justify-between gap-4'}>
-          <div>
-            <h2 className={'text-2xl font-semibold text-neutral-900'}>{'Your vaults'}</h2>
-            <p className={'text-sm text-neutral-600'}>{'Track every v3 position you currently hold.'}</p>
-          </div>
-          {hasHoldings ? (
-            <Link to="/v3" className={'yearn--button text-sm'} data-variant={'light'}>
-              {'Browse more vaults'}
-            </Link>
-          ) : null}
-        </div>
-        <div className={'overflow-hidden rounded-3xl border border-neutral-200'}>
-          <div className={'flex flex-col'}>
-            <VaultsV3ListHead
-              sortBy={sortBy}
-              sortDirection={sortDirection}
-              onSort={(newSortBy, newDirection): void => {
-                setSortBy(newSortBy as TPossibleSortBy)
-                setSortDirection(newDirection)
-              }}
-              wrapperClassName={'rounded-t-3xl bg-neutral-100'}
-              containerClassName={'rounded-t-3xl bg-neutral-100'}
-              items={[
-                {
-                  type: 'sort',
-                  label: 'Vault / Featuring Score',
-                  value: 'featuringScore',
-                  sortable: true,
-                  className: 'col-span-9'
-                },
-                {
-                  type: 'sort',
-                  label: 'Est. APY',
-                  value: 'estAPY',
-                  sortable: true,
-                  className: 'col-span-3'
-                },
-                {
-                  type: 'sort',
-                  label: 'Hist. APY',
-                  value: 'APY',
-                  sortable: true,
-                  className: 'col-span-3'
-                },
-                {
-                  type: 'sort',
-                  label: 'Risk Level',
-                  value: 'score',
-                  sortable: true,
-                  className: 'col-span-3 whitespace-nowrap'
-                },
-                {
-                  type: 'sort',
-                  label: 'Your Deposit',
-                  value: 'deposited',
-                  sortable: true,
-                  className: 'col-span-3'
-                },
-                {
-                  type: 'sort',
-                  label: 'TVL',
-                  value: 'tvl',
-                  sortable: true,
-                  className: 'col-span-3 justify-end'
+          <div className={'grid grid-cols-1 gap-4 md:grid-cols-3'}>
+            <div className={'rounded-3xl border border-neutral-200 bg-neutral-0 p-6 md:col-span-2'}>
+              <div className={'flex flex-wrap items-center justify-between gap-4'}>
+                <div>
+                  <p className={'text-sm font-semibold uppercase tracking-wide text-neutral-500'}>{'Total balance'}</p>
+                  <p className={'mt-1 text-3xl font-black text-neutral-900'}>
+                    {currencyFormatter.format(cumulatedValueInV3Vaults || 0)}
+                  </p>
+                </div>
+                <div className={'flex flex-wrap gap-2'}>
+                  {TIMEFRAMES.map((range) => (
+                    <button
+                      key={range}
+                      type={'button'}
+                      onClick={(): void => setSelectedRange(range)}
+                      className={cl(
+                        'rounded-full px-3 py-1 text-xs font-semibold transition-colors',
+                        selectedRange === range
+                          ? 'bg-neutral-900 text-neutral-0'
+                          : 'bg-neutral-100 text-neutral-600 hover:text-neutral-900'
+                      )}
+                    >
+                      {range}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div
+                className={
+                  'mt-6 flex h-48 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#DCE6FF] via-[#F2EBFF] to-[#FFE7F3] text-sm text-neutral-600'
                 }
-              ]}
-            />
-            {isLoading ? (
-              <div className={'flex items-center justify-center px-6 py-16 text-sm text-neutral-600'}>
-                {'Loading your vaults...'}
+              >
+                {'Performance chart coming soon'}
               </div>
-            ) : hasHoldings ? (
-              <div className={'flex flex-col gap-px'}>
-                {sortedHoldings.map((vault) => {
-                  const key = `${vault.chainID}_${toAddress(vault.address)}`
-                  return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
-                })}
-              </div>
-            ) : (
-              <HoldingsEmptyState isActive={isActive} onConnect={openLoginModal} />
-            )}
-          </div>
-        </div>
-      </section>
-
-      {suggestedVaults.length > 0 ? (
-        <section className={'flex flex-col gap-4'}>
-          <div>
-            <h2 className={'text-2xl font-semibold text-neutral-900'}>{'You might also like'}</h2>
-            <p className={'text-sm text-neutral-600'}>{'Vaults picked for you based on performance and popularity.'}</p>
-          </div>
-          <div className={'grid gap-4 md:grid-cols-2 xl:grid-cols-4'}>
-            {suggestedVaults.map((vault) => {
-              const key = `${vault.chainID}_${toAddress(vault.address)}`
-              return <SuggestedVaultCard key={key} vault={vault} />
-            })}
+            </div>
+            <div className={'rounded-3xl border border-neutral-200 bg-neutral-0 p-6'}>
+              <p className={'text-sm font-semibold uppercase tracking-wide text-neutral-500'}>{'Total return'}</p>
+              <p className={'mt-3 text-3xl font-black text-neutral-900'}>{'—'}</p>
+              <p className={'mt-2 text-sm text-neutral-600'}>
+                {'Return insights will appear here once this data becomes available.'}
+              </p>
+            </div>
           </div>
         </section>
-      ) : null}
+
+        <section className={'flex flex-col gap-4'}>
+          <div className={'flex flex-wrap items-center justify-between gap-4'}>
+            <div>
+              <h2 className={'text-2xl font-semibold text-neutral-900'}>{'Your vaults'}</h2>
+              <p className={'text-sm text-neutral-600'}>{'Track every v3 position you currently hold.'}</p>
+            </div>
+            {hasHoldings ? (
+              <Link to="/v3" className={'yearn--button text-sm'} data-variant={'light'}>
+                {'Browse more vaults'}
+              </Link>
+            ) : null}
+          </div>
+          <div className={'overflow-hidden rounded-3xl border border-neutral-200'}>
+            <div className={'flex flex-col'}>
+              <VaultsV3ListHead
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={(newSortBy, newDirection): void => {
+                  setSortBy(newSortBy as TPossibleSortBy)
+                  setSortDirection(newDirection)
+                }}
+                wrapperClassName={'rounded-t-3xl bg-neutral-100'}
+                containerClassName={'rounded-t-3xl bg-neutral-100'}
+                items={[
+                  {
+                    type: 'sort',
+                    label: 'Vault / Featuring Score',
+                    value: 'featuringScore',
+                    sortable: true,
+                    className: 'col-span-9'
+                  },
+                  {
+                    type: 'sort',
+                    label: 'Est. APY',
+                    value: 'estAPY',
+                    sortable: true,
+                    className: 'col-span-3'
+                  },
+                  {
+                    type: 'sort',
+                    label: 'Hist. APY',
+                    value: 'APY',
+                    sortable: true,
+                    className: 'col-span-3'
+                  },
+                  {
+                    type: 'sort',
+                    label: 'Risk Level',
+                    value: 'score',
+                    sortable: true,
+                    className: 'col-span-3 whitespace-nowrap'
+                  },
+                  {
+                    type: 'sort',
+                    label: 'Your Deposit',
+                    value: 'deposited',
+                    sortable: true,
+                    className: 'col-span-3'
+                  },
+                  {
+                    type: 'sort',
+                    label: 'TVL',
+                    value: 'tvl',
+                    sortable: true,
+                    className: 'col-span-3 justify-end'
+                  }
+                ]}
+              />
+              {isLoading ? (
+                <div className={'flex items-center justify-center px-6 py-16 text-sm text-neutral-600'}>
+                  {'Loading your vaults...'}
+                </div>
+              ) : hasHoldings ? (
+                <div className={'flex flex-col gap-px'}>
+                  {sortedHoldings.map((vault) => {
+                    const key = `${vault.chainID}_${toAddress(vault.address)}`
+                    return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
+                  })}
+                </div>
+              ) : (
+                <HoldingsEmptyState isActive={isActive} onConnect={openLoginModal} />
+              )}
+            </div>
+          </div>
+        </section>
+
+        {suggestedVaults.length > 0 ? (
+          <section className={'flex flex-col gap-4'}>
+            <div>
+              <h2 className={'text-2xl font-semibold text-neutral-900'}>{'You might also like'}</h2>
+              <p className={'text-sm text-neutral-600'}>
+                {'Vaults picked for you based on performance and popularity.'}
+              </p>
+            </div>
+            <div className={'grid gap-4 md:grid-cols-2 xl:grid-cols-4'}>
+              {suggestedVaults.map((vault) => {
+                const key = `${vault.chainID}_${toAddress(vault.address)}`
+                return <SuggestedVaultCard key={key} vault={vault} />
+              })}
+            </div>
+          </section>
+        ) : null}
+      </div>
     </div>
   )
 }

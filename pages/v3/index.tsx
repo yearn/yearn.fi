@@ -406,7 +406,7 @@ function Index(): ReactElement {
   return (
     <div className={'vaults-layout vaults-layout--list'}>
       <div
-        className={'relative z-50 mx-auto flex w-full max-w-[1232px] flex-col gap-4 bg-transparent px-4 pb-4 md:gap-3'}
+        className={'relative z-50 mx-auto flex w-full max-w-[1232px] flex-col gap-4 bg-transparent pb-4 md:gap-3'}
         style={{
           height: 'calc(100vh - var(--header-height))'
         }}

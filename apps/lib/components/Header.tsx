@@ -205,12 +205,19 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
 
     const observer = new MutationObserver(() => updateSurfaceBackground())
     const layoutHost = document.querySelector('.vaults-layout')
+
+    // Observe both the layout host and document root for class changes
     if (layoutHost) {
       observer.observe(layoutHost, {
         attributes: true,
         attributeFilter: ['class']
       })
     }
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    })
 
     return () => observer.disconnect()
   }, [updateSurfaceBackground])
