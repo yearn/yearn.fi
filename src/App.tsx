@@ -21,28 +21,12 @@ import PlausibleProvider from './components/PlausibleProvider'
 import { AppRoutes } from './routes'
 
 function WithLayout(): ReactElement {
-  const location = useLocation()
-  const isAppsPage = location.pathname?.startsWith('/apps')
-
-  if (isAppsPage) {
-    return (
-      <>
-        <div className={cl('mx-auto mb-0 flex z-60 max-w-[1232px] absolute top-0 inset-x-0 px-4 bg-neutral-0')}>
-          <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
-        </div>
-        <div id={'app'} className={'bg-neutral-0 mb-0 flex min-h-screen justify-center'}>
-          <div className={'flex w-full max-w-[1230px] justify-start'}>
-            <AppRoutes />
-          </div>
-        </div>
-      </>
-    )
-  }
-
   return (
     <>
-      <div className={cl('mx-auto mb-0 flex z-60 max-w-[1232px] absolute top-0 inset-x-0 px-4')}>
-        <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
+      <div className={'sticky top-0 z-60 w-full bg-app'}>
+        <div className={'mx-auto flex max-w-[1232px] px-4'}>
+          <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
+        </div>
       </div>
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>
