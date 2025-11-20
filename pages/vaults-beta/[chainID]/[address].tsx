@@ -176,7 +176,7 @@ function Index(): ReactElement | null {
         </header>
 
         <section className={'mt-6 grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start'}>
-          <div className={'space-y-4 md:col-span-13'}>
+          <div className={'space-y-4 md:col-span-13 pb-4'}>
             {[
               {
                 key: 'charts',
@@ -211,7 +211,7 @@ function Index(): ReactElement | null {
                 </div>
               ))}
           </div>
-          <div className={'md:col-span-7 md:col-start-14 md:sticky md:top-32 md:h-fit'}>
+          <div className={'md:col-span-7 md:col-start-14 md:sticky md:h-fit'} style={{ top: '193.5px' }}>
             <div>
               <Widget
                 vaultType={isV3 ? 'v3' : 'v2'}

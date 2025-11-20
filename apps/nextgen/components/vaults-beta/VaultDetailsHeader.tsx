@@ -33,7 +33,7 @@ import { VaultForwardAPY } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { erc20Abi, zeroAddress } from 'viem'
 import { useBlockNumber } from 'wagmi'
 import { readContract, readContracts } from 'wagmi/actions'
@@ -356,6 +356,8 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
     rewardTokenDecimal: 0,
     earnedValue: 0
   })
+  const blockScrollUntilCompressedRef = useRef(true)
+  const touchStartYRef = useRef<number | null>(null)
 
   const tokenPrice = currentVault.tvl.price || 0
 
@@ -639,15 +641,139 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
       : currentVault.address
 
   useEffect(() => {
+    const getDirection = (event: WheelEvent | TouchEvent): 'up' | 'down' | null => {
+      if (event instanceof WheelEvent) {
+        if (event.deltaY > 0) return 'down'
+        if (event.deltaY < 0) return 'up'
+        return null
+      }
+      if (touchStartYRef.current === null) return null
+      const deltaY = touchStartYRef.current - (event.touches[0]?.clientY ?? touchStartYRef.current)
+      if (deltaY > 0) return 'down'
+      if (deltaY < 0) return 'up'
+      return null
+    }
+
+    const consumeScrollWhileExpanding = (event: WheelEvent | TouchEvent): void => {
+      const direction = getDirection(event)
+      if (!direction) {
+        return
+      }
+
+      const atTop = window.scrollY <= 0
+
+      // If we're not at the very top, allow default scrolling.
+      if (!atTop) {
+        blockScrollUntilCompressedRef.current = false
+        return
+      }
+
+      // At the top: upward gesture should expand if currently compressed.
+      if (direction === 'up' && isCompressed) {
+        blockScrollUntilCompressedRef.current = true
+        setIsCompressed(false)
+        event.preventDefault()
+        return
+      }
+
+      // At the top: first downward gesture should compress if currently expanded.
+      if (!isCompressed && blockScrollUntilCompressedRef.current && direction === 'down') {
+        blockScrollUntilCompressedRef.current = false
+        setIsCompressed(true)
+        event.preventDefault()
+      }
+    }
+
+    const handleTouchStart = (event: TouchEvent): void => {
+      touchStartYRef.current = event.touches[0]?.clientY ?? null
+    }
+
+    window.addEventListener('wheel', consumeScrollWhileExpanding, { passive: false })
+    window.addEventListener('touchmove', consumeScrollWhileExpanding, { passive: false })
+    window.addEventListener('touchstart', handleTouchStart, { passive: true })
+
+    return (): void => {
+      window.removeEventListener('wheel', consumeScrollWhileExpanding)
+      window.removeEventListener('touchmove', consumeScrollWhileExpanding)
+      window.removeEventListener('touchstart', handleTouchStart)
+    }
+  }, [isCompressed])
+
+  useEffect(() => {
+    const isEditableElement = (element: EventTarget | null): boolean => {
+      if (!(element instanceof HTMLElement)) {
+        return false
+      }
+      const tag = element.tagName.toLowerCase()
+      if (['input', 'textarea', 'select', 'option', 'button'].includes(tag)) {
+        return true
+      }
+      return element.isContentEditable
+    }
+
+    const consumeKeyboardScrollWhileExpanding = (event: KeyboardEvent): void => {
+      if (!blockScrollUntilCompressedRef.current && !isCompressed) {
+        return
+      }
+
+      // Only act when at the top.
+      if (window.scrollY > 0) {
+        blockScrollUntilCompressedRef.current = false
+        return
+      }
+
+      if (isEditableElement(event.target)) {
+        return
+      }
+
+      const isDownKey =
+        event.key === 'ArrowDown' ||
+        event.key === 'PageDown' ||
+        event.key === 'End' ||
+        (event.key === ' ' && !event.shiftKey)
+
+      const isUpKey =
+        event.key === 'ArrowUp' ||
+        event.key === 'PageUp' ||
+        event.key === 'Home' ||
+        (event.key === ' ' && event.shiftKey)
+
+      if (isCompressed && isUpKey) {
+        blockScrollUntilCompressedRef.current = true
+        setIsCompressed(false)
+        event.preventDefault()
+        return
+      }
+
+      if (blockScrollUntilCompressedRef.current && !isCompressed && isDownKey) {
+        blockScrollUntilCompressedRef.current = false
+        setIsCompressed(true)
+        event.preventDefault()
+      }
+    }
+
+    window.addEventListener('keydown', consumeKeyboardScrollWhileExpanding)
+    return (): void => window.removeEventListener('keydown', consumeKeyboardScrollWhileExpanding)
+  }, [isCompressed])
+
+  useEffect(() => {
     const handleScroll = (): void => {
-      const shouldCompress = window.scrollY > 40
+      const scrollTop = window.scrollY
+
+      // When we return to the very top, prepare to block the next scroll so the header can compress first.
+      if (scrollTop === 0) {
+        blockScrollUntilCompressedRef.current = !isCompressed
+        return
+      }
+
+      const shouldCompress = scrollTop > 0
       setIsCompressed((prev) => (prev === shouldCompress ? prev : shouldCompress))
     }
 
     handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
     return (): void => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [isCompressed])
 
   return (
     <div className={'col-span-12 grid w-full grid-cols-1 gap-4 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
