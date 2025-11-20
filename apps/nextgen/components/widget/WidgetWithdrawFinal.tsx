@@ -144,7 +144,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<'vault' | 'staking' | null>(stakingAddress ? null : 'vault') // Default to vault for smooth UI (prevents balance flickering)
 
-  // Fetch pricePerShare to convert vault tokens to underlying
+  // Fetch pricePerShare to convert vault shares to underlying
   const { data: pricePerShare } = useReadContract({
     address: vaultAddress,
     abi: vaultAbi,
@@ -423,6 +423,16 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     stakingAddress
   ])
 
+  const actionLabel = useMemo(() => {
+    if (isUnstake) {
+      return 'You will unstake'
+    }
+    if (withdrawalSource === 'staking') {
+      return 'You will unstake and redeem'
+    }
+    return 'You will redeem'
+  }, [isUnstake, withdrawalSource])
+
   return (
     <div className="flex flex-col relative">
       {/* Settings Popover */}
@@ -534,25 +544,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
         {/* Details */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-gray-500 ">{isUnstake ? 'You will unstake' : 'You will redeem'}</p>
-            <p className="text-sm text-gray-900">
-              {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
-                <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
-              ) : (
-                <>
-                  {requiredVaultTokens > 0n
-                    ? formatTAmount({
-                        value: requiredVaultTokens,
-                        decimals: isUnstake ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)
-                      })
-                    : '0'}{' '}
-                  {withdrawalSource === 'staking' && stakingToken ? stakingToken.symbol : vaultSymbol}
-                </>
-              )}
-            </p>
-          </div>
-          <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-gray-500">You will receive at least</p>
+            <p className="text-sm text-gray-500 ">{actionLabel}</p>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowWithdrawDetailsModal(true)}
@@ -572,6 +564,37 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                   />
                 </svg>
               </button>
+              <p className="text-sm text-gray-900">
+                {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
+                  <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  <>
+                    {requiredVaultTokens > 0n
+                      ? formatTAmount({
+                          value: requiredVaultTokens,
+                          decimals: isUnstake ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)
+                        })
+                      : '0'}{' '}
+                    {'Vault shares'}
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+          {withdrawToken !== assetAddress && !isUnstake ? (
+            <div className="flex items-center justify-between h-5">
+              <p className="text-sm text-gray-500">You will swap</p>
+              <div className="flex items-center gap-1">
+                <p className="text-sm text-gray-900">
+                  {withdrawAmount.simple} {assetToken?.symbol}
+                </p>
+              </div>
+            </div>
+          ) : null}
+          {/* TODO: This should display You will receive at least only in case of zap. Change this when we support vanilla withdrawals */}
+          <div className="flex items-center justify-between h-5">
+            <p className="text-sm text-gray-500">You will receive at least</p>
+            <div className="flex items-center gap-1">
               <p className="text-sm text-gray-900">
                 {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />

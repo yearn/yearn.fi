@@ -113,7 +113,7 @@ export const useSolverEnso = ({
           'Content-Type': 'application/json'
         }
       })
-      console.log(response)
+
       const data: EnsoRouteResponse & EnsoError = await response.json()
 
       if (data.error) {

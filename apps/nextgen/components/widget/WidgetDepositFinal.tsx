@@ -2,6 +2,7 @@ import { Dialog, Transition } from '@headlessui/react'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
 import { cl, formatAmount, formatPercent, formatTAmount, toAddress } from '@lib/utils'
+import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
@@ -9,7 +10,7 @@ import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
 import { type FC, Fragment, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
-import { useAccount } from 'wagmi'
+import { useAccount, useReadContract } from 'wagmi'
 import { InputTokenAmountV2 } from '../InputTokenAmountV2'
 import { TokenSelector } from '../TokenSelector'
 import { SettingsPopover } from './SettingsPopover'
@@ -191,6 +192,10 @@ export const WidgetDepositFinal: FC<Props> = ({
 
   // Determine which token to use for deposits
   const depositToken = selectedToken || assetAddress
+  const assetToken = useMemo(
+    () => getToken({ address: assetAddress, chainID: chainId }),
+    [getToken, assetAddress, chainId]
+  )
 
   // Get tokens from wallet - use selected chain or default to vault chain
   const sourceChainId = selectedChainId || chainId
@@ -208,6 +213,14 @@ export const WidgetDepositFinal: FC<Props> = ({
 
   // Get settings from Yearn context
   const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
+
+  // Fetch pricePerShare to convert vault shares to underlying
+  const { data: pricePerShare } = useReadContract({
+    address: vaultAddress,
+    abi: vaultAbi,
+    functionName: 'pricePerShare',
+    chainId
+  })
 
   // Determine destination token based on auto-staking setting
   const destinationToken = useMemo(() => {
@@ -327,6 +340,12 @@ export const WidgetDepositFinal: FC<Props> = ({
     return annualReturn.toFixed(2)
   }, [depositAmount.bn, depositAmount.debouncedBn, vaultAPR, inputToken?.decimals])
 
+  // Enso returns the expected output in the destination token (vault or staking), we need to convert it to the selected token
+  const expectedOutInSelectedToken = useMemo(() => {
+    if (!route || !pricePerShare || !assetToken?.decimals) return 0n
+    return (BigInt(route.minAmountOut) * pricePerShare) / 10n ** BigInt(assetToken.decimals)
+  }, [route, route?.minAmountOut, assetToken?.decimals, pricePerShare])
+
   return (
     <div className="flex flex-col relative">
       {/* Settings Popover */}
@@ -363,7 +382,9 @@ export const WidgetDepositFinal: FC<Props> = ({
         {/* Details */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">You will deposit</p>
+            <p className="text-sm text-gray-500">
+              {'You will ' + (selectedToken === assetAddress ? 'deposit' : 'swap')}
+            </p>
             <p className="text-sm text-gray-900">
               {depositAmount.bn > 0n
                 ? formatTAmount({
@@ -374,6 +395,23 @@ export const WidgetDepositFinal: FC<Props> = ({
               {inputToken?.symbol}
             </p>
           </div>
+          {selectedToken !== assetAddress && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">{'For at least'}</p>
+              <p className="text-sm text-gray-900">
+                {isLoadingRoute || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
+                  <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                ) : expectedOutInSelectedToken > 0n && route ? (
+                  `${formatTAmount({
+                    value: expectedOutInSelectedToken,
+                    decimals: assetToken?.decimals ?? 18
+                  })} ${assetToken?.symbol || 'tokens'}`
+                ) : (
+                  `0 ${assetToken?.symbol || 'tokens'}`
+                )}
+              </p>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">You will receive</p>
             <div className="flex items-center gap-1">
@@ -399,9 +437,9 @@ export const WidgetDepositFinal: FC<Props> = ({
                 {isLoadingRoute || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
                 ) : depositAmount.bn > 0n && route ? (
-                  `${formatAmount(expectedOut.normalized)} ${isAutoStakingEnabled && stakingAddress ? stakingToken?.symbol || vaultSymbol : vaultSymbol}`
+                  `${formatAmount(expectedOut.normalized)} Vault shares`
                 ) : (
-                  `0 ${isAutoStakingEnabled && stakingAddress ? stakingToken?.symbol || vaultSymbol : vaultSymbol}`
+                  `0 Vault shares`
                 )}
               </p>
             </div>
@@ -428,7 +466,7 @@ export const WidgetDepositFinal: FC<Props> = ({
                 </svg>
               </button>
               <p className="text-sm text-gray-900">
-                {depositAmount.bn > 0n && route ? `~${estimatedAnnualReturn} ${inputToken?.symbol}` : '~0'}
+                {depositAmount.bn > 0n && route ? `~${estimatedAnnualReturn}` : '0'} {inputToken?.symbol}
               </p>
             </div>
           </div>

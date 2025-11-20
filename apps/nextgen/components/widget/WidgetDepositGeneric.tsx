@@ -238,7 +238,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
     slippage: zapSlippage * 100, // Convert percentage to basis points (e.g., 0.5% -> 50 basis points)
     enabled: !!depositToken && !depositAmount.isDebouncing
   })
-  console.log(isLoadingRoute)
+
   // Fetch route when debounced amount changes
   useEffect(() => {
     if (depositAmount.debouncedBn > 0n && !depositAmount.isDebouncing) {
