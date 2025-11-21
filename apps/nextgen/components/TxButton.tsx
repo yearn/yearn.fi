@@ -163,13 +163,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
           />
         </svg>
         <span className="text-neutral-900">
-          {isChainSwitching
-            ? 'Switching chain...'
-            : _loading && transactionName.includes('...')
-              ? transactionName
-              : ensoTxHash
-                ? 'Confirming...'
-                : 'Signing...'}
+          {_loading && transactionName.includes('...') ? transactionName : ensoTxHash ? 'Confirming...' : 'Signing...'}
         </span>
       </div>
     )
