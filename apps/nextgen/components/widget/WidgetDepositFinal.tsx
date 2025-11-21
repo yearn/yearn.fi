@@ -8,6 +8,7 @@ import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
+import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, Fragment, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
@@ -190,20 +191,33 @@ export const WidgetDepositFinal: FC<Props> = ({
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
 
+  // Fetch priority tokens (asset, vault, and optionally staking)
+  const priorityTokenAddresses = useMemo(() => {
+    const addresses: (Address | undefined)[] = [assetAddress, vaultAddress]
+    if (stakingAddress) {
+      addresses.push(stakingAddress)
+    }
+    return addresses
+  }, [assetAddress, vaultAddress, stakingAddress])
+
+  const { tokens: priorityTokens, isLoading: isLoadingPriorityTokens } = useTokens(priorityTokenAddresses, chainId)
+
+  // Extract priority tokens
+  const [assetToken, vault] = priorityTokens
+
   // Determine which token to use for deposits
   const depositToken = selectedToken || assetAddress
-  const assetToken = useMemo(
-    () => getToken({ address: assetAddress, chainID: chainId }),
-    [getToken, assetAddress, chainId]
-  )
 
   // Get tokens from wallet - use selected chain or default to vault chain
   const sourceChainId = selectedChainId || chainId
-  const inputToken = useMemo(
-    () => getToken({ address: depositToken, chainID: sourceChainId }),
-    [getToken, depositToken, sourceChainId]
-  )
-  const vault = useMemo(() => getToken({ address: vaultAddress, chainID: chainId }), [getToken, vaultAddress, chainId])
+  const inputToken = useMemo(() => {
+    // If the selected token is one of our priority tokens on the same chain, use it
+    if (sourceChainId === chainId && depositToken === assetAddress) {
+      return assetToken
+    }
+    // Otherwise, get it from the wallet context (for cross-chain or other tokens)
+    return getToken({ address: depositToken, chainID: sourceChainId })
+  }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken])
 
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
@@ -342,6 +356,15 @@ export const WidgetDepositFinal: FC<Props> = ({
     if (!route || !pricePerShare || !assetToken?.decimals) return 0n
     return (BigInt(route.minAmountOut) * pricePerShare) / 10n ** BigInt(assetToken.decimals)
   }, [route, route?.minAmountOut, assetToken?.decimals, pricePerShare])
+
+  // Show loading state while priority tokens are loading
+  if (isLoadingPriorityTokens) {
+    return (
+      <div className="p-6 flex items-center justify-center h-[317px]">
+        <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col relative">

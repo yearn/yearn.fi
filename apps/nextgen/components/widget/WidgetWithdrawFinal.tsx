@@ -9,6 +9,7 @@ import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
+import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, Fragment, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
@@ -144,6 +145,20 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<'vault' | 'staking' | null>(stakingAddress ? null : 'vault') // Default to vault for smooth UI (prevents balance flickering)
 
+  // Fetch priority tokens (asset, vault, and optionally staking)
+  const priorityTokenAddresses = useMemo(() => {
+    const addresses: (Address | undefined)[] = [assetAddress, vaultAddress]
+    if (stakingAddress) {
+      addresses.push(stakingAddress)
+    }
+    return addresses
+  }, [assetAddress, vaultAddress, stakingAddress])
+
+  const { tokens: priorityTokens, isLoading: isLoadingPriorityTokens } = useTokens(priorityTokenAddresses, chainId)
+
+  // Extract priority tokens
+  const [assetToken, vault, stakingToken] = priorityTokens
+
   // Fetch pricePerShare to convert vault shares to underlying
   const { data: pricePerShare } = useReadContract({
     address: vaultAddress,
@@ -165,20 +180,15 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   const withdrawToken = selectedToken || assetAddress
   const destinationChainId = selectedChainId || chainId
 
-  // Get tokens from wallet
-  const vault = useMemo(() => getToken({ address: vaultAddress, chainID: chainId }), [getToken, vaultAddress, chainId])
-  const stakingToken = useMemo(
-    () => (stakingAddress ? getToken({ address: stakingAddress, chainID: chainId }) : undefined),
-    [getToken, stakingAddress, chainId]
-  )
-  const outputToken = useMemo(
-    () => getToken({ address: withdrawToken, chainID: destinationChainId }),
-    [getToken, withdrawToken, destinationChainId]
-  )
-  const assetToken = useMemo(
-    () => getToken({ address: assetAddress, chainID: chainId }),
-    [getToken, assetAddress, chainId]
-  )
+  // Get output token from wallet context (for cross-chain or other tokens)
+  const outputToken = useMemo(() => {
+    // If the selected token is one of our priority tokens on the same chain, use it
+    if (destinationChainId === chainId && withdrawToken === assetAddress) {
+      return assetToken
+    }
+    // Otherwise, get it from the wallet context
+    return getToken({ address: withdrawToken, chainID: destinationChainId })
+  }, [getToken, withdrawToken, destinationChainId, chainId, assetAddress, assetToken])
 
   // Determine available withdrawal sources
   const hasVaultBalance = vault?.balance.raw && vault.balance.raw > 0n
@@ -432,6 +442,15 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     }
     return 'You will redeem'
   }, [isUnstake, withdrawalSource])
+
+  // Show loading state while priority tokens are loading
+  if (isLoadingPriorityTokens) {
+    return (
+      <div className="p-6 flex items-center justify-center h-[317px]">
+        <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col relative">
