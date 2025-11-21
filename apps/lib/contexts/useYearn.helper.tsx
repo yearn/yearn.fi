@@ -6,6 +6,7 @@ import { toAddress } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
+import { useDeepCompareMemo } from '@react-hookz/web'
 import { useMemo, useState } from 'react'
 
 export function useYearnTokens({
@@ -20,6 +21,7 @@ export function useYearnTokens({
   isLoadingVaultList: boolean
 }): TUseBalancesTokens[] {
   const { currentNetworkTokenList } = useTokenList()
+
   const { safeChainID } = useChainID()
   const [isReady, setIsReady] = useState(false)
   const allVaults = useMemo(
@@ -36,7 +38,7 @@ export function useYearnTokens({
    ** tokenList context and filtered to only keep the tokens of the current
    ** network.
    **************************************************************************/
-  const availableTokenListTokens = useMemo((): TUseBalancesTokens[] => {
+  const availableTokenListTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
     const withTokenList = [...Object.values(currentNetworkTokenList)]
     const tokens: TUseBalancesTokens[] = []
     withTokenList.forEach((token): void => {
@@ -76,7 +78,8 @@ export function useYearnTokens({
         { chainID: 137, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Matic', symbol: 'POL' },
         { chainID: 250, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Fantom', symbol: 'FTM' },
         { chainID: 8453, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
-        { chainID: 42161, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' }
+        { chainID: 42161, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
+        { chainID: 747474, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' }
       ]
     )
 
@@ -102,6 +105,7 @@ export function useYearnTokens({
         tokens[`${vault.chainID}/${toAddress(vault.address)}`] = newToken
       } else {
         const existingToken = tokens[`${vault.chainID}/${toAddress(vault.address)}`]
+
         if (existingToken) {
           if (!existingToken?.name && vault.name) {
             tokens[`${vault.chainID}/${toAddress(vault.address)}`].name = vault.name
@@ -116,29 +120,15 @@ export function useYearnTokens({
       }
 
       // Add vaults tokens
-      if (vault?.token?.address && !tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`]) {
+      if (vault?.token?.address && !availableTokenListTokens.some((token) => token.address === vault.token.address)) {
         const newToken = {
           address: vault.token.address,
           chainID: vault.chainID,
-          symbol: vault.symbol,
-          decimals: vault.decimals,
-          name: vault.name
+
+          decimals: vault.decimals
         }
 
         tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`] = newToken
-      } else {
-        const existingToken = tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`]
-        if (existingToken) {
-          if (!existingToken?.name && vault.name) {
-            tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].name = vault.name
-          }
-          if (!existingToken?.symbol && vault.symbol) {
-            tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].symbol = vault.symbol
-          }
-          if (!existingToken?.decimals && vault.decimals) {
-            tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].decimals = vault.decimals
-          }
-        }
       }
 
       // Add staking token
@@ -169,9 +159,9 @@ export function useYearnTokens({
 
     setIsReady(true)
     return tokens
-  }, [isLoadingVaultList, allVaults])
+  }, [isLoadingVaultList, allVaults, availableTokenListTokens])
 
-  const allTokens = useMemo((): TUseBalancesTokens[] => {
+  const allTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
     if (!isReady) {
       return []
     }
@@ -194,10 +184,16 @@ export function useYearnTokens({
     })
     return clonedTokens
   }
-  const shouldEnableForknet = false
-  if (shouldEnableForknet) {
-    return cloneForForknet(allTokens)
-  }
 
-  return allTokens
+  // Use deep compare memo for the final result to ensure stability
+  const finalTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
+    const shouldEnableForknet = false
+    if (shouldEnableForknet) {
+      return cloneForForknet(allTokens)
+    }
+    // console.log('useYearnTokens returning tokens, count:', allTokens.length)
+    return allTokens
+  }, [allTokens])
+
+  return finalTokens
 }
