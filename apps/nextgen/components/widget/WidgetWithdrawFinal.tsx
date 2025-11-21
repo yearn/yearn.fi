@@ -233,7 +233,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
 
   // Get settings from Yearn context
-  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
+  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled, getPrice } = useYearn()
 
   // Determine source token based on withdrawal source selection
   const sourceToken = useMemo(() => {
@@ -443,6 +443,18 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     return 'You will redeem'
   }, [isUnstake, withdrawalSource])
 
+  // Get the real USD price for the asset token (what the user is withdrawing)
+  const assetTokenPrice = useMemo(() => {
+    if (!assetToken?.address || !assetToken?.chainID) return 0
+    return getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
+  }, [assetToken?.address, assetToken?.chainID, getPrice])
+
+  // Get the real USD price for the output token (in case of zap)
+  const outputTokenPrice = useMemo(() => {
+    if (!outputToken?.address || !outputToken?.chainID) return 0
+    return getPrice({ address: toAddress(outputToken.address), chainID: outputToken.chainID }).normalized
+  }, [outputToken?.address, outputToken?.chainID, getPrice])
+
   // Show loading state while priority tokens are loading
   if (isLoadingPriorityTokens) {
     return (
@@ -504,7 +516,8 @@ export const WidgetWithdrawFinal: FC<Props> = ({
             symbol={assetToken?.symbol || 'tokens'}
             disabled={!!isWaitingForTx || (!!hasBothBalances && !withdrawalSource)}
             errorMessage={withdrawError || undefined}
-            mockUsdPrice={1.0} // Mock USD price for now
+            inputTokenUsdPrice={assetTokenPrice}
+            outputTokenUsdPrice={outputTokenPrice}
             tokenAddress={assetToken?.address}
             tokenChainId={assetToken?.chainID}
             // Show token selector only when no zap is selected (default state)

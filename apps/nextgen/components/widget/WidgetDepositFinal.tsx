@@ -223,7 +223,7 @@ export const WidgetDepositFinal: FC<Props> = ({
   const [depositAmount, , setDepositInput] = depositInput
 
   // Get settings from Yearn context
-  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
+  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled, getPrice } = useYearn()
 
   // Fetch pricePerShare to convert vault shares to underlying
   const { data: pricePerShare } = useReadContract({
@@ -357,6 +357,22 @@ export const WidgetDepositFinal: FC<Props> = ({
     return (BigInt(route.minAmountOut) * pricePerShare) / 10n ** BigInt(assetToken.decimals)
   }, [route, route?.minAmountOut, assetToken?.decimals, pricePerShare])
 
+  // Get the real USD price for the input token
+  const inputTokenPrice = useMemo(() => {
+    if (!inputToken?.address || !inputToken?.chainID) return 0
+    return getPrice({ address: toAddress(inputToken.address), chainID: inputToken.chainID }).normalized
+  }, [inputToken?.address, inputToken?.chainID, getPrice])
+
+  // Get the real USD price for the output token (vault or asset when zapping)
+  const outputTokenPrice = useMemo(() => {
+    // When not zapping, output is in vault shares (we don't show USD for vault shares)
+    if (depositToken === assetAddress) return 0
+    
+    // When zapping, we're converting input to asset, so show asset price
+    if (!assetToken?.address || !assetToken?.chainID) return 0
+    return getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
+  }, [depositToken, assetAddress, assetToken?.address, assetToken?.chainID, getPrice])
+
   // Show loading state while priority tokens are loading
   if (isLoadingPriorityTokens) {
     return (
@@ -390,7 +406,8 @@ export const WidgetDepositFinal: FC<Props> = ({
           disabled={isWaitingForTx}
           errorMessage={depositError || undefined}
           showTokenSelector
-          mockUsdPrice={1.5} // Mock USD price for now
+          inputTokenUsdPrice={inputTokenPrice}
+          outputTokenUsdPrice={outputTokenPrice}
           tokenAddress={inputToken?.address}
           tokenChainId={inputToken?.chainID}
           onTokenSelectorClick={() => setShowTokenSelector(true)}
