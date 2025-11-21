@@ -10,7 +10,7 @@ import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
 import { useTokens } from '@nextgen/hooks/useTokens'
-import { type FC, Fragment, useEffect, useMemo, useState } from 'react'
+import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
 import { type UseSimulateContractReturnType, useAccount, useReadContract, useSimulateContract } from 'wagmi'
@@ -154,7 +154,11 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     return addresses
   }, [assetAddress, vaultAddress, stakingAddress])
 
-  const { tokens: priorityTokens, isLoading: isLoadingPriorityTokens } = useTokens(priorityTokenAddresses, chainId)
+  const {
+    tokens: priorityTokens,
+    isLoading: isLoadingPriorityTokens,
+    refetch: refetchPriorityTokens
+  } = useTokens(priorityTokenAddresses, chainId)
 
   // Extract priority tokens
   const [assetToken, vault, stakingToken] = priorityTokens
@@ -405,33 +409,38 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   // Check if we're waiting for transaction
   const isWaitingForTx = !!txHash && !receiptSuccess
 
-  // Handle successful transaction receipt
-  useEffect(() => {
-    if (receiptSuccess && txHash) {
-      setWithdrawInput('')
-      // Refresh wallet balances
-      const tokensToRefresh = [
-        { address: withdrawToken, chainID: destinationChainId },
-        { address: vaultAddress, chainID: chainId }
-      ]
-      if (stakingAddress) {
-        tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
-      }
-      refreshWalletBalances(tokensToRefresh)
-      onWithdrawSuccess?.()
+  // Shared function to handle successful withdrawals
+  const handleWithdrawSuccess = useCallback(() => {
+    setWithdrawInput('')
+    // Refresh wallet balances
+    const tokensToRefresh = [
+      { address: withdrawToken, chainID: destinationChainId },
+      { address: vaultAddress, chainID: chainId }
+    ]
+    if (stakingAddress) {
+      tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
     }
+    refreshWalletBalances(tokensToRefresh)
+    refetchPriorityTokens()
+    onWithdrawSuccess?.()
   }, [
-    receiptSuccess,
-    txHash,
     setWithdrawInput,
-    destinationChainId,
-    refreshWalletBalances,
     withdrawToken,
+    destinationChainId,
     vaultAddress,
     chainId,
-    onWithdrawSuccess,
-    stakingAddress
+    stakingAddress,
+    refreshWalletBalances,
+    refetchPriorityTokens,
+    onWithdrawSuccess
   ])
+
+  // Handle successful transaction receipt for Enso orders
+  useEffect(() => {
+    if (receiptSuccess && txHash) {
+      handleWithdrawSuccess()
+    }
+  }, [receiptSuccess, txHash, handleWithdrawSuccess])
 
   const actionLabel = useMemo(() => {
     if (isUnstake) {
@@ -652,6 +661,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
               disabled={!canWithdraw || !!withdrawError}
               tooltip={withdrawError || undefined}
               className="w-full"
+              onSuccess={handleWithdrawSuccess}
             />
           ) : (
             // For regular withdrawals, show approve + withdraw
@@ -659,8 +669,8 @@ export const WidgetWithdrawFinal: FC<Props> = ({
               <TxButton
                 prepareWrite={prepareApprove}
                 transactionName="Approve"
-                disabled={!prepareApproveEnabled || !!withdrawError || isLoadingAnyQuote}
-                tooltip={withdrawError || (isLoadingAnyQuote ? 'Calculating required amount...' : undefined)}
+                disabled={!prepareApproveEnabled || !!withdrawError || isLoadingAnyQuote || isWaitingForTx}
+                tooltip={withdrawError || (isLoadingAnyQuote ? 'Calculating required amount...' : isWaitingForTx ? 'Transaction is confirming...' : undefined)}
                 className="w-full"
               />
               <TxButton
@@ -674,9 +684,9 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                         ? 'Cross-chain Withdraw'
                         : 'Withdraw'
                 }
-                disabled={!canWithdraw || isLoadingAnyQuote}
-                loading={isLoadingAnyQuote}
-                tooltip={withdrawError || (!isAllowanceSufficient ? 'Please approve token first' : undefined)}
+                disabled={!canWithdraw || isLoadingAnyQuote || isWaitingForTx}
+                loading={isLoadingAnyQuote || isWaitingForTx}
+                tooltip={withdrawError || (!isAllowanceSufficient ? 'Please approve token first' : isWaitingForTx ? 'Transaction is confirming...' : undefined)}
                 className="w-full"
               />
             </>

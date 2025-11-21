@@ -200,7 +200,11 @@ export const WidgetDepositFinal: FC<Props> = ({
     return addresses
   }, [assetAddress, vaultAddress, stakingAddress])
 
-  const { tokens: priorityTokens, isLoading: isLoadingPriorityTokens } = useTokens(priorityTokenAddresses, chainId)
+  const {
+    tokens: priorityTokens,
+    isLoading: isLoadingPriorityTokens,
+    refetch: refetchPriorityTokens
+  } = useTokens(priorityTokenAddresses, chainId)
 
   // Extract priority tokens
   const [assetToken, vault] = priorityTokens
@@ -327,6 +331,7 @@ export const WidgetDepositFinal: FC<Props> = ({
         tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
       }
       refreshWalletBalances(tokensToRefresh)
+      refetchPriorityTokens()
       onDepositSuccess?.()
     }
   }, [
@@ -339,7 +344,8 @@ export const WidgetDepositFinal: FC<Props> = ({
     vaultAddress,
     chainId,
     onDepositSuccess,
-    stakingAddress
+    stakingAddress,
+    refetchPriorityTokens
   ])
 
   const estimatedAnnualReturn = useMemo(() => {
@@ -367,7 +373,7 @@ export const WidgetDepositFinal: FC<Props> = ({
   const outputTokenPrice = useMemo(() => {
     // When not zapping, output is in vault shares (we don't show USD for vault shares)
     if (depositToken === assetAddress) return 0
-    
+
     // When zapping, we're converting input to asset, so show asset price
     if (!assetToken?.address || !assetToken?.chainID) return 0
     return getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
