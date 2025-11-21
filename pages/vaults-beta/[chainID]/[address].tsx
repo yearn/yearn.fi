@@ -19,10 +19,11 @@ import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
+import { useDevFlags } from '/src/contexts/useDevFlags'
 
 function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
-  const enableHeaderCompression = false
+  const { headerCompressionEnabled: enableHeaderCompression } = useDevFlags()
 
   const { address, isActive } = useWeb3()
   const params = useParams()

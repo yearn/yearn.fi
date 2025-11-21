@@ -1,3 +1,4 @@
+import { DevToolbar } from '@components/DevToolbar'
 import AppHeader from '@lib/components/Header'
 import { Meta } from '@lib/components/Meta'
 import { WithFonts } from '@lib/components/WithFonts'
@@ -18,6 +19,7 @@ import type { ReactElement } from 'react'
 import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router'
+import { DevFlagsProvider } from '/src/contexts/useDevFlags'
 import PlausibleProvider from './components/PlausibleProvider'
 import { AppRoutes } from './routes'
 
@@ -95,7 +97,10 @@ function App(): ReactElement {
                     <IndexedDB>
                       <WithNotifications>
                         <WithNotificationsActions>
-                          <WithLayout />
+                          <DevFlagsProvider>
+                            <WithLayout />
+                            <DevToolbar />
+                          </DevFlagsProvider>
                         </WithNotificationsActions>
                       </WithNotifications>
                     </IndexedDB>
