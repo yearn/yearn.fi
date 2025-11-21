@@ -650,7 +650,7 @@ export function VaultDetailsHeader({
       <div className={'md:col-span-20 md:row-start-1 mt-2 w-full md:py-0'}>{breadcrumbs}</div>
       <div
         className={cl(
-          'flex flex-col gap-1',
+          'flex flex-col gap-1 px-1',
           isCompressed ? 'md:col-span-5 md:row-start-2 md:justify-center' : 'md:col-span-20 md:row-start-2'
         )}
       >

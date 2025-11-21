@@ -267,7 +267,7 @@ function Index(): ReactElement | null {
         <section className={'grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div className={'space-y-4 md:col-span-13 pb-4'}>
             {renderableSections.length > 0 ? (
-              <div className={'w-full sticky z-30'} style={{ top: '169.5px' }}>
+              <div className={'w-full sticky z-30'} style={{ top: enableHeaderCompression ? '169.5px' : '293.5px' }}>
                 <div className={'h-6  bg-app'}></div>
                 <div className={'flex flex-wrap gap-2 md:gap-3'}>
                   <div
@@ -340,7 +340,10 @@ function Index(): ReactElement | null {
               )
             })}
           </div>
-          <div className={'md:col-span-7 mt-6 md:col-start-14 md:sticky md:h-fit'} style={{ top: '193.5px' }}>
+          <div
+            className={'md:col-span-7 mt-6 md:col-start-14 md:sticky md:h-fit'}
+            style={{ top: enableHeaderCompression ? '193.5px' : '317.5px' }}
+          >
             <div>
               <Widget
                 vaultType={isV3 ? 'v3' : 'v2'}
