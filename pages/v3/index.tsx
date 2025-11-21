@@ -10,6 +10,7 @@ import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3AuxiliaryList } from '@vaults-v3/components/list/VaultsV3AuxiliaryList'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
+import { SuggestedVaultCard } from '@vaults-v3/components/SuggestedVaultCard'
 import {
   ALL_VAULTSV3_CATEGORIES,
   ALL_VAULTSV3_KINDS_KEYS,
@@ -99,6 +100,7 @@ function ListOfVaults({
   const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
   const sortedHoldingsVaults = useSortVaults(holdingsVaults, sortBy, sortDirection)
   const sortedAvailableVaults = useSortVaults(availableVaults, sortBy, sortDirection)
+  const sortedSuggestedCandidates = useSortVaults(filteredVaults, 'featuringScore', 'desc')
 
   const pinnedSections = useMemo(() => {
     const sections: Array<{ key: string; vaults: typeof sortedVaults }> = []
@@ -158,6 +160,19 @@ function ListOfVaults({
   }, [pinnedVaultKeys, pinnedVaults, sortedVaults])
 
   const displayedVaults = useMemo(() => [...pinnedVaults, ...mainVaults], [pinnedVaults, mainVaults])
+
+  const holdingsKeySet = useMemo(
+    () => new Set(holdingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
+    [holdingsVaults]
+  )
+
+  const suggestedVaults = useMemo(
+    () =>
+      sortedSuggestedCandidates
+        .filter((vault) => !holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`))
+        .slice(0, 4),
+    [sortedSuggestedCandidates, holdingsKeySet]
+  )
 
   const visibleFlagCounts = displayedVaults.reduce(
     (counts, vault) => {
@@ -283,8 +298,26 @@ function ListOfVaults({
     )
   }
 
+  const suggestedVaultsElement =
+    suggestedVaults.length > 0 ? (
+      <div className={'w-full bg-app pb-2'}>
+        <div className={'flex flex-col gap-0 rounded-xl border border-neutral-200 bg-surface px-4 py-2 md:px-2'}>
+          <div>
+            <p className={'text-sm p-2 font-semibold tracking-wide text-neutral-500'}>{'Trending Vaults'}</p>
+          </div>
+          <div className={'grid gap-4 md:grid-cols-2 xl:grid-cols-4'}>
+            {suggestedVaults.map((vault) => {
+              const key = `${vault.chainID}_${toAddress(vault.address)}`
+              return <SuggestedVaultCard key={key} vault={vault} />
+            })}
+          </div>
+        </div>
+      </div>
+    ) : null
+
   const filtersElement = (
     <div className={'w-full bg-app pb-2 shrink-0'}>
+      {suggestedVaultsElement}
       <Filters
         types={types}
         shouldDebounce={true}
