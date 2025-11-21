@@ -88,7 +88,7 @@ export const InputTokenAmountV2: FC<Props> = ({
 
   // Calculate USD value for input token
   const inputUsdValue = formValue ? (parseFloat(formValue) * inputTokenUsdPrice).toFixed(2) : '0.00'
-  
+
   // Calculate USD value for output token (when zapping)
   const outputUsdValue = useMemo(() => {
     if (!zapToken?.expectedAmount || !outputTokenUsdPrice) return '0.00'

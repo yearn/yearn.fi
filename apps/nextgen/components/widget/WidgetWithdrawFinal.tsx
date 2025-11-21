@@ -670,7 +670,14 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                 prepareWrite={prepareApprove}
                 transactionName="Approve"
                 disabled={!prepareApproveEnabled || !!withdrawError || isLoadingAnyQuote || isWaitingForTx}
-                tooltip={withdrawError || (isLoadingAnyQuote ? 'Calculating required amount...' : isWaitingForTx ? 'Transaction is confirming...' : undefined)}
+                tooltip={
+                  withdrawError ||
+                  (isLoadingAnyQuote
+                    ? 'Calculating required amount...'
+                    : isWaitingForTx
+                      ? 'Transaction is confirming...'
+                      : undefined)
+                }
                 className="w-full"
               />
               <TxButton
@@ -686,7 +693,14 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                 }
                 disabled={!canWithdraw || isLoadingAnyQuote || isWaitingForTx}
                 loading={isLoadingAnyQuote || isWaitingForTx}
-                tooltip={withdrawError || (!isAllowanceSufficient ? 'Please approve token first' : isWaitingForTx ? 'Transaction is confirming...' : undefined)}
+                tooltip={
+                  withdrawError ||
+                  (!isAllowanceSufficient
+                    ? 'Please approve token first'
+                    : isWaitingForTx
+                      ? 'Transaction is confirming...'
+                      : undefined)
+                }
                 className="w-full"
               />
             </>
