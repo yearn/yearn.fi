@@ -22,6 +22,7 @@ import { useParams } from 'react-router'
 
 function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
+  const enableHeaderCompression = false
 
   const { address, isActive } = useWeb3()
   const params = useParams()
@@ -260,10 +261,10 @@ function Index(): ReactElement | null {
           )}
           style={{ top: 'var(--header-height)' }}
         >
-          <VaultDetailsHeader currentVault={currentVault} />
+          <VaultDetailsHeader currentVault={currentVault} enableCompression={enableHeaderCompression} />
         </header>
 
-        <section className={'grid grid-cols-1 gap-6 mt-6 md:grid-cols-20 md:items-start bg-app'}>
+        <section className={'grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div className={'space-y-4 md:col-span-13 pb-4'}>
             {renderableSections.length > 0 ? (
               <div className={'w-full sticky z-30'} style={{ top: '169.5px' }}>
@@ -339,7 +340,7 @@ function Index(): ReactElement | null {
               )
             })}
           </div>
-          <div className={'md:col-span-7 md:col-start-14 md:sticky md:h-fit'} style={{ top: '193.5px' }}>
+          <div className={'md:col-span-7 mt-6 md:col-start-14 md:sticky md:h-fit'} style={{ top: '193.5px' }}>
             <div>
               <Widget
                 vaultType={isV3 ? 'v3' : 'v2'}
