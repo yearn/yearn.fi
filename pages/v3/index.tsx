@@ -1,7 +1,7 @@
 import Link from '@components/Link'
 import { Button } from '@lib/components/Button'
-import { IconChevron } from '@lib/icons/IconChevron'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
+import { IconChevron } from '@lib/icons/IconChevron'
 import type { TSortDirection } from '@lib/types'
 import { toAddress } from '@lib/utils'
 import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
