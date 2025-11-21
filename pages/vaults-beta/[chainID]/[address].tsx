@@ -308,7 +308,7 @@ function Index(): ReactElement | null {
                   <div
                     key={section.key}
                     ref={section.ref}
-                    className={'border border-neutral-300 rounded-lg bg-surface'}
+                    className={'border border-neutral-300 rounded-lg bg-surface scroll-mt-[250px]'}
                   >
                     <button
                       type={'button'}
@@ -329,7 +329,11 @@ function Index(): ReactElement | null {
               }
 
               return (
-                <div key={section.key} ref={section.ref} className={'border border-neutral-300 rounded-lg bg-surface'}>
+                <div
+                  key={section.key}
+                  ref={section.ref}
+                  className={'border border-neutral-300 rounded-lg bg-surface scroll-mt-[250px]'}
+                >
                   {section.content}
                 </div>
               )
