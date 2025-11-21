@@ -1,4 +1,3 @@
-import Link from '@components/Link'
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
@@ -266,13 +265,6 @@ TListHero): ReactElement {
 
   return (
     <>
-      <div className={'mb-3 mt-2 px-4 flex items-center gap-2 text-sm text-neutral-500'}>
-        <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
-          {'Home'}
-        </Link>
-        <span>{'>'}</span>
-        <span className={'font-medium text-neutral-900'}>{'Vaults'}</span>
-      </div>
       <div className={'relative col-span-24 w-full rounded-lg bg-neutral-0 p-2 md:col-span-19'}>
         {/* <PortfolioCard holdingsVaults={holdingsVaults} /> */}
 

@@ -1,4 +1,6 @@
+import Link from '@components/Link'
 import { Button } from '@lib/components/Button'
+import { IconChevron } from '@lib/icons/IconChevron'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
 import { toAddress } from '@lib/utils'
@@ -80,8 +82,10 @@ function ListOfVaults({
     totalRetiredMatching,
     isLoading: isLoadingVaultList
   } = useV3VaultFilter(types, chains, search || '', categories)
+  const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(types, null, search || '', categories)
 
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
+  const [isTrendingExpanded, setIsTrendingExpanded] = useState(true)
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
 
@@ -100,7 +104,7 @@ function ListOfVaults({
   const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
   const sortedHoldingsVaults = useSortVaults(holdingsVaults, sortBy, sortDirection)
   const sortedAvailableVaults = useSortVaults(availableVaults, sortBy, sortDirection)
-  const sortedSuggestedCandidates = useSortVaults(filteredVaults, 'featuringScore', 'desc')
+  const sortedSuggestedCandidates = useSortVaults(filteredVaultsAllChains, 'featuringScore', 'desc')
 
   const pinnedSections = useMemo(() => {
     const sections: Array<{ key: string; vaults: typeof sortedVaults }> = []
@@ -301,22 +305,45 @@ function ListOfVaults({
   const suggestedVaultsElement =
     suggestedVaults.length > 0 ? (
       <div className={'w-full bg-app pb-2'}>
-        <div className={'flex flex-col gap-0 rounded-xl border border-neutral-200 bg-surface px-4 py-2 md:px-2'}>
-          <div>
-            <p className={'text-sm p-2 font-semibold tracking-wide text-neutral-500'}>{'Trending Vaults'}</p>
-          </div>
-          <div className={'grid gap-4 md:grid-cols-2 xl:grid-cols-4'}>
-            {suggestedVaults.map((vault) => {
-              const key = `${vault.chainID}_${toAddress(vault.address)}`
-              return <SuggestedVaultCard key={key} vault={vault} />
-            })}
-          </div>
+        <div className={'flex flex-col gap-0 rounded-xl border border-neutral-200 bg-surface'}>
+          <button
+            type={'button'}
+            className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
+            onClick={(): void => setIsTrendingExpanded((previous) => !previous)}
+          >
+            <div className={'flex flex-col text-left'}>
+              <p className={'text-sm font-semibold tracking-wide text-neutral-500'}>{'Trending Vaults'}</p>
+            </div>
+            <IconChevron
+              className={'size-4 text-neutral-600 transition-transform duration-200'}
+              direction={isTrendingExpanded ? 'up' : 'down'}
+            />
+          </button>
+          {isTrendingExpanded ? (
+            <div className={'grid gap-4 px-4 pb-4 md:grid-cols-2 xl:grid-cols-4 md:px-6'}>
+              {suggestedVaults.map((vault) => {
+                const key = `${vault.chainID}_${toAddress(vault.address)}`
+                return <SuggestedVaultCard key={key} vault={vault} />
+              })}
+            </div>
+          ) : null}
         </div>
       </div>
     ) : null
 
+  const breadcrumbsElement = (
+    <div className={'mb-3 mt-2 px-4 flex items-center gap-2 text-sm text-neutral-500'}>
+      <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
+        {'Home'}
+      </Link>
+      <span>{'>'}</span>
+      <span className={'font-medium text-neutral-900'}>{'Vaults'}</span>
+    </div>
+  )
+
   const filtersElement = (
     <div className={'w-full bg-app pb-2 shrink-0'}>
+      {breadcrumbsElement}
       {suggestedVaultsElement}
       <Filters
         types={types}

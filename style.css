@@ -117,7 +117,7 @@
     --color-neutral-0: hsl(231 100% 6%);
     --surface-background: var(--color-neutral-0);
     --surface-default: var(--color-neutral-100);
-    --surface-muted: var(--color-neutral-200);
+    --surface-muted: var(--color-neutral-100);
   }
 }
 
@@ -139,6 +139,10 @@ body {
 
   .bg-surface {
     background-color: var(--surface-default);
+  }
+
+  .bg-card {
+    background-color: var(--surface-muted);
   }
 
   .font-number {
@@ -188,6 +192,15 @@ body {
     --surface-background: var(--color-neutral-0);
     --surface-default: var(--color-neutral-100);
     --surface-muted: var(--color-neutral-300);
+  }
+
+  .vaults-card {
+    background-color: var(--color-neutral-0);
+  }
+
+  .dark .vaults-card,
+  .v3 .vaults-card {
+    background-color: var(--color-neutral-200);
   }
 
   [role='button']:not(:disabled),
