@@ -50,6 +50,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const [ensoTxHash, setEnsoTxHash] = useState<`0x${string}` | undefined>()
   const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash })
   const [override, setOverride] = useState<ButtonState>()
+  const [isSigning, setIsSigning] = useState(false)
   const client = usePublicClient()
   const ref = useRef<(number | undefined)[]>(undefined)
   const { address: account } = useAccount()
@@ -163,7 +164,13 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
           />
         </svg>
         <span className="text-neutral-900">
-          {_loading && transactionName.includes('...') ? transactionName : ensoTxHash ? 'Confirming...' : 'Signing...'}
+          {_loading && transactionName.includes('...')
+            ? transactionName
+            : ensoTxHash || writeContract.data
+              ? 'Confirming...'
+              : isSigning
+                ? 'Signing...'
+                : 'Loading...'}
         </span>
       </div>
     )
@@ -237,6 +244,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
           // Check if this is a Cowswap or Enso order
           if ((prepareWrite.data.request as any).__isCowswapOrder || (prepareWrite.data.request as any).__isEnsoOrder) {
             const customWriteAsync = (prepareWrite.data.request as any).writeContractAsync
+            setIsSigning(true)
             customWriteAsync()
               .then((result: any) => {
                 if (result.orderUID) {
@@ -255,7 +263,11 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                 addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
                 console.error('Transaction failed:', error)
               })
+              .finally(() => {
+                setIsSigning(false)
+              })
           } else {
+            setIsSigning(true)
             writeContract
               .writeContractAsync({ ...prepareWrite.data.request, ...overrides })
               .then((hash) => {
@@ -265,6 +277,9 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                 setOverride('error')
                 addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
                 console.error('Transaction failed:', error)
+              })
+              .finally(() => {
+                setIsSigning(false)
               })
           }
         }
