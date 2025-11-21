@@ -166,7 +166,7 @@ export function VaultsV3ListHead({
     <div className={cl('mt-4 hidden w-full grid-cols-1 md:mt-0 md:grid', wrapperClassName)}>
       <div
         className={cl(
-          'grid w-full grid-cols-1 md:grid-cols-24 px-4 py-2 md:px-8',
+          'grid w-full grid-cols-1 md:grid-cols-24 py-2 pl-6 pr-16 md:pl-6 md:pr-20',
           'border-t border-neutral-200 md:border-none',
           containerClassName
         )}

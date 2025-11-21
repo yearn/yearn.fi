@@ -85,7 +85,7 @@ export function VaultsV3ListRow({
         onKeyDown={handleKeyDown}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
-          'p-6 pt-2 pb-4 pr-14 md:pr-16',
+          'p-6 pt-2 pb-4 pr-16 md:pr-20',
           'cursor-pointer relative group'
         )}
       >
