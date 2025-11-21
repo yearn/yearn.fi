@@ -14,12 +14,14 @@ const DEFAULT_FLAGS: DevFlagsContextValue = {
 const DevFlagsContext = createContext<DevFlagsContextValue | undefined>(undefined)
 
 const HEADER_COMPRESSION_STORAGE_KEY = 'dev-header-compression-enabled'
+const ENABLE_TOOLBAR =
+  !import.meta.env.PROD || import.meta.env.VITE_ENABLE_DEV_TOOLBAR === 'true' || import.meta.env.MODE !== 'production'
 
 export function DevFlagsProvider({ children }: { children: ReactNode }): ReactElement {
   const [headerCompressionEnabled, setHeaderCompressionEnabled] = useState<boolean>(true)
 
   useEffect(() => {
-    if (!import.meta.env.DEV) {
+    if (!ENABLE_TOOLBAR) {
       return
     }
 
@@ -36,7 +38,7 @@ export function DevFlagsProvider({ children }: { children: ReactNode }): ReactEl
   }, [])
 
   useEffect(() => {
-    if (!import.meta.env.DEV) {
+    if (!ENABLE_TOOLBAR) {
       return
     }
 

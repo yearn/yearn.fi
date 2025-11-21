@@ -10,18 +10,17 @@ export function DevToolbar(): ReactElement | null {
   const themePreference = useThemePreference()
   const { headerCompressionEnabled, setHeaderCompressionEnabled } = useDevFlags()
   const location = useLocation()
+  const enabledInEnv =
+    !import.meta.env.PROD || import.meta.env.VITE_ENABLE_DEV_TOOLBAR === 'true' || import.meta.env.MODE !== 'production'
 
   const isVaultDetail = useMemo(() => /^\/vaults-beta\/\d+\/[^/]+/i.test(location.pathname), [location.pathname])
 
   useEffect(() => {
-    if (!import.meta.env.DEV) {
-      return
-    }
     // Ensure themePreference is respected on initial load for the toolbar label
     setThemePreference(themePreference)
   }, [themePreference])
 
-  if (!import.meta.env.DEV) {
+  if (!enabledInEnv) {
     return null
   }
 
