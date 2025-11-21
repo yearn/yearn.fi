@@ -3,8 +3,8 @@ import { useWeb3 } from '@lib/contexts/useWeb3'
 import type { TUseBalancesTokens } from '@lib/hooks/useBalances.multichains'
 import { useFetch } from '@lib/hooks/useFetch'
 import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
-import { cl, toAddress } from '@lib/utils'
 import { IconChevron } from '@lib/icons/IconChevron'
+import { cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
@@ -17,10 +17,12 @@ import { Widget } from '@nextgen/components/widget'
 import { WidgetActionType } from '@nextgen/types'
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 import type { ReactElement } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 
 function Index(): ReactElement | null {
+  type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
+
   const { address, isActive } = useWeb3()
   const params = useParams()
   const chainId = Number(params.chainID)
@@ -36,18 +38,36 @@ function Index(): ReactElement | null {
   const [overrideVault, setOverrideVault] = useState<TYDaemonVault | undefined>(undefined)
   const [hasFetchedOverride, setHasFetchedOverride] = useState(false)
   const [lastVaultKey, setLastVaultKey] = useState(vaultKey)
-  const [openSections, setOpenSections] = useState<Record<'about' | 'risk' | 'strategies' | 'info', boolean>>({
+  const chartsRef = useRef<HTMLDivElement>(null)
+  const aboutRef = useRef<HTMLDivElement>(null)
+  const riskRef = useRef<HTMLDivElement>(null)
+  const strategiesRef = useRef<HTMLDivElement>(null)
+  const infoRef = useRef<HTMLDivElement>(null)
+  const sectionRefs = useMemo(
+    () => ({
+      charts: chartsRef,
+      about: aboutRef,
+      risk: riskRef,
+      strategies: strategiesRef,
+      info: infoRef
+    }),
+    []
+  )
+  const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
     about: true,
     risk: true,
     strategies: true,
-    info: true
+    info: true,
+    charts: true
   })
-  const collapsibleTitles: Record<'about' | 'risk' | 'strategies' | 'info', string> = {
+  const collapsibleTitles: Record<SectionKey, string> = {
     about: 'Description',
     risk: 'Risk',
     strategies: 'Strategies',
-    info: 'More Info'
+    info: 'More Info',
+    charts: 'Performance'
   }
+  const [activeSection, setActiveSection] = useState<SectionKey>('charts')
 
   // Reset state when vault changes
   useEffect(() => {
@@ -154,6 +174,61 @@ function Index(): ReactElement | null {
     currentVault?.staking.address
   ])
 
+  const sections = useMemo(() => {
+    if (!currentVault || !yDaemonBaseUri) {
+      return []
+    }
+
+    return [
+      {
+        key: 'charts' as const,
+        shouldRender: Number.isInteger(chainId),
+        ref: sectionRefs.charts,
+        content: <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} />
+      },
+      {
+        key: 'about' as const,
+        shouldRender: true,
+        ref: sectionRefs.about,
+        content: <VaultAboutSection currentVault={currentVault} />
+      },
+      {
+        key: 'risk' as const,
+        shouldRender: true,
+        ref: sectionRefs.risk,
+        content: <VaultRiskSection currentVault={currentVault} />
+      },
+      {
+        key: 'strategies' as const,
+        shouldRender: Number(currentVault.strategies?.length || 0) > 0,
+        ref: sectionRefs.strategies,
+        content: <VaultStrategiesSection currentVault={currentVault} />
+      },
+      {
+        key: 'info' as const,
+        shouldRender: true,
+        ref: sectionRefs.info,
+        content: <VaultInfoSection currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
+      }
+    ]
+  }, [chainId, currentVault, sectionRefs, yDaemonBaseUri])
+
+  const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
+
+  useEffect(() => {
+    if (!renderableSections.some((section) => section.key === activeSection) && renderableSections[0]) {
+      setActiveSection(renderableSections[0].key)
+    }
+  }, [renderableSections, activeSection])
+
+  const handleSelectSection = (key: SectionKey): void => {
+    setActiveSection(key)
+    const element = sectionRefs[key]?.current
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   if (isLoadingVault || !params.address || !isInit || !yDaemonBaseUri) {
     return (
       <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
@@ -188,74 +263,77 @@ function Index(): ReactElement | null {
           <VaultDetailsHeader currentVault={currentVault} />
         </header>
 
-        <section className={'mt-6 grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start'}>
+        <section className={'grid grid-cols-1 gap-6 mt-6 md:grid-cols-20 md:items-start bg-app'}>
           <div className={'space-y-4 md:col-span-13 pb-4'}>
-            {[
-              {
-                key: 'charts',
-                shouldRender: Number.isInteger(chainId),
-                content: <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} />
-              },
-              {
-                key: 'about',
-                shouldRender: true,
-                content: <VaultAboutSection currentVault={currentVault} />
-              },
-              {
-                key: 'risk',
-                shouldRender: true,
-                content: <VaultRiskSection currentVault={currentVault} />
-              },
-              {
-                key: 'strategies',
-                shouldRender: Number(currentVault.strategies?.length || 0) > 0,
-                content: <VaultStrategiesSection currentVault={currentVault} />
-              },
-              {
-                key: 'info',
-                shouldRender: true,
-                content: <VaultInfoSection currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
-              }
-            ]
-              .filter((section) => section.shouldRender)
-              .map((section) => {
-                const isCollapsible =
-                  section.key === 'about' ||
-                  section.key === 'risk' ||
-                  section.key === 'strategies' ||
-                  section.key === 'info'
-                if (isCollapsible) {
-                  const typedKey = section.key as 'about' | 'risk' | 'strategies' | 'info'
-                  const isOpen = openSections[typedKey]
-
-                  return (
-                    <div key={section.key} className={'border border-neutral-300 rounded-lg bg-surface'}>
+            {renderableSections.length > 0 ? (
+              <div className={'w-full sticky z-30'} style={{ top: '169.5px' }}>
+                <div className={'h-6  bg-app'}></div>
+                <div className={'flex flex-wrap gap-2 md:gap-3'}>
+                  <div
+                    className={
+                      'flex w-full flex-wrap justify-between gap-2 rounded-lg bg-neutral-100 p-1 border border-neutral-200'
+                    }
+                  >
+                    {renderableSections.map((section) => (
                       <button
+                        key={section.key}
                         type={'button'}
-                        className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
-                        onClick={(): void =>
-                          setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
-                        }
+                        onClick={(): void => handleSelectSection(section.key)}
+                        className={cl(
+                          'flex-1 min-w-[120px] rounded-lg px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
+                          activeSection === section.key
+                            ? 'bg-neutral-0 text-neutral-900 shadow-sm'
+                            : 'bg-transparent text-neutral-600 hover:text-neutral-800'
+                        )}
                       >
-                        <span className={'text-base font-semibold text-neutral-900'}>
-                          {collapsibleTitles[typedKey]}
-                        </span>
-                        <IconChevron
-                          className={'size-4 text-neutral-600 transition-transform duration-200'}
-                          direction={isOpen ? 'up' : 'down'}
-                        />
+                        {collapsibleTitles[section.key]}
                       </button>
-                      {isOpen ? <div>{section.content}</div> : null}
-                    </div>
-                  )
-                }
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {renderableSections.map((section) => {
+              const isCollapsible =
+                section.key === 'about' ||
+                section.key === 'risk' ||
+                section.key === 'strategies' ||
+                section.key === 'info'
+              if (isCollapsible) {
+                const typedKey = section.key as SectionKey
+                const isOpen = openSections[typedKey]
 
                 return (
-                  <div key={section.key} className={'border border-neutral-300 rounded-lg bg-surface'}>
-                    {section.content}
+                  <div
+                    key={section.key}
+                    ref={section.ref}
+                    className={'border border-neutral-300 rounded-lg bg-surface'}
+                  >
+                    <button
+                      type={'button'}
+                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
+                      onClick={(): void =>
+                        setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                      }
+                    >
+                      <span className={'text-base font-semibold text-neutral-900'}>{collapsibleTitles[typedKey]}</span>
+                      <IconChevron
+                        className={'size-4 text-neutral-600 transition-transform duration-200'}
+                        direction={isOpen ? 'up' : 'down'}
+                      />
+                    </button>
+                    {isOpen ? <div>{section.content}</div> : null}
                   </div>
                 )
-              })}
+              }
+
+              return (
+                <div key={section.key} ref={section.ref} className={'border border-neutral-300 rounded-lg bg-surface'}>
+                  {section.content}
+                </div>
+              )
+            })}
           </div>
           <div className={'md:col-span-7 md:col-start-14 md:sticky md:h-fit'} style={{ top: '193.5px' }}>
             <div>
