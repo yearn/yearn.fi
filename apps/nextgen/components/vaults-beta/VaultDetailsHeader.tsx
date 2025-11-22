@@ -167,6 +167,85 @@ function MetricsCard({
   )
 }
 
+export function VaultDetailsHeaderClamped({
+  currentVault,
+  enableCompression
+}: {
+  currentVault: TYDaemonVault
+  enableCompression?: boolean
+}): ReactElement {
+  const { vaultData, tokenPrice } = useVaultDetailsHeaderData(currentVault)
+  enableCompression = false
+  console.log(enableCompression)
+  const chainName = getNetwork(currentVault.chainID).name
+  const metadataLine = [chainName, currentVault.category, currentVault.kind].filter(Boolean).join(' • ')
+  const breadcrumbs = (
+    <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
+      <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
+        {'Home'}
+      </Link>
+      <span>{'>'}</span>
+      <Link to={'/v3'} className={'transition-colors hover:text-neutral-900'}>
+        {'Vaults'}
+      </Link>
+      <span>{'>'}</span>
+      <span className={'font-medium text-neutral-900'}>{currentVault.name}</span>
+    </div>
+  )
+  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+    currentVault.chainID
+  }/${currentVault.token.address.toLowerCase()}/logo-128.png`
+
+  return (
+    <div className={'col-span-12 grid w-full grid-cols-1 gap-4 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
+      <div className={'md:col-span-20 md:row-start-1 mt-2 w-full md:py-0'}>{breadcrumbs}</div>
+
+      <div className={'flex items-center gap-4 md:col-span-13 md:row-start-2'}>
+        <div className={'flex size-10 items-center justify-start rounded-full bg-neutral-0/70'}>
+          <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
+        </div>
+        <div className={'min-w-0'}>
+          <strong
+            className={
+              'block font-black leading-tight text-neutral-700 text-[clamp(24px,2vw+18px,32px)] md:leading-[1.15]'
+            }
+          >
+            {getVaultName(currentVault)} {' yVault'}
+          </strong>
+        </div>
+      </div>
+
+      <div className={'flex min-w-0 flex-col gap-2 md:col-span-7 md:row-start-2 md:items-start md:text-left'}>
+        {currentVault.address ? (
+          <button
+            type={'button'}
+            onClick={(): void => copyToClipboard(currentVault.address)}
+            className={
+              'flex w-full items-center justify-start gap-2 text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm'
+            }
+          >
+            <span className={'block min-w-0 break-all md:text-left'}>{currentVault.address}</span>
+            <IconCopy className={'size-4'} />
+          </button>
+        ) : null}
+        {metadataLine ? <p className={'text-sm text-neutral-900/70 md:text-base'}>{metadataLine}</p> : null}
+      </div>
+
+      <div className={'md:col-span-13 md:row-start-3'}>
+        <VaultOverviewCard currentVault={currentVault} isCompressed={false} />
+      </div>
+      <div className={'md:col-span-7 md:col-start-14 md:row-start-3'}>
+        <UserHoldingsCard
+          currentVault={currentVault}
+          vaultData={vaultData}
+          tokenPrice={tokenPrice}
+          isCompressed={false}
+        />
+      </div>
+    </div>
+  )
+}
+
 function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): ReactElement {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -343,18 +422,14 @@ function UserHoldingsCard({
   return <MetricsCard items={sections} hideFootnotes={isCompressed} />
 }
 
-export function VaultDetailsHeader({
-  currentVault,
-  enableCompression = true
-}: {
-  currentVault: TYDaemonVault
-  enableCompression?: boolean
-}): ReactElement {
+function useVaultDetailsHeaderData(currentVault: TYDaemonVault): {
+  vaultData: TVaultHoldingsData
+  tokenPrice: number
+} {
   const { address } = useWeb3()
   const { getPrice } = useYearn()
   const { data: blockNumber } = useBlockNumber({ watch: true })
   const { decimals } = currentVault
-  const { isCompressed } = useHeaderCompression({ enabled: enableCompression })
   const [vaultData, setVaultData] = useState<TVaultHoldingsData>({
     deposited: zeroNormalizedBN,
     valueInToken: zeroNormalizedBN,
@@ -621,6 +696,19 @@ export function VaultDetailsHeader({
       refetch()
     }
   }, [blockNumber, refetch, currentVault.chainID])
+
+  return { vaultData, tokenPrice }
+}
+
+export function VaultDetailsHeader({
+  currentVault,
+  enableCompression = true
+}: {
+  currentVault: TYDaemonVault
+  enableCompression?: boolean
+}): ReactElement {
+  const { isCompressed } = useHeaderCompression({ enabled: enableCompression })
+  const { vaultData, tokenPrice } = useVaultDetailsHeaderData(currentVault)
 
   const chainName = getNetwork(currentVault.chainID).name
   const metadataLine = [chainName, currentVault.category, currentVault.kind].filter(Boolean).join(' • ')

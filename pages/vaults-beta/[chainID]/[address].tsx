@@ -9,7 +9,7 @@ import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
 import { VaultChartsSection } from '@nextgen/components/vaults-beta/VaultChartsSection'
-import { VaultDetailsHeader } from '@nextgen/components/vaults-beta/VaultDetailsHeader'
+import { VaultDetailsHeaderClamped } from '@nextgen/components/vaults-beta/VaultDetailsHeader'
 import { VaultInfoSection } from '@nextgen/components/vaults-beta/VaultInfoSection'
 import { VaultRiskSection } from '@nextgen/components/vaults-beta/VaultRiskSection'
 import { VaultStrategiesSection } from '@nextgen/components/vaults-beta/VaultStrategiesSection'
@@ -262,13 +262,14 @@ function Index(): ReactElement | null {
           )}
           style={{ top: 'var(--header-height)' }}
         >
-          <VaultDetailsHeader currentVault={currentVault} enableCompression={enableHeaderCompression} />
+          <VaultDetailsHeaderClamped currentVault={currentVault} enableCompression={enableHeaderCompression} />
         </header>
 
         <section className={'grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div className={'space-y-4 md:col-span-13 pb-4'}>
             {renderableSections.length > 0 ? (
-              <div className={'w-full sticky z-30'} style={{ top: enableHeaderCompression ? '169.5px' : '293.5px' }}>
+              // <div className={'w-full sticky z-30'} style={{ top: enableHeaderCompression ? '169.5px' : '293.5px' }}>
+              <div className={'w-full sticky z-30'} style={{ top: '257.5px' }}>
                 <div className={'h-6  bg-app'}></div>
                 <div className={'flex flex-wrap gap-2 md:gap-3'}>
                   <div
@@ -343,7 +344,8 @@ function Index(): ReactElement | null {
           </div>
           <div
             className={'md:col-span-7 mt-6 md:col-start-14 md:sticky md:h-fit'}
-            style={{ top: enableHeaderCompression ? '193.5px' : '317.5px' }}
+            // style={{ top: enableHeaderCompression ? '193.5px' : '317.5px' }}
+            style={{ top: '282.5px' }}
           >
             <div>
               <Widget

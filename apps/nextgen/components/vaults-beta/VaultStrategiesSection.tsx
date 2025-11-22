@@ -75,6 +75,8 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
     netAPR: TYDaemonVaultStrategy['netAPR']
   })[]
 
+  console.log('sortedVaultsToDisplay', sortedVaultsToDisplay)
+
   const activeStrategyData = useMemo(() => {
     return filteredVaultList
       .filter((strategy) => {
@@ -207,7 +209,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   address={strategy.address}
                   isVault={!!vaults[strategy.address]}
                   variant="v3"
-                  apr={strategy.netAPR}
+                  apr={strategy.netAPR ?? strategy.apr?.forwardAPR.netAPR}
                   fees={currentVault.apr.fees}
                 />
               ))}
