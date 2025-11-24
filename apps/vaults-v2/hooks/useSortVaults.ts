@@ -29,7 +29,7 @@ export function useSortVaults(
   const { getPrice } = useYearn()
 
   const sortedByName = useCallback((): TYDaemonVaults => {
-    if (sortBy !== 'estAPY') {
+    if (sortBy !== 'name') {
       return vaultList
     }
     return vaultList.sort((a, b): number =>

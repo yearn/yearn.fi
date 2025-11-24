@@ -277,7 +277,7 @@ function ListOfVaults(): ReactElement {
         }}
         items={[
           { label: <IconChain />, value: 'chain', sortable: false, className: 'col-span-1' },
-          { label: 'Token', value: 'name', sortable: true },
+          { label: 'Vault', value: 'name', sortable: false },
           { label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2' },
           { label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2' },
           { label: 'Available', value: 'available', sortable: true, className: 'col-span-2' },

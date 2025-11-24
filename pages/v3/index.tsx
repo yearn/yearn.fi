@@ -144,7 +144,8 @@ function ListOfVaults(): ReactElement {
   } = useQueryArguments({
     defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
     defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
-    defaultPathname: '/v3'
+    defaultPathname: '/v3',
+    defaultSortBy: 'featuringScore'
   })
   const { activeVaults, retiredVaults, migratableVaults } = useVaultFilter(types, chains, true)
 
@@ -376,7 +377,7 @@ function ListOfVaults(): ReactElement {
             onChangeSortDirection(newSortDirection as TSortDirection)
           }}
           items={[
-            { label: 'Vault', value: 'name', sortable: true, className: 'col-span-4' },
+            { label: 'Vault / featuring score', value: 'featuringScore', sortable: true, className: 'col-span-4' },
             { label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2' },
             { label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2' },
             {

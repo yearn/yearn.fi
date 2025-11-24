@@ -2,8 +2,8 @@ import { useFetch } from '@lib/hooks/useFetch'
 import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
 import type { TDict } from '@lib/types'
 import { toAddress } from '@lib/utils'
-import { applyFeaturingScores } from '@lib/utils/computeFeaturingScore'
 import type { TFeaturingOverride } from '@lib/utils/computeFeaturingScore'
+import { applyFeaturingScores } from '@lib/utils/computeFeaturingScore'
 import type { TYDaemonVault, TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultsSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
@@ -149,6 +149,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
         : (): void => {
             /* no-op outside dev */
           }
+    // Keep original ordering from yDaemon for v2 (protocol-grouped); v3 pages re-sort locally after computing scores.
     return applyFeaturingScores(patchedVaultsObject, featuringScoreOverrides, { warn })
   }, [patchedVaultsObject])
 

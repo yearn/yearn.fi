@@ -53,11 +53,15 @@ export function ListHead({
         <div className={cl('col-span-4 flex gap-6', tokenClassName)}>
           <p className={'yearn--table-head-label max-w-[32px]'}>{chain.label}</p>
           <button
-            onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
+            onClick={(): void => {
+              if (!token.sortable) return
+              onSort(token.value, toggleSortDirection(token.value))
+            }}
             className={'yearn--table-head-label-wrapper group'}
+            disabled={!token.sortable}
           >
             <p className={'yearn--table-head-label'}>{token.label}</p>
-            {renderChevron(sortBy === token.value)}
+            {token.sortable ? renderChevron(sortBy === token.value) : null}
           </button>
         </div>
 
