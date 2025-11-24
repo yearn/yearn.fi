@@ -9,6 +9,12 @@ import { useTokenAllowance } from '../useTokenAllowance'
 const ENSO_API_BASE = 'https://api.enso.finance/api/v1'
 const ENSO_API_KEY = import.meta.env.VITE_ENSO_API_KEY
 
+interface EnsoError {
+  error: string
+  message: string
+  requestId: string
+  statusCode: number
+}
 interface EnsoRouteResponse {
   tx: {
     to: Address
@@ -46,6 +52,7 @@ interface UseSolverEnsoReturn {
     minExpectedOut: TNormalizedBN
     allowance: bigint
     route: EnsoRouteResponse | undefined
+    error: EnsoError | undefined
     isLoadingRoute: boolean
     isLoadingAllowance: boolean
     isCrossChain: boolean
@@ -68,6 +75,7 @@ export const useSolverEnso = ({
   enabled = true
 }: UseSolverEnsoProps): UseSolverEnsoReturn => {
   const [route, setRoute] = useState<EnsoRouteResponse | undefined>()
+  const [error, setError] = useState<EnsoError | undefined>()
   const [isLoadingRoute, setIsLoadingRoute] = useState(false)
 
   const isCrossChain = destinationChainId !== undefined && destinationChainId !== chainId
@@ -106,15 +114,16 @@ export const useSolverEnso = ({
         }
       })
 
-      if (!response.ok) {
-        throw new Error(`Enso API error: ${response.statusText}`)
+      const data: EnsoRouteResponse & EnsoError = await response.json()
+
+      if (data.error) {
+        setError(data)
+        throw new Error(`Enso API error: ${data.message}`)
       }
 
-      const data: EnsoRouteResponse = await response.json()
       setRoute(data)
     } catch (error) {
       console.error('Failed to get Enso route:', error)
-      setRoute(undefined)
     } finally {
       setIsLoadingRoute(false)
     }
@@ -152,6 +161,7 @@ export const useSolverEnso = ({
       minExpectedOut,
       allowance,
       route,
+      error,
       isLoadingRoute,
       isLoadingAllowance,
       isCrossChain,

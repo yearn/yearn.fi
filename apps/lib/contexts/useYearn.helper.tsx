@@ -6,6 +6,7 @@ import { toAddress } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
+import { useDeepCompareMemo } from '@react-hookz/web'
 import { useMemo, useState } from 'react'
 
 export function useYearnTokens({
@@ -37,7 +38,7 @@ export function useYearnTokens({
    ** tokenList context and filtered to only keep the tokens of the current
    ** network.
    **************************************************************************/
-  const availableTokenListTokens = useMemo((): TUseBalancesTokens[] => {
+  const availableTokenListTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
     const withTokenList = [...Object.values(currentNetworkTokenList)]
     const tokens: TUseBalancesTokens[] = []
     withTokenList.forEach((token): void => {
@@ -160,7 +161,7 @@ export function useYearnTokens({
     return tokens
   }, [isLoadingVaultList, allVaults, availableTokenListTokens])
 
-  const allTokens = useMemo((): TUseBalancesTokens[] => {
+  const allTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
     if (!isReady) {
       return []
     }
@@ -183,10 +184,16 @@ export function useYearnTokens({
     })
     return clonedTokens
   }
-  const shouldEnableForknet = false
-  if (shouldEnableForknet) {
-    return cloneForForknet(allTokens)
-  }
 
-  return allTokens
+  // Use deep compare memo for the final result to ensure stability
+  const finalTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
+    const shouldEnableForknet = false
+    if (shouldEnableForknet) {
+      return cloneForForknet(allTokens)
+    }
+    // console.log('useYearnTokens returning tokens, count:', allTokens.length)
+    return allTokens
+  }, [allTokens])
+
+  return finalTokens
 }

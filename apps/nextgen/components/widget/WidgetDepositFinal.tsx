@@ -2,14 +2,16 @@ import { Dialog, Transition } from '@headlessui/react'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
 import { cl, formatAmount, formatPercent, formatTAmount, toAddress } from '@lib/utils'
+import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
+import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, Fragment, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
-import { useAccount } from 'wagmi'
+import { useAccount, useReadContract } from 'wagmi'
 import { InputTokenAmountV2 } from '../InputTokenAmountV2'
 import { TokenSelector } from '../TokenSelector'
 import { SettingsPopover } from './SettingsPopover'
@@ -189,25 +191,51 @@ export const WidgetDepositFinal: FC<Props> = ({
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
 
+  // Fetch priority tokens (asset, vault, and optionally staking)
+  const priorityTokenAddresses = useMemo(() => {
+    const addresses: (Address | undefined)[] = [assetAddress, vaultAddress]
+    if (stakingAddress) {
+      addresses.push(stakingAddress)
+    }
+    return addresses
+  }, [assetAddress, vaultAddress, stakingAddress])
+
+  const {
+    tokens: priorityTokens,
+    isLoading: isLoadingPriorityTokens,
+    refetch: refetchPriorityTokens
+  } = useTokens(priorityTokenAddresses, chainId)
+
+  // Extract priority tokens
+  const [assetToken, vault] = priorityTokens
+
   // Determine which token to use for deposits
   const depositToken = selectedToken || assetAddress
 
   // Get tokens from wallet - use selected chain or default to vault chain
   const sourceChainId = selectedChainId || chainId
-  const inputToken = useMemo(
-    () => getToken({ address: depositToken, chainID: sourceChainId }),
-    [getToken, depositToken, sourceChainId]
-  )
-  const vault = useMemo(() => getToken({ address: vaultAddress, chainID: chainId }), [getToken, vaultAddress, chainId])
-  const stakingToken = useMemo(
-    () => (stakingAddress ? getToken({ address: stakingAddress, chainID: chainId }) : undefined),
-    [getToken, stakingAddress, chainId]
-  )
+  const inputToken = useMemo(() => {
+    // If the selected token is one of our priority tokens on the same chain, use it
+    if (sourceChainId === chainId && depositToken === assetAddress) {
+      return assetToken
+    }
+    // Otherwise, get it from the wallet context (for cross-chain or other tokens)
+    return getToken({ address: depositToken, chainID: sourceChainId })
+  }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken])
+
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
 
   // Get settings from Yearn context
-  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
+  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled, getPrice } = useYearn()
+
+  // Fetch pricePerShare to convert vault shares to underlying
+  const { data: pricePerShare } = useReadContract({
+    address: vaultAddress,
+    abi: vaultAbi,
+    functionName: 'pricePerShare',
+    chainId
+  })
 
   // Determine destination token based on auto-staking setting
   const destinationToken = useMemo(() => {
@@ -222,7 +250,16 @@ export const WidgetDepositFinal: FC<Props> = ({
   // Deposit flow using Enso
   const {
     actions: { prepareApprove },
-    periphery: { prepareApproveEnabled, route, isLoadingRoute, expectedOut, routerAddress, isCrossChain, allowance },
+    periphery: {
+      prepareApproveEnabled,
+      route,
+      error,
+      isLoadingRoute,
+      expectedOut,
+      routerAddress,
+      isCrossChain,
+      allowance
+    },
     getRoute,
     getEnsoTransaction
   } = useSolverEnso({
@@ -251,7 +288,7 @@ export const WidgetDepositFinal: FC<Props> = ({
     if (depositAmount.bn > (inputToken?.balance.raw || 0n)) {
       return 'Insufficient balance'
     }
-    if (!route && !isLoadingRoute && depositAmount.debouncedBn > 0n && !depositAmount.isDebouncing) {
+    if (error && !route && !isLoadingRoute && depositAmount.debouncedBn > 0n && !depositAmount.isDebouncing) {
       return 'Unable to find route'
     }
     return null
@@ -261,9 +298,9 @@ export const WidgetDepositFinal: FC<Props> = ({
     depositAmount.isDebouncing,
     inputToken?.balance.raw,
     route,
+    error,
     isLoadingRoute
   ])
-
   // Check if the selected token is ETH (native token)
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
 
@@ -294,6 +331,7 @@ export const WidgetDepositFinal: FC<Props> = ({
         tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
       }
       refreshWalletBalances(tokensToRefresh)
+      refetchPriorityTokens()
       onDepositSuccess?.()
     }
   }, [
@@ -306,7 +344,8 @@ export const WidgetDepositFinal: FC<Props> = ({
     vaultAddress,
     chainId,
     onDepositSuccess,
-    stakingAddress
+    stakingAddress,
+    refetchPriorityTokens
   ])
 
   const estimatedAnnualReturn = useMemo(() => {
@@ -318,10 +357,41 @@ export const WidgetDepositFinal: FC<Props> = ({
     return annualReturn.toFixed(2)
   }, [depositAmount.bn, depositAmount.debouncedBn, vaultAPR, inputToken?.decimals])
 
+  // Enso returns the expected output in the destination token (vault or staking), we need to convert it to the selected token
+  const expectedOutInSelectedToken = useMemo(() => {
+    if (!route || !pricePerShare || !assetToken?.decimals) return 0n
+    return (BigInt(route.minAmountOut) * pricePerShare) / 10n ** BigInt(assetToken.decimals)
+  }, [route, route?.minAmountOut, assetToken?.decimals, pricePerShare])
+
+  // Get the real USD price for the input token
+  const inputTokenPrice = useMemo(() => {
+    if (!inputToken?.address || !inputToken?.chainID) return 0
+    return getPrice({ address: toAddress(inputToken.address), chainID: inputToken.chainID }).normalized
+  }, [inputToken?.address, inputToken?.chainID, getPrice])
+
+  // Get the real USD price for the output token (vault or asset when zapping)
+  const outputTokenPrice = useMemo(() => {
+    // When not zapping, output is in vault shares (we don't show USD for vault shares)
+    if (depositToken === assetAddress) return 0
+
+    // When zapping, we're converting input to asset, so show asset price
+    if (!assetToken?.address || !assetToken?.chainID) return 0
+    return getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
+  }, [depositToken, assetAddress, assetToken?.address, assetToken?.chainID, getPrice])
+
+  // Show loading state while priority tokens are loading
+  if (isLoadingPriorityTokens) {
+    return (
+      <div className="p-6 flex items-center justify-center h-[317px]">
+        <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col relative">
       {/* Settings Popover */}
-      <div className="flex justify-end px-1 pt-1 h-6">
+      <div className="flex justify-end px-6 py-1 h-6">
         <SettingsPopover
           slippage={zapSlippage}
           setSlippage={setZapSlippage}
@@ -342,7 +412,8 @@ export const WidgetDepositFinal: FC<Props> = ({
           disabled={isWaitingForTx}
           errorMessage={depositError || undefined}
           showTokenSelector
-          mockUsdPrice={1.5} // Mock USD price for now
+          inputTokenUsdPrice={inputTokenPrice}
+          outputTokenUsdPrice={outputTokenPrice}
           tokenAddress={inputToken?.address}
           tokenChainId={inputToken?.chainID}
           onTokenSelectorClick={() => setShowTokenSelector(true)}
@@ -354,7 +425,9 @@ export const WidgetDepositFinal: FC<Props> = ({
         {/* Details */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">You will deposit</p>
+            <p className="text-sm text-gray-500">
+              {'You will ' + (selectedToken === assetAddress ? 'deposit' : 'swap')}
+            </p>
             <p className="text-sm text-gray-900">
               {depositAmount.bn > 0n
                 ? formatTAmount({
@@ -365,6 +438,23 @@ export const WidgetDepositFinal: FC<Props> = ({
               {inputToken?.symbol}
             </p>
           </div>
+          {selectedToken !== assetAddress && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">{'For at least'}</p>
+              <p className="text-sm text-gray-900">
+                {isLoadingRoute || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
+                  <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                ) : expectedOutInSelectedToken > 0n && route ? (
+                  `${formatTAmount({
+                    value: expectedOutInSelectedToken,
+                    decimals: assetToken?.decimals ?? 18
+                  })} ${assetToken?.symbol || 'tokens'}`
+                ) : (
+                  `0 ${assetToken?.symbol || 'tokens'}`
+                )}
+              </p>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">You will receive</p>
             <div className="flex items-center gap-1">
@@ -390,9 +480,9 @@ export const WidgetDepositFinal: FC<Props> = ({
                 {isLoadingRoute || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
                 ) : depositAmount.bn > 0n && route ? (
-                  `${formatAmount(expectedOut.normalized)} ${isAutoStakingEnabled && stakingAddress ? stakingToken?.symbol || vaultSymbol : vaultSymbol}`
+                  `${formatAmount(expectedOut.normalized)} Vault shares`
                 ) : (
-                  `0 ${isAutoStakingEnabled && stakingAddress ? stakingToken?.symbol || vaultSymbol : vaultSymbol}`
+                  `0 Vault shares`
                 )}
               </p>
             </div>
@@ -419,7 +509,7 @@ export const WidgetDepositFinal: FC<Props> = ({
                 </svg>
               </button>
               <p className="text-sm text-gray-900">
-                {depositAmount.bn > 0n && route ? `~${estimatedAnnualReturn} ${inputToken?.symbol}` : '~0'}
+                {depositAmount.bn > 0n && route ? `~${estimatedAnnualReturn}` : '0'} {inputToken?.symbol}
               </p>
             </div>
           </div>

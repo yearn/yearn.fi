@@ -19,8 +19,8 @@ export const SettingsPopover: FC<SettingsPopoverProps> = ({
   return (
     <Popover
       trigger={
-        <button className="inline-flex items-center justify-center hover:bg-gray-100 rounded-full p-1.5 transition-colors">
-          <IconSliders className="h-4 w-4 text-blue-600" />
+        <button className="inline-flex items-center justify-center hover:bg-gray-100 rounded-sm p-1.5 transition-colors">
+          <IconSliders className="h-3 w-3 text-blue-600" />
         </button>
       }
       align="end"

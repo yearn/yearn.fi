@@ -1,11 +1,8 @@
 import type { TAddress } from '@lib/types'
 import { cl, isZeroAddress, toAddress } from '@lib/utils'
-import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { WidgetActionType as ActionType } from '@nextgen/types'
 import { type FC, useMemo, useState } from 'react'
-import { type Address, erc4626Abi } from 'viem'
-import { useReadContract } from 'wagmi'
 import { WidgetDeposit } from './WidgetDeposit'
 import { WidgetDepositAndStake } from './WidgetDepositAndStake'
 import { WidgetDepositFinal } from './WidgetDepositFinal'
@@ -72,22 +69,9 @@ export const Widget: FC<Props> = ({
   handleSuccess
 }) => {
   const [mode, setMode] = useState<ActionType>(actions[0])
-
-  const { data: assetToken, isLoading: isLoadingAsset } = useReadContract({
-    address: vaultAddress as Address,
-    abi: vaultType === 'v2' ? vaultAbi : erc4626Abi,
-    functionName: vaultType === 'v2' ? 'token' : 'asset',
-    chainId
-  })
+  const assetToken = currentVault.token.address
 
   const SelectedComponent = useMemo(() => {
-    if (!assetToken || isLoadingAsset) {
-      return (
-        <div className="p-6 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
-        </div>
-      )
-    }
     switch (mode) {
       case ActionType.Deposit:
         return (
@@ -214,18 +198,7 @@ export const Widget: FC<Props> = ({
           />
         )
     }
-  }, [
-    mode,
-    vaultAddress,
-    gaugeAddress,
-    currentVault,
-    vaultType,
-    vaultVersion,
-    assetToken,
-    chainId,
-    handleSuccess,
-    isLoadingAsset
-  ])
+  }, [mode, vaultAddress, gaugeAddress, currentVault, vaultType, vaultVersion, assetToken, chainId, handleSuccess])
 
   return (
     <div className="flex flex-col gap-0 w-full h-full">
