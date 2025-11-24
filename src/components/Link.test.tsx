@@ -1,39 +1,97 @@
-/**
- * Example usage of the Link component
- *
- * The Link component automatically detects whether a URL is internal or external
- * and renders the appropriate element (React Router Link or standard anchor tag)
- */
-
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { BrowserRouter } from 'react-router'
+import { describe, expect, it } from 'vitest'
 import Link from './Link'
 
-// Example usages:
-export function LinkExamples() {
-  return (
-    <div>
-      {/* Internal links - will use React Router */}
-      <Link href="/apps">Go to Apps</Link>
-      <Link href="/vaults">View Vaults</Link>
-      <Link to="/v3">V3 Vaults</Link>
+describe('Link component', () => {
+  it('uses RouterLink for internal navigation', () => {
+    render(
+      <BrowserRouter>
+        <Link href="/vaults">Vaults</Link>
+      </BrowserRouter>
+    )
+    const link = screen.getByText('Vaults')
+    expect(link).toHaveAttribute('href', '/vaults')
+    expect(link.tagName).toBe('A')
+  })
 
-      {/* External links - will use standard anchor tags with target="_blank" */}
-      <Link href="https://twitter.com/yearnfi">Twitter</Link>
-      <Link href="https://github.com/yearn">GitHub</Link>
+  it('uses RouterLink when "to" prop is provided', () => {
+    render(
+      <BrowserRouter>
+        <Link to="/apps">Apps</Link>
+      </BrowserRouter>
+    )
+    const link = screen.getByText('Apps')
+    expect(link).toHaveAttribute('href', '/apps')
+  })
 
-      {/* Custom styling */}
-      <Link href="/vaults/about" className="text-blue-600 hover:text-blue-800 underline">
-        Learn about Vaults
-      </Link>
+  it('falls back to anchor for external URLs with defaults', () => {
+    render(
+      <BrowserRouter>
+        <Link href="https://twitter.com/yearnfi">Twitter</Link>
+      </BrowserRouter>
+    )
+    const link = screen.getByText('Twitter')
+    expect(link).toHaveAttribute('href', 'https://twitter.com/yearnfi')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
 
-      {/* External link with custom target/rel */}
-      <Link href="https://docs.yearn.fi" target="_self" rel="noopener">
-        Documentation
-      </Link>
+  it('allows overriding target and rel attributes', () => {
+    render(
+      <BrowserRouter>
+        <Link href="https://docs.yearn.fi" target="_self" rel="noopener">
+          Docs
+        </Link>
+      </BrowserRouter>
+    )
+    const link = screen.getByText('Docs')
+    expect(link).toHaveAttribute('href', 'https://docs.yearn.fi')
+    expect(link).toHaveAttribute('target', '_self')
+    expect(link).toHaveAttribute('rel', 'noopener')
+  })
 
-      {/* With onClick handler */}
-      <Link href="/apps" onClick={(e) => console.log('Link clicked:', e)}>
-        Apps with tracking
-      </Link>
-    </div>
-  )
-}
+  it('prioritises href over to prop', () => {
+    render(
+      <BrowserRouter>
+        <Link href="https://docs.yearn.fi" to="/apps">
+          Docs
+        </Link>
+      </BrowserRouter>
+    )
+    const link = screen.getByText('Docs')
+    expect(link).toHaveAttribute('href', 'https://docs.yearn.fi')
+  })
+
+  it('applies custom className', () => {
+    render(
+      <BrowserRouter>
+        <Link href="/vaults" className="custom-class">
+          Vaults
+        </Link>
+      </BrowserRouter>
+    )
+    const link = screen.getByText('Vaults')
+    expect(link).toHaveClass('custom-class')
+  })
+
+  it('handles onClick event', async () => {
+    const user = userEvent.setup()
+    let clicked = false
+    const handleClick = () => {
+      clicked = true
+    }
+
+    render(
+      <BrowserRouter>
+        <Link href="/apps" onClick={handleClick}>
+          Apps
+        </Link>
+      </BrowserRouter>
+    )
+    const link = screen.getByText('Apps')
+    await user.click(link)
+    expect(clicked).toBe(true)
+  })
+})
