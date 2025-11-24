@@ -8,7 +8,8 @@ import { useLocation } from 'react-router'
 import Link from '/src/components/Link'
 
 import { LogoYearn } from '../icons/LogoYearn'
-import { LogoYearnOutline } from '../icons/LogoYearnOutline'
+import { LogoYearnMark } from '../icons/LogoYearnMark'
+import { LogoYearnMarkOutline } from '../icons/LogoYearnMarkOutline'
 import { APP_GROUPS, type TAppTile } from './YearnApps'
 
 type LaunchModalTriggerProps = {
@@ -348,29 +349,24 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
       ) : (
         <button
           type={'button'}
-          className={'group z-20 flex size-8 items-center justify-center rounded-full'}
+          className={'group z-20 flex items-center justify-center'}
           aria-haspopup={'dialog'}
           aria-expanded={isOpen}
           onClick={handleOpen}
         >
           <span className={'sr-only'}>{'Open Yearn navigation'}</span>
-          <TileIcon
-            isDark={isDarkTheme}
-            icon={
-              <>
-                <LogoYearn
-                  className={'size-8! max-h-8! max-w-8! group-hover:hidden'}
-                  front={'text-white'}
-                  back={'text-primary'}
-                />
-                <LogoYearnOutline
-                  className={'hidden size-8! max-h-8! max-w-8! group-hover:block'}
-                  fill={'text-primary'}
-                  stroke={'text-primary'}
-                />
-              </>
-            }
-          />
+          <span className={'relative flex h-8 w-auto items-center justify-center'}>
+            <LogoYearnMark
+              className={'h-8 w-auto transition-opacity duration-150 group-hover:opacity-0'}
+              color={isDarkTheme ? '#fff' : 'var(--color-primary)'}
+            />
+            <LogoYearnMarkOutline
+              className={
+                'absolute inset-0 h-8 w-auto opacity-0 transition-opacity duration-150 group-hover:opacity-100'
+              }
+              color={isDarkTheme ? '#fff' : 'var(--color-primary)'}
+            />
+          </span>
         </button>
       )}
 

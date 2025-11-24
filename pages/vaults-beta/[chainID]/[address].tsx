@@ -1,3 +1,4 @@
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import type { TUseBalancesTokens } from '@lib/hooks/useBalances.multichains'
@@ -8,8 +9,7 @@ import { cl, toAddress } from '@lib/utils'
 import { getVaultName } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
-import { VaultMetricsGrid, UserBalanceGrid } from '@nextgen/components/vaults-beta/QuickStatsGrid'
+import { UserBalanceGrid, VaultMetricsGrid } from '@nextgen/components/vaults-beta/QuickStatsGrid'
 import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
 import { VaultChartsSection } from '@nextgen/components/vaults-beta/VaultChartsSection'
 import { VaultDetailsHeader } from '@nextgen/components/vaults-beta/VaultDetailsHeader'
@@ -370,43 +370,16 @@ function Index(): ReactElement | null {
               {/* If not connected: show widget first, then other sections */}
               {isActive && address ? (
                 // Wallet connected: show all normal sections
-                <>
-                  {renderableSections.map((section) => {
-                    const isCollapsible =
-                      section.key === 'about' ||
-                      section.key === 'risk' ||
-                      section.key === 'strategies' ||
-                      section.key === 'info'
+                renderableSections.map((section) => {
+                  const isCollapsible =
+                    section.key === 'about' ||
+                    section.key === 'risk' ||
+                    section.key === 'strategies' ||
+                    section.key === 'info'
 
-                    if (isCollapsible) {
-                      const typedKey = section.key as SectionKey
-                      const isOpen = openSections[typedKey]
-
-                      return (
-                        <div
-                          key={section.key}
-                          ref={section.ref}
-                          className={'border border-neutral-300 rounded-lg bg-surface'}
-                        >
-                          <button
-                            type={'button'}
-                            className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
-                            onClick={(): void =>
-                              setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
-                            }
-                          >
-                            <span className={'text-base font-semibold text-neutral-900'}>
-                              {collapsibleTitles[typedKey]}
-                            </span>
-                            <IconChevron
-                              className={'size-4 text-neutral-600 transition-transform duration-200'}
-                              direction={isOpen ? 'up' : 'down'}
-                            />
-                          </button>
-                          {isOpen ? <div>{section.content}</div> : null}
-                        </div>
-                      )
-                    }
+                  if (isCollapsible) {
+                    const typedKey = section.key as SectionKey
+                    const isOpen = openSections[typedKey]
 
                     return (
                       <div
@@ -414,11 +387,36 @@ function Index(): ReactElement | null {
                         ref={section.ref}
                         className={'border border-neutral-300 rounded-lg bg-surface'}
                       >
-                        {section.content}
+                        <button
+                          type={'button'}
+                          className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
+                          onClick={(): void =>
+                            setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                          }
+                        >
+                          <span className={'text-base font-semibold text-neutral-900'}>
+                            {collapsibleTitles[typedKey]}
+                          </span>
+                          <IconChevron
+                            className={'size-4 text-neutral-600 transition-transform duration-200'}
+                            direction={isOpen ? 'up' : 'down'}
+                          />
+                        </button>
+                        {isOpen ? <div>{section.content}</div> : null}
                       </div>
                     )
-                  })}
-                </>
+                  }
+
+                  return (
+                    <div
+                      key={section.key}
+                      ref={section.ref}
+                      className={'border border-neutral-300 rounded-lg bg-surface'}
+                    >
+                      {section.content}
+                    </div>
+                  )
+                })
               ) : (
                 // Wallet not connected: show widget first, then other sections (excluding charts which is already shown)
                 <>
