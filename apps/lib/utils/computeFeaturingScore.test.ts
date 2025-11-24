@@ -155,12 +155,7 @@ describe('applyFeaturingScores', () => {
       tvl: { totalAssets: 0n, tvl: 10, price: 1 },
       apr: { ...makeVault().apr, netAPR: 0.1 }
     })
-    const override = makeVault({
-      address: '0xoverride',
-      tvl: { totalAssets: 0n, tvl: 20, price: 1 },
-      apr: { ...makeVault().apr, netAPR: 0.2 }
-    })
-    const vaults = { [baseAddress]: base, '0xoverride': override }
+    const vaults = { [baseAddress]: base }
     const overrides: Record<Address, TFeaturingOverride> = {
       [baseAddress]: {
         address: missingAddress,

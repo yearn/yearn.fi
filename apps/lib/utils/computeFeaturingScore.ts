@@ -96,7 +96,8 @@ const applyFeaturingScores = (
       )
     }
 
-    const featuringScore = computeFeaturingScore({ baseVault: vault, overrideVault, override })
+    const effectiveOverride = overrideVault ? override : undefined
+    const featuringScore = computeFeaturingScore({ baseVault: vault, overrideVault, override: effectiveOverride })
     result[address as Address] = { ...vault, featuringScore }
   }
   return result
