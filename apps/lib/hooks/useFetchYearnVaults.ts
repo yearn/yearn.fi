@@ -2,6 +2,8 @@ import { useFetch } from '@lib/hooks/useFetch'
 import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
 import type { TDict } from '@lib/types'
 import { toAddress } from '@lib/utils'
+import { applyFeaturingScores } from '@lib/utils/computeFeaturingScore'
+import type { TFeaturingOverride } from '@lib/utils/computeFeaturingScore'
 import type { TYDaemonVault, TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultsSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
@@ -131,6 +133,25 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
   }, [vaultsObject])
   // </WORKAROUND>
 
+  const featuringScoreOverrides: Record<Address, TFeaturingOverride> = {
+    [YBOLD_VAULT_ADDRESS]: {
+      address: YBOLD_STAKING_ADDRESS,
+      useAprFrom: 'override',
+      useTvlFrom: 'override',
+      useHighlightFrom: 'base'
+    }
+  }
+
+  const vaultsWithFeaturingScores = useDeepCompareMemo((): TDict<TYDaemonVault> => {
+    const warn =
+      process.env.NODE_ENV === 'development'
+        ? undefined
+        : (): void => {
+            /* no-op outside dev */
+          }
+    return applyFeaturingScores(patchedVaultsObject, featuringScoreOverrides, { warn })
+  }, [patchedVaultsObject])
+
   const vaultsMigrationsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
     if (!vaultsMigrations) {
       return {}
@@ -162,7 +183,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
   }, [vaultsRetired])
 
   return {
-    vaults: patchedVaultsObject,
+    vaults: vaultsWithFeaturingScores,
     vaultsMigrations: vaultsMigrationsObject,
     vaultsRetired: vaultsRetiredObject,
     isLoading,
