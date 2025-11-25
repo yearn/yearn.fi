@@ -53,6 +53,23 @@ export type UseWithdrawReturn = T<
   }
 >
 
+// Unified interface for WidgetDepositFinal flows (direct deposit, direct stake, Enso)
+export type UseWidgetFlowReturn = T<
+  {
+    prepareApprove: UseSimulateContractReturnType
+    prepareDeposit: UseSimulateContractReturnType
+  },
+  {
+    prepareApproveEnabled: boolean
+    prepareDepositEnabled: boolean
+    isAllowanceSufficient: boolean
+    expectedOut: bigint
+    isLoadingRoute: boolean
+    isCrossChain: boolean
+    error?: string
+  }
+>
+
 export enum WidgetActionType {
   Deposit = 'deposit',
   Withdraw = 'withdraw',

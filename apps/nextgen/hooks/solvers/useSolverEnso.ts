@@ -51,6 +51,7 @@ interface UseSolverEnsoReturn {
     expectedOut: TNormalizedBN
     minExpectedOut: TNormalizedBN
     allowance: bigint
+    isAllowanceSufficient: boolean
     route: EnsoRouteResponse | undefined
     error: EnsoError | undefined
     isLoadingRoute: boolean
@@ -120,7 +121,7 @@ export const useSolverEnso = ({
         setError(data)
         throw new Error(`Enso API error: ${data.message}`)
       }
-
+      setError(undefined)
       setRoute(data)
     } catch (error) {
       console.error('Failed to get Enso route:', error)
@@ -160,6 +161,7 @@ export const useSolverEnso = ({
       expectedOut,
       minExpectedOut,
       allowance,
+      isAllowanceSufficient,
       route,
       error,
       isLoadingRoute,
