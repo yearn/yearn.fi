@@ -3,17 +3,18 @@ import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
 import type { TNormalizedBN } from '@lib/types'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
-import { gaugeV2Abi } from '@lib/utils/abi/gaugeV2.abi'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { TxButton } from '@nextgen/components/TxButton'
-import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
+import { useDirectUnstake } from '@nextgen/hooks/actions/useDirectUnstake'
+import { useDirectWithdraw } from '@nextgen/hooks/actions/useDirectWithdraw'
+import { useEnsoWithdraw } from '@nextgen/hooks/actions/useEnsoWithdraw'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
-import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
 import { useTokens } from '@nextgen/hooks/useTokens'
+import type { UseWidgetWithdrawFlowReturn } from '@nextgen/types'
 import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
-import { type UseSimulateContractReturnType, useAccount, useReadContract, useSimulateContract } from 'wagmi'
+import { useAccount, useReadContract } from 'wagmi'
 import { InputTokenAmountV2 } from '../InputTokenAmountV2'
 import { TokenSelector } from '../TokenSelector'
 import { SettingsPopover } from './SettingsPopover'
@@ -253,18 +254,60 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   // Check if this is an unstake operation (withdrawing from staking to vault token)
   const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
 
-  // Calculate required vault tokens based on desired output
-  const requiredVaultTokens = useMemo(() => {
+  // Determine routing type: direct withdraw, unstake, or Enso
+  const routeType = useMemo(() => {
+    // Case 1: Direct withdraw (vault → asset, same token, from vault source)
+    if (
+      toAddress(withdrawToken) === toAddress(assetAddress) &&
+      withdrawalSource === 'vault' &&
+      chainId === outputToken.chainID
+    ) {
+      return 'DIRECT_WITHDRAW'
+    }
+
+    // Case 2: Unstake (staking → vault tokens)
+    if (isUnstake) {
+      return 'DIRECT_UNSTAKE'
+    }
+
+    // Case 3: Everything else uses Enso
+    return 'ENSO'
+  }, [withdrawToken, chainId, outputToken.chainID, assetAddress, withdrawalSource, isUnstake])
+
+  // Direct withdraw hook (vault → asset)
+  const directWithdraw = useDirectWithdraw({
+    vaultAddress,
+    assetAddress,
+    amount: withdrawAmount.debouncedBn,
+    pricePerShare: pricePerShare || 0n,
+    account,
+    chainId,
+    decimals: assetToken?.decimals ?? 18,
+    vaultDecimals: vault?.decimals ?? 18,
+    enabled: routeType === 'DIRECT_WITHDRAW' && withdrawAmount.debouncedBn > 0n
+  })
+
+  // Direct unstake hook (staking → vault)
+  const directUnstake = useDirectUnstake({
+    stakingAddress,
+    amount: withdrawAmount.bn,
+    account,
+    chainId,
+    enabled: routeType === 'DIRECT_UNSTAKE' && withdrawAmount.bn > 0n
+  })
+
+  // Calculate required vault shares based on desired output amount
+  const requiredShares = useMemo(() => {
     if (!withdrawAmount.debouncedBn || withdrawAmount.debouncedBn === 0n) return 0n
 
-    // For unstake operations, we need exactly the amount entered
+    // For unstake operations, calculate shares needed from staking token
     if (isUnstake) {
       return (
         (withdrawAmount.debouncedBn * 10n ** BigInt(stakingToken?.decimals ?? 18)) / (stakingPricePerShare as bigint)
       )
     }
 
-    // Always calculate vault tokens from asset amount
+    // For all other cases (DIRECT_WITHDRAW and ENSO), calculate from pricePerShare
     if (pricePerShare) {
       const vaultDecimals = vault?.decimals ?? 18
       return (withdrawAmount.debouncedBn * 10n ** BigInt(vaultDecimals ?? 18)) / (pricePerShare as bigint)
@@ -280,40 +323,26 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     vault?.decimals
   ])
 
-  // Withdrawal flow using Enso - using calculated vault tokens
-  const {
-    actions: { prepareApprove },
-    periphery: {
-      prepareApproveEnabled,
-      route,
-      error,
-      isLoadingRoute,
-      expectedOut,
-      minExpectedOut,
-      routerAddress,
-      isCrossChain,
-      allowance
-    },
-    getRoute,
-    getEnsoTransaction
-  } = useSolverEnso({
-    tokenIn: sourceToken,
-    tokenOut: withdrawToken,
-    amountIn: requiredVaultTokens, // Use calculated vault tokens
-    fromAddress: account,
+  // Withdrawal flow using Enso - now uses the unified hook
+  const ensoFlow = useEnsoWithdraw({
+    vaultAddress: sourceToken,
+    withdrawToken,
+    amount: requiredShares,
+    account,
     receiver: account, // Same as fromAddress for withdrawals
     chainId,
     destinationChainId,
     decimalsOut: outputToken?.decimals ?? 18,
-    slippage: zapSlippage * 100, // Convert percentage to basis points
-    enabled: !!withdrawToken && !withdrawAmount.isDebouncing && requiredVaultTokens > 0n
+    enabled: routeType === 'ENSO' && !!withdrawToken && !withdrawAmount.isDebouncing && requiredShares > 0n,
+    slippage: zapSlippage * 100 // Convert percentage to basis points
   })
-  // Fetch forward route when we have the required vault tokens
-  useEffect(() => {
-    if (requiredVaultTokens > 0n && !withdrawAmount.isDebouncing) {
-      getRoute()
-    }
-  }, [requiredVaultTokens, withdrawAmount.isDebouncing, getRoute])
+
+  // Select active flow based on routing type - returns unified UseWidgetWithdrawFlowReturn
+  const activeFlow = useMemo((): UseWidgetWithdrawFlowReturn => {
+    if (routeType === 'DIRECT_WITHDRAW') return directWithdraw
+    if (routeType === 'DIRECT_UNSTAKE') return directUnstake
+    return ensoFlow
+  }, [routeType, directWithdraw, directUnstake, ensoFlow])
 
   // Error handling
   const withdrawError = useMemo(() => {
@@ -321,93 +350,37 @@ export const WidgetWithdrawFinal: FC<Props> = ({
       return 'Please select withdrawal source'
     }
     if (withdrawAmount.bn === 0n) return null
-    if (requiredVaultTokens > totalVaultBalance.raw) {
+
+    // Check balance for all flows using unified requiredShares
+    if (requiredShares > totalVaultBalance.raw) {
       return 'Insufficient balance'
     }
-    if (error && !route && !isLoadingRoute && withdrawAmount.debouncedBn > 0n && !withdrawAmount.isDebouncing) {
-      return 'Unable to find route'
+
+    // ENSO-specific error: route not found
+    if (routeType === 'ENSO') {
+      if (
+        activeFlow.periphery.error &&
+        !activeFlow.periphery.isLoadingRoute &&
+        withdrawAmount.debouncedBn > 0n &&
+        !withdrawAmount.isDebouncing
+      ) {
+        return 'Unable to find route'
+      }
     }
+
     return null
   }, [
     withdrawAmount.bn,
     withdrawAmount.debouncedBn,
     withdrawAmount.isDebouncing,
     totalVaultBalance,
-    requiredVaultTokens,
-    route,
-    error,
-    isLoadingRoute,
+    routeType,
+    requiredShares,
+    activeFlow.periphery.error,
+    activeFlow.periphery.isLoadingRoute,
     hasBothBalances,
     withdrawalSource
   ])
-
-  // Unified loading state for UI elements
-  const isLoadingAnyQuote = isLoadingRoute
-
-  const isAllowanceSufficient = isUnstake || !routerAddress || allowance >= requiredVaultTokens
-
-  // Determine if withdrawal can proceed
-  const canWithdraw = useMemo(() => {
-    // Common checks
-    if (withdrawError || withdrawAmount.bn === 0n) {
-      return false
-    }
-
-    if (isUnstake) {
-      // Convert staking token balance into vault shares balance e.g ysyBOLD -> yBOLD
-      const stakingBalanceInVaultToken =
-        (totalVaultBalance.raw * (stakingPricePerShare as bigint)) / 10n ** BigInt(stakingToken?.decimals ?? 18)
-      // For unstaking, just check if amount is within balance
-      return withdrawAmount.bn <= stakingBalanceInVaultToken
-    }
-
-    // For regular withdrawals via Enso
-    if (!route) {
-      return false
-    }
-
-    if (!isAllowanceSufficient) {
-      return false
-    }
-
-    // If user has both vault and staking balances, they must select a source
-    if (hasBothBalances && !withdrawalSource) {
-      return false
-    }
-
-    return true
-  }, [
-    withdrawError,
-    withdrawAmount.bn,
-    isUnstake,
-    totalVaultBalance.raw,
-    route,
-    stakingPricePerShare,
-    stakingToken?.decimals,
-    isAllowanceSufficient,
-    hasBothBalances,
-    withdrawalSource
-  ])
-
-  // Prepare unstake transaction
-  const prepareUnstake: UseSimulateContractReturnType = useSimulateContract({
-    abi: gaugeV2Abi,
-    functionName: 'withdraw',
-    address: stakingAddress,
-    args: stakingAddress && account ? [withdrawAmount.bn, account, account] : undefined,
-    chainId,
-    query: { enabled: isUnstake && canWithdraw && !!stakingAddress && !!account }
-  })
-
-  // Use the useEnsoOrder hook for cleaner integration with TxButton
-  const { prepareEnsoOrder, receiptSuccess, txHash } = useEnsoOrder({
-    getEnsoTransaction,
-    enabled: canWithdraw && !isUnstake,
-    chainId
-  })
-
-  // Check if we're waiting for transaction
-  const isWaitingForTx = !!txHash && !receiptSuccess
 
   // Shared function to handle successful withdrawals
   const handleWithdrawSuccess = useCallback(() => {
@@ -435,13 +408,6 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     onWithdrawSuccess
   ])
 
-  // Handle successful transaction receipt for Enso orders
-  useEffect(() => {
-    if (receiptSuccess && txHash) {
-      handleWithdrawSuccess()
-    }
-  }, [receiptSuccess, txHash, handleWithdrawSuccess])
-
   const actionLabel = useMemo(() => {
     if (isUnstake) {
       return 'You will unstake'
@@ -451,6 +417,35 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     }
     return 'You will redeem'
   }, [isUnstake, withdrawalSource])
+
+  // Compute transaction name based on flow type
+  const transactionName = useMemo(() => {
+    if (routeType === 'DIRECT_WITHDRAW') {
+      return 'Withdraw'
+    }
+    if (routeType === 'DIRECT_UNSTAKE') {
+      return 'Unstake'
+    }
+    // ENSO flow
+    if (activeFlow.periphery.isLoadingRoute) {
+      return 'Finding route...'
+    }
+    if (!activeFlow.periphery.isAllowanceSufficient) {
+      return 'Approve First'
+    }
+    if (activeFlow.periphery.isCrossChain) {
+      return 'Cross-chain Withdraw'
+    }
+    return 'Withdraw'
+  }, [
+    routeType,
+    activeFlow.periphery.isLoadingRoute,
+    activeFlow.periphery.isAllowanceSufficient,
+    activeFlow.periphery.isCrossChain
+  ])
+
+  // Determine if we should show approve button (only for ENSO flow)
+  const showApprove = routeType === 'ENSO'
 
   // Get the real USD price for the asset token (what the user is withdrawing)
   const assetTokenPrice = useMemo(() => {
@@ -523,7 +518,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
             balance={totalBalanceInUnderlying.raw}
             decimals={assetToken?.decimals ?? 18}
             symbol={assetToken?.symbol || 'tokens'}
-            disabled={!!isWaitingForTx || (!!hasBothBalances && !withdrawalSource)}
+            disabled={!!hasBothBalances && !withdrawalSource}
             errorMessage={withdrawError || undefined}
             inputTokenUsdPrice={assetTokenPrice}
             outputTokenUsdPrice={outputTokenPrice}
@@ -560,8 +555,14 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                     address: outputToken?.address || '',
                     chainId: outputToken?.chainID || chainId,
                     expectedAmount:
-                      expectedOut && expectedOut.normalized > 0 ? formatAmount(expectedOut.normalized, 6, 6) : '0',
-                    isLoading: isLoadingRoute || withdrawAmount.isDebouncing
+                      activeFlow.periphery.expectedOut && activeFlow.periphery.expectedOut > 0n
+                        ? formatAmount(
+                            Number(formatUnits(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)),
+                            6,
+                            6
+                          )
+                        : '0',
+                    isLoading: activeFlow.periphery.isLoadingRoute || withdrawAmount.isDebouncing
                   }
                 : undefined
             }
@@ -606,13 +607,13 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                 </svg>
               </button>
               <p className="text-sm text-gray-900">
-                {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
+                {activeFlow.periphery.isLoadingRoute ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
                 ) : (
                   <>
-                    {requiredVaultTokens > 0n
+                    {requiredShares > 0n
                       ? formatTAmount({
-                          value: requiredVaultTokens,
+                          value: requiredShares,
                           decimals: isUnstake ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)
                         })
                       : '0'}{' '}
@@ -632,15 +633,18 @@ export const WidgetWithdrawFinal: FC<Props> = ({
               </div>
             </div>
           ) : null}
-          {/* TODO: This should display You will receive at least only in case of zap. Change this when we support vanilla withdrawals */}
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-gray-500">You will receive at least</p>
+            <p className="text-sm text-gray-500">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
             <div className="flex items-center gap-1">
               <p className="text-sm text-gray-900">
-                {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
+                {activeFlow.periphery.isLoadingRoute ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                ) : minExpectedOut && minExpectedOut.normalized > 0 ? (
-                  `${formatAmount(minExpectedOut.normalized, 3, 6)} ${outputToken?.symbol}`
+                ) : activeFlow.periphery.expectedOut > 0n ? (
+                  `${formatAmount(
+                    Number(formatUnits(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)),
+                    3,
+                    6
+                  )} ${outputToken?.symbol}`
                 ) : (
                   `0 ${outputToken?.symbol || 'tokens'}`
                 )}
@@ -653,58 +657,31 @@ export const WidgetWithdrawFinal: FC<Props> = ({
       {/* Action Buttons */}
       <div className={'px-6 pt-6 pb-6'}>
         <div className="flex gap-2 w-full">
-          {isUnstake ? (
-            // For unstake operations, show single button
+          {showApprove && activeFlow.actions.prepareApprove && (
             <TxButton
-              prepareWrite={prepareUnstake}
-              transactionName="Unstake"
-              disabled={!canWithdraw || !!withdrawError}
-              tooltip={withdrawError || undefined}
+              prepareWrite={activeFlow.actions.prepareApprove}
+              transactionName="Approve"
+              disabled={
+                !activeFlow.periphery.prepareApproveEnabled || !!withdrawError || activeFlow.periphery.isLoadingRoute
+              }
+              tooltip={
+                withdrawError || (activeFlow.periphery.isLoadingRoute ? 'Calculating required amount...' : undefined)
+              }
               className="w-full"
-              onSuccess={handleWithdrawSuccess}
             />
-          ) : (
-            // For regular withdrawals, show approve + withdraw
-            <>
-              <TxButton
-                prepareWrite={prepareApprove}
-                transactionName="Approve"
-                disabled={!prepareApproveEnabled || !!withdrawError || isLoadingAnyQuote || isWaitingForTx}
-                tooltip={
-                  withdrawError ||
-                  (isLoadingAnyQuote
-                    ? 'Calculating required amount...'
-                    : isWaitingForTx
-                      ? 'Transaction is confirming...'
-                      : undefined)
-                }
-                className="w-full"
-              />
-              <TxButton
-                prepareWrite={prepareEnsoOrder}
-                transactionName={
-                  isLoadingAnyQuote
-                    ? 'Finding route...'
-                    : !isAllowanceSufficient
-                      ? 'Approve First'
-                      : isCrossChain
-                        ? 'Cross-chain Withdraw'
-                        : 'Withdraw'
-                }
-                disabled={!canWithdraw || isLoadingAnyQuote || isWaitingForTx}
-                loading={isLoadingAnyQuote || isWaitingForTx}
-                tooltip={
-                  withdrawError ||
-                  (!isAllowanceSufficient
-                    ? 'Please approve token first'
-                    : isWaitingForTx
-                      ? 'Transaction is confirming...'
-                      : undefined)
-                }
-                className="w-full"
-              />
-            </>
           )}
+          <TxButton
+            prepareWrite={activeFlow.actions.prepareWithdraw}
+            transactionName={transactionName}
+            disabled={!activeFlow.periphery.prepareWithdrawEnabled || !!withdrawError}
+            loading={activeFlow.periphery.isLoadingRoute}
+            tooltip={
+              withdrawError ||
+              (!activeFlow.periphery.isAllowanceSufficient && showApprove ? 'Please approve token first' : undefined)
+            }
+            onSuccess={handleWithdrawSuccess}
+            className="w-full"
+          />
         </div>
       </div>
 
@@ -714,9 +691,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
         onClose={() => setShowWithdrawDetailsModal(false)}
         vaultSymbol={vaultSymbol}
         withdrawAmount={
-          requiredVaultTokens > 0n
-            ? formatTAmount({ value: requiredVaultTokens, decimals: vault?.decimals ?? 18 })
-            : '0'
+          requiredShares > 0n ? formatTAmount({ value: requiredShares, decimals: vault?.decimals ?? 18 }) : '0'
         }
         stakingAddress={stakingAddress}
         withdrawalSource={withdrawalSource}

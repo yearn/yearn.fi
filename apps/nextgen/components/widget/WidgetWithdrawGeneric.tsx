@@ -423,8 +423,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   const {
     actions: { prepareApprove },
     periphery: { prepareApproveEnabled, route, isLoadingRoute, minExpectedOut, routerAddress, isCrossChain, allowance },
-    getRoute,
-    getEnsoTransaction
+    methods: { getRoute, getEnsoTransaction }
   } = useSolverEnso({
     tokenIn: sourceToken,
     tokenOut: withdrawToken,

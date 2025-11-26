@@ -59,8 +59,10 @@ interface UseSolverEnsoReturn {
     isCrossChain: boolean
     routerAddress: Address | undefined
   }
-  getRoute: () => Promise<void>
-  getEnsoTransaction: () => EnsoRouteResponse['tx'] | undefined
+  methods: {
+    getRoute: () => Promise<void>
+    getEnsoTransaction: () => EnsoRouteResponse['tx'] | undefined
+  }
 }
 
 export const useSolverEnso = ({
@@ -169,7 +171,9 @@ export const useSolverEnso = ({
       isCrossChain,
       routerAddress
     },
-    getRoute,
-    getEnsoTransaction
+    methods: {
+      getRoute,
+      getEnsoTransaction
+    }
   }
 }

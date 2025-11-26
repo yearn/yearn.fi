@@ -54,7 +54,7 @@ export type UseWithdrawReturn = T<
 >
 
 // Unified interface for WidgetDepositFinal flows (direct deposit, direct stake, Enso)
-export type UseWidgetFlowReturn = T<
+export type UseWidgetDepositFlowReturn = T<
   {
     prepareApprove: UseSimulateContractReturnType
     prepareDeposit: UseSimulateContractReturnType
@@ -63,6 +63,23 @@ export type UseWidgetFlowReturn = T<
     prepareApproveEnabled: boolean
     prepareDepositEnabled: boolean
     isAllowanceSufficient: boolean
+    expectedOut: bigint
+    isLoadingRoute: boolean
+    isCrossChain: boolean
+    error?: string
+  }
+>
+
+// Unified interface for WidgetWithdrawFinal flows (direct withdraw, direct unstake, Enso)
+export type UseWidgetWithdrawFlowReturn = T<
+  {
+    prepareWithdraw: UseSimulateContractReturnType
+    prepareApprove?: UseSimulateContractReturnType // Optional: only needed for ENSO withdrawals
+  },
+  {
+    prepareWithdrawEnabled: boolean
+    prepareApproveEnabled?: boolean // Optional: only needed for ENSO withdrawals
+    isAllowanceSufficient: boolean // always true for direct withdraw (no approval needed)
     expectedOut: bigint
     isLoadingRoute: boolean
     isCrossChain: boolean

@@ -1,7 +1,7 @@
 import { toAddress } from '@lib/utils'
 import { erc4626Abi } from '@lib/utils/abi/4626.abi'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
-import type { UseWidgetFlowReturn } from '@nextgen/types'
+import type { UseWidgetDepositFlowReturn } from '@nextgen/types'
 import type { Address } from 'viem'
 import { erc20Abi } from 'viem'
 import { type UseSimulateContractReturnType, useReadContract, useSimulateContract } from 'wagmi'
@@ -17,7 +17,7 @@ interface UseDirectDepositParams {
   enabled: boolean
 }
 
-export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetFlowReturn {
+export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepositFlowReturn {
   // Check current allowance using shared hook
   const { allowance = 0n } = useTokenAllowance({
     account: params.account,

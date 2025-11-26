@@ -1,4 +1,4 @@
-import type { UseWidgetFlowReturn } from '@nextgen/types'
+import type { UseWidgetDepositFlowReturn } from '@nextgen/types'
 import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
 import { VEYFI_GAUGE_ABI } from '@vaults-v2/utils/abi/veYFIGauge.abi'
 import { TOKENIZED_STRATEGY_ABI } from '@vaults-v3/utils/abi/tokenizedStrategy.abi'
@@ -18,7 +18,7 @@ interface UseDirectStakeParams {
   enabled: boolean
 }
 
-export function useDirectStake(params: UseDirectStakeParams): UseWidgetFlowReturn {
+export function useDirectStake(params: UseDirectStakeParams): UseWidgetDepositFlowReturn {
   // Check current allowance (vault tokens → staking contract)
   const { allowance = 0n } = useTokenAllowance({
     account: params.account,
