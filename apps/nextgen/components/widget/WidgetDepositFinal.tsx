@@ -207,7 +207,7 @@ export const WidgetDepositFinal: FC<Props> = ({
     tokens: priorityTokens,
     isLoading: isLoadingPriorityTokens,
     refetch: refetchPriorityTokens
-  } = useTokens(priorityTokenAddresses, chainId)
+  } = useTokens(priorityTokenAddresses, chainId, account)
 
   // Extract priority tokens
   const [assetToken, vault] = priorityTokens

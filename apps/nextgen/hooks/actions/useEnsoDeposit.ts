@@ -25,6 +25,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
     fromAddress: params.account,
     chainId: params.chainId,
     destinationChainId: params.destinationChainId,
+    receiver: params.account,
     decimalsOut: params.decimalsOut,
     slippage: params.slippage,
     enabled: params.enabled
