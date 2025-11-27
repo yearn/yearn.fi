@@ -457,7 +457,7 @@ export const WidgetDepositFinal: FC<Props> = ({
       <div className="px-6">
         {/* Details */}
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between h-5">
             <p className="text-sm text-gray-500">
               {'You will ' + (selectedToken === assetAddress ? 'deposit' : 'swap')}
             </p>
@@ -472,7 +472,7 @@ export const WidgetDepositFinal: FC<Props> = ({
             </p>
           </div>
           {selectedToken !== assetAddress && (
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between h-5">
               <p className="text-sm text-gray-500">{'For at least'}</p>
               <p className="text-sm text-gray-900">
                 {activeFlow.periphery.isLoadingRoute || depositAmount.isDebouncing ? (
@@ -488,7 +488,7 @@ export const WidgetDepositFinal: FC<Props> = ({
               </p>
             </div>
           )}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between h-5">
             <p className="text-sm text-gray-500">You will receive</p>
             <div className="flex items-center gap-1">
               <button
@@ -520,7 +520,7 @@ export const WidgetDepositFinal: FC<Props> = ({
               </p>
             </div>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between h-5">
             <p className="text-sm text-gray-500">Est. Annual Return</p>
             <div className="flex items-center gap-1">
               <button
