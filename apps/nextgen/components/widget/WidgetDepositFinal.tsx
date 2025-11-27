@@ -641,6 +641,7 @@ export const WidgetDepositFinal: FC<Props> = ({
             onChange={(address, chainId) => {
               setSelectedToken(address)
               setSelectedChainId(chainId)
+              setDepositInput('')
               setShowTokenSelector(false)
             }}
             chainId={sourceChainId}

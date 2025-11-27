@@ -729,6 +729,8 @@ export const WidgetWithdrawFinal: FC<Props> = ({
             onChange={(address, chainId) => {
               setSelectedToken(address)
               setSelectedChainId(chainId)
+              // We could also set token balance here
+              setWithdrawInput('')
               setShowTokenSelector(false)
             }}
             chainId={chainId}
