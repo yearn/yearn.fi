@@ -2,8 +2,9 @@ import { useNotifications } from '@lib/contexts/useNotifications'
 import { useYearn } from '@lib/contexts/useYearn'
 import { IconCross } from '@lib/icons/IconCross'
 import { cl } from '@lib/utils'
+import { useClickOutside } from '@react-hookz/web'
 import { AnimatePresence, motion } from 'framer-motion'
-import { type ReactElement, useEffect } from 'react'
+import { type ReactElement, type RefObject, useEffect, useRef } from 'react'
 import { Drawer } from 'vaul'
 
 import { Notification } from './Notification'
@@ -18,6 +19,7 @@ export function NotificationsCurtain(props: {
   const allVaults = { ...vaults, ...vaultsMigrations, ...vaultsRetired }
 
   const isEmpty = cachedEntries.length === 0
+  const contentRef = useRef<HTMLDivElement>(null)
 
   /*************************************************************************************
    * Clear top bar notification status when drawer is triggered
@@ -25,25 +27,25 @@ export function NotificationsCurtain(props: {
   useEffect(() => {
     if (props.isOpen) {
       setNotificationStatus(null)
-      // Block page scrolling when drawer is open
-      document.body.style.overflow = 'hidden'
-    } else {
-      // Restore scrolling when drawer is closed
-      document.body.style.overflow = ''
-    }
-
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = ''
     }
   }, [props.isOpen, setNotificationStatus])
 
+  /*************************************************************************************
+   * Close curtain when clicking outside
+   *******************************************************************/
+  useClickOutside<HTMLDivElement>(contentRef as unknown as RefObject<HTMLDivElement>, () => {
+    if (props.isOpen) {
+      props.setShouldOpenCurtain(false)
+    }
+  })
+
   return (
-    <Drawer.Root direction={'right'} open={props.isOpen} onOpenChange={props.setShouldOpenCurtain}>
+    <Drawer.Root direction={'right'} open={props.isOpen} onOpenChange={props.setShouldOpenCurtain} modal={false}>
       <Drawer.Portal>
         <Drawer.Overlay className={'fixed inset-0 z-999998 bg-black/40 backdrop-blur-xs transition-all duration-300'} />
         <Drawer.Content className={'fixed inset-y-0 right-0 z-999999 flex w-full outline-hidden md:w-[386px]'}>
           <div
+            ref={contentRef}
             className={cl(
               'flex w-full grow flex-col py-5 pl-5 md:my-2 md:mr-2 shadow-2xl',
               props.variant === 'v3' ? 'bg-neutral-100 md:rounded-3xl' : 'bg-neutral-0'
