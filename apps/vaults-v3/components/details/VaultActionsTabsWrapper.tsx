@@ -586,7 +586,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
               <b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
               <p className={'mt-2'}>
                 {
-                  'They say all good things must come to an end, and sadly this vault is deprecated and will no longer earn yield or be supported by Yearn. Please withdraw your funds (which you could deposit into another Vault. Just saying…)'
+                  'This Vault has been retired and is no longer supported. Please withdraw your funds at your earliest convenience. If you have any questions, feel free to reach out to our support team for assistance.'
                 }
               </p>
             </div>

@@ -8,7 +8,9 @@ import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useChainOptions } from '@lib/hooks/useChains'
 import { useVaultFilter } from '@lib/hooks/useFilteredVaults'
+import { IconAlertError } from '@lib/icons/IconAlertError'
 import { IconChain } from '@lib/icons/IconChain'
+import { IconClose } from '@lib/icons/IconClose'
 import type { TSortDirection } from '@lib/types'
 import { toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault, TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -316,10 +318,54 @@ function ListOfVaults(): ReactElement {
   )
 }
 
+function IncidentBanner(): ReactElement | null {
+  const [isVisible, setIsVisible] = useState(true)
+
+  if (!isVisible) {
+    return null
+  }
+
+  return (
+    <div
+      className={
+        'rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-neutral-900 md:px-6 md:py-4 md:text-base'
+      }
+    >
+      <div className={'flex items-start gap-3'}>
+        <IconAlertError className={'mt-0.5 size-5 text-amber-700'} />
+        <p className={'flex-1 leading-relaxed'}>
+          {
+            'The yETH pool and related factory vaults have been paused following a security incident. More updates will be provided as we have them. Please check X/twitter for the most up to date information: '
+          }
+          <a
+            href={'https://x.com/yearnfi'}
+            target={'_blank'}
+            rel={'noreferrer'}
+            className={'underline underline-offset-2 transition-colors hover:text-amber-800'}
+          >
+            {'https://x.com/yearnfi'}
+          </a>
+        </p>
+        <button
+          type={'button'}
+          aria-label={'Dismiss announcement'}
+          onClick={(): void => setIsVisible(false)}
+          className={'mt-0.5 text-neutral-500 transition hover:text-neutral-700'}
+        >
+          <IconClose className={'size-4'} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function Index(): ReactElement {
   return (
     <div className={'mx-auto my-0 max-w-[1232px] pt-4 md:mb-0 md:mt-16 px-4'}>
-      <section className={'mt-16 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
+      <section className={'grid w-full grid-cols-12 gap-y-10 pb-10 md:gap-x-10 md:gap-y-20'}>
+        <div className={'col-span-12'}>
+          <IncidentBanner />
+        </div>
         <HeaderUserPosition />
         <ListOfVaults />
       </section>
