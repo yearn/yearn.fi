@@ -57,7 +57,7 @@ export function NotificationsCurtain(props: {
                 </Drawer.Close>
               </div>
               <div
-                className={'h-[94.5%] overflow-y-auto overflow-x-hidden pt-2'}
+                className={'h-[94.5%] overflow-y-auto overflow-x-hidden'}
                 style={{
                   scrollbarColor: '#9E9E9E transparent',
                   scrollbarWidth: 'thin',

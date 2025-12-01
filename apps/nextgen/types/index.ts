@@ -1,4 +1,4 @@
-import type { TNormalizedBN } from '@lib/types'
+import type { TAddress, TNormalizedBN } from '@lib/types'
 import type { UseSimulateContractReturnType } from 'wagmi'
 
 export type T<Actions, Periphery> = {
@@ -66,6 +66,7 @@ export type UseWidgetDepositFlowReturn = T<
     expectedOut: bigint
     isLoadingRoute: boolean
     isCrossChain: boolean
+    routerAddress?: TAddress
     error?: string
   }
 >
@@ -83,6 +84,7 @@ export type UseWidgetWithdrawFlowReturn = T<
     expectedOut: bigint
     isLoadingRoute: boolean
     isCrossChain: boolean
+    routerAddress?: TAddress
     error?: string
   }
 >
@@ -101,3 +103,9 @@ export enum WidgetActionType {
   DepositFinal = 'deposit final',
   WithdrawFinal = 'withdraw final'
 }
+
+export type {
+  TNotificationActionParams,
+  TNotificationTokenOption,
+  TTxButtonNotificationParams
+} from './notifications'

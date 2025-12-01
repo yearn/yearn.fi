@@ -108,6 +108,9 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
         toAddress: toAddress(actionParams.selectedOptionTo?.value),
         toTokenName: actionParams.selectedOptionTo?.symbol || '',
         chainId: actionParams.selectedOptionFrom?.chainID || 1,
+        toChainId: actionParams.selectedOptionTo?.chainID !== actionParams.selectedOptionFrom?.chainID
+          ? actionParams.selectedOptionTo?.chainID
+          : undefined,
         txHash: undefined,
         timeFinished: undefined,
         blockNumber: undefined,
@@ -160,6 +163,9 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
         toAddress: toAddress(actionParams.selectedOptionTo?.value),
         toTokenName: actionParams.selectedOptionTo?.symbol || '',
         chainId: actionParams.selectedOptionFrom?.chainID || 1,
+        toChainId: actionParams.selectedOptionTo?.chainID !== actionParams.selectedOptionFrom?.chainID
+          ? actionParams.selectedOptionTo?.chainID
+          : undefined,
         txHash: undefined,
         timeFinished: undefined,
         blockNumber: undefined,

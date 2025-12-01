@@ -10,7 +10,7 @@ import { useDirectWithdraw } from '@nextgen/hooks/actions/useDirectWithdraw'
 import { useEnsoWithdraw } from '@nextgen/hooks/actions/useEnsoWithdraw'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
-import type { UseWidgetWithdrawFlowReturn } from '@nextgen/types'
+import type { TTxButtonNotificationParams, UseWidgetWithdrawFlowReturn } from '@nextgen/types'
 import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
@@ -382,6 +382,91 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     withdrawalSource
   ])
 
+  // Notification parameters for approve transaction
+  const approveNotificationParams = useMemo((): TTxButtonNotificationParams | undefined => {
+    if (!vault || !outputToken || !account || routeType !== 'ENSO') return undefined
+
+    // For ENSO approvals, spender is the router contract, not the output token
+    const spenderAddress = activeFlow.periphery.routerAddress || withdrawToken
+    const spenderName = activeFlow.periphery.routerAddress ? 'Enso Router' : outputToken.symbol || ''
+
+    return {
+      type: 'approve',
+      actionParams: {
+        amount: vault.balance,
+        selectedOptionFrom: {
+          label: vault.symbol || '',
+          value: toAddress(sourceToken),
+          symbol: vault.symbol || '',
+          decimals: vault.decimals ?? 18,
+          chainID: chainId
+        },
+        selectedOptionTo: {
+          label: spenderName,
+          value: toAddress(spenderAddress),
+          symbol: spenderName,
+          decimals: vault.decimals ?? 18,
+          chainID: chainId
+        }
+      }
+    }
+  }, [vault, outputToken, account, routeType, activeFlow.periphery.routerAddress, sourceToken, chainId, withdrawToken])
+
+  // Notification parameters for withdraw transaction
+  const withdrawNotificationParams = useMemo((): TTxButtonNotificationParams | undefined => {
+    if (!vault || !outputToken || !account || withdrawAmount.bn === 0n) return undefined
+
+    // Determine notification type based on routing
+    let notificationType: 'withdraw' | 'zap' | 'crosschain zap' | 'unstake' = 'withdraw'
+    if (routeType === 'ENSO') {
+      // For ENSO, use 'zap' for same-chain, 'crosschain zap' for cross-chain
+      notificationType = activeFlow.periphery.isCrossChain ? 'crosschain zap' : 'zap'
+    } else if (routeType === 'DIRECT_UNSTAKE') {
+      notificationType = 'unstake'
+    }
+
+    // Determine source token details
+    // For withdrawals from staking (DIRECT_UNSTAKE or ENSO from staking), use the staking token's symbol
+    const sourceTokenSymbol = withdrawalSource === 'staking' && stakingToken
+      ? stakingToken.symbol || vault.symbol || ''
+      : vault.symbol || ''
+
+    return {
+      type: notificationType,
+      actionParams: {
+        amount: toNormalizedBN(requiredShares, vault.decimals ?? 18),
+        selectedOptionFrom: {
+          label: sourceTokenSymbol,
+          value: toAddress(sourceToken),
+          symbol: sourceTokenSymbol,
+          decimals: vault.decimals ?? 18,
+          chainID: chainId
+        },
+        selectedOptionTo: {
+          label: outputToken.symbol || '',
+          value: toAddress(withdrawToken),
+          symbol: outputToken.symbol || '',
+          decimals: outputToken.decimals ?? 18,
+          chainID: destinationChainId
+        }
+      }
+    }
+  }, [
+    vault,
+    outputToken,
+    account,
+    withdrawAmount.bn,
+    routeType,
+    activeFlow.periphery.isCrossChain,
+    requiredShares,
+    sourceToken,
+    chainId,
+    withdrawToken,
+    destinationChainId,
+    stakingToken,
+    withdrawalSource
+  ])
+
   // Shared function to handle successful withdrawals
   const handleWithdrawSuccess = useCallback(() => {
     setWithdrawInput('')
@@ -668,6 +753,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                 withdrawError || (activeFlow.periphery.isLoadingRoute ? 'Calculating required amount...' : undefined)
               }
               className="w-full"
+              notificationParams={approveNotificationParams}
             />
           )}
           <TxButton
@@ -681,6 +767,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
             }
             onSuccess={handleWithdrawSuccess}
             className="w-full"
+            notificationParams={withdrawNotificationParams}
           />
         </div>
       </div>

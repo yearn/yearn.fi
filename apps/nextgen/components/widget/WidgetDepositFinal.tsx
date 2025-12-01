@@ -1,7 +1,7 @@
 import { Dialog, Transition } from '@headlessui/react'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
-import { cl, formatAmount, formatPercent, formatTAmount, toAddress } from '@lib/utils'
+import { cl, formatAmount, formatPercent, formatTAmount, toAddress, toNormalizedBN } from '@lib/utils'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { TxButton } from '@nextgen/components/TxButton'
@@ -10,6 +10,7 @@ import { useDirectStake } from '@nextgen/hooks/actions/useDirectStake'
 import { useEnsoDeposit } from '@nextgen/hooks/actions/useEnsoDeposit'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
+import type { TTxButtonNotificationParams } from '@nextgen/types'
 import { type FC, Fragment, useCallback, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
@@ -210,7 +211,7 @@ export const WidgetDepositFinal: FC<Props> = ({
   } = useTokens(priorityTokenAddresses, chainId, account)
 
   // Extract priority tokens
-  const [assetToken, vault] = priorityTokens
+  const [assetToken, vault, stakingToken] = priorityTokens
 
   // Determine which token to use for deposits
   const depositToken = selectedToken || assetAddress
@@ -298,7 +299,7 @@ export const WidgetDepositFinal: FC<Props> = ({
 
   // Check if the selected token is ETH (native token)
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
-
+  console.log(depositAmount.debouncedBn)
   // Deposit flow using Enso - now uses the unified hook
   const ensoFlow = useEnsoDeposit({
     vaultAddress: destinationToken,
@@ -311,7 +312,7 @@ export const WidgetDepositFinal: FC<Props> = ({
     enabled: routeType === 'ENSO' && !!depositToken && !depositAmount.isDebouncing,
     slippage: zapSlippage * 100 // Convert percentage to basis points
   })
-
+  console.log(ensoFlow)
   // Select active flow based on routing type - all hooks return UseWidgetDepositFlowReturn
   const activeFlow = useMemo(() => {
     if (routeType === 'DIRECT_DEPOSIT') return directDeposit
@@ -348,6 +349,104 @@ export const WidgetDepositFinal: FC<Props> = ({
     isAutoStakingEnabled,
     selectedToken,
     vaultAddress
+  ])
+
+  // Notification parameters for approve transaction
+  const approveNotificationParams = useMemo((): TTxButtonNotificationParams | undefined => {
+    if (!inputToken || !vault || !account) return undefined
+
+    // Only create approve params for ENSO and DIRECT_STAKE (DIRECT_DEPOSIT doesn't need approval)
+    if (routeType === 'DIRECT_DEPOSIT') return undefined
+
+    // Determine spender based on route type
+    let spenderAddress: Address
+    let spenderName: string
+
+    if (routeType === 'ENSO') {
+      // For ENSO approvals, spender is the router contract
+      spenderAddress = activeFlow.periphery.routerAddress || destinationToken
+      spenderName = activeFlow.periphery.routerAddress ? 'Enso Router' : vault.symbol || ''
+    } else if (routeType === 'DIRECT_STAKE') {
+      // For DIRECT_STAKE, spender is the staking contract
+      spenderAddress = stakingAddress || destinationToken
+      spenderName = 'Staking Contract'
+    } else {
+      return undefined
+    }
+
+    return {
+      type: 'approve',
+      actionParams: {
+        amount: inputToken.balance,
+        selectedOptionFrom: {
+          label: inputToken.symbol || '',
+          value: toAddress(depositToken),
+          symbol: inputToken.symbol || '',
+          decimals: inputToken.decimals ?? 18,
+          chainID: sourceChainId
+        },
+        selectedOptionTo: {
+          label: spenderName,
+          value: toAddress(spenderAddress),
+          symbol: spenderName,
+          decimals: vault.decimals ?? 18,
+          chainID: chainId
+        }
+      }
+    }
+  }, [inputToken, vault, account, routeType, activeFlow.periphery.routerAddress, depositToken, sourceChainId, destinationToken, chainId, stakingAddress])
+
+  // Notification parameters for deposit transaction
+  const depositNotificationParams = useMemo((): TTxButtonNotificationParams | undefined => {
+    if (!inputToken || !vault || !account || depositAmount.bn === 0n) return undefined
+
+    // Determine notification type based on routing
+    let notificationType: 'deposit' | 'zap' | 'crosschain zap' | 'stake' = 'deposit'
+    if (routeType === 'ENSO') {
+      // Use 'zap' for same-chain ENSO, 'crosschain zap' for cross-chain ENSO
+      notificationType = activeFlow.periphery.isCrossChain ? 'crosschain zap' : 'zap'
+    } else if (routeType === 'DIRECT_STAKE') {
+      notificationType = 'stake'
+    }
+
+    // Determine destination token details
+    // For DIRECT_STAKE, use the staking token's symbol if available
+    const destinationTokenSymbol = routeType === 'DIRECT_STAKE' && stakingToken
+      ? stakingToken.symbol || vault.symbol || ''
+      : vault.symbol || ''
+
+    return {
+      type: notificationType,
+      actionParams: {
+        amount: toNormalizedBN(depositAmount.bn, inputToken.decimals ?? 18),
+        selectedOptionFrom: {
+          label: inputToken.symbol || '',
+          value: toAddress(depositToken),
+          symbol: inputToken.symbol || '',
+          decimals: inputToken.decimals ?? 18,
+          chainID: sourceChainId
+        },
+        selectedOptionTo: {
+          label: destinationTokenSymbol,
+          value: toAddress(destinationToken),
+          symbol: destinationTokenSymbol,
+          decimals: vault.decimals ?? 18,
+          chainID: chainId
+        }
+      }
+    }
+  }, [
+    inputToken,
+    vault,
+    account,
+    depositAmount.bn,
+    routeType,
+    activeFlow.periphery.isCrossChain,
+    depositToken,
+    sourceChainId,
+    destinationToken,
+    chainId,
+    stakingToken
   ])
 
   // Deposit is enabled when: prepare is enabled, allowance is sufficient, no errors, and amount > 0
@@ -392,10 +491,25 @@ export const WidgetDepositFinal: FC<Props> = ({
 
   // Enso returns the expected output in the destination token (vault or staking), we need to convert it to the selected token
   const expectedOutInSelectedToken = useMemo(() => {
-    if (activeFlow.periphery.expectedOut === 0n || !pricePerShare || !assetToken?.decimals) return 0n
+    if (
+      activeFlow.periphery.expectedOut === 0n ||
+      !pricePerShare ||
+      !assetToken?.decimals ||
+      depositAmount.isDebouncing ||
+      depositAmount.bn === 0n
+    )
+      return 0n
     return (activeFlow.periphery.expectedOut * pricePerShare) / 10n ** BigInt(assetToken.decimals)
-  }, [activeFlow.periphery.expectedOut, assetToken?.decimals, pricePerShare])
-
+  }, [
+    activeFlow.periphery.expectedOut,
+    assetToken?.decimals,
+    pricePerShare,
+    depositAmount.isDebouncing,
+    depositAmount.bn
+  ])
+  console.log(expectedOutInSelectedToken)
+  console.log(depositAmount.debouncedBn)
+  console.log(routeType)
   // Get the real USD price for the input token
   const inputTokenPrice = useMemo(() => {
     if (!inputToken?.address || !inputToken?.chainID) return 0
@@ -559,6 +673,7 @@ export const WidgetDepositFinal: FC<Props> = ({
               disabled={!activeFlow.periphery.prepareApproveEnabled || !!depositError}
               tooltip={depositError || undefined}
               className="w-full"
+              notificationParams={approveNotificationParams}
             />
           )}
           <TxButton
@@ -582,6 +697,7 @@ export const WidgetDepositFinal: FC<Props> = ({
             }
             onSuccess={handleDepositSuccess}
             className="w-full"
+            notificationParams={depositNotificationParams}
           />
         </div>
       </div>
@@ -639,10 +755,9 @@ export const WidgetDepositFinal: FC<Props> = ({
           <TokenSelector
             value={selectedToken}
             onChange={(address, chainId) => {
+              setDepositInput('') // Reset the input with no debounce
               setSelectedToken(address)
               setSelectedChainId(chainId)
-              setDepositInput('')
-              setShowTokenSelector(false)
             }}
             chainId={sourceChainId}
             onClose={() => setShowTokenSelector(false)}
