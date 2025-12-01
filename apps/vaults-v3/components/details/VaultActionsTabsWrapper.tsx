@@ -583,7 +583,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
         !isSonneRetiredVault && (
           <div aria-label={'Deprecation Warning'} className={'col-span-12 mt-10'}>
             <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
-              <b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
+              <b className={'text-lg'}>{'This Vault is no longer supported.'}</b>
               <p className={'mt-2'}>
                 {
                   'This Vault has been retired and is no longer supported. Please withdraw your funds at your earliest convenience. If you have any questions, feel free to reach out to our support team for assistance.'
