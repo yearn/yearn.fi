@@ -328,7 +328,7 @@ function IncidentBanner(): ReactElement | null {
   return (
     <div
       className={
-        'rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-neutral-900 md:px-6 md:py-4 md:text-base'
+        'rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-black md:px-6 md:py-4 md:text-base'
       }
     >
       <div className={'flex items-start gap-3'}>
