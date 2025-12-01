@@ -338,10 +338,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                     actionParams,
                     type: notificationParams.type
                   })
-                } else if (
-                  notificationParams.type === 'withdraw' ||
-                  notificationParams.type === 'unstake'
-                ) {
+                } else if (notificationParams.type === 'withdraw' || notificationParams.type === 'unstake') {
                   createdNotificationId = await handleWithdrawNotification({
                     actionParams,
                     type: notificationParams.type
@@ -389,10 +386,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                           idToUpdate: createdNotificationId,
                           txHash: result.hash
                         })
-                      } else if (
-                        notificationParams.type === 'withdraw' ||
-                        notificationParams.type === 'unstake'
-                      ) {
+                      } else if (notificationParams.type === 'withdraw' || notificationParams.type === 'unstake') {
                         handleWithdrawNotification({
                           actionParams,
                           type: notificationParams.type,
@@ -433,10 +427,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                         status: 'error',
                         idToUpdate: createdNotificationId
                       })
-                    } else if (
-                      notificationParams.type === 'withdraw' ||
-                      notificationParams.type === 'unstake'
-                    ) {
+                    } else if (notificationParams.type === 'withdraw' || notificationParams.type === 'unstake') {
                       handleWithdrawNotification({
                         actionParams,
                         type: notificationParams.type,

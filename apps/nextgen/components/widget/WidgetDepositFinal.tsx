@@ -394,7 +394,18 @@ export const WidgetDepositFinal: FC<Props> = ({
         }
       }
     }
-  }, [inputToken, vault, account, routeType, activeFlow.periphery.routerAddress, depositToken, sourceChainId, destinationToken, chainId, stakingAddress])
+  }, [
+    inputToken,
+    vault,
+    account,
+    routeType,
+    activeFlow.periphery.routerAddress,
+    depositToken,
+    sourceChainId,
+    destinationToken,
+    chainId,
+    stakingAddress
+  ])
 
   // Notification parameters for deposit transaction
   const depositNotificationParams = useMemo((): TTxButtonNotificationParams | undefined => {
@@ -411,9 +422,8 @@ export const WidgetDepositFinal: FC<Props> = ({
 
     // Determine destination token details
     // For DIRECT_STAKE, use the staking token's symbol if available
-    const destinationTokenSymbol = routeType === 'DIRECT_STAKE' && stakingToken
-      ? stakingToken.symbol || vault.symbol || ''
-      : vault.symbol || ''
+    const destinationTokenSymbol =
+      routeType === 'DIRECT_STAKE' && stakingToken ? stakingToken.symbol || vault.symbol || '' : vault.symbol || ''
 
     return {
       type: notificationType,

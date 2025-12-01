@@ -49,6 +49,7 @@ export const useDebouncedInput = (decimals = 18, debounceMs = 500): UseDebounced
   const activity = useState(false)
 
   // Debounce the form value
+  // biome-ignore lint/correctness/useExhaustiveDependencies: debouncedFormValue is extra
   useEffect(() => {
     if (formValue === debouncedFormValue) {
       setIsDebouncing(false)

@@ -427,9 +427,8 @@ export const WidgetWithdrawFinal: FC<Props> = ({
 
     // Determine source token details
     // For withdrawals from staking (DIRECT_UNSTAKE or ENSO from staking), use the staking token's symbol
-    const sourceTokenSymbol = withdrawalSource === 'staking' && stakingToken
-      ? stakingToken.symbol || vault.symbol || ''
-      : vault.symbol || ''
+    const sourceTokenSymbol =
+      withdrawalSource === 'staking' && stakingToken ? stakingToken.symbol || vault.symbol || '' : vault.symbol || ''
 
     return {
       type: notificationType,
