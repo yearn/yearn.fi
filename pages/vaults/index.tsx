@@ -335,7 +335,7 @@ function IncidentBanner(): ReactElement | null {
         <IconAlertError className={'mt-0.5 size-5 text-amber-700'} />
         <p className={'flex-1 leading-relaxed'}>
           {
-            'The yETH pool and related factory vaults have been paused following a security incident. More updates will be provided as we have them. Please check X/twitter for the most up to date information: '
+            "The yETH pool has been paused following a security incident. Yearn's v2 and v3 vault code is not impacted. More updates will be provided as we have them. Please check X/twitter for the most up to date information: "
           }
           <a
             href={'https://x.com/yearnfi'}
