@@ -63,11 +63,7 @@ export function NotificationsCurtain(props: {
             className={cl(
               'flex w-full grow flex-col shadow-2xl',
               drawerDirection === 'right' ? 'py-5 pl-5 md:my-2 md:mr-2' : 'rounded-t-3xl px-5 pb-6 pt-5 max-h-[90vh]',
-              props.variant === 'v3'
-                ? drawerDirection === 'right'
-                  ? 'bg-neutral-100 md:rounded-3xl'
-                  : 'bg-neutral-100'
-                : 'bg-neutral-0'
+              drawerDirection === 'right' ? 'bg-surface md:rounded-3xl' : 'bg-surface'
             )}
           >
             <div className={'h-full'}>

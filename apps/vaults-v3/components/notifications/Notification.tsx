@@ -9,7 +9,6 @@ import { IconLoader } from '@lib/icons/IconLoader'
 import type { TNotification, TNotificationStatus } from '@lib/types/notifications'
 import { cl, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
 import Image from '/src/components/Image'
@@ -319,44 +318,13 @@ export const Notification = memo(function Notification({
   }, [deleteByID, notification.id, isDeleting])
 
   return (
-    <motion.div
-      layout
-      layoutId={`notification-${notification.id}`}
-      initial={{ opacity: 0, y: 20, scaleY: 0.8 }}
-      animate={{ opacity: 1, y: 0, scaleY: 1 }}
-      exit={{
-        opacity: 0,
-        y: -10,
-        scaleY: 0.3,
-        transition: {
-          duration: 0.2,
-          ease: [0.4, 0.0, 0.2, 1] // easeOut
-        }
-      }}
-      transition={{
-        duration: 0.25,
-        ease: [0.4, 0.0, 0.2, 1], // easeOut
-        layout: {
-          duration: 0.2,
-          ease: [0.4, 0.0, 0.2, 1] // easeOut
-        }
-      }}
+    <div
       className={cl(
         'border border-neutral-200 p-4 h-fit relative mb-4 origin-top group',
-        variant === 'v3' ? 'bg-neutral-200 rounded-xl' : 'bg-neutral-0 hover:bg-neutral-100/30 transition-colors'
+        'bg-card rounded-xl border-neutral-300'
       )}
-      style={{ transformOrigin: 'top center' }}
-      aria-label={`${notificationTitle} notification`}
     >
-      {variant === 'v3' && (
-        <div
-          className={cl(
-            'absolute inset-0 rounded-xl',
-            'opacity-20 transition-opacity  pointer-events-none',
-            'bg-[linear-gradient(80deg,#2C3DA6,#D21162)] group-hover:opacity-100'
-          )}
-        />
-      )}
+      {variant === 'v3' && <div className={cl('absolute inset-0 rounded-xl')} />}
 
       {/* Close button */}
       <button
@@ -364,14 +332,14 @@ export const Notification = memo(function Notification({
         disabled={isDeleting}
         className={cl(
           'absolute z-999999 flex items-center justify-center',
-          'right-2 top-2 w-5 h-5 rounded-full hover:opacity-100 hover:bg-neutral-200',
+          'right-2 top-2 w-5 h-5 rounded-full hover:opacity-100 hover:bg-neutral-0',
           'transition-all duration-200',
-          'opacity-0 group-hover:opacity-60 group-hover:bg-neutral-200/60 hover:opacity-100!',
+          'opacity-0 group-hover:opacity-100 group-hover:bg-neutral-0/70 group-hover:border group-hover:border-neutral-0 hover:opacity-100!',
           isDeleting ? 'opacity-30!' : ''
         )}
         title={'Remove'}
       >
-        <IconClose className={cl('w-3 h-3', variant === 'v3' ? 'text-neutral-700' : 'text-neutral-600')} />
+        <IconClose className={cl('w-3 h-3 text-neutral-900')} />
       </button>
 
       <div className={'relative z-20'}>
@@ -405,6 +373,6 @@ export const Notification = memo(function Notification({
           </div>
         ) : null}
       </div>
-    </motion.div>
+    </div>
   )
 })
