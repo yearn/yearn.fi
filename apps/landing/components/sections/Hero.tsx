@@ -80,16 +80,7 @@ export function Hero(): ReactElement {
     <>
       {/* Desktop Hero Section */}
       <div className={'hidden w-full justify-center overflow-hidden border-b border-white/10 md:flex'}>
-        <div
-          style={{
-            backgroundImage: "url('/landing/hero-background.png')",
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: '100% 100%',
-            backgroundPosition: 'center',
-            overflow: 'hidden'
-          }}
-          className={'relative flex h-[600px] w-[2365px] max-w-[2352px] flex-col items-center self-center'}
-        >
+        <div className={'relative flex h-[600px] w-[2365px] max-w-[2352px] flex-col items-center self-center'}>
           <AnimatedLogos />
           <div className={'flex h-full items-center justify-center'}>
             <div className={'z-20 flex flex-col items-center justify-center gap-12 text-center'}>

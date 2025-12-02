@@ -42,6 +42,11 @@
 
       function resolveTheme() {
         const storedValue = window.localStorage.getItem(THEME_STORAGE_KEY)
+        const isHomePage = window.location.pathname === '/'
+        if (isHomePage) {
+          return 'dark'
+        }
+
         if (storedValue === 'true') {
           return 'dark'
         }

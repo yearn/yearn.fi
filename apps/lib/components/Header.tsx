@@ -30,7 +30,7 @@ const PRIMARY_LINKS: TPrimaryLink[] = [
   {
     path: '/v3',
     label: 'Vaults',
-    matchers: ['/', '/v3', '/vaults', '/vaults-beta']
+    matchers: ['/v3', '/vaults', '/vaults-beta']
   },
   { path: '/portfolio', label: 'Portfolio' }
 ]
@@ -227,6 +227,8 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     void pathname
   }, [updateSurfaceBackground, pathname])
 
+  const isHomePage = window.location.pathname === '/'
+
   return (
     <div
       id={'head'}
@@ -268,21 +270,25 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
           </div>
           <div className={'flex w-1/2 items-center justify-end'}>
             <Navbar currentPathName={pathname || ''} nav={menu} />
-            <button
-              className={'yearn--header-nav-item relative rounded-full p-4 transition-colors'}
-              onClick={(): void => setShouldOpenCurtain(true)}
-            >
-              <IconBell className={'size-4 font-bold transition-colors'} />
+            {!isHomePage && (
+              <div className={'direction-row flex items-center justify-end'}>
+                <button
+                  className={'yearn--header-nav-item relative rounded-full p-4 transition-colors'}
+                  onClick={(): void => setShouldOpenCurtain(true)}
+                >
+                  <IconBell className={'size-4 font-bold transition-colors'} />
 
-              <div className={cl('absolute right-4 top-4 size-2 rounded-full', notificationDotColor)} />
-            </button>
-            <WalletSelector />
-            <div className={'flex md:hidden pl-4 text-neutral-500'}>
-              <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
-                <span className={'sr-only'}>{'Open menu'}</span>
-                <IconBurgerPlain />
-              </button>
-            </div>
+                  <div className={cl('absolute right-4 top-4 size-2 rounded-full', notificationDotColor)} />
+                </button>
+                <WalletSelector />
+                <div className={'flex md:hidden pl-4 text-neutral-500'}>
+                  <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
+                    <span className={'sr-only'}>{'Open menu'}</span>
+                    <IconBurgerPlain />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </header>
       </div>

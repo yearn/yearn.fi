@@ -59,7 +59,7 @@ const IntegrationItem: FC<TIntegration & { index: number }> = ({ name, imageSrc,
   return (
     <Link href={href} className={'block cursor-pointer'}>
       <div
-        className={`flex flex-row items-center p-[12px] transition-all duration-300 ease-in-out hover:scale-[1.005] hover:bg-[#2a2b2c] hover:shadow-lg md:p-[16px] ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}
+        className={`flex flex-row items-center p-3 transition-all duration-300 ease-in-out hover:scale-[1.005] hover:shadow-lg md:p-[16px] ${index % 2 === 0 ? 'bg-[#00051f]/50 hover:bg-[#00051f]' : 'bg-[#212223]/50 hover:bg-[#0e141a]/70'}`}
       >
         <div className={'relative mr-4 shrink-0 self-center'}>
           <Image
