@@ -1,5 +1,5 @@
 import { cl } from '@lib/utils'
-import type { CSSProperties, ReactElement } from 'react'
+import type { ReactElement } from 'react'
 import type { ImageProps } from '/src/components/Image'
 import Image from '/src/components/Image'
 
