@@ -122,7 +122,7 @@ function NotificationContent({
             width={32}
             height={32}
           />
-          <div className={'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
+          <div className={'absolute bottom-6 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
             <Image
               width={14}
               height={14}
