@@ -9,7 +9,6 @@ import Link from '/src/components/Link'
 
 import { LogoYearn } from '../icons/LogoYearn'
 import { LogoYearnMark } from '../icons/LogoYearnMark'
-import { LogoYearnMarkOutline } from '../icons/LogoYearnMarkOutline'
 import { APP_GROUPS, type TAppTile } from './YearnApps'
 
 type LaunchModalTriggerProps = {
@@ -355,17 +354,13 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
           onClick={handleOpen}
         >
           <span className={'sr-only'}>{'Open Yearn navigation'}</span>
-          <span className={'relative flex h-8 w-auto items-center justify-center'}>
-            <LogoYearnMark
-              className={'h-8 w-auto transition-opacity duration-150 group-hover:opacity-0'}
-              color={isDarkTheme ? '#fff' : 'var(--color-primary)'}
-            />
-            <LogoYearnMarkOutline
-              className={
-                'absolute inset-0 h-8 w-auto opacity-0 transition-opacity duration-150 group-hover:opacity-100'
-              }
-              color={isDarkTheme ? '#fff' : 'var(--color-primary)'}
-            />
+          <span
+            className={cl(
+              'relative flex h-8 w-auto items-center justify-center transition-colors duration-150',
+              isDarkTheme ? 'text-white group-hover:text-primary' : 'text-primary group-hover:text-black'
+            )}
+          >
+            <LogoYearnMark className={'h-8 w-auto'} color={'currentColor'} />
           </span>
         </button>
       )}
