@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
-import { TypeMarkYearn } from '../../../apps/lib/icons/TypeMarkYearn-text-only'
+import { TypeMarkYearn as TypeMarkYearnText } from '../icons/TypeMarkYearn-text-only'
 import { LaunchModal } from './LaunchModal'
 import { ModalMobileMenu } from './ModalMobileMenu'
 
@@ -244,13 +244,14 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     >
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         <header className={'yearn--header w-full px-0!'}>
-          <div className={'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'}>
+          <div className={'direction-row flex items-center justify-start gap-x-0 px-1 py-2 md:py-1'}>
             <div className={'flex justify-center'}>
               <LaunchModal />
             </div>
             <div className={'flex items-center gap-2 md:gap-4'}>
-              <TypeMarkYearn className={'yearn-typemark h-8 w-auto pt-1'} />
-              <div className={'flex items-center gap-4'}>
+              <TypeMarkYearnText className={'yearn-typemark h-8 w-auto'} />
+              {/* <TypeMarkYearnFull className={'yearn-typemark hidden h-8 w-auto md:block'} color={'currentColor'} /> */}
+              <div className={'flex items-center gap-4 pb-0.5'}>
                 {PRIMARY_LINKS.map((link) => {
                   const isActive =
                     link.matchers?.some((matcher) =>

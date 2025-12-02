@@ -1,3 +1,4 @@
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import type { TUseBalancesTokens } from '@lib/hooks/useBalances.multichains'
@@ -5,8 +6,10 @@ import { useFetch } from '@lib/hooks/useFetch'
 import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { cl, toAddress } from '@lib/utils'
+import { getVaultName } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { UserBalanceGrid, VaultMetricsGrid } from '@nextgen/components/vaults-beta/QuickStatsGrid'
 import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
 import { VaultChartsSection } from '@nextgen/components/vaults-beta/VaultChartsSection'
 import { VaultDetailsHeader } from '@nextgen/components/vaults-beta/VaultDetailsHeader'
@@ -17,13 +20,14 @@ import { Widget } from '@nextgen/components/widget'
 import { WidgetActionType } from '@nextgen/types'
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 import type { ReactElement } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { useDevFlags } from '/src/contexts/useDevFlags'
 
 function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
   const { headerCompressionEnabled: enableHeaderCompression } = useDevFlags()
+  const mobileDetailsSectionId = useId()
 
   const { address, isActive } = useWeb3()
   const params = useParams()
@@ -40,6 +44,8 @@ function Index(): ReactElement | null {
   const [overrideVault, setOverrideVault] = useState<TYDaemonVault | undefined>(undefined)
   const [hasFetchedOverride, setHasFetchedOverride] = useState(false)
   const [lastVaultKey, setLastVaultKey] = useState(vaultKey)
+  const [isMobileDetailsExpanded, setIsMobileDetailsExpanded] = useState(false)
+  const detailsRef = useRef<HTMLDivElement>(null)
   const chartsRef = useRef<HTMLDivElement>(null)
   const aboutRef = useRef<HTMLDivElement>(null)
   const riskRef = useRef<HTMLDivElement>(null)
@@ -62,6 +68,7 @@ function Index(): ReactElement | null {
     info: true,
     charts: true
   })
+  const [isWidgetOpen, setIsWidgetOpen] = useState(false)
   const collapsibleTitles: Record<SectionKey, string> = {
     about: 'Description',
     risk: 'Risk',
@@ -231,6 +238,19 @@ function Index(): ReactElement | null {
     }
   }
 
+  const toggleMobileDetails = (): void => {
+    setIsMobileDetailsExpanded((prev) => {
+      const newState = !prev
+      // Scroll to details when expanding
+      if (newState && detailsRef.current) {
+        setTimeout(() => {
+          detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }, 100)
+      }
+      return newState
+    })
+  }
+
   if (isLoadingVault || !params.address || !isInit || !yDaemonBaseUri) {
     return (
       <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
@@ -254,18 +274,232 @@ function Index(): ReactElement | null {
   return (
     <div className={'vaults-layout vaults-layout--detail'}>
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
+        {/* Desktop Header - Hidden on mobile */}
         <header
           className={cl(
             'h-full rounded-3xl',
-            'relative flex flex-col items-center justify-center',
-            'md:sticky md:z-30'
+            'relative flex-col items-center justify-center',
+            'hidden md:flex md:sticky md:z-30'
           )}
           style={{ top: 'var(--header-height)' }}
         >
           <VaultDetailsHeader currentVault={currentVault} enableCompression={enableHeaderCompression} />
         </header>
 
-        <section className={'grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
+        {/* Mobile: Compact Header */}
+        <div className="md:hidden mt-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center size-10 rounded-full bg-neutral-0/70">
+              <ImageWithFallback
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`}
+                alt={currentVault.token.symbol || ''}
+                width={40}
+                height={40}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-black leading-tight text-neutral-700 truncate">
+                {getVaultName(currentVault)} yVault
+              </h1>
+              <p className="text-xs text-neutral-600 truncate">
+                {currentVault.token.symbol} • v{currentVault.version}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Layout - Conditional based on wallet connection */}
+        <div className="md:hidden space-y-4">
+          {/* Vault metrics always at the top */}
+          <VaultMetricsGrid currentVault={currentVault} />
+
+          {/* If wallet connected: show user balance grid, then widget */}
+          {isActive && address ? (
+            <>
+              <UserBalanceGrid currentVault={currentVault} />
+              <div>
+                <Widget
+                  vaultType={isV3 ? 'v3' : 'v2'}
+                  vaultAddress={currentVault.address}
+                  currentVault={currentVault}
+                  gaugeAddress={currentVault.staking.address}
+                  actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
+                  chainId={chainId}
+                />
+              </div>
+            </>
+          ) : (
+            /* If not connected: show charts, then user balance grid (connect button) */
+            <>
+              <div className={'border border-neutral-300 rounded-lg bg-surface'}>
+                <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} />
+              </div>
+              <UserBalanceGrid currentVault={currentVault} />
+            </>
+          )}
+
+          {/* Expandable details toggle button */}
+          <button
+            type="button"
+            onClick={toggleMobileDetails}
+            aria-label={isMobileDetailsExpanded ? 'Hide vault details' : 'Show vault details'}
+            aria-controls={mobileDetailsSectionId}
+            aria-expanded={isMobileDetailsExpanded}
+            className={cl(
+              'w-full bg-neutral-100 border border-neutral-200 rounded-lg',
+              'py-4 px-6 flex items-center justify-between',
+              'transition-all duration-200',
+              'hover:bg-neutral-200 active:scale-[0.99]'
+            )}
+          >
+            <span className="text-sm font-semibold text-neutral-900">
+              {isMobileDetailsExpanded ? 'Hide Details' : 'View More Details'}
+            </span>
+            <IconChevron direction={isMobileDetailsExpanded ? 'up' : 'down'} className="size-5 text-neutral-600" />
+          </button>
+
+          {/* Expandable details section */}
+          {isMobileDetailsExpanded && (
+            <section
+              id={mobileDetailsSectionId}
+              ref={detailsRef}
+              aria-label="Vault performance and details"
+              className="space-y-4 pb-8 mobile-details-section"
+            >
+              {/* If wallet connected: show all sections including charts in details */}
+              {/* If not connected: show widget first, then other sections */}
+              {isActive && address ? (
+                // Wallet connected: show all normal sections
+                renderableSections.map((section) => {
+                  const isCollapsible =
+                    section.key === 'about' ||
+                    section.key === 'risk' ||
+                    section.key === 'strategies' ||
+                    section.key === 'info'
+
+                  if (isCollapsible) {
+                    const typedKey = section.key as SectionKey
+                    const isOpen = openSections[typedKey]
+
+                    return (
+                      <div
+                        key={section.key}
+                        ref={section.ref}
+                        className={'border border-neutral-300 rounded-lg bg-surface'}
+                      >
+                        <button
+                          type={'button'}
+                          className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
+                          onClick={(): void =>
+                            setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                          }
+                        >
+                          <span className={'text-base font-semibold text-neutral-900'}>
+                            {collapsibleTitles[typedKey]}
+                          </span>
+                          <IconChevron
+                            className={'size-4 text-neutral-600 transition-transform duration-200'}
+                            direction={isOpen ? 'up' : 'down'}
+                          />
+                        </button>
+                        {isOpen ? <div>{section.content}</div> : null}
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div
+                      key={section.key}
+                      ref={section.ref}
+                      className={'border border-neutral-300 rounded-lg bg-surface'}
+                    >
+                      {section.content}
+                    </div>
+                  )
+                })
+              ) : (
+                // Wallet not connected: show widget first, then other sections (excluding charts which is already shown)
+                <>
+                  {/* Widget in expandable section when not connected - Collapsible */}
+                  <div className={'border border-neutral-300 rounded-lg bg-surface overflow-hidden'}>
+                    <button
+                      type={'button'}
+                      className={
+                        'flex w-full items-center justify-between gap-3 px-4 py-3 bg-neutral-100 border-b border-neutral-300'
+                      }
+                      onClick={(): void => setIsWidgetOpen((prev) => !prev)}
+                    >
+                      <span className={'text-base font-semibold text-neutral-900'}>Deposit / Withdraw</span>
+                      <IconChevron
+                        className={'size-4 text-neutral-600 transition-transform duration-200'}
+                        direction={isWidgetOpen ? 'up' : 'down'}
+                      />
+                    </button>
+                    {isWidgetOpen ? (
+                      <div>
+                        <Widget
+                          vaultType={isV3 ? 'v3' : 'v2'}
+                          vaultAddress={currentVault.address}
+                          currentVault={currentVault}
+                          gaugeAddress={currentVault.staking.address}
+                          actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
+                          chainId={chainId}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Other sections (excluding charts) */}
+                  {renderableSections
+                    .filter((section) => section.key !== 'charts')
+                    .map((section) => {
+                      const isCollapsible =
+                        section.key === 'about' ||
+                        section.key === 'risk' ||
+                        section.key === 'strategies' ||
+                        section.key === 'info'
+
+                      if (isCollapsible) {
+                        const typedKey = section.key as SectionKey
+                        const isOpen = openSections[typedKey]
+
+                        return (
+                          <div
+                            key={section.key}
+                            ref={section.ref}
+                            className={'border border-neutral-300 rounded-lg bg-surface'}
+                          >
+                            <button
+                              type={'button'}
+                              className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
+                              onClick={(): void =>
+                                setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                              }
+                            >
+                              <span className={'text-base font-semibold text-neutral-900'}>
+                                {collapsibleTitles[typedKey]}
+                              </span>
+                              <IconChevron
+                                className={'size-4 text-neutral-600 transition-transform duration-200'}
+                                direction={isOpen ? 'up' : 'down'}
+                              />
+                            </button>
+                            {isOpen ? <div>{section.content}</div> : null}
+                          </div>
+                        )
+                      }
+
+                      // Non-collapsible sections (charts would be here, but we filter it out)
+                      return null
+                    })}
+                </>
+              )}
+            </section>
+          )}
+        </div>
+
+        {/* Desktop Layout - Keep existing */}
+        <section className={'hidden md:grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div className={'space-y-4 md:col-span-13 pb-4'}>
             {renderableSections.length > 0 ? (
               <div className={'w-full sticky z-30'} style={{ top: enableHeaderCompression ? '169.5px' : '293.5px' }}>

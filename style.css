@@ -707,3 +707,27 @@ input[type='number'] {
   transform: rotateX(0deg);
   transition: transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
+/* Mobile Vault Details Redesign */
+/* Animation for expandable details section */
+.mobile-details-section {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile-specific layout adjustments */
+@media (max-width: 768px) {
+  .vaults-layout--detail {
+    padding-bottom: 2rem;
+  }
+}
