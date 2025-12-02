@@ -45,12 +45,10 @@ export const InputTokenAmountV2: FC<Props> = ({
   input,
   className,
   balance,
-  displayBalance,
   decimals,
   symbol,
   placeholder,
   disabled: _disabled,
-  disableMaxButton = false,
   isMaxButtonLoading = false,
   errorMessage,
   onInputChange,
@@ -179,11 +177,11 @@ export const InputTokenAmountV2: FC<Props> = ({
                 onClick={() => handlePercentageClick(100)}
                 className={cl(
                   'px-2 py-0.5 text-xs font-medium rounded transition-colors flex items-center justify-center min-w-[42px]',
-                  disabled || disableMaxButton || isMaxButtonLoading
+                  disabled || isMaxButtonLoading
                     ? 'text-gray-400 bg-transparent cursor-not-allowed'
                     : 'text-gray-500 bg-transparent hover:bg-gray-100'
                 )}
-                disabled={disabled || disableMaxButton || isMaxButtonLoading}
+                disabled={disabled || isMaxButtonLoading}
               >
                 {isMaxButtonLoading ? (
                   <div className="w-3 h-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
@@ -259,7 +257,7 @@ export const InputTokenAmountV2: FC<Props> = ({
           <div className="text-sm text-gray-500">${inputUsdValue}</div>
           {balance !== undefined && symbol && (
             <div className="text-sm text-gray-500">
-              Balance: {exactToSimple(displayBalance ?? balance, decimals ?? input[0].decimals)} {symbol}
+              Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
             </div>
           )}
         </div>
