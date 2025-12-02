@@ -1,4 +1,4 @@
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { useNotifications } from '@lib/contexts/useNotifications'
 import { useTransactionStatusPoller } from '@lib/hooks/useTransactionStatusPoller'
 import { IconArrow } from '@lib/icons/IconArrow'
@@ -113,14 +113,14 @@ function NotificationContent({
     <div className={'flex gap-4'}>
       <div className={'flex flex-col items-center gap-3'}>
         <div className={'relative'}>
-          <ImageWithFallback
-            alt={notification.fromTokenName || 'Token'}
-            unoptimized
+          <TokenLogo
             src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
             altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-            quality={90}
+            tokenSymbol={notification.fromTokenName}
             width={32}
             height={32}
+            className="rounded-full"
+            loading="eager"
           />
           <div className={'absolute bottom-6 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
             <Image
@@ -136,16 +136,16 @@ function NotificationContent({
 
         {notification.toTokenName && notification.toAddress && (
           <div className={'relative'}>
-            <ImageWithFallback
-              alt={notification.toTokenName || 'Token'}
-              unoptimized
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress}/logo-128.png`}
-              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress}/logo-128.png`}
-              quality={90}
+            <TokenLogo
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
+              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
+              tokenSymbol={notification.toTokenName}
               width={32}
               height={32}
+              className="rounded-full"
+              loading="eager"
             />
-            <div className={'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
+            <div className={'absolute bottom-6 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
               <Image
                 width={14}
                 height={14}
