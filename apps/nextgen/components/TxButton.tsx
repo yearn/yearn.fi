@@ -23,15 +23,7 @@ type Props = {
   addNotification?: (type: string, hash?: string, transactionName?: string) => void
 }
 
-type ButtonState =
-  | 'loading'
-  | 'success'
-  | 'error'
-  | 'wrongChain'
-  | 'default'
-  | 'simulating'
-  | 'approved'
-  | 'notConnected'
+type ButtonState = 'loading' | 'success' | 'error' | 'default' | 'simulating' | 'approved' | 'notConnected'
 
 const spinnerStyle = {
   animation: 'spin 1s linear infinite',
@@ -54,10 +46,11 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
 }) => {
   const writeContract = useWriteContract()
   const chains = useChains()
-  const { switchChain } = useSwitchChain()
+  const { switchChainAsync, isPending: isChainSwitching } = useSwitchChain()
   const [ensoTxHash, setEnsoTxHash] = useState<`0x${string}` | undefined>()
   const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash })
   const [override, setOverride] = useState<ButtonState>()
+  const [isSigning, setIsSigning] = useState(false)
   const client = usePublicClient()
   const ref = useRef<(number | undefined)[]>(undefined)
   const { address: account } = useAccount()
@@ -73,10 +66,11 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   // For Enso orders, check if we're waiting for transaction
   const isEnsoOrder = !!(prepareWrite.data?.request as any)?.__isEnsoOrder
   const isWaitingForEnsoTx = isEnsoOrder && !!(prepareWrite.data?.request as any)?.__waitingForTx
-  const isLoading = override === 'loading' || _loading || (isWaitingForEnsoTx && !!ensoTxHash)
+  const isLoading = override === 'loading' || _loading || (isWaitingForEnsoTx && !!ensoTxHash) || isChainSwitching
   const isSuccess = override === 'success'
 
-  const disabled = wrongNetwork ? false : _disabled || !prepareWrite.isSuccess || isLoading || override === 'error'
+  const disabled =
+    _disabled || (!prepareWrite.isSuccess && !wrongNetwork) || isLoading || isSimulating || override === 'error'
 
   // Clear override states after timeout
   useEffect(() => {
@@ -91,7 +85,6 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   }, [override])
   const ButtonContentType: ButtonState | undefined = (() => {
     if (!account) return 'notConnected'
-    if (wrongNetwork) return 'wrongChain'
     if (override === 'loading' || isLoading || isSimulating) return 'loading'
     if (override === 'success') return 'success'
     if (override === 'error') return 'error'
@@ -170,12 +163,17 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           />
         </svg>
-        <span className="text-neutral-900">{_loading && 'Loading...'}</span>
+        <span className="text-neutral-900">
+          {_loading && transactionName.includes('...')
+            ? transactionName
+            : ensoTxHash || writeContract.data
+              ? 'Confirming...'
+              : isSigning
+                ? 'Signing...'
+                : 'Loading...'}
+        </span>
       </div>
-    ),
-    wrongChain: txChainId
-      ? `Switch to ${chains.find((chain) => chain.id === txChainId)?.name || 'Unknown Chain'}`
-      : 'Wrong chain'
+    )
   }
 
   // Determine button variant based on state
@@ -213,10 +211,16 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
       onClick={async (event: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
         ref.current = [event?.clientX, event?.clientY]
 
-        // Handle chain switching
+        // Handle chain switching automatically
         if (wrongNetwork && txChainId) {
-          switchChain({ chainId: txChainId })
-          return
+          try {
+            setOverride('loading')
+            await switchChainAsync({ chainId: txChainId })
+          } catch (error) {
+            console.error('Failed to switch chain:', error)
+            setOverride('error')
+            return
+          }
         }
 
         const overrides = await (async () => {
@@ -240,6 +244,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
           // Check if this is a Cowswap or Enso order
           if ((prepareWrite.data.request as any).__isCowswapOrder || (prepareWrite.data.request as any).__isEnsoOrder) {
             const customWriteAsync = (prepareWrite.data.request as any).writeContractAsync
+            setIsSigning(true)
             customWriteAsync()
               .then((result: any) => {
                 if (result.orderUID) {
@@ -258,7 +263,11 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                 addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
                 console.error('Transaction failed:', error)
               })
+              .finally(() => {
+                setIsSigning(false)
+              })
           } else {
+            setIsSigning(true)
             writeContract
               .writeContractAsync({ ...prepareWrite.data.request, ...overrides })
               .then((hash) => {
@@ -268,6 +277,9 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                 setOverride('error')
                 addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
                 console.error('Transaction failed:', error)
+              })
+              .finally(() => {
+                setIsSigning(false)
               })
           }
         }

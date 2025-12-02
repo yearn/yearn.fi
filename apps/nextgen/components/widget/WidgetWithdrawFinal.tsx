@@ -9,7 +9,8 @@ import { TxButton } from '@nextgen/components/TxButton'
 import { useSolverEnso } from '@nextgen/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useEnsoOrder } from '@nextgen/hooks/useEnsoOrder'
-import { type FC, Fragment, useEffect, useMemo, useState } from 'react'
+import { useTokens } from '@nextgen/hooks/useTokens'
+import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
 import { type UseSimulateContractReturnType, useAccount, useReadContract, useSimulateContract } from 'wagmi'
@@ -144,7 +145,25 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<'vault' | 'staking' | null>(stakingAddress ? null : 'vault') // Default to vault for smooth UI (prevents balance flickering)
 
-  // Fetch pricePerShare to convert vault tokens to underlying
+  // Fetch priority tokens (asset, vault, and optionally staking)
+  const priorityTokenAddresses = useMemo(() => {
+    const addresses: (Address | undefined)[] = [assetAddress, vaultAddress]
+    if (stakingAddress) {
+      addresses.push(stakingAddress)
+    }
+    return addresses
+  }, [assetAddress, vaultAddress, stakingAddress])
+
+  const {
+    tokens: priorityTokens,
+    isLoading: isLoadingPriorityTokens,
+    refetch: refetchPriorityTokens
+  } = useTokens(priorityTokenAddresses, chainId)
+
+  // Extract priority tokens
+  const [assetToken, vault, stakingToken] = priorityTokens
+
+  // Fetch pricePerShare to convert vault shares to underlying
   const { data: pricePerShare } = useReadContract({
     address: vaultAddress,
     abi: vaultAbi,
@@ -165,20 +184,15 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   const withdrawToken = selectedToken || assetAddress
   const destinationChainId = selectedChainId || chainId
 
-  // Get tokens from wallet
-  const vault = useMemo(() => getToken({ address: vaultAddress, chainID: chainId }), [getToken, vaultAddress, chainId])
-  const stakingToken = useMemo(
-    () => (stakingAddress ? getToken({ address: stakingAddress, chainID: chainId }) : undefined),
-    [getToken, stakingAddress, chainId]
-  )
-  const outputToken = useMemo(
-    () => getToken({ address: withdrawToken, chainID: destinationChainId }),
-    [getToken, withdrawToken, destinationChainId]
-  )
-  const assetToken = useMemo(
-    () => getToken({ address: assetAddress, chainID: chainId }),
-    [getToken, assetAddress, chainId]
-  )
+  // Get output token from wallet context (for cross-chain or other tokens)
+  const outputToken = useMemo(() => {
+    // If the selected token is one of our priority tokens on the same chain, use it
+    if (destinationChainId === chainId && withdrawToken === assetAddress) {
+      return assetToken
+    }
+    // Otherwise, get it from the wallet context
+    return getToken({ address: withdrawToken, chainID: destinationChainId })
+  }, [getToken, withdrawToken, destinationChainId, chainId, assetAddress, assetToken])
 
   // Determine available withdrawal sources
   const hasVaultBalance = vault?.balance.raw && vault.balance.raw > 0n
@@ -223,7 +237,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
 
   // Get settings from Yearn context
-  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
+  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled, getPrice } = useYearn()
 
   // Determine source token based on withdrawal source selection
   const sourceToken = useMemo(() => {
@@ -272,6 +286,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     periphery: {
       prepareApproveEnabled,
       route,
+      error,
       isLoadingRoute,
       expectedOut,
       minExpectedOut,
@@ -309,7 +324,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     if (requiredVaultTokens > totalVaultBalance.raw) {
       return 'Insufficient balance'
     }
-    if (!route && !isLoadingRoute && withdrawAmount.debouncedBn > 0n && !withdrawAmount.isDebouncing) {
+    if (error && !route && !isLoadingRoute && withdrawAmount.debouncedBn > 0n && !withdrawAmount.isDebouncing) {
       return 'Unable to find route'
     }
     return null
@@ -320,6 +335,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     totalVaultBalance,
     requiredVaultTokens,
     route,
+    error,
     isLoadingRoute,
     hasBothBalances,
     withdrawalSource
@@ -393,38 +409,74 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   // Check if we're waiting for transaction
   const isWaitingForTx = !!txHash && !receiptSuccess
 
-  // Handle successful transaction receipt
-  useEffect(() => {
-    if (receiptSuccess && txHash) {
-      setWithdrawInput('')
-      // Refresh wallet balances
-      const tokensToRefresh = [
-        { address: withdrawToken, chainID: destinationChainId },
-        { address: vaultAddress, chainID: chainId }
-      ]
-      if (stakingAddress) {
-        tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
-      }
-      refreshWalletBalances(tokensToRefresh)
-      onWithdrawSuccess?.()
+  // Shared function to handle successful withdrawals
+  const handleWithdrawSuccess = useCallback(() => {
+    setWithdrawInput('')
+    // Refresh wallet balances
+    const tokensToRefresh = [
+      { address: withdrawToken, chainID: destinationChainId },
+      { address: vaultAddress, chainID: chainId }
+    ]
+    if (stakingAddress) {
+      tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
     }
+    refreshWalletBalances(tokensToRefresh)
+    refetchPriorityTokens()
+    onWithdrawSuccess?.()
   }, [
-    receiptSuccess,
-    txHash,
     setWithdrawInput,
-    destinationChainId,
-    refreshWalletBalances,
     withdrawToken,
+    destinationChainId,
     vaultAddress,
     chainId,
-    onWithdrawSuccess,
-    stakingAddress
+    stakingAddress,
+    refreshWalletBalances,
+    refetchPriorityTokens,
+    onWithdrawSuccess
   ])
+
+  // Handle successful transaction receipt for Enso orders
+  useEffect(() => {
+    if (receiptSuccess && txHash) {
+      handleWithdrawSuccess()
+    }
+  }, [receiptSuccess, txHash, handleWithdrawSuccess])
+
+  const actionLabel = useMemo(() => {
+    if (isUnstake) {
+      return 'You will unstake'
+    }
+    if (withdrawalSource === 'staking') {
+      return 'You will unstake and redeem'
+    }
+    return 'You will redeem'
+  }, [isUnstake, withdrawalSource])
+
+  // Get the real USD price for the asset token (what the user is withdrawing)
+  const assetTokenPrice = useMemo(() => {
+    if (!assetToken?.address || !assetToken?.chainID) return 0
+    return getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
+  }, [assetToken?.address, assetToken?.chainID, getPrice])
+
+  // Get the real USD price for the output token (in case of zap)
+  const outputTokenPrice = useMemo(() => {
+    if (!outputToken?.address || !outputToken?.chainID) return 0
+    return getPrice({ address: toAddress(outputToken.address), chainID: outputToken.chainID }).normalized
+  }, [outputToken?.address, outputToken?.chainID, getPrice])
+
+  // Show loading state while priority tokens are loading
+  if (isLoadingPriorityTokens) {
+    return (
+      <div className="p-6 flex items-center justify-center h-[317px]">
+        <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col relative">
       {/* Settings Popover */}
-      <div className="flex justify-end px-1 pt-1 h-6">
+      <div className="flex justify-end px-6 py-1 h-6">
         <SettingsPopover
           slippage={zapSlippage}
           setSlippage={setZapSlippage}
@@ -473,7 +525,8 @@ export const WidgetWithdrawFinal: FC<Props> = ({
             symbol={assetToken?.symbol || 'tokens'}
             disabled={!!isWaitingForTx || (!!hasBothBalances && !withdrawalSource)}
             errorMessage={withdrawError || undefined}
-            mockUsdPrice={1.0} // Mock USD price for now
+            inputTokenUsdPrice={assetTokenPrice}
+            outputTokenUsdPrice={outputTokenPrice}
             tokenAddress={assetToken?.address}
             tokenChainId={assetToken?.chainID}
             // Show token selector only when no zap is selected (default state)
@@ -532,25 +585,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
         {/* Details */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-gray-500 ">{isUnstake ? 'You will unstake' : 'You will redeem'}</p>
-            <p className="text-sm text-gray-900">
-              {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
-                <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
-              ) : (
-                <>
-                  {requiredVaultTokens > 0n
-                    ? formatTAmount({
-                        value: requiredVaultTokens,
-                        decimals: isUnstake ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)
-                      })
-                    : '0'}{' '}
-                  {withdrawalSource === 'staking' && stakingToken ? stakingToken.symbol : vaultSymbol}
-                </>
-              )}
-            </p>
-          </div>
-          <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-gray-500">You will receive at least</p>
+            <p className="text-sm text-gray-500 ">{actionLabel}</p>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowWithdrawDetailsModal(true)}
@@ -570,6 +605,37 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                   />
                 </svg>
               </button>
+              <p className="text-sm text-gray-900">
+                {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
+                  <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  <>
+                    {requiredVaultTokens > 0n
+                      ? formatTAmount({
+                          value: requiredVaultTokens,
+                          decimals: isUnstake ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)
+                        })
+                      : '0'}{' '}
+                    {'Vault shares'}
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+          {withdrawToken !== assetAddress && !isUnstake ? (
+            <div className="flex items-center justify-between h-5">
+              <p className="text-sm text-gray-500">You will swap</p>
+              <div className="flex items-center gap-1">
+                <p className="text-sm text-gray-900">
+                  {withdrawAmount.simple} {assetToken?.symbol}
+                </p>
+              </div>
+            </div>
+          ) : null}
+          {/* TODO: This should display You will receive at least only in case of zap. Change this when we support vanilla withdrawals */}
+          <div className="flex items-center justify-between h-5">
+            <p className="text-sm text-gray-500">You will receive at least</p>
+            <div className="flex items-center gap-1">
               <p className="text-sm text-gray-900">
                 {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
@@ -595,6 +661,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
               disabled={!canWithdraw || !!withdrawError}
               tooltip={withdrawError || undefined}
               className="w-full"
+              onSuccess={handleWithdrawSuccess}
             />
           ) : (
             // For regular withdrawals, show approve + withdraw
@@ -602,8 +669,15 @@ export const WidgetWithdrawFinal: FC<Props> = ({
               <TxButton
                 prepareWrite={prepareApprove}
                 transactionName="Approve"
-                disabled={!prepareApproveEnabled || !!withdrawError || isLoadingAnyQuote}
-                tooltip={withdrawError || (isLoadingAnyQuote ? 'Calculating required amount...' : undefined)}
+                disabled={!prepareApproveEnabled || !!withdrawError || isLoadingAnyQuote || isWaitingForTx}
+                tooltip={
+                  withdrawError ||
+                  (isLoadingAnyQuote
+                    ? 'Calculating required amount...'
+                    : isWaitingForTx
+                      ? 'Transaction is confirming...'
+                      : undefined)
+                }
                 className="w-full"
               />
               <TxButton
@@ -617,9 +691,16 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                         ? 'Cross-chain Withdraw'
                         : 'Withdraw'
                 }
-                disabled={!canWithdraw || isLoadingAnyQuote}
-                loading={isLoadingAnyQuote}
-                tooltip={withdrawError || (!isAllowanceSufficient ? 'Please approve token first' : undefined)}
+                disabled={!canWithdraw || isLoadingAnyQuote || isWaitingForTx}
+                loading={isLoadingAnyQuote || isWaitingForTx}
+                tooltip={
+                  withdrawError ||
+                  (!isAllowanceSufficient
+                    ? 'Please approve token first'
+                    : isWaitingForTx
+                      ? 'Transaction is confirming...'
+                      : undefined)
+                }
                 className="w-full"
               />
             </>

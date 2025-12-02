@@ -2,7 +2,7 @@ import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { cl, exactToSimple, simpleToExact } from '@lib/utils'
 import type { useDebouncedInput } from 'apps/nextgen/hooks/useDebouncedInput'
 import type { useInput } from 'apps/nextgen/hooks/useInput'
-import type { ChangeEvent, FC } from 'react'
+import { type ChangeEvent, type FC, useMemo } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 
@@ -19,8 +19,9 @@ interface Props {
   onInputChange?: (value: bigint) => void
   showTokenSelector?: boolean
   onTokenSelectorClick?: () => void
-  // Mock USD price for now
-  mockUsdPrice?: number
+  // USD prices
+  inputTokenUsdPrice?: number
+  outputTokenUsdPrice?: number
   // Token info for logo
   tokenAddress?: string
   tokenChainId?: number
@@ -51,7 +52,8 @@ export const InputTokenAmountV2: FC<Props> = ({
   title = 'Amount',
   showTokenSelector = false,
   onTokenSelectorClick,
-  mockUsdPrice = 1.0,
+  inputTokenUsdPrice = 0,
+  outputTokenUsdPrice = 0,
   tokenAddress,
   tokenChainId,
   hidePercentageButtons = false,
@@ -84,8 +86,14 @@ export const InputTokenAmountV2: FC<Props> = ({
     }
   }
 
-  // Calculate USD value
-  const usdValue = formValue ? (parseFloat(formValue) * mockUsdPrice).toFixed(2) : '0.00'
+  // Calculate USD value for input token
+  const inputUsdValue = formValue ? (parseFloat(formValue) * inputTokenUsdPrice).toFixed(2) : '0.00'
+
+  // Calculate USD value for output token (when zapping)
+  const outputUsdValue = useMemo(() => {
+    if (!zapToken?.expectedAmount || !outputTokenUsdPrice) return '0.00'
+    return (parseFloat(zapToken.expectedAmount) * outputTokenUsdPrice).toFixed(2)
+  }, [zapToken?.expectedAmount, outputTokenUsdPrice])
 
   // Calculate percentage amounts
   const handlePercentageClick = (percentage: number) => {
@@ -234,7 +242,7 @@ export const InputTokenAmountV2: FC<Props> = ({
 
         {/* Bottom row - USD value and balance */}
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">${usdValue}</div>
+          <div className="text-sm text-gray-500">${inputUsdValue}</div>
           {balance !== undefined && symbol && (
             <div className="text-sm text-gray-500">
               Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
@@ -300,7 +308,7 @@ export const InputTokenAmountV2: FC<Props> = ({
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-500">${usdValue}</div>
+              <div className="text-sm text-gray-500">${outputUsdValue}</div>
               {/* Remove Zap button */}
               {onRemoveZap && (
                 <button

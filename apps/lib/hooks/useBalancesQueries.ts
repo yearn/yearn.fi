@@ -1,3 +1,4 @@
+import { useDeepCompareMemo } from '@react-hookz/web'
 import { type UseQueryOptions, useQueries } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import type { TAddress } from '../types/address'
@@ -58,7 +59,7 @@ export async function fetchTokenBalancesWithRateLimit(
   if (!userAddress || isZeroAddress(userAddress) || tokens.length === 0) {
     return {}
   }
-
+  // console.log(`[Balance Fetch] Chain ${chainId}, force: ${shouldForceFetch}, tokens: ${tokens.length}`)
   const config = getChainConfig(chainId).rateLimit
 
   // Wait for previous requests on this chain to complete with rate limiting
@@ -107,8 +108,8 @@ export function useBalancesQueries(
   chainSuccessStatus: TNDict<boolean>
   chainErrorStatus: TNDict<boolean>
 } {
-  // Group tokens by chainId
-  const tokensByChain = useMemo(() => {
+  // Group tokens by chainId - use deep comparison to prevent unnecessary recalculation
+  const tokensByChain = useDeepCompareMemo(() => {
     const grouped: TNDict<TUseBalancesTokens[]> = {}
     const uniqueTokens: TNDict<Set<TAddress>> = {}
 
@@ -128,20 +129,23 @@ export function useBalancesQueries(
     return grouped
   }, [tokens])
 
-  // Create queries for each chain
-  const queries = useQueries({
-    queries: Object.entries(tokensByChain).map(([chainIdStr, chainTokens]) => {
+  // Memoize the queries array to prevent recreation
+  const queryOptions = useDeepCompareMemo(() => {
+    return Object.entries(tokensByChain).map(([chainIdStr, chainTokens]) => {
       const chainId = Number(chainIdStr)
       const config = getChainConfig(chainId)
       const tokenAddresses = chainTokens.map((t) => t.address)
+      const queryKey = balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses)
 
-      const queryOptions: UseQueryOptions<
+      // console.log(`Creating query for chain ${chainId}, tokens: ${tokenAddresses.length}, key:`, queryKey)
+
+      const queryOption: UseQueryOptions<
         TDict<TToken>,
         Error,
         TDict<TToken>,
         ReturnType<typeof balanceQueryKeys.byTokens>
       > = {
-        queryKey: balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses),
+        queryKey,
         queryFn: () => fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens),
         enabled: Boolean(
           options?.enabled !== false && userAddress && !isZeroAddress(userAddress) && chainTokens.length > 0
@@ -150,12 +154,19 @@ export function useBalancesQueries(
         gcTime: config.cache.gcTime,
         refetchInterval: false,
         refetchOnWindowFocus: false,
+        refetchOnMount: false, // Don't refetch on mount if data exists
+        refetchOnReconnect: false, // Don't refetch on reconnect
         retry: 3,
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
       }
 
-      return queryOptions
+      return queryOption
     })
+  }, [tokensByChain, userAddress, options?.enabled])
+
+  // Create queries for each chain
+  const queries = useQueries({
+    queries: queryOptions
   })
 
   // Combine results
