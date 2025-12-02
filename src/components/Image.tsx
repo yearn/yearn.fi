@@ -109,7 +109,7 @@ function Image(props: CustomImageProps): ReactElement {
 
   const imageClassName = [
     className,
-    isLoading ? 'opacity-0' : 'opacity-100',
+    isLoading && !hasError ? 'opacity-0' : 'opacity-100',
     'transition-opacity duration-300 ease-in-out'
   ]
     .filter(Boolean)

@@ -4,7 +4,6 @@ import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useMemo } from 'react'
 import { serialize } from 'wagmi'
-import { useWeb3 } from '../contexts/useWeb3'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
@@ -49,7 +48,6 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   children: ReactElement
   shouldWorkOnTestnet?: boolean
 }): ReactElement {
-  const { chainID } = useWeb3()
   const { vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, getPrice } = useYearn()
   const allTokens = useYearnTokens({ vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList })
   const {
@@ -59,8 +57,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     isLoading
   } = useBalancesWithQuery({
     tokens: allTokens,
-    priorityChainID: chainID
+    priorityChainID: 1
   })
+  // console.log('in WalletContext')
   const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
     const _tokens = { ...tokensRaw }
 

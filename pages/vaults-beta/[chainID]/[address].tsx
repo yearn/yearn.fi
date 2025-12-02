@@ -8,7 +8,6 @@ import { cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { Widget } from '@nextgen/components/widget'
-import { WidgetRewards } from '@nextgen/components/widget/WidgetRewards'
 import { WidgetActionType } from '@nextgen/types'
 import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHeader'
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
@@ -203,28 +202,31 @@ function Index(): ReactElement | null {
       <div className={'relative mx-auto w-full max-w-[1232px]'}>
         <section className={'flex flex-col-reverse md:flex-row gap-6 md:items-start mt-4'}>
           <div className={'w-full md:w-[65%] h-[2000px]'}>
-            <div className={'w-full h-full bg-neutral-200 rounded-lg'}>
+            {/* <div className={'w-full h-full bg-neutral-200 rounded-lg'}>
               <div className="h-[1000px]"></div>
-            </div>
+            </div> */}
           </div>
           <div className={'w-full md:w-[35%] md:sticky md:top-4 md:self-start'}>
-            <div className={'w-full h-[400px] bg-neutral-200 rounded-lg'}>
-              <div className="flex flex-col gap-2">
-                <WidgetRewards vaultType="v3" vaultAddress={currentVault.address} handleRewardsSuccess={() => {}} />
+            <div className={'w-full bg-neutral-200 rounded-lg'}>
+              <div className="flex flex-col gap-2 h-full">
+                {/* <WidgetRewards vaultType="v3" vaultAddress={currentVault.address} handleRewardsSuccess={() => {}} /> */}
+
                 <Widget
                   vaultType={isV3 ? 'v3' : 'v2'}
                   vaultAddress={currentVault.address}
-                  actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
+                  currentVault={currentVault}
+                  gaugeAddress={currentVault.staking.address}
+                  actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
                   chainId={Number(params.chainID)}
                 />
-                {currentVault.staking.available && (
-                  <Widget
-                    chainId={Number(params.chainID)}
-                    vaultType={isV3 ? 'v3' : 'v2'}
-                    vaultAddress={currentVault.address}
-                    actions={[WidgetActionType.Stake, WidgetActionType.Unstake]}
-                  />
-                )}
+
+                {/* <Widget
+                  vaultType={isV3 ? 'v3' : 'v2'}
+                  vaultAddress={currentVault.address}
+                  gaugeAddress={currentVault.staking.address}
+                  actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
+                  chainId={Number(params.chainID)}
+                /> */}
               </div>
             </div>
           </div>
