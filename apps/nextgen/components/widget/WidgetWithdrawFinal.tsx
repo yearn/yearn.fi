@@ -333,7 +333,12 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     chainId,
     destinationChainId,
     decimalsOut: outputToken?.decimals ?? 18,
-    enabled: routeType === 'ENSO' && !!withdrawToken && !withdrawAmount.isDebouncing && requiredShares > 0n,
+    enabled:
+      routeType === 'ENSO' &&
+      !!withdrawToken &&
+      !withdrawAmount.isDebouncing &&
+      requiredShares > 0n &&
+      withdrawAmount.bn > 0n, // Ensure current input is also > 0 to prevent fetching with stale debounced value
     slippage: zapSlippage * 100 // Convert percentage to basis points
   })
 
@@ -343,6 +348,23 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     if (routeType === 'DIRECT_UNSTAKE') return directUnstake
     return ensoFlow
   }, [routeType, directWithdraw, directUnstake, ensoFlow])
+
+  // Combined loading state to prevent flickering between debouncing and route loading
+  // Keep loading state active for a short time after debouncing ends to prevent gap
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false)
+
+  useEffect(() => {
+    if (withdrawAmount.isDebouncing || activeFlow.periphery.isLoadingRoute) {
+      setIsLoadingQuote(true)
+      return
+    }
+
+    // Add a small delay before hiding loading state to prevent flickering
+    const timeout = setTimeout(() => {
+      setIsLoadingQuote(false)
+    }, 100)
+    return () => clearTimeout(timeout)
+  }, [withdrawAmount.isDebouncing, activeFlow.periphery.isLoadingRoute])
 
   // Error handling
   const withdrawError = useMemo(() => {
@@ -646,7 +668,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                             6
                           )
                         : '0',
-                    isLoading: activeFlow.periphery.isLoadingRoute || withdrawAmount.isDebouncing
+                    isLoading: isLoadingQuote
                   }
                 : undefined
             }
@@ -691,7 +713,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                 </svg>
               </button>
               <p className="text-sm text-gray-900">
-                {activeFlow.periphery.isLoadingRoute ? (
+                {isLoadingQuote ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
                 ) : (
                   <>
@@ -721,7 +743,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
             <p className="text-sm text-gray-500">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
             <div className="flex items-center gap-1">
               <p className="text-sm text-gray-900">
-                {activeFlow.periphery.isLoadingRoute ? (
+                {isLoadingQuote ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
                 ) : activeFlow.periphery.expectedOut > 0n ? (
                   `${formatAmount(
@@ -745,12 +767,9 @@ export const WidgetWithdrawFinal: FC<Props> = ({
             <TxButton
               prepareWrite={activeFlow.actions.prepareApprove}
               transactionName="Approve"
-              disabled={
-                !activeFlow.periphery.prepareApproveEnabled || !!withdrawError || activeFlow.periphery.isLoadingRoute
-              }
-              tooltip={
-                withdrawError || (activeFlow.periphery.isLoadingRoute ? 'Calculating required amount...' : undefined)
-              }
+              disabled={!activeFlow.periphery.prepareApproveEnabled || !!withdrawError || isLoadingQuote}
+              tooltip={withdrawError || (isLoadingQuote ? 'Calculating required amount...' : undefined)}
+              loading={isLoadingQuote}
               className="w-full"
               notificationParams={approveNotificationParams}
             />
@@ -759,7 +778,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
             prepareWrite={activeFlow.actions.prepareWithdraw}
             transactionName={transactionName}
             disabled={!activeFlow.periphery.prepareWithdrawEnabled || !!withdrawError}
-            loading={activeFlow.periphery.isLoadingRoute}
+            loading={isLoadingQuote}
             tooltip={
               withdrawError ||
               (!activeFlow.periphery.isAllowanceSufficient && showApprove ? 'Please approve token first' : undefined)

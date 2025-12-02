@@ -1,4 +1,5 @@
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { useWallet } from '@lib/contexts/useWallet'
 import type { TToken } from '@lib/types'
 import { cl, toAddress } from '@lib/utils'
@@ -25,11 +26,13 @@ const TokenItem: FC<{ token: TToken; selected: boolean; onSelect: () => void }> 
       )}
     >
       <div className="flex items-center gap-2">
-        <ImageWithFallback
+        <TokenLogo
           src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${token.chainID}/${token.address?.toLowerCase()}/logo-32.png`}
-          alt={token.symbol ?? ''}
+          tokenSymbol={token.symbol}
+          tokenName={token.name}
           width={24}
           height={24}
+          className="rounded-full"
         />
         <div className="text-left">
           <div className="text-sm font-medium text-gray-900">{token.symbol}</div>

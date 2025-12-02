@@ -1,4 +1,4 @@
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { useNotifications } from '@lib/contexts/useNotifications'
 import { useTransactionStatusPoller } from '@lib/hooks/useTransactionStatusPoller'
 import { IconArrow } from '@lib/icons/IconArrow'
@@ -103,22 +103,17 @@ function NotificationContent({
   return (
     <div className={'flex gap-4'}>
       <div className={'flex flex-col items-center gap-3'}>
-        <div className={'relative flex size-10 items-center justify-center'}>
-          <ImageWithFallback
-            alt={notification.fromTokenName || 'Token'}
-            unoptimized
-            className={'size-8 rounded-full border border-neutral-300 bg-neutral-200/40 object-cover'}
+        <div className={'relative'}>
+          <TokenLogo
             src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
             altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-            quality={90}
+            tokenSymbol={notification.fromTokenName}
             width={32}
             height={32}
+            className="rounded-full"
+            loading="eager"
           />
-          <div
-            className={
-              'absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-white shadow-sm'
-            }
-          >
+          <div className={'absolute bottom-6 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
             <Image
               className={'object-contain'}
               width={14}
@@ -132,22 +127,17 @@ function NotificationContent({
         {notification.toTokenName && <IconArrow className={'size-4 rotate-135'} />}
 
         {notification.toTokenName && notification.toAddress && (
-          <div className={'relative flex size-10 items-center justify-center'}>
-            <ImageWithFallback
-              alt={notification.toTokenName || 'Token'}
-              unoptimized
-              className={'size-8 rounded-full border border-neutral-300 bg-neutral-200/40 object-cover'}
+          <div className={'relative'}>
+            <TokenLogo
               src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
               altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
-              quality={90}
+              tokenSymbol={notification.toTokenName}
               width={32}
               height={32}
+              className="rounded-full"
+              loading="eager"
             />
-            <div
-              className={
-                'absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-white shadow-sm'
-              }
-            >
+            <div className={'absolute bottom-6 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
               <Image
                 className={'object-contain'}
                 width={14}
