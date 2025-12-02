@@ -17,7 +17,8 @@ export interface DebouncedInputValue {
 export type UseDebouncedInputReturnValue = [
   DebouncedInputValue,
   (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | undefined) => void,
-  (formValue: string) => void
+  (formValue: string) => void,
+  (debouncedFormValue: string) => void
 ]
 
 // match escaped "." characters via in a non-capturing group
@@ -48,6 +49,7 @@ export const useDebouncedInput = (decimals = 18, debounceMs = 500): UseDebounced
   const activity = useState(false)
 
   // Debounce the form value
+  // biome-ignore lint/correctness/useExhaustiveDependencies: debouncedFormValue is extra
   useEffect(() => {
     if (formValue === debouncedFormValue) {
       setIsDebouncing(false)
@@ -63,7 +65,7 @@ export const useDebouncedInput = (decimals = 18, debounceMs = 500): UseDebounced
     return () => {
       clearTimeout(handler)
     }
-  }, [formValue, debouncedFormValue, debounceMs])
+  }, [formValue, debounceMs])
 
   // Handle callback, no change if number is invalid
   const handleChange = useCallback(
@@ -111,5 +113,5 @@ export const useDebouncedInput = (decimals = 18, debounceMs = 500): UseDebounced
     }
   }, [decimals, formValue, debouncedFormValue, activity[0], isDebouncing])
 
-  return [state, handleChange, setFormValue]
+  return [state, handleChange, setFormValue, setDebouncedFormValue]
 }

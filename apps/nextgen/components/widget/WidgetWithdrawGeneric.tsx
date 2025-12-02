@@ -359,7 +359,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
 
   const {
     periphery: { route: reverseRoute, isLoadingRoute: isLoadingReverseRoute },
-    getRoute: getReverseRoute
+    methods: { getRoute: getReverseRoute }
   } = useSolverEnso({
     tokenIn: withdrawToken || assetAddress, // Fallback to asset address to prevent errors
     tokenOut: sourceToken, // We want to know how many vault tokens
@@ -423,8 +423,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
   const {
     actions: { prepareApprove },
     periphery: { prepareApproveEnabled, route, isLoadingRoute, minExpectedOut, routerAddress, isCrossChain, allowance },
-    getRoute,
-    getEnsoTransaction
+    methods: { getRoute, getEnsoTransaction }
   } = useSolverEnso({
     tokenIn: sourceToken,
     tokenOut: withdrawToken,

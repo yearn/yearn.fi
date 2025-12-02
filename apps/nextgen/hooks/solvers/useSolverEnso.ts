@@ -51,6 +51,7 @@ interface UseSolverEnsoReturn {
     expectedOut: TNormalizedBN
     minExpectedOut: TNormalizedBN
     allowance: bigint
+    isAllowanceSufficient: boolean
     route: EnsoRouteResponse | undefined
     error: EnsoError | undefined
     isLoadingRoute: boolean
@@ -58,8 +59,10 @@ interface UseSolverEnsoReturn {
     isCrossChain: boolean
     routerAddress: Address | undefined
   }
-  getRoute: () => Promise<void>
-  getEnsoTransaction: () => EnsoRouteResponse['tx'] | undefined
+  methods: {
+    getRoute: () => Promise<void>
+    getEnsoTransaction: () => EnsoRouteResponse['tx'] | undefined
+  }
 }
 
 export const useSolverEnso = ({
@@ -120,7 +123,7 @@ export const useSolverEnso = ({
         setError(data)
         throw new Error(`Enso API error: ${data.message}`)
       }
-
+      setError(undefined)
       setRoute(data)
     } catch (error) {
       console.error('Failed to get Enso route:', error)
@@ -160,6 +163,7 @@ export const useSolverEnso = ({
       expectedOut,
       minExpectedOut,
       allowance,
+      isAllowanceSufficient,
       route,
       error,
       isLoadingRoute,
@@ -167,7 +171,9 @@ export const useSolverEnso = ({
       isCrossChain,
       routerAddress
     },
-    getRoute,
-    getEnsoTransaction
+    methods: {
+      getRoute,
+      getEnsoTransaction
+    }
   }
 }

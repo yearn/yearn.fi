@@ -1,4 +1,4 @@
-import type { TNormalizedBN } from '@lib/types'
+import type { TAddress, TNormalizedBN } from '@lib/types'
 import type { UseSimulateContractReturnType } from 'wagmi'
 
 export type T<Actions, Periphery> = {
@@ -53,6 +53,42 @@ export type UseWithdrawReturn = T<
   }
 >
 
+// Unified interface for WidgetDepositFinal flows (direct deposit, direct stake, Enso)
+export type UseWidgetDepositFlowReturn = T<
+  {
+    prepareApprove: UseSimulateContractReturnType
+    prepareDeposit: UseSimulateContractReturnType
+  },
+  {
+    prepareApproveEnabled: boolean
+    prepareDepositEnabled: boolean
+    isAllowanceSufficient: boolean
+    expectedOut: bigint
+    isLoadingRoute: boolean
+    isCrossChain: boolean
+    routerAddress?: TAddress
+    error?: string
+  }
+>
+
+// Unified interface for WidgetWithdrawFinal flows (direct withdraw, direct unstake, Enso)
+export type UseWidgetWithdrawFlowReturn = T<
+  {
+    prepareWithdraw: UseSimulateContractReturnType
+    prepareApprove?: UseSimulateContractReturnType // Optional: only needed for ENSO withdrawals
+  },
+  {
+    prepareWithdrawEnabled: boolean
+    prepareApproveEnabled?: boolean // Optional: only needed for ENSO withdrawals
+    isAllowanceSufficient: boolean // always true for direct withdraw (no approval needed)
+    expectedOut: bigint
+    isLoadingRoute: boolean
+    isCrossChain: boolean
+    routerAddress?: TAddress
+    error?: string
+  }
+>
+
 export enum WidgetActionType {
   Deposit = 'deposit',
   Withdraw = 'withdraw',
@@ -67,3 +103,9 @@ export enum WidgetActionType {
   DepositFinal = 'deposit final',
   WithdrawFinal = 'withdraw final'
 }
+
+export type {
+  TNotificationActionParams,
+  TNotificationTokenOption,
+  TTxButtonNotificationParams
+} from './notifications'

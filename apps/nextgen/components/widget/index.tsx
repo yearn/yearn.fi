@@ -182,6 +182,7 @@ export const Widget: FC<Props> = ({
             chainId={chainId}
             vaultAPR={currentVault?.apr?.forwardAPR?.netAPR || 0}
             vaultSymbol={currentVault?.symbol || ''}
+            stakingSource={currentVault?.staking?.source}
             handleDepositSuccess={handleSuccess}
           />
         )

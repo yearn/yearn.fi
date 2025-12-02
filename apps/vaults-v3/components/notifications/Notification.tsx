@@ -49,7 +49,12 @@ function NotificationContent({
   fromVault?: TYDaemonVault
   toVault?: TYDaemonVault
 }): ReactElement {
-  const chainName = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)?.name || 'Unknown'
+  const fromChainName = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)?.name || 'Unknown'
+  const toChainName = notification.toChainId
+    ? SUPPORTED_NETWORKS.find((network) => network.id === notification.toChainId)?.name || 'Unknown'
+    : undefined
+  const isCrossChain = !!notification.toChainId && notification.toChainId !== notification.chainId
+
   const explorerBaseURI = useMemo(() => {
     const chain = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)
     return chain?.blockExplorers?.default?.url || 'https://etherscan.io'
@@ -132,8 +137,8 @@ function NotificationContent({
               alt={notification.toTokenName || 'Token'}
               unoptimized
               className={'size-8 rounded-full border border-neutral-300 bg-neutral-200/40 object-cover'}
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
-              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
+              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
               quality={90}
               width={32}
               height={32}
@@ -148,7 +153,7 @@ function NotificationContent({
                 width={14}
                 height={14}
                 alt={'chain'}
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${notification.chainId}/logo.svg`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${notification.toChainId || notification.chainId}/logo.svg`}
               />
             </div>
           </div>
@@ -216,8 +221,19 @@ function NotificationContent({
               </p>
             </>
           )}
-          <p>{'Chain:'}</p>
-          <p className={'text-right font-bold'}>{chainName}</p>
+          {isCrossChain ? (
+            <>
+              <p>{'From chain:'}</p>
+              <p className={'text-right font-bold'}>{fromChainName}</p>
+              <p>{'To chain:'}</p>
+              <p className={'text-right font-bold'}>{toChainName}</p>
+            </>
+          ) : (
+            <>
+              <p>{'Chain:'}</p>
+              <p className={'text-right font-bold'}>{fromChainName}</p>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -278,6 +294,8 @@ export const Notification = memo(function Notification({
         return 'Withdraw'
       case 'zap':
         return 'Zap'
+      case 'crosschain zap':
+        return 'Cross-chain Zap'
       case 'deposit and stake':
         return 'Deposit & Stake'
       case 'stake':
