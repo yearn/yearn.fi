@@ -11,7 +11,7 @@ import { useEnsoDeposit } from '@nextgen/hooks/actions/useEnsoDeposit'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import type { TTxButtonNotificationParams } from '@nextgen/types'
-import { type FC, Fragment, useCallback, useMemo, useState } from 'react'
+import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
@@ -299,7 +299,7 @@ export const WidgetDepositFinal: FC<Props> = ({
 
   // Check if the selected token is ETH (native token)
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
-  console.log(depositAmount.debouncedBn)
+
   // Deposit flow using Enso - now uses the unified hook
   const ensoFlow = useEnsoDeposit({
     vaultAddress: destinationToken,
@@ -309,10 +309,9 @@ export const WidgetDepositFinal: FC<Props> = ({
     chainId: sourceChainId,
     destinationChainId: chainId, // Vault is always on the original chain
     decimalsOut: vault?.decimals ?? 18,
-    enabled: routeType === 'ENSO' && !!depositToken && !depositAmount.isDebouncing,
+    enabled: routeType === 'ENSO' && !!depositToken && depositAmount.debouncedBn > 0n && depositAmount.bn > 0n, // Ensure current input is also > 0 to prevent fetching with stale debounced value
     slippage: zapSlippage * 100 // Convert percentage to basis points
   })
-  console.log(ensoFlow)
   // Select active flow based on routing type - all hooks return UseWidgetDepositFlowReturn
   const activeFlow = useMemo(() => {
     if (routeType === 'DIRECT_DEPOSIT') return directDeposit
@@ -491,6 +490,24 @@ export const WidgetDepositFinal: FC<Props> = ({
     refetchPriorityTokens,
     onDepositSuccess
   ])
+  console.log(activeFlow.periphery.isLoadingRoute, depositAmount.isDebouncing)
+
+  // Combined loading state to prevent flickering between debouncing and route loading
+  // Keep loading state active for a short time after debouncing ends to prevent gap
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false)
+
+  useEffect(() => {
+    if (depositAmount.isDebouncing || activeFlow.periphery.isLoadingRoute) {
+      setIsLoadingQuote(true)
+      return
+    }
+
+    // Add a small delay before hiding loading state to prevent flickering
+    const timeout = setTimeout(() => {
+      setIsLoadingQuote(false)
+    }, 100)
+    return () => clearTimeout(timeout)
+  }, [depositAmount.isDebouncing, activeFlow.periphery.isLoadingRoute])
 
   const estimatedAnnualReturn = useMemo(() => {
     if (depositAmount.bn === 0n || vaultAPR === 0) return '0'
@@ -517,9 +534,7 @@ export const WidgetDepositFinal: FC<Props> = ({
     depositAmount.isDebouncing,
     depositAmount.bn
   ])
-  console.log(expectedOutInSelectedToken)
-  console.log(depositAmount.debouncedBn)
-  console.log(routeType)
+
   // Get the real USD price for the input token
   const inputTokenPrice = useMemo(() => {
     if (!inputToken?.address || !inputToken?.chainID) return 0
@@ -599,7 +614,7 @@ export const WidgetDepositFinal: FC<Props> = ({
             <div className="flex items-center justify-between h-5">
               <p className="text-sm text-gray-500">{'For at least'}</p>
               <p className="text-sm text-gray-900">
-                {activeFlow.periphery.isLoadingRoute || depositAmount.isDebouncing ? (
+                {isLoadingQuote ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
                 ) : expectedOutInSelectedToken > 0n ? (
                   `${formatTAmount({
@@ -634,7 +649,7 @@ export const WidgetDepositFinal: FC<Props> = ({
                 </svg>
               </button>
               <p className="text-sm text-gray-900">
-                {activeFlow.periphery.isLoadingRoute || depositAmount.isDebouncing ? (
+                {isLoadingQuote ? (
                   <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
                 ) : depositAmount.bn > 0n && activeFlow.periphery.expectedOut > 0n ? (
                   `${formatAmount(Number(formatUnits(activeFlow.periphery.expectedOut, vault?.decimals ?? 18)))} Vault shares`
@@ -682,6 +697,7 @@ export const WidgetDepositFinal: FC<Props> = ({
               transactionName="Approve"
               disabled={!activeFlow.periphery.prepareApproveEnabled || !!depositError}
               tooltip={depositError || undefined}
+              loading={isLoadingQuote}
               className="w-full"
               notificationParams={approveNotificationParams}
             />
@@ -689,7 +705,7 @@ export const WidgetDepositFinal: FC<Props> = ({
           <TxButton
             prepareWrite={activeFlow.actions.prepareDeposit}
             transactionName={
-              activeFlow.periphery.isLoadingRoute || depositAmount.isDebouncing
+              isLoadingQuote
                 ? 'Finding route...'
                 : !activeFlow.periphery.isAllowanceSufficient && !isNativeToken
                   ? 'Approve First'
@@ -699,8 +715,8 @@ export const WidgetDepositFinal: FC<Props> = ({
                       ? 'Cross-chain Deposit'
                       : 'Deposit'
             }
-            disabled={!canDeposit || activeFlow.periphery.isLoadingRoute || depositAmount.isDebouncing}
-            loading={activeFlow.periphery.isLoadingRoute || depositAmount.isDebouncing}
+            disabled={!canDeposit}
+            loading={isLoadingQuote}
             tooltip={
               depositError ||
               (!activeFlow.periphery.isAllowanceSufficient && !isNativeToken ? 'Please approve token first' : undefined)
