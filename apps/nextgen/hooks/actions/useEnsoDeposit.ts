@@ -69,7 +69,9 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
         isCrossChain: ensoFlow.periphery.isCrossChain,
         routerAddress: ensoFlow.periphery.routerAddress,
-        error: ensoFlow.periphery.error?.message
+        error: ensoFlow.periphery.error?.message,
+        tx: ensoFlow.periphery.route?.tx,
+        gas: ensoFlow.periphery.route?.gas
       }
     }),
     [ensoFlow, prepareEnsoOrder, params.amount, isEnsoAllowanceSufficient]

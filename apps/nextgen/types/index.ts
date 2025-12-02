@@ -1,4 +1,5 @@
 import type { TAddress, TNormalizedBN } from '@lib/types'
+import type { Hex } from 'viem'
 import type { UseSimulateContractReturnType } from 'wagmi'
 
 export type T<Actions, Periphery> = {
@@ -66,6 +67,13 @@ export type UseWidgetDepositFlowReturn = T<
     expectedOut: bigint
     isLoadingRoute: boolean
     isCrossChain: boolean
+    tx?: {
+      to: TAddress
+      data: Hex
+      value: string
+      from: TAddress
+    }
+    gas?: string
     routerAddress?: TAddress
     error?: string
   }
@@ -85,6 +93,13 @@ export type UseWidgetWithdrawFlowReturn = T<
     isLoadingRoute: boolean
     isCrossChain: boolean
     routerAddress?: TAddress
+    tx?: {
+      to: TAddress
+      data: Hex
+      value: string
+      from: TAddress
+    }
+    gas?: string
     error?: string
   }
 >

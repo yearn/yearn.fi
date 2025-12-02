@@ -230,16 +230,14 @@ export const WidgetDepositFinal: FC<Props> = ({
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
 
+  // State for MAX button quote fetching
+  const [isFetchingMaxQuote, setIsFetchingMaxQuote] = useState(false)
+
   // Get settings from Yearn context
   const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled, getPrice } = useYearn()
 
-  // Fetch pricePerShare to convert vault shares to underlying
-  const { data: pricePerShare } = useReadContract({
-    address: vaultAddress,
-    abi: vaultAbi,
-    functionName: 'pricePerShare',
-    chainId
-  })
+  // Check if the selected token is ETH (native token)
+  const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
 
   // Determine destination token based on auto-staking setting
   const destinationToken = useMemo(() => {
@@ -250,6 +248,83 @@ export const WidgetDepositFinal: FC<Props> = ({
     // Otherwise, use the vault address
     return vaultAddress
   }, [isAutoStakingEnabled, stakingAddress, vaultAddress])
+
+  // Manual fetch for MAX button - gets gas estimate for full balance
+  const fetchMaxQuote = useCallback(async () => {
+    if (!isNativeToken || !account || !inputToken?.balance.raw || !depositToken) {
+      return
+    }
+
+    setIsFetchingMaxQuote(true)
+    try {
+      const ENSO_API_BASE = 'https://api.enso.finance/api/v1'
+      const ENSO_API_KEY = import.meta.env.VITE_ENSO_API_KEY
+
+      // Determine if cross-chain: source chain differs from vault chain
+      const isCrossChain = sourceChainId !== chainId
+      const params = new URLSearchParams({
+        fromAddress: account,
+        chainId: sourceChainId.toString(),
+        tokenIn: depositToken,
+        tokenOut: destinationToken,
+        amountIn: inputToken.balance.raw.toString(),
+        slippage: (zapSlippage * 100).toString(),
+        ...(isCrossChain && { destinationChainId: chainId.toString() }),
+        receiver: account
+      })
+
+      const response = await fetch(`${ENSO_API_BASE}/shortcuts/route?${params}`, {
+        headers: {
+          Authorization: `Bearer ${ENSO_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        console.error('Enso MAX quote error:', data.message)
+        return
+      }
+
+      // Calculate adjusted balance and set input directly
+      const gasEstimate = BigInt(data.gas)
+      const gasPriceGwei = 20n
+      const gasPrice = gasPriceGwei * 1_000_000_000n
+      const gasReserve = (gasEstimate * gasPrice * 120n) / 100n
+      const rawBalance = inputToken.balance.raw
+
+      if (gasReserve >= rawBalance) {
+        setDepositInput('0')
+      } else {
+        const adjustedBalance = rawBalance - gasReserve
+        setDepositInput(formatUnits(adjustedBalance, inputToken.decimals ?? 18))
+      }
+    } catch (error) {
+      console.error('Failed to fetch MAX quote:', error)
+    } finally {
+      setIsFetchingMaxQuote(false)
+    }
+  }, [
+    isNativeToken,
+    account,
+    inputToken?.balance.raw,
+    inputToken?.decimals,
+    depositToken,
+    destinationToken,
+    sourceChainId,
+    chainId,
+    zapSlippage,
+    setDepositInput
+  ])
+
+  // Fetch pricePerShare to convert vault shares to underlying
+  const { data: pricePerShare } = useReadContract({
+    address: vaultAddress,
+    abi: vaultAbi,
+    functionName: 'pricePerShare',
+    chainId
+  })
 
   // Determine routing type: direct deposit, direct stake, or Enso
   const routeType = useMemo(() => {
@@ -296,9 +371,6 @@ export const WidgetDepositFinal: FC<Props> = ({
     stakingSource,
     enabled: routeType === 'DIRECT_STAKE' && depositAmount.debouncedBn > 0n
   })
-
-  // Check if the selected token is ETH (native token)
-  const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
 
   // Deposit flow using Enso - now uses the unified hook
   const ensoFlow = useEnsoDeposit({
@@ -490,7 +562,6 @@ export const WidgetDepositFinal: FC<Props> = ({
     refetchPriorityTokens,
     onDepositSuccess
   ])
-  console.log(activeFlow.periphery.isLoadingRoute, depositAmount.isDebouncing)
 
   // Combined loading state to prevent flickering between debouncing and route loading
   // Keep loading state active for a short time after debouncing ends to prevent gap
@@ -581,7 +652,9 @@ export const WidgetDepositFinal: FC<Props> = ({
           balance={inputToken?.balance.raw}
           decimals={inputToken?.decimals}
           symbol={inputToken?.symbol}
-          disabled={false}
+          disabled={isFetchingMaxQuote}
+          isMaxButtonLoading={isFetchingMaxQuote}
+          onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
           errorMessage={depositError || undefined}
           showTokenSelector
           inputTokenUsdPrice={inputTokenPrice}
