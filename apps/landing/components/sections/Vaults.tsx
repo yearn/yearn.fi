@@ -73,13 +73,6 @@ const vaultsRows = [
 
 const appRows: TRow[] = [
   {
-    bgClass: 'bg-linear-to-r from-gray-800 to-gray-700',
-    icon: '/landing/apps/veyfi.png',
-    text: 'veYFI',
-    description: 'Earn yield, boost gauges, and take part in governance',
-    href: 'https://veyfi.yearn.fi/'
-  },
-  {
     bgClass: 'bg-linear-to-r from-gray-900 to-gray-800',
     icon: '/landing/apps/ycrv.png',
     text: 'yCRV',
@@ -88,17 +81,24 @@ const appRows: TRow[] = [
   },
   {
     bgClass: 'bg-linear-to-r from-gray-800 to-gray-700',
-    icon: '/landing/apps/yeth.png',
-    text: 'yETH',
-    description: 'A basket of LSTs in a single token',
-    href: 'https://yeth.yearn.fi/'
+    icon: '/landing/apps/factory.png',
+    text: 'Factory Vaults',
+    description: 'Permissionless Curve Autocompounders',
+    href: 'https://yearn.fi/vaults'
   },
   {
     bgClass: 'bg-linear-to-r from-gray-900 to-gray-800',
-    icon: '/landing/apps/bearn.png',
-    text: 'Bearn',
-    description: 'Liquid locker for Berachain',
-    href: 'https://bearn.sucks'
+    icon: '/landing/apps/powerglove.png',
+    text: 'Analytics',
+    description: 'Analytics for all Yearn Vaults',
+    href: 'https://powerglove.yearn.fi'
+  },
+  {
+    bgClass: 'bg-linear-to-r from-gray-800 to-gray-700',
+    icon: '/landing/apps/veyfi.png',
+    text: 'veYFI',
+    description: 'Earn yield, boost gauges, and take part in governance',
+    href: 'https://veyfi.yearn.fi/'
   }
 ]
 

@@ -25,8 +25,7 @@ const partners: TPartner[] = [
   {
     image: '/landing/x/katana.png',
     alt: 'Katana',
-    href: 'https://katana.yearn.space/',
-    size: 40
+    href: 'https://katana.yearn.space/'
   },
   {
     image: '/landing/x/aerodrome.png',
@@ -41,12 +40,11 @@ const partners: TPartner[] = [
   {
     image: '/landing/x/pooltogether.png',
     alt: 'PoolTogether',
-    href: 'https://pooltogether.yearn.space/',
-    size: 40
+    href: 'https://pooltogether.yearn.space/'
   }
 ]
 
-const PartnerLogo: FC<TPartner> = ({ image, alt, href, size = 40 }) => {
+const PartnerLogo: FC<TPartner> = ({ image, alt, href, size = 60 }) => {
   const [isHovered, setIsHovered] = useState(false)
   return (
     <Link href={href} className={'block flex-1'}>
@@ -76,10 +74,10 @@ const PartnerLogo: FC<TPartner> = ({ image, alt, href, size = 40 }) => {
           alt={alt}
           width={size}
           height={size}
-          className={'object-contain'}
+          className={'h-full w-full object-contain'}
           style={{
-            maxWidth: `${size}px`,
-            maxHeight: `${size}px`
+            width: `${size}px`,
+            height: `${size}px`
           }}
         />
       </div>
