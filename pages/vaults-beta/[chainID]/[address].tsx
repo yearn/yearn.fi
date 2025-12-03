@@ -19,11 +19,9 @@ import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
-import { useDevFlags } from '/src/contexts/useDevFlags'
 
 function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
-  const { headerCompressionEnabled: enableHeaderCompression } = useDevFlags()
 
   const { address, isActive } = useWeb3()
   const params = useParams()
@@ -252,24 +250,36 @@ function Index(): ReactElement | null {
   }
 
   return (
-    <div className={'vaults-layout vaults-layout--detail'}>
-      <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-        <header
-          className={cl(
-            'h-full rounded-3xl',
-            'relative flex flex-col items-center justify-center',
-            'md:sticky md:z-30'
-          )}
-          style={{ top: 'var(--header-height)' }}
-        >
-          <VaultDetailsHeader currentVault={currentVault} enableCompression={enableHeaderCompression} />
+    <div className={'vaults-layout vaults-layout--detail rounded-lg'}>
+      <div className={'mx-auto w-full max-w-[1232px] px-4 rounded-lg'}>
+        <header className={cl('h-full rounded-3xl pb-6', 'relative flex flex-col items-center justify-center')}>
+          <VaultDetailsHeader currentVault={currentVault} />
         </header>
 
-        <section className={'grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
-          <div className={'space-y-4 md:col-span-13 pb-4'}>
+        <section className={'grid grid-cols-1 gap-6 md:grid-cols-20 rounded-lg md:items-start bg-app'}>
+          {/* Widget - Shows first on mobile, second on desktop */}
+          <div
+            className={'md:col-span-7 md:col-start-14 md:sticky md:h-fit md:order-2'}
+            style={{ top: 'var(--header-height)' }}
+          >
+            <div>
+              <Widget
+                vaultType={isV3 ? 'v3' : 'v2'}
+                vaultAddress={currentVault.address}
+                currentVault={currentVault}
+                gaugeAddress={currentVault.staking.address}
+                actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
+                chainId={chainId}
+              />
+            </div>
+          </div>
+
+          {/* Content sections - Shows second on mobile, first on desktop */}
+          <div className={'space-y-4 md:col-span-13 pb-4 md:order-1'}>
             {renderableSections.length > 0 ? (
-              <div className={'w-full sticky z-30'} style={{ top: enableHeaderCompression ? '169.5px' : '293.5px' }}>
-                <div className={'h-6  bg-app'}></div>
+              <div className="rounded-b-lg w-full md:sticky z-30 bg-app" style={{ top: 'var(--header-height)' }}>
+                <div className={'h-full w-full bg-app'}></div>
+
                 <div className={'flex flex-wrap gap-2 md:gap-3'}>
                   <div
                     className={
@@ -282,7 +292,7 @@ function Index(): ReactElement | null {
                         type={'button'}
                         onClick={(): void => handleSelectSection(section.key)}
                         className={cl(
-                          'flex-1 min-w-[120px] rounded-lg px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
+                          'flex-1 min-w-[120px] rounded-sm px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
                           activeSection === section.key
                             ? 'bg-neutral-0 text-neutral-900 shadow-sm'
                             : 'bg-transparent text-neutral-600 hover:text-neutral-800'
@@ -340,21 +350,6 @@ function Index(): ReactElement | null {
                 </div>
               )
             })}
-          </div>
-          <div
-            className={'md:col-span-7 mt-6 md:col-start-14 md:sticky md:h-fit'}
-            style={{ top: enableHeaderCompression ? '193.5px' : '317.5px' }}
-          >
-            <div>
-              <Widget
-                vaultType={isV3 ? 'v3' : 'v2'}
-                vaultAddress={currentVault.address}
-                currentVault={currentVault}
-                gaugeAddress={currentVault.staking.address}
-                actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
-                chainId={chainId}
-              />
-            </div>
           </div>
         </section>
       </div>
