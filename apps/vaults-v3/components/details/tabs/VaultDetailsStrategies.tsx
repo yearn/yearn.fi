@@ -193,33 +193,33 @@ export function VaultDetailsStrategies({ currentVault }: { currentVault: TYDaemo
               sortBy={sortBy}
               sortDirection={sortDirection}
               onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-                if (newSortDirection === '') {
-                  onChangeSortBy('featuringScore')
-                  onChangeSortDirection('')
-                  return
-                }
                 onChangeSortBy(newSortBy as TPossibleSortBy)
                 onChangeSortDirection(newSortDirection as TSortDirection)
               }}
               items={[
-                { label: 'Vault', value: 'name', sortable: false, className: 'ml-20' },
+                {
+                  label: 'Vault',
+                  value: 'name',
+                  sortable: false,
+                  className: ''
+                },
                 {
                   label: 'Allocation %',
                   value: 'allocationPercentage',
                   sortable: true,
-                  className: 'col-span-4'
+                  className: 'col-span-5'
                 },
                 {
                   label: 'Allocation $',
                   value: 'allocation',
                   sortable: true,
-                  className: 'col-span-4'
+                  className: 'col-span-5'
                 },
                 {
                   label: 'Est. APY',
                   value: 'estAPY',
                   sortable: true,
-                  className: 'col-span-4 justify-end'
+                  className: 'col-span-5 justify-end'
                 }
               ]}
             />

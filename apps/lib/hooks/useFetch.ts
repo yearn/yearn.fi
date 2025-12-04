@@ -92,7 +92,7 @@ export function useFetch<T>({ endpoint, schema, config }: TUseZodProps<T>): SWRR
 
   if (!parsedData.success) {
     console.error(`[useFetch] Schema validation failed for ${endpoint}:`, parsedData.error)
-    return { ...result, isSuccess: false }
+    return { ...result, data: undefined as unknown as T, isSuccess: false }
   }
 
   return { ...result, data: parsedData.data, isSuccess: true }

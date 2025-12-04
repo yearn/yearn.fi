@@ -1,11 +1,19 @@
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { Renderable } from '@lib/components/Renderable'
-import { isZero } from '@lib/utils'
+import { cl, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { KATANA_CHAIN_ID } from '@vaults-v3/constants/addresses'
 import type { ReactElement } from 'react'
 
-export function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+export function VaultHistoricalAPY({
+  currentVault,
+  className,
+  valueClassName
+}: {
+  currentVault: TYDaemonVault
+  className?: string
+  valueClassName?: string
+}): ReactElement {
   // TEMPORARY HACK: Force 'NEW' APY for chainID KATANA
   const shouldUseKatanaAPRs = currentVault.chainID === KATANA_CHAIN_ID
   const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
@@ -14,8 +22,8 @@ export function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVau
 
   if (shouldUseKatanaAPRs) {
     return (
-      <div className={'flex flex-col items-end md:text-right'}>
-        <b className={'yearn--table-data-section-item-value'}>
+      <div className={cl('flex flex-col items-end md:text-right', className)}>
+        <b className={cl('yearn--table-data-section-item-value', valueClassName)}>
           <Renderable shouldRender={!shouldUseKatanaAPRs} fallback={'-'}>
             <RenderAmount
               value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
@@ -30,8 +38,8 @@ export function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVau
   }
 
   return (
-    <div className={'flex flex-col items-end md:text-right'}>
-      <b className={'yearn--table-data-section-item-value'}>
+    <div className={cl('flex flex-col items-end md:text-right', className)}>
+      <b className={cl('yearn--table-data-section-item-value', valueClassName)}>
         <Renderable shouldRender={!currentVault.apr?.type.includes('new')} fallback={'NEW'}>
           <RenderAmount
             value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}

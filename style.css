@@ -1,16 +1,19 @@
+/* biome-ignore format: preserve legacy style conventions */
 /* External Dependencies */
 /** biome-ignore-all lint/complexity/noImportantStyles: overriding some library styles */
-@import "@rainbow-me/rainbowkit/styles.css";
+@import '@rainbow-me/rainbowkit/styles.css';
 /* Tailwind CSS */
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   /* Font families */
-  --font-family-aeonik: Aeonik, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-family-aeonik-fono:
-    "Aeonik Fono", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-family-aeonik-mono: "Aeonik Mono", Consolas, "Courier New", monospace;
-  --font-family-source-code-pro: "Source Code Pro", "Aeonik Mono", Consolas, "Courier New", monospace;
+  --font-family-aeonik: Aeonik, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-family-aeonik-fono: 'Aeonik Fono', -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-family-aeonik-mono: 'Aeonik Mono', Consolas, 'Courier New', monospace;
+  --font-family-source-code-pro: 'Source Code Pro', 'Aeonik Mono', Consolas,
+    'Courier New', monospace;
 
   --color-black: hsl(0 0% 0%);
   --color-white: hsl(0 0% 100%);
@@ -74,10 +77,13 @@
 
   --color-blue-500: hsl(220 95% 50%);
   --color-blue-800: hsl(230 93% 38%);
-  --color-blue-900: hsl(231 100% 11%);
+  --color-blue-900: hsl(231 100% 25%);
   --color-steel-gray-500: hsl(218 14% 71%);
   --color-light-blue-500: hsl(220 100% 67%);
   --default-rounded: 0rem;
+  --surface-background: var(--color-neutral-0);
+  --surface-default: var(--color-neutral-0);
+  --surface-muted: var(--color-neutral-100);
 
   /* Custom Font Sizes */
   --text-xxs: 0.625rem; /* 10px */
@@ -90,24 +96,13 @@
   --text-7xl--line-height: 4.5rem; /* 72px */
   --text-8xl: 5.5rem; /* 88px */
   --text-8xl--line-height: 6.5rem; /* 104px */
+
+  /* Layout Heights */
+  --header-height: 3.25rem; /* 48px - matches h-12 */
 }
 
 @layer theme {
-  .dark {
-    --color-primary: hsl(220 95% 50%);
-    --color-neutral-900: hsl(0 0% 100%);
-    --color-neutral-800: hsl(0 0% 96%);
-    --color-neutral-700: hsl(0 0% 92%);
-    --color-neutral-600: hsl(0 0% 88%);
-    --color-neutral-500: hsl(0 0% 62%);
-    --color-neutral-400: hsl(0 0% 50%);
-    --color-neutral-300: hsl(0 0% 36%);
-    --color-neutral-200: hsl(0 0% 26%);
-    --color-neutral-100: hsl(0 0% 16%);
-    --color-neutral-0: hsl(0 0% 5%);
-  }
-
-  .v3 {
+  :is(.dark, .v3) {
     --color-primary: hsl(220 95% 50%);
     --color-neutral-900: hsl(0 0% 96%);
     --color-neutral-800: hsl(0 0% 96%);
@@ -115,10 +110,14 @@
     --color-neutral-600: hsl(0 0% 88%);
     --color-neutral-500: hsl(0 0% 62%);
     --color-neutral-400: hsl(0 0% 50%);
-    --color-neutral-300: hsl(231 51% 19%);
-    --color-neutral-200: hsl(242 54% 27%);
-    --color-neutral-100: hsl(231 100% 11%);
+    --color-neutral-300: hsl(231 50% 20%);
+    --color-neutral-200: hsl(231, 75%, 15%);
+    /* --color-neutral-100: hsl(231 100% 11%); */
+    --color-neutral-100: hsl(231, 100%, 10%);
     --color-neutral-0: hsl(231 100% 6%);
+    --surface-background: var(--color-neutral-0);
+    --surface-default: var(--color-neutral-100);
+    --surface-muted: var(--color-neutral-200);
   }
 }
 
@@ -128,18 +127,27 @@ html {
 }
 
 body {
-  color: var(--color-neutral-900);
-  font-family: aeonik, "aeonik Fallback", "Source Code Pro", "Source Code Pro Fallback", sans-serif;
-}
-
-#main {
-  @apply flex flex-col w-full h-full min-h-screen bg-neutral-0;
+  color: var(--color-neutral-800);
+  font-family: aeonik, 'aeonik Fallback', 'Source Code Pro',
+    'Source Code Pro Fallback', sans-serif;
 }
 
 @layer utilities {
+  .bg-app {
+    background-color: var(--surface-background);
+  }
+
+  .bg-surface {
+    background-color: var(--surface-default);
+  }
+
+  .bg-card {
+    background-color: var(--surface-muted);
+  }
+
   .font-number {
-    font-family:
-      "Aeonik Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family: 'Aeonik Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, 'Liberation Mono', 'Courier New', monospace;
   }
 
   .scrollbar-none {
@@ -152,8 +160,51 @@ body {
 }
 
 @layer components {
-  [role="button"],
-  button {
+  .vaults-layout {
+    min-height: calc(100vh - var(--header-height));
+    width: 100%;
+    background-color: var(--surface-background);
+  }
+
+  .vaults-layout--list {
+    height: calc(100vh - var(--header-height));
+    overflow: hidden;
+    --surface-background: var(--color-neutral-100);
+    --surface-default: var(--color-neutral-0);
+    --surface-muted: var(--color-neutral-200);
+  }
+
+  .vaults-layout--detail {
+    --surface-background: var(--color-neutral-0);
+    --surface-default: var(--color-neutral-0);
+    --surface-muted: var(--color-neutral-200);
+  }
+
+  .dark .vaults-layout--list,
+  .v3 .vaults-layout--list {
+    --surface-background: var(--color-neutral-0);
+    --surface-default: var(--color-neutral-100);
+    --surface-muted: var(--color-neutral-300);
+  }
+
+  .dark .vaults-layout--detail,
+  .v3 .vaults-layout--detail {
+    --surface-background: var(--color-neutral-0);
+    --surface-default: var(--color-neutral-100);
+    --surface-muted: var(--color-neutral-300);
+  }
+
+  .vaults-card {
+    background-color: var(--color-neutral-0);
+  }
+
+  .dark .vaults-card,
+  .v3 .vaults-card {
+    background-color: var(--color-neutral-200);
+  }
+
+  [role='button']:not(:disabled),
+  button:not(:disabled) {
     @apply cursor-pointer;
   }
 }
@@ -162,10 +213,11 @@ body {
 ** Header an navbar
 ***************************************************************************************************/
 .yearn--header {
-  @apply inset-x-0 top-0 z-50 flex h-20 w-full max-w-[1200px] flex-row items-center justify-between p-4 text-xs sm:text-sm md:inset-x-auto md:mb-0 md:px-0 md:text-base;
+  @apply inset-x-0 top-0 z-50 flex w-full max-w-[1200px] flex-row items-center justify-between pt-2 md:pt-4 pb-1 text-xs sm:text-sm md:mb-0 md:px-0 md:text-base;
+  height: var(--header-height);
 }
 .yearn--nav {
-  @apply hidden flex-row items-center space-x-3 md:flex md:space-x-6;
+  @apply flex flex-row items-center space-x-3 md:space-x-6;
 }
 .yearn--header-nav-item {
   @apply relative cursor-pointer transition-colors text-neutral-500 hover:text-neutral-900 font-normal text-sm;
@@ -173,6 +225,20 @@ body {
   &.active {
     @apply text-neutral-900 font-bold;
   }
+}
+
+.yearn-typemark {
+  color: #fff;
+  transition: color 0.2s ease;
+}
+
+.light .yearn-typemark {
+  color: var(--color-primary);
+}
+
+.dark .yearn-typemark,
+.v3 .yearn-typemark {
+  color: #fff;
 }
 
 /* 🔵 - Yearn Finance ******************************************************************************
@@ -215,7 +281,7 @@ body {
 }
 
 .tooltip .tooltiptext::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: 98%;
   right: 50%;
@@ -243,8 +309,8 @@ body {
   @apply text-start text-base;
 }
 .yearn--table-head-label-wrapper {
-  @apply flex flex-row items-center justify-start space-x-1;
-  &[datatype="number"] {
+  @apply flex flex-row items-center justify-end space-x-1;
+  &[datatype='number'] {
     justify-content: flex-end;
     & > .yearn--table-head-label {
       text-align: right;
@@ -274,8 +340,8 @@ body {
   @apply text-neutral-900;
 }
 .yearn--table-data-section-item {
-  @apply flex h-min flex-row md:items-start justify-between pt-0 px-0 md:min-h-14 md:pt-1;
-  &[datatype="number"] {
+  @apply flex h-min flex-row md:items-start justify-between pt-0 px-0 md:min-h-14 md:pt-2;
+  &[datatype='number'] {
     @apply md:text-right md:justify-end;
     & > .yearn--table-data-section-item-value {
       font-variant-numeric: tabular-nums;
@@ -289,13 +355,13 @@ body {
 
 .yearn--next-switch {
   @apply relative flex h-[18px] w-8 border-neutral-500 rounded-full cursor-pointer transition-colors ease-in-out duration-200 p-0 items-center border-2;
-  &[aria-checked="true"] {
+  &[aria-checked='true'] {
     @apply bg-neutral-400 border-neutral-900;
     & > div {
       @apply bg-neutral-900;
     }
   }
-  &[aria-checked="false"] {
+  &[aria-checked='false'] {
     @apply bg-transparent border-neutral-600;
     & > div {
       @apply bg-neutral-600;
@@ -322,7 +388,7 @@ body {
   @apply rounded-lg;
 
   /* Global state styles */
-  &[aria-busy="true"] {
+  &[aria-busy='true'] {
     @apply cursor-wait;
     color: transparent !important;
   }
@@ -332,62 +398,62 @@ body {
   }
 
   /* Variant: Filled (Primary) */
-  &[data-variant="filled"] {
+  &[data-variant='filled'] {
     @apply text-neutral-0 bg-neutral-900;
 
     &:disabled {
       @apply bg-neutral-700;
     }
 
-    &:not(:disabled):not([aria-busy="true"]):hover {
+    &:not(:disabled):not([aria-busy='true']):hover {
       @apply bg-neutral-800;
     }
   }
 
   /* Variant: Light */
-  &[data-variant="light"] {
+  &[data-variant='light'] {
     @apply text-neutral-900 bg-neutral-100;
 
-    &:not(:disabled):not([aria-busy="true"]):hover {
+    &:not(:disabled):not([aria-busy='true']):hover {
       @apply bg-neutral-200;
     }
   }
 
   /* Variant: Outlined */
-  &[data-variant="outlined"] {
+  &[data-variant='outlined'] {
     @apply text-neutral-900 bg-transparent border-neutral-900;
 
-    &:not(:disabled):not([aria-busy="true"]):hover {
+    &:not(:disabled):not([aria-busy='true']):hover {
       @apply bg-neutral-900 text-neutral-0;
     }
   }
 
   /* Variant: Reverted */
-  &[data-variant="reverted"] {
+  &[data-variant='reverted'] {
     @apply text-neutral-900 bg-neutral-0;
 
     &:disabled {
       @apply bg-neutral-200;
     }
 
-    &:not(:disabled):not([aria-busy="true"]):hover {
+    &:not(:disabled):not([aria-busy='true']):hover {
       @apply bg-neutral-200;
     }
 
-    &[aria-busy="true"] svg {
+    &[aria-busy='true'] svg {
       @apply text-neutral-900;
     }
   }
 
   /* Variant: V3 (Special variant) */
-  &[data-variant="v3"] {
+  &[data-variant='v3'] {
     @apply text-neutral-900 bg-pink-600;
 
     &:disabled {
       @apply bg-pink-600;
     }
 
-    &:not(:disabled):not([aria-busy="true"]):hover {
+    &:not(:disabled):not([aria-busy='true']):hover {
       @apply bg-pink-600/80;
     }
   }
@@ -400,7 +466,7 @@ body {
   @apply rounded-lg;
 
   /* Global state styles */
-  &[aria-busy="true"] {
+  &[aria-busy='true'] {
     @apply cursor-wait;
 
     color: transparent !important;
@@ -411,87 +477,91 @@ body {
   }
 
   /* Variant: Filled (Primary) */
-  &[data-variant="filled"] {
+  &[data-variant='filled'] {
     @apply text-neutral-900 bg-blue-600;
 
     &:disabled {
       @apply bg-neutral-700 text-neutral-0;
     }
 
-    &[aria-busy="true"] {
+    &[aria-busy='true'] {
       @apply bg-blue-700;
     }
 
-    &:not(:disabled):not([aria-busy="true"]):hover {
+    &:not(:disabled):not([aria-busy='true']):hover {
       @apply bg-blue-700;
     }
   }
 
-  &[data-variant="busy"] {
+  &[data-variant='busy'] {
     @apply bg-neutral-300;
   }
 
+  &[data-variant='error'] {
+    @apply bg-red-50 text-red-700 border-red-200;
+  }
+
   /* Variant: Light */
-  &[data-variant="light"] {
+  &[data-variant='light'] {
     @apply text-neutral-900 bg-neutral-100;
 
-    &:not(:disabled):not([aria-busy="true"]):hover {
+    &:not(:disabled):not([aria-busy='true']):hover {
       @apply bg-neutral-200;
     }
   }
 
   /* Variant: Outlined */
-  &[data-variant="outlined"] {
+  &[data-variant='outlined'] {
     @apply text-neutral-900 bg-transparent border-neutral-900;
 
-    &:not(:disabled):not([aria-busy="true"]):hover {
+    &:not(:disabled):not([aria-busy='true']):hover {
       @apply bg-neutral-900 text-neutral-0;
     }
   }
 
   /* Variant: Reverted */
-  &[data-variant="reverted"] {
+  &[data-variant='reverted'] {
     @apply text-neutral-900 bg-neutral-0;
 
     &:disabled {
       @apply bg-neutral-200;
     }
 
-    &:not(:disabled):not([aria-busy="true"]):hover {
+    &:not(:disabled):not([aria-busy='true']):hover {
       @apply bg-neutral-200;
     }
 
-    &[aria-busy="true"] svg {
+    &[aria-busy='true'] svg {
       @apply text-neutral-900;
     }
   }
 
   /* Variant: V3 (Special variant) */
-  &[data-variant="v3"] {
+  &[data-variant='v3'] {
     @apply text-neutral-900 bg-pink-600;
 
     &:disabled {
       @apply bg-pink-600;
     }
 
-    &:not(:disabled):not([aria-busy="true"]):hover {
+    &:not(:disabled):not([aria-busy='true']):hover {
       @apply bg-pink-600/80;
     }
   }
 }
 .yearn--button-smaller {
-  @apply h-8 text-xs py-2 w-16 px-2;
+  @apply h-8 text-xs py-2 px-2;
 }
 .yearn--button-smaller.reverted {
   @apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
   &:disabled {
     @apply bg-neutral-200 opacity-40;
   }
-  &:not(:disabled):not([aria-busy="true"]):hover {
+  &:not(:disabled):not([aria-busy='true']):hover {
     @apply bg-neutral-200;
   }
 
-  &[aria-busy="true"] svg {
+  &[aria-busy='true'] svg {
     @apply text-neutral-900;
   }
 }
@@ -508,7 +578,7 @@ body {
 .yearn--dropdown-menu-item {
   @apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
 
-  &[data-active="true"] {
+  &[data-active='true'] {
     @apply bg-neutral-0/40;
   }
 
@@ -522,7 +592,7 @@ body {
 }
 .yearn--listbox-menu-item {
   @apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
-  &[data-active="true"] {
+  &[data-active='true'] {
     @apply bg-neutral-0/40;
   }
 }
@@ -532,7 +602,7 @@ body {
  *************************************************************************************************/
 .tab {
   @apply font-normal text-neutral-600 transition-colors hover:text-neutral-900 cursor-pointer border-b-2 border-transparent pb-4 z-20;
-  &[aria-selected="true"] {
+  &[aria-selected='true'] {
     @apply font-bold text-neutral-900 border-neutral-900;
   }
 }
@@ -564,10 +634,14 @@ body {
   fill: var(--color-neutral-0);
 }
 
+.skeleton {
+  @apply bg-gray-200 rounded animate-pulse;
+}
+
 /* 🔵 - Yearn Finance ******************************************************
 ** Overwriting the defaults to match our needs
 **************************************************************************/
-input[type="number"] {
+input[type='number'] {
   /* Firefox: Remove increment/decrement buttons */
   -moz-appearance: textfield;
 
@@ -582,8 +656,78 @@ input[type="number"] {
 :focus {
   outline: none;
 }
-[type="checkbox"],
-[type="checkbox"]:focus {
+[type='checkbox'],
+[type='checkbox']:focus {
   @apply outline-none focus:border-0 focus:outline-none focus:ring-0 active:border-0 active:ring-0;
   box-shadow: none !important;
+}
+
+.brand-new-marquee {
+  animation: brandNewVaultMarquee var(--brand-new-marquee-duration, 24s) linear
+    infinite;
+}
+.brand-new-marquee > * {
+  flex: 0 0 auto;
+}
+.brand-new-marquee--paused {
+  animation-play-state: paused;
+}
+@keyframes brandNewVaultMarquee {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+.wordWrapper {
+  display: inline-block;
+  vertical-align: top;
+  margin: 0;
+}
+.text-animate-word {
+  @apply absolute text-white text-2xl md:text-[30px] text-left flex justify-start items-start w-[300px] md:w-[600px];
+  opacity: 0;
+}
+.letter {
+  display: inline-block;
+  position: relative;
+  float: left;
+  transform: translateZ(25px);
+  transform-origin: 50% 50% 25px;
+}
+.letter.out {
+  transform: rotateX(90deg);
+  transition: transform 0.32s cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+.letter.behind {
+  transform: rotateX(-90deg);
+}
+.letter.in {
+  transform: rotateX(0deg);
+  transition: transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Mobile Vault Details Redesign */
+/* Animation for expandable details section */
+.mobile-details-section {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile-specific layout adjustments */
+@media (max-width: 768px) {
+  .vaults-layout--detail {
+    padding-bottom: 2rem;
+  }
 }

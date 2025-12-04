@@ -8,25 +8,44 @@ import { IconWallet } from '@lib/icons/IconWallet'
 import { cl } from '@lib/utils'
 import { truncateHex } from '@lib/utils/tools.address'
 import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
-import type { ReactElement } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import type { CSSProperties, ReactElement } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
-import { APPS, AppName } from './Apps'
+import { TypeMarkYearn as TypeMarkYearnText } from '../icons/TypeMarkYearn-text-only'
 import { LaunchModal } from './LaunchModal'
 import { ModalMobileMenu } from './ModalMobileMenu'
 
-export type TMenu = { path: string; label: string | ReactElement; target?: string }
+export type TMenu = {
+  path: string
+  label: string | ReactElement
+  target?: string
+}
 type TNavbar = { nav: TMenu[]; currentPathName: string }
+
+type TPrimaryLink = TMenu & { matchers?: string[] }
+
+const PRIMARY_LINKS: TPrimaryLink[] = [
+  {
+    path: '/v3',
+    label: 'Vaults',
+    matchers: ['/v3', '/vaults', '/vaults-beta']
+  },
+  { path: '/portfolio', label: 'Portfolio' }
+]
 
 function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
   return (
     <nav className={'yearn--nav'}>
       {nav.map(
-        (option): ReactElement => (
+        (option, index): ReactElement => (
           <Link key={option.path} target={option.target} href={option.path}>
-            <p className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}>
+            <p
+              className={`yearn--header-nav-item ${
+                currentPathName.startsWith(option.path) ? 'active' : ''
+              } ${index > 0 ? 'hidden md:block' : ''}`}
+            >
               {option?.label || 'Unknown'}
             </p>
           </Link>
@@ -121,32 +140,33 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
   const pathname = location.pathname
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
   const { setShouldOpenCurtain, notificationStatus } = useNotifications()
+  const [surfaceBackground, setSurfaceBackground] = useState<string | undefined>(undefined)
 
   const menu = useMemo((): TMenu[] => {
-    const HOME_MENU = { path: '/apps', label: 'Apps' }
+    // const HOME_MENU = { path: '/apps', label: 'Apps' }
 
-    if (pathname.startsWith('/ycrv')) {
-      return [...APPS[AppName.YCRV].menu]
-    }
+    // if (pathname.startsWith('/ycrv')) {
+    //   return [...APPS[AppName.YCRV].menu]
+    // }
 
-    if (pathname.startsWith('/v3')) {
-      return [...APPS[AppName.VAULTSV3].menu]
-    }
+    // if (pathname.startsWith('/v3')) {
+    //   return [...APPS[AppName.VAULTSV3].menu]
+    // }
 
-    if (pathname.startsWith('/vaults-beta')) {
-      return [...APPS[AppName.BETA].menu]
-    }
+    // if (pathname.startsWith('/vaults-beta')) {
+    //   return [...APPS[AppName.BETA].menu]
+    // }
 
-    if (pathname.startsWith('/vaults')) {
-      return [...APPS[AppName.VAULTS].menu]
-    }
+    // if (pathname.startsWith('/vaults')) {
+    //   return [...APPS[AppName.VAULTS].menu]
+    // }
 
-    if (pathname.startsWith('/veyfi')) {
-      return [...APPS[AppName.VEYFI].menu]
-    }
+    // if (pathname.startsWith('/veyfi')) {
+    //   return [...APPS[AppName.VEYFI].menu]
+    // }
 
     return [
-      HOME_MENU,
+      // HOME_MENU,
       { path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank' },
       { path: 'https://discord.gg/yearn', label: 'Support', target: '_blank' },
       { path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank' },
@@ -156,7 +176,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
         target: '_blank'
       }
     ]
-  }, [pathname])
+  }, [])
 
   const notificationDotColor = useMemo(() => {
     if (notificationStatus === 'error') {
@@ -173,32 +193,103 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     return ''
   }, [notificationStatus])
 
+  const updateSurfaceBackground = useCallback((): void => {
+    const layoutHost = document.querySelector('.vaults-layout') as HTMLElement | null
+    const target = layoutHost ?? document.documentElement
+    const value = getComputedStyle(target).getPropertyValue('--surface-background').trim()
+    setSurfaceBackground(value || undefined)
+  }, [])
+
+  useEffect(() => {
+    updateSurfaceBackground()
+
+    const observer = new MutationObserver(() => updateSurfaceBackground())
+    const layoutHost = document.querySelector('.vaults-layout')
+
+    // Observe both the layout host and document root for class changes
+    if (layoutHost) {
+      observer.observe(layoutHost, {
+        attributes: true,
+        attributeFilter: ['class']
+      })
+    }
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    })
+
+    return () => observer.disconnect()
+  }, [updateSurfaceBackground])
+
+  useEffect(() => {
+    updateSurfaceBackground()
+    void pathname
+  }, [updateSurfaceBackground, pathname])
+
+  const isHomePage = window.location.pathname === '/'
+
   return (
-    <div id={'head'} className={'inset-x-0 top-0 z-50 w-full'}>
-      <div className={'w-full'}>
-        <header className={'yearn--header mx-auto max-w-[1232px] px-0!'}>
-          <div className={'direction-row flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'}>
+    <div
+      id={'head'}
+      className={'sticky inset-x-0 top-0 z-50 w-full bg-app backdrop-blur-md'}
+      style={
+        surfaceBackground
+          ? ({
+              backgroundColor: surfaceBackground,
+              '--surface-background': surfaceBackground
+            } as CSSProperties & { '--surface-background': string })
+          : undefined
+      }
+    >
+      <div className={'mx-auto w-full max-w-[1232px] px-4'}>
+        <header className={'yearn--header w-full px-0!'}>
+          <div className={'direction-row flex items-center justify-start gap-x-0 px-1 py-2 md:py-1'}>
             <div className={'flex justify-center'}>
               <LaunchModal />
             </div>
-            <Navbar currentPathName={pathname || ''} nav={menu} />
-          </div>
-          <div className={'flex w-1/3 items-center justify-end'}>
-            <button
-              className={'yearn--header-nav-item relative rounded-full p-2 transition-colors'}
-              onClick={(): void => setShouldOpenCurtain(true)}
-            >
-              <IconBell className={'size-4 font-bold transition-colors'} />
+            <div className={'flex items-center gap-2 md:gap-4'}>
+              <TypeMarkYearnText className={'yearn-typemark h-8 w-auto'} />
+              {/* <TypeMarkYearnFull className={'yearn-typemark hidden h-8 w-auto md:block'} color={'currentColor'} /> */}
+              <div className={'flex items-center gap-4 pb-0.5'}>
+                {PRIMARY_LINKS.map((link) => {
+                  const isActive =
+                    link.matchers?.some((matcher) =>
+                      matcher === '/' ? pathname === '/' : pathname.startsWith(matcher)
+                    ) ?? pathname.startsWith(link.path)
 
-              <div className={cl('absolute right-1 top-1 size-2 rounded-full', notificationDotColor)} />
-            </button>
-            <WalletSelector />
-            <div className={'flex md:hidden pl-4 text-neutral-500'}>
-              <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
-                <span className={'sr-only'}>{'Open menu'}</span>
-                <IconBurgerPlain />
-              </button>
+                  return (
+                    <Link key={link.path} href={link.path}>
+                      <span className={cl('yearn--header-nav-item text-lg!', isActive ? 'active' : '')}>
+                        {link.label}
+                      </span>
+                    </Link>
+                  )
+                })}
+              </div>
             </div>
+          </div>
+          <div className={'flex w-1/2 items-center justify-end'}>
+            <Navbar currentPathName={pathname || ''} nav={menu} />
+            {!isHomePage && (
+              <div className={'direction-row flex items-center justify-end'}>
+                <button
+                  className={'yearn--header-nav-item relative rounded-full p-4 transition-colors'}
+                  onClick={(): void => setShouldOpenCurtain(true)}
+                >
+                  <IconBell className={'size-4 font-bold transition-colors'} />
+
+                  <div className={cl('absolute right-4 top-4 size-2 rounded-full', notificationDotColor)} />
+                </button>
+                <WalletSelector />
+                <div className={'flex md:hidden pl-4 text-neutral-500'}>
+                  <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
+                    <span className={'sr-only'}>{'Open menu'}</span>
+                    <IconBurgerPlain />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </header>
       </div>

@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Generate dynamic meta tags
     const ogBaseUrl = 'https://og.yearn.fi'
     const ogImageUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainId}/${address}`
-    const canonicalUrl = `https://yearn.fi/v3/${chainId}/${address}`
+    const canonicalUrl = `https://yearn.fi/vaults-beta/${chainId}/${address}`
 
     const title = 'Yearn Vault'
     const description = "Earn yield on your crypto with Yearn's automated vault strategies"

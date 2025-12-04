@@ -59,7 +59,9 @@ const IntegrationItem: FC<TIntegration & { index: number }> = ({ name, imageSrc,
   return (
     <Link href={href} className={'block cursor-pointer'}>
       <div
-        className={`flex flex-row items-center p-[12px] transition-all duration-300 ease-in-out hover:scale-[1.005] hover:bg-[#2a2b2c] hover:shadow-lg md:p-[16px] ${index % 2 === 0 ? 'bg-[#212223]' : 'bg-[#212223]/50'}`}
+        className={`flex flex-row items-center rounded-xl border border-neutral-200 p-3 transition-all duration-300 ease-in-out hover:scale-[1.005] hover:shadow-lg md:p-[16px] ${
+          index % 2 === 0 ? 'bg-surface' : 'bg-card'
+        }`}
       >
         <div className={'relative mr-4 shrink-0 self-center'}>
           <Image
@@ -71,15 +73,15 @@ const IntegrationItem: FC<TIntegration & { index: number }> = ({ name, imageSrc,
           />
         </div>
         <div className={'flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:justify-between'}>
-          <div className={'flex items-center text-[20px] text-white '}>
+          <div className={'flex items-center text-[20px] text-neutral-900'}>
             {name}{' '}
-            <span className={'ml-2 text-neutral-700 transition-all duration-300 ease-in-out hover:text-neutral-500'}>
+            <span className={'ml-2 text-neutral-700 transition-all duration-300 ease-in-out hover:text-neutral-800'}>
               {'↗'}
             </span>
           </div>
           <div
             className={
-              'hidden text-base text-neutral-400 transition-colors duration-300 ease-in-out hover:text-neutral-300 md:block md:max-w-[60%] md:text-right'
+              'hidden text-base text-neutral-600 transition-colors duration-300 ease-in-out hover:text-neutral-800 md:block md:max-w-[60%] md:text-right'
             }
           >
             {description}
@@ -91,7 +93,7 @@ const IntegrationItem: FC<TIntegration & { index: number }> = ({ name, imageSrc,
 }
 
 export const Integrations: FC = () => (
-  <section className={'flex w-full justify-center bg-white/5 py-16 lg:py-32'}>
+  <section className={'flex w-full justify-center border-t border-neutral-200 bg-transparent py-16 lg:py-32'}>
     <div className={'flex w-[1180px] flex-col items-center justify-between md:flex-row'}>
       <div className={'w-full px-4'}>
         <SectionHeader

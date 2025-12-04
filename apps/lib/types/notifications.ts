@@ -9,6 +9,7 @@ export type TNotificationType =
   | 'deposit'
   | 'withdraw'
   | 'zap'
+  | 'crosschain zap'
   | 'deposit and stake'
   | 'stake'
   | 'unstake'
@@ -21,6 +22,7 @@ export type TNotification = {
   type: TNotificationType
   address: TAddress
   chainId: number
+  toChainId?: number // Destination chain ID for cross-chain transactions
   spenderAddress?: TAddress
   spenderName?: string
   amount: string

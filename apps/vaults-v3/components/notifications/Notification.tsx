@@ -1,4 +1,4 @@
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { useNotifications } from '@lib/contexts/useNotifications'
 import { useTransactionStatusPoller } from '@lib/hooks/useTransactionStatusPoller'
 import { IconArrow } from '@lib/icons/IconArrow'
@@ -9,7 +9,6 @@ import { IconLoader } from '@lib/icons/IconLoader'
 import type { TNotification, TNotificationStatus } from '@lib/types/notifications'
 import { cl, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
 import Image from '/src/components/Image'
@@ -49,7 +48,12 @@ function NotificationContent({
   fromVault?: TYDaemonVault
   toVault?: TYDaemonVault
 }): ReactElement {
-  const chainName = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)?.name || 'Unknown'
+  const fromChainName = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)?.name || 'Unknown'
+  const toChainName = notification.toChainId
+    ? SUPPORTED_NETWORKS.find((network) => network.id === notification.toChainId)?.name || 'Unknown'
+    : undefined
+  const isCrossChain = !!notification.toChainId && notification.toChainId !== notification.chainId
+
   const explorerBaseURI = useMemo(() => {
     const chain = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)
     return chain?.blockExplorers?.default?.url || 'https://etherscan.io'
@@ -75,12 +79,7 @@ function NotificationContent({
       return `${explorerBaseURI}/address/${notification.fromAddress || '0x0'}`
     }
 
-    const isV3 = fromVault.version.startsWith('3') || fromVault.version.startsWith('~3')
-    const href = isV3
-      ? `/v3/${fromVault.chainID}/${toAddress(fromVault.address)}`
-      : `/vaults/${fromVault.chainID}/${toAddress(fromVault.address)}`
-
-    return href
+    return `/vaults-beta/${fromVault.chainID}/${toAddress(fromVault.address)}`
   }, [fromVault, explorerBaseURI, notification.fromAddress])
 
   const toTokenLabel = useMemo(() => {
@@ -96,29 +95,26 @@ function NotificationContent({
     if (!toVault) {
       return `${explorerBaseURI}/address/${notification.toAddress || '0x0'}`
     }
-    const isV3 = toVault.version.startsWith('3') || toVault.version.startsWith('~3')
-    const href = isV3
-      ? `/v3/${toVault.chainID}/${toAddress(toVault.address)}`
-      : `/vaults/${toVault.chainID}/${toAddress(toVault.address)}`
 
-    return href
+    return `/vaults-beta/${toVault.chainID}/${toAddress(toVault.address)}`
   }, [toVault, explorerBaseURI, notification.toAddress])
 
   return (
     <div className={'flex gap-4'}>
       <div className={'flex flex-col items-center gap-3'}>
         <div className={'relative'}>
-          <ImageWithFallback
-            alt={notification.fromTokenName || 'Token'}
-            unoptimized
+          <TokenLogo
             src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
             altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-            quality={90}
+            tokenSymbol={notification.fromTokenName}
             width={32}
             height={32}
+            className="rounded-full"
+            loading="eager"
           />
-          <div className={'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
+          <div className={'absolute bottom-6 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
             <Image
+              className={'object-contain'}
               width={14}
               height={14}
               alt={'chain'}
@@ -131,21 +127,22 @@ function NotificationContent({
 
         {notification.toTokenName && notification.toAddress && (
           <div className={'relative'}>
-            <ImageWithFallback
-              alt={notification.toTokenName || 'Token'}
-              unoptimized
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress}/logo-128.png`}
-              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress}/logo-128.png`}
-              quality={90}
+            <TokenLogo
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
+              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
+              tokenSymbol={notification.toTokenName}
               width={32}
               height={32}
+              className="rounded-full"
+              loading="eager"
             />
-            <div className={'absolute bottom-5 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
+            <div className={'absolute bottom-6 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
               <Image
+                className={'object-contain'}
                 width={14}
                 height={14}
                 alt={'chain'}
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${notification.chainId}/logo.svg`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${notification.toChainId || notification.chainId}/logo.svg`}
               />
             </div>
           </div>
@@ -213,8 +210,19 @@ function NotificationContent({
               </p>
             </>
           )}
-          <p>{'Chain:'}</p>
-          <p className={'text-right font-bold'}>{chainName}</p>
+          {isCrossChain ? (
+            <>
+              <p>{'From chain:'}</p>
+              <p className={'text-right font-bold'}>{fromChainName}</p>
+              <p>{'To chain:'}</p>
+              <p className={'text-right font-bold'}>{toChainName}</p>
+            </>
+          ) : (
+            <>
+              <p>{'Chain:'}</p>
+              <p className={'text-right font-bold'}>{fromChainName}</p>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -275,6 +283,8 @@ export const Notification = memo(function Notification({
         return 'Withdraw'
       case 'zap':
         return 'Zap'
+      case 'crosschain zap':
+        return 'Cross-chain Zap'
       case 'deposit and stake':
         return 'Deposit & Stake'
       case 'stake':
@@ -308,44 +318,13 @@ export const Notification = memo(function Notification({
   }, [deleteByID, notification.id, isDeleting])
 
   return (
-    <motion.div
-      layout
-      layoutId={`notification-${notification.id}`}
-      initial={{ opacity: 0, y: 20, scaleY: 0.8 }}
-      animate={{ opacity: 1, y: 0, scaleY: 1 }}
-      exit={{
-        opacity: 0,
-        y: -10,
-        scaleY: 0.3,
-        transition: {
-          duration: 0.2,
-          ease: [0.4, 0.0, 0.2, 1] // easeOut
-        }
-      }}
-      transition={{
-        duration: 0.25,
-        ease: [0.4, 0.0, 0.2, 1], // easeOut
-        layout: {
-          duration: 0.2,
-          ease: [0.4, 0.0, 0.2, 1] // easeOut
-        }
-      }}
+    <div
       className={cl(
         'border border-neutral-200 p-4 h-fit relative mb-4 origin-top group',
-        variant === 'v3' ? 'bg-neutral-200 rounded-xl' : 'bg-neutral-0 hover:bg-neutral-100/30 transition-colors'
+        'bg-card rounded-xl border-neutral-300'
       )}
-      style={{ transformOrigin: 'top center' }}
-      aria-label={`${notificationTitle} notification`}
     >
-      {variant === 'v3' && (
-        <div
-          className={cl(
-            'absolute inset-0 rounded-xl',
-            'opacity-20 transition-opacity  pointer-events-none',
-            'bg-[linear-gradient(80deg,#2C3DA6,#D21162)] group-hover:opacity-100'
-          )}
-        />
-      )}
+      {variant === 'v3' && <div className={cl('absolute inset-0 rounded-xl')} />}
 
       {/* Close button */}
       <button
@@ -353,14 +332,14 @@ export const Notification = memo(function Notification({
         disabled={isDeleting}
         className={cl(
           'absolute z-999999 flex items-center justify-center',
-          'right-2 top-2 w-5 h-5 rounded-full hover:opacity-100 hover:bg-neutral-200',
+          'right-2 top-2 w-5 h-5 rounded-full hover:opacity-100 hover:bg-neutral-0',
           'transition-all duration-200',
-          'opacity-0 group-hover:opacity-60 group-hover:bg-neutral-200/60 hover:opacity-100!',
+          'opacity-0 group-hover:opacity-100 group-hover:bg-neutral-0/70 group-hover:border group-hover:border-neutral-0 hover:opacity-100!',
           isDeleting ? 'opacity-30!' : ''
         )}
         title={'Remove'}
       >
-        <IconClose className={cl('w-3 h-3', variant === 'v3' ? 'text-neutral-700' : 'text-neutral-600')} />
+        <IconClose className={cl('w-3 h-3 text-neutral-900')} />
       </button>
 
       <div className={'relative z-20'}>
@@ -394,6 +373,6 @@ export const Notification = memo(function Notification({
           </div>
         ) : null}
       </div>
-    </motion.div>
+    </div>
   )
 })

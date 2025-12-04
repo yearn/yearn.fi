@@ -1,7 +1,8 @@
 import { LaunchModal } from '@lib/components/LaunchModal'
 import { ModalMobileMenu } from '@lib/components/ModalMobileMenu'
 import { IconBurgerPlain } from '@lib/icons/IconBurgerPlain'
-import { TypeMarkYearn } from '@lib/icons/TypeMarkYearn-text-only'
+import { TypeMarkYearn as TypeMarkYearnFull } from '@lib/icons/TypeMarkYearn'
+import { TypeMarkYearn as TypeMarkYearnText } from '@lib/icons/TypeMarkYearn-text-only'
 import { type ReactElement, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 import Link from '/src/components/Link'
@@ -52,9 +53,10 @@ export function LandingAppHeader(): ReactElement {
             <div className={'md:hidden'}>
               <LaunchModal />
             </div>
-            <div className={'hidden flex-row items-center gap-x-3 md:flex'}>
+            <div className={'hidden flex-row items-center gap-x-1 md:flex'}>
               <LaunchModal />
-              <TypeMarkYearn className={'h-6 w-auto'} color={'#E1E1E1'} />
+              <TypeMarkYearnText className={'h-8 w-auto'} color={'#E1E1E1'} />
+              <TypeMarkYearnFull className={'yearn-typemark hidden h-8 w-auto md:block'} color={'#E1E1E1'} />
             </div>
           </div>
           <div className={'hidden items-center gap-6 md:flex'}>

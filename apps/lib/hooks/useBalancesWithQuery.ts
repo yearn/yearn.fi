@@ -32,7 +32,6 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
     priorityChainId: props?.priorityChainID,
     enabled: tokens.length > 0
   })
-
   /***************************************************************************
    ** onUpdate will refetch all balances, with optional force refresh
    **************************************************************************/

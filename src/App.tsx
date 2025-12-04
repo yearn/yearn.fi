@@ -1,4 +1,4 @@
-import { LandingAppHeader } from '@landing/components/common/Header'
+import { DevToolbar } from '@components/DevToolbar'
 import AppHeader from '@lib/components/Header'
 import { Meta } from '@lib/components/Meta'
 import { WithFonts } from '@lib/components/WithFonts'
@@ -16,35 +16,18 @@ import { cl } from '@lib/utils'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
 import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
 import type { ReactElement } from 'react'
+import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router'
+import { DevFlagsProvider } from '/src/contexts/useDevFlags'
 import PlausibleProvider from './components/PlausibleProvider'
 import { AppRoutes } from './routes'
 
 function WithLayout(): ReactElement {
-  const location = useLocation()
-  const isAppsPage = location.pathname?.startsWith('/apps')
-  const isHomePage = location.pathname === '/'
-
-  if (isAppsPage) {
-    return (
-      <>
-        <div className={cl('mx-auto mb-0 flex z-60 max-w-[1232px] absolute top-0 inset-x-0 px-4 bg-neutral-0')}>
-          <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
-        </div>
-        <div id={'app'} className={'bg-neutral-0 mb-0 flex min-h-screen justify-center'}>
-          <div className={'flex w-full max-w-[1230px] justify-start'}>
-            <AppRoutes />
-          </div>
-        </div>
-      </>
-    )
-  }
-
   return (
     <>
-      <div className={cl('mx-auto mb-0 flex z-60 max-w-[1232px] absolute top-0 inset-x-0 px-4')}>
-        {isHomePage ? <LandingAppHeader /> : <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />}
+      <div className={'sticky top-0 z-60 w-full'}>
+        <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
       </div>
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>
@@ -59,7 +42,13 @@ function App(): ReactElement {
   const location = useLocation()
   const { manifest } = useCurrentApp()
 
-  // Determine dynamic meta for V3 vault detail pages
+  // Scroll to top on route change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on pathname change only
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+
+  // Determine dynamic meta for vault detail pages
   const asPath = location.pathname
 
   // Get most basic og and uri info
@@ -68,16 +57,15 @@ function App(): ReactElement {
 
   const ogBaseUrl = 'https://og.yearn.fi'
 
-  if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
-    // Default to production
-
-    // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
+  if (asPath.startsWith('/vaults-beta/') && asPath.split('/').length === 4) {
     const [, , chainID, address] = asPath.split('/')
     ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`
-  }
-  if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
-    // Use dynamic OG API for v2 vault pages: /vaults/[chainID]/[address]
+  } else if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
+    const [, , chainID, address] = asPath.split('/')
+    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
+    pageUri = `https://yearn.fi${asPath}`
+  } else if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
     const [, , chainID, address] = asPath.split('/')
     ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`
@@ -109,7 +97,10 @@ function App(): ReactElement {
                     <IndexedDB>
                       <WithNotifications>
                         <WithNotificationsActions>
-                          <WithLayout />
+                          <DevFlagsProvider>
+                            <WithLayout />
+                            <DevToolbar />
+                          </DevFlagsProvider>
                         </WithNotificationsActions>
                       </WithNotifications>
                     </IndexedDB>
@@ -143,6 +134,7 @@ function App(): ReactElement {
               }
             }}
             position={'bottom-right'}
+            containerStyle={{ maxWidth: 'calc(100vw - 32px)', width: '100%' }}
           />
         </main>
       </WithFonts>

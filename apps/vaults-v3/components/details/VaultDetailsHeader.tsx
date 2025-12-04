@@ -1,11 +1,11 @@
 import { Counter } from '@lib/components/Counter'
+import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
-import { Renderable } from '@lib/components/Renderable'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
-import type { TKatanaAprData } from '@lib/hooks/useKatanaAprs'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
+import { IconCopy } from '@lib/icons/IconCopy'
 import { IconQuestion } from '@lib/icons/IconQuestion'
 import type { TAddress, TNormalizedBN } from '@lib/types'
 import {
@@ -15,7 +15,6 @@ import {
   decodeAsNumber,
   decodeAsString,
   formatUSD,
-  isZero,
   isZeroAddress,
   toAddress,
   toBigInt,
@@ -31,352 +30,201 @@ import { STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/stakingRewards.abi'
 import { V3_STAKING_REWARDS_ABI } from '@vaults-v2/utils/abi/V3StakingRewards.abi'
 import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
 import { VEYFI_GAUGE_ABI } from '@vaults-v2/utils/abi/veYFIGauge.abi'
-import { KatanaApyTooltip } from '@vaults-v3/components/table/KatanaApyTooltip'
-import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
+import { VaultForwardAPY } from '@vaults-v3/components/table/VaultForwardAPY'
+import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import type { ReactElement } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { erc20Abi, zeroAddress } from 'viem'
 import { useBlockNumber } from 'wagmi'
 import { readContract, readContracts } from 'wagmi/actions'
 
-type TVaultHeaderLineItemProps = {
-  label: string
-  children: ReactElement | string
-  legend?: ReactElement | string
+type TVaultHoldingsData = {
+  deposited: TNormalizedBN
+  valueInToken: TNormalizedBN
+  earnedAmount: TNormalizedBN
+  rewardTokenSymbol: string
+  rewardTokenDecimal: number
+  earnedValue: number
 }
 
-function VaultHeaderLineItem({ label, children, legend }: TVaultHeaderLineItemProps): ReactElement {
+const METRIC_VALUE_CLASS = 'font-number text-[32px] leading-tight md:text-[28px] font-normal'
+const METRIC_FOOTNOTE_CLASS = 'text-xs text-neutral-500'
+
+type TMetricBlock = {
+  key: string
+  header: ReactElement
+  value: ReactElement
+  footnote?: ReactElement
+  secondaryLabel?: ReactElement
+}
+
+function MetricsCard({ items }: { items: TMetricBlock[] }): ReactElement {
   return (
     <div
-      className={'flex flex-col items-center justify-center space-y-1 overflow-hidden md:space-y-2 md:overflow-visible'}
+      className={cl(
+        'rounded-xl border border-neutral-200 bg-neutral-0/90 text-neutral-900 shadow-xs shadow-neutral-900/10',
+        'backdrop-blur-sm'
+      )}
     >
-      <p className={'text-center text-xs text-neutral-900/70'}>{label}</p>
-      <b className={'font-number text-base md:text-3xl'} suppressHydrationWarning>
-        {children}
-      </b>
-      <legend
-        className={'font-number whitespace-nowrap text-center text-xs text-neutral-900/70'}
-        suppressHydrationWarning
-      >
-        {legend ? legend : '\u00A0'}
-      </legend>
+      <div className={'divide-y divide-neutral-200 md:flex md:divide-y-0'}>
+        {items.map(
+          (item, index): ReactElement => (
+            <div
+              key={item.key}
+              className={cl(
+                'flex flex-1 flex-col gap-1 px-5 py-3',
+                index < items.length - 1 ? 'md:border-r md:border-neutral-200' : ''
+              )}
+            >
+              <div className={'flex items-center justify-between'}>
+                {item.header}
+                {item.secondaryLabel ?? <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>}
+              </div>
+              <div className={'[&_b.yearn--table-data-section-item-value]:text-left'}>{item.value}</div>
+              {item.footnote ? <div>{item.footnote}</div> : null}
+            </div>
+          )
+        )}
+      </div>
     </div>
   )
 }
 
-function VaultAPY({
-  apr,
-  source,
-  katanaExtras,
-  currentVault
-}: {
-  apr: TYDaemonVault['apr']
-  source: string
-  chain: number
-  katanaExtras?: TKatanaAprData
-  currentVault: TYDaemonVault
-}): ReactElement {
-  const apyData = useVaultApyData(currentVault)
-  const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
-  const monthlyAPY = apr.points.monthAgo
-  const weeklyAPY = apr.points.weekAgo
-  const netAPY = apr.netAPR + extraAPY
-  const currentAPY = apr.forwardAPR.netAPR + extraAPY
-  const isSourceVeYFI = source === 'VeYFI'
-
-  const katanaNetAPY = useMemo(() => apyData.katanaTotalApr || 0, [apyData.katanaTotalApr])
-
-  if (katanaExtras) {
-    return (
-      <VaultHeaderLineItem
-        label={'Estimated APR'}
-        legend={
-          <KatanaApyTooltip
-            extrinsicYield={katanaExtras.extrinsicYield}
-            katanaNativeYield={katanaExtras.katanaNativeYield}
-            fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards}
-            katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR}
-            katanaBonusAPR={katanaExtras.katanaBonusAPY}
-            steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
-            currentVault={currentVault}
-            position="top"
-            maxWidth="w-max"
-            className={'items-center justify-center md:justify-center'}
-          >
-            <div className={'flex flex-row items-center space-x-2'}>
-              <div>{'APR Breakdown '}</div>
-              <IconQuestion className={'hidden md:block'} />
-            </div>
-          </KatanaApyTooltip>
-        }
-      >
-        <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
-          <RenderAmount value={katanaNetAPY} symbol={'percent'} decimals={6} />
-        </Renderable>
-      </VaultHeaderLineItem>
-    )
-  }
-
-  if (apr.forwardAPR.type === '' && extraAPY === 0) {
-    return (
-      <VaultHeaderLineItem label={'Historical APY'}>
-        <Renderable shouldRender={true} fallback={'New'}>
-          <RenderAmount value={netAPY} symbol={'percent'} decimals={6} />
-        </Renderable>
-      </VaultHeaderLineItem>
-    )
-  }
-
-  if (apr.forwardAPR.type !== '' && extraAPY !== 0 && !isSourceVeYFI) {
-    const boostedAPY = (apyData.baseForwardApr || apr.forwardAPR.netAPR) + (apyData.rewardsAprSum || extraAPY)
-    return (
-      <VaultHeaderLineItem
-        label={'Historical APY'}
-        legend={
-          <span className={'tooltip'}>
-            <div className={'flex flex-row items-center space-x-2'}>
-              <div>
-                {'Est. APY: '}
-                <RenderAmount shouldHideTooltip={boostedAPY === 0} value={boostedAPY} symbol={'percent'} decimals={6} />
-              </div>
-              <IconQuestion className={'hidden md:block'} />
-            </div>
-            <span className={'tooltipLight top-full mt-2'}>
-              <div
-                className={
-                  'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-                }
-              >
-                <p
-                  className={
-                    'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
-                  }
-                >
-                  {'Estimated APY for the next period based on current data.'}
-                </p>
-                <div
-                  className={
-                    'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
-                  }
-                >
-                  <p>{'• Base APY '}</p>
-                  <span className={'font-number'}>
-                    <RenderAmount
-                      shouldHideTooltip
-                      value={apyData.baseForwardApr || apr.forwardAPR.netAPR}
-                      symbol={'percent'}
-                      decimals={6}
-                    />
-                  </span>
-                </div>
-
-                <div
-                  className={
-                    'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                  }
-                >
-                  <p>{'• Rewards APY '}</p>
-                  <span className={'font-number'}>
-                    <RenderAmount
-                      shouldHideTooltip
-                      value={apyData.rewardsAprSum || extraAPY}
-                      symbol={'percent'}
-                      decimals={6}
-                    />
-                  </span>
-                </div>
-              </div>
-            </span>
-          </span>
-        }
-      >
-        <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
-          <RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
-        </Renderable>
-      </VaultHeaderLineItem>
-    )
-  }
-
+function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): ReactElement {
   return (
-    <VaultHeaderLineItem
-      label={'Historical APY'}
-      legend={
-        <span className={'tooltip'}>
-          <div className={'flex flex-row items-center space-x-2'}>
-            <div>
-              {'Est. APY: '}
-              <RenderAmount value={isZero(currentAPY) ? netAPY : currentAPY} symbol={'percent'} decimals={6} />
-            </div>
-            <IconQuestion className={'hidden md:block'} />
-          </div>
-          <span className={'tooltipLight top-full mt-2'}>
-            <div
-              className={
-                'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-              }
-            >
-              <p
-                className={
-                  'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
-                }
-              >
-                {'Estimated APY for the next period based on current data.'}
-              </p>
-              <div
-                className={
-                  'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
-                }
-              >
-                <p>{'• Base APY '}</p>
-                <RenderAmount
-                  shouldHideTooltip
-                  value={isZero(currentAPY) ? netAPY : currentAPY}
-                  symbol={'percent'}
-                  decimals={6}
-                />
-              </div>
-
-              <div
-                className={
-                  'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-                }
-              >
-                <p>{'• Rewards APY '}</p>
-                <p>{'N/A'}</p>
-              </div>
-            </div>
-          </span>
+    <p className={'flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-neutral-600'}>
+      <span>{label}</span>
+      {tooltip ? (
+        <span title={tooltip} className={'inline-flex items-center'}>
+          <IconQuestion className={'size-3 text-neutral-400'} aria-label={`${label} info`} />
         </span>
-      }
-    >
-      <Renderable shouldRender={!apr?.type.includes('new')} fallback={'New'}>
-        <RenderAmount value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY} symbol={'percent'} decimals={6} />
-      </Renderable>
-    </VaultHeaderLineItem>
+      ) : null}
+    </p>
   )
 }
 
-/**************************************************************************************************
- ** TVLInVault will render a block of two values: the total value locked in the vault along with
- ** the value of the vault in USD.
- *************************************************************************************************/
-function TVLInVault(props: { tokenSymbol: string; tvl: number; totalAssets: bigint; decimals: number }): ReactElement {
-  return (
-    <VaultHeaderLineItem label={`Total deposited, ${props.tokenSymbol || 'tokens'}`} legend={formatUSD(props.tvl)}>
-      <Counter
-        value={toNormalizedBN(props.totalAssets, props.decimals).normalized}
-        decimals={props.decimals}
-        decimalsToDisplay={[2, 6, 8, 10, 12]}
-      />
-    </VaultHeaderLineItem>
-  )
-}
-
-/**************************************************************************************************
- ** ValueInVaultAsToken will render a block of two values: the value of token we can redeem from
- ** the vault based on the amount of yvToken deposited, along with the value of the token in USD.
- *************************************************************************************************/
-function ValueInVaultAsToken(props: {
-  currentVault: TYDaemonVault
-  vaultPrice: number
-  valueInToken: TNormalizedBN
-}): ReactElement {
-  return (
-    <VaultHeaderLineItem
-      label={`Value in ${props.currentVault.token.symbol || 'tokens'}`}
-      legend={
-        <span className={'tooltip'}>
-          <div className={'flex flex-row items-center space-x-2'}>
-            <div>
-              {'$'}
-              <Counter
-                value={props.valueInToken.normalized * props.vaultPrice}
-                decimals={2}
-                decimalsToDisplay={[2, 4, 6, 8]}
-              />
-            </div>
-            <IconQuestion className={'hidden md:block'} />
-          </div>
-          <span className={'tooltipLight top-full mt-2'}>
-            <div
-              className={
-                '-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-xs text-neutral-900'
-              }
-            >
-              <p className={'flex w-full flex-row justify-between text-neutral-700 md:text-xs'}>
-                {'Your yield is accruing every single block. Go you!'}
-              </p>
-            </div>
-          </span>
-        </span>
-      }
-    >
-      <Counter
-        value={props.valueInToken.normalized}
-        decimals={props.currentVault.decimals}
-        idealDecimals={2}
-        decimalsToDisplay={[6, 8, 10, 12]}
-      />
-    </VaultHeaderLineItem>
-  )
-}
-
-/**************************************************************************************************
- ** ValueEarned will render a block of two values: the amount of rewards earned by the user in the
- ** vault, along with the value of the rewards in USD.
- ** This is only displayed if the vault has a staking contract.
- *************************************************************************************************/
-function ValueEarned(props: {
-  currentVault: TYDaemonVault
-  rewardTokenSymbol: string
-  rewardTokenDecimal: number
-  earnedValue: number
-  earnedAmount: TNormalizedBN
-}): ReactElement {
-  return (
-    <VaultHeaderLineItem
-      label={`Extra earned, ${props.rewardTokenSymbol}`}
-      legend={
-        <span className={'tooltip'}>
-          <div className={'flex flex-row items-center space-x-2'}>
-            <div>
-              {'$'}
-              <Counter value={props.earnedValue} decimals={2} decimalsToDisplay={[2, 4, 6, 8]} />
-            </div>
-            <IconQuestion className={'hidden md:block'} />
-          </div>
-          <span className={'tooltipLight top-full mt-2'}>
-            <div
-              className={
-                '-mx-12 w-fit rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'
-              }
-            >
-              <p className={'flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
-                {'Your yield is accruing every single block. Go you!'}
-              </p>
-            </div>
-          </span>
-        </span>
-      }
-    >
-      <span className={'font-numer'}>
-        <Counter
-          value={props.earnedAmount.normalized}
-          decimals={props.rewardTokenDecimal}
-          idealDecimals={2}
-          decimalsToDisplay={[8, 10, 12, 16, 18]}
+function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+  const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
+  const metrics: TMetricBlock[] = [
+    {
+      key: 'est-apy',
+      header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY for the next period'} />,
+      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
+      value: (
+        <VaultForwardAPY
+          currentVault={currentVault}
+          showSubline={false}
+          className={'items-start text-left'}
+          valueClassName={METRIC_VALUE_CLASS}
         />
-      </span>
-    </VaultHeaderLineItem>
-  )
+      )
+    },
+    {
+      key: 'historical-apy',
+      header: <MetricHeader label={'30 Day APY'} tooltip={'Average realized APY over the previous 30 days'} />,
+      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
+      value: (
+        <VaultHistoricalAPY
+          currentVault={currentVault}
+          className={'items-start text-left'}
+          valueClassName={METRIC_VALUE_CLASS}
+        />
+      )
+    },
+    {
+      key: 'tvl',
+      header: <MetricHeader label={'TVL'} tooltip={'Total value currently deposited into this vault'} />,
+      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
+      value: (
+        <span className={METRIC_VALUE_CLASS}>
+          <RenderAmount
+            value={currentVault.tvl?.tvl || 0}
+            symbol={'USD'}
+            decimals={0}
+            options={{
+              shouldCompactValue: true,
+              maximumFractionDigits: 2,
+              minimumFractionDigits: 0
+            }}
+          />
+        </span>
+      ),
+      footnote: (
+        <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
+          <span className={'font-number'}>
+            <Counter value={totalAssets} decimals={currentVault.decimals} decimalsToDisplay={[2, 6, 8, 10, 12]} />
+          </span>
+          <span className={'pl-1'}>{currentVault.token.symbol || 'tokens'}</span>
+        </p>
+      )
+    }
+  ]
+
+  return <MetricsCard items={metrics} />
+}
+
+function UserHoldingsCard({
+  currentVault,
+  vaultData,
+  tokenPrice
+}: {
+  currentVault: TYDaemonVault
+  vaultData: TVaultHoldingsData
+  tokenPrice: number
+}): ReactElement {
+  const underlyingValueUSD = vaultData.valueInToken.normalized * tokenPrice
+  const hasDeposits = vaultData.deposited.raw > 0n
+
+  const sections: TMetricBlock[] = [
+    {
+      key: 'underlying',
+      header: <MetricHeader label={'Underlying'} tooltip={'Your redeemable balance of the vault’s underlying asset'} />,
+      value: (
+        <span className={METRIC_VALUE_CLASS} suppressHydrationWarning>
+          <Counter
+            value={vaultData.valueInToken.normalized}
+            decimals={currentVault.decimals}
+            idealDecimals={2}
+            decimalsToDisplay={[6, 8, 10, 12]}
+          />
+        </span>
+      ),
+      footnote: (
+        <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
+          {formatUSD(underlyingValueUSD)}
+        </p>
+      )
+    },
+    {
+      key: 'deposited',
+      header: <MetricHeader label={'Deposited'} tooltip={'Your total position denominated in vault tokens'} />,
+      value: (
+        <span className={METRIC_VALUE_CLASS} suppressHydrationWarning>
+          <Counter
+            value={vaultData.deposited.normalized}
+            decimals={currentVault.decimals}
+            idealDecimals={2}
+            decimalsToDisplay={[6, 8, 10, 12]}
+          />
+        </span>
+      ),
+      footnote: (
+        <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
+          {hasDeposits ? `${currentVault.symbol || 'Vault'} tokens` : 'No deposits yet'}
+        </p>
+      )
+    }
+  ]
+
+  return <MetricsCard items={sections} />
 }
 
 export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { address } = useWeb3()
   const { getPrice } = useYearn()
   const { data: blockNumber } = useBlockNumber({ watch: true })
-  const { apr, tvl, decimals, symbol = 'token' } = currentVault
-  const [vaultData, setVaultData] = useState({
+  const { decimals } = currentVault
+  const [vaultData, setVaultData] = useState<TVaultHoldingsData>({
     deposited: zeroNormalizedBN,
     valueInToken: zeroNormalizedBN,
     earnedAmount: zeroNormalizedBN,
@@ -384,13 +232,6 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
     rewardTokenDecimal: 0,
     earnedValue: 0
   })
-
-  const apyData = useVaultApyData(currentVault)
-
-  const displayApr = useMemo((): TYDaemonVault['apr'] => {
-    if (apyData.katanaTotalApr === undefined) return apr
-    return { ...apr, netAPR: apyData.katanaTotalApr }
-  }, [apr, apyData.katanaTotalApr])
 
   const tokenPrice =
     useYearnTokenPrice({
@@ -654,88 +495,49 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
     }
   }, [blockNumber, refetch, currentVault.chainID])
 
-  return (
-    <div className={'col-span-12 mt-4 flex w-full flex-col items-center justify-center'}>
-      <strong
-        className={cl(
-          'mx-auto flex w-full flex-row items-center justify-center text-center',
-          'text-3xl md:text-[64px] leading-[36px] md:leading-[72px]',
-          'tabular-nums text-neutral-900 font-black'
-        )}
-      >
-        {getVaultName(currentVault)}
-      </strong>
+  const chainName = getNetwork(currentVault.chainID).name
+  const metadataLine = [chainName, currentVault.category, currentVault.kind].filter(Boolean).join(' • ')
+  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+    currentVault.chainID
+  }/${currentVault.token.address.toLowerCase()}/logo-128.png`
 
-      <div className={'mb-10 mt-6 flex flex-col justify-center md:mt-4'}>
-        {currentVault.address ? (
-          <button onClick={(): void => copyToClipboard(currentVault.address)}>
-            <p className={'font-number text-center text-xxs text-neutral-900/70 md:text-xs'}>{currentVault.address}</p>
-          </button>
-        ) : (
-          <p className={'text-xxs md:text-xs'}>&nbsp;</p>
-        )}
-        <div className={'mt-4 flex flex-col gap-2 md:flex-row md:justify-center'}>
-          <div className={'w-full rounded-lg bg-neutral-900/30 px-4 py-2 text-center md:w-fit'}>
-            <strong className={'text-sm font-black text-neutral-900 md:text-xl'}>{currentVault.token.name}</strong>
-          </div>
-          <div className={'w-full rounded-lg bg-neutral-900/30 px-4 py-2 text-center md:w-fit'}>
-            <strong className={'text-sm font-black text-neutral-900 md:text-xl'}>
-              {getNetwork(currentVault.chainID).name}
-            </strong>
-          </div>
-          {currentVault?.info?.isBoosted ? (
-            <div className={'w-full rounded-lg bg-neutral-900/30 px-4 py-2 text-center md:w-fit'}>
-              <strong className={'text-sm font-black text-neutral-900 md:text-xl'}>{'⚡️ Boosted'}</strong>
+  return (
+    <div className={'col-span-12 mt-4 flex w-full flex-col text-left'}>
+      <div className={'flex flex-col gap-0'}>
+        <div className={'flex flex-col gap-4 md:flex-row md:items-center'}>
+          <div className={'flex items-center gap-4'}>
+            <div className={'flex size-14 items-center justify-start rounded-full bg-neutral-0/70'}>
+              <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={56} height={56} />
             </div>
-          ) : null}
+            <div className={'flex flex-col'}>
+              <strong className={'text-3xl font-black leading-tight text-neutral-700 md:text-[48px] md:leading-14'}>
+                {getVaultName(currentVault)} {' yVault'}
+              </strong>
+            </div>
+          </div>
         </div>
+        {currentVault.address ? (
+          <button
+            type={'button'}
+            onClick={(): void => copyToClipboard(currentVault.address)}
+            className={
+              'flex items-center gap-2 text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm pt-2'
+            }
+          >
+            <span>{currentVault.address}</span>
+            <IconCopy className={'size-4'} />
+          </button>
+        ) : null}
+        {metadataLine ? <p className={'text-sm text-neutral-900/70 md:text-base'}>{metadataLine}</p> : null}
       </div>
 
-      <div
-        className={cl(
-          'grid grid-cols-2 gap-6 w-full md:px-10',
-          currentVault.staking.available &&
-            currentVault.staking.source !== 'yBOLD' &&
-            currentVault.staking.source !== 'VeYFI'
-            ? 'md:grid-cols-4'
-            : 'md:grid-cols-3'
-        )}
-      >
-        <div className={'w-full'}>
-          <TVLInVault tokenSymbol={symbol} tvl={tvl.tvl} totalAssets={tvl.totalAssets} decimals={decimals} />
+      <div className={'mt-4 grid w-full grid-cols-1 gap-4 md:grid-cols-20 md:items-start'}>
+        <div className={'md:col-span-13'}>
+          <VaultOverviewCard currentVault={currentVault} />
         </div>
-
-        <div className={'w-full'}>
-          <VaultAPY
-            apr={displayApr}
-            source={currentVault.staking.source}
-            chain={currentVault.chainID}
-            katanaExtras={apyData.katanaExtras}
-            currentVault={currentVault}
-          />
+        <div className={'md:col-span-7'}>
+          <UserHoldingsCard currentVault={currentVault} vaultData={vaultData} tokenPrice={tokenPrice} />
         </div>
-
-        <div className={'w-full'}>
-          <ValueInVaultAsToken
-            currentVault={currentVault}
-            valueInToken={vaultData.valueInToken}
-            vaultPrice={tokenPrice}
-          />
-        </div>
-
-        {currentVault.staking.available &&
-        currentVault.staking.source !== 'yBOLD' &&
-        currentVault.staking.source !== 'VeYFI' ? (
-          <div className={'w-full'}>
-            <ValueEarned
-              currentVault={currentVault}
-              earnedAmount={vaultData.earnedAmount}
-              earnedValue={vaultData.earnedValue}
-              rewardTokenSymbol={vaultData.rewardTokenSymbol}
-              rewardTokenDecimal={vaultData.rewardTokenDecimal}
-            />
-          </div>
-        ) : null}
       </div>
     </div>
   )

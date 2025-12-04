@@ -39,7 +39,7 @@ export function VaultRiskScoreTag({
           <p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>{'Risk Score'}</p>
         )}
         <div
-          className={cl('flex w-fit items-center justify-end gap-4 md:justify-center', 'tooltip relative z-50 h-6')}
+          className={cl('flex w-fit items-center justify-end gap-4 md:justify-center', 'tooltip relative z-5 h-6')}
           onClick={onClick}
         >
           <div className={'h-3 w-10 min-w-10 rounded-xs border-2 border-neutral-400 p-[2px]'}>

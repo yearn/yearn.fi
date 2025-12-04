@@ -5,14 +5,18 @@ import { Navigate, Route, Routes } from 'react-router'
 // Lazy load all page components
 const HomePage = lazy(() => import('../pages/index'))
 const AppsPage = lazy(() => import('../pages/apps/index'))
+const PortfolioPage = lazy(() => import('../pages/portfolio/index'))
 const VaultsPage = lazy(() => import('../pages/vaults/index'))
 const VaultsAboutPage = lazy(() => import('../pages/vaults/about'))
-const VaultsDetailPage = lazy(() => import('../pages/vaults/[chainID]/[address]'))
 const V3Page = lazy(() => import('../pages/v3/index'))
+const V3HomePage = lazy(() => import('../pages/v3/home'))
 const V3AboutPage = lazy(() => import('../pages/v3/about'))
-const V3DetailPage = lazy(() => import('../pages/v3/[chainID]/[address]'))
 const VaultsBetaPage = lazy(() => import('../pages/vaults-beta/index'))
+const VaultsBetaDetailPage = lazy(() => import('../pages/vaults-beta/[chainID]/[address]'))
 const VaultsBetaSearchPage = lazy(() => import('../pages/vaults-beta/search/[query]'))
+
+const VaultsDetailPage = VaultsBetaDetailPage
+const V3DetailPage = VaultsBetaDetailPage
 
 // Loading component
 const PageLoader = (): ReactElement => (
@@ -41,12 +45,14 @@ export const routeConfig = {
   },
   v3: {
     index: '/v3',
+    home: '/v3/home',
     about: '/v3/about',
     detail: '/v3/:chainID/:address',
     chainOnly: '/v3/:chainID'
   },
   vaultsBeta: {
     index: '/vaults-beta',
+    detail: '/vaults-beta/:chainID/:address',
     search: '/vaults-beta/search/:query'
   },
   external: {
@@ -73,6 +79,9 @@ export function AppRoutes(): ReactElement {
         {/* Apps page */}
         <Route path="/apps" element={<AppsPage />} />
 
+        {/* Portfolio page */}
+        <Route path="/portfolio" element={<PortfolioPage />} />
+
         {/* Vaults routes */}
         <Route path="/vaults">
           <Route index element={<VaultsPage />} />
@@ -83,6 +92,7 @@ export function AppRoutes(): ReactElement {
 
         {/* V3 routes */}
         <Route path="/v3" element={<V3Page />} />
+        <Route path="/v3/home" element={<V3HomePage />} />
         <Route path="/v3/about" element={<V3AboutPage />} />
         <Route path="/v3/:chainID/:address" element={<V3DetailPage />} />
         {/* Redirect /v3/:chainId without address to /v3 */}
@@ -91,6 +101,7 @@ export function AppRoutes(): ReactElement {
         {/* Vaults Beta routes */}
         <Route path="/vaults-beta">
           <Route index element={<VaultsBetaPage />} />
+          <Route path=":chainID/:address" element={<VaultsBetaDetailPage />} />
           <Route path="search/:query" element={<VaultsBetaSearchPage />} />
         </Route>
 

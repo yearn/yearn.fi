@@ -6,7 +6,7 @@ import type { TSortDirection } from '@lib/types'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { TFilter, VAULT_PAGE_SIZE } from '@vaults/constants'
 import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
-import { ALL_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
+import { DEFAULT_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
 import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
@@ -37,7 +37,6 @@ function mapToCombinedVaultList(
         <VaultsListEmpty
           key={'empty-list'}
           isLoading={isLoadingVaultList}
-          sortedVaultsToDisplay={sortedVaults}
           currentSearch={''}
           currentCategories={[]}
           currentChains={[]}
@@ -69,7 +68,7 @@ function CombinedVaultsTable(): ReactElement {
 
   // v2
   const { types: typesV2 } = useQueryArguments({
-    defaultTypes: ALL_VAULTS_CATEGORIES_KEYS,
+    defaultTypes: DEFAULT_VAULTS_CATEGORIES_KEYS,
     defaultPathname: '/vaults'
   })
 

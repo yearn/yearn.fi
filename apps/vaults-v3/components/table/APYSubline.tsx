@@ -1,5 +1,4 @@
-import { Tooltip } from '@lib/components/Tooltip'
-import { cl, formatAmount } from '@lib/utils'
+import { cl } from '@lib/utils'
 import type { FC } from 'react'
 import { Fragment } from 'react'
 
@@ -10,7 +9,7 @@ type TAPYSublineProps = {
   isEligibleForSteer?: boolean
   steerPointsPerDollar?: number
   isEligibleForSpectraBoost?: boolean
-  onMobileToggle?: boolean
+  onExtraRewardsClick?: () => void
 }
 
 export const APYSubline: FC<TAPYSublineProps> = ({
@@ -20,7 +19,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
   isEligibleForSteer,
   steerPointsPerDollar,
   isEligibleForSpectraBoost,
-  onMobileToggle
+  onExtraRewardsClick
 }) => {
   // Handle single-line rewards first (they take priority and don't stack)
   if (hasKelpNEngenlayer) {
@@ -48,99 +47,27 @@ export const APYSubline: FC<TAPYSublineProps> = ({
   const hasSteerPoints = isEligibleForSteer && (steerPointsPerDollar || 0) > 0
 
   if (hasSpectraBoost || hasSteerPoints) {
+    const LabelTag = onExtraRewardsClick ? 'button' : 'span'
     return (
-      <div className={cl('flex flex-col gap-0 text-sm text-neutral-500 self-end items-end')}>
-        {/* Spectra boost - show first */}
-        {hasSpectraBoost && !onMobileToggle && (
-          <Tooltip
-            tooltip={
-              <div
-                className={
-                  'w-full max-w-[360px] rounded-xl border border-neutral-300 bg-neutral-200 p-4 pb-1 text-center text-sm text-neutral-900'
-                }
-              >
-                <p className={'-mt-1 mb-2 w-full text-left text-sm text-neutral-700 break-words whitespace-normal'}>
-                  {'Earn boosted yield on Spectra if you '}
-                  <a
-                    href={'https://app.spectra.finance/pools?networks=katana'}
-                    target={'_blank'}
-                    rel={'noopener noreferrer'}
-                    className={
-                      'font-bold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 hover:decoration-neutral-600'
-                    }
-                  >
-                    {'deposit to their protocol'}
-                  </a>
-                  {'.'}
-                </p>
-              </div>
-            }
-          >
-            <small
-              className={cl(
-                'whitespace-nowrap text-sm text-neutral-500 self-end sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
-              )}
-            >
-              {'Boosted yield on Spectra'}
-            </small>
-          </Tooltip>
+      <LabelTag
+        type={onExtraRewardsClick ? 'button' : undefined}
+        className={cl(
+          'whitespace-nowrap text-sm text-neutral-500 self-end -mb-1',
+          onExtraRewardsClick
+            ? 'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600'
+            : undefined
         )}
-        {hasSpectraBoost && onMobileToggle && (
-          <small
-            className={cl(
-              'whitespace-nowrap text-sm text-neutral-500 self-end sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
-            )}
-          >
-            {'Boosted yield on Spectra'}
-          </small>
-        )}
-
-        {/* Steer Points - show second */}
-        {hasSteerPoints && !onMobileToggle && (
-          <Tooltip
-            tooltip={
-              <div
-                className={
-                  'w-full max-w-[360px] rounded-xl border border-neutral-300 bg-neutral-200 p-4 pb-1 text-center text-sm text-neutral-900'
-                }
-              >
-                <p className={'-mt-1 mb-2 w-full text-left text-sm text-neutral-700 break-words whitespace-normal'}>
-                  {'This vault earns '}
-                  <span className={'font-number'}>{formatAmount(steerPointsPerDollar || 0, 2, 2)}</span>
-                  {' Steer Points / dollar deposited, but you must '}
-                  <a
-                    href={'https://app.steer.finance/points'}
-                    target={'_blank'}
-                    rel={'noopener noreferrer'}
-                    className={
-                      'font-bold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 hover:decoration-neutral-600'
-                    }
-                  >
-                    {'register here to earn them.'}
-                  </a>
-                </p>
-              </div>
-            }
-          >
-            <small
-              className={cl(
-                'whitespace-nowrap text-sm text-neutral-500 self-end sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
-              )}
-            >
-              {'Eligible for Steer Points'}
-            </small>
-          </Tooltip>
-        )}
-        {hasSteerPoints && onMobileToggle && (
-          <small
-            className={cl(
-              'whitespace-nowrap text-sm text-neutral-500 self-end sm:underline sm:decoration-neutral-600/30 sm:decoration-dotted sm:underline-offset-4 transition-opacity sm:hover:decoration-neutral-600'
-            )}
-          >
-            {'Eligible for Steer Points'}
-          </small>
-        )}
-      </div>
+        onClick={
+          onExtraRewardsClick
+            ? (event): void => {
+                event.stopPropagation()
+                onExtraRewardsClick()
+              }
+            : undefined
+        }
+      >
+        {'Eligible for Extra Rewards'}
+      </LabelTag>
     )
   }
 
