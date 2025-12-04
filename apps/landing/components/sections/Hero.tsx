@@ -10,7 +10,7 @@ import Link from '/src/components/Link'
 function AnimatedLogos(): ReactElement {
   return (
     <>
-      <div
+      {/* <div
         className={'absolute'}
         style={{
           backgroundImage: "url('/landing/yfi-bottom-right.png')",
@@ -20,7 +20,7 @@ function AnimatedLogos(): ReactElement {
           left: '70%',
           bottom: '0px'
         }}
-      />
+      /> */}
       <div
         className={'absolute'}
         style={{
@@ -55,7 +55,7 @@ function AnimatedLogos(): ReactElement {
           top: '200px'
         }}
       />
-      <div
+      {/* <div
         className={'absolute'}
         style={{
           backgroundImage: "url('/landing/yfi-bottom-left.png')",
@@ -65,7 +65,7 @@ function AnimatedLogos(): ReactElement {
           right: '60%',
           bottom: '0px'
         }}
-      />
+      /> */}
     </>
   )
 }
@@ -79,10 +79,12 @@ export function Hero(): ReactElement {
   return (
     <>
       {/* Desktop Hero Section */}
-      <div className={'hidden w-full justify-center overflow-hidden border-b border-white/10 md:flex'}>
+      <div
+        className={'hidden w-full justify-center overflow-hidden border-b border-neutral-200 bg-transparent md:flex'}
+      >
         <div
           style={{
-            backgroundImage: "url('/landing/hero-background.png')",
+            backgroundImage: "url('/landing/hero-background-2.png')",
             backgroundRepeat: 'no-repeat',
             backgroundSize: '100% 100%',
             backgroundPosition: 'center',
@@ -92,8 +94,8 @@ export function Hero(): ReactElement {
         >
           <AnimatedLogos />
           <div className={'flex h-full items-center justify-center'}>
-            <div className={'z-20 flex flex-col items-center justify-center gap-12 text-center'}>
-              <div className={'mb-8 mt-12'}>
+            <div className={'z-20 flex flex-col items-center justify-center gap-8 text-center'}>
+              <div>
                 <TvlStat tvl={tvl ?? 0} />
               </div>
               <SectionHeader
@@ -102,9 +104,12 @@ export function Hero(): ReactElement {
                 title={'Earn on your Crypto'}
                 description={"Yearn is DeFi's Yield Aggregator"}
               />
-              <div className={'flex flex-row items-center justify-center gap-4'}>
+              <div className={'flex flex-row items-center justify-center gap-4 mt-8'}>
                 <Link href={'/v3'}>
-                  <Button className={'!text-[18px] max-w-xs !px-4 !py-5 !rounded-full !bg-primary'} variant={'primary'}>
+                  <Button
+                    className={'!text-[18px] max-w-xs !px-4 !py-5 !rounded-full !bg-primary text-white'}
+                    variant={'primary'}
+                  >
                     {'Explore Vaults'}
                   </Button>
                 </Link>
@@ -115,9 +120,9 @@ export function Hero(): ReactElement {
       </div>
       {/* Mobile Hero Section */}
       <div
-        className={'flex w-full flex-col items-center bg-white/5 px-4 py-16 md:hidden'}
+        className={'flex w-full flex-col items-center border-b border-neutral-200 bg-surface px-4 py-16 md:hidden'}
         style={{
-          backgroundImage: "url('/landing/hero-background-mobile.png')",
+          backgroundImage: "url('/landing/hero-background-3-flipped.png')",
           backgroundRepeat: 'no-repeat',
           backgroundSize: '100% 100%',
           backgroundPosition: 'center'
@@ -141,7 +146,10 @@ export function Hero(): ReactElement {
             />
             <div className={'flex flex-col items-center justify-center gap-4'}>
               <Link href={'/v3'} className={'block'}>
-                <Button className={'!text-[16px] max-w-xs !px-4 !py-5 !rounded-full !bg-primary'} variant={'primary'}>
+                <Button
+                  className={'!text-[16px] max-w-xs !px-4 !py-5 !rounded-full !bg-primary text-white'}
+                  variant={'primary'}
+                >
                   {'Explore Vaults'}
                 </Button>
               </Link>

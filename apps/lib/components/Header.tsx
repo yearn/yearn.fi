@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
-import { TypeMarkYearn } from '../../../apps/lib/icons/TypeMarkYearn-text-only'
+import { TypeMarkYearn as TypeMarkYearnText } from '../icons/TypeMarkYearn-text-only'
 import { LaunchModal } from './LaunchModal'
 import { ModalMobileMenu } from './ModalMobileMenu'
 
@@ -30,7 +30,7 @@ const PRIMARY_LINKS: TPrimaryLink[] = [
   {
     path: '/v3',
     label: 'Vaults',
-    matchers: ['/', '/v3', '/vaults', '/vaults-beta']
+    matchers: ['/v3', '/vaults', '/vaults-beta']
   },
   { path: '/portfolio', label: 'Portfolio' }
 ]
@@ -227,6 +227,8 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     void pathname
   }, [updateSurfaceBackground, pathname])
 
+  const isHomePage = window.location.pathname === '/'
+
   return (
     <div
       id={'head'}
@@ -247,8 +249,9 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
               <LaunchModal />
             </div>
             <div className={'flex items-center gap-2 md:gap-4'}>
-              <TypeMarkYearn className={'yearn-typemark h-8 w-auto pt-1'} />
-              <div className={'flex items-center gap-4'}>
+              <TypeMarkYearnText className={'yearn-typemark h-8 w-auto'} />
+              {/* <TypeMarkYearnFull className={'yearn-typemark hidden h-8 w-auto md:block'} color={'currentColor'} /> */}
+              <div className={'flex items-center gap-4 pb-0.5'}>
                 {PRIMARY_LINKS.map((link) => {
                   const isActive =
                     link.matchers?.some((matcher) =>
@@ -268,21 +271,25 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
           </div>
           <div className={'flex w-1/2 items-center justify-end'}>
             <Navbar currentPathName={pathname || ''} nav={menu} />
-            <button
-              className={'yearn--header-nav-item relative rounded-full p-4 transition-colors'}
-              onClick={(): void => setShouldOpenCurtain(true)}
-            >
-              <IconBell className={'size-4 font-bold transition-colors'} />
+            {!isHomePage && (
+              <div className={'direction-row flex items-center justify-end'}>
+                <button
+                  className={'yearn--header-nav-item relative rounded-full p-4 transition-colors'}
+                  onClick={(): void => setShouldOpenCurtain(true)}
+                >
+                  <IconBell className={'size-4 font-bold transition-colors'} />
 
-              <div className={cl('absolute right-4 top-4 size-2 rounded-full', notificationDotColor)} />
-            </button>
-            <WalletSelector />
-            <div className={'flex md:hidden pl-4 text-neutral-500'}>
-              <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
-                <span className={'sr-only'}>{'Open menu'}</span>
-                <IconBurgerPlain />
-              </button>
-            </div>
+                  <div className={cl('absolute right-4 top-4 size-2 rounded-full', notificationDotColor)} />
+                </button>
+                <WalletSelector />
+                <div className={'flex md:hidden pl-4 text-neutral-500'}>
+                  <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
+                    <span className={'sr-only'}>{'Open menu'}</span>
+                    <IconBurgerPlain />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </header>
       </div>

@@ -26,12 +26,12 @@ export const SectionHeader: FC<{
       </div>
       {!!description && (
         <p
-          className={`text-steel-gray-500 ${isH1 ? 'text-[18px] md:text-[24px]' : 'text-[18px]'} max-w-[55ch] ${align === 'center' ? 'text-center' : 'text-center md:text-left'} max-w-[28ch] md:max-w-full`}
+          className={`text-neutral-700 ${isH1 ? 'text-[18px] md:text-[24px]' : 'text-[18px]'} max-w-[55ch] ${align === 'center' ? 'text-center' : 'text-center md:text-left'} max-w-[28ch] md:max-w-full`}
         >
           {description}
           {!!cta && (
             <span className={'hidden md:inline'}>
-              <Link href={cta.href} className={'ml-2 text-white'}>
+              <Link href={cta.href} className={'ml-2 text-neutral-900'}>
                 {cta.label} {'→'}
               </Link>
             </span>

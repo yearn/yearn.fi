@@ -77,10 +77,10 @@ const PartnerLogo: FC<Partner> = ({ image, alt, href, size = 40 }) => {
           alt={alt}
           width={size}
           height={size}
-          className={'object-contain'}
+          className={'h-full w-full object-contain'}
           style={{
-            maxWidth: `${size}px`,
-            maxHeight: `${size}px`
+            width: `${size}px`,
+            height: `${size}px`
           }}
         />
       </div>
