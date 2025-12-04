@@ -95,17 +95,16 @@ export const FAQs: FC = () => {
               description={'Frequently asked questions about Yearn'}
             />
           </div>
-          <div className={'grid grid-cols-1 gap-8 md:grid-cols-2'}>
-            <div className={'hidden h-[400px] md:block'}>
+          <div className={'flex flex-col gap-8 md:flex-row'}>
+            <div className={'hidden h-[427px] w-[427px] flex-shrink-0 md:block'}>
               <Image
-                src={'/landing/footer-background.png'}
-                width={600}
-                height={600}
-                alt={'Yearn Finance'}
+                src={'/landing/pill4.png'}
+                height={427}
+                alt={'blue-pill'}
                 className={'size-full rounded-lg object-cover'}
               />
             </div>
-            <div className={'flex flex-col space-y-2'}>
+            <div className={'flex flex-1 flex-col space-y-2'}>
               {faqData.map((faq, index) => (
                 <FAQItem key={faq.title} title={faq.title} isOpen={openFAQ === index} onToggle={() => toggleFAQ(index)}>
                   {faq.content}

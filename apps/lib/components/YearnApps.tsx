@@ -92,23 +92,6 @@ const CORE_APPS: TAppTile[] = [
     hosts: ['veyfi.yearn.fi']
   },
   {
-    name: 'yETH',
-    href: 'https://yeth.yearn.fi',
-    description: 'ETH LST Aggregator',
-    icon: (
-      <Image
-        alt={'yETH'}
-        className={'size-8! max-h-8! max-w-8!'}
-        width={64}
-        height={64}
-        src={`${BASE_YEARN_ASSET_URI}/tokens/1/0x1bed97cbc3c24a4fb5c069c6e311a967386131f7/logo-128.png`}
-        loading={'eager'}
-        priority
-      />
-    ),
-    hosts: ['yeth.yearn.fi']
-  },
-  {
     name: 'YearnX',
     href: 'https://yearn.space',
     description: 'Yearn Partner Pages',
@@ -271,6 +254,23 @@ const DEPRECATED: TAppTile[] = [
     description: 'Legacy dashboards',
     icon: yearnGlyph({ back: 'text-[#14b8a6]', front: 'text-[#0f172a]' }),
     hosts: ['seafood.yearn.watch']
+  },
+  {
+    name: 'yETH',
+    href: 'https://yeth.yearn.fi',
+    description: 'ETH LST Aggregator',
+    icon: (
+      <Image
+        alt={'yETH'}
+        className={'size-8! max-h-8! max-w-8!'}
+        width={64}
+        height={64}
+        src={`${BASE_YEARN_ASSET_URI}/tokens/1/0x1bed97cbc3c24a4fb5c069c6e311a967386131f7/logo-128.png`}
+        loading={'eager'}
+        priority
+      />
+    ),
+    hosts: ['yeth.yearn.fi']
   }
 ]
 
