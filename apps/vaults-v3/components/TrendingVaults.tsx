@@ -70,7 +70,7 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
   return (
     <div className={'w-full bg-app pb-2'}>
       <div className={'flex flex-col gap-0 rounded-xl border border-neutral-200 bg-surface'}>
-        <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}>
+        <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4 h-16'}>
           <button
             type={'button'}
             className={'flex items-center gap-3'}
