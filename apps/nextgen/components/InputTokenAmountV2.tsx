@@ -1,4 +1,5 @@
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { cl, exactToSimple, simpleToExact } from '@lib/utils'
 import type { useDebouncedInput } from 'apps/nextgen/hooks/useDebouncedInput'
 import type { useInput } from 'apps/nextgen/hooks/useInput'
@@ -123,6 +124,7 @@ export const InputTokenAmountV2: FC<Props> = ({
     const percentageAmount = ((+fullAmount * percentage) / 100).toFixed(tokenDecimals)
     setFormValue?.(percentageAmount)
   }
+
   return (
     <div className={cl('flex flex-col w-full relative border border-gray-200 rounded-md', className)}>
       <div className="py-2 px-3 flex flex-col gap-1">
@@ -227,13 +229,12 @@ export const InputTokenAmountV2: FC<Props> = ({
               )}
             >
               {tokenAddress && tokenChainId && (
-                <ImageWithFallback
-                  src={`${
-                    import.meta.env.VITE_BASE_YEARN_ASSETS_URI
-                  }/tokens/${tokenChainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-                  alt={symbol ?? ''}
-                  width={24}
-                  height={24}
+                <TokenLogo
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${tokenChainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                  tokenSymbol={symbol ?? ''}
+                  tokenName={symbol ?? ''}
+                  width={32}
+                  height={32}
                   className="rounded-full"
                 />
               )}
