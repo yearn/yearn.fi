@@ -1,24 +1,31 @@
 import type { ReactElement, ReactNode } from 'react'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
+export type HeaderDisplayMode = 'collapsible' | 'full' | 'minimal'
+
 type DevFlagsContextValue = {
+  headerDisplayMode: HeaderDisplayMode
+  setHeaderDisplayMode: (value: HeaderDisplayMode) => void
+  // Legacy support
   headerCompressionEnabled: boolean
   setHeaderCompressionEnabled: (value: boolean) => void
 }
 
 const DEFAULT_FLAGS: DevFlagsContextValue = {
+  headerDisplayMode: 'collapsible',
+  setHeaderDisplayMode: () => undefined,
   headerCompressionEnabled: true,
   setHeaderCompressionEnabled: () => undefined
 }
 
 const DevFlagsContext = createContext<DevFlagsContextValue | undefined>(undefined)
 
-const HEADER_COMPRESSION_STORAGE_KEY = 'dev-header-compression-enabled'
+const HEADER_DISPLAY_MODE_STORAGE_KEY = 'dev-header-display-mode'
 const ENABLE_TOOLBAR =
   !import.meta.env.PROD || import.meta.env.VITE_ENABLE_DEV_TOOLBAR === 'true' || import.meta.env.MODE !== 'production'
 
 export function DevFlagsProvider({ children }: { children: ReactNode }): ReactElement {
-  const [headerCompressionEnabled, setHeaderCompressionEnabled] = useState<boolean>(true)
+  const [headerDisplayMode, setHeaderDisplayMode] = useState<HeaderDisplayMode>('collapsible')
 
   useEffect(() => {
     if (!ENABLE_TOOLBAR) {
@@ -26,11 +33,9 @@ export function DevFlagsProvider({ children }: { children: ReactNode }): ReactEl
     }
 
     try {
-      const stored = window.localStorage.getItem(HEADER_COMPRESSION_STORAGE_KEY)
-      if (stored === 'true') {
-        setHeaderCompressionEnabled(true)
-      } else if (stored === 'false') {
-        setHeaderCompressionEnabled(false)
+      const stored = window.localStorage.getItem(HEADER_DISPLAY_MODE_STORAGE_KEY) as HeaderDisplayMode | null
+      if (stored && ['collapsible', 'full', 'minimal'].includes(stored)) {
+        setHeaderDisplayMode(stored)
       }
     } catch {
       // no-op
@@ -43,18 +48,29 @@ export function DevFlagsProvider({ children }: { children: ReactNode }): ReactEl
     }
 
     try {
-      window.localStorage.setItem(HEADER_COMPRESSION_STORAGE_KEY, headerCompressionEnabled ? 'true' : 'false')
+      window.localStorage.setItem(HEADER_DISPLAY_MODE_STORAGE_KEY, headerDisplayMode)
     } catch {
       // no-op
     }
-  }, [headerCompressionEnabled])
+  }, [headerDisplayMode])
+
+  // Legacy support - map new modes to old boolean
+  const headerCompressionEnabled = useMemo(() => headerDisplayMode === 'collapsible', [headerDisplayMode])
+  const setHeaderCompressionEnabled = useMemo(
+    () => (value: boolean) => {
+      setHeaderDisplayMode(value ? 'collapsible' : 'full')
+    },
+    []
+  )
 
   const value = useMemo(
     () => ({
+      headerDisplayMode,
+      setHeaderDisplayMode,
       headerCompressionEnabled,
       setHeaderCompressionEnabled
     }),
-    [headerCompressionEnabled]
+    [headerDisplayMode, headerCompressionEnabled, setHeaderCompressionEnabled]
   )
 
   return <DevFlagsContext.Provider value={value}>{children}</DevFlagsContext.Provider>
