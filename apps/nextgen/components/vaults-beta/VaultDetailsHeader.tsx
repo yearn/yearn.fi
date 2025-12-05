@@ -345,16 +345,16 @@ function UserHoldingsCard({
 
 export function VaultDetailsHeader({
   currentVault,
-  enableCompression = true
+  displayMode = 'collapsible'
 }: {
   currentVault: TYDaemonVault
-  enableCompression?: boolean
+  displayMode?: 'collapsible' | 'full' | 'minimal'
 }): ReactElement {
   const { address } = useWeb3()
   const { getPrice } = useYearn()
   const { data: blockNumber } = useBlockNumber({ watch: true })
   const { decimals } = currentVault
-  const { isCompressed } = useHeaderCompression({ enabled: enableCompression })
+  const { isCompressed } = useHeaderCompression({ enabled: displayMode === 'collapsible' })
   const [vaultData, setVaultData] = useState<TVaultHoldingsData>({
     deposited: zeroNormalizedBN,
     valueInToken: zeroNormalizedBN,

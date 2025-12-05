@@ -97,7 +97,7 @@ export type TModal = {
 } & React.ComponentPropsWithoutRef<'div'>
 
 export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
-  const { isOpen, onClose } = props
+  const { isOpen, onClose, children } = props
 
   return (
     <Transition show={isOpen} as={'div'}>
@@ -138,8 +138,9 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
                 style={{
                   background: 'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
                 }}
-                className={'flex flex-1 w-full flex-col justify-end px-8 pb-20 h-full'}
+                className={'flex flex-1 w-full flex-col justify-end px-8 pb-20 h-full space-y-8'}
               >
+                <div className={'flex flex-col space-y-4'}>{children}</div>
                 <FooterNav onClose={onClose} />
               </div>
             </div>

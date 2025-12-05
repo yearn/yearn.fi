@@ -100,10 +100,10 @@ export function VaultInfoSection({
             href={`${yDaemonBaseUri}/vaults/${currentVault.address}`}
             target={'_blank'}
             rel={'noopener noreferrer'}
-            className={'font-number text-sm text-neutral-900 hover:underline'}
+            className={'text-sm text-neutral-900 hover:underline'}
             suppressHydrationWarning
           >
-            {`${yDaemonBaseUri}/vaults/${currentVault.address}`}
+            {'View API Data'}
           </a>
         </div>
       </div>

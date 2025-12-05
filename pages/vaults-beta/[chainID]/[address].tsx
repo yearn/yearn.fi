@@ -26,7 +26,7 @@ import { useDevFlags } from '/src/contexts/useDevFlags'
 
 function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
-  const { headerCompressionEnabled: enableHeaderCompression } = useDevFlags()
+  const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
 
   const { address, isActive } = useWeb3()
@@ -68,7 +68,6 @@ function Index(): ReactElement | null {
     info: true,
     charts: true
   })
-  const [isWidgetOpen, setIsWidgetOpen] = useState(false)
   const collapsibleTitles: Record<SectionKey, string> = {
     about: 'Description',
     risk: 'Risk',
@@ -271,6 +270,24 @@ function Index(): ReactElement | null {
     )
   }
 
+  const isMinimalMode = headerDisplayMode === 'minimal'
+  const isCollapsibleMode = headerDisplayMode === 'collapsible'
+
+  // Calculate sticky positions based on mode
+  // On mobile, all modes behave like minimal (natural scroll)
+  // On desktop (md+), collapsible and full have sticky headers
+  const headerStickyTop = 'var(--header-height)'
+  const tabsStickyTop = isMinimalMode
+    ? headerStickyTop
+    : isCollapsibleMode
+      ? '169.5px' // compressed header height + header-height
+      : '293.5px' // full/expanded header height + header-height
+  const widgetStickyTop = isMinimalMode
+    ? 'calc(var(--header-height) + 24px)' // header-height + tab height
+    : isCollapsibleMode
+      ? '193.5px' // compressed + spacing
+      : '317.5px' // full/expanded + spacing
+
   return (
     <div className={'vaults-layout vaults-layout--detail'}>
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
@@ -279,11 +296,13 @@ function Index(): ReactElement | null {
           className={cl(
             'h-full rounded-3xl',
             'relative flex-col items-center justify-center',
-            'hidden md:flex md:sticky md:z-30'
+            'hidden md:flex',
+            // On desktop, sticky only for non-minimal modes
+            isMinimalMode ? '' : 'md:sticky md:z-30'
           )}
-          style={{ top: 'var(--header-height)' }}
+          style={isMinimalMode ? {} : { top: headerStickyTop }}
         >
-          <VaultDetailsHeader currentVault={currentVault} enableCompression={enableHeaderCompression} />
+          <VaultDetailsHeader currentVault={currentVault} displayMode={headerDisplayMode} />
         </header>
 
         {/* Mobile: Compact Header */}
@@ -308,35 +327,25 @@ function Index(): ReactElement | null {
           </div>
         </div>
 
-        {/* Mobile Layout - Conditional based on wallet connection */}
+        {/* Mobile Layout */}
         <div className="md:hidden space-y-4">
           {/* Vault metrics always at the top */}
           <VaultMetricsGrid currentVault={currentVault} />
 
-          {/* If wallet connected: show user balance grid, then widget */}
-          {isActive && address ? (
-            <>
-              <UserBalanceGrid currentVault={currentVault} />
-              <div>
-                <Widget
-                  vaultType={isV3 ? 'v3' : 'v2'}
-                  vaultAddress={currentVault.address}
-                  currentVault={currentVault}
-                  gaugeAddress={currentVault.staking.address}
-                  actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
-                  chainId={chainId}
-                />
-              </div>
-            </>
-          ) : (
-            /* If not connected: show charts, then user balance grid (connect button) */
-            <>
-              <div className={'border border-neutral-300 rounded-lg bg-surface'}>
-                <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} />
-              </div>
-              <UserBalanceGrid currentVault={currentVault} />
-            </>
-          )}
+          {/* User balance grid */}
+          <UserBalanceGrid currentVault={currentVault} />
+
+          {/* Widget */}
+          <div>
+            <Widget
+              vaultType={isV3 ? 'v3' : 'v2'}
+              vaultAddress={currentVault.address}
+              currentVault={currentVault}
+              gaugeAddress={currentVault.staking.address}
+              actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
+              chainId={chainId}
+            />
+          </div>
 
           {/* Expandable details toggle button */}
           <button
@@ -364,48 +373,18 @@ function Index(): ReactElement | null {
               id={mobileDetailsSectionId}
               ref={detailsRef}
               aria-label="Vault performance and details"
-              className="space-y-4 pb-8 mobile-details-section"
+              className="space-y-4 pb-8"
             >
-              {/* If wallet connected: show all sections including charts in details */}
-              {/* If not connected: show widget first, then other sections */}
-              {isActive && address ? (
-                // Wallet connected: show all normal sections
-                renderableSections.map((section) => {
-                  const isCollapsible =
-                    section.key === 'about' ||
-                    section.key === 'risk' ||
-                    section.key === 'strategies' ||
-                    section.key === 'info'
+              {renderableSections.map((section) => {
+                const isCollapsible =
+                  section.key === 'about' ||
+                  section.key === 'risk' ||
+                  section.key === 'strategies' ||
+                  section.key === 'info'
 
-                  if (isCollapsible) {
-                    const typedKey = section.key as SectionKey
-                    const isOpen = openSections[typedKey]
-
-                    return (
-                      <div
-                        key={section.key}
-                        ref={section.ref}
-                        className={'border border-neutral-300 rounded-lg bg-surface'}
-                      >
-                        <button
-                          type={'button'}
-                          className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
-                          onClick={(): void =>
-                            setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
-                          }
-                        >
-                          <span className={'text-base font-semibold text-neutral-900'}>
-                            {collapsibleTitles[typedKey]}
-                          </span>
-                          <IconChevron
-                            className={'size-4 text-neutral-600 transition-transform duration-200'}
-                            direction={isOpen ? 'up' : 'down'}
-                          />
-                        </button>
-                        {isOpen ? <div>{section.content}</div> : null}
-                      </div>
-                    )
-                  }
+                if (isCollapsible) {
+                  const typedKey = section.key as SectionKey
+                  const isOpen = openSections[typedKey]
 
                   return (
                     <div
@@ -413,98 +392,47 @@ function Index(): ReactElement | null {
                       ref={section.ref}
                       className={'border border-neutral-300 rounded-lg bg-surface'}
                     >
-                      {section.content}
+                      <button
+                        type={'button'}
+                        className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
+                        onClick={(): void =>
+                          setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                        }
+                      >
+                        <span className={'text-base font-semibold text-neutral-900'}>
+                          {collapsibleTitles[typedKey]}
+                        </span>
+                        <IconChevron
+                          className={'size-4 text-neutral-600 transition-transform duration-200'}
+                          direction={isOpen ? 'up' : 'down'}
+                        />
+                      </button>
+                      {isOpen ? <div>{section.content}</div> : null}
                     </div>
                   )
-                })
-              ) : (
-                // Wallet not connected: show widget first, then other sections (excluding charts which is already shown)
-                <>
-                  {/* Widget in expandable section when not connected - Collapsible */}
-                  <div className={'border border-neutral-300 rounded-lg bg-surface overflow-hidden'}>
-                    <button
-                      type={'button'}
-                      className={
-                        'flex w-full items-center justify-between gap-3 px-4 py-3 bg-neutral-100 border-b border-neutral-300'
-                      }
-                      onClick={(): void => setIsWidgetOpen((prev) => !prev)}
-                    >
-                      <span className={'text-base font-semibold text-neutral-900'}>Deposit / Withdraw</span>
-                      <IconChevron
-                        className={'size-4 text-neutral-600 transition-transform duration-200'}
-                        direction={isWidgetOpen ? 'up' : 'down'}
-                      />
-                    </button>
-                    {isWidgetOpen ? (
-                      <div>
-                        <Widget
-                          vaultType={isV3 ? 'v3' : 'v2'}
-                          vaultAddress={currentVault.address}
-                          currentVault={currentVault}
-                          gaugeAddress={currentVault.staking.address}
-                          actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
-                          chainId={chainId}
-                        />
-                      </div>
-                    ) : null}
+                }
+
+                return (
+                  <div
+                    key={section.key}
+                    ref={section.ref}
+                    className={'border border-neutral-300 rounded-lg bg-surface'}
+                  >
+                    {section.content}
                   </div>
-
-                  {/* Other sections (excluding charts) */}
-                  {renderableSections
-                    .filter((section) => section.key !== 'charts')
-                    .map((section) => {
-                      const isCollapsible =
-                        section.key === 'about' ||
-                        section.key === 'risk' ||
-                        section.key === 'strategies' ||
-                        section.key === 'info'
-
-                      if (isCollapsible) {
-                        const typedKey = section.key as SectionKey
-                        const isOpen = openSections[typedKey]
-
-                        return (
-                          <div
-                            key={section.key}
-                            ref={section.ref}
-                            className={'border border-neutral-300 rounded-lg bg-surface'}
-                          >
-                            <button
-                              type={'button'}
-                              className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
-                              onClick={(): void =>
-                                setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
-                              }
-                            >
-                              <span className={'text-base font-semibold text-neutral-900'}>
-                                {collapsibleTitles[typedKey]}
-                              </span>
-                              <IconChevron
-                                className={'size-4 text-neutral-600 transition-transform duration-200'}
-                                direction={isOpen ? 'up' : 'down'}
-                              />
-                            </button>
-                            {isOpen ? <div>{section.content}</div> : null}
-                          </div>
-                        )
-                      }
-
-                      // Non-collapsible sections (charts would be here, but we filter it out)
-                      return null
-                    })}
-                </>
-              )}
+                )
+              })}
             </section>
           )}
         </div>
 
-        {/* Desktop Layout - Keep existing */}
+        {/* Desktop Layout - Hidden on mobile */}
         <section className={'hidden md:grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div className={'space-y-4 md:col-span-13 pb-4'}>
             {renderableSections.length > 0 ? (
-              <div className={'w-full sticky z-30'} style={{ top: enableHeaderCompression ? '169.5px' : '293.5px' }}>
-                <div className={'h-6  bg-app'}></div>
-                <div className={'flex flex-wrap gap-2 md:gap-3'}>
+              <div className={'w-full sticky z-30'} style={{ top: tabsStickyTop }}>
+                <div className={'h-6 bg-app'}></div>
+                <div className={'flex flex-wrap gap-2 md:gap-3 bg-app rounded-b-lg'}>
                   <div
                     className={
                       'flex w-full flex-wrap justify-between gap-2 rounded-lg bg-neutral-100 p-1 border border-neutral-200'
@@ -575,10 +503,7 @@ function Index(): ReactElement | null {
               )
             })}
           </div>
-          <div
-            className={'md:col-span-7 mt-6 md:col-start-14 md:sticky md:h-fit'}
-            style={{ top: enableHeaderCompression ? '193.5px' : '317.5px' }}
-          >
+          <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit mt-6')} style={{ top: widgetStickyTop }}>
             <div>
               <Widget
                 vaultType={isV3 ? 'v3' : 'v2'}

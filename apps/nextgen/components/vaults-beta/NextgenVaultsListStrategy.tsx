@@ -1,12 +1,12 @@
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { useFetch } from '@lib/hooks/useFetch'
 import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { IconCopy } from '@lib/icons/IconCopy'
 import { IconLinkOut } from '@lib/icons/IconLinkOut'
 import type { TAddress } from '@lib/types'
-import { cl, formatPercent, toAddress } from '@lib/utils'
+import { cl, formatPercent, toAddress, truncateHex } from '@lib/utils'
 import { formatDuration } from '@lib/utils/format.time'
 import { copyToClipboard } from '@lib/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -65,56 +65,58 @@ export function NextgenVaultsListStrategy({
       {/* Collapsible header - always visible */}
       <div
         className={cl(
-          'grid grid-cols-1 md:grid-cols-24 items-center w-full gap-4 py-3 px-4 md:px-8 cursor-pointer',
+          'flex flex-col md:grid md:grid-cols-24 items-start md:items-center w-full gap-3 md:gap-4 py-3 px-4 md:px-8 cursor-pointer',
           'transition-colors duration-200 hover:bg-neutral-100/50'
         )}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className={cl('col-span-9 flex flex-row items-center gap-4')}>
-          <div className={'rounded-full'}>
-            <ImageWithFallback
-              src={`${
-                import.meta.env.VITE_BASE_YEARN_ASSETS_URI
-              }/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-              alt={''}
-              width={24}
-              height={24}
+        {/* Top row on mobile: Name + Chevron */}
+        <div className={'flex flex-row items-center justify-between w-full md:col-span-9 md:w-auto'}>
+          <div className={'flex flex-row items-center gap-4 flex-1 min-w-0'}>
+            <div className={'rounded-full flex-shrink-0'}>
+              <TokenLogo
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                tokenSymbol={name}
+                tokenName={name}
+                width={24}
+                height={24}
+                className="rounded-full"
+              />
+            </div>
+            <strong title={name} className={'block truncate font-bold'}>
+              {name}
+            </strong>
+          </div>
+          <div className={'flex md:hidden ml-2'}>
+            <IconChevron
+              className={cl('size-4 text-neutral-600 transition-transform duration-200')}
+              direction={isExpanded ? 'up' : 'down'}
             />
           </div>
-          <strong title={name} className={'block truncate font-bold '}>
-            {name}
-          </strong>
         </div>
 
-        <div
-          className={cl('md:col-span-14', 'grid grid-cols-1 sm:grid-cols-3 md:grid-cols-15 md:gap-4', 'mt-4 md:mt-0')}
-        >
-          <div
-            className={'items-right flex flex-row justify-between sm:flex-col md:col-span-5 md:text-right'}
-            datatype={'number'}
-          >
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Allocation %'}</p>
-            <p>{formatPercent((details?.debtRatio || 0) / 100, 0)}</p>
+        {/* Stats row - 3 columns on mobile */}
+        <div className={'grid grid-cols-3 gap-2 w-full md:col-span-14 md:grid-cols-15 md:gap-4'}>
+          <div className={'flex flex-col md:col-span-5 md:text-right'}>
+            <p className={'text-xs text-neutral-800/60 mb-1'}>{'Allocation %'}</p>
+            <p className={'font-medium'}>{formatPercent((details?.debtRatio || 0) / 100, 0)}</p>
           </div>
-          <div
-            className={'items-right flex flex-row justify-between sm:flex-col md:col-span-5 md:text-right'}
-            datatype={'number'}
-          >
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Amount'}</p>
-            <p>{allocation}</p>
+          <div className={'flex flex-col md:col-span-5 md:text-right'}>
+            <p className={'text-xs text-neutral-800/60 mb-1'}>{'Amount'}</p>
+            <p className={'font-medium truncate'} title={allocation}>
+              {allocation}
+            </p>
           </div>
-          <div
-            className={'items-right flex flex-row justify-between sm:flex-col md:col-span-5 md:text-right'}
-            datatype={'number'}
-          >
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'APY'}</p>
-            <p>
+          <div className={'flex flex-col md:col-span-5 md:text-right'}>
+            <p className={'text-xs text-neutral-800/60 mb-1'}>{'APY'}</p>
+            <p className={'font-medium'}>
               <RenderAmount shouldHideTooltip value={finalApr} symbol={'percent'} decimals={6} />
             </p>
           </div>
         </div>
 
-        <div className={'col-span-1 flex justify-end items-center'}>
+        {/* Chevron - desktop only */}
+        <div className={'hidden md:flex col-span-1 justify-end items-center'}>
           <IconChevron
             className={cl('size-4 text-neutral-600 transition-transform duration-200')}
             direction={isExpanded ? 'up' : 'down'}
@@ -141,11 +143,32 @@ export function NextgenVaultsListStrategy({
                 <span className={''}>{'Last Report:'}</span>
                 {lastReportTime}
               </div>
+              <div className={'flex flex-row gap-2'}>
+                <span className={''}>{'Address:'}</span>
+                <div className={'flex items-center gap-2'}>
+                  <span className={'font-mono text-sm'} title={address}>
+                    {truncateHex(address, 6)}
+                  </span>
+                  <button
+                    type={'button'}
+                    onClick={(e): void => {
+                      e.stopPropagation()
+                      copyToClipboard(address)
+                    }}
+                    className={'text-neutral-600 hover:text-neutral-900 transition-colors'}
+                    aria-label={'Copy address'}
+                  >
+                    <IconCopy className={'size-4'} />
+                  </button>
+                </div>
+              </div>
               {variant === 'v3' && isVault ? (
                 <div className={'flex flex-row gap-2'}>
                   <Link
                     href={`/vaults-beta/${chainId}/${toAddress(address)}`}
                     className={cl('flex gap-1 items-center text-neutral-800 hover:text-neutral-600')}
+                    target={'_blank'}
+                    rel={'noopener noreferrer'}
                   >
                     {'View Vault Page'}
                     <IconLinkOut className={'inline-block size-4'} />
@@ -163,23 +186,6 @@ export function NextgenVaultsListStrategy({
                   {'View on Block Explorer'}
                   <IconLinkOut className={'inline-block size-4'} />
                 </Link>
-              </div>
-              <div className={'flex flex-row gap-2'}>
-                <span className={''}>{'Address:'}</span>
-                <div className={'flex items-center gap-2'}>
-                  <span className={'font-mono text-sm'}>{address}</span>
-                  <button
-                    type={'button'}
-                    onClick={(e): void => {
-                      e.stopPropagation()
-                      copyToClipboard(address)
-                    }}
-                    className={'text-neutral-600 hover:text-neutral-900 transition-colors'}
-                    aria-label={'Copy address'}
-                  >
-                    <IconCopy className={'size-4'} />
-                  </button>
-                </div>
               </div>
             </div>
           </div>
