@@ -70,7 +70,7 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
   return (
     <div className={'w-full bg-app pb-2'}>
       <div className={'flex flex-col gap-0 rounded-xl border border-neutral-200 bg-surface'}>
-        <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4 h-16'}>
+        <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}>
           <button
             type={'button'}
             className={'flex items-center gap-3'}
@@ -90,7 +90,7 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
                 onClick={onScrollBack}
                 disabled={!canScrollLeft}
                 className={cl(
-                  'flex h-8! items-center rounded-[4px] px-4 outline-solid outline-1! outline-neutral-200 transition-colors focus:outline-none',
+                  'flex h-5! items-center rounded-[4px] px-2 outline-solid outline-1! outline-neutral-200 transition-colors ',
                   canScrollLeft ? 'text-neutral-400 hover:bg-neutral-200' : 'text-neutral-300 cursor-not-allowed'
                 )}
               >
@@ -100,7 +100,7 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
                 onClick={onScrollForward}
                 disabled={!canScrollRight}
                 className={cl(
-                  'flex h-8! items-center rounded-[4px] px-4 outline-solid outline-1! outline-neutral-200 transition-colors focus:outline-none',
+                  'flex h-5! items-center rounded-[4px] px-2  transition-colors outline-solid outline-1! outline-neutral-200',
                   canScrollRight ? 'text-neutral-400 hover:bg-neutral-200' : 'text-neutral-300 cursor-not-allowed'
                 )}
               >
