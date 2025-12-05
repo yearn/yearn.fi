@@ -9,13 +9,11 @@ const ChainColors: { [key: number]: string } = {
   250: '#1969FF',
   8453: '#1C55F5',
   42161: '#2F3749',
-  747474: '#f6ff0d',
-  146: '#ffffff'
+  747474: '#f6ff0d'
 }
 
 const ChainTextColors: { [key: number]: string } = {
-  747474: '#000000',
-  146: '#000000'
+  747474: '#000000'
 }
 
 const ChainNames: { [key: number]: string } = {
@@ -25,8 +23,7 @@ const ChainNames: { [key: number]: string } = {
   250: 'Fantom',
   8453: 'Base',
   42161: 'Arbitrum',
-  747474: 'Katana',
-  146: 'Sonic'
+  747474: 'Katana'
 }
 
 export const VaultChainTag: FC<{
