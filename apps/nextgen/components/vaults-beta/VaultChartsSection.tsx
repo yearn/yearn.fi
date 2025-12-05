@@ -76,7 +76,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
   const [timeframe, setTimeframe] = useState<TimeframeOption>(TIMEFRAME_OPTIONS[3])
 
   return (
-    <div className={'space-y-4 md:pt-3 rounded-lg'}>
+    <div className={'space-y-4 pt-3 rounded-lg'}>
       <div className={'flex flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between'}>
         <div className={'flex flex-wrap gap-3'}>
           <div className={'flex items-center gap-1 rounded-lg bg-neutral-100 p-1 border border-neutral-200'}>
