@@ -43,21 +43,27 @@
   "devDependencies": {
     "@biomejs/biome": "2.2.6",
     "@tailwindcss/postcss": "4.1.17",
+    "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jsdom": "27.0.0",
     "@types/minimatch": "6.0.0",
     "@types/node": "20.19.10",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "@vercel/node": "5.5.5",
     "@vitejs/plugin-react": "5.1.0",
+    "@vitest/browser": "4.0.9",
     "bump": "0.2.5",
+    "happy-dom": "^20.0.10",
     "husky": "9.1.7",
+    "jsdom": "27.2.0",
     "lint-staged": "16.2.6",
     "postcss": "8.5.6",
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3",
     "vite": "7.2.2",
     "vite-plugin-webfont-dl": "3.11.1",
-    "vitest": "1.6.1"
+    "vitest": "4.0.6"
   }
 }
