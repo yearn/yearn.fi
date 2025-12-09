@@ -16,7 +16,12 @@ export function DevToolbar(): ReactElement | null {
   const isVaultDetail = useMemo(() => /^\/vaults-beta\/\d+\/[^/]+/i.test(location.pathname), [location.pathname])
 
   const cycleHeaderDisplayMode = () => {
-    const modes: Array<'collapsible' | 'full' | 'minimal'> = ['collapsible', 'full', 'minimal']
+    const modes: Array<'collapsible' | 'full' | 'minimal' | 'sticky-name'> = [
+      'collapsible',
+      'full',
+      'minimal',
+      'sticky-name'
+    ]
     const currentIndex = modes.indexOf(headerDisplayMode)
     const nextIndex = (currentIndex + 1) % modes.length
     setHeaderDisplayMode(modes[nextIndex])
@@ -96,7 +101,9 @@ export function DevToolbar(): ReactElement | null {
                       ? 'border-green-200 bg-green-50 text-green-800 hover:border-green-300'
                       : headerDisplayMode === 'full'
                         ? 'border-blue-200 bg-blue-50 text-blue-800 hover:border-blue-300'
-                        : 'border-purple-200 bg-purple-50 text-purple-800 hover:border-purple-300'
+                        : headerDisplayMode === 'minimal'
+                          ? 'border-purple-200 bg-purple-50 text-purple-800 hover:border-purple-300'
+                          : 'border-orange-200 bg-orange-50 text-orange-800 hover:border-orange-300'
                   )}
                 >
                   <span
@@ -106,7 +113,9 @@ export function DevToolbar(): ReactElement | null {
                         ? 'bg-green-500'
                         : headerDisplayMode === 'full'
                           ? 'bg-blue-500'
-                          : 'bg-purple-500'
+                          : headerDisplayMode === 'minimal'
+                            ? 'bg-purple-500'
+                            : 'bg-orange-500'
                     )}
                   ></span>
                   {headerDisplayMode}

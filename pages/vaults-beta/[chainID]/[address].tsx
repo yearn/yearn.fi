@@ -21,7 +21,7 @@ import { WidgetActionType } from '@nextgen/types'
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 import type { ReactElement } from 'react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { useDevFlags } from '/src/contexts/useDevFlags'
 
 function Index(): ReactElement | null {
@@ -128,6 +128,9 @@ function Index(): ReactElement | null {
   }, [overrideVault, _currentVault])
 
   const isV3 = currentVault?.version.startsWith('3') || currentVault?.version.startsWith('~3')
+  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+    currentVault?.chainID
+  }/${currentVault?.token.address.toLowerCase()}/logo-128.png`
 
   useEffect(() => {
     if (!hasFetchedOverride && _currentVault && _currentVault.address) {
@@ -272,35 +275,67 @@ function Index(): ReactElement | null {
 
   const isMinimalMode = headerDisplayMode === 'minimal'
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
-
+  const isStickyNameMode = headerDisplayMode === 'sticky-name'
+  const breadcrumbs = (
+    <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
+      <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
+        {'Home'}
+      </Link>
+      <span>{'>'}</span>
+      <Link to={'/v3'} className={'transition-colors hover:text-neutral-900'}>
+        {'Vaults'}
+      </Link>
+      <span>{'>'}</span>
+      <span className={'font-medium text-neutral-900'}>{currentVault.name}</span>
+    </div>
+  )
   // Calculate sticky positions based on mode
   // On mobile, all modes behave like minimal (natural scroll)
   // On desktop (md+), collapsible and full have sticky headers
   const headerStickyTop = 'var(--header-height)'
+  const vaultNameHeight = 48 // Approximate height of sticky vault name
   const tabsStickyTop = isMinimalMode
     ? headerStickyTop
-    : isCollapsibleMode
-      ? '169.5px' // compressed header height + header-height
-      : '293.5px' // full/expanded header height + header-height
+    : isStickyNameMode
+      ? `calc(var(--header-height) + ${vaultNameHeight}px)`
+      : isCollapsibleMode
+        ? '141.5px' // compressed header height + header-height
+        : '265.5px' // full/expanded header height + header-height
   const widgetStickyTop = isMinimalMode
     ? 'calc(var(--header-height) + 24px)' // header-height + tab height
-    : isCollapsibleMode
-      ? '193.5px' // compressed + spacing
-      : '317.5px' // full/expanded + spacing
+    : isStickyNameMode
+      ? `calc(var(--header-height) + ${vaultNameHeight}px + 12px)` // header + name + tabs
+      : isCollapsibleMode
+        ? '166.5px' // compressed + spacing
+        : '287.5px' // full/expanded + spacing
 
   return (
     <div className={'vaults-layout vaults-layout--detail'}>
+      <div className={'w-full px-4 md:py-0 md:pt-2'}>{breadcrumbs}</div>
+
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         {/* Desktop Header - Hidden on mobile */}
+        {isStickyNameMode ? (
+          <div className={cl('flex items-center bg-app gap-4 md:sticky md:z-30 md:bg-app top-13 p-1')}>
+            <div className={cl('flex items-center justify-start rounded-full bg-neutral-0/70')}>
+              <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
+            </div>
+            <div className={'flex flex-col'}>
+              <strong className={cl('text-lg font-black leading-tight text-neutral-700 md:text-3xl md:leading-10')}>
+                {getVaultName(currentVault)} {' yVault'}
+              </strong>
+            </div>
+          </div>
+        ) : null}
         <header
           className={cl(
             'h-full rounded-3xl',
             'relative flex-col items-center justify-center',
             'hidden md:flex',
             // On desktop, sticky only for non-minimal modes
-            isMinimalMode ? '' : 'md:sticky md:z-30'
+            isMinimalMode || isStickyNameMode ? '' : 'md:sticky md:z-30'
           )}
-          style={isMinimalMode ? {} : { top: headerStickyTop }}
+          style={isMinimalMode || isStickyNameMode ? {} : { top: headerStickyTop }}
         >
           <VaultDetailsHeader currentVault={currentVault} displayMode={headerDisplayMode} />
         </header>
@@ -431,7 +466,7 @@ function Index(): ReactElement | null {
           <div className={'space-y-4 md:col-span-13 pb-4'}>
             {renderableSections.length > 0 ? (
               <div className={'w-full sticky z-30'} style={{ top: tabsStickyTop }}>
-                <div className={'h-6 bg-app'}></div>
+                <div className={cl('bg-app', isStickyNameMode ? 'h-3 mt-3' : 'h-6')}></div>
                 <div className={'flex flex-wrap gap-2 md:gap-3 bg-app rounded-b-lg'}>
                   <div
                     className={

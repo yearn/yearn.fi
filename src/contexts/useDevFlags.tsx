@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
-export type HeaderDisplayMode = 'collapsible' | 'full' | 'minimal'
+export type HeaderDisplayMode = 'collapsible' | 'full' | 'minimal' | 'sticky-name'
 
 type DevFlagsContextValue = {
   headerDisplayMode: HeaderDisplayMode
@@ -34,7 +34,7 @@ export function DevFlagsProvider({ children }: { children: ReactNode }): ReactEl
 
     try {
       const stored = window.localStorage.getItem(HEADER_DISPLAY_MODE_STORAGE_KEY) as HeaderDisplayMode | null
-      if (stored && ['collapsible', 'full', 'minimal'].includes(stored)) {
+      if (stored && ['collapsible', 'full', 'minimal', 'sticky-name'].includes(stored)) {
         setHeaderDisplayMode(stored)
       }
     } catch {
