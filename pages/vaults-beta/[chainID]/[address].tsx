@@ -316,7 +316,7 @@ function Index(): ReactElement | null {
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         {/* Desktop Header - Hidden on mobile */}
         {isStickyNameMode ? (
-          <div className={cl('flex items-center bg-app gap-4 md:sticky md:z-30 md:bg-app top-13 p-1')}>
+          <div className={cl('items-center bg-app gap-4 md:sticky md:z-30 md:bg-app top-13 p-1 md:flex hidden')}>
             <div className={cl('flex items-center justify-start rounded-full bg-neutral-0/70')}>
               <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
             </div>
