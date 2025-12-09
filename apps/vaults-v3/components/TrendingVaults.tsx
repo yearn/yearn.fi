@@ -110,7 +110,10 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
           ) : null}
         </div>
         {isTrendingExpanded ? (
-          <div ref={trendingCarouselRef} className={'overflow-x-auto scrollbar-none px-4 pb-4 md:px-6 scroll-smooth'}>
+          <div
+            ref={trendingCarouselRef}
+            className={'overflow-x-auto scrollbar-none px-4 pt-0.5 pb-4 md:px-6 scroll-smooth'}
+          >
             <div className={'flex'}>
               {suggestedVaults.map((vault) => {
                 const key = `${vault.chainID}_${toAddress(vault.address)}`
