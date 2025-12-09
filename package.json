@@ -60,9 +60,6 @@
     "vite-plugin-webfont-dl": "3.11.1",
     "vitest": "1.6.1"
   },
-  "resolutions": {
-    "ox": "0.9.6"
-  },
   "overrides": {
     "ox": "0.9.6"
   }
