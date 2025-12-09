@@ -1,7 +1,6 @@
 import Link from '@components/Link'
 import { Button } from '@lib/components/Button'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
-import { IconChevron } from '@lib/icons/IconChevron'
 import type { TSortDirection } from '@lib/types'
 import { toAddress } from '@lib/utils'
 import { VaultsListEmpty } from '@vaults-v2/components/list/VaultsListEmpty'
@@ -12,7 +11,7 @@ import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3AuxiliaryList } from '@vaults-v3/components/list/VaultsV3AuxiliaryList'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
-import { SuggestedVaultCard } from '@vaults-v3/components/SuggestedVaultCard'
+import { TrendingVaults } from '@vaults-v3/components/TrendingVaults'
 import {
   ALL_VAULTSV3_CATEGORIES,
   ALL_VAULTSV3_KINDS_KEYS,
@@ -85,7 +84,6 @@ function ListOfVaults({
   const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(types, null, search || '', categories)
 
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
-  const [isTrendingExpanded, setIsTrendingExpanded] = useState(true)
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
 
@@ -174,7 +172,7 @@ function ListOfVaults({
     () =>
       sortedSuggestedCandidates
         .filter((vault) => !holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`))
-        .slice(0, 4),
+        .slice(0, 8),
     [sortedSuggestedCandidates, holdingsKeySet]
   )
 
@@ -302,34 +300,7 @@ function ListOfVaults({
     )
   }
 
-  const suggestedVaultsElement =
-    suggestedVaults.length > 0 ? (
-      <div className={'w-full bg-app pb-2'}>
-        <div className={'flex flex-col gap-0 rounded-xl border border-neutral-200 bg-surface'}>
-          <button
-            type={'button'}
-            className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
-            onClick={(): void => setIsTrendingExpanded((previous) => !previous)}
-          >
-            <div className={'flex flex-col text-left'}>
-              <p className={'text-sm font-semibold tracking-wide text-neutral-500'}>{'Trending Vaults'}</p>
-            </div>
-            <IconChevron
-              className={'size-4 text-neutral-600 transition-transform duration-200'}
-              direction={isTrendingExpanded ? 'up' : 'down'}
-            />
-          </button>
-          {isTrendingExpanded ? (
-            <div className={'grid gap-4 px-4 pb-4 md:grid-cols-2 xl:grid-cols-4 md:px-6'}>
-              {suggestedVaults.map((vault) => {
-                const key = `${vault.chainID}_${toAddress(vault.address)}`
-                return <SuggestedVaultCard key={key} vault={vault} />
-              })}
-            </div>
-          ) : null}
-        </div>
-      </div>
-    ) : null
+  const suggestedVaultsElement = <TrendingVaults suggestedVaults={suggestedVaults} />
 
   const breadcrumbsElement = (
     <div className={'mb-3 mt-2 px-4 flex items-center gap-2 text-sm text-neutral-500'}>

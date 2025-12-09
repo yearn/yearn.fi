@@ -426,7 +426,7 @@ function FilterControls({
           <div className={'flex w-full flex-nowrap justify-between items-center gap-3'}>
             <div
               className={
-                'flex shrink-0 flex-wrap items-center gap-px rounded-lg h-10 bg-neutral-100 border border-neutral-200 px-2 py-1 text-sm text-neutral-900'
+                'flex shrink-0 flex-wrap items-center gap-px rounded-md h-10 bg-neutral-100 border border-neutral-200 py-1 px-1.5 text-sm text-neutral-900'
               }
             >
               {chainButtons.map((chain) => (
@@ -434,7 +434,7 @@ function FilterControls({
                   key={chain.id}
                   type={'button'}
                   className={cl(
-                    'flex items-center gap-2 rounded-lg px-3 py-1 font-medium transition-all',
+                    'flex items-center gap-2 rounded-sm px-3 py-1 font-medium transition-all',
                     'hover:bg-neutral-0/70',
                     'data-[active=false]:text-neutral-500 data-[active=false]:opacity-60 data-[active=false]:hover:text-neutral-900 data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-neutral-100/40',
                     'data-[active=true]:bg-neutral-0 data-[active=true]:text-neutral-900 data-[active=true]:opacity-100 data-[active=true]:shadow-sm'

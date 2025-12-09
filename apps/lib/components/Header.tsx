@@ -37,15 +37,11 @@ const PRIMARY_LINKS: TPrimaryLink[] = [
 
 function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
   return (
-    <nav className={'yearn--nav'}>
+    <nav className={'yearn--nav hidden md:flex'}>
       {nav.map(
-        (option, index): ReactElement => (
+        (option): ReactElement => (
           <Link key={option.path} target={option.target} href={option.path}>
-            <p
-              className={`yearn--header-nav-item ${
-                currentPathName.startsWith(option.path) ? 'active' : ''
-              } ${index > 0 ? 'hidden md:block' : ''}`}
-            >
+            <p className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}>
               {option?.label || 'Unknown'}
             </p>
           </Link>
@@ -243,15 +239,15 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
       }
     >
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-        <header className={'yearn--header w-full px-0!'}>
-          <div className={'direction-row flex items-center justify-start gap-x-0 px-1 py-2 md:py-1'}>
+        <header className={'yearn--header w-full px-0! pb-4!'}>
+          <div className={'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'}>
             <div className={'flex justify-center'}>
               <LaunchModal />
             </div>
             <div className={'flex items-center gap-2 md:gap-4'}>
               <TypeMarkYearnText className={'yearn-typemark h-8 w-auto'} />
               {/* <TypeMarkYearnFull className={'yearn-typemark hidden h-8 w-auto md:block'} color={'currentColor'} /> */}
-              <div className={'flex items-center gap-4 pb-0.5'}>
+              <div className={'hidden md:flex items-center gap-4 pb-0.5'}>
                 {PRIMARY_LINKS.map((link) => {
                   const isActive =
                     link.matchers?.some((matcher) =>
@@ -300,12 +296,15 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
         onClose={(): void => setIsMenuOpen(false)}
         supportedNetworks={props.supportedNetworks}
       >
-        {menu?.map(
+        {PRIMARY_LINKS.map(
           (option): ReactElement => (
-            <Link key={option.path} href={option.path}>
-              <div className={'mobile-nav-item'} onClick={(): void => setIsMenuOpen(false)}>
-                <p className={'font-bold'}>{option.label}</p>
-              </div>
+            <Link
+              key={option.path}
+              href={option.path}
+              className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
+              onClick={(): void => setIsMenuOpen(false)}
+            >
+              <span className={'text-[32px] font-bold'}>{option.label}</span>
             </Link>
           )
         )}

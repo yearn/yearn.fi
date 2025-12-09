@@ -76,7 +76,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
   const [timeframe, setTimeframe] = useState<TimeframeOption>(TIMEFRAME_OPTIONS[3])
 
   return (
-    <div className={'space-y-4 md:pt-3'}>
+    <div className={'space-y-4 pt-3 rounded-lg'}>
       <div className={'flex flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between'}>
         <div className={'flex flex-wrap gap-3'}>
           <div className={'flex items-center gap-1 rounded-lg bg-neutral-100 p-1 border border-neutral-200'}>
@@ -86,7 +86,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
                 type={'button'}
                 onClick={() => setActiveTab(tab.id)}
                 className={cl(
-                  'rounded-lg px-3 py-1 text-xs font-semibold transition-all',
+                  'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
                   activeTab === tab.id
                     ? 'bg-neutral-0 text-neutral-900'
                     : 'bg-transparent text-neutral-500 hover:text-neutral-700'
@@ -104,7 +104,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
                 key={option.value}
                 type={'button'}
                 className={cl(
-                  'rounded-lg px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                  'rounded-sm px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
                   option.value === timeframe.value
                     ? 'bg-neutral-0 text-neutral-900'
                     : 'bg-transparent text-neutral-500 hover:text-neutral-700'

@@ -217,7 +217,7 @@ body {
   height: var(--header-height);
 }
 .yearn--nav {
-  @apply flex flex-row items-center space-x-3 md:space-x-6;
+  @apply md:flex hidden flex-row items-center space-x-3 md:space-x-6;
 }
 .yearn--header-nav-item {
   @apply relative cursor-pointer transition-colors text-neutral-500 hover:text-neutral-900 font-normal text-sm;

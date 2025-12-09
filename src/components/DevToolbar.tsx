@@ -8,12 +8,24 @@ import { useDevFlags } from '/src/contexts/useDevFlags'
 export function DevToolbar(): ReactElement | null {
   const [isOpen, setIsOpen] = useState(false)
   const themePreference = useThemePreference()
-  const { headerCompressionEnabled, setHeaderCompressionEnabled } = useDevFlags()
+  const { headerDisplayMode, setHeaderDisplayMode } = useDevFlags()
   const location = useLocation()
   const enabledInEnv =
     !import.meta.env.PROD || import.meta.env.VITE_ENABLE_DEV_TOOLBAR === 'true' || import.meta.env.MODE !== 'production'
 
   const isVaultDetail = useMemo(() => /^\/vaults-beta\/\d+\/[^/]+/i.test(location.pathname), [location.pathname])
+
+  const cycleHeaderDisplayMode = () => {
+    const modes: Array<'collapsible' | 'full' | 'minimal' | 'sticky-name'> = [
+      'collapsible',
+      'full',
+      'minimal',
+      'sticky-name'
+    ]
+    const currentIndex = modes.indexOf(headerDisplayMode)
+    const nextIndex = (currentIndex + 1) % modes.length
+    setHeaderDisplayMode(modes[nextIndex])
+  }
 
   useEffect(() => {
     // Ensure themePreference is respected on initial load for the toolbar label
@@ -79,24 +91,34 @@ export function DevToolbar(): ReactElement | null {
 
             {isVaultDetail ? (
               <div className={'flex items-center justify-between'}>
-                <span className={'font-medium text-neutral-700'}>{'Header Compression'}</span>
+                <span className={'font-medium text-neutral-700'}>{'Header Display'}</span>
                 <button
                   type={'button'}
-                  onClick={(): void => setHeaderCompressionEnabled(!headerCompressionEnabled)}
+                  onClick={cycleHeaderDisplayMode}
                   className={cl(
-                    'inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-semibold transition',
-                    headerCompressionEnabled
+                    'inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-semibold transition capitalize',
+                    headerDisplayMode === 'collapsible'
                       ? 'border-green-200 bg-green-50 text-green-800 hover:border-green-300'
-                      : 'border-neutral-300 bg-neutral-50 text-neutral-800 hover:border-neutral-400'
+                      : headerDisplayMode === 'full'
+                        ? 'border-blue-200 bg-blue-50 text-blue-800 hover:border-blue-300'
+                        : headerDisplayMode === 'minimal'
+                          ? 'border-purple-200 bg-purple-50 text-purple-800 hover:border-purple-300'
+                          : 'border-orange-200 bg-orange-50 text-orange-800 hover:border-orange-300'
                   )}
                 >
                   <span
                     className={cl(
                       'inline-block size-2 rounded-full',
-                      headerCompressionEnabled ? 'bg-green-500' : 'bg-neutral-500'
+                      headerDisplayMode === 'collapsible'
+                        ? 'bg-green-500'
+                        : headerDisplayMode === 'full'
+                          ? 'bg-blue-500'
+                          : headerDisplayMode === 'minimal'
+                            ? 'bg-purple-500'
+                            : 'bg-orange-500'
                     )}
                   ></span>
-                  {headerCompressionEnabled ? 'On' : 'Off'}
+                  {headerDisplayMode}
                 </button>
               </div>
             ) : null}

@@ -38,7 +38,6 @@ import { Fragment, useEffect, useState } from 'react'
 import { erc20Abi, zeroAddress } from 'viem'
 import { useBlockNumber } from 'wagmi'
 import { readContract, readContracts } from 'wagmi/actions'
-import Link from '/src/components/Link'
 
 type TVaultHoldingsData = {
   deposited: TNormalizedBN
@@ -345,16 +344,16 @@ function UserHoldingsCard({
 
 export function VaultDetailsHeader({
   currentVault,
-  enableCompression = true
+  displayMode = 'collapsible'
 }: {
   currentVault: TYDaemonVault
-  enableCompression?: boolean
+  displayMode?: 'collapsible' | 'full' | 'minimal' | 'sticky-name'
 }): ReactElement {
   const { address } = useWeb3()
   const { getPrice } = useYearn()
   const { data: blockNumber } = useBlockNumber({ watch: true })
   const { decimals } = currentVault
-  const { isCompressed } = useHeaderCompression({ enabled: enableCompression })
+  const { isCompressed } = useHeaderCompression({ enabled: displayMode === 'collapsible' })
   const [vaultData, setVaultData] = useState<TVaultHoldingsData>({
     deposited: zeroNormalizedBN,
     valueInToken: zeroNormalizedBN,
@@ -624,19 +623,7 @@ export function VaultDetailsHeader({
 
   const chainName = getNetwork(currentVault.chainID).name
   const metadataLine = [chainName, currentVault.category, currentVault.kind].filter(Boolean).join(' • ')
-  const breadcrumbs = (
-    <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
-      <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
-        {'Home'}
-      </Link>
-      <span>{'>'}</span>
-      <Link to={'/v3'} className={'transition-colors hover:text-neutral-900'}>
-        {'Vaults'}
-      </Link>
-      <span>{'>'}</span>
-      <span className={'font-medium text-neutral-900'}>{currentVault.name}</span>
-    </div>
-  )
+
   const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
     currentVault.chainID
   }/${currentVault.token.address.toLowerCase()}/logo-128.png`
@@ -645,40 +632,43 @@ export function VaultDetailsHeader({
       ? `${currentVault.address.slice(0, 13)}...${currentVault.address.slice(-13)}`
       : currentVault.address
 
+  const isStickyName = displayMode === 'sticky-name'
+
   return (
     <div className={'col-span-12 grid w-full grid-cols-1 gap-4 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
-      <div className={'md:col-span-20 md:row-start-1 mt-2 w-full md:py-0'}>{breadcrumbs}</div>
       <div
         className={cl(
           'flex flex-col gap-1 px-1',
           isCompressed ? 'md:col-span-5 md:row-start-2 md:justify-center' : 'md:col-span-20 md:row-start-2'
         )}
       >
-        <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
-          <div
-            className={cl(
-              'flex items-center justify-start rounded-full bg-neutral-0/70',
-              isCompressed ? 'size-8' : 'size-10'
-            )}
-          >
-            <ImageWithFallback
-              src={tokenLogoSrc}
-              alt={currentVault.token.symbol || ''}
-              width={isCompressed ? 32 : 40}
-              height={isCompressed ? 32 : 40}
-            />
-          </div>
-          <div className={'flex flex-col'}>
-            <strong
+        {isStickyName ? null : (
+          <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
+            <div
               className={cl(
-                'text-lg font-black leading-tight text-neutral-700 md:text-3xl md:leading-10',
-                isCompressed ? 'md:text-[30px] md:leading-9' : ''
+                'flex items-center justify-start rounded-full bg-neutral-0/70',
+                isCompressed ? 'size-8' : 'size-10'
               )}
             >
-              {getVaultName(currentVault)} {' yVault'}
-            </strong>
+              <ImageWithFallback
+                src={tokenLogoSrc}
+                alt={currentVault.token.symbol || ''}
+                width={isCompressed ? 32 : 40}
+                height={isCompressed ? 32 : 40}
+              />
+            </div>
+            <div className={'flex flex-col'}>
+              <strong
+                className={cl(
+                  'text-lg font-black leading-tight text-neutral-700 md:text-3xl md:leading-10',
+                  isCompressed ? 'md:text-[30px] md:leading-9' : ''
+                )}
+              >
+                {getVaultName(currentVault)} {' yVault'}
+              </strong>
+            </div>
           </div>
-        </div>
+        )}
         {currentVault.address ? (
           <button
             type={'button'}
