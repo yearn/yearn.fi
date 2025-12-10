@@ -64,6 +64,7 @@ export default defineConfig({
       '@vaults-v2': path.resolve(__dirname, './apps/vaults-v2'),
       '@vaults-v3': path.resolve(__dirname, './apps/vaults-v3'),
       '@landing': path.resolve(__dirname, './apps/landing'),
+      '@new-landing': path.resolve(__dirname, './apps/new-landing-1'),
       '@nextgen': path.resolve(__dirname, './apps/nextgen'),
       '@utils': path.resolve(__dirname, './apps/nextgen/utils'),
       '@safe-global/safe-apps-sdk': path.resolve(__dirname, 'node_modules/@safe-global/safe-apps-sdk/dist/esm'),
