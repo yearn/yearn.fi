@@ -37,11 +37,16 @@ const PRIMARY_LINKS: TPrimaryLink[] = [
 
 function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
   return (
-    <nav className={'yearn--nav hidden md:flex'}>
+    <nav className={'hidden md:flex gap-6'}>
       {nav.map(
         (option): ReactElement => (
           <Link key={option.path} target={option.target} href={option.path}>
-            <p className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}>
+            <p
+              className={cl(
+                'cursor-pointer text-sm font-normal text-text-secondary transition-colors hover:text-text-primary',
+                currentPathName.startsWith(option.path) ? 'text-text-primary' : ''
+              )}
+            >
               {option?.label || 'Unknown'}
             </p>
           </Link>
@@ -105,21 +110,23 @@ function WalletSelector(): ReactElement {
           openLoginModal()
         }
       }}
+      className={'cursor-pointer'}
     >
-      <p suppressHydrationWarning className={'yearn--header-nav-item text-xs! md:text-sm!'}>
+      <p
+        suppressHydrationWarning
+        className={'text-xs font-normal text-text-secondary transition-colors hover:text-text-primary md:text-sm'}
+      >
         {walletIdentity ? (
           <span className={'inline-flex items-center gap-2'}>
             <span>{walletIdentity}</span>
-            {shouldShowSpinner ? (
-              <IconSpinner className={'h-3.5 w-3.5 text-neutral-100 dark:text-neutral-700'} />
-            ) : null}
+            {shouldShowSpinner ? <IconSpinner className={'h-3.5 w-3.5 text-text-tertiary'} /> : null}
           </span>
         ) : (
           <span>
-            <IconWallet className={'yearn--header-nav-item mt-0.5 block size-4 md:hidden'} />
+            <IconWallet className={'mt-0.5 block size-4 text-text-secondary md:hidden'} />
             <span
               className={
-                'text-neutral-0 relative hidden h-8 cursor-pointer items-center justify-center rounded-sm border border-transparent bg-neutral-900 px-2 text-xs font-normal transition-all hover:bg-neutral-800 md:flex'
+                'relative hidden h-8 cursor-pointer items-center justify-center rounded-sm border border-transparent bg-text-primary px-2 text-xs font-normal text-surface transition-all hover:opacity-90 md:flex'
               }
             >
               {'Connect wallet'}
@@ -239,13 +246,13 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
       }
     >
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-        <header className={'yearn--header w-full px-0! pb-4!'}>
+        <header className={'w-full px-0 pb-4 flex items-center justify-between'}>
           <div className={'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'}>
             <div className={'flex justify-center'}>
               <LaunchModal />
             </div>
             <div className={'flex items-center gap-2 md:gap-4'}>
-              <TypeMarkYearnText className={'yearn-typemark h-8 w-auto'} />
+              <TypeMarkYearnText className={'yearn-typemark h-8 w-auto text-text-primary'} />
               {/* <TypeMarkYearnFull className={'yearn-typemark hidden h-8 w-auto md:block'} color={'currentColor'} /> */}
               <div className={'hidden md:flex items-center gap-4 pb-0.5'}>
                 {PRIMARY_LINKS.map((link) => {
@@ -256,7 +263,12 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
 
                   return (
                     <Link key={link.path} href={link.path}>
-                      <span className={cl('yearn--header-nav-item text-lg!', isActive ? 'active' : '')}>
+                      <span
+                        className={cl(
+                          'cursor-pointer text-lg font-medium text-text-secondary transition-colors hover:text-text-primary',
+                          isActive ? 'text-text-primary' : ''
+                        )}
+                      >
                         {link.label}
                       </span>
                     </Link>
@@ -270,7 +282,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
             {!isHomePage && (
               <div className={'direction-row flex items-center justify-end'}>
                 <button
-                  className={'yearn--header-nav-item relative rounded-full p-4 transition-colors'}
+                  className={'relative rounded-full p-4 text-text-secondary transition-colors hover:text-text-primary'}
                   onClick={(): void => setShouldOpenCurtain(true)}
                 >
                   <IconBell className={'size-4 font-bold transition-colors'} />
@@ -278,7 +290,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
                   <div className={cl('absolute right-4 top-4 size-2 rounded-full', notificationDotColor)} />
                 </button>
                 <WalletSelector />
-                <div className={'flex md:hidden pl-4 text-neutral-500'}>
+                <div className={'flex md:hidden pl-4 text-text-secondary'}>
                   <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
                     <span className={'sr-only'}>{'Open menu'}</span>
                     <IconBurgerPlain />

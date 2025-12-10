@@ -36,7 +36,7 @@ export const VaultChainTag: FC<{
   const textOpacity = backgroundOpacity > 0.5 ? 1 : 0.8
   return (
     <div
-      className={'rounded-2xl px-2 py-0.5 text-xs text-neutral-900'}
+      className={'rounded-2xl px-2 py-0.5 text-xs text-text-primary'}
       style={{
         backgroundColor: `${ChainColors[chainID]}${opacityToHex(backgroundOpacity)}`,
         color: `${ChainTextColors[chainID] || '#ffffff'}${opacityToHex(textOpacity)}`

@@ -173,9 +173,9 @@ export function VaultDetailsQuickActionsTo(props: {
   function renderMultipleOptionsFallback(): ReactElement {
     return (
       <Dropdown
-        className={isV3Page ? 'rounded-lg bg-neutral-300' : 'rounded-lg'}
+        className={isV3Page ? 'rounded-lg bg-surface-tertiary' : 'rounded-lg'}
         comboboxOptionsClassName={
-          isV3Page ? 'bg-neutral-300 w-full rounded-lg scrollbar-none' : 'rounded-lg scrollbar-none'
+          isV3Page ? 'bg-surface-tertiary w-full rounded-lg scrollbar-none' : 'rounded-lg scrollbar-none'
         }
         defaultOption={possibleOptionsTo[0]}
         options={possibleOptionsTo}
@@ -189,10 +189,10 @@ export function VaultDetailsQuickActionsTo(props: {
     <section className={'grid w-full flex-col gap-0 md:grid-cols-2 md:flex-row md:gap-4'}>
       <div className={'relative w-full'}>
         <div className={'flex flex-col items-baseline justify-between pb-2 pl-1 md:flex-row'}>
-          <p className={'text-base text-neutral-600'}>
+          <p className={'text-base text-text-secondary'}>
             {isDepositing || isMigrationAvailable ? 'To vault' : 'To wallet'}
           </p>
-          <legend className={'font-number inline text-xs text-neutral-900/50 md:hidden'} suppressHydrationWarning>
+          <legend className={'font-number inline text-xs text-text-primary/50 md:hidden'} suppressHydrationWarning>
             <VaultAPY
               currentVault={currentVault}
               hasVeYFIBalance={hasVeYFIBalance}
@@ -208,19 +208,19 @@ export function VaultDetailsQuickActionsTo(props: {
         >
           <div
             className={
-              'flex h-10 w-full items-center justify-between rounded-lg bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
+              'flex h-10 w-full items-center justify-between rounded-lg bg-surface-tertiary px-2 text-base text-text-primary md:px-3'
             }
           >
             <div className={'relative flex flex-row items-center truncate'}>
               <div className={'size-6 flex-none rounded-full'}>{actionParams?.selectedOptionTo?.icon}</div>
-              <p className={'truncate whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
+              <p className={'truncate whitespace-nowrap pl-2 font-normal text-text-primary scrollbar-none'}>
                 {selectedOptionToSymbol}
               </p>
             </div>
           </div>
         </Renderable>
         <div className={'mt-1 pl-1'}>
-          <legend className={'hidden text-xs text-neutral-900/50 md:inline'} suppressHydrationWarning>
+          <legend className={'hidden text-xs text-text-primary/50 md:inline'} suppressHydrationWarning>
             <div>
               <p className={'font-number'}>
                 {isDepositing ? (
@@ -242,11 +242,11 @@ export function VaultDetailsQuickActionsTo(props: {
 
       <div className={'w-full'}>
         <div className={'pb-2 pl-1'}>
-          <label htmlFor={'toAmount'} className={'hidden text-base text-neutral-600 md:inline'}>
+          <label htmlFor={'toAmount'} className={'hidden text-base text-text-secondary md:inline'}>
             {'You will receive'}
           </label>
         </div>
-        <div className={'flex h-10 items-center rounded-lg bg-neutral-300 p-2'}>
+        <div className={'flex h-10 items-center rounded-lg bg-surface-tertiary p-2'}>
           <div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
             {isLoadingExpectedOut ? (
               <div className={'relative h-10 w-full'}>
@@ -271,7 +271,7 @@ export function VaultDetailsQuickActionsTo(props: {
           </div>
         </div>
         <div className={'mt-1 pl-1'}>
-          <legend suppressHydrationWarning className={'hidden text-xs text-neutral-900/50 md:inline'}>
+          <legend suppressHydrationWarning className={'hidden text-xs text-text-primary/50 md:inline'}>
             <div>
               <p className={'font-number'}>
                 {formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}

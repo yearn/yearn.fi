@@ -35,7 +35,7 @@ function UnallocatedStrategy({
 
       <div
         className={cl(
-          'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 md:px-8 px-4 justify-between'
+          'grid grid-cols-1 md:grid-cols-12 text-text-primary items-center w-full py-3 md:px-8 px-4 justify-between'
         )}
       >
         <div className={cl('col-span-5 flex flex-row items-center gap-4 z-10')}>
@@ -59,7 +59,7 @@ function UnallocatedStrategy({
             className={'items-right flex flex-row justify-between sm:flex-col md:col-span-3 md:text-right'}
             datatype={'number'}
           >
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Percentage'}</p>
+            <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Percentage'}</p>
             <p>{formatPercent(unallocatedPercentage / 100, 0)}</p>
           </div>
           <div
@@ -68,7 +68,7 @@ function UnallocatedStrategy({
             }
             datatype={'number'}
           >
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Amount'}</p>
+            <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Amount'}</p>
             <p>{unallocatedValue}</p>
           </div>
         </div>
@@ -284,7 +284,7 @@ export function VaultDetailsStrategies({ currentVault }: { currentVault: TYDaemo
           <b className={'text-center text-lg'}>
             {isVaultListEmpty ? 'This vault IS the strategy' : 'No strategies found'}
           </b>
-          <p className={'text-center text-neutral-600'}>
+          <p className={'text-center text-text-secondary'}>
             {isVaultListEmpty
               ? "Surprise! This vault doesn't have any strategies. It is the strategy. #brainexplosion"
               : "Surprise! This vault doesn't have any strategies."}

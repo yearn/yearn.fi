@@ -42,20 +42,20 @@ export function KatanaApyTooltipContent({
 
   return (
     <div
-      className={`${width} rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-xs text-neutral-900`}
+      className={`${width} rounded-xl border border-border bg-surface-secondary p-4 text-center text-xs text-text-primary`}
     >
       <div className={'flex flex-col items-start justify-start text-left'}>
         {/* Native APY */}
         <p
           className={
-            'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm text-bold pb-2'
+            'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-text-secondary md:text-sm text-bold pb-2'
           }
         >
           {'Native APY'}
         </p>
         <div
           className={
-            'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-neutral-700 md:text-sm text-bold pb-2'
+            'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-text-secondary md:text-sm text-bold pb-2'
           }
         >
           <div className={'flex flex-row items-center space-x-2'}>
@@ -73,12 +73,12 @@ export function KatanaApyTooltipContent({
             <RenderAmount shouldHideTooltip value={extrinsicYield} symbol={'percent'} decimals={6} />
           </span>
         </div>
-        <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 wrap-break-word'}>
+        <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
           {extrinsicYieldDescription}
         </p>
         <div
           className={
-            'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-neutral-700 md:text-sm text-bold pb-2'
+            'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-text-secondary md:text-sm text-bold pb-2'
           }
         >
           <div className={'flex flex-row items-center space-x-2'}>
@@ -96,24 +96,24 @@ export function KatanaApyTooltipContent({
             <RenderAmount shouldHideTooltip value={katanaNativeYield} symbol={'percent'} decimals={6} />
           </span>
         </div>
-        <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 wrap-break-word'}>
+        <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
           {'Yield Earned on Katana'}
         </p>
-        <p className={'mb-2 w-full text-left text-xs italic text-neutral-500 wrap-break-word whitespace-normal'}>
+        <p className={'mb-2 w-full text-left text-xs italic text-text-secondary wrap-break-word whitespace-normal'}>
           {'*This yield is guaranteed but may be paid in KAT tokens if actual rates are lower.'}
         </p>
         {/* Rewards APR */}
-        <div className={'my-2 h-px w-full bg-neutral-300/60'} />
+        <div className={'my-2 h-px w-full bg-surface-tertiary/60'} />
         <p
           className={
-            'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm text-bold '
+            'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-text-secondary md:text-sm text-bold '
           }
         >
           {'Rewards APR'}
         </p>
         <div
           className={
-            'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-neutral-700 md:text-sm text-bold pb-2'
+            'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-text-secondary md:text-sm text-bold pb-2'
           }
         >
           <div className={'flex flex-row items-center space-x-2'}>
@@ -129,10 +129,10 @@ export function KatanaApyTooltipContent({
             <RenderAmount shouldHideTooltip value={fixedRateKatanRewardsAPR} symbol={'percent'} decimals={6} />
           </span>
         </div>
-        <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 wrap-break-word'}>
+        <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
           {'Limited time fixed KAT rewards'}
         </p>
-        <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
+        <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words'}>
           {'* claimable after 28 days, subject to '}
           <a
             href={'https://x.com/katana/status/1961475531188126178'}
@@ -147,7 +147,7 @@ export function KatanaApyTooltipContent({
         </p>
         <div
           className={
-            'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-neutral-700 md:text-sm text-bold pb-2'
+            'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-text-secondary md:text-sm text-bold pb-2'
           }
         >
           <div className={'flex flex-row items-center space-x-2'}>
@@ -163,12 +163,12 @@ export function KatanaApyTooltipContent({
             <RenderAmount shouldHideTooltip value={katanaAppRewardsAPR} symbol={'percent'} decimals={6} />
           </span>
         </div>
-        <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 wrap-break-word'}>
+        <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
           {'Kat Rewards passed through from Apps'}
         </p>
         <div
           className={
-            'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-neutral-700/35 md:text-sm text-bold pb-2'
+            'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-text-secondary/35 md:text-sm text-bold pb-2'
           }
         >
           <div className={'flex flex-row items-center space-x-2'}>
@@ -184,11 +184,11 @@ export function KatanaApyTooltipContent({
             <RenderAmount shouldHideTooltip value={katanaBonusAPR} symbol={'percent'} decimals={6} />
           </span>
         </div>
-        <p className={'-mt-1 mb-0 w-full text-left text-xs text-neutral-700/35 wrap-break-word'}>
+        <p className={'-mt-1 mb-0 w-full text-left text-xs text-text-secondary/35 wrap-break-word'}>
           {'Applied if you deposited before Sept. 1st and hold for 90 days'}
         </p>
 
-        <div className={'mt-2 p-3 pb-0 text-neutral-700 md:text-xs text-bold'}>
+        <div className={'mt-2 p-3 pb-0 text-text-secondary md:text-xs text-bold'}>
           <li className={'-mt-1 mb-2 w-full text-left wrap-break-word'}>
             {'KAT tokens are locked until no later than Feb. 20 2026.'}
           </li>
@@ -211,15 +211,15 @@ export function KatanaApyTooltipContent({
         </div>
         {isEligibleForSpectraBoost && (
           <>
-            <div className={'my-2 h-px w-full bg-neutral-300/60'} />
+            <div className={'my-2 h-px w-full bg-surface-tertiary/60'} />
             <p
               className={
-                'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm text-bold pb-2'
+                'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-text-secondary md:text-sm text-bold pb-2'
               }
             >
               {'Earn Boosted Yield with Spectra'}
             </p>
-            <p className={'-mt-1 mb-2 w-full text-left text-sm text-neutral-700 wrap-break-word whitespace-normal'}>
+            <p className={'-mt-1 mb-2 w-full text-left text-sm text-text-secondary wrap-break-word whitespace-normal'}>
               {'Earn boosted yield on Spectra if you '}
               <a
                 href={'https://app.spectra.finance/pools?networks=katana'}
@@ -237,15 +237,15 @@ export function KatanaApyTooltipContent({
         )}
         {steerPointsPerDollar && steerPointsPerDollar > 0 ? (
           <>
-            <div className={'my-2 h-px w-full bg-neutral-300/60'} />
+            <div className={'my-2 h-px w-full bg-surface-tertiary/60'} />
             <p
               className={
-                'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm text-bold pb-2'
+                'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-text-secondary md:text-sm text-bold pb-2'
               }
             >
               {'Steer Points'}
             </p>
-            <p className={'-mt-1 mb-2 w-full text-left text-sm text-neutral-700 wrap-break-word whitespace-normal'}>
+            <p className={'-mt-1 mb-2 w-full text-left text-sm text-text-secondary wrap-break-word whitespace-normal'}>
               {'This vault earns '}
               <span className={'font-number'}>{formatAmount(steerPointsPerDollar, 2, 2)}</span>
               {' Steer Points / dollar deposited, but you must '}

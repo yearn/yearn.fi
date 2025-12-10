@@ -12,7 +12,7 @@ type TYearnFeesLineItem = {
 export function YearnFeesLineItem({ children, label, tooltip }: TYearnFeesLineItem): ReactElement {
   return (
     <div className={'flex flex-col space-y-0 md:space-y-2'}>
-      <p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>
+      <p className={'text-xxs text-text-secondary md:text-xs'}>{label}</p>
       <div
         className={cl(
           tooltip
@@ -24,7 +24,7 @@ export function YearnFeesLineItem({ children, label, tooltip }: TYearnFeesLineIt
           <span suppressHydrationWarning className={'tooltipFees bottom-full'}>
             <div
               className={
-                'w-96 rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'
+                'w-96 rounded-xl border border-border bg-surface-secondary p-4 text-center text-xxs text-text-primary'
               }
             >
               {tooltip}
@@ -55,7 +55,7 @@ export function VaultDetailsAbout({ currentVault }: { currentVault: TYDaemonVaul
           href="https://docs.yearn.fi"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-900 underline"
+          className="text-text-primary underline"
         >
           docs
         </a>
@@ -64,7 +64,7 @@ export function VaultDetailsAbout({ currentVault }: { currentVault: TYDaemonVaul
           href="https://discord.gg/yearn"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-900 underline"
+          className="text-text-primary underline"
         >
           discord
         </a>{' '}
@@ -73,7 +73,7 @@ export function VaultDetailsAbout({ currentVault }: { currentVault: TYDaemonVaul
           href="https://t.me/yearnfinance"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-900 underline"
+          className="text-text-primary underline"
         >
           telegram
         </a>{' '}
@@ -86,8 +86,8 @@ export function VaultDetailsAbout({ currentVault }: { currentVault: TYDaemonVaul
     <div className={'grid grid-cols-1 gap-4 p-4 md:grid-cols-12 md:gap-10 md:p-8'}>
       <div className={'col-span-12 w-full pr-0 md:col-span-7 md:pr-28'}>
         <div>
-          <b className={'text-neutral-900'}>{'Description'}</b>
-          <div className={'mt-4 text-neutral-900/50'}>
+          <b className={'text-text-primary'}>{'Description'}</b>
+          <div className={'mt-4 text-text-primary/50'}>
             {typeof getVaultDescription() === 'string' ? (
               /* biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled vault description content */
               <p dangerouslySetInnerHTML={{ __html: getVaultDescription() as string }} />
@@ -101,36 +101,36 @@ export function VaultDetailsAbout({ currentVault }: { currentVault: TYDaemonVaul
       <div className={'col-span-12 mt-6 w-full space-y-10 md:col-span-5 md:mt-0'}>
         <div className={'grid grid-cols-1 gap-x-12 md:grid-cols-1'}>
           <div className={'mb-4 md:mb-10'}>
-            <b className={'text-neutral-900'}>{'APY'}</b>
+            <b className={'text-text-primary'}>{'APY'}</b>
             <div className={'mt-4 grid grid-cols-3 gap-8'}>
               <YearnFeesLineItem label={'Last 7 days'}>
-                <b className={'font-number text-xl text-neutral-900'}>
+                <b className={'font-number text-xl text-text-primary'}>
                   {apr.type.includes('new') ? 'New' : formatPercent(apr.points.weekAgo * 100, 0)}
                 </b>
               </YearnFeesLineItem>
               <YearnFeesLineItem label={'Last 30 days'}>
-                <b className={'font-number text-xl text-neutral-900'}>
+                <b className={'font-number text-xl text-text-primary'}>
                   {apr.type.includes('new') ? '-' : formatPercent(apr.points.monthAgo * 100, 0)}
                 </b>
               </YearnFeesLineItem>
 
               <YearnFeesLineItem label={'Inception'}>
-                <b className={'font-number text-xl text-neutral-900'}>
+                <b className={'font-number text-xl text-text-primary'}>
                   {apr.type.includes('new') ? '-' : formatPercent(apr.points.inception * 100, 0)}
                 </b>
               </YearnFeesLineItem>
             </div>
           </div>
           <div>
-            <b className={'text-neutral-900'}>{'Fees'}</b>
+            <b className={'text-text-primary'}>{'Fees'}</b>
             <div className={'mt-4 grid grid-cols-4 gap-8'}>
               <YearnFeesLineItem label={'Management'}>
-                <b className={'font-number text-xl text-neutral-900'}>
+                <b className={'font-number text-xl text-text-primary'}>
                   {formatPercent((apr.fees.management || 0) * 100, 0)}
                 </b>
               </YearnFeesLineItem>
               <YearnFeesLineItem label={'Performance'}>
-                <b className={'font-number text-xl text-neutral-900'}>
+                <b className={'font-number text-xl text-text-primary'}>
                   {formatPercent((apr.fees.performance || 0) * 100, 0)}
                 </b>
               </YearnFeesLineItem>
@@ -139,7 +139,7 @@ export function VaultDetailsAbout({ currentVault }: { currentVault: TYDaemonVaul
                   label={'keepVELO'}
                   tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}
                 >
-                  <b className={'font-number text-xl text-neutral-500'}>
+                  <b className={'font-number text-xl text-text-secondary'}>
                     {`${formatAmount((currentVault.apr.forwardAPR.composite?.keepVELO || 0) * 100, 0, 2)} %`}
                   </b>
                 </YearnFeesLineItem>

@@ -26,10 +26,12 @@ export function APYTooltipContent({
 }: Omit<TAPYTooltipProps, 'children'>): ReactElement {
   return (
     <div
-      className={'w-fit rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-sm text-neutral-900'}
+      className={'w-fit rounded-xl border border-border bg-surface-secondary p-4 text-center text-sm text-text-primary'}
     >
       <div className={'flex flex-col items-start justify-start text-left'}>
-        <div className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}>
+        <div
+          className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'}
+        >
           <p>{'Base APY '}</p>
           <span className={'font-number'}>
             <RenderAmount shouldHideTooltip value={baseAPY} symbol={'percent'} decimals={6} />
@@ -38,7 +40,7 @@ export function APYTooltipContent({
 
         {rewardsAPY ? (
           <div
-            className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
+            className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'}
           >
             <p>{'Rewards APR '}</p>
             <span className={'font-number'}>
@@ -49,7 +51,7 @@ export function APYTooltipContent({
 
         {boost ? (
           <div
-            className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
+            className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'}
           >
             <p>{'Boost '}</p>
             <p>
@@ -61,7 +63,7 @@ export function APYTooltipContent({
 
         {range ? (
           <div
-            className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
+            className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'}
           >
             <p>{'Rewards APR '}</p>
             <div>
@@ -78,7 +80,7 @@ export function APYTooltipContent({
 
         {hasPendleArbRewards ? (
           <div
-            className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
+            className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'}
           >
             <p>{'Extra ARB '}</p>
             <p>{'2 500/week'}</p>
@@ -87,7 +89,7 @@ export function APYTooltipContent({
 
         {hasKelp ? (
           <div
-            className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
+            className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'}
           >
             <p>{'Extra Kelp Miles '}</p>
             <p>{'1x'}</p>
@@ -97,13 +99,17 @@ export function APYTooltipContent({
         {hasKelpNEngenlayer ? (
           <>
             <div
-              className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
+              className={
+                'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'
+              }
             >
               <p>{'Extra Kelp Miles '}</p>
               <p>{'1x'}</p>
             </div>
             <div
-              className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-900 md:text-sm'}
+              className={
+                'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'
+              }
             >
               <p>{'Extra EigenLayer Points '}</p>
               <p>{'1x'}</p>

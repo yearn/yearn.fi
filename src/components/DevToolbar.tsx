@@ -80,12 +80,26 @@ export function DevToolbar(): ReactElement | null {
               <button
                 type={'button'}
                 onClick={toggleThemePreference}
-                className={
-                  'inline-flex items-center gap-2 rounded-md border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-800 transition hover:border-neutral-400 hover:bg-neutral-50'
-                }
+                className={cl(
+                  'inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-semibold transition capitalize',
+                  themePreference === 'light'
+                    ? 'border-yellow-200 bg-yellow-50 text-yellow-800 hover:border-yellow-300'
+                    : themePreference === 'dark'
+                      ? 'border-neutral-700 bg-neutral-800 text-neutral-0 hover:border-neutral-600'
+                      : 'border-indigo-200 bg-indigo-50 text-indigo-800 hover:border-indigo-300'
+                )}
               >
-                <span className={'inline-block h-2 w-2 rounded-full bg-neutral-800'}></span>
-                {themePreference === 'dark' ? 'Dark' : 'Light'}
+                <span
+                  className={cl(
+                    'inline-block size-2 rounded-full',
+                    themePreference === 'light'
+                      ? 'bg-yellow-400'
+                      : themePreference === 'dark'
+                        ? 'bg-neutral-0'
+                        : 'bg-indigo-500'
+                  )}
+                ></span>
+                {themePreference}
               </button>
             </div>
 

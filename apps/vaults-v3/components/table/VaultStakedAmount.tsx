@@ -42,7 +42,7 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
 
   return (
     <div className={'flex flex-col pt-0 text-right'}>
-      <p className={`yearn--table-data-section-item-value ${hasBalance ? 'text-neutral-900' : 'text-neutral-400'}`}>
+      <p className={`yearn--table-data-section-item-value ${hasBalance ? 'text-text-primary' : 'text-text-tertiary'}`}>
         <RenderAmount
           value={isDusty ? 0 : value}
           symbol={'USD'}
@@ -50,7 +50,7 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
           options={{ shouldCompactValue: true, maximumFractionDigits: 2, minimumFractionDigits: 2 }}
         />
       </p>
-      <small className={cl('text-xs text-neutral-900/40 flex flex-row', hasBalance ? 'visible' : 'invisible')}>
+      <small className={cl('text-xs text-text-primary/40 flex flex-row', hasBalance ? 'visible' : 'invisible')}>
         <RenderAmount
           shouldFormatDust
           value={isDusty ? 0 : staked.normalized}

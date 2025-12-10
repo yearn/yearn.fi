@@ -32,15 +32,15 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
             />
           </div>
           <div>
-            <strong className={'mb-1 block text-xl font-black text-neutral-800'}>{currentVault.name}</strong>
-            <p className={'mb-2 block text-neutral-800'}>{currentVault.token.name}</p>
+            <strong className={'mb-1 block text-xl font-black text-text-primary'}>{currentVault.name}</strong>
+            <p className={'mb-2 block text-text-primary'}>{currentVault.token.name}</p>
             <VaultChainTag chainID={currentVault.chainID} />
           </div>
         </div>
       </div>
 
       <div className={cl('col-span-9 z-10', 'flex flex-col md:flex-row items-center', 'gap-x-7', 'mt-8 md:mt-0')}>
-        <div className={cl('flex justify-between', 'text-left text-neutral-800/80 whitespace-break-spaces')}>
+        <div className={cl('flex justify-between', 'text-left text-text-primary/80 whitespace-break-spaces')}>
           {"Looks like you're holding tokens from a previous version of this vault.\n"}
           {'To keep earning yield on your assets, migrate to the current vault.'}
         </div>
@@ -57,7 +57,7 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
                   'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
                 )}
               />
-              <p className={'z-10 mx-auto whitespace-nowrap text-neutral-900'}>
+              <p className={'z-10 mx-auto whitespace-nowrap text-text-primary'}>
                 {'Migrate '}
                 {`${formatAmount(balanceToMigrate.normalized)} ${currentVault.token.symbol}`}
               </p>

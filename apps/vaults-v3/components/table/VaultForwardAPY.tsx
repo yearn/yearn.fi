@@ -207,7 +207,7 @@ export function VaultForwardAPY({
               </div>
             </Renderable>
           </b>
-          <small className={'text-xs text-neutral-800'}>
+          <small className={'text-xs text-text-primary'}>
             <Renderable shouldRender={data.isBoosted}>{`BOOST ${formatAmount(data.boost || 0, 2, 2)}x`}</Renderable>
           </small>
           {showSubline ? (
@@ -372,10 +372,10 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
 
   if (currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined) {
     return (
-      <div className={'w-full rounded-xl border border-neutral-300 bg-neutral-100 p-3 text-neutral-900'}>
+      <div className={'w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'}>
         <div className={'flex flex-col gap-2'}>
           <div className={'flex items-center justify-between'}>
-            <p className={'text-xs text-neutral-800'}>{'Extrinsic Yield'}</p>
+            <p className={'text-xs text-text-primary'}>{'Extrinsic Yield'}</p>
             <span className={'font-number'}>
               <RenderAmount
                 shouldHideTooltip
@@ -386,7 +386,7 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
             </span>
           </div>
           <div className={'flex items-center justify-between'}>
-            <p className={'text-xs text-neutral-800'}>{'Katana APY'}</p>
+            <p className={'text-xs text-text-primary'}>{'Katana APY'}</p>
             <span className={'font-number'}>
               <RenderAmount
                 shouldHideTooltip
@@ -396,9 +396,9 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
               />
             </span>
           </div>
-          <div className={'my-1 h-px w-full bg-neutral-300/60'} />
+          <div className={'my-1 h-px w-full bg-surface-tertiary/60'} />
           <div className={'flex items-center justify-between'}>
-            <p className={'text-xs text-neutral-800'}>{'Base Rewards APR'}</p>
+            <p className={'text-xs text-text-primary'}>{'Base Rewards APR'}</p>
             <span className={'font-number'}>
               <RenderAmount
                 shouldHideTooltip
@@ -409,7 +409,7 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
             </span>
           </div>
           <div className={'flex items-center justify-between'}>
-            <p className={'text-xs text-neutral-800'}>{'App Rewards APR'}</p>
+            <p className={'text-xs text-text-primary'}>{'App Rewards APR'}</p>
             <span className={'font-number'}>
               <RenderAmount
                 shouldHideTooltip
@@ -420,7 +420,7 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
             </span>
           </div>
           <div className={'flex items-center justify-between'}>
-            <p className={'text-xs text-neutral-800'}>{'Deposit Bonus APR'}</p>
+            <p className={'text-xs text-text-primary'}>{'Deposit Bonus APR'}</p>
             <span className={'font-number'}>
               <RenderAmount
                 shouldHideTooltip
@@ -432,11 +432,11 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
           </div>
           {data.katanaExtras.steerPointsPerDollar && data.katanaExtras.steerPointsPerDollar > 0 ? (
             <div className={'flex items-center justify-between'}>
-              <p className={'text-xs text-neutral-800'}>{'Steer Points / $'}</p>
+              <p className={'text-xs text-text-primary'}>{'Steer Points / $'}</p>
               <span className={'font-number'}>{data.katanaExtras.steerPointsPerDollar.toFixed(2)}</span>
             </div>
           ) : null}
-          <div className={'mt-2 p-3 pb-0 text-neutral-700 md:text-xs text-bold'}>
+          <div className={'mt-2 p-3 pb-0 text-text-secondary md:text-xs text-bold'}>
             <li className={'-mt-1 mb-2 w-full text-left text-xs break-words'}>
               {'KAT tokens are locked until no later than Feb. 20 2026.'}
             </li>
@@ -457,7 +457,7 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
               </a>
             </li>
             {isEligibleForSpectraBoost && (
-              <li className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
+              <li className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words whitespace-normal'}>
                 {'Earn boosted yield on Spectra if you '}
                 <a
                   href={'https://app.spectra.finance/pools?networks=katana'}
@@ -473,7 +473,7 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
               </li>
             )}
             {data.katanaExtras.steerPointsPerDollar && data.katanaExtras.steerPointsPerDollar > 0 ? (
-              <li className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-700 break-words whitespace-normal'}>
+              <li className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words whitespace-normal'}>
                 {'This vault earns Steer Points, but you must '}
                 <a
                   href={'https://app.steer.finance/points'}
@@ -496,16 +496,16 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
   if (data.mode === 'noForward' || currentVault.chainID === KATANA_CHAIN_ID) {
     if (data.rewardsAprSum > 0) {
       return (
-        <div className={'w-full rounded-xl border border-neutral-300 bg-neutral-100 p-3 text-neutral-900'}>
+        <div className={'w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'}>
           <div className={'flex flex-col gap-2'}>
             <div className={'flex items-center justify-between'}>
-              <p className={'text-xs text-neutral-800'}>{'Base APY'}</p>
+              <p className={'text-xs text-text-primary'}>{'Base APY'}</p>
               <span className={'font-number'}>
                 <RenderAmount shouldHideTooltip value={data.netApr} symbol={'percent'} decimals={6} />
               </span>
             </div>
             <div className={'flex items-center justify-between'}>
-              <p className={'text-xs text-neutral-800'}>{'Rewards APR'}</p>
+              <p className={'text-xs text-text-primary'}>{'Rewards APR'}</p>
               <span className={'font-number'}>
                 <RenderAmount shouldHideTooltip value={data.rewardsAprSum} symbol={'percent'} decimals={6} />
               </span>
@@ -520,16 +520,16 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
   if (data.mode === 'boosted' && data.isBoosted) {
     const unBoostedAPY = data.unboostedApr || 0
     return (
-      <div className={'w-full rounded-xl border border-neutral-300 bg-neutral-100 p-3 text-neutral-900'}>
+      <div className={'w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'}>
         <div className={'flex flex-col gap-2'}>
           <div className={'flex items-center justify-between'}>
-            <p className={'text-xs text-neutral-800'}>{'Base APY'}</p>
+            <p className={'text-xs text-text-primary'}>{'Base APY'}</p>
             <span className={'font-number'}>
               <RenderAmount shouldHideTooltip value={unBoostedAPY} symbol={'percent'} decimals={6} />
             </span>
           </div>
           <div className={'flex items-center justify-between'}>
-            <p className={'text-xs text-neutral-800'}>{'Boost'}</p>
+            <p className={'text-xs text-text-primary'}>{'Boost'}</p>
             <span className={'font-number'}>{formatAmount(data.boost || 0, 2, 2)}x</span>
           </div>
         </div>
@@ -541,17 +541,17 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
     const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
     const veYFIRange = data.veYfiRange
     return (
-      <div className={'w-full rounded-xl border border-neutral-300 bg-neutral-100 p-3 text-neutral-900'}>
+      <div className={'w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'}>
         <div className={'flex flex-col gap-2'}>
           <div className={'flex items-center justify-between'}>
-            <p className={'text-xs text-neutral-800'}>{'Base APY'}</p>
+            <p className={'text-xs text-text-primary'}>{'Base APY'}</p>
             <span className={'font-number'}>
               <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
             </span>
           </div>
           {isSourceVeYFI && veYFIRange ? (
             <div className={'flex items-center justify-between'}>
-              <p className={'text-xs text-neutral-800'}>{'Rewards APR'}</p>
+              <p className={'text-xs text-text-primary'}>{'Rewards APR'}</p>
               <span className={'font-number'}>
                 <RenderAmount shouldHideTooltip value={veYFIRange[0]} symbol={'percent'} decimals={6} />
                 {' → '}
@@ -560,7 +560,7 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
             </div>
           ) : (
             <div className={'flex items-center justify-between'}>
-              <p className={'text-xs text-neutral-800'}>{'Rewards APR'}</p>
+              <p className={'text-xs text-text-primary'}>{'Rewards APR'}</p>
               <span className={'font-number'}>
                 <RenderAmount shouldHideTooltip value={data.rewardsAprSum} symbol={'percent'} decimals={6} />
               </span>

@@ -4,6 +4,8 @@
 @import '@rainbow-me/rainbowkit/styles.css';
 /* Tailwind CSS */
 @import 'tailwindcss';
+/* Theme System */
+@import './src/styles/themes.css';
 
 @theme {
   /* Font families */
@@ -81,9 +83,28 @@
   --color-steel-gray-500: hsl(218 14% 71%);
   --color-light-blue-500: hsl(220 100% 67%);
   --default-rounded: 0rem;
-  --surface-background: var(--color-neutral-0);
-  --surface-default: var(--color-neutral-0);
-  --surface-muted: var(--color-neutral-100);
+  --surface-background: var(--color-app);
+  --surface-default: var(--color-surface);
+  --surface-muted: var(--color-surface-secondary);
+
+  /* Semantic theme tokens - these are overridden by themes.css based on data-theme */
+  --color-app: hsl(0 0% 98%);
+  --color-surface: hsl(0 0% 100%);
+  --color-surface-secondary: hsl(0 0% 96%);
+  --color-surface-tertiary: hsl(0 0% 90%);
+  --color-text-primary: hsl(0 0% 9%);
+  --color-text-secondary: hsl(0 0% 32%);
+  --color-text-tertiary: hsl(0 0% 64%);
+  --color-border: hsl(0 0% 90%);
+  --color-border-hover: hsl(0 0% 83%);
+  --color-border-focus: hsl(0 0% 9%);
+  --color-primary-hover: hsl(220 100% 44%);
+  --color-success: hsl(142 71% 45%);
+  --color-warning: hsl(17 88% 48%);
+  --color-error: hsl(0 73% 51%);
+  --color-input-bg: hsl(0 0% 100%);
+  --color-modal-overlay: hsl(0 0% 0% / 0.5);
+  --color-table-row-hover: hsl(0 0% 96%);
 
   /* Custom Font Sizes */
   --text-xxs: 0.625rem; /* 10px */
@@ -115,9 +136,9 @@
     /* --color-neutral-100: hsl(231 100% 11%); */
     --color-neutral-100: hsl(231, 100%, 10%);
     --color-neutral-0: hsl(231 100% 6%);
-    --surface-background: var(--color-neutral-0);
-    --surface-default: var(--color-neutral-100);
-    --surface-muted: var(--color-neutral-200);
+    --surface-background: var(--color-app);
+    --surface-default: var(--color-surface-secondary);
+    --surface-muted: var(--color-surface-secondary);
   }
 }
 
@@ -126,25 +147,23 @@ html {
   padding-right: 0 !important;
 }
 
+html {
+  background-color: var(--color-app);
+}
+
 body {
-  color: var(--color-neutral-800);
+  background-color: var(--color-app);
+  color: var(--color-text-primary);
   font-family: aeonik, 'aeonik Fallback', 'Source Code Pro',
     'Source Code Pro Fallback', sans-serif;
 }
 
+#root {
+  min-height: 100vh;
+  background-color: var(--color-app);
+}
+
 @layer utilities {
-  .bg-app {
-    background-color: var(--surface-background);
-  }
-
-  .bg-surface {
-    background-color: var(--surface-default);
-  }
-
-  .bg-card {
-    background-color: var(--surface-muted);
-  }
-
   .font-number {
     font-family: 'Aeonik Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
       Consolas, 'Liberation Mono', 'Courier New', monospace;
@@ -169,29 +188,29 @@ body {
   .vaults-layout--list {
     height: calc(100vh - var(--header-height));
     overflow: hidden;
-    --surface-background: var(--color-neutral-100);
-    --surface-default: var(--color-neutral-0);
-    --surface-muted: var(--color-neutral-200);
+    --surface-background: var(--color-surface-secondary);
+    --surface-default: var(--color-surface);
+    --surface-muted: var(--color-surface-secondary);
   }
 
   .vaults-layout--detail {
-    --surface-background: var(--color-neutral-0);
-    --surface-default: var(--color-neutral-0);
-    --surface-muted: var(--color-neutral-200);
+    --surface-background: var(--color-app);
+    --surface-default: var(--color-surface);
+    --surface-muted: var(--color-surface-secondary);
   }
 
   .dark .vaults-layout--list,
   .v3 .vaults-layout--list {
-    --surface-background: var(--color-neutral-0);
-    --surface-default: var(--color-neutral-100);
-    --surface-muted: var(--color-neutral-300);
+    --surface-background: var(--color-app);
+    --surface-default: var(--color-surface-secondary);
+    --surface-muted: var(--color-surface-tertiary);
   }
 
   .dark .vaults-layout--detail,
   .v3 .vaults-layout--detail {
-    --surface-background: var(--color-neutral-0);
-    --surface-default: var(--color-neutral-100);
-    --surface-muted: var(--color-neutral-300);
+    --surface-background: var(--color-app);
+    --surface-default: var(--color-surface-secondary);
+    --surface-muted: var(--color-surface-tertiary);
   }
 
   .vaults-card {

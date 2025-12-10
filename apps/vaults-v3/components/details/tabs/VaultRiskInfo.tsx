@@ -38,14 +38,14 @@ function RiskScoreItem({
         </button>
         <div className={'flex items-end font-bold'}>
           <p className={cl('mr-2', isOverall ? 'text-xl' : 'text-lg')}>{score}</p>
-          <span className={'text-neutral-900/40'}> {' / 5'}</span>
+          <span className={'text-text-primary/40'}> {' / 5'}</span>
         </div>
         {rightContent ? <div className={'flex items-end'}>{rightContent}</div> : null}
       </div>
       {isOpen && (
         <div className={'mt-2 w-full'}>
-          {/* {isOverall && <p className={'mt-2 text-md text-neutral-900/70'}>{currentVault.info.riskScoreComment}</p>} */}
-          <small className={'whitespace-break-spaces text-sm text-neutral-900/70'}>{explanation}</small>
+          {/* {isOverall && <p className={'mt-2 text-md text-text-primary/70'}>{currentVault.info.riskScoreComment}</p>} */}
+          <small className={'whitespace-break-spaces text-sm text-text-primary/70'}>{explanation}</small>
         </div>
       )}
     </div>
@@ -98,7 +98,7 @@ export function SimpleRiskScore({
         <div className={'col-span-12 mt-6 w-full md:mt-0'}>
           <div className={'flex flex-col mb-4 md:mb-10'}>
             <div className={'flex flex-col gap-2'}>
-              <div className={'border-b border-neutral-300 pb-2 mb-2'}>
+              <div className={'border-b border-border pb-2 mb-2'}>
                 <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
                   <div className={'flex items-end gap-2'}>
                     <p className={'font-medium text-xl font-bold'}>{multiStrategyRiskScore.label}</p>
@@ -106,13 +106,13 @@ export function SimpleRiskScore({
                   <div className={'flex items-end gap-4'}>
                     <div className={'flex items-center font-bold'}>
                       <p className={'mr-2 text-xl'}>{multiStrategyRiskScore.score}</p>
-                      <span className={'text-neutral-900/40'}> {' / 5'}</span>
+                      <span className={'text-text-primary/40'}> {' / 5'}</span>
                     </div>
                     {renderInlineRiskScoreTag()}
                   </div>
                 </div>
                 <div className={'mt-2 w-full'}>
-                  <small className={'whitespace-break-spaces text-sm text-neutral-900/70'}>
+                  <small className={'whitespace-break-spaces text-sm text-text-primary/70'}>
                     {multiStrategyRiskScore.explanation}
                   </small>
                 </div>
@@ -207,7 +207,7 @@ export function SimpleRiskScore({
           {hasRiskScore > 10 ? (
             <div className={cl('flex flex-col gap-2')}>
               {riskScoreData.map((item, index) => (
-                <div key={item.label} className={index === 0 ? 'border-b border-neutral-300 pb-2 mb-2' : ''}>
+                <div key={item.label} className={index === 0 ? 'border-b border-border pb-2 mb-2' : ''}>
                   <RiskScoreItem
                     label={item.label}
                     score={item.score}
@@ -222,7 +222,7 @@ export function SimpleRiskScore({
               ))}
             </div>
           ) : (
-            <div className={'text-neutral-900/70'}>
+            <div className={'text-text-primary/70'}>
               <p>
                 No risk score data available for this vault. If you are seeing this, please let us know in our{' '}
                 <a

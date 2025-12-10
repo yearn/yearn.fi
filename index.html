@@ -28,35 +28,37 @@
     <link rel="icon" href="/favicon.ico" />
     <title>Yearn Finance</title>
     <script>
-      const darkModeMediaQuery = window.matchMedia(
-        '(prefers-color-scheme: dark)'
-      )
-      const THEME_STORAGE_KEY = 'isDarkMode'
+      // Theme initialization script - runs before React loads to prevent flash
+      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const NEW_THEME_STORAGE_KEY = 'yearn-theme'
+      const OLD_THEME_STORAGE_KEY = 'isDarkMode'
       const THEME_EVENT_NAME = 'yearn-theme-change'
 
-      updateMode()
-      darkModeMediaQuery.addEventListener('change', updateMode)
-      window.addEventListener('storage', updateMode)
-      window.addEventListener('beforeunload', updateMode)
-      window.addEventListener(THEME_EVENT_NAME, updateMode)
-
       function resolveTheme() {
-        const storedValue = window.localStorage.getItem(THEME_STORAGE_KEY)
-
-        if (storedValue === 'true') {
-          return 'dark'
-        }
-        if (storedValue === 'false') {
-          return 'light'
+        // Check new storage key first
+        const storedValue = window.localStorage.getItem(NEW_THEME_STORAGE_KEY)
+        if (storedValue === 'light' || storedValue === 'dark' || storedValue === 'soft-dark') {
+          return storedValue
         }
 
+        // Backward compatibility: check old storage key
+        const oldStoredValue = window.localStorage.getItem(OLD_THEME_STORAGE_KEY)
+        if (oldStoredValue === 'true') return 'dark'
+        if (oldStoredValue === 'false') return 'light'
+
+        // Default to system preference
         return darkModeMediaQuery.matches ? 'dark' : 'light'
       }
 
       function applyTheme(theme) {
         const root = document.documentElement
+
+        // Set data-theme attribute for CSS variable system
+        root.setAttribute('data-theme', theme)
+
+        // Keep legacy classes for backward compatibility
         root.classList.remove('dark', 'light', 'v3')
-        if (theme === 'dark') {
+        if (theme === 'dark' || theme === 'soft-dark') {
           root.classList.add('dark')
           root.classList.add('v3')
         } else {
@@ -68,6 +70,14 @@
         const theme = resolveTheme()
         applyTheme(theme)
       }
+
+      // Apply theme immediately to prevent flash
+      updateMode()
+
+      // Listen for changes
+      darkModeMediaQuery.addEventListener('change', updateMode)
+      window.addEventListener('storage', updateMode)
+      window.addEventListener(THEME_EVENT_NAME, updateMode)
     </script>
   </head>
   <body>

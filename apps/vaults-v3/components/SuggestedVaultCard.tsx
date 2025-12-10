@@ -60,7 +60,7 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
     <Link
       to={`/vaults-beta/${vault.chainID}/${toAddress(vault.address)}`}
       className={
-        'group flex h-full flex-col mr-4 rounded-md border border-neutral-200 vaults-card p-4 shadow-[0_12px_32px_rgba(4,8,32,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(4,8,32,0.12)]'
+        'group flex h-full flex-col mr-4 rounded-md border border-border bg-surface vaults-card p-4 shadow-[0_12px_32px_rgba(4,8,32,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(4,8,32,0.12)]'
       }
     >
       <div className={'flex items-center gap-3'}>
@@ -68,23 +68,23 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
           <ImageWithFallback src={tokenIcon} alt={vault.token.symbol || ''} width={36} height={36} />
         </div>
         <div className={'flex flex-col'}>
-          <p className={'text-base font-semibold text-neutral-900'}>{vault.name}</p>
-          <p className={'text-xs text-neutral-600'}>
+          <p className={'text-base font-semibold text-text-primary'}>{vault.name}</p>
+          <p className={'text-xs text-text-secondary'}>
             {chain.name} • {vault.category}
           </p>
         </div>
       </div>
       <div className={'mt-4 flex items-end justify-between gap-4'}>
         <div>
-          <p className={'text-xs font-semibold uppercase tracking-wide text-neutral-500'}>{'Est. APY'}</p>
-          <p className={'mt-1 text-2xl font-bold text-neutral-900'}>
+          <p className={'text-xs font-semibold uppercase tracking-wide text-text-secondary'}>{'Est. APY'}</p>
+          <p className={'mt-1 text-2xl font-bold text-text-primary'}>
             {aprDisplay.prefix ? `${aprDisplay.prefix} ` : ''}
             {renderAprValue()}
           </p>
         </div>
         <div className={'text-right'}>
-          <p className={'text-xs font-semibold uppercase tracking-wide text-neutral-500'}>{'TVL'}</p>
-          <p className={'mt-1 text-lg font-semibold text-neutral-900'}>
+          <p className={'text-xs font-semibold uppercase tracking-wide text-text-secondary'}>{'TVL'}</p>
+          <p className={'mt-1 text-lg font-semibold text-text-primary'}>
             <RenderAmount
               value={vault.tvl?.tvl || 0}
               symbol={'USD'}
