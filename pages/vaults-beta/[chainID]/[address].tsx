@@ -311,7 +311,7 @@ function Index(): ReactElement | null {
 
   return (
     <div className={'vaults-layout vaults-layout--detail'}>
-      <div className={'w-full px-4 md:py-0 md:pt-2'}>{breadcrumbs}</div>
+      <div className={'mx-auto w-full max-w-[1232px] px-4 md:py-0 md:pt-2'}>{breadcrumbs}</div>
 
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         {/* Desktop Header - Hidden on mobile */}
