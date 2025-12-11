@@ -12,6 +12,7 @@
       "@landing/*": ["apps/landing/*"],
       "@nextgen/*": ["apps/nextgen/*"],
       "@utils/*": ["apps/nextgen/utils/*"],
+      "@new-landing/*": ["apps/new-landing-1/*"],
       "/src/*": ["src/*"]
     },
     /* Basic Options */
