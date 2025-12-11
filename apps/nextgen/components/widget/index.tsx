@@ -230,7 +230,7 @@ const TabButton: FC<{
       className={cl(
         'flex-1 px-3 py-1 text-sm font-medium transition-all duration-200 capitalize',
         isActive
-          ? 'bg-surface text-text-primary rounded-bl-none rounded-br-none shadow-sm'
+          ? 'bg-surface text-text-primary rounded-bl-none rounded-br-none'
           : 'bg-surface-secondary text-text-secondary hover:text-text-primary',
         className
       )}
