@@ -1,7 +1,5 @@
-import { useFetch } from '@lib/hooks/useFetch'
-import { cl, toAddress } from '@lib/utils'
-import { vaultChartTimeseriesSchema } from '@lib/utils/schemas/vaultChartsSchema'
-import type { TChartTimeseriesResponse } from '@nextgen/types/charts'
+import { cl } from '@lib/utils'
+import { useVaultChartTimeseries } from '@nextgen/hooks/useVaultChartTimeseries'
 import { transformVaultChartData } from '@nextgen/utils/charts'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
@@ -39,32 +37,9 @@ const CHART_TABS: Array<{ id: ChartTab; label: string }> = [
 ]
 
 export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSectionProps): ReactElement {
-  const normalizedAddress = vaultAddress ? toAddress(vaultAddress) : undefined
-
-  const chartsApiBase = import.meta.env.VITE_CHARTS_API_BASE || (import.meta.env.DEV ? 'https://yearn.fi' : '')
-
-  const endpoint = useMemo(() => {
-    if (!normalizedAddress || !Number.isInteger(chainId)) {
-      return null
-    }
-    const search = new URLSearchParams({
-      chainId: String(chainId),
-      address: normalizedAddress
-    }).toString()
-    if (!chartsApiBase) {
-      return `/api/vault/charts?${search}`
-    }
-    const trimmedBase = chartsApiBase.replace(/\/$/, '')
-    return `${trimmedBase}/api/vault/charts?${search}`
-  }, [chainId, normalizedAddress])
-
-  const { data, error, isLoading } = useFetch<TChartTimeseriesResponse>({
-    endpoint,
-    schema: vaultChartTimeseriesSchema,
-    config: {
-      revalidateOnFocus: false,
-      dedupingInterval: 5 * 60 * 1000
-    }
+  const { data, error, isLoading } = useVaultChartTimeseries({
+    chainId,
+    address: vaultAddress
   })
 
   const transformed = useMemo(() => transformVaultChartData(data), [data])
