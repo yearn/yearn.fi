@@ -635,7 +635,7 @@ export function VaultDetailsHeader({
   const isStickyName = displayMode === 'sticky-name'
 
   return (
-    <div className={'col-span-12 grid w-full grid-cols-1 gap-4 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
+    <div className={'grid w-full grid-cols-1 gap-6 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
       <div
         className={cl(
           'flex flex-col gap-1 px-1',
