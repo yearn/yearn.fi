@@ -37,8 +37,8 @@ const TabButton: FC<{
       className={cl(
         'flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 capitalize',
         isActive
-          ? 'bg-white text-gray-900 rounded-bl-none rounded-br-none'
-          : 'bg-transparent text-gray-500 hover:text-gray-700',
+          ? 'bg-surface text-text-primary rounded-bl-none rounded-br-none shadow-sm'
+          : 'bg-transparent text-text-secondary hover:text-text-secondary',
         className
       )}
     >
@@ -222,9 +222,9 @@ export const WidgetStakingZap: FC<Props> = ({
 
         <div className="space-y-1 text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-gray-400">You will deposit into</span>
+            <span className="text-text-tertiary">You will deposit into</span>
             <Link className="" href={`https://etherscan.io/address/${gaugeAddress}#code`}>
-              <span className="text-gray-500 font-medium hover:underline">{gauge?.symbol}</span>
+              <span className="text-text-secondary font-medium hover:underline">{gauge?.symbol}</span>
             </Link>
           </div>
         </div>
@@ -282,21 +282,21 @@ export const WidgetStakingZap: FC<Props> = ({
 
         <div className="space-y-1 text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-gray-400">You will burn</span>
-            <span className="text-gray-500 font-medium">
+            <span className="text-text-tertiary">You will burn</span>
+            <span className="text-text-secondary font-medium">
               {gaugeTokensNeeded > 0n ? (
                 formatTAmount({ value: gaugeTokensNeeded, decimals: gauge?.decimals ?? 18 }) + ' ' + gauge?.symbol
               ) : (
-                <span className="text-gray-400">0 {gauge?.symbol}</span>
+                <span className="text-text-tertiary">0 {gauge?.symbol}</span>
               )}
             </span>
           </div>
           {(isLoadingQuote || (quote && expectedOut.raw > 0n)) && (
             <div className="flex items-center justify-between">
-              <span className="text-gray-400">You will receive</span>
-              <span className="text-gray-500 font-medium">
+              <span className="text-text-tertiary">You will receive</span>
+              <span className="text-text-secondary font-medium">
                 {isLoadingQuote ? (
-                  <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 w-16 bg-surface-secondary rounded animate-pulse" />
                 ) : (
                   `${formatAmount(expectedOut.normalized)} ${asset?.symbol}`
                 )}
@@ -324,7 +324,7 @@ export const WidgetStakingZap: FC<Props> = ({
               className="w-full"
             />
           </div>
-          {/* <div className="text-xs text-gray-500 text-center my-1">
+          {/* <div className="text-xs text-text-secondary text-center my-1">
             Swap staked {gauge?.symbol} directly to {asset?.symbol} via Cowswap
           </div> */}
         </div>
@@ -355,8 +355,8 @@ export const WidgetStakingZap: FC<Props> = ({
   // Return with wrapper styling to match Widget component
   return (
     <div className="flex flex-col gap-0 mt-4">
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gray-100 rounded-lg flex h-12">
+      <div className="bg-surface rounded-lg border border-border overflow-hidden">
+        <div className="bg-surface-secondary rounded-lg flex h-12">
           <TabButton isActive={activeTab === 'deposit'} onClick={() => setActiveTab('deposit')}>
             Deposit & Stake
           </TabButton>

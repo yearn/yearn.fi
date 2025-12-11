@@ -61,12 +61,12 @@ export function NextgenVaultsListStrategy({
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
 
   return (
-    <div className={cl('w-full', 'rounded-lg', 'text-neutral-900', isUnallocated ? 'opacity-50' : '')}>
+    <div className={cl('w-full', 'rounded-lg', 'text-text-primary', isUnallocated ? 'opacity-50' : '')}>
       {/* Collapsible header - always visible */}
       <div
         className={cl(
           'flex flex-col md:grid md:grid-cols-24 items-start md:items-center w-full gap-3 md:gap-4 py-3 px-4 md:px-8 cursor-pointer',
-          'transition-colors duration-200 hover:bg-neutral-100/50'
+          'transition-colors duration-200 hover:bg-surface-secondary/50'
         )}
         onClick={() => setIsExpanded(!isExpanded)}
       >
@@ -89,7 +89,7 @@ export function NextgenVaultsListStrategy({
           </div>
           <div className={'flex md:hidden ml-2'}>
             <IconChevron
-              className={cl('size-4 text-neutral-600 transition-transform duration-200')}
+              className={cl('size-4 text-text-secondary transition-transform duration-200')}
               direction={isExpanded ? 'up' : 'down'}
             />
           </div>
@@ -98,17 +98,17 @@ export function NextgenVaultsListStrategy({
         {/* Stats row - 3 columns on mobile */}
         <div className={'grid grid-cols-3 gap-2 w-full md:col-span-14 md:grid-cols-15 md:gap-4'}>
           <div className={'flex flex-col md:col-span-5 md:text-right'}>
-            <p className={'text-xs text-neutral-800/60 mb-1'}>{'Allocation %'}</p>
+            <p className={'text-xs text-text-primary/60 mb-1'}>{'Allocation %'}</p>
             <p className={'font-medium'}>{formatPercent((details?.debtRatio || 0) / 100, 0)}</p>
           </div>
           <div className={'flex flex-col md:col-span-5 md:text-right'}>
-            <p className={'text-xs text-neutral-800/60 mb-1'}>{'Amount'}</p>
+            <p className={'text-xs text-text-primary/60 mb-1'}>{'Amount'}</p>
             <p className={'font-medium truncate'} title={allocation}>
               {allocation}
             </p>
           </div>
           <div className={'flex flex-col md:col-span-5 md:text-right'}>
-            <p className={'text-xs text-neutral-800/60 mb-1'}>{'APY'}</p>
+            <p className={'text-xs text-text-primary/60 mb-1'}>{'APY'}</p>
             <p className={'font-medium'}>
               <RenderAmount shouldHideTooltip value={finalApr} symbol={'percent'} decimals={6} />
             </p>
@@ -118,7 +118,7 @@ export function NextgenVaultsListStrategy({
         {/* Chevron - desktop only */}
         <div className={'hidden md:flex col-span-1 justify-end items-center'}>
           <IconChevron
-            className={cl('size-4 text-neutral-600 transition-transform duration-200')}
+            className={cl('size-4 text-text-secondary transition-transform duration-200')}
             direction={isExpanded ? 'up' : 'down'}
           />
         </div>
@@ -127,7 +127,7 @@ export function NextgenVaultsListStrategy({
       {/* Expanded content */}
       {isExpanded && (
         <div className={'px-4 pb-4 md:px-8 md:pb-6'}>
-          <div className={'h-px w-full bg-neutral-200 mb-4'} />
+          <div className={'h-px w-full bg-surface-secondary mb-4'} />
           <div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
             {/* First column */}
             <div className={'flex flex-col gap-1'}>
@@ -155,7 +155,7 @@ export function NextgenVaultsListStrategy({
                       e.stopPropagation()
                       copyToClipboard(address)
                     }}
-                    className={'text-neutral-600 hover:text-neutral-900 transition-colors'}
+                    className={'text-text-secondary hover:text-text-primary transition-colors'}
                     aria-label={'Copy address'}
                   >
                     <IconCopy className={'size-4'} />
@@ -166,7 +166,7 @@ export function NextgenVaultsListStrategy({
                 <div className={'flex flex-row gap-2'}>
                   <Link
                     href={`/vaults-beta/${chainId}/${toAddress(address)}`}
-                    className={cl('flex gap-1 items-center text-neutral-800 hover:text-neutral-600')}
+                    className={cl('flex gap-1 items-center text-text-primary hover:text-text-secondary')}
                     target={'_blank'}
                     rel={'noopener noreferrer'}
                   >
@@ -179,7 +179,7 @@ export function NextgenVaultsListStrategy({
                 <Link
                   href={`${getNetwork(chainId)?.defaultBlockExplorer}/address/${address}`}
                   onClick={(event: React.MouseEvent): void => event.stopPropagation()}
-                  className={cl('flex gap-1 items-center text-neutral-800 hover:text-neutral-600')}
+                  className={cl('flex gap-1 items-center text-text-primary hover:text-text-secondary')}
                   target={'_blank'}
                   rel={'noopener noreferrer'}
                 >

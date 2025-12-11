@@ -63,14 +63,16 @@ export function NextgenVaultsListHead({
   const renderChevron = useCallback(
     (shouldSortBy: boolean): ReactElement => {
       if (shouldSortBy && sortDirection === 'desc') {
-        return <IconChevron className={'size-4 min-w-4 cursor-pointer text-neutral-800'} />
+        return <IconChevron className={'size-4 min-w-4 cursor-pointer text-text-primary'} />
       }
       if (shouldSortBy && sortDirection === 'asc') {
-        return <IconChevron className={'size-4 min-w-4 cursor-pointer text-neutral-800'} direction="up" />
+        return <IconChevron className={'size-4 min-w-4 cursor-pointer text-text-primary'} direction="up" />
       }
       return (
         <IconChevron
-          className={'size-4 min-w-4 cursor-pointer text-neutral-800/60 transition-colors group-hover:text-neutral-800'}
+          className={
+            'size-4 min-w-4 cursor-pointer text-text-primary/60 transition-colors group-hover:text-text-primary'
+          }
         />
       )
     },
@@ -101,10 +103,10 @@ export function NextgenVaultsListHead({
             'transition-colors',
             shouldIndent ? '' : 'text-left',
             shouldHighlight
-              ? 'text-neutral-800'
+              ? 'text-text-primary'
               : isSortable
-                ? 'text-neutral-800/60 group-hover:text-neutral-800'
-                : 'text-neutral-800/60'
+                ? 'text-text-primary/60 group-hover:text-text-primary'
+                : 'text-text-primary/60'
           )}
         >
           {shouldIndent ? <>&nbsp;{item.label}</> : item.label}
@@ -129,23 +131,23 @@ export function NextgenVaultsListHead({
         aria-pressed={isActive}
         className={cl(
           'yearn--table-head-label-wrapper group gap-1 justify-end text-right w-full',
-          isActive ? 'text-neutral-800' : 'text-neutral-800/60 hover:text-neutral-800',
+          isActive ? 'text-text-primary' : 'text-text-primary/60 hover:text-text-primary',
           item.className
         )}
       >
         <p
           className={cl(
             'yearn--table-head-label transition-colors text-right',
-            isActive ? 'text-neutral-800' : undefined
+            isActive ? 'text-text-primary' : undefined
           )}
         >
           {shouldIndent ? <>&nbsp;{item.label}</> : item.label}
         </p>
         <span className={'flex items-center justify-center'}>
           {isActive ? (
-            <IconMinus className={'size-2 text-neutral-800'} />
+            <IconMinus className={'size-2 text-text-primary'} />
           ) : (
-            <IconPlus className={'size-2 text-neutral-800/60 group-hover:text-neutral-800'} />
+            <IconPlus className={'size-2 text-text-primary/60 group-hover:text-text-primary'} />
           )}
         </span>
       </button>
@@ -170,7 +172,7 @@ export function NextgenVaultsListHead({
       <div
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 px-4 py-2 md:px-8',
-          'border-t border-neutral-200 md:border-none',
+          'border-t border-border md:border-none',
           containerClassName
         )}
       >

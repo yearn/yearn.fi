@@ -36,15 +36,15 @@ export class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, Chart
         this.props.fallback || (
           <div
             className={
-              'flex h-64 flex-col items-center justify-center rounded-xl border border-neutral-200 bg-neutral-0 text-center'
+              'flex h-64 flex-col items-center justify-center rounded-xl border border-border bg-surface text-center'
             }
           >
-            <p className={'text-sm font-medium text-neutral-900'}>{'Chart unavailable'}</p>
-            <p className={'text-xs text-neutral-500'}>{'Unable to render chart data right now.'}</p>
+            <p className={'text-sm font-medium text-text-primary'}>{'Chart unavailable'}</p>
+            <p className={'text-xs text-text-secondary'}>{'Unable to render chart data right now.'}</p>
             <button
               type={'button'}
               onClick={this.reset}
-              className={'mt-3 rounded-full border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-700'}
+              className={'mt-3 rounded-full border border-border px-3 py-1 text-xs font-semibold text-text-secondary'}
             >
               {'Try again'}
             </button>

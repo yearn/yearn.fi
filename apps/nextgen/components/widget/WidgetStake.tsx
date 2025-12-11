@@ -55,8 +55,8 @@ export const WidgetStake: FC<Props> = ({ vaultAddress, gaugeAddress, handleStake
 
       <div className="space-y-1 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-gray-400">You will receive</span>
-          <span className="text-gray-500 font-medium">
+          <span className="text-text-tertiary">You will receive</span>
+          <span className="text-text-secondary font-medium">
             {formatAmount(expectedStakeAmount.display)} {gauge?.symbol}
           </span>
         </div>

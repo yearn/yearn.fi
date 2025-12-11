@@ -36,13 +36,13 @@ function RiskScoreItem({
         </button>
         <div className={'flex items-end font-bold'}>
           <p className={cl('mr-2', isOverall ? 'text-xl' : 'text-lg')}>{score}</p>
-          <span className={'text-neutral-900/40'}>{' / 5'}</span>
+          <span className={'text-text-primary/40'}>{' / 5'}</span>
         </div>
         {rightContent ? <div className={'flex items-end'}>{rightContent}</div> : null}
       </div>
       {isOpen && (
         <div className={'mt-2 w-full'}>
-          <small className={'whitespace-break-spaces text-sm text-neutral-900/70'}>{explanation}</small>
+          <small className={'whitespace-break-spaces text-sm text-text-primary/70'}>{explanation}</small>
         </div>
       )}
     </div>
@@ -102,13 +102,13 @@ function SimpleRiskScore({
                 <div className={'flex items-end gap-4'}>
                   <div className={'flex items-center font-bold'}>
                     <p className={'mr-2 text-xl'}>{multiStrategyRiskScore.score}</p>
-                    <span className={'text-neutral-900/40'}>{' / 5'}</span>
+                    <span className={'text-text-primary/40'}>{' / 5'}</span>
                   </div>
                   {renderInlineRiskScoreTag()}
                 </div>
               </div>
               <div className={'mt-2 w-full'}>
-                <small className={'whitespace-break-spaces text-sm text-neutral-900/70'}>
+                <small className={'whitespace-break-spaces text-sm text-text-primary/70'}>
                   {multiStrategyRiskScore.explanation}
                 </small>
               </div>
@@ -212,7 +212,7 @@ function SimpleRiskScore({
             />
           ))
         ) : (
-          <div className={'rounded-3xl border border-neutral-200 bg-neutral-100 p-4 text-center text-neutral-900'}>
+          <div className={'rounded-3xl border border-border bg-surface-secondary p-4 text-center text-text-primary'}>
             {'No risk data available for this vault.'}
           </div>
         )}

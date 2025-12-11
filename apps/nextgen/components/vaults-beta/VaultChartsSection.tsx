@@ -79,7 +79,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
     <div className={'space-y-4 pt-3 rounded-lg'}>
       <div className={'flex flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between'}>
         <div className={'flex flex-wrap gap-3'}>
-          <div className={'flex items-center gap-1 rounded-lg bg-neutral-100 p-1 border border-neutral-200'}>
+          <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 border border-border'}>
             {CHART_TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -88,8 +88,8 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
                 className={cl(
                   'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
                   activeTab === tab.id
-                    ? 'bg-neutral-0 text-neutral-900'
-                    : 'bg-transparent text-neutral-500 hover:text-neutral-700'
+                    ? 'bg-surface text-text-primary'
+                    : 'bg-transparent text-text-secondary hover:text-text-secondary'
                 )}
               >
                 {tab.label}
@@ -98,7 +98,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
           </div>
         </div>
         <div className={'flex flex-wrap gap-3'}>
-          <div className={'flex items-center gap-1 rounded-lg bg-neutral-100 p-1 border border-neutral-200'}>
+          <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 border border-border'}>
             {TIMEFRAME_OPTIONS.map((option) => (
               <button
                 key={option.value}
@@ -106,8 +106,8 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
                 className={cl(
                   'rounded-sm px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
                   option.value === timeframe.value
-                    ? 'bg-neutral-0 text-neutral-900'
-                    : 'bg-transparent text-neutral-500 hover:text-neutral-700'
+                    ? 'bg-surface text-text-primary'
+                    : 'bg-transparent text-text-secondary hover:text-text-secondary'
                 )}
                 onClick={() => setTimeframe(option)}
               >

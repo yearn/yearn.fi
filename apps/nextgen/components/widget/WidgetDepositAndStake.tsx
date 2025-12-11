@@ -82,9 +82,9 @@ export const WidgetDepositAndStake: FC<Props> = ({
 
       <div className="space-y-1 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-gray-400">You will deposit into</span>
+          <span className="text-text-tertiary">You will deposit into</span>
           <Link className="" href={`https://etherscan.io/address/${gaugeAddress}#code`}>
-            <span className="text-gray-500 font-medium hover:underline">{gauge?.symbol}</span>
+            <span className="text-text-secondary font-medium hover:underline">{gauge?.symbol}</span>
           </Link>
         </div>
       </div>

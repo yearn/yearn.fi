@@ -58,8 +58,8 @@ const InfoModal: FC<InfoModalProps> = ({ isOpen, onClose, title, children }) => 
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-gray-900 mb-4">
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-text-primary mb-4">
                   {title}
                 </Dialog.Title>
                 {children}
@@ -101,14 +101,14 @@ const VaultSharesModal: FC<VaultSharesModalProps> = ({
   return (
     <InfoModal isOpen={isOpen} onClose={onClose} title="Vault Shares">
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           After depositing into the vault, you will receive{' '}
           {isAutoStakingEnabled && stakingAddress ? 'staked vault' : 'vault'} tokens which serve as proof that you have
           deposited into the vault.
         </p>
         <div className="space-y-3">
-          <p className="font-medium text-sm text-gray-900">Token details:</p>
-          <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-2">
+          <p className="font-medium text-sm text-text-primary">Token details:</p>
+          <ul className="list-disc list-inside space-y-2 text-sm text-text-secondary ml-2">
             <li>Symbol: {vaultSymbol}</li>
             <li>
               Your shares: {expectedShares} {vaultSymbol}
@@ -119,7 +119,7 @@ const VaultSharesModal: FC<VaultSharesModalProps> = ({
             )}
           </ul>
         </div>
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-text-secondary mt-4">
           You can use these tokens to withdraw your deposit and any accrued returns at any time.
         </p>
       </div>
@@ -147,13 +147,13 @@ const AnnualReturnModal: FC<AnnualReturnModalProps> = ({
   return (
     <InfoModal isOpen={isOpen} onClose={onClose} title="Estimated Annual Return">
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           The estimated annual return is calculated based on the vault's historical performance and current market
           conditions.
         </p>
         <div className="space-y-3">
-          <p className="font-medium text-sm text-gray-900">Calculation factors:</p>
-          <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-2">
+          <p className="font-medium text-sm text-text-primary">Calculation factors:</p>
+          <ul className="list-disc list-inside space-y-2 text-sm text-text-secondary ml-2">
             <li>Current APR: {formatPercent(currentAPR * 100, 2, 2, 500)}</li>
             <li>
               Your deposit: {depositAmount} {tokenSymbol}
@@ -163,7 +163,7 @@ const AnnualReturnModal: FC<AnnualReturnModalProps> = ({
             </li>
           </ul>
         </div>
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-text-secondary mt-4">
           Please note that past performance does not guarantee future results. Actual returns may vary based on market
           volatility and vault strategy adjustments.
         </p>
@@ -327,13 +327,13 @@ export const WidgetDepositGeneric: FC<Props> = ({
           <div className="relative">
             <div className="flex flex-col gap-2 w-full">
               <div className="flex justify-between items-end">
-                <label className="font-medium text-sm text-gray-900">Amount</label>
+                <label className="font-medium text-sm text-text-primary">Amount</label>
                 <p className="text-[10px] text-zinc-500 font-medium">
                   Balance: {formatAmount(inputToken?.balance.normalized || 0)} {inputToken?.symbol}
                 </p>
               </div>
               <div className="relative flex items-center gap-2">
-                <div className="bg-white border border-gray-200 rounded-md h-9 flex-1">
+                <div className="bg-surface border border-border rounded-md h-9 flex-1">
                   <div className="flex gap-1 h-9 items-center px-3 py-1">
                     <input
                       type="text"
@@ -341,7 +341,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
                       onChange={(e) => depositInput[1](e)}
                       placeholder="0"
                       disabled={isWaitingForTx}
-                      className="flex-1 font-normal text-sm text-gray-900 outline-none bg-transparent"
+                      className="flex-1 font-normal text-sm text-text-primary outline-none bg-transparent"
                     />
                     <span className="text-sm text-zinc-500 font-normal">{inputToken?.symbol}</span>
                   </div>
@@ -353,9 +353,9 @@ export const WidgetDepositGeneric: FC<Props> = ({
                       depositInput[2](exactAmount)
                     }
                   }}
-                  className="bg-white border border-gray-200 flex gap-2 h-9 items-center justify-center px-8 py-2 rounded-md"
+                  className="bg-surface border border-border flex gap-2 h-9 items-center justify-center px-8 py-2 rounded-md"
                 >
-                  <span className="font-medium text-sm text-gray-900">Max</span>
+                  <span className="font-medium text-sm text-text-primary">Max</span>
                 </button>
               </div>
             </div>
@@ -367,10 +367,10 @@ export const WidgetDepositGeneric: FC<Props> = ({
       <div className="px-6">
         {/* Deposit Token Selector */}
         <div className="flex flex-col gap-2 mb-6">
-          <label className="font-medium text-sm text-gray-900">Deposit Token</label>
+          <label className="font-medium text-sm text-text-primary">Deposit Token</label>
           <button
             onClick={() => setShowTokenSelector(!showTokenSelector)}
-            className="bg-white border border-gray-200 rounded-md h-9 w-full flex items-center justify-between px-3 py-2"
+            className="bg-surface border border-border rounded-md h-9 w-full flex items-center justify-between px-3 py-2"
           >
             <div className="flex items-center gap-2">
               {inputToken && (
@@ -382,10 +382,10 @@ export const WidgetDepositGeneric: FC<Props> = ({
                   className="rounded-full"
                 />
               )}
-              <span className="font-normal text-sm text-gray-900">{inputToken?.symbol || 'Select Token'}</span>
+              <span className="font-normal text-sm text-text-primary">{inputToken?.symbol || 'Select Token'}</span>
             </div>
 
-            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -394,8 +394,8 @@ export const WidgetDepositGeneric: FC<Props> = ({
         {/* Details */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">You will deposit</p>
-            <p className="text-sm text-gray-900">
+            <p className="text-sm text-text-secondary">You will deposit</p>
+            <p className="text-sm text-text-primary">
               {depositAmount.bn > 0n
                 ? formatTAmount({
                     value: depositAmount.bn,
@@ -406,14 +406,14 @@ export const WidgetDepositGeneric: FC<Props> = ({
             </p>
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">You will receive</p>
+            <p className="text-sm text-text-secondary">You will receive</p>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowVaultSharesModal(true)}
-                className="inline-flex items-center justify-center hover:bg-gray-100 rounded-full p-0.5 transition-colors"
+                className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-full p-0.5 transition-colors"
               >
                 <svg
-                  className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600"
+                  className="h-3.5 w-3.5 text-text-tertiary hover:text-text-secondary"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -426,9 +426,9 @@ export const WidgetDepositGeneric: FC<Props> = ({
                   />
                 </svg>
               </button>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-text-primary">
                 {isLoadingRoute || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
-                  <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                  <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
                 ) : depositAmount.bn > 0n && route ? (
                   `${formatAmount(expectedOut.normalized)} ${isAutoStakingEnabled && stakingAddress ? stakingToken?.symbol || vaultSymbol : vaultSymbol}`
                 ) : (
@@ -438,14 +438,14 @@ export const WidgetDepositGeneric: FC<Props> = ({
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">Est. Annual Return</p>
+            <p className="text-sm text-text-secondary">Est. Annual Return</p>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowAnnualReturnModal(true)}
-                className="inline-flex items-center justify-center hover:bg-gray-100 rounded-full p-0.5 transition-colors"
+                className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-full p-0.5 transition-colors"
               >
                 <svg
-                  className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600"
+                  className="h-3.5 w-3.5 text-text-tertiary hover:text-text-secondary"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -458,7 +458,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
                   />
                 </svg>
               </button>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-text-primary">
                 {depositAmount.bn > 0n && route ? `~${estimatedAnnualReturn} ${inputToken?.symbol}` : '~0'}
               </p>
             </div>
@@ -502,7 +502,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
         <div className="mt-1 flex flex-col items-center">
           <button
             onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors"
           >
             <svg
               className={cl('h-3 w-3 transition-transform', showAdvancedSettings ? 'rotate-180' : 'rotate-0')}
@@ -518,7 +518,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
           {showAdvancedSettings && (
             <div className="mt-3 w-full space-y-3">
               <div className="flex items-center justify-between">
-                <label htmlFor="slippage" className="text-sm text-gray-600">
+                <label htmlFor="slippage" className="text-sm text-text-secondary">
                   Slippage Tolerance
                 </label>
                 <div className="flex items-center gap-2">
@@ -526,22 +526,22 @@ export const WidgetDepositGeneric: FC<Props> = ({
                     type="number"
                     value={zapSlippage}
                     onChange={(e) => setZapSlippage(parseFloat(e.target.value) || 0)}
-                    className="w-16 px-2 py-1 text-sm border border-gray-200 text-gray-900 text-right rounded focus:outline-none focus:ring-1 focus:ring-gray-300"
+                    className="w-16 px-2 py-1 text-sm border border-border text-text-primary text-right rounded focus:outline-none focus:ring-1 focus:ring-border-focus"
                     step="0.1"
                     min="0"
                     max="50"
                   />
-                  <span className="text-sm text-gray-500">%</span>
+                  <span className="text-sm text-text-secondary">%</span>
                 </div>
               </div>
 
               {stakingAddress && (
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between pt-2 border-t border-border">
                   <div className="space-y-0.5">
-                    <label htmlFor="maximize-yield" className="text-sm text-gray-600">
+                    <label htmlFor="maximize-yield" className="text-sm text-text-secondary">
                       Maximize Yield
                     </label>
-                    <p className="text-xs text-gray-400">Auto-stake for maximum APY</p>
+                    <p className="text-xs text-text-tertiary">Auto-stake for maximum APY</p>
                   </div>
                   <button
                     role="switch"
@@ -554,7 +554,7 @@ export const WidgetDepositGeneric: FC<Props> = ({
                   >
                     <span
                       className={cl(
-                        'inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform',
+                        'inline-block h-3.5 w-3.5 transform rounded-full bg-surface transition-transform',
                         isAutoStakingEnabled ? 'translate-x-5' : 'translate-x-1'
                       )}
                     />

@@ -136,21 +136,21 @@ export const WidgetUnstakeAndWithdraw: FC<Props> = ({
 
       <div className="space-y-1 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-gray-400">You will burn</span>
-          <span className="text-gray-500 font-medium">
+          <span className="text-text-tertiary">You will burn</span>
+          <span className="text-text-secondary font-medium">
             {gaugeTokensNeeded > 0n ? (
               formatTAmount({ value: gaugeTokensNeeded, decimals: gauge?.decimals ?? 18 }) + ' ' + gauge?.symbol
             ) : (
-              <span className="text-gray-400">0 {gauge?.symbol}</span>
+              <span className="text-text-tertiary">0 {gauge?.symbol}</span>
             )}
           </span>
         </div>
         {(isLoadingQuote || (quote && expectedOut.raw > 0n)) && (
           <div className="flex items-center justify-between">
-            <span className="text-gray-400">You will receive</span>
-            <span className="text-gray-500 font-medium">
+            <span className="text-text-tertiary">You will receive</span>
+            <span className="text-text-secondary font-medium">
               {isLoadingQuote ? (
-                <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-16 bg-surface-secondary rounded animate-pulse" />
               ) : (
                 `${formatAmount(expectedOut.normalized)} ${asset?.symbol}`
               )}

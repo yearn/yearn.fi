@@ -12,7 +12,7 @@ type TNextgenFeesLineItem = {
 export function NextgenFeesLineItem({ children, label, tooltip }: TNextgenFeesLineItem): ReactElement {
   return (
     <div className={'flex flex-col space-y-0 md:space-y-0'}>
-      <p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>
+      <p className={'text-xxs text-text-secondary md:text-xs'}>{label}</p>
       <div
         className={cl(
           tooltip
@@ -24,7 +24,7 @@ export function NextgenFeesLineItem({ children, label, tooltip }: TNextgenFeesLi
           <span suppressHydrationWarning className={'tooltipFees bottom-full'}>
             <div
               className={
-                'w-96 rounded-xl border border-neutral-300 bg-neutral-100 p-4 text-center text-xxs text-neutral-900'
+                'w-96 rounded-xl border border-border bg-surface-secondary p-4 text-center text-xxs text-text-primary'
               }
             >
               {tooltip}
@@ -55,7 +55,7 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
           href="https://docs.yearn.fi"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-900 underline"
+          className="text-text-primary underline"
         >
           docs
         </a>
@@ -64,7 +64,7 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
           href="https://discord.gg/yearn"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-900 underline"
+          className="text-text-primary underline"
         >
           discord
         </a>{' '}
@@ -73,7 +73,7 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
           href="https://t.me/yearnfinance"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-900 underline"
+          className="text-text-primary underline"
         >
           telegram
         </a>{' '}
@@ -85,7 +85,7 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
   return (
     <div className={'space-y-4 p-8 pt-0'}>
       <div className={'w-full'}>
-        <div className={'mt-2 text-neutral-900/50'}>
+        <div className={'mt-2 text-text-primary/50'}>
           {typeof getVaultDescription() === 'string' ? (
             <p
               // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled description content
@@ -100,15 +100,15 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
       </div>
 
       <div className={'w-full'}>
-        <b className={'text-neutral-900'}>{'Fees'}</b>
+        <b className={'text-text-primary'}>{'Fees'}</b>
         <div className={'mt-2 grid grid-cols-4 gap-8'}>
           <NextgenFeesLineItem label={'Management'}>
-            <p className={'font-number text-xl text-neutral-900'}>
+            <p className={'font-number text-xl text-text-primary'}>
               {formatPercent((apr.fees.management || 0) * 100, 0)}
             </p>
           </NextgenFeesLineItem>
           <NextgenFeesLineItem label={'Performance'}>
-            <p className={'font-number text-xl text-neutral-900'}>
+            <p className={'font-number text-xl text-text-primary'}>
               {formatPercent((apr.fees.performance || 0) * 100, 0)}
             </p>
           </NextgenFeesLineItem>
@@ -117,7 +117,7 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
               label={'keepVELO'}
               tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}
             >
-              <b className={'font-number text-xl text-neutral-500'}>
+              <b className={'font-number text-xl text-text-secondary'}>
                 {`${formatAmount((currentVault.apr.forwardAPR.composite?.keepVELO || 0) * 100, 0, 2)} %`}
               </b>
             </NextgenFeesLineItem>

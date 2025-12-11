@@ -97,8 +97,8 @@ const InfoModal: FC<InfoModalProps> = ({ isOpen, onClose, title, children }) => 
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-gray-900 mb-4">
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-text-primary mb-4">
                   {title}
                 </Dialog.Title>
                 {children}
@@ -142,21 +142,21 @@ const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
   return (
     <InfoModal isOpen={isOpen} onClose={onClose} title="Withdrawal Details">
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           You are withdrawing {withdrawAmount}{' '}
           {withdrawalSource === 'staking' && stakingTokenSymbol ? stakingTokenSymbol : vaultSymbol} from the{' '}
           {withdrawalSource === 'staking' ? 'staking contract' : 'vault'}.
           {stakingAddress && withdrawalSource === 'staking' && ' Your tokens will be automatically unstaked.'}
         </p>
         <div className="space-y-3">
-          <p className="font-medium text-sm text-gray-900">Withdrawal notes:</p>
-          <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-2">
+          <p className="font-medium text-sm text-text-primary">Withdrawal notes:</p>
+          <ul className="list-disc list-inside space-y-2 text-sm text-text-secondary ml-2">
             <li>You will receive your underlying assets</li>
             <li>Any earned yield will be included</li>
             <li>The transaction cannot be reversed</li>
           </ul>
         </div>
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-text-secondary mt-4">
           Make sure you have enough gas to complete the withdrawal transaction.
         </p>
       </div>
@@ -578,19 +578,19 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
       {hasBothBalances ? (
         <div className="px-6 pt-6 pb-4">
           <div className="flex flex-col gap-2">
-            <label className="font-medium text-sm text-gray-900">Withdraw from</label>
+            <label className="font-medium text-sm text-text-primary">Withdraw from</label>
             <div className="relative">
               <select
                 value={withdrawalSource || ''}
                 onChange={(e) => setWithdrawalSource(e.target.value as 'vault' | 'staking' | null)}
-                className="bg-white border border-gray-200 rounded-md h-9 w-full px-3 py-2 text-sm text-gray-900 appearance-none pr-10"
+                className="bg-surface border border-border rounded-md h-9 w-full px-3 py-2 text-sm text-text-primary appearance-none pr-10"
               >
                 <option value="">Not selected</option>
                 <option value="vault">Vault shares</option>
                 <option value="staking">Staking contract</option>
               </select>
               <svg
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -609,14 +609,14 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
           <div className="relative">
             <div className="flex flex-col gap-2 w-full">
               <div className="flex justify-between items-end">
-                <label className="font-medium text-sm text-gray-900">Amount</label>
+                <label className="font-medium text-sm text-text-primary">Amount</label>
                 <p className="text-[10px] text-zinc-500 font-medium">
                   {withdrawalSource === 'staking' ? 'Staking' : 'Vault'} Balance:{' '}
                   {formatAmount(totalBalanceInUnderlying.normalized)} {assetToken?.symbol || 'tokens'}
                 </p>
               </div>
               <div className="relative flex items-center gap-2">
-                <div className="bg-white border border-gray-200 rounded-md h-9 flex-1">
+                <div className="bg-surface border border-border rounded-md h-9 flex-1">
                   <div className="flex gap-1 h-9 items-center px-3 py-1">
                     <input
                       type="text"
@@ -624,7 +624,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                       onChange={(e) => withdrawInput[1](e)}
                       placeholder="0"
                       disabled={!!isWaitingForTx || !!isFetchingMaxQuote || (!!hasBothBalances && !withdrawalSource)}
-                      className="flex-1 font-normal text-sm text-gray-900 outline-none bg-transparent"
+                      className="flex-1 font-normal text-sm text-text-primary outline-none bg-transparent"
                     />
                     <span className="text-sm text-zinc-500 font-normal">{outputToken?.symbol || 'tokens'}</span>
                   </div>
@@ -652,12 +652,12 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                     }
                   }}
                   disabled={!!isFetchingMaxQuote || (!!hasBothBalances && !withdrawalSource)}
-                  className="bg-white border border-gray-200 flex gap-2 h-9 items-center justify-center px-8 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed w-[88px]"
+                  className="bg-surface border border-border flex gap-2 h-9 items-center justify-center px-8 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed w-[88px]"
                 >
                   {isFetchingMaxQuote ? (
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-border border-t-gray-600 rounded-full animate-spin" />
                   ) : (
-                    <span className="font-medium text-sm text-gray-900">Max</span>
+                    <span className="font-medium text-sm text-text-primary">Max</span>
                   )}
                 </button>
               </div>
@@ -670,11 +670,11 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
       <div className="px-6">
         {/* Withdraw Token Selector */}
         <div className="flex flex-col gap-2 mb-6">
-          <label className="font-medium text-sm text-gray-900">Receive Token</label>
+          <label className="font-medium text-sm text-text-primary">Receive Token</label>
           <button
             onClick={() => setShowTokenSelector(!showTokenSelector)}
             disabled={!!hasBothBalances && !withdrawalSource}
-            className="bg-white border border-gray-200 rounded-md h-9 w-full flex items-center justify-between px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-surface border border-border rounded-md h-9 w-full flex items-center justify-between px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="flex items-center gap-2">
               {outputToken && (
@@ -686,10 +686,10 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                   className="rounded-full"
                 />
               )}
-              <span className="font-normal text-sm text-gray-900">{outputToken?.symbol || 'Select Token'}</span>
+              <span className="font-normal text-sm text-text-primary">{outputToken?.symbol || 'Select Token'}</span>
             </div>
 
-            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -698,10 +698,10 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
         {/* Details */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">{isUnstake ? 'You will unstake' : 'You will redeem'}</p>
-            <p className="text-sm text-gray-900">
+            <p className="text-sm text-text-secondary">{isUnstake ? 'You will unstake' : 'You will redeem'}</p>
+            <p className="text-sm text-text-primary">
               {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
-                <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : (
                 <>
                   {requiredVaultTokens > 0n
@@ -716,14 +716,14 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
             </p>
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">You will receive at least</p>
+            <p className="text-sm text-text-secondary">You will receive at least</p>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowWithdrawDetailsModal(true)}
-                className="inline-flex items-center justify-center hover:bg-gray-100 rounded-full p-0.5 transition-colors"
+                className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-full p-0.5 transition-colors"
               >
                 <svg
-                  className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600"
+                  className="h-3.5 w-3.5 text-text-tertiary hover:text-text-secondary"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -736,9 +736,9 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                   />
                 </svg>
               </button>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-text-primary">
                 {isLoadingAnyQuote || prepareApprove.isLoading || prepareEnsoOrder.isLoading ? (
-                  <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                  <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
                 ) : minExpectedOut && minExpectedOut.normalized > 0 ? (
                   `${formatAmount(minExpectedOut.normalized, 3, 6)} ${outputToken?.symbol}`
                 ) : (
@@ -749,8 +749,8 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
           </div>
           {/* {stakingToken?.balance.raw && stakingToken.balance.raw > 0n && (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-500">From staked</p>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-text-secondary">From staked</p>
+              <p className="text-sm text-text-primary">
                 {formatAmount(stakingToken.balance.normalized)} {vaultSymbol}
               </p>
             </div>
@@ -804,7 +804,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
         <div className="mt-1 flex flex-col items-center">
           <button
             onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors"
           >
             <svg
               className={cl('h-3 w-3 transition-transform', showAdvancedSettings ? 'rotate-180' : 'rotate-0')}
@@ -820,7 +820,7 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
           {showAdvancedSettings && (
             <div className="mt-3 w-full space-y-3">
               <div className="flex items-center justify-between">
-                <label htmlFor="slippage" className="text-sm text-gray-600">
+                <label htmlFor="slippage" className="text-sm text-text-secondary">
                   Slippage Tolerance
                 </label>
                 <div className="flex items-center gap-2">
@@ -828,12 +828,12 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                     type="number"
                     value={zapSlippage}
                     onChange={(e) => setZapSlippage(parseFloat(e.target.value) || 0)}
-                    className="w-16 px-2 py-1 text-sm border border-gray-200 text-gray-900 text-right rounded focus:outline-none focus:ring-1 focus:ring-gray-300"
+                    className="w-16 px-2 py-1 text-sm border border-border text-text-primary text-right rounded focus:outline-none focus:ring-1 focus:ring-border-focus"
                     step="0.1"
                     min="0"
                     max="50"
                   />
-                  <span className="text-sm text-gray-500">%</span>
+                  <span className="text-sm text-text-secondary">%</span>
                 </div>
               </div>
             </div>
