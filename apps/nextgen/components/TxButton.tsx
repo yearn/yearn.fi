@@ -173,7 +173,13 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
     ),
     loading: (
       <div className="flex items-center justify-center gap-2">
-        <svg style={spinnerStyle} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" color="#000000">
+        <svg
+          style={spinnerStyle}
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          color="currentColor"
+        >
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path
             className="opacity-75"

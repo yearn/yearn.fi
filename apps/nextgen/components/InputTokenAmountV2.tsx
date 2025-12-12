@@ -126,11 +126,11 @@ export const InputTokenAmountV2: FC<Props> = ({
   }
 
   return (
-    <div className={cl('flex flex-col w-full relative border border-gray-200 rounded-md', className)}>
+    <div className={cl('flex flex-col w-full relative border border-border rounded-md', className)}>
       <div className="py-2 px-3 flex flex-col gap-1">
         {/* Top row - Title and percentage buttons */}
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-700">{title}</label>
+          <label className="text-sm font-medium text-text-primary">{title}</label>
 
           {/* Percentage buttons */}
           {!hidePercentageButtons && (
@@ -141,8 +141,8 @@ export const InputTokenAmountV2: FC<Props> = ({
                 className={cl(
                   'px-1 py-0.5 text-xs font-medium rounded transition-colors',
                   disabled
-                    ? 'text-gray-400 bg-transparent cursor-not-allowed'
-                    : 'text-gray-500 bg-transparent hover:bg-gray-100'
+                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
+                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
                 )}
                 disabled={disabled}
               >
@@ -154,8 +154,8 @@ export const InputTokenAmountV2: FC<Props> = ({
                 className={cl(
                   'px-1 py-0.5 text-xs font-medium rounded transition-colors',
                   disabled
-                    ? 'text-gray-400 bg-transparent cursor-not-allowed'
-                    : 'text-gray-500 bg-transparent hover:bg-gray-100'
+                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
+                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
                 )}
                 disabled={disabled}
               >
@@ -167,8 +167,8 @@ export const InputTokenAmountV2: FC<Props> = ({
                 className={cl(
                   'px-1 py-0.5 text-xs font-medium rounded transition-colors',
                   disabled
-                    ? 'text-gray-400 bg-transparent cursor-not-allowed'
-                    : 'text-gray-500 bg-transparent hover:bg-gray-100'
+                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
+                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
                 )}
                 disabled={disabled}
               >
@@ -180,13 +180,13 @@ export const InputTokenAmountV2: FC<Props> = ({
                 className={cl(
                   'px-1 py-0.5 text-xs font-medium rounded transition-colors flex items-center justify-center min-w-[42px]',
                   disabled || isMaxButtonLoading
-                    ? 'text-gray-400 bg-transparent cursor-not-allowed'
-                    : 'text-gray-500 bg-transparent hover:bg-gray-100'
+                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
+                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
                 )}
                 disabled={disabled || isMaxButtonLoading}
               >
                 {isMaxButtonLoading ? (
-                  <div className="w-3 h-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3 h-3 border-2 border-border border-t-transparent rounded-full animate-spin" />
                 ) : (
                   'Max'
                 )}
@@ -206,8 +206,8 @@ export const InputTokenAmountV2: FC<Props> = ({
             onBlur={() => setActive(false)}
             className={cl(
               'bg-transparent outline-none text-2xl font-medium flex-1 min-w-0',
-              disabled ? 'text-gray-400' : 'text-gray-900',
-              'placeholder:text-gray-400'
+              disabled ? 'text-text-secondary' : 'text-text-primary',
+              'placeholder:text-text-secondary'
             )}
           />
 
@@ -220,9 +220,9 @@ export const InputTokenAmountV2: FC<Props> = ({
               disabled={!showTokenSelector && disabled}
               className={cl(
                 'px-2 py-1 rounded-lg flex items-center gap-2 transition-colors',
-                'text-gray-900 text-xl font-medium', // Match input text size
+                'text-text-primary text-xl font-medium', // Match input text size
                 showTokenSelector
-                  ? 'bg-transparent hover:bg-gray-100'
+                  ? 'bg-transparent hover:bg-surface-secondary'
                   : disabled
                     ? 'bg-transparent cursor-not-allowed'
                     : 'bg-transparent'
@@ -250,16 +250,16 @@ export const InputTokenAmountV2: FC<Props> = ({
           {/* Loading indicator */}
           {isDebouncing && (
             <div className="absolute -right-8">
-              <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
             </div>
           )}
         </div>
 
         {/* Bottom row - USD value and balance */}
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">${inputUsdValue}</div>
+          <div className="text-sm text-text-secondary">${inputUsdValue}</div>
           {balance !== undefined && symbol && (
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-text-secondary">
               Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
             </div>
           )}
@@ -275,9 +275,9 @@ export const InputTokenAmountV2: FC<Props> = ({
           {/* Notification text */}
           {zapNotificationText && (
             <div className="flex items-center gap-2 px-3">
-              <div className="flex-1 h-px bg-gray-200"></div>
-              <span className="text-sm text-gray-600">{zapNotificationText}</span>
-              <div className="flex-1 h-px bg-gray-200"></div>
+              <div className="flex-1 h-px bg-border"></div>
+              <span className="text-sm text-text-secondary">{zapNotificationText}</span>
+              <div className="flex-1 h-px bg-border"></div>
             </div>
           )}
 
@@ -286,9 +286,9 @@ export const InputTokenAmountV2: FC<Props> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {zapToken.isLoading ? (
-                  <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-8 w-24 bg-surface-secondary rounded animate-pulse" />
                 ) : (
-                  <div className="text-gray-500 text-2xl font-medium">{zapToken.expectedAmount || '0'}</div>
+                  <div className="text-text-secondary text-2xl font-medium">{zapToken.expectedAmount || '0'}</div>
                 )}
               </div>
 
@@ -300,8 +300,8 @@ export const InputTokenAmountV2: FC<Props> = ({
                   disabled={disabled}
                   className={cl(
                     'px-2 py-1 rounded-lg flex items-center gap-2 transition-colors',
-                    disabled ? 'bg-transparent cursor-not-allowed' : 'bg-transparent hover:bg-gray-100',
-                    'text-gray-900 text-2xl font-medium'
+                    disabled ? 'bg-transparent cursor-not-allowed' : 'bg-transparent hover:bg-surface-secondary',
+                    'text-text-primary text-2xl font-medium'
                   )}
                 >
                   {zapToken.address && zapToken.chainId && (
@@ -323,12 +323,12 @@ export const InputTokenAmountV2: FC<Props> = ({
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-500">${outputUsdValue}</div>
+              <div className="text-sm text-text-secondary">${outputUsdValue}</div>
               {/* Remove Zap button */}
               {onRemoveZap && (
                 <button
                   onClick={onRemoveZap}
-                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors self-end"
+                  className="text-sm text-text-secondary hover:text-text-primary transition-colors self-end"
                 >
                   Remove Zap
                 </button>

@@ -18,15 +18,15 @@ export const SettingsPopover: FC<SettingsPopoverProps> = ({
 }) => {
   return (
     <Popover
-      className="!border-border"
+      className="!bg-surface-secondary !-mt-1 !shadow-none !border-border !w-89"
       trigger={
         <button className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-sm p-1.5 transition-colors">
-          <IconSliders className="h-3 w-3 text-blue-600" />
+          <IconSliders className="h-3 w-3 text-primary" />
         </button>
       }
       align="end"
     >
-      <PopoverContent className="w-80 bg-surface-secondary">
+      <PopoverContent className="w-full">
         <div className="space-y-4">
           <div>
             <h4 className="font-medium mb-3 text-text-primary">Transaction Settings</h4>
@@ -100,7 +100,7 @@ export const SettingsPopover: FC<SettingsPopoverProps> = ({
                 onClick={() => setMaximizeYield(!maximizeYield)}
                 className={cl(
                   'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                  maximizeYield ? 'bg-surface-tertiary' : 'bg-surface-secondary'
+                  maximizeYield ? 'bg-blue-600' : 'bg-surface-secondary'
                 )}
               >
                 <span

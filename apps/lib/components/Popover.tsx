@@ -25,14 +25,18 @@ export const Popover: FC<PopoverProps> = ({ trigger, children, className, align 
         leaveTo="opacity-0 translate-y-1"
       >
         <PopoverPanel
+          anchor={{
+            to: 'bottom end',
+            gap: `${sideOffset}px`,
+            padding: '16px'
+          }}
           className={cl(
-            'absolute z-50 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200',
-            align === 'start' ? 'left-0' : '',
-            align === 'center' ? 'left-1/2 -translate-x-1/2' : '',
-            align === 'end' ? 'right-0' : '',
+            'z-50 w-80 bg-white rounded-lg shadow-lg border border-gray-200',
+            align === 'start' ? '[--anchor-align:start]' : '',
+            align === 'center' ? '[--anchor-align:center]' : '',
+            align === 'end' ? '[--anchor-align:end]' : '',
             className
           )}
-          style={{ top: `calc(100% + ${sideOffset}px)` }}
         >
           {children}
         </PopoverPanel>
