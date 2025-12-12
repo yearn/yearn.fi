@@ -71,12 +71,7 @@ export function VaultsV3ListRow({
   }, [isExpanded])
 
   return (
-    <div
-      className={cl(
-        'w-full overflow-hidden border border-transparent transition-colors bg-surface',
-        isExpanded ? 'border-border' : ''
-      )}
-    >
+    <div className={cl('w-full overflow-hidden transition-colors bg-surface', isExpanded ? 'border-border' : '')}>
       {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
       <div
         role={'link'}
@@ -283,7 +278,7 @@ export function VaultsV3ListRow({
 
       {isExpanded ? (
         <div className={'border-t border-border bg-surface'}>
-          <div className={'flex flex-wrap gap-2 px-6'}>
+          <div className={'flex flex-wrap gap-2 px-6 pt-4'}>
             <div className={'flex items-center gap-1 rounded-lg bg-app p-1'}>
               {EXPANDED_TABS.map((tab) => (
                 <button

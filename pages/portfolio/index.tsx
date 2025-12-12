@@ -71,8 +71,8 @@ function PortfolioPage(): ReactElement {
   const hasHoldings = sortedHoldings.length > 0
 
   return (
-    <div className={'vaults-layout vaults-layout--detail'}>
-      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-10 bg-neutral-0 px-4 pb-16'}>
+    <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
+      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-10 bg-surface px-4 pb-16'}>
         <section className={'flex flex-col gap-4'}>
           <div className={'flex items-center gap-2 mt-2 text-sm text-neutral-500'}>
             <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>

@@ -197,9 +197,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
   }, [notificationStatus])
 
   const updateSurfaceBackground = useCallback((): void => {
-    const layoutHost = document.querySelector('.vaults-layout') as HTMLElement | null
-    const target = layoutHost ?? document.documentElement
-    const value = getComputedStyle(target).getPropertyValue('--surface-background').trim()
+    const value = getComputedStyle(document.documentElement).getPropertyValue('--color-app').trim()
     setSurfaceBackground(value || undefined)
   }, [])
 
@@ -207,15 +205,12 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     updateSurfaceBackground()
 
     const observer = new MutationObserver(() => updateSurfaceBackground())
-    const layoutHost = document.querySelector('.vaults-layout')
 
-    // Observe both the layout host and document root for class changes
-    if (layoutHost) {
-      observer.observe(layoutHost, {
-        attributes: true,
-        attributeFilter: ['class']
-      })
-    }
+    // Observe document root for theme/class changes
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme']
+    })
 
     observer.observe(document.documentElement, {
       attributes: true,

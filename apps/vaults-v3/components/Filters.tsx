@@ -265,7 +265,7 @@ TListHero): ReactElement {
 
   return (
     <>
-      <div className={'relative col-span-24 w-full rounded-lg bg-surface p-2 md:col-span-19'}>
+      <div className={'relative col-span-24 w-full rounded-lg border border-border bg-surface mt-2 p-2 md:col-span-19'}>
         {/* <PortfolioCard holdingsVaults={holdingsVaults} /> */}
 
         <div className={'md:hidden'}>
@@ -428,7 +428,7 @@ function FilterControls({
           <div className={'flex w-full flex-nowrap justify-between items-center gap-3'}>
             <div
               className={
-                'flex shrink-0 flex-wrap items-center gap-px rounded-md h-10 bg-surface-secondary border border-border py-1 px-1.5 text-sm text-text-primary'
+                'flex shrink-0 flex-wrap items-center gap-px rounded-md border h-10 py-1 px-1.5 bg-surface-secondary border-border text-sm text-text-primary'
               }
             >
               {chainButtons.map((chain) => (

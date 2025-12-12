@@ -316,6 +316,7 @@ function ListOfVaults({
 
   const filtersElement = (
     <div className={'w-full bg-app pb-2 shrink-0'}>
+      {/* TODO: Deprecate when decide on Header display */}
       {breadcrumbsElement}
       {suggestedVaultsElement}
       <Filters
@@ -415,7 +416,7 @@ function ListOfVaults({
             }
           ]}
         />
-        <div className={'flex flex-1 flex-col overflow-auto bg-app'}>{renderVaultList()}</div>
+        <div className={'flex flex-1 flex-col overflow-auto'}>{renderVaultList()}</div>
       </div>
     </div>
   )
@@ -437,7 +438,7 @@ function Index(): ReactElement {
   })
 
   return (
-    <div className={'vaults-layout vaults-layout--list'}>
+    <div className={'h-[calc(100vh-var(--header-height))] w-full overflow-hidden bg-app'}>
       <div
         className={'relative z-50 mx-auto flex w-full max-w-[1232px] flex-col gap-4 bg-transparent pb-4 md:gap-3'}
         style={{

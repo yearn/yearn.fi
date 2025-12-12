@@ -179,39 +179,6 @@ body {
 }
 
 @layer components {
-  .vaults-layout {
-    min-height: calc(100vh - var(--header-height));
-    width: 100%;
-    background-color: var(--surface-background);
-  }
-
-  .vaults-layout--list {
-    height: calc(100vh - var(--header-height));
-    overflow: hidden;
-    --surface-background: var(--color-surface-secondary);
-    --surface-default: var(--color-surface);
-    --surface-muted: var(--color-surface-secondary);
-  }
-
-  .vaults-layout--detail {
-    --surface-background: var(--color-app);
-    --surface-default: var(--color-surface);
-    --surface-muted: var(--color-surface-secondary);
-  }
-
-  .dark .vaults-layout--list,
-  .v3 .vaults-layout--list {
-    --surface-background: var(--color-app);
-    --surface-default: var(--color-surface-secondary);
-    --surface-muted: var(--color-surface-tertiary);
-  }
-
-  .dark .vaults-layout--detail,
-  .v3 .vaults-layout--detail {
-    --surface-background: var(--color-app);
-    --surface-default: var(--color-surface-secondary);
-    --surface-muted: var(--color-surface-tertiary);
-  }
 
   .vaults-card {
     background-color: var(--color-neutral-0);
@@ -744,9 +711,3 @@ input[type='number'] {
   }
 }
 
-/* Mobile-specific layout adjustments */
-@media (max-width: 768px) {
-  .vaults-layout--detail {
-    padding-bottom: 2rem;
-  }
-}

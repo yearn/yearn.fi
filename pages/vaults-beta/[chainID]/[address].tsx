@@ -310,7 +310,8 @@ function Index(): ReactElement | null {
         : '287.5px' // full/expanded + spacing
 
   return (
-    <div className={'vaults-layout vaults-layout--detail'}>
+    <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
+      {/* TODO: Deprecate when decide on Header display */}
       <div className={'mx-auto w-full max-w-[1232px] px-4 md:py-0 md:pt-2'}>{breadcrumbs}</div>
 
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
