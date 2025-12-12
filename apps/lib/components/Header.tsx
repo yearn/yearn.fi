@@ -260,8 +260,8 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
                     <Link key={link.path} href={link.path}>
                       <span
                         className={cl(
-                          'cursor-pointer text-lg font-medium text-text-secondary transition-colors hover:text-text-primary',
-                          isActive ? 'text-text-primary' : ''
+                          'cursor-pointer text-lg font-medium transition-colors relative',
+                          isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'
                         )}
                       >
                         {link.label}
