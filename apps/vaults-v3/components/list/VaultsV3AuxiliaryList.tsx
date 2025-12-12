@@ -26,9 +26,9 @@ export function VaultsV3AuxiliaryList({ title, vaults, vaultFlags }: TVaultsV3Au
   }
 
   return (
-    <div className={'flex flex-col gap-2 border-b border-neutral-300 pb-3'}>
+    <div className={'flex flex-col gap-2 border-b border-border pb-3'}>
       {title ? (
-        <p className={cl('px-4 text-xs font-semibold uppercase tracking-wide text-neutral-600 md:px-8')}>{title}</p>
+        <p className={cl('px-4 text-xs font-semibold uppercase tracking-wide text-text-secondary md:px-8')}>{title}</p>
       ) : null}
       <div className={'flex flex-col gap-px'}>
         {vaults.map((vault) => {

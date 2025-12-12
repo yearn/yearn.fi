@@ -13,10 +13,10 @@ interface StatCardProps {
 
 function StatCard({ label, value, subValue }: StatCardProps): ReactElement {
   return (
-    <div className={cl('rounded-lg bg-neutral-100 border border-neutral-300 p-3')}>
-      <p className={'text-xs text-neutral-600 mb-1'}>{label}</p>
-      <p className={'text-base font-semibold text-neutral-900'}>{value}</p>
-      {subValue && <p className={'text-xs text-neutral-500 mt-0.5'}>{subValue}</p>}
+    <div className={cl('rounded-lg bg-surface-secondary border border-border p-3')}>
+      <p className={'text-xs text-text-secondary mb-1'}>{label}</p>
+      <p className={'text-base font-semibold text-text-primary'}>{value}</p>
+      {subValue && <p className={'text-xs text-text-secondary mt-0.5'}>{subValue}</p>}
     </div>
   )
 }

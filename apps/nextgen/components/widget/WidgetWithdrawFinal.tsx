@@ -63,8 +63,8 @@ const InfoModal: FC<InfoModalProps> = ({ isOpen, onClose, title, children }) => 
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-gray-900 mb-4">
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-text-primary mb-4">
                   {title}
                 </Dialog.Title>
                 {children}
@@ -108,21 +108,21 @@ const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
   return (
     <InfoModal isOpen={isOpen} onClose={onClose} title="Withdrawal Details">
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           You are withdrawing {withdrawAmount}{' '}
           {withdrawalSource === 'staking' && stakingTokenSymbol ? stakingTokenSymbol : vaultSymbol} from the{' '}
           {withdrawalSource === 'staking' ? 'staking contract' : 'vault'}.
           {stakingAddress && withdrawalSource === 'staking' && ' Your tokens will be automatically unstaked.'}
         </p>
         <div className="space-y-3">
-          <p className="font-medium text-sm text-gray-900">Withdrawal notes:</p>
-          <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-2">
+          <p className="font-medium text-sm text-text-primary">Withdrawal notes:</p>
+          <ul className="list-disc list-inside space-y-2 text-sm text-text-secondary ml-2">
             <li>You will receive your underlying assets</li>
             <li>Any earned yield will be included</li>
             <li>The transaction cannot be reversed</li>
           </ul>
         </div>
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-text-secondary mt-4">
           Make sure you have enough gas to complete the withdrawal transaction.
         </p>
       </div>
@@ -569,7 +569,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   if (isLoadingPriorityTokens) {
     return (
       <div className="p-6 flex items-center justify-center h-[317px]">
-        <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
       </div>
     )
   }
@@ -590,19 +590,19 @@ export const WidgetWithdrawFinal: FC<Props> = ({
       {hasBothBalances ? (
         <div className="px-6 pb-4">
           <div className="flex flex-col gap-2">
-            <label className="font-medium text-sm text-gray-900">Withdraw from</label>
+            <label className="font-medium text-sm text-text-primary">Withdraw from</label>
             <div className="relative">
               <select
                 value={withdrawalSource || ''}
                 onChange={(e) => setWithdrawalSource(e.target.value as 'vault' | 'staking' | null)}
-                className="bg-white border border-gray-200 rounded-md h-9 w-full px-3 py-2 text-sm text-gray-900 appearance-none pr-10"
+                className="bg-surface border border-border rounded-md h-9 w-full px-3 py-2 text-sm text-text-primary appearance-none pr-10"
               >
                 <option value="">Not selected</option>
                 <option value="vault">Vault shares</option>
                 <option value="staking">Staking contract</option>
               </select>
               <svg
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -692,14 +692,14 @@ export const WidgetWithdrawFinal: FC<Props> = ({
         {/* Details */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-gray-500 ">{actionLabel}</p>
+            <p className="text-sm text-text-secondary ">{actionLabel}</p>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowWithdrawDetailsModal(true)}
-                className="inline-flex items-center justify-center hover:bg-gray-100 rounded-full p-0.5 transition-colors"
+                className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-full p-0.5 transition-colors"
               >
                 <svg
-                  className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600"
+                  className="h-3.5 w-3.5 text-text-tertiary hover:text-text-secondary"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -712,9 +712,9 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                   />
                 </svg>
               </button>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-text-primary">
                 {isLoadingQuote ? (
-                  <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                  <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
                 ) : (
                   <>
                     {requiredShares > 0n
@@ -731,20 +731,20 @@ export const WidgetWithdrawFinal: FC<Props> = ({
           </div>
           {withdrawToken !== assetAddress && !isUnstake ? (
             <div className="flex items-center justify-between h-5">
-              <p className="text-sm text-gray-500">You will swap</p>
+              <p className="text-sm text-text-secondary">You will swap</p>
               <div className="flex items-center gap-1">
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-text-primary">
                   {withdrawAmount.simple} {assetToken?.symbol}
                 </p>
               </div>
             </div>
           ) : null}
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-gray-500">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
+            <p className="text-sm text-text-secondary">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
             <div className="flex items-center gap-1">
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-text-primary">
                 {isLoadingQuote ? (
-                  <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                  <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
                 ) : activeFlow.periphery.expectedOut > 0n ? (
                   `${formatAmount(
                     Number(formatUnits(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)),

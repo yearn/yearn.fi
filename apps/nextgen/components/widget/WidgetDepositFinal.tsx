@@ -64,8 +64,8 @@ const InfoModal: FC<InfoModalProps> = ({ isOpen, onClose, title, children }) => 
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-gray-900 mb-4">
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-text-primary mb-4">
                   {title}
                 </Dialog.Title>
                 {children}
@@ -107,14 +107,14 @@ const VaultSharesModal: FC<VaultSharesModalProps> = ({
   return (
     <InfoModal isOpen={isOpen} onClose={onClose} title="Vault Shares">
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           After depositing into the vault, you will receive{' '}
           {isAutoStakingEnabled && stakingAddress ? 'staked vault' : 'vault'} tokens which serve as proof that you have
           deposited into the vault.
         </p>
         <div className="space-y-3">
-          <p className="font-medium text-sm text-gray-900">Token details:</p>
-          <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-2">
+          <p className="font-medium text-sm text-text-primary">Token details:</p>
+          <ul className="list-disc list-inside space-y-2 text-sm text-text-secondary ml-2">
             <li>Symbol: {vaultSymbol}</li>
             <li>
               Your shares: {expectedShares} {vaultSymbol}
@@ -125,7 +125,7 @@ const VaultSharesModal: FC<VaultSharesModalProps> = ({
             )}
           </ul>
         </div>
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-text-secondary mt-4">
           You can use these tokens to withdraw your deposit and any accrued returns at any time.
         </p>
       </div>
@@ -153,13 +153,13 @@ const AnnualReturnModal: FC<AnnualReturnModalProps> = ({
   return (
     <InfoModal isOpen={isOpen} onClose={onClose} title="Estimated Annual Return">
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           The estimated annual return is calculated based on the vault's historical performance and current market
           conditions.
         </p>
         <div className="space-y-3">
-          <p className="font-medium text-sm text-gray-900">Calculation factors:</p>
-          <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-2">
+          <p className="font-medium text-sm text-text-primary">Calculation factors:</p>
+          <ul className="list-disc list-inside space-y-2 text-sm text-text-secondary ml-2">
             <li>Current APR: {formatPercent(currentAPR * 100, 2, 2, 500)}</li>
             <li>
               Your deposit: {depositAmount} {tokenSymbol}
@@ -169,7 +169,7 @@ const AnnualReturnModal: FC<AnnualReturnModalProps> = ({
             </li>
           </ul>
         </div>
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-text-secondary mt-4">
           Please note that past performance does not guarantee future results. Actual returns may vary based on market
           volatility and vault strategy adjustments.
         </p>
@@ -626,7 +626,7 @@ export const WidgetDepositFinal: FC<Props> = ({
   if (isLoadingPriorityTokens) {
     return (
       <div className="p-6 flex items-center justify-center h-[317px]">
-        <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
       </div>
     )
   }
@@ -670,10 +670,10 @@ export const WidgetDepositFinal: FC<Props> = ({
         {/* Details */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-text-secondary">
               {'You will ' + (selectedToken === assetAddress ? 'deposit' : 'swap')}
             </p>
-            <p className="text-sm text-gray-900">
+            <p className="text-sm text-text-primary">
               {depositAmount.bn > 0n
                 ? formatTAmount({
                     value: depositAmount.bn,
@@ -685,10 +685,10 @@ export const WidgetDepositFinal: FC<Props> = ({
           </div>
           {selectedToken !== assetAddress && (
             <div className="flex items-center justify-between h-5">
-              <p className="text-sm text-gray-500">{'For at least'}</p>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-text-secondary">{'For at least'}</p>
+              <p className="text-sm text-text-primary">
                 {isLoadingQuote ? (
-                  <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                  <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
                 ) : expectedOutInSelectedToken > 0n ? (
                   `${formatTAmount({
                     value: expectedOutInSelectedToken,
@@ -701,14 +701,14 @@ export const WidgetDepositFinal: FC<Props> = ({
             </div>
           )}
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-gray-500">You will receive</p>
+            <p className="text-sm text-text-secondary">You will receive</p>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowVaultSharesModal(true)}
-                className="inline-flex items-center justify-center hover:bg-gray-100 rounded-full p-0.5 transition-colors"
+                className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-full p-0.5 transition-colors"
               >
                 <svg
-                  className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600"
+                  className="h-3.5 w-3.5 text-text-tertiary hover:text-text-secondary"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -721,9 +721,9 @@ export const WidgetDepositFinal: FC<Props> = ({
                   />
                 </svg>
               </button>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-text-primary">
                 {isLoadingQuote ? (
-                  <span className="inline-block h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                  <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
                 ) : depositAmount.bn > 0n && activeFlow.periphery.expectedOut > 0n ? (
                   `${formatAmount(Number(formatUnits(activeFlow.periphery.expectedOut, vault?.decimals ?? 18)))} Vault shares`
                 ) : (
@@ -733,14 +733,14 @@ export const WidgetDepositFinal: FC<Props> = ({
             </div>
           </div>
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-gray-500">Est. Annual Return</p>
+            <p className="text-sm text-text-secondary">Est. Annual Return</p>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowAnnualReturnModal(true)}
-                className="inline-flex items-center justify-center hover:bg-gray-100 rounded-full p-0.5 transition-colors"
+                className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-full p-0.5 transition-colors"
               >
                 <svg
-                  className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600"
+                  className="h-3.5 w-3.5 text-text-tertiary hover:text-text-secondary"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -753,7 +753,7 @@ export const WidgetDepositFinal: FC<Props> = ({
                   />
                 </svg>
               </button>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-text-primary">
                 {depositAmount.bn > 0n ? `~${estimatedAnnualReturn}` : '0'} {inputToken?.symbol}
               </p>
             </div>

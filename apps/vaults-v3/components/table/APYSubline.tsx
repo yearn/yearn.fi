@@ -24,7 +24,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
   // Handle single-line rewards first (they take priority and don't stack)
   if (hasKelpNEngenlayer) {
     return (
-      <small className={cl('whitespace-nowrap text-sm text-neutral-500 self-end -mb-1')}>
+      <small className={cl('whitespace-nowrap text-sm text-text-secondary self-end -mb-1')}>
         {'+1x Kelp Miles'}
         <br />
         {'+1x EigenLayer Points'}
@@ -33,12 +33,12 @@ export const APYSubline: FC<TAPYSublineProps> = ({
   }
   if (hasKelp) {
     return (
-      <small className={cl('whitespace-nowrap text-sm text-neutral-500 self-end -mb-1')}>{'+ 1x Kelp Miles'}</small>
+      <small className={cl('whitespace-nowrap text-sm text-text-secondary self-end -mb-1')}>{'+ 1x Kelp Miles'}</small>
     )
   }
   if (hasPendleArbRewards) {
     return (
-      <small className={cl('whitespace-nowrap text-sm text-neutral-500 self-end -mb-1')}>{'+ 2500 ARB/week'}</small>
+      <small className={cl('whitespace-nowrap text-sm text-text-secondary self-end -mb-1')}>{'+ 2500 ARB/week'}</small>
     )
   }
 
@@ -52,7 +52,7 @@ export const APYSubline: FC<TAPYSublineProps> = ({
       <LabelTag
         type={onExtraRewardsClick ? 'button' : undefined}
         className={cl(
-          'whitespace-nowrap text-sm text-neutral-500 self-end -mb-1',
+          'whitespace-nowrap text-sm text-text-secondary self-end -mb-1',
           onExtraRewardsClick
             ? 'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600'
             : undefined

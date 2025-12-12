@@ -124,9 +124,9 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
         />
         {routerAddress && (
           <div className="flex items-center justify-between">
-            <span className="text-gray-400">Router</span>
+            <span className="text-text-tertiary">Router</span>
             <Link href={`https://etherscan.io/address/${routerAddress}`}>
-              <span className="text-gray-500 font-medium hover:underline">
+              <span className="text-text-secondary font-medium hover:underline">
                 {routerAddress.slice(0, 6)}...{routerAddress.slice(-4)}
               </span>
             </Link>

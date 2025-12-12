@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Test</title>
+    <style>
+        /* Light Theme */
+        :root[data-theme='light'] {
+            --color-app: hsl(0 0% 98%);
+            --color-surface: hsl(0 0% 100%);
+            --color-surface-secondary: hsl(0 0% 96%);
+            --color-text-primary: hsl(0 0% 9%);
+            --color-text-secondary: hsl(0 0% 32%);
+            --color-border: hsl(0 0% 90%);
+        }
+
+        /* Dark Theme */
+        :root[data-theme='dark'] {
+            --color-app: hsl(0 0% 0%);
+            --color-surface: hsl(0 0% 4%);
+            --color-surface-secondary: hsl(0 0% 9%);
+            --color-text-primary: hsl(0 0% 98%);
+            --color-text-secondary: hsl(0 0% 64%);
+            --color-border: hsl(0 0% 15%);
+        }
+
+        /* Soft Dark Theme */
+        :root[data-theme='soft-dark'] {
+            --color-app: hsl(0 0% 6%);
+            --color-surface: hsl(0 0% 10%);
+            --color-surface-secondary: hsl(0 0% 15%);
+            --color-text-primary: hsl(0 0% 96%);
+            --color-text-secondary: hsl(0 0% 64%);
+            --color-border: hsl(0 0% 20%);
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--color-app);
+            color: var(--color-text-primary);
+            padding: 2rem;
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-secondary {
+            background: var(--color-surface-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        h1 {
+            color: var(--color-text-primary);
+            margin-top: 0;
+        }
+
+        p {
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+
+        button {
+            background: var(--color-text-primary);
+            color: var(--color-surface);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Theme System Test</h1>
+
+    <div style="margin-bottom: 2rem;">
+        <button onclick="setTheme('light')">Light Theme</button>
+        <button onclick="setTheme('dark')">Dark Theme</button>
+        <button onclick="setTheme('soft-dark')">Soft-Dark Theme</button>
+    </div>
+
+    <div class="card">
+        <h2>Surface (bg-surface)</h2>
+        <p>This card uses --color-surface for background</p>
+        <p>Text uses --color-text-primary and --color-text-secondary</p>
+        <p>Border uses --color-border</p>
+
+        <div class="card-secondary">
+            <strong>Secondary Surface (bg-surface-secondary)</strong>
+            <p>This nested card uses --color-surface-secondary</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Theme Colors Working</h2>
+        <p>If you can switch between themes using the buttons above, the CSS variable system is working correctly!</p>
+        <ul>
+            <li>Light theme: White surfaces, dark text</li>
+            <li>Dark theme: Near-black surfaces, light text</li>
+            <li>Soft-dark theme: Dark gray surfaces, light text</li>
+        </ul>
+    </div>
+
+    <script>
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            console.log('Theme set to:', theme);
+        }
+    </script>
+</body>
+</html>

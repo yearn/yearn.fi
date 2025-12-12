@@ -50,7 +50,7 @@ function BoostMessage(props: { currentVault: TYDaemonVault; canStake: boolean })
       <div className={'col-span-12 mt-0'}>
         <div
           className={cl(
-            'w-full rounded-lg p-3 text-neutral-0',
+            'w-full rounded-lg p-3 text-surface',
             isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
           )}
         >
@@ -68,7 +68,7 @@ function BoostMessage(props: { currentVault: TYDaemonVault; canStake: boolean })
       <div className={'col-span-12 mt-0'}>
         <div
           className={cl(
-            'w-full rounded-lg p-6 text-neutral-0',
+            'w-full rounded-lg p-6 text-surface',
             isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
           )}
         >
@@ -88,7 +88,7 @@ function BoostMessage(props: { currentVault: TYDaemonVault; canStake: boolean })
       <div className={'col-span-12 mt-0 hidden'}>
         <div
           className={cl(
-            'w-full rounded-lg p-6 text-neutral-0',
+            'w-full rounded-lg p-6 text-surface',
             isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
           )}
         >
@@ -120,7 +120,7 @@ function BoostMessage(props: { currentVault: TYDaemonVault; canStake: boolean })
       <div className={'col-span-12 mt-0'}>
         <div
           className={cl(
-            'w-full rounded-lg p-6 text-neutral-0',
+            'w-full rounded-lg p-6 text-surface',
             isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
           )}
         >
@@ -147,7 +147,7 @@ function BoostMessage(props: { currentVault: TYDaemonVault; canStake: boolean })
       <div className={'col-span-12 mt-0'}>
         <div
           className={cl(
-            'w-full rounded-lg p-6 text-neutral-0',
+            'w-full rounded-lg p-6 text-surface',
             isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
           )}
         >
@@ -176,8 +176,8 @@ function VeYFIBoostMessage(props: { currentVault: TYDaemonVault }): ReactElement
 
   return (
     <div className={cl('flex w-full flex-col rounded-2xl p-6', 'bg-neutral-900')}>
-      <b className={cl('text-lg text-neutral-100')}>{'veYFI Gauges have been retired'}</b>
-      <div className={cl('flex flex-col gap-2 py-2', isV3Page ? 'text-neutral-300' : 'text-neutral-400')}>
+      <b className={cl('text-lg text-text-primary')}>{'veYFI Gauges have been retired'}</b>
+      <div className={cl('flex flex-col gap-2 py-2', isV3Page ? 'text-text-tertiary' : 'text-text-tertiary')}>
         <p>{'All good things must come to an end!'}</p>
         <span className={'flex flex-row flex-wrap gap-1'}>
           <p>{'Please '}</p>
@@ -726,7 +726,7 @@ export function RewardsTab(props: {
 
             <div className={'flex flex-col gap-4 md:flex-row'}>
               <div className={'w-full'}>
-                <div className={cl('flex h-10 items-center rounded-lg p-2 w-full', 'bg-neutral-300')}>
+                <div className={cl('flex h-10 items-center rounded-lg p-2 w-full', 'bg-surface-tertiary')}>
                   <div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
                     <input
                       id={'stakeAmount'}
@@ -753,14 +753,17 @@ export function RewardsTab(props: {
                         setIsStakeAmountDirty(true)
                       }}
                       className={
-                        'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
+                        'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-text-primary transition-colors hover:bg-neutral-800/50'
                       }
                     >
                       {'Max'}
                     </button>
                   </div>
                 </div>
-                <legend className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'} suppressHydrationWarning>
+                <legend
+                  className={'mt-1 pl-0.5 text-xs text-text-secondary opacity-70 md:mr-0'}
+                  suppressHydrationWarning
+                >
                   <div className={'flex items-center justify-between'}>
                     <p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} yBOLD available`}</p>
                     <p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
@@ -783,7 +786,7 @@ export function RewardsTab(props: {
             </div>
             <div className={'flex flex-col gap-4 md:flex-row'}>
               <div className={'w-full'}>
-                <div className={cl('flex h-10 items-center rounded-lg p-2 w-full', 'bg-neutral-300')}>
+                <div className={cl('flex h-10 items-center rounded-lg p-2 w-full', 'bg-surface-tertiary')}>
                   <div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
                     <input
                       id={'unstakeAmount'}
@@ -810,14 +813,17 @@ export function RewardsTab(props: {
                         setIsUnstakeAmountDirty(true)
                       }}
                       className={
-                        'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
+                        'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-text-primary transition-colors hover:bg-neutral-800/50'
                       }
                     >
                       {'Max'}
                     </button>
                   </div>
                 </div>
-                <legend className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'} suppressHydrationWarning>
+                <legend
+                  className={'mt-1 pl-0.5 text-xs text-text-secondary opacity-70 md:mr-0'}
+                  suppressHydrationWarning
+                >
                   <div className={'flex items-center justify-between'}>
                     <p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ysyBOLD staked`}</p>
                     <p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
@@ -837,7 +843,7 @@ export function RewardsTab(props: {
         </div>
         <div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
           <div className={cl('flex w-full flex-col rounded-2xl p-6', 'bg-neutral-900')}>
-            <b className={cl('text-lg text-neutral-100')}>{'Meet yBOLD: Tokenized Stability Pool Rewards'}</b>
+            <b className={cl('text-lg text-text-primary')}>{'Meet yBOLD: Tokenized Stability Pool Rewards'}</b>
             <div className={cl('flex flex-col gap-2 py-4', 'text-[#908FB4]')}>
               <p>
                 {
@@ -848,7 +854,7 @@ export function RewardsTab(props: {
                 }
               </p>
               <p>
-                <span className={cl('font-bold text-neutral-100')}>{'TLDR: Highest rewards, lowest risk. '}</span>
+                <span className={cl('font-bold text-text-primary')}>{'TLDR: Highest rewards, lowest risk. '}</span>
               </p>
               <p>
                 <span>
@@ -927,7 +933,7 @@ export function RewardsTab(props: {
           </div>
           <div className={'flex flex-col gap-4 md:flex-row'}>
             <div className={'w-full'}>
-              <div className={cl('flex h-10 items-center rounded-lg p-2 w-full', 'bg-neutral-300')}>
+              <div className={cl('flex h-10 items-center rounded-lg p-2 w-full', 'bg-surface-tertiary')}>
                 <div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
                   <input
                     id={'fromAmount'}
@@ -954,14 +960,14 @@ export function RewardsTab(props: {
                       setIsUnstakeAmountDirty(true)
                     }}
                     className={
-                      'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
+                      'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-text-primary transition-colors hover:bg-neutral-800/50'
                     }
                   >
                     {'Max'}
                   </button>
                 </div>
               </div>
-              <legend className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'} suppressHydrationWarning>
+              <legend className={'mt-1 pl-0.5 text-xs text-text-secondary opacity-70 md:mr-0'} suppressHydrationWarning>
                 <div className={'flex items-center justify-between'}>
                   <p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${props.currentVault.symbol} staked`}</p>
                   <p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>

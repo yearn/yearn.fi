@@ -51,8 +51,8 @@ export const WidgetDeposit: FC<Props> = ({ vaultType, vaultAddress, assetAddress
 
       <div className="space-y-1 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-gray-400">You will receive</span>
-          <span className="text-gray-500 font-medium">
+          <span className="text-text-tertiary">You will receive</span>
+          <span className="text-text-secondary font-medium">
             {formatAmount(exactToSimple(expectedDepositAmount, vault?.decimals ?? 18))} {vault?.symbol}
           </span>
         </div>
@@ -66,12 +66,12 @@ export const WidgetDeposit: FC<Props> = ({ vaultType, vaultAddress, assetAddress
         >
           <span
             className={cl(
-              'inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition duration-200 ease-in-out',
+              'inline-block h-4 w-4 transform rounded-full bg-surface shadow-lg transition duration-200 ease-in-out',
               depositAndStake ? 'translate-x-5' : 'translate-x-0.5'
             )}
           />
         </button>
-        <span className="ml-3 text-sm font-medium text-gray-900">Deposit & Stake</span>
+        <span className="ml-3 text-sm font-medium text-text-primary">Deposit & Stake</span>
       </div> */}
       <div className="pb-6 pt-2">
         <div className="flex gap-2">

@@ -17,7 +17,7 @@ type TSettingPopover = {
 
 function Label({ children }: { children: string }): ReactElement {
   return (
-    <label htmlFor={'zapProvider'} className={'font-bold text-neutral-900'}>
+    <label htmlFor={'zapProvider'} className={'font-bold text-text-primary'}>
       {children}
     </label>
   )
@@ -29,26 +29,28 @@ function MaxLossSection(): ReactElement {
   return (
     <div className={'flex flex-col space-y-1'}>
       <Label>{'Max Loss'}</Label>
-      <legend className={'text-xs text-neutral-500'}>{'Maximum acceptable loss when withdrawing from vaults.'}</legend>
+      <legend className={'text-xs text-text-secondary'}>
+        {'Maximum acceptable loss when withdrawing from vaults.'}
+      </legend>
       <div className={'flex flex-row space-x-2 pt-2'}>
         <button
           onClick={(): void => setMaxLoss(5n)}
-          className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
+          className={`flex h-10 items-center rounded-lg border bg-surface-secondary px-1.5 py-2 ${
             maxLoss === 5n ? 'border-neutral-900/40' : 'border-transparent'
           }`}
         >
-          <p className={'font-number px-2 text-center text-neutral-900 '}>{'0.05%'}</p>
+          <p className={'font-number px-2 text-center text-text-primary '}>{'0.05%'}</p>
         </button>
         <button
           onClick={(): void => setMaxLoss(10n)}
-          className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
+          className={`flex h-10 items-center rounded-lg border bg-surface-secondary px-1.5 py-2 ${
             maxLoss === 10n ? 'border-neutral-900/40' : 'border-transparent'
           }`}
         >
-          <p className={'font-number px-2 text-center text-neutral-900 '}>{'0.1%'}</p>
+          <p className={'font-number px-2 text-center text-text-primary '}>{'0.1%'}</p>
         </button>
         <div
-          className={`flex h-10 w-full min-w-[72px] items-center rounded-lg border bg-neutral-100 px-0 py-4 ${
+          className={`flex h-10 w-full min-w-[72px] items-center rounded-lg border bg-surface-secondary px-0 py-4 ${
             maxLoss !== 5n && maxLoss !== 10n ? 'border-neutral-900/40' : 'border-transparent'
           }`}
         >
@@ -70,7 +72,7 @@ function MaxLossSection(): ReactElement {
               setMaxLoss(value)
             }}
           />
-          <p className={'font-number mt-1 pr-2 text-neutral-900/60'}>{'%'}</p>
+          <p className={'font-number mt-1 pr-2 text-text-primary/60'}>{'%'}</p>
         </div>
       </div>
       {maxLoss >= 100n ? (
@@ -100,13 +102,13 @@ function ZapSection({ chainID }: { chainID: number }): ReactElement {
 
       <div className={'mb-2 flex flex-col space-y-1'}>
         <Label>{'Zap Provider & slippage'}</Label>
-        <legend className={'pb-2 text-xs text-neutral-500'}>
+        <legend className={'pb-2 text-xs text-text-secondary'}>
           {
             'When you want to deposit/withdraw a token that is not supported by the vault, we will use this provider to swap it to a supported token.'
           }
         </legend>
         <Renderable shouldRender={currentZapProvider === Solver.enum.Cowswap}>
-          <legend className={'text-xs italic text-neutral-500'}>
+          <legend className={'text-xs italic text-text-secondary'}>
             {'Submit a'}&nbsp;
             <a
               className={'underline'}
@@ -120,7 +122,7 @@ function ZapSection({ chainID }: { chainID: number }): ReactElement {
           </legend>
         </Renderable>
         <Renderable shouldRender={currentZapProvider === Solver.enum.Portals}>
-          <legend className={'text-xs text-neutral-500'}>
+          <legend className={'text-xs text-text-secondary'}>
             {'Submit an order via'}&nbsp;
             <a className={'underline'} href={'https://portals.fi/'} target={'_blank'} rel={'noreferrer'}>
               {'Portals'}
@@ -133,7 +135,7 @@ function ZapSection({ chainID }: { chainID: number }): ReactElement {
           onChange={(e): void => setZapProvider(e.target.value as TSolver)}
           value={!isSolverDisabled(currentZapProvider) ? currentZapProvider : Solver.enum.Portals}
           className={
-            'mt-1 h-10 w-full overflow-x-scroll rounded-lg border-none bg-neutral-100 p-2 outline-hidden scrollbar-none'
+            'mt-1 h-10 w-full overflow-x-scroll rounded-lg border-none bg-surface-secondary p-2 outline-hidden scrollbar-none'
           }
         >
           {chainID === 1 ? (
@@ -150,22 +152,22 @@ function ZapSection({ chainID }: { chainID: number }): ReactElement {
         <div className={'mt-1 flex flex-row space-x-2'}>
           <button
             onClick={(): void => setZapSlippage(1)}
-            className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
+            className={`flex h-10 items-center rounded-lg border bg-surface-secondary px-1.5 py-2 ${
               zapSlippage === 1 ? 'border-neutral-900/40' : 'border-transparent'
             }`}
           >
-            <p className={'font-number px-2 text-center text-neutral-900 '}>{'1%'}</p>
+            <p className={'font-number px-2 text-center text-text-primary '}>{'1%'}</p>
           </button>
           <button
             onClick={(): void => setZapSlippage(2)}
-            className={`flex h-10 items-center rounded-lg border bg-neutral-100 px-1.5 py-2 ${
+            className={`flex h-10 items-center rounded-lg border bg-surface-secondary px-1.5 py-2 ${
               zapSlippage === 2 ? 'border-neutral-900/40' : 'border-transparent'
             }`}
           >
-            <p className={'font-number px-2 text-center text-neutral-900 '}>{'2%'}</p>
+            <p className={'font-number px-2 text-center text-text-primary '}>{'2%'}</p>
           </button>
           <div
-            className={`flex h-10 w-full min-w-[72px] items-center rounded-lg border bg-neutral-100 px-0 py-4 md:min-w-[160px] ${
+            className={`flex h-10 w-full min-w-[72px] items-center rounded-lg border bg-surface-secondary px-0 py-4 md:min-w-[160px] ${
               zapSlippage !== 1 && zapSlippage !== 2 ? 'border-neutral-900/40' : 'border-transparent'
             }`}
           >
@@ -183,10 +185,10 @@ function ZapSection({ chainID }: { chainID: number }): ReactElement {
                 setZapSlippage(parseFloat(e.target.value) || 0)
               }}
             />
-            <p className={'font-number mt-1 pr-2 text-neutral-900/60'}>{'%'}</p>
+            <p className={'font-number mt-1 pr-2 text-text-primary/60'}>{'%'}</p>
           </div>
         </div>
-        <legend className={'pl-1 text-xs text-neutral-500'}>{'Maximum acceptable slippage for Zaps.'}</legend>
+        <legend className={'pl-1 text-xs text-text-secondary'}>{'Maximum acceptable slippage for Zaps.'}</legend>
       </div>
     </>
   )
@@ -204,7 +206,7 @@ function StakingSection({ currentVault }: { currentVault: TYDaemonVault }): Reac
       <div className={'my-6 h-px w-full bg-neutral-900/20'} />
       <div className={'mt-6'}>
         <Label>{'Staking Vaults'}</Label>
-        <legend className={'pb-2 text-xs text-neutral-500'}>
+        <legend className={'pb-2 text-xs text-text-secondary'}>
           {
             'Some Vaults offer boosted yields or token rewards via staking. Enable automatic staking to (you guessed it) automatically stake for these boosts.'
           }
@@ -230,7 +232,7 @@ export function SettingsPopover({ vault }: TSettingPopover): ReactElement {
         <>
           <PopoverButton>
             <span className={'sr-only'}>{'Settings'}</span>
-            <IconSettings className={'transition-color size-4 text-neutral-400 hover:text-neutral-900'} />
+            <IconSettings className={'transition-color size-4 text-text-tertiary hover:text-text-primary'} />
           </PopoverButton>
           <Transition
             as={'div'}
@@ -244,7 +246,7 @@ export function SettingsPopover({ vault }: TSettingPopover): ReactElement {
             <PopoverPanel
               className={cl(
                 'absolute right-0 top-6 z-1000 mt-3 w-screen max-w-xs md:-right-4 md:top-4 ',
-                'bg-neutral-200 rounded-lg'
+                'bg-surface-secondary rounded-lg'
               )}
             >
               <div className={'relative p-4'}>

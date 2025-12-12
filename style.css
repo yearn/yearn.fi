@@ -4,6 +4,8 @@
 @import '@rainbow-me/rainbowkit/styles.css';
 /* Tailwind CSS */
 @import 'tailwindcss';
+/* Theme System */
+@import './src/styles/themes.css';
 
 @theme {
   /* Font families */
@@ -81,9 +83,28 @@
   --color-steel-gray-500: hsl(218 14% 71%);
   --color-light-blue-500: hsl(220 100% 67%);
   --default-rounded: 0rem;
-  --surface-background: var(--color-neutral-0);
-  --surface-default: var(--color-neutral-0);
-  --surface-muted: var(--color-neutral-100);
+  --surface-background: var(--color-app);
+  --surface-default: var(--color-surface);
+  --surface-muted: var(--color-surface-secondary);
+
+  /* Semantic theme tokens - these are overridden by themes.css based on data-theme */
+  --color-app: hsl(0 0% 98%);
+  --color-surface: hsl(0 0% 100%);
+  --color-surface-secondary: hsl(0 0% 96%);
+  --color-surface-tertiary: hsl(0 0% 90%);
+  --color-text-primary: hsl(0 0% 9%);
+  --color-text-secondary: hsl(0 0% 32%);
+  --color-text-tertiary: hsl(0 0% 64%);
+  --color-border: hsl(0 0% 90%);
+  --color-border-hover: hsl(0 0% 83%);
+  --color-border-focus: hsl(0 0% 9%);
+  --color-primary-hover: hsl(220 100% 44%);
+  --color-success: hsl(142 71% 45%);
+  --color-warning: hsl(17 88% 48%);
+  --color-error: hsl(0 73% 51%);
+  --color-input-bg: hsl(0 0% 100%);
+  --color-modal-overlay: hsl(0 0% 0% / 0.5);
+  --color-table-row-hover: hsl(0 0% 96%);
 
   /* Custom Font Sizes */
   --text-xxs: 0.625rem; /* 10px */
@@ -115,9 +136,9 @@
     /* --color-neutral-100: hsl(231 100% 11%); */
     --color-neutral-100: hsl(231, 100%, 10%);
     --color-neutral-0: hsl(231 100% 6%);
-    --surface-background: var(--color-neutral-0);
-    --surface-default: var(--color-neutral-100);
-    --surface-muted: var(--color-neutral-200);
+    --surface-background: var(--color-app);
+    --surface-default: var(--color-surface-secondary);
+    --surface-muted: var(--color-surface-secondary);
   }
 }
 
@@ -126,25 +147,23 @@ html {
   padding-right: 0 !important;
 }
 
+html {
+  background-color: var(--color-app);
+}
+
 body {
-  color: var(--color-neutral-800);
+  background-color: var(--color-app);
+  color: var(--color-text-primary);
   font-family: aeonik, 'aeonik Fallback', 'Source Code Pro',
     'Source Code Pro Fallback', sans-serif;
 }
 
+#root {
+  min-height: 100vh;
+  background-color: var(--color-app);
+}
+
 @layer utilities {
-  .bg-app {
-    background-color: var(--surface-background);
-  }
-
-  .bg-surface {
-    background-color: var(--surface-default);
-  }
-
-  .bg-card {
-    background-color: var(--surface-muted);
-  }
-
   .font-number {
     font-family: 'Aeonik Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
       Consolas, 'Liberation Mono', 'Courier New', monospace;
@@ -160,39 +179,6 @@ body {
 }
 
 @layer components {
-  .vaults-layout {
-    min-height: calc(100vh - var(--header-height));
-    width: 100%;
-    background-color: var(--surface-background);
-  }
-
-  .vaults-layout--list {
-    height: calc(100vh - var(--header-height));
-    overflow: hidden;
-    --surface-background: var(--color-neutral-100);
-    --surface-default: var(--color-neutral-0);
-    --surface-muted: var(--color-neutral-200);
-  }
-
-  .vaults-layout--detail {
-    --surface-background: var(--color-neutral-0);
-    --surface-default: var(--color-neutral-0);
-    --surface-muted: var(--color-neutral-200);
-  }
-
-  .dark .vaults-layout--list,
-  .v3 .vaults-layout--list {
-    --surface-background: var(--color-neutral-0);
-    --surface-default: var(--color-neutral-100);
-    --surface-muted: var(--color-neutral-300);
-  }
-
-  .dark .vaults-layout--detail,
-  .v3 .vaults-layout--detail {
-    --surface-background: var(--color-neutral-0);
-    --surface-default: var(--color-neutral-100);
-    --surface-muted: var(--color-neutral-300);
-  }
 
   .vaults-card {
     background-color: var(--color-neutral-0);
@@ -478,10 +464,10 @@ body {
 
   /* Variant: Filled (Primary) */
   &[data-variant='filled'] {
-    @apply text-neutral-900 bg-blue-600;
+    @apply text-[#f5f5f5] bg-primary;
 
     &:disabled {
-      @apply bg-neutral-700 text-neutral-0;
+      @apply bg-surface-tertiary text-text-secondary;
     }
 
     &[aria-busy='true'] {
@@ -494,7 +480,7 @@ body {
   }
 
   &[data-variant='busy'] {
-    @apply bg-neutral-300;
+    @apply bg-surface-secondary text-text-primary;
   }
 
   &[data-variant='error'] {
@@ -503,42 +489,42 @@ body {
 
   /* Variant: Light */
   &[data-variant='light'] {
-    @apply text-neutral-900 bg-neutral-100;
+    @apply text-text-primary bg-surface-secondary;
 
     &:not(:disabled):not([aria-busy='true']):hover {
-      @apply bg-neutral-200;
+      @apply bg-surface-tertiary;
     }
   }
 
   /* Variant: Outlined */
   &[data-variant='outlined'] {
-    @apply text-neutral-900 bg-transparent border-neutral-900;
+    @apply text-text-primary bg-transparent border-text-primary;
 
     &:not(:disabled):not([aria-busy='true']):hover {
-      @apply bg-neutral-900 text-neutral-0;
+      @apply bg-text-primary text-surface;
     }
   }
 
   /* Variant: Reverted */
   &[data-variant='reverted'] {
-    @apply text-neutral-900 bg-neutral-0;
+    @apply text-text-primary bg-surface;
 
     &:disabled {
-      @apply bg-neutral-200;
+      @apply bg-surface-secondary;
     }
 
     &:not(:disabled):not([aria-busy='true']):hover {
-      @apply bg-neutral-200;
+      @apply bg-surface-secondary;
     }
 
     &[aria-busy='true'] svg {
-      @apply text-neutral-900;
+      @apply text-text-primary;
     }
   }
 
   /* Variant: V3 (Special variant) */
   &[data-variant='v3'] {
-    @apply text-neutral-900 bg-pink-600;
+    @apply text-[#f5f5f5] bg-pink-600;
 
     &:disabled {
       @apply bg-pink-600;
@@ -725,9 +711,3 @@ input[type='number'] {
   }
 }
 
-/* Mobile-specific layout adjustments */
-@media (max-width: 768px) {
-  .vaults-layout--detail {
-    padding-bottom: 2rem;
-  }
-}

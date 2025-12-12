@@ -100,7 +100,7 @@ export function BoostMessage(props: {
       return (
         <div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
           <div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
-            <b className={'text-base text-neutral-900'}>
+            <b className={'text-base text-text-primary'}>
               {
                 'Great news! This Vault is receiving an Optimism Boost. Deposit and stake your tokens to receive OP rewards. Nice!'
               }
@@ -112,7 +112,7 @@ export function BoostMessage(props: {
     return (
       <div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
         <div className={'w-full rounded-lg bg-[#F8A908] p-2 md:px-6 md:py-4'}>
-          <b className={'text-base text-neutral-900'}>
+          <b className={'text-base text-text-primary'}>
             {
               "This Vault is receiving an Optimism Boost. To zap into it for additional OP rewards, you'll have to stake your yVault tokens manually on the $OP BOOST tab after you deposit. Sorry anon, it's just how it works."
             }
@@ -125,10 +125,10 @@ export function BoostMessage(props: {
     return (
       <div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
         <div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
-          <b className={'text-base text-neutral-900'}>
+          <b className={'text-base text-text-primary'}>
             {`This Vault has an active veYFI gauge which boosts your APY from ${formatAmount(extraAPY * 10)}% to ${formatAmount(extraAPY * 100)}% depending on the veYFI you have locked. Simply deposit and stake to start earning.`}
           </b>
-          <b className={'block text-neutral-900'}>
+          <b className={'block text-text-primary'}>
             {'Learn more about veYFI rewards in the '}
             <a
               className={'underline'}
@@ -148,10 +148,10 @@ export function BoostMessage(props: {
     return (
       <div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
         <div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
-          <b className={'text-base text-neutral-900'}>
+          <b className={'text-base text-text-primary'}>
             {`This Vault can be juiced for even more yield. Simply deposit and stake to receive juiced APYs of ${formatAmount(extraAPY * 100)}%.`}
           </b>
-          <b className={'block text-neutral-900'}>
+          <b className={'block text-text-primary'}>
             {'Visit '}
             <a className={'underline'} href={'https://juiced.app'} target={'_blank'} rel={'noopener noreferrer'}>
               {'juiced.app'}
@@ -167,7 +167,7 @@ export function BoostMessage(props: {
       return (
         <div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
           <div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
-            <b className={'text-base text-neutral-900'}>
+            <b className={'text-base text-text-primary'}>
               {
                 'Great news! This Vault is receiving a Staking Boost. Deposit and stake your tokens to receive extra rewards. Nice!'
               }
@@ -179,7 +179,7 @@ export function BoostMessage(props: {
     return (
       <div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
         <div className={'w-full rounded-lg bg-[#F8A908] p-2 md:px-6 md:py-4'}>
-          <b className={'text-base text-neutral-900'}>
+          <b className={'text-base text-text-primary'}>
             {
               "This Vault is receiving a Staking Boost. To zap into it for additional rewards, you'll have to stake your yVault tokens manually on the BOOST tab after you deposit. Sorry anon, it's just how it works."
             }
@@ -210,10 +210,10 @@ const MobileTabButtons = React.memo(function MobileTabButtons(props: {
     <button
       onClick={handleClick}
       className={cl(
-        'flex h-10 px-2 transition-all duration-300 flex-row items-center border-0 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden',
+        'flex h-10 px-2 transition-all duration-300 flex-row items-center border-0 bg-surface-secondary p-0 font-bold focus:border-neutral-900 md:hidden',
         props.selectedTab.value === props.currentTab.value
           ? 'border-b-2 border-neutral-900'
-          : 'border-b-2 border-neutral-300'
+          : 'border-b-2 border-border'
       )}
     >
       {props.currentTab.label}
@@ -271,8 +271,8 @@ export const VaultDetailsTab = React.memo(function VaultDetailsTab(props: {
           'hover-fix tab relative px-2',
           isV3Page
             ? props.selectedTab.value === props.tab.value
-              ? 'text-neutral-900!'
-              : 'text-neutral-900/50! hover:text-neutral-900!'
+              ? 'text-text-primary!'
+              : 'text-text-primary/50! hover:text-text-primary!'
             : ''
         )}
       >
@@ -509,7 +509,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
     <>
       {currentVault?.chainID === KATANA_CHAIN_ID && (
         <div aria-label={'Rewards Claim Notification'} className={'col-span-12 mt-10'}>
-          <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+          <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-surface'}>
             {isEligibleForSpectraBoost && (
               <div>
                 <b>{'Get more yield on Spectra: '}</b>
@@ -566,7 +566,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
 
       {currentVault?.migration?.available && (
         <div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
-          <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+          <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-surface'}>
             <b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
             <p className={'mt-2'}>
               {
@@ -582,7 +582,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
         !currentVault.info.uiNotice &&
         !isSonneRetiredVault && (
           <div aria-label={'Deprecation Warning'} className={'col-span-12 mt-10'}>
-            <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+            <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-surface'}>
               <b className={'text-lg'}>{'This Vault is no longer supported.'}</b>
               <p className={'mt-2'}>
                 {
@@ -595,7 +595,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
 
       {currentVault?.info.uiNotice && !currentVault?.migration.available && currentVault.info.isRetired && (
         <div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
-          <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+          <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-surface'}>
             <b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
             <p
               className={'mt-2'}
@@ -613,7 +613,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
         !currentVault.info.isRetired &&
         !isSonneRetiredVault && (
           <div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
-            <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+            <div className={'w-full rounded-3xl bg-neutral-900 p-6 text-surface'}>
               <p
                 className={'mt-2'}
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled vault config content, not user input
@@ -625,7 +625,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
           </div>
         )}
 
-      <div className={'col-span-12 mt-6 flex flex-col rounded-3xl bg-neutral-100'}>
+      <div className={'col-span-12 mt-6 flex flex-col rounded-3xl bg-surface-secondary'}>
         <div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
           <nav className={'hidden flex-row items-center space-x-10 md:flex'}>
             {(possibleTabs as TTabsOptions[])
@@ -667,7 +667,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
             <SettingsPopover vault={currentVault} />
           </div>
         </div>
-        <div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
+        <div className={'-mt-0.5 h-0.5 w-full bg-surface-tertiary'} />
 
         {currentTab.value === 3 && currentVault.staking.available ? (
           <RewardsTab
@@ -702,7 +702,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
                   <div className={cl('mt-1 flex justify-between pb-[10px]')}>
                     <div className={'flex items-center gap-5'}>
                       <InfoTooltip className={'max-sm:left'} text={tooltipText} size={'sm'} />
-                      <p className={cl('text-xs text-neutral-600')}>
+                      <p className={cl('text-xs text-text-secondary')}>
                         {isAutoStakingEnabled ? 'Deposit and Stake' : 'Deposit only'}
                       </p>
                     </div>
@@ -725,7 +725,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
             <div className={'flex flex-row items-center justify-between pl-4 md:px-8'}>
               <div
                 className={cl(
-                  'flex h-10 min-w-28 z-10 flex-row items-center bg-neutral-100 p-0 font-bold md:hidden border-b-2 border-neutral-900'
+                  'flex h-10 min-w-28 z-10 flex-row items-center bg-surface-secondary p-0 font-bold md:hidden border-b-2 border-neutral-900'
                 )}
               >
                 {'Boost'}
@@ -733,7 +733,7 @@ function VaultActionsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
               <div className={'hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>{getTabLabel()}</div>
             </div>
             <div>
-              <div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
+              <div className={'-mt-0.5 h-0.5 w-full bg-surface-tertiary'} />
               <RewardsTab
                 currentVault={currentVault}
                 isGaugeActive={isGaugeActive}

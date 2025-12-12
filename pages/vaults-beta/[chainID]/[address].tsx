@@ -267,7 +267,7 @@ function Index(): ReactElement | null {
     return (
       <div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>
-          <p className={'text-sm text-neutral-900'}>{"We couldn't find this vault on the connected network."}</p>
+          <p className={'text-sm text-text-primary'}>{"We couldn't find this vault on the connected network."}</p>
         </div>
       </div>
     )
@@ -277,16 +277,16 @@ function Index(): ReactElement | null {
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const isStickyNameMode = headerDisplayMode === 'sticky-name'
   const breadcrumbs = (
-    <div className={'flex items-center gap-2 text-sm text-neutral-500'}>
-      <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
+    <div className={'flex items-center gap-2 text-sm text-text-secondary'}>
+      <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
         {'Home'}
       </Link>
       <span>{'>'}</span>
-      <Link to={'/v3'} className={'transition-colors hover:text-neutral-900'}>
+      <Link to={'/v3'} className={'transition-colors hover:text-text-primary'}>
         {'Vaults'}
       </Link>
       <span>{'>'}</span>
-      <span className={'font-medium text-neutral-900'}>{currentVault.name}</span>
+      <span className={'font-medium text-text-primary'}>{currentVault.name}</span>
     </div>
   )
   // Calculate sticky positions based on mode
@@ -310,18 +310,19 @@ function Index(): ReactElement | null {
         : '287.5px' // full/expanded + spacing
 
   return (
-    <div className={'vaults-layout vaults-layout--detail'}>
+    <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
+      {/* TODO: Deprecate when decide on Header display */}
       <div className={'mx-auto w-full max-w-[1232px] px-4 md:py-0 md:pt-2'}>{breadcrumbs}</div>
 
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         {/* Desktop Header - Hidden on mobile */}
         {isStickyNameMode ? (
           <div className={cl('items-center bg-app gap-4 md:sticky md:z-30 md:bg-app top-13 p-1 md:flex hidden')}>
-            <div className={cl('flex items-center justify-start rounded-full bg-neutral-0/70')}>
+            <div className={cl('flex items-center justify-start rounded-full bg-surface/70')}>
               <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
             </div>
             <div className={'flex flex-col'}>
-              <strong className={cl('text-lg font-black leading-tight text-neutral-700 md:text-3xl md:leading-10')}>
+              <strong className={cl('text-lg font-black leading-tight text-text-secondary md:text-3xl md:leading-10')}>
                 {getVaultName(currentVault)} {' yVault'}
               </strong>
             </div>
@@ -343,7 +344,7 @@ function Index(): ReactElement | null {
         {/* Mobile: Compact Header */}
         <div className="md:hidden mt-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center size-10 rounded-full bg-neutral-0/70">
+            <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
               <ImageWithFallback
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`}
                 alt={currentVault.token.symbol || ''}
@@ -352,10 +353,10 @@ function Index(): ReactElement | null {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-black leading-tight text-neutral-700 truncate">
+              <h1 className="text-lg font-black leading-tight text-text-secondary truncate">
                 {getVaultName(currentVault)} yVault
               </h1>
-              <p className="text-xs text-neutral-600 truncate">
+              <p className="text-xs text-text-secondary truncate">
                 {currentVault.token.symbol} • v{currentVault.version}
               </p>
             </div>
@@ -390,16 +391,16 @@ function Index(): ReactElement | null {
             aria-controls={mobileDetailsSectionId}
             aria-expanded={isMobileDetailsExpanded}
             className={cl(
-              'w-full bg-neutral-100 border border-neutral-200 rounded-lg',
+              'w-full bg-surface-secondary border border-border rounded-lg',
               'py-4 px-6 flex items-center justify-between',
               'transition-all duration-200',
-              'hover:bg-neutral-200 active:scale-[0.99]'
+              'hover:bg-surface-secondary active:scale-[0.99]'
             )}
           >
-            <span className="text-sm font-semibold text-neutral-900">
+            <span className="text-sm font-semibold text-text-primary">
               {isMobileDetailsExpanded ? 'Hide Details' : 'View More Details'}
             </span>
-            <IconChevron direction={isMobileDetailsExpanded ? 'up' : 'down'} className="size-5 text-neutral-600" />
+            <IconChevron direction={isMobileDetailsExpanded ? 'up' : 'down'} className="size-5 text-text-secondary" />
           </button>
 
           {/* Expandable details section */}
@@ -422,11 +423,7 @@ function Index(): ReactElement | null {
                   const isOpen = openSections[typedKey]
 
                   return (
-                    <div
-                      key={section.key}
-                      ref={section.ref}
-                      className={'border border-neutral-300 rounded-lg bg-surface'}
-                    >
+                    <div key={section.key} ref={section.ref} className={'border border-border rounded-lg bg-surface'}>
                       <button
                         type={'button'}
                         className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
@@ -434,11 +431,11 @@ function Index(): ReactElement | null {
                           setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
                         }
                       >
-                        <span className={'text-base font-semibold text-neutral-900'}>
+                        <span className={'text-base font-semibold text-text-primary'}>
                           {collapsibleTitles[typedKey]}
                         </span>
                         <IconChevron
-                          className={'size-4 text-neutral-600 transition-transform duration-200'}
+                          className={'size-4 text-text-secondary transition-transform duration-200'}
                           direction={isOpen ? 'up' : 'down'}
                         />
                       </button>
@@ -448,11 +445,7 @@ function Index(): ReactElement | null {
                 }
 
                 return (
-                  <div
-                    key={section.key}
-                    ref={section.ref}
-                    className={'border border-neutral-300 rounded-lg bg-surface'}
-                  >
+                  <div key={section.key} ref={section.ref} className={'border border-border rounded-lg bg-surface'}>
                     {section.content}
                   </div>
                 )
@@ -470,7 +463,7 @@ function Index(): ReactElement | null {
                 <div className={'flex flex-wrap gap-2 md:gap-3 bg-app rounded-b-lg'}>
                   <div
                     className={
-                      'flex w-full flex-wrap justify-between gap-2 rounded-lg bg-neutral-100 p-1 border border-neutral-200'
+                      'flex w-full flex-wrap justify-between gap-2 rounded-lg bg-surface-secondary p-1 border border-border'
                     }
                   >
                     {renderableSections.map((section) => (
@@ -481,8 +474,8 @@ function Index(): ReactElement | null {
                         className={cl(
                           'flex-1 min-w-[120px] rounded-lg px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
                           activeSection === section.key
-                            ? 'bg-neutral-0 text-neutral-900 shadow-sm'
-                            : 'bg-transparent text-neutral-600 hover:text-neutral-800'
+                            ? 'bg-surface text-text-primary shadow-sm'
+                            : 'bg-transparent text-text-secondary hover:text-text-primary'
                         )}
                       >
                         {collapsibleTitles[section.key]}
@@ -507,7 +500,7 @@ function Index(): ReactElement | null {
                   <div
                     key={section.key}
                     ref={section.ref}
-                    className={'border border-neutral-300 rounded-lg bg-surface scroll-mt-[250px]'}
+                    className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
                   >
                     <button
                       type={'button'}
@@ -516,9 +509,9 @@ function Index(): ReactElement | null {
                         setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
                       }
                     >
-                      <span className={'text-base font-semibold text-neutral-900'}>{collapsibleTitles[typedKey]}</span>
+                      <span className={'text-base font-semibold text-text-primary'}>{collapsibleTitles[typedKey]}</span>
                       <IconChevron
-                        className={'size-4 text-neutral-600 transition-transform duration-200'}
+                        className={'size-4 text-text-secondary transition-transform duration-200'}
                         direction={isOpen ? 'up' : 'down'}
                       />
                     </button>
@@ -531,7 +524,7 @@ function Index(): ReactElement | null {
                 <div
                   key={section.key}
                   ref={section.ref}
-                  className={'border border-neutral-300 rounded-lg bg-surface scroll-mt-[250px]'}
+                  className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
                 >
                   {section.content}
                 </div>

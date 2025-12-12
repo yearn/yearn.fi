@@ -69,7 +69,7 @@ type TChainButton = {
 //               'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
 //             )}
 //           />
-//           <p className={'z-10 text-neutral-900'}>{'Connect Wallet'}</p>
+//           <p className={'z-10 text-text-primary'}>{'Connect Wallet'}</p>
 //         </button>
 //         <p className={'p-2 text-[#757CA6]'}>{'It looks like you need to connect your wallet.'}</p>
 //       </div>
@@ -84,7 +84,7 @@ type TChainButton = {
 //           {isLoading ? (
 //             <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
 //           ) : (
-//             <b className={'font-number text-neutral-900 '}>
+//             <b className={'font-number text-text-primary '}>
 //               {'$'}
 //               <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
 //             </b>
@@ -265,15 +265,17 @@ TListHero): ReactElement {
 
   return (
     <>
-      <div className={'relative col-span-24 w-full rounded-lg bg-neutral-0 p-2 md:col-span-19'}>
+      <div className={'relative col-span-24 w-full rounded-lg border border-border bg-surface mt-2 p-2 md:col-span-19'}>
         {/* <PortfolioCard holdingsVaults={holdingsVaults} /> */}
 
         <div className={'md:hidden'}>
           <div className={'mb-5 w-full'}>
             <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
             <SearchBar
-              className={'max-w-none rounded-lg border-none bg-neutral-100 text-neutral-900 transition-all md:w-full'}
-              iconClassName={'text-neutral-900'}
+              className={
+                'max-w-none rounded-lg border-none bg-surface-secondary text-text-primary transition-all md:w-full'
+              }
+              iconClassName={'text-text-primary'}
               searchPlaceholder={'YFI Vault'}
               searchValue={searchValue}
               onSearch={onSearch}
@@ -296,7 +298,7 @@ TListHero): ReactElement {
             <Drawer.Trigger asChild>
               <button
                 className={
-                  'w-full cursor-pointer rounded-[4px] bg-neutral-800/20 py-2 text-sm text-neutral-900 transition-colors hover:bg-neutral-800/50'
+                  'w-full cursor-pointer rounded-[4px] bg-neutral-800/20 py-2 text-sm text-text-primary transition-colors hover:bg-neutral-800/50'
                 }
               >
                 {'Filter Vaults'}
@@ -307,14 +309,14 @@ TListHero): ReactElement {
               <Drawer.Content className={'fixed inset-x-0 bottom-0 z-99999 flex justify-center outline-hidden'}>
                 <div
                   className={
-                    'w-full max-w-[520px] rounded-t-3xl bg-neutral-100 p-6 border border-neutral-300 shadow-sm'
+                    'w-full max-w-[520px] rounded-t-3xl bg-surface-secondary p-6 border border-border shadow-sm'
                   }
                   style={{ height: '75vh', overflowY: 'auto' }}
                 >
                   <div className={'mb-4 flex items-center justify-between'}>
-                    <p className={'text-base font-medium text-neutral-900'}>{'Filter Vaults'}</p>
+                    <p className={'text-base font-medium text-text-primary'}>{'Filter Vaults'}</p>
                     <Drawer.Close
-                      className={'rounded-full p-2 text-neutral-900 transition-colors hover:text-neutral-600'}
+                      className={'rounded-full p-2 text-text-primary transition-colors hover:text-text-secondary'}
                     >
                       <IconCross className={'size-4'} />
                     </Drawer.Close>
@@ -423,10 +425,10 @@ function FilterControls({
     <div className={'flex flex-col gap-4'}>
       <div>
         <div className={'flex flex-col gap-2'}>
-          <div className={'flex w-full flex-nowrap justify-between items-center gap-3'}>
+          <div className={'flex w-full flex-wrap justify-between items-center gap-3'}>
             <div
               className={
-                'flex shrink-0 flex-wrap items-center gap-px rounded-md h-10 bg-neutral-100 border border-neutral-200 py-1 px-1.5 text-sm text-neutral-900'
+                'flex shrink-0 flex-wrap items-center gap-px rounded-md border h-10 py-1 px-1.5 bg-surface-secondary border-border text-sm text-text-primary'
               }
             >
               {chainButtons.map((chain) => (
@@ -435,9 +437,9 @@ function FilterControls({
                   type={'button'}
                   className={cl(
                     'flex items-center gap-2 rounded-sm px-3 py-1 font-medium transition-all',
-                    'hover:bg-neutral-0/70',
-                    'data-[active=false]:text-neutral-500 data-[active=false]:opacity-60 data-[active=false]:hover:text-neutral-900 data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-neutral-100/40',
-                    'data-[active=true]:bg-neutral-0 data-[active=true]:text-neutral-900 data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
+                    'hover:bg-surface/70',
+                    'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-surface-secondary/40',
+                    'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
                   )}
                   data-active={chain.isSelected}
                   onClick={(): void => onSelectChain(chain.id)}
@@ -446,7 +448,7 @@ function FilterControls({
                   {chain.icon ? (
                     <span
                       className={cl(
-                        'size-5 overflow-hidden rounded-full bg-neutral-0/80',
+                        'size-5 overflow-hidden rounded-full bg-surface/80',
                         chain.label === 'Sonic' ? 'bg-white' : ''
                       )}
                     >
@@ -460,9 +462,9 @@ function FilterControls({
                 type={'button'}
                 className={cl(
                   'flex items-center gap-2 rounded-lg px-3 py-1 font-medium transition-all',
-                  'hover:bg-neutral-0/70',
-                  'data-[active=false]:text-neutral-500 data-[active=false]:opacity-60 data-[active=false]:hover:text-neutral-900 data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-neutral-100/40',
-                  'data-[active=true]:bg-neutral-100/40 data-[active=true]:text-neutral-900 data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
+                  'hover:bg-surface/70',
+                  'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-surface-secondary/40',
+                  'data-[active=true]:bg-surface-secondary/40 data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
                 )}
                 data-active={areAllChainsSelected}
                 onClick={onSelectAllChains}
@@ -471,8 +473,8 @@ function FilterControls({
                 <span className={'size-5 overflow-hidden rounded-full'}>
                   <LogoYearn
                     className={'size-full'}
-                    back={areAllChainsSelected ? 'text-neutral-900' : 'text-neutral-500'}
-                    front={'text-neutral-0'}
+                    back={areAllChainsSelected ? 'text-text-primary' : 'text-text-secondary'}
+                    front={'text-surface'}
                   />
                 </span>
                 <span>{'All'}</span>
@@ -480,7 +482,7 @@ function FilterControls({
               <button
                 type={'button'}
                 className={
-                  'flex items-center gap-1 rounded-full px-3 py-1 font-medium text-neutral-700 transition-colors hover:bg-neutral-0/70'
+                  'flex items-center gap-1 rounded-full px-3 py-1 font-medium text-text-secondary transition-colors hover:bg-surface/70'
                 }
                 onClick={onOpenChainModal}
               >
@@ -492,9 +494,9 @@ function FilterControls({
               <button
                 type={'button'}
                 className={cl(
-                  'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-500 bg-surface transition-colors',
-                  'hover:text-neutral-700',
-                  'data-[active=true]:border-neutral-400 data-[active=true]:text-neutral-700'
+                  'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-border px-4 py-2 text-sm font-medium text-text-secondary bg-surface transition-colors',
+                  'hover:text-text-secondary',
+                  'data-[active=true]:border-border-hover data-[active=true]:text-text-secondary'
                 )}
                 data-active={isMoreFiltersOpen}
                 onClick={onToggleMoreFilters}
@@ -506,8 +508,8 @@ function FilterControls({
               {showInlineSearch ? (
                 <div className={'min-w-[200px] flex-1'}>
                   <SearchBar
-                    className={'w-full rounded-lg border-neutral-300 bg-neutral-0 text-neutral-900 transition-all'}
-                    iconClassName={'text-neutral-900'}
+                    className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
+                    iconClassName={'text-text-primary'}
                     searchPlaceholder={'Find a Vault'}
                     searchValue={searchValue}
                     onSearch={onSearch}
@@ -524,10 +526,10 @@ function FilterControls({
       {isMoreFiltersOpen ? (
         <div className={'grid grid-cols-1 gap-4 md:grid-cols-2'}>
           <div className={'w-full'}>
-            <p className={'pb-2 text-neutral-500'}>{'Select Category'}</p>
+            <p className={'pb-2 text-text-secondary'}>{'Select Category'}</p>
             <MultiSelectDropdown
-              buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
-              comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
+              buttonClassName={'max-w-none rounded-lg bg-surface-tertiary text-text-primary md:w-full'}
+              comboboxOptionsClassName={'bg-surface-tertiary rounded-lg'}
               options={categoryOptions}
               placeholder={'Filter categories'}
               isOpen={activeDropdown === 'categories'}
@@ -541,10 +543,10 @@ function FilterControls({
             />
           </div>
           <div className={'w-full'}>
-            <p className={'pb-2 text-neutral-500'}>{'Select Type'}</p>
+            <p className={'pb-2 text-text-secondary'}>{'Select Type'}</p>
             <MultiSelectDropdown
-              buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
-              comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
+              buttonClassName={'max-w-none rounded-lg bg-surface-tertiary text-text-primary md:w-full'}
+              comboboxOptionsClassName={'bg-surface-tertiary rounded-lg'}
               options={typeOptions}
               placeholder={'Filter list'}
               isOpen={activeDropdown === 'types'}
@@ -630,16 +632,16 @@ function ChainSelectionModal({
             >
               <Dialog.Panel
                 className={
-                  'w-full max-w-lg rounded-3xl border border-neutral-200 bg-neutral-0 p-6 text-neutral-900 shadow-lg'
+                  'w-full max-w-lg rounded-3xl border border-border bg-surface p-6 text-text-primary shadow-lg'
                 }
               >
                 <div className={'flex items-start justify-between gap-4'}>
-                  <Dialog.Title className={'text-lg font-semibold text-neutral-900'}>{'Select chains'}</Dialog.Title>
+                  <Dialog.Title className={'text-lg font-semibold text-text-primary'}>{'Select chains'}</Dialog.Title>
                   <button
                     type={'button'}
                     onClick={onClose}
                     className={
-                      'inline-flex size-8 items-center justify-center rounded-full border border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-900'
+                      'inline-flex size-8 items-center justify-center rounded-full border border-transparent text-text-secondary hover:border-border hover:text-text-primary'
                     }
                     aria-label={'Close chain selector'}
                   >
@@ -648,7 +650,7 @@ function ChainSelectionModal({
                 </div>
                 <div className={'mt-4 max-h-[320px] space-y-3 overflow-y-auto pr-1'}>
                   {options.length === 0 ? (
-                    <p className={'text-sm text-neutral-600'}>{'No additional chains are available right now.'}</p>
+                    <p className={'text-sm text-text-secondary'}>{'No additional chains are available right now.'}</p>
                   ) : (
                     options.map((option) => {
                       const chainId = Number(option.value)
@@ -659,8 +661,8 @@ function ChainSelectionModal({
                           key={chainId}
                           className={cl(
                             'flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors',
-                            isChecked ? 'border-neutral-300 bg-neutral-300/80' : 'border-neutral-200',
-                            isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-neutral-300/50'
+                            isChecked ? 'border-border bg-surface-tertiary/80' : 'border-border',
+                            isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-surface-tertiary/50'
                           )}
                         >
                           <div className={'flex items-center gap-3'}>
@@ -674,7 +676,7 @@ function ChainSelectionModal({
                                 {option.icon}
                               </span>
                             ) : null}
-                            <span className={'text-sm font-medium text-neutral-900'}>{option.label}</span>
+                            <span className={'text-sm font-medium text-text-primary'}>{option.label}</span>
                           </div>
                           <input
                             type={'checkbox'}
@@ -692,7 +694,7 @@ function ChainSelectionModal({
                   <button
                     type={'button'}
                     className={
-                      'rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 hover:border-neutral-400'
+                      'rounded-full border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-border-hover'
                     }
                     onClick={onClose}
                   >
@@ -701,7 +703,7 @@ function ChainSelectionModal({
                   <button
                     type={'button'}
                     className={
-                      'rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-neutral-0 transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60'
+                      'rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-surface transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60'
                     }
                     onClick={handleApply}
                     disabled={options.length === 0}

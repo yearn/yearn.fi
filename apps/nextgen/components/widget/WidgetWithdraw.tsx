@@ -55,8 +55,8 @@ export const WidgetWithdraw: FC<Props> = ({
       />
       <div className="space-y-1 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-gray-400">You will burn</span>
-          <span className="text-gray-500 font-medium">
+          <span className="text-text-tertiary">You will burn</span>
+          <span className="text-text-secondary font-medium">
             {formatAmount(exactToSimple(expectedWithdrawAmount, vault?.decimals ?? 18))} {vault?.symbol}
           </span>
         </div>
@@ -70,12 +70,12 @@ export const WidgetWithdraw: FC<Props> = ({
         >
           <span
             className={cl(
-              'inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition duration-200 ease-in-out',
+              'inline-block h-4 w-4 transform rounded-full bg-surface shadow-lg transition duration-200 ease-in-out',
               unstakeAndWithdraw ? 'translate-x-5' : 'translate-x-0.5'
             )}
           />
         </button>
-        <span className="ml-3 text-sm font-medium text-gray-900">Unstake & Withdraw</span>
+        <span className="ml-3 text-sm font-medium text-text-primary">Unstake & Withdraw</span>
       </div> */}
       <div className="pb-6 pt-2">
         <TxButton

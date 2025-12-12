@@ -203,7 +203,7 @@ export const Widget: FC<Props> = ({
 
   return (
     <div className="flex flex-col gap-0 w-full h-full">
-      <div className="bg-surface rounded-lg border border-neutral-200 overflow-hidden relative w-full min-w-0">
+      <div className="bg-surface rounded-lg border border-border overflow-hidden relative w-full min-w-0">
         <div className="bg-surface rounded-lg flex h-12">
           {actions.map((action) => (
             <TabButton key={action} isActive={mode === action} onClick={() => setMode(action)}>
@@ -230,8 +230,8 @@ const TabButton: FC<{
       className={cl(
         'flex-1 px-3 py-1 text-sm font-medium transition-all duration-200 capitalize',
         isActive
-          ? 'bg-white text-gray-900 rounded-bl-none rounded-br-none'
-          : 'bg-neutral-200 text-gray-500 hover:text-gray-700',
+          ? 'bg-surface text-text-primary rounded-bl-none rounded-br-none'
+          : 'bg-surface-secondary text-text-secondary hover:text-text-primary',
         className
       )}
     >

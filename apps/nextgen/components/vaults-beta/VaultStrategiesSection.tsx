@@ -134,7 +134,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                       return (
                         <div key={item.id} className={'flex flex-row items-center gap-2'}>
                           <div className={'h-3 w-3 rounded-sm'} style={{ backgroundColor: color }} />
-                          <span className={'text-sm text-neutral-900'}>{item.name}</span>
+                          <span className={'text-sm text-text-primary'}>{item.name}</span>
                         </div>
                       )
                     })}
@@ -148,7 +148,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
 
       <div className={'pb-2'}>
         {isVaultListEmpty ? (
-          <div className={'border border-neutral-200 bg-neutral-100 p-4 text-center text-neutral-900'}>
+          <div className={'border border-border bg-surface-secondary p-4 text-center text-text-primary'}>
             {'No strategies found for this vault.'}
           </div>
         ) : (
@@ -212,11 +212,11 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                 />
               ))}
             {unallocatedPercentage > 0 && unallocatedValue > 0 ? (
-              <div className={'w-full rounded-lg text-neutral-900 opacity-50'}>
+              <div className={'w-full rounded-lg text-text-primary opacity-50'}>
                 <div className={'grid grid-cols-1 md:grid-cols-24 items-center w-full gap-4 py-3 px-4 md:px-8'}>
                   <div className={'col-span-9 flex flex-row items-center gap-4'}>
                     <div className={'rounded-full size-6'}>
-                      <div className={'flex items-center justify-center size-6 text-neutral-600'}>{'●'}</div>
+                      <div className={'flex items-center justify-center size-6 text-text-secondary'}>{'●'}</div>
                     </div>
                     <strong title={'Unallocated'} className={'block truncate font-bold'}>
                       {'Unallocated'}
@@ -229,21 +229,21 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                       className={'flex flex-row justify-between sm:flex-col md:col-span-5 md:text-right'}
                       datatype={'number'}
                     >
-                      <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Allocation %'}</p>
+                      <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Allocation %'}</p>
                       <p>{formatPercent(unallocatedPercentage / 100, 0)}</p>
                     </div>
                     <div
                       className={'flex flex-row justify-between sm:flex-col md:col-span-5 md:text-right'}
                       datatype={'number'}
                     >
-                      <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Amount'}</p>
+                      <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Amount'}</p>
                       <p>{toNormalizedBN(unallocatedValue, currentVault.token.decimals).display}</p>
                     </div>
                     <div
                       className={'flex flex-row justify-between sm:flex-col md:col-span-5 md:text-right'}
                       datatype={'number'}
                     >
-                      <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'APY'}</p>
+                      <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'APY'}</p>
                       <p>{'—'}</p>
                     </div>
                   </div>

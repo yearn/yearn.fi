@@ -1,7 +1,7 @@
 import { Dialog, Transition } from '@headlessui/react'
 import { Counter } from '@lib/components/Counter'
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
@@ -49,7 +49,7 @@ type TVaultHoldingsData = {
 }
 
 const METRIC_VALUE_CLASS = 'font-number text-[20px] leading-tight md:text-[22px] font-normal'
-const METRIC_FOOTNOTE_CLASS = 'text-xs text-neutral-500'
+const METRIC_FOOTNOTE_CLASS = 'text-xs text-text-secondary'
 
 type TMetricBlock = {
   key: string
@@ -101,15 +101,15 @@ function MetricInfoModal({
             >
               <Dialog.Panel
                 className={
-                  'w-full max-w-md transform overflow-hidden rounded-2xl bg-neutral-0 p-6 text-left align-middle shadow-lg transition-all'
+                  'w-full max-w-md transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-lg transition-all'
                 }
               >
-                <Dialog.Title as={'h3'} className={'text-lg font-semibold leading-6 text-neutral-900'}>
+                <Dialog.Title as={'h3'} className={'text-lg font-semibold leading-6 text-text-primary'}>
                   {title}
                 </Dialog.Title>
-                <p className={'mt-4 text-sm text-neutral-600'}>
+                <p className={'mt-4 text-sm text-text-secondary'}>
                   {description}
-                  <span className={'mt-2 block text-xs text-neutral-500'}>
+                  <span className={'mt-2 block text-xs text-text-secondary'}>
                     {'More information about this metric is coming soon.'}
                   </span>
                 </p>
@@ -141,7 +141,7 @@ function MetricsCard({
   hideFootnotes?: boolean
 }): ReactElement {
   return (
-    <div className={cl('rounded-lg border border-neutral-300 bg-surface text-neutral-900', 'backdrop-blur-sm')}>
+    <div className={cl('rounded-lg border border-border bg-surface text-text-primary', 'backdrop-blur-sm')}>
       <div className={'divide-y divide-neutral-300 md:flex md:divide-y-0'}>
         {items.map(
           (item, index): ReactElement => (
@@ -149,7 +149,7 @@ function MetricsCard({
               key={item.key}
               className={cl(
                 'flex flex-1 flex-col gap-1 px-5 py-3',
-                index < items.length - 1 ? 'md:border-r md:border-neutral-300' : ''
+                index < items.length - 1 ? 'md:border-r md:border-border' : ''
               )}
             >
               <div className={'flex items-center justify-between'}>
@@ -171,7 +171,7 @@ function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): 
 
   return (
     <>
-      <p className={'flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-neutral-600'}>
+      <p className={'flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-text-secondary'}>
         <span>{label}</span>
         {tooltip ? (
           <button
@@ -179,7 +179,7 @@ function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): 
             onClick={(): void => setIsModalOpen(true)}
             aria-label={`Learn more about ${label}`}
             className={
-              'inline-flex size-4 items-center justify-center rounded-full border bg-neutral-0 border-neutral-300 text-[10px] font-semibold text-neutral-500 transition-colors hover:border-neutral-500 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300'
+              'inline-flex size-4 items-center justify-center rounded-full border bg-surface border-border text-[10px] font-semibold text-text-secondary transition-colors hover:border-neutral-500 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300'
             }
           >
             <span className={'leading-none'}>{'i'}</span>
@@ -635,7 +635,7 @@ export function VaultDetailsHeader({
   const isStickyName = displayMode === 'sticky-name'
 
   return (
-    <div className={'col-span-12 grid w-full grid-cols-1 gap-4 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
+    <div className={'grid w-full grid-cols-1 gap-6 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
       <div
         className={cl(
           'flex flex-col gap-1 px-1',
@@ -646,13 +646,13 @@ export function VaultDetailsHeader({
           <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
             <div
               className={cl(
-                'flex items-center justify-start rounded-full bg-neutral-0/70',
+                'flex items-center justify-start rounded-full bg-surface/70',
                 isCompressed ? 'size-8' : 'size-10'
               )}
             >
-              <ImageWithFallback
+              <TokenLogo
                 src={tokenLogoSrc}
-                alt={currentVault.token.symbol || ''}
+                tokenSymbol={currentVault.token.symbol || ''}
                 width={isCompressed ? 32 : 40}
                 height={isCompressed ? 32 : 40}
               />
@@ -660,7 +660,7 @@ export function VaultDetailsHeader({
             <div className={'flex flex-col'}>
               <strong
                 className={cl(
-                  'text-lg font-black leading-tight text-neutral-700 md:text-3xl md:leading-10',
+                  'text-lg font-black leading-tight text-text-secondary md:text-3xl md:leading-10',
                   isCompressed ? 'md:text-[30px] md:leading-9' : ''
                 )}
               >
@@ -674,17 +674,17 @@ export function VaultDetailsHeader({
             type={'button'}
             onClick={(): void => copyToClipboard(currentVault.address)}
             className={
-              'flex items-center gap-2 text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm'
+              'flex w-fit items-center gap-2 text-left text-xs font-number text-text-primary/70 transition-colors hover:text-text-primary md:text-sm'
             }
           >
-            <span className={cl(isCompressed ? 'flex-1 max-w-[260px] truncate whitespace-nowrap' : 'break-all')}>
+            <span className={cl(isCompressed ? 'max-w-[260px] truncate whitespace-nowrap' : 'break-all')}>
               {displayAddress}
             </span>
             <IconCopy className={'size-4 shrink-0'} />
           </button>
         ) : null}
         {metadataLine && !isCompressed ? (
-          <p className={'text-xs text-neutral-900/70 md:text-sm'}>{metadataLine}</p>
+          <p className={'text-xs text-text-primary/70 md:text-sm'}>{metadataLine}</p>
         ) : null}
       </div>
 

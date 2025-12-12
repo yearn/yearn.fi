@@ -208,13 +208,15 @@ function ListOfVaults({
     if (!hasHiddenResults) return null
 
     return (
-      <div className={'flex items-center gap-2 rounded-lg px-3 py-1 text-xs text-neutral-700'}>
+      <div className={'flex items-center gap-2 rounded-lg px-3 py-1 text-xs text-text-secondary'}>
         <span>
           {hiddenByFiltersCount} {`vault${hiddenByFiltersCount > 1 ? 's' : ''} hidden by filters`}
         </span>
         <Button
           onClick={onResetMultiSelect}
-          className={'yearn--button-smaller h-6 rounded-md px-3 py-1 text-xs text-white hover:bg-neutral-800'}
+          className={
+            'h-6 rounded-md bg-text-primary px-3 py-1 text-xs text-surface transition-opacity hover:opacity-90'
+          }
         >
           {'Show all'}
         </Button>
@@ -228,7 +230,7 @@ function ListOfVaults({
     }
 
     return (
-      <div className={'flex flex-wrap items-center gap-2 text-xs text-neutral-600'}>
+      <div className={'flex flex-wrap items-center gap-2 text-xs text-text-secondary'}>
         {renderHiddenBadge()}
         {hiddenHoldingsCount > 0 ? (
           <span>
@@ -294,7 +296,7 @@ function ListOfVaults({
           </div>
         ) : null}
         {hasRows ? (
-          <div className={'shrink-0 border-t border-neutral-200 bg-surface px-4 py-3 md:px-8 rounded-b-xl'} />
+          <div className={'shrink-0 border-t border-border bg-surface px-4 py-3 md:px-8 rounded-b-xl'} />
         ) : null}
       </div>
     )
@@ -303,17 +305,18 @@ function ListOfVaults({
   const suggestedVaultsElement = <TrendingVaults suggestedVaults={suggestedVaults} />
 
   const breadcrumbsElement = (
-    <div className={'mb-3 mt-2 px-4 flex items-center gap-2 text-sm text-neutral-500'}>
-      <Link to={'/'} className={'transition-colors hover:text-neutral-900'}>
+    <div className={'mb-3 mt-2 flex items-center gap-2 text-sm text-text-secondary'}>
+      <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
         {'Home'}
       </Link>
       <span>{'>'}</span>
-      <span className={'font-medium text-neutral-900'}>{'Vaults'}</span>
+      <span className={'font-medium text-text-primary'}>{'Vaults'}</span>
     </div>
   )
 
   const filtersElement = (
     <div className={'w-full bg-app pb-2 shrink-0'}>
+      {/* TODO: Deprecate when decide on Header display */}
       {breadcrumbsElement}
       {suggestedVaultsElement}
       <Filters
@@ -334,7 +337,7 @@ function ListOfVaults({
 
   const listElement = (
     <div className={'flex w-full flex-1 flex-col'} style={{ minHeight: 0 }}>
-      <div className={'flex flex-1 flex-col overflow-hidden rounded-xl border border-neutral-200 bg-surface'}>
+      <div className={'flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface'}>
         <VaultsV3ListHead
           containerClassName={'rounded-t-xl bg-surface shrink-0'}
           wrapperClassName={'sticky top-0 z-10 mt-0 bg-surface'}
@@ -413,7 +416,7 @@ function ListOfVaults({
             }
           ]}
         />
-        <div className={'flex flex-1 flex-col overflow-auto bg-app'}>{renderVaultList()}</div>
+        <div className={'flex flex-1 flex-col overflow-auto'}>{renderVaultList()}</div>
       </div>
     </div>
   )
@@ -435,9 +438,9 @@ function Index(): ReactElement {
   })
 
   return (
-    <div className={'vaults-layout vaults-layout--list'}>
+    <div className={'h-[calc(100vh-var(--header-height))] w-full overflow-hidden bg-app max-w-[1232px] mx-auto'}>
       <div
-        className={'relative z-50 mx-auto flex w-full max-w-[1232px] flex-col gap-4 bg-transparent pb-4 md:gap-3'}
+        className={'relative z-50 flex w-full flex-col gap-4 bg-transparent md:gap-3 pb-4 px-4'}
         style={{
           height: 'calc(100vh - var(--header-height))'
         }}

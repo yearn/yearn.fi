@@ -113,7 +113,7 @@ function V3Home(): ReactElement {
   }
 
   return (
-    <div className={'vaults-layout vaults-layout--list'} style={layoutStyle}>
+    <div className={'h-[calc(100vh-var(--header-height))] w-full overflow-hidden bg-app'} style={layoutStyle}>
       <div className={'mx-auto h-full w-full max-w-[1232px]'}>
         <div
           ref={gridRef}

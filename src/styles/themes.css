@@ -1,0 +1,126 @@
+/* Multi-Theme System - Light, Dark, and Soft-Dark Themes */
+/* Uses CSS custom properties with data-theme attribute for flexible theme switching */
+
+/* ============================================
+   LIGHT THEME
+   ============================================ */
+:root[data-theme="light"] {
+  /* Surface tokens (backgrounds) */
+  --color-app: hsl(0 0% 98%); /* #fafafa */
+  --color-surface: hsl(0 0% 100%); /* #ffffff */
+  --color-surface-secondary: hsl(0 0% 96%); /* #f5f5f5 */
+  --color-surface-tertiary: hsl(0 0% 90%); /* #e5e5e5 */
+
+  /* Text tokens */
+  --color-text-primary: hsl(0 0% 9%); /* #171717 */
+  --color-text-secondary: hsl(0 0% 32%); /* #525252 */
+  --color-text-tertiary: hsl(0 0% 64%); /* #a3a3a3 */
+
+  /* Border tokens */
+  --color-border: hsl(0 0% 90%); /* #e5e5e5 */
+  --color-border-hover: hsl(0 0% 83%); /* #d4d4d4 */
+  --color-border-focus: hsl(0 0% 9%); /* #171717 */
+
+  /* Interactive tokens (preserved from existing primary colors) */
+  --color-primary: hsl(220 95% 50%); /* #0657F9 */
+  --color-primary-hover: hsl(220 100% 44%); /* #0543c0 */
+  --color-success: hsl(142 71% 45%); /* #16a34a */
+  --color-warning: hsl(17 88% 48%); /* #ea580c */
+  --color-error: hsl(0 73% 51%); /* #dc2626 */
+
+  /* Component-specific */
+  --color-input-bg: hsl(0 0% 100%); /* #ffffff */
+  --color-modal-overlay: hsl(0 0% 0% / 0.5); /* rgba(0, 0, 0, 0.5) */
+  --color-table-row-hover: hsl(0 0% 96%); /* #f5f5f5 */
+}
+
+/* ============================================
+   DARK THEME (True Dark)
+   ============================================ */
+:root[data-theme="dark"] {
+  /* Surface tokens (backgrounds) */
+  --color-app: hsl(0 0% 0%); /* #000000 */
+  --color-surface: hsl(0 0% 4%); /* #0a0a0a */
+  --color-surface-secondary: hsl(0 0% 9%); /* #171717 */
+  --color-surface-tertiary: hsl(0 0% 15%); /* #262626 */
+
+  /* Text tokens */
+  --color-text-primary: hsl(0 0% 98%); /* #fafafa */
+  --color-text-secondary: hsl(0 0% 64%); /* #a3a3a3 */
+  --color-text-tertiary: hsl(0 0% 32%); /* #525252 */
+
+  /* Border tokens */
+  --color-border: hsl(0 0% 15%); /* #262626 */
+  --color-border-hover: hsl(0 0% 20%); /* #333333 */
+  --color-border-focus: hsl(0 0% 98%); /* #fafafa */
+
+  /* Interactive tokens */
+  --color-primary: hsl(220 95% 50%); /* #0657F9 */
+  --color-primary-hover: hsl(220 100% 55%); /* Lighter hover for dark bg */
+  --color-success: hsl(142 71% 45%); /* #16a34a */
+  --color-warning: hsl(17 88% 48%); /* #ea580c */
+  --color-error: hsl(0 73% 51%); /* #dc2626 */
+
+  /* Component-specific */
+  --color-input-bg: hsl(0 0% 4%); /* #0a0a0a */
+  --color-modal-overlay: hsl(0 0% 0% / 0.8); /* Darker overlay for dark theme */
+  --color-table-row-hover: hsl(0 0% 9%); /* #171717 */
+}
+
+/* ============================================
+   SOFT-DARK THEME (Warmer Dark)
+   ============================================ */
+:root[data-theme="soft-dark"] {
+  /* Surface tokens (backgrounds) */
+  --color-app: hsl(0 0% 6%); /* #0f0f0f */
+  --color-surface: hsl(0 0% 10%); /* #1a1a1a */
+  --color-surface-secondary: hsl(0 0% 15%); /* #262626 */
+  --color-surface-tertiary: hsl(0 0% 25%); /* #404040 */
+
+  /* Text tokens */
+  --color-text-primary: hsl(0 0% 96%); /* #f5f5f5 */
+  --color-text-secondary: hsl(0 0% 64%); /* #a3a3a3 */
+  --color-text-tertiary: hsl(0 0% 40%); /* #666666 */
+
+  /* Border tokens */
+  --color-border: hsl(0 0% 20%); /* #333333 */
+  --color-border-hover: hsl(0 0% 28%); /* #474747 */
+  --color-border-focus: hsl(0 0% 96%); /* #f5f5f5 */
+
+  /* Interactive tokens */
+  --color-primary: hsl(220 95% 50%); /* #0657F9 */
+  --color-primary-hover: hsl(220 100% 55%); /* Lighter hover */
+  --color-success: hsl(142 71% 45%); /* #16a34a */
+  --color-warning: hsl(17 88% 48%); /* #ea580c */
+  --color-error: hsl(0 73% 51%); /* #dc2626 */
+
+  /* Component-specific */
+  --color-input-bg: hsl(0 0% 10%); /* #1a1a1a */
+  --color-modal-overlay: hsl(0 0% 0% / 0.7); /* Medium overlay */
+  --color-table-row-hover: hsl(0 0% 15%); /* #262626 */
+}
+
+/* ============================================
+   DEFAULT THEME (Fallback to Light)
+   ============================================ */
+:root {
+  /* Default to light theme if no data-theme attribute is set */
+  --color-app: hsl(0 0% 98%);
+  --color-surface: hsl(0 0% 100%);
+  --color-surface-secondary: hsl(0 0% 96%);
+  --color-surface-tertiary: hsl(0 0% 90%);
+  --color-text-primary: hsl(0 0% 9%);
+  --color-text-secondary: hsl(0 0% 32%);
+  --color-text-tertiary: hsl(0 0% 64%);
+  --color-border: hsl(0 0% 90%);
+  --color-border-hover: hsl(0 0% 83%);
+  --color-border-focus: hsl(0 0% 9%);
+  --color-primary: hsl(220 95% 50%);
+  --color-primary-hover: hsl(220 100% 44%);
+  --color-success: hsl(142 71% 45%);
+  --color-warning: hsl(17 88% 48%);
+  --color-error: hsl(0 73% 51%);
+  --color-input-bg: hsl(0 0% 100%);
+  --color-modal-overlay: hsl(0 0% 0% / 0.5);
+  --color-table-row-hover: hsl(0 0% 96%);
+}

@@ -48,7 +48,7 @@ type TVaultHoldingsData = {
 }
 
 const METRIC_VALUE_CLASS = 'font-number text-[32px] leading-tight md:text-[28px] font-normal'
-const METRIC_FOOTNOTE_CLASS = 'text-xs text-neutral-500'
+const METRIC_FOOTNOTE_CLASS = 'text-xs text-text-secondary'
 
 type TMetricBlock = {
   key: string
@@ -62,7 +62,7 @@ function MetricsCard({ items }: { items: TMetricBlock[] }): ReactElement {
   return (
     <div
       className={cl(
-        'rounded-xl border border-neutral-200 bg-neutral-0/90 text-neutral-900 shadow-xs shadow-neutral-900/10',
+        'rounded-xl border border-border bg-surface/90 text-text-primary shadow-xs shadow-neutral-900/10',
         'backdrop-blur-sm'
       )}
     >
@@ -73,7 +73,7 @@ function MetricsCard({ items }: { items: TMetricBlock[] }): ReactElement {
               key={item.key}
               className={cl(
                 'flex flex-1 flex-col gap-1 px-5 py-3',
-                index < items.length - 1 ? 'md:border-r md:border-neutral-200' : ''
+                index < items.length - 1 ? 'md:border-r md:border-border' : ''
               )}
             >
               <div className={'flex items-center justify-between'}>
@@ -92,11 +92,11 @@ function MetricsCard({ items }: { items: TMetricBlock[] }): ReactElement {
 
 function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): ReactElement {
   return (
-    <p className={'flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-neutral-600'}>
+    <p className={'flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-text-secondary'}>
       <span>{label}</span>
       {tooltip ? (
         <span title={tooltip} className={'inline-flex items-center'}>
-          <IconQuestion className={'size-3 text-neutral-400'} aria-label={`${label} info`} />
+          <IconQuestion className={'size-3 text-text-tertiary'} aria-label={`${label} info`} />
         </span>
       ) : null}
     </p>
@@ -506,11 +506,11 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
       <div className={'flex flex-col gap-0'}>
         <div className={'flex flex-col gap-4 md:flex-row md:items-center'}>
           <div className={'flex items-center gap-4'}>
-            <div className={'flex size-14 items-center justify-start rounded-full bg-neutral-0/70'}>
+            <div className={'flex size-14 items-center justify-start rounded-full bg-surface/70'}>
               <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={56} height={56} />
             </div>
             <div className={'flex flex-col'}>
-              <strong className={'text-3xl font-black leading-tight text-neutral-700 md:text-[48px] md:leading-14'}>
+              <strong className={'text-3xl font-black leading-tight text-text-secondary md:text-[48px] md:leading-14'}>
                 {getVaultName(currentVault)} {' yVault'}
               </strong>
             </div>
@@ -521,14 +521,14 @@ export function VaultDetailsHeader({ currentVault }: { currentVault: TYDaemonVau
             type={'button'}
             onClick={(): void => copyToClipboard(currentVault.address)}
             className={
-              'flex items-center gap-2 text-left text-xs font-number text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-sm pt-2'
+              'flex items-center gap-2 text-left text-xs font-number text-text-primary/70 transition-colors hover:text-text-primary md:text-sm pt-2'
             }
           >
             <span>{currentVault.address}</span>
             <IconCopy className={'size-4'} />
           </button>
         ) : null}
-        {metadataLine ? <p className={'text-sm text-neutral-900/70 md:text-base'}>{metadataLine}</p> : null}
+        {metadataLine ? <p className={'text-sm text-text-primary/70 md:text-base'}>{metadataLine}</p> : null}
       </div>
 
       <div className={'mt-4 grid w-full grid-cols-1 gap-4 md:grid-cols-20 md:items-start'}>

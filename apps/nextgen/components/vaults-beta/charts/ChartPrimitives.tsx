@@ -144,7 +144,7 @@ export const ChartTooltipContent = forwardRef<HTMLDivElement, ChartTooltipConten
       <div
         ref={ref}
         className={cl(
-          'grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs shadow-xl',
+          'grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border bg-white px-2.5 py-1.5 text-xs shadow-xl',
           className
         )}
       >
@@ -159,7 +159,7 @@ export const ChartTooltipContent = forwardRef<HTMLDivElement, ChartTooltipConten
               <div
                 key={item.dataKey}
                 className={cl(
-                  'flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-neutral-500',
+                  'flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-text-secondary',
                   { 'items-center': indicator === 'dot' }
                 )}
               >
@@ -195,10 +195,10 @@ export const ChartTooltipContent = forwardRef<HTMLDivElement, ChartTooltipConten
                     >
                       <div className={'grid gap-1.5'}>
                         {nestLabel ? tooltipLabel : null}
-                        <span className={'text-neutral-500'}>{itemConfig?.label || item.name}</span>
+                        <span className={'text-text-secondary'}>{itemConfig?.label || item.name}</span>
                       </div>
                       {item.value !== undefined && item.value !== null ? (
-                        <span className={'font-mono font-medium tabular-nums text-neutral-900'}>
+                        <span className={'font-mono font-medium tabular-nums text-text-primary'}>
                           {item.value.toLocaleString()}
                         </span>
                       ) : null}

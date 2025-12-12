@@ -68,8 +68,10 @@ export function NotificationsCurtain(props: {
           >
             <div className={'h-full'}>
               <div className={'mb-4 flex items-center justify-between pr-4'}>
-                <Drawer.Title className={'font-bold text-neutral-900'}>{'Notifications'}</Drawer.Title>
-                <Drawer.Close className={'rounded-full p-1 text-neutral-900 transition-colors hover:text-neutral-600'}>
+                <Drawer.Title className={'font-bold text-text-primary'}>{'Notifications'}</Drawer.Title>
+                <Drawer.Close
+                  className={'rounded-full p-1 text-text-primary transition-colors hover:text-text-secondary'}
+                >
                   <IconCross className={'size-4'} />
                 </Drawer.Close>
               </div>
@@ -83,19 +85,17 @@ export function NotificationsCurtain(props: {
                 {isLoading ? (
                   <div className={'flex h-full items-center justify-center'}>
                     <div className={'flex flex-col items-center gap-2'}>
-                      <div
-                        className={'size-8 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900'}
-                      />
-                      <p className={'text-sm text-neutral-600'}>{'Loading notifications...'}</p>
+                      <div className={'size-8 animate-spin rounded-full border-2 border-border border-t-neutral-900'} />
+                      <p className={'text-sm text-text-secondary'}>{'Loading notifications...'}</p>
                     </div>
                   </div>
                 ) : error ? (
                   <div className={'mx-auto mt-40 text-center'}>
                     <p className={'text-red-600 font-medium'}>{'Error loading notifications'}</p>
-                    <p className={'mt-2 text-sm text-neutral-600'}>{error}</p>
+                    <p className={'mt-2 text-sm text-text-secondary'}>{error}</p>
                   </div>
                 ) : isEmpty ? (
-                  <p className={'mx-auto my-20 sm:mt-40 text-center text-neutral-800'}>{'No transactions to show.'}</p>
+                  <p className={'mx-auto my-20 sm:mt-40 text-center text-text-primary'}>{'No transactions to show.'}</p>
                 ) : (
                   <motion.div
                     layout

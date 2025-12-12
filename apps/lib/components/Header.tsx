@@ -8,8 +8,8 @@ import { IconWallet } from '@lib/icons/IconWallet'
 import { cl } from '@lib/utils'
 import { truncateHex } from '@lib/utils/tools.address'
 import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
-import type { CSSProperties, ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { ReactElement } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
@@ -37,11 +37,16 @@ const PRIMARY_LINKS: TPrimaryLink[] = [
 
 function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
   return (
-    <nav className={'yearn--nav hidden md:flex'}>
+    <nav className={'hidden md:flex gap-6'}>
       {nav.map(
         (option): ReactElement => (
           <Link key={option.path} target={option.target} href={option.path}>
-            <p className={`yearn--header-nav-item ${currentPathName.startsWith(option.path) ? 'active' : ''}`}>
+            <p
+              className={cl(
+                'cursor-pointer text-sm font-normal text-text-secondary transition-colors hover:text-text-primary',
+                currentPathName.startsWith(option.path) ? 'text-text-primary' : ''
+              )}
+            >
               {option?.label || 'Unknown'}
             </p>
           </Link>
@@ -105,21 +110,23 @@ function WalletSelector(): ReactElement {
           openLoginModal()
         }
       }}
+      className={'cursor-pointer'}
     >
-      <p suppressHydrationWarning className={'yearn--header-nav-item text-xs! md:text-sm!'}>
+      <p
+        suppressHydrationWarning
+        className={'text-xs font-normal text-text-secondary transition-colors hover:text-text-primary md:text-sm'}
+      >
         {walletIdentity ? (
           <span className={'inline-flex items-center gap-2'}>
             <span>{walletIdentity}</span>
-            {shouldShowSpinner ? (
-              <IconSpinner className={'h-3.5 w-3.5 text-neutral-100 dark:text-neutral-700'} />
-            ) : null}
+            {shouldShowSpinner ? <IconSpinner className={'h-3.5 w-3.5 text-text-tertiary'} /> : null}
           </span>
         ) : (
           <span>
-            <IconWallet className={'yearn--header-nav-item mt-0.5 block size-4 md:hidden'} />
+            <IconWallet className={'mt-0.5 block size-4 text-text-secondary md:hidden'} />
             <span
               className={
-                'text-neutral-0 relative hidden h-8 cursor-pointer items-center justify-center rounded-sm border border-transparent bg-neutral-900 px-2 text-xs font-normal transition-all hover:bg-neutral-800 md:flex'
+                'relative hidden h-8 cursor-pointer items-center justify-center rounded-sm border border-transparent bg-text-primary px-2 text-xs font-normal text-surface transition-all hover:opacity-90 md:flex'
               }
             >
               {'Connect wallet'}
@@ -136,7 +143,6 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
   const pathname = location.pathname
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
   const { setShouldOpenCurtain, notificationStatus } = useNotifications()
-  const [surfaceBackground, setSurfaceBackground] = useState<string | undefined>(undefined)
 
   const menu = useMemo((): TMenu[] => {
     // const HOME_MENU = { path: '/apps', label: 'Apps' }
@@ -189,63 +195,18 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     return ''
   }, [notificationStatus])
 
-  const updateSurfaceBackground = useCallback((): void => {
-    const layoutHost = document.querySelector('.vaults-layout') as HTMLElement | null
-    const target = layoutHost ?? document.documentElement
-    const value = getComputedStyle(target).getPropertyValue('--surface-background').trim()
-    setSurfaceBackground(value || undefined)
-  }, [])
-
-  useEffect(() => {
-    updateSurfaceBackground()
-
-    const observer = new MutationObserver(() => updateSurfaceBackground())
-    const layoutHost = document.querySelector('.vaults-layout')
-
-    // Observe both the layout host and document root for class changes
-    if (layoutHost) {
-      observer.observe(layoutHost, {
-        attributes: true,
-        attributeFilter: ['class']
-      })
-    }
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    })
-
-    return () => observer.disconnect()
-  }, [updateSurfaceBackground])
-
-  useEffect(() => {
-    updateSurfaceBackground()
-    void pathname
-  }, [updateSurfaceBackground, pathname])
-
   const isHomePage = window.location.pathname === '/'
 
   return (
-    <div
-      id={'head'}
-      className={'sticky inset-x-0 top-0 z-50 w-full bg-app backdrop-blur-md'}
-      style={
-        surfaceBackground
-          ? ({
-              backgroundColor: surfaceBackground,
-              '--surface-background': surfaceBackground
-            } as CSSProperties & { '--surface-background': string })
-          : undefined
-      }
-    >
+    <div id={'head'} className={'sticky inset-x-0 top-0 z-50 w-full bg-app backdrop-blur-md'}>
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-        <header className={'yearn--header w-full px-0! pb-4!'}>
+        <header className={'w-full px-0 flex items-center justify-between h-[var(--header-height)]'}>
           <div className={'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'}>
             <div className={'flex justify-center'}>
               <LaunchModal />
             </div>
             <div className={'flex items-center gap-2 md:gap-4'}>
-              <TypeMarkYearnText className={'yearn-typemark h-8 w-auto'} />
+              <TypeMarkYearnText className={'yearn-typemark h-8 w-auto text-text-primary'} />
               {/* <TypeMarkYearnFull className={'yearn-typemark hidden h-8 w-auto md:block'} color={'currentColor'} /> */}
               <div className={'hidden md:flex items-center gap-4 pb-0.5'}>
                 {PRIMARY_LINKS.map((link) => {
@@ -256,7 +217,12 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
 
                   return (
                     <Link key={link.path} href={link.path}>
-                      <span className={cl('yearn--header-nav-item text-lg!', isActive ? 'active' : '')}>
+                      <span
+                        className={cl(
+                          'cursor-pointer text-lg font-medium transition-colors relative',
+                          isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                        )}
+                      >
                         {link.label}
                       </span>
                     </Link>
@@ -270,7 +236,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
             {!isHomePage && (
               <div className={'direction-row flex items-center justify-end'}>
                 <button
-                  className={'yearn--header-nav-item relative rounded-full p-4 transition-colors'}
+                  className={'relative rounded-full p-4 text-text-secondary transition-colors hover:text-text-primary'}
                   onClick={(): void => setShouldOpenCurtain(true)}
                 >
                   <IconBell className={'size-4 font-bold transition-colors'} />
@@ -278,7 +244,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
                   <div className={cl('absolute right-4 top-4 size-2 rounded-full', notificationDotColor)} />
                 </button>
                 <WalletSelector />
-                <div className={'flex md:hidden pl-4 text-neutral-500'}>
+                <div className={'flex md:hidden pl-4 text-text-secondary'}>
                   <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
                     <span className={'sr-only'}>{'Open menu'}</span>
                     <IconBurgerPlain />

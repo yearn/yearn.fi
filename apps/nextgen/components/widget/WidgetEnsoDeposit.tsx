@@ -132,10 +132,10 @@ export const WidgetEnsoDeposit: FC<Props> = ({
 
       <div className="space-y-1 text-sm h-8">
         <div className="flex items-center justify-between">
-          <span className="text-gray-400">You will receive</span>
-          <span className="text-gray-500 font-medium">
+          <span className="text-text-tertiary">You will receive</span>
+          <span className="text-text-secondary font-medium">
             {isLoadingRoute || depositAmount.isDebouncing ? (
-              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-16 bg-surface-secondary rounded animate-pulse" />
             ) : depositAmount.bn > 0n && route ? (
               `${formatAmount(expectedOut.normalized)} ${vault?.symbol}`
             ) : (
@@ -145,15 +145,15 @@ export const WidgetEnsoDeposit: FC<Props> = ({
         </div>
         {isCrossChain && (
           <div className="flex items-center justify-between">
-            <span className="text-gray-400">Type</span>
+            <span className="text-text-tertiary">Type</span>
             <span className="text-blue-500 font-medium">Cross-chain</span>
           </div>
         )}
         {routerAddress && (
           <div className="flex items-center justify-between">
-            <span className="text-gray-400">Router</span>
+            <span className="text-text-tertiary">Router</span>
             <Link href={`https://etherscan.io/address/${routerAddress}`}>
-              <span className="text-gray-500 font-medium hover:underline">
+              <span className="text-text-secondary font-medium hover:underline">
                 {routerAddress.slice(0, 6)}...{routerAddress.slice(-4)}
               </span>
             </Link>

@@ -151,7 +151,7 @@ function HoldingsMarquee({ holdingsVaults }: { holdingsVaults: TYDaemonVault[] }
       </div>
       <div
         className={
-          'pointer-events-none absolute inset-0 flex items-center justify-center bg-neutral-200/50 border-1 border-neutral-700/50 text-sm font-semibold uppercase tracking-wide text-neutral-50 opacity-0 transition-opacity duration-200 group-hover:opacity-100'
+          'pointer-events-none absolute inset-0 flex items-center justify-center bg-surface-secondary/50 border-1 border-neutral-700/50 text-sm font-semibold uppercase tracking-wide text-text-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100'
         }
       >
         {'view portfolio'}

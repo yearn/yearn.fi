@@ -18,7 +18,7 @@ const STATUS: { [key: string]: [string, string, ReactElement] } = {
   success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} key={'success'} />],
   pending: [
     'Pending',
-    'text-neutral-800 bg-neutral-300',
+    'text-text-primary bg-surface-tertiary',
     <IconLoader className={'size-4 animate-spin'} key={'pending'} />
   ],
   error: ['Error', 'text-white bg-[#C73203] bg-opacity-90', <IconCross className={'size-3'} key={'error'} />]
@@ -149,7 +149,7 @@ function NotificationContent({
         )}
       </div>
       <div className={'flex-1'}>
-        <div className={'grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-neutral-800'}>
+        <div className={'grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-text-primary'}>
           <p>{'Address:'}</p>
           <p className={'text-right font-bold'}>
             <Link
@@ -157,7 +157,7 @@ function NotificationContent({
               target={'_blank'}
               rel={'noopener noreferrer'}
               aria-label={`View address ${notification.address} on explorer`}
-              className={'text-neutral-900 hover:text-neutral-600'}
+              className={'text-text-primary hover:text-text-secondary'}
             >
               <button className={'text-xs font-medium underline'}>{truncateHex(notification.address, 5)}</button>
             </Link>
@@ -169,7 +169,7 @@ function NotificationContent({
               target={'_blank'}
               rel={'noopener noreferrer'}
               aria-label={`View token ${notification.fromTokenName || 'Unknown'} on explorer`}
-              className={'text-neutral-900 hover:text-neutral-600'}
+              className={'text-text-primary hover:text-text-secondary'}
             >
               <button className={'text-xs font-medium underline'}>{notification.fromTokenName || 'Unknown'}</button>
             </Link>
@@ -185,7 +185,7 @@ function NotificationContent({
                   target={'_blank'}
                   rel={'noopener noreferrer'}
                   aria-label={`View vault ${notification.toTokenName || 'Unknown'} on explorer`}
-                  className={'text-neutral-900 hover:text-neutral-600'}
+                  className={'text-text-primary hover:text-text-secondary'}
                 >
                   <button className={'text-xs font-medium underline'}>{notification.toTokenName || 'Unknown'}</button>
                 </Link>
@@ -201,7 +201,7 @@ function NotificationContent({
                   target={'_blank'}
                   rel={'noopener noreferrer'}
                   aria-label={`View spender ${notification.spenderAddress} on explorer`}
-                  className={'text-neutral-900 hover:text-neutral-600'}
+                  className={'text-text-primary hover:text-text-secondary'}
                 >
                   <button className={'text-xs font-medium underline'}>
                     {truncateHex(notification.spenderAddress || '0x0', 5)}
@@ -320,8 +320,8 @@ export const Notification = memo(function Notification({
   return (
     <div
       className={cl(
-        'border border-neutral-200 p-4 h-fit relative mb-4 origin-top group',
-        'bg-card rounded-xl border-neutral-300'
+        'border border-border p-4 h-fit relative mb-4 origin-top group',
+        'bg-card rounded-xl border-border'
       )}
     >
       {variant === 'v3' && <div className={cl('absolute inset-0 rounded-xl')} />}
@@ -332,19 +332,19 @@ export const Notification = memo(function Notification({
         disabled={isDeleting}
         className={cl(
           'absolute z-999999 flex items-center justify-center',
-          'right-2 top-2 w-5 h-5 rounded-full hover:opacity-100 hover:bg-neutral-0',
+          'right-2 top-2 w-5 h-5 rounded-full hover:opacity-100 hover:bg-surface',
           'transition-all duration-200',
-          'opacity-0 group-hover:opacity-100 group-hover:bg-neutral-0/70 group-hover:border group-hover:border-neutral-0 hover:opacity-100!',
+          'opacity-0 group-hover:opacity-100 group-hover:bg-surface/70 group-hover:border group-hover:border-neutral-0 hover:opacity-100!',
           isDeleting ? 'opacity-30!' : ''
         )}
         title={'Remove'}
       >
-        <IconClose className={cl('w-3 h-3 text-neutral-900')} />
+        <IconClose className={cl('w-3 h-3 text-text-primary')} />
       </button>
 
       <div className={'relative z-20'}>
         <div className={'mb-4 flex items-center justify-between'}>
-          <p className={'font-medium text-neutral-900'}>{notificationTitle}</p>
+          <p className={'font-medium text-text-primary'}>{notificationTitle}</p>
           <NotificationStatus status={notification.status} />
         </div>
 
@@ -352,9 +352,7 @@ export const Notification = memo(function Notification({
 
         {notification.status === 'success' || notification.txHash ? (
           <div
-            className={
-              'mt-4 flex items-center justify-between border-t border-neutral-100 pt-3 text-xs text-neutral-800'
-            }
+            className={'mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-text-primary'}
           >
             <div className={'flex gap-4'}>
               <span className={'font-bold'}>{formattedDate}</span>
@@ -365,7 +363,7 @@ export const Notification = memo(function Notification({
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 aria-label={`View transaction ${notification.txHash} on explorer`}
-                className={'text-neutral-900 hover:text-neutral-600'}
+                className={'text-text-primary hover:text-text-secondary'}
               >
                 <button className={'text-xs font-medium underline'}>{'View tx'}</button>
               </Link>

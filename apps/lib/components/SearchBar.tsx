@@ -64,12 +64,12 @@ export function SearchBar(props: TSearchBar): ReactElement {
   return (
     <div
       className={cl(
-        'flex h-10 items-center gap-2 px-2',
+        'flex h-10 items-center gap-2 px-2 rounded-md',
         props.highlightWhenActive
           ? localSearchValue
-            ? 'bg-neutral-100 border border-neutral-300'
-            : 'border border-neutral-300 bg-neutral-100 focus-within:bg-neutral-100 focus-within:border-neutral-400'
-          : 'border border-neutral-300 bg-neutral-0',
+            ? 'bg-surface-secondary border border-border'
+            : 'border border-border bg-surface-secondary focus-within:bg-surface-secondary focus-within:border-border-hover'
+          : 'border border-border bg-surface',
         props.className
       )}
     >
@@ -79,7 +79,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
           suppressHydrationWarning
           className={cl(
             props.inputClassName,
-            'h-full flex-1 bg-transparent py-2 text-base text-neutral-700 placeholder:text-neutral-400'
+            'h-full flex-1 bg-transparent py-2 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none'
           )}
           type={'text'}
           placeholder={props.searchPlaceholder}
@@ -97,7 +97,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
           }}
         />
         {props.alertContent ? (
-          <div className={'flex shrink-0 items-center gap-2 text-xs text-neutral-700'}>{props.alertContent}</div>
+          <div className={'flex shrink-0 items-center gap-2 text-xs text-text-secondary'}>{props.alertContent}</div>
         ) : null}
         <div
           role={localSearchValue ? 'button' : 'div'}
@@ -111,18 +111,20 @@ export function SearchBar(props: TSearchBar): ReactElement {
           }}
           className={cl(
             props.iconClassName,
-            'flex h-8 w-8 shrink-0 items-center justify-center rounded text-neutral-400 transition-colors',
-            localSearchValue && !props.shouldSearchByClick ? 'cursor-pointer hover:text-neutral-600' : 'cursor-default'
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded text-text-tertiary transition-colors',
+            localSearchValue && !props.shouldSearchByClick
+              ? 'cursor-pointer hover:text-text-secondary'
+              : 'cursor-default'
           )}
         >
           {props.shouldSearchByClick && localSearchValue ? (
-            <div className={'rounded-md border border-gray-500 p-[6px]'}>
+            <div className={'rounded-md border border-text-secondary p-[6px]'}>
               <IconEnter className={'size-3'} />
             </div>
           ) : localSearchValue && !props.shouldSearchByClick ? (
-            <IconCross className={'size-3 text-neutral-600 transition-all hover:text-neutral-500'} />
+            <IconCross className={'size-3 text-text-secondary transition-all hover:text-text-primary'} />
           ) : (
-            <IconSearch className={'size-4 text-neutral-400'} />
+            <IconSearch className={'size-4 text-text-tertiary'} />
           )}
         </div>
       </div>

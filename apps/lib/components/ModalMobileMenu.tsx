@@ -26,13 +26,13 @@ export function FooterNav({ onClose }: { onClose?: () => void }): ReactElement {
   return (
     <div
       className={
-        'flex w-full flex-col space-y-14 rounded-[24px] p-0 md:flex-row md:space-x-14 md:space-y-0 md:bg-[#222222]/50 md:p-[12px]'
+        'flex w-full flex-col space-y-14 rounded-[24px] p-0 md:flex-row md:space-x-14 md:space-y-0 md:bg-surface-tertiary/50 md:p-[12px]'
       }
     >
-      <div className={'flex w-full flex-col space-y-4 rounded-[12px] p-[24px] md:bg-black/30'}>
+      <div className={'flex w-full flex-col space-y-4 rounded-[12px] p-[24px] md:bg-surface-tertiary/30'}>
         {menu.map((link) => (
           <Link
-            className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
+            className={'flex items-center gap-2 text-text-primary transition-colors hover:text-primary'}
             key={link.path}
             target={link.target}
             href={link.path}
@@ -53,28 +53,28 @@ export function FooterNav({ onClose }: { onClose?: () => void }): ReactElement {
           href={'https://discord.com/invite/yearn'}
           target={'_blank'}
           className={
-            'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
+            'flex items-center justify-center rounded-full bg-surface-tertiary/10 p-3 transition-colors hover:bg-surface-tertiary/20'
           }
         >
-          <IconDiscord className={'size-7 text-white'} />
+          <IconDiscord className={'size-7 text-text-primary'} />
         </Link>
         <Link
           href={'https://github.com/yearn'}
           target={'_blank'}
           className={
-            'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
+            'flex items-center justify-center rounded-full bg-surface-tertiary/10 p-3 transition-colors hover:bg-surface-tertiary/20'
           }
         >
-          <LogoGithub className={'size-7 text-white'} />
+          <LogoGithub className={'size-7 text-text-primary'} />
         </Link>
         <Link
           href={'https://x.com/yearnfi'}
           target={'_blank'}
           className={
-            'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
+            'flex items-center justify-center rounded-full bg-surface-tertiary/10 p-3 transition-colors hover:bg-surface-tertiary/20'
           }
         >
-          <IconTwitter className={'size-7 text-white'} />
+          <IconTwitter className={'size-7 text-text-primary'} />
         </Link>
       </div>
     </div>
@@ -112,7 +112,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
             leaveFrom={'opacity-100'}
             leaveTo={'opacity-0'}
           >
-            <div className={'yearn--modal-overlay'} />
+            <div className={'fixed inset-0 bg-modal-overlay backdrop-blur-sm'} />
           </TransitionChild>
 
           <span className={'hidden'} aria-hidden={'true'}>
@@ -128,17 +128,14 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
             leaveTo={'opacity-0 translate-y-full'}
             style={{ width: '100%' }}
           >
-            <div className={'w-full h-full max-w-full flex flex-col bg-neutral-0 overflow-hidden relative z-50'}>
-              <div className={'flex items-center justify-end border-b border-gray-600 p-4 pt-6'}>
-                <button onClick={onClose}>
+            <div className={'w-full h-full max-w-full flex flex-col bg-surface overflow-hidden relative z-50'}>
+              <div className={'flex items-center justify-end border-b border-border p-4 pt-6'}>
+                <button onClick={onClose} className={'text-text-primary'}>
                   <IconClose />
                 </button>
               </div>
               <div
-                style={{
-                  background: 'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
-                }}
-                className={'flex flex-1 w-full flex-col justify-end px-8 pb-20 h-full space-y-8'}
+                className={'flex flex-1 w-full flex-col justify-end px-8 pb-20 h-full space-y-8 bg-surface-secondary'}
               >
                 <div className={'flex flex-col space-y-4'}>{children}</div>
                 <FooterNav onClose={onClose} />

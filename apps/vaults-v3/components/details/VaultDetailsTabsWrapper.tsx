@@ -82,8 +82,8 @@ const Tabs = React.memo(function Tabs({
                 className={cl(
                   'hover-fix tab px-2',
                   selectedAboutTabIndex === tab.value
-                    ? 'text-neutral-900!'
-                    : 'text-neutral-900/50! hover:text-neutral-900!'
+                    ? 'text-text-primary!'
+                    : 'text-text-primary/50! hover:text-text-primary!'
                 )}
               >
                 {tab.label}
@@ -98,7 +98,7 @@ const Tabs = React.memo(function Tabs({
             <>
               <ListboxButton
                 className={
-                  'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 pl-4 font-bold focus:border-neutral-900 md:hidden'
+                  'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-surface-secondary p-0 pl-4 font-bold focus:border-neutral-900 md:hidden'
                 }
               >
                 <div className={'relative flex flex-row items-center'}>
@@ -177,7 +177,9 @@ const AddToWalletLink = React.memo(function AddToWalletLink({
   return (
     <button onClick={handleClick}>
       <span className={'sr-only'}>{'Add to wallet'}</span>
-      <IconAddToMetamask className={'size-5 text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'} />
+      <IconAddToMetamask
+        className={'size-5 text-text-primary/50 transition-colors hover:text-text-primary md:size-6'}
+      />
     </button>
   )
 })
@@ -188,7 +190,7 @@ function VaultDetailsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
   const hasStrategies = Number(currentVault.strategies?.length || 0) > 0
 
   return (
-    <div className={'col-span-12 mt-6 flex flex-col rounded-3xl bg-neutral-100'}>
+    <div className={'col-span-12 mt-6 flex flex-col rounded-3xl bg-surface-secondary'}>
       <div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
         <Tabs
           hasStrategies={hasStrategies}
@@ -206,13 +208,13 @@ function VaultDetailsTabsWrapperComponent({ currentVault }: { currentVault: TYDa
           >
             <span className={'sr-only'}>{'Open in explorer'}</span>
             <IconLinkOut
-              className={'size-5 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'}
+              className={'size-5 cursor-alias text-text-primary/50 transition-colors hover:text-text-primary md:size-6'}
             />
           </a>
         </div>
       </div>
 
-      <div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
+      <div className={'-mt-0.5 h-0.5 w-full bg-surface-tertiary'} />
 
       <Renderable shouldRender={currentVault && selectedAboutTabIndex === 0}>
         <VaultDetailsAbout currentVault={currentVault} />

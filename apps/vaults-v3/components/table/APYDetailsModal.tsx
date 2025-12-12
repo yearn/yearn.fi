@@ -52,24 +52,24 @@ export function APYDetailsModal({ isOpen, onClose, title, children }: TAPYDetail
             >
               <Dialog.Panel
                 className={
-                  'w-full max-w-xl rounded-3xl border border-neutral-200 bg-neutral-0 p-6 text-neutral-900 shadow-lg'
+                  'w-full max-w-xl rounded-3xl border border-border bg-surface p-6 text-text-primary shadow-lg'
                 }
               >
                 <div className={'flex items-start justify-between gap-4'}>
-                  <Dialog.Title className={'text-lg font-semibold text-neutral-900'}>{title}</Dialog.Title>
+                  <Dialog.Title className={'text-lg font-semibold text-text-primary'}>{title}</Dialog.Title>
                   <button
                     type={'button'}
                     onClick={onClose}
                     className={cl(
-                      'inline-flex size-8 items-center justify-center rounded-full border border-transparent text-neutral-500',
-                      'hover:border-neutral-300 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-neutral-300'
+                      'inline-flex size-8 items-center justify-center rounded-full border border-transparent text-text-secondary',
+                      'hover:border-border hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-neutral-300'
                     )}
                     aria-label={'Close APY details'}
                   >
                     <IconClose className={'size-4'} />
                   </button>
                 </div>
-                <div className={'mt-4 text-sm leading-relaxed text-neutral-700'}>{children}</div>
+                <div className={'mt-4 text-sm leading-relaxed text-text-secondary'}>{children}</div>
               </Dialog.Panel>
             </TransitionChild>
           </div>

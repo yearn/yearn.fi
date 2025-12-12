@@ -5,8 +5,8 @@ import {
   type TAllocationChartData,
   useDarkMode
 } from '@lib/components/AllocationChart'
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import { IconChevron } from '@lib/icons/IconChevron'
@@ -71,12 +71,7 @@ export function VaultsV3ListRow({
   }, [isExpanded])
 
   return (
-    <div
-      className={cl(
-        'w-full overflow-hidden border border-transparent transition-colors bg-surface',
-        isExpanded ? 'border-neutral-200' : ''
-      )}
-    >
+    <div className={cl('w-full overflow-hidden transition-colors bg-surface', isExpanded ? 'border-border' : '')}>
       {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
       <div
         role={'link'}
@@ -106,8 +101,8 @@ export function VaultsV3ListRow({
             setIsExpanded((value) => !value)
           }}
           className={cl(
-            'absolute top-4 right-4 z-20 flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-neutral-700 transition-colors duration-150',
-            'hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
+            'absolute top-4 right-4 z-20 flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
+            'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
             'md:top-5 md:right-5'
           )}
         >
@@ -122,11 +117,11 @@ export function VaultsV3ListRow({
             }
           >
             <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
-              <ImageWithFallback
+              <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
                   currentVault.chainID
                 }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
-                alt={currentVault.token.symbol || ''}
+                tokenSymbol={currentVault.token.symbol || ''}
                 width={32}
                 height={32}
               />
@@ -134,14 +129,14 @@ export function VaultsV3ListRow({
             <div className={'truncate'}>
               <strong
                 title={currentVault.name}
-                className={'block truncate font-black text-neutral-800 md:-mb-0.5 text-lg'}
+                className={'block truncate font-black text-text-primary md:-mb-0.5 text-lg'}
               >
                 {currentVault.name}
               </strong>
-              <div className={'flex flex-row items-center gap-1 text-sm text-neutral-800/60'}>
-                <ImageWithFallback
+              <div className={'flex flex-row items-center gap-1 text-sm text-text-primary/60'}>
+                <TokenLogo
                   src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`}
-                  alt={`Chain ${currentVault.chainID}`}
+                  tokenSymbol={getNetwork(currentVault.chainID).name}
                   width={14}
                   height={14}
                 />
@@ -153,25 +148,25 @@ export function VaultsV3ListRow({
         </div>
 
         {/* Desktop metrics grid */}
-        <div className={cl('col-span-15 z-10 gap-4 grid grid-cols-15 mt-4 md:mt-0')}>
+        <div className={cl('col-span-15 z-10 gap-4 grid-cols-15 mt-4 md:mt-0 md:grid hidden')}>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
+            <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Estimated APY'}</p>
             <VaultForwardAPY currentVault={currentVault} />
           </div>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Historical APY'}</p>
+            <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Historical APY'}</p>
             <VaultHistoricalAPY currentVault={currentVault} />
           </div>
           <div className={'col-span-3'}>
             <VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
           </div>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
+            <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Deposited'}</p>
             <VaultStakedAmount currentVault={currentVault} />
           </div>
           {/* TVL */}
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
+            <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'TVL'}</p>
             <div className={'flex flex-col pt-0 text-right'}>
               <p className={'yearn--table-data-section-item-value'}>
                 <RenderAmount
@@ -185,7 +180,7 @@ export function VaultsV3ListRow({
                   }}
                 />
               </p>
-              <small className={'text-xs flex flex-row text-neutral-900/40'}>
+              <small className={'text-xs flex flex-row text-text-primary/40'}>
                 <RenderAmount
                   value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
                   symbol={''}
@@ -213,14 +208,14 @@ export function VaultsV3ListRow({
         >
           {flags?.hasHoldings ? (
             <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-              <p className={'inline text-start text-dm text-neutral-800'}>{'Your Deposit'}</p>
+              <p className={'inline text-start text-dm text-text-primary'}>{'Your Deposit'}</p>
               <VaultStakedAmount currentVault={currentVault} />
             </div>
           ) : null}
           <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
             <div className={'w-full flex flex-col items-start'}>
               <div className={'flex w-full flex-row items-center justify-between'}>
-                <p className={'inline text-start text-dm text-neutral-800'}>{'Estimated APY'}</p>
+                <p className={'inline text-start text-dm text-text-primary'}>{'Estimated APY'}</p>
                 <VaultForwardAPY currentVault={currentVault} onMobileToggle={(): void => setIsApyOpen((v) => !v)} />
               </div>
               {isApyOpen ? (
@@ -231,11 +226,11 @@ export function VaultsV3ListRow({
             </div>
           </div>
           <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-            <p className={'inline text-start text-dm text-neutral-800'}>{'Historical APY'}</p>
+            <p className={'inline text-start text-dm text-text-primary'}>{'Historical APY'}</p>
             <VaultHistoricalAPY currentVault={currentVault} />
           </div>
           <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-            <p className={'inline text-start text-dm text-neutral-800'}>{'TVL'}</p>
+            <p className={'inline text-start text-dm text-text-primary'}>{'TVL'}</p>
             <div className={'flex flex-col pt-0 text-right'}>
               <p className={'yearn--table-data-section-item-value'}>
                 <RenderAmount
@@ -249,7 +244,7 @@ export function VaultsV3ListRow({
                   }}
                 />
               </p>
-              <small className={'text-xs flex flex-row text-neutral-900/40'}>
+              <small className={'text-xs flex flex-row text-text-primary/40'}>
                 <RenderAmount
                   value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
                   symbol={''}
@@ -282,8 +277,8 @@ export function VaultsV3ListRow({
       </div>
 
       {isExpanded ? (
-        <div className={'border-t border-neutral-200 bg-surface'}>
-          <div className={'flex flex-wrap gap-2 px-6'}>
+        <div className={'border-t border-border bg-surface'}>
+          <div className={'flex flex-wrap gap-2 px-6 pt-4'}>
             <div className={'flex items-center gap-1 rounded-lg bg-app p-1'}>
               {EXPANDED_TABS.map((tab) => (
                 <button
@@ -292,8 +287,8 @@ export function VaultsV3ListRow({
                   className={cl(
                     'rounded-lg px-4 py-1 text-xs font-semibold tracking-wide transition-colors',
                     activeExpandedTab === tab.id
-                      ? 'bg-surface text-neutral-800'
-                      : 'bg-transparent text-neutral-500 hover:text-neutral-700'
+                      ? 'bg-surface text-text-primary'
+                      : 'bg-transparent text-text-secondary hover:text-text-secondary'
                   )}
                   onClick={(): void => setActiveExpandedTab(tab.id)}
                 >
@@ -307,12 +302,12 @@ export function VaultsV3ListRow({
               <VaultChartsSection chainId={currentVault.chainID} vaultAddress={currentVault.address} />
             ) : null}
             {activeExpandedTab === 'strategies' ? (
-              <div className={'border border-neutral-200 bg-surface p-4 md:p-6'}>
+              <div className={'border border-border bg-surface p-4 md:p-6'}>
                 <VaultStrategyAllocationPreview currentVault={currentVault} />
               </div>
             ) : null}
             {activeExpandedTab === 'info' ? (
-              <div className={'border border-neutral-200 bg-surface'}>
+              <div className={'border border-border bg-surface'}>
                 <VaultAboutSection currentVault={currentVault} />
               </div>
             ) : null}
@@ -425,7 +420,7 @@ function VaultStrategyAllocationPreview({ currentVault }: { currentVault: TYDaem
   const legendColors = useMemo(() => (isDark ? DARK_MODE_COLORS : LIGHT_MODE_COLORS), [isDark])
 
   if (allocationChartData.length === 0) {
-    return <div className={'text-sm text-neutral-600'}>{'No strategy allocation data available.'}</div>
+    return <div className={'text-sm text-text-secondary'}>{'No strategy allocation data available.'}</div>
   }
 
   return (
@@ -442,17 +437,17 @@ function VaultStrategyAllocationPreview({ currentVault }: { currentVault: TYDaem
                 }}
               />
               <div className={'flex flex-col'}>
-                <span className={'text-sm text-neutral-900'}>{item.name}</span>
-                <span className={'text-xs text-neutral-600'}>{item.amount}</span>
+                <span className={'text-sm text-text-primary'}>{item.name}</span>
+                <span className={'text-xs text-text-secondary'}>{item.amount}</span>
               </div>
             </div>
           ))}
           {unallocatedData ? (
             <div className={'flex flex-row items-center gap-3'}>
-              <div className={'h-3 w-3 rounded-sm bg-neutral-300'} />
+              <div className={'h-3 w-3 rounded-sm bg-surface-tertiary'} />
               <div className={'flex flex-col'}>
-                <span className={'text-sm text-neutral-600'}>{'Unallocated'}</span>
-                <span className={'text-xs text-neutral-500'}>{unallocatedData.amount}</span>
+                <span className={'text-sm text-text-secondary'}>{'Unallocated'}</span>
+                <span className={'text-xs text-text-secondary'}>{unallocatedData.amount}</span>
               </div>
             </div>
           ) : null}
