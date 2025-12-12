@@ -40,14 +40,16 @@ type ExpandedTabId = (typeof EXPANDED_TABS)[number]['id']
 
 export function VaultsV3ListRow({
   currentVault,
-  flags
+  flags,
+  hrefOverride
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
+  hrefOverride?: string
 }): ReactElement {
   const navigate = useNavigate()
   // const availableToDeposit = useAvailableToDeposit(currentVault)
-  const href = `/vaults-beta/${currentVault.chainID}/${toAddress(currentVault.address)}`
+  const href = hrefOverride ?? `/vaults-beta/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const [isApyOpen, setIsApyOpen] = useState(false)
   const [isRiskOpen, setIsRiskOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)

@@ -1,7 +1,5 @@
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import { cl } from '@lib/utils'
-import type { CSSProperties, ReactElement } from 'react'
-import { useRef, useState } from 'react'
 import { DiscoverCard } from '@new-landing/components/DiscoverCard'
 import { FAQs } from '@new-landing/components/FAQs'
 import { HeroCard } from '@new-landing/components/HeroCard'
@@ -11,6 +9,8 @@ import { PortfolioCard } from '@new-landing/components/PortfolioCard'
 import { Security } from '@new-landing/components/Security'
 import { ExploreOurVaults } from '@new-landing/components/V3SecondaryCard'
 import { VaultInfo } from '@new-landing/components/VaultInfo'
+import type { CSSProperties, ReactElement } from 'react'
+import { useRef, useState } from 'react'
 
 const LEARN_MORE_SECTIONS = [
   { key: 'vaultInfo', Component: VaultInfo, rowSpan: 6 },
