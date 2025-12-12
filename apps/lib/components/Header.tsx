@@ -8,8 +8,8 @@ import { IconWallet } from '@lib/icons/IconWallet'
 import { cl } from '@lib/utils'
 import { truncateHex } from '@lib/utils/tools.address'
 import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
-import type { CSSProperties, ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { ReactElement } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
@@ -143,7 +143,6 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
   const pathname = location.pathname
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
   const { setShouldOpenCurtain, notificationStatus } = useNotifications()
-  const [surfaceBackground, setSurfaceBackground] = useState<string | undefined>(undefined)
 
   const menu = useMemo((): TMenu[] => {
     // const HOME_MENU = { path: '/apps', label: 'Apps' }
@@ -196,50 +195,10 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     return ''
   }, [notificationStatus])
 
-  const updateSurfaceBackground = useCallback((): void => {
-    const value = getComputedStyle(document.documentElement).getPropertyValue('--color-app').trim()
-    setSurfaceBackground(value || undefined)
-  }, [])
-
-  useEffect(() => {
-    updateSurfaceBackground()
-
-    const observer = new MutationObserver(() => updateSurfaceBackground())
-
-    // Observe document root for theme/class changes
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class', 'data-theme']
-    })
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    })
-
-    return () => observer.disconnect()
-  }, [updateSurfaceBackground])
-
-  useEffect(() => {
-    updateSurfaceBackground()
-    void pathname
-  }, [updateSurfaceBackground, pathname])
-
   const isHomePage = window.location.pathname === '/'
 
   return (
-    <div
-      id={'head'}
-      className={'sticky inset-x-0 top-0 z-50 w-full bg-app backdrop-blur-md'}
-      style={
-        surfaceBackground
-          ? ({
-              backgroundColor: surfaceBackground,
-              '--surface-background': surfaceBackground
-            } as CSSProperties & { '--surface-background': string })
-          : undefined
-      }
-    >
+    <div id={'head'} className={'sticky inset-x-0 top-0 z-50 w-full bg-app backdrop-blur-md'}>
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         <header className={'w-full px-0 flex items-center justify-between h-[var(--header-height)]'}>
           <div className={'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'}>
