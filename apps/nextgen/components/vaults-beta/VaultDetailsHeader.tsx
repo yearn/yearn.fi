@@ -1,7 +1,7 @@
 import { Dialog, Transition } from '@headlessui/react'
 import { Counter } from '@lib/components/Counter'
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
@@ -650,9 +650,9 @@ export function VaultDetailsHeader({
                 isCompressed ? 'size-8' : 'size-10'
               )}
             >
-              <ImageWithFallback
+              <TokenLogo
                 src={tokenLogoSrc}
-                alt={currentVault.token.symbol || ''}
+                tokenSymbol={currentVault.token.symbol || ''}
                 width={isCompressed ? 32 : 40}
                 height={isCompressed ? 32 : 40}
               />
@@ -674,10 +674,10 @@ export function VaultDetailsHeader({
             type={'button'}
             onClick={(): void => copyToClipboard(currentVault.address)}
             className={
-              'flex items-center gap-2 text-left text-xs font-number text-text-primary/70 transition-colors hover:text-text-primary md:text-sm'
+              'flex w-fit items-center gap-2 text-left text-xs font-number text-text-primary/70 transition-colors hover:text-text-primary md:text-sm'
             }
           >
-            <span className={cl(isCompressed ? 'flex-1 max-w-[260px] truncate whitespace-nowrap' : 'break-all')}>
+            <span className={cl(isCompressed ? 'max-w-[260px] truncate whitespace-nowrap' : 'break-all')}>
               {displayAddress}
             </span>
             <IconCopy className={'size-4 shrink-0'} />

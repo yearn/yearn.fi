@@ -241,7 +241,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
       }
     >
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-        <header className={'w-full px-0 pb-4 flex items-center justify-between'}>
+        <header className={'w-full px-0 flex items-center justify-between h-[var(--header-height)]'}>
           <div className={'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'}>
             <div className={'flex justify-center'}>
               <LaunchModal />

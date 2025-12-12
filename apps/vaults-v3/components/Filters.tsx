@@ -425,7 +425,7 @@ function FilterControls({
     <div className={'flex flex-col gap-4'}>
       <div>
         <div className={'flex flex-col gap-2'}>
-          <div className={'flex w-full flex-nowrap justify-between items-center gap-3'}>
+          <div className={'flex w-full flex-wrap justify-between items-center gap-3'}>
             <div
               className={
                 'flex shrink-0 flex-wrap items-center gap-px rounded-md border h-10 py-1 px-1.5 bg-surface-secondary border-border text-sm text-text-primary'

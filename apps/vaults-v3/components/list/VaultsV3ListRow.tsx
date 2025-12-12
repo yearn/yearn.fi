@@ -5,8 +5,8 @@ import {
   type TAllocationChartData,
   useDarkMode
 } from '@lib/components/AllocationChart'
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import { IconChevron } from '@lib/icons/IconChevron'
@@ -117,11 +117,11 @@ export function VaultsV3ListRow({
             }
           >
             <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
-              <ImageWithFallback
+              <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
                   currentVault.chainID
                 }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
-                alt={currentVault.token.symbol || ''}
+                tokenSymbol={currentVault.token.symbol || ''}
                 width={32}
                 height={32}
               />
@@ -134,9 +134,9 @@ export function VaultsV3ListRow({
                 {currentVault.name}
               </strong>
               <div className={'flex flex-row items-center gap-1 text-sm text-text-primary/60'}>
-                <ImageWithFallback
+                <TokenLogo
                   src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`}
-                  alt={`Chain ${currentVault.chainID}`}
+                  tokenSymbol={getNetwork(currentVault.chainID).name}
                   width={14}
                   height={14}
                 />
@@ -148,7 +148,7 @@ export function VaultsV3ListRow({
         </div>
 
         {/* Desktop metrics grid */}
-        <div className={cl('col-span-15 z-10 gap-4 grid grid-cols-15 mt-4 md:mt-0')}>
+        <div className={cl('col-span-15 z-10 gap-4 grid-cols-15 mt-4 md:mt-0 md:grid hidden')}>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Estimated APY'}</p>
             <VaultForwardAPY currentVault={currentVault} />

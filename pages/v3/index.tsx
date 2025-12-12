@@ -305,7 +305,7 @@ function ListOfVaults({
   const suggestedVaultsElement = <TrendingVaults suggestedVaults={suggestedVaults} />
 
   const breadcrumbsElement = (
-    <div className={'mb-3 mt-2 px-4 flex items-center gap-2 text-sm text-text-secondary'}>
+    <div className={'mb-3 mt-2 flex items-center gap-2 text-sm text-text-secondary'}>
       <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
         {'Home'}
       </Link>
@@ -438,9 +438,9 @@ function Index(): ReactElement {
   })
 
   return (
-    <div className={'h-[calc(100vh-var(--header-height))] w-full overflow-hidden bg-app'}>
+    <div className={'h-[calc(100vh-var(--header-height))] w-full overflow-hidden bg-app max-w-[1232px] mx-auto'}>
       <div
-        className={'relative z-50 mx-auto flex w-full max-w-[1232px] flex-col gap-4 bg-transparent pb-4 md:gap-3'}
+        className={'relative z-50 flex w-full flex-col gap-4 bg-transparent md:gap-3 pb-4 px-4'}
         style={{
           height: 'calc(100vh - var(--header-height))'
         }}

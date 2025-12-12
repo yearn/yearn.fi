@@ -1,6 +1,6 @@
 import Link from '@components/Link'
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { RenderAmount } from '@lib/components/RenderAmount'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { toAddress } from '@lib/utils'
 import { formatPercent } from '@lib/utils/format'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -65,7 +65,7 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
     >
       <div className={'flex items-center gap-3'}>
         <div className={'shrink-0'}>
-          <ImageWithFallback src={tokenIcon} alt={vault.token.symbol || ''} width={36} height={36} />
+          <TokenLogo src={tokenIcon} tokenSymbol={vault.token.symbol || ''} width={36} height={36} />
         </div>
         <div className={'flex flex-col'}>
           <p className={'text-base font-semibold text-text-primary'}>{vault.name}</p>
