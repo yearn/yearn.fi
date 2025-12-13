@@ -49,7 +49,7 @@ type TVaultHoldingsData = {
   earnedValue: number
 }
 
-const METRIC_VALUE_CLASS = 'font-number text-[20px] leading-tight md:text-[22px] font-normal'
+const METRIC_VALUE_CLASS = 'font-semibold text-[20px] leading-tight md:text-[22px]'
 const METRIC_FOOTNOTE_CLASS = 'text-xs text-text-secondary'
 
 type TMetricBlock = {
@@ -153,11 +153,8 @@ function MetricsCard({
                 index < items.length - 1 ? 'md:border-r md:border-border' : ''
               )}
             >
-              <div className={'flex items-center justify-between'}>
-                {item.header}
-                {item.secondaryLabel ?? <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>}
-              </div>
-              <div className={'[&_b.yearn--table-data-section-item-value]:text-left'}>{item.value}</div>
+              <div className={'flex items-center justify-between'}>{item.header}</div>
+              <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{item.value}</div>
               {item.footnote && !hideFootnotes ? <div>{item.footnote}</div> : null}
             </div>
           )
@@ -172,7 +169,7 @@ function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): 
 
   return (
     <>
-      <p className={'flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-text-secondary'}>
+      <p className={'flex items-center gap-1 text-xs font-normal uppercase tracking-wide text-text-secondary'}>
         <span>{label}</span>
         {tooltip ? (
           <button
@@ -180,7 +177,7 @@ function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): 
             onClick={(): void => setIsModalOpen(true)}
             aria-label={`Learn more about ${label}`}
             className={
-              'inline-flex size-4 items-center justify-center rounded-full border bg-surface border-border text-[10px] font-semibold text-text-secondary transition-colors hover:border-neutral-500 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300'
+              'inline-flex size-4 items-center justify-center rounded-full border bg-surface border-border text-[10px] font-normal text-text-secondary transition-colors hover:border-neutral-500 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300'
             }
           >
             <span className={'leading-none'}>{'i'}</span>
@@ -209,7 +206,6 @@ function VaultOverviewCard({
     {
       key: 'est-apy',
       header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY for the next period'} />,
-      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
       value: (
         <VaultForwardAPY
           currentVault={currentVault}
@@ -222,7 +218,6 @@ function VaultOverviewCard({
     {
       key: 'historical-apy',
       header: <MetricHeader label={'30 Day APY'} tooltip={'Average realized APY over the previous 30 days'} />,
-      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
       value: (
         <VaultHistoricalAPY
           currentVault={currentVault}
@@ -234,7 +229,6 @@ function VaultOverviewCard({
     {
       key: 'tvl',
       header: <MetricHeader label={'TVL'} tooltip={'Total value currently deposited into this vault'} />,
-      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
       value: (
         <span className={METRIC_VALUE_CLASS}>
           <RenderAmount
