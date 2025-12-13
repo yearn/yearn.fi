@@ -7,7 +7,7 @@ import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 
-export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+export function VaultHoldingsAmount({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { getToken } = useWallet()
   const { getPrice } = useYearn()
 
@@ -53,7 +53,7 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
       <small className={cl('text-xs text-text-primary/40 flex flex-row', hasBalance ? 'visible' : 'invisible')}>
         <RenderAmount
           shouldFormatDust
-          value={isDusty ? 0 : staked.normalized}
+          value={isDusty ? 0 : staked.normalized * currentVault.apr.pricePerShare.today}
           symbol={currentVault.token.symbol}
           decimals={currentVault.token.decimals}
           options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}

@@ -7,7 +7,7 @@ import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import type { FC } from 'react'
 import { useMemo } from 'react'
 
-export const VaultStakedAmount: FC<{ currentVault: TYDaemonVault }> = ({ currentVault }) => {
+export const VaultHoldingsAmount: FC<{ currentVault: TYDaemonVault }> = ({ currentVault }) => {
   const { getToken } = useWallet()
   const { getPrice } = useYearn()
 
