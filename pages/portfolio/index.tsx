@@ -164,7 +164,7 @@ function PortfolioPage(): ReactElement {
                     label: 'Vault / Featuring Score',
                     value: 'featuringScore',
                     sortable: true,
-                    className: 'col-span-9'
+                    className: 'col-span-10'
                   },
                   {
                     type: 'sort',
@@ -175,22 +175,8 @@ function PortfolioPage(): ReactElement {
                   },
                   {
                     type: 'sort',
-                    label: 'Hist. APY',
+                    label: '30D. APY',
                     value: 'APY',
-                    sortable: true,
-                    className: 'col-span-3'
-                  },
-                  {
-                    type: 'sort',
-                    label: 'Risk Level',
-                    value: 'score',
-                    sortable: true,
-                    className: 'col-span-3 whitespace-nowrap'
-                  },
-                  {
-                    type: 'sort',
-                    label: 'Your Deposit',
-                    value: 'deposited',
                     sortable: true,
                     className: 'col-span-3'
                   },
@@ -199,7 +185,14 @@ function PortfolioPage(): ReactElement {
                     label: 'TVL',
                     value: 'tvl',
                     sortable: true,
-                    className: 'col-span-3 justify-end'
+                    className: 'col-span-4 '
+                  },
+                  {
+                    type: 'sort',
+                    label: 'Your Holdings',
+                    value: 'deposited',
+                    sortable: true,
+                    className: 'col-span-4 justify-end'
                   }
                 ]}
               />

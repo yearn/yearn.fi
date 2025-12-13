@@ -17,8 +17,8 @@ import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSec
 import { VaultChartsSection } from '@nextgen/components/vaults-beta/VaultChartsSection'
 import { VaultForwardAPY, VaultForwardAPYInlineDetails } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
+import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
 import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
-import { VaultStakedAmount } from '@vaults-v3/components/table/VaultStakedAmount'
 // import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
@@ -110,7 +110,7 @@ export function VaultsV3ListRow({
         </button>
 
         {/* TODO:on hover add list head categories */}
-        <div className={cl('col-span-9 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
+        <div className={cl('col-span-10 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
           <div
             className={
               'flex flex-row-reverse sm:flex-row w-full justify-between sm:justify-normal gap-4 overflow-hidden'
@@ -148,25 +148,15 @@ export function VaultsV3ListRow({
         </div>
 
         {/* Desktop metrics grid */}
-        <div className={cl('col-span-15 z-10 gap-4 grid-cols-15 mt-4 md:mt-0 md:grid hidden')}>
+        <div className={cl('col-span-14 z-10 gap-4 mt-4', 'md:mt-0 md:grid md:grid-cols-14')}>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Estimated APY'}</p>
             <VaultForwardAPY currentVault={currentVault} />
           </div>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Historical APY'}</p>
             <VaultHistoricalAPY currentVault={currentVault} />
           </div>
-          <div className={'col-span-3'}>
-            <VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
-          </div>
-          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Deposited'}</p>
-            <VaultStakedAmount currentVault={currentVault} />
-          </div>
           {/* TVL */}
-          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'TVL'}</p>
+          <div className={'yearn--table-data-section-item col-span-4'} datatype={'number'}>
             <div className={'flex flex-col pt-0 text-right'}>
               <p className={'yearn--table-data-section-item-value'}>
                 <RenderAmount
@@ -196,6 +186,30 @@ export function VaultsV3ListRow({
               </small>
             </div>
           </div>
+          {/* <div className={'col-span-3'}>
+            <VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
+          </div> */}
+          {/* Available to deposit */}
+          {/* <div className={'yearn--table-data-section-item col-span-3 flex-row md:flex-col'} datatype={'number'}>
+            <p
+              className={`yearn--table-data-section-item-value ${isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'}`}
+            >
+              <RenderAmount
+                value={Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized)}
+                symbol={currentVault.token.symbol}
+                decimals={currentVault.token.decimals}
+                shouldFormatDust
+                options={{
+                  shouldDisplaySymbol: false,
+                  maximumFractionDigits:
+                    Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized) > 1000 ? 2 : 4
+                }}
+              />
+            </p>
+          </div> */}
+          <div className={'yearn--table-data-section-item col-span-4'} datatype={'number'}>
+            <VaultHoldingsAmount currentVault={currentVault} />
+          </div>
         </div>
 
         {/* Mobile metrics grid; conditionally show Deposited if user has holdings */}
@@ -209,7 +223,7 @@ export function VaultsV3ListRow({
           {flags?.hasHoldings ? (
             <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
               <p className={'inline text-start text-dm text-text-primary'}>{'Your Deposit'}</p>
-              <VaultStakedAmount currentVault={currentVault} />
+              <VaultHoldingsAmount currentVault={currentVault} />
             </div>
           ) : null}
           <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
