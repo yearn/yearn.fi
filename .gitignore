@@ -45,6 +45,9 @@ AGENTS.md
 
 # playwright
 .playwright-mcp
+.env.e2e
+test-results/
+playwright-report/
 
 # local worktree clones
 yearn.fi-worktree-*
