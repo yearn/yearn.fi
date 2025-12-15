@@ -100,7 +100,8 @@ function WalletSelector(): ReactElement {
   )
 
   return (
-    <div
+    <button
+      data-testid="connect-wallet-button"
       onClick={(): void => {
         if (isActive && !isNetworkMismatch) {
           openAccountModal?.()
@@ -134,7 +135,7 @@ function WalletSelector(): ReactElement {
           </span>
         )}
       </p>
-    </div>
+    </button>
   )
 }
 

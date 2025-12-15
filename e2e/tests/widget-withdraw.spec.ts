@@ -1,7 +1,7 @@
-import { test, expect } from '../fixtures/synpress'
+import { expect, test } from '../fixtures/synpress'
 import { TEST_VAULT } from '../fixtures/test-vault'
-import { checkBalance, logBalances } from '../helpers/wallet'
 import { navigateToVault, switchToWithdrawTab } from '../helpers/navigation'
+import { checkBalance, logBalances } from '../helpers/wallet'
 import { clickPercentageButton } from '../helpers/widget-interactions'
 
 test.describe('Widget Withdraw', () => {
@@ -72,10 +72,7 @@ test.describe('Widget Withdraw', () => {
     await page.fill('input[placeholder="0.00"]', '5')
 
     // 9. Wait for Enso route calculation
-    await page.waitForSelector(
-      'button:not(:has-text("Finding route...")):has-text("Approve")',
-      { timeout: 30000 }
-    )
+    await page.waitForSelector('button:not(:has-text("Finding route...")):has-text("Approve")', { timeout: 30000 })
 
     // 10. Approve vault shares
     const approveButton = page.locator('button:has-text("Approve")')

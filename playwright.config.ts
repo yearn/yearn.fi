@@ -6,7 +6,7 @@ export default defineConfig({
   retries: 1, // Retry once on failure (network issues)
 
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:3002',
     headless: false, // Metamask requires headed mode
     viewport: { width: 1280, height: 720 },
     video: 'retain-on-failure',
@@ -24,8 +24,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npm run dev',
-    port: 5173,
+    command: 'bun run dev --port 3002',
+    port: 3002,
     reuseExistingServer: true,
     timeout: 120000
   }

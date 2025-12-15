@@ -48,6 +48,7 @@ AGENTS.md
 .env.e2e
 test-results/
 playwright-report/
+.cache-synpress/
 
 # local worktree clones
 yearn.fi-worktree-*

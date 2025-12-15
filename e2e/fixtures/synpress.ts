@@ -1,37 +1,16 @@
-import { expect } from '@playwright/test'
-import { defineWalletSetup } from '@synthetixio/synpress'
-import { metaMaskFixtures } from '@synthetixio/synpress/playwright'
-import * as dotenv from 'dotenv'
+import { testWithSynpress } from '@synthetixio/synpress'
+import { MetaMask, metaMaskFixtures } from '@synthetixio/synpress/playwright'
+import basicSetup from '../wallet-setup/basic.setup'
 
-// Load .env.e2e
-dotenv.config({ path: '.env.e2e' })
+// Create the base test with MetaMask fixtures
+const baseTest = testWithSynpress(metaMaskFixtures(basicSetup))
 
-const privateKey = process.env.E2E_PRIVATE_KEY
-if (!privateKey) {
-  throw new Error(
-    'E2E_PRIVATE_KEY environment variable not set. ' +
-    'Please create .env.e2e file with test wallet private key.'
-  )
-}
-
-if (privateKey === '0x0000000000000000000000000000000000000000000000000000000000000000') {
-  throw new Error(
-    'Please replace E2E_PRIVATE_KEY in .env.e2e with actual test wallet private key'
-  )
-}
-
-// Define wallet setup using private key
-const walletSetup = defineWalletSetup('Test123!', async (context, walletPage) => {
-  const metamask = new (await import('@synthetixio/synpress/playwright')).MetaMask(
-    context,
-    walletPage,
-    'Test123!'
-  )
-
-  await metamask.importWalletFromPrivateKey(privateKey)
+// Extend with a convenient metamask helper
+export const test = baseTest.extend<{ metamask: MetaMask }>({
+  metamask: async ({ context, metamaskPage, extensionId }, use) => {
+    const metamask = new MetaMask(context, metamaskPage, basicSetup.walletPassword, extensionId)
+    await use(metamask)
+  }
 })
 
-// Create test with MetaMask fixtures
-export const test = metaMaskFixtures(walletSetup)
-
-export { expect }
+export { expect } from '@playwright/test'

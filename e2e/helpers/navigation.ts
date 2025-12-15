@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 
 export async function navigateToVault(page: Page, vaultAddress: string) {
-  await page.goto(`/vaults/${vaultAddress}`)
+  await page.goto(`/vaults-beta/${vaultAddress}`)
 
   // Wait for page to load
   await page.waitForLoadState('networkidle')
