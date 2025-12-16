@@ -134,9 +134,9 @@ function VaultVersionSwitch(): ReactElement {
   const searchParams = new URLSearchParams(location.search)
   const typeParam = searchParams.get('type')
 
-  const isOnVaultsPage = pathname.startsWith('/vaults')
-  const isV2Active = isOnVaultsPage && typeParam === 'v2'
-  const isV3Active = isOnVaultsPage && typeParam !== 'v2'
+  const isOnVaultsPage = pathname === '/vaults'
+  const isV2Active = isOnVaultsPage && typeParam === 'factory'
+  const isV3Active = isOnVaultsPage && typeParam !== 'factory'
 
   return (
     <div
@@ -167,10 +167,10 @@ function VaultVersionSwitch(): ReactElement {
           'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
         )}
         data-active={isV2Active}
-        onClick={(): void => void navigate('/vaults?type=v2')}
+        onClick={(): void => void navigate('/vaults?type=factory')}
         aria-pressed={isV2Active}
       >
-        {'V2'}
+        {'Factory'}
       </button>
     </div>
   )
@@ -322,11 +322,11 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
           <span className={'text-[32px] font-bold'}>{'V3 Vaults'}</span>
         </Link>
         <Link
-          href={'/vaults?type=v2'}
+          href={'/vaults?type=factory'}
           className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
           onClick={(): void => setIsMenuOpen(false)}
         >
-          <span className={'text-[32px] font-bold'}>{'V2 Vaults'}</span>
+          <span className={'text-[32px] font-bold'}>{'Factory Vaults'}</span>
         </Link>
         <Link
           href={'/portfolio'}

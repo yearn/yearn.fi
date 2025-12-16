@@ -27,12 +27,12 @@ import { useSearchParams } from 'react-router'
 const AVAILABLE_TOGGLE_VALUE = 'available'
 const HOLDINGS_TOGGLE_VALUE = 'holdings'
 
-type TVaultType = 'v2' | 'v3'
+type TVaultType = 'factory' | 'v3'
 
 function useVaultType(): TVaultType {
   const [searchParams] = useSearchParams()
   const type = searchParams.get('type')
-  return type === 'v2' ? 'v2' : 'v3'
+  return type === 'factory' ? 'factory' : 'v3'
 }
 
 type TListOfVaultsProps = {
@@ -328,7 +328,7 @@ function ListOfVaults({
         {'Vaults'}
       </Link>
       <span>{'>'}</span>
-      <span className={'font-medium text-text-primary'}>{vaultType === 'v3' ? 'V3' : 'V2'}</span>
+      <span className={'font-medium text-text-primary'}>{vaultType === 'v3' ? 'V3' : 'Factory'}</span>
     </div>
   )
 
