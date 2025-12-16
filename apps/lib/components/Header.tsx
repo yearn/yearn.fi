@@ -10,7 +10,7 @@ import { truncateHex } from '@lib/utils/tools.address'
 import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
 import { TypeMarkYearn as TypeMarkYearnText } from '../icons/TypeMarkYearn-text-only'
@@ -23,17 +23,6 @@ export type TMenu = {
   target?: string
 }
 type TNavbar = { nav: TMenu[]; currentPathName: string }
-
-type TPrimaryLink = TMenu & { matchers?: string[] }
-
-const PRIMARY_LINKS: TPrimaryLink[] = [
-  {
-    path: '/v3',
-    label: 'Vaults',
-    matchers: ['/v3', '/vaults', '/vaults-beta']
-  },
-  { path: '/portfolio', label: 'Portfolio' }
-]
 
 function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
   return (
@@ -139,6 +128,55 @@ function WalletSelector(): ReactElement {
   )
 }
 
+function VaultVersionSwitch(): ReactElement {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const pathname = location.pathname
+  const searchParams = new URLSearchParams(location.search)
+  const typeParam = searchParams.get('type')
+
+  const isOnVaultsPage = pathname.startsWith('/vaults')
+  const isV2Active = isOnVaultsPage && typeParam === 'v2'
+  const isV3Active = isOnVaultsPage && typeParam !== 'v2'
+
+  return (
+    <div
+      className={
+        'flex shrink-0 items-center gap-px rounded-full border h-7 py-0.5 px-0.5 bg-surface-secondary border-border text-xs'
+      }
+    >
+      <button
+        type={'button'}
+        className={cl(
+          'flex items-center rounded-full px-2.5 py-0.5 font-medium transition-all',
+          'hover:bg-surface/70',
+          'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100',
+          'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
+        )}
+        data-active={isV3Active}
+        onClick={(): void => void navigate('/vaults')}
+        aria-pressed={isV3Active}
+      >
+        {'V3'}
+      </button>
+      <button
+        type={'button'}
+        className={cl(
+          'flex items-center rounded-full px-2.5 py-0.5 font-medium transition-all',
+          'hover:bg-surface/70',
+          'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100',
+          'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
+        )}
+        data-active={isV2Active}
+        onClick={(): void => void navigate('/vaults?type=v2')}
+        aria-pressed={isV2Active}
+      >
+        {'V2'}
+      </button>
+    </div>
+  )
+}
+
 function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
   const location = useLocation()
   const pathname = location.pathname
@@ -156,7 +194,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     //   return [...APPS[AppName.VAULTSV3].menu]
     // }
 
-    // if (pathname.startsWith('/vaults-beta')) {
+    // if (pathname.startsWith('/vaults')) {
     //   return [...APPS[AppName.BETA].menu]
     // }
 
@@ -209,26 +247,40 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
             <div className={'flex items-center gap-2 md:gap-4'}>
               <TypeMarkYearnText className={'yearn-typemark h-8 w-auto text-text-primary'} />
               {/* <TypeMarkYearnFull className={'yearn-typemark hidden h-8 w-auto md:block'} color={'currentColor'} /> */}
-              <div className={'hidden md:flex items-center gap-4 pb-0.5'}>
-                {PRIMARY_LINKS.map((link) => {
-                  const isActive =
-                    link.matchers?.some((matcher) =>
-                      matcher === '/' ? pathname === '/' : pathname.startsWith(matcher)
-                    ) ?? pathname.startsWith(link.path)
+              <div className={'hidden md:flex items-center gap-3 pb-0.5'}>
+                {/* Vaults section with version switch */}
+                <div className={'flex items-center gap-2'}>
+                  <Link href={'/vaults'}>
+                    <span
+                      className={cl(
+                        'cursor-pointer text-lg font-medium transition-colors relative',
+                        pathname.startsWith('/vaults')
+                          ? 'text-text-primary'
+                          : 'text-text-secondary hover:text-text-primary'
+                      )}
+                    >
+                      {'Vaults'}
+                    </span>
+                  </Link>
+                  <VaultVersionSwitch />
+                </div>
 
-                  return (
-                    <Link key={link.path} href={link.path}>
-                      <span
-                        className={cl(
-                          'cursor-pointer text-lg font-medium transition-colors relative',
-                          isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'
-                        )}
-                      >
-                        {link.label}
-                      </span>
-                    </Link>
-                  )
-                })}
+                {/* Separator */}
+                <div className={'h-6 w-px bg-text-primary/20'} />
+
+                {/* Portfolio link */}
+                <Link href={'/portfolio'}>
+                  <span
+                    className={cl(
+                      'cursor-pointer text-lg font-medium transition-colors relative',
+                      pathname.startsWith('/portfolio')
+                        ? 'text-text-primary'
+                        : 'text-text-secondary hover:text-text-primary'
+                    )}
+                  >
+                    {'Portfolio'}
+                  </span>
+                </Link>
               </div>
             </div>
           </div>
@@ -263,18 +315,27 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
         onClose={(): void => setIsMenuOpen(false)}
         supportedNetworks={props.supportedNetworks}
       >
-        {PRIMARY_LINKS.map(
-          (option): ReactElement => (
-            <Link
-              key={option.path}
-              href={option.path}
-              className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
-              onClick={(): void => setIsMenuOpen(false)}
-            >
-              <span className={'text-[32px] font-bold'}>{option.label}</span>
-            </Link>
-          )
-        )}
+        <Link
+          href={'/vaults'}
+          className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
+          onClick={(): void => setIsMenuOpen(false)}
+        >
+          <span className={'text-[32px] font-bold'}>{'V3 Vaults'}</span>
+        </Link>
+        <Link
+          href={'/vaults?type=v2'}
+          className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
+          onClick={(): void => setIsMenuOpen(false)}
+        >
+          <span className={'text-[32px] font-bold'}>{'V2 Vaults'}</span>
+        </Link>
+        <Link
+          href={'/portfolio'}
+          className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
+          onClick={(): void => setIsMenuOpen(false)}
+        >
+          <span className={'text-[32px] font-bold'}>{'Portfolio'}</span>
+        </Link>
       </ModalMobileMenu>
     </div>
   )

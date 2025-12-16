@@ -56,15 +56,7 @@ function App(): ReactElement {
 
   const ogBaseUrl = 'https://og.yearn.fi'
 
-  if (asPath.startsWith('/vaults-beta/') && asPath.split('/').length === 4) {
-    const [, , chainID, address] = asPath.split('/')
-    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
-    pageUri = `https://yearn.fi${asPath}`
-  } else if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
-    const [, , chainID, address] = asPath.split('/')
-    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
-    pageUri = `https://yearn.fi${asPath}`
-  } else if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
+  if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
     const [, , chainID, address] = asPath.split('/')
     ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
     pageUri = `https://yearn.fi${asPath}`

@@ -172,7 +172,7 @@ export function BrandNewVaultCard({ className }: { className?: string }): ReactE
           'inline-flex flex-1 items-center justify-center rounded-lg border border-white/60 px-4 py-2 text-sm font-semibold',
           'transition hover:border-white hover:text-white'
         )}
-        href={'/v3'}
+        href={'/vaults'}
       >
         {'Enter app'}
       </Link>
@@ -242,7 +242,7 @@ export function BrandNewVaultCard({ className }: { className?: string }): ReactE
         </div>
       </div>
       <Link
-        href={'/v3/about'}
+        href={'/vaults'}
         className={cl(
           'pointer-events-none absolute bottom-6 left-6 right-6 z-20 flex items-center justify-center rounded-xl border border-white/40 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur',
           'transition-all duration-300 ease-out',

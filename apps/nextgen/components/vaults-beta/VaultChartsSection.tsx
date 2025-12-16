@@ -54,7 +54,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
     <div className={'space-y-4 pt-3 rounded-lg'}>
       <div className={'flex flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between'}>
         <div className={'flex flex-wrap gap-3'}>
-          <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 border border-border'}>
+          <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner'}>
             {CHART_TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -73,7 +73,7 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
           </div>
         </div>
         <div className={'flex flex-wrap gap-3'}>
-          <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 border border-border'}>
+          <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner'}>
             {TIMEFRAME_OPTIONS.map((option) => (
               <button
                 key={option.value}

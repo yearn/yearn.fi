@@ -5,7 +5,7 @@ import { TokenLogo } from '@lib/components/TokenLogo'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
-import { IconCopy } from '@lib/icons/IconCopy'
+import { IconLinkOut } from '@lib/icons/IconLinkOut'
 import type { TAddress, TNormalizedBN } from '@lib/types'
 import {
   cl,
@@ -20,7 +20,7 @@ import {
   toNormalizedBN,
   zeroNormalizedBN
 } from '@lib/utils'
-import { copyToClipboard, getVaultName } from '@lib/utils/helpers'
+import { getVaultName } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { retrieveConfig } from '@lib/utils/wagmi'
 import { getNetwork } from '@lib/utils/wagmi/utils'
@@ -34,7 +34,8 @@ import { VaultForwardAPY } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router'
 import { erc20Abi, zeroAddress } from 'viem'
 import { useBlockNumber } from 'wagmi'
 import { readContract, readContracts } from 'wagmi/actions'
@@ -48,7 +49,7 @@ type TVaultHoldingsData = {
   earnedValue: number
 }
 
-const METRIC_VALUE_CLASS = 'font-number text-[20px] leading-tight md:text-[22px] font-normal'
+const METRIC_VALUE_CLASS = 'font-semibold text-[20px] leading-tight md:text-[22px]'
 const METRIC_FOOTNOTE_CLASS = 'text-xs text-text-secondary'
 
 type TMetricBlock = {
@@ -152,11 +153,8 @@ function MetricsCard({
                 index < items.length - 1 ? 'md:border-r md:border-border' : ''
               )}
             >
-              <div className={'flex items-center justify-between'}>
-                {item.header}
-                {item.secondaryLabel ?? <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>}
-              </div>
-              <div className={'[&_b.yearn--table-data-section-item-value]:text-left'}>{item.value}</div>
+              <div className={'flex items-center justify-between'}>{item.header}</div>
+              <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{item.value}</div>
               {item.footnote && !hideFootnotes ? <div>{item.footnote}</div> : null}
             </div>
           )
@@ -171,7 +169,7 @@ function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): 
 
   return (
     <>
-      <p className={'flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-text-secondary'}>
+      <p className={'flex items-center gap-1 text-xs font-normal uppercase tracking-wide text-text-secondary'}>
         <span>{label}</span>
         {tooltip ? (
           <button
@@ -179,7 +177,7 @@ function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): 
             onClick={(): void => setIsModalOpen(true)}
             aria-label={`Learn more about ${label}`}
             className={
-              'inline-flex size-4 items-center justify-center rounded-full border bg-surface border-border text-[10px] font-semibold text-text-secondary transition-colors hover:border-neutral-500 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300'
+              'inline-flex size-4 items-center justify-center rounded-full border bg-surface border-border text-[10px] font-normal text-text-secondary transition-colors hover:border-neutral-500 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300'
             }
           >
             <span className={'leading-none'}>{'i'}</span>
@@ -208,7 +206,6 @@ function VaultOverviewCard({
     {
       key: 'est-apy',
       header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY for the next period'} />,
-      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
       value: (
         <VaultForwardAPY
           currentVault={currentVault}
@@ -221,7 +218,6 @@ function VaultOverviewCard({
     {
       key: 'historical-apy',
       header: <MetricHeader label={'30 Day APY'} tooltip={'Average realized APY over the previous 30 days'} />,
-      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
       value: (
         <VaultHistoricalAPY
           currentVault={currentVault}
@@ -233,7 +229,6 @@ function VaultOverviewCard({
     {
       key: 'tvl',
       header: <MetricHeader label={'TVL'} tooltip={'Total value currently deposited into this vault'} />,
-      secondaryLabel: <span className={'text-xs font-semibold text-transparent'}>{'+'}</span>,
       value: (
         <span className={METRIC_VALUE_CLASS}>
           <RenderAmount
@@ -344,16 +339,16 @@ function UserHoldingsCard({
 
 export function VaultDetailsHeader({
   currentVault,
-  displayMode = 'collapsible'
+  isCollapsibleMode = true
 }: {
   currentVault: TYDaemonVault
-  displayMode?: 'collapsible' | 'full' | 'minimal' | 'sticky-name'
+  isCollapsibleMode?: boolean
 }): ReactElement {
   const { address } = useWeb3()
   const { getPrice } = useYearn()
   const { data: blockNumber } = useBlockNumber({ watch: true })
   const { decimals } = currentVault
-  const { isCompressed } = useHeaderCompression({ enabled: displayMode === 'collapsible' })
+  const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode })
   const [vaultData, setVaultData] = useState<TVaultHoldingsData>({
     deposited: zeroNormalizedBN,
     valueInToken: zeroNormalizedBN,
@@ -622,69 +617,166 @@ export function VaultDetailsHeader({
   }, [blockNumber, refetch, currentVault.chainID])
 
   const chainName = getNetwork(currentVault.chainID).name
-  const metadataLine = [chainName, currentVault.category, currentVault.kind].filter(Boolean).join(' • ')
 
   const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
     currentVault.chainID
   }/${currentVault.token.address.toLowerCase()}/logo-128.png`
-  const displayAddress =
-    currentVault.address && isCompressed
-      ? `${currentVault.address.slice(0, 13)}...${currentVault.address.slice(-13)}`
-      : currentVault.address
+  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
+  const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
+  const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
+  const showChainChip = !isCompressed
+  const showCategoryChip = Boolean(currentVault.category)
+  const showKindChip = Boolean(currentVault.kind)
+  const shouldShowMetadata = showChainChip || showCategoryChip || showKindChip
+  const [isTitleClipped, setIsTitleClipped] = useState(false)
+  const titleRef = useRef<HTMLSpanElement>(null)
+  const vaultName = getVaultName(currentVault)
 
-  const isStickyName = displayMode === 'sticky-name'
+  useEffect(() => {
+    // Preload chain logo so it appears instantly when the chip mounts
+    const preload = new Image()
+    preload.src = chainLogoSrc
+  }, [chainLogoSrc])
+
+  useEffect(() => {
+    if (!isCompressed) {
+      setIsTitleClipped(false)
+      return
+    }
+
+    const measure = (): void => {
+      if (!titleRef.current) return
+      setIsTitleClipped(titleRef.current.scrollWidth > titleRef.current.clientWidth)
+    }
+
+    measure()
+    window.addEventListener('resize', measure)
+
+    return () => {
+      window.removeEventListener('resize', measure)
+    }
+  }, [isCompressed])
 
   return (
     <div className={'grid w-full grid-cols-1 gap-6 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
+      <div className={'hidden md:flex items-center gap-2 text-sm text-text-secondary md:col-span-20 px-1'}>
+        <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
+          {'Home'}
+        </Link>
+        <span>{'>'}</span>
+        <Link to={'/v3'} className={'transition-colors hover:text-text-primary'}>
+          {'Vaults'}
+        </Link>
+        <span>{'>'}</span>
+        <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)}</span>
+      </div>
       <div
         className={cl(
           'flex flex-col gap-1 px-1',
           isCompressed ? 'md:col-span-5 md:row-start-2 md:justify-center' : 'md:col-span-20 md:row-start-2'
         )}
       >
-        {isStickyName ? null : (
-          <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
-            <div
-              className={cl(
-                'flex items-center justify-start rounded-full bg-surface/70',
-                isCompressed ? 'size-8' : 'size-10'
-              )}
-            >
-              <TokenLogo
-                src={tokenLogoSrc}
-                tokenSymbol={currentVault.token.symbol || ''}
-                width={isCompressed ? 32 : 40}
-                height={isCompressed ? 32 : 40}
-              />
-            </div>
-            <div className={'flex flex-col'}>
+        <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
+          <div
+            className={cl(
+              'relative flex items-center justify-start rounded-full bg-surface/70',
+              isCompressed ? 'size-8' : 'size-10'
+            )}
+          >
+            <TokenLogo
+              src={tokenLogoSrc}
+              tokenSymbol={currentVault.token.symbol || ''}
+              width={isCompressed ? 32 : 40}
+              height={isCompressed ? 32 : 40}
+            />
+            {isCompressed ? (
+              <div
+                className={
+                  'absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full border border-border bg-surface'
+                }
+              >
+                <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={14} height={14} />
+              </div>
+            ) : null}
+          </div>
+          <div className={'flex flex-col'}>
+            <div className={cl('flex items-center gap-3', isCompressed && isTitleClipped ? 'relative group' : '')}>
               <strong
+                ref={titleRef}
                 className={cl(
                   'text-lg font-black leading-tight text-text-secondary md:text-3xl md:leading-10',
-                  isCompressed ? 'md:text-[30px] md:leading-9' : ''
+                  isCompressed ? 'md:text-[30px] md:leading-9 max-w-[260px] truncate whitespace-nowrap' : ''
                 )}
               >
-                {getVaultName(currentVault)} {' yVault'}
+                {vaultName} {' yVault'}
               </strong>
+              {isCompressed && isTitleClipped ? (
+                <span
+                  className={
+                    'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight text-text-secondary group-hover:block'
+                  }
+                >
+                  {vaultName} {' yVault'}
+                </span>
+              ) : null}
+              {!isCompressed && explorerHref ? (
+                <a
+                  href={explorerHref}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className={'text-text-secondary hover:text-text-primary transition-colors h-7 content-end'}
+                  aria-label={'View vault on block explorer'}
+                >
+                  <IconLinkOut className={'size-4 md:size-4'} />
+                </a>
+              ) : null}
             </div>
           </div>
-        )}
-        {currentVault.address ? (
-          <button
-            type={'button'}
-            onClick={(): void => copyToClipboard(currentVault.address)}
-            className={
-              'flex w-fit items-center gap-2 text-left text-xs font-number text-text-primary/70 transition-colors hover:text-text-primary md:text-sm'
-            }
-          >
-            <span className={cl(isCompressed ? 'max-w-[260px] truncate whitespace-nowrap' : 'break-all')}>
-              {displayAddress}
-            </span>
-            <IconCopy className={'size-4 shrink-0'} />
-          </button>
-        ) : null}
-        {metadataLine && !isCompressed ? (
-          <p className={'text-xs text-text-primary/70 md:text-sm'}>{metadataLine}</p>
+        </div>
+        {shouldShowMetadata ? (
+          <div className={'flex flex-wrap items-center gap-1 text-xs text-text-primary/70 md:text-xs mt-1'}>
+            {showChainChip ? (
+              <span
+                className={
+                  'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
+                }
+              >
+                <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={14} height={14} priority />
+                <span>{chainName}</span>
+              </span>
+            ) : null}
+            {showCategoryChip ? (
+              <span
+                className={
+                  'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
+                }
+              >
+                {currentVault.category}
+              </span>
+            ) : null}
+            {showKindChip ? (
+              <span
+                className={
+                  'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
+                }
+              >
+                {currentVault.kind}
+              </span>
+            ) : null}
+            {isCompressed && explorerHref ? (
+              <a
+                href={explorerHref}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'inline-flex items-center justify-center px-2 py-1 text-text-secondary hover:text-text-primary transition-colors'
+                }
+                aria-label={'View vault on block explorer'}
+              >
+                <IconLinkOut className={'size-4'} />
+              </a>
+            ) : null}
+          </div>
         ) : null}
       </div>
 

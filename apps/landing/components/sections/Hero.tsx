@@ -105,7 +105,7 @@ export function Hero(): ReactElement {
                 description={"Yearn is DeFi's Yield Aggregator"}
               />
               <div className={'flex flex-row items-center justify-center gap-4 mt-8'}>
-                <Link href={'/v3'}>
+                <Link href={'/vaults'}>
                   <Button
                     className={'!text-[18px] max-w-xs !px-4 !py-5 !rounded-full !bg-primary text-white'}
                     variant={'primary'}
@@ -145,7 +145,7 @@ export function Hero(): ReactElement {
               description={"DeFi's most battle tested yield aggregator"}
             />
             <div className={'flex flex-col items-center justify-center gap-4'}>
-              <Link href={'/v3'} className={'block'}>
+              <Link href={'/vaults'} className={'block'}>
                 <Button
                   className={'!text-[16px] max-w-xs !px-4 !py-5 !rounded-full !bg-primary text-white'}
                   variant={'primary'}
