@@ -5,6 +5,7 @@ import { SearchBar } from '@lib/components/SearchBar'
 // import useWallet from '@lib/contexts/useWallet'
 // import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useChainOptions } from '@lib/hooks/useChains'
+import { IconChevron } from '@lib/icons/IconChevron'
 import { IconCross } from '@lib/icons/IconCross'
 import { IconFilter } from '@lib/icons/IconFilter'
 import { LogoYearn } from '@lib/icons/LogoYearn'
@@ -45,57 +46,6 @@ type TChainButton = {
   isSelected: boolean
 }
 
-// function PortfolioCard({ holdingsVaults }: { holdingsVaults: TYDaemonVault[] }): ReactElement {
-//   const { cumulatedValueInV3Vaults, isLoading } = useWallet()
-//   const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
-
-//   if (!isActive) {
-//     return (
-//       <div className={'mb-4 flex h-18 flex-row items-center gap-2'}>
-//         <button
-//           className={cl('relative flex overflow-hidden rounded-lg group', 'px-[42px] py-2', 'border-none')}
-//           onClick={(): void => {
-//             if (!isActive && address) {
-//               onSwitchChain(1)
-//             } else {
-//               openLoginModal()
-//             }
-//           }}
-//         >
-//           <div
-//             className={cl(
-//               'absolute inset-0',
-//               'pointer-events-none opacity-80 transition-opacity group-hover:opacity-100',
-//               'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
-//             )}
-//           />
-//           <p className={'z-10 text-text-primary'}>{'Connect Wallet'}</p>
-//         </button>
-//         <p className={'p-2 text-[#757CA6]'}>{'It looks like you need to connect your wallet.'}</p>
-//       </div>
-//     )
-//   }
-//   return (
-//     <div className={'mb-2 flex flex-col gap-0 md:min-h-18'}>
-//       <div className={'flex flex-row justify-between'}>
-//         <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Your Deposits:'}</p>
-//         <div className={'flex flex-row gap-4 md:flex-row md:gap-2 pr-4'}>
-//           <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Value of your Deposits:'}</p>
-//           {isLoading ? (
-//             <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
-//           ) : (
-//             <b className={'font-number text-text-primary '}>
-//               {'$'}
-//               <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
-//             </b>
-//           )}
-//         </div>
-//       </div>
-//       <HoldingsMarquee holdingsVaults={holdingsVaults} />
-//     </div>
-//   )
-// }
-
 export function Filters({
   types,
   onChangeTypes,
@@ -107,8 +57,7 @@ export function Filters({
   shouldDebounce,
   onChangeChains,
   searchAlertContent
-}: // holdingsVaults
-TListHero): ReactElement {
+}: TListHero): ReactElement {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
@@ -266,8 +215,6 @@ TListHero): ReactElement {
   return (
     <>
       <div className={'relative col-span-24 w-full rounded-lg border border-border bg-surface mt-2 p-2 md:col-span-19'}>
-        {/* <PortfolioCard holdingsVaults={holdingsVaults} /> */}
-
         <div className={'md:hidden'}>
           <div className={'mb-5 w-full'}>
             <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
@@ -428,18 +375,33 @@ function FilterControls({
           <div className={'flex w-full flex-wrap justify-between items-center gap-3'}>
             <div
               className={
-                'flex shrink-0 flex-wrap items-center gap-px rounded-md border h-10 py-1 px-1.5 bg-surface-secondary border-border text-sm text-text-primary'
+                'flex h-10 shrink-0 items-stretch overflow-hidden rounded-md border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
               }
             >
+              <button
+                type={'button'}
+                className={cl(
+                  'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+                  'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+                  'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+                )}
+                data-active={areAllChainsSelected}
+                onClick={onSelectAllChains}
+                aria-pressed={areAllChainsSelected}
+              >
+                <span className={'size-5 overflow-hidden rounded-full'}>
+                  <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
+                </span>
+                <span className={'whitespace-nowrap'}>{'All'}</span>
+              </button>
               {chainButtons.map((chain) => (
                 <button
                   key={chain.id}
                   type={'button'}
                   className={cl(
-                    'flex items-center gap-2 rounded-sm px-3 py-1 font-medium transition-all',
-                    'hover:bg-surface/70',
-                    'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-surface-secondary/40',
-                    'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
+                    'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+                    'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+                    'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
                   )}
                   data-active={chain.isSelected}
                   onClick={(): void => onSelectChain(chain.id)}
@@ -455,39 +417,23 @@ function FilterControls({
                       {chain.icon}
                     </span>
                   ) : null}
-                  <span>{chain.label}</span>
+                  <span className={'whitespace-nowrap'}>{chain.label}</span>
                 </button>
               ))}
+
               <button
                 type={'button'}
                 className={cl(
-                  'flex items-center gap-2 rounded-lg px-3 py-1 font-medium transition-all',
-                  'hover:bg-surface/70',
-                  'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-surface-secondary/40',
-                  'data-[active=true]:bg-surface-secondary/40 data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
+                  'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+                  'text-text-secondary hover:bg-surface/30 hover:text-text-primary'
                 )}
-                data-active={areAllChainsSelected}
-                onClick={onSelectAllChains}
-                aria-pressed={areAllChainsSelected}
-              >
-                <span className={'size-5 overflow-hidden rounded-full'}>
-                  <LogoYearn
-                    className={'size-full'}
-                    back={areAllChainsSelected ? 'text-text-primary' : 'text-text-secondary'}
-                    front={'text-surface'}
-                  />
-                </span>
-                <span>{'All'}</span>
-              </button>
-              <button
-                type={'button'}
-                className={
-                  'flex items-center gap-1 rounded-full px-3 py-1 font-medium text-text-secondary transition-colors hover:bg-surface/70'
-                }
                 onClick={onOpenChainModal}
               >
-                <span className={'text-base leading-none'}>{'+'}</span>
-                <span>{'More'}</span>
+                <span className={'whitespace-nowrap'}>{'More'}</span>
+                <span className={'flex items-center'}>
+                  <IconChevron direction={'right'} className={'size-4'} />
+                  <IconChevron direction={'right'} className={'-ml-3 size-4'} />
+                </span>
               </button>
             </div>
             <div className={'flex flex-row items-center gap-3 min-w-[300px] max-w-[500px] flex-1'}>

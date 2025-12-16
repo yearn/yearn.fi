@@ -39,7 +39,7 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
   const [search, setSearch] = useState<string | null>(null)
   const [types, setTypes] = useState<string[] | null>(props.defaultTypes || [])
   const [categories, setCategories] = useState<string[] | null>(props.defaultCategories || [])
-  const [chains, setChains] = useState<number[] | null>([1]) // Default to Ethereum
+  const [chains, setChains] = useState<number[] | null>([]) // Default to all chains
   const [sortDirection, setSortDirection] = useState<string | null>(null)
 
   const defaultSortBy = props.defaultSortBy || 'featuringScore'
@@ -124,7 +124,7 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
         const chainsParam = _searchParams.get('chains')
         const chainsParamArray = chainsParam?.split('_') || []
         if (chainsParamArray.length === 0) {
-          setChains([1])
+          setChains([])
           return
         }
         if (chainsParamArray.length === allChains.length) {
@@ -140,7 +140,7 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
         }
         setChains(chainsParamArray.map((chain): number => Number(chain)))
       } else {
-        setChains([1])
+        setChains([])
       }
 
       if (_searchParams.has('sortDirection')) {
