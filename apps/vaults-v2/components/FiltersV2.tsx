@@ -22,7 +22,7 @@ type TFiltersV2Props = {
   holdingsVaults: TYDaemonVault[]
 }
 
-const V2_SUPPORTED_CHAINS = [1, 10, 250, 42161]
+const V2_SUPPORTED_CHAINS = [1, 10, 42161]
 
 export const FiltersV2: React.FC<TFiltersV2Props> = ({
   chains,

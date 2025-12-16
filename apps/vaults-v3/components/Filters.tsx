@@ -2,8 +2,6 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
 import { SearchBar } from '@lib/components/SearchBar'
-// import useWallet from '@lib/contexts/useWallet'
-// import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useChainOptions } from '@lib/hooks/useChains'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { IconCross } from '@lib/icons/IconCross'
@@ -16,8 +14,6 @@ import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constant
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Drawer } from 'vaul'
-
-// import HoldingsMarquee from './list/HoldingsMarquee'
 
 type TListHero = {
   types: string[] | null
@@ -33,9 +29,9 @@ type TListHero = {
   holdingsVaults: TYDaemonVault[]
 }
 
-const CHAIN_DISPLAY_ORDER = [1, 747474, 8453, 42161, 137, 146]
+const CHAIN_DISPLAY_ORDER = [1, 747474, 8453, 42161, 137]
 const PRIMARY_CHAIN_IDS = [1, 747474]
-const DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161]
+const DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
 
 const isPrimaryChain = (chainId: number): boolean => PRIMARY_CHAIN_IDS.includes(chainId)
 
@@ -78,7 +74,6 @@ export function Filters({
       option.value === 137 ||
       option.value === 42161 ||
       option.value === 8453 ||
-      option.value === 146 ||
       option.value === 747474
   )
 
@@ -274,6 +269,7 @@ export function Filters({
                     areAllChainsSelected={areAllChainsSelected}
                     onSelectChain={handleChainToggle}
                     onOpenChainModal={(): void => setIsChainModalOpen(true)}
+                    showMoreChainsButton={false}
                     isMoreFiltersOpen={isMoreFiltersOpen}
                     onToggleMoreFilters={(): void => setIsMoreFiltersOpen((prev) => !prev)}
                     categoryOptions={categoryOptions}
@@ -301,6 +297,7 @@ export function Filters({
             areAllChainsSelected={areAllChainsSelected}
             onSelectChain={handleChainToggle}
             onOpenChainModal={(): void => setIsChainModalOpen(true)}
+            showMoreChainsButton={false}
             isMoreFiltersOpen={isMoreFiltersOpen}
             onToggleMoreFilters={(): void => setIsMoreFiltersOpen((prev) => !prev)}
             categoryOptions={categoryOptions}
@@ -335,6 +332,7 @@ function FilterControls({
   areAllChainsSelected,
   onSelectChain,
   onOpenChainModal,
+  showMoreChainsButton = true,
   isMoreFiltersOpen,
   onToggleMoreFilters,
   categoryOptions,
@@ -354,6 +352,11 @@ function FilterControls({
   areAllChainsSelected: boolean
   onSelectChain: (chainId: number) => void
   onOpenChainModal: () => void
+  /**
+   * Controls whether the "More" chain button is shown.
+   * Disable when all supported chains fit inline; re-enable if/when we add more chains.
+   */
+  showMoreChainsButton?: boolean
   isMoreFiltersOpen: boolean
   onToggleMoreFilters: () => void
   categoryOptions: TMultiSelectOptionProps[]
@@ -372,7 +375,7 @@ function FilterControls({
     <div className={'flex flex-col gap-4'}>
       <div>
         <div className={'flex flex-col gap-2'}>
-          <div className={'flex w-full flex-wrap justify-between items-center gap-3'}>
+          <div className={'flex w-full flex-wrap items-center gap-3'}>
             <div
               className={
                 'flex h-10 shrink-0 items-stretch overflow-hidden rounded-md border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
@@ -392,7 +395,7 @@ function FilterControls({
                 <span className={'size-5 overflow-hidden rounded-full'}>
                   <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
                 </span>
-                <span className={'whitespace-nowrap'}>{'All'}</span>
+                <span className={'whitespace-nowrap'}>{'All Chains'}</span>
               </button>
               {chainButtons.map((chain) => (
                 <button
@@ -408,35 +411,30 @@ function FilterControls({
                   aria-pressed={chain.isSelected}
                 >
                   {chain.icon ? (
-                    <span
-                      className={cl(
-                        'size-5 overflow-hidden rounded-full bg-surface/80',
-                        chain.label === 'Sonic' ? 'bg-white' : ''
-                      )}
-                    >
-                      {chain.icon}
-                    </span>
+                    <span className={'size-5 overflow-hidden rounded-full bg-surface/80'}>{chain.icon}</span>
                   ) : null}
                   <span className={'whitespace-nowrap'}>{chain.label}</span>
                 </button>
               ))}
 
-              <button
-                type={'button'}
-                className={cl(
-                  'flex h-full items-center gap-2 px-3 font-medium transition-colors',
-                  'text-text-secondary hover:bg-surface/30 hover:text-text-primary'
-                )}
-                onClick={onOpenChainModal}
-              >
-                <span className={'whitespace-nowrap'}>{'More'}</span>
-                <span className={'flex items-center'}>
-                  <IconChevron direction={'right'} className={'size-4'} />
-                  <IconChevron direction={'right'} className={'-ml-3 size-4'} />
-                </span>
-              </button>
+              {showMoreChainsButton ? (
+                <button
+                  type={'button'}
+                  className={cl(
+                    'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+                    'text-text-secondary hover:bg-surface/30 hover:text-text-primary'
+                  )}
+                  onClick={onOpenChainModal}
+                >
+                  <span className={'whitespace-nowrap'}>{'More'}</span>
+                  <span className={'flex items-center'}>
+                    <IconChevron direction={'right'} className={'size-4'} />
+                    <IconChevron direction={'right'} className={'-ml-3 size-4'} />
+                  </span>
+                </button>
+              ) : null}
             </div>
-            <div className={'flex flex-row items-center gap-3 min-w-[300px] max-w-[500px] flex-1'}>
+            <div className={'flex flex-row items-center gap-3 flex-1'}>
               <button
                 type={'button'}
                 className={cl(
@@ -452,7 +450,7 @@ function FilterControls({
                 <span>{isMoreFiltersOpen ? 'Filters' : 'Filters'}</span>
               </button>
               {showInlineSearch ? (
-                <div className={'min-w-[200px] flex-1'}>
+                <div className={'flex-1'}>
                   <SearchBar
                     className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
                     iconClassName={'text-text-primary'}
@@ -613,20 +611,13 @@ function ChainSelectionModal({
                         >
                           <div className={'flex items-center gap-3'}>
                             {option.icon ? (
-                              <span
-                                className={cl(
-                                  'size-5 overflow-hidden rounded-full',
-                                  option.label === 'Sonic' ? 'bg-white' : ''
-                                )}
-                              >
-                                {option.icon}
-                              </span>
+                              <span className={'size-5 overflow-hidden rounded-full'}>{option.icon}</span>
                             ) : null}
                             <span className={'text-sm font-medium text-text-primary'}>{option.label}</span>
                           </div>
                           <input
                             type={'checkbox'}
-                            className={'checkbox'}
+                            className={'checkbox accent-blue-500'} // or any other accent color
                             checked={isChecked}
                             disabled={isLocked}
                             onChange={(): void => toggleChain(chainId)}
