@@ -21,7 +21,7 @@ import { WidgetActionType } from '@nextgen/types'
 import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 import type { ReactElement } from 'react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import { useDevFlags } from '/src/contexts/useDevFlags'
 
 function Index(): ReactElement | null {
@@ -46,6 +46,7 @@ function Index(): ReactElement | null {
   const [lastVaultKey, setLastVaultKey] = useState(vaultKey)
   const [isMobileDetailsExpanded, setIsMobileDetailsExpanded] = useState(false)
   const detailsRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLElement | null>(null)
   const chartsRef = useRef<HTMLDivElement>(null)
   const aboutRef = useRef<HTMLDivElement>(null)
   const riskRef = useRef<HTMLDivElement>(null)
@@ -128,9 +129,6 @@ function Index(): ReactElement | null {
   }, [overrideVault, _currentVault])
 
   const isV3 = currentVault?.version.startsWith('3') || currentVault?.version.startsWith('~3')
-  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-    currentVault?.chainID
-  }/${currentVault?.token.address.toLowerCase()}/logo-128.png`
 
   useEffect(() => {
     if (!hasFetchedOverride && _currentVault && _currentVault.address) {
@@ -273,72 +271,26 @@ function Index(): ReactElement | null {
     )
   }
 
-  const isMinimalMode = headerDisplayMode === 'minimal'
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
-  const isStickyNameMode = headerDisplayMode === 'sticky-name'
-  const breadcrumbs = (
-    <div className={'flex items-center gap-2 text-sm text-text-secondary'}>
-      <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
-        {'Home'}
-      </Link>
-      <span>{'>'}</span>
-      <Link to={'/v3'} className={'transition-colors hover:text-text-primary'}>
-        {'Vaults'}
-      </Link>
-      <span>{'>'}</span>
-      <span className={'font-medium text-text-primary'}>{currentVault.name}</span>
-    </div>
-  )
-  // Calculate sticky positions based on mode
-  // On mobile, all modes behave like minimal (natural scroll)
-  // On desktop (md+), collapsible and full have sticky headers
+  // Calculate sticky positions for the collapsible header (desktop only)
+  // On mobile, natural scroll behavior is used
   const headerStickyTop = 'var(--header-height)'
-  const vaultNameHeight = 48 // Approximate height of sticky vault name
-  const tabsStickyTop = isMinimalMode
-    ? headerStickyTop
-    : isStickyNameMode
-      ? `calc(var(--header-height) + ${vaultNameHeight}px)`
-      : isCollapsibleMode
-        ? '141.5px' // compressed header height + header-height
-        : '265.5px' // full/expanded header height + header-height
-  const widgetStickyTop = isMinimalMode
-    ? 'calc(var(--header-height) + 24px)' // header-height + tab height
-    : isStickyNameMode
-      ? `calc(var(--header-height) + ${vaultNameHeight}px + 12px)` // header + name + tabs
-      : isCollapsibleMode
-        ? '166.5px' // compressed + spacing
-        : '287.5px' // full/expanded + spacing
+  const nextSticky = `calc(var(--header-height) + 117.5px)`
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
-      {/* TODO: Deprecate when decide on Header display */}
-      <div className={'mx-auto w-full max-w-[1232px] px-4 md:py-0 md:pt-2'}>{breadcrumbs}</div>
-
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-        {/* Desktop Header - Hidden on mobile */}
-        {isStickyNameMode ? (
-          <div className={cl('items-center bg-app gap-4 md:sticky md:z-30 md:bg-app top-13 p-1 md:flex hidden')}>
-            <div className={cl('flex items-center justify-start rounded-full bg-surface/70')}>
-              <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
-            </div>
-            <div className={'flex flex-col'}>
-              <strong className={cl('text-lg font-black leading-tight text-text-secondary md:text-3xl md:leading-10')}>
-                {getVaultName(currentVault)} {' yVault'}
-              </strong>
-            </div>
-          </div>
-        ) : null}
         <header
           className={cl(
             'h-full rounded-3xl',
             'relative flex-col items-center justify-center',
             'hidden md:flex',
-            // On desktop, sticky only for non-minimal modes
-            isMinimalMode || isStickyNameMode ? '' : 'md:sticky md:z-30'
+            'md:sticky md:z-30'
           )}
-          style={isMinimalMode || isStickyNameMode ? {} : { top: headerStickyTop }}
+          style={{ top: headerStickyTop }}
+          ref={headerRef}
         >
-          <VaultDetailsHeader currentVault={currentVault} displayMode={headerDisplayMode} />
+          <VaultDetailsHeader currentVault={currentVault} isCollapsibleMode={isCollapsibleMode} />
         </header>
 
         {/* Mobile: Compact Header */}
@@ -458,12 +410,17 @@ function Index(): ReactElement | null {
         <section className={'hidden md:grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div className={'space-y-4 md:col-span-13 pb-4'}>
             {renderableSections.length > 0 ? (
-              <div className={'w-full sticky z-30'} style={{ top: tabsStickyTop }}>
-                <div className={cl('bg-app', isStickyNameMode ? 'h-3 mt-3' : 'h-6')}></div>
-                <div className={'flex flex-wrap gap-2 md:gap-3 bg-app rounded-b-lg'}>
+              <div className={'w-full sticky z-30'} style={{ top: nextSticky }}>
+                <div className={'bg-app h-6'}></div>
+                <div
+                  className={cl(
+                    'flex flex-wrap gap-2 md:pb-3 md:gap-3',
+                    'bg-gradient-to-b from-app from-90% to-transparent'
+                  )}
+                >
                   <div
                     className={
-                      'flex w-full flex-wrap justify-between gap-2 rounded-lg bg-surface-secondary p-1 border border-border'
+                      'flex w-full flex-wrap justify-between gap-2 rounded-lg bg-surface-secondary p-1 shadow-inner'
                     }
                   >
                     {renderableSections.map((section) => (
@@ -531,7 +488,7 @@ function Index(): ReactElement | null {
               )
             })}
           </div>
-          <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit mt-6')} style={{ top: widgetStickyTop }}>
+          <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-6')} style={{ top: nextSticky }}>
             <div>
               <Widget
                 vaultType={isV3 ? 'v3' : 'v2'}

@@ -313,7 +313,7 @@ function VaultHistoricalAPY({ currentVault }: { currentVault: TYDaemonVault }): 
   )
 }
 
-export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+export function VaultHoldingsAmount({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { getToken } = useWallet()
   const { getPrice } = useYearn()
 
@@ -359,11 +359,12 @@ export function VaultStakedAmount({ currentVault }: { currentVault: TYDaemonVaul
       </p>
       <small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
         <RenderAmount
-          value={staked.raw}
+          value={staked.normalized * currentVault.apr.pricePerShare.today}
           symbol={currentVault.token.symbol}
           decimals={currentVault.token.decimals}
           options={{ shouldDisplaySymbol: false, maximumFractionDigits: 4 }}
         />
+        <p className="pl-1">{currentVault.token.symbol}</p>
       </small>
     </div>
   )
@@ -540,7 +541,7 @@ export function VaultsListRow({ currentVault, flags }: TVaultRowProps): ReactEle
           {/* Holdings */}
           <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
             <p className={'yearn--table-data-section-item-label font-aeonik!'}>{'Deposited'}</p>
-            <VaultStakedAmount currentVault={currentVault} />
+            <VaultHoldingsAmount currentVault={currentVault} />
           </div>
           {/* TVL */}
           <div className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'} datatype={'number'}>
@@ -558,7 +559,7 @@ export function VaultsListRow({ currentVault, flags }: TVaultRowProps): ReactEle
                   }}
                 />
               </p>
-              <small className={'text-xs text-neutral-900/40'}>
+              <small className={'text-xs flex flex-row text-neutral-900/40'}>
                 <RenderAmount
                   value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
                   symbol={''}
@@ -569,6 +570,7 @@ export function VaultsListRow({ currentVault, flags }: TVaultRowProps): ReactEle
                     minimumFractionDigits: 2
                   }}
                 />
+                <p className="pl-1">{currentVault.token.symbol}</p>
               </small>
             </div>
           </div>

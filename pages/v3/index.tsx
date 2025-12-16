@@ -370,7 +370,7 @@ function ListOfVaults({
               label: 'Vault / Featuring Score',
               value: 'featuringScore',
               sortable: true,
-              className: 'col-span-9'
+              className: 'col-span-10'
             },
             {
               type: 'sort',
@@ -381,38 +381,31 @@ function ListOfVaults({
             },
             {
               type: 'sort',
-              label: 'Hist. APY',
+              label: '30D APY',
               value: 'APY',
               sortable: true,
               className: 'col-span-3'
             },
             {
               type: 'sort',
-              label: 'Risk Level',
-              value: 'score',
+              label: 'TVL',
+              value: 'tvl',
               sortable: true,
-              className: 'col-span-3 whitespace-nowrap'
+              className: 'col-span-4'
             },
             // {
             //   type: 'toggle',
             //   label: 'Available',
             //   value: AVAILABLE_TOGGLE_VALUE,
-            //   className: 'col-span-2',
+            //   className: 'col-span-3',
             //   disabled: availableVaults.length === 0
             // },
             {
               type: 'toggle',
               label: 'Holdings',
               value: HOLDINGS_TOGGLE_VALUE,
-              className: 'col-span-3',
+              className: 'col-span-4 justify-end',
               disabled: holdingsVaults.length === 0
-            },
-            {
-              type: 'sort',
-              label: 'TVL',
-              value: 'tvl',
-              sortable: true,
-              className: 'col-span-3 justify-end'
             }
           ]}
         />

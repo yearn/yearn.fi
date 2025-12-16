@@ -12,16 +12,17 @@ interface TokenLogoProps extends Omit<ImageProps, 'alt' | 'src'> {
 
 function TokenLogo(props: TokenLogoProps): ReactElement {
   const { src, altSrc, tokenSymbol, tokenName, className, width = 32, height = 32, ...rest } = props
-  const [imageSrc, setImageSrc] = useState<string>(altSrc || src)
+  const [imageSrc, setImageSrc] = useState<string>(src)
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isVisible, setIsVisible] = useState(props.loading !== 'lazy' || props.priority === true)
-  const imageRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
 
   // Set up IntersectionObserver for lazy loading
   useEffect(() => {
-    if (props.loading !== 'lazy' || props.priority || !imageRef.current) return
+    if (props.loading !== 'lazy' || props.priority || !containerRef.current) return
 
     const observerOptions: IntersectionObserverInit = {
       root: null,
@@ -38,7 +39,7 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
       })
     }, observerOptions)
 
-    observerRef.current.observe(imageRef.current)
+    observerRef.current.observe(containerRef.current)
 
     return () => {
       observerRef.current?.disconnect()
@@ -47,10 +48,20 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
 
   // Reset states when src changes
   useEffect(() => {
-    setImageSrc(altSrc || src)
+    setImageSrc(src)
     setHasError(false)
     setIsLoading(true)
-  }, [src, altSrc])
+  }, [src])
+
+  // Handle already-cached images where onLoad might not fire
+  useEffect(() => {
+    if (!isVisible) return
+    const imageElement = imgRef.current
+    if (imageElement?.complete && imageElement.naturalWidth > 0 && imageElement.naturalHeight > 0) {
+      setIsLoading(false)
+      setHasError(false)
+    }
+  }, [isVisible])
 
   const handleLoad = (): void => {
     setIsLoading(false)
@@ -63,6 +74,7 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
     // Try altSrc first if we haven't already
     if (altSrc && imageSrc !== altSrc) {
       setImageSrc(altSrc)
+      setIsLoading(true)
       return
     }
 
@@ -107,25 +119,26 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
         : 'text-sm'
 
   const imageClassName = cl(
-    'transition-opacity duration-300 ease-in-out',
+    'absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ease-in-out',
     isLoading && !hasError ? 'opacity-0' : 'opacity-100',
     className
   )
+  const showFallback = hasError || isLoading
 
   return (
     <div
-      ref={imageRef}
-      className="relative inline-block"
+      ref={containerRef}
+      className="relative inline-block overflow-hidden"
       style={{
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height
       }}
     >
-      {hasError ? (
-        // Fallback with text (YV/YG/YS or first letter) - circle border with no background
+      {showFallback ? (
+        // Fallback with text (YV/YG/YS or first letter) - circle border with subtle background while loading/errored
         <div
           className={cl(
-            'flex items-center justify-center rounded-full border-2 border-gray-400 text-gray-400 font-bold',
+            'absolute inset-0 flex items-center justify-center rounded-full border-2 border-gray-400 text-gray-400 font-bold bg-surface-secondary',
             fontSize,
             className
           )}
@@ -136,21 +149,21 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
         >
           {fallbackText}
         </div>
-      ) : (
-        isVisible && (
-          <img
-            src={imageSrc}
-            alt={tokenSymbol || tokenName || 'Token'}
-            className={imageClassName}
-            onLoad={handleLoad}
-            onError={handleError}
-            width={width}
-            height={height}
-            decoding="async"
-            {...rest}
-          />
-        )
-      )}
+      ) : null}
+      {isVisible && !hasError ? (
+        <img
+          ref={imgRef}
+          src={imageSrc}
+          alt={tokenSymbol || tokenName || 'Token'}
+          className={imageClassName}
+          onLoad={handleLoad}
+          onError={handleError}
+          width={width}
+          height={height}
+          decoding="async"
+          {...rest}
+        />
+      ) : null}
     </div>
   )
 }
