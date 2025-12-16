@@ -1,4 +1,3 @@
-import { DevToolbar } from '@components/DevToolbar'
 import AppHeader from '@lib/components/Header'
 import { Meta } from '@lib/components/Meta'
 import { WithFonts } from '@lib/components/WithFonts'
@@ -99,7 +98,7 @@ function App(): ReactElement {
                         <WithNotificationsActions>
                           <DevFlagsProvider>
                             <WithLayout />
-                            <DevToolbar />
+                            {/* <DevToolbar /> */}
                           </DevFlagsProvider>
                         </WithNotificationsActions>
                       </WithNotifications>

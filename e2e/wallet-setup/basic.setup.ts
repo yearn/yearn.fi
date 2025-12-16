@@ -6,7 +6,12 @@ import * as dotenv from 'dotenv'
 dotenv.config({ path: '.env.e2e' })
 
 const PASSWORD = 'Tester@1234'
-const SEED_PHRASE = process.env.SEED_PHRASE || 'test test test test test test test test test test test junk'
+const SEED_PHRASE = process.env.E2E_SEED_PHRASE
+if (!SEED_PHRASE) {
+  throw new Error(
+    'E2E_SEED_PHRASE environment variable not set. Please create .env.e2e file with test wallet seed phrase.'
+  )
+}
 
 export default defineWalletSetup(PASSWORD, async (context, walletPage) => {
   const metamask = new MetaMask(context, walletPage, PASSWORD)

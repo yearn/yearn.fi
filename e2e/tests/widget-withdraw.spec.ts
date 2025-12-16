@@ -1,8 +1,15 @@
 import { expect, test } from '../fixtures/synpress'
 import { TEST_VAULT } from '../fixtures/test-vault'
-import { navigateToVault, switchToWithdrawTab } from '../helpers/navigation'
+import { ensureWithdrawTab, navigateToVault } from '../helpers/navigation'
 import { checkBalance, logBalances } from '../helpers/wallet'
-import { clickPercentageButton } from '../helpers/widget-interactions'
+import { ensureWalletConnected } from '../helpers/wallet-connection'
+import {
+  clickPercentageButton,
+  selectToken,
+  waitForBalanceLoaded,
+  waitForRouteCalculation,
+  waitForWithdrawApproval
+} from '../helpers/widget-interactions'
 
 test.describe('Widget Withdraw', () => {
   test.beforeAll(async () => {
@@ -16,81 +23,84 @@ test.describe('Widget Withdraw', () => {
   })
 
   test('should withdraw USDC from vault (vanilla)', async ({ page, metamask }) => {
-    // 1. Check wallet has MATIC for gas
+    // 1. Connect wallet first
+    await page.goto('/v3')
+    await ensureWalletConnected(page, metamask)
+
+    // 2. Check wallet has MATIC for gas
     await checkBalance({ minMatic: 0.1 })
 
-    // 2. Navigate to vault page
-    await navigateToVault(page, TEST_VAULT.vaultAddress)
+    // 3. Navigate to vault page
+    await navigateToVault(page, TEST_VAULT.vaultAddress, 137)
 
-    // 3. Switch to Withdraw tab
-    await switchToWithdrawTab(page)
+    // 4. Ensure we're on Withdraw tab and get the withdraw widget
+    const withdrawWidget = await ensureWithdrawTab(page)
 
-    // 4. Click 25% button
-    await clickPercentageButton(page, 25)
+    // 5. Wait for balance to load before clicking percentage button
+    await waitForBalanceLoaded(withdrawWidget)
 
-    // 5. Verify input populated
-    const input = page.locator('input[placeholder="0.00"]')
+    // 6. Click 25% button
+    await clickPercentageButton(withdrawWidget, 25)
+
+    // 7. Verify input populated
+    const input = withdrawWidget.locator('input[placeholder="0.00"]')
     await expect(input).not.toHaveValue('0')
     await expect(input).not.toHaveValue('')
 
-    // 6. Click Withdraw button (no approve needed for vault shares)
-    const withdrawButton = page.locator('button:has-text("Withdraw")')
+    // 8. Click Withdraw button (no approve needed for vault shares)
+    const withdrawButton = withdrawWidget.locator('button:has-text("Withdraw")')
     await expect(withdrawButton).toBeVisible()
     await expect(withdrawButton).not.toBeDisabled()
     await withdrawButton.click()
 
-    // 7. Confirm withdraw in Metamask
+    // 9. Confirm withdraw in Metamask
     await metamask.confirmTransaction()
 
-    // 8. Wait for success - input should be cleared
+    // 10. Wait for success - input should be cleared
     await expect(input).toHaveValue('', { timeout: 90000 })
   })
 
   test('should zap vault shares to DAI via Enso', async ({ page, metamask }) => {
-    // 1. Check wallet has MATIC for gas
+    // 1. Connect wallet first
+    await page.goto('/v3')
+    await ensureWalletConnected(page, metamask)
+
+    // 2. Check wallet has MATIC for gas
     await checkBalance({ minMatic: 0.1 })
 
-    // 2. Navigate to vault page
-    await navigateToVault(page, TEST_VAULT.vaultAddress)
+    // 3. Navigate to vault page
+    await navigateToVault(page, TEST_VAULT.vaultAddress, 137)
 
-    // 3. Switch to Withdraw tab
-    await switchToWithdrawTab(page)
+    // 4. Ensure we're on Withdraw tab and get the withdraw widget
+    const withdrawWidget = await ensureWithdrawTab(page)
 
-    // 4. Open token selector
-    await page.click('[data-token-selector-button]')
+    // 5. Wait for balance to load (ensures widget is fully initialized)
+    await waitForBalanceLoaded(withdrawWidget)
 
-    // 5. Wait for selector to open
-    await page.waitForTimeout(500)
+    // 6. Select DAI token
+    await selectToken(withdrawWidget, TEST_VAULT.zapToken)
 
-    // 6. Select DAI from token list
-    await page.click(`[data-token="${TEST_VAULT.zapToken.toLowerCase()}"]`)
+    // 7. Fill amount (5 vault shares)
+    const input = withdrawWidget.locator('input[placeholder="0.00"]')
+    await input.fill('5')
 
-    // 7. Wait for selector to close and UI to update
-    await page.waitForTimeout(500)
+    // 8. Wait for Enso route calculation
+    await waitForRouteCalculation(withdrawWidget)
 
-    // 8. Fill amount
-    await page.fill('input[placeholder="0.00"]', '5')
-
-    // 9. Wait for Enso route calculation
-    await page.waitForSelector('button:not(:has-text("Finding route...")):has-text("Approve")', { timeout: 30000 })
-
-    // 10. Approve vault shares
-    const approveButton = page.locator('button:has-text("Approve")')
+    // 9. Approve vault shares
+    const approveButton = withdrawWidget.locator('button:has-text("Approve")')
     await approveButton.click()
     await metamask.confirmTransaction()
 
-    // 11. Wait for approval confirmation
-    await page.waitForSelector('button:has-text("Withdraw"):not(:disabled)', {
-      timeout: 60000
-    })
+    // 10. Wait for approval confirmation
+    await waitForWithdrawApproval(withdrawWidget)
 
-    // 12. Withdraw via Enso
-    const withdrawButton = page.locator('button:has-text("Withdraw")')
+    // 11. Withdraw via Enso
+    const withdrawButton = withdrawWidget.locator('button:has-text("Withdraw")')
     await withdrawButton.click()
     await metamask.confirmTransaction()
 
-    // 13. Verify success - input should be cleared
-    const input = page.locator('input[placeholder="0.00"]')
+    // 12. Verify success - input should be cleared
     await expect(input).toHaveValue('', { timeout: 90000 })
   })
 })

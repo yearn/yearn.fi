@@ -1,7 +1,7 @@
-import { createPublicClient, http, parseUnits, formatUnits, type Address } from 'viem'
-import { polygon } from 'viem/chains'
-import { privateKeyToAccount } from 'viem/accounts'
 import * as dotenv from 'dotenv'
+import { type Address, createPublicClient, formatUnits, http, parseUnits } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
+import { polygon } from 'viem/chains'
 
 dotenv.config({ path: '.env.e2e' })
 
@@ -24,11 +24,7 @@ export function getWalletAddress(): Address {
   return account.address
 }
 
-export async function checkBalance(requirements: {
-  minMatic?: number
-  minUSDC?: number
-  minDAI?: number
-}) {
+export async function checkBalance(requirements: { minMatic?: number; minUSDC?: number; minDAI?: number }) {
   const client = createPublicClient({
     chain: polygon,
     transport: http()
@@ -44,16 +40,16 @@ export async function checkBalance(requirements: {
     if (balance < minRequired) {
       throw new Error(
         `Insufficient MATIC balance.\n` +
-        `Current: ${formatUnits(balance, 18)} MATIC\n` +
-        `Required: ${requirements.minMatic} MATIC\n` +
-        `Please fund wallet: ${address}`
+          `Current: ${formatUnits(balance, 18)} MATIC\n` +
+          `Required: ${requirements.minMatic} MATIC\n` +
+          `Please fund wallet: ${address}`
       )
     }
   }
 
   // Check USDC balance
   if (requirements.minUSDC) {
-    const usdcAddress = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174' as Address
+    const usdcAddress = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' as Address
     const balance = await client.readContract({
       address: usdcAddress,
       abi: ERC20_ABI,
@@ -65,9 +61,9 @@ export async function checkBalance(requirements: {
     if (balance < minRequired) {
       throw new Error(
         `Insufficient USDC balance.\n` +
-        `Current: ${formatUnits(balance, 6)} USDC\n` +
-        `Required: ${requirements.minUSDC} USDC\n` +
-        `Please fund wallet: ${address}`
+          `Current: ${formatUnits(balance, 6)} USDC\n` +
+          `Required: ${requirements.minUSDC} USDC\n` +
+          `Please fund wallet: ${address}`
       )
     }
   }
@@ -86,9 +82,9 @@ export async function checkBalance(requirements: {
     if (balance < minRequired) {
       throw new Error(
         `Insufficient DAI balance.\n` +
-        `Current: ${formatUnits(balance, 18)} DAI\n` +
-        `Required: ${requirements.minDAI} DAI\n` +
-        `Please fund wallet: ${address}`
+          `Current: ${formatUnits(balance, 18)} DAI\n` +
+          `Required: ${requirements.minDAI} DAI\n` +
+          `Please fund wallet: ${address}`
       )
     }
   }
@@ -104,7 +100,7 @@ export async function logBalances() {
 
   const maticBalance = await client.getBalance({ address })
 
-  const usdcAddress = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174' as Address
+  const usdcAddress = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' as Address
   const usdcBalance = await client.readContract({
     address: usdcAddress,
     abi: ERC20_ABI,

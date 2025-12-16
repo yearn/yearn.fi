@@ -1,55 +1,73 @@
-import type { Page } from '@playwright/test'
+import type { Locator } from '@playwright/test'
 
-export async function fillDepositAmount(page: Page, amount: string) {
-  await page.fill('input[placeholder="0.00"]', amount)
+/**
+ * Wait for the balance to be loaded and displayed (non-zero)
+ * This ensures percentage buttons will work correctly
+ */
+export async function waitForBalanceLoaded(widget: Locator) {
+  // Wait for the balance text to show a non-zero value
+  // Balance is typically shown as "Balance: X USDC" or similar
+  await widget.locator('text=/Balance:\\s*[^0\\s].*[A-Z]{3,}/i').waitFor({
+    state: 'visible',
+    timeout: 15000
+  })
+
+  // Add small delay to ensure state is fully updated
+  await widget.page().waitForTimeout(500)
+}
+
+/**
+ * Fill amount in the input field within a specific tab widget
+ */
+export async function fillAmount(widget: Locator, amount: string) {
+  await widget.locator('input[placeholder="0.00"]').fill(amount)
   // Wait for debounce to settle
-  await page.waitForTimeout(500)
+  await widget.page().waitForTimeout(500)
 }
 
-export async function clickPercentageButton(
-  page: Page,
-  percent: 25 | 50 | 75 | 100
-) {
+/**
+ * Click a percentage button (25%, 50%, 75%, Max) within a specific tab widget
+ */
+export async function clickPercentageButton(widget: Locator, percent: 25 | 50 | 75 | 100) {
   const buttonText = percent === 100 ? 'Max' : `${percent}%`
-  await page.click(`button:has-text("${buttonText}")`)
+  await widget.locator(`button:has-text("${buttonText}")`).click()
+
   // Wait for input to update
-  await page.waitForTimeout(300)
+  await widget.page().waitForTimeout(300)
 }
 
-export async function selectToken(page: Page, tokenAddress: string) {
+/**
+ * Select a token from the token selector within a specific tab widget
+ */
+export async function selectToken(widget: Locator, tokenAddress: string) {
+  const page = widget.page()
+
   // Open token selector
-  await page.click('[data-token-selector-button]')
-
-  // Wait for selector to open
+  await widget.locator('[data-token-selector-button]').click()
   await page.waitForTimeout(500)
 
-  // Select token
+  // Select token (modal is outside widget scope)
   await page.click(`[data-token="${tokenAddress.toLowerCase()}"]`)
-
-  // Wait for selector to close
   await page.waitForTimeout(500)
 }
 
-export async function waitForRouteCalculation(page: Page) {
-  // Wait for "Finding route..." to disappear
-  await page.waitForSelector(
-    'button:not(:has-text("Finding route..."))',
-    { timeout: 30000 }
-  )
+/**
+ * Wait for Enso route calculation to complete (for zap deposits)
+ */
+export async function waitForRouteCalculation(widget: Locator) {
+  await widget.locator('button:not(:has-text("Finding route...")):has-text("Approve")').waitFor({ timeout: 30000 })
 }
 
-export async function waitForApprovalConfirmation(page: Page) {
-  // Wait for Deposit button to become enabled
-  await page.waitForSelector(
-    'button:has-text("Deposit"):not(:disabled)',
-    { timeout: 60000 }
-  )
+/**
+ * Wait for deposit approval confirmation (Deposit button becomes enabled)
+ */
+export async function waitForDepositApproval(widget: Locator) {
+  await widget.locator('button:has-text("Deposit"):not(:disabled)').waitFor({ timeout: 60000 })
 }
 
-export async function waitForWithdrawApprovalConfirmation(page: Page) {
-  // Wait for Withdraw button to become enabled
-  await page.waitForSelector(
-    'button:has-text("Withdraw"):not(:disabled)',
-    { timeout: 60000 }
-  )
+/**
+ * Wait for withdraw approval confirmation (Withdraw button becomes enabled)
+ */
+export async function waitForWithdrawApproval(widget: Locator) {
+  await widget.locator('button:has-text("Withdraw"):not(:disabled)').waitFor({ timeout: 60000 })
 }
