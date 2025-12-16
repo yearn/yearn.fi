@@ -594,7 +594,7 @@ function ChainSelectionModal({
                     <IconCross className={'size-4'} />
                   </button>
                 </div>
-                <div className={'mt-4 max-h-[320px] space-y-3 overflow-y-auto pr-1'}>
+                <div className={'mt-4 max-h-[400px] space-y-1 overflow-y-auto pr-1'}>
                   {options.length === 0 ? (
                     <p className={'text-sm text-text-secondary'}>{'No additional chains are available right now.'}</p>
                   ) : (
@@ -606,7 +606,7 @@ function ChainSelectionModal({
                         <label
                           key={chainId}
                           className={cl(
-                            'flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors',
+                            'flex items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors',
                             isChecked ? 'border-border bg-surface-tertiary/80' : 'border-border',
                             isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-surface-tertiary/50'
                           )}
@@ -615,7 +615,7 @@ function ChainSelectionModal({
                             {option.icon ? (
                               <span
                                 className={cl(
-                                  'size-8 overflow-hidden rounded-full',
+                                  'size-5 overflow-hidden rounded-full',
                                   option.label === 'Sonic' ? 'bg-white' : ''
                                 )}
                               >
