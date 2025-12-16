@@ -1,5 +1,0 @@
-export { APYSubline } from './APYSubline'
-export { APYTooltip } from './APYTooltip'
-export { VaultForwardAPY } from './VaultForwardAPY'
-export { VaultHoldingsAmount } from './VaultHoldingsAmount'
-export { VaultRiskScoreTag } from './VaultRiskScoreTag'

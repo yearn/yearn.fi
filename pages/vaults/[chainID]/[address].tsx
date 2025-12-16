@@ -4,41 +4,86 @@ import { useWeb3 } from '@lib/contexts/useWeb3'
 import type { TUseBalancesTokens } from '@lib/hooks/useBalances.multichains'
 import { useFetch } from '@lib/hooks/useFetch'
 import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
-import { IconAlertError } from '@lib/icons/IconAlertError'
-import { IconClose } from '@lib/icons/IconClose'
-import { toAddress } from '@lib/utils'
-import { variants } from '@lib/utils/animations'
+import { IconChevron } from '@lib/icons/IconChevron'
+import { cl, toAddress } from '@lib/utils'
+import { getVaultName } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { VaultDetailsTabsWrapper } from '@vaults-v2/components/details/tabs/VaultDetailsTabsWrapper'
-import { VaultActionsTabsWrapper } from '@vaults-v2/components/details/VaultActionsTabsWrapper'
-import { ActionFlowContextApp } from '@vaults-v2/contexts/useActionFlow'
-import { WithSolverContextApp } from '@vaults-v2/contexts/useSolver'
-import { VaultDetailsHeader } from '@vaults-v3/components/details/VaultDetailsHeader'
-import { motion } from 'framer-motion'
+import { UserBalanceGrid, VaultMetricsGrid } from '@nextgen/components/vaults-beta/QuickStatsGrid'
+import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
+import { VaultChartsSection } from '@nextgen/components/vaults-beta/VaultChartsSection'
+import { VaultDetailsHeader } from '@nextgen/components/vaults-beta/VaultDetailsHeader'
+import { VaultInfoSection } from '@nextgen/components/vaults-beta/VaultInfoSection'
+import { VaultRiskSection } from '@nextgen/components/vaults-beta/VaultRiskSection'
+import { VaultStrategiesSection } from '@nextgen/components/vaults-beta/VaultStrategiesSection'
+import { Widget } from '@nextgen/components/widget'
+import { WidgetActionType } from '@nextgen/types'
+import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 import type { ReactElement } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
-
-const INCIDENT_VAULT_ADDRESS = '0x58900d761ae3765b75ddfc235c1536b527f25d8f'
+import { useDevFlags } from '/src/contexts/useDevFlags'
 
 function Index(): ReactElement | null {
+  type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
+  const { headerDisplayMode } = useDevFlags()
+  const mobileDetailsSectionId = useId()
+
   const { address, isActive } = useWeb3()
   const params = useParams()
-
+  const chainId = Number(params.chainID)
   const { onRefresh } = useWallet()
-  const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: Number(params.chainID) })
+  const { yDaemonBaseUri } = useYDaemonBaseURI({
+    chainID: chainId
+  })
 
-  // Use vault address as key to properly handle navigation
+  // Use vault address as key to reset state
   const vaultKey = `${params.chainID}-${params.address}`
-  const [currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
+  const [_currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
   const [isInit, setIsInit] = useState(false)
+  const [overrideVault, setOverrideVault] = useState<TYDaemonVault | undefined>(undefined)
+  const [hasFetchedOverride, setHasFetchedOverride] = useState(false)
   const [lastVaultKey, setLastVaultKey] = useState(vaultKey)
+  const [isMobileDetailsExpanded, setIsMobileDetailsExpanded] = useState(false)
+  const detailsRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLElement | null>(null)
+  const chartsRef = useRef<HTMLDivElement>(null)
+  const aboutRef = useRef<HTMLDivElement>(null)
+  const riskRef = useRef<HTMLDivElement>(null)
+  const strategiesRef = useRef<HTMLDivElement>(null)
+  const infoRef = useRef<HTMLDivElement>(null)
+  const sectionRefs = useMemo(
+    () => ({
+      charts: chartsRef,
+      about: aboutRef,
+      risk: riskRef,
+      strategies: strategiesRef,
+      info: infoRef
+    }),
+    []
+  )
+  const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
+    about: true,
+    risk: true,
+    strategies: true,
+    info: true,
+    charts: true
+  })
+  const collapsibleTitles: Record<SectionKey, string> = {
+    about: 'Description',
+    risk: 'Risk',
+    strategies: 'Strategies',
+    info: 'More Info',
+    charts: 'Performance'
+  }
+  const [activeSection, setActiveSection] = useState<SectionKey>('charts')
 
   // Reset state when vault changes
   useEffect(() => {
     if (vaultKey !== lastVaultKey) {
       setCurrentVault(undefined)
+      setOverrideVault(undefined)
+      setHasFetchedOverride(false)
       setIsInit(false)
       setLastVaultKey(vaultKey)
     }
@@ -75,21 +120,49 @@ function Index(): ReactElement | null {
     }
   }, [endpoint, mutate])
 
+  // TODO: remove this workaround when possible
+  // <WORKAROUND>
+  const currentVault = useMemo(() => {
+    if (overrideVault) return overrideVault
+    if (_currentVault) return _currentVault
+    return undefined
+  }, [overrideVault, _currentVault])
+
+  const isV3 = currentVault?.version.startsWith('3') || currentVault?.version.startsWith('~3')
+
+  useEffect(() => {
+    if (!hasFetchedOverride && _currentVault && _currentVault.address) {
+      setHasFetchedOverride(true)
+      fetchYBoldVault(yDaemonBaseUri, _currentVault).then((_vault) => {
+        if (_vault) {
+          setOverrideVault(_vault)
+        }
+      })
+    }
+  }, [yDaemonBaseUri, _currentVault, hasFetchedOverride])
+  // </WORKAROUND>
+
   useEffect((): void => {
-    if (vault && (!currentVault || vault.address !== currentVault.address)) {
+    if (vault && (!_currentVault || vault.address !== _currentVault.address)) {
       setCurrentVault(vault)
       setIsInit(true)
     }
-  }, [vault, currentVault])
+  }, [vault, _currentVault])
 
   useEffect((): void => {
     if (address && isActive) {
       const tokensToRefresh: TUseBalancesTokens[] = []
       if (currentVault?.address) {
-        tokensToRefresh.push({ address: currentVault.address, chainID: currentVault.chainID })
+        tokensToRefresh.push({
+          address: currentVault.address,
+          chainID: currentVault.chainID
+        })
       }
       if (currentVault?.token?.address) {
-        tokensToRefresh.push({ address: currentVault.token.address, chainID: currentVault.chainID })
+        tokensToRefresh.push({
+          address: currentVault.token.address,
+          chainID: currentVault.chainID
+        })
       }
       if (currentVault?.staking.available) {
         tokensToRefresh.push({
@@ -110,6 +183,74 @@ function Index(): ReactElement | null {
     currentVault?.staking.address
   ])
 
+  const sections = useMemo(() => {
+    if (!currentVault || !yDaemonBaseUri) {
+      return []
+    }
+
+    return [
+      {
+        key: 'charts' as const,
+        shouldRender: Number.isInteger(chainId),
+        ref: sectionRefs.charts,
+        content: <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} />
+      },
+      {
+        key: 'about' as const,
+        shouldRender: true,
+        ref: sectionRefs.about,
+        content: <VaultAboutSection currentVault={currentVault} />
+      },
+      {
+        key: 'risk' as const,
+        shouldRender: true,
+        ref: sectionRefs.risk,
+        content: <VaultRiskSection currentVault={currentVault} />
+      },
+      {
+        key: 'strategies' as const,
+        shouldRender: Number(currentVault.strategies?.length || 0) > 0,
+        ref: sectionRefs.strategies,
+        content: <VaultStrategiesSection currentVault={currentVault} />
+      },
+      {
+        key: 'info' as const,
+        shouldRender: true,
+        ref: sectionRefs.info,
+        content: <VaultInfoSection currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
+      }
+    ]
+  }, [chainId, currentVault, sectionRefs, yDaemonBaseUri])
+
+  const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
+
+  useEffect(() => {
+    if (!renderableSections.some((section) => section.key === activeSection) && renderableSections[0]) {
+      setActiveSection(renderableSections[0].key)
+    }
+  }, [renderableSections, activeSection])
+
+  const handleSelectSection = (key: SectionKey): void => {
+    setActiveSection(key)
+    const element = sectionRefs[key]?.current
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
+  const toggleMobileDetails = (): void => {
+    setIsMobileDetailsExpanded((prev) => {
+      const newState = !prev
+      // Scroll to details when expanding
+      if (newState && detailsRef.current) {
+        setTimeout(() => {
+          detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }, 100)
+      }
+      return newState
+    })
+  }
+
   if (isLoadingVault || !params.address || !isInit || !yDaemonBaseUri) {
     return (
       <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
@@ -124,91 +265,242 @@ function Index(): ReactElement | null {
     return (
       <div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>
-          <p className={'text-sm text-neutral-900'}>{"We couln't find this vault on the connected network."}</p>
+          <p className={'text-sm text-text-primary'}>{"We couldn't find this vault on the connected network."}</p>
         </div>
       </div>
     )
   }
 
-  const isIncidentVault =
-    currentVault.chainID === 1 && toAddress(currentVault.address) === toAddress(INCIDENT_VAULT_ADDRESS)
+  const isCollapsibleMode = headerDisplayMode === 'collapsible'
+  // Calculate sticky positions for the collapsible header (desktop only)
+  // On mobile, natural scroll behavior is used
+  const headerStickyTop = 'var(--header-height)'
+  const nextSticky = `calc(var(--header-height) + 117.5px)`
 
   return (
-    <div className={'mx-auto my-0 mt-24 max-w-[1232px] md:mb-0 px-4'}>
-      {isIncidentVault ? (
-        <div className={'mb-6'}>
-          <IncidentBanner />
+    <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
+      <div className={'mx-auto w-full max-w-[1232px] px-4'}>
+        <header
+          className={cl(
+            'h-full rounded-3xl',
+            'relative flex-col items-center justify-center',
+            'hidden md:flex',
+            'md:sticky md:z-30'
+          )}
+          style={{ top: headerStickyTop }}
+          ref={headerRef}
+        >
+          <VaultDetailsHeader currentVault={currentVault} isCollapsibleMode={isCollapsibleMode} />
+        </header>
+
+        {/* Mobile: Compact Header */}
+        <div className="md:hidden mt-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
+              <ImageWithFallback
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`}
+                alt={currentVault.token.symbol || ''}
+                width={40}
+                height={40}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-black leading-tight text-text-secondary truncate">
+                {getVaultName(currentVault)} yVault
+              </h1>
+              <p className="text-xs text-text-secondary truncate">
+                {currentVault.token.symbol} • v{currentVault.version}
+              </p>
+            </div>
+          </div>
         </div>
-      ) : null}
-      <header className={'pointer-events-none flex w-full items-center justify-center'}>
-        <motion.div
-          key={'Vaults'}
-          initial={'initial'}
-          animate={'enter'}
-          variants={variants}
-          className={'pointer-events-none cursor-pointer md:-mt-0 '}
-        >
-          <ImageWithFallback
-            className={'size-12 md:size-[72px]'}
-            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`}
-            alt={''}
-            width={72}
-            height={72}
-          />
-        </motion.div>
-      </header>
 
-      <section className={'mt-4 grid w-full grid-cols-12 pb-10 md:mt-10'}>
-        <VaultDetailsHeader currentVault={currentVault} />
-        {currentVault && (
-          <ActionFlowContextApp currentVault={currentVault}>
-            <WithSolverContextApp>
-              <VaultActionsTabsWrapper currentVault={currentVault} />
-            </WithSolverContextApp>
-          </ActionFlowContextApp>
-        )}
-        {currentVault && <VaultDetailsTabsWrapper currentVault={currentVault} />}
-      </section>
-    </div>
-  )
-}
+        {/* Mobile Layout */}
+        <div className="md:hidden space-y-4">
+          {/* Vault metrics always at the top */}
+          <VaultMetricsGrid currentVault={currentVault} />
 
-function IncidentBanner(): ReactElement | null {
-  const [isVisible, setIsVisible] = useState(true)
+          {/* User balance grid */}
+          <UserBalanceGrid currentVault={currentVault} />
 
-  if (!isVisible) {
-    return null
-  }
+          {/* Widget */}
+          <div>
+            <Widget
+              vaultType={isV3 ? 'v3' : 'v2'}
+              vaultAddress={currentVault.address}
+              currentVault={currentVault}
+              gaugeAddress={currentVault.staking.address}
+              actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
+              chainId={chainId}
+            />
+          </div>
 
-  return (
-    <div
-      className={
-        'rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-black md:px-6 md:py-4 md:text-base'
-      }
-    >
-      <div className={'flex items-start gap-3'}>
-        <IconAlertError className={'mt-0.5 size-5 text-amber-700'} />
-        <p className={'flex-1 leading-relaxed'}>
-          {
-            "The yETH pool has been paused following a security incident. Yearn's v2 and v3 vault code is not impacted. More updates will be provided as we have them. Please check X/twitter for the most up to date information: "
-          }
-          <a
-            href={'https://x.com/yearnfi'}
-            target={'_blank'}
-            rel={'noreferrer'}
-            className={'underline underline-offset-2 transition-colors hover:text-amber-800'}
+          {/* Expandable details toggle button */}
+          <button
+            type="button"
+            onClick={toggleMobileDetails}
+            aria-label={isMobileDetailsExpanded ? 'Hide vault details' : 'Show vault details'}
+            aria-controls={mobileDetailsSectionId}
+            aria-expanded={isMobileDetailsExpanded}
+            className={cl(
+              'w-full bg-surface-secondary border border-border rounded-lg',
+              'py-4 px-6 flex items-center justify-between',
+              'transition-all duration-200',
+              'hover:bg-surface-secondary active:scale-[0.99]'
+            )}
           >
-            {'https://x.com/yearnfi'}
-          </a>
-        </p>
-        <button
-          type={'button'}
-          aria-label={'Dismiss announcement'}
-          onClick={(): void => setIsVisible(false)}
-          className={'mt-0.5 text-neutral-500 transition hover:text-neutral-700'}
-        >
-          <IconClose className={'size-4'} />
-        </button>
+            <span className="text-sm font-semibold text-text-primary">
+              {isMobileDetailsExpanded ? 'Hide Details' : 'View More Details'}
+            </span>
+            <IconChevron direction={isMobileDetailsExpanded ? 'up' : 'down'} className="size-5 text-text-secondary" />
+          </button>
+
+          {/* Expandable details section */}
+          {isMobileDetailsExpanded && (
+            <section
+              id={mobileDetailsSectionId}
+              ref={detailsRef}
+              aria-label="Vault performance and details"
+              className="space-y-4 pb-8"
+            >
+              {renderableSections.map((section) => {
+                const isCollapsible =
+                  section.key === 'about' ||
+                  section.key === 'risk' ||
+                  section.key === 'strategies' ||
+                  section.key === 'info'
+
+                if (isCollapsible) {
+                  const typedKey = section.key as SectionKey
+                  const isOpen = openSections[typedKey]
+
+                  return (
+                    <div key={section.key} ref={section.ref} className={'border border-border rounded-lg bg-surface'}>
+                      <button
+                        type={'button'}
+                        className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
+                        onClick={(): void =>
+                          setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                        }
+                      >
+                        <span className={'text-base font-semibold text-text-primary'}>
+                          {collapsibleTitles[typedKey]}
+                        </span>
+                        <IconChevron
+                          className={'size-4 text-text-secondary transition-transform duration-200'}
+                          direction={isOpen ? 'up' : 'down'}
+                        />
+                      </button>
+                      {isOpen ? <div>{section.content}</div> : null}
+                    </div>
+                  )
+                }
+
+                return (
+                  <div key={section.key} ref={section.ref} className={'border border-border rounded-lg bg-surface'}>
+                    {section.content}
+                  </div>
+                )
+              })}
+            </section>
+          )}
+        </div>
+
+        {/* Desktop Layout - Hidden on mobile */}
+        <section className={'hidden md:grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
+          <div className={'space-y-4 md:col-span-13 pb-4'}>
+            {renderableSections.length > 0 ? (
+              <div className={'w-full sticky z-30'} style={{ top: nextSticky }}>
+                <div className={'bg-app h-6'}></div>
+                <div
+                  className={cl(
+                    'flex flex-wrap gap-2 md:pb-3 md:gap-3',
+                    'bg-gradient-to-b from-app from-90% to-transparent'
+                  )}
+                >
+                  <div
+                    className={
+                      'flex w-full flex-wrap justify-between gap-2 rounded-lg bg-surface-secondary p-1 shadow-inner'
+                    }
+                  >
+                    {renderableSections.map((section) => (
+                      <button
+                        key={section.key}
+                        type={'button'}
+                        onClick={(): void => handleSelectSection(section.key)}
+                        className={cl(
+                          'flex-1 min-w-[120px] rounded-lg px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
+                          activeSection === section.key
+                            ? 'bg-surface text-text-primary shadow-sm'
+                            : 'bg-transparent text-text-secondary hover:text-text-primary'
+                        )}
+                      >
+                        {collapsibleTitles[section.key]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {renderableSections.map((section) => {
+              const isCollapsible =
+                section.key === 'about' ||
+                section.key === 'risk' ||
+                section.key === 'strategies' ||
+                section.key === 'info'
+              if (isCollapsible) {
+                const typedKey = section.key as SectionKey
+                const isOpen = openSections[typedKey]
+
+                return (
+                  <div
+                    key={section.key}
+                    ref={section.ref}
+                    className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
+                  >
+                    <button
+                      type={'button'}
+                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
+                      onClick={(): void =>
+                        setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                      }
+                    >
+                      <span className={'text-base font-semibold text-text-primary'}>{collapsibleTitles[typedKey]}</span>
+                      <IconChevron
+                        className={'size-4 text-text-secondary transition-transform duration-200'}
+                        direction={isOpen ? 'up' : 'down'}
+                      />
+                    </button>
+                    {isOpen ? <div>{section.content}</div> : null}
+                  </div>
+                )
+              }
+
+              return (
+                <div
+                  key={section.key}
+                  ref={section.ref}
+                  className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
+                >
+                  {section.content}
+                </div>
+              )
+            })}
+          </div>
+          <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-6')} style={{ top: nextSticky }}>
+            <div>
+              <Widget
+                vaultType={isV3 ? 'v3' : 'v2'}
+                vaultAddress={currentVault.address}
+                currentVault={currentVault}
+                gaugeAddress={currentVault.staking.address}
+                actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
+                chainId={chainId}
+              />
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   )

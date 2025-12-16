@@ -272,7 +272,7 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
               : 'mt-10 md:mt-20'
         )}
       >
-        <Link href={'/vaults'}>
+        <Link href={'/v2'}>
           <p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>{'Back to vaults'}</p>
         </Link>
       </nav>

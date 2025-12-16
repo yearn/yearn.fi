@@ -5,9 +5,9 @@ import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import type { TSortDirection } from '@lib/types'
 import { cl, formatCounterValue, formatPercent, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
-import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
-import { useQueryArguments } from '@vaults-v2/hooks/useVaultsQueryArgs'
+import type { TPossibleSortBy } from '@vaults-shared/hooks/useSortVaults'
+import { useSortVaults } from '@vaults-shared/hooks/useSortVaults'
+import { useQueryArguments } from '@vaults-shared/hooks/useVaultsQueryArgs'
 import { ALL_VAULTSV3_KINDS_KEYS } from '@vaults-v3/constants'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
@@ -20,7 +20,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
   const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
     defaultSortBy: 'allocationPercentage',
     defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
-    defaultPathname: '/vaults-beta/[chainID]/[address]'
+    defaultPathname: '/vaults/[chainID]/[address]'
   })
   const tokenPrice = useYearnTokenPrice({
     address: currentVault.token.address,

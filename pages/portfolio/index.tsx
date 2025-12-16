@@ -8,8 +8,7 @@ import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import { IconSpinner } from '@lib/icons/IconSpinner'
 import type { TSortDirection } from '@lib/types'
 import { isZero, toAddress } from '@lib/utils'
-import type { TPossibleSortBy } from '@vaults-v2/hooks/useSortVaults'
-import { useSortVaults } from '@vaults-v2/hooks/useSortVaults'
+import { type TPossibleSortBy, useSortVaults } from '@vaults-shared/index'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
 import { SuggestedVaultCard } from '@vaults-v3/components/SuggestedVaultCard'
@@ -38,7 +37,7 @@ function HoldingsEmptyState({ isActive, onConnect }: { isActive: boolean; onConn
         {isActive ? 'Deposit into a Yearn vault to see it here.' : 'Link a wallet to load your Yearn balances.'}
       </p>
       {isActive ? (
-        <Link to="/vaults-beta" className={'yearn--button'} data-variant={'filled'}>
+        <Link to="/vaults" className={'yearn--button'} data-variant={'filled'}>
           {'Browse vaults'}
         </Link>
       ) : (
@@ -342,7 +341,7 @@ function PortfolioPage(): ReactElement {
               <p className={'text-sm text-text-secondary'}>{'Track every Yearn position you currently hold.'}</p>
             </div>
             {hasHoldings ? (
-              <Link to="/vaults-beta" className={'yearn--button text-sm'} data-variant={'light'}>
+              <Link to="/vaults" className={'yearn--button text-sm'} data-variant={'light'}>
                 {'Browse more vaults'}
               </Link>
             ) : null}

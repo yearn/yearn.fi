@@ -9,10 +9,10 @@ type TProps = {
 
 export function VaultsHeader({ pathname }: TProps): ReactElement {
   const { name, icon } = APPS[AppName.VAULTS]
-  const isVaultPage = pathname === '/vaults/[chainID]/[address]'
+  const isVaultPage = pathname === '/v2/[chainID]/[address]'
 
   return (
-    <MotionDiv animate={!isVaultPage && pathname.startsWith('/vaults') ? 'enter' : 'exit'} name={name}>
+    <MotionDiv animate={!isVaultPage && pathname.startsWith('/v2') ? 'enter' : 'exit'} name={name}>
       {icon}
     </MotionDiv>
   )

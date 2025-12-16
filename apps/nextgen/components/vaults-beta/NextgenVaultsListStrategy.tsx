@@ -165,7 +165,7 @@ export function NextgenVaultsListStrategy({
               {variant === 'v3' && isVault ? (
                 <div className={'flex flex-row gap-2'}>
                   <Link
-                    href={`/vaults-beta/${chainId}/${toAddress(address)}`}
+                    href={`/vaults/${chainId}/${toAddress(address)}`}
                     className={cl('flex gap-1 items-center text-text-primary hover:text-text-secondary')}
                     target={'_blank'}
                     rel={'noopener noreferrer'}

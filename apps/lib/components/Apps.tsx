@@ -1,8 +1,7 @@
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import vaultsManifest from '@lib/data/vaults-manifest.json'
 import { LogoYearn } from '@lib/icons/LogoYearn'
-import { VAULTS_BETA_MENU } from '@vaults/constants/menu'
-import { VAULTS_MENU } from '@vaults-v2/constants/menu'
+import { VAULTS_BETA_MENU, VAULTS_MENU } from '@vaults-v2/constants/menu'
 import { VAULTS_V3_MENU } from '@vaults-v3/constants/menu'
 import type { ReactElement } from 'react'
 import Image from '/src/components/Image'
@@ -58,7 +57,7 @@ type TApp = {
 export const APPS: { [key in AppName]: TApp } = {
   V3: {
     name: AppName.VAULTSV3,
-    href: '/v3',
+    href: '/vaults',
     menu: VAULTS_V3_MENU,
     manifest: vaultsManifest,
     isDisabled: false,
@@ -92,7 +91,7 @@ export const APPS: { [key in AppName]: TApp } = {
   },
   Vaults: {
     name: `${AppName.VAULTS} V2`,
-    href: '/vaults',
+    href: '/vaults?type=v2',
     menu: VAULTS_MENU,
     manifest: vaultsManifest,
     icon: <LogoYearn className={'size-8'} back={'text-pink-400'} front={'text-white'} />

@@ -60,7 +60,7 @@ export default defineConfig({
       '@lib': path.resolve(__dirname, './apps/lib'),
       '@components': path.resolve(__dirname, './src/components'),
       '@hooks': path.resolve(__dirname, './src/hooks'),
-      '@vaults': path.resolve(__dirname, './apps/vaults'),
+      '@vaults-shared': path.resolve(__dirname, './apps/vaults-shared'),
       '@vaults-v2': path.resolve(__dirname, './apps/vaults-v2'),
       '@vaults-v3': path.resolve(__dirname, './apps/vaults-v3'),
       '@landing': path.resolve(__dirname, './apps/landing'),

@@ -427,10 +427,7 @@ export function VaultsListRow({ currentVault, flags }: TVaultRowProps): ReactEle
   }, [flags])
 
   return (
-    <Link
-      key={`${currentVault.address}`}
-      href={`/vaults-beta/${currentVault.chainID}/${toAddress(currentVault.address)}`}
-    >
+    <Link key={`${currentVault.address}`} href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
       <div
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-12',
