@@ -1,6 +1,5 @@
 import { Button } from '@lib/components/Button'
 import type { TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { DEFAULT_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
 import type { ReactElement } from 'react'
 
 type TVaultListEmpty = {
@@ -20,7 +19,7 @@ export function VaultsListEmpty({
   currentChains,
   onReset,
   isLoading,
-  defaultCategories = DEFAULT_VAULTS_CATEGORIES_KEYS,
+  defaultCategories = [],
   potentialResultsCount = 0
 }: TVaultListEmpty): ReactElement {
   if (isLoading) {

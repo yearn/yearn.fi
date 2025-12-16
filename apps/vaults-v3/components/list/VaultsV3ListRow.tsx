@@ -19,7 +19,6 @@ import { VaultForwardAPY, VaultForwardAPYInlineDetails } from '@vaults-v3/compon
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
 import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
-// import { useAvailableToDeposit } from '@vaults-v3/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -48,8 +47,7 @@ export function VaultsV3ListRow({
   hrefOverride?: string
 }): ReactElement {
   const navigate = useNavigate()
-  // const availableToDeposit = useAvailableToDeposit(currentVault)
-  const href = hrefOverride ?? `/vaults-beta/${currentVault.chainID}/${toAddress(currentVault.address)}`
+  const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const [isApyOpen, setIsApyOpen] = useState(false)
   const [isRiskOpen, setIsRiskOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)

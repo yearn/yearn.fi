@@ -58,7 +58,7 @@ export function HeroCard({ className, onLearnMore, isLearnMoreExpanded }: HeroCa
             'inline-flex items-center justify-center rounded-lg border border-white/60 px-6 py-2',
             'text-sm font-semibold text-white transition hover:border-white hover:text-white'
           )}
-          href={'/v3'}
+          href={'/vaults'}
         >
           {'Explore Vaults'}
         </Link>

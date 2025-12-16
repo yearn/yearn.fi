@@ -42,15 +42,15 @@ export type TAppGroup = {
 const CORE_APPS: TAppTile[] = [
   {
     name: 'V3 Vaults',
-    href: '/v3',
+    href: '/vaults',
     description: 'Single asset vaults',
     icon: yearnGlyph({ gradient: { start: '#FB245A', end: '#0657F9' }, front: 'text-white' }),
-    pathnames: ['/v3'],
+    pathnames: ['/vaults'],
     hosts: ['yearn.fi']
   },
   {
     name: 'V2 Vaults',
-    href: '/vaults',
+    href: '/vaults?type=v2',
     description: 'LP and Factory Vaults',
     icon: yearnGlyph({ back: 'text-[#f472b6]', front: 'text-white' }),
     pathnames: ['/vaults'],
@@ -115,11 +115,11 @@ const CORE_APPS: TAppTile[] = [
     hosts: ['yearn.space']
   },
   {
-    name: 'Vaults Beta',
-    href: '/vaults-beta',
-    description: 'Experimental site',
+    name: 'Vaults',
+    href: '/vaults',
+    description: 'Vaults',
     icon: yearnGlyph({ back: 'text-white', front: 'text-blue-500' }),
-    pathnames: ['/vaults-beta'],
+    pathnames: ['/vaults'],
     hosts: ['yearn.fi']
   }
 ]

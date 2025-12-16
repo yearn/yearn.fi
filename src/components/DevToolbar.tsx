@@ -13,7 +13,7 @@ export function DevToolbar(): ReactElement | null {
   const enabledInEnv =
     !import.meta.env.PROD || import.meta.env.VITE_ENABLE_DEV_TOOLBAR === 'true' || import.meta.env.MODE !== 'production'
 
-  const isVaultDetail = useMemo(() => /^\/vaults-beta\/\d+\/[^/]+/i.test(location.pathname), [location.pathname])
+  const isVaultDetail = useMemo(() => /^\/vaults\/\d+\/[^/]+/i.test(location.pathname), [location.pathname])
 
   const cycleHeaderDisplayMode = () => {
     const modes: Array<'collapsible' | 'full' | 'minimal' | 'sticky-name'> = [

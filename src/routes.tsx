@@ -7,16 +7,7 @@ const HomePage = lazy(() => import('../pages/index'))
 const AppsPage = lazy(() => import('../pages/apps/index'))
 const PortfolioPage = lazy(() => import('../pages/portfolio/index'))
 const VaultsPage = lazy(() => import('../pages/vaults/index'))
-const VaultsAboutPage = lazy(() => import('../pages/vaults/about'))
-const V3Page = lazy(() => import('../pages/v3/index'))
-const V3HomePage = lazy(() => import('../pages/v3/home'))
-const V3AboutPage = lazy(() => import('../pages/v3/about'))
-const VaultsBetaPage = lazy(() => import('../pages/vaults-beta/index'))
-const VaultsBetaDetailPage = lazy(() => import('../pages/vaults-beta/[chainID]/[address]'))
-const VaultsBetaSearchPage = lazy(() => import('../pages/vaults-beta/search/[query]'))
-
-const VaultsDetailPage = VaultsBetaDetailPage
-const V3DetailPage = VaultsBetaDetailPage
+const VaultsDetailPage = lazy(() => import('../pages/vaults/[chainID]/[address]'))
 
 // Loading component
 const PageLoader = (): ReactElement => (
@@ -39,21 +30,7 @@ export const routeConfig = {
   apps: '/apps',
   vaults: {
     index: '/vaults',
-    about: '/vaults/about',
-    detail: '/vaults/:chainID/:address',
-    factory: '/vaults/factory/*'
-  },
-  v3: {
-    index: '/v3',
-    home: '/v3/home',
-    about: '/v3/about',
-    detail: '/v3/:chainID/:address',
-    chainOnly: '/v3/:chainID'
-  },
-  vaultsBeta: {
-    index: '/vaults-beta',
-    detail: '/vaults-beta/:chainID/:address',
-    search: '/vaults-beta/search/:query'
+    detail: '/vaults/:chainID/:address'
   },
   external: {
     ybribe: '/ybribe/*',
@@ -82,28 +59,19 @@ export function AppRoutes(): ReactElement {
         {/* Portfolio page */}
         <Route path="/portfolio" element={<PortfolioPage />} />
 
-        {/* Vaults routes */}
+        {/* Unified Vaults routes */}
         <Route path="/vaults">
           <Route index element={<VaultsPage />} />
-          <Route path="about" element={<VaultsAboutPage />} />
           <Route path=":chainID/:address" element={<VaultsDetailPage />} />
-          <Route path="factory/*" element={<ExternalRedirect to="https://factory.yearn.fi" />} />
         </Route>
 
-        {/* V3 routes */}
-        <Route path="/v3" element={<V3Page />} />
-        <Route path="/v3/home" element={<V3HomePage />} />
-        <Route path="/v3/about" element={<V3AboutPage />} />
-        <Route path="/v3/:chainID/:address" element={<V3DetailPage />} />
-        {/* Redirect /v3/:chainId without address to /v3 */}
-        <Route path="/v3/:chainID" element={<Navigate to="/v3" replace />} />
-
-        {/* Vaults Beta routes */}
-        <Route path="/vaults-beta">
-          <Route index element={<VaultsBetaPage />} />
-          <Route path=":chainID/:address" element={<VaultsBetaDetailPage />} />
-          <Route path="search/:query" element={<VaultsBetaSearchPage />} />
-        </Route>
+        {/* Legacy redirects to new /vaults routes */}
+        <Route path="/v2" element={<Navigate to="/vaults?type=v2" replace />} />
+        <Route path="/v2/*" element={<Navigate to="/vaults?type=v2" replace />} />
+        <Route path="/v3" element={<Navigate to="/vaults" replace />} />
+        <Route path="/v3/*" element={<Navigate to="/vaults" replace />} />
+        <Route path="/vaults" element={<Navigate to="/vaults" replace />} />
+        <Route path="/vaults/*" element={<Navigate to="/vaults" replace />} />
 
         {/* External redirects */}
         <Route path="/ybribe/*" element={<ExternalRedirect to="https://ybribe.yearn.fi" />} />
