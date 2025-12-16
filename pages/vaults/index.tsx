@@ -20,8 +20,8 @@ import {
   ALL_VAULTSV3_KINDS_KEYS,
   DEFAULT_SELECTED_VAULTSV3_CATEGORIES
 } from '@vaults-v3/constants'
-import type { ReactElement, ReactNode } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 const AVAILABLE_TOGGLE_VALUE = 'available'
@@ -70,6 +70,30 @@ function ListOfVaults({
   vaultType,
   children
 }: TListOfVaultsProps): ReactElement {
+  const filtersRef = useRef<HTMLDivElement | null>(null)
+  const [filtersStickyHeight, setFiltersStickyHeight] = useState(0)
+
+  useLayoutEffect(() => {
+    const element = filtersRef.current
+    if (!element) return
+
+    const updateHeight = (): void => {
+      setFiltersStickyHeight(element.getBoundingClientRect().height)
+    }
+
+    updateHeight()
+
+    const observer = new ResizeObserver(() => updateHeight())
+    observer.observe(element)
+
+    return () => observer.disconnect()
+  }, [])
+
+  const stickyVars = useMemo(
+    () => ({ '--vaults-filters-height': `${filtersStickyHeight}px` }) as CSSProperties,
+    [filtersStickyHeight]
+  )
+
   // Use the appropriate filter hook based on vault type
   const v3FilterResult = useV3VaultFilter(
     vaultType === 'v3' ? types : null,
@@ -294,8 +318,6 @@ function ListOfVaults({
       )
     }
 
-    const hasRows = pinnedSections.length > 0 || mainVaults.length > 0
-
     return (
       <div className={'flex flex-col gap-px bg-app'}>
         {pinnedSections.map((section) => (
@@ -308,9 +330,6 @@ function ListOfVaults({
               return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
             })}
           </div>
-        ) : null}
-        {hasRows ? (
-          <div className={'shrink-0 border-t border-border bg-surface px-4 py-3 md:px-8 rounded-b-xl'} />
         ) : null}
       </div>
     )
@@ -333,7 +352,7 @@ function ListOfVaults({
   )
 
   const filtersElement = (
-    <div className={'w-full bg-app pb-2 shrink-0'}>
+    <div ref={filtersRef} className={'sticky z-40 w-full bg-app pb-5 shrink-0'} style={{ top: 'var(--header-height)' }}>
       {breadcrumbsElement}
       {suggestedVaultsElement}
       {vaultType === 'v3' ? (
@@ -364,90 +383,104 @@ function ListOfVaults({
   )
 
   const listElement = (
-    <div className={'flex w-full flex-1 flex-col'} style={{ minHeight: 0 }}>
-      <div className={'flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface'}>
-        <VaultsV3ListHead
-          containerClassName={'rounded-t-xl bg-surface shrink-0'}
-          wrapperClassName={'sticky top-0 z-10 mt-0 bg-surface'}
-          sortBy={sortBy}
-          sortDirection={sortDirection}
-          onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-            let targetSortBy = newSortBy as TPossibleSortBy
-            let targetSortDirection = newSortDirection as TSortDirection
+    <div className={'w-full rounded-xl bg-surface'} style={stickyVars}>
+      <div className={''}>
+        <div
+          className={'relative md:sticky md:z-30'}
+          style={{ top: 'calc(var(--header-height) + var(--vaults-filters-height))' }}
+        >
+          <div
+            aria-hidden={true}
+            className={'pointer-events-none absolute inset-0 z-0 bg-app border-2'}
+            style={{ borderColor: 'var(--color-app)' }}
+          />
+          <VaultsV3ListHead
+            containerClassName={'rounded-t-xl bg-surface shrink-0'}
+            wrapperClassName={'relative z-10 border border-border rounded-t-xl bg-transparent'}
+            sortBy={sortBy}
+            sortDirection={sortDirection}
+            onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+              let targetSortBy = newSortBy as TPossibleSortBy
+              let targetSortDirection = newSortDirection as TSortDirection
 
-            if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
-              targetSortBy = 'featuringScore'
-              targetSortDirection = 'desc'
-            }
-
-            onChangeSortBy(targetSortBy)
-            onChangeSortDirection(targetSortDirection)
-          }}
-          onToggle={(value): void => {
-            setActiveToggleValues((prev) => {
-              if (prev.includes(value)) {
-                return prev.filter((entry) => entry !== value)
+              if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
+                targetSortBy = 'featuringScore'
+                targetSortDirection = 'desc'
               }
-              return [value]
-            })
-          }}
-          activeToggleValues={activeToggleValues}
-          items={[
-            {
-              type: 'sort',
-              label: 'Vault / Featuring Score',
-              value: 'featuringScore',
-              sortable: true,
-              className: 'col-span-10'
-            },
-            {
-              type: 'sort',
-              label: 'Est. APY',
-              value: 'estAPY',
-              sortable: true,
-              className: 'col-span-3'
-            },
-            {
-              type: 'sort',
-              label: '30D APY',
-              value: 'APY',
-              sortable: true,
-              className: 'col-span-3'
-            },
-            {
-              type: 'sort',
-              label: 'TVL',
-              value: 'tvl',
-              sortable: true,
-              className: 'col-span-4'
-            },
-            // {
-            //   type: 'toggle',
-            //   label: 'Available',
-            //   value: AVAILABLE_TOGGLE_VALUE,
-            //   className: 'col-span-3',
-            //   disabled: availableVaults.length === 0
-            // },
-            {
-              type: 'toggle',
-              label: 'Holdings',
-              value: HOLDINGS_TOGGLE_VALUE,
-              className: 'col-span-4 justify-end',
-              disabled: holdingsVaults.length === 0
-            }
-          ]}
-        />
-        <div className={'flex flex-1 flex-col overflow-auto'}>{renderVaultList()}</div>
+
+              onChangeSortBy(targetSortBy)
+              onChangeSortDirection(targetSortDirection)
+            }}
+            onToggle={(value): void => {
+              setActiveToggleValues((prev) => {
+                if (prev.includes(value)) {
+                  return prev.filter((entry) => entry !== value)
+                }
+                return [value]
+              })
+            }}
+            activeToggleValues={activeToggleValues}
+            items={[
+              {
+                type: 'sort',
+                label: 'Vault / Featuring Score',
+                value: 'featuringScore',
+                sortable: true,
+                className: 'col-span-10'
+              },
+              {
+                type: 'sort',
+                label: 'Est. APY',
+                value: 'estAPY',
+                sortable: true,
+                className: 'col-span-3'
+              },
+              {
+                type: 'sort',
+                label: '30D APY',
+                value: 'APY',
+                sortable: true,
+                className: 'col-span-3'
+              },
+              {
+                type: 'sort',
+                label: 'TVL',
+                value: 'tvl',
+                sortable: true,
+                className: 'col-span-4'
+              },
+              // {
+              //   type: 'toggle',
+              //   label: 'Available',
+              //   value: AVAILABLE_TOGGLE_VALUE,
+              //   className: 'col-span-3',
+              //   disabled: availableVaults.length === 0
+              // },
+              {
+                type: 'toggle',
+                label: 'Holdings',
+                value: HOLDINGS_TOGGLE_VALUE,
+                className: 'col-span-4 justify-end',
+                disabled: holdingsVaults.length === 0
+              }
+            ]}
+          />
+        </div>
+        {/* <div className={'overflow-hidden rounded-b-xl'}> */}
+        <div className={'flex flex-col border-x border-b border-border rounded-b-xl overflow-hidden'}>
+          {renderVaultList()}
+        </div>
+        {/* </div> */}
       </div>
     </div>
   )
 
   if (typeof children === 'function') {
     const content = children({ filters: filtersElement, list: listElement })
-    return <div className={'flex h-full flex-col'}>{content}</div>
+    return <div className={'flex flex-col'}>{content}</div>
   }
 
-  return <div className={'flex h-full flex-col'}>{[filtersElement, listElement]}</div>
+  return <div className={'flex flex-col'}>{[filtersElement, listElement]}</div>
 }
 
 function Index(): ReactElement {
@@ -463,16 +496,11 @@ function Index(): ReactElement {
   })
 
   return (
-    <div className={'h-[calc(100vh-var(--header-height))] w-full overflow-hidden bg-app max-w-[1232px] mx-auto'}>
-      <div
-        className={'relative z-50 flex w-full flex-col gap-4 bg-transparent md:gap-3 pb-4 px-4'}
-        style={{
-          height: 'calc(100vh - var(--header-height))'
-        }}
-      >
+    <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
+      <div className={'mx-auto w-full max-w-[1232px] px-4 pb-4'}>
         <ListOfVaults {...queryArgs} vaultType={vaultType}>
           {({ filters, list }) => (
-            <div className={'flex h-full flex-col'}>
+            <div className={'flex flex-col'}>
               {filters}
               {list}
             </div>
