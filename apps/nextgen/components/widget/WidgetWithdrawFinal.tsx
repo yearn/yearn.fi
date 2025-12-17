@@ -772,6 +772,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
               loading={isLoadingQuote}
               className="w-full"
               notificationParams={approveNotificationParams}
+              data-testid="approve-button"
             />
           )}
           <TxButton
@@ -786,6 +787,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
             onSuccess={handleWithdrawSuccess}
             className="w-full"
             notificationParams={withdrawNotificationParams}
+            data-testid="withdraw-button"
           />
         </div>
       </div>

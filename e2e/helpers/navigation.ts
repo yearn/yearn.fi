@@ -1,4 +1,4 @@
-import type { Page, Locator } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 
 /**
  * Get the visible widget container (inside <section>)
@@ -11,7 +11,7 @@ function getWidget(page: Page): Locator {
  * Navigate to vault page and wait for widget to load
  */
 export async function navigateToVault(page: Page, vaultAddress: string, chainId: number) {
-  await page.goto(`/vaults-beta/${chainId}/${vaultAddress}`)
+  await page.goto(`/vaults/${chainId}/${vaultAddress}`)
   await page.waitForLoadState('networkidle')
 
   // Wait for the widget to be visible

@@ -24,6 +24,7 @@ type Props = {
   additionalComponent?: ReactNode
   addNotification?: (type: string, hash?: string, transactionName?: string) => void
   notificationParams?: TTxButtonNotificationParams
+  'data-testid'?: string
 }
 
 type ButtonState = 'loading' | 'success' | 'error' | 'default' | 'simulating' | 'approved' | 'notConnected'
@@ -76,8 +77,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const isWaitingForEnsoTx = isEnsoOrder && !!(prepareWrite.data?.request as any)?.__waitingForTx
   const isLoading = override === 'loading' || _loading || (isWaitingForEnsoTx && !!ensoTxHash) || isChainSwitching
 
-  const disabled =
-    _disabled || (!prepareWrite.isSuccess && !wrongNetwork) || isLoading || isSimulating || override === 'error'
+  const disabled = _disabled || (!prepareWrite.isSuccess && !wrongNetwork) || isLoading || isSimulating
 
   // Helper to convert notification params to legacy TActionParams format
   const buildActionParamsForNotification = useCallback(() => {
@@ -282,12 +282,27 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
     }
   }, [isTxSuccess, onSuccess, ensoTxHash])
 
+  // Handle transaction errors
+  useEffect(() => {
+    if (isError && receipt.error) {
+      console.error('Transaction failed:', receipt.error)
+      console.error('Receipt data:', receipt.data)
+      console.error('Transaction name:', transactionName)
+      setOverride('error')
+      // Clear Enso tx hash after error
+      if (ensoTxHash) {
+        setEnsoTxHash(undefined)
+      }
+    }
+  }, [isError, receipt.error, ensoTxHash, receipt.data, transactionName])
+
   return (
     <Button
       variant={getVariant()}
       classNameOverride="yearn--button--nextgen w-full"
       className={props.className}
       disabled={disabled}
+      data-testid={props['data-testid']}
       onClick={async (event: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
         ref.current = [event?.clientX, event?.clientY]
 
@@ -307,6 +322,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
           if (!prepareWrite.data?.request || !client) return {}
           try {
             const gasEstimate = await client.estimateContractGas(prepareWrite.data.request as any)
+
             if (gasEstimate) {
               const gas = (gasEstimate * BigInt(110)) / BigInt(100) // 10% buffer
               return { gas }

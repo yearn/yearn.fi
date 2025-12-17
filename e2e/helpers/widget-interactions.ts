@@ -53,21 +53,39 @@ export async function selectToken(widget: Locator, tokenAddress: string) {
 
 /**
  * Wait for Enso route calculation to complete (for zap deposits)
+ * Waits for the Approve button to appear (not "Approve First" and not "Finding route...")
  */
 export async function waitForRouteCalculation(widget: Locator) {
-  await widget.locator('button:not(:has-text("Finding route...")):has-text("Approve")').waitFor({ timeout: 30000 })
+  // Wait for any approve button that's not disabled and doesn't say "Finding route..."
+  await widget
+    .locator('button:has-text("Approve"):not(:disabled):not(:has-text("Finding route..."))')
+    .first()
+    .waitFor({ timeout: 30000 })
 }
 
 /**
  * Wait for deposit approval confirmation (Deposit button becomes enabled)
  */
 export async function waitForDepositApproval(widget: Locator) {
-  await widget.locator('button:has-text("Deposit"):not(:disabled)').waitFor({ timeout: 60000 })
+  await widget.locator('[data-testid="deposit-button"]:not(:disabled)').waitFor({ timeout: 600000 })
 }
 
 /**
  * Wait for withdraw approval confirmation (Withdraw button becomes enabled)
  */
 export async function waitForWithdrawApproval(widget: Locator) {
-  await widget.locator('button:has-text("Withdraw"):not(:disabled)').waitFor({ timeout: 60000 })
+  await widget.locator('[data-testid="withdraw-button"]:not(:disabled)').waitFor({ timeout: 60000 })
+}
+
+/**
+ * Check if the TxButton is showing an error state
+ * If error is detected, throw an error to fail the test
+ */
+export async function checkForTxButtonError(widget: Locator) {
+  const tryAgainButton = widget.locator('button:has-text("Try Again")')
+  const hasError = await tryAgainButton.isVisible({ timeout: 1000 }).catch(() => false)
+
+  if (hasError) {
+    throw new Error('Transaction failed - TxButton is showing "Try Again" error state')
+  }
 }

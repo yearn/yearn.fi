@@ -773,6 +773,7 @@ export const WidgetDepositFinal: FC<Props> = ({
               loading={isLoadingQuote}
               className="w-full"
               notificationParams={approveNotificationParams}
+              data-testid="approve-button"
             />
           )}
           <TxButton
@@ -797,6 +798,7 @@ export const WidgetDepositFinal: FC<Props> = ({
             onSuccess={handleDepositSuccess}
             className="w-full"
             notificationParams={depositNotificationParams}
+            data-testid="deposit-button"
           />
         </div>
       </div>
