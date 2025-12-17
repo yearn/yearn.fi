@@ -209,7 +209,7 @@ export function Filters({
 
   return (
     <>
-      <div className={'relative col-span-24 w-full rounded-lg border border-border bg-surface mt-2 p-2 md:col-span-19'}>
+      <div className={'relative col-span-24 w-full  md:col-span-19'}>
         <div className={'md:hidden'}>
           <div className={'mb-5 w-full'}>
             <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
@@ -378,7 +378,7 @@ function FilterControls({
           <div className={'flex w-full flex-wrap items-center gap-3'}>
             <div
               className={
-                'flex h-10 shrink-0 items-stretch overflow-hidden rounded-md border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
+                'flex h-10 shrink-0 items-stretch overflow-hidden rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
               }
             >
               <button
