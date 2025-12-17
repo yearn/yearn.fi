@@ -22,7 +22,7 @@ type TFiltersV2Props = {
   holdingsVaults: TYDaemonVault[]
 }
 
-const V2_SUPPORTED_CHAINS = [1, 10, 250, 42161]
+const V2_SUPPORTED_CHAINS = [1, 10, 42161]
 
 export const FiltersV2: React.FC<TFiltersV2Props> = ({
   chains,
@@ -95,22 +95,6 @@ export const FiltersV2: React.FC<TFiltersV2Props> = ({
           />
         </div>
         <div className={'flex flex-wrap gap-2'}>
-          {chainButtons.map((chain) => (
-            <button
-              key={chain.id}
-              type={'button'}
-              className={cl(
-                'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all border',
-                chain.isSelected
-                  ? 'border-border bg-surface text-text-primary'
-                  : 'border-transparent text-text-secondary hover:text-text-primary'
-              )}
-              onClick={(): void => handleChainToggle(chain.id)}
-            >
-              {chain.icon ? <span className={'size-5 overflow-hidden rounded-full'}>{chain.icon}</span> : null}
-              <span>{chain.label}</span>
-            </button>
-          ))}
           <button
             type={'button'}
             className={cl(
@@ -130,6 +114,22 @@ export const FiltersV2: React.FC<TFiltersV2Props> = ({
             </span>
             <span>{'All'}</span>
           </button>
+          {chainButtons.map((chain) => (
+            <button
+              key={chain.id}
+              type={'button'}
+              className={cl(
+                'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all border',
+                chain.isSelected
+                  ? 'border-border bg-surface text-text-primary'
+                  : 'border-transparent text-text-secondary hover:text-text-primary'
+              )}
+              onClick={(): void => handleChainToggle(chain.id)}
+            >
+              {chain.icon ? <span className={'size-5 overflow-hidden rounded-full'}>{chain.icon}</span> : null}
+              <span>{chain.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -139,18 +139,33 @@ export const FiltersV2: React.FC<TFiltersV2Props> = ({
             <div className={'flex w-full flex-wrap justify-between items-center gap-3'}>
               <div
                 className={
-                  'flex shrink-0 flex-wrap items-center gap-px rounded-md border h-10 py-1 px-1.5 bg-surface-secondary border-border text-sm text-text-primary'
+                  'flex h-10 shrink-0 items-stretch overflow-hidden rounded-md border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
                 }
               >
+                <button
+                  type={'button'}
+                  className={cl(
+                    'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+                    'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+                    'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+                  )}
+                  data-active={areAllChainsSelected}
+                  onClick={handleSelectAllChains}
+                  aria-pressed={areAllChainsSelected}
+                >
+                  <span className={'size-5 overflow-hidden rounded-full'}>
+                    <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
+                  </span>
+                  <span className={'whitespace-nowrap'}>{'All'}</span>
+                </button>
                 {chainButtons.map((chain) => (
                   <button
                     key={chain.id}
                     type={'button'}
                     className={cl(
-                      'flex items-center gap-2 rounded-sm px-3 py-1 font-medium transition-all',
-                      'hover:bg-surface/70',
-                      'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-surface-secondary/40',
-                      'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
+                      'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+                      'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+                      'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
                     )}
                     data-active={chain.isSelected}
                     onClick={(): void => handleChainToggle(chain.id)}
@@ -159,30 +174,9 @@ export const FiltersV2: React.FC<TFiltersV2Props> = ({
                     {chain.icon ? (
                       <span className={'size-5 overflow-hidden rounded-full bg-surface/80'}>{chain.icon}</span>
                     ) : null}
-                    <span>{chain.label}</span>
+                    <span className={'whitespace-nowrap'}>{chain.label}</span>
                   </button>
                 ))}
-                <button
-                  type={'button'}
-                  className={cl(
-                    'flex items-center gap-2 rounded-lg px-3 py-1 font-medium transition-all',
-                    'hover:bg-surface/70',
-                    'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-surface-secondary/40',
-                    'data-[active=true]:bg-surface-secondary/40 data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
-                  )}
-                  data-active={areAllChainsSelected}
-                  onClick={handleSelectAllChains}
-                  aria-pressed={areAllChainsSelected}
-                >
-                  <span className={'size-5 overflow-hidden rounded-full'}>
-                    <LogoYearn
-                      className={'size-full'}
-                      back={areAllChainsSelected ? 'text-text-primary' : 'text-text-secondary'}
-                      front={'text-surface'}
-                    />
-                  </span>
-                  <span>{'All'}</span>
-                </button>
               </div>
               <div className={'flex flex-row items-center gap-3 min-w-[300px] max-w-[500px] flex-1'}>
                 <SearchBar
