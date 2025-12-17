@@ -70,29 +70,40 @@ function ListOfVaults({
   vaultType,
   children
 }: TListOfVaultsProps): ReactElement {
+  const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
-  const [filtersStickyHeight, setFiltersStickyHeight] = useState(0)
 
   useLayoutEffect(() => {
-    const element = filtersRef.current
-    if (!element) return
+    const filtersElement = filtersRef.current
+    const varsElement = varsRef.current
+    if (!filtersElement || !varsElement) return
 
-    const updateHeight = (): void => {
-      setFiltersStickyHeight(element.getBoundingClientRect().height)
+    const updateHeight = (heightOverride?: number): void => {
+      const height = heightOverride ?? filtersElement.getBoundingClientRect().height
+      varsElement.style.setProperty('--vaults-filters-height', `${height}px`)
     }
 
     updateHeight()
 
-    const observer = new ResizeObserver(() => updateHeight())
-    observer.observe(element)
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', () => updateHeight(), { passive: true })
+      return () => window.removeEventListener('resize', () => updateHeight())
+    }
 
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      updateHeight(entry?.contentRect?.height)
+    })
+    observer.observe(filtersElement)
     return () => observer.disconnect()
   }, [])
 
-  const stickyVars = useMemo(
-    () => ({ '--vaults-filters-height': `${filtersStickyHeight}px` }) as CSSProperties,
-    [filtersStickyHeight]
-  )
+  useLayoutEffect(() => {
+    const filtersElement = filtersRef.current
+    const varsElement = varsRef.current
+    if (!filtersElement || !varsElement) return
+    varsElement.style.setProperty('--vaults-filters-height', `${filtersElement.getBoundingClientRect().height}px`)
+  })
 
   // Use the appropriate filter hook based on vault type
   const v3FilterResult = useV3VaultFilter(
@@ -383,7 +394,7 @@ function ListOfVaults({
   )
 
   const listElement = (
-    <div className={'w-full rounded-xl bg-surface'} style={stickyVars}>
+    <div className={'w-full rounded-xl bg-surface'}>
       <div className={''}>
         <div
           className={'relative md:sticky md:z-30'}
@@ -477,10 +488,19 @@ function ListOfVaults({
 
   if (typeof children === 'function') {
     const content = children({ filters: filtersElement, list: listElement })
-    return <div className={'flex flex-col'}>{content}</div>
+    return (
+      <div ref={varsRef} className={'flex flex-col'} style={{ '--vaults-filters-height': '0px' } as CSSProperties}>
+        {content}
+      </div>
+    )
   }
 
-  return <div className={'flex flex-col'}>{[filtersElement, listElement]}</div>
+  return (
+    <div ref={varsRef} className={'flex flex-col'} style={{ '--vaults-filters-height': '0px' } as CSSProperties}>
+      {filtersElement}
+      {listElement}
+    </div>
+  )
 }
 
 function Index(): ReactElement {
