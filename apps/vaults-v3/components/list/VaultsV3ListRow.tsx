@@ -48,6 +48,8 @@ export function VaultsV3ListRow({
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
+  const network = getNetwork(currentVault.chainID)
+  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const [isApyOpen, setIsApyOpen] = useState(false)
   const [isRiskOpen, setIsRiskOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -126,22 +128,40 @@ export function VaultsV3ListRow({
                 height={32}
               />
             </div>
-            <div className={'truncate'}>
+            <div className={'min-w-0'}>
               <strong
                 title={currentVault.name}
                 className={'block truncate font-black text-text-primary md:-mb-0.5 text-lg'}
               >
                 {currentVault.name}
               </strong>
-              <div className={'flex flex-row items-center gap-1 text-sm text-text-primary/60'}>
-                <TokenLogo
-                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`}
-                  tokenSymbol={getNetwork(currentVault.chainID).name}
-                  width={14}
-                  height={14}
-                />
-                <p>{getNetwork(currentVault.chainID).name}</p>
-                <p>{` - ${currentVault.category} - ${currentVault.kind}`}</p>
+              <div className={'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'}>
+                <span
+                  className={
+                    'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
+                  }
+                >
+                  <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
+                  <span>{network.name}</span>
+                </span>
+                {currentVault.category ? (
+                  <span
+                    className={
+                      'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
+                    }
+                  >
+                    {currentVault.category}
+                  </span>
+                ) : null}
+                {currentVault.kind ? (
+                  <span
+                    className={
+                      'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
+                    }
+                  >
+                    {currentVault.kind}
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
