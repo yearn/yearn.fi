@@ -14,7 +14,11 @@ import { cl, formatCounterValue, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
 import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
-import { VaultChartsSection } from '@nextgen/components/vaults-beta/VaultChartsSection'
+import {
+  type TVaultChartTab,
+  type TVaultChartTimeframe,
+  VaultChartsSection
+} from '@nextgen/components/vaults-beta/VaultChartsSection'
 import { VaultForwardAPY, VaultForwardAPYInlineDetails } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
@@ -22,20 +26,13 @@ import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { type TVaultsV3ExpandedView, VaultsV3ExpandedSelector } from './VaultsV3ExpandedSelector'
 
 type TVaultRowFlags = {
   hasHoldings?: boolean
   isMigratable?: boolean
   isRetired?: boolean
 }
-
-const EXPANDED_TABS = [
-  { id: 'charts', label: 'Charts' },
-  { id: 'strategies', label: 'Strategies' },
-  { id: 'info', label: 'Vault Info' }
-] as const
-
-type ExpandedTabId = (typeof EXPANDED_TABS)[number]['id']
 
 export function VaultsV3ListRow({
   currentVault,
@@ -53,7 +50,8 @@ export function VaultsV3ListRow({
   const [isApyOpen, setIsApyOpen] = useState(false)
   const [isRiskOpen, setIsRiskOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
-  const [activeExpandedTab, setActiveExpandedTab] = useState<ExpandedTabId>('charts')
+  const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('performance')
+  const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
 
   const handleRowClick = (): void => {
     navigate(href)
@@ -68,12 +66,14 @@ export function VaultsV3ListRow({
 
   useEffect(() => {
     if (isExpanded) {
-      setActiveExpandedTab('charts')
+      setExpandedView('performance')
     }
   }, [isExpanded])
 
   return (
-    <div className={cl('w-full overflow-hidden transition-colors bg-surface', isExpanded ? 'border-border' : '')}>
+    <div
+      className={cl('w-full overflow-hidden transition-colors bg-surface', isExpanded ? 'border-y border-border' : '')}
+    >
       {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
       <div
         role={'link'}
@@ -311,38 +311,37 @@ export function VaultsV3ListRow({
       </div>
 
       {isExpanded ? (
-        <div className={'border-t border-border bg-surface'}>
-          <div className={'flex flex-wrap gap-2 px-6 pt-4'}>
-            <div className={'flex items-center gap-1 rounded-lg bg-app p-1'}>
-              {EXPANDED_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type={'button'}
-                  className={cl(
-                    'rounded-lg px-4 py-1 text-xs font-semibold tracking-wide transition-colors',
-                    activeExpandedTab === tab.id
-                      ? 'bg-surface text-text-primary'
-                      : 'bg-transparent text-text-secondary hover:text-text-secondary'
-                  )}
-                  onClick={(): void => setActiveExpandedTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className={'pb-6 pt-2 px-2'}>
-            {activeExpandedTab === 'charts' ? (
-              <VaultChartsSection chainId={currentVault.chainID} vaultAddress={currentVault.address} />
-            ) : null}
-            {activeExpandedTab === 'strategies' ? (
-              <div className={'border border-border bg-surface p-4 md:p-6'}>
-                <VaultStrategyAllocationPreview currentVault={currentVault} />
+        <div className={'bg-surface'}>
+          <VaultsV3ExpandedSelector
+            activeView={expandedView}
+            onViewChange={setExpandedView}
+            timeframe={expandedTimeframe}
+            onTimeframeChange={setExpandedTimeframe}
+          />
+
+          <div className={'px-6 pb-6 pt-3'}>
+            {expandedView === 'apy' || expandedView === 'performance' ? (
+              <div className={'border border-border bg-surface'}>
+                <VaultChartsSection
+                  chainId={currentVault.chainID}
+                  vaultAddress={currentVault.address}
+                  shouldRenderSelectors={false}
+                  chartTab={(expandedView === 'apy' ? 'historical-apy' : 'historical-pps') satisfies TVaultChartTab}
+                  timeframe={expandedTimeframe}
+                  chartHeightPx={150}
+                  chartHeightMdPx={150}
+                />
               </div>
             ) : null}
-            {activeExpandedTab === 'info' ? (
-              <div className={'border border-border bg-surface'}>
-                <VaultAboutSection currentVault={currentVault} />
+
+            {expandedView === 'info' ? (
+              <div className={'grid gap-4 md:grid-cols-2'}>
+                <div className={'border border-border bg-surface p-4 md:p-6'}>
+                  <VaultStrategyAllocationPreview currentVault={currentVault} />
+                </div>
+                <div className={'border border-border bg-surface'}>
+                  <VaultAboutSection currentVault={currentVault} />
+                </div>
               </div>
             ) : null}
           </div>
