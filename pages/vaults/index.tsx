@@ -128,7 +128,7 @@ function ListOfVaults({
   const totalMigratableMatching = vaultType === 'v3' ? (v3FilterResult.totalMigratableMatching ?? 0) : 0
   const totalRetiredMatching = vaultType === 'v3' ? (v3FilterResult.totalRetiredMatching ?? 0) : 0
 
-  const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(types, null, search || '', categories)
+  const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(types, null, '', categories)
 
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
@@ -149,7 +149,8 @@ function ListOfVaults({
   const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
   const sortedHoldingsVaults = useSortVaults(holdingsVaults, sortBy, sortDirection)
   const sortedAvailableVaults = useSortVaults(availableVaults, sortBy, sortDirection)
-  const sortedSuggestedCandidates = useSortVaults(filteredVaultsAllChains, 'featuringScore', 'desc')
+  const sortedSuggestedV3Candidates = useSortVaults(filteredVaultsAllChains, 'featuringScore', 'desc')
+  const sortedSuggestedV2Candidates = useSortVaults(v2FilterResult.filteredVaultsNoSearch, 'featuringScore', 'desc')
 
   const pinnedSections = useMemo(() => {
     const sections: Array<{ key: string; vaults: typeof sortedVaults }> = []
@@ -215,12 +216,20 @@ function ListOfVaults({
     [holdingsVaults]
   )
 
-  const suggestedVaults = useMemo(
+  const suggestedV3Vaults = useMemo(
     () =>
-      sortedSuggestedCandidates
+      sortedSuggestedV3Candidates
         .filter((vault) => !holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`))
         .slice(0, 8),
-    [sortedSuggestedCandidates, holdingsKeySet]
+    [sortedSuggestedV3Candidates, holdingsKeySet]
+  )
+
+  const suggestedV2Vaults = useMemo(
+    () =>
+      sortedSuggestedV2Candidates
+        .filter((vault) => !holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`))
+        .slice(0, 8),
+    [sortedSuggestedV2Candidates, holdingsKeySet]
   )
 
   const visibleFlagCounts = displayedVaults.reduce(
@@ -347,7 +356,12 @@ function ListOfVaults({
     )
   }
 
-  const suggestedVaultsElement = vaultType === 'v3' ? <TrendingVaults suggestedVaults={suggestedVaults} /> : null
+  const suggestedVaultsElement =
+    vaultType === 'v3' ? (
+      <TrendingVaults suggestedVaults={suggestedV3Vaults} />
+    ) : (
+      <TrendingVaults suggestedVaults={suggestedV2Vaults} />
+    )
 
   const breadcrumbsElement = (
     <div className={'mb-3 mt-2 flex items-center gap-2 text-sm text-text-secondary'}>
@@ -364,7 +378,7 @@ function ListOfVaults({
   )
 
   const filtersElement = (
-    <div ref={filtersRef} className={'sticky z-40 w-full bg-app pb-5 shrink-0'} style={{ top: 'var(--header-height)' }}>
+    <div ref={filtersRef} className={'sticky z-40 w-full bg-app pb-2 shrink-0'} style={{ top: 'var(--header-height)' }}>
       {breadcrumbsElement}
       {suggestedVaultsElement}
       {vaultType === 'v3' ? (
@@ -399,7 +413,7 @@ function ListOfVaults({
       <div className={''}>
         <div
           className={'relative md:sticky md:z-30'}
-          style={{ top: 'calc(var(--header-height) + var(--vaults-filters-height))' }}
+          style={{ top: 'calc(var(--header-height) + var(--vaults-filters-height) + 8px)' }}
         >
           <div
             aria-hidden={true}
