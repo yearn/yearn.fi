@@ -478,7 +478,11 @@ function ListOfVaults({
           />
         </div>
         {/* <div className={'overflow-hidden rounded-b-xl'}> */}
-        <div className={'flex flex-col border-x border-b border-border rounded-b-xl overflow-hidden'}>
+        <div
+          className={
+            'flex flex-col border-x border-b border-border rounded-b-xl overflow-hidden hover:overflow-visible focus-within:overflow-visible'
+          }
+        >
           {renderVaultList()}
         </div>
         {/* </div> */}

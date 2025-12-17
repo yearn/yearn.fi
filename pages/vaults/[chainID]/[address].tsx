@@ -193,7 +193,7 @@ function Index(): ReactElement | null {
         key: 'charts' as const,
         shouldRender: Number.isInteger(chainId),
         ref: sectionRefs.charts,
-        content: <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} chartHeightPx={230} />
+        content: <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} chartHeightPx={235} />
       },
       {
         key: 'about' as const,

@@ -346,7 +346,11 @@ function PortfolioPage(): ReactElement {
               </Link>
             ) : null}
           </div>
-          <div className={'overflow-hidden rounded-3xl border border-border'}>
+          <div
+            className={
+              'overflow-hidden hover:overflow-visible focus-within:overflow-visible rounded-3xl border border-border'
+            }
+          >
             <div className={'flex flex-col'}>
               <VaultsV3ListHead
                 sortBy={sortBy}

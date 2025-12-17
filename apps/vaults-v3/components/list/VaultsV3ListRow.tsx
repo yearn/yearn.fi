@@ -50,66 +50,72 @@ export function VaultsV3ListRow({
   const [isApyOpen, setIsApyOpen] = useState(false)
   const [isRiskOpen, setIsRiskOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
-  const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('performance')
+  const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('apy')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
-
-  const handleRowClick = (): void => {
-    navigate(href)
-  }
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      navigate(href)
-    }
-  }
 
   useEffect(() => {
     if (isExpanded) {
-      setExpandedView('performance')
+      setExpandedView('apy')
     }
   }, [isExpanded])
 
   return (
     <div
-      className={cl('w-full overflow-hidden transition-colors bg-surface', isExpanded ? 'border-y border-border' : '')}
+      className={cl(
+        'w-full overflow-visible transition-colors bg-surface relative border-b border-border'
+        // !isExpanded ? 'hover:z-10 hover:border-x hover:border-border' : ''
+        // 'hover:border-x hover:border-border',
+        // isExpanded ? 'border-y border-border' : ''
+      )}
     >
-      {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
       <div
-        role={'link'}
-        tabIndex={0}
-        onClick={handleRowClick}
-        onKeyDown={handleKeyDown}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
-          'p-6 pt-2 pb-4 pr-16 md:pr-20',
-          'cursor-pointer relative group'
+          'p-6 pt-2 pb-4 pr-32 md:pr-36',
+          'relative group'
         )}
       >
-        <div
-          className={cl(
-            'absolute inset-0',
-            'opacity-0 transition-opacity duration-300 group-hover:opacity-20 group-focus-visible:opacity-20 pointer-events-none',
-            'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
-          )}
-        />
-
         <button
           type={'button'}
-          aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
-          aria-expanded={isExpanded}
           onClick={(event): void => {
             event.stopPropagation()
-            setIsExpanded((value) => !value)
+            navigate(href)
           }}
           className={cl(
-            'absolute top-4 right-4 z-20 flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
-            'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
+            'absolute top-4 right-4 z-20 flex items-center justify-center rounded-lg border border-primary bg-surface px-3 py-2 text-xs font-semibold text-primary transition-colors',
+            'hover:border-primary hover:text-surface hover:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
             'md:top-5 md:right-5'
           )}
         >
-          <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
+          {'Go to Vault'}
         </button>
+
+        {!isExpanded ? (
+          <button
+            type={'button'}
+            aria-label={'Expand'}
+            onClick={(event): void => {
+              event.stopPropagation()
+              setIsExpanded(true)
+            }}
+            className={cl(
+              'absolute bottom-2 left-1/2 z-30 -translate-x-1',
+              'rounded-full border border-border bg-surface px-3 py-1',
+              'text-xs font-semibold text-text-secondary',
+              'opacity-100 transition-opacity duration-150',
+              'md:opacity-0 md:group-hover:opacity-100 md:group-focus-visible:opacity-100',
+              'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+            )}
+          >
+            <span className={'flex items-center'}>
+              <span>{''}</span>
+              <span className={'flex flex-col -space-y-2'}>
+                <IconChevron size={12} direction={'down'} />
+                <IconChevron size={12} direction={'down'} />
+              </span>
+            </span>
+          </button>
+        ) : null}
 
         {/* TODO:on hover add list head categories */}
         <div className={cl('col-span-10 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
@@ -312,28 +318,14 @@ export function VaultsV3ListRow({
 
       {isExpanded ? (
         <div className={'bg-surface'}>
-          <div className={'px-6 pb-6 pt-3'}>
-            <div className={'border border-border bg-surface'}>
+          <div className={'px-6 pb-3'}>
+            <div className={'relative border border-border bg-surface'}>
               <VaultsV3ExpandedSelector
                 className={'p-3'}
                 activeView={expandedView}
                 onViewChange={setExpandedView}
                 timeframe={expandedTimeframe}
                 onTimeframeChange={setExpandedTimeframe}
-                rightElement={
-                  <button
-                    type={'button'}
-                    onClick={(event): void => {
-                      event.stopPropagation()
-                      navigate(href)
-                    }}
-                    className={
-                      'rounded-lg border border-border bg-surface-secondary px-4 py-2 text-xs font-semibold text-text-primary transition-colors hover:bg-surface-secondary/80'
-                    }
-                  >
-                    {'Go to Vault'}
-                  </button>
-                }
               />
 
               {expandedView === 'apy' || expandedView === 'performance' ? (
@@ -351,7 +343,7 @@ export function VaultsV3ListRow({
               ) : null}
 
               {expandedView === 'info' ? (
-                <div className={'grid md:grid-cols-2 divide-y divide-border md:divide-y-0 md:divide-x'}>
+                <div className={'grid md:grid-cols-2'}>
                   <div className={'p-4 md:p-6'}>
                     <VaultStrategyAllocationPreview currentVault={currentVault} />
                   </div>
@@ -360,6 +352,29 @@ export function VaultsV3ListRow({
                   </div>
                 </div>
               ) : null}
+
+              <button
+                type={'button'}
+                aria-label={'Close'}
+                onClick={(event): void => {
+                  event.stopPropagation()
+                  setIsExpanded(false)
+                }}
+                className={cl(
+                  'absolute top-4 left-1/2 z-30 -translate-x-1',
+                  'rounded-full border border-border bg-surface px-3 py-1',
+                  'text-xs font-semibold text-text-secondary',
+                  'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+                )}
+              >
+                <span className={'flex items-center'}>
+                  <span>{''}</span>
+                  <span className={'flex flex-col -space-y-2'}>
+                    <IconChevron size={12} direction={'up'} />
+                    <IconChevron size={12} direction={'up'} />
+                  </span>
+                </span>
+              </button>
             </div>
           </div>
         </div>
