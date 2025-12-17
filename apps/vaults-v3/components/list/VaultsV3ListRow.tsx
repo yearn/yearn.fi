@@ -312,38 +312,55 @@ export function VaultsV3ListRow({
 
       {isExpanded ? (
         <div className={'bg-surface'}>
-          <VaultsV3ExpandedSelector
-            activeView={expandedView}
-            onViewChange={setExpandedView}
-            timeframe={expandedTimeframe}
-            onTimeframeChange={setExpandedTimeframe}
-          />
-
           <div className={'px-6 pb-6 pt-3'}>
-            {expandedView === 'apy' || expandedView === 'performance' ? (
-              <div className={'border border-border bg-surface'}>
-                <VaultChartsSection
-                  chainId={currentVault.chainID}
-                  vaultAddress={currentVault.address}
-                  shouldRenderSelectors={false}
-                  chartTab={(expandedView === 'apy' ? 'historical-apy' : 'historical-pps') satisfies TVaultChartTab}
-                  timeframe={expandedTimeframe}
-                  chartHeightPx={150}
-                  chartHeightMdPx={150}
-                />
-              </div>
-            ) : null}
+            <div className={'border border-border bg-surface'}>
+              <VaultsV3ExpandedSelector
+                className={'p-3'}
+                activeView={expandedView}
+                onViewChange={setExpandedView}
+                timeframe={expandedTimeframe}
+                onTimeframeChange={setExpandedTimeframe}
+                rightElement={
+                  <button
+                    type={'button'}
+                    onClick={(event): void => {
+                      event.stopPropagation()
+                      navigate(href)
+                    }}
+                    className={
+                      'rounded-lg border border-border bg-surface-secondary px-4 py-2 text-xs font-semibold text-text-primary transition-colors hover:bg-surface-secondary/80'
+                    }
+                  >
+                    {'Go to Vault'}
+                  </button>
+                }
+              />
 
-            {expandedView === 'info' ? (
-              <div className={'grid gap-4 md:grid-cols-2'}>
-                <div className={'border border-border bg-surface p-4 md:p-6'}>
-                  <VaultStrategyAllocationPreview currentVault={currentVault} />
+              {expandedView === 'apy' || expandedView === 'performance' ? (
+                <div className={'px-3 pb-4'}>
+                  <VaultChartsSection
+                    chainId={currentVault.chainID}
+                    vaultAddress={currentVault.address}
+                    shouldRenderSelectors={false}
+                    chartTab={(expandedView === 'apy' ? 'historical-apy' : 'historical-pps') satisfies TVaultChartTab}
+                    timeframe={expandedTimeframe}
+                    chartHeightPx={150}
+                    chartHeightMdPx={150}
+                  />
                 </div>
-                <div className={'border border-border bg-surface'}>
-                  <VaultAboutSection currentVault={currentVault} />
+              ) : null}
+
+              {expandedView === 'info' ? (
+                <div className={'grid md:grid-cols-2 divide-y divide-border md:divide-y-0 md:divide-x'}>
+                  <div className={'p-4 md:p-6'}>
+                    <VaultStrategyAllocationPreview currentVault={currentVault} />
+                  </div>
+                  <div className={'p-4 md:p-6'}>
+                    <VaultAboutSection currentVault={currentVault} className={'p-0'} />
+                  </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}
