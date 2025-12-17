@@ -92,11 +92,10 @@ function VaultAPY({
         label={'Estimated APR'}
         legend={
           <KatanaApyTooltip
-            extrinsicYield={katanaExtras.extrinsicYield}
-            katanaNativeYield={katanaExtras.katanaNativeYield}
-            fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards}
-            katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR}
-            katanaBonusAPR={katanaExtras.katanaBonusAPY}
+            katanaNativeYield={katanaExtras.katanaNativeYield ?? 0}
+            fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards ?? 0}
+            katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR ?? katanaExtras.katanaRewardsAPR ?? 0}
+            katanaBonusAPR={katanaExtras.katanaBonusAPY ?? 0}
             steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
             currentVault={currentVault}
             position="top"
