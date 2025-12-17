@@ -5,7 +5,7 @@ import { V3_CARD_BASE } from './v3CardBase'
 
 export function ExploreV2Vaults({ className }: { className?: string }): ReactElement {
   return (
-    <Link className={cl(V3_CARD_BASE, className)} href={'/vaults?type=v2'}>
+    <Link className={cl(V3_CARD_BASE, className)} href={'/vaults?type=factory'}>
       <img
         alt={'Single asset vaults graphic'}
         className={' max-h-[260px] object-contain m-4'}
