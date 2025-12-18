@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 describe('chart styles', () => {
   it('exposes minimal and powerglove options', () => {
-    expect(CHART_STYLE_OPTIONS.map((o) => o.id)).toEqual(expect.arrayContaining(['minimal', 'powerglove']))
+    expect(CHART_STYLE_OPTIONS.map((o) => o.id)).toEqual(expect.arrayContaining(['minimal', 'blended', 'powerglove']))
   })
 
   it('provides a palette for each style', () => {

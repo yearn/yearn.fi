@@ -17,6 +17,24 @@ export const CHART_STYLES = {
       '--chart-tooltip-shadow': '0 25px 50px -12px hsl(0 0% 0% / 0.25)'
     }
   },
+  blended: {
+    label: 'Blended',
+    vars: {
+      '--chart-1': '#2578ff',
+      '--chart-2': '#46a2ff',
+      '--chart-3': '#94adf2',
+      '--chart-4': '#b0b5bf',
+      '--chart-axis': 'var(--color-text-tertiary)',
+      '--chart-grid': 'var(--color-neutral-200)',
+      '--chart-cursor-line': 'var(--color-neutral-200)',
+      '--chart-cursor-fill': 'var(--color-neutral-100)',
+      '--chart-radial-bg': 'var(--color-neutral-100)',
+      '--chart-tooltip-bg': 'var(--color-surface)',
+      '--chart-tooltip-border': 'hsl(0 0% 0% / 0.08)',
+      '--chart-tooltip-radius': '12px',
+      '--chart-tooltip-shadow': '0 25px 50px -12px hsl(0 0% 0% / 0.25)'
+    }
+  },
   powerglove: {
     label: 'PowerGlove',
     vars: {

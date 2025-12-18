@@ -1,4 +1,3 @@
-import { CHART_STYLE_OPTIONS, useChartStyle } from '@lib/contexts/useChartStyle'
 import { cl } from '@lib/utils'
 import { useVaultChartTimeseries } from '@nextgen/hooks/useVaultChartTimeseries'
 import { transformVaultChartData } from '@nextgen/utils/charts'
@@ -43,7 +42,6 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
     address: vaultAddress
   })
 
-  const { chartStyle, setChartStyle } = useChartStyle()
   const transformed = useMemo(() => transformVaultChartData(data), [data])
 
   const chartsLoading = isLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData
@@ -87,23 +85,6 @@ export function VaultChartsSection({ chainId, vaultAddress }: VaultChartsSection
                     : 'bg-transparent text-text-secondary hover:text-text-secondary'
                 )}
                 onClick={() => setTimeframe(option)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-          <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner'}>
-            {CHART_STYLE_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                type={'button'}
-                className={cl(
-                  'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
-                  option.id === chartStyle
-                    ? 'bg-surface text-text-primary'
-                    : 'bg-transparent text-text-secondary hover:text-text-secondary'
-                )}
-                onClick={() => setChartStyle(option.id)}
               >
                 {option.label}
               </button>

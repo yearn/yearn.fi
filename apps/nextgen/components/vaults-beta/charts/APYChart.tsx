@@ -36,6 +36,7 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
   const gradientId = useId().replace(/:/g, '')
   const { chartStyle } = useChartStyle()
   const isPowerglove = chartStyle === 'powerglove'
+  const isBlended = chartStyle === 'blended'
   const filteredData = useMemo(() => {
     const limit = getTimeframeLimit(timeframe)
     if (!Number.isFinite(limit) || limit >= chartData.length) {
@@ -82,16 +83,6 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
               tick={{ fill: 'var(--chart-axis)' }}
               axisLine={{ stroke: 'var(--chart-axis)' }}
               tickLine={{ stroke: 'var(--chart-axis)' }}
-              label={{
-                value: 'Annualized %',
-                angle: -90,
-                position: 'insideLeft',
-                offset: 10,
-                style: {
-                  textAnchor: 'middle',
-                  fill: 'var(--chart-axis)'
-                }
-              }}
             />
             {!hideTooltip && (
               <ChartTooltip
@@ -131,6 +122,75 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
               isAnimationActive={false}
             />
           </LineChart>
+        </ChartContainer>
+      </div>
+    )
+  }
+
+  if (isBlended) {
+    return (
+      <div className={'relative h-full'}>
+        <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
+          <ComposedChart
+            data={filteredData}
+            margin={{
+              top: 20,
+              right: 30,
+              left: 10,
+              bottom: 20
+            }}
+          >
+            <CartesianGrid vertical={false} />
+            <defs>
+              <linearGradient id={`${gradientId}-apy`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-thirtyDayApy)" stopOpacity={0.5} />
+                <stop offset="95%" stopColor="var(--color-thirtyDayApy)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey={'date'}
+              tick={{ fill: 'var(--chart-axis)' }}
+              axisLine={{ stroke: 'var(--chart-axis)' }}
+              tickLine={{ stroke: 'var(--chart-axis)' }}
+            />
+            <YAxis
+              domain={[0, 'auto']}
+              tickFormatter={(value) => `${value}%`}
+              tick={{ fill: 'var(--chart-axis)' }}
+              axisLine={{ stroke: 'var(--chart-axis)' }}
+              tickLine={{ stroke: 'var(--chart-axis)' }}
+            />
+            <Area
+              type={'monotone'}
+              dataKey={'thirtyDayApy'}
+              stroke="none"
+              fill={`url(#${gradientId}-apy)`}
+              fillOpacity={1}
+              connectNulls
+              isAnimationActive={false}
+            />
+            {!hideTooltip && (
+              <ChartTooltip
+                formatter={(value: number, name: string) => {
+                  return [`${(value ?? 0).toFixed(2)}%`, formatSeriesLabel(name)]
+                }}
+                contentStyle={{
+                  backgroundColor: 'var(--chart-tooltip-bg)',
+                  borderRadius: 'var(--chart-tooltip-radius)',
+                  border: '1px solid var(--chart-tooltip-border)',
+                  boxShadow: 'var(--chart-tooltip-shadow)'
+                }}
+              />
+            )}
+            <Line
+              type={'monotone'}
+              dataKey={'thirtyDayApy'}
+              stroke={'var(--color-thirtyDayApy)'}
+              strokeWidth={1.5}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </ComposedChart>
         </ChartContainer>
       </div>
     )
