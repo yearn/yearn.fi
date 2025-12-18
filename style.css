@@ -451,6 +451,10 @@ body {
   @apply font-normal border border-transparent;
   @apply rounded-lg;
 
+  &:not(:disabled):active {
+    @apply scale-[0.98];
+  }
+
   /* Global state styles */
   &[aria-busy='true'] {
     @apply cursor-wait;

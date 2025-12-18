@@ -126,23 +126,21 @@ export const InputTokenAmountV2: FC<Props> = ({
   }
 
   return (
-    <div className={cl('flex flex-col w-full relative border border-border rounded-md', className)}>
-      <div className="py-2 px-3 flex flex-col gap-1">
+    <div className={cl('flex flex-col w-full relative border border-border rounded-md group', className)}>
+      <div className="py-2 px-3 flex flex-col gap-2">
         {/* Top row - Title and percentage buttons */}
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-text-primary">{title}</label>
 
-          {/* Percentage buttons */}
+          {/* Percentage buttons - appear on hover */}
           {!hidePercentageButtons && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-100">
               <button
                 type="button"
                 onClick={() => handlePercentageClick(25)}
                 className={cl(
-                  'px-1 py-0.5 text-xs font-medium rounded transition-colors',
-                  disabled
-                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
-                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
+                  'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                  disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
                 )}
                 disabled={disabled}
               >
@@ -152,10 +150,8 @@ export const InputTokenAmountV2: FC<Props> = ({
                 type="button"
                 onClick={() => handlePercentageClick(50)}
                 className={cl(
-                  'px-1 py-0.5 text-xs font-medium rounded transition-colors',
-                  disabled
-                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
-                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
+                  'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                  disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
                 )}
                 disabled={disabled}
               >
@@ -165,10 +161,8 @@ export const InputTokenAmountV2: FC<Props> = ({
                 type="button"
                 onClick={() => handlePercentageClick(75)}
                 className={cl(
-                  'px-1 py-0.5 text-xs font-medium rounded transition-colors',
-                  disabled
-                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
-                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
+                  'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                  disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
                 )}
                 disabled={disabled}
               >
@@ -178,10 +172,10 @@ export const InputTokenAmountV2: FC<Props> = ({
                 type="button"
                 onClick={() => handlePercentageClick(100)}
                 className={cl(
-                  'px-1 py-0.5 text-xs font-medium rounded transition-colors flex items-center justify-center min-w-[42px]',
+                  'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90 flex items-center justify-center min-w-[42px]',
                   disabled || isMaxButtonLoading
-                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
-                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
+                    ? 'text-text-tertiary cursor-not-allowed'
+                    : 'text-text-secondary hover:scale-100'
                 )}
                 disabled={disabled || isMaxButtonLoading}
               >

@@ -21,7 +21,7 @@ const TokenItem: FC<{ token: TToken; selected: boolean; onSelect: () => void }> 
       type="button"
       onClick={onSelect}
       className={cl(
-        'flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors',
+        'flex items-center justify-between w-full px-3 py-2 rounded-lg transition-all active:scale-[0.98]',
         selected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-surface-secondary'
       )}
     >
