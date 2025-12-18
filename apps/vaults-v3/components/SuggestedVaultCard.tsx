@@ -12,11 +12,13 @@ import { useMemo } from 'react'
 type TAprDisplay =
   | {
       type: 'value'
+      label: string
       prefix?: string
       value: number
     }
   | {
       type: 'range'
+      label: string
       prefix?: string
       range: [number, number]
     }
@@ -26,22 +28,22 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
   const aprDisplay = useMemo<TAprDisplay>(() => {
     const isVeYfi = vault.staking.source === 'VeYFI'
     const boostedApr = apyData.baseForwardApr + apyData.rewardsAprSum
+    if (apyData.mode === 'historical' || apyData.mode === 'noForward') {
+      return { type: 'value', label: '30D APY', value: apyData.netApr }
+    }
     if (apyData.mode === 'katana' && apyData.katanaTotalApr !== undefined) {
-      return { type: 'value', prefix: '⚔️', value: apyData.katanaTotalApr }
+      return { type: 'value', label: 'Est. APY', prefix: '⚔️', value: apyData.katanaTotalApr }
     }
     if (apyData.mode === 'rewards') {
       if (isVeYfi && apyData.estAprRange) {
-        return { type: 'range', prefix: '⚡️', range: apyData.estAprRange }
+        return { type: 'range', label: 'Est. APY', prefix: '⚡️', range: apyData.estAprRange }
       }
-      return { type: 'value', prefix: '⚡️', value: boostedApr }
+      return { type: 'value', label: 'Est. APY', prefix: '⚡️', value: boostedApr }
     }
     if (apyData.mode === 'boosted' && apyData.isBoosted) {
-      return { type: 'value', prefix: '🚀', value: apyData.baseForwardApr }
+      return { type: 'value', label: 'Est. APY', prefix: '🚀', value: apyData.baseForwardApr }
     }
-    if (apyData.baseForwardApr !== 0) {
-      return { type: 'value', value: apyData.baseForwardApr }
-    }
-    return { type: 'value', prefix: 'Hist.', value: apyData.netApr }
+    return { type: 'value', label: 'Est. APY', value: apyData.baseForwardApr }
   }, [apyData, vault])
 
   const chain = getNetwork(vault.chainID)
@@ -67,8 +69,8 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
         <div className={'shrink-0'}>
           <TokenLogo src={tokenIcon} tokenSymbol={vault.token.symbol || ''} width={36} height={36} />
         </div>
-        <div className={'flex flex-col'}>
-          <p className={'text-base font-semibold text-text-primary'}>{vault.name}</p>
+        <div className={'flex min-w-0 flex-col'}>
+          <p className={'truncate text-base font-semibold text-text-primary'}>{vault.name}</p>
           <p className={'text-xs text-text-secondary'}>
             {chain.name} • {vault.category}
           </p>
@@ -76,7 +78,7 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
       </div>
       <div className={'mt-4 flex items-end justify-between gap-4'}>
         <div>
-          <p className={'text-xs font-semibold uppercase tracking-wide text-text-secondary'}>{'Est. APY'}</p>
+          <p className={'text-xs font-semibold uppercase tracking-wide text-text-secondary'}>{aprDisplay.label}</p>
           <p className={'mt-1 text-2xl font-bold text-text-primary'}>
             {aprDisplay.prefix ? `${aprDisplay.prefix} ` : ''}
             {renderAprValue()}
