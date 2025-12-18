@@ -138,7 +138,7 @@ export function VaultsV3ListRow({
               <div className={'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'}>
                 <span
                   className={
-                    'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
+                    'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
                   }
                 >
                   <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
@@ -147,7 +147,7 @@ export function VaultsV3ListRow({
                 {currentVault.category ? (
                   <span
                     className={
-                      'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
+                      'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
                     }
                   >
                     {currentVault.category}
@@ -156,7 +156,7 @@ export function VaultsV3ListRow({
                 {currentVault.kind ? (
                   <span
                     className={
-                      'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
+                      'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
                     }
                   >
                     {currentVault.kind}

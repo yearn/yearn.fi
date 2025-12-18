@@ -666,6 +666,23 @@ input[type='number'] {
     transform: translateY(-50%);
   }
 }
+.trending-vaults-marquee {
+  animation: trendingVaultsMarquee var(--trending-marquee-duration, 24s) linear infinite;
+}
+.trending-vaults-marquee > * {
+  flex: 0 0 auto;
+}
+.trending-vaults-marquee--paused {
+  animation-play-state: paused;
+}
+@keyframes trendingVaultsMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
 .wordWrapper {
   display: inline-block;
   vertical-align: top;
@@ -710,4 +727,3 @@ input[type='number'] {
     transform: translateY(0);
   }
 }
-
