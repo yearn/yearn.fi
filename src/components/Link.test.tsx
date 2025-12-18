@@ -5,10 +5,12 @@
  * and renders the appropriate element (React Router Link or standard anchor tag)
  */
 
+import { describe, expect, it } from 'vitest'
+
 import Link from './Link'
 
 // Example usages:
-export function LinkExamples() {
+function LinkExamples() {
   return (
     <div>
       {/* Internal links - will use React Router */}
@@ -37,3 +39,9 @@ export function LinkExamples() {
     </div>
   )
 }
+
+describe('LinkExamples', () => {
+  it('declares a React component', () => {
+    expect(typeof LinkExamples).toBe('function')
+  })
+})

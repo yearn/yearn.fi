@@ -6,6 +6,7 @@ import { IconBurgerPlain } from '@lib/icons/IconBurgerPlain'
 import { IconSpinner } from '@lib/icons/IconSpinner'
 import { IconWallet } from '@lib/icons/IconWallet'
 import { cl } from '@lib/utils'
+import { isVaultsIndexPath, normalizePathname } from '@lib/utils/routes'
 import { truncateHex } from '@lib/utils/tools.address'
 import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
 import type { ReactElement } from 'react'
@@ -179,6 +180,8 @@ function VaultVersionSwitch(): ReactElement {
 function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
   const location = useLocation()
   const pathname = location.pathname
+  const normalizedPathname = normalizePathname(pathname)
+  const shouldShowVaultVersionSwitch = isVaultsIndexPath(pathname)
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
   const { setShouldOpenCurtain, notificationStatus } = useNotifications()
 
@@ -233,7 +236,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     return ''
   }, [notificationStatus])
 
-  const isHomePage = window.location.pathname === '/'
+  const isHomePage = normalizedPathname === '/'
 
   return (
     <div id={'head'} className={'sticky inset-x-0 top-0 z-50 w-full bg-app backdrop-blur-md'}>
@@ -261,7 +264,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
                       {'Vaults'}
                     </span>
                   </Link>
-                  <VaultVersionSwitch />
+                  {shouldShowVaultVersionSwitch ? <VaultVersionSwitch /> : null}
                 </div>
 
                 {/* Separator */}
