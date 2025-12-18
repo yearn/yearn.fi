@@ -164,7 +164,10 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     [onChange, onClose, selectedChainId, chainId]
   )
   return (
-    <div className="absolute inset-0 bg-surface rounded-lg z-50 flex flex-col shadow-xl">
+    <div
+      className="absolute inset-0 bg-surface rounded-lg z-50 flex flex-col shadow-xl overscroll-contain"
+      onWheel={(e) => e.stopPropagation()}
+    >
       {/* Header with chain selector and close button */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
@@ -207,7 +210,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       </div>
 
       {/* Token list */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-4 overscroll-contain">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="w-5 h-5 border-2 border-border border-t-primary rounded-full animate-spin" />
