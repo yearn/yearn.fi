@@ -415,7 +415,7 @@ function Index(): ReactElement | null {
                 <div
                   className={cl(
                     'flex flex-wrap gap-2 md:pb-3 md:gap-3',
-                    'bg-gradient-to-b from-app from-90% to-transparent'
+                    'bg-linear-to-b from-app from-90% to-transparent'
                   )}
                 >
                   <div
