@@ -2,9 +2,8 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
 import { SearchBar } from '@lib/components/SearchBar'
-// import useWallet from '@lib/contexts/useWallet'
-// import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useChainOptions } from '@lib/hooks/useChains'
+import { IconChevron } from '@lib/icons/IconChevron'
 import { IconCross } from '@lib/icons/IconCross'
 import { IconFilter } from '@lib/icons/IconFilter'
 import { LogoYearn } from '@lib/icons/LogoYearn'
@@ -15,8 +14,6 @@ import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constant
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Drawer } from 'vaul'
-
-// import HoldingsMarquee from './list/HoldingsMarquee'
 
 type TListHero = {
   types: string[] | null
@@ -32,9 +29,9 @@ type TListHero = {
   holdingsVaults: TYDaemonVault[]
 }
 
-const CHAIN_DISPLAY_ORDER = [1, 747474, 8453, 42161, 137, 146]
+const CHAIN_DISPLAY_ORDER = [1, 747474, 8453, 42161, 137]
 const PRIMARY_CHAIN_IDS = [1, 747474]
-const DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161]
+const DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
 
 const isPrimaryChain = (chainId: number): boolean => PRIMARY_CHAIN_IDS.includes(chainId)
 
@@ -44,57 +41,6 @@ type TChainButton = {
   icon?: ReactElement
   isSelected: boolean
 }
-
-// function PortfolioCard({ holdingsVaults }: { holdingsVaults: TYDaemonVault[] }): ReactElement {
-//   const { cumulatedValueInV3Vaults, isLoading } = useWallet()
-//   const { isActive, address, openLoginModal, onSwitchChain } = useWeb3()
-
-//   if (!isActive) {
-//     return (
-//       <div className={'mb-4 flex h-18 flex-row items-center gap-2'}>
-//         <button
-//           className={cl('relative flex overflow-hidden rounded-lg group', 'px-[42px] py-2', 'border-none')}
-//           onClick={(): void => {
-//             if (!isActive && address) {
-//               onSwitchChain(1)
-//             } else {
-//               openLoginModal()
-//             }
-//           }}
-//         >
-//           <div
-//             className={cl(
-//               'absolute inset-0',
-//               'pointer-events-none opacity-80 transition-opacity group-hover:opacity-100',
-//               'bg-[linear-gradient(80deg,#D21162,#2C3DA6)]'
-//             )}
-//           />
-//           <p className={'z-10 text-text-primary'}>{'Connect Wallet'}</p>
-//         </button>
-//         <p className={'p-2 text-[#757CA6]'}>{'It looks like you need to connect your wallet.'}</p>
-//       </div>
-//     )
-//   }
-//   return (
-//     <div className={'mb-2 flex flex-col gap-0 md:min-h-18'}>
-//       <div className={'flex flex-row justify-between'}>
-//         <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Your Deposits:'}</p>
-//         <div className={'flex flex-row gap-4 md:flex-row md:gap-2 pr-4'}>
-//           <p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Value of your Deposits:'}</p>
-//           {isLoading ? (
-//             <div className={'h-[36.5px] w-32 animate-pulse rounded-sm bg-[#757CA6]'} />
-//           ) : (
-//             <b className={'font-number text-text-primary '}>
-//               {'$'}
-//               <span suppressHydrationWarning>{formatAmount(cumulatedValueInV3Vaults.toFixed(2), 2, 2)}</span>
-//             </b>
-//           )}
-//         </div>
-//       </div>
-//       <HoldingsMarquee holdingsVaults={holdingsVaults} />
-//     </div>
-//   )
-// }
 
 export function Filters({
   types,
@@ -107,8 +53,7 @@ export function Filters({
   shouldDebounce,
   onChangeChains,
   searchAlertContent
-}: // holdingsVaults
-TListHero): ReactElement {
+}: TListHero): ReactElement {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
@@ -129,7 +74,6 @@ TListHero): ReactElement {
       option.value === 137 ||
       option.value === 42161 ||
       option.value === 8453 ||
-      option.value === 146 ||
       option.value === 747474
   )
 
@@ -266,8 +210,6 @@ TListHero): ReactElement {
   return (
     <>
       <div className={'relative col-span-24 w-full rounded-lg border border-border bg-surface mt-2 p-2 md:col-span-19'}>
-        {/* <PortfolioCard holdingsVaults={holdingsVaults} /> */}
-
         <div className={'md:hidden'}>
           <div className={'mb-5 w-full'}>
             <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
@@ -327,6 +269,7 @@ TListHero): ReactElement {
                     areAllChainsSelected={areAllChainsSelected}
                     onSelectChain={handleChainToggle}
                     onOpenChainModal={(): void => setIsChainModalOpen(true)}
+                    showMoreChainsButton={false}
                     isMoreFiltersOpen={isMoreFiltersOpen}
                     onToggleMoreFilters={(): void => setIsMoreFiltersOpen((prev) => !prev)}
                     categoryOptions={categoryOptions}
@@ -354,6 +297,7 @@ TListHero): ReactElement {
             areAllChainsSelected={areAllChainsSelected}
             onSelectChain={handleChainToggle}
             onOpenChainModal={(): void => setIsChainModalOpen(true)}
+            showMoreChainsButton={false}
             isMoreFiltersOpen={isMoreFiltersOpen}
             onToggleMoreFilters={(): void => setIsMoreFiltersOpen((prev) => !prev)}
             categoryOptions={categoryOptions}
@@ -388,6 +332,7 @@ function FilterControls({
   areAllChainsSelected,
   onSelectChain,
   onOpenChainModal,
+  showMoreChainsButton = true,
   isMoreFiltersOpen,
   onToggleMoreFilters,
   categoryOptions,
@@ -407,6 +352,11 @@ function FilterControls({
   areAllChainsSelected: boolean
   onSelectChain: (chainId: number) => void
   onOpenChainModal: () => void
+  /**
+   * Controls whether the "More" chain button is shown.
+   * Disable when all supported chains fit inline; re-enable if/when we add more chains.
+   */
+  showMoreChainsButton?: boolean
   isMoreFiltersOpen: boolean
   onToggleMoreFilters: () => void
   categoryOptions: TMultiSelectOptionProps[]
@@ -425,72 +375,66 @@ function FilterControls({
     <div className={'flex flex-col gap-4'}>
       <div>
         <div className={'flex flex-col gap-2'}>
-          <div className={'flex w-full flex-wrap justify-between items-center gap-3'}>
+          <div className={'flex w-full flex-wrap items-center gap-3'}>
             <div
               className={
-                'flex shrink-0 flex-wrap items-center gap-px rounded-md border h-10 py-1 px-1.5 bg-surface-secondary border-border text-sm text-text-primary'
+                'flex h-10 shrink-0 items-stretch overflow-hidden rounded-md border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
               }
             >
-              {chainButtons.map((chain) => (
-                <button
-                  key={chain.id}
-                  type={'button'}
-                  className={cl(
-                    'flex items-center gap-2 rounded-sm px-3 py-1 font-medium transition-all',
-                    'hover:bg-surface/70',
-                    'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-surface-secondary/40',
-                    'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
-                  )}
-                  data-active={chain.isSelected}
-                  onClick={(): void => onSelectChain(chain.id)}
-                  aria-pressed={chain.isSelected}
-                >
-                  {chain.icon ? (
-                    <span
-                      className={cl(
-                        'size-5 overflow-hidden rounded-full bg-surface/80',
-                        chain.label === 'Sonic' ? 'bg-white' : ''
-                      )}
-                    >
-                      {chain.icon}
-                    </span>
-                  ) : null}
-                  <span>{chain.label}</span>
-                </button>
-              ))}
               <button
                 type={'button'}
                 className={cl(
-                  'flex items-center gap-2 rounded-lg px-3 py-1 font-medium transition-all',
-                  'hover:bg-surface/70',
-                  'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100 data-[active=false]:hover:bg-surface-secondary/40',
-                  'data-[active=true]:bg-surface-secondary/40 data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
+                  'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+                  'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+                  'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
                 )}
                 data-active={areAllChainsSelected}
                 onClick={onSelectAllChains}
                 aria-pressed={areAllChainsSelected}
               >
                 <span className={'size-5 overflow-hidden rounded-full'}>
-                  <LogoYearn
-                    className={'size-full'}
-                    back={areAllChainsSelected ? 'text-text-primary' : 'text-text-secondary'}
-                    front={'text-surface'}
-                  />
+                  <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
                 </span>
-                <span>{'All'}</span>
+                <span className={'whitespace-nowrap'}>{'All Chains'}</span>
               </button>
-              <button
-                type={'button'}
-                className={
-                  'flex items-center gap-1 rounded-full px-3 py-1 font-medium text-text-secondary transition-colors hover:bg-surface/70'
-                }
-                onClick={onOpenChainModal}
-              >
-                <span className={'text-base leading-none'}>{'+'}</span>
-                <span>{'More'}</span>
-              </button>
+              {chainButtons.map((chain) => (
+                <button
+                  key={chain.id}
+                  type={'button'}
+                  className={cl(
+                    'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+                    'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+                    'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+                  )}
+                  data-active={chain.isSelected}
+                  onClick={(): void => onSelectChain(chain.id)}
+                  aria-pressed={chain.isSelected}
+                >
+                  {chain.icon ? (
+                    <span className={'size-5 overflow-hidden rounded-full bg-surface/80'}>{chain.icon}</span>
+                  ) : null}
+                  <span className={'whitespace-nowrap'}>{chain.label}</span>
+                </button>
+              ))}
+
+              {showMoreChainsButton ? (
+                <button
+                  type={'button'}
+                  className={cl(
+                    'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+                    'text-text-secondary hover:bg-surface/30 hover:text-text-primary'
+                  )}
+                  onClick={onOpenChainModal}
+                >
+                  <span className={'whitespace-nowrap'}>{'More'}</span>
+                  <span className={'flex items-center'}>
+                    <IconChevron direction={'right'} className={'size-4'} />
+                    <IconChevron direction={'right'} className={'-ml-3 size-4'} />
+                  </span>
+                </button>
+              ) : null}
             </div>
-            <div className={'flex flex-row items-center gap-3 min-w-[300px] max-w-[500px] flex-1'}>
+            <div className={'flex flex-row items-center gap-3 flex-1'}>
               <button
                 type={'button'}
                 className={cl(
@@ -506,7 +450,7 @@ function FilterControls({
                 <span>{isMoreFiltersOpen ? 'Filters' : 'Filters'}</span>
               </button>
               {showInlineSearch ? (
-                <div className={'min-w-[200px] flex-1'}>
+                <div className={'flex-1'}>
                   <SearchBar
                     className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
                     iconClassName={'text-text-primary'}
@@ -648,7 +592,7 @@ function ChainSelectionModal({
                     <IconCross className={'size-4'} />
                   </button>
                 </div>
-                <div className={'mt-4 max-h-[320px] space-y-3 overflow-y-auto pr-1'}>
+                <div className={'mt-4 max-h-[400px] space-y-1 overflow-y-auto pr-1'}>
                   {options.length === 0 ? (
                     <p className={'text-sm text-text-secondary'}>{'No additional chains are available right now.'}</p>
                   ) : (
@@ -660,27 +604,20 @@ function ChainSelectionModal({
                         <label
                           key={chainId}
                           className={cl(
-                            'flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors',
+                            'flex items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors',
                             isChecked ? 'border-border bg-surface-tertiary/80' : 'border-border',
                             isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-surface-tertiary/50'
                           )}
                         >
                           <div className={'flex items-center gap-3'}>
                             {option.icon ? (
-                              <span
-                                className={cl(
-                                  'size-8 overflow-hidden rounded-full',
-                                  option.label === 'Sonic' ? 'bg-white' : ''
-                                )}
-                              >
-                                {option.icon}
-                              </span>
+                              <span className={'size-5 overflow-hidden rounded-full'}>{option.icon}</span>
                             ) : null}
                             <span className={'text-sm font-medium text-text-primary'}>{option.label}</span>
                           </div>
                           <input
                             type={'checkbox'}
-                            className={'checkbox'}
+                            className={'checkbox accent-blue-500'} // or any other accent color
                             checked={isChecked}
                             disabled={isLocked}
                             onChange={(): void => toggleChain(chainId)}
