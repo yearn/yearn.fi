@@ -71,13 +71,14 @@ const InfoModal: FC<InfoModalProps> = ({ isOpen, onClose, title, children }) => 
                 </Dialog.Title>
                 {children}
                 <div className="mt-6">
-                  <button
-                    type="button"
-                    className="w-full inline-flex justify-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+                  <Button
                     onClick={onClose}
+                    variant="filled"
+                    className="w-full"
+                    classNameOverride="yearn--button--nextgen w-full"
                   >
-                    Got it, thanks!
-                  </button>
+                    Got it!
+                  </Button>
                 </div>
               </Dialog.Panel>
             </Transition.Child>
