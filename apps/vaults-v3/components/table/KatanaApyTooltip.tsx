@@ -4,10 +4,8 @@ import { Tooltip } from '@lib/components/Tooltip'
 import { cl, formatAmount } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
-import { VAULT_ADDRESSES } from '../../constants/addresses'
 
 export function KatanaApyTooltip(props: {
-  extrinsicYield: number
   katanaNativeYield: number
   fixedRateKatanRewardsAPR: number
   katanaAppRewardsAPR: number
@@ -21,13 +19,6 @@ export function KatanaApyTooltip(props: {
 }): ReactElement {
   const maxWidth = props.maxWidth || 'w-full max-w-[360px]'
 
-  // Check if this is the T-Bill vault
-  const isTBillVault = props.currentVault.address.toLowerCase() === VAULT_ADDRESSES.AUSD.toLowerCase()
-  const extrinsicYieldLabel = isTBillVault ? 'T-Bill Yield' : 'Extrinsic Yield'
-  const extrinsicYieldDescription = isTBillVault
-    ? 'Interest from U.S. treasury bills'
-    : 'Yield Earned from underlying bridged assets'
-
   return (
     <Tooltip
       className={cl('gap-0 h-auto', props.className)}
@@ -36,14 +27,6 @@ export function KatanaApyTooltip(props: {
           className={`${maxWidth} rounded-xl border border-neutral-300 bg-neutral-200 p-4 text-center text-xs text-neutral-900`}
         >
           <div className={'flex flex-col items-start justify-start text-left'}>
-            {/* Native APY */}
-            <p
-              className={
-                'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm text-bold pb-2'
-              }
-            >
-              {'Native APY'}
-            </p>
             <div
               className={
                 'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-neutral-700 md:text-sm text-bold pb-2'
@@ -58,30 +41,7 @@ export function KatanaApyTooltip(props: {
                   width={16}
                   height={16}
                 />
-                <p>{extrinsicYieldLabel} </p>
-              </div>
-              <span className={'font-number text-right'}>
-                <RenderAmount shouldHideTooltip value={props.extrinsicYield} symbol={'percent'} decimals={6} />
-              </span>
-            </div>
-            <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
-              {extrinsicYieldDescription}
-            </p>
-            <div
-              className={
-                'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-neutral-700 md:text-sm text-bold pb-2'
-              }
-            >
-              <div className={'flex flex-row items-center space-x-2'}>
-                <ImageWithFallback
-                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-                    props.currentVault.chainID
-                  }/${props.currentVault.token.address.toLowerCase()}/logo-32.png`}
-                  alt={''}
-                  width={16}
-                  height={16}
-                />
-                <p>{'Katana APY '}</p>
+                <p>{'Katana Native APY '}</p>
               </div>
               <span className={'font-number text-right'}>
                 <RenderAmount shouldHideTooltip value={props.katanaNativeYield} symbol={'percent'} decimals={6} />
@@ -89,18 +49,6 @@ export function KatanaApyTooltip(props: {
             </div>
             <p className={'-mt-1 mb-2 w-full text-left text-xs text-neutral-500 break-words'}>
               {'Yield Earned on Katana'}
-            </p>
-            <p className={'mb-2 w-full text-left text-xs italic text-neutral-500 break-words whitespace-normal'}>
-              {'*This yield is guaranteed but may be paid in KAT tokens if actual rates are lower.'}
-            </p>
-            {/* Rewards APR */}
-            <div className={'my-2 h-px w-full bg-neutral-300/60'} />
-            <p
-              className={
-                'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-700 md:text-sm text-bold '
-              }
-            >
-              {'Rewards APR'}
             </p>
             <div
               className={
