@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 type FixedHeightChartContainerProps = {
   children: ReactNode
@@ -14,26 +14,8 @@ export function FixedHeightChartContainer({
   heightMdPx = heightPx
 }: FixedHeightChartContainerProps) {
   return (
-    <div
-      className={`${className} relative h-[var(--chart-height)] md:h-[var(--chart-height-md)]`}
-      style={
-        {
-          '--chart-height': `${heightPx}px`,
-          '--chart-height-md': `${heightMdPx}px`
-        } as CSSProperties
-      }
-    >
-      <div
-        className={'absolute inset-0'}
-        style={
-          {
-            '--chart-1': '#2578ff',
-            '--chart-2': '#46a2ff',
-            '--chart-3': '#94adf2',
-            '--chart-4': '#b0b5bf'
-          } as CSSProperties
-        }
-      >
+    <div className={`${className} relative h-[${heightPx}px] md:h-[${heightMdPx}px]`}>
+      <div className={'absolute inset-0'}>
         <div className={'h-full w-full'}>
           <style>{`
             .aspect-video {

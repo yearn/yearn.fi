@@ -7,7 +7,7 @@ describe('APP_GROUPS', () => {
 
   it('includes newly requested internal tools', () => {
     expect(allNames).toEqual(
-      expect.arrayContaining(['YearnX', 'APR Oracle', 'yCMS', 'Token Assets', 'Seafood', 'Kong'])
+      expect.arrayContaining(['YearnX', 'APR Oracle', 'yCMS', 'Token Assets', 'Seafood', 'Kong', 'PowerGlove'])
     )
   })
 
