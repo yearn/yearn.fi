@@ -2,7 +2,7 @@ import axios from 'axios'
 import { useEffect, useState } from 'react'
 
 const CACHE_KEY = 'katana-aprs-cache'
-const CACHE_TTL = 1 * 60 * 1000 // 1 min
+const CACHE_TTL = 15 * 60 * 1000 // 15 min
 
 export type TKatanaAprs = {
   [key: string]: {
