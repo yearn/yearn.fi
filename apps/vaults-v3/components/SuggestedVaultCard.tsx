@@ -62,7 +62,7 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
     <Link
       to={`/vaults/${vault.chainID}/${toAddress(vault.address)}`}
       className={
-        'group flex h-full flex-col mr-4 rounded-md border border-border bg-surface p-4 shadow-[0_12px_32px_rgba(4,8,32,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(4,8,32,0.12)]'
+        'group flex h-full flex-col rounded-md border border-border bg-surface p-4 shadow-[0_12px_32px_rgba(4,8,32,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(4,8,32,0.12)]'
       }
     >
       <div className={'flex items-center gap-3'}>
