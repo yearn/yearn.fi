@@ -318,11 +318,17 @@ export const InputTokenAmountV2: FC<Props> = ({
             </div>
             <div className="flex items-center justify-between">
               <div className="text-sm text-text-secondary">${outputUsdValue}</div>
-              {/* Remove Zap button */}
+              {/* Remove Zap button - appears on hover */}
               {onRemoveZap && (
                 <button
+                  type="button"
                   onClick={onRemoveZap}
-                  className="text-sm text-text-secondary hover:text-text-primary transition-colors self-end"
+                  className={cl(
+                    'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                    'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+                    disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
+                  )}
+                  disabled={disabled}
                 >
                   Remove Zap
                 </button>
