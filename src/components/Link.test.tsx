@@ -1,39 +1,44 @@
-/**
- * Example usage of the Link component
- *
- * The Link component automatically detects whether a URL is internal or external
- * and renders the appropriate element (React Router Link or standard anchor tag)
- */
+import { renderToStaticMarkup } from 'react-dom/server'
+import { MemoryRouter } from 'react-router'
+import { describe, expect, it } from 'vitest'
 
 import Link from './Link'
 
-// Example usages:
-export function LinkExamples() {
-  return (
-    <div>
-      {/* Internal links - will use React Router */}
-      <Link href="/apps">Go to Apps</Link>
-      <Link href="/vaults">View Vaults</Link>
-      <Link to="/v3">V3 Vaults</Link>
+describe('Link', () => {
+  it('renders external links as <a> with safe defaults', () => {
+    const originalWindow = globalThis.window
+    ;(globalThis as unknown as { window: unknown }).window = {
+      location: { href: 'https://yearn.fi/', hostname: 'yearn.fi' }
+    }
 
-      {/* External links - will use standard anchor tags with target="_blank" */}
-      <Link href="https://twitter.com/yearnfi">Twitter</Link>
-      <Link href="https://github.com/yearn">GitHub</Link>
+    try {
+      const html = renderToStaticMarkup(<Link href="https://example.com">Example</Link>)
 
-      {/* Custom styling */}
-      <Link href="/vaults/about" className="text-blue-600 hover:text-blue-800 underline">
-        Learn about Vaults
-      </Link>
+      expect(html).toContain('href="https://example.com"')
+      expect(html).toContain('target="_blank"')
+      expect(html).toContain('rel="noopener noreferrer"')
+    } finally {
+      ;(globalThis as unknown as { window: unknown }).window = originalWindow
+    }
+  })
 
-      {/* External link with custom target/rel */}
-      <Link href="https://docs.yearn.fi" target="_self" rel="noopener">
-        Documentation
-      </Link>
+  it('renders internal links through react-router', () => {
+    const originalWindow = globalThis.window
+    ;(globalThis as unknown as { window: unknown }).window = {
+      location: { href: 'https://yearn.fi/', hostname: 'yearn.fi' }
+    }
 
-      {/* With onClick handler */}
-      <Link href="/apps" onClick={(e) => console.log('Link clicked:', e)}>
-        Apps with tracking
-      </Link>
-    </div>
-  )
-}
+    try {
+      const html = renderToStaticMarkup(
+        <MemoryRouter>
+          <Link href="/apps">Apps</Link>
+        </MemoryRouter>
+      )
+
+      expect(html).toContain('href="/apps"')
+      expect(html).not.toContain('target="_blank"')
+    } finally {
+      ;(globalThis as unknown as { window: unknown }).window = originalWindow
+    }
+  })
+})
