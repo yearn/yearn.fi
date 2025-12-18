@@ -316,7 +316,19 @@ function ListOfVaults({
     )
   }
 
-  const suggestedVaultsElement = vaultType === 'v3' ? <TrendingVaults suggestedVaults={suggestedVaults} /> : null
+  const suggestedVaultsElement =
+    vaultType === 'v3' ? (
+      <TrendingVaults
+        suggestedVaults={suggestedVaults}
+        promotionalBanner={{
+          title: 'yvUSD',
+          subtitle: 'The Everything Vault',
+          description: 'A new cross-chain, multi-asset, usd denominated yield product.',
+          ctaLabel: 'Learn More',
+          ctaTo: 'https://docs.yearn.fi/'
+        }}
+      />
+    ) : null
 
   const breadcrumbsElement = (
     <div className={'mb-3 mt-2 flex items-center gap-2 text-sm text-text-secondary'}>

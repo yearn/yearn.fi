@@ -1,27 +1,58 @@
 import { IconChevron } from '@lib/icons/IconChevron'
 import { cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { CollapsedPromotionalBanner, PromotionalBanner } from '@vaults-v3/components/PromotionalBanner'
 import { SuggestedVaultCard } from '@vaults-v3/components/SuggestedVaultCard'
 import type { ReactElement } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 type TTrendingVaultsProps = {
   suggestedVaults: TYDaemonVault[]
+  promotionalBanner?: {
+    title: string
+    subtitle: string
+    description: string
+    ctaLabel: string
+    ctaTo: string
+  }
 }
 
-export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): ReactElement | null {
+export function TrendingVaults(props: TTrendingVaultsProps): ReactElement | null {
+  const { suggestedVaults } = props
   const [isTrendingExpanded, setIsTrendingExpanded] = useState(true)
   const trendingCarouselRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
+  const [renderedVaults, setRenderedVaults] = useState<TYDaemonVault[]>(suggestedVaults)
+  const [isBannerOpen, setIsBannerOpen] = useState(true)
+
+  useEffect(() => {
+    setRenderedVaults(suggestedVaults)
+  }, [suggestedVaults])
+
+  const getScrollStep = useCallback((): number | undefined => {
+    if (!trendingCarouselRef.current) {
+      return undefined
+    }
+    const firstChild = trendingCarouselRef.current.querySelector<HTMLElement>('[data-trending-vault-card]')
+    if (firstChild) {
+      const style = window.getComputedStyle(firstChild)
+      const width = firstChild.offsetWidth
+      const marginLeft = parseFloat(style.marginLeft) || 0
+      const marginRight = parseFloat(style.marginRight) || 0
+      return width + marginLeft + marginRight
+    }
+    return undefined
+  }, [])
 
   const updateScrollButtons = (): void => {
     if (!trendingCarouselRef.current) {
       return
     }
     const { scrollLeft, scrollWidth, clientWidth } = trendingCarouselRef.current
+    const step = getScrollStep() || 280 + 16
     setCanScrollLeft(scrollLeft > 0)
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1)
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - step / 2)
   }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <>
@@ -39,15 +70,15 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
       container.removeEventListener('scroll', updateScrollButtons)
       window.removeEventListener('resize', updateScrollButtons)
     }
-  }, [isTrendingExpanded, suggestedVaults.length])
+  }, [isTrendingExpanded, suggestedVaults.length, getScrollStep])
 
   const onScrollBack = (): void => {
     if (!trendingCarouselRef.current) {
       return
     }
-    const itemWidth = 280 + 16 // card width + gap
+    const step = getScrollStep() || 280 + 16
     trendingCarouselRef.current.scrollTo({
-      left: trendingCarouselRef.current.scrollLeft - itemWidth,
+      left: trendingCarouselRef.current.scrollLeft - step,
       behavior: 'smooth'
     })
   }
@@ -56,19 +87,50 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
     if (!trendingCarouselRef.current) {
       return
     }
-    const itemWidth = 280 + 16 // card width + gap
+    const step = getScrollStep() || 280 + 16
+    const { scrollLeft, clientWidth, scrollWidth } = trendingCarouselRef.current
+    const isAtEnd = scrollLeft + clientWidth >= scrollWidth - step - 1
+    if (isAtEnd) {
+      setRenderedVaults((prev) => [...prev, ...suggestedVaults])
+    }
     trendingCarouselRef.current.scrollTo({
-      left: trendingCarouselRef.current.scrollLeft + itemWidth,
+      left: trendingCarouselRef.current.scrollLeft + step,
       behavior: 'smooth'
     })
   }
 
-  if (suggestedVaults.length === 0) {
+  if (suggestedVaults.length === 0 && !props.promotionalBanner) {
     return null
+  }
+
+  if (props.promotionalBanner && isBannerOpen) {
+    return (
+      <div className={'w-full bg-app pb-2'}>
+        <PromotionalBanner
+          title={props.promotionalBanner.title}
+          subtitle={props.promotionalBanner.subtitle}
+          description={props.promotionalBanner.description}
+          ctaLabel={props.promotionalBanner.ctaLabel}
+          ctaTo={props.promotionalBanner.ctaTo}
+          variant={'yvUSD'}
+          onClose={(): void => setIsBannerOpen(false)}
+        />
+      </div>
+    )
   }
 
   return (
     <div className={'w-full bg-app pb-2'}>
+      {props.promotionalBanner && !isBannerOpen ? (
+        <div className={'mb-4'}>
+          <CollapsedPromotionalBanner
+            title={props.promotionalBanner.title}
+            subtitle={props.promotionalBanner.subtitle}
+            variant={'yvUSD'}
+            onExpand={(): void => setIsBannerOpen(true)}
+          />
+        </div>
+      ) : null}
       <div className={'flex flex-col gap-0 rounded-xl border border-border bg-surface'}>
         <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}>
           <div className={'flex items-center gap-3'}>
@@ -120,11 +182,11 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
             ref={trendingCarouselRef}
             className={'overflow-x-auto scrollbar-none px-4 pt-0.5 pb-4 md:px-6 scroll-smooth'}
           >
-            <div className={'flex'}>
-              {suggestedVaults.map((vault) => {
-                const key = `${vault.chainID}_${toAddress(vault.address)}`
+            <div className={'flex gap-4'}>
+              {renderedVaults.map((vault, index) => {
+                const key = `${vault.chainID}_${toAddress(vault.address)}_${index}`
                 return (
-                  <div key={key} className={'w-[280px] flex-shrink-0'}>
+                  <div key={key} data-trending-vault-card className={'w-[272px] flex-shrink-0'}>
                     <SuggestedVaultCard vault={vault} />
                   </div>
                 )

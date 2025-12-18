@@ -1,11 +1,12 @@
 /** @type {import('vite').UserConfig} */
 
-import react from '@vitejs/plugin-react'
 import path from 'path'
 
 // https://vitejs.dev/config/
 export default {
-  plugins: [react()],
+  esbuild: {
+    jsx: 'automatic'
+  },
   resolve: {
     alias: {
       '@vaults': path.resolve(__dirname, './apps/vaults'),
