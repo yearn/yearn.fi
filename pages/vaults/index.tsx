@@ -391,7 +391,7 @@ function ListOfVaults({
       <div className={''}>
         <div
           className={'relative md:sticky md:z-30'}
-          style={{ top: 'calc(var(--header-height) + var(--vaults-filters-height) + 8px)' }}
+          style={{ top: 'calc(var(--header-height) + var(--vaults-filters-height))' }}
         >
           <div
             aria-hidden={true}
