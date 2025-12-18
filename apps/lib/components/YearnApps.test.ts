@@ -16,6 +16,6 @@ describe('APP_GROUPS', () => {
   })
 
   it('exposes core navigation tiles', () => {
-    expect(allNames).toEqual(expect.arrayContaining(['V3 Vaults', 'V2 Vaults']))
+    expect(allNames).toEqual(expect.arrayContaining(['V3 Vaults', 'Factory Vaults']))
   })
 })
