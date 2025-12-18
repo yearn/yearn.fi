@@ -10,6 +10,7 @@ import { TokenLogo } from '@lib/components/TokenLogo'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import { IconChevron } from '@lib/icons/IconChevron'
+import { LogoYearn } from '@lib/icons/LogoYearn'
 import { cl, formatCounterValue, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
@@ -52,6 +53,14 @@ export function VaultsV3ListRow({
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('apy')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
+  const isYearnVault = Boolean(currentVault.version?.startsWith('3') || currentVault.version?.startsWith('~3'))
+  const isFeatured = Boolean(currentVault.info?.isHighlighted)
+  const kindLabel =
+    currentVault.kind === 'Multi Strategy'
+      ? 'Allocator Vault'
+      : currentVault.kind === 'Single Strategy'
+        ? 'Strategy Vault'
+        : currentVault.kind
 
   useEffect(() => {
     if (isExpanded) {
@@ -135,12 +144,25 @@ export function VaultsV3ListRow({
               />
             </div>
             <div className={'min-w-0'}>
-              <strong
-                title={currentVault.name}
-                className={'block truncate font-black text-text-primary md:-mb-0.5 text-lg'}
-              >
-                {currentVault.name}
-              </strong>
+              <div className={'flex items-center gap-2 min-w-0'}>
+                <strong
+                  title={currentVault.name}
+                  className={'block truncate font-black text-text-primary md:-mb-0.5 text-lg'}
+                >
+                  {currentVault.name}
+                </strong>
+                {isYearnVault ? (
+                  <span className={'shrink-0'}>
+                    <LogoYearn
+                      width={16}
+                      height={16}
+                      className={'size-4'}
+                      back={isFeatured ? 'text-primary' : 'text-text-secondary'}
+                      front={'text-white'}
+                    />
+                  </span>
+                ) : null}
+              </div>
               <div className={'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'}>
                 <span
                   className={
@@ -159,13 +181,13 @@ export function VaultsV3ListRow({
                     {currentVault.category}
                   </span>
                 ) : null}
-                {currentVault.kind ? (
+                {kindLabel ? (
                   <span
                     className={
                       'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
                     }
                   >
-                    {currentVault.kind}
+                    {kindLabel}
                   </span>
                 ) : null}
               </div>

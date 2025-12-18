@@ -1,5 +1,4 @@
 import Link from '@components/Link'
-import { Button } from '@lib/components/Button'
 import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
@@ -9,20 +8,15 @@ import type { TPossibleSortBy } from '@vaults-shared/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-shared/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults-shared/hooks/useVaultsQueryArgs'
 import { FiltersV2 } from '@vaults-v2/components/FiltersV2'
-import { DEFAULT_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
 import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3AuxiliaryList } from '@vaults-v3/components/list/VaultsV3AuxiliaryList'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
 import { TrendingVaults } from '@vaults-v3/components/TrendingVaults'
-import {
-  ALL_VAULTSV3_CATEGORIES,
-  ALL_VAULTSV3_KINDS_KEYS,
-  DEFAULT_SELECTED_VAULTSV3_CATEGORIES
-} from '@vaults-v3/constants'
+import { ALL_VAULTSV3_CATEGORIES } from '@vaults-v3/constants'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 
 const AVAILABLE_TOGGLE_VALUE = 'available'
 const HOLDINGS_TOGGLE_VALUE = 'holdings'
@@ -40,12 +34,18 @@ type TListOfVaultsProps = {
   types: string[] | null
   chains: number[] | null
   categories: string[] | null
+  protocols: string[] | null
+  aggressiveness: number[] | null
+  showHiddenYearnVaults: boolean
   sortDirection: TSortDirection
   sortBy: TPossibleSortBy
   onSearch: (value: string) => void
   onChangeTypes: (value: string[] | null) => void
   onChangeCategories: (value: string[] | null) => void
   onChangeChains: (value: number[] | null) => void
+  onChangeProtocols: (value: string[] | null) => void
+  onChangeAggressiveness: (value: number[] | null) => void
+  onChangeShowHiddenYearnVaults: (value: boolean) => void
   onChangeSortDirection: (value: TSortDirection | '') => void
   onChangeSortBy: (value: TPossibleSortBy | '') => void
   onResetMultiSelect: () => void
@@ -58,12 +58,18 @@ function ListOfVaults({
   types,
   chains,
   categories,
+  protocols,
+  aggressiveness,
+  showHiddenYearnVaults,
   sortDirection,
   sortBy,
   onSearch,
   onChangeTypes,
   onChangeCategories,
   onChangeChains,
+  onChangeProtocols,
+  onChangeAggressiveness,
+  onChangeShowHiddenYearnVaults,
   onChangeSortDirection,
   onChangeSortBy,
   onResetMultiSelect,
@@ -106,13 +112,43 @@ function ListOfVaults({
   })
 
   // Use the appropriate filter hook based on vault type
+  const sanitizedTypes = useMemo(() => {
+    const selected = types ?? []
+    const allowed = vaultType === 'v3' ? new Set(['multi', 'single']) : new Set(['factory', 'legacy'])
+    const result = selected.filter((value) => allowed.has(value))
+    if (vaultType === 'v3' && result.length === 0) {
+      return ['multi']
+    }
+    return result
+  }, [types, vaultType])
+
+  const sanitizedCategories = useMemo(() => {
+    const selected = categories ?? []
+    if (vaultType === 'v3') {
+      return selected.filter(
+        (value) => value === ALL_VAULTSV3_CATEGORIES.Stablecoin || value === ALL_VAULTSV3_CATEGORIES.Volatile
+      )
+    }
+    const allowed = new Set(['Stablecoin', 'Volatile'])
+    return selected.filter((value) => allowed.has(value))
+  }, [categories, vaultType])
+
   const v3FilterResult = useV3VaultFilter(
-    vaultType === 'v3' ? types : null,
+    vaultType === 'v3' ? sanitizedTypes : null,
     chains,
     search || '',
-    vaultType === 'v3' ? categories : null
+    vaultType === 'v3' ? sanitizedCategories : null,
+    vaultType === 'v3' ? protocols : null,
+    vaultType === 'v3' ? aggressiveness : null,
+    vaultType === 'v3' ? showHiddenYearnVaults : undefined
   )
-  const v2FilterResult = useV2VaultFilter(null, chains, search || '')
+  const v2FilterResult = useV2VaultFilter(
+    vaultType === 'factory' ? sanitizedTypes : null,
+    chains,
+    search || '',
+    vaultType === 'factory' ? sanitizedCategories : null,
+    vaultType === 'factory' ? protocols : null
+  )
 
   const {
     filteredVaults,
@@ -124,10 +160,16 @@ function ListOfVaults({
 
   const totalMatchingVaults = vaultType === 'v3' ? (v3FilterResult.totalMatchingVaults ?? 0) : 0
   const totalHoldingsMatching = vaultType === 'v3' ? (v3FilterResult.totalHoldingsMatching ?? 0) : 0
-  const totalMigratableMatching = vaultType === 'v3' ? (v3FilterResult.totalMigratableMatching ?? 0) : 0
-  const totalRetiredMatching = vaultType === 'v3' ? (v3FilterResult.totalRetiredMatching ?? 0) : 0
 
-  const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(types, null, '', categories)
+  const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(
+    vaultType === 'v3' ? sanitizedTypes : null,
+    null,
+    '',
+    vaultType === 'v3' ? sanitizedCategories : null,
+    vaultType === 'v3' ? protocols : null,
+    vaultType === 'v3' ? aggressiveness : null,
+    vaultType === 'v3' ? showHiddenYearnVaults : undefined
+  )
 
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
@@ -208,8 +250,6 @@ function ListOfVaults({
     return sortedVaults.filter((vault) => !pinnedVaultKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
   }, [pinnedVaultKeys, pinnedVaults, sortedVaults])
 
-  const displayedVaults = useMemo(() => [...pinnedVaults, ...mainVaults], [pinnedVaults, mainVaults])
-
   const holdingsKeySet = useMemo(
     () => new Set(holdingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
     [holdingsVaults]
@@ -231,91 +271,18 @@ function ListOfVaults({
     [sortedSuggestedV2Candidates, holdingsKeySet]
   )
 
-  const visibleFlagCounts = displayedVaults.reduce(
-    (counts, vault) => {
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
-      const flags = vaultFlags[key]
-
-      if (flags?.hasHoldings) {
-        counts.holdings += 1
-      }
-      if (flags?.isMigratable) {
-        counts.migratable += 1
-      }
-      if (flags?.isRetired) {
-        counts.retired += 1
-      }
-
-      return counts
-    },
-    { holdings: 0, migratable: 0, retired: 0 }
-  )
-
-  const hiddenHoldingsCount = Math.max(totalHoldingsMatching - visibleFlagCounts.holdings, 0)
-  const hiddenMigratableCount = Math.max(totalMigratableMatching - visibleFlagCounts.migratable, 0)
-  const hiddenRetiredCount = Math.max(totalRetiredMatching - visibleFlagCounts.retired, 0)
-
-  const hiddenByFiltersCount = Math.max(totalMatchingVaults - sortedVaults.length, 0)
-  const hasHiddenResults = hiddenByFiltersCount > 0
-  const hasHiddenFlagged = hiddenHoldingsCount > 0 || hiddenMigratableCount > 0 || hiddenRetiredCount > 0
-
-  const renderHiddenBadge = (): ReactNode => {
-    if (!hasHiddenResults) return null
-
-    return (
-      <div className={'flex items-center gap-2 rounded-lg px-3 py-1 text-xs text-text-secondary'}>
-        <span>
-          {hiddenByFiltersCount} {`vault${hiddenByFiltersCount > 1 ? 's' : ''} hidden by filters`}
-        </span>
-        <Button
-          onClick={onResetMultiSelect}
-          className={
-            'h-6 rounded-md bg-text-primary px-3 py-1 text-xs text-surface transition-opacity hover:opacity-90'
-          }
-        >
-          {'Show all'}
-        </Button>
-      </div>
-    )
-  }
-
-  const renderHiddenSearchAlert = (): ReactNode => {
-    if (!hasHiddenResults && !hasHiddenFlagged) {
-      return null
-    }
-
-    return (
-      <div className={'flex flex-wrap items-center gap-2 text-xs text-text-secondary'}>
-        {renderHiddenBadge()}
-        {hiddenHoldingsCount > 0 ? (
-          <span>
-            {hiddenHoldingsCount} {`holding${hiddenHoldingsCount > 1 ? 's' : ''} hidden by filters`}
-          </span>
-        ) : null}
-        {hiddenMigratableCount > 0 ? (
-          <span>
-            {hiddenMigratableCount} {`migratable vault${hiddenMigratableCount > 1 ? 's are' : ' is'} hidden`}
-          </span>
-        ) : null}
-        {hiddenRetiredCount > 0 ? (
-          <span>
-            {hiddenRetiredCount} {`retired vault${hiddenRetiredCount > 1 ? 's are' : ' is'} hidden`}
-          </span>
-        ) : null}
-      </div>
-    )
-  }
-
   function renderVaultList(): ReactNode {
     const defaultCategories =
-      vaultType === 'v3' ? Object.values(ALL_VAULTSV3_CATEGORIES) : DEFAULT_VAULTS_CATEGORIES_KEYS
+      vaultType === 'v3'
+        ? [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
+        : ['Stablecoin', 'Volatile']
 
     if (isLoadingVaultList) {
       return (
         <VaultsListEmpty
           isLoading={isLoadingVaultList}
           currentSearch={search || ''}
-          currentCategories={vaultType === 'v3' ? categories : types}
+          currentCategories={sanitizedCategories}
           currentChains={chains}
           onReset={onResetMultiSelect}
           defaultCategories={defaultCategories}
@@ -329,7 +296,7 @@ function ListOfVaults({
         <VaultsListEmpty
           isLoading={false}
           currentSearch={search || ''}
-          currentCategories={vaultType === 'v3' ? categories : types}
+          currentCategories={sanitizedCategories}
           currentChains={chains}
           onReset={onResetMultiSelect}
           defaultCategories={defaultCategories}
@@ -382,25 +349,36 @@ function ListOfVaults({
       {suggestedVaultsElement}
       {vaultType === 'v3' ? (
         <Filters
-          types={types}
+          types={sanitizedTypes}
           shouldDebounce={true}
-          categories={categories}
+          categories={sanitizedCategories}
+          protocols={protocols}
+          aggressiveness={aggressiveness}
+          showHiddenYearnVaults={showHiddenYearnVaults}
           searchValue={search || ''}
           chains={chains}
           onChangeChains={onChangeChains}
           onChangeTypes={onChangeTypes}
           onChangeCategories={onChangeCategories}
+          onChangeProtocols={onChangeProtocols}
+          onChangeAggressiveness={onChangeAggressiveness}
+          onChangeShowHiddenYearnVaults={onChangeShowHiddenYearnVaults}
           onSearch={onSearch}
-          searchAlertContent={renderHiddenSearchAlert()}
           holdingsVaults={holdingsVaults}
         />
       ) : (
         <FiltersV2
           shouldDebounce={true}
+          types={sanitizedTypes}
+          categories={sanitizedCategories}
+          protocols={protocols}
           searchValue={search || ''}
           chains={chains}
           onChangeChains={onChangeChains}
           onSearch={onSearch}
+          onChangeTypes={onChangeTypes}
+          onChangeCategories={onChangeCategories}
+          onChangeProtocols={onChangeProtocols}
           holdingsVaults={holdingsVaults}
         />
       )}
@@ -521,22 +499,123 @@ function ListOfVaults({
   )
 }
 
-function Index(): ReactElement {
-  const vaultType = useVaultType()
+function useVaultListExtraFilters(): {
+  protocols: string[] | null
+  aggressiveness: number[] | null
+  showHiddenYearnVaults: boolean
+  onChangeProtocols: (value: string[] | null) => void
+  onChangeAggressiveness: (value: number[] | null) => void
+  onChangeShowHiddenYearnVaults: (value: boolean) => void
+  onResetExtraFilters: () => void
+} {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const readStringList = (key: string): string[] => {
+    const raw = searchParams.get(key)
+    if (!raw || raw === 'none') return []
+    return raw
+      .split('_')
+      .map((value) => value.trim())
+      .filter(Boolean)
+  }
+
+  const readNumberList = (key: string): number[] => {
+    return readStringList(key)
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value))
+  }
+
+  const [protocols, setProtocols] = useState<string[] | null>(() => readStringList('protocol'))
+  const [aggressiveness, setAggressiveness] = useState<number[] | null>(() => readNumberList('aggr'))
+  const [showHiddenYearnVaults, setShowHiddenYearnVaults] = useState<boolean>(() => {
+    const raw = searchParams.get('showHidden')
+    return raw === '1' || raw === 'true'
+  })
+
+  const updateParam = (key: string, value: string[] | number[] | null): void => {
+    const nextParams = new URLSearchParams(window.location.search)
+    if (!value || value.length === 0) {
+      nextParams.delete(key)
+    } else {
+      nextParams.set(key, value.join('_'))
+    }
+    navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
+  }
+
+  return {
+    protocols,
+    aggressiveness,
+    showHiddenYearnVaults,
+    onChangeProtocols: (value): void => {
+      setProtocols(value)
+      updateParam('protocol', value)
+    },
+    onChangeAggressiveness: (value): void => {
+      setAggressiveness(value)
+      updateParam('aggr', value)
+    },
+    onChangeShowHiddenYearnVaults: (value): void => {
+      setShowHiddenYearnVaults(value)
+      const nextParams = new URLSearchParams(window.location.search)
+      if (value) {
+        nextParams.set('showHidden', '1')
+      } else {
+        nextParams.delete('showHidden')
+      }
+      navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
+    },
+    onResetExtraFilters: (): void => {
+      setProtocols([])
+      setAggressiveness([])
+      setShowHiddenYearnVaults(false)
+      const nextParams = new URLSearchParams(window.location.search)
+      nextParams.delete('protocol')
+      nextParams.delete('aggr')
+      nextParams.delete('showHidden')
+      navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
+    }
+  }
+}
+
+function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElement {
+  const {
+    protocols,
+    aggressiveness,
+    showHiddenYearnVaults,
+    onChangeProtocols,
+    onChangeAggressiveness,
+    onChangeShowHiddenYearnVaults,
+    onResetExtraFilters
+  } = useVaultListExtraFilters()
 
   const queryArgs = useQueryArguments({
-    defaultTypes: vaultType === 'v3' ? [ALL_VAULTSV3_KINDS_KEYS[0]] : DEFAULT_VAULTS_CATEGORIES_KEYS,
-    defaultCategories: vaultType === 'v3' ? DEFAULT_SELECTED_VAULTSV3_CATEGORIES : [],
+    defaultTypes: vaultType === 'v3' ? ['multi'] : [],
+    defaultCategories: [],
     defaultPathname: '/vaults',
     defaultSortBy: 'featuringScore',
-    resetTypes: vaultType === 'v3' ? ALL_VAULTSV3_KINDS_KEYS : DEFAULT_VAULTS_CATEGORIES_KEYS,
-    resetCategories: vaultType === 'v3' ? DEFAULT_SELECTED_VAULTSV3_CATEGORIES : []
+    resetTypes: vaultType === 'v3' ? ['multi'] : [],
+    resetCategories: []
   })
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
       <div className={'mx-auto w-full max-w-[1232px] px-4 pb-4'}>
-        <ListOfVaults {...queryArgs} vaultType={vaultType}>
+        <ListOfVaults
+          {...queryArgs}
+          protocols={protocols}
+          aggressiveness={aggressiveness}
+          showHiddenYearnVaults={showHiddenYearnVaults}
+          onChangeProtocols={onChangeProtocols}
+          onChangeAggressiveness={onChangeAggressiveness}
+          onChangeShowHiddenYearnVaults={onChangeShowHiddenYearnVaults}
+          onResetMultiSelect={(): void => {
+            queryArgs.onResetMultiSelect()
+            onResetExtraFilters()
+          }}
+          vaultType={vaultType}
+        >
           {({ filters, list }) => (
             <div className={'flex flex-col'}>
               {filters}
@@ -547,6 +626,11 @@ function Index(): ReactElement {
       </div>
     </div>
   )
+}
+
+function Index(): ReactElement {
+  const vaultType = useVaultType()
+  return <VaultsIndexContent key={vaultType} vaultType={vaultType} />
 }
 
 export default Index
