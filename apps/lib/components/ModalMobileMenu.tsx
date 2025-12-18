@@ -1,17 +1,13 @@
 'use client'
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { IconClose } from '@lib/icons/IconClose'
-import { IconDiscord } from '@lib/icons/IconDiscord'
-import { IconTwitter } from '@lib/icons/IconTwitter'
 import type React from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
-import { LogoGithub } from '../icons/LogoGithub'
 import type { TMenu } from './Header'
 
 const menu: TMenu[] = [
-  { path: '/apps', label: 'Apps' },
   { path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank' },
   { path: 'https://discord.gg/yearn', label: 'Support', target: '_blank' },
   { path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank' },
@@ -19,17 +15,19 @@ const menu: TMenu[] = [
     path: 'https://gov.yearn.fi/',
     label: 'Discourse',
     target: '_blank'
-  }
+  },
+  { path: 'https://github.com/yearn', label: 'Github', target: '_blank' },
+  { path: 'https://x.com/yearnfi', label: 'X (Twitter)', target: '_blank' }
 ]
 
 export function FooterNav({ onClose }: { onClose?: () => void }): ReactElement {
   return (
     <div
       className={
-        'flex w-full flex-col space-y-14 rounded-[24px] p-0 md:flex-row md:space-x-14 md:space-y-0 md:bg-[#222222]/50 md:p-[12px]'
+        'flex w-full flex-col gap-6 rounded-3xl p-0 md:flex-row md:space-x-14 md:space-y-0 md:bg-[#222222]/50 md:p-3'
       }
     >
-      <div className={'flex w-full flex-col space-y-4 rounded-[12px] p-[24px] md:bg-black/30'}>
+      <div className={'flex w-full flex-col gap-8 justify-center rounded-xl p-6 md:flex-row md:bg-black/30'}>
         {menu.map((link) => (
           <Link
             className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
@@ -47,35 +45,6 @@ export function FooterNav({ onClose }: { onClose?: () => void }): ReactElement {
             <span className={'size-6'}>{'↗'}</span>
           </Link>
         ))}
-      </div>
-      <div className={'flex w-full items-center justify-center gap-6'}>
-        <Link
-          href={'https://discord.com/invite/yearn'}
-          target={'_blank'}
-          className={
-            'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
-          }
-        >
-          <IconDiscord className={'size-7 text-white'} />
-        </Link>
-        <Link
-          href={'https://github.com/yearn'}
-          target={'_blank'}
-          className={
-            'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
-          }
-        >
-          <LogoGithub className={'size-7 text-white'} />
-        </Link>
-        <Link
-          href={'https://x.com/yearnfi'}
-          target={'_blank'}
-          className={
-            'flex items-center justify-center rounded-full bg-white/10 p-3 transition-colors hover:bg-white/20'
-          }
-        >
-          <IconTwitter className={'size-7 text-white'} />
-        </Link>
       </div>
     </div>
   )

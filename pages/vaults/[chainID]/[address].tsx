@@ -4,6 +4,8 @@ import { useWeb3 } from '@lib/contexts/useWeb3'
 import type { TUseBalancesTokens } from '@lib/hooks/useBalances.multichains'
 import { useFetch } from '@lib/hooks/useFetch'
 import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
+import { IconAlertError } from '@lib/icons/IconAlertError'
+import { IconClose } from '@lib/icons/IconClose'
 import { toAddress } from '@lib/utils'
 import { variants } from '@lib/utils/animations'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -17,6 +19,8 @@ import { motion } from 'framer-motion'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router'
+
+const INCIDENT_VAULT_ADDRESS = '0x58900d761ae3765b75ddfc235c1536b527f25d8f'
 
 function Index(): ReactElement | null {
   const { address, isActive } = useWeb3()
@@ -126,8 +130,16 @@ function Index(): ReactElement | null {
     )
   }
 
+  const isIncidentVault =
+    currentVault.chainID === 1 && toAddress(currentVault.address) === toAddress(INCIDENT_VAULT_ADDRESS)
+
   return (
     <div className={'mx-auto my-0 mt-24 max-w-[1232px] md:mb-0 px-4'}>
+      {isIncidentVault ? (
+        <div className={'mb-6'}>
+          <IncidentBanner />
+        </div>
+      ) : null}
       <header className={'pointer-events-none flex w-full items-center justify-center'}>
         <motion.div
           key={'Vaults'}
@@ -157,6 +169,47 @@ function Index(): ReactElement | null {
         )}
         {currentVault && <VaultDetailsTabsWrapper currentVault={currentVault} />}
       </section>
+    </div>
+  )
+}
+
+function IncidentBanner(): ReactElement | null {
+  const [isVisible, setIsVisible] = useState(true)
+
+  if (!isVisible) {
+    return null
+  }
+
+  return (
+    <div
+      className={
+        'rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-black md:px-6 md:py-4 md:text-base'
+      }
+    >
+      <div className={'flex items-start gap-3'}>
+        <IconAlertError className={'mt-0.5 size-5 text-amber-700'} />
+        <p className={'flex-1 leading-relaxed'}>
+          {
+            "The yETH pool has been paused following a security incident. Yearn's v2 and v3 vault code is not impacted. More updates will be provided as we have them. Please check X/twitter for the most up to date information: "
+          }
+          <a
+            href={'https://x.com/yearnfi'}
+            target={'_blank'}
+            rel={'noreferrer'}
+            className={'underline underline-offset-2 transition-colors hover:text-amber-800'}
+          >
+            {'https://x.com/yearnfi'}
+          </a>
+        </p>
+        <button
+          type={'button'}
+          aria-label={'Dismiss announcement'}
+          onClick={(): void => setIsVisible(false)}
+          className={'mt-0.5 text-neutral-500 transition hover:text-neutral-700'}
+        >
+          <IconClose className={'size-4'} />
+        </button>
+      </div>
     </div>
   )
 }

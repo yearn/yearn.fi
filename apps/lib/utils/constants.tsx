@@ -6,11 +6,11 @@ import { IconYearn } from '@lib/icons/IconYearn'
 import { IconYearnXApps } from '@lib/icons/IconYearnXApps'
 import type { TAddress, TNDict, TToken } from '@lib/types'
 import type { TApp } from '@lib/types/mixed'
-import { arbitrum, base, fantom, mainnet, optimism, polygon, sonic } from 'viem/chains'
+import { arbitrum, base, fantom, mainnet, optimism, polygon } from 'viem/chains'
 import { toAddress } from './tools.address'
 import { katana } from './wagmi'
 
-export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic, katana]
+export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum, katana]
 
 export const MULTICALL3_ADDRESS = toAddress('0xcA11bde05977b3631167028862bE2a173976CA11')
 
