@@ -26,7 +26,7 @@ type Props = {
   notificationParams?: TTxButtonNotificationParams
 }
 
-type ButtonState = 'loading' | 'success' | 'error' | 'default' | 'simulating' | 'approved' | 'notConnected'
+type ButtonState = 'loading' | 'success' | 'default' | 'simulating' | 'approved' | 'notConnected'
 
 const spinnerStyle = {
   animation: 'spin 1s linear infinite',
@@ -69,15 +69,14 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const wrongNetwork = txChainId && currentChain?.id !== txChainId
 
   const { isSuccess: isTxSuccess, isError } = receipt
-  const { isError: isSimulatedError, isFetching: isSimulating } = prepareWrite
+  const { isFetching: isSimulating } = prepareWrite
 
   // For Enso orders, check if we're waiting for transaction
   const isEnsoOrder = !!(prepareWrite.data?.request as any)?.__isEnsoOrder
   const isWaitingForEnsoTx = isEnsoOrder && !!(prepareWrite.data?.request as any)?.__waitingForTx
   const isLoading = override === 'loading' || _loading || (isWaitingForEnsoTx && !!ensoTxHash) || isChainSwitching
 
-  const disabled =
-    _disabled || (!prepareWrite.isSuccess && !wrongNetwork) || isLoading || isSimulating || override === 'error'
+  const disabled = _disabled || (!prepareWrite.isSuccess && !wrongNetwork) || isLoading || isSimulating
 
   // Helper to convert notification params to legacy TActionParams format
   const buildActionParamsForNotification = useCallback(() => {
@@ -90,29 +89,86 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
     }
   }, [notificationParams, account])
 
-  // Clear override states after timeout
+  // Clear success state after timeout
   useEffect(() => {
-    if (override === 'error' || override === 'success') {
-      const timeout = override === 'error' ? 3000 : 2000
+    if (override === 'success') {
       const timer = setTimeout(() => {
         setOverride(undefined)
-      }, timeout)
+      }, 2000)
       return () => clearTimeout(timer)
     }
     return undefined
   }, [override])
+
+  // Handle transaction errors
+  useEffect(() => {
+    if (isError && receipt.error) {
+      console.error('Transaction failed:', receipt.error)
+      console.error('Receipt data:', receipt.data)
+      console.error('Transaction name:', transactionName)
+      setOverride(undefined)
+      writeContract.reset()
+
+      // Update notification to error state
+      if (notificationId && notificationParams && account) {
+        const actionParams = buildActionParamsForNotification()
+        if (actionParams) {
+          if (notificationParams.type === 'approve') {
+            handleApproveNotification({
+              actionParams,
+              status: 'error',
+              idToUpdate: notificationId
+            })
+          } else if (
+            notificationParams.type === 'deposit' ||
+            notificationParams.type === 'zap' ||
+            notificationParams.type === 'crosschain zap' ||
+            notificationParams.type === 'deposit and stake' ||
+            notificationParams.type === 'stake'
+          ) {
+            handleDepositNotification({
+              actionParams,
+              type: notificationParams.type,
+              status: 'error',
+              idToUpdate: notificationId
+            })
+          } else if (notificationParams.type === 'withdraw' || notificationParams.type === 'unstake') {
+            handleWithdrawNotification({
+              actionParams,
+              type: notificationParams.type,
+              status: 'error',
+              idToUpdate: notificationId
+            })
+          }
+        }
+      }
+
+      // Clear Enso tx hash after error
+      if (ensoTxHash) {
+        setEnsoTxHash(undefined)
+      }
+    }
+  }, [
+    isError,
+    receipt.error,
+    writeContract,
+    ensoTxHash,
+    receipt.data,
+    transactionName,
+    notificationId,
+    notificationParams,
+    account,
+    buildActionParamsForNotification,
+    handleApproveNotification,
+    handleDepositNotification,
+    handleWithdrawNotification
+  ])
+
   const ButtonContentType: ButtonState | undefined = (() => {
     if (!account) return 'notConnected'
     if (override === 'loading' || isLoading || isSimulating) return 'loading'
     if (override === 'success') return 'success'
-    if (override === 'error') return 'error'
     if (isApproved) return 'approved'
-
-    // Only show transaction errors for non-custom orders
-    const isCustomOrder =
-      !!(prepareWrite.data?.request as any)?.__isCowswapOrder || !!(prepareWrite.data?.request as any)?.__isEnsoOrder
-    if (!isCustomOrder && (isError || isSimulatedError)) return 'error'
-
     return 'default'
   })()
 
@@ -130,19 +186,6 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
       <div className="flex items-center gap-2">
         {transactionName}
         {additionalComponent}
-      </div>
-    ),
-    error: (
-      <div className="flex items-center gap-2">
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        Try Again
       </div>
     ),
     simulating: (
@@ -203,7 +246,6 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   // Determine button variant based on state
   const getVariant = useCallback(() => {
     if (!account) return 'filled'
-    if (ButtonContentType === 'error') return 'error'
     if (ButtonContentType === 'loading') return 'busy'
     return 'filled'
   }, [account, ButtonContentType])
@@ -298,7 +340,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
             await switchChainAsync({ chainId: txChainId })
           } catch (error) {
             console.error('Failed to switch chain:', error)
-            setOverride('error')
+            setOverride(undefined)
             return
           }
         }
@@ -407,53 +449,10 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                 }
               })
               .catch((error: Error) => {
-                // Check if user rejected the transaction
-                const isUserRejection =
-                  error?.message?.toLowerCase().includes('rejected') || (error as any)?.code === 4001
-
-                if (isUserRejection) {
-                  // User rejected - just reset to default state
-                  setOverride(undefined)
-                } else {
-                  setOverride('error')
-                  addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
-
-                  // Update notification to error state
-                  if (createdNotificationId && notificationParams && account) {
-                    const actionParams = buildActionParamsForNotification()
-                    if (actionParams) {
-                      if (notificationParams.type === 'approve') {
-                        handleApproveNotification({
-                          actionParams,
-                          status: 'error',
-                          idToUpdate: createdNotificationId
-                        })
-                      } else if (
-                        notificationParams.type === 'deposit' ||
-                        notificationParams.type === 'zap' ||
-                        notificationParams.type === 'crosschain zap' ||
-                        notificationParams.type === 'deposit and stake' ||
-                        notificationParams.type === 'stake'
-                      ) {
-                        handleDepositNotification({
-                          actionParams,
-                          type: notificationParams.type,
-                          status: 'error',
-                          idToUpdate: createdNotificationId
-                        })
-                      } else if (notificationParams.type === 'withdraw' || notificationParams.type === 'unstake') {
-                        handleWithdrawNotification({
-                          actionParams,
-                          type: notificationParams.type,
-                          status: 'error',
-                          idToUpdate: createdNotificationId
-                        })
-                      }
-                    }
-                  }
-
-                  console.error('Transaction failed:', error)
-                }
+                setOverride(undefined)
+                setEnsoTxHash(undefined)
+                writeContract.reset()
+                console.error('Transaction failed:', error)
               })
               .finally(() => {
                 setIsSigning(false)
@@ -540,56 +539,9 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                 }
               })
               .catch((error) => {
-                // Check if user rejected the transaction
-                const isUserRejection =
-                  error?.message?.toLowerCase().includes('rejected') || (error as any)?.code === 4001
-
-                if (isUserRejection) {
-                  // User rejected - just reset to default state
-                  setOverride(undefined)
-                } else {
-                  setOverride('error')
-                  addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
-
-                  // Update notification to error state
-                  if (createdNotificationId && notificationParams && account) {
-                    const actionParams = buildActionParamsForNotification()
-                    if (actionParams) {
-                      if (notificationParams.type === 'approve') {
-                        handleApproveNotification({
-                          actionParams,
-                          status: 'error',
-                          idToUpdate: createdNotificationId
-                        })
-                      } else if (
-                        notificationParams.type === 'deposit' ||
-                        notificationParams.type === 'zap' ||
-                        notificationParams.type === 'deposit and stake' ||
-                        notificationParams.type === 'stake'
-                      ) {
-                        handleDepositNotification({
-                          actionParams,
-                          type: notificationParams.type,
-                          status: 'error',
-                          idToUpdate: createdNotificationId
-                        })
-                      } else if (
-                        notificationParams.type === 'withdraw' ||
-                        notificationParams.type === 'crosschain zap' ||
-                        notificationParams.type === 'unstake'
-                      ) {
-                        handleWithdrawNotification({
-                          actionParams,
-                          type: notificationParams.type,
-                          status: 'error',
-                          idToUpdate: createdNotificationId
-                        })
-                      }
-                    }
-                  }
-
-                  console.error('Transaction failed:', error)
-                }
+                setOverride(undefined)
+                writeContract.reset()
+                console.error('Transaction failed:', error)
               })
               .finally(() => {
                 setIsSigning(false)

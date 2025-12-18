@@ -636,9 +636,9 @@ export const WidgetDepositFinal: FC<Props> = ({
   }
 
   return (
-    <div className="flex flex-col relative">
+    <div className="flex flex-col relative group/widget">
       {/* Settings Popover */}
-      <div className="flex justify-end px-1 py-1 h-6">
+      <div className="flex justify-end px-1 py-1 h-6 opacity-0 group-hover/widget:opacity-100 transition-opacity duration-200">
         <SettingsPopover
           slippage={zapSlippage}
           setSlippage={setZapSlippage}
