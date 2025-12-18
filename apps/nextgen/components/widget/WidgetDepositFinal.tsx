@@ -1,5 +1,7 @@
 import { Dialog, Transition } from '@headlessui/react'
+import { Button } from '@lib/components/Button'
 import { useWallet } from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { cl, formatAmount, formatPercent, formatTAmount, toAddress, toNormalizedBN } from '@lib/utils'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
@@ -189,6 +191,7 @@ export const WidgetDepositFinal: FC<Props> = ({
   handleDepositSuccess: onDepositSuccess
 }) => {
   const { address: account } = useAccount()
+  const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
@@ -763,42 +766,55 @@ export const WidgetDepositFinal: FC<Props> = ({
 
       {/* Action Buttons */}
       <div className="px-6 pt-6 pb-6">
-        <div className="flex gap-2 w-full">
-          {!isNativeToken && (
-            <TxButton
-              prepareWrite={activeFlow.actions.prepareApprove}
-              transactionName="Approve"
-              disabled={!activeFlow.periphery.prepareApproveEnabled || !!depositError}
-              tooltip={depositError || undefined}
-              loading={isLoadingQuote}
-              className="w-full"
-              notificationParams={approveNotificationParams}
-            />
-          )}
-          <TxButton
-            prepareWrite={activeFlow.actions.prepareDeposit}
-            transactionName={
-              isLoadingQuote
-                ? 'Finding route...'
-                : !activeFlow.periphery.isAllowanceSufficient && !isNativeToken
-                  ? 'Approve First'
-                  : routeType === 'DIRECT_STAKE'
-                    ? 'Stake'
-                    : activeFlow.periphery.isCrossChain
-                      ? 'Cross-chain Deposit'
-                      : 'Deposit'
-            }
-            disabled={!canDeposit}
-            loading={isLoadingQuote}
-            tooltip={
-              depositError ||
-              (!activeFlow.periphery.isAllowanceSufficient && !isNativeToken ? 'Please approve token first' : undefined)
-            }
-            onSuccess={handleDepositSuccess}
+        {!account ? (
+          <Button
+            onClick={openLoginModal}
+            variant="filled"
             className="w-full"
-            notificationParams={depositNotificationParams}
-          />
-        </div>
+            classNameOverride="yearn--button--nextgen w-full"
+          >
+            Connect Wallet
+          </Button>
+        ) : (
+          <div className="flex gap-2 w-full">
+            {!isNativeToken && (
+              <TxButton
+                prepareWrite={activeFlow.actions.prepareApprove}
+                transactionName="Approve"
+                disabled={!activeFlow.periphery.prepareApproveEnabled || !!depositError}
+                tooltip={depositError || undefined}
+                loading={isLoadingQuote}
+                className="w-full"
+                notificationParams={approveNotificationParams}
+              />
+            )}
+            <TxButton
+              prepareWrite={activeFlow.actions.prepareDeposit}
+              transactionName={
+                isLoadingQuote
+                  ? 'Finding route...'
+                  : !activeFlow.periphery.isAllowanceSufficient && !isNativeToken
+                    ? 'Approve First'
+                    : routeType === 'DIRECT_STAKE'
+                      ? 'Stake'
+                      : activeFlow.periphery.isCrossChain
+                        ? 'Cross-chain Deposit'
+                        : 'Deposit'
+              }
+              disabled={!canDeposit}
+              loading={isLoadingQuote}
+              tooltip={
+                depositError ||
+                (!activeFlow.periphery.isAllowanceSufficient && !isNativeToken
+                  ? 'Please approve token first'
+                  : undefined)
+              }
+              onSuccess={handleDepositSuccess}
+              className="w-full"
+              notificationParams={depositNotificationParams}
+            />
+          </div>
+        )}
       </div>
 
       {/* Vault Shares Modal */}

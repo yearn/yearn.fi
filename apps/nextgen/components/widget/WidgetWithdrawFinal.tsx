@@ -1,5 +1,7 @@
 import { Dialog, Transition } from '@headlessui/react'
+import { Button } from '@lib/components/Button'
 import { useWallet } from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import type { TNormalizedBN } from '@lib/types'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
@@ -139,6 +141,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   handleWithdrawSuccess: onWithdrawSuccess
 }) => {
   const { address: account } = useAccount()
+  const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
@@ -762,32 +765,43 @@ export const WidgetWithdrawFinal: FC<Props> = ({
 
       {/* Action Buttons */}
       <div className={'px-6 pt-6 pb-6'}>
-        <div className="flex gap-2 w-full">
-          {showApprove && activeFlow.actions.prepareApprove && (
-            <TxButton
-              prepareWrite={activeFlow.actions.prepareApprove}
-              transactionName="Approve"
-              disabled={!activeFlow.periphery.prepareApproveEnabled || !!withdrawError || isLoadingQuote}
-              tooltip={withdrawError || (isLoadingQuote ? 'Calculating required amount...' : undefined)}
-              loading={isLoadingQuote}
-              className="w-full"
-              notificationParams={approveNotificationParams}
-            />
-          )}
-          <TxButton
-            prepareWrite={activeFlow.actions.prepareWithdraw}
-            transactionName={transactionName}
-            disabled={!activeFlow.periphery.prepareWithdrawEnabled || !!withdrawError}
-            loading={isLoadingQuote}
-            tooltip={
-              withdrawError ||
-              (!activeFlow.periphery.isAllowanceSufficient && showApprove ? 'Please approve token first' : undefined)
-            }
-            onSuccess={handleWithdrawSuccess}
+        {!account ? (
+          <Button
+            onClick={openLoginModal}
+            variant="filled"
             className="w-full"
-            notificationParams={withdrawNotificationParams}
-          />
-        </div>
+            classNameOverride="yearn--button--nextgen w-full"
+          >
+            Connect Wallet
+          </Button>
+        ) : (
+          <div className="flex gap-2 w-full">
+            {showApprove && activeFlow.actions.prepareApprove && (
+              <TxButton
+                prepareWrite={activeFlow.actions.prepareApprove}
+                transactionName="Approve"
+                disabled={!activeFlow.periphery.prepareApproveEnabled || !!withdrawError || isLoadingQuote}
+                tooltip={withdrawError || (isLoadingQuote ? 'Calculating required amount...' : undefined)}
+                loading={isLoadingQuote}
+                className="w-full"
+                notificationParams={approveNotificationParams}
+              />
+            )}
+            <TxButton
+              prepareWrite={activeFlow.actions.prepareWithdraw}
+              transactionName={transactionName}
+              disabled={!activeFlow.periphery.prepareWithdrawEnabled || !!withdrawError}
+              loading={isLoadingQuote}
+              tooltip={
+                withdrawError ||
+                (!activeFlow.periphery.isAllowanceSufficient && showApprove ? 'Please approve token first' : undefined)
+              }
+              onSuccess={handleWithdrawSuccess}
+              className="w-full"
+              notificationParams={withdrawNotificationParams}
+            />
+          </div>
+        )}
       </div>
 
       {/* Withdraw Details Modal */}
