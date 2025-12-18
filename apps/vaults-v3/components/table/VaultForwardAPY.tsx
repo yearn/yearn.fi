@@ -46,11 +46,10 @@ export function VaultForwardAPY({
   if (currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined) {
     const katanaDetails = (
       <KatanaApyTooltipContent
-        extrinsicYield={data.katanaExtras.extrinsicYield}
-        katanaNativeYield={data.katanaExtras.katanaNativeYield}
-        fixedRateKatanRewardsAPR={data.katanaExtras.FixedRateKatanaRewards}
-        katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR}
-        katanaBonusAPR={data.katanaExtras.katanaBonusAPY}
+        katanaNativeYield={data.katanaExtras.katanaNativeYield ?? 0}
+        fixedRateKatanRewardsAPR={data.katanaExtras.FixedRateKatanaRewards ?? 0}
+        katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR ?? data.katanaExtras.katanaRewardsAPR ?? 0}
+        katanaBonusAPR={data.katanaExtras.katanaBonusAPY ?? 0}
         steerPointsPerDollar={data.katanaExtras.steerPointsPerDollar}
         isEligibleForSpectraBoost={isEligibleForSpectraBoost}
         currentVault={currentVault}
@@ -375,34 +374,22 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
       <div className={'w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'}>
         <div className={'flex flex-col gap-2'}>
           <div className={'flex items-center justify-between'}>
-            <p className={'text-xs text-text-primary'}>{'Extrinsic Yield'}</p>
+            <p className={'text-xs text-text-primary'}>{'Katana Native APY'}</p>
             <span className={'font-number'}>
               <RenderAmount
                 shouldHideTooltip
-                value={data.katanaExtras.extrinsicYield}
+                value={data.katanaExtras.katanaNativeYield ?? 0}
                 symbol={'percent'}
                 decimals={6}
               />
             </span>
           </div>
-          <div className={'flex items-center justify-between'}>
-            <p className={'text-xs text-text-primary'}>{'Katana APY'}</p>
-            <span className={'font-number'}>
-              <RenderAmount
-                shouldHideTooltip
-                value={data.katanaExtras.katanaNativeYield}
-                symbol={'percent'}
-                decimals={6}
-              />
-            </span>
-          </div>
-          <div className={'my-1 h-px w-full bg-surface-tertiary/60'} />
           <div className={'flex items-center justify-between'}>
             <p className={'text-xs text-text-primary'}>{'Base Rewards APR'}</p>
             <span className={'font-number'}>
               <RenderAmount
                 shouldHideTooltip
-                value={data.katanaExtras.FixedRateKatanaRewards}
+                value={data.katanaExtras.FixedRateKatanaRewards ?? 0}
                 symbol={'percent'}
                 decimals={6}
               />
@@ -413,7 +400,7 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
             <span className={'font-number'}>
               <RenderAmount
                 shouldHideTooltip
-                value={data.katanaExtras.katanaAppRewardsAPR}
+                value={data.katanaExtras.katanaAppRewardsAPR ?? data.katanaExtras.katanaRewardsAPR ?? 0}
                 symbol={'percent'}
                 decimals={6}
               />
@@ -424,7 +411,7 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
             <span className={'font-number'}>
               <RenderAmount
                 shouldHideTooltip
-                value={data.katanaExtras.katanaBonusAPY}
+                value={data.katanaExtras.katanaBonusAPY ?? 0}
                 symbol={'percent'}
                 decimals={6}
               />
