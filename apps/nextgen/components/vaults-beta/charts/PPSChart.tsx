@@ -1,7 +1,8 @@
+import { useChartStyle } from '@lib/contexts/useChartStyle'
 import type { TPpsChartData } from '@nextgen/types/charts'
 import { getTimeframeLimit } from '@nextgen/utils/charts'
 import { useId, useMemo } from 'react'
-import { Area, ComposedChart, Line, XAxis, YAxis } from 'recharts'
+import { Area, CartesianGrid, ComposedChart, Line, LineChart, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
 import { ChartContainer, ChartTooltip } from './ChartPrimitives'
 
@@ -23,6 +24,8 @@ const PERCENT_SERIES_META: Record<PercentSeriesKey, { label: string; color: stri
 
 export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }: PPSChartProps) {
   const gradientId = useId().replace(/:/g, '')
+  const { chartStyle } = useChartStyle()
+  const isPowerglove = chartStyle === 'powerglove'
   const filteredData = useMemo(() => {
     const limit = getTimeframeLimit(timeframe)
     if (!Number.isFinite(limit) || limit >= chartData.length) {
@@ -32,6 +35,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
   }, [chartData, timeframe])
 
   const isPercentSeries = dataKey !== 'PPS'
+  const seriesColor = isPercentSeries ? `var(--color-${dataKey})` : 'var(--color-pps)'
   const chartConfig = useMemo<ChartConfig>(() => {
     const config: ChartConfig = {}
     if (isPercentSeries) {
@@ -49,6 +53,70 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
     return config
   }, [dataKey, isPercentSeries])
 
+  if (isPowerglove) {
+    return (
+      <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
+        <LineChart
+          data={filteredData}
+          margin={{
+            top: 20,
+            right: 30,
+            left: 10,
+            bottom: 20
+          }}
+        >
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey={'date'}
+            tick={{ fill: 'var(--chart-axis)' }}
+            axisLine={{ stroke: 'var(--chart-axis)' }}
+            tickLine={{ stroke: 'var(--chart-axis)' }}
+          />
+          <YAxis
+            domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']}
+            tickFormatter={(value) => (isPercentSeries ? `${value}%` : Number(value).toFixed(3))}
+            tick={{ fill: 'var(--chart-axis)' }}
+            axisLine={{ stroke: 'var(--chart-axis)' }}
+            tickLine={{ stroke: 'var(--chart-axis)' }}
+            label={{
+              value: isPercentSeries ? PERCENT_SERIES_META[dataKey as PercentSeriesKey].label : 'Price Per Share',
+              angle: -90,
+              position: 'insideLeft',
+              offset: 10,
+              style: {
+                textAnchor: 'middle',
+                fill: 'var(--chart-axis)'
+              }
+            }}
+          />
+          {!hideTooltip && (
+            <ChartTooltip
+              formatter={(value: number) =>
+                isPercentSeries
+                  ? [`${(value ?? 0).toFixed(2)}%`, PERCENT_SERIES_META[dataKey as PercentSeriesKey].label]
+                  : [(value ?? 0).toFixed(3), 'PPS']
+              }
+              contentStyle={{
+                backgroundColor: 'var(--chart-tooltip-bg)',
+                borderRadius: 'var(--chart-tooltip-radius)',
+                border: '1px solid var(--chart-tooltip-border)',
+                boxShadow: 'var(--chart-tooltip-shadow)'
+              }}
+            />
+          )}
+          <Line
+            type={'monotone'}
+            dataKey={dataKey}
+            stroke={seriesColor}
+            strokeWidth={2}
+            dot={false}
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ChartContainer>
+    )
+  }
+
   return (
     <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
       <ComposedChart
@@ -62,8 +130,8 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
       >
         <defs>
           <linearGradient id={`${gradientId}-pps`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="5%" stopColor="#0657f9" stopOpacity={0.5} />
-            <stop offset="95%" stopColor="#0657f9" stopOpacity={0} />
+            <stop offset="5%" stopColor={seriesColor} stopOpacity={0.5} />
+            <stop offset="95%" stopColor={seriesColor} stopOpacity={0} />
           </linearGradient>
         </defs>
         <XAxis dataKey={'date'} hide />
@@ -76,8 +144,10 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
                 : [(value ?? 0).toFixed(3), 'PPS']
             }
             contentStyle={{
-              borderRadius: '12px',
-              border: '1px solid rgba(0,0,0,0.08)'
+              backgroundColor: 'var(--chart-tooltip-bg)',
+              borderRadius: 'var(--chart-tooltip-radius)',
+              border: '1px solid var(--chart-tooltip-border)',
+              boxShadow: 'var(--chart-tooltip-shadow)'
             }}
           />
         )}
@@ -93,7 +163,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
         <Line
           type={'monotone'}
           dataKey={dataKey}
-          stroke={isPercentSeries ? `var(--color-${dataKey})` : 'var(--color-pps)'}
+          stroke={seriesColor}
           strokeWidth={2}
           dot={false}
           isAnimationActive={false}
