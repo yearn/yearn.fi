@@ -144,6 +144,7 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
             fill={`url(#${gradientId}-tvl)`}
             fillOpacity={1}
             connectNulls
+            tooltipType={'none'}
             isAnimationActive={false}
           />
           <Line
@@ -201,6 +202,7 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
           fill={`url(#${gradientId}-tvl)`}
           fillOpacity={1}
           connectNulls
+          tooltipType={'none'}
           isAnimationActive={false}
         />
         <Line

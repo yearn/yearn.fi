@@ -12,12 +12,12 @@ type ChartStyleContextValue = {
 }
 
 const ChartStyleContext = createContext<ChartStyleContextValue>({
-  chartStyle: 'minimal',
+  chartStyle: 'blended',
   setChartStyle: () => undefined
 })
 
 export function ChartStyleContextApp({ children }: { children: ReactElement }): ReactElement {
-  const [chartStyle, setChartStyle] = useLocalStorage<TChartStyle>(STORAGE_KEY, 'minimal')
+  const [chartStyle, setChartStyle] = useLocalStorage<TChartStyle>(STORAGE_KEY, 'blended')
 
   const value = useMemo<ChartStyleContextValue>(() => {
     return { chartStyle, setChartStyle }

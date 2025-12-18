@@ -22,7 +22,7 @@ const SERIES_META: Record<SeriesKey, { chartLabel: string; legendLabel: string; 
   thirtyDayApy: {
     chartLabel: '30-day APY %',
     legendLabel: '30-day APY',
-    color: 'var(--chart-2)'
+    color: 'var(--chart-1)'
   }
 }
 
@@ -167,6 +167,7 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
               fill={`url(#${gradientId}-apy)`}
               fillOpacity={1}
               connectNulls
+              tooltipType={'none'}
               isAnimationActive={false}
             />
             {!hideTooltip && (
@@ -223,6 +224,7 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
             fill={`url(#${gradientId}-apy)`}
             fillOpacity={1}
             connectNulls
+            tooltipType={'none'}
             isAnimationActive={false}
           />
           {!hideTooltip && (

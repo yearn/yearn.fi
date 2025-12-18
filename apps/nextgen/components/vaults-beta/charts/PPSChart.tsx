@@ -162,6 +162,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
             fill={`url(#${gradientId}-pps)`}
             fillOpacity={1}
             connectNulls
+            tooltipType={'none'}
             isAnimationActive={false}
           />
           <Line
@@ -218,6 +219,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           fill={`url(#${gradientId}-pps)`}
           fillOpacity={1}
           connectNulls
+          tooltipType={'none'}
           isAnimationActive={false}
         />
         <Line
