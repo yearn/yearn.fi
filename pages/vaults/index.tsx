@@ -84,32 +84,33 @@ function ListOfVaults({
     const varsElement = varsRef.current
     if (!filtersElement || !varsElement) return
 
-    const updateHeight = (heightOverride?: number): void => {
-      const height = heightOverride ?? filtersElement.getBoundingClientRect().height
-      varsElement.style.setProperty('--vaults-filters-height', `${height}px`)
-    }
-
-    updateHeight()
-
     if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', () => updateHeight(), { passive: true })
-      return () => window.removeEventListener('resize', () => updateHeight())
+      const updateHeight = (): void => {
+        varsElement.style.setProperty('--vaults-filters-height', `${filtersElement.getBoundingClientRect().height}px`)
+      }
+
+      updateHeight()
+      const handleResize = (): void => updateHeight()
+      window.addEventListener('resize', handleResize, { passive: true })
+      return () => window.removeEventListener('resize', handleResize)
     }
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
-      updateHeight(entry?.contentRect?.height)
+      const borderBoxSize = entry?.borderBoxSize as unknown
+      const borderBoxHeight = Array.isArray(borderBoxSize)
+        ? borderBoxSize[0]?.blockSize
+        : borderBoxSize && typeof borderBoxSize === 'object' && 'blockSize' in borderBoxSize
+          ? (borderBoxSize as ResizeObserverSize).blockSize
+          : undefined
+      const height = borderBoxHeight ?? filtersElement.getBoundingClientRect().height
+      varsElement.style.setProperty('--vaults-filters-height', `${height}px`)
     })
+
+    varsElement.style.setProperty('--vaults-filters-height', `${filtersElement.getBoundingClientRect().height}px`)
     observer.observe(filtersElement)
     return () => observer.disconnect()
   }, [])
-
-  useLayoutEffect(() => {
-    const filtersElement = filtersRef.current
-    const varsElement = varsRef.current
-    if (!filtersElement || !varsElement) return
-    varsElement.style.setProperty('--vaults-filters-height', `${filtersElement.getBoundingClientRect().height}px`)
-  })
 
   // Use the appropriate filter hook based on vault type
   const sanitizedTypes = useMemo(() => {
