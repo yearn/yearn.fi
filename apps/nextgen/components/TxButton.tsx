@@ -407,44 +407,53 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                 }
               })
               .catch((error: Error) => {
-                setOverride('error')
-                addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
+                // Check if user rejected the transaction
+                const isUserRejection =
+                  error?.message?.toLowerCase().includes('rejected') || (error as any)?.code === 4001
 
-                // Update notification to error state
-                if (createdNotificationId && notificationParams && account) {
-                  const actionParams = buildActionParamsForNotification()
-                  if (actionParams) {
-                    if (notificationParams.type === 'approve') {
-                      handleApproveNotification({
-                        actionParams,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
-                    } else if (
-                      notificationParams.type === 'deposit' ||
-                      notificationParams.type === 'zap' ||
-                      notificationParams.type === 'crosschain zap' ||
-                      notificationParams.type === 'deposit and stake' ||
-                      notificationParams.type === 'stake'
-                    ) {
-                      handleDepositNotification({
-                        actionParams,
-                        type: notificationParams.type,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
-                    } else if (notificationParams.type === 'withdraw' || notificationParams.type === 'unstake') {
-                      handleWithdrawNotification({
-                        actionParams,
-                        type: notificationParams.type,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
+                if (isUserRejection) {
+                  // User rejected - just reset to default state
+                  setOverride(undefined)
+                } else {
+                  setOverride('error')
+                  addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
+
+                  // Update notification to error state
+                  if (createdNotificationId && notificationParams && account) {
+                    const actionParams = buildActionParamsForNotification()
+                    if (actionParams) {
+                      if (notificationParams.type === 'approve') {
+                        handleApproveNotification({
+                          actionParams,
+                          status: 'error',
+                          idToUpdate: createdNotificationId
+                        })
+                      } else if (
+                        notificationParams.type === 'deposit' ||
+                        notificationParams.type === 'zap' ||
+                        notificationParams.type === 'crosschain zap' ||
+                        notificationParams.type === 'deposit and stake' ||
+                        notificationParams.type === 'stake'
+                      ) {
+                        handleDepositNotification({
+                          actionParams,
+                          type: notificationParams.type,
+                          status: 'error',
+                          idToUpdate: createdNotificationId
+                        })
+                      } else if (notificationParams.type === 'withdraw' || notificationParams.type === 'unstake') {
+                        handleWithdrawNotification({
+                          actionParams,
+                          type: notificationParams.type,
+                          status: 'error',
+                          idToUpdate: createdNotificationId
+                        })
+                      }
                     }
                   }
-                }
 
-                console.error('Transaction failed:', error)
+                  console.error('Transaction failed:', error)
+                }
               })
               .finally(() => {
                 setIsSigning(false)
@@ -531,47 +540,56 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
                 }
               })
               .catch((error) => {
-                setOverride('error')
-                addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
+                // Check if user rejected the transaction
+                const isUserRejection =
+                  error?.message?.toLowerCase().includes('rejected') || (error as any)?.code === 4001
 
-                // Update notification to error state
-                if (createdNotificationId && notificationParams && account) {
-                  const actionParams = buildActionParamsForNotification()
-                  if (actionParams) {
-                    if (notificationParams.type === 'approve') {
-                      handleApproveNotification({
-                        actionParams,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
-                    } else if (
-                      notificationParams.type === 'deposit' ||
-                      notificationParams.type === 'zap' ||
-                      notificationParams.type === 'deposit and stake' ||
-                      notificationParams.type === 'stake'
-                    ) {
-                      handleDepositNotification({
-                        actionParams,
-                        type: notificationParams.type,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
-                    } else if (
-                      notificationParams.type === 'withdraw' ||
-                      notificationParams.type === 'crosschain zap' ||
-                      notificationParams.type === 'unstake'
-                    ) {
-                      handleWithdrawNotification({
-                        actionParams,
-                        type: notificationParams.type,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
+                if (isUserRejection) {
+                  // User rejected - just reset to default state
+                  setOverride(undefined)
+                } else {
+                  setOverride('error')
+                  addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
+
+                  // Update notification to error state
+                  if (createdNotificationId && notificationParams && account) {
+                    const actionParams = buildActionParamsForNotification()
+                    if (actionParams) {
+                      if (notificationParams.type === 'approve') {
+                        handleApproveNotification({
+                          actionParams,
+                          status: 'error',
+                          idToUpdate: createdNotificationId
+                        })
+                      } else if (
+                        notificationParams.type === 'deposit' ||
+                        notificationParams.type === 'zap' ||
+                        notificationParams.type === 'deposit and stake' ||
+                        notificationParams.type === 'stake'
+                      ) {
+                        handleDepositNotification({
+                          actionParams,
+                          type: notificationParams.type,
+                          status: 'error',
+                          idToUpdate: createdNotificationId
+                        })
+                      } else if (
+                        notificationParams.type === 'withdraw' ||
+                        notificationParams.type === 'crosschain zap' ||
+                        notificationParams.type === 'unstake'
+                      ) {
+                        handleWithdrawNotification({
+                          actionParams,
+                          type: notificationParams.type,
+                          status: 'error',
+                          idToUpdate: createdNotificationId
+                        })
+                      }
                     }
                   }
-                }
 
-                console.error('Transaction failed:', error)
+                  console.error('Transaction failed:', error)
+                }
               })
               .finally(() => {
                 setIsSigning(false)
