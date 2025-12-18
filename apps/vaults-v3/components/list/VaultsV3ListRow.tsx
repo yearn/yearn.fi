@@ -7,7 +7,6 @@ import {
 } from '@lib/components/AllocationChart'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
-import { Tooltip } from '@lib/components/Tooltip'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import { IconChevron } from '@lib/icons/IconChevron'
@@ -53,30 +52,6 @@ export function VaultsV3ListRow({
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('performance')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
-  const kindLabel =
-    currentVault.kind === 'Multi Strategy'
-      ? 'Allocator Vault'
-      : currentVault.kind === 'Single Strategy'
-        ? 'Strategy Vault'
-        : currentVault.kind
-  const tvlNativeTooltip = (
-    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
-      <span className={'font-number'}>
-        <RenderAmount
-          value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
-          symbol={''}
-          decimals={6}
-          shouldFormatDust
-          options={{
-            shouldCompactValue: true,
-            maximumFractionDigits: 2,
-            minimumFractionDigits: 2
-          }}
-        />
-      </span>
-      <span className={'pl-1'}>{currentVault.token.symbol}</span>
-    </div>
-  )
 
   const handleRowClick = (): void => {
     navigate(href)
@@ -163,7 +138,7 @@ export function VaultsV3ListRow({
               <div className={'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'}>
                 <span
                   className={
-                    'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
+                    'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
                   }
                 >
                   <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
@@ -172,19 +147,19 @@ export function VaultsV3ListRow({
                 {currentVault.category ? (
                   <span
                     className={
-                      'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
+                      'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
                     }
                   >
                     {currentVault.category}
                   </span>
                 ) : null}
-                {kindLabel ? (
+                {currentVault.kind ? (
                   <span
                     className={
-                      'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
+                      'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
                     }
                   >
-                    {kindLabel}
+                    {currentVault.kind}
                   </span>
                 ) : null}
               </div>
@@ -193,35 +168,42 @@ export function VaultsV3ListRow({
         </div>
 
         {/* Desktop metrics grid */}
-        <div className={cl('col-span-14 z-10 gap-4 mt-4', 'md:mt-0 md:grid md:grid-cols-14 md:items-center')}>
+        <div className={cl('col-span-14 z-10 gap-4 mt-4', 'md:mt-0 md:grid md:grid-cols-14')}>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <VaultForwardAPY currentVault={currentVault} showSubline={false} showSublineTooltip />
+            <VaultForwardAPY currentVault={currentVault} />
           </div>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <VaultHistoricalAPY currentVault={currentVault} />
           </div>
           {/* TVL */}
           <div className={'yearn--table-data-section-item col-span-4'} datatype={'number'}>
-            <div className={'flex justify-end text-right'}>
-              <Tooltip
-                className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
-                openDelayMs={150}
-                toggleOnClick={false}
-                tooltip={tvlNativeTooltip}
-              >
-                <p className={'yearn--table-data-section-item-value'}>
-                  <RenderAmount
-                    value={currentVault.tvl?.tvl}
-                    symbol={'USD'}
-                    decimals={0}
-                    options={{
-                      shouldCompactValue: true,
-                      maximumFractionDigits: 2,
-                      minimumFractionDigits: 0
-                    }}
-                  />
-                </p>
-              </Tooltip>
+            <div className={'flex flex-col pt-0 text-right'}>
+              <p className={'yearn--table-data-section-item-value'}>
+                <RenderAmount
+                  value={currentVault.tvl?.tvl}
+                  symbol={'USD'}
+                  decimals={0}
+                  options={{
+                    shouldCompactValue: true,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 0
+                  }}
+                />
+              </p>
+              <small className={'text-xs flex flex-row text-text-primary/40'}>
+                <RenderAmount
+                  value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
+                  symbol={''}
+                  decimals={6}
+                  shouldFormatDust
+                  options={{
+                    shouldCompactValue: true,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 2
+                  }}
+                />
+                <p className="pl-1">{currentVault.token.symbol}</p>
+              </small>
             </div>
           </div>
           {/* <div className={'col-span-3'}>
@@ -268,12 +250,7 @@ export function VaultsV3ListRow({
             <div className={'w-full flex flex-col items-start'}>
               <div className={'flex w-full flex-row items-center justify-between'}>
                 <p className={'inline text-start text-dm text-text-primary'}>{'Estimated APY'}</p>
-                <VaultForwardAPY
-                  currentVault={currentVault}
-                  onMobileToggle={(): void => setIsApyOpen((v) => !v)}
-                  showSubline={false}
-                  showSublineTooltip
-                />
+                <VaultForwardAPY currentVault={currentVault} onMobileToggle={(): void => setIsApyOpen((v) => !v)} />
               </div>
               {isApyOpen ? (
                 <div className={'mt-2 w-full'}>
@@ -288,26 +265,33 @@ export function VaultsV3ListRow({
           </div>
           <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
             <p className={'inline text-start text-dm text-text-primary'}>{'TVL'}</p>
-            <div className={'flex justify-end text-right'}>
-              <Tooltip
-                className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
-                openDelayMs={150}
-                toggleOnClick
-                tooltip={tvlNativeTooltip}
-              >
-                <p className={'yearn--table-data-section-item-value'}>
-                  <RenderAmount
-                    value={currentVault.tvl?.tvl}
-                    symbol={'USD'}
-                    decimals={0}
-                    options={{
-                      shouldCompactValue: true,
-                      maximumFractionDigits: 2,
-                      minimumFractionDigits: 0
-                    }}
-                  />
-                </p>
-              </Tooltip>
+            <div className={'flex flex-col pt-0 text-right'}>
+              <p className={'yearn--table-data-section-item-value'}>
+                <RenderAmount
+                  value={currentVault.tvl?.tvl}
+                  symbol={'USD'}
+                  decimals={0}
+                  options={{
+                    shouldCompactValue: true,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 0
+                  }}
+                />
+              </p>
+              <small className={'text-xs flex flex-row text-text-primary/40'}>
+                <RenderAmount
+                  value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
+                  symbol={''}
+                  decimals={6}
+                  shouldFormatDust
+                  options={{
+                    shouldCompactValue: true,
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 2
+                  }}
+                />
+                <p className="pl-1">{currentVault.token.symbol}</p>
+              </small>
             </div>
           </div>
           <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
