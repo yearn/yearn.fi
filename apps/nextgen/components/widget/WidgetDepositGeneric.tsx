@@ -474,7 +474,6 @@ export const WidgetDepositGeneric: FC<Props> = ({
               prepareWrite={prepareApprove}
               transactionName="Approve"
               disabled={!prepareApproveEnabled || !!depositError}
-              tooltip={depositError || undefined}
               className="w-full"
             />
           )}
@@ -491,9 +490,6 @@ export const WidgetDepositGeneric: FC<Props> = ({
             }
             disabled={!canDeposit || isLoadingRoute || depositAmount.isDebouncing}
             loading={isLoadingRoute || depositAmount.isDebouncing}
-            tooltip={
-              depositError || (!isAllowanceSufficient && !isNativeToken ? 'Please approve token first' : undefined)
-            }
             className="w-full"
           />
         </div>

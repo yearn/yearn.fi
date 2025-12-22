@@ -9,11 +9,11 @@ import {
   cl,
   formatAmount,
   formatCounterValue,
+  formatTAmount,
   fromNormalized,
   isZero,
   toAddress,
-  toBigInt,
-  toNormalizedBN
+  toBigInt
 } from '@lib/utils'
 import { DISABLED_VEYFI_GAUGES_VAULTS_LIST } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -210,8 +210,7 @@ export function RewardsTab(props: {
   const { provider, isActive } = useWeb3()
   const { getPrice } = useYearn()
   const { vaultData, updateVaultData } = props
-  const { handleApproveNotification, handleStakeNotification, handleUnstakeNotification, handleClaimNotification } =
-    useNotificationsActions()
+  const { createNotification, updateNotification } = useNotificationsActions()
   const rewardTokenBalance = useYearnToken({
     address: vaultData.rewardsToken,
     chainID: props.currentVault.chainID
@@ -259,118 +258,6 @@ export function RewardsTab(props: {
     props.currentVault.staking.available &&
     (isVeYFIGauge ? canShowVeYFIRewards : hasStakedDeposit || hasClaimableRewards || hasActiveRewardsProgram)
 
-  /**************************************************************************************************
-   ** Create action parameters for approve operations to integrate with the notification system.
-   *************************************************************************************************/
-  const approveActionParams = useMemo(
-    () => ({
-      amount: vaultData.vaultBalanceOf,
-
-      selectedOptionFrom: {
-        label: props.currentVault.symbol,
-        value: props.currentVault.address,
-        symbol: props.currentVault.symbol,
-        decimals: props.currentVault.decimals,
-        chainID: props.currentVault.chainID
-      },
-      selectedOptionTo: {
-        label: vaultData.stakedGaugeSymbol || `Staked ${props.currentVault.symbol}`,
-        value: vaultData.address,
-        symbol: vaultData.stakedGaugeSymbol || `Staked ${props.currentVault.symbol}`,
-        decimals: vaultData.stakingDecimals || 18,
-        chainID: props.currentVault.chainID
-      }
-    }),
-    [
-      vaultData.vaultBalanceOf,
-      props.currentVault,
-      vaultData.address,
-      vaultData.stakedGaugeSymbol,
-      vaultData.stakingDecimals
-    ]
-  )
-
-  /**************************************************************************************************
-   ** Create action parameters for stake operations to integrate with the notification system.
-   *************************************************************************************************/
-  const stakeActionParams = useMemo(
-    () => ({
-      amount: vaultData.vaultBalanceOf,
-      selectedOptionFrom: {
-        label: props.currentVault.symbol,
-        value: props.currentVault.address,
-        symbol: props.currentVault.symbol,
-        decimals: props.currentVault.decimals,
-        chainID: props.currentVault.chainID
-      },
-      selectedOptionTo: {
-        label: vaultData.stakedGaugeSymbol || `Staked ${props.currentVault.symbol}`,
-        value: vaultData.address,
-        symbol: vaultData.stakedGaugeSymbol || `Staked ${props.currentVault.symbol}`,
-        decimals: vaultData.stakingDecimals || 18,
-        chainID: props.currentVault.chainID
-      }
-    }),
-    [
-      vaultData.vaultBalanceOf,
-      props.currentVault,
-      vaultData.address,
-      vaultData.stakedGaugeSymbol,
-      vaultData.stakingDecimals
-    ]
-  )
-
-  /**************************************************************************************************
-   ** Create action parameters for unstake operations to integrate with the notification system.
-   *************************************************************************************************/
-  const unstakeActionParams = useMemo(
-    () => ({
-      amount: toNormalizedBN(
-        fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
-        vaultData.stakingDecimals || 18
-      ),
-      selectedOptionFrom: {
-        label: vaultData.stakedGaugeSymbol || `Staked ${props.currentVault.symbol}`,
-        value: vaultData.address,
-        symbol: vaultData.stakedGaugeSymbol || `Staked ${props.currentVault.symbol}`,
-        decimals: vaultData.stakingDecimals || 18,
-        chainID: props.currentVault.chainID
-      },
-      selectedOptionTo: {
-        label: props.currentVault.symbol,
-        value: props.currentVault.address,
-        symbol: props.currentVault.symbol,
-        decimals: props.currentVault.decimals,
-        chainID: props.currentVault.chainID
-      }
-    }),
-    [unstakeAmount, vaultData.stakingDecimals, props.currentVault, vaultData.address, vaultData.stakedGaugeSymbol]
-  )
-
-  /**************************************************************************************************
-   ** Create action parameters for claim operations to integrate with the notification system.
-   *************************************************************************************************/
-  const claimActionParams = useMemo(
-    () => ({
-      amount: vaultData.stakedEarned,
-      selectedOptionFrom: {
-        label: rewardTokenBalance.symbol || 'Reward Token',
-        value: vaultData.rewardsToken,
-        symbol: rewardTokenBalance.symbol || 'Reward Token',
-        decimals: vaultData.rewardDecimals || 18,
-        chainID: props.currentVault.chainID
-      },
-      selectedOptionTo: undefined
-    }),
-    [
-      vaultData.stakedEarned,
-      props.currentVault,
-      rewardTokenBalance.symbol,
-      vaultData.rewardsToken,
-      vaultData.rewardDecimals
-    ]
-  )
-
   /**********************************************************************************************
    ** The refreshData function will be called when the user interacts with the stake, unstake, or
    ** claim buttons. It will refresh the user's balances and the staking rewards data so the app
@@ -386,7 +273,15 @@ export function RewardsTab(props: {
    ** yVault tokens. If the approval is successful, the staking rewards data will be updated.
    *********************************************************************************************/
   const onApprove = useCallback(async (): Promise<void> => {
-    const id = await handleApproveNotification({ actionParams: approveActionParams })
+    const id = await createNotification({
+      type: 'approve',
+      amount: formatTAmount({ value: vaultData.vaultBalanceOf.raw, decimals: props.currentVault.decimals }),
+      fromAddress: toAddress(props.currentVault.address),
+      fromSymbol: props.currentVault.symbol,
+      fromChainId: props.currentVault.chainID,
+      toAddress: toAddress(vaultData?.address),
+      toSymbol: vaultData.stakedGaugeSymbol || `Staked ${props.currentVault.symbol}`
+    })
     const result = await approveERC20({
       connector: provider,
       chainID: props.currentVault.chainID,
@@ -396,19 +291,10 @@ export function RewardsTab(props: {
       statusHandler: setApproveStakeStatus
     })
     if (result.isSuccessful) {
-      await handleApproveNotification({
-        actionParams: approveActionParams,
-        receipt: result.receipt,
-        status: 'success',
-        idToUpdate: id
-      })
+      await updateNotification({ id, receipt: result.receipt, status: 'success' })
       updateVaultData()
     } else {
-      await handleApproveNotification({
-        actionParams: approveActionParams,
-        status: 'error',
-        idToUpdate: id
-      })
+      await updateNotification({ id, status: 'error' })
     }
   }, [
     props.currentVault,
@@ -416,8 +302,9 @@ export function RewardsTab(props: {
     updateVaultData,
     vaultData?.address,
     vaultData.vaultBalanceOf.raw,
-    handleApproveNotification,
-    approveActionParams
+    vaultData.stakedGaugeSymbol,
+    createNotification,
+    updateNotification
   ])
 
   /**********************************************************************************************
@@ -429,7 +316,15 @@ export function RewardsTab(props: {
    ** stakeVeYFIGauge function.
    *********************************************************************************************/
   const onStake = useCallback(async (): Promise<void> => {
-    const id = await handleStakeNotification({ actionParams: stakeActionParams, type: 'stake' })
+    const id = await createNotification({
+      type: 'stake',
+      amount: formatTAmount({ value: vaultData.vaultBalanceOf.raw, decimals: props.currentVault.decimals }),
+      fromAddress: toAddress(props.currentVault.address),
+      fromSymbol: props.currentVault.symbol,
+      fromChainId: props.currentVault.chainID,
+      toAddress: toAddress(vaultData?.address),
+      toSymbol: vaultData.stakedGaugeSymbol || `Staked ${props.currentVault.symbol}`
+    })
 
     if (props.currentVault.staking.source === 'VeYFI') {
       const result = await stakeVeYFIAction({
@@ -440,22 +335,11 @@ export function RewardsTab(props: {
         statusHandler: setStakeStatus
       })
       if (result.isSuccessful) {
-        await handleStakeNotification({
-          actionParams: stakeActionParams,
-          type: 'stake',
-          receipt: result.receipt,
-          status: 'success',
-          idToUpdate: id
-        })
+        await updateNotification({ id, receipt: result.receipt, status: 'success' })
         refreshData()
         updateVaultData()
       } else {
-        await handleStakeNotification({
-          actionParams: stakeActionParams,
-          type: 'stake',
-          status: 'error',
-          idToUpdate: id
-        })
+        await updateNotification({ id, status: 'error' })
       }
     } else if (props.currentVault.staking.source === 'yBOLD') {
       const result = await stakeYBold({
@@ -466,22 +350,11 @@ export function RewardsTab(props: {
         statusHandler: setStakeStatus
       })
       if (result.isSuccessful) {
-        await handleStakeNotification({
-          actionParams: stakeActionParams,
-          type: 'stake',
-          receipt: result.receipt,
-          status: 'success',
-          idToUpdate: id
-        })
+        await updateNotification({ id, receipt: result.receipt, status: 'success' })
         refreshData()
         updateVaultData()
       } else {
-        await handleStakeNotification({
-          actionParams: stakeActionParams,
-          type: 'stake',
-          status: 'error',
-          idToUpdate: id
-        })
+        await updateNotification({ id, status: 'error' })
       }
     } else {
       const result = await stakeAction({
@@ -492,36 +365,29 @@ export function RewardsTab(props: {
         statusHandler: setStakeStatus
       })
       if (result.isSuccessful) {
-        await handleStakeNotification({
-          actionParams: stakeActionParams,
-          type: 'stake',
-          receipt: result.receipt,
-          status: 'success',
-          idToUpdate: id
-        })
+        await updateNotification({ id, receipt: result.receipt, status: 'success' })
         refreshData()
         updateVaultData()
       } else {
-        await handleStakeNotification({
-          actionParams: stakeActionParams,
-          type: 'stake',
-          status: 'error',
-          idToUpdate: id
-        })
+        await updateNotification({ id, status: 'error' })
       }
     }
   }, [
     props.currentVault.staking.source,
     props.currentVault.chainID,
+    props.currentVault.address,
+    props.currentVault.symbol,
+    props.currentVault.decimals,
     provider,
     vaultData?.address,
     vaultData.vaultBalanceOf.raw,
     vaultData.stakingDecimals,
+    vaultData.stakedGaugeSymbol,
     refreshData,
     updateVaultData,
     stakeAmount,
-    handleStakeNotification,
-    stakeActionParams
+    createNotification,
+    updateNotification
   ])
 
   /**********************************************************************************************
@@ -535,9 +401,15 @@ export function RewardsTab(props: {
    *********************************************************************************************/
   const onUnstake = useCallback(async (): Promise<void> => {
     const notificationType = isUnstakingMax ? 'claim and exit' : 'unstake'
-    const id = await handleUnstakeNotification({
-      actionParams: unstakeActionParams,
-      type: notificationType
+    const unstakeAmountRaw = fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18)
+    const id = await createNotification({
+      type: notificationType,
+      amount: formatTAmount({ value: unstakeAmountRaw, decimals: vaultData.stakingDecimals || 18 }),
+      fromAddress: toAddress(vaultData?.address),
+      fromSymbol: vaultData.stakedGaugeSymbol || `Staked ${props.currentVault.symbol}`,
+      fromChainId: props.currentVault.chainID,
+      toAddress: toAddress(props.currentVault.address),
+      toSymbol: props.currentVault.symbol
     })
 
     if (props.currentVault.staking.source === 'VeYFI' || isGaugeDisabled) {
@@ -545,53 +417,31 @@ export function RewardsTab(props: {
         connector: provider,
         chainID: props.currentVault.chainID,
         contractAddress: toAddress(vaultData?.address),
-        amount: fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
+        amount: unstakeAmountRaw,
         willClaim: isUnstakingMax,
         statusHandler: setUnstakeStatus
       })
       if (result.isSuccessful) {
-        await handleUnstakeNotification({
-          actionParams: unstakeActionParams,
-          type: notificationType,
-          receipt: result.receipt,
-          status: 'success',
-          idToUpdate: id
-        })
+        await updateNotification({ id, receipt: result.receipt, status: 'success' })
         refreshData()
         updateVaultData()
       } else {
-        await handleUnstakeNotification({
-          actionParams: unstakeActionParams,
-          type: notificationType,
-          status: 'error',
-          idToUpdate: id
-        })
+        await updateNotification({ id, status: 'error' })
       }
     } else if (props.currentVault.staking.source === 'yBOLD') {
       const result = await unstakeYBold({
         connector: provider,
         chainID: props.currentVault.chainID,
         contractAddress: toAddress(vaultData?.address),
-        amount: fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
+        amount: unstakeAmountRaw,
         statusHandler: setUnstakeStatus
       })
       if (result.isSuccessful) {
-        await handleUnstakeNotification({
-          actionParams: unstakeActionParams,
-          type: notificationType,
-          receipt: result.receipt,
-          status: 'success',
-          idToUpdate: id
-        })
+        await updateNotification({ id, receipt: result.receipt, status: 'success' })
         refreshData()
         updateVaultData()
       } else {
-        await handleUnstakeNotification({
-          actionParams: unstakeActionParams,
-          type: notificationType,
-          status: 'error',
-          idToUpdate: id
-        })
+        await updateNotification({ id, status: 'error' })
       }
     } else {
       const result = await unstakeAction({
@@ -601,37 +451,29 @@ export function RewardsTab(props: {
         statusHandler: setUnstakeStatus
       })
       if (result.isSuccessful) {
-        await handleUnstakeNotification({
-          actionParams: unstakeActionParams,
-          type: notificationType,
-          receipt: result.receipt,
-          status: 'success',
-          idToUpdate: id
-        })
+        await updateNotification({ id, receipt: result.receipt, status: 'success' })
         refreshData()
         updateVaultData()
       } else {
-        await handleUnstakeNotification({
-          actionParams: unstakeActionParams,
-          type: notificationType,
-          status: 'error',
-          idToUpdate: id
-        })
+        await updateNotification({ id, status: 'error' })
       }
     }
   }, [
     unstakeAmount,
     vaultData.stakingDecimals,
     vaultData?.address,
+    vaultData.stakedGaugeSymbol,
     props.currentVault.staking.source,
     props.currentVault.chainID,
+    props.currentVault.address,
+    props.currentVault.symbol,
     isGaugeDisabled,
     provider,
     isUnstakingMax,
     refreshData,
     updateVaultData,
-    handleUnstakeNotification,
-    unstakeActionParams
+    createNotification,
+    updateNotification
   ])
 
   /**********************************************************************************************
@@ -641,7 +483,13 @@ export function RewardsTab(props: {
    ** refreshed.
    *********************************************************************************************/
   const onClaim = useCallback(async (): Promise<void> => {
-    const id = await handleClaimNotification({ actionParams: claimActionParams, type: 'claim' })
+    const id = await createNotification({
+      type: 'claim',
+      amount: formatTAmount({ value: vaultData.stakedEarned.raw, decimals: vaultData.rewardDecimals || 18 }),
+      fromAddress: toAddress(vaultData.rewardsToken),
+      fromSymbol: rewardTokenBalance.symbol || 'Reward Token',
+      fromChainId: props.currentVault.chainID
+    })
     const result = await claimAction({
       connector: provider,
       chainID: props.currentVault.chainID,
@@ -649,29 +497,22 @@ export function RewardsTab(props: {
       statusHandler: setClaimStatus
     })
     if (result.isSuccessful) {
-      await handleClaimNotification({
-        actionParams: claimActionParams,
-        type: 'claim',
-        receipt: result.receipt,
-        status: 'success',
-        idToUpdate: id
-      })
+      await updateNotification({ id, receipt: result.receipt, status: 'success' })
       refreshData()
     } else {
-      await handleClaimNotification({
-        actionParams: claimActionParams,
-        type: 'claim',
-        status: 'error',
-        idToUpdate: id
-      })
+      await updateNotification({ id, status: 'error' })
     }
   }, [
     provider,
     refreshData,
     vaultData?.address,
+    vaultData.stakedEarned.raw,
+    vaultData.rewardDecimals,
+    vaultData.rewardsToken,
+    rewardTokenBalance.symbol,
     props.currentVault.chainID,
-    handleClaimNotification,
-    claimActionParams
+    createNotification,
+    updateNotification
   ])
 
   /**********************************************************************************************

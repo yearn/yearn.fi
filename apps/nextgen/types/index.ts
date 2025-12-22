@@ -118,9 +118,3 @@ export enum WidgetActionType {
   DepositFinal = 'deposit final',
   WithdrawFinal = 'withdraw final'
 }
-
-export type {
-  TNotificationActionParams,
-  TNotificationTokenOption,
-  TTxButtonNotificationParams
-} from './notifications'

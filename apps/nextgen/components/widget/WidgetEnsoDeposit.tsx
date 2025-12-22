@@ -167,7 +167,6 @@ export const WidgetEnsoDeposit: FC<Props> = ({
             prepareWrite={prepareApprove}
             transactionName="Approve"
             disabled={!prepareApproveEnabled || !!depositError}
-            tooltip={depositError || undefined}
             className="w-full"
           />
           <TxButton
@@ -183,7 +182,6 @@ export const WidgetEnsoDeposit: FC<Props> = ({
             }
             disabled={!canDeposit || isLoadingRoute || depositAmount.isDebouncing}
             loading={isLoadingRoute || depositAmount.isDebouncing}
-            tooltip={depositError || (!isAllowanceSufficient ? 'Please approve token first' : undefined)}
             className="w-full"
           />
         </div>

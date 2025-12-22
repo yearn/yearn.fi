@@ -1,362 +1,72 @@
-import type { TNotificationStatus, TNotificationsActionsContext, TNotificationType } from '@lib/types/notifications'
-import { formatTAmount, toAddress } from '@lib/utils'
-import type { TActionParams } from '@vaults-v2/contexts/useActionFlow'
+import type {
+  TCreateNotificationParams,
+  TNotificationsActionsContext,
+  TUpdateNotificationParams
+} from '@lib/types/notifications'
+import { toAddress } from '@lib/utils'
 import type React from 'react'
 import { createContext, useCallback, useContext, useMemo } from 'react'
 
-import type { Hash, TransactionReceipt } from 'viem'
 import { useNotifications } from './useNotifications'
 import { useWeb3 } from './useWeb3'
 
 const defaultProps: TNotificationsActionsContext = {
-  handleApproveNotification: async (): Promise<number> => 0,
-  handleDepositNotification: async (): Promise<number> => 0,
-  handleWithdrawNotification: async (): Promise<number> => 0,
-  handleStakeNotification: async (): Promise<number> => 0,
-  handleUnstakeNotification: async (): Promise<number> => 0,
-  handleClaimNotification: async (): Promise<number> => 0
+  createNotification: async (): Promise<number> => 0,
+  updateNotification: async (): Promise<void> => undefined
 }
 
 const NotificationsActionsContext = createContext<TNotificationsActionsContext>(defaultProps)
+
 export const WithNotificationsActions = ({ children }: { children: React.ReactElement }): React.ReactElement => {
   const { addNotification, updateEntry } = useNotifications()
   const { address } = useWeb3()
 
-  const handleApproveNotification = useCallback(
-    async ({
-      actionParams,
-      receipt,
-      status,
-      idToUpdate,
-      txHash
-    }: {
-      actionParams: Partial<TActionParams>
-      receipt?: TransactionReceipt
-      status?: TNotificationStatus
-      idToUpdate?: number
-      txHash?: Hash
-    }): Promise<number> => {
-      if (idToUpdate) {
-        await updateEntry(
-          {
-            txHash: txHash ? txHash : receipt?.transactionHash,
-            timeFinished: receipt ? Date.now() / 1000 : undefined,
-            blockNumber: receipt?.blockNumber,
-            status
-          },
-          idToUpdate
-        )
-
-        return idToUpdate
-      }
-      const createdId = await addNotification({
+  const createNotification = useCallback(
+    async (params: TCreateNotificationParams): Promise<number> => {
+      const id = await addNotification({
         address: toAddress(address),
-        chainId: actionParams.selectedOptionFrom?.chainID || 1,
+        type: params.type,
+        amount: params.amount,
+        fromAddress: toAddress(params.fromAddress),
+        fromTokenName: params.fromSymbol,
+        chainId: params.fromChainId,
+        toAddress: params.toAddress ? toAddress(params.toAddress) : undefined,
+        toTokenName: params.toSymbol,
+        toChainId: params.toChainId !== params.fromChainId ? params.toChainId : undefined,
+        // For approve notifications, use toAddress/toSymbol as spender
+        spenderAddress: params.type === 'approve' ? toAddress(params.toAddress) : undefined,
+        spenderName: params.type === 'approve' ? params.toSymbol : undefined,
+        status: 'pending',
         txHash: undefined,
         timeFinished: undefined,
-        blockNumber: undefined,
-        status: 'pending',
-        type: 'approve',
-        fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
-        fromTokenName: actionParams.selectedOptionFrom?.symbol || '',
-        spenderAddress: toAddress(actionParams.selectedOptionTo?.value),
-        spenderName: actionParams.selectedOptionTo?.symbol || '',
-        amount: formatTAmount({
-          value: actionParams.amount?.normalized || 0,
-          decimals: actionParams.selectedOptionFrom?.decimals || 18
-        })
+        blockNumber: undefined
       })
-      return createdId
+      return id
     },
-    [addNotification, address, updateEntry]
+    [addNotification, address]
   )
 
-  const handleDepositNotification = useCallback(
-    async ({
-      actionParams,
-      type,
-      receipt,
-      status,
-      idToUpdate,
-      txHash
-    }: {
-      actionParams: Partial<TActionParams>
-      txHash?: Hash
-      type?: TNotificationType
-      receipt?: TransactionReceipt
-      status?: TNotificationStatus
-      idToUpdate?: number
-    }): Promise<number> => {
-      if (idToUpdate) {
-        await updateEntry(
-          {
-            txHash: txHash ? txHash : receipt?.transactionHash,
-            timeFinished: receipt ? Date.now() / 1000 : undefined,
-            blockNumber: receipt?.blockNumber,
-            status
-          },
-          idToUpdate
-        )
-
-        return idToUpdate
-      }
-
-      const createdId = await addNotification({
-        address: toAddress(address),
-        fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
-        fromTokenName: actionParams.selectedOptionFrom?.symbol || '',
-        toAddress: toAddress(actionParams.selectedOptionTo?.value),
-        toTokenName: actionParams.selectedOptionTo?.symbol || '',
-        chainId: actionParams.selectedOptionFrom?.chainID || 1,
-        toChainId:
-          actionParams.selectedOptionTo?.chainID !== actionParams.selectedOptionFrom?.chainID
-            ? actionParams.selectedOptionTo?.chainID
-            : undefined,
-        txHash: undefined,
-        timeFinished: undefined,
-        blockNumber: undefined,
-        status: 'pending',
-        type: type || 'deposit',
-        amount: formatTAmount({
-          value: actionParams.amount?.normalized || 0,
-          decimals: actionParams.selectedOptionFrom?.decimals || 18
-        })
-      })
-      return createdId
+  const updateNotification = useCallback(
+    async (params: TUpdateNotificationParams): Promise<void> => {
+      await updateEntry(
+        {
+          txHash: params.txHash ?? params.receipt?.transactionHash,
+          timeFinished: params.receipt ? Date.now() / 1000 : undefined,
+          blockNumber: params.receipt?.blockNumber,
+          status: params.status
+        },
+        params.id
+      )
     },
-    [addNotification, updateEntry, address]
+    [updateEntry]
   )
 
-  const handleWithdrawNotification = useCallback(
-    async ({
-      actionParams,
-      type,
-      receipt,
-      status,
-      idToUpdate,
-      txHash
-    }: {
-      actionParams: Partial<TActionParams>
-      type?: TNotificationType
-      receipt?: TransactionReceipt
-      status?: TNotificationStatus
-      idToUpdate?: number
-      txHash?: Hash
-    }): Promise<number> => {
-      if (idToUpdate) {
-        await updateEntry(
-          {
-            txHash: txHash ? txHash : receipt?.transactionHash,
-            timeFinished: receipt ? Date.now() / 1000 : undefined,
-            blockNumber: receipt?.blockNumber,
-            status
-          },
-          idToUpdate
-        )
-
-        return idToUpdate
-      }
-
-      const createdId = await addNotification({
-        address: toAddress(address),
-        fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
-        fromTokenName: actionParams.selectedOptionFrom?.symbol || '',
-        toAddress: toAddress(actionParams.selectedOptionTo?.value),
-        toTokenName: actionParams.selectedOptionTo?.symbol || '',
-        chainId: actionParams.selectedOptionFrom?.chainID || 1,
-        toChainId:
-          actionParams.selectedOptionTo?.chainID !== actionParams.selectedOptionFrom?.chainID
-            ? actionParams.selectedOptionTo?.chainID
-            : undefined,
-        txHash: undefined,
-        timeFinished: undefined,
-        blockNumber: undefined,
-        status: 'pending',
-        type: type || 'withdraw',
-        amount: formatTAmount({
-          value: actionParams.amount?.normalized || 0,
-          decimals: actionParams.selectedOptionFrom?.decimals || 18
-        })
-      })
-      return createdId
-    },
-    [addNotification, updateEntry, address]
-  )
-
-  const handleStakeNotification = useCallback(
-    async ({
-      actionParams,
-      type,
-      receipt,
-      status,
-      idToUpdate,
-      txHash
-    }: {
-      actionParams: Partial<TActionParams>
-      type?: TNotificationType
-      receipt?: TransactionReceipt
-      status?: TNotificationStatus
-      idToUpdate?: number
-      txHash?: Hash
-    }): Promise<number> => {
-      if (idToUpdate) {
-        await updateEntry(
-          {
-            txHash: txHash ? txHash : receipt?.transactionHash,
-            timeFinished: receipt ? Date.now() / 1000 : undefined,
-            blockNumber: receipt?.blockNumber,
-            status
-          },
-          idToUpdate
-        )
-
-        return idToUpdate
-      }
-
-      const createdId = await addNotification({
-        address: toAddress(address),
-        fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
-        fromTokenName: actionParams.selectedOptionFrom?.symbol || '',
-        toAddress: toAddress(actionParams.selectedOptionTo?.value),
-        toTokenName: actionParams.selectedOptionTo?.symbol || '',
-        chainId: actionParams.selectedOptionFrom?.chainID || 1,
-        txHash: undefined,
-        timeFinished: undefined,
-        blockNumber: undefined,
-        status: 'pending',
-        type: type || 'stake',
-        amount: formatTAmount({
-          value: actionParams.amount?.normalized || 0,
-          decimals: actionParams.selectedOptionFrom?.decimals || 18
-        })
-      })
-      return createdId
-    },
-    [addNotification, updateEntry, address]
-  )
-
-  const handleUnstakeNotification = useCallback(
-    async ({
-      actionParams,
-      type,
-      receipt,
-      status,
-      idToUpdate,
-      txHash
-    }: {
-      actionParams: Partial<TActionParams>
-      type?: TNotificationType
-      receipt?: TransactionReceipt
-      status?: TNotificationStatus
-      idToUpdate?: number
-      txHash?: Hash
-    }): Promise<number> => {
-      if (idToUpdate) {
-        await updateEntry(
-          {
-            txHash: txHash ? txHash : receipt?.transactionHash,
-            timeFinished: receipt ? Date.now() / 1000 : undefined,
-            blockNumber: receipt?.blockNumber,
-            status
-          },
-          idToUpdate
-        )
-
-        return idToUpdate
-      }
-
-      const createdId = await addNotification({
-        address: toAddress(address),
-        fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
-        fromTokenName: actionParams.selectedOptionFrom?.symbol || '',
-        toAddress: toAddress(actionParams.selectedOptionTo?.value),
-        toTokenName: actionParams.selectedOptionTo?.symbol || '',
-        chainId: actionParams.selectedOptionFrom?.chainID || 1,
-        txHash: undefined,
-        timeFinished: undefined,
-        blockNumber: undefined,
-        status: 'pending',
-        type: type || 'unstake',
-        amount: formatTAmount({
-          value: actionParams.amount?.normalized || 0,
-          decimals: actionParams.selectedOptionFrom?.decimals || 18
-        })
-      })
-      return createdId
-    },
-    [addNotification, updateEntry, address]
-  )
-
-  const handleClaimNotification = useCallback(
-    async ({
-      actionParams,
-      type,
-      receipt,
-      status,
-      idToUpdate,
-      txHash
-    }: {
-      actionParams: Partial<TActionParams>
-      type?: TNotificationType
-      receipt?: TransactionReceipt
-      status?: TNotificationStatus
-      idToUpdate?: number
-      txHash?: Hash
-    }): Promise<number> => {
-      if (idToUpdate) {
-        await updateEntry(
-          {
-            txHash: txHash ? txHash : receipt?.transactionHash,
-            timeFinished: receipt ? Date.now() / 1000 : undefined,
-            blockNumber: receipt?.blockNumber,
-            status
-          },
-          idToUpdate
-        )
-
-        return idToUpdate
-      }
-
-      const createdId = await addNotification({
-        address: toAddress(address),
-        fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
-        fromTokenName: actionParams.selectedOptionFrom?.symbol || '',
-        chainId: actionParams.selectedOptionFrom?.chainID || 1,
-        txHash: undefined,
-        timeFinished: undefined,
-        blockNumber: undefined,
-        status: 'pending',
-        type: type || 'claim',
-        amount: formatTAmount({
-          value: actionParams.amount?.normalized || 0,
-          decimals: actionParams.selectedOptionFrom?.decimals || 18
-        })
-      })
-      return createdId
-    },
-    [addNotification, updateEntry, address]
-  )
-
-  /**************************************************************************
-   * Context value that is passed to all children of this component.
-   *************************************************************************/
   const contextValue = useMemo(
     (): TNotificationsActionsContext => ({
-      handleApproveNotification,
-      handleDepositNotification,
-      handleWithdrawNotification,
-      handleStakeNotification,
-      handleUnstakeNotification,
-      handleClaimNotification
+      createNotification,
+      updateNotification
     }),
-    [
-      handleApproveNotification,
-      handleDepositNotification,
-      handleWithdrawNotification,
-      handleStakeNotification,
-      handleUnstakeNotification,
-      handleClaimNotification
-    ]
+    [createNotification, updateNotification]
   )
 
   return <NotificationsActionsContext.Provider value={contextValue}>{children}</NotificationsActionsContext.Provider>

@@ -16,6 +16,7 @@ import Link from '/src/components/Link'
 
 const STATUS: { [key: string]: [string, string, ReactElement] } = {
   success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} key={'success'} />],
+  submitted: ['Submitted', 'text-white bg-[#2563EB]', <IconCheck className={'size-4'} key={'submitted'} />],
   pending: [
     'Pending',
     'text-text-primary bg-surface-tertiary',
@@ -250,7 +251,7 @@ export const Notification = memo(function Notification({
   useTransactionStatusPoller(notification)
 
   const formattedDate = useMemo(() => {
-    if (!notification.timeFinished || notification.status === 'pending') {
+    if (!notification.timeFinished || notification.status === 'pending' || notification.status === 'submitted') {
       return null
     }
     const date = new Date(notification.timeFinished * 1000)

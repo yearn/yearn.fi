@@ -82,6 +82,7 @@ export const useSolverEnso = ({
   const [isLoadingRoute, setIsLoadingRoute] = useState(false)
 
   const isCrossChain = destinationChainId !== undefined && destinationChainId !== chainId
+  console.log(destinationChainId, chainId)
   const routerAddress = route?.tx?.to
 
   const { allowance = 0n, isLoading: isLoadingAllowance } = useTokenAllowance({

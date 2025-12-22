@@ -3,7 +3,8 @@ import { Button } from '@lib/components/Button'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
-import { cl, formatAmount, formatPercent, formatTAmount, toAddress, toNormalizedBN } from '@lib/utils'
+import type { TCreateNotificationParams } from '@lib/types/notifications'
+import { cl, formatAmount, formatPercent, formatTAmount, toAddress } from '@lib/utils'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { TxButton } from '@nextgen/components/TxButton'
@@ -12,7 +13,6 @@ import { useDirectStake } from '@nextgen/hooks/actions/useDirectStake'
 import { useEnsoDeposit } from '@nextgen/hooks/actions/useEnsoDeposit'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
-import type { TTxButtonNotificationParams } from '@nextgen/types'
 import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
@@ -383,11 +383,12 @@ export const WidgetDepositFinal: FC<Props> = ({
     amount: depositAmount.debouncedBn,
     account,
     chainId: sourceChainId,
-    destinationChainId: chainId, // Vault is always on the original chain
+    destinationChainId: vault?.chainID,
     decimalsOut: vault?.decimals ?? 18,
     enabled: routeType === 'ENSO' && !!depositToken && depositAmount.debouncedBn > 0n && depositAmount.bn > 0n, // Ensure current input is also > 0 to prevent fetching with stale debounced value
     slippage: zapSlippage * 100 // Convert percentage to basis points
   })
+  console.log(ensoFlow)
   // Select active flow based on routing type - all hooks return UseWidgetDepositFlowReturn
   const activeFlow = useMemo(() => {
     if (routeType === 'DIRECT_DEPOSIT') return directDeposit
@@ -427,7 +428,7 @@ export const WidgetDepositFinal: FC<Props> = ({
   ])
 
   // Notification parameters for approve transaction
-  const approveNotificationParams = useMemo((): TTxButtonNotificationParams | undefined => {
+  const approveNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!inputToken || !vault || !account) return undefined
 
     // Only create approve params for ENSO and DIRECT_STAKE (DIRECT_DEPOSIT doesn't need approval)
@@ -451,23 +452,12 @@ export const WidgetDepositFinal: FC<Props> = ({
 
     return {
       type: 'approve',
-      actionParams: {
-        amount: inputToken.balance,
-        selectedOptionFrom: {
-          label: inputToken.symbol || '',
-          value: toAddress(depositToken),
-          symbol: inputToken.symbol || '',
-          decimals: inputToken.decimals ?? 18,
-          chainID: sourceChainId
-        },
-        selectedOptionTo: {
-          label: spenderName,
-          value: toAddress(spenderAddress),
-          symbol: spenderName,
-          decimals: vault.decimals ?? 18,
-          chainID: chainId
-        }
-      }
+      amount: formatTAmount({ value: inputToken.balance.raw, decimals: inputToken.decimals ?? 18 }),
+      fromAddress: toAddress(depositToken),
+      fromSymbol: inputToken.symbol || '',
+      fromChainId: sourceChainId,
+      toAddress: toAddress(spenderAddress),
+      toSymbol: spenderName
     }
   }, [
     inputToken,
@@ -478,12 +468,11 @@ export const WidgetDepositFinal: FC<Props> = ({
     depositToken,
     sourceChainId,
     destinationToken,
-    chainId,
     stakingAddress
   ])
 
   // Notification parameters for deposit transaction
-  const depositNotificationParams = useMemo((): TTxButtonNotificationParams | undefined => {
+  const depositNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!inputToken || !vault || !account || depositAmount.bn === 0n) return undefined
 
     // Determine notification type based on routing
@@ -502,23 +491,13 @@ export const WidgetDepositFinal: FC<Props> = ({
 
     return {
       type: notificationType,
-      actionParams: {
-        amount: toNormalizedBN(depositAmount.bn, inputToken.decimals ?? 18),
-        selectedOptionFrom: {
-          label: inputToken.symbol || '',
-          value: toAddress(depositToken),
-          symbol: inputToken.symbol || '',
-          decimals: inputToken.decimals ?? 18,
-          chainID: sourceChainId
-        },
-        selectedOptionTo: {
-          label: destinationTokenSymbol,
-          value: toAddress(destinationToken),
-          symbol: destinationTokenSymbol,
-          decimals: vault.decimals ?? 18,
-          chainID: chainId
-        }
-      }
+      amount: formatTAmount({ value: depositAmount.bn, decimals: inputToken.decimals ?? 18 }),
+      fromAddress: toAddress(depositToken),
+      fromSymbol: inputToken.symbol || '',
+      fromChainId: sourceChainId,
+      toAddress: toAddress(destinationToken),
+      toSymbol: destinationTokenSymbol,
+      toChainId: activeFlow.periphery.isCrossChain ? chainId : undefined
     }
   }, [
     inputToken,
@@ -783,10 +762,9 @@ export const WidgetDepositFinal: FC<Props> = ({
                 prepareWrite={activeFlow.actions.prepareApprove}
                 transactionName="Approve"
                 disabled={!activeFlow.periphery.prepareApproveEnabled || !!depositError}
-                tooltip={depositError || undefined}
                 loading={isLoadingQuote}
                 className="w-full"
-                notificationParams={approveNotificationParams}
+                notification={approveNotificationParams}
               />
             )}
             <TxButton
@@ -804,15 +782,9 @@ export const WidgetDepositFinal: FC<Props> = ({
               }
               disabled={!canDeposit}
               loading={isLoadingQuote}
-              tooltip={
-                depositError ||
-                (!activeFlow.periphery.isAllowanceSufficient && !isNativeToken
-                  ? 'Please approve token first'
-                  : undefined)
-              }
               onSuccess={handleDepositSuccess}
               className="w-full"
-              notificationParams={depositNotificationParams}
+              notification={depositNotificationParams}
             />
           </div>
         )}

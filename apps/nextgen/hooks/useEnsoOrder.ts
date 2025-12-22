@@ -33,8 +33,9 @@ export const useEnsoOrder = ({
   const [error, setError] = useState<Error | null>(null)
   const [txHash, setTxHash] = useState<Hash | undefined>()
   const [waitingForTx, setWaitingForTx] = useState(false)
-  const publicClient = usePublicClient({ chainId })
-  const { data: walletClient } = useWalletClient({ chainId })
+  // Don't specify chainId - use current chain. TxButton handles chain switching before execution.
+  const publicClient = usePublicClient()
+  const { data: walletClient } = useWalletClient()
   const { data: receipt, isSuccess: receiptSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
     chainId
@@ -46,9 +47,17 @@ export const useEnsoOrder = ({
 
     try {
       const ensoTx = getEnsoTransaction()
+      console.log(ensoTx)
       if (!ensoTx) throw new Error('No Enso transaction data')
       if (!walletClient) throw new Error('No wallet client available')
       if (!publicClient) throw new Error('No public client available')
+
+      // Verify wallet is on the correct chain (chain switch may not have propagated to React state yet)
+      // if (walletClient.chain?.id !== ensoTx.chainId) {
+      //   throw new Error(
+      //     `Chain mismatch: wallet on ${walletClient.chain?.id}, transaction requires ${ensoTx.chainId}. Please try again.`
+      //   )
+      // }
 
       // Send the transaction
       const hash = await walletClient.sendTransaction({

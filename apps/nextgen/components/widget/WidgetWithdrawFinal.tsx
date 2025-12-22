@@ -4,6 +4,7 @@ import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import type { TNormalizedBN } from '@lib/types'
+import type { TCreateNotificationParams } from '@lib/types/notifications'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { TxButton } from '@nextgen/components/TxButton'
@@ -12,7 +13,7 @@ import { useDirectWithdraw } from '@nextgen/hooks/actions/useDirectWithdraw'
 import { useEnsoWithdraw } from '@nextgen/hooks/actions/useEnsoWithdraw'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
-import type { TTxButtonNotificationParams, UseWidgetWithdrawFlowReturn } from '@nextgen/types'
+import type { UseWidgetWithdrawFlowReturn } from '@nextgen/types'
 import { type FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
@@ -409,7 +410,7 @@ export const WidgetWithdrawFinal: FC<Props> = ({
   ])
 
   // Notification parameters for approve transaction
-  const approveNotificationParams = useMemo((): TTxButtonNotificationParams | undefined => {
+  const approveNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!vault || !outputToken || !account || routeType !== 'ENSO') return undefined
 
     // For ENSO approvals, spender is the router contract, not the output token
@@ -418,28 +419,17 @@ export const WidgetWithdrawFinal: FC<Props> = ({
 
     return {
       type: 'approve',
-      actionParams: {
-        amount: vault.balance,
-        selectedOptionFrom: {
-          label: vault.symbol || '',
-          value: toAddress(sourceToken),
-          symbol: vault.symbol || '',
-          decimals: vault.decimals ?? 18,
-          chainID: chainId
-        },
-        selectedOptionTo: {
-          label: spenderName,
-          value: toAddress(spenderAddress),
-          symbol: spenderName,
-          decimals: vault.decimals ?? 18,
-          chainID: chainId
-        }
-      }
+      amount: formatTAmount({ value: vault.balance.raw, decimals: vault.decimals ?? 18 }),
+      fromAddress: toAddress(sourceToken),
+      fromSymbol: vault.symbol || '',
+      fromChainId: chainId,
+      toAddress: toAddress(spenderAddress),
+      toSymbol: spenderName
     }
   }, [vault, outputToken, account, routeType, activeFlow.periphery.routerAddress, sourceToken, chainId, withdrawToken])
 
   // Notification parameters for withdraw transaction
-  const withdrawNotificationParams = useMemo((): TTxButtonNotificationParams | undefined => {
+  const withdrawNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!vault || !outputToken || !account || withdrawAmount.bn === 0n) return undefined
 
     // Determine notification type based on routing
@@ -458,23 +448,13 @@ export const WidgetWithdrawFinal: FC<Props> = ({
 
     return {
       type: notificationType,
-      actionParams: {
-        amount: toNormalizedBN(requiredShares, vault.decimals ?? 18),
-        selectedOptionFrom: {
-          label: sourceTokenSymbol,
-          value: toAddress(sourceToken),
-          symbol: sourceTokenSymbol,
-          decimals: vault.decimals ?? 18,
-          chainID: chainId
-        },
-        selectedOptionTo: {
-          label: outputToken.symbol || '',
-          value: toAddress(withdrawToken),
-          symbol: outputToken.symbol || '',
-          decimals: outputToken.decimals ?? 18,
-          chainID: destinationChainId
-        }
-      }
+      amount: formatTAmount({ value: requiredShares, decimals: vault.decimals ?? 18 }),
+      fromAddress: toAddress(sourceToken),
+      fromSymbol: sourceTokenSymbol,
+      fromChainId: chainId,
+      toAddress: toAddress(withdrawToken),
+      toSymbol: outputToken.symbol || '',
+      toChainId: activeFlow.periphery.isCrossChain ? destinationChainId : undefined
     }
   }, [
     vault,
@@ -782,10 +762,9 @@ export const WidgetWithdrawFinal: FC<Props> = ({
                 prepareWrite={activeFlow.actions.prepareApprove}
                 transactionName="Approve"
                 disabled={!activeFlow.periphery.prepareApproveEnabled || !!withdrawError || isLoadingQuote}
-                tooltip={withdrawError || (isLoadingQuote ? 'Calculating required amount...' : undefined)}
                 loading={isLoadingQuote}
                 className="w-full"
-                notificationParams={approveNotificationParams}
+                notification={approveNotificationParams}
               />
             )}
             <TxButton
@@ -793,13 +772,9 @@ export const WidgetWithdrawFinal: FC<Props> = ({
               transactionName={transactionName}
               disabled={!activeFlow.periphery.prepareWithdrawEnabled || !!withdrawError}
               loading={isLoadingQuote}
-              tooltip={
-                withdrawError ||
-                (!activeFlow.periphery.isAllowanceSufficient && showApprove ? 'Please approve token first' : undefined)
-              }
               onSuccess={handleWithdrawSuccess}
               className="w-full"
-              notificationParams={withdrawNotificationParams}
+              notification={withdrawNotificationParams}
             />
           </div>
         )}
