@@ -388,7 +388,7 @@ export const WidgetDepositFinal: FC<Props> = ({
     enabled: routeType === 'ENSO' && !!depositToken && depositAmount.debouncedBn > 0n && depositAmount.bn > 0n, // Ensure current input is also > 0 to prevent fetching with stale debounced value
     slippage: zapSlippage * 100 // Convert percentage to basis points
   })
-  console.log(ensoFlow)
+
   // Select active flow based on routing type - all hooks return UseWidgetDepositFlowReturn
   const activeFlow = useMemo(() => {
     if (routeType === 'DIRECT_DEPOSIT') return directDeposit

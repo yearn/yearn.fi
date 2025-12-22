@@ -56,7 +56,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
 
   const txChainId = prepareWrite.data?.request.chainId
   const wrongNetwork = txChainId && currentChainId !== txChainId
-  console.log(txChainId, currentChainId)
+
   const { isSuccess: isTxSuccess, isError } = receipt
   const { isFetching: isSimulating } = prepareWrite
 
@@ -226,13 +226,15 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
     executeRegularTransaction
   ])
 
+  // Keep a ref to the latest executeTransaction to avoid stale closures in effects
+  const executeTransactionRef = useRef(executeTransaction)
+  executeTransactionRef.current = executeTransaction
+
   // Main click handler
   const handleClick = useCallback(async () => {
-    console.log(wrongNetwork, txChainId)
     // If on wrong network, switch chain and queue execution for after React updates
     if (wrongNetwork && txChainId) {
       const chainSwitched = await handleChainSwitch()
-      console.log(chainSwitched)
       if (chainSwitched) {
         // Queue execution for when chain state updates
         setPendingChainExecution(txChainId)
@@ -246,11 +248,19 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
 
   // Execute pending transaction after chain switch propagates to React state
   useEffect(() => {
-    if (pendingChainExecution && currentChainId === pendingChainExecution) {
-      setPendingChainExecution(null)
-      executeTransaction()
+    if (!pendingChainExecution || currentChainId !== pendingChainExecution) {
+      return
     }
-  }, [pendingChainExecution, currentChainId, executeTransaction])
+
+    // Delay to ensure all wagmi hooks (walletClient, publicClient) have updated
+    // Use ref to call the latest version of executeTransaction
+    const timeout = setTimeout(() => {
+      setPendingChainExecution(null)
+      executeTransactionRef.current()
+    }, 150)
+
+    return () => clearTimeout(timeout)
+  }, [pendingChainExecution, currentChainId])
 
   // Handle transaction success
   useEffect(() => {
