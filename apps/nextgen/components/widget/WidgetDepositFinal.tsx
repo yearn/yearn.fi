@@ -208,6 +208,7 @@ export const WidgetDepositFinal: FC<Props> = ({
     }
     return addresses
   }, [assetAddress, vaultAddress, stakingAddress])
+
   const {
     tokens: priorityTokens,
     isLoading: isLoadingPriorityTokens,
@@ -219,7 +220,6 @@ export const WidgetDepositFinal: FC<Props> = ({
 
   // Determine which token to use for deposits
   const depositToken = selectedToken || assetAddress
-
   // Get tokens from wallet - use selected chain or default to vault chain
   const sourceChainId = selectedChainId || chainId
   const inputToken = useMemo(() => {
@@ -227,6 +227,7 @@ export const WidgetDepositFinal: FC<Props> = ({
     if (sourceChainId === chainId && depositToken === assetAddress) {
       return assetToken
     }
+
     // Otherwise, get it from the wallet context (for cross-chain or other tokens)
     return getToken({ address: depositToken, chainID: sourceChainId })
   }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken])
@@ -592,6 +593,7 @@ export const WidgetDepositFinal: FC<Props> = ({
   // Get the real USD price for the input token
   const inputTokenPrice = useMemo(() => {
     if (!inputToken?.address || !inputToken?.chainID) return 0
+
     return getPrice({ address: toAddress(inputToken.address), chainID: inputToken.chainID }).normalized
   }, [inputToken?.address, inputToken?.chainID, getPrice])
 
