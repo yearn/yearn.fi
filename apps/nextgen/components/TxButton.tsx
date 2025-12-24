@@ -333,6 +333,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
       variant={getVariant()}
       classNameOverride="yearn--button--nextgen w-full"
       className={props.className}
+      isBusy={isLoading || isSimulating}
       disabled={disabled}
       onClick={handleClick}
       {...props}

@@ -376,7 +376,6 @@ body {
   /* Global state styles */
   &[aria-busy='true'] {
     @apply cursor-wait;
-    color: transparent !important;
   }
 
   &:disabled {
@@ -458,8 +457,6 @@ body {
   /* Global state styles */
   &[aria-busy='true'] {
     @apply cursor-wait;
-
-    color: transparent !important;
   }
 
   &:disabled {
