@@ -775,12 +775,10 @@ export const WidgetDepositFinal: FC<Props> = ({
                 isLoadingQuote
                   ? 'Finding route...'
                   : !activeFlow.periphery.isAllowanceSufficient && !isNativeToken
-                    ? 'Approve First'
+                    ? 'Deposit'
                     : routeType === 'DIRECT_STAKE'
                       ? 'Stake'
-                      : activeFlow.periphery.isCrossChain
-                        ? 'Cross-chain Deposit'
-                        : 'Deposit'
+                      : 'Deposit'
               }
               disabled={!canDeposit}
               loading={isLoadingQuote}

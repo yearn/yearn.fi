@@ -520,19 +520,9 @@ export const WidgetWithdrawFinal: FC<Props> = ({
     if (activeFlow.periphery.isLoadingRoute) {
       return 'Finding route...'
     }
-    if (!activeFlow.periphery.isAllowanceSufficient) {
-      return 'Approve First'
-    }
-    if (activeFlow.periphery.isCrossChain) {
-      return 'Cross-chain Withdraw'
-    }
+
     return 'Withdraw'
-  }, [
-    routeType,
-    activeFlow.periphery.isLoadingRoute,
-    activeFlow.periphery.isAllowanceSufficient,
-    activeFlow.periphery.isCrossChain
-  ])
+  }, [routeType, activeFlow.periphery.isLoadingRoute])
 
   // Determine if we should show approve button (only for ENSO flow)
   const showApprove = routeType === 'ENSO'
