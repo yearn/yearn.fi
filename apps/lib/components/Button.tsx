@@ -61,13 +61,8 @@ const Button = forwardRef((props: TButton, ref: ForwardedRef<HTMLButtonElement |
         }
       }}
     >
-      {isBusy ? (
-        <div className={'absolute inset-0 flex items-center justify-center'}>
-          <IconLoader className={'size-6 animate-spin text-neutral-0'} />
-        </div>
-      ) : (
-        children
-      )}
+      {isBusy && <IconLoader className={'size-4 animate-spin mr-2'} />}
+      {children}
     </button>
   )
 })
