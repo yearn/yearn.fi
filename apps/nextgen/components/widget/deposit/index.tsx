@@ -410,10 +410,10 @@ export const WidgetDeposit: FC<Props> = ({
 
 // Re-export types
 export type {
-  DepositWidgetProps,
-  DepositRouteType,
   DepositFlow,
   DepositFlowActions,
   DepositFlowPeriphery,
-  DepositState
+  DepositRouteType,
+  DepositState,
+  DepositWidgetProps
 } from './types'
