@@ -22,12 +22,6 @@ type Props = {
   notification?: TCreateNotificationParams
 }
 
-const spinnerStyle = {
-  animation: 'spin 1s linear infinite',
-  width: '16px',
-  height: '16px'
-}
-
 export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   prepareWrite,
   transactionName = 'Send',
@@ -308,40 +302,23 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   // Determine button content
   const getButtonContent = (): ReactNode => {
     if (!account) {
-      return <div className="flex items-center gap-2">Connect Wallet</div>
+      return 'Connect Wallet'
     }
 
     if (isLoading || isSimulating) {
-      return (
-        <div className="flex items-center justify-center gap-2">
-          <svg
-            style={spinnerStyle}
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            color="currentColor"
-          >
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-          <span className="text-text-primary">
-            {_loading && transactionName.includes('...')
-              ? transactionName
-              : ensoTxHash || writeContract.data
-                ? 'Confirming...'
-                : isSigning
-                  ? 'Signing...'
-                  : 'Loading...'}
-          </span>
-        </div>
-      )
+      if (_loading && transactionName.includes('...')) {
+        return transactionName
+      }
+      if (ensoTxHash || writeContract.data) {
+        return 'Confirming...'
+      }
+      if (isSigning) {
+        return 'Signing...'
+      }
+      return 'Loading...'
     }
 
-    return <div className="flex items-center gap-2">{transactionName}</div>
+    return transactionName
   }
 
   // Determine button variant
