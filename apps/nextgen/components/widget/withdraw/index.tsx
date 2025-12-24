@@ -468,6 +468,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
           setSelectedChainId(chainIdValue)
           setWithdrawInput('')
           setShowTokenSelector(false)
+          activeFlow.periphery.resetQuote?.()
         }}
         chainId={chainId}
         value={selectedToken}

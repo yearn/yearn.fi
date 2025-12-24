@@ -101,6 +101,7 @@ export type UseWidgetWithdrawFlowReturn = T<
     }
     gas?: string
     error?: string
+    resetQuote?: () => void
   }
 >
 
