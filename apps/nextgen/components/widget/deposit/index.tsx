@@ -2,26 +2,24 @@ import { Button } from '@lib/components/Button'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
-import type { TCreateNotificationParams } from '@lib/types/notifications'
 import { formatTAmount, toAddress } from '@lib/utils'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { InputTokenAmountV2 } from '@nextgen/components/InputTokenAmountV2'
 import { TxButton } from '@nextgen/components/TxButton'
-import { useDirectDeposit } from '@nextgen/hooks/actions/useDirectDeposit'
-import { useDirectStake } from '@nextgen/hooks/actions/useDirectStake'
-import { useEnsoDeposit } from '@nextgen/hooks/actions/useEnsoDeposit'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, useCallback, useMemo, useState } from 'react'
 import type { Address } from 'viem'
-import { formatUnits } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
 import { SettingsPopover } from '../SettingsPopover'
 import { TokenSelectorOverlay, useLoadingQuote } from '../shared'
 import { AnnualReturnModal } from './AnnualReturnModal'
 import { DepositDetails } from './DepositDetails'
-import { useDepositRoute } from './useDepositRoute'
+import { useDepositError } from './useDepositError'
+import { useDepositFlow } from './useDepositFlow'
+import { useDepositNotifications } from './useDepositNotifications'
+import { useFetchMaxQuote } from './useFetchMaxQuote'
 import { VaultSharesModal } from './VaultSharesModal'
 
 interface Props {
@@ -58,7 +56,6 @@ export const WidgetDeposit: FC<Props> = ({
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
-  const [isFetchingMaxQuote, setIsFetchingMaxQuote] = useState(false)
 
   // ============================================================================
   // Token Data
@@ -111,54 +108,25 @@ export const WidgetDeposit: FC<Props> = ({
   })
 
   // ============================================================================
-  // Routing & Flows
+  // Deposit Flow (routing, actions, periphery)
   // ============================================================================
-  const routeType = useDepositRoute({
+  const { routeType, activeFlow } = useDepositFlow({
     depositToken,
     assetAddress,
     destinationToken,
     vaultAddress,
-    stakingAddress
-  })
-
-  const directDeposit = useDirectDeposit({
-    vaultAddress,
-    assetAddress,
-    amount: depositAmount.debouncedBn,
-    account,
-    chainId,
-    decimals: inputToken?.decimals ?? 18,
-    enabled: routeType === 'DIRECT_DEPOSIT' && depositAmount.debouncedBn > 0n
-  })
-
-  const directStake = useDirectStake({
     stakingAddress,
-    vaultAddress,
     amount: depositAmount.debouncedBn,
+    currentAmount: depositAmount.bn,
     account,
     chainId,
-    decimals: vault?.decimals ?? 18,
-    stakingSource,
-    enabled: routeType === 'DIRECT_STAKE' && depositAmount.debouncedBn > 0n
-  })
-
-  const ensoFlow = useEnsoDeposit({
-    vaultAddress: destinationToken,
-    depositToken,
-    amount: depositAmount.debouncedBn,
-    account,
-    chainId: sourceChainId,
+    sourceChainId,
     destinationChainId: vault?.chainID,
-    decimalsOut: vault?.decimals ?? 18,
-    enabled: routeType === 'ENSO' && !!depositToken && depositAmount.debouncedBn > 0n && depositAmount.bn > 0n,
-    slippage: zapSlippage * 100
+    inputDecimals: inputToken?.decimals ?? 18,
+    vaultDecimals: vault?.decimals ?? 18,
+    slippage: zapSlippage,
+    stakingSource
   })
-
-  const activeFlow = useMemo(() => {
-    if (routeType === 'DIRECT_DEPOSIT') return directDeposit
-    if (routeType === 'DIRECT_STAKE') return directStake
-    return ensoFlow
-  }, [routeType, directDeposit, directStake, ensoFlow])
 
   // ============================================================================
   // Loading State
@@ -168,32 +136,17 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   // Error Handling
   // ============================================================================
-  const depositError = useMemo(() => {
-    if (depositAmount.bn === 0n || activeFlow.periphery.isLoadingRoute) return null
-    if (depositAmount.bn > (inputToken?.balance.raw || 0n)) return 'Insufficient balance'
-    if (selectedToken === vaultAddress && !isAutoStakingEnabled) {
-      return "Please toggle 'Maximize Yield' switch in settings to stake"
-    }
-    if (
-      activeFlow.periphery.error &&
-      !activeFlow.periphery.isLoadingRoute &&
-      depositAmount.debouncedBn > 0n &&
-      !depositAmount.isDebouncing
-    ) {
-      return 'Unable to find route'
-    }
-    return null
-  }, [
-    depositAmount.bn,
-    depositAmount.debouncedBn,
-    depositAmount.isDebouncing,
-    inputToken?.balance.raw,
-    activeFlow.periphery.error,
-    activeFlow.periphery.isLoadingRoute,
-    isAutoStakingEnabled,
+  const depositError = useDepositError({
+    amount: depositAmount.bn,
+    debouncedAmount: depositAmount.debouncedBn,
+    isDebouncing: depositAmount.isDebouncing,
+    balance: inputToken?.balance.raw || 0n,
+    isLoadingRoute: activeFlow.periphery.isLoadingRoute,
+    flowError: activeFlow.periphery.error,
     selectedToken,
-    vaultAddress
-  ])
+    vaultAddress,
+    isAutoStakingEnabled
+  })
 
   const canDeposit =
     activeFlow.periphery.prepareDepositEnabled &&
@@ -204,80 +157,21 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   // Notifications
   // ============================================================================
-  const approveNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
-    if (!inputToken || !vault || !account) return undefined
-    if (routeType === 'DIRECT_DEPOSIT') return undefined
-
-    let spenderAddress: Address
-    let spenderName: string
-
-    if (routeType === 'ENSO') {
-      spenderAddress = (activeFlow.periphery.routerAddress as Address) || destinationToken
-      spenderName = activeFlow.periphery.routerAddress ? 'Enso Router' : vault.symbol || ''
-    } else if (routeType === 'DIRECT_STAKE') {
-      spenderAddress = stakingAddress || destinationToken
-      spenderName = 'Staking Contract'
-    } else {
-      return undefined
-    }
-
-    return {
-      type: 'approve',
-      amount: formatTAmount({ value: inputToken.balance.raw, decimals: inputToken.decimals ?? 18 }),
-      fromAddress: toAddress(depositToken),
-      fromSymbol: inputToken.symbol || '',
-      fromChainId: sourceChainId,
-      toAddress: toAddress(spenderAddress),
-      toSymbol: spenderName
-    }
-  }, [
+  const { approveNotificationParams, depositNotificationParams } = useDepositNotifications({
     inputToken,
     vault,
-    account,
-    routeType,
-    activeFlow.periphery.routerAddress,
+    stakingToken,
     depositToken,
-    sourceChainId,
     destinationToken,
-    stakingAddress
-  ])
-
-  const depositNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
-    if (!inputToken || !vault || !account || depositAmount.bn === 0n) return undefined
-
-    let notificationType: 'deposit' | 'zap' | 'crosschain zap' | 'stake' = 'deposit'
-    if (routeType === 'ENSO') {
-      notificationType = activeFlow.periphery.isCrossChain ? 'crosschain zap' : 'zap'
-    } else if (routeType === 'DIRECT_STAKE') {
-      notificationType = 'stake'
-    }
-
-    const destinationTokenSymbol =
-      routeType === 'DIRECT_STAKE' && stakingToken ? stakingToken.symbol || vault.symbol || '' : vault.symbol || ''
-
-    return {
-      type: notificationType,
-      amount: formatTAmount({ value: depositAmount.bn, decimals: inputToken.decimals ?? 18 }),
-      fromAddress: toAddress(depositToken),
-      fromSymbol: inputToken.symbol || '',
-      fromChainId: sourceChainId,
-      toAddress: toAddress(destinationToken),
-      toSymbol: destinationTokenSymbol,
-      toChainId: activeFlow.periphery.isCrossChain ? chainId : undefined
-    }
-  }, [
-    inputToken,
-    vault,
+    stakingAddress,
     account,
-    depositAmount.bn,
-    routeType,
-    activeFlow.periphery.isCrossChain,
-    depositToken,
     sourceChainId,
-    destinationToken,
     chainId,
-    stakingToken
-  ])
+    depositAmount: depositAmount.bn,
+    routeType,
+    routerAddress: activeFlow.periphery.routerAddress,
+    isCrossChain: activeFlow.periphery.isCrossChain
+  })
 
   // ============================================================================
   // Computed Values
@@ -318,6 +212,22 @@ export const WidgetDeposit: FC<Props> = ({
   }, [depositToken, assetAddress, assetToken?.address, assetToken?.chainID, getPrice])
 
   // ============================================================================
+  // Max Quote (for native tokens)
+  // ============================================================================
+  const { fetchMaxQuote, isFetching: isFetchingMaxQuote } = useFetchMaxQuote({
+    isNativeToken,
+    account,
+    balance: inputToken?.balance.raw,
+    decimals: inputToken?.decimals ?? 18,
+    depositToken,
+    destinationToken,
+    sourceChainId,
+    chainId,
+    slippage: zapSlippage,
+    onResult: setDepositInput
+  })
+
+  // ============================================================================
   // Handlers
   // ============================================================================
   const handleDepositSuccess = useCallback(() => {
@@ -353,69 +263,6 @@ export const WidgetDeposit: FC<Props> = ({
     },
     [setDepositInput]
   )
-
-  const fetchMaxQuote = useCallback(async () => {
-    if (!isNativeToken || !account || !inputToken?.balance.raw || !depositToken) return
-
-    setIsFetchingMaxQuote(true)
-    try {
-      const ENSO_API_BASE = 'https://api.enso.finance/api/v1'
-      const ENSO_API_KEY = import.meta.env.VITE_ENSO_API_KEY
-
-      const isCrossChain = sourceChainId !== chainId
-      const params = new URLSearchParams({
-        fromAddress: account,
-        chainId: sourceChainId.toString(),
-        tokenIn: depositToken,
-        tokenOut: destinationToken,
-        amountIn: inputToken.balance.raw.toString(),
-        slippage: (zapSlippage * 100).toString(),
-        ...(isCrossChain && { destinationChainId: chainId.toString() }),
-        receiver: account
-      })
-
-      const response = await fetch(`${ENSO_API_BASE}/shortcuts/route?${params}`, {
-        headers: {
-          Authorization: `Bearer ${ENSO_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      const data = await response.json()
-      if (data.error) {
-        console.error('Enso MAX quote error:', data.message)
-        return
-      }
-
-      const gasEstimate = BigInt(data.gas)
-      const gasPriceGwei = 20n
-      const gasPrice = gasPriceGwei * 1_000_000_000n
-      const gasReserve = (gasEstimate * gasPrice * 120n) / 100n
-      const rawBalance = inputToken.balance.raw
-
-      if (gasReserve >= rawBalance) {
-        setDepositInput('0')
-      } else {
-        const adjustedBalance = rawBalance - gasReserve
-        setDepositInput(formatUnits(adjustedBalance, inputToken.decimals ?? 18))
-      }
-    } catch (error) {
-      console.error('Failed to fetch MAX quote:', error)
-    } finally {
-      setIsFetchingMaxQuote(false)
-    }
-  }, [
-    isNativeToken,
-    account,
-    inputToken?.balance.raw,
-    inputToken?.decimals,
-    depositToken,
-    destinationToken,
-    sourceChainId,
-    chainId,
-    zapSlippage,
-    setDepositInput
-  ])
 
   // ============================================================================
   // Loading State

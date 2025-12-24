@@ -3,16 +3,11 @@ import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import type { TNormalizedBN } from '@lib/types'
-import type { TCreateNotificationParams } from '@lib/types/notifications'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
 import { vaultAbi } from '@lib/utils/abi/vaultV2.abi'
 import { TxButton } from '@nextgen/components/TxButton'
-import { useDirectUnstake } from '@nextgen/hooks/actions/useDirectUnstake'
-import { useDirectWithdraw } from '@nextgen/hooks/actions/useDirectWithdraw'
-import { useEnsoWithdraw } from '@nextgen/hooks/actions/useEnsoWithdraw'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
-import type { UseWidgetWithdrawFlowReturn } from '@nextgen/types'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
@@ -22,7 +17,9 @@ import { SettingsPopover } from '../SettingsPopover'
 import { TokenSelectorOverlay, useLoadingQuote } from '../shared'
 import { SourceSelector } from './SourceSelector'
 import type { WithdrawWidgetProps, WithdrawalSource } from './types'
-import { useWithdrawRoute } from './useWithdrawRoute'
+import { useWithdrawError } from './useWithdrawError'
+import { useWithdrawFlow } from './useWithdrawFlow'
+import { useWithdrawNotifications } from './useWithdrawNotifications'
 import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsModal } from './WithdrawDetailsModal'
 
@@ -39,19 +36,21 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled, getPrice } = useYearn()
 
-  // Local state
+  // ============================================================================
+  // UI State
+  // ============================================================================
   const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
   const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
 
-  // Fetch priority tokens (asset, vault, and optionally staking)
+  // ============================================================================
+  // Token Data
+  // ============================================================================
   const priorityTokenAddresses = useMemo(() => {
     const addresses: (Address | undefined)[] = [assetAddress, vaultAddress]
-    if (stakingAddress) {
-      addresses.push(stakingAddress)
-    }
+    if (stakingAddress) addresses.push(stakingAddress)
     return addresses
   }, [assetAddress, vaultAddress, stakingAddress])
 
@@ -61,31 +60,12 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     refetch: refetchPriorityTokens
   } = useTokens(priorityTokenAddresses, chainId, account)
 
-  // Extract priority tokens
   const [assetToken, vault, stakingToken] = priorityTokens
 
-  // Fetch pricePerShare to convert vault shares to underlying
-  const { data: pricePerShare } = useReadContract({
-    address: vaultAddress,
-    abi: vaultAbi,
-    functionName: 'pricePerShare',
-    chainId
-  })
-
-  // Fetch staking contract pricePerShare if withdrawing from staking
-  const { data: stakingPricePerShare } = useReadContract({
-    address: stakingAddress,
-    abi: vaultAbi,
-    functionName: 'pricePerShare',
-    chainId,
-    query: { enabled: !!stakingAddress && withdrawalSource === 'staking' }
-  })
-
-  // Determine which token to use for withdrawals
+  // Derived token values
   const withdrawToken = selectedToken || assetAddress
   const destinationChainId = selectedChainId || chainId
 
-  // Get output token from wallet context
   const outputToken = useMemo(() => {
     if (destinationChainId === chainId && withdrawToken === assetAddress) {
       return assetToken
@@ -93,12 +73,13 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     return getToken({ address: withdrawToken, chainID: destinationChainId })
   }, [getToken, withdrawToken, destinationChainId, chainId, assetAddress, assetToken])
 
-  // Determine available withdrawal sources
+  // ============================================================================
+  // Withdrawal Source Logic
+  // ============================================================================
   const hasVaultBalance = vault?.balance.raw && vault.balance.raw > 0n
   const hasStakingBalance = stakingToken?.balance.raw && stakingToken.balance.raw > 0n
   const hasBothBalances = hasVaultBalance && hasStakingBalance
 
-  // Auto-select withdrawal source if only one is available
   useEffect(() => {
     if (!hasBothBalances && (hasVaultBalance || hasStakingBalance)) {
       if (hasVaultBalance && !hasStakingBalance) {
@@ -109,17 +90,41 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     }
   }, [hasVaultBalance, hasStakingBalance, hasBothBalances])
 
-  // Get the actual balance based on withdrawal source
   const totalVaultBalance: TNormalizedBN = useMemo(() => {
-    if (withdrawalSource === 'vault' && vault) {
-      return vault.balance
-    } else if (withdrawalSource === 'staking' && stakingToken) {
-      return stakingToken.balance
-    }
+    if (withdrawalSource === 'vault' && vault) return vault.balance
+    if (withdrawalSource === 'staking' && stakingToken) return stakingToken.balance
     return zeroNormalizedBN
   }, [withdrawalSource, vault, stakingToken])
 
-  // Convert vault balance to underlying tokens
+  const sourceToken = useMemo(() => {
+    if (withdrawalSource === 'vault') return vaultAddress
+    if (withdrawalSource === 'staking' && stakingAddress) return stakingAddress
+    return vaultAddress
+  }, [withdrawalSource, vaultAddress, stakingAddress])
+
+  const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
+
+  // ============================================================================
+  // Contract Reads
+  // ============================================================================
+  const { data: pricePerShare } = useReadContract({
+    address: vaultAddress,
+    abi: vaultAbi,
+    functionName: 'pricePerShare',
+    chainId
+  })
+
+  const { data: stakingPricePerShare } = useReadContract({
+    address: stakingAddress,
+    abi: vaultAbi,
+    functionName: 'pricePerShare',
+    chainId,
+    query: { enabled: !!stakingAddress && withdrawalSource === 'staking' }
+  })
+
+  // ============================================================================
+  // Balance Conversions
+  // ============================================================================
   const totalBalanceInUnderlying: TNormalizedBN = useMemo(() => {
     if (!pricePerShare || totalVaultBalance.raw === 0n || !assetToken) {
       return zeroNormalizedBN
@@ -129,57 +134,15 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
   }, [totalVaultBalance.raw, pricePerShare, vault?.decimals, assetToken])
 
-  // Input handling
+  // ============================================================================
+  // Input Handling
+  // ============================================================================
   const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
 
-  // Determine source token based on withdrawal source selection
-  const sourceToken = useMemo(() => {
-    if (withdrawalSource === 'vault') {
-      return vaultAddress
-    } else if (withdrawalSource === 'staking' && stakingAddress) {
-      return stakingAddress
-    }
-    return vaultAddress
-  }, [withdrawalSource, vaultAddress, stakingAddress])
-
-  // Check if this is an unstake operation
-  const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
-
-  // Determine routing type
-  const routeType = useWithdrawRoute({
-    withdrawToken,
-    assetAddress,
-    vaultAddress,
-    withdrawalSource,
-    chainId,
-    outputChainId: outputToken.chainID ?? chainId,
-    isUnstake
-  })
-
-  // Direct withdraw hook (vault → asset)
-  const directWithdraw = useDirectWithdraw({
-    vaultAddress,
-    assetAddress,
-    amount: withdrawAmount.debouncedBn,
-    pricePerShare: pricePerShare || 0n,
-    account,
-    chainId,
-    decimals: assetToken?.decimals ?? 18,
-    vaultDecimals: vault?.decimals ?? 18,
-    enabled: routeType === 'DIRECT_WITHDRAW' && withdrawAmount.debouncedBn > 0n
-  })
-
-  // Direct unstake hook (staking → vault)
-  const directUnstake = useDirectUnstake({
-    stakingAddress,
-    amount: withdrawAmount.bn,
-    account,
-    chainId,
-    enabled: routeType === 'DIRECT_UNSTAKE' && withdrawAmount.bn > 0n
-  })
-
-  // Calculate required vault shares based on desired output amount
+  // ============================================================================
+  // Required Shares Calculation
+  // ============================================================================
   const requiredShares = useMemo(() => {
     if (!withdrawAmount.debouncedBn || withdrawAmount.debouncedBn === 0n) return 0n
 
@@ -191,7 +154,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
 
     if (pricePerShare) {
       const vaultDecimals = vault?.decimals ?? 18
-      return (withdrawAmount.debouncedBn * 10n ** BigInt(vaultDecimals ?? 18)) / (pricePerShare as bigint)
+      return (withdrawAmount.debouncedBn * 10n ** BigInt(vaultDecimals)) / (pricePerShare as bigint)
     }
 
     return 0n
@@ -204,155 +167,76 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     vault?.decimals
   ])
 
-  // Withdrawal flow using Enso
-  const ensoFlow = useEnsoWithdraw({
-    vaultAddress: sourceToken,
+  // ============================================================================
+  // Withdraw Flow (routing, actions, periphery)
+  // ============================================================================
+  const { routeType, activeFlow } = useWithdrawFlow({
     withdrawToken,
-    amount: requiredShares,
+    assetAddress,
+    vaultAddress,
+    sourceToken,
+    stakingAddress,
+    amount: withdrawAmount.debouncedBn,
+    currentAmount: withdrawAmount.bn,
+    requiredShares,
     account,
-    receiver: account,
     chainId,
     destinationChainId,
-    decimalsOut: outputToken?.decimals ?? 18,
-    enabled:
-      routeType === 'ENSO' &&
-      !!withdrawToken &&
-      !withdrawAmount.isDebouncing &&
-      requiredShares > 0n &&
-      withdrawAmount.bn > 0n,
-    slippage: zapSlippage * 100
+    outputChainId: outputToken.chainID ?? chainId,
+    assetDecimals: assetToken?.decimals ?? 18,
+    vaultDecimals: vault?.decimals ?? 18,
+    outputDecimals: outputToken?.decimals ?? 18,
+    pricePerShare: pricePerShare || 0n,
+    slippage: zapSlippage,
+    withdrawalSource,
+    isUnstake,
+    isDebouncing: withdrawAmount.isDebouncing
   })
 
-  // Select active flow based on routing type
-  const activeFlow = useMemo((): UseWidgetWithdrawFlowReturn => {
-    if (routeType === 'DIRECT_WITHDRAW') return directWithdraw
-    if (routeType === 'DIRECT_UNSTAKE') return directUnstake
-    return ensoFlow
-  }, [routeType, directWithdraw, directUnstake, ensoFlow])
-
-  // Combined loading state
+  // ============================================================================
+  // Loading State
+  // ============================================================================
   const isLoadingQuote = useLoadingQuote(withdrawAmount.isDebouncing, activeFlow.periphery.isLoadingRoute)
 
-  // Error handling
-  const withdrawError = useMemo(() => {
-    if (hasBothBalances && !withdrawalSource) {
-      return 'Please select withdrawal source'
-    }
-    if (withdrawAmount.bn === 0n) return null
-
-    if (requiredShares > totalVaultBalance.raw) {
-      return 'Insufficient balance'
-    }
-
-    if (routeType === 'ENSO') {
-      if (
-        activeFlow.periphery.error &&
-        !activeFlow.periphery.isLoadingRoute &&
-        withdrawAmount.debouncedBn > 0n &&
-        !withdrawAmount.isDebouncing
-      ) {
-        return 'Unable to find route'
-      }
-    }
-
-    return null
-  }, [
-    withdrawAmount.bn,
-    withdrawAmount.debouncedBn,
-    withdrawAmount.isDebouncing,
-    totalVaultBalance,
-    routeType,
+  // ============================================================================
+  // Error Handling
+  // ============================================================================
+  const withdrawError = useWithdrawError({
+    amount: withdrawAmount.bn,
+    debouncedAmount: withdrawAmount.debouncedBn,
+    isDebouncing: withdrawAmount.isDebouncing,
     requiredShares,
-    activeFlow.periphery.error,
-    activeFlow.periphery.isLoadingRoute,
-    hasBothBalances,
+    totalBalance: totalVaultBalance.raw,
+    isLoadingRoute: activeFlow.periphery.isLoadingRoute,
+    flowError: activeFlow.periphery.error,
+    routeType,
+    hasBothBalances: !!hasBothBalances,
     withdrawalSource
-  ])
+  })
 
-  // Notification parameters for approve transaction
-  const approveNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
-    if (!vault || !outputToken || !account || routeType !== 'ENSO') return undefined
-
-    const spenderAddress = activeFlow.periphery.routerAddress || withdrawToken
-    const spenderName = activeFlow.periphery.routerAddress ? 'Enso Router' : outputToken.symbol || ''
-
-    return {
-      type: 'approve',
-      amount: formatTAmount({ value: vault.balance.raw, decimals: vault.decimals ?? 18 }),
-      fromAddress: toAddress(sourceToken),
-      fromSymbol: vault.symbol || '',
-      fromChainId: chainId,
-      toAddress: toAddress(spenderAddress),
-      toSymbol: spenderName
-    }
-  }, [vault, outputToken, account, routeType, activeFlow.periphery.routerAddress, sourceToken, chainId, withdrawToken])
-
-  // Notification parameters for withdraw transaction
-  const withdrawNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
-    if (!vault || !outputToken || !account || withdrawAmount.bn === 0n) return undefined
-
-    let notificationType: 'withdraw' | 'zap' | 'crosschain zap' | 'unstake' = 'withdraw'
-    if (routeType === 'ENSO') {
-      notificationType = activeFlow.periphery.isCrossChain ? 'crosschain zap' : 'zap'
-    } else if (routeType === 'DIRECT_UNSTAKE') {
-      notificationType = 'unstake'
-    }
-
-    const sourceTokenSymbol =
-      withdrawalSource === 'staking' && stakingToken ? stakingToken.symbol || vault.symbol || '' : vault.symbol || ''
-
-    return {
-      type: notificationType,
-      amount: formatTAmount({ value: requiredShares, decimals: vault.decimals ?? 18 }),
-      fromAddress: toAddress(sourceToken),
-      fromSymbol: sourceTokenSymbol,
-      fromChainId: chainId,
-      toAddress: toAddress(withdrawToken),
-      toSymbol: outputToken.symbol || '',
-      toChainId: activeFlow.periphery.isCrossChain ? destinationChainId : undefined
-    }
-  }, [
+  // ============================================================================
+  // Notifications
+  // ============================================================================
+  const { approveNotificationParams, withdrawNotificationParams } = useWithdrawNotifications({
     vault,
     outputToken,
-    account,
-    withdrawAmount.bn,
-    routeType,
-    activeFlow.periphery.isCrossChain,
-    requiredShares,
-    sourceToken,
-    chainId,
-    withdrawToken,
-    destinationChainId,
     stakingToken,
-    withdrawalSource
-  ])
-
-  // Success handler
-  const handleWithdrawSuccess = useCallback(() => {
-    setWithdrawInput('')
-    const tokensToRefresh = [
-      { address: withdrawToken, chainID: destinationChainId },
-      { address: vaultAddress, chainID: chainId }
-    ]
-    if (stakingAddress) {
-      tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
-    }
-    refreshWalletBalances(tokensToRefresh)
-    refetchPriorityTokens()
-    onWithdrawSuccess?.()
-  }, [
-    setWithdrawInput,
+    sourceToken,
     withdrawToken,
-    destinationChainId,
-    vaultAddress,
+    account,
     chainId,
-    stakingAddress,
-    refreshWalletBalances,
-    refetchPriorityTokens,
-    onWithdrawSuccess
-  ])
+    destinationChainId,
+    withdrawAmount: withdrawAmount.bn,
+    requiredShares,
+    routeType,
+    routerAddress: activeFlow.periphery.routerAddress,
+    isCrossChain: activeFlow.periphery.isCrossChain,
+    withdrawalSource
+  })
 
-  // Computed values for UI
+  // ============================================================================
+  // Computed Values
+  // ============================================================================
   const actionLabel = useMemo(() => {
     if (isUnstake) return 'You will unstake'
     if (withdrawalSource === 'staking') return 'You will unstake and redeem'
@@ -378,7 +262,36 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     return getPrice({ address: toAddress(outputToken.address), chainID: outputToken.chainID }).normalized
   }, [outputToken?.address, outputToken?.chainID, getPrice])
 
-  // Loading state
+  // ============================================================================
+  // Handlers
+  // ============================================================================
+  const handleWithdrawSuccess = useCallback(() => {
+    setWithdrawInput('')
+    const tokensToRefresh = [
+      { address: withdrawToken, chainID: destinationChainId },
+      { address: vaultAddress, chainID: chainId }
+    ]
+    if (stakingAddress) {
+      tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
+    }
+    refreshWalletBalances(tokensToRefresh)
+    refetchPriorityTokens()
+    onWithdrawSuccess?.()
+  }, [
+    setWithdrawInput,
+    withdrawToken,
+    destinationChainId,
+    vaultAddress,
+    chainId,
+    stakingAddress,
+    refreshWalletBalances,
+    refetchPriorityTokens,
+    onWithdrawSuccess
+  ])
+
+  // ============================================================================
+  // Loading State
+  // ============================================================================
   if (isLoadingPriorityTokens) {
     return (
       <div className="p-6 flex items-center justify-center h-[317px]">
@@ -387,6 +300,9 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     )
   }
 
+  // ============================================================================
+  // Render
+  // ============================================================================
   return (
     <div className="flex flex-col relative group/widget">
       {/* Settings Popover */}
