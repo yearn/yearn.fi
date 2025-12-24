@@ -251,7 +251,7 @@ export const Notification = memo(function Notification({
   useTransactionStatusPoller(notification)
 
   const formattedDate = useMemo(() => {
-    if (!notification.timeFinished || notification.status === 'pending' || notification.status === 'submitted') {
+    if (!notification.timeFinished || notification.status === 'pending') {
       return null
     }
     const date = new Date(notification.timeFinished * 1000)

@@ -48,10 +48,13 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
 
   const updateNotification = useCallback(
     async (params: TUpdateNotificationParams): Promise<void> => {
+      // Set timeFinished for receipt confirmations or 'submitted' status (cross-chain zaps)
+      const shouldSetTimeFinished = params.receipt || params.status === 'submitted'
+
       await updateEntry(
         {
           txHash: params.txHash ?? params.receipt?.transactionHash,
-          timeFinished: params.receipt ? Date.now() / 1000 : undefined,
+          timeFinished: shouldSetTimeFinished ? Date.now() / 1000 : undefined,
           blockNumber: params.receipt?.blockNumber,
           status: params.status
         },
