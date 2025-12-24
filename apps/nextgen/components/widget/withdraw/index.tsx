@@ -14,7 +14,7 @@ import { formatUnits } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
 import { InputTokenAmountV2 } from '../../InputTokenAmountV2'
 import { SettingsPopover } from '../SettingsPopover'
-import { TokenSelectorOverlay, useLoadingQuote } from '../shared'
+import { TokenSelectorOverlay } from '../shared'
 import { SourceSelector } from './SourceSelector'
 import type { WithdrawalSource, WithdrawWidgetProps } from './types'
 import { useWithdrawError } from './useWithdrawError'
@@ -196,7 +196,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   // ============================================================================
   // Loading State
   // ============================================================================
-  const isLoadingQuote = useLoadingQuote(withdrawAmount.isDebouncing, activeFlow.periphery.isLoadingRoute)
+  // const isLoadingQuote = useLoadingQuote(withdrawAmount.isDebouncing, activeFlow.periphery.isLoadingRoute)
 
   // ============================================================================
   // Error Handling
@@ -246,7 +246,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const transactionName = useMemo(() => {
     if (routeType === 'DIRECT_WITHDRAW') return 'Withdraw'
     if (routeType === 'DIRECT_UNSTAKE') return 'Unstake'
-    if (activeFlow.periphery.isLoadingRoute) return 'Finding route...'
+    if (activeFlow.periphery.isLoadingRoute) return 'Fetching quote...'
     return 'Withdraw'
   }, [routeType, activeFlow.periphery.isLoadingRoute])
 
@@ -299,7 +299,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       </div>
     )
   }
-
+  console.log(activeFlow.periphery)
   // ============================================================================
   // Render
   // ============================================================================
@@ -366,7 +366,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
                             6
                           )
                         : '0',
-                    isLoading: isLoadingQuote
+                    isLoading: activeFlow.periphery.isLoadingRoute
                   }
                 : undefined
             }
@@ -390,7 +390,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
         actionLabel={actionLabel}
         requiredShares={requiredShares}
         sharesDecimals={isUnstake ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)}
-        isLoadingQuote={isLoadingQuote}
+        isLoadingQuote={activeFlow.periphery.isLoadingRoute}
         expectedOut={activeFlow.periphery.expectedOut}
         outputDecimals={outputToken?.decimals ?? 18}
         outputSymbol={outputToken?.symbol}
@@ -418,8 +418,12 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
               <TxButton
                 prepareWrite={activeFlow.actions.prepareApprove}
                 transactionName="Approve"
-                disabled={!activeFlow.periphery.prepareApproveEnabled || !!withdrawError || isLoadingQuote}
-                loading={isLoadingQuote}
+                disabled={
+                  !activeFlow.periphery.prepareApproveEnabled ||
+                  !!withdrawError ||
+                  activeFlow.periphery.isLoadingRoute ||
+                  withdrawAmount.isDebouncing
+                }
                 className="w-full"
                 notification={approveNotificationParams}
               />
@@ -427,8 +431,13 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
             <TxButton
               prepareWrite={activeFlow.actions.prepareWithdraw}
               transactionName={transactionName}
-              disabled={!activeFlow.periphery.prepareWithdrawEnabled || !!withdrawError}
-              loading={isLoadingQuote}
+              disabled={
+                !activeFlow.periphery.prepareWithdrawEnabled ||
+                !!withdrawError ||
+                activeFlow.periphery.isLoadingRoute ||
+                withdrawAmount.isDebouncing
+              }
+              loading={activeFlow.periphery.isLoadingRoute}
               onSuccess={handleWithdrawSuccess}
               className="w-full"
               notification={withdrawNotificationParams}

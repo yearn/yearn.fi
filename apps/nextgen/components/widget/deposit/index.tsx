@@ -10,10 +10,10 @@ import { TxButton } from '@nextgen/components/TxButton'
 import { useDebouncedInput } from '@nextgen/hooks/useDebouncedInput'
 import { useTokens } from '@nextgen/hooks/useTokens'
 import { type FC, useCallback, useMemo, useState } from 'react'
-import type { Address } from 'viem'
+import { type Address, formatUnits } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
 import { SettingsPopover } from '../SettingsPopover'
-import { TokenSelectorOverlay, useLoadingQuote } from '../shared'
+import { TokenSelectorOverlay } from '../shared'
 import { AnnualReturnModal } from './AnnualReturnModal'
 import { DepositDetails } from './DepositDetails'
 import { useDepositError } from './useDepositError'
@@ -131,7 +131,7 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   // Loading State
   // ============================================================================
-  const isLoadingQuote = useLoadingQuote(depositAmount.isDebouncing, activeFlow.periphery.isLoadingRoute)
+  // const isLoadingQuote = useLoadingQuote(depositAmount.isDebouncing, activeFlow.periphery.isLoadingRoute)
 
   // ============================================================================
   // Error Handling
@@ -177,28 +177,16 @@ export const WidgetDeposit: FC<Props> = ({
   // Computed Values
   // ============================================================================
   const estimatedAnnualReturn = useMemo(() => {
-    if (depositAmount.bn === 0n || vaultAPR === 0) return '0'
-    const annualReturn = Number(depositAmount.formValue) * vaultAPR
+    if (depositAmount.debouncedBn === 0n || vaultAPR === 0) return '0'
+    const annualReturn = Number(formatUnits(depositAmount.debouncedBn, inputToken?.decimals ?? 18)) * vaultAPR
     return annualReturn.toFixed(2)
-  }, [depositAmount.bn, depositAmount.formValue, vaultAPR])
+  }, [depositAmount.debouncedBn, inputToken?.decimals, vaultAPR])
 
   const expectedOutInSelectedToken = useMemo(() => {
-    if (
-      activeFlow.periphery.expectedOut === 0n ||
-      !pricePerShare ||
-      !assetToken?.decimals ||
-      depositAmount.isDebouncing ||
-      depositAmount.bn === 0n
-    )
+    if (activeFlow.periphery.expectedOut === 0n || !pricePerShare || !assetToken?.decimals || depositAmount.bn === 0n)
       return 0n
     return (activeFlow.periphery.expectedOut * pricePerShare) / 10n ** BigInt(assetToken.decimals)
-  }, [
-    activeFlow.periphery.expectedOut,
-    assetToken?.decimals,
-    pricePerShare,
-    depositAmount.isDebouncing,
-    depositAmount.bn
-  ])
+  }, [activeFlow.periphery.expectedOut, assetToken?.decimals, pricePerShare, depositAmount.bn])
 
   const inputTokenPrice = useMemo(() => {
     if (!inputToken?.address || !inputToken?.chainID) return 0
@@ -318,7 +306,7 @@ export const WidgetDeposit: FC<Props> = ({
         inputTokenSymbol={inputToken?.symbol}
         inputTokenDecimals={inputToken?.decimals ?? 18}
         isSwap={selectedToken !== assetAddress}
-        isLoadingQuote={isLoadingQuote}
+        isLoadingQuote={activeFlow.periphery.isLoadingRoute}
         expectedOutInAsset={expectedOutInSelectedToken}
         assetTokenSymbol={assetToken?.symbol}
         assetTokenDecimals={assetToken?.decimals ?? 18}
@@ -346,8 +334,12 @@ export const WidgetDeposit: FC<Props> = ({
               <TxButton
                 prepareWrite={activeFlow.actions.prepareApprove}
                 transactionName="Approve"
-                disabled={!activeFlow.periphery.prepareApproveEnabled || !!depositError}
-                loading={isLoadingQuote}
+                disabled={
+                  !activeFlow.periphery.prepareApproveEnabled ||
+                  !!depositError ||
+                  activeFlow.periphery.isLoadingRoute ||
+                  depositAmount.isDebouncing
+                }
                 className="w-full"
                 notification={approveNotificationParams}
               />
@@ -355,8 +347,8 @@ export const WidgetDeposit: FC<Props> = ({
             <TxButton
               prepareWrite={activeFlow.actions.prepareDeposit}
               transactionName={
-                isLoadingQuote
-                  ? 'Finding route...'
+                activeFlow.periphery.isLoadingRoute
+                  ? 'Fetching quote...'
                   : !activeFlow.periphery.isAllowanceSufficient && !isNativeToken
                     ? 'Deposit'
                     : routeType === 'DIRECT_STAKE'
@@ -364,7 +356,7 @@ export const WidgetDeposit: FC<Props> = ({
                       : 'Deposit'
               }
               disabled={!canDeposit}
-              loading={isLoadingQuote}
+              loading={activeFlow.periphery.isLoadingRoute}
               onSuccess={handleDepositSuccess}
               className="w-full"
               notification={depositNotificationParams}

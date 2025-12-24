@@ -315,7 +315,6 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
       if (isSigning) {
         return 'Signing...'
       }
-      return 'Loading...'
     }
 
     return transactionName
@@ -324,7 +323,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   // Determine button variant
   const getVariant = (): 'filled' | 'busy' => {
     if (!account) return 'filled'
-    if (isLoading || isSimulating) return 'busy'
+    if (isLoading) return 'busy'
     return 'filled'
   }
 
@@ -333,7 +332,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
       variant={getVariant()}
       classNameOverride="yearn--button--nextgen w-full"
       className={props.className}
-      isBusy={isLoading || isSimulating}
+      isBusy={isLoading}
       disabled={disabled}
       onClick={handleClick}
       {...props}
