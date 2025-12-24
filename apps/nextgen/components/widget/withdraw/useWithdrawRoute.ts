@@ -1,7 +1,7 @@
 import { toAddress } from '@lib/utils'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
-import type { WithdrawRouteType, WithdrawalSource } from './types'
+import type { WithdrawalSource, WithdrawRouteType } from './types'
 
 interface UseWithdrawRouteProps {
   withdrawToken: Address

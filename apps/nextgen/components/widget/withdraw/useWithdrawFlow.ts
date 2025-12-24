@@ -4,7 +4,7 @@ import { useEnsoWithdraw } from '@nextgen/hooks/actions/useEnsoWithdraw'
 import type { UseWidgetWithdrawFlowReturn } from '@nextgen/types'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
-import type { WithdrawRouteType, WithdrawalSource } from './types'
+import type { WithdrawalSource, WithdrawRouteType } from './types'
 import { useWithdrawRoute } from './useWithdrawRoute'
 
 interface UseWithdrawFlowProps {

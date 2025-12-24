@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { WithdrawRouteType, WithdrawalSource } from './types'
+import type { WithdrawalSource, WithdrawRouteType } from './types'
 
 interface UseWithdrawErrorProps {
   // Amount state

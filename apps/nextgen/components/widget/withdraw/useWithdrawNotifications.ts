@@ -3,7 +3,7 @@ import { formatTAmount, toAddress } from '@lib/utils'
 import type { Token } from '@nextgen/hooks/useTokens'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
-import type { WithdrawRouteType, WithdrawalSource } from './types'
+import type { WithdrawalSource, WithdrawRouteType } from './types'
 
 interface UseWithdrawNotificationsProps {
   // Tokens

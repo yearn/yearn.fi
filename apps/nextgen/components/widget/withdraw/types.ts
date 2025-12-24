@@ -1,5 +1,5 @@
-import type { UseSimulateContractReturnType } from 'wagmi'
 import type { Address } from 'viem'
+import type { UseSimulateContractReturnType } from 'wagmi'
 
 export type WithdrawRouteType = 'DIRECT_WITHDRAW' | 'DIRECT_UNSTAKE' | 'ENSO'
 
