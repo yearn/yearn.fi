@@ -101,6 +101,7 @@ export const useWithdrawFlow = ({
     vaultAddress: sourceToken,
     withdrawToken,
     amount: requiredShares,
+    currentAmount,
     account,
     receiver: account,
     chainId,

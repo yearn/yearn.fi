@@ -103,6 +103,7 @@ export const useDepositFlow = ({
     vaultAddress: destinationToken,
     depositToken,
     amount,
+    currentAmount,
     account,
     chainId: sourceChainId,
     destinationChainId,

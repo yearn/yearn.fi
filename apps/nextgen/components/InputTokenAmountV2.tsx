@@ -199,7 +199,7 @@ export const InputTokenAmountV2: FC<Props> = ({
             onFocus={() => setActive(true)}
             onBlur={() => setActive(false)}
             className={cl(
-              'bg-transparent outline-none text-2xl font-medium flex-1 min-w-0',
+              'bg-transparent outline-none text-2xl font-medium flex-1 min-w-0 transition-colors duration-200',
               errorMessage ? 'text-red-500' : disabled ? 'text-text-secondary' : 'text-text-primary',
               'placeholder:text-text-secondary'
             )}
