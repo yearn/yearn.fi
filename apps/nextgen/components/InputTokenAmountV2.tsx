@@ -70,14 +70,12 @@ export const InputTokenAmountV2: FC<Props> = ({
   const [
     {
       formValue,
-      activity: [, setActive],
-      ...inputState
+      activity: [, setActive]
     },
     handleChangeInput,
     setFormValue
   ] = input
 
-  const isDebouncing = 'isDebouncing' in inputState ? inputState.isDebouncing : false
   const disabled = _disabled || !account
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -239,13 +237,6 @@ export const InputTokenAmountV2: FC<Props> = ({
                 </svg>
               )}
             </button>
-          )}
-
-          {/* Loading indicator */}
-          {isDebouncing && (
-            <div className="absolute -right-8">
-              <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
-            </div>
           )}
         </div>
 
