@@ -348,7 +348,7 @@ export const WidgetDeposit: FC<Props> = ({
               prepareWrite={activeFlow.actions.prepareDeposit}
               transactionName={
                 activeFlow.periphery.isLoadingRoute
-                  ? 'Fetching quote...'
+                  ? 'Fetching quote'
                   : !activeFlow.periphery.isAllowanceSufficient && !isNativeToken
                     ? 'Deposit'
                     : routeType === 'DIRECT_STAKE'

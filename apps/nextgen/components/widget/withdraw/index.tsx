@@ -246,7 +246,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const transactionName = useMemo(() => {
     if (routeType === 'DIRECT_WITHDRAW') return 'Withdraw'
     if (routeType === 'DIRECT_UNSTAKE') return 'Unstake'
-    if (activeFlow.periphery.isLoadingRoute) return 'Fetching quote...'
+    if (activeFlow.periphery.isLoadingRoute) return 'Fetching quote'
     return 'Withdraw'
   }, [routeType, activeFlow.periphery.isLoadingRoute])
 
