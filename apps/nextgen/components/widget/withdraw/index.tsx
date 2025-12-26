@@ -131,6 +131,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     }
     const vaultDecimals = vault?.decimals ?? 18
     const underlyingAmount = (totalVaultBalance.raw * (pricePerShare as bigint)) / 10n ** BigInt(vaultDecimals)
+    console.log(totalVaultBalance.raw, underlyingAmount)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
   }, [totalVaultBalance.raw, pricePerShare, vault?.decimals, assetToken])
 
@@ -144,28 +145,19 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   // Required Shares Calculation
   // ============================================================================
   const requiredShares = useMemo(() => {
-    if (!withdrawAmount.debouncedBn || withdrawAmount.debouncedBn === 0n) return 0n
+    if (!withdrawAmount.bn || withdrawAmount.bn === 0n) return 0n
 
     if (isUnstake) {
-      return (
-        (withdrawAmount.debouncedBn * 10n ** BigInt(stakingToken?.decimals ?? 18)) / (stakingPricePerShare as bigint)
-      )
+      return (withdrawAmount.bn * 10n ** BigInt(stakingToken?.decimals ?? 18)) / (stakingPricePerShare as bigint)
     }
 
     if (pricePerShare) {
       const vaultDecimals = vault?.decimals ?? 18
-      return (withdrawAmount.debouncedBn * 10n ** BigInt(vaultDecimals)) / (pricePerShare as bigint)
+      return (withdrawAmount.bn * 10n ** BigInt(vaultDecimals)) / (pricePerShare as bigint)
     }
 
     return 0n
-  }, [
-    withdrawAmount.debouncedBn,
-    isUnstake,
-    pricePerShare,
-    stakingToken?.decimals,
-    stakingPricePerShare,
-    vault?.decimals
-  ])
+  }, [withdrawAmount.bn, isUnstake, pricePerShare, stakingToken?.decimals, stakingPricePerShare, vault?.decimals])
 
   // ============================================================================
   // Withdraw Flow (routing, actions, periphery)
@@ -299,7 +291,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       </div>
     )
   }
-  console.log(activeFlow.periphery)
+
   // ============================================================================
   // Render
   // ============================================================================

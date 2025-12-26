@@ -200,7 +200,7 @@ export const InputTokenAmountV2: FC<Props> = ({
             onBlur={() => setActive(false)}
             className={cl(
               'bg-transparent outline-none text-2xl font-medium flex-1 min-w-0',
-              disabled ? 'text-text-secondary' : 'text-text-primary',
+              errorMessage ? 'text-red-500' : disabled ? 'text-text-secondary' : 'text-text-primary',
               'placeholder:text-text-secondary'
             )}
           />
@@ -249,18 +249,19 @@ export const InputTokenAmountV2: FC<Props> = ({
           )}
         </div>
 
-        {/* Bottom row - USD value and balance */}
+        {/* Bottom row - USD value (or error) and balance */}
         <div className="flex items-center justify-between">
-          <div className="text-sm text-text-secondary">${inputUsdValue}</div>
+          {errorMessage ? (
+            <div className="text-sm text-red-500">{errorMessage}</div>
+          ) : (
+            <div className="text-sm text-text-secondary">${inputUsdValue}</div>
+          )}
           {balance !== undefined && symbol && (
             <div className="text-sm text-text-secondary">
               Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
             </div>
           )}
         </div>
-
-        {/* Error message */}
-        {errorMessage && <div className="text-red-500 text-sm mt-1">{errorMessage}</div>}
       </div>
 
       {/* Zap Token Section */}

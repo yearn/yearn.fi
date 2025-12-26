@@ -34,13 +34,14 @@ export const useWithdrawError = ({
     if (hasBothBalances && !withdrawalSource) {
       return 'Please select withdrawal source'
     }
-
+    console.log(amount, requiredShares, totalBalance)
     if (amount === 0n) return null
 
     if (requiredShares > totalBalance) {
       return 'Insufficient balance'
     }
 
+    // Route-dependent validation - wait for debounce and route fetch
     if (routeType === 'ENSO') {
       if (flowError && !isLoadingRoute && debouncedAmount > 0n && !isDebouncing) {
         return 'Unable to find route'

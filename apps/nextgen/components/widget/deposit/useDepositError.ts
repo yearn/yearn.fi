@@ -29,7 +29,7 @@ export const useDepositError = ({
   isAutoStakingEnabled
 }: UseDepositErrorProps): string | null => {
   return useMemo(() => {
-    if (amount === 0n || isLoadingRoute) return null
+    if (amount === 0n) return null
 
     if (amount > balance) return 'Insufficient balance'
 
@@ -37,6 +37,7 @@ export const useDepositError = ({
       return "Please toggle 'Maximize Yield' switch in settings to stake"
     }
 
+    // Route-dependent validation - wait for debounce and route fetch
     if (flowError && !isLoadingRoute && debouncedAmount > 0n && !isDebouncing) {
       return 'Unable to find route'
     }
