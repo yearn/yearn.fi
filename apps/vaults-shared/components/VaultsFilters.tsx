@@ -1,6 +1,5 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
-import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
 import { SearchBar } from '@lib/components/SearchBar'
 import { useChainOptions } from '@lib/hooks/useChains'
 import { IconChevron } from '@lib/icons/IconChevron'
@@ -17,14 +16,6 @@ type TChainButton = {
   label: string
   icon?: ReactElement
   isSelected: boolean
-}
-
-type TFilterGroup = {
-  id: string
-  label: string
-  placeholder: string
-  options: TMultiSelectOptionProps[]
-  onChange: (values: string[] | null) => void
 }
 
 type TChainConfig = {
@@ -45,7 +36,10 @@ type TVaultsFiltersProps = {
   searchAlertContent?: ReactNode
   leadingControls?: ReactNode
   chainConfig: TChainConfig
-  filterGroups?: TFilterGroup[]
+  filtersCount?: number
+  filtersContent?: ReactNode
+  filtersPanelContent?: ReactNode
+  onClearFilters?: () => void
 }
 
 export function VaultsFilters({
@@ -57,23 +51,16 @@ export function VaultsFilters({
   searchAlertContent,
   leadingControls,
   chainConfig,
-  filterGroups
+  filtersCount = 0,
+  filtersContent,
+  filtersPanelContent,
+  onClearFilters
 }: TVaultsFiltersProps): ReactElement {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
-
-  const hasFilterGroups = Boolean(filterGroups && filterGroups.length > 0)
-  const filtersCount = useMemo(() => {
-    if (!filterGroups || filterGroups.length === 0) {
-      return 0
-    }
-    return filterGroups.reduce((total, group) => {
-      const selectedCount = group.options.filter((option) => option.isSelected).length
-      return total + selectedCount
-    }, 0)
-  }, [filterGroups])
+  const hasFiltersContent = Boolean(filtersContent)
+  const hasPanelContent = Boolean(filtersPanelContent)
 
   const {
     supportedChainIds,
@@ -89,14 +76,6 @@ export function VaultsFilters({
   useEffect(() => {
     setCustomChainIds(defaultSecondaryChainIds)
   }, [defaultSecondaryChainIds])
-
-  const handleDropdownOpenChange = (dropdownId: string, isOpen: boolean): void => {
-    if (isOpen) {
-      setActiveDropdown(dropdownId)
-    } else if (activeDropdown === dropdownId) {
-      setActiveDropdown(null)
-    }
-  }
 
   const chainOptions = useChainOptions(chains).filter((option): boolean =>
     supportedChainIds.includes(Number(option.value))
@@ -219,11 +198,6 @@ export function VaultsFilters({
     setCustomChainIds(unique)
   }
 
-  const handleCloseFiltersModal = (): void => {
-    setIsFiltersModalOpen(false)
-    setActiveDropdown(null)
-  }
-
   return (
     <>
       <div className={'relative col-span-24 w-full md:col-span-19'}>
@@ -248,9 +222,6 @@ export function VaultsFilters({
             open={isMobileFiltersOpen}
             onOpenChange={(isOpen): void => {
               setIsMobileFiltersOpen(isOpen)
-              if (!isOpen) {
-                setActiveDropdown(null)
-              }
             }}
             direction={'bottom'}
           >
@@ -288,7 +259,7 @@ export function VaultsFilters({
                     onOpenChainModal={(): void => setIsChainModalOpen(true)}
                     showMoreChainsButton={showMoreChainsButton}
                     allChainsLabel={allChainsLabel}
-                    showFiltersButton={hasFilterGroups}
+                    showFiltersButton={hasFiltersContent && !hasPanelContent}
                     filtersCount={filtersCount}
                     onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
                     showInlineSearch={false}
@@ -298,6 +269,7 @@ export function VaultsFilters({
                     searchAlertContent={searchAlertContent}
                     leadingControls={leadingControls}
                   />
+                  {hasPanelContent ? filtersPanelContent : null}
                 </div>
               </Drawer.Content>
             </Drawer.Portal>
@@ -313,7 +285,7 @@ export function VaultsFilters({
             onOpenChainModal={(): void => setIsChainModalOpen(true)}
             showMoreChainsButton={showMoreChainsButton}
             allChainsLabel={allChainsLabel}
-            showFiltersButton={hasFilterGroups}
+            showFiltersButton={hasFiltersContent}
             filtersCount={filtersCount}
             onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
             showInlineSearch={true}
@@ -335,13 +307,12 @@ export function VaultsFilters({
           onApply={handleApplyAdditionalChains}
         />
       ) : null}
-      {hasFilterGroups ? (
+      {hasFiltersContent ? (
         <FiltersModal
           isOpen={isFiltersModalOpen}
-          onClose={handleCloseFiltersModal}
-          filterGroups={filterGroups || []}
-          activeDropdown={activeDropdown}
-          onDropdownOpenChange={handleDropdownOpenChange}
+          onClose={(): void => setIsFiltersModalOpen(false)}
+          onClear={onClearFilters}
+          filtersContent={filtersContent}
         />
       ) : null}
     </>
@@ -451,7 +422,7 @@ function FilterControls({
                 </button>
               ) : null}
             </div>
-            <div className={'flex flex-row items-center gap-3 flex-1'}>
+            <div className={'flex flex-row items-center gap-3 flex-1 min-w-0'}>
               {showFiltersButton ? (
                 <button
                   type={'button'}
@@ -477,7 +448,7 @@ function FilterControls({
                 </button>
               ) : null}
               {showInlineSearch ? (
-                <div className={'flex-1'}>
+                <div className={'flex-1 min-w-[180px]'}>
                   <SearchBar
                     className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
                     iconClassName={'text-text-primary'}
@@ -501,22 +472,14 @@ function FilterControls({
 function FiltersModal({
   isOpen,
   onClose,
-  filterGroups,
-  activeDropdown,
-  onDropdownOpenChange
+  onClear,
+  filtersContent
 }: {
   isOpen: boolean
   onClose: () => void
-  filterGroups: TFilterGroup[]
-  activeDropdown: string | null
-  onDropdownOpenChange: (dropdownId: string, isOpen: boolean) => void
+  onClear?: () => void
+  filtersContent: ReactNode
 }): ReactElement {
-  const clearAll = (): void => {
-    filterGroups.forEach((group) => {
-      group.onChange([])
-    })
-  }
-
   return (
     <Transition show={isOpen} as={Fragment}>
       <Dialog as={'div'} className={'relative z-70'} onClose={onClose}>
@@ -560,37 +523,19 @@ function FiltersModal({
                     <IconCross className={'size-4'} />
                   </button>
                 </div>
-                <div className={'mt-4 grid grid-cols-1 gap-6 md:grid-cols-2'}>
-                  {filterGroups.map((group) => (
-                    <div key={group.id} className={'w-full'}>
-                      <p className={'pb-2 text-text-secondary'}>{group.label}</p>
-                      <MultiSelectDropdown
-                        buttonClassName={'max-w-none rounded-lg bg-surface-tertiary text-text-primary md:w-full'}
-                        comboboxOptionsClassName={'bg-surface-tertiary rounded-lg'}
-                        options={group.options}
-                        placeholder={group.placeholder}
-                        isOpen={activeDropdown === group.id}
-                        onOpenChange={(isOpen): void => onDropdownOpenChange(group.id, isOpen)}
-                        onSelect={(options): void => {
-                          const selectedValues = options
-                            .filter((option): boolean => option.isSelected)
-                            .map((option): string => String(option.value))
-                          group.onChange(selectedValues)
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
+                {filtersContent}
                 <div className={'mt-6 flex justify-end gap-3'}>
-                  <button
-                    type={'button'}
-                    className={
-                      'rounded-full border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-border-hover'
-                    }
-                    onClick={clearAll}
-                  >
-                    {'Clear'}
-                  </button>
+                  {onClear ? (
+                    <button
+                      type={'button'}
+                      className={
+                        'rounded-full border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-border-hover'
+                      }
+                      onClick={onClear}
+                    >
+                      {'Clear'}
+                    </button>
+                  ) : null}
                   <button
                     type={'button'}
                     className={
