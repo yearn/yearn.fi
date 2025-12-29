@@ -62,9 +62,18 @@ export function VaultsFilters({
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
-  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false)
+  const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
 
   const hasFilterGroups = Boolean(filterGroups && filterGroups.length > 0)
+  const filtersCount = useMemo(() => {
+    if (!filterGroups || filterGroups.length === 0) {
+      return 0
+    }
+    return filterGroups.reduce((total, group) => {
+      const selectedCount = group.options.filter((option) => option.isSelected).length
+      return total + selectedCount
+    }, 0)
+  }, [filterGroups])
 
   const {
     supportedChainIds,
@@ -80,12 +89,6 @@ export function VaultsFilters({
   useEffect(() => {
     setCustomChainIds(defaultSecondaryChainIds)
   }, [defaultSecondaryChainIds])
-
-  useEffect(() => {
-    if (!hasFilterGroups && isMoreFiltersOpen) {
-      setIsMoreFiltersOpen(false)
-    }
-  }, [hasFilterGroups, isMoreFiltersOpen])
 
   const handleDropdownOpenChange = (dropdownId: string, isOpen: boolean): void => {
     if (isOpen) {
@@ -216,6 +219,11 @@ export function VaultsFilters({
     setCustomChainIds(unique)
   }
 
+  const handleCloseFiltersModal = (): void => {
+    setIsFiltersModalOpen(false)
+    setActiveDropdown(null)
+  }
+
   return (
     <>
       <div className={'relative col-span-24 w-full md:col-span-19'}>
@@ -280,12 +288,9 @@ export function VaultsFilters({
                     onOpenChainModal={(): void => setIsChainModalOpen(true)}
                     showMoreChainsButton={showMoreChainsButton}
                     allChainsLabel={allChainsLabel}
-                    isMoreFiltersOpen={isMoreFiltersOpen}
-                    onToggleMoreFilters={(): void => setIsMoreFiltersOpen((prev) => !prev)}
-                    filterGroups={filterGroups || []}
-                    hasFilterGroups={hasFilterGroups}
-                    activeDropdown={activeDropdown}
-                    onDropdownOpenChange={handleDropdownOpenChange}
+                    showFiltersButton={hasFilterGroups}
+                    filtersCount={filtersCount}
+                    onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
                     showInlineSearch={false}
                     searchValue={searchValue}
                     onSearch={onSearch}
@@ -308,12 +313,9 @@ export function VaultsFilters({
             onOpenChainModal={(): void => setIsChainModalOpen(true)}
             showMoreChainsButton={showMoreChainsButton}
             allChainsLabel={allChainsLabel}
-            isMoreFiltersOpen={isMoreFiltersOpen}
-            onToggleMoreFilters={(): void => setIsMoreFiltersOpen((prev) => !prev)}
-            filterGroups={filterGroups || []}
-            hasFilterGroups={hasFilterGroups}
-            activeDropdown={activeDropdown}
-            onDropdownOpenChange={handleDropdownOpenChange}
+            showFiltersButton={hasFilterGroups}
+            filtersCount={filtersCount}
+            onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
             showInlineSearch={true}
             searchValue={searchValue}
             onSearch={onSearch}
@@ -333,6 +335,15 @@ export function VaultsFilters({
           onApply={handleApplyAdditionalChains}
         />
       ) : null}
+      {hasFilterGroups ? (
+        <FiltersModal
+          isOpen={isFiltersModalOpen}
+          onClose={handleCloseFiltersModal}
+          filterGroups={filterGroups || []}
+          activeDropdown={activeDropdown}
+          onDropdownOpenChange={handleDropdownOpenChange}
+        />
+      ) : null}
     </>
   )
 }
@@ -345,12 +356,9 @@ function FilterControls({
   onOpenChainModal,
   showMoreChainsButton = true,
   allChainsLabel,
-  isMoreFiltersOpen,
-  onToggleMoreFilters,
-  filterGroups,
-  hasFilterGroups,
-  activeDropdown,
-  onDropdownOpenChange,
+  showFiltersButton = true,
+  filtersCount,
+  onOpenFiltersModal,
   showInlineSearch,
   searchValue,
   onSearch,
@@ -369,12 +377,9 @@ function FilterControls({
    */
   showMoreChainsButton?: boolean
   allChainsLabel: string
-  isMoreFiltersOpen: boolean
-  onToggleMoreFilters: () => void
-  filterGroups: TFilterGroup[]
-  hasFilterGroups: boolean
-  activeDropdown: string | null
-  onDropdownOpenChange: (dropdownId: string, isOpen: boolean) => void
+  showFiltersButton?: boolean
+  filtersCount: number
+  onOpenFiltersModal: () => void
   showInlineSearch: boolean
   searchValue: string
   onSearch: (value: string) => void
@@ -447,7 +452,7 @@ function FilterControls({
               ) : null}
             </div>
             <div className={'flex flex-row items-center gap-3 flex-1'}>
-              {hasFilterGroups ? (
+              {showFiltersButton ? (
                 <button
                   type={'button'}
                   className={cl(
@@ -455,12 +460,20 @@ function FilterControls({
                     'hover:text-text-secondary',
                     'data-[active=true]:border-border-hover data-[active=true]:text-text-secondary'
                   )}
-                  data-active={isMoreFiltersOpen}
-                  onClick={onToggleMoreFilters}
-                  aria-expanded={isMoreFiltersOpen}
+                  onClick={onOpenFiltersModal}
+                  aria-label={'Open filters'}
                 >
                   <IconFilter className={'size-4'} />
                   <span>{'Filters'}</span>
+                  {filtersCount > 0 ? (
+                    <span
+                      className={
+                        'ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-surface-tertiary px-1.5 text-xs text-text-primary'
+                      }
+                    >
+                      {filtersCount}
+                    </span>
+                  ) : null}
                 </button>
               ) : null}
               {showInlineSearch ? (
@@ -481,30 +494,119 @@ function FilterControls({
           </div>
         </div>
       </div>
-      {hasFilterGroups && isMoreFiltersOpen ? (
-        <div className={'grid grid-cols-1 gap-4 md:grid-cols-2'}>
-          {filterGroups.map((group) => (
-            <div key={group.id} className={'w-full'}>
-              <p className={'pb-2 text-text-secondary'}>{group.label}</p>
-              <MultiSelectDropdown
-                buttonClassName={'max-w-none rounded-lg bg-surface-tertiary text-text-primary md:w-full'}
-                comboboxOptionsClassName={'bg-surface-tertiary rounded-lg'}
-                options={group.options}
-                placeholder={group.placeholder}
-                isOpen={activeDropdown === group.id}
-                onOpenChange={(isOpen): void => onDropdownOpenChange(group.id, isOpen)}
-                onSelect={(options): void => {
-                  const selectedValues = options
-                    .filter((option): boolean => option.isSelected)
-                    .map((option): string => String(option.value))
-                  group.onChange(selectedValues)
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      ) : null}
     </div>
+  )
+}
+
+function FiltersModal({
+  isOpen,
+  onClose,
+  filterGroups,
+  activeDropdown,
+  onDropdownOpenChange
+}: {
+  isOpen: boolean
+  onClose: () => void
+  filterGroups: TFilterGroup[]
+  activeDropdown: string | null
+  onDropdownOpenChange: (dropdownId: string, isOpen: boolean) => void
+}): ReactElement {
+  const clearAll = (): void => {
+    filterGroups.forEach((group) => {
+      group.onChange([])
+    })
+  }
+
+  return (
+    <Transition show={isOpen} as={Fragment}>
+      <Dialog as={'div'} className={'relative z-70'} onClose={onClose}>
+        <TransitionChild
+          as={Fragment}
+          enter={'duration-200 ease-out'}
+          enterFrom={'opacity-0'}
+          enterTo={'opacity-100'}
+          leave={'duration-150 ease-in'}
+          leaveFrom={'opacity-100'}
+          leaveTo={'opacity-0'}
+        >
+          <div className={'fixed inset-0 bg-black/40'} />
+        </TransitionChild>
+        <div className={'fixed inset-0 overflow-y-auto'}>
+          <div className={'flex min-h-full items-center justify-center p-4'}>
+            <TransitionChild
+              as={Fragment}
+              enter={'duration-200 ease-out'}
+              enterFrom={'opacity-0 scale-95'}
+              enterTo={'opacity-100 scale-100'}
+              leave={'duration-150 ease-in'}
+              leaveFrom={'opacity-100 scale-100'}
+              leaveTo={'opacity-0 scale-95'}
+            >
+              <Dialog.Panel
+                className={
+                  'w-full max-w-3xl rounded-3xl border border-border bg-surface p-6 text-text-primary shadow-lg'
+                }
+              >
+                <div className={'flex items-start justify-between gap-4'}>
+                  <Dialog.Title className={'text-lg font-semibold text-text-primary'}>{'Filters'}</Dialog.Title>
+                  <button
+                    type={'button'}
+                    onClick={onClose}
+                    className={
+                      'inline-flex size-8 items-center justify-center rounded-full border border-transparent text-text-secondary hover:border-border hover:text-text-primary'
+                    }
+                    aria-label={'Close filters'}
+                  >
+                    <IconCross className={'size-4'} />
+                  </button>
+                </div>
+                <div className={'mt-4 grid grid-cols-1 gap-6 md:grid-cols-2'}>
+                  {filterGroups.map((group) => (
+                    <div key={group.id} className={'w-full'}>
+                      <p className={'pb-2 text-text-secondary'}>{group.label}</p>
+                      <MultiSelectDropdown
+                        buttonClassName={'max-w-none rounded-lg bg-surface-tertiary text-text-primary md:w-full'}
+                        comboboxOptionsClassName={'bg-surface-tertiary rounded-lg'}
+                        options={group.options}
+                        placeholder={group.placeholder}
+                        isOpen={activeDropdown === group.id}
+                        onOpenChange={(isOpen): void => onDropdownOpenChange(group.id, isOpen)}
+                        onSelect={(options): void => {
+                          const selectedValues = options
+                            .filter((option): boolean => option.isSelected)
+                            .map((option): string => String(option.value))
+                          group.onChange(selectedValues)
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className={'mt-6 flex justify-end gap-3'}>
+                  <button
+                    type={'button'}
+                    className={
+                      'rounded-full border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-border-hover'
+                    }
+                    onClick={clearAll}
+                  >
+                    {'Clear'}
+                  </button>
+                  <button
+                    type={'button'}
+                    className={
+                      'rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-surface transition-colors hover:bg-neutral-800'
+                    }
+                    onClick={onClose}
+                  >
+                    {'Done'}
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
   )
 }
 
@@ -550,7 +652,7 @@ function ChainSelectionModal({
 
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog as={'div'} className={'relative z-[60]'} onClose={onClose}>
+      <Dialog as={'div'} className={'relative z-70'} onClose={onClose}>
         <TransitionChild
           as={Fragment}
           enter={'duration-200 ease-out'}

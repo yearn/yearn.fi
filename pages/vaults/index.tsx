@@ -5,12 +5,12 @@ import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
 import { toAddress } from '@lib/utils'
-import { VaultsFilters } from '@vaults-shared/components/VaultsFilters'
 import { VaultsListEmpty } from '@vaults-shared/components/list/VaultsListEmpty'
+import { VaultsFilters } from '@vaults-shared/components/VaultsFilters'
 import type { TPossibleSortBy } from '@vaults-shared/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-shared/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults-shared/hooks/useVaultsQueryArgs'
-import { DEFAULT_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
+import { ALL_VAULTS_CATEGORIES, DEFAULT_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
 import { VaultsV3AuxiliaryList } from '@vaults-v3/components/list/VaultsV3AuxiliaryList'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
@@ -34,6 +34,7 @@ const V2_SUPPORTED_CHAINS = [1, 10, 42161]
 const V3_SUPPORTED_CHAINS = [1, 747474, 8453, 42161, 137]
 const V3_PRIMARY_CHAIN_IDS = [1, 747474]
 const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
+const V2_CATEGORY_KEYS = Object.keys(ALL_VAULTS_CATEGORIES)
 
 function useVaultType(): TVaultType {
   const [searchParams] = useSearchParams()
@@ -112,6 +113,13 @@ function ListOfVaults({
     return () => observer.disconnect()
   }, [])
 
+  const v2SelectedTypes = useMemo(() => {
+    if (vaultType !== 'factory') {
+      return []
+    }
+    return (types || []).filter((type) => V2_CATEGORY_KEYS.includes(type))
+  }, [types, vaultType])
+
   // Use the appropriate filter hook based on vault type
   const v3FilterResult = useV3VaultFilter(
     vaultType === 'v3' ? types : null,
@@ -119,7 +127,7 @@ function ListOfVaults({
     search || '',
     vaultType === 'v3' ? categories : null
   )
-  const v2FilterResult = useV2VaultFilter(null, chains, search || '')
+  const v2FilterResult = useV2VaultFilter(vaultType === 'factory' ? v2SelectedTypes : null, chains, search || '')
 
   const {
     filteredVaults,
@@ -313,7 +321,7 @@ function ListOfVaults({
     )
   }
 
-  const typeOptions = useMemo((): TMultiSelectOptionProps[] => {
+  const v3TypeOptions = useMemo((): TMultiSelectOptionProps[] => {
     if (vaultType !== 'v3') {
       return []
     }
@@ -324,7 +332,7 @@ function ListOfVaults({
     }))
   }, [types, vaultType])
 
-  const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
+  const v3CategoryOptions = useMemo((): TMultiSelectOptionProps[] => {
     if (vaultType !== 'v3') {
       return []
     }
@@ -335,27 +343,49 @@ function ListOfVaults({
     }))
   }, [categories, vaultType])
 
-  const filterGroups = useMemo(() => {
-    if (vaultType !== 'v3') {
+  const v2CategoryOptions = useMemo((): TMultiSelectOptionProps[] => {
+    if (vaultType !== 'factory') {
       return []
     }
-    return [
-      {
-        id: 'categories',
-        label: 'Select Category',
-        placeholder: 'Filter categories',
-        options: categoryOptions,
-        onChange: onChangeCategories
-      },
-      {
-        id: 'types',
-        label: 'Select Type',
-        placeholder: 'Filter list',
-        options: typeOptions,
-        onChange: onChangeTypes
-      }
-    ]
-  }, [vaultType, categoryOptions, typeOptions, onChangeCategories, onChangeTypes])
+    return Object.entries(ALL_VAULTS_CATEGORIES).map(([key, value]) => ({
+      value: key,
+      label: value,
+      isSelected: v2SelectedTypes.includes(key)
+    }))
+  }, [vaultType, v2SelectedTypes])
+
+  const filterGroups = useMemo(() => {
+    if (vaultType === 'v3') {
+      return [
+        {
+          id: 'categories',
+          label: 'Select Category',
+          placeholder: 'Filter categories',
+          options: v3CategoryOptions,
+          onChange: onChangeCategories
+        },
+        {
+          id: 'types',
+          label: 'Select Type',
+          placeholder: 'Filter list',
+          options: v3TypeOptions,
+          onChange: onChangeTypes
+        }
+      ]
+    }
+    if (vaultType === 'factory') {
+      return [
+        {
+          id: 'categories',
+          label: 'Select Category',
+          placeholder: 'Filter categories',
+          options: v2CategoryOptions,
+          onChange: onChangeTypes
+        }
+      ]
+    }
+    return []
+  }, [vaultType, v3CategoryOptions, v3TypeOptions, v2CategoryOptions, onChangeCategories, onChangeTypes])
 
   const chainConfig = useMemo(() => {
     if (vaultType === 'v3') {
@@ -471,7 +501,7 @@ function ListOfVaults({
       <div className={''}>
         <div
           className={'relative md:sticky md:z-30'}
-          style={{ top: 'calc(var(--header-height) + var(--vaults-filters-height))' }}
+          style={{ top: 'calc(var(--header-height) + var(--vaults-filters-height) + 8px)' }}
         >
           <div
             aria-hidden={true}
