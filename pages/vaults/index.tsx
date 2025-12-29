@@ -1,22 +1,23 @@
 import Link from '@components/Link'
 import { Button } from '@lib/components/Button'
+import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
 import { toAddress } from '@lib/utils'
+import { VaultsFilters } from '@vaults-shared/components/VaultsFilters'
 import { VaultsListEmpty } from '@vaults-shared/components/list/VaultsListEmpty'
 import type { TPossibleSortBy } from '@vaults-shared/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-shared/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults-shared/hooks/useVaultsQueryArgs'
-import { FiltersV2 } from '@vaults-v2/components/FiltersV2'
 import { DEFAULT_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
-import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3AuxiliaryList } from '@vaults-v3/components/list/VaultsV3AuxiliaryList'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
 import { TrendingVaults } from '@vaults-v3/components/TrendingVaults'
 import {
   ALL_VAULTSV3_CATEGORIES,
+  ALL_VAULTSV3_KINDS,
   ALL_VAULTSV3_KINDS_KEYS,
   DEFAULT_SELECTED_VAULTSV3_CATEGORIES
 } from '@vaults-v3/constants'
@@ -24,10 +25,15 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
+import { VaultVersionToggle } from './VaultVersionToggle'
+import { getVaultTypeLabel, type TVaultType } from './vaultTypeCopy'
+
 const AVAILABLE_TOGGLE_VALUE = 'available'
 const HOLDINGS_TOGGLE_VALUE = 'holdings'
-
-type TVaultType = 'factory' | 'v3'
+const V2_SUPPORTED_CHAINS = [1, 10, 42161]
+const V3_SUPPORTED_CHAINS = [1, 747474, 8453, 42161, 137]
+const V3_PRIMARY_CHAIN_IDS = [1, 747474]
+const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
 
 function useVaultType(): TVaultType {
   const [searchParams] = useSearchParams()
@@ -307,6 +313,71 @@ function ListOfVaults({
     )
   }
 
+  const typeOptions = useMemo((): TMultiSelectOptionProps[] => {
+    if (vaultType !== 'v3') {
+      return []
+    }
+    return Object.entries(ALL_VAULTSV3_KINDS).map(([key, value]) => ({
+      value: key,
+      label: value.replaceAll(' Vaults', ''),
+      isSelected: types?.includes(key) || false
+    }))
+  }, [types, vaultType])
+
+  const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
+    if (vaultType !== 'v3') {
+      return []
+    }
+    return Object.values(ALL_VAULTSV3_CATEGORIES).map((value) => ({
+      value,
+      label: value,
+      isSelected: categories?.includes(value) || false
+    }))
+  }, [categories, vaultType])
+
+  const filterGroups = useMemo(() => {
+    if (vaultType !== 'v3') {
+      return []
+    }
+    return [
+      {
+        id: 'categories',
+        label: 'Select Category',
+        placeholder: 'Filter categories',
+        options: categoryOptions,
+        onChange: onChangeCategories
+      },
+      {
+        id: 'types',
+        label: 'Select Type',
+        placeholder: 'Filter list',
+        options: typeOptions,
+        onChange: onChangeTypes
+      }
+    ]
+  }, [vaultType, categoryOptions, typeOptions, onChangeCategories, onChangeTypes])
+
+  const chainConfig = useMemo(() => {
+    if (vaultType === 'v3') {
+      return {
+        supportedChainIds: V3_SUPPORTED_CHAINS,
+        primaryChainIds: V3_PRIMARY_CHAIN_IDS,
+        defaultSecondaryChainIds: V3_DEFAULT_SECONDARY_CHAIN_IDS,
+        chainDisplayOrder: V3_SUPPORTED_CHAINS,
+        showMoreChainsButton: false,
+        allChainsLabel: 'All Chains'
+      }
+    }
+    return {
+      supportedChainIds: V2_SUPPORTED_CHAINS,
+      primaryChainIds: V2_SUPPORTED_CHAINS,
+      defaultSecondaryChainIds: [],
+      chainDisplayOrder: V2_SUPPORTED_CHAINS,
+      showMoreChainsButton: false,
+      allChainsLabel: 'All'
+    }
+  }, [vaultType])
+
   function renderVaultList(): ReactNode {
     const defaultCategories =
       vaultType === 'v3' ? Object.values(ALL_VAULTSV3_CATEGORIES) : DEFAULT_VAULTS_CATEGORIES_KEYS
@@ -373,7 +444,7 @@ function ListOfVaults({
         {'Vaults'}
       </Link>
       <span>{'>'}</span>
-      <span className={'font-medium text-text-primary'}>{vaultType === 'v3' ? 'V3' : 'Factory'}</span>
+      <span className={'font-medium text-text-primary'}>{getVaultTypeLabel(vaultType)}</span>
     </div>
   )
 
@@ -381,30 +452,17 @@ function ListOfVaults({
     <div ref={filtersRef} className={'sticky z-40 w-full bg-app pb-2 shrink-0'} style={{ top: 'var(--header-height)' }}>
       {breadcrumbsElement}
       {suggestedVaultsElement}
-      {vaultType === 'v3' ? (
-        <Filters
-          types={types}
-          shouldDebounce={true}
-          categories={categories}
-          searchValue={search || ''}
-          chains={chains}
-          onChangeChains={onChangeChains}
-          onChangeTypes={onChangeTypes}
-          onChangeCategories={onChangeCategories}
-          onSearch={onSearch}
-          searchAlertContent={renderHiddenSearchAlert()}
-          holdingsVaults={holdingsVaults}
-        />
-      ) : (
-        <FiltersV2
-          shouldDebounce={true}
-          searchValue={search || ''}
-          chains={chains}
-          onChangeChains={onChangeChains}
-          onSearch={onSearch}
-          holdingsVaults={holdingsVaults}
-        />
-      )}
+      <VaultsFilters
+        filterGroups={filterGroups}
+        shouldDebounce={true}
+        searchValue={search || ''}
+        chains={chains}
+        onChangeChains={onChangeChains}
+        onSearch={onSearch}
+        searchAlertContent={renderHiddenSearchAlert()}
+        chainConfig={chainConfig}
+        leadingControls={<VaultVersionToggle />}
+      />
     </div>
   )
 
