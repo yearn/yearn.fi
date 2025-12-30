@@ -1,6 +1,13 @@
 import { useChartStyle } from '@lib/contexts/useChartStyle'
 import type { TPpsChartData } from '@nextgen/types/charts'
-import { getTimeframeLimit } from '@nextgen/utils/charts'
+import {
+  formatChartMonthYearLabel,
+  formatChartTooltipDate,
+  formatChartWeekLabel,
+  getChartMonthlyTicks,
+  getChartWeeklyTicks,
+  getTimeframeLimit
+} from '@nextgen/utils/charts'
 import { useId, useMemo } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, LineChart, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
@@ -22,6 +29,10 @@ const PERCENT_SERIES_META: Record<PercentSeriesKey, { label: string; color: stri
   }
 }
 
+const shouldOmitZeroTick = (value: number | string) => Number(value) === 0
+const formatPercentTick = (value: number | string) => (shouldOmitZeroTick(value) ? '' : `${value}%`)
+const formatPpsTick = (value: number | string) => (shouldOmitZeroTick(value) ? '' : Number(value).toFixed(3))
+
 export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }: PPSChartProps) {
   const gradientId = useId().replace(/:/g, '')
   const { chartStyle } = useChartStyle()
@@ -34,6 +45,12 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
     }
     return chartData.slice(-limit)
   }, [chartData, timeframe])
+  const isShortTimeframe = timeframe === '30d' || timeframe === '90d'
+  const ticks = useMemo(
+    () => (isShortTimeframe ? getChartWeeklyTicks(filteredData, true) : getChartMonthlyTicks(filteredData, true)),
+    [filteredData, isShortTimeframe]
+  )
+  const tickFormatter = isShortTimeframe ? formatChartWeekLabel : formatChartMonthYearLabel
 
   const isPercentSeries = dataKey !== 'PPS'
   const seriesColor = isPercentSeries ? `var(--color-${dataKey})` : 'var(--color-pps)'
@@ -69,13 +86,15 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           <CartesianGrid vertical={false} />
           <XAxis
             dataKey={'date'}
+            ticks={ticks}
+            tickFormatter={tickFormatter}
             tick={{ fill: 'var(--chart-axis)' }}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
           />
           <YAxis
             domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']}
-            tickFormatter={(value) => (isPercentSeries ? `${value}%` : Number(value).toFixed(3))}
+            tickFormatter={(value) => (isPercentSeries ? formatPercentTick(value) : formatPpsTick(value))}
             tick={{ fill: 'var(--chart-axis)' }}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
@@ -87,6 +106,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
                   ? [`${(value ?? 0).toFixed(2)}%`, PERCENT_SERIES_META[dataKey as PercentSeriesKey].label]
                   : [(value ?? 0).toFixed(3), 'PPS']
               }
+              labelFormatter={formatChartTooltipDate}
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
                 borderRadius: 'var(--chart-tooltip-radius)',
@@ -129,13 +149,15 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           </defs>
           <XAxis
             dataKey={'date'}
+            ticks={ticks}
+            tickFormatter={tickFormatter}
             tick={{ fill: 'var(--chart-axis)' }}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
           />
           <YAxis
             domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']}
-            tickFormatter={(value) => (isPercentSeries ? `${value}%` : Number(value).toFixed(3))}
+            tickFormatter={(value) => (isPercentSeries ? formatPercentTick(value) : formatPpsTick(value))}
             tick={{ fill: 'var(--chart-axis)' }}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
@@ -147,6 +169,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
                   ? [`${(value ?? 0).toFixed(2)}%`, PERCENT_SERIES_META[dataKey as PercentSeriesKey].label]
                   : [(value ?? 0).toFixed(3), 'PPS']
               }
+              labelFormatter={formatChartTooltipDate}
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
                 borderRadius: 'var(--chart-tooltip-radius)',
@@ -204,6 +227,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
                 ? [`${(value ?? 0).toFixed(2)}%`, PERCENT_SERIES_META[dataKey as PercentSeriesKey].label]
                 : [(value ?? 0).toFixed(3), 'PPS']
             }
+            labelFormatter={formatChartTooltipDate}
             contentStyle={{
               backgroundColor: 'var(--chart-tooltip-bg)',
               borderRadius: 'var(--chart-tooltip-radius)',
