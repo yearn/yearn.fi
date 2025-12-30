@@ -1,33 +1,54 @@
 import Link from '@components/Link'
-import { Button } from '@lib/components/Button'
 import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
-import { toAddress } from '@lib/utils'
+import { cl, toAddress } from '@lib/utils'
 import { VaultsListEmpty } from '@vaults-shared/components/list/VaultsListEmpty'
+import { VaultsFilters } from '@vaults-shared/components/VaultsFilters'
 import type { TPossibleSortBy } from '@vaults-shared/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-shared/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults-shared/hooks/useVaultsQueryArgs'
-import { FiltersV2 } from '@vaults-v2/components/FiltersV2'
-import { DEFAULT_VAULTS_CATEGORIES_KEYS } from '@vaults-v2/constants'
-import { Filters } from '@vaults-v3/components/Filters'
 import { VaultsV3AuxiliaryList } from '@vaults-v3/components/list/VaultsV3AuxiliaryList'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
 import { TrendingVaults } from '@vaults-v3/components/TrendingVaults'
-import {
-  ALL_VAULTSV3_CATEGORIES,
-  ALL_VAULTSV3_KINDS_KEYS,
-  DEFAULT_SELECTED_VAULTSV3_CATEGORIES
-} from '@vaults-v3/constants'
+import { ALL_VAULTSV3_CATEGORIES } from '@vaults-v3/constants'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
+
+import { VaultVersionToggle } from './VaultVersionToggle'
+import { getVaultTypeLabel, type TVaultType } from './vaultTypeCopy'
 
 const AVAILABLE_TOGGLE_VALUE = 'available'
 const HOLDINGS_TOGGLE_VALUE = 'holdings'
-
-type TVaultType = 'factory' | 'v3'
+const V2_SUPPORTED_CHAINS = [1, 10, 42161]
+const V3_SUPPORTED_CHAINS = [1, 747474, 8453, 42161, 137]
+const V3_PRIMARY_CHAIN_IDS = [1, 747474]
+const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
+const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
+const V2_ASSET_CATEGORIES = ['Stablecoin', 'Volatile']
+const V3_KIND_OPTIONS = [
+  { value: 'multi', label: 'Allocator Vault' },
+  { value: 'single', label: 'Strategy Vault' }
+] as const
+const V2_KIND_OPTIONS = [
+  { value: 'factory', label: 'Factory' },
+  { value: 'legacy', label: 'Legacy' }
+] as const
+const PROTOCOL_OPTIONS = [
+  'Curve',
+  'Velodrome',
+  'Aerodrome',
+  'Balancer',
+  'Fluid',
+  'Morpho',
+  'Aave',
+  'Sky',
+  'Silo',
+  'Compound'
+]
+const AGGRESSIVENESS_OPTIONS = [-1, -2, -3]
 
 function useVaultType(): TVaultType {
   const [searchParams] = useSearchParams()
@@ -35,16 +56,38 @@ function useVaultType(): TVaultType {
   return type === 'factory' ? 'factory' : 'v3'
 }
 
+const toggleString = (current: string[] | null, next: string): string[] => {
+  const existing = current ?? []
+  if (existing.includes(next)) {
+    return existing.filter((value) => value !== next)
+  }
+  return [...existing, next]
+}
+
+const toggleNumber = (current: number[] | null, next: number): number[] => {
+  const existing = current ?? []
+  if (existing.includes(next)) {
+    return existing.filter((value) => value !== next)
+  }
+  return [...existing, next]
+}
+
 type TListOfVaultsProps = {
   search: string | null | undefined
   types: string[] | null
   chains: number[] | null
   categories: string[] | null
+  protocols: string[] | null
+  aggressiveness: number[] | null
+  showHiddenYearnVaults: boolean
   sortDirection: TSortDirection
   sortBy: TPossibleSortBy
   onSearch: (value: string) => void
   onChangeTypes: (value: string[] | null) => void
   onChangeCategories: (value: string[] | null) => void
+  onChangeProtocols: (value: string[] | null) => void
+  onChangeAggressiveness: (value: number[] | null) => void
+  onChangeShowHiddenYearnVaults: (value: boolean) => void
   onChangeChains: (value: number[] | null) => void
   onChangeSortDirection: (value: TSortDirection | '') => void
   onChangeSortBy: (value: TPossibleSortBy | '') => void
@@ -58,11 +101,17 @@ function ListOfVaults({
   types,
   chains,
   categories,
+  protocols,
+  aggressiveness,
+  showHiddenYearnVaults,
   sortDirection,
   sortBy,
   onSearch,
   onChangeTypes,
   onChangeCategories,
+  onChangeProtocols,
+  onChangeAggressiveness,
+  onChangeShowHiddenYearnVaults,
   onChangeChains,
   onChangeSortDirection,
   onChangeSortBy,
@@ -72,6 +121,7 @@ function ListOfVaults({
 }: TListOfVaultsProps): ReactElement {
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
+  const lastSelectedKindRef = useRef<'multi' | 'single'>('multi')
 
   useLayoutEffect(() => {
     const filtersElement = filtersRef.current
@@ -106,14 +156,60 @@ function ListOfVaults({
     return () => observer.disconnect()
   }, [])
 
+  const sanitizedV3Types = useMemo(() => {
+    if (vaultType !== 'v3') {
+      return []
+    }
+    const selected = (types || []).filter((type) => type === 'multi' || type === 'single')
+    if (selected.length === 0) {
+      return ['multi']
+    }
+    return selected
+  }, [types, vaultType])
+
+  const sanitizedV2Types = useMemo(() => {
+    if (vaultType !== 'factory') {
+      return []
+    }
+    return (types || []).filter((type) => type === 'factory' || type === 'legacy')
+  }, [types, vaultType])
+
+  const sanitizedCategories = useMemo(() => {
+    const allowed = vaultType === 'v3' ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
+    return (categories || []).filter((value) => allowed.includes(value))
+  }, [categories, vaultType])
+
+  const sanitizedProtocols = useMemo(() => {
+    return (protocols || []).filter((value) => PROTOCOL_OPTIONS.includes(value))
+  }, [protocols])
+
+  const sanitizedAggressiveness = useMemo(() => {
+    return (aggressiveness || []).filter((value) => AGGRESSIVENESS_OPTIONS.includes(value))
+  }, [aggressiveness])
+
+  useEffect(() => {
+    if (sanitizedV3Types.length === 1 && (sanitizedV3Types[0] === 'multi' || sanitizedV3Types[0] === 'single')) {
+      lastSelectedKindRef.current = sanitizedV3Types[0]
+    }
+  }, [sanitizedV3Types])
+
   // Use the appropriate filter hook based on vault type
   const v3FilterResult = useV3VaultFilter(
-    vaultType === 'v3' ? types : null,
+    vaultType === 'v3' ? sanitizedV3Types : null,
     chains,
     search || '',
-    vaultType === 'v3' ? categories : null
+    vaultType === 'v3' ? sanitizedCategories : null,
+    vaultType === 'v3' ? sanitizedProtocols : null,
+    vaultType === 'v3' ? sanitizedAggressiveness : null,
+    vaultType === 'v3' ? showHiddenYearnVaults : undefined
   )
-  const v2FilterResult = useV2VaultFilter(null, chains, search || '')
+  const v2FilterResult = useV2VaultFilter(
+    vaultType === 'factory' ? sanitizedV2Types : null,
+    chains,
+    search || '',
+    vaultType === 'factory' ? sanitizedCategories : null,
+    vaultType === 'factory' ? sanitizedProtocols : null
+  )
 
   const {
     filteredVaults,
@@ -125,10 +221,16 @@ function ListOfVaults({
 
   const totalMatchingVaults = vaultType === 'v3' ? (v3FilterResult.totalMatchingVaults ?? 0) : 0
   const totalHoldingsMatching = vaultType === 'v3' ? (v3FilterResult.totalHoldingsMatching ?? 0) : 0
-  const totalMigratableMatching = vaultType === 'v3' ? (v3FilterResult.totalMigratableMatching ?? 0) : 0
-  const totalRetiredMatching = vaultType === 'v3' ? (v3FilterResult.totalRetiredMatching ?? 0) : 0
 
-  const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(types, null, '', categories)
+  const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(
+    vaultType === 'v3' ? sanitizedV3Types : null,
+    null,
+    '',
+    vaultType === 'v3' ? sanitizedCategories : null,
+    vaultType === 'v3' ? sanitizedProtocols : null,
+    vaultType === 'v3' ? sanitizedAggressiveness : null,
+    vaultType === 'v3' ? showHiddenYearnVaults : undefined
+  )
 
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
@@ -209,8 +311,6 @@ function ListOfVaults({
     return sortedVaults.filter((vault) => !pinnedVaultKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
   }, [pinnedVaultKeys, pinnedVaults, sortedVaults])
 
-  const displayedVaults = useMemo(() => [...pinnedVaults, ...mainVaults], [pinnedVaults, mainVaults])
-
   const holdingsKeySet = useMemo(
     () => new Set(holdingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
     [holdingsVaults]
@@ -232,91 +332,311 @@ function ListOfVaults({
     [sortedSuggestedV2Candidates, holdingsKeySet]
   )
 
-  const visibleFlagCounts = displayedVaults.reduce(
-    (counts, vault) => {
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
-      const flags = vaultFlags[key]
+  const v3FiltersCount = useMemo(() => {
+    const hasMulti = sanitizedV3Types.includes('multi')
+    const hasSingle = sanitizedV3Types.includes('single')
+    const kindMode = hasMulti && hasSingle ? 'both' : hasMulti ? 'multi' : 'single'
+    const typeCount = kindMode === 'multi' ? 0 : 1
+    const categoryCount = sanitizedCategories.length
+    const protocolCount = sanitizedProtocols.length
+    const aggressivenessCount = sanitizedAggressiveness.length
+    return typeCount + categoryCount + protocolCount + aggressivenessCount
+  }, [sanitizedV3Types, sanitizedCategories, sanitizedProtocols, sanitizedAggressiveness])
 
-      if (flags?.hasHoldings) {
-        counts.holdings += 1
-      }
-      if (flags?.isMigratable) {
-        counts.migratable += 1
-      }
-      if (flags?.isRetired) {
-        counts.retired += 1
-      }
+  const v2FiltersCount = useMemo(() => {
+    return sanitizedV2Types.length + sanitizedCategories.length + sanitizedProtocols.length
+  }, [sanitizedV2Types, sanitizedCategories, sanitizedProtocols])
 
-      return counts
-    },
-    { holdings: 0, migratable: 0, retired: 0 }
+  const v3FiltersPanel = (
+    <div className={'mt-4 grid grid-cols-1 gap-6 md:grid-cols-2'}>
+      <div className={'flex flex-col gap-6'}>
+        <div>
+          <p className={'mb-2 text-sm text-text-secondary'}>{'Asset Category'}</p>
+          <div className={'space-y-2'}>
+            {V3_ASSET_CATEGORIES.map((value) => {
+              const isChecked = sanitizedCategories.includes(value)
+              return (
+                <label
+                  key={value}
+                  className={cl(
+                    'flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors',
+                    isChecked ? 'border-border bg-surface-tertiary/80' : 'border-border hover:bg-surface-tertiary/40'
+                  )}
+                >
+                  <span className={'text-sm font-medium text-text-primary'}>{value}</span>
+                  <input
+                    type={'checkbox'}
+                    className={'checkbox accent-blue-500'}
+                    checked={isChecked}
+                    onChange={(): void => onChangeCategories(toggleString(sanitizedCategories, value))}
+                  />
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+      <div className={'flex flex-col gap-6'}>
+        <div>
+          <p className={'mb-2 text-sm text-text-secondary'}>{'Protocol'}</p>
+          <div className={'max-h-[260px] space-y-2 overflow-y-auto pr-1'}>
+            {PROTOCOL_OPTIONS.map((protocol) => {
+              const isChecked = sanitizedProtocols.includes(protocol)
+              return (
+                <label
+                  key={protocol}
+                  className={cl(
+                    'flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors',
+                    isChecked ? 'border-border bg-surface-tertiary/80' : 'border-border hover:bg-surface-tertiary/40'
+                  )}
+                >
+                  <span className={'text-sm font-medium text-text-primary'}>{protocol}</span>
+                  <input
+                    type={'checkbox'}
+                    className={'checkbox accent-blue-500'}
+                    checked={isChecked}
+                    onChange={(): void => onChangeProtocols(toggleString(sanitizedProtocols, protocol))}
+                  />
+                </label>
+              )
+            })}
+          </div>
+        </div>
+        <div>
+          <p className={'mb-2 text-sm text-text-secondary'}>{'Aggressiveness'}</p>
+          <div className={'space-y-2'}>
+            {AGGRESSIVENESS_OPTIONS.map((value) => {
+              const isChecked = sanitizedAggressiveness.includes(value)
+              return (
+                <label
+                  key={value}
+                  className={cl(
+                    'flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors',
+                    isChecked ? 'border-border bg-surface-tertiary/80' : 'border-border hover:bg-surface-tertiary/40'
+                  )}
+                >
+                  <span className={'text-sm font-medium text-text-primary'}>{value}</span>
+                  <input
+                    type={'checkbox'}
+                    className={'checkbox accent-blue-500'}
+                    checked={isChecked}
+                    onChange={(): void => onChangeAggressiveness(toggleNumber(sanitizedAggressiveness, value))}
+                  />
+                </label>
+              )
+            })}
+          </div>
+        </div>
+        <details className={'rounded-xl border border-border bg-surface-secondary p-4'}>
+          <summary className={'cursor-pointer text-sm font-semibold text-text-primary'}>{'Advanced'}</summary>
+          <div className={'mt-4 flex flex-col gap-6'}>
+            <label
+              className={
+                'flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2'
+              }
+            >
+              <div className={'min-w-0'}>
+                <p className={'text-sm font-medium text-text-primary'}>{'Show hidden vaults & strategies'}</p>
+                <p className={'text-xs text-text-secondary'}>
+                  {'Includes allocators & strategies that are not featured.'}
+                </p>
+              </div>
+              <input
+                type={'checkbox'}
+                className={'checkbox accent-blue-500'}
+                checked={showHiddenYearnVaults}
+                onChange={(event): void => onChangeShowHiddenYearnVaults(event.target.checked)}
+              />
+            </label>
+
+            <div>
+              <p className={'mb-2 text-sm text-text-secondary'}>{'Vault Kind'}</p>
+              <div className={'flex flex-col gap-3'}>
+                <div className={'flex items-center gap-2'}>
+                  <button
+                    type={'button'}
+                    className={cl(
+                      'flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+                      sanitizedV3Types.includes('multi') && !sanitizedV3Types.includes('single')
+                        ? 'border-border bg-surface text-text-primary'
+                        : 'border-border bg-transparent text-text-secondary hover:text-text-primary'
+                    )}
+                    onClick={(): void => {
+                      onChangeTypes(['multi'])
+                      lastSelectedKindRef.current = 'multi'
+                    }}
+                  >
+                    {V3_KIND_OPTIONS[0].label}
+                  </button>
+                  <button
+                    type={'button'}
+                    className={cl(
+                      'flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+                      sanitizedV3Types.includes('single') && !sanitizedV3Types.includes('multi')
+                        ? 'border-border bg-surface text-text-primary'
+                        : 'border-border bg-transparent text-text-secondary hover:text-text-primary'
+                    )}
+                    onClick={(): void => {
+                      onChangeTypes(['single'])
+                      lastSelectedKindRef.current = 'single'
+                    }}
+                  >
+                    {V3_KIND_OPTIONS[1].label}
+                  </button>
+                </div>
+                <label
+                  className={cl(
+                    'flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors',
+                    sanitizedV3Types.includes('multi') && sanitizedV3Types.includes('single')
+                      ? 'border-border bg-surface-tertiary/80'
+                      : 'border-border hover:bg-surface-tertiary/40'
+                  )}
+                >
+                  <div className={'min-w-0'}>
+                    <p className={'text-sm font-medium text-text-primary'}>{'Show both together'}</p>
+                    <p className={'text-xs text-text-secondary'}>{'Displays allocators and strategies at once.'}</p>
+                  </div>
+                  <input
+                    type={'checkbox'}
+                    className={'checkbox accent-blue-500'}
+                    checked={sanitizedV3Types.includes('multi') && sanitizedV3Types.includes('single')}
+                    onChange={(event): void => {
+                      if (event.target.checked) {
+                        onChangeTypes(['multi', 'single'])
+                        return
+                      }
+                      onChangeTypes([lastSelectedKindRef.current])
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
   )
 
-  const hiddenHoldingsCount = Math.max(totalHoldingsMatching - visibleFlagCounts.holdings, 0)
-  const hiddenMigratableCount = Math.max(totalMigratableMatching - visibleFlagCounts.migratable, 0)
-  const hiddenRetiredCount = Math.max(totalRetiredMatching - visibleFlagCounts.retired, 0)
-
-  const hiddenByFiltersCount = Math.max(totalMatchingVaults - sortedVaults.length, 0)
-  const hasHiddenResults = hiddenByFiltersCount > 0
-  const hasHiddenFlagged = hiddenHoldingsCount > 0 || hiddenMigratableCount > 0 || hiddenRetiredCount > 0
-
-  const renderHiddenBadge = (): ReactNode => {
-    if (!hasHiddenResults) return null
-
-    return (
-      <div className={'flex items-center gap-2 rounded-lg px-3 py-1 text-xs text-text-secondary'}>
-        <span>
-          {hiddenByFiltersCount} {`vault${hiddenByFiltersCount > 1 ? 's' : ''} hidden by filters`}
-        </span>
-        <Button
-          onClick={onResetMultiSelect}
-          className={
-            'h-6 rounded-md bg-text-primary px-3 py-1 text-xs text-surface transition-opacity hover:opacity-90'
-          }
-        >
-          {'Show all'}
-        </Button>
+  const v2FiltersPanel = (
+    <div className={'mt-4 grid grid-cols-1 gap-6 md:grid-cols-2'}>
+      <div className={'flex flex-col gap-6'}>
+        <div>
+          <p className={'mb-2 text-sm text-text-secondary'}>{'Asset Category'}</p>
+          <div className={'space-y-2'}>
+            {V2_ASSET_CATEGORIES.map((value) => {
+              const isChecked = sanitizedCategories.includes(value)
+              return (
+                <label
+                  key={value}
+                  className={cl(
+                    'flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors',
+                    isChecked ? 'border-border bg-surface-tertiary/80' : 'border-border hover:bg-surface-tertiary/40'
+                  )}
+                >
+                  <span className={'text-sm font-medium text-text-primary'}>{value}</span>
+                  <input
+                    type={'checkbox'}
+                    className={'checkbox accent-blue-500'}
+                    checked={isChecked}
+                    onChange={(): void => onChangeCategories(toggleString(sanitizedCategories, value))}
+                  />
+                </label>
+              )
+            })}
+          </div>
+        </div>
+        <details className={'rounded-xl border border-border bg-surface-secondary p-4'}>
+          <summary className={'cursor-pointer text-sm font-semibold text-text-primary'}>{'Advanced'}</summary>
+          <div className={'mt-4'}>
+            <p className={'mb-2 text-sm text-text-secondary'}>{'Vault Kind'}</p>
+            <div className={'space-y-2'}>
+              {V2_KIND_OPTIONS.map((option) => {
+                const isChecked = sanitizedV2Types.includes(option.value)
+                return (
+                  <label
+                    key={option.value}
+                    className={cl(
+                      'flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors',
+                      isChecked ? 'border-border bg-surface-tertiary/80' : 'border-border hover:bg-surface-tertiary/40'
+                    )}
+                  >
+                    <span className={'text-sm font-medium text-text-primary'}>{option.label}</span>
+                    <input
+                      type={'checkbox'}
+                      className={'checkbox accent-blue-500'}
+                      checked={isChecked}
+                      onChange={(): void => onChangeTypes(toggleString(sanitizedV2Types, option.value))}
+                    />
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        </details>
       </div>
-    )
-  }
+      <div className={'flex flex-col gap-6'}>
+        <div>
+          <p className={'mb-2 text-sm text-text-secondary'}>{'Protocol'}</p>
+          <div className={'max-h-[320px] space-y-2 overflow-y-auto pr-1'}>
+            {PROTOCOL_OPTIONS.map((protocol) => {
+              const isChecked = sanitizedProtocols.includes(protocol)
+              return (
+                <label
+                  key={protocol}
+                  className={cl(
+                    'flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors',
+                    isChecked ? 'border-border bg-surface-tertiary/80' : 'border-border hover:bg-surface-tertiary/40'
+                  )}
+                >
+                  <span className={'text-sm font-medium text-text-primary'}>{protocol}</span>
+                  <input
+                    type={'checkbox'}
+                    className={'checkbox accent-blue-500'}
+                    checked={isChecked}
+                    onChange={(): void => onChangeProtocols(toggleString(sanitizedProtocols, protocol))}
+                  />
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 
-  const renderHiddenSearchAlert = (): ReactNode => {
-    if (!hasHiddenResults && !hasHiddenFlagged) {
-      return null
+  const filtersPanelContent = vaultType === 'v3' ? v3FiltersPanel : v2FiltersPanel
+  const filtersCount = vaultType === 'v3' ? v3FiltersCount : v2FiltersCount
+
+  const chainConfig = useMemo(() => {
+    if (vaultType === 'v3') {
+      return {
+        supportedChainIds: V3_SUPPORTED_CHAINS,
+        primaryChainIds: V3_PRIMARY_CHAIN_IDS,
+        defaultSecondaryChainIds: V3_DEFAULT_SECONDARY_CHAIN_IDS,
+        chainDisplayOrder: V3_SUPPORTED_CHAINS,
+        showMoreChainsButton: false,
+        allChainsLabel: 'All Chains'
+      }
     }
-
-    return (
-      <div className={'flex flex-wrap items-center gap-2 text-xs text-text-secondary'}>
-        {renderHiddenBadge()}
-        {hiddenHoldingsCount > 0 ? (
-          <span>
-            {hiddenHoldingsCount} {`holding${hiddenHoldingsCount > 1 ? 's' : ''} hidden by filters`}
-          </span>
-        ) : null}
-        {hiddenMigratableCount > 0 ? (
-          <span>
-            {hiddenMigratableCount} {`migratable vault${hiddenMigratableCount > 1 ? 's are' : ' is'} hidden`}
-          </span>
-        ) : null}
-        {hiddenRetiredCount > 0 ? (
-          <span>
-            {hiddenRetiredCount} {`retired vault${hiddenRetiredCount > 1 ? 's are' : ' is'} hidden`}
-          </span>
-        ) : null}
-      </div>
-    )
-  }
+    return {
+      supportedChainIds: V2_SUPPORTED_CHAINS,
+      primaryChainIds: V2_SUPPORTED_CHAINS,
+      defaultSecondaryChainIds: [],
+      chainDisplayOrder: V2_SUPPORTED_CHAINS,
+      showMoreChainsButton: false,
+      allChainsLabel: 'All'
+    }
+  }, [vaultType])
 
   function renderVaultList(): ReactNode {
-    const defaultCategories =
-      vaultType === 'v3' ? Object.values(ALL_VAULTSV3_CATEGORIES) : DEFAULT_VAULTS_CATEGORIES_KEYS
+    const defaultCategories = vaultType === 'v3' ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
 
     if (isLoadingVaultList) {
       return (
         <VaultsListEmpty
           isLoading={isLoadingVaultList}
           currentSearch={search || ''}
-          currentCategories={vaultType === 'v3' ? categories : types}
+          currentCategories={sanitizedCategories}
           currentChains={chains}
           onReset={onResetMultiSelect}
           defaultCategories={defaultCategories}
@@ -330,7 +650,7 @@ function ListOfVaults({
         <VaultsListEmpty
           isLoading={false}
           currentSearch={search || ''}
-          currentCategories={vaultType === 'v3' ? categories : types}
+          currentCategories={sanitizedCategories}
           currentChains={chains}
           onReset={onResetMultiSelect}
           defaultCategories={defaultCategories}
@@ -373,7 +693,7 @@ function ListOfVaults({
         {'Vaults'}
       </Link>
       <span>{'>'}</span>
-      <span className={'font-medium text-text-primary'}>{vaultType === 'v3' ? 'V3' : 'Factory'}</span>
+      <span className={'font-medium text-text-primary'}>{getVaultTypeLabel(vaultType)}</span>
     </div>
   )
 
@@ -381,30 +701,19 @@ function ListOfVaults({
     <div ref={filtersRef} className={'sticky z-40 w-full bg-app pb-2 shrink-0'} style={{ top: 'var(--header-height)' }}>
       {breadcrumbsElement}
       {suggestedVaultsElement}
-      {vaultType === 'v3' ? (
-        <Filters
-          types={types}
-          shouldDebounce={true}
-          categories={categories}
-          searchValue={search || ''}
-          chains={chains}
-          onChangeChains={onChangeChains}
-          onChangeTypes={onChangeTypes}
-          onChangeCategories={onChangeCategories}
-          onSearch={onSearch}
-          searchAlertContent={renderHiddenSearchAlert()}
-          holdingsVaults={holdingsVaults}
-        />
-      ) : (
-        <FiltersV2
-          shouldDebounce={true}
-          searchValue={search || ''}
-          chains={chains}
-          onChangeChains={onChangeChains}
-          onSearch={onSearch}
-          holdingsVaults={holdingsVaults}
-        />
-      )}
+      <VaultsFilters
+        shouldDebounce={true}
+        searchValue={search || ''}
+        chains={chains}
+        onChangeChains={onChangeChains}
+        onSearch={onSearch}
+        chainConfig={chainConfig}
+        filtersCount={filtersCount}
+        filtersContent={filtersPanelContent}
+        filtersPanelContent={filtersPanelContent}
+        onClearFilters={onResetMultiSelect}
+        leadingControls={<VaultVersionToggle />}
+      />
     </div>
   )
 
@@ -518,22 +827,123 @@ function ListOfVaults({
   )
 }
 
-function Index(): ReactElement {
-  const vaultType = useVaultType()
+function useVaultListExtraFilters(): {
+  protocols: string[] | null
+  aggressiveness: number[] | null
+  showHiddenYearnVaults: boolean
+  onChangeProtocols: (value: string[] | null) => void
+  onChangeAggressiveness: (value: number[] | null) => void
+  onChangeShowHiddenYearnVaults: (value: boolean) => void
+  onResetExtraFilters: () => void
+} {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const readStringList = (key: string): string[] => {
+    const raw = searchParams.get(key)
+    if (!raw || raw === 'none') return []
+    return raw
+      .split('_')
+      .map((value) => value.trim())
+      .filter(Boolean)
+  }
+
+  const readNumberList = (key: string): number[] => {
+    return readStringList(key)
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value))
+  }
+
+  const [protocols, setProtocols] = useState<string[] | null>(() => readStringList('protocol'))
+  const [aggressiveness, setAggressiveness] = useState<number[] | null>(() => readNumberList('aggr'))
+  const [showHiddenYearnVaults, setShowHiddenYearnVaults] = useState<boolean>(() => {
+    const raw = searchParams.get('showHidden')
+    return raw === '1' || raw === 'true'
+  })
+
+  const updateParam = (key: string, value: string[] | number[] | null): void => {
+    const nextParams = new URLSearchParams(window.location.search)
+    if (!value || value.length === 0) {
+      nextParams.delete(key)
+    } else {
+      nextParams.set(key, value.join('_'))
+    }
+    navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
+  }
+
+  return {
+    protocols,
+    aggressiveness,
+    showHiddenYearnVaults,
+    onChangeProtocols: (value): void => {
+      setProtocols(value)
+      updateParam('protocol', value)
+    },
+    onChangeAggressiveness: (value): void => {
+      setAggressiveness(value)
+      updateParam('aggr', value)
+    },
+    onChangeShowHiddenYearnVaults: (value): void => {
+      setShowHiddenYearnVaults(value)
+      const nextParams = new URLSearchParams(window.location.search)
+      if (value) {
+        nextParams.set('showHidden', '1')
+      } else {
+        nextParams.delete('showHidden')
+      }
+      navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
+    },
+    onResetExtraFilters: (): void => {
+      setProtocols([])
+      setAggressiveness([])
+      setShowHiddenYearnVaults(false)
+      const nextParams = new URLSearchParams(window.location.search)
+      nextParams.delete('protocol')
+      nextParams.delete('aggr')
+      nextParams.delete('showHidden')
+      navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
+    }
+  }
+}
+
+function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElement {
+  const {
+    protocols,
+    aggressiveness,
+    showHiddenYearnVaults,
+    onChangeProtocols,
+    onChangeAggressiveness,
+    onChangeShowHiddenYearnVaults,
+    onResetExtraFilters
+  } = useVaultListExtraFilters()
 
   const queryArgs = useQueryArguments({
-    defaultTypes: vaultType === 'v3' ? [ALL_VAULTSV3_KINDS_KEYS[0]] : DEFAULT_VAULTS_CATEGORIES_KEYS,
-    defaultCategories: vaultType === 'v3' ? DEFAULT_SELECTED_VAULTSV3_CATEGORIES : [],
+    defaultTypes: vaultType === 'v3' ? ['multi'] : [],
+    defaultCategories: [],
     defaultPathname: '/vaults',
     defaultSortBy: 'featuringScore',
-    resetTypes: vaultType === 'v3' ? ALL_VAULTSV3_KINDS_KEYS : DEFAULT_VAULTS_CATEGORIES_KEYS,
-    resetCategories: vaultType === 'v3' ? DEFAULT_SELECTED_VAULTSV3_CATEGORIES : []
+    resetTypes: vaultType === 'v3' ? ['multi'] : [],
+    resetCategories: []
   })
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
       <div className={'mx-auto w-full max-w-[1232px] px-4 pb-4'}>
-        <ListOfVaults {...queryArgs} vaultType={vaultType}>
+        <ListOfVaults
+          {...queryArgs}
+          protocols={protocols}
+          aggressiveness={aggressiveness}
+          showHiddenYearnVaults={showHiddenYearnVaults}
+          onChangeProtocols={onChangeProtocols}
+          onChangeAggressiveness={onChangeAggressiveness}
+          onChangeShowHiddenYearnVaults={onChangeShowHiddenYearnVaults}
+          onResetMultiSelect={(): void => {
+            queryArgs.onResetMultiSelect()
+            onResetExtraFilters()
+          }}
+          vaultType={vaultType}
+        >
           {({ filters, list }) => (
             <div className={'flex flex-col'}>
               {filters}
@@ -544,6 +954,11 @@ function Index(): ReactElement {
       </div>
     </div>
   )
+}
+
+function Index(): ReactElement {
+  const vaultType = useVaultType()
+  return <VaultsIndexContent key={vaultType} vaultType={vaultType} />
 }
 
 export default Index

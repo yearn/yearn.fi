@@ -52,6 +52,12 @@ export function VaultsV3ListRow({
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('performance')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
+  const kindLabel =
+    currentVault.kind === 'Multi Strategy'
+      ? 'Allocator Vault'
+      : currentVault.kind === 'Single Strategy'
+        ? 'Strategy Vault'
+        : currentVault.kind
 
   const handleRowClick = (): void => {
     navigate(href)
@@ -153,13 +159,13 @@ export function VaultsV3ListRow({
                     {currentVault.category}
                   </span>
                 ) : null}
-                {currentVault.kind ? (
+                {kindLabel ? (
                   <span
                     className={
                       'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
                     }
                   >
-                    {currentVault.kind}
+                    {kindLabel}
                   </span>
                 ) : null}
               </div>

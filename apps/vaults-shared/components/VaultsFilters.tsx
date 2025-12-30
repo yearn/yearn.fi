@@ -1,6 +1,5 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
-import { MultiSelectDropdown } from '@lib/components/MultiSelectDropdown'
 import { SearchBar } from '@lib/components/SearchBar'
 import { useChainOptions } from '@lib/hooks/useChains'
 import { IconChevron } from '@lib/icons/IconChevron'
@@ -8,32 +7,9 @@ import { IconCross } from '@lib/icons/IconCross'
 import { IconFilter } from '@lib/icons/IconFilter'
 import { LogoYearn } from '@lib/icons/LogoYearn'
 import { cl } from '@lib/utils'
-import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS } from '@vaults-v3/constants'
-
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Drawer } from 'vaul'
-
-type TListHero = {
-  types: string[] | null
-  categories: string[] | null
-  chains: number[] | null
-  searchValue: string
-  shouldDebounce: boolean
-  onChangeTypes: (newType: string[] | null) => void
-  onChangeChains: (chains: number[] | null) => void
-  onChangeCategories: (categories: string[] | null) => void
-  onSearch: (searchValue: string) => void
-  searchAlertContent?: ReactNode
-  holdingsVaults: TYDaemonVault[]
-}
-
-const CHAIN_DISPLAY_ORDER = [1, 747474, 8453, 42161, 137]
-const PRIMARY_CHAIN_IDS = [1, 747474]
-const DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
-
-const isPrimaryChain = (chainId: number): boolean => PRIMARY_CHAIN_IDS.includes(chainId)
 
 type TChainButton = {
   id: number
@@ -42,39 +18,67 @@ type TChainButton = {
   isSelected: boolean
 }
 
-export function Filters({
-  types,
-  onChangeTypes,
-  categories,
-  onChangeCategories,
-  searchValue,
+type TChainConfig = {
+  supportedChainIds: number[]
+  primaryChainIds?: number[]
+  defaultSecondaryChainIds?: number[]
+  chainDisplayOrder?: number[]
+  showMoreChainsButton?: boolean
+  allChainsLabel?: string
+}
+
+type TVaultsFiltersProps = {
+  chains: number[] | null
+  searchValue: string
+  onChangeChains: (chains: number[] | null) => void
+  onSearch: (searchValue: string) => void
+  shouldDebounce?: boolean
+  searchAlertContent?: ReactNode
+  leadingControls?: ReactNode
+  chainConfig: TChainConfig
+  filtersCount?: number
+  filtersContent?: ReactNode
+  filtersPanelContent?: ReactNode
+  onClearFilters?: () => void
+}
+
+export function VaultsFilters({
   chains,
+  searchValue,
+  onChangeChains,
   onSearch,
   shouldDebounce,
-  onChangeChains,
-  searchAlertContent
-}: TListHero): ReactElement {
+  searchAlertContent,
+  leadingControls,
+  chainConfig,
+  filtersCount = 0,
+  filtersContent,
+  filtersPanelContent,
+  onClearFilters
+}: TVaultsFiltersProps): ReactElement {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
-  const [customChainIds, setCustomChainIds] = useState<number[]>(DEFAULT_SECONDARY_CHAIN_IDS)
-  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false)
+  const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
+  const hasFiltersContent = Boolean(filtersContent)
+  const hasPanelContent = Boolean(filtersPanelContent)
 
-  const handleDropdownOpenChange = (dropdownId: string, isOpen: boolean): void => {
-    if (isOpen) {
-      setActiveDropdown(dropdownId)
-    } else if (activeDropdown === dropdownId) {
-      setActiveDropdown(null)
-    }
-  }
+  const {
+    supportedChainIds,
+    primaryChainIds: primaryChainIdsProp = supportedChainIds,
+    defaultSecondaryChainIds = [],
+    chainDisplayOrder = supportedChainIds,
+    showMoreChainsButton = false,
+    allChainsLabel = 'All Chains'
+  } = chainConfig
 
-  const chainOptions = useChainOptions(chains).filter(
-    (option): boolean =>
-      option.value === 1 ||
-      option.value === 137 ||
-      option.value === 42161 ||
-      option.value === 8453 ||
-      option.value === 747474
+  const [customChainIds, setCustomChainIds] = useState<number[]>(defaultSecondaryChainIds)
+
+  useEffect(() => {
+    setCustomChainIds(defaultSecondaryChainIds)
+  }, [defaultSecondaryChainIds])
+
+  const chainOptions = useChainOptions(chains).filter((option): boolean =>
+    supportedChainIds.includes(Number(option.value))
   )
 
   const chainOptionMap = useMemo(() => {
@@ -85,21 +89,28 @@ export function Filters({
     return map
   }, [chainOptions])
 
+  const primaryChainIds = useMemo(() => {
+    return primaryChainIdsProp.filter((chainId) => chainOptionMap.has(chainId))
+  }, [primaryChainIdsProp, chainOptionMap])
+
+  const primaryChainIdSet = useMemo(() => new Set(primaryChainIds), [primaryChainIds])
+
   const pinnedChainIds = useMemo(() => {
     const seen = new Set<number>()
     const sanitized: number[] = []
     for (const id of customChainIds) {
       const chainId = Number(id)
-      if (!seen.has(chainId) && !isPrimaryChain(chainId) && chainOptionMap.has(chainId)) {
+      if (!seen.has(chainId) && !primaryChainIdSet.has(chainId) && chainOptionMap.has(chainId)) {
         seen.add(chainId)
         sanitized.push(chainId)
       }
     }
     return sanitized
-  }, [customChainIds, chainOptionMap])
+  }, [customChainIds, primaryChainIdSet, chainOptionMap])
 
   const visibleChainIds = useMemo(() => {
     const ordered: number[] = []
+    const baseIds = primaryChainIds.length > 0 ? primaryChainIds : supportedChainIds
     const push = (chainId: number): void => {
       if (!chainOptionMap.has(chainId)) {
         return
@@ -109,7 +120,7 @@ export function Filters({
       }
     }
 
-    for (const id of PRIMARY_CHAIN_IDS) {
+    for (const id of baseIds) {
       push(id)
     }
     for (const id of pinnedChainIds) {
@@ -117,7 +128,7 @@ export function Filters({
     }
 
     return ordered
-  }, [chainOptionMap, pinnedChainIds])
+  }, [primaryChainIds, supportedChainIds, pinnedChainIds, chainOptionMap])
 
   const selectedChainSet = useMemo(() => new Set(chains ?? []), [chains])
 
@@ -142,11 +153,11 @@ export function Filters({
 
   const chainOrderMap = useMemo(() => {
     const map = new Map<number, number>()
-    CHAIN_DISPLAY_ORDER.forEach((chainId, index) => {
+    chainDisplayOrder.forEach((chainId, index) => {
       map.set(chainId, index)
     })
     return map
-  }, [])
+  }, [chainDisplayOrder])
 
   const chainModalOptions = useMemo(() => {
     return [...chainOptions].sort((a, b) => {
@@ -178,7 +189,7 @@ export function Filters({
       if (seen.has(id)) {
         continue
       }
-      if (isPrimaryChain(id) || !chainOptionMap.has(id)) {
+      if (primaryChainIdSet.has(id) || !chainOptionMap.has(id)) {
         continue
       }
       seen.add(id)
@@ -187,29 +198,9 @@ export function Filters({
     setCustomChainIds(unique)
   }
 
-  const typeOptions = useMemo((): TMultiSelectOptionProps[] => {
-    return Object.entries(ALL_VAULTSV3_KINDS).map(
-      ([key, value]): TMultiSelectOptionProps => ({
-        value: key,
-        label: value.replaceAll(' Vaults', ''),
-        isSelected: types?.includes(key) || false
-      })
-    )
-  }, [types])
-
-  const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
-    return Object.values(ALL_VAULTSV3_CATEGORIES).map(
-      (value): TMultiSelectOptionProps => ({
-        value: value,
-        label: value,
-        isSelected: categories?.includes(value) || false
-      })
-    )
-  }, [categories])
-
   return (
     <>
-      <div className={'relative col-span-24 w-full  md:col-span-19'}>
+      <div className={'relative col-span-24 w-full md:col-span-19'}>
         <div className={'md:hidden'}>
           <div className={'mb-5 w-full'}>
             <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
@@ -231,9 +222,6 @@ export function Filters({
             open={isMobileFiltersOpen}
             onOpenChange={(isOpen): void => {
               setIsMobileFiltersOpen(isOpen)
-              if (!isOpen) {
-                setActiveDropdown(null)
-              }
             }}
             direction={'bottom'}
           >
@@ -269,21 +257,19 @@ export function Filters({
                     areAllChainsSelected={areAllChainsSelected}
                     onSelectChain={handleChainToggle}
                     onOpenChainModal={(): void => setIsChainModalOpen(true)}
-                    showMoreChainsButton={false}
-                    isMoreFiltersOpen={isMoreFiltersOpen}
-                    onToggleMoreFilters={(): void => setIsMoreFiltersOpen((prev) => !prev)}
-                    categoryOptions={categoryOptions}
-                    onChangeCategories={onChangeCategories}
-                    typeOptions={typeOptions}
-                    onChangeTypes={onChangeTypes}
-                    activeDropdown={activeDropdown}
-                    onDropdownOpenChange={handleDropdownOpenChange}
+                    showMoreChainsButton={showMoreChainsButton}
+                    allChainsLabel={allChainsLabel}
+                    showFiltersButton={hasFiltersContent && !hasPanelContent}
+                    filtersCount={filtersCount}
+                    onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
                     showInlineSearch={false}
                     searchValue={searchValue}
                     onSearch={onSearch}
                     shouldDebounce={shouldDebounce}
                     searchAlertContent={searchAlertContent}
+                    leadingControls={leadingControls}
                   />
+                  {hasPanelContent ? filtersPanelContent : null}
                 </div>
               </Drawer.Content>
             </Drawer.Portal>
@@ -297,31 +283,38 @@ export function Filters({
             areAllChainsSelected={areAllChainsSelected}
             onSelectChain={handleChainToggle}
             onOpenChainModal={(): void => setIsChainModalOpen(true)}
-            showMoreChainsButton={false}
-            isMoreFiltersOpen={isMoreFiltersOpen}
-            onToggleMoreFilters={(): void => setIsMoreFiltersOpen((prev) => !prev)}
-            categoryOptions={categoryOptions}
-            onChangeCategories={onChangeCategories}
-            typeOptions={typeOptions}
-            onChangeTypes={onChangeTypes}
-            activeDropdown={activeDropdown}
-            onDropdownOpenChange={handleDropdownOpenChange}
+            showMoreChainsButton={showMoreChainsButton}
+            allChainsLabel={allChainsLabel}
+            showFiltersButton={hasFiltersContent}
+            filtersCount={filtersCount}
+            onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
             showInlineSearch={true}
             searchValue={searchValue}
             onSearch={onSearch}
             shouldDebounce={shouldDebounce}
             searchAlertContent={searchAlertContent}
+            leadingControls={leadingControls}
           />
         </div>
       </div>
-      <ChainSelectionModal
-        isOpen={isChainModalOpen}
-        onClose={(): void => setIsChainModalOpen(false)}
-        options={chainModalOptions}
-        selectedChainIds={pinnedChainIds}
-        lockedChainIds={PRIMARY_CHAIN_IDS}
-        onApply={handleApplyAdditionalChains}
-      />
+      {showMoreChainsButton ? (
+        <ChainSelectionModal
+          isOpen={isChainModalOpen}
+          onClose={(): void => setIsChainModalOpen(false)}
+          options={chainModalOptions}
+          selectedChainIds={pinnedChainIds}
+          lockedChainIds={primaryChainIds}
+          onApply={handleApplyAdditionalChains}
+        />
+      ) : null}
+      {hasFiltersContent ? (
+        <FiltersModal
+          isOpen={isFiltersModalOpen}
+          onClose={(): void => setIsFiltersModalOpen(false)}
+          onClear={onClearFilters}
+          filtersContent={filtersContent}
+        />
+      ) : null}
     </>
   )
 }
@@ -333,19 +326,16 @@ function FilterControls({
   onSelectChain,
   onOpenChainModal,
   showMoreChainsButton = true,
-  isMoreFiltersOpen,
-  onToggleMoreFilters,
-  categoryOptions,
-  onChangeCategories,
-  typeOptions,
-  onChangeTypes,
-  activeDropdown,
-  onDropdownOpenChange,
+  allChainsLabel,
+  showFiltersButton = true,
+  filtersCount,
+  onOpenFiltersModal,
   showInlineSearch,
   searchValue,
   onSearch,
   shouldDebounce,
-  searchAlertContent
+  searchAlertContent,
+  leadingControls
 }: {
   chainButtons: TChainButton[]
   onSelectAllChains: () => void
@@ -357,25 +347,23 @@ function FilterControls({
    * Disable when all supported chains fit inline; re-enable if/when we add more chains.
    */
   showMoreChainsButton?: boolean
-  isMoreFiltersOpen: boolean
-  onToggleMoreFilters: () => void
-  categoryOptions: TMultiSelectOptionProps[]
-  onChangeCategories: (categories: string[] | null) => void
-  typeOptions: TMultiSelectOptionProps[]
-  onChangeTypes: (types: string[] | null) => void
-  activeDropdown: string | null
-  onDropdownOpenChange: (dropdownId: string, isOpen: boolean) => void
+  allChainsLabel: string
+  showFiltersButton?: boolean
+  filtersCount: number
+  onOpenFiltersModal: () => void
   showInlineSearch: boolean
   searchValue: string
   onSearch: (value: string) => void
   shouldDebounce?: boolean
   searchAlertContent?: ReactNode
+  leadingControls?: ReactNode
 }): ReactElement {
   return (
     <div className={'flex flex-col gap-4'}>
       <div>
         <div className={'flex flex-col gap-2'}>
           <div className={'flex w-full flex-wrap items-center gap-3'}>
+            {leadingControls ? <div className={'shrink-0'}>{leadingControls}</div> : null}
             <div
               className={
                 'flex h-10 shrink-0 items-stretch overflow-hidden rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
@@ -384,7 +372,7 @@ function FilterControls({
               <button
                 type={'button'}
                 className={cl(
-                  'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+                  'flex h-full items-center gap-1 px-2 font-medium transition-colors',
                   'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
                   'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
                 )}
@@ -395,14 +383,14 @@ function FilterControls({
                 <span className={'size-5 overflow-hidden rounded-full'}>
                   <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
                 </span>
-                <span className={'whitespace-nowrap'}>{'All Chains'}</span>
+                <span className={'whitespace-nowrap'}>{allChainsLabel}</span>
               </button>
               {chainButtons.map((chain) => (
                 <button
                   key={chain.id}
                   type={'button'}
                   className={cl(
-                    'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+                    'flex h-full items-center gap-1 px-2 font-medium transition-colors',
                     'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
                     'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
                   )}
@@ -434,23 +422,33 @@ function FilterControls({
                 </button>
               ) : null}
             </div>
-            <div className={'flex flex-row items-center gap-3 flex-1'}>
-              <button
-                type={'button'}
-                className={cl(
-                  'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-border px-4 py-2 text-sm font-medium text-text-secondary bg-surface transition-colors',
-                  'hover:text-text-secondary',
-                  'data-[active=true]:border-border-hover data-[active=true]:text-text-secondary'
-                )}
-                data-active={isMoreFiltersOpen}
-                onClick={onToggleMoreFilters}
-                aria-expanded={isMoreFiltersOpen}
-              >
-                <IconFilter className={'size-4'} />
-                <span>{isMoreFiltersOpen ? 'Filters' : 'Filters'}</span>
-              </button>
+            <div className={'flex flex-row items-center gap-3 flex-1 min-w-0'}>
+              {showFiltersButton ? (
+                <button
+                  type={'button'}
+                  className={cl(
+                    'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-border px-4 py-2 text-sm font-medium text-text-secondary bg-surface transition-colors',
+                    'hover:text-text-secondary',
+                    'data-[active=true]:border-border-hover data-[active=true]:text-text-secondary'
+                  )}
+                  onClick={onOpenFiltersModal}
+                  aria-label={'Open filters'}
+                >
+                  <IconFilter className={'size-4'} />
+                  <span>{'Filters'}</span>
+                  {filtersCount > 0 ? (
+                    <span
+                      className={
+                        'ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-surface-tertiary px-1.5 text-xs text-text-primary'
+                      }
+                    >
+                      {filtersCount}
+                    </span>
+                  ) : null}
+                </button>
+              ) : null}
               {showInlineSearch ? (
-                <div className={'flex-1'}>
+                <div className={'flex-1 min-w-[180px]'}>
                   <SearchBar
                     className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
                     iconClassName={'text-text-primary'}
@@ -467,45 +465,93 @@ function FilterControls({
           </div>
         </div>
       </div>
-      {isMoreFiltersOpen ? (
-        <div className={'grid grid-cols-1 gap-4 md:grid-cols-2'}>
-          <div className={'w-full'}>
-            <p className={'pb-2 text-text-secondary'}>{'Select Category'}</p>
-            <MultiSelectDropdown
-              buttonClassName={'max-w-none rounded-lg bg-surface-tertiary text-text-primary md:w-full'}
-              comboboxOptionsClassName={'bg-surface-tertiary rounded-lg'}
-              options={categoryOptions}
-              placeholder={'Filter categories'}
-              isOpen={activeDropdown === 'categories'}
-              onOpenChange={(isOpen): void => onDropdownOpenChange('categories', isOpen)}
-              onSelect={(options): void => {
-                const selectedCategories = options
-                  .filter((o): boolean => o.isSelected)
-                  .map((option): string => String(option.value))
-                onChangeCategories(selectedCategories)
-              }}
-            />
-          </div>
-          <div className={'w-full'}>
-            <p className={'pb-2 text-text-secondary'}>{'Select Type'}</p>
-            <MultiSelectDropdown
-              buttonClassName={'max-w-none rounded-lg bg-surface-tertiary text-text-primary md:w-full'}
-              comboboxOptionsClassName={'bg-surface-tertiary rounded-lg'}
-              options={typeOptions}
-              placeholder={'Filter list'}
-              isOpen={activeDropdown === 'types'}
-              onOpenChange={(isOpen): void => onDropdownOpenChange('types', isOpen)}
-              onSelect={(options): void => {
-                const selectedTypes = options
-                  .filter((o): boolean => o.isSelected)
-                  .map((option): string => String(option.value))
-                onChangeTypes(selectedTypes)
-              }}
-            />
+    </div>
+  )
+}
+
+function FiltersModal({
+  isOpen,
+  onClose,
+  onClear,
+  filtersContent
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onClear?: () => void
+  filtersContent: ReactNode
+}): ReactElement {
+  return (
+    <Transition show={isOpen} as={Fragment}>
+      <Dialog as={'div'} className={'relative z-70'} onClose={onClose}>
+        <TransitionChild
+          as={Fragment}
+          enter={'duration-200 ease-out'}
+          enterFrom={'opacity-0'}
+          enterTo={'opacity-100'}
+          leave={'duration-150 ease-in'}
+          leaveFrom={'opacity-100'}
+          leaveTo={'opacity-0'}
+        >
+          <div className={'fixed inset-0 bg-black/40'} />
+        </TransitionChild>
+        <div className={'fixed inset-0 overflow-y-auto'}>
+          <div className={'flex min-h-full items-center justify-center p-4'}>
+            <TransitionChild
+              as={Fragment}
+              enter={'duration-200 ease-out'}
+              enterFrom={'opacity-0 scale-95'}
+              enterTo={'opacity-100 scale-100'}
+              leave={'duration-150 ease-in'}
+              leaveFrom={'opacity-100 scale-100'}
+              leaveTo={'opacity-0 scale-95'}
+            >
+              <Dialog.Panel
+                className={
+                  'w-full max-w-3xl rounded-3xl border border-border bg-surface p-6 text-text-primary shadow-lg'
+                }
+              >
+                <div className={'flex items-start justify-between gap-4'}>
+                  <Dialog.Title className={'text-lg font-semibold text-text-primary'}>{'Filters'}</Dialog.Title>
+                  <button
+                    type={'button'}
+                    onClick={onClose}
+                    className={
+                      'inline-flex size-8 items-center justify-center rounded-full border border-transparent text-text-secondary hover:border-border hover:text-text-primary'
+                    }
+                    aria-label={'Close filters'}
+                  >
+                    <IconCross className={'size-4'} />
+                  </button>
+                </div>
+                {filtersContent}
+                <div className={'mt-6 flex justify-end gap-3'}>
+                  {onClear ? (
+                    <button
+                      type={'button'}
+                      className={
+                        'rounded-full border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-border-hover'
+                      }
+                      onClick={onClear}
+                    >
+                      {'Clear'}
+                    </button>
+                  ) : null}
+                  <button
+                    type={'button'}
+                    className={
+                      'rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-surface transition-colors hover:bg-neutral-800'
+                    }
+                    onClick={onClose}
+                  >
+                    {'Done'}
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </TransitionChild>
           </div>
         </div>
-      ) : null}
-    </div>
+      </Dialog>
+    </Transition>
   )
 }
 
@@ -551,7 +597,7 @@ function ChainSelectionModal({
 
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog as={'div'} className={'relative z-[60]'} onClose={onClose}>
+      <Dialog as={'div'} className={'relative z-70'} onClose={onClose}>
         <TransitionChild
           as={Fragment}
           enter={'duration-200 ease-out'}
@@ -617,7 +663,7 @@ function ChainSelectionModal({
                           </div>
                           <input
                             type={'checkbox'}
-                            className={'checkbox accent-blue-500'} // or any other accent color
+                            className={'checkbox accent-blue-500'}
                             checked={isChecked}
                             disabled={isLocked}
                             onChange={(): void => toggleChain(chainId)}
