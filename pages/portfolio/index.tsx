@@ -246,92 +246,98 @@ function PortfolioPage(): ReactElement {
           </div>
           <div>
             <h1 className={'text-4xl font-black text-text-primary'}>{'Account Overview'}</h1>
-            <p className={'mt-2 text-base text-text-secondary'}>
-              {'Monitor your balances, returns, and discover new vaults.'}
-            </p>
           </div>
-          <div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
-            <div className={'rounded-3xl border border-border bg-surface p-6'}>
-              <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>{'Total balance'}</p>
-              <p className={'mt-3 text-3xl font-black text-text-primary'}>
-                {isSearchingBalances ? (
-                  <span
-                    className={
-                      'inline-flex h-9 w-40 items-center justify-center rounded-xl bg-surface-secondary animate-pulse'
-                    }
-                  >
-                    <IconSpinner className={'h-4 w-4 text-text-secondary'} />
-                  </span>
-                ) : (
-                  currencyFormatter.format(totalPortfolioValue)
-                )}
+          {isActive ? (
+            <div>
+              <p className={'mt-2 text-base text-text-secondary'}>
+                {'Monitor your balances, returns, and discover new vaults.'}
               </p>
-            </div>
+              <div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
+                <div className={'rounded-3xl border border-border bg-surface p-6'}>
+                  <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>
+                    {'Total balance'}
+                  </p>
+                  <p className={'mt-3 text-3xl font-black text-text-primary'}>
+                    {isSearchingBalances ? (
+                      <span
+                        className={
+                          'inline-flex h-9 w-40 items-center justify-center rounded-xl bg-surface-secondary animate-pulse'
+                        }
+                      >
+                        <IconSpinner className={'h-4 w-4 text-text-secondary'} />
+                      </span>
+                    ) : (
+                      currencyFormatter.format(totalPortfolioValue)
+                    )}
+                  </p>
+                </div>
 
-            <div className={'rounded-3xl border border-border bg-surface p-6'}>
-              <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>
-                {'Blended Current APY'}
-              </p>
-              <p className={'mt-3 text-3xl font-black text-text-primary'}>
-                {isHoldingsLoading ? (
-                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
-                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
-                  </span>
-                ) : blendedMetrics.blendedCurrentAPY !== null ? (
-                  `${percentFormatter.format(blendedMetrics.blendedCurrentAPY)}%`
-                ) : (
-                  '—'
-                )}
-              </p>
-              <p className={'mt-2 text-sm text-text-secondary'}>
-                {'Weighted by your total deposits across all Yearn vaults.'}
-              </p>
-            </div>
+                <div className={'rounded-3xl border border-border bg-surface p-6'}>
+                  <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>
+                    {'Blended Current APY'}
+                  </p>
+                  <p className={'mt-3 text-3xl font-black text-text-primary'}>
+                    {isHoldingsLoading ? (
+                      <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
+                        <IconSpinner className={'h-5 w-5 text-text-secondary'} />
+                      </span>
+                    ) : blendedMetrics.blendedCurrentAPY !== null ? (
+                      `${percentFormatter.format(blendedMetrics.blendedCurrentAPY)}%`
+                    ) : (
+                      '—'
+                    )}
+                  </p>
+                  <p className={'mt-2 text-sm text-text-secondary'}>
+                    {'Weighted by your total deposits across all Yearn vaults.'}
+                  </p>
+                </div>
 
-            <div className={'rounded-3xl border border-border bg-surface p-6'}>
-              <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>
-                {'Blended 30-day APY'}
-              </p>
-              <p className={'mt-3 text-3xl font-black text-text-primary'}>
-                {isHoldingsLoading ? (
-                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
-                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
-                  </span>
-                ) : blendedMetrics.blendedHistoricalAPY !== null ? (
-                  `${percentFormatter.format(blendedMetrics.blendedHistoricalAPY)}%`
-                ) : (
-                  '—'
-                )}
-              </p>
-              <p className={'mt-2 text-sm text-text-secondary'}>
-                {'Blended 30-day performance using your current positions.'}
-              </p>
-            </div>
+                <div className={'rounded-3xl border border-border bg-surface p-6'}>
+                  <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>
+                    {'Blended 30-day APY'}
+                  </p>
+                  <p className={'mt-3 text-3xl font-black text-text-primary'}>
+                    {isHoldingsLoading ? (
+                      <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
+                        <IconSpinner className={'h-5 w-5 text-text-secondary'} />
+                      </span>
+                    ) : blendedMetrics.blendedHistoricalAPY !== null ? (
+                      `${percentFormatter.format(blendedMetrics.blendedHistoricalAPY)}%`
+                    ) : (
+                      '—'
+                    )}
+                  </p>
+                  <p className={'mt-2 text-sm text-text-secondary'}>
+                    {'Blended 30-day performance using your current positions.'}
+                  </p>
+                </div>
 
-            <div className={'rounded-3xl border border-border bg-surface p-6'}>
-              <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>
-                {'Estimated Annual Return'}
-              </p>
-              <p className={'mt-3 text-3xl font-black text-text-primary'}>
-                {isHoldingsLoading ? (
-                  <span
-                    className={
-                      'inline-flex h-9 w-40 items-center justify-center rounded-xl bg-surface-secondary animate-pulse'
-                    }
-                  >
-                    <IconSpinner className={'h-4 w-4 text-text-secondary'} />
-                  </span>
-                ) : blendedMetrics.estimatedAnnualReturn !== null ? (
-                  currencyFormatter.format(blendedMetrics.estimatedAnnualReturn)
-                ) : (
-                  '—'
-                )}
-              </p>
-              <p className={'mt-2 text-sm text-text-secondary'}>
-                {'Projects potential returns based on your blended current APY.'}
-              </p>
+                <div className={'rounded-3xl border border-border bg-surface p-6'}>
+                  <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>
+                    {'Estimated Annual Return'}
+                  </p>
+                  <p className={'mt-3 text-3xl font-black text-text-primary'}>
+                    {isHoldingsLoading ? (
+                      <span
+                        className={
+                          'inline-flex h-9 w-40 items-center justify-center rounded-xl bg-surface-secondary animate-pulse'
+                        }
+                      >
+                        <IconSpinner className={'h-4 w-4 text-text-secondary'} />
+                      </span>
+                    ) : blendedMetrics.estimatedAnnualReturn !== null ? (
+                      currencyFormatter.format(blendedMetrics.estimatedAnnualReturn)
+                    ) : (
+                      '—'
+                    )}
+                  </p>
+                  <p className={'mt-2 text-sm text-text-secondary'}>
+                    {'Projects potential returns based on your blended current APY.'}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : null}
         </section>
 
         <section className={'flex flex-col gap-4'}>
@@ -428,7 +434,7 @@ function PortfolioPage(): ReactElement {
         {suggestedVaults.length > 0 ? (
           <section className={'flex flex-col gap-4'}>
             <div>
-              <h2 className={'text-2xl font-semibold text-text-primary'}>{'You might also like'}</h2>
+              <h2 className={'text-2xl font-semibold text-text-primary'}>{'You might like'}</h2>
               <p className={'text-sm text-text-secondary'}>
                 {'Vaults picked for you based on performance and popularity.'}
               </p>
