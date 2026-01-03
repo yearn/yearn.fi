@@ -12,6 +12,34 @@ type TAPYSublineProps = {
   onExtraRewardsClick?: () => void
 }
 
+export function getApySublineLines({
+  hasPendleArbRewards,
+  hasKelpNEngenlayer,
+  hasKelp,
+  isEligibleForSteer,
+  steerPointsPerDollar,
+  isEligibleForSpectraBoost
+}: Omit<TAPYSublineProps, 'onExtraRewardsClick'>): string[] {
+  if (hasKelpNEngenlayer) {
+    return ['+1x Kelp Miles', '+1x EigenLayer Points']
+  }
+  if (hasKelp) {
+    return ['+ 1x Kelp Miles']
+  }
+  if (hasPendleArbRewards) {
+    return ['+ 2500 ARB/week']
+  }
+
+  const hasSpectraBoost = isEligibleForSpectraBoost
+  const hasSteerPoints = isEligibleForSteer && (steerPointsPerDollar || 0) > 0
+
+  if (hasSpectraBoost || hasSteerPoints) {
+    return ['Eligible for Extra Rewards']
+  }
+
+  return []
+}
+
 export const APYSubline: FC<TAPYSublineProps> = ({
   hasPendleArbRewards,
   hasKelpNEngenlayer,
@@ -21,32 +49,20 @@ export const APYSubline: FC<TAPYSublineProps> = ({
   isEligibleForSpectraBoost,
   onExtraRewardsClick
 }) => {
-  // Handle single-line rewards first (they take priority and don't stack)
-  if (hasKelpNEngenlayer) {
-    return (
-      <small className={cl('whitespace-nowrap text-sm text-text-secondary self-end -mb-1')}>
-        {'+1x Kelp Miles'}
-        <br />
-        {'+1x EigenLayer Points'}
-      </small>
-    )
-  }
-  if (hasKelp) {
-    return (
-      <small className={cl('whitespace-nowrap text-sm text-text-secondary self-end -mb-1')}>{'+ 1x Kelp Miles'}</small>
-    )
-  }
-  if (hasPendleArbRewards) {
-    return (
-      <small className={cl('whitespace-nowrap text-sm text-text-secondary self-end -mb-1')}>{'+ 2500 ARB/week'}</small>
-    )
+  const lines = getApySublineLines({
+    hasPendleArbRewards,
+    hasKelpNEngenlayer,
+    hasKelp,
+    isEligibleForSteer,
+    steerPointsPerDollar,
+    isEligibleForSpectraBoost
+  })
+
+  if (lines.length === 0) {
+    return <Fragment />
   }
 
-  // Handle stackable rewards (Spectra and Steer Points can both display)
-  const hasSpectraBoost = isEligibleForSpectraBoost
-  const hasSteerPoints = isEligibleForSteer && (steerPointsPerDollar || 0) > 0
-
-  if (hasSpectraBoost || hasSteerPoints) {
+  if (lines.length === 1 && lines[0] === 'Eligible for Extra Rewards') {
     const LabelTag = onExtraRewardsClick ? 'button' : 'span'
     return (
       <LabelTag
@@ -66,10 +82,19 @@ export const APYSubline: FC<TAPYSublineProps> = ({
             : undefined
         }
       >
-        {'Eligible for Extra Rewards'}
+        {lines[0]}
       </LabelTag>
     )
   }
 
-  return <Fragment />
+  return (
+    <small className={cl('whitespace-nowrap text-sm text-text-secondary self-end -mb-1')}>
+      {lines.map((line, index) => (
+        <Fragment key={line}>
+          {index > 0 ? <br /> : null}
+          {line}
+        </Fragment>
+      ))}
+    </small>
+  )
 }
