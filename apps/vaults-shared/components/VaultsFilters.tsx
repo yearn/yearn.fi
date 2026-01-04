@@ -7,8 +7,8 @@ import { IconCross } from '@lib/icons/IconCross'
 import { IconFilter } from '@lib/icons/IconFilter'
 import { LogoYearn } from '@lib/icons/LogoYearn'
 import { cl } from '@lib/utils'
-import type { ReactElement, ReactNode } from 'react'
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import type { ReactElement, ReactNode, RefObject } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Drawer } from 'vaul'
 
 type TChainButton = {
@@ -59,6 +59,7 @@ export function VaultsFilters({
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
+  const [isChainSelectorMinimal, setIsChainSelectorMinimal] = useState(false)
   const hasFiltersContent = Boolean(filtersContent)
   const hasPanelContent = Boolean(filtersPanelContent)
 
@@ -198,6 +199,39 @@ export function VaultsFilters({
     setCustomChainIds(unique)
   }
 
+  const controlsRowRef = useRef<HTMLDivElement | null>(null)
+  const chainSelectorRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') {
+      return
+    }
+    const row = controlsRowRef.current
+    const chainSelector = chainSelectorRef.current
+    if (!row || !chainSelector) {
+      return
+    }
+
+    const updateMinimalState = (): void => {
+      if (row.clientWidth === 0) {
+        return
+      }
+      const baseline = chainSelector.offsetHeight
+      if (!baseline) {
+        return
+      }
+      const shouldBeMinimal = row.offsetHeight > baseline + 8
+      setIsChainSelectorMinimal(shouldBeMinimal)
+    }
+
+    updateMinimalState()
+    const observer = new ResizeObserver(() => {
+      window.requestAnimationFrame(updateMinimalState)
+    })
+    observer.observe(row)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <>
       <div className={'relative col-span-24 w-full md:col-span-19'}>
@@ -294,6 +328,9 @@ export function VaultsFilters({
             shouldDebounce={shouldDebounce}
             searchAlertContent={searchAlertContent}
             leadingControls={leadingControls}
+            isChainSelectorMinimal={isChainSelectorMinimal}
+            controlsRowRef={controlsRowRef}
+            chainSelectorRef={chainSelectorRef}
           />
         </div>
       </div>
@@ -335,7 +372,10 @@ function FilterControls({
   onSearch,
   shouldDebounce,
   searchAlertContent,
-  leadingControls
+  leadingControls,
+  isChainSelectorMinimal = false,
+  controlsRowRef,
+  chainSelectorRef
 }: {
   chainButtons: TChainButton[]
   onSelectAllChains: () => void
@@ -357,14 +397,18 @@ function FilterControls({
   shouldDebounce?: boolean
   searchAlertContent?: ReactNode
   leadingControls?: ReactNode
+  isChainSelectorMinimal?: boolean
+  controlsRowRef?: RefObject<HTMLDivElement | null>
+  chainSelectorRef?: RefObject<HTMLDivElement | null>
 }): ReactElement {
   return (
     <div className={'flex flex-col gap-4'}>
       <div>
         <div className={'flex flex-col gap-2'}>
-          <div className={'flex w-full flex-wrap items-center gap-3'}>
+          <div ref={controlsRowRef} className={'flex w-full flex-wrap items-center gap-3'}>
             {leadingControls ? <div className={'shrink-0'}>{leadingControls}</div> : null}
             <div
+              ref={chainSelectorRef}
               className={
                 'flex h-10 shrink-0 items-stretch overflow-hidden rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
               }
@@ -385,25 +429,29 @@ function FilterControls({
                 </span>
                 <span className={'whitespace-nowrap'}>{allChainsLabel}</span>
               </button>
-              {chainButtons.map((chain) => (
-                <button
-                  key={chain.id}
-                  type={'button'}
-                  className={cl(
-                    'flex h-full items-center gap-1 px-2 font-medium transition-colors',
-                    'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-                    'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
-                  )}
-                  data-active={chain.isSelected}
-                  onClick={(): void => onSelectChain(chain.id)}
-                  aria-pressed={chain.isSelected}
-                >
-                  {chain.icon ? (
-                    <span className={'size-5 overflow-hidden rounded-full bg-surface/80'}>{chain.icon}</span>
-                  ) : null}
-                  <span className={'whitespace-nowrap'}>{chain.label}</span>
-                </button>
-              ))}
+              {chainButtons.map((chain) => {
+                const showChainLabel = !isChainSelectorMinimal || chain.isSelected
+                return (
+                  <button
+                    key={chain.id}
+                    type={'button'}
+                    className={cl(
+                      'flex h-full items-center gap-1 px-2 font-medium transition-colors',
+                      'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+                      'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+                    )}
+                    data-active={chain.isSelected}
+                    onClick={(): void => onSelectChain(chain.id)}
+                    aria-pressed={chain.isSelected}
+                    aria-label={showChainLabel ? undefined : chain.label}
+                  >
+                    {chain.icon ? (
+                      <span className={'size-5 overflow-hidden rounded-full bg-surface/80'}>{chain.icon}</span>
+                    ) : null}
+                    {showChainLabel ? <span className={'whitespace-nowrap'}>{chain.label}</span> : null}
+                  </button>
+                )
+              })}
 
               {showMoreChainsButton ? (
                 <button
