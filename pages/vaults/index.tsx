@@ -28,10 +28,6 @@ const V3_PRIMARY_CHAIN_IDS = [1, 747474]
 const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
 const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
 const V2_ASSET_CATEGORIES = ['Stablecoin', 'Volatile']
-const V3_KIND_OPTIONS = [
-  { value: 'multi', label: 'Allocator Vault' },
-  { value: 'single', label: 'Strategy Vault' }
-] as const
 const V2_KIND_OPTIONS = [
   { value: 'factory', label: 'Factory' },
   { value: 'legacy', label: 'Legacy' }
@@ -79,7 +75,8 @@ type TListOfVaultsProps = {
   categories: string[] | null
   protocols: string[] | null
   aggressiveness: number[] | null
-  showHiddenYearnVaults: boolean
+  showHiddenVaults: boolean
+  showStrategies: boolean
   sortDirection: TSortDirection
   sortBy: TPossibleSortBy
   onSearch: (value: string) => void
@@ -87,7 +84,8 @@ type TListOfVaultsProps = {
   onChangeCategories: (value: string[] | null) => void
   onChangeProtocols: (value: string[] | null) => void
   onChangeAggressiveness: (value: number[] | null) => void
-  onChangeShowHiddenYearnVaults: (value: boolean) => void
+  onChangeShowHiddenVaults: (value: boolean) => void
+  onChangeShowStrategies: (value: boolean) => void
   onChangeChains: (value: number[] | null) => void
   onChangeSortDirection: (value: TSortDirection | '') => void
   onChangeSortBy: (value: TPossibleSortBy | '') => void
@@ -103,7 +101,8 @@ function ListOfVaults({
   categories,
   protocols,
   aggressiveness,
-  showHiddenYearnVaults,
+  showHiddenVaults,
+  showStrategies,
   sortDirection,
   sortBy,
   onSearch,
@@ -111,7 +110,8 @@ function ListOfVaults({
   onChangeCategories,
   onChangeProtocols,
   onChangeAggressiveness,
-  onChangeShowHiddenYearnVaults,
+  onChangeShowHiddenVaults,
+  onChangeShowStrategies,
   onChangeChains,
   onChangeSortDirection,
   onChangeSortBy,
@@ -121,7 +121,6 @@ function ListOfVaults({
 }: TListOfVaultsProps): ReactElement {
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
-  const lastSelectedKindRef = useRef<'multi' | 'single'>('multi')
 
   useLayoutEffect(() => {
     const filtersElement = filtersRef.current
@@ -178,13 +177,13 @@ function ListOfVaults({
     if (vaultType !== 'v3') {
       return
     }
-    if (showHiddenYearnVaults) {
+    if (showStrategies) {
       return
     }
     if (sanitizedV3Types.includes('single')) {
       onChangeTypes(['multi'])
     }
-  }, [vaultType, showHiddenYearnVaults, sanitizedV3Types, onChangeTypes])
+  }, [vaultType, showStrategies, sanitizedV3Types, onChangeTypes])
 
   const sanitizedCategories = useMemo(() => {
     const allowed = vaultType === 'v3' ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
@@ -199,12 +198,6 @@ function ListOfVaults({
     return (aggressiveness || []).filter((value) => AGGRESSIVENESS_OPTIONS.includes(value))
   }, [aggressiveness])
 
-  useEffect(() => {
-    if (sanitizedV3Types.length === 1 && (sanitizedV3Types[0] === 'multi' || sanitizedV3Types[0] === 'single')) {
-      lastSelectedKindRef.current = sanitizedV3Types[0]
-    }
-  }, [sanitizedV3Types])
-
   // Use the appropriate filter hook based on vault type
   const v3FilterResult = useV3VaultFilter(
     vaultType === 'v3' ? sanitizedV3Types : null,
@@ -213,7 +206,7 @@ function ListOfVaults({
     vaultType === 'v3' ? sanitizedCategories : null,
     vaultType === 'v3' ? sanitizedProtocols : null,
     vaultType === 'v3' ? sanitizedAggressiveness : null,
-    vaultType === 'v3' ? showHiddenYearnVaults : undefined
+    vaultType === 'v3' ? showHiddenVaults : undefined
   )
   const v2FilterResult = useV2VaultFilter(
     vaultType === 'factory' ? sanitizedV2Types : null,
@@ -241,7 +234,7 @@ function ListOfVaults({
     vaultType === 'v3' ? sanitizedCategories : null,
     vaultType === 'v3' ? sanitizedProtocols : null,
     vaultType === 'v3' ? sanitizedAggressiveness : null,
-    vaultType === 'v3' ? showHiddenYearnVaults : undefined
+    vaultType === 'v3' ? showHiddenVaults : undefined
   )
 
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
@@ -345,15 +338,13 @@ function ListOfVaults({
   )
 
   const v3FiltersCount = useMemo(() => {
-    const hasMulti = sanitizedV3Types.includes('multi')
-    const hasSingle = sanitizedV3Types.includes('single')
-    const kindMode = hasMulti && hasSingle ? 'both' : hasMulti ? 'multi' : 'single'
-    const typeCount = kindMode === 'multi' ? 0 : 1
+    const typeCount = sanitizedV3Types.includes('single') ? 1 : 0
+    const hiddenCount = showHiddenVaults ? 1 : 0
     const categoryCount = sanitizedCategories.length
     const protocolCount = sanitizedProtocols.length
     const aggressivenessCount = sanitizedAggressiveness.length
-    return typeCount + categoryCount + protocolCount + aggressivenessCount
-  }, [sanitizedV3Types, sanitizedCategories, sanitizedProtocols, sanitizedAggressiveness])
+    return typeCount + categoryCount + protocolCount + aggressivenessCount + hiddenCount
+  }, [sanitizedV3Types, sanitizedCategories, sanitizedProtocols, sanitizedAggressiveness, showHiddenVaults])
 
   const v2FiltersCount = useMemo(() => {
     return sanitizedV2Types.length + sanitizedCategories.length + sanitizedProtocols.length
@@ -448,81 +439,35 @@ function ListOfVaults({
               }
             >
               <div className={'min-w-0'}>
-                <p className={'text-sm font-medium text-text-primary'}>{'Show hidden vaults & strategies'}</p>
+                <p className={'text-sm font-medium text-text-primary'}>{'Show strategies'}</p>
+                <p className={'text-xs text-text-secondary'}>{'Enables the v3 Strategies tab.'}</p>
+              </div>
+              <input
+                type={'checkbox'}
+                className={'checkbox accent-blue-500'}
+                checked={showStrategies}
+                onChange={(event): void => onChangeShowStrategies(event.target.checked)}
+              />
+            </label>
+
+            <label
+              className={
+                'flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2'
+              }
+            >
+              <div className={'min-w-0'}>
+                <p className={'text-sm font-medium text-text-primary'}>{'Show hidden vaults'}</p>
                 <p className={'text-xs text-text-secondary'}>
-                  {'Includes allocators & strategies that are not featured.'}
+                  {'Includes vaults without featured status and vaults marked hidden.'}
                 </p>
               </div>
               <input
                 type={'checkbox'}
                 className={'checkbox accent-blue-500'}
-                checked={showHiddenYearnVaults}
-                onChange={(event): void => onChangeShowHiddenYearnVaults(event.target.checked)}
+                checked={showHiddenVaults}
+                onChange={(event): void => onChangeShowHiddenVaults(event.target.checked)}
               />
             </label>
-
-            <div>
-              <p className={'mb-2 text-sm text-text-secondary'}>{'Vault Kind'}</p>
-              <div className={'flex flex-col gap-3'}>
-                <div className={'flex items-center gap-2'}>
-                  <button
-                    type={'button'}
-                    className={cl(
-                      'flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
-                      sanitizedV3Types.includes('multi') && !sanitizedV3Types.includes('single')
-                        ? 'border-border bg-surface text-text-primary'
-                        : 'border-border bg-transparent text-text-secondary hover:text-text-primary'
-                    )}
-                    onClick={(): void => {
-                      onChangeTypes(['multi'])
-                      lastSelectedKindRef.current = 'multi'
-                    }}
-                  >
-                    {V3_KIND_OPTIONS[0].label}
-                  </button>
-                  <button
-                    type={'button'}
-                    className={cl(
-                      'flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
-                      sanitizedV3Types.includes('single') && !sanitizedV3Types.includes('multi')
-                        ? 'border-border bg-surface text-text-primary'
-                        : 'border-border bg-transparent text-text-secondary hover:text-text-primary'
-                    )}
-                    onClick={(): void => {
-                      onChangeTypes(['single'])
-                      lastSelectedKindRef.current = 'single'
-                    }}
-                  >
-                    {V3_KIND_OPTIONS[1].label}
-                  </button>
-                </div>
-                <label
-                  className={cl(
-                    'flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors',
-                    sanitizedV3Types.includes('multi') && sanitizedV3Types.includes('single')
-                      ? 'border-border bg-surface-tertiary/80'
-                      : 'border-border hover:bg-surface-tertiary/40'
-                  )}
-                >
-                  <div className={'min-w-0'}>
-                    <p className={'text-sm font-medium text-text-primary'}>{'Show both together'}</p>
-                    <p className={'text-xs text-text-secondary'}>{'Displays allocators and strategies at once.'}</p>
-                  </div>
-                  <input
-                    type={'checkbox'}
-                    className={'checkbox accent-blue-500'}
-                    checked={sanitizedV3Types.includes('multi') && sanitizedV3Types.includes('single')}
-                    onChange={(event): void => {
-                      if (event.target.checked) {
-                        onChangeTypes(['multi', 'single'])
-                        return
-                      }
-                      onChangeTypes([lastSelectedKindRef.current])
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
           </div>
         </details>
       </div>
@@ -724,7 +669,7 @@ function ListOfVaults({
         filtersContent={filtersPanelContent}
         filtersPanelContent={filtersPanelContent}
         onClearFilters={onResetMultiSelect}
-        leadingControls={<VaultVersionToggle showHiddenYearnVaults={showHiddenYearnVaults} />}
+        leadingControls={<VaultVersionToggle showStrategies={showStrategies} />}
       />
     </div>
   )
@@ -842,10 +787,12 @@ function ListOfVaults({
 function useVaultListExtraFilters(): {
   protocols: string[] | null
   aggressiveness: number[] | null
-  showHiddenYearnVaults: boolean
+  showHiddenVaults: boolean
+  showStrategies: boolean
   onChangeProtocols: (value: string[] | null) => void
   onChangeAggressiveness: (value: number[] | null) => void
-  onChangeShowHiddenYearnVaults: (value: boolean) => void
+  onChangeShowHiddenVaults: (value: boolean) => void
+  onChangeShowStrategies: (value: boolean) => void
   onResetExtraFilters: () => void
 } {
   const [searchParams] = useSearchParams()
@@ -869,8 +816,16 @@ function useVaultListExtraFilters(): {
 
   const [protocols, setProtocols] = useState<string[] | null>(() => readStringList('protocol'))
   const [aggressiveness, setAggressiveness] = useState<number[] | null>(() => readNumberList('aggr'))
-  const [showHiddenYearnVaults, setShowHiddenYearnVaults] = useState<boolean>(() => {
+  const [showHiddenVaults, setShowHiddenVaults] = useState<boolean>(() => {
     const raw = searchParams.get('showHidden')
+    return raw === '1' || raw === 'true'
+  })
+  const [showStrategies, setShowStrategies] = useState<boolean>(() => {
+    const raw = searchParams.get('showStrategies')
+    if (raw === null) {
+      const typesParam = searchParams.get('types')
+      return Boolean(typesParam?.split('_').includes('single'))
+    }
     return raw === '1' || raw === 'true'
   })
 
@@ -887,7 +842,8 @@ function useVaultListExtraFilters(): {
   return {
     protocols,
     aggressiveness,
-    showHiddenYearnVaults,
+    showHiddenVaults,
+    showStrategies,
     onChangeProtocols: (value): void => {
       setProtocols(value)
       updateParam('protocol', value)
@@ -896,8 +852,8 @@ function useVaultListExtraFilters(): {
       setAggressiveness(value)
       updateParam('aggr', value)
     },
-    onChangeShowHiddenYearnVaults: (value): void => {
-      setShowHiddenYearnVaults(value)
+    onChangeShowHiddenVaults: (value): void => {
+      setShowHiddenVaults(value)
       const nextParams = new URLSearchParams(window.location.search)
       if (value) {
         nextParams.set('showHidden', '1')
@@ -906,14 +862,26 @@ function useVaultListExtraFilters(): {
       }
       navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
     },
+    onChangeShowStrategies: (value): void => {
+      setShowStrategies(value)
+      const nextParams = new URLSearchParams(window.location.search)
+      if (value) {
+        nextParams.set('showStrategies', '1')
+      } else {
+        nextParams.delete('showStrategies')
+      }
+      navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
+    },
     onResetExtraFilters: (): void => {
       setProtocols([])
       setAggressiveness([])
-      setShowHiddenYearnVaults(false)
+      setShowHiddenVaults(false)
+      setShowStrategies(false)
       const nextParams = new URLSearchParams(window.location.search)
       nextParams.delete('protocol')
       nextParams.delete('aggr')
       nextParams.delete('showHidden')
+      nextParams.delete('showStrategies')
       navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
     }
   }
@@ -923,10 +891,12 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
   const {
     protocols,
     aggressiveness,
-    showHiddenYearnVaults,
+    showHiddenVaults,
+    showStrategies,
     onChangeProtocols,
     onChangeAggressiveness,
-    onChangeShowHiddenYearnVaults,
+    onChangeShowHiddenVaults,
+    onChangeShowStrategies,
     onResetExtraFilters
   } = useVaultListExtraFilters()
 
@@ -946,10 +916,12 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
           {...queryArgs}
           protocols={protocols}
           aggressiveness={aggressiveness}
-          showHiddenYearnVaults={showHiddenYearnVaults}
+          showHiddenVaults={showHiddenVaults}
+          showStrategies={showStrategies}
           onChangeProtocols={onChangeProtocols}
           onChangeAggressiveness={onChangeAggressiveness}
-          onChangeShowHiddenYearnVaults={onChangeShowHiddenYearnVaults}
+          onChangeShowHiddenVaults={onChangeShowHiddenVaults}
+          onChangeShowStrategies={onChangeShowStrategies}
           onResetMultiSelect={(): void => {
             queryArgs.onResetMultiSelect()
             onResetExtraFilters()

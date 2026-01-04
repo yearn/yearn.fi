@@ -4,10 +4,10 @@ import { describe, expect, it } from 'vitest'
 
 import { VaultVersionToggle } from './VaultVersionToggle'
 
-function renderToggle(entry: string, showHiddenYearnVaults = false): string {
+function renderToggle(entry: string, showStrategies = false): string {
   return renderToStaticMarkup(
     <MemoryRouter initialEntries={[entry]}>
-      <VaultVersionToggle showHiddenYearnVaults={showHiddenYearnVaults} />
+      <VaultVersionToggle showStrategies={showStrategies} />
     </MemoryRouter>
   )
 }
@@ -30,7 +30,7 @@ describe('VaultVersionToggle', () => {
     expect(html).toContain('🏭')
   })
 
-  it('shows v3 strategies tab when hidden vaults are enabled', () => {
+  it('shows v3 strategies tab when strategies are enabled', () => {
     const html = renderToggle('/vaults?types=single', true)
     expect(html).toMatch(/v3 Strategies/)
     expect(html).toMatch(/data-active="true".*v3 Strategies/)

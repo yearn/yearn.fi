@@ -6,16 +6,16 @@ import { getVaultTypeEmoji, getVaultTypeLabel } from './vaultTypeCopy'
 
 type TVaultVersionToggleProps = {
   className?: string
-  showHiddenYearnVaults?: boolean
+  showStrategies?: boolean
 }
 
-export function VaultVersionToggle({ className, showHiddenYearnVaults }: TVaultVersionToggleProps): ReactElement {
+export function VaultVersionToggle({ className, showStrategies }: TVaultVersionToggleProps): ReactElement {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const isFactoryActive = searchParams.get('type') === 'factory'
   const typesParam = searchParams.get('types')
   const activeTypes = typesParam ? typesParam.split('_').filter(Boolean) : []
-  const isStrategiesTabVisible = Boolean(showHiddenYearnVaults)
+  const isStrategiesTabVisible = Boolean(showStrategies)
   const isStrategiesActive = isStrategiesTabVisible && !isFactoryActive && activeTypes.includes('single')
   const isAllocatorActive = !isFactoryActive && !isStrategiesActive
   const allocatorLabel = getVaultTypeLabel('v3')
@@ -41,9 +41,7 @@ export function VaultVersionToggle({ className, showHiddenYearnVaults }: TVaultV
     const nextParams = new URLSearchParams(searchParams)
     nextParams.delete('type')
     nextParams.set('types', 'single')
-    if (nextParams.get('showHidden') !== '1' && nextParams.get('showHidden') !== 'true') {
-      nextParams.set('showHidden', '1')
-    }
+    nextParams.set('showStrategies', '1')
     navigate(buildVaultsPath(nextParams))
   }
 

@@ -49,7 +49,7 @@ export function useV3VaultFilter(
   categories?: string[] | null,
   protocols?: string[] | null,
   aggressiveness?: number[] | null,
-  showHiddenYearnVaults?: boolean
+  showHiddenVaults?: boolean
 ): TV3VaultFilterResult {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
@@ -258,8 +258,11 @@ export function useV3VaultFilter(
           !categories || categories.length === 0 || categories.some((category) => vaultCategorySet.has(category))
 
         const isFeatured = Boolean(vault.info?.isHighlighted)
+        const isHidden = Boolean(vault.info?.isHidden)
         const isPinnedByUserContext = Boolean(hasUserHoldings || isMigratableVault || isRetiredVault)
-        const shouldIncludeByFeaturedGate = Boolean(showHiddenYearnVaults || isFeatured || isPinnedByUserContext)
+        const shouldIncludeByFeaturedGate = Boolean(
+          showHiddenVaults || (!isHidden && (isFeatured || isPinnedByUserContext))
+        )
 
         let shouldIncludeByKind = true
         if (types && types.length > 0) {
@@ -312,17 +315,7 @@ export function useV3VaultFilter(
       totalMigratableMatching,
       totalRetiredMatching
     }
-  }, [
-    processedVaults,
-    types,
-    chains,
-    search,
-    categories,
-    protocols,
-    aggressiveness,
-    holdingsVaults,
-    showHiddenYearnVaults
-  ])
+  }, [processedVaults, types, chains, search, categories, protocols, aggressiveness, holdingsVaults, showHiddenVaults])
 
   return {
     ...filteredResults,
