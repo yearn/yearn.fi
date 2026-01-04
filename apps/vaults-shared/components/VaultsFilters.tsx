@@ -56,6 +56,7 @@ export function VaultsFilters({
   filtersPanelContent,
   onClearFilters
 }: TVaultsFiltersProps): ReactElement {
+  const SEARCH_MIN_WIDTH = 180
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
@@ -204,6 +205,7 @@ export function VaultsFilters({
   const controlsRowRef = useRef<HTMLDivElement | null>(null)
   const chainSelectorRef = useRef<HTMLDivElement | null>(null)
   const filtersButtonRef = useRef<HTMLButtonElement | null>(null)
+  const searchContainerRef = useRef<HTMLDivElement | null>(null)
   const measurementsRef = useRef({
     chain: { full: 0, minimal: 0 },
     filters: { full: 0, minimal: 0 }
@@ -218,11 +220,18 @@ export function VaultsFilters({
     if (clientWidth === 0) {
       return
     }
+    const searchContainer = searchContainerRef.current
+    if (!searchContainer) {
+      return
+    }
     const scrollWidth = row.scrollWidth
+    const searchWidth = searchContainer.offsetWidth
     const chainWidths = measurementsRef.current.chain
     const filtersWidths = measurementsRef.current.filters
     const chainDelta = chainWidths.full && chainWidths.minimal ? chainWidths.full - chainWidths.minimal : 0
     const filtersDelta = filtersWidths.full && filtersWidths.minimal ? filtersWidths.full - filtersWidths.minimal : 0
+    const searchSlack = Math.max(0, searchWidth - SEARCH_MIN_WIDTH)
+    const isSearchAtMin = searchWidth <= SEARCH_MIN_WIDTH + 1
 
     let nextFiltersMinimal = hasFiltersContent ? isFiltersButtonMinimal : false
     let nextChainMinimal = isChainSelectorMinimal
@@ -230,25 +239,27 @@ export function VaultsFilters({
     const hasOverflow = scrollWidth > clientWidth + 1
 
     if (hasOverflow) {
-      if (hasFiltersContent && !nextFiltersMinimal) {
-        nextFiltersMinimal = true
-      } else if (!nextChainMinimal) {
-        nextChainMinimal = true
-      } else {
-        nextForceMobile = true
+      if (isSearchAtMin) {
+        if (hasFiltersContent && !nextFiltersMinimal) {
+          nextFiltersMinimal = true
+        } else if (!nextChainMinimal) {
+          nextChainMinimal = true
+        } else {
+          nextForceMobile = true
+        }
       }
     } else {
       if (nextForceMobile) {
         nextForceMobile = false
       }
-      let projectedWidth = scrollWidth
-      if (nextChainMinimal && chainDelta > 0 && clientWidth >= projectedWidth + chainDelta) {
+      let remainingSlack = searchSlack
+      if (nextChainMinimal && chainDelta > 0 && remainingSlack >= chainDelta) {
         nextChainMinimal = false
-        projectedWidth += chainDelta
+        remainingSlack -= chainDelta
       }
-      if (nextFiltersMinimal && filtersDelta > 0 && clientWidth >= projectedWidth + filtersDelta) {
+      if (nextFiltersMinimal && filtersDelta > 0 && remainingSlack >= filtersDelta) {
         nextFiltersMinimal = false
-        projectedWidth += filtersDelta
+        remainingSlack -= filtersDelta
       }
     }
 
@@ -337,6 +348,21 @@ export function VaultsFilters({
     observer.observe(filtersButton)
     return () => observer.disconnect()
   }, [hasFiltersContent, isFiltersButtonMinimal, updateResponsiveControls])
+
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') {
+      return
+    }
+    const searchContainer = searchContainerRef.current
+    if (!searchContainer) {
+      return
+    }
+    const observer = new ResizeObserver(() => {
+      window.requestAnimationFrame(updateResponsiveControls)
+    })
+    observer.observe(searchContainer)
+    return () => observer.disconnect()
+  }, [updateResponsiveControls])
 
   useEffect(() => {
     if (typeof ResizeObserver === 'undefined') {
@@ -460,6 +486,7 @@ export function VaultsFilters({
             controlsRowRef={controlsRowRef}
             chainSelectorRef={chainSelectorRef}
             filtersButtonRef={filtersButtonRef}
+            searchContainerRef={searchContainerRef}
             enableResponsiveLayout={true}
           />
         </div>
@@ -508,6 +535,7 @@ function FilterControls({
   controlsRowRef,
   chainSelectorRef,
   filtersButtonRef,
+  searchContainerRef,
   enableResponsiveLayout = false
 }: {
   chainButtons: TChainButton[]
@@ -535,6 +563,7 @@ function FilterControls({
   controlsRowRef?: RefObject<HTMLDivElement | null>
   chainSelectorRef?: RefObject<HTMLDivElement | null>
   filtersButtonRef?: RefObject<HTMLButtonElement | null>
+  searchContainerRef?: RefObject<HTMLDivElement | null>
   enableResponsiveLayout?: boolean
 }): ReactElement {
   const showFiltersLabel = !isFiltersButtonMinimal
@@ -639,7 +668,7 @@ function FilterControls({
                 </button>
               ) : null}
               {showInlineSearch ? (
-                <div className={'flex-1 min-w-[180px]'}>
+                <div ref={searchContainerRef} className={'flex-1 min-w-[180px]'}>
                   <SearchBar
                     className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
                     iconClassName={'text-text-primary'}
