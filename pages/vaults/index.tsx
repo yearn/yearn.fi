@@ -174,6 +174,18 @@ function ListOfVaults({
     return (types || []).filter((type) => type === 'factory' || type === 'legacy')
   }, [types, vaultType])
 
+  useEffect(() => {
+    if (vaultType !== 'v3') {
+      return
+    }
+    if (showHiddenYearnVaults) {
+      return
+    }
+    if (sanitizedV3Types.includes('single')) {
+      onChangeTypes(['multi'])
+    }
+  }, [vaultType, showHiddenYearnVaults, sanitizedV3Types, onChangeTypes])
+
   const sanitizedCategories = useMemo(() => {
     const allowed = vaultType === 'v3' ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
     return (categories || []).filter((value) => allowed.includes(value))
@@ -712,7 +724,7 @@ function ListOfVaults({
         filtersContent={filtersPanelContent}
         filtersPanelContent={filtersPanelContent}
         onClearFilters={onResetMultiSelect}
-        leadingControls={<VaultVersionToggle />}
+        leadingControls={<VaultVersionToggle showHiddenYearnVaults={showHiddenYearnVaults} />}
       />
     </div>
   )
