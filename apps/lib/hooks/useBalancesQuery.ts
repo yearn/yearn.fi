@@ -3,8 +3,8 @@ import type { TAddress } from '../types/address'
 import type { TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
 import { isZeroAddress } from '../utils/tools.is'
-import { getBalances, type TUseBalancesTokens } from './useBalances.multichains'
 import { getChainCacheConfig } from './balanceQueryConfig'
+import { getBalances, type TUseBalancesTokens } from './useBalances.multichains'
 
 /*******************************************************************************
  ** Query key factory for consistent cache key generation

@@ -5,8 +5,8 @@ import type { TAddress } from '../types/address'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
 import { isZeroAddress } from '../utils/tools.is'
-import { getBalances, type TUseBalancesTokens } from './useBalances.multichains'
 import { getChainConfig, getChainRateLimit } from './balanceQueryConfig'
+import { getBalances, type TUseBalancesTokens } from './useBalances.multichains'
 import { balanceQueryKeys } from './useBalancesQuery'
 
 /*******************************************************************************

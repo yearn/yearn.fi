@@ -6,6 +6,7 @@ import { cl, formatAmount, parseMarkdown, toAddress, toBigInt, toNormalizedValue
 import { DISABLED_VEYFI_GAUGES_VAULTS_LIST, VEYFI_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useUpdateEffect } from '@react-hookz/web'
+import { SettingsPopover } from '@vaults-shared/components/SettingsPopover'
 import { Flow, useActionFlow } from '@vaults-v2/contexts/useActionFlow'
 import { useVaultStakingData } from '@vaults-v2/hooks/useVaultStakingData'
 import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
@@ -15,7 +16,6 @@ import { VaultDetailsQuickActionsFrom } from '@vaults-v3/components/details/acti
 import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/actions/QuickActionsSwitch'
 import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
-import { SettingsPopover } from '@vaults-shared/components/SettingsPopover'
 import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@vaults-v3/constants/addresses'
 import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 
