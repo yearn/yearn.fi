@@ -6,7 +6,7 @@ import { IconLinkOut } from '@lib/icons/IconLinkOut'
 import { cl, formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@vaults-v3/constants/addresses'
-import { getFixedTermMarket, type TFixedTermMarket } from '@vaults-v3/constants/fixedTermMarkets'
+import { getFixedTermMarket } from '@vaults-v3/constants/fixedTermMarkets'
 import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import type { ReactElement } from 'react'
 import { Fragment, useState } from 'react'
@@ -16,49 +16,6 @@ import { APYTooltipContent } from './APYTooltip'
 import { KatanaApyTooltipContent } from './KatanaApyTooltip'
 
 export type TVaultForwardAPYVariant = 'default' | 'factory-list'
-
-type TFixedTermIndicatorProps = {
-  market: TFixedTermMarket
-}
-
-function FixedTermIndicator({ market }: TFixedTermIndicatorProps): ReactElement {
-  const providerLabel = market.label
-  const tooltipContent = (
-    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
-      <p className={'font-semibold'}>{'Fixed-rate markets available'}</p>
-      <p className={'mt-1 text-text-secondary'}>{`This vault has fixed-term options on ${providerLabel}.`}</p>
-      <a
-        href={market.marketUrl}
-        target={'_blank'}
-        rel={'noopener noreferrer'}
-        className={
-          'mt-2 inline-flex items-center gap-1 font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-        }
-        onClick={(event): void => event.stopPropagation()}
-      >
-        {`View ${providerLabel} market`}
-        <IconLinkOut className={'size-3'} />
-      </a>
-    </div>
-  )
-
-  return (
-    <Tooltip
-      className={'apy-fixed-rate-tooltip gap-0 h-auto md:justify-end'}
-      openDelayMs={150}
-      tooltip={tooltipContent}
-    >
-      <button
-        type={'button'}
-        aria-label={`Fixed-rate options on ${providerLabel}`}
-        className={'flex items-center text-text-secondary'}
-        onClick={(event): void => event.stopPropagation()}
-      >
-        <IconFixedRate className={'size-3.5'} />
-      </button>
-    </Tooltip>
-  )
-}
 
 export function VaultForwardAPY({
   currentVault,
@@ -84,7 +41,11 @@ export function VaultForwardAPY({
     ? 'cursor-pointer underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
     : undefined
   const fixedTermMarket = getFixedTermMarket(currentVault.address)
-  const fixedTermIndicator = fixedTermMarket ? <FixedTermIndicator market={fixedTermMarket} /> : null
+  const fixedTermIndicator = fixedTermMarket ? (
+    <span className={'flex items-center text-text-secondary'} aria-hidden={true}>
+      <IconFixedRate className={'size-3.5'} />
+    </span>
+  ) : null
 
   // Check if vault is eligible for Spectra boost (Katana chain only)
   const isEligibleForSpectraBoost =
@@ -98,19 +59,66 @@ export function VaultForwardAPY({
     steerPointsPerDollar: data.steerPointsPerDollar,
     isEligibleForSpectraBoost
   })
-  const hasSublineTooltip = showSublineTooltip && sublineLines.length > 0
-  const enableSublineTooltipClick = Boolean(onMobileToggle)
-  const sublineTooltipContent = (
-    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
-      {sublineLines.map((line, index) => (
-        <div key={line} className={index === 0 ? '' : 'mt-1'}>
-          {line}
-        </div>
-      ))}
-    </div>
+  const isKatanaVault =
+    currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined
+  const katanaTooltipContent =
+    showSublineTooltip && isKatanaVault ? (
+      <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+        <div>{'This Vault is receiving KAT incentives'}</div>
+        {fixedTermMarket ? <div className={'mt-1'}>{'This Vault has fixed rate markets available'}</div> : null}
+        {canOpenModal ? (
+          <button
+            type={'button'}
+            className={
+              'mt-2 text-left font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+            }
+            onClick={(event): void => {
+              event.stopPropagation()
+              setIsModalOpen(true)
+            }}
+          >
+            {'Click for more information'}
+          </button>
+        ) : null}
+      </div>
+    ) : null
+
+  const boostTooltipLine =
+    data.mode === 'boosted' && data.isBoosted ? `Boost ${formatAmount(data.boost || 0, 2, 2)}x` : null
+  const fixedRateTooltipLine =
+    fixedTermMarket && !isKatanaVault ? `Fixed-rate markets available on ${fixedTermMarket.label}.` : null
+  const standardTooltipLines = [boostTooltipLine, ...sublineLines, fixedRateTooltipLine].filter(
+    (line): line is string => Boolean(line)
   )
+
+  const standardTooltipContent =
+    showSublineTooltip && standardTooltipLines.length > 0 ? (
+      <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+        {standardTooltipLines.map((line, index) => (
+          <div key={line} className={index === 0 ? '' : 'mt-1'}>
+            {line}
+          </div>
+        ))}
+        {fixedTermMarket ? (
+          <a
+            href={fixedTermMarket.marketUrl}
+            target={'_blank'}
+            rel={'noopener noreferrer'}
+            className={
+              'mt-2 inline-flex items-center gap-1 font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+            }
+            onClick={(event): void => event.stopPropagation()}
+          >
+            {`View ${fixedTermMarket.label} market`}
+            <IconLinkOut className={'size-3'} />
+          </a>
+        ) : null}
+      </div>
+    ) : null
+
+  const infoTooltipContent = katanaTooltipContent ?? standardTooltipContent
   const renderValueWithTooltip = (value: ReactElement): ReactElement => {
-    if (!hasSublineTooltip) {
+    if (!infoTooltipContent) {
       return value
     }
 
@@ -118,8 +126,7 @@ export function VaultForwardAPY({
       <Tooltip
         className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
         openDelayMs={150}
-        toggleOnClick={enableSublineTooltipClick}
-        tooltip={sublineTooltipContent}
+        tooltip={infoTooltipContent}
       >
         {value}
       </Tooltip>
@@ -136,11 +143,6 @@ export function VaultForwardAPY({
     }
     e.stopPropagation()
     setIsModalOpen(true)
-  }
-  const handleInfoOpen = (): void => {
-    if (canOpenModal) {
-      setIsModalOpen(true)
-    }
   }
   const handleInfoClose = (): void => setIsModalOpen(false)
 
@@ -183,7 +185,6 @@ export function VaultForwardAPY({
               isEligibleForSteer={data.isEligibleForSteer}
               steerPointsPerDollar={data.steerPointsPerDollar}
               isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-              onExtraRewardsClick={canOpenModal ? handleInfoOpen : undefined}
             />
           ) : null}
         </div>
@@ -242,7 +243,6 @@ export function VaultForwardAPY({
                 isEligibleForSteer={data.isEligibleForSteer}
                 steerPointsPerDollar={data.steerPointsPerDollar}
                 isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-                onExtraRewardsClick={canOpenModal ? handleInfoOpen : undefined}
               />
             ) : null}
           </div>
@@ -290,25 +290,9 @@ export function VaultForwardAPY({
     const boostValue = formatAmount(data.boost || 0, 2, 2)
     const boostIndicator =
       displayVariant === 'factory-list' ? (
-        <Tooltip
-          className={'apy-boost-tooltip gap-0 h-auto md:justify-end'}
-          openDelayMs={150}
-          toggleOnClick={false}
-          tooltip={
-            <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
-              {`Boost ${boostValue}x`}
-            </div>
-          }
-        >
-          <button
-            type={'button'}
-            aria-label={`Boost ${boostValue}x`}
-            className={'flex items-center text-sm'}
-            onClick={(event): void => event.stopPropagation()}
-          >
-            {'🚀'}
-          </button>
-        </Tooltip>
+        <span className={'text-sm text-text-secondary'} aria-hidden={true}>
+          {'🚀'}
+        </span>
       ) : null
     const modalContent = (
       <APYTooltipContent
@@ -355,7 +339,6 @@ export function VaultForwardAPY({
               isEligibleForSteer={data.isEligibleForSteer}
               steerPointsPerDollar={data.steerPointsPerDollar}
               isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-              onExtraRewardsClick={canOpenModal ? handleInfoOpen : undefined}
             />
           ) : null}
         </div>
@@ -437,7 +420,6 @@ export function VaultForwardAPY({
               isEligibleForSteer={data.isEligibleForSteer}
               steerPointsPerDollar={data.steerPointsPerDollar}
               isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-              onExtraRewardsClick={canOpenModal ? handleInfoOpen : undefined}
             />
           ) : null}
         </div>
