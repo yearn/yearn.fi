@@ -1,9 +1,12 @@
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { Renderable } from '@lib/components/Renderable'
 import { Tooltip } from '@lib/components/Tooltip'
+import { IconFixedRate } from '@lib/icons/IconFixedRate'
+import { IconLinkOut } from '@lib/icons/IconLinkOut'
 import { cl, formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@vaults-v3/constants/addresses'
+import { getFixedTermMarket, type TFixedTermMarket } from '@vaults-v3/constants/fixedTermMarkets'
 import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import type { ReactElement } from 'react'
 import { Fragment, useState } from 'react'
@@ -13,6 +16,49 @@ import { APYTooltipContent } from './APYTooltip'
 import { KatanaApyTooltipContent } from './KatanaApyTooltip'
 
 export type TVaultForwardAPYVariant = 'default' | 'factory-list'
+
+type TFixedTermIndicatorProps = {
+  market: TFixedTermMarket
+}
+
+function FixedTermIndicator({ market }: TFixedTermIndicatorProps): ReactElement {
+  const providerLabel = market.label
+  const tooltipContent = (
+    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+      <p className={'font-semibold'}>{'Fixed-rate markets available'}</p>
+      <p className={'mt-1 text-text-secondary'}>{`This vault has fixed-term options on ${providerLabel}.`}</p>
+      <a
+        href={market.marketUrl}
+        target={'_blank'}
+        rel={'noopener noreferrer'}
+        className={
+          'mt-2 inline-flex items-center gap-1 font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+        }
+        onClick={(event): void => event.stopPropagation()}
+      >
+        {`View ${providerLabel} market`}
+        <IconLinkOut className={'size-3'} />
+      </a>
+    </div>
+  )
+
+  return (
+    <Tooltip
+      className={'apy-fixed-rate-tooltip gap-0 h-auto md:justify-end'}
+      openDelayMs={150}
+      tooltip={tooltipContent}
+    >
+      <button
+        type={'button'}
+        aria-label={`Fixed-rate options on ${providerLabel}`}
+        className={'flex items-center text-text-secondary'}
+        onClick={(event): void => event.stopPropagation()}
+      >
+        <IconFixedRate className={'size-3.5'} />
+      </button>
+    </Tooltip>
+  )
+}
 
 export function VaultForwardAPY({
   currentVault,
@@ -37,6 +83,8 @@ export function VaultForwardAPY({
   const valueInteractiveClass = canOpenModal
     ? 'cursor-pointer underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
     : undefined
+  const fixedTermMarket = getFixedTermMarket(currentVault.address)
+  const fixedTermIndicator = fixedTermMarket ? <FixedTermIndicator market={fixedTermMarket} /> : null
 
   // Check if vault is eligible for Spectra boost (Katana chain only)
   const isEligibleForSpectraBoost =
@@ -122,6 +170,7 @@ export function VaultForwardAPY({
                     {'⚔️ '}
                     <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
                   </span>
+                  {fixedTermIndicator}
                 </div>
               </Renderable>
             </b>
@@ -180,6 +229,7 @@ export function VaultForwardAPY({
                         decimals={6}
                       />
                     </span>
+                    {fixedTermIndicator}
                   </div>
                 </Renderable>
               </b>
@@ -213,7 +263,10 @@ export function VaultForwardAPY({
             onClick={handleValueClick}
           >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-              <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
+              <span className={'inline-flex items-center gap-2'}>
+                <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
+                {fixedTermIndicator}
+              </span>
             </Renderable>
           </b>
         )}
@@ -284,6 +337,7 @@ export function VaultForwardAPY({
                     decimals={6}
                   />
                   {boostIndicator}
+                  {fixedTermIndicator}
                 </div>
               </Renderable>
             </b>
@@ -370,6 +424,7 @@ export function VaultForwardAPY({
                       />
                     )}
                   </span>
+                  {fixedTermIndicator}
                 </div>
               </Renderable>
             </b>
@@ -405,8 +460,13 @@ export function VaultForwardAPY({
             onClick={handleValueClick}
           >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-              {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
-              <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
+              <span className={'inline-flex items-center gap-2'}>
+                <span className={'flex items-center gap-1'}>
+                  {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+                  <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
+                </span>
+                {fixedTermIndicator}
+              </span>
             </Renderable>
           </b>
         )}
@@ -437,8 +497,13 @@ export function VaultForwardAPY({
             shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')}
             fallback={'NEW'}
           >
-            {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
-            <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
+            <span className={'inline-flex items-center gap-2'}>
+              <span className={'flex items-center gap-1'}>
+                {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+                <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
+              </span>
+              {fixedTermIndicator}
+            </span>
           </Renderable>
         </b>
       )}
