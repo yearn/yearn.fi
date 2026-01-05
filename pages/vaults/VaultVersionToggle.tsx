@@ -1,6 +1,6 @@
 import { cl } from '@lib/utils'
 import type { ReactElement } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 
 import { getVaultTypeEmoji, getVaultTypeLabel } from './vaultTypeCopy'
 
@@ -10,8 +10,7 @@ type TVaultVersionToggleProps = {
 }
 
 export function VaultVersionToggle({ className, showStrategies }: TVaultVersionToggleProps): ReactElement {
-  const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const isFactoryActive = searchParams.get('type') === 'factory'
   const typesParam = searchParams.get('types')
   const activeTypes = typesParam ? typesParam.split('_').filter(Boolean) : []
@@ -25,16 +24,11 @@ export function VaultVersionToggle({ className, showStrategies }: TVaultVersionT
   const strategiesLabel = 'v3 Strategies'
   const strategiesEmoji = '🧩'
 
-  const buildVaultsPath = (params: URLSearchParams): string => {
-    const query = params.toString()
-    return query ? `/vaults?${query}` : '/vaults'
-  }
-
   const goToAllocator = (): void => {
     const nextParams = new URLSearchParams(searchParams)
     nextParams.delete('type')
     nextParams.delete('types')
-    navigate(buildVaultsPath(nextParams))
+    setSearchParams(nextParams, { replace: true })
   }
 
   const goToStrategies = (): void => {
@@ -42,14 +36,14 @@ export function VaultVersionToggle({ className, showStrategies }: TVaultVersionT
     nextParams.delete('type')
     nextParams.set('types', 'single')
     nextParams.set('showStrategies', '1')
-    navigate(buildVaultsPath(nextParams))
+    setSearchParams(nextParams, { replace: true })
   }
 
   const goToFactory = (): void => {
     const nextParams = new URLSearchParams(searchParams)
     nextParams.set('type', 'factory')
     nextParams.delete('types')
-    navigate(buildVaultsPath(nextParams))
+    setSearchParams(nextParams, { replace: true })
   }
 
   return (

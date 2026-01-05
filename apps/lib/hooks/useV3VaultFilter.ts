@@ -260,8 +260,10 @@ export function useV3VaultFilter(
         const isFeatured = Boolean(vault.info?.isHighlighted)
         const isHidden = Boolean(vault.info?.isHidden)
         const isPinnedByUserContext = Boolean(hasUserHoldings || isMigratableVault || isRetiredVault)
+        const kind = deriveListKind(vault)
+        const isStrategy = kind === 'strategy'
         const shouldIncludeByFeaturedGate = Boolean(
-          showHiddenVaults || (!isHidden && (isFeatured || isPinnedByUserContext))
+          showHiddenVaults || (!isHidden && (isStrategy || isFeatured || isPinnedByUserContext))
         )
 
         let shouldIncludeByKind = true
@@ -269,7 +271,6 @@ export function useV3VaultFilter(
           const hasMulti = types.includes('multi')
           const hasSingle = types.includes('single')
 
-          const kind = deriveListKind(vault)
           const matchesAllocator = hasMulti && kind === 'allocator'
           const matchesStrategy = hasSingle && kind === 'strategy'
 
@@ -278,7 +279,6 @@ export function useV3VaultFilter(
 
         let shouldIncludeByProtocol = true
         if (protocols && protocols.length > 0) {
-          const kind = deriveListKind(vault)
           if (kind === 'allocator') {
             shouldIncludeByProtocol = false
           } else {

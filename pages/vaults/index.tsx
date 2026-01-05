@@ -15,14 +15,14 @@ import { TrendingVaults } from '@vaults-v3/components/TrendingVaults'
 import { ALL_VAULTSV3_CATEGORIES } from '@vaults-v3/constants'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 
 import { VaultVersionToggle } from './VaultVersionToggle'
 import { getVaultTypeLabel, type TVaultType } from './vaultTypeCopy'
 
 const AVAILABLE_TOGGLE_VALUE = 'available'
 const HOLDINGS_TOGGLE_VALUE = 'holdings'
-const V2_SUPPORTED_CHAINS = [1, 10, 42161]
+const V2_SUPPORTED_CHAINS = [1, 10, 8453, 42161]
 const V3_SUPPORTED_CHAINS = [1, 747474, 8453, 42161, 137]
 const V3_PRIMARY_CHAIN_IDS = [1, 747474]
 const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
@@ -167,6 +167,10 @@ function ListOfVaults({
     return ['multi']
   }, [types, vaultType, showStrategies])
 
+  const allocatorTypesForTrending = useMemo(() => {
+    return vaultType === 'v3' ? ['multi'] : null
+  }, [vaultType])
+
   const sanitizedV2Types = useMemo(() => {
     if (vaultType !== 'factory') {
       return []
@@ -229,7 +233,7 @@ function ListOfVaults({
   const totalHoldingsMatching = vaultType === 'v3' ? (v3FilterResult.totalHoldingsMatching ?? 0) : 0
 
   const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(
-    vaultType === 'v3' ? sanitizedV3Types : null,
+    allocatorTypesForTrending,
     null,
     '',
     vaultType === 'v3' ? sanitizedCategories : null,
@@ -796,9 +800,7 @@ function useVaultListExtraFilters(): {
   onChangeShowStrategies: (value: boolean) => void
   onResetExtraFilters: () => void
 } {
-  const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const readStringList = (key: string): string[] => {
     const raw = searchParams.get(key)
@@ -815,34 +817,25 @@ function useVaultListExtraFilters(): {
       .filter((value) => Number.isFinite(value))
   }
 
-  const [protocols, setProtocols] = useState<string[] | null>(() => readStringList('protocol'))
-  const [aggressiveness, setAggressiveness] = useState<number[] | null>(() => readNumberList('aggr'))
-  const [showHiddenVaults, setShowHiddenVaults] = useState<boolean>(() => {
+  const protocols = readStringList('protocol')
+  const aggressiveness = readNumberList('aggr')
+  const showHiddenVaults = (() => {
     const raw = searchParams.get('showHidden')
     return raw === '1' || raw === 'true'
-  })
-  const [showStrategies, setShowStrategies] = useState<boolean>(() => {
+  })()
+  const showStrategies = (() => {
     const raw = searchParams.get('showStrategies')
     return raw === '1' || raw === 'true'
-  })
-
-  useEffect(() => {
-    const rawHidden = searchParams.get('showHidden')
-    const nextHidden = rawHidden === '1' || rawHidden === 'true'
-    const rawStrategies = searchParams.get('showStrategies')
-    const nextStrategies = rawStrategies === '1' || rawStrategies === 'true'
-    setShowHiddenVaults(nextHidden)
-    setShowStrategies(nextStrategies)
-  }, [searchParams])
+  })()
 
   const updateParam = (key: string, value: string[] | number[] | null): void => {
-    const nextParams = new URLSearchParams(window.location.search)
+    const nextParams = new URLSearchParams(searchParams)
     if (!value || value.length === 0) {
       nextParams.delete(key)
     } else {
       nextParams.set(key, value.join('_'))
     }
-    navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
+    setSearchParams(nextParams, { replace: true })
   }
 
   return {
@@ -851,44 +844,36 @@ function useVaultListExtraFilters(): {
     showHiddenVaults,
     showStrategies,
     onChangeProtocols: (value): void => {
-      setProtocols(value)
       updateParam('protocol', value)
     },
     onChangeAggressiveness: (value): void => {
-      setAggressiveness(value)
       updateParam('aggr', value)
     },
     onChangeShowHiddenVaults: (value): void => {
-      setShowHiddenVaults(value)
-      const nextParams = new URLSearchParams(window.location.search)
+      const nextParams = new URLSearchParams(searchParams)
       if (value) {
         nextParams.set('showHidden', '1')
       } else {
         nextParams.delete('showHidden')
       }
-      navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
+      setSearchParams(nextParams, { replace: true })
     },
     onChangeShowStrategies: (value): void => {
-      setShowStrategies(value)
-      const nextParams = new URLSearchParams(window.location.search)
+      const nextParams = new URLSearchParams(searchParams)
       if (value) {
         nextParams.set('showStrategies', '1')
       } else {
         nextParams.delete('showStrategies')
       }
-      navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
+      setSearchParams(nextParams, { replace: true })
     },
     onResetExtraFilters: (): void => {
-      setProtocols([])
-      setAggressiveness([])
-      setShowHiddenVaults(false)
-      setShowStrategies(false)
-      const nextParams = new URLSearchParams(window.location.search)
+      const nextParams = new URLSearchParams(searchParams)
       nextParams.delete('protocol')
       nextParams.delete('aggr')
       nextParams.delete('showHidden')
       nextParams.delete('showStrategies')
-      navigate(`${location.pathname}?${nextParams.toString()}`, { replace: true })
+      setSearchParams(nextParams, { replace: true })
     }
   }
 }
