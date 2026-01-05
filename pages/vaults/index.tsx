@@ -160,11 +160,12 @@ function ListOfVaults({
       return []
     }
     const selected = (types || []).filter((type) => type === 'multi' || type === 'single')
-    if (selected.length === 0) {
-      return ['multi']
+    const hasSingle = selected.includes('single')
+    if (showStrategies && hasSingle) {
+      return ['single']
     }
-    return selected
-  }, [types, vaultType])
+    return ['multi']
+  }, [types, vaultType, showStrategies])
 
   const sanitizedV2Types = useMemo(() => {
     if (vaultType !== 'factory') {
@@ -180,10 +181,10 @@ function ListOfVaults({
     if (showStrategies) {
       return
     }
-    if (sanitizedV3Types.includes('single')) {
+    if (types?.includes('single')) {
       onChangeTypes(['multi'])
     }
-  }, [vaultType, showStrategies, sanitizedV3Types, onChangeTypes])
+  }, [vaultType, showStrategies, types, onChangeTypes])
 
   const sanitizedCategories = useMemo(() => {
     const allowed = vaultType === 'v3' ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
@@ -822,12 +823,17 @@ function useVaultListExtraFilters(): {
   })
   const [showStrategies, setShowStrategies] = useState<boolean>(() => {
     const raw = searchParams.get('showStrategies')
-    if (raw === null) {
-      const typesParam = searchParams.get('types')
-      return Boolean(typesParam?.split('_').includes('single'))
-    }
     return raw === '1' || raw === 'true'
   })
+
+  useEffect(() => {
+    const rawHidden = searchParams.get('showHidden')
+    const nextHidden = rawHidden === '1' || rawHidden === 'true'
+    const rawStrategies = searchParams.get('showStrategies')
+    const nextStrategies = rawStrategies === '1' || rawStrategies === 'true'
+    setShowHiddenVaults(nextHidden)
+    setShowStrategies(nextStrategies)
+  }, [searchParams])
 
   const updateParam = (key: string, value: string[] | number[] | null): void => {
     const nextParams = new URLSearchParams(window.location.search)

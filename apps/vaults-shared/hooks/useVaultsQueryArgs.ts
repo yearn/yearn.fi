@@ -2,7 +2,7 @@ import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@lib/types'
 import { useMountEffect } from '@react-hookz/web'
 import type { TPossibleSortBy } from '@vaults-shared/hooks/useSortVaults'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router'
 
 type TQueryArgs = {
@@ -166,6 +166,10 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
     const currentPage = new URL(window.location.href)
     handleQuery(new URLSearchParams(currentPage.search))
   })
+
+  useEffect(() => {
+    handleQuery(searchParams)
+  }, [handleQuery, searchParams])
 
   return {
     search,
