@@ -20,7 +20,11 @@ import {
   type TVaultChartTimeframe,
   VaultChartsSection
 } from '@nextgen/components/vaults-beta/VaultChartsSection'
-import { VaultForwardAPY, VaultForwardAPYInlineDetails } from '@vaults-v3/components/table/VaultForwardAPY'
+import {
+  type TVaultForwardAPYVariant,
+  VaultForwardAPY,
+  VaultForwardAPYInlineDetails
+} from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
 import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
@@ -38,11 +42,13 @@ type TVaultRowFlags = {
 export function VaultsV3ListRow({
   currentVault,
   flags,
-  hrefOverride
+  hrefOverride,
+  apyDisplayVariant = 'default'
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
   hrefOverride?: string
+  apyDisplayVariant?: TVaultForwardAPYVariant
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
@@ -195,7 +201,12 @@ export function VaultsV3ListRow({
         {/* Desktop metrics grid */}
         <div className={cl('col-span-14 z-10 gap-4 mt-4', 'md:mt-0 md:grid md:grid-cols-14 md:items-center')}>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <VaultForwardAPY currentVault={currentVault} showSubline={false} showSublineTooltip />
+            <VaultForwardAPY
+              currentVault={currentVault}
+              showSubline={false}
+              showSublineTooltip
+              displayVariant={apyDisplayVariant}
+            />
           </div>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <VaultHistoricalAPY currentVault={currentVault} />

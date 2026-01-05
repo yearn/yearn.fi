@@ -355,6 +355,8 @@ function ListOfVaults({
     return sanitizedV2Types.length + sanitizedCategories.length + sanitizedProtocols.length
   }, [sanitizedV2Types, sanitizedCategories, sanitizedProtocols])
 
+  const apyDisplayVariant = vaultType === 'factory' ? 'factory-list' : 'default'
+
   const v3FiltersPanel = (
     <div className={'mt-4 grid grid-cols-1 gap-6 md:grid-cols-2'}>
       <div className={'flex flex-col gap-6'}>
@@ -624,13 +626,25 @@ function ListOfVaults({
     return (
       <div className={'flex flex-col gap-px bg-app'}>
         {pinnedSections.map((section) => (
-          <VaultsV3AuxiliaryList key={section.key} vaults={section.vaults} vaultFlags={vaultFlags} />
+          <VaultsV3AuxiliaryList
+            key={section.key}
+            vaults={section.vaults}
+            vaultFlags={vaultFlags}
+            apyDisplayVariant={apyDisplayVariant}
+          />
         ))}
         {mainVaults.length > 0 ? (
           <div className={'flex flex-col gap-px bg-app'}>
             {mainVaults.map((vault) => {
               const key = `${vault.chainID}_${toAddress(vault.address)}`
-              return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
+              return (
+                <VaultsV3ListRow
+                  key={key}
+                  currentVault={vault}
+                  flags={vaultFlags[key]}
+                  apyDisplayVariant={apyDisplayVariant}
+                />
+              )
             })}
           </div>
         ) : null}

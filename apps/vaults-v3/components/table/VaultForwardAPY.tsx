@@ -12,13 +12,16 @@ import { APYSubline, getApySublineLines } from './APYSubline'
 import { APYTooltipContent } from './APYTooltip'
 import { KatanaApyTooltipContent } from './KatanaApyTooltip'
 
+export type TVaultForwardAPYVariant = 'default' | 'factory-list'
+
 export function VaultForwardAPY({
   currentVault,
   onMobileToggle,
   className,
   valueClassName,
   showSubline = true,
-  showSublineTooltip = false
+  showSublineTooltip = false,
+  displayVariant = 'default'
 }: {
   currentVault: TYDaemonVault
   onMobileToggle?: (e: React.MouseEvent) => void
@@ -26,9 +29,14 @@ export function VaultForwardAPY({
   valueClassName?: string
   showSubline?: boolean
   showSublineTooltip?: boolean
+  displayVariant?: TVaultForwardAPYVariant
 }): ReactElement {
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const canOpenModal = displayVariant !== 'factory-list'
+  const valueInteractiveClass = canOpenModal
+    ? 'cursor-pointer underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+    : undefined
 
   // Check if vault is eligible for Spectra boost (Katana chain only)
   const isEligibleForSpectraBoost =
@@ -70,16 +78,22 @@ export function VaultForwardAPY({
     )
   }
   const handleValueClick = (e: React.MouseEvent): void => {
-    if (!(hasSublineTooltip && enableSublineTooltipClick)) {
-      e.stopPropagation()
-    }
     if (onMobileToggle) {
+      e.stopPropagation()
       onMobileToggle(e)
       return
     }
+    if (!canOpenModal) {
+      return
+    }
+    e.stopPropagation()
     setIsModalOpen(true)
   }
-  const handleInfoOpen = (): void => setIsModalOpen(true)
+  const handleInfoOpen = (): void => {
+    if (canOpenModal) {
+      setIsModalOpen(true)
+    }
+  }
   const handleInfoClose = (): void => setIsModalOpen(false)
 
   // Katana
@@ -104,11 +118,7 @@ export function VaultForwardAPY({
             <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
               <Renderable shouldRender={true} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
-                  <span
-                    className={
-                      'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                    }
-                  >
+                  <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
                     {'⚔️ '}
                     <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
                   </span>
@@ -124,13 +134,15 @@ export function VaultForwardAPY({
               isEligibleForSteer={data.isEligibleForSteer}
               steerPointsPerDollar={data.steerPointsPerDollar}
               isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-              onExtraRewardsClick={handleInfoOpen}
+              onExtraRewardsClick={canOpenModal ? handleInfoOpen : undefined}
             />
           ) : null}
         </div>
-        <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'Katana APY breakdown'}>
-          {katanaDetails}
-        </APYDetailsModal>
+        {canOpenModal ? (
+          <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'Katana APY breakdown'}>
+            {katanaDetails}
+          </APYDetailsModal>
+        ) : null}
       </Fragment>
     )
   }
@@ -159,11 +171,7 @@ export function VaultForwardAPY({
               <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
                 <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                   <div className={'flex items-center gap-2'}>
-                    <span
-                      className={
-                        'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                      }
-                    >
+                    <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
                       {'⚡️ '}
                       <RenderAmount
                         shouldHideTooltip={hasZeroBoostedAPY}
@@ -184,13 +192,15 @@ export function VaultForwardAPY({
                 isEligibleForSteer={data.isEligibleForSteer}
                 steerPointsPerDollar={data.steerPointsPerDollar}
                 isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-                onExtraRewardsClick={handleInfoOpen}
+                onExtraRewardsClick={canOpenModal ? handleInfoOpen : undefined}
               />
             ) : null}
           </div>
-          <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
-            {modalContent}
-          </APYDetailsModal>
+          {canOpenModal ? (
+            <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
+              {modalContent}
+            </APYDetailsModal>
+          ) : null}
         </Fragment>
       )
     }
@@ -198,7 +208,10 @@ export function VaultForwardAPY({
     return (
       <div className={cl('relative flex flex-col items-end md:text-right', className)}>
         {renderValueWithTooltip(
-          <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+          <b
+            className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
+            onClick={handleValueClick}
+          >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
             </Renderable>
@@ -221,6 +234,29 @@ export function VaultForwardAPY({
   // Boosted
   if (data.mode === 'boosted' && data.isBoosted) {
     const unBoostedAPY = data.unboostedApr || 0
+    const boostValue = formatAmount(data.boost || 0, 2, 2)
+    const boostIndicator =
+      displayVariant === 'factory-list' ? (
+        <Tooltip
+          className={'apy-boost-tooltip gap-0 h-auto md:justify-end'}
+          openDelayMs={150}
+          toggleOnClick={false}
+          tooltip={
+            <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+              {`Boost ${boostValue}x`}
+            </div>
+          }
+        >
+          <button
+            type={'button'}
+            aria-label={`Boost ${boostValue}x`}
+            className={'flex items-center text-sm'}
+            onClick={(event): void => event.stopPropagation()}
+          >
+            {'🚀'}
+          </button>
+        </Tooltip>
+      ) : null
     const modalContent = (
       <APYTooltipContent
         baseAPY={unBoostedAPY}
@@ -236,27 +272,27 @@ export function VaultForwardAPY({
         <div className={cl('flex flex-col items-end md:text-right', className)}>
           {renderValueWithTooltip(
             <b
-              className={cl(
-                'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600',
-                valueClassName
-              )}
+              className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
               onClick={handleValueClick}
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-                <div className={'flex cursor-pointer items-center gap-2'}>
+                <div className={cl('flex items-center gap-2', canOpenModal ? 'cursor-pointer' : undefined)}>
                   <RenderAmount
                     shouldHideTooltip
                     value={currentVault.apr.forwardAPR.netAPR}
                     symbol={'percent'}
                     decimals={6}
                   />
+                  {boostIndicator}
                 </div>
               </Renderable>
             </b>
           )}
-          <small className={'text-xs text-text-primary'}>
-            <Renderable shouldRender={data.isBoosted}>{`BOOST ${formatAmount(data.boost || 0, 2, 2)}x`}</Renderable>
-          </small>
+          {displayVariant !== 'factory-list' ? (
+            <small className={'text-xs text-text-primary'}>
+              <Renderable shouldRender={data.isBoosted}>{`BOOST ${boostValue}x`}</Renderable>
+            </small>
+          ) : null}
           {showSubline ? (
             <APYSubline
               hasPendleArbRewards={data.hasPendleArbRewards}
@@ -265,13 +301,15 @@ export function VaultForwardAPY({
               isEligibleForSteer={data.isEligibleForSteer}
               steerPointsPerDollar={data.steerPointsPerDollar}
               isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-              onExtraRewardsClick={handleInfoOpen}
+              onExtraRewardsClick={canOpenModal ? handleInfoOpen : undefined}
             />
           ) : null}
         </div>
-        <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
-          {modalContent}
-        </APYDetailsModal>
+        {canOpenModal ? (
+          <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
+            {modalContent}
+          </APYDetailsModal>
+        ) : null}
       </Fragment>
     )
   }
@@ -315,11 +353,7 @@ export function VaultForwardAPY({
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
-                  <span
-                    className={
-                      'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                    }
-                  >
+                  <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
                     {'⚡️ '}
                     {estAPYRange ? (
                       <Fragment>
@@ -348,13 +382,15 @@ export function VaultForwardAPY({
               isEligibleForSteer={data.isEligibleForSteer}
               steerPointsPerDollar={data.steerPointsPerDollar}
               isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-              onExtraRewardsClick={handleInfoOpen}
+              onExtraRewardsClick={canOpenModal ? handleInfoOpen : undefined}
             />
           ) : null}
         </div>
-        <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
-          {modalContent}
-        </APYDetailsModal>
+        {canOpenModal ? (
+          <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
+            {modalContent}
+          </APYDetailsModal>
+        ) : null}
       </Fragment>
     )
   }
@@ -364,7 +400,10 @@ export function VaultForwardAPY({
     return (
       <div className={cl('relative flex flex-col items-end md:text-right', className)}>
         {renderValueWithTooltip(
-          <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+          <b
+            className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
+            onClick={handleValueClick}
+          >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
               <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
@@ -390,7 +429,10 @@ export function VaultForwardAPY({
   return (
     <div className={cl('relative flex flex-col items-end md:text-right', className)}>
       {renderValueWithTooltip(
-        <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+        <b
+          className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
+          onClick={handleValueClick}
+        >
           <Renderable
             shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')}
             fallback={'NEW'}

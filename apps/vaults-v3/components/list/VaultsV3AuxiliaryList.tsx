@@ -1,6 +1,7 @@
 import { cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
+import type { TVaultForwardAPYVariant } from '@vaults-v3/components/table/VaultForwardAPY'
 
 import type { ReactElement } from 'react'
 
@@ -17,10 +18,16 @@ type TVaultsV3AuxiliaryListProps = {
   title?: string
   vaults: TYDaemonVault[]
   vaultFlags: TVaultFlagsRecord
+  apyDisplayVariant?: TVaultForwardAPYVariant
 }
 
 // TODO: the contents of this component override the type filers. This should only happen for HOLDINGS and not AVAILABLE TO DEPOSIT
-export function VaultsV3AuxiliaryList({ title, vaults, vaultFlags }: TVaultsV3AuxiliaryListProps): ReactElement | null {
+export function VaultsV3AuxiliaryList({
+  title,
+  vaults,
+  vaultFlags,
+  apyDisplayVariant
+}: TVaultsV3AuxiliaryListProps): ReactElement | null {
   if (vaults.length === 0) {
     return null
   }
@@ -33,7 +40,14 @@ export function VaultsV3AuxiliaryList({ title, vaults, vaultFlags }: TVaultsV3Au
       <div className={'flex flex-col gap-px'}>
         {vaults.map((vault) => {
           const key = `${vault.chainID}_${toAddress(vault.address)}`
-          return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
+          return (
+            <VaultsV3ListRow
+              key={key}
+              currentVault={vault}
+              flags={vaultFlags[key]}
+              apyDisplayVariant={apyDisplayVariant}
+            />
+          )
         })}
       </div>
     </div>
