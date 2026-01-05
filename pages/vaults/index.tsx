@@ -17,13 +17,12 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
+import { V2_SUPPORTED_CHAINS, V3_SUPPORTED_CHAINS } from './constants'
 import { VaultVersionToggle } from './VaultVersionToggle'
 import { getVaultTypeLabel, type TVaultType } from './vaultTypeCopy'
 
 const AVAILABLE_TOGGLE_VALUE = 'available'
 const HOLDINGS_TOGGLE_VALUE = 'holdings'
-const V2_SUPPORTED_CHAINS = [1, 10, 8453, 42161]
-const V3_SUPPORTED_CHAINS = [1, 747474, 8453, 42161, 137]
 const V3_PRIMARY_CHAIN_IDS = [1, 747474]
 const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
 const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
