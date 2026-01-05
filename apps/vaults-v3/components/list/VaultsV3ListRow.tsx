@@ -11,6 +11,10 @@ import { Tooltip } from '@lib/components/Tooltip'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import { IconChevron } from '@lib/icons/IconChevron'
+import { IconSettings } from '@lib/icons/IconSettings'
+import { IconStablecoin } from '@lib/icons/IconStablecoin'
+import { IconStack } from '@lib/icons/IconStack'
+import { IconVolatile } from '@lib/icons/IconVolatile'
 import { cl, formatCounterValue, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
@@ -31,6 +35,7 @@ import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { VaultsListChip } from './VaultsListChip'
 import { type TVaultsV3ExpandedView, VaultsV3ExpandedSelector } from './VaultsV3ExpandedSelector'
 
 type TVaultRowFlags = {
@@ -43,12 +48,26 @@ export function VaultsV3ListRow({
   currentVault,
   flags,
   hrefOverride,
-  apyDisplayVariant = 'default'
+  apyDisplayVariant = 'default',
+  activeChains,
+  activeCategories,
+  activeTypes,
+  onToggleChain,
+  onToggleCategory,
+  onToggleType,
+  showStrategies = false
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
   hrefOverride?: string
   apyDisplayVariant?: TVaultForwardAPYVariant
+  activeChains?: number[]
+  activeCategories?: string[]
+  activeTypes?: string[]
+  onToggleChain?: (chainId: number) => void
+  onToggleCategory?: (category: string) => void
+  onToggleType?: (type: string) => void
+  showStrategies?: boolean
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
@@ -65,6 +84,24 @@ export function VaultsV3ListRow({
       : currentVault.kind === 'Single Strategy'
         ? 'Strategy Vault'
         : currentVault.kind
+  const kindType =
+    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
+  const activeChainIds = activeChains ?? []
+  const activeCategoryLabels = activeCategories ?? []
+  const activeTypeLabels = activeTypes ?? []
+  const showKindChip = showStrategies && Boolean(kindType)
+  const categoryIcon =
+    currentVault.category === 'Stablecoin' ? (
+      <IconStablecoin className={'size-3.5'} />
+    ) : currentVault.category === 'Volatile' ? (
+      <IconVolatile className={'size-3.5'} />
+    ) : null
+  const kindIcon =
+    kindType === 'multi' ? (
+      <IconSettings className={'size-3.5'} />
+    ) : kindType === 'single' ? (
+      <IconStack className={'size-3.5'} />
+    ) : null
   const tvlNativeTooltip = (
     <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       <span className={'font-number'}>
@@ -167,31 +204,30 @@ export function VaultsV3ListRow({
                 {currentVault.name}
               </strong>
               <div className={'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'}>
-                <span
-                  className={
-                    'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
-                  }
-                >
-                  <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
-                  <span>{network.name}</span>
-                </span>
+                <VaultsListChip
+                  label={network.name}
+                  icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
+                  isActive={activeChainIds.includes(currentVault.chainID)}
+                  onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
+                  ariaLabel={`Filter by ${network.name}`}
+                />
                 {currentVault.category ? (
-                  <span
-                    className={
-                      'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
-                    }
-                  >
-                    {currentVault.category}
-                  </span>
+                  <VaultsListChip
+                    label={currentVault.category}
+                    icon={categoryIcon}
+                    isActive={activeCategoryLabels.includes(currentVault.category)}
+                    onClick={onToggleCategory ? (): void => onToggleCategory(currentVault.category) : undefined}
+                    ariaLabel={`Filter by ${currentVault.category}`}
+                  />
                 ) : null}
-                {kindLabel ? (
-                  <span
-                    className={
-                      'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
-                    }
-                  >
-                    {kindLabel}
-                  </span>
+                {showKindChip && kindLabel ? (
+                  <VaultsListChip
+                    label={kindLabel}
+                    icon={kindIcon}
+                    isActive={kindType ? activeTypeLabels.includes(kindType) : false}
+                    onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
+                    ariaLabel={`Filter by ${kindLabel}`}
+                  />
                 ) : null}
               </div>
             </div>

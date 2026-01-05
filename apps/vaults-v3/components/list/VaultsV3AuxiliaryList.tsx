@@ -19,6 +19,13 @@ type TVaultsV3AuxiliaryListProps = {
   vaults: TYDaemonVault[]
   vaultFlags: TVaultFlagsRecord
   apyDisplayVariant?: TVaultForwardAPYVariant
+  activeChains?: number[]
+  activeCategories?: string[]
+  activeTypes?: string[]
+  onToggleChain?: (chainId: number) => void
+  onToggleCategory?: (category: string) => void
+  onToggleType?: (type: string) => void
+  showStrategies?: boolean
 }
 
 // TODO: the contents of this component override the type filers. This should only happen for HOLDINGS and not AVAILABLE TO DEPOSIT
@@ -26,7 +33,14 @@ export function VaultsV3AuxiliaryList({
   title,
   vaults,
   vaultFlags,
-  apyDisplayVariant
+  apyDisplayVariant,
+  activeChains,
+  activeCategories,
+  activeTypes,
+  onToggleChain,
+  onToggleCategory,
+  onToggleType,
+  showStrategies
 }: TVaultsV3AuxiliaryListProps): ReactElement | null {
   if (vaults.length === 0) {
     return null
@@ -46,6 +60,13 @@ export function VaultsV3AuxiliaryList({
               currentVault={vault}
               flags={vaultFlags[key]}
               apyDisplayVariant={apyDisplayVariant}
+              activeChains={activeChains}
+              activeCategories={activeCategories}
+              activeTypes={activeTypes}
+              onToggleChain={onToggleChain}
+              onToggleCategory={onToggleCategory}
+              onToggleType={onToggleType}
+              showStrategies={showStrategies}
             />
           )
         })}

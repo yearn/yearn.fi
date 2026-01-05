@@ -14,7 +14,7 @@ import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
 import { TrendingVaults } from '@vaults-v3/components/TrendingVaults'
 import { ALL_VAULTSV3_CATEGORIES } from '@vaults-v3/constants'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { VaultVersionToggle } from './VaultVersionToggle'
@@ -356,6 +356,30 @@ function ListOfVaults({
   }, [sanitizedV2Types, sanitizedCategories, sanitizedProtocols])
 
   const apyDisplayVariant = vaultType === 'factory' ? 'factory-list' : 'default'
+  const activeChains = chains ?? []
+  const activeCategories = sanitizedCategories
+  const activeTypes = vaultType === 'v3' ? sanitizedV3Types : sanitizedV2Types
+  const handleToggleChain = useCallback(
+    (chainId: number): void => {
+      onChangeChains(toggleNumber(chains, chainId))
+    },
+    [chains, onChangeChains]
+  )
+  const handleToggleCategory = useCallback(
+    (category: string): void => {
+      onChangeCategories(toggleString(sanitizedCategories, category))
+    },
+    [onChangeCategories, sanitizedCategories]
+  )
+  const handleToggleType = useCallback(
+    (type: string): void => {
+      if (vaultType !== 'v3') {
+        return
+      }
+      onChangeTypes(toggleString(sanitizedV3Types, type))
+    },
+    [onChangeTypes, sanitizedV3Types, vaultType]
+  )
 
   const v3FiltersPanel = (
     <div className={'mt-4 grid grid-cols-1 gap-6 md:grid-cols-2'}>
@@ -631,6 +655,13 @@ function ListOfVaults({
             vaults={section.vaults}
             vaultFlags={vaultFlags}
             apyDisplayVariant={apyDisplayVariant}
+            activeChains={activeChains}
+            activeCategories={activeCategories}
+            activeTypes={activeTypes}
+            onToggleChain={handleToggleChain}
+            onToggleCategory={handleToggleCategory}
+            onToggleType={vaultType === 'v3' ? handleToggleType : undefined}
+            showStrategies={showStrategies}
           />
         ))}
         {mainVaults.length > 0 ? (
@@ -643,6 +674,13 @@ function ListOfVaults({
                   currentVault={vault}
                   flags={vaultFlags[key]}
                   apyDisplayVariant={apyDisplayVariant}
+                  activeChains={activeChains}
+                  activeCategories={activeCategories}
+                  activeTypes={activeTypes}
+                  onToggleChain={handleToggleChain}
+                  onToggleCategory={handleToggleCategory}
+                  onToggleType={vaultType === 'v3' ? handleToggleType : undefined}
+                  showStrategies={showStrategies}
                 />
               )
             })}
