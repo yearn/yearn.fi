@@ -20,10 +20,10 @@ import {
   type TVaultChartTimeframe,
   VaultChartsSection
 } from '@nextgen/components/vaults-beta/VaultChartsSection'
-import { VaultForwardAPY, VaultForwardAPYInlineDetails } from '@vaults-v3/components/table/VaultForwardAPY'
-import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
+import { APYSparkline } from '@vaults-v3/components/table/APYSparkline'
+import { VaultForwardAPY } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
-import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
+import { VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -48,17 +48,9 @@ export function VaultsV3ListRow({
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
-  const [isApyOpen, setIsApyOpen] = useState(false)
-  const [isRiskOpen, setIsRiskOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('performance')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
-  const kindLabel =
-    currentVault.kind === 'Multi Strategy'
-      ? 'Allocator Vault'
-      : currentVault.kind === 'Single Strategy'
-        ? 'Strategy Vault'
-        : currentVault.kind
   const tvlNativeTooltip = (
     <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       <span className={'font-number'}>
@@ -107,7 +99,7 @@ export function VaultsV3ListRow({
         onKeyDown={handleKeyDown}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
-          'p-6 pt-2 pb-4 pr-16 md:pr-20',
+          'p-6 pt-2 pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
       >
@@ -128,9 +120,8 @@ export function VaultsV3ListRow({
             setIsExpanded((value) => !value)
           }}
           className={cl(
-            'absolute top-4 right-4 z-20 flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
-            'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
-            'md:top-5 md:right-5'
+            'absolute top-5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
+            'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
           )}
         >
           <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
@@ -178,27 +169,18 @@ export function VaultsV3ListRow({
                     {currentVault.category}
                   </span>
                 ) : null}
-                {kindLabel ? (
-                  <span
-                    className={
-                      'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
-                    }
-                  >
-                    {kindLabel}
-                  </span>
-                ) : null}
               </div>
             </div>
           </div>
         </div>
 
         {/* Desktop metrics grid */}
-        <div className={cl('col-span-14 z-10 gap-4 mt-4', 'md:mt-0 md:grid md:grid-cols-14 md:items-center')}>
+        <div className={cl('col-span-14 z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:grid-cols-14 md:items-center')}>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <VaultForwardAPY currentVault={currentVault} showSubline={false} showSublineTooltip />
           </div>
-          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <VaultHistoricalAPY currentVault={currentVault} />
+          <div className={'yearn--table-data-section-item col-span-3 flex items-center'} datatype={'number'}>
+            <APYSparkline chainId={currentVault.chainID} vaultAddress={currentVault.address} />
           </div>
           {/* TVL */}
           <div className={'yearn--table-data-section-item col-span-4'} datatype={'number'}>
@@ -250,84 +232,63 @@ export function VaultsV3ListRow({
           </div>
         </div>
 
-        {/* Mobile metrics grid; conditionally show Deposited if user has holdings */}
+        {/* Mobile metrics grid */}
         <div
           className={cl(
             'col-span-8 z-10',
-            'grid grid-cols-2 gap-4 md:hidden',
-            'pt-2 mt-2 md:mt-0 md:pt-0 border-t border-neutral-800/20'
+            'flex flex-col md:hidden',
+            'pt-3 mt-3 md:mt-0 md:pt-0 border-t border-neutral-800/20'
           )}
         >
+          {/* Estimated APY */}
+          <div className={'flex h-10 flex-row items-center justify-between'} datatype={'number'}>
+            <p className={'text-sm font-medium text-text-primary'}>{'Estimated APY'}</p>
+            <VaultForwardAPY currentVault={currentVault} valueClassName={'text-sm'} showSubline={false} />
+          </div>
+
+          {/* 30D APY Sparkline */}
+          <div className={'flex h-10 flex-row items-center justify-between'} datatype={'number'}>
+            <p className={'text-xs text-text-primary/60'}>{'30D APY'}</p>
+            <div className={'w-24 h-10'}>
+              <APYSparkline chainId={currentVault.chainID} vaultAddress={currentVault.address} />
+            </div>
+          </div>
+
+          {/* TVL */}
+          <div className={'flex h-10 flex-row items-center justify-between'} datatype={'number'}>
+            <p className={'text-xs text-text-primary/60'}>{'TVL'}</p>
+            <p className={'text-sm text-text-primary'}>
+              <RenderAmount
+                value={currentVault.tvl?.tvl}
+                symbol={'USD'}
+                decimals={0}
+                options={{
+                  shouldCompactValue: true,
+                  maximumFractionDigits: 2,
+                  minimumFractionDigits: 0
+                }}
+              />
+            </p>
+          </div>
+
+          {/* Your Deposit */}
           {flags?.hasHoldings ? (
-            <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-              <p className={'inline text-start text-dm text-text-primary'}>{'Your Deposit'}</p>
-              <VaultHoldingsAmount currentVault={currentVault} />
+            <div className={'flex h-10 flex-row items-center justify-between'} datatype={'number'}>
+              <p className={'text-xs text-text-primary/60'}>{'Your Deposit'}</p>
+              <VaultHoldingsAmount currentVault={currentVault} valueClassName={'text-sm'} />
             </div>
           ) : null}
-          <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
-            <div className={'w-full flex flex-col items-start'}>
-              <div className={'flex w-full flex-row items-center justify-between'}>
-                <p className={'inline text-start text-dm text-text-primary'}>{'Estimated APY'}</p>
-                <VaultForwardAPY
-                  currentVault={currentVault}
-                  onMobileToggle={(): void => setIsApyOpen((v) => !v)}
-                  showSubline={false}
-                  showSublineTooltip
-                />
-              </div>
-              {isApyOpen ? (
-                <div className={'mt-2 w-full'}>
-                  <VaultForwardAPYInlineDetails currentVault={currentVault} />
-                </div>
-              ) : null}
-            </div>
-          </div>
-          <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-            <p className={'inline text-start text-dm text-text-primary'}>{'Historical APY'}</p>
-            <VaultHistoricalAPY currentVault={currentVault} />
-          </div>
-          <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-            <p className={'inline text-start text-dm text-text-primary'}>{'TVL'}</p>
-            <div className={'flex justify-end text-right'}>
-              <Tooltip
-                className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
-                openDelayMs={150}
-                toggleOnClick
-                tooltip={tvlNativeTooltip}
-              >
-                <p className={'yearn--table-data-section-item-value'}>
-                  <RenderAmount
-                    value={currentVault.tvl?.tvl}
-                    symbol={'USD'}
-                    decimals={0}
-                    options={{
-                      shouldCompactValue: true,
-                      maximumFractionDigits: 2,
-                      minimumFractionDigits: 0
-                    }}
-                  />
-                </p>
-              </Tooltip>
-            </div>
-          </div>
-          <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
-            <div className={'w-full flex flex-col items-start'} onClick={(event): void => event.stopPropagation()}>
-              <VaultRiskScoreTag
-                riskLevel={currentVault.info.riskLevel}
-                onMobileToggle={(): void => setIsRiskOpen((v) => !v)}
-              />
-              {isRiskOpen ? (
-                <div className={'mt-2 w-full'}>
-                  <RiskScoreInlineDetails riskLevel={currentVault.info.riskLevel} />
-                </div>
-              ) : null}
-            </div>
+
+          {/* Risk Score */}
+          <div className={'flex h-10 flex-row items-center justify-between'} datatype={'number'}>
+            <p className={'text-xs text-text-primary/60'}>{'Risk Score'}</p>
+            <VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} variant={'inline'} />
           </div>
         </div>
       </div>
 
       {isExpanded ? (
-        <div className={'bg-surface'}>
+        <div className={'hidden md:block bg-surface'}>
           <div className={'px-6 pb-6 pt-3'}>
             <div className={'border border-border bg-surface'}>
               <VaultsV3ExpandedSelector
