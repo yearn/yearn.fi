@@ -37,9 +37,7 @@ export function VaultForwardAPY({
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const canOpenModal = displayVariant !== 'factory-list'
-  const valueInteractiveClass = canOpenModal
-    ? 'cursor-pointer underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-    : undefined
+  const valueInteractiveClass = canOpenModal ? 'cursor-pointer' : undefined
   const fixedTermMarket = getFixedTermMarket(currentVault.address)
   const fixedTermIndicator = fixedTermMarket ? (
     <span className={'flex items-center text-text-secondary'} aria-hidden={true}>
@@ -64,8 +62,16 @@ export function VaultForwardAPY({
   const katanaTooltipContent =
     showSublineTooltip && isKatanaVault ? (
       <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
-        <div>{'This Vault is receiving KAT incentives'}</div>
-        {fixedTermMarket ? <div className={'mt-1'}>{'This Vault has fixed rate markets available'}</div> : null}
+        <div className={'flex items-center gap-2'}>
+          <span aria-hidden>{'⚔️'}</span>
+          <span>{'This Vault is receiving KAT incentives'}</span>
+        </div>
+        {fixedTermMarket ? (
+          <div className={'mt-1 flex items-center gap-2'}>
+            <IconFixedRate className={'size-3.5 text-text-secondary'} aria-hidden={true} />
+            <span>{'This Vault has fixed rate markets available'}</span>
+          </div>
+        ) : null}
         {canOpenModal ? (
           <button
             type={'button'}
@@ -170,7 +176,6 @@ export function VaultForwardAPY({
                 <div className={'flex items-center gap-2'}>
                   {fixedTermIndicator}
                   <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
-                    {'⚔️ '}
                     <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
                   </span>
                 </div>
