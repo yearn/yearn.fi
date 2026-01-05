@@ -648,7 +648,7 @@ function ListOfVaults({
     }
 
     return (
-      <div className={'flex flex-col gap-px bg-app'}>
+      <div className={'flex flex-col gap-px bg-border'}>
         {pinnedSections.map((section) => (
           <VaultsV3AuxiliaryList
             key={section.key}
@@ -665,7 +665,7 @@ function ListOfVaults({
           />
         ))}
         {mainVaults.length > 0 ? (
-          <div className={'flex flex-col gap-px bg-app'}>
+          <div className={'flex flex-col gap-px bg-border'}>
             {mainVaults.map((vault) => {
               const key = `${vault.chainID}_${toAddress(vault.address)}`
               return (
@@ -736,7 +736,9 @@ function ListOfVaults({
       <div className={''}>
         <div
           className={'relative md:sticky md:z-30'}
-          style={{ top: 'calc(var(--header-height) + var(--vaults-filters-height))' }}
+          style={{
+            top: 'calc(var(--header-height) + var(--vaults-filters-height))'
+          }}
         >
           <div
             aria-hidden={true}

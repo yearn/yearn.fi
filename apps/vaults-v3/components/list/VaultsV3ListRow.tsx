@@ -139,9 +139,7 @@ export function VaultsV3ListRow({
   }, [isExpanded])
 
   return (
-    <div
-      className={cl('w-full overflow-hidden transition-colors bg-surface', isExpanded ? 'border-y border-border' : '')}
-    >
+    <div className={cl('w-full overflow-hidden transition-colors bg-surface')}>
       {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
       <div
         role={'link'}
@@ -181,11 +179,7 @@ export function VaultsV3ListRow({
 
         {/* TODO:on hover add list head categories */}
         <div className={cl('col-span-10 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
-          <div
-            className={
-              'flex flex-row-reverse sm:flex-row w-full justify-between sm:justify-normal gap-4 overflow-hidden'
-            }
-          >
+          <div className={'flex flex-row-reverse sm:flex-row w-full justify-between sm:justify-normal gap-4'}>
             <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
               <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
@@ -376,7 +370,7 @@ export function VaultsV3ListRow({
       {isExpanded ? (
         <div className={'bg-surface'}>
           <div className={'px-6 pb-6 pt-3'}>
-            <div className={'border border-border bg-surface'}>
+            <div className={' bg-surface'}>
               <VaultsV3ExpandedSelector
                 className={'p-3'}
                 activeView={expandedView}
@@ -391,7 +385,7 @@ export function VaultsV3ListRow({
                       navigate(href)
                     }}
                     className={
-                      'rounded-lg border border-border bg-surface-secondary px-4 py-2 text-xs font-semibold text-text-primary transition-colors hover:bg-surface-secondary/80'
+                      'rounded-lg  bg-surface-secondary px-4 py-2 text-xs font-semibold text-text-primary transition-colors hover:bg-surface-secondary/80'
                     }
                   >
                     {'Go to Vault'}
