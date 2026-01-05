@@ -1,4 +1,6 @@
+import { useChartStyle } from '@lib/contexts/useChartStyle'
 import { cl } from '@lib/utils'
+import { getChartStyleVariables } from '@lib/utils/chartStyles'
 import type { ComponentProps, ComponentType, CSSProperties, ReactNode } from 'react'
 import { createContext, forwardRef, useContext, useId, useMemo } from 'react'
 import * as Recharts from 'recharts'
@@ -32,22 +34,23 @@ type ChartContainerProps = ComponentProps<'div'> & {
 }
 
 export const ChartContainer = forwardRef<HTMLDivElement, ChartContainerProps>(
-  ({ id, className, children, config, ...props }, ref) => {
+  ({ id, className, children, config, style, ...props }, ref) => {
     const uniqueId = useId()
     const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`
+    const { chartStyle } = useChartStyle()
+    const chartStyleVars = getChartStyleVariables(chartStyle)
 
     return (
       <ChartContext.Provider value={{ config }}>
         <div
           data-chart={chartId}
           ref={ref}
-          className={cl(
-            'flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-neutral-500 [&_.recharts-cartesian-grid_line[stroke="#ccc"]]:stroke-neutral-200 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-neutral-200 [&_.recharts-dot[stroke="#fff"]]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke="#ccc"]]:stroke-neutral-200 [&_.recharts-radial-bar-background-sector]:fill-neutral-100 [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-neutral-100 [&_.recharts-reference-line_[stroke="#ccc"]]:stroke-neutral-200 [&_.recharts-sector[stroke="#fff"]]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none',
-            className
-          )}
+          className={cl('flex aspect-video justify-center text-xs', className)}
+          style={{ ...chartStyleVars, ...style } as CSSProperties}
           {...props}
         >
           <ChartStyle id={chartId} config={config} />
+          <ChartAppearanceStyle id={chartId} />
           <Recharts.ResponsiveContainer>{children}</Recharts.ResponsiveContainer>
         </div>
       </ChartContext.Provider>
@@ -74,6 +77,25 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
       return `${prefix} [data-chart=${id}] {\n${cssLines}\n}`
     })
     .join('\n')
+
+  return <style>{styles}</style>
+}
+
+const ChartAppearanceStyle = ({ id }: { id: string }) => {
+  const styles = `
+[data-chart=${id}] .recharts-cartesian-axis-tick text { fill: var(--chart-axis); }
+[data-chart=${id}] .recharts-cartesian-grid line[stroke="#ccc"] { stroke: var(--chart-grid); }
+[data-chart=${id}] .recharts-curve.recharts-tooltip-cursor { stroke: var(--chart-cursor-line); }
+[data-chart=${id}] .recharts-rectangle.recharts-tooltip-cursor { fill: var(--chart-cursor-fill); }
+[data-chart=${id}] .recharts-dot[stroke="#fff"] { stroke: transparent; }
+[data-chart=${id}] .recharts-layer { outline: none; }
+[data-chart=${id}] .recharts-polar-grid [stroke="#ccc"] { stroke: var(--chart-grid); }
+[data-chart=${id}] .recharts-radial-bar-background-sector { fill: var(--chart-radial-bg); }
+[data-chart=${id}] .recharts-reference-line [stroke="#ccc"] { stroke: var(--chart-grid); }
+[data-chart=${id}] .recharts-sector[stroke="#fff"] { stroke: transparent; }
+[data-chart=${id}] .recharts-sector { outline: none; }
+[data-chart=${id}] .recharts-surface { outline: none; }
+`
 
   return <style>{styles}</style>
 }

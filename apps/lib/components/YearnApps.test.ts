@@ -7,7 +7,7 @@ describe('APP_GROUPS', () => {
 
   it('includes newly requested internal tools', () => {
     expect(allNames).toEqual(
-      expect.arrayContaining(['Yearn Space', 'Oracle', 'CMS', 'Token Assets', 'Seafood', 'Kong'])
+      expect.arrayContaining(['YearnX', 'APR Oracle', 'yCMS', 'Token Assets', 'Seafood', 'Kong', 'PowerGlove'])
     )
   })
 
@@ -15,7 +15,7 @@ describe('APP_GROUPS', () => {
     expect(allNames).toEqual(expect.arrayContaining(['Docs', 'Support', 'Blog', 'Discourse']))
   })
 
-  it('exposes a home tile because the logo no longer navigates directly', () => {
-    expect(allNames).toContain('Home')
+  it('exposes both v3 and factory vault entrypoints', () => {
+    expect(allNames).toEqual(expect.arrayContaining(['V3 Vaults', 'Factory Vaults']))
   })
 })

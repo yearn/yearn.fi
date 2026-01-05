@@ -91,7 +91,7 @@ export const APPS: { [key in AppName]: TApp } = {
   },
   Vaults: {
     name: `${AppName.VAULTS} V2`,
-    href: '/vaults?type=v2',
+    href: '/vaults?type=factory',
     menu: VAULTS_MENU,
     manifest: vaultsManifest,
     icon: <LogoYearn className={'size-8'} back={'text-pink-400'} front={'text-white'} />

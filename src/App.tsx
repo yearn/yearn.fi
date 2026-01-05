@@ -2,6 +2,7 @@ import { DevToolbar } from '@components/DevToolbar'
 import AppHeader from '@lib/components/Header'
 import { Meta } from '@lib/components/Meta'
 import { WithFonts } from '@lib/components/WithFonts'
+import { ChartStyleContextApp } from '@lib/contexts/useChartStyle'
 import { IndexedDB } from '@lib/contexts/useIndexedDB'
 import { WithNotifications } from '@lib/contexts/useNotifications'
 import { WithNotificationsActions } from '@lib/contexts/useNotificationsActions'
@@ -84,20 +85,22 @@ function App(): ReactElement {
               ]}
             >
               <AppSettingsContextApp>
-                <YearnContextApp>
-                  <WalletContextApp>
-                    <IndexedDB>
-                      <WithNotifications>
-                        <WithNotificationsActions>
-                          <DevFlagsProvider>
-                            <WithLayout />
-                            <DevToolbar />
-                          </DevFlagsProvider>
-                        </WithNotificationsActions>
-                      </WithNotifications>
-                    </IndexedDB>
-                  </WalletContextApp>
-                </YearnContextApp>
+                <ChartStyleContextApp>
+                  <YearnContextApp>
+                    <WalletContextApp>
+                      <IndexedDB>
+                        <WithNotifications>
+                          <WithNotificationsActions>
+                            <DevFlagsProvider>
+                              <WithLayout />
+                              <DevToolbar />
+                            </DevFlagsProvider>
+                          </WithNotificationsActions>
+                        </WithNotifications>
+                      </IndexedDB>
+                    </WalletContextApp>
+                  </YearnContextApp>
+                </ChartStyleContextApp>
               </AppSettingsContextApp>
             </WithMom>
           </PlausibleProvider>

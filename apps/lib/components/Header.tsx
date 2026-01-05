@@ -6,11 +6,12 @@ import { IconBurgerPlain } from '@lib/icons/IconBurgerPlain'
 import { IconSpinner } from '@lib/icons/IconSpinner'
 import { IconWallet } from '@lib/icons/IconWallet'
 import { cl } from '@lib/utils'
+import { normalizePathname } from '@lib/utils/routes'
 import { truncateHex } from '@lib/utils/tools.address'
 import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { useLocation } from 'react-router'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
 import { TypeMarkYearn as TypeMarkYearnText } from '../icons/TypeMarkYearn-text-only'
@@ -127,58 +128,10 @@ function WalletSelector(): ReactElement {
   )
 }
 
-function VaultVersionSwitch(): ReactElement {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const pathname = location.pathname
-  const searchParams = new URLSearchParams(location.search)
-  const typeParam = searchParams.get('type')
-
-  const isOnVaultsPage = pathname.startsWith('/vaults')
-  const isV2Active = isOnVaultsPage && typeParam === 'v2'
-  const isV3Active = isOnVaultsPage && typeParam !== 'v2'
-
-  return (
-    <div
-      className={
-        'flex shrink-0 items-center gap-px rounded-full border h-7 py-0.5 px-0.5 bg-surface-secondary border-border text-xs'
-      }
-    >
-      <button
-        type={'button'}
-        className={cl(
-          'flex items-center rounded-full px-2.5 py-0.5 font-medium transition-all',
-          'hover:bg-surface/70',
-          'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100',
-          'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
-        )}
-        data-active={isV3Active}
-        onClick={(): void => void navigate('/vaults')}
-        aria-pressed={isV3Active}
-      >
-        {'V3'}
-      </button>
-      <button
-        type={'button'}
-        className={cl(
-          'flex items-center rounded-full px-2.5 py-0.5 font-medium transition-all',
-          'hover:bg-surface/70',
-          'data-[active=false]:text-text-secondary data-[active=false]:opacity-60 data-[active=false]:hover:text-text-primary data-[active=false]:hover:opacity-100',
-          'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:opacity-100 data-[active=true]:shadow-sm'
-        )}
-        data-active={isV2Active}
-        onClick={(): void => void navigate('/vaults?type=v2')}
-        aria-pressed={isV2Active}
-      >
-        {'V2'}
-      </button>
-    </div>
-  )
-}
-
 function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
   const location = useLocation()
   const pathname = location.pathname
+  const normalizedPathname = normalizePathname(pathname)
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
   const { setShouldOpenCurtain, notificationStatus } = useNotifications()
 
@@ -233,7 +186,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
     return ''
   }, [notificationStatus])
 
-  const isHomePage = window.location.pathname === '/'
+  const isHomePage = normalizedPathname === '/'
 
   return (
     <div id={'head'} className={'sticky inset-x-0 top-0 z-50 w-full bg-app backdrop-blur-md'}>
@@ -261,7 +214,6 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
                       {'Vaults'}
                     </span>
                   </Link>
-                  <VaultVersionSwitch />
                 </div>
 
                 {/* Separator */}
@@ -322,11 +274,11 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
           <span className={'text-[32px] font-bold'}>{'V3 Vaults'}</span>
         </Link>
         <Link
-          href={'/vaults?type=v2'}
+          href={'/vaults?type=factory'}
           className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
           onClick={(): void => setIsMenuOpen(false)}
         >
-          <span className={'text-[32px] font-bold'}>{'V2 Vaults'}</span>
+          <span className={'text-[32px] font-bold'}>{'Factory Vaults'}</span>
         </Link>
         <Link
           href={'/portfolio'}

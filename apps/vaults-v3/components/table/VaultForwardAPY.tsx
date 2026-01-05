@@ -1,5 +1,6 @@
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { Renderable } from '@lib/components/Renderable'
+import { Tooltip } from '@lib/components/Tooltip'
 import { cl, formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@vaults-v3/constants/addresses'
@@ -7,7 +8,7 @@ import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import type { ReactElement } from 'react'
 import { Fragment, useState } from 'react'
 import { APYDetailsModal } from './APYDetailsModal'
-import { APYSubline } from './APYSubline'
+import { APYSubline, getApySublineLines } from './APYSubline'
 import { APYTooltipContent } from './APYTooltip'
 import { KatanaApyTooltipContent } from './KatanaApyTooltip'
 
@@ -16,13 +17,15 @@ export function VaultForwardAPY({
   onMobileToggle,
   className,
   valueClassName,
-  showSubline = true
+  showSubline = true,
+  showSublineTooltip = false
 }: {
   currentVault: TYDaemonVault
   onMobileToggle?: (e: React.MouseEvent) => void
   className?: string
   valueClassName?: string
   showSubline?: boolean
+  showSublineTooltip?: boolean
 }): ReactElement {
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -31,8 +34,45 @@ export function VaultForwardAPY({
   const isEligibleForSpectraBoost =
     currentVault.chainID === KATANA_CHAIN_ID &&
     SPECTRA_BOOST_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
+  const sublineLines = getApySublineLines({
+    hasPendleArbRewards: data.hasPendleArbRewards,
+    hasKelpNEngenlayer: data.hasKelpNEngenlayer,
+    hasKelp: data.hasKelp,
+    isEligibleForSteer: data.isEligibleForSteer,
+    steerPointsPerDollar: data.steerPointsPerDollar,
+    isEligibleForSpectraBoost
+  })
+  const hasSublineTooltip = showSublineTooltip && sublineLines.length > 0
+  const enableSublineTooltipClick = Boolean(onMobileToggle)
+  const sublineTooltipContent = (
+    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+      {sublineLines.map((line, index) => (
+        <div key={line} className={index === 0 ? '' : 'mt-1'}>
+          {line}
+        </div>
+      ))}
+    </div>
+  )
+  const renderValueWithTooltip = (value: ReactElement): ReactElement => {
+    if (!hasSublineTooltip) {
+      return value
+    }
+
+    return (
+      <Tooltip
+        className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
+        openDelayMs={150}
+        toggleOnClick={enableSublineTooltipClick}
+        tooltip={sublineTooltipContent}
+      >
+        {value}
+      </Tooltip>
+    )
+  }
   const handleValueClick = (e: React.MouseEvent): void => {
-    e.stopPropagation()
+    if (!(hasSublineTooltip && enableSublineTooltipClick)) {
+      e.stopPropagation()
+    }
     if (onMobileToggle) {
       onMobileToggle(e)
       return
@@ -60,20 +100,22 @@ export function VaultForwardAPY({
     return (
       <Fragment>
         <div className={cl('relative flex flex-col items-end md:text-right', className)}>
-          <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
-            <Renderable shouldRender={true} fallback={'NEW'}>
-              <div className={'flex items-center gap-2'}>
-                <span
-                  className={
-                    'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                  }
-                >
-                  {'⚔️ '}
-                  <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
-                </span>
-              </div>
-            </Renderable>
-          </b>
+          {renderValueWithTooltip(
+            <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+              <Renderable shouldRender={true} fallback={'NEW'}>
+                <div className={'flex items-center gap-2'}>
+                  <span
+                    className={
+                      'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                    }
+                  >
+                    {'⚔️ '}
+                    <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
+                  </span>
+                </div>
+              </Renderable>
+            </b>
+          )}
           {showSubline ? (
             <APYSubline
               hasPendleArbRewards={false}
@@ -113,25 +155,27 @@ export function VaultForwardAPY({
       return (
         <Fragment>
           <div className={cl('relative flex flex-col items-end md:text-right', className)}>
-            <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
-              <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-                <div className={'flex items-center gap-2'}>
-                  <span
-                    className={
-                      'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                    }
-                  >
-                    {'⚡️ '}
-                    <RenderAmount
-                      shouldHideTooltip={hasZeroBoostedAPY}
-                      value={boostedAPY}
-                      symbol={'percent'}
-                      decimals={6}
-                    />
-                  </span>
-                </div>
-              </Renderable>
-            </b>
+            {renderValueWithTooltip(
+              <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+                <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
+                  <div className={'flex items-center gap-2'}>
+                    <span
+                      className={
+                        'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                      }
+                    >
+                      {'⚡️ '}
+                      <RenderAmount
+                        shouldHideTooltip={hasZeroBoostedAPY}
+                        value={boostedAPY}
+                        symbol={'percent'}
+                        decimals={6}
+                      />
+                    </span>
+                  </div>
+                </Renderable>
+              </b>
+            )}
             {showSubline ? (
               <APYSubline
                 hasPendleArbRewards={data.hasPendleArbRewards}
@@ -153,11 +197,13 @@ export function VaultForwardAPY({
 
     return (
       <div className={cl('relative flex flex-col items-end md:text-right', className)}>
-        <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
-          <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-            <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
-          </Renderable>
-        </b>
+        {renderValueWithTooltip(
+          <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
+              <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
+            </Renderable>
+          </b>
+        )}
         {showSubline ? (
           <APYSubline
             hasPendleArbRewards={data.hasPendleArbRewards}
@@ -188,24 +234,26 @@ export function VaultForwardAPY({
     return (
       <Fragment>
         <div className={cl('flex flex-col items-end md:text-right', className)}>
-          <b
-            className={cl(
-              'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600',
-              valueClassName
-            )}
-            onClick={handleValueClick}
-          >
-            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-              <div className={'flex cursor-pointer items-center gap-2'}>
-                <RenderAmount
-                  shouldHideTooltip
-                  value={currentVault.apr.forwardAPR.netAPR}
-                  symbol={'percent'}
-                  decimals={6}
-                />
-              </div>
-            </Renderable>
-          </b>
+          {renderValueWithTooltip(
+            <b
+              className={cl(
+                'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600',
+                valueClassName
+              )}
+              onClick={handleValueClick}
+            >
+              <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
+                <div className={'flex cursor-pointer items-center gap-2'}>
+                  <RenderAmount
+                    shouldHideTooltip
+                    value={currentVault.apr.forwardAPR.netAPR}
+                    symbol={'percent'}
+                    decimals={6}
+                  />
+                </div>
+              </Renderable>
+            </b>
+          )}
           <small className={'text-xs text-text-primary'}>
             <Renderable shouldRender={data.isBoosted}>{`BOOST ${formatAmount(data.boost || 0, 2, 2)}x`}</Renderable>
           </small>
@@ -260,36 +308,38 @@ export function VaultForwardAPY({
     return (
       <Fragment>
         <div className={cl('relative flex flex-col items-end md:text-right', className)}>
-          <b
-            className={cl('yearn--table-data-section-item-value whitespace-nowrap', valueClassName)}
-            onClick={handleValueClick}
-          >
-            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-              <div className={'flex items-center gap-2'}>
-                <span
-                  className={
-                    'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                  }
-                >
-                  {'⚡️ '}
-                  {estAPYRange ? (
-                    <Fragment>
-                      <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
-                      &nbsp;&rarr;&nbsp;
-                      <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
-                    </Fragment>
-                  ) : (
-                    <RenderAmount
-                      shouldHideTooltip={hasZeroBoostedAPY}
-                      value={boostedAPY}
-                      symbol={'percent'}
-                      decimals={6}
-                    />
-                  )}
-                </span>
-              </div>
-            </Renderable>
-          </b>
+          {renderValueWithTooltip(
+            <b
+              className={cl('yearn--table-data-section-item-value whitespace-nowrap', valueClassName)}
+              onClick={handleValueClick}
+            >
+              <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
+                <div className={'flex items-center gap-2'}>
+                  <span
+                    className={
+                      'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                    }
+                  >
+                    {'⚡️ '}
+                    {estAPYRange ? (
+                      <Fragment>
+                        <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
+                        &nbsp;&rarr;&nbsp;
+                        <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
+                      </Fragment>
+                    ) : (
+                      <RenderAmount
+                        shouldHideTooltip={hasZeroBoostedAPY}
+                        value={boostedAPY}
+                        symbol={'percent'}
+                        decimals={6}
+                      />
+                    )}
+                  </span>
+                </div>
+              </Renderable>
+            </b>
+          )}
           {showSubline ? (
             <APYSubline
               hasPendleArbRewards={data.hasPendleArbRewards}
@@ -313,12 +363,14 @@ export function VaultForwardAPY({
   if (data.mode === 'spot') {
     return (
       <div className={cl('relative flex flex-col items-end md:text-right', className)}>
-        <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
-          <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-            {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
-            <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
-          </Renderable>
-        </b>
+        {renderValueWithTooltip(
+          <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+            <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
+              {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+              <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
+            </Renderable>
+          </b>
+        )}
         {showSubline ? (
           <APYSubline
             hasPendleArbRewards={data.hasPendleArbRewards}
@@ -337,15 +389,17 @@ export function VaultForwardAPY({
   const hasZeroAPY = isZero(data.netApr) || Number((data.netApr || 0).toFixed(2)) === 0
   return (
     <div className={cl('relative flex flex-col items-end md:text-right', className)}>
-      <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
-        <Renderable
-          shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')}
-          fallback={'NEW'}
-        >
-          {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
-          <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
-        </Renderable>
-      </b>
+      {renderValueWithTooltip(
+        <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+          <Renderable
+            shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')}
+            fallback={'NEW'}
+          >
+            {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+            <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
+          </Renderable>
+        </b>
+      )}
       {showSubline ? (
         <APYSubline
           hasPendleArbRewards={data.hasPendleArbRewards}

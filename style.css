@@ -179,7 +179,6 @@ body {
 }
 
 @layer components {
-
   .vaults-card {
     background-color: var(--color-neutral-0);
   }
@@ -326,7 +325,7 @@ body {
   @apply text-neutral-900;
 }
 .yearn--table-data-section-item {
-  @apply flex h-min flex-row md:items-start justify-between pt-0 px-0 md:min-h-14 md:pt-2;
+  @apply flex h-min flex-row md:items-center justify-between pt-0 px-0 md:min-h-14 md:pt-2;
   &[datatype='number'] {
     @apply md:text-right md:justify-end;
     & > .yearn--table-data-section-item-value {
@@ -666,6 +665,24 @@ input[type='number'] {
     transform: translateY(-50%);
   }
 }
+.trending-vaults-marquee {
+  animation: trendingVaultsMarquee var(--trending-marquee-duration, 24s) linear
+    infinite;
+}
+.trending-vaults-marquee > * {
+  flex: 0 0 auto;
+}
+.trending-vaults-marquee--paused {
+  animation-play-state: paused;
+}
+@keyframes trendingVaultsMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
 .wordWrapper {
   display: inline-block;
   vertical-align: top;
@@ -710,4 +727,3 @@ input[type='number'] {
     transform: translateY(0);
   }
 }
-
