@@ -612,7 +612,7 @@ function ListOfVaults({
       defaultSecondaryChainIds: [],
       chainDisplayOrder: V2_SUPPORTED_CHAINS,
       showMoreChainsButton: false,
-      allChainsLabel: 'All'
+      allChainsLabel: 'All Chains'
     }
   }, [vaultType])
 

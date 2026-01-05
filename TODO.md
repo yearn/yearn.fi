@@ -22,8 +22,8 @@ Format:
 
 | Issue | Status | Date | Summary | Location | Spec | Group | Root Branch | Work Branch |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| GH-868 | spec'd |  | Allocator vault list shows unexpected secondary tooltip value on hover; remove conflicting tooltip. | /vaults (allocator list) | docs/specs/allocator-vaults-tooltip-conflict.md | vaults-tooltips | Feat--New-Vault-Page | vaults/tooltips |
-| GH-870 | spec'd |  | Chain selector label on factory vaults shows "All" instead of "All Chains". | /vaults (factory) | docs/specs/vaults-factory-chain-selector-label.md | vaults-filters | Feat--New-Vault-Page | vaults/filters-ui |
+| GH-868 | In Progress |  | Allocator vault list shows unexpected secondary tooltip value on hover; remove conflicting tooltip. | /vaults (allocator list) | docs/specs/allocator-vaults-tooltip-conflict.md | vaults-tooltips | Feat--New-Vault-Page | vaults/tooltips |
+| GH-870 | In Progress |  | Chain selector label on factory vaults shows "All" instead of "All Chains". | /vaults (factory) | docs/specs/vaults-factory-chain-selector-label.md | vaults-filters | Feat--New-Vault-Page | vaults/filters-ui |
 | GH-871 | spec'd |  | Standardize tooltip format for `/vaults` filters bar (Allocator/Factory/Ethereum). | /vaults filters | docs/specs/vaults-filters-tooltip-standard.md | vaults-filters | Feat--New-Vault-Page | vaults/filters-ui |
 | GH-872 | In Progress |  | Trending vaults card disappears when no vaults are fetched; add size-matched skeleton to avoid layout shift. | /vaults (trending) | docs/specs/trending-vaults-skeleton.md | vaults-list-ui | Feat--New-Vault-Page | vaults/list-ui |
 | GH-873 | In Progress |  | Factory vault list: remove boost subline under Est. APY, show rocket hover popover with boost amount; no modal on Est. APY. | /vaults (factory list) | docs/specs/factory-vaults-boost-popover.md | vaults-list-ui | Feat--New-Vault-Page | vaults/list-ui |
