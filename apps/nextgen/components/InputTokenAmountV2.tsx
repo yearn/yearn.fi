@@ -130,9 +130,9 @@ export const InputTokenAmountV2: FC<Props> = ({
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-text-primary">{title}</label>
 
-          {/* Percentage buttons - appear on hover */}
+          {/* Percentage buttons */}
           {!hidePercentageButtons && (
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-100">
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => handlePercentageClick(25)}
