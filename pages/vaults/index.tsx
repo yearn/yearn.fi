@@ -1,4 +1,5 @@
 import Link from '@components/Link'
+import { usePrefetchYearnVaults } from '@lib/hooks/useFetchYearnVaults'
 import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
@@ -932,6 +933,8 @@ function useVaultListExtraFilters(): {
 }
 
 function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElement {
+  usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType !== 'factory')
+
   const {
     protocols,
     aggressiveness,
