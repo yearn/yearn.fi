@@ -49,7 +49,7 @@ export function useV3VaultFilter(
   categories?: string[] | null,
   protocols?: string[] | null,
   aggressiveness?: number[] | null,
-  showHiddenYearnVaults?: boolean
+  showHiddenVaults?: boolean
 ): TV3VaultFilterResult {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
@@ -258,15 +258,19 @@ export function useV3VaultFilter(
           !categories || categories.length === 0 || categories.some((category) => vaultCategorySet.has(category))
 
         const isFeatured = Boolean(vault.info?.isHighlighted)
+        const isHidden = Boolean(vault.info?.isHidden)
         const isPinnedByUserContext = Boolean(hasUserHoldings || isMigratableVault || isRetiredVault)
-        const shouldIncludeByFeaturedGate = Boolean(showHiddenYearnVaults || isFeatured || isPinnedByUserContext)
+        const kind = deriveListKind(vault)
+        const isStrategy = kind === 'strategy'
+        const shouldIncludeByFeaturedGate = Boolean(
+          showHiddenVaults || (!isHidden && (isStrategy || isFeatured || isPinnedByUserContext))
+        )
 
         let shouldIncludeByKind = true
         if (types && types.length > 0) {
           const hasMulti = types.includes('multi')
           const hasSingle = types.includes('single')
 
-          const kind = deriveListKind(vault)
           const matchesAllocator = hasMulti && kind === 'allocator'
           const matchesStrategy = hasSingle && kind === 'strategy'
 
@@ -275,7 +279,6 @@ export function useV3VaultFilter(
 
         let shouldIncludeByProtocol = true
         if (protocols && protocols.length > 0) {
-          const kind = deriveListKind(vault)
           if (kind === 'allocator') {
             shouldIncludeByProtocol = false
           } else {
@@ -312,17 +315,7 @@ export function useV3VaultFilter(
       totalMigratableMatching,
       totalRetiredMatching
     }
-  }, [
-    processedVaults,
-    types,
-    chains,
-    search,
-    categories,
-    protocols,
-    aggressiveness,
-    holdingsVaults,
-    showHiddenYearnVaults
-  ])
+  }, [processedVaults, types, chains, search, categories, protocols, aggressiveness, holdingsVaults, showHiddenVaults])
 
   return {
     ...filteredResults,
