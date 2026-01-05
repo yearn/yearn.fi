@@ -25,12 +25,13 @@ Format:
 | GH-868 | spec'd |  | Allocator vault list shows unexpected secondary tooltip value on hover; remove conflicting tooltip. | /vaults (allocator list) | docs/specs/allocator-vaults-tooltip-conflict.md | vaults-tooltips | Feat--New-Vault-Page | vaults/tooltips |
 | GH-870 | spec'd |  | Chain selector label on factory vaults shows "All" instead of "All Chains". | /vaults (factory) | docs/specs/vaults-factory-chain-selector-label.md | vaults-filters | Feat--New-Vault-Page | vaults/filters-ui |
 | GH-871 | spec'd |  | Standardize tooltip format for `/vaults` filters bar (Allocator/Factory/Ethereum). | /vaults filters | docs/specs/vaults-filters-tooltip-standard.md | vaults-filters | Feat--New-Vault-Page | vaults/filters-ui |
-| GH-872 | spec'd |  | Trending vaults card disappears when no vaults are fetched; add size-matched skeleton to avoid layout shift. | /vaults (trending) | docs/specs/trending-vaults-skeleton.md | vaults-list-ui | Feat--New-Vault-Page | vaults/list-ui |
-| GH-873 | spec'd |  | Factory vault list: remove boost subline under Est. APY, show rocket hover popover with boost amount; no modal on Est. APY. | /vaults (factory list) | docs/specs/factory-vaults-boost-popover.md | vaults-list-ui | Feat--New-Vault-Page | vaults/list-ui |
-| GH-874 | spec'd |  | Vaults list chips: add click-to-filter, active state + icons, allocator chip gated by advanced settings, reusable chip component. | /vaults list | docs/specs/vaults-list-chip-enhancements.md | vaults-list-ui | Feat--New-Vault-Page | vaults/list-ui |
-| GH-875 | spec'd |  | Add fixed-term (Spectra/Pendle) icons next to Est. APY with tooltip + market link. | /vaults list + APY display | docs/specs/vaults-fixed-term-icons.md | vaults-list-ui | Feat--New-Vault-Page | vaults/list-ui |
+| GH-872 | In Progress |  | Trending vaults card disappears when no vaults are fetched; add size-matched skeleton to avoid layout shift. | /vaults (trending) | docs/specs/trending-vaults-skeleton.md | vaults-list-ui | Feat--New-Vault-Page | vaults/list-ui |
+| GH-873 | In Progress |  | Factory vault list: remove boost subline under Est. APY, show rocket hover popover with boost amount; no modal on Est. APY. | /vaults (factory list) | docs/specs/factory-vaults-boost-popover.md | vaults-list-ui | Feat--New-Vault-Page | vaults/list-ui |
+| GH-874 | In Progress |  | Vaults list chips: add click-to-filter, active state + icons, allocator chip gated by advanced settings, reusable chip component. | /vaults list | docs/specs/vaults-list-chip-enhancements.md | vaults-list-ui | Feat--New-Vault-Page | vaults/list-ui |
+| GH-875 | In Progress |  | Add fixed-term (Spectra/Pendle) icons next to Est. APY with tooltip + market link. | /vaults list + APY display | docs/specs/vaults-fixed-term-icons.md | vaults-list-ui | Feat--New-Vault-Page | vaults/list-ui |
 | GH-883 | spec'd | 2026-01-05 | Prefetch factory vaults to eliminate toggle delay. | /vaults filters toggle | docs/specs/vaults-factory-prefetch.md | vaults-filters | Feat--New-Vault-Page | vaults/filters-ui |
 | GH-884 | spec'd | 2026-01-05 | Remove full Dark theme; keep Soft-Dark only. | Dev toolbar / theme selector | docs/specs/remove-full-dark-mode.md | theme-ui | Feat--New-Vault-Page | theme/soft-dark-only |
+| GH-886 | spec'd | 2026-01-05 | Render initial app shell during wallet/data load to avoid blank screen. | global app load / header / all pages | docs/specs/app-initial-load-skeleton.md | app-loading | Feat--New-Vault-Page | app/initial-load-shell |
 |  |  |  |  |  |  |  |  |  |
 
 ## Tech Debt
