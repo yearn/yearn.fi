@@ -76,8 +76,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   // ============================================================================
   // Withdrawal Source Logic
   // ============================================================================
-  const hasVaultBalance = vault?.balance.raw && vault.balance.raw > 0n
-  const hasStakingBalance = stakingToken?.balance.raw && stakingToken.balance.raw > 0n
+  const hasVaultBalance = (vault?.balance.raw ?? 0n) > 0n
+  const hasStakingBalance = (stakingToken?.balance.raw ?? 0n) > 0n
   const hasBothBalances = hasVaultBalance && hasStakingBalance
 
   useEffect(() => {
