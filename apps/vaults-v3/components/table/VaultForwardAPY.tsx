@@ -166,11 +166,11 @@ export function VaultForwardAPY({
             <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
               <Renderable shouldRender={true} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
+                  {fixedTermIndicator}
                   <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
                     {'⚔️ '}
                     <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
                   </span>
-                  {fixedTermIndicator}
                 </div>
               </Renderable>
             </b>
@@ -220,6 +220,7 @@ export function VaultForwardAPY({
               <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
                 <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                   <div className={'flex items-center gap-2'}>
+                    {fixedTermIndicator}
                     <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
                       {'⚡️ '}
                       <RenderAmount
@@ -229,7 +230,6 @@ export function VaultForwardAPY({
                         decimals={6}
                       />
                     </span>
-                    {fixedTermIndicator}
                   </div>
                 </Renderable>
               </b>
@@ -264,8 +264,8 @@ export function VaultForwardAPY({
           >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <span className={'inline-flex items-center gap-2'}>
-                <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
                 {fixedTermIndicator}
+                <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
               </span>
             </Renderable>
           </b>
@@ -330,14 +330,14 @@ export function VaultForwardAPY({
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={cl('flex items-center gap-2', canOpenModal ? 'cursor-pointer' : undefined)}>
+                  {fixedTermIndicator}
+                  {boostIndicator}
                   <RenderAmount
                     shouldHideTooltip
                     value={currentVault.apr.forwardAPR.netAPR}
                     symbol={'percent'}
                     decimals={6}
                   />
-                  {boostIndicator}
-                  {fixedTermIndicator}
                 </div>
               </Renderable>
             </b>
@@ -407,6 +407,7 @@ export function VaultForwardAPY({
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
+                  {fixedTermIndicator}
                   <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
                     {'⚡️ '}
                     {estAPYRange ? (
@@ -424,7 +425,6 @@ export function VaultForwardAPY({
                       />
                     )}
                   </span>
-                  {fixedTermIndicator}
                 </div>
               </Renderable>
             </b>
@@ -461,11 +461,11 @@ export function VaultForwardAPY({
           >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <span className={'inline-flex items-center gap-2'}>
+                {fixedTermIndicator}
                 <span className={'flex items-center gap-1'}>
                   {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
                   <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
                 </span>
-                {fixedTermIndicator}
               </span>
             </Renderable>
           </b>
@@ -498,11 +498,11 @@ export function VaultForwardAPY({
             fallback={'NEW'}
           >
             <span className={'inline-flex items-center gap-2'}>
+              {fixedTermIndicator}
               <span className={'flex items-center gap-1'}>
                 {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
                 <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
               </span>
-              {fixedTermIndicator}
             </span>
           </Renderable>
         </b>
