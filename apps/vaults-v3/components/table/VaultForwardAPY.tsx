@@ -90,7 +90,9 @@ export function VaultForwardAPY({
     ) : null
 
   const boostTooltipLine =
-    data.mode === 'boosted' && data.isBoosted ? `Boost ${formatAmount(data.boost || 0, 2, 2)}x` : null
+    displayVariant !== 'factory-list' && data.mode === 'boosted' && data.isBoosted
+      ? `Boost ${formatAmount(data.boost || 0, 2, 2)}x`
+      : null
   const fixedRateTooltipLine =
     fixedTermMarket && !isKatanaVault ? `Fixed-rate markets available on ${fixedTermMarket.label}.` : null
   const standardTooltipLines = [boostTooltipLine, ...sublineLines, fixedRateTooltipLine].filter(
@@ -294,12 +296,6 @@ export function VaultForwardAPY({
   if (data.mode === 'boosted' && data.isBoosted) {
     const unBoostedAPY = data.unboostedApr || 0
     const boostValue = formatAmount(data.boost || 0, 2, 2)
-    const boostIndicator =
-      displayVariant === 'factory-list' ? (
-        <span className={'text-sm text-text-secondary'} aria-hidden={true}>
-          {'🚀'}
-        </span>
-      ) : null
     const modalContent = (
       <APYTooltipContent
         baseAPY={unBoostedAPY}
@@ -321,7 +317,6 @@ export function VaultForwardAPY({
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={cl('flex items-center gap-2', canOpenModal ? 'cursor-pointer' : undefined)}>
                   {fixedTermIndicator}
-                  {boostIndicator}
                   <RenderAmount
                     shouldHideTooltip
                     value={currentVault.apr.forwardAPR.netAPR}

@@ -314,6 +314,7 @@ export function VaultsV3ListRow({
                   onMobileToggle={(): void => setIsApyOpen((v) => !v)}
                   showSubline={false}
                   showSublineTooltip
+                  displayVariant={apyDisplayVariant}
                 />
               </div>
               {isApyOpen ? (
