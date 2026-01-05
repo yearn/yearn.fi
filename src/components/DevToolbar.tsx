@@ -1,5 +1,7 @@
 import { setThemePreference, toggleThemePreference, useThemePreference } from '@hooks/useThemePreference'
+import { CHART_STYLE_OPTIONS, useChartStyle } from '@lib/contexts/useChartStyle'
 import { cl } from '@lib/utils'
+import type { TChartStyle } from '@lib/utils/chartStyles'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
@@ -8,6 +10,7 @@ import { useDevFlags } from '/src/contexts/useDevFlags'
 export function DevToolbar(): ReactElement | null {
   const [isOpen, setIsOpen] = useState(false)
   const themePreference = useThemePreference()
+  const { chartStyle, setChartStyle } = useChartStyle()
   const { headerDisplayMode, setHeaderDisplayMode } = useDevFlags()
   const location = useLocation()
   const enabledInEnv =
@@ -101,6 +104,23 @@ export function DevToolbar(): ReactElement | null {
                 ></span>
                 {themePreference}
               </button>
+            </div>
+
+            <div className={'flex items-center justify-between'}>
+              <span className={'font-medium text-neutral-700'}>{'Chart Style'}</span>
+              <select
+                className={
+                  'h-8 max-w-[10.5rem] rounded-md border border-neutral-200 bg-white px-2 text-xs font-semibold text-neutral-900 shadow-sm transition hover:border-neutral-300 focus:border-neutral-400 focus:outline-none'
+                }
+                value={chartStyle}
+                onChange={(event) => setChartStyle(event.target.value as TChartStyle)}
+              >
+                {CHART_STYLE_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {isVaultDetail ? (

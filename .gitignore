@@ -48,3 +48,4 @@ AGENTS.md
 
 # local worktree clones
 yearn.fi-worktree-*
+.worktrees/
