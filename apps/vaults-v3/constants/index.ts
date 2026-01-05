@@ -1,13 +1,12 @@
 export const ALL_VAULTSV3_KINDS = {
-  highlight: 'Fancy',
-  multi: 'Multi Strategy',
-  single: 'Single Strategy'
+  highlight: 'Featured',
+  multi: 'Allocator Vault',
+  single: 'Strategy Vault'
 }
 export const ALL_VAULTSV3_KINDS_KEYS = Object.keys(ALL_VAULTSV3_KINDS)
 
 export const ALL_VAULTSV3_CATEGORIES = {
   Stablecoin: 'Stablecoin',
-  Curve: 'Curve',
   Volatile: 'Volatile',
   Holdings: 'Your Holdings',
   Migratable: 'Migratable',

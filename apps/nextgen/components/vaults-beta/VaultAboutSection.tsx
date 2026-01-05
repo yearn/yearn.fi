@@ -37,7 +37,13 @@ export function NextgenFeesLineItem({ children, label, tooltip }: TNextgenFeesLi
   )
 }
 
-export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+export function VaultAboutSection({
+  currentVault,
+  className
+}: {
+  currentVault: TYDaemonVault
+  className?: string
+}): ReactElement {
   const { token, apr } = currentVault
 
   function getVaultDescription(): string | ReactElement {
@@ -83,7 +89,7 @@ export function VaultAboutSection({ currentVault }: { currentVault: TYDaemonVaul
   }
 
   return (
-    <div className={'space-y-4 p-8 pt-0'}>
+    <div className={cl('space-y-4 p-8 pt-0', className)}>
       <div className={'w-full'}>
         <div className={'mt-2 text-text-primary/50'}>
           {typeof getVaultDescription() === 'string' ? (

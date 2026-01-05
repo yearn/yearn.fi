@@ -17,9 +17,9 @@ const TIMEFRAME_LIMITS: Record<string, number> = {
 }
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric'
+  month: '2-digit',
+  day: '2-digit',
+  year: '2-digit'
 })
 
 export function formatUnixTimestamp(value: number | string): string {

@@ -34,6 +34,18 @@ export type TVaultApyData = {
   katanaTotalApr?: number
 }
 
+export function computeKatanaTotalApr(katanaExtras?: Partial<TKatanaAprData>): number | undefined {
+  if (!katanaExtras) return undefined
+
+  const appRewardsApr = katanaExtras.katanaAppRewardsAPR ?? katanaExtras.katanaRewardsAPR
+  const parts = [katanaExtras.katanaNativeYield, katanaExtras.FixedRateKatanaRewards, appRewardsApr].filter(
+    (value): value is number => typeof value === 'number' && !Number.isNaN(value)
+  )
+
+  if (parts.length === 0) return undefined
+  return sumApr(parts)
+}
+
 export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
   const { katanaAprs } = useYearn()
   const shouldUseKatanaAPRs = vault.chainID === KATANA_CHAIN_ID
@@ -44,9 +56,7 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
   }, [shouldUseKatanaAPRs, katanaAprs, vault.address])
 
   const katanaTotalApr = useMemo(() => {
-    if (!katanaExtras) return undefined
-    const { katanaRewardsAPR: _legacy, katanaBonusAPY: _bonus, steerPointsPerDollar: _points, ...rest } = katanaExtras
-    return sumApr(Object.values(rest))
+    return computeKatanaTotalApr(katanaExtras)
   }, [katanaExtras])
 
   const baseForwardApr = vault.apr.forwardAPR.netAPR

@@ -7,6 +7,7 @@ import {
 } from '@lib/components/AllocationChart'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
+import { Tooltip } from '@lib/components/Tooltip'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import { IconChevron } from '@lib/icons/IconChevron'
@@ -14,7 +15,11 @@ import { cl, formatCounterValue, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
 import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
-import { VaultChartsSection } from '@nextgen/components/vaults-beta/VaultChartsSection'
+import {
+  type TVaultChartTab,
+  type TVaultChartTimeframe,
+  VaultChartsSection
+} from '@nextgen/components/vaults-beta/VaultChartsSection'
 import { VaultForwardAPY, VaultForwardAPYInlineDetails } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
@@ -22,20 +27,13 @@ import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { type TVaultsV3ExpandedView, VaultsV3ExpandedSelector } from './VaultsV3ExpandedSelector'
 
 type TVaultRowFlags = {
   hasHoldings?: boolean
   isMigratable?: boolean
   isRetired?: boolean
 }
-
-const EXPANDED_TABS = [
-  { id: 'charts', label: 'Charts' },
-  { id: 'strategies', label: 'Strategies' },
-  { id: 'info', label: 'Vault Info' }
-] as const
-
-type ExpandedTabId = (typeof EXPANDED_TABS)[number]['id']
 
 export function VaultsV3ListRow({
   currentVault,
@@ -48,10 +46,37 @@ export function VaultsV3ListRow({
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
+  const network = getNetwork(currentVault.chainID)
+  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const [isApyOpen, setIsApyOpen] = useState(false)
   const [isRiskOpen, setIsRiskOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
-  const [activeExpandedTab, setActiveExpandedTab] = useState<ExpandedTabId>('charts')
+  const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('performance')
+  const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
+  const kindLabel =
+    currentVault.kind === 'Multi Strategy'
+      ? 'Allocator Vault'
+      : currentVault.kind === 'Single Strategy'
+        ? 'Strategy Vault'
+        : currentVault.kind
+  const tvlNativeTooltip = (
+    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+      <span className={'font-number'}>
+        <RenderAmount
+          value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
+          symbol={''}
+          decimals={6}
+          shouldFormatDust
+          options={{
+            shouldCompactValue: true,
+            maximumFractionDigits: 2,
+            minimumFractionDigits: 2
+          }}
+        />
+      </span>
+      <span className={'pl-1'}>{currentVault.token.symbol}</span>
+    </div>
+  )
 
   const handleRowClick = (): void => {
     navigate(href)
@@ -66,12 +91,14 @@ export function VaultsV3ListRow({
 
   useEffect(() => {
     if (isExpanded) {
-      setActiveExpandedTab('charts')
+      setExpandedView('performance')
     }
   }, [isExpanded])
 
   return (
-    <div className={cl('w-full overflow-hidden transition-colors bg-surface', isExpanded ? 'border-border' : '')}>
+    <div
+      className={cl('w-full overflow-hidden transition-colors bg-surface', isExpanded ? 'border-y border-border' : '')}
+    >
       {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
       <div
         role={'link'}
@@ -126,64 +153,75 @@ export function VaultsV3ListRow({
                 height={32}
               />
             </div>
-            <div className={'truncate'}>
+            <div className={'min-w-0'}>
               <strong
                 title={currentVault.name}
                 className={'block truncate font-black text-text-primary md:-mb-0.5 text-lg'}
               >
                 {currentVault.name}
               </strong>
-              <div className={'flex flex-row items-center gap-1 text-sm text-text-primary/60'}>
-                <TokenLogo
-                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`}
-                  tokenSymbol={getNetwork(currentVault.chainID).name}
-                  width={14}
-                  height={14}
-                />
-                <p>{getNetwork(currentVault.chainID).name}</p>
-                <p>{` - ${currentVault.category} - ${currentVault.kind}`}</p>
+              <div className={'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'}>
+                <span
+                  className={
+                    'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
+                  }
+                >
+                  <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
+                  <span>{network.name}</span>
+                </span>
+                {currentVault.category ? (
+                  <span
+                    className={
+                      'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
+                    }
+                  >
+                    {currentVault.category}
+                  </span>
+                ) : null}
+                {kindLabel ? (
+                  <span
+                    className={
+                      'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
+                    }
+                  >
+                    {kindLabel}
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
         </div>
 
         {/* Desktop metrics grid */}
-        <div className={cl('col-span-14 z-10 gap-4 mt-4', 'md:mt-0 md:grid md:grid-cols-14')}>
+        <div className={cl('col-span-14 z-10 gap-4 mt-4', 'md:mt-0 md:grid md:grid-cols-14 md:items-center')}>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <VaultForwardAPY currentVault={currentVault} />
+            <VaultForwardAPY currentVault={currentVault} showSubline={false} showSublineTooltip />
           </div>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <VaultHistoricalAPY currentVault={currentVault} />
           </div>
           {/* TVL */}
           <div className={'yearn--table-data-section-item col-span-4'} datatype={'number'}>
-            <div className={'flex flex-col pt-0 text-right'}>
-              <p className={'yearn--table-data-section-item-value'}>
-                <RenderAmount
-                  value={currentVault.tvl?.tvl}
-                  symbol={'USD'}
-                  decimals={0}
-                  options={{
-                    shouldCompactValue: true,
-                    maximumFractionDigits: 2,
-                    minimumFractionDigits: 0
-                  }}
-                />
-              </p>
-              <small className={'text-xs flex flex-row text-text-primary/40'}>
-                <RenderAmount
-                  value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
-                  symbol={''}
-                  decimals={6}
-                  shouldFormatDust
-                  options={{
-                    shouldCompactValue: true,
-                    maximumFractionDigits: 2,
-                    minimumFractionDigits: 2
-                  }}
-                />
-                <p className="pl-1">{currentVault.token.symbol}</p>
-              </small>
+            <div className={'flex justify-end text-right'}>
+              <Tooltip
+                className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
+                openDelayMs={150}
+                toggleOnClick={false}
+                tooltip={tvlNativeTooltip}
+              >
+                <p className={'yearn--table-data-section-item-value'}>
+                  <RenderAmount
+                    value={currentVault.tvl?.tvl}
+                    symbol={'USD'}
+                    decimals={0}
+                    options={{
+                      shouldCompactValue: true,
+                      maximumFractionDigits: 2,
+                      minimumFractionDigits: 0
+                    }}
+                  />
+                </p>
+              </Tooltip>
             </div>
           </div>
           {/* <div className={'col-span-3'}>
@@ -230,7 +268,12 @@ export function VaultsV3ListRow({
             <div className={'w-full flex flex-col items-start'}>
               <div className={'flex w-full flex-row items-center justify-between'}>
                 <p className={'inline text-start text-dm text-text-primary'}>{'Estimated APY'}</p>
-                <VaultForwardAPY currentVault={currentVault} onMobileToggle={(): void => setIsApyOpen((v) => !v)} />
+                <VaultForwardAPY
+                  currentVault={currentVault}
+                  onMobileToggle={(): void => setIsApyOpen((v) => !v)}
+                  showSubline={false}
+                  showSublineTooltip
+                />
               </div>
               {isApyOpen ? (
                 <div className={'mt-2 w-full'}>
@@ -245,33 +288,26 @@ export function VaultsV3ListRow({
           </div>
           <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
             <p className={'inline text-start text-dm text-text-primary'}>{'TVL'}</p>
-            <div className={'flex flex-col pt-0 text-right'}>
-              <p className={'yearn--table-data-section-item-value'}>
-                <RenderAmount
-                  value={currentVault.tvl?.tvl}
-                  symbol={'USD'}
-                  decimals={0}
-                  options={{
-                    shouldCompactValue: true,
-                    maximumFractionDigits: 2,
-                    minimumFractionDigits: 0
-                  }}
-                />
-              </p>
-              <small className={'text-xs flex flex-row text-text-primary/40'}>
-                <RenderAmount
-                  value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
-                  symbol={''}
-                  decimals={6}
-                  shouldFormatDust
-                  options={{
-                    shouldCompactValue: true,
-                    maximumFractionDigits: 2,
-                    minimumFractionDigits: 2
-                  }}
-                />
-                <p className="pl-1">{currentVault.token.symbol}</p>
-              </small>
+            <div className={'flex justify-end text-right'}>
+              <Tooltip
+                className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
+                openDelayMs={150}
+                toggleOnClick
+                tooltip={tvlNativeTooltip}
+              >
+                <p className={'yearn--table-data-section-item-value'}>
+                  <RenderAmount
+                    value={currentVault.tvl?.tvl}
+                    symbol={'USD'}
+                    decimals={0}
+                    options={{
+                      shouldCompactValue: true,
+                      maximumFractionDigits: 2,
+                      minimumFractionDigits: 0
+                    }}
+                  />
+                </p>
+              </Tooltip>
             </div>
           </div>
           <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
@@ -291,40 +327,56 @@ export function VaultsV3ListRow({
       </div>
 
       {isExpanded ? (
-        <div className={'border-t border-border bg-surface'}>
-          <div className={'flex flex-wrap gap-2 px-6 pt-4'}>
-            <div className={'flex items-center gap-1 rounded-lg bg-app p-1'}>
-              {EXPANDED_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type={'button'}
-                  className={cl(
-                    'rounded-lg px-4 py-1 text-xs font-semibold tracking-wide transition-colors',
-                    activeExpandedTab === tab.id
-                      ? 'bg-surface text-text-primary'
-                      : 'bg-transparent text-text-secondary hover:text-text-secondary'
-                  )}
-                  onClick={(): void => setActiveExpandedTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
+        <div className={'bg-surface'}>
+          <div className={'px-6 pb-6 pt-3'}>
+            <div className={'border border-border bg-surface'}>
+              <VaultsV3ExpandedSelector
+                className={'p-3'}
+                activeView={expandedView}
+                onViewChange={setExpandedView}
+                timeframe={expandedTimeframe}
+                onTimeframeChange={setExpandedTimeframe}
+                rightElement={
+                  <button
+                    type={'button'}
+                    onClick={(event): void => {
+                      event.stopPropagation()
+                      navigate(href)
+                    }}
+                    className={
+                      'rounded-lg border border-border bg-surface-secondary px-4 py-2 text-xs font-semibold text-text-primary transition-colors hover:bg-surface-secondary/80'
+                    }
+                  >
+                    {'Go to Vault'}
+                  </button>
+                }
+              />
+
+              {expandedView === 'apy' || expandedView === 'performance' ? (
+                <div className={'px-3 pb-4'}>
+                  <VaultChartsSection
+                    chainId={currentVault.chainID}
+                    vaultAddress={currentVault.address}
+                    shouldRenderSelectors={false}
+                    chartTab={(expandedView === 'apy' ? 'historical-apy' : 'historical-pps') satisfies TVaultChartTab}
+                    timeframe={expandedTimeframe}
+                    chartHeightPx={150}
+                    chartHeightMdPx={150}
+                  />
+                </div>
+              ) : null}
+
+              {expandedView === 'info' ? (
+                <div className={'grid md:grid-cols-2 divide-y divide-border md:divide-y-0 md:divide-x'}>
+                  <div className={'p-4 md:p-6'}>
+                    <VaultStrategyAllocationPreview currentVault={currentVault} />
+                  </div>
+                  <div className={'p-4 md:p-6'}>
+                    <VaultAboutSection currentVault={currentVault} className={'p-0'} />
+                  </div>
+                </div>
+              ) : null}
             </div>
-          </div>
-          <div className={'pb-6 pt-2 px-2'}>
-            {activeExpandedTab === 'charts' ? (
-              <VaultChartsSection chainId={currentVault.chainID} vaultAddress={currentVault.address} />
-            ) : null}
-            {activeExpandedTab === 'strategies' ? (
-              <div className={'border border-border bg-surface p-4 md:p-6'}>
-                <VaultStrategyAllocationPreview currentVault={currentVault} />
-              </div>
-            ) : null}
-            {activeExpandedTab === 'info' ? (
-              <div className={'border border-border bg-surface'}>
-                <VaultAboutSection currentVault={currentVault} />
-              </div>
-            ) : null}
           </div>
         </div>
       ) : null}
