@@ -1,22 +1,50 @@
 import { cl } from '@lib/utils'
 import type { ReactElement } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 
 import { getVaultTypeEmoji, getVaultTypeLabel } from './vaultTypeCopy'
 
 type TVaultVersionToggleProps = {
   className?: string
+  showStrategies?: boolean
 }
 
-export function VaultVersionToggle({ className }: TVaultVersionToggleProps): ReactElement {
-  const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
+export function VaultVersionToggle({ className, showStrategies }: TVaultVersionToggleProps): ReactElement {
+  const [searchParams, setSearchParams] = useSearchParams()
   const isFactoryActive = searchParams.get('type') === 'factory'
-  const isV3Active = !isFactoryActive
+  const typesParam = searchParams.get('types')
+  const activeTypes = typesParam ? typesParam.split('_').filter(Boolean) : []
+  const isStrategiesTabVisible = Boolean(showStrategies)
+  const isStrategiesActive = isStrategiesTabVisible && !isFactoryActive && activeTypes.includes('single')
+  const isAllocatorActive = !isFactoryActive && !isStrategiesActive
   const allocatorLabel = getVaultTypeLabel('v3')
   const allocatorEmoji = getVaultTypeEmoji('v3')
   const factoryLabel = getVaultTypeLabel('factory')
   const factoryEmoji = getVaultTypeEmoji('factory')
+  const strategiesLabel = 'v3 Strategies'
+  const strategiesEmoji = '🧩'
+
+  const goToAllocator = (): void => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('type')
+    nextParams.delete('types')
+    setSearchParams(nextParams, { replace: true })
+  }
+
+  const goToStrategies = (): void => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('type')
+    nextParams.set('types', 'single')
+    nextParams.set('showStrategies', '1')
+    setSearchParams(nextParams, { replace: true })
+  }
+
+  const goToFactory = (): void => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.set('type', 'factory')
+    nextParams.delete('types')
+    setSearchParams(nextParams, { replace: true })
+  }
 
   return (
     <div
@@ -32,9 +60,9 @@ export function VaultVersionToggle({ className }: TVaultVersionToggleProps): Rea
           'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
           'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
         )}
-        data-active={isV3Active}
-        onClick={(): void => void navigate('/vaults')}
-        aria-pressed={isV3Active}
+        data-active={isAllocatorActive}
+        onClick={goToAllocator}
+        aria-pressed={isAllocatorActive}
       >
         <span
           aria-hidden={true}
@@ -44,6 +72,27 @@ export function VaultVersionToggle({ className }: TVaultVersionToggleProps): Rea
         </span>
         <span className={'whitespace-nowrap'}>{allocatorLabel}</span>
       </button>
+      {isStrategiesTabVisible ? (
+        <button
+          type={'button'}
+          className={cl(
+            'flex h-full items-center gap-1 px-2 font-medium transition-colors',
+            'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+            'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+          )}
+          data-active={isStrategiesActive}
+          onClick={goToStrategies}
+          aria-pressed={isStrategiesActive}
+        >
+          <span
+            aria-hidden={true}
+            className={'size-5 overflow-hidden rounded-full bg-surface/80 flex items-center justify-center'}
+          >
+            {strategiesEmoji}
+          </span>
+          <span className={'whitespace-nowrap'}>{strategiesLabel}</span>
+        </button>
+      ) : null}
       <button
         type={'button'}
         className={cl(
@@ -52,7 +101,7 @@ export function VaultVersionToggle({ className }: TVaultVersionToggleProps): Rea
           'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
         )}
         data-active={isFactoryActive}
-        onClick={(): void => void navigate('/vaults?type=factory')}
+        onClick={goToFactory}
         aria-pressed={isFactoryActive}
       >
         <span
