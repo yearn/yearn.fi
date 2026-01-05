@@ -1,2 +1,2 @@
-export const V2_SUPPORTED_CHAINS = [1, 10, 8453, 42161]
+export const V2_SUPPORTED_CHAINS = [1, 10, 8453]
 export const V3_SUPPORTED_CHAINS = [1, 747474, 8453, 42161, 137]
