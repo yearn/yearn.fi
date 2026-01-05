@@ -24,7 +24,8 @@ export function VaultForwardAPY({
   valueClassName,
   showSubline = true,
   showSublineTooltip = false,
-  displayVariant = 'default'
+  displayVariant = 'default',
+  showBoostDetails = true
 }: {
   currentVault: TYDaemonVault
   onMobileToggle?: (e: React.MouseEvent) => void
@@ -33,6 +34,7 @@ export function VaultForwardAPY({
   showSubline?: boolean
   showSublineTooltip?: boolean
   displayVariant?: TVaultForwardAPYVariant
+  showBoostDetails?: boolean
 }): ReactElement {
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -90,7 +92,7 @@ export function VaultForwardAPY({
     ) : null
 
   const boostTooltipLine =
-    displayVariant !== 'factory-list' && data.mode === 'boosted' && data.isBoosted
+    showBoostDetails && displayVariant !== 'factory-list' && data.mode === 'boosted' && data.isBoosted
       ? `Boost ${formatAmount(data.boost || 0, 2, 2)}x`
       : null
   const fixedRateTooltipLine =
@@ -302,7 +304,7 @@ export function VaultForwardAPY({
         hasPendleArbRewards={data.hasPendleArbRewards}
         hasKelpNEngenlayer={data.hasKelpNEngenlayer}
         hasKelp={data.hasKelp}
-        boost={data.boost}
+        boost={showBoostDetails ? data.boost : undefined}
       />
     )
 
@@ -327,7 +329,7 @@ export function VaultForwardAPY({
               </Renderable>
             </b>
           )}
-          {displayVariant !== 'factory-list' ? (
+          {displayVariant !== 'factory-list' && showBoostDetails ? (
             <small className={'text-xs text-text-primary'}>
               <Renderable shouldRender={data.isBoosted}>{`BOOST ${boostValue}x`}</Renderable>
             </small>
@@ -505,7 +507,13 @@ export function VaultForwardAPY({
 }
 
 // Inline details for mobile accordion rendering controlled by parent
-export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: TYDaemonVault }): ReactElement | null {
+export function VaultForwardAPYInlineDetails({
+  currentVault,
+  showBoostDetails = true
+}: {
+  currentVault: TYDaemonVault
+  showBoostDetails?: boolean
+}): ReactElement | null {
   const data = useVaultApyData(currentVault)
 
   // Check if vault is eligible for Spectra boost (Katana chain only)
@@ -649,6 +657,9 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
   }
 
   if (data.mode === 'boosted' && data.isBoosted) {
+    if (!showBoostDetails) {
+      return null
+    }
     const unBoostedAPY = data.unboostedApr || 0
     return (
       <div className={'w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'}>

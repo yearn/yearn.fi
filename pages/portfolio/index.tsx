@@ -419,6 +419,7 @@ function PortfolioPage(): ReactElement {
                         currentVault={vault}
                         flags={vaultFlags[key]}
                         hrefOverride={hrefOverride}
+                        showBoostDetails={false}
                       />
                     )
                   })}

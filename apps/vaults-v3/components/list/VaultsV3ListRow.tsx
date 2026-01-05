@@ -49,6 +49,7 @@ export function VaultsV3ListRow({
   flags,
   hrefOverride,
   apyDisplayVariant = 'default',
+  showBoostDetails = true,
   activeChains,
   activeCategories,
   activeTypes,
@@ -61,6 +62,7 @@ export function VaultsV3ListRow({
   flags?: TVaultRowFlags
   hrefOverride?: string
   apyDisplayVariant?: TVaultForwardAPYVariant
+  showBoostDetails?: boolean
   activeChains?: number[]
   activeCategories?: string[]
   activeTypes?: string[]
@@ -236,6 +238,7 @@ export function VaultsV3ListRow({
               showSubline={false}
               showSublineTooltip
               displayVariant={apyDisplayVariant}
+              showBoostDetails={showBoostDetails}
             />
           </div>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
@@ -315,11 +318,12 @@ export function VaultsV3ListRow({
                   showSubline={false}
                   showSublineTooltip
                   displayVariant={apyDisplayVariant}
+                  showBoostDetails={showBoostDetails}
                 />
               </div>
               {isApyOpen ? (
                 <div className={'mt-2 w-full'}>
-                  <VaultForwardAPYInlineDetails currentVault={currentVault} />
+                  <VaultForwardAPYInlineDetails currentVault={currentVault} showBoostDetails={showBoostDetails} />
                 </div>
               ) : null}
             </div>
