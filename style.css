@@ -679,6 +679,19 @@ input[type='number'] {
 .brand-new-marquee--paused {
   animation-play-state: paused;
 }
+.loader {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary-500);
+  border-radius: 9999px;
+  animation: spinner 0.8s linear infinite;
+}
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
 @keyframes brandNewVaultMarquee {
   0% {
     transform: translateY(0);
