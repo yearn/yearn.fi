@@ -15,7 +15,7 @@ import { VaultDetailsQuickActionsFrom } from '@vaults-v3/components/details/acti
 import { VaultDetailsQuickActionsSwitch } from '@vaults-v3/components/details/actions/QuickActionsSwitch'
 import { VaultDetailsQuickActionsTo } from '@vaults-v3/components/details/actions/QuickActionsTo'
 import { RewardsTab } from '@vaults-v3/components/details/RewardsTab'
-import { SettingsPopover } from '@vaults-v3/components/SettingsPopover'
+import { SettingsPopover } from '@vaults-shared/components/SettingsPopover'
 import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@vaults-v3/constants/addresses'
 import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 

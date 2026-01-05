@@ -1,5 +1,9 @@
 {
   "permissions": {
-    "allow": ["Bash(git show:*)"]
+    "allow": [
+      "Bash(git show:*)",
+      "Bash(xargs ls:*)",
+      "Bash(bun run tslint:*)"
+    ]
   }
 }
