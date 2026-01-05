@@ -220,6 +220,13 @@ function ListOfVaults({
     vaultType === 'factory' ? sanitizedCategories : null,
     vaultType === 'factory' ? sanitizedProtocols : null
   )
+  const { filteredVaults: filteredV2VaultsAllChains } = useV2VaultFilter(
+    vaultType === 'factory' ? sanitizedV2Types : null,
+    null,
+    '',
+    vaultType === 'factory' ? sanitizedCategories : null,
+    vaultType === 'factory' ? sanitizedProtocols : null
+  )
 
   const {
     filteredVaults,
@@ -262,7 +269,7 @@ function ListOfVaults({
   const sortedHoldingsVaults = useSortVaults(holdingsVaults, sortBy, sortDirection)
   const sortedAvailableVaults = useSortVaults(availableVaults, sortBy, sortDirection)
   const sortedSuggestedV3Candidates = useSortVaults(filteredVaultsAllChains, 'featuringScore', 'desc')
-  const sortedSuggestedV2Candidates = useSortVaults(v2FilterResult.filteredVaultsNoSearch, 'featuringScore', 'desc')
+  const sortedSuggestedV2Candidates = useSortVaults(filteredV2VaultsAllChains, 'featuringScore', 'desc')
 
   const pinnedSections = useMemo(() => {
     const sections: Array<{ key: string; vaults: typeof sortedVaults }> = []
