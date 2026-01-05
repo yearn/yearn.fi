@@ -176,6 +176,7 @@ export function VaultForwardAPY({
                 <div className={'flex items-center gap-2'}>
                   {fixedTermIndicator}
                   <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
+                    {'⚔️ '}
                     <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
                   </span>
                 </div>
