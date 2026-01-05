@@ -65,7 +65,11 @@ export const useDepositNotifications = ({
 
     return {
       type: 'approve',
-      amount: formatTAmount({ value: inputToken.balance.raw, decimals: inputToken.decimals ?? 18 }),
+      amount: formatTAmount({
+        value: inputToken.balance.raw,
+        decimals: inputToken.decimals ?? 18,
+        options: { maximumFractionDigits: 8 }
+      }),
       fromAddress: toAddress(depositToken),
       fromSymbol: inputToken.symbol || '',
       fromChainId: sourceChainId,
@@ -99,7 +103,11 @@ export const useDepositNotifications = ({
 
     return {
       type: notificationType,
-      amount: formatTAmount({ value: depositAmount, decimals: inputToken.decimals ?? 18 }),
+      amount: formatTAmount({
+        value: depositAmount,
+        decimals: inputToken.decimals ?? 18,
+        options: { maximumFractionDigits: 8 }
+      }),
       fromAddress: toAddress(depositToken),
       fromSymbol: inputToken.symbol || '',
       fromChainId: sourceChainId,
