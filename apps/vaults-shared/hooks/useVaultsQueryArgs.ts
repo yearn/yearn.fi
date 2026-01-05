@@ -1,9 +1,8 @@
 import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@lib/types'
-import { useMountEffect } from '@react-hookz/web'
 import type { TPossibleSortBy } from '@vaults-shared/hooks/useSortVaults'
-import { useCallback, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router'
+import { useCallback, useMemo } from 'react'
+import { useSearchParams } from 'react-router'
 
 type TQueryArgs = {
   search: string | null | undefined
@@ -33,149 +32,99 @@ type TUseQueryArgumentsProps = {
 
 function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
   const allChains = useSupportedChains().map((chain): number => chain.id)
-  const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [search, setSearch] = useState<string | null>(null)
-  const [types, setTypes] = useState<string[] | null>(props.defaultTypes || [])
-  const [categories, setCategories] = useState<string[] | null>(props.defaultCategories || [])
-  const [chains, setChains] = useState<number[] | null>([]) // Default to all chains
-  const [sortDirection, setSortDirection] = useState<string | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const defaultSortBy = props.defaultSortBy || 'featuringScore'
-  const [sortBy, setSortBy] = useState<string | null>(defaultSortBy)
-
-  const pathname = location.pathname
-
   const updateSearchParams = useCallback(
     (queryArgs: TDict<string | string[] | undefined>): void => {
       const newSearchParams = new URLSearchParams()
       Object.entries(queryArgs).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (Array.isArray(value)) {
-            newSearchParams.set(key, value.join('_'))
-          } else {
-            newSearchParams.set(key, value as string)
-          }
+        if (value === undefined || value === null) {
+          return
+        }
+        if (Array.isArray(value)) {
+          newSearchParams.set(key, value.join('_'))
+        } else {
+          newSearchParams.set(key, value as string)
         }
       })
-      navigate(`${pathname}?${newSearchParams.toString()}`, { replace: true })
+      setSearchParams(newSearchParams, { replace: true })
     },
-    [navigate, pathname]
+    [setSearchParams]
   )
 
-  const handleQuery = useCallback(
-    (_searchParams: URLSearchParams): void => {
-      if (_searchParams.has('search')) {
-        const _search = _searchParams.get('search')
-        if (_search === null) {
-          return
-        }
-        setSearch(_search)
+  const parseStringList = useCallback(
+    (key: string, defaults?: string[]): string[] => {
+      if (!searchParams.has(key)) {
+        return defaults || []
       }
-
-      if (_searchParams.has('types')) {
-        const typesParam = _searchParams.get('types')
-        const typesParamArray = typesParam?.split('_') || []
-        if (typesParamArray.length === 0) {
-          setTypes(props.defaultTypes || [])
-          return
-        }
-        if (typesParamArray.length === props.defaultTypes?.length) {
-          const isEqual = typesParamArray.every((c): boolean => Boolean(props.defaultTypes?.includes(c)))
-          if (isEqual) {
-            setTypes(props.defaultTypes)
-            return
-          }
-        }
-        if (typesParamArray[0] === 'none') {
-          setTypes([])
-          return
-        }
-        setTypes(typesParamArray)
-      } else {
-        setTypes(props.defaultTypes || [])
+      const raw = searchParams.get(key)
+      if (!raw || raw === 'none') {
+        return []
       }
-
-      if (_searchParams.has('categories')) {
-        const categoriesParam = _searchParams.get('categories')
-        const categoriesParamArray = categoriesParam?.split('_') || []
-        if (categoriesParamArray.length === 0) {
-          setCategories(props.defaultCategories || [])
-          return
-        }
-        if (categoriesParamArray.length === props.defaultCategories?.length) {
-          const isEqual = categoriesParamArray.every((c): boolean => Boolean(props.defaultCategories?.includes(c)))
-          if (isEqual) {
-            setCategories(props.defaultCategories)
-            return
-          }
-        }
-        if (categoriesParamArray[0] === 'none') {
-          setCategories([])
-          return
-        }
-        setCategories(categoriesParamArray)
-      } else {
-        setCategories(props.defaultCategories || [])
+      const values = raw
+        .split('_')
+        .map((value) => value.trim())
+        .filter(Boolean)
+      if (values.length === 0) {
+        return defaults || []
       }
-
-      if (_searchParams.has('chains')) {
-        const chainsParam = _searchParams.get('chains')
-        const chainsParamArray = chainsParam?.split('_') || []
-        if (chainsParamArray.length === 0) {
-          setChains([])
-          return
+      if (defaults && values.length === defaults.length) {
+        const isEqual = values.every((value): boolean => defaults.includes(value))
+        if (isEqual) {
+          return defaults
         }
-        if (chainsParamArray.length === allChains.length) {
-          const isEqual = chainsParamArray.every((c): boolean => allChains.includes(Number(c)))
-          if (isEqual) {
-            setChains(allChains)
-            return
-          }
-        }
-        if (chainsParamArray[0] === '0') {
-          setChains([])
-          return
-        }
-        setChains(chainsParamArray.map((chain): number => Number(chain)))
-      } else {
-        setChains([])
       }
-
-      if (_searchParams.has('sortDirection')) {
-        const _sortDirection = _searchParams.get('sortDirection')
-        if (_sortDirection === null) {
-          return
-        }
-        setSortDirection(_sortDirection)
-      }
-
-      if (_searchParams.has('sortBy')) {
-        const _sortBy = _searchParams.get('sortBy')
-        if (_sortBy === null) {
-          return
-        }
-        setSortBy(_sortBy)
-      }
+      return values
     },
-    [props.defaultTypes, props.defaultCategories, allChains]
+    [searchParams]
   )
 
-  useMountEffect((): void => {
-    const currentPage = new URL(window.location.href)
-    handleQuery(new URLSearchParams(currentPage.search))
-  })
+  const parseNumberList = useCallback(
+    (key: string): number[] => {
+      if (!searchParams.has(key)) {
+        return []
+      }
+      const raw = searchParams.get(key)
+      if (!raw || raw === '0') {
+        return []
+      }
+      const values = raw
+        .split('_')
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value))
+      if (values.length === 0) {
+        return []
+      }
+      if (values.length === allChains.length) {
+        const isEqual = values.every((value) => allChains.includes(value))
+        if (isEqual) {
+          return allChains
+        }
+      }
+      return values
+    },
+    [searchParams, allChains]
+  )
+
+  const search = searchParams.get('search')
+  const types = useMemo(() => parseStringList('types', props.defaultTypes), [parseStringList, props.defaultTypes])
+  const categories = useMemo(
+    () => parseStringList('categories', props.defaultCategories),
+    [parseStringList, props.defaultCategories]
+  )
+  const chains = useMemo(() => parseNumberList('chains'), [parseNumberList])
+  const sortDirection = (searchParams.get('sortDirection') || 'desc') as TSortDirection
+  const sortBy = (searchParams.get('sortBy') || defaultSortBy) as TPossibleSortBy
 
   return {
     search,
-    types: (types || []) as string[],
-    categories: (categories || []) as string[],
-    chains: (chains || []) as number[],
-    sortDirection: (sortDirection || 'desc') as TSortDirection,
-    sortBy: (sortBy || 'featuringScore') as TPossibleSortBy,
+    types: types as string[],
+    categories: categories as string[],
+    chains: chains as number[],
+    sortDirection,
+    sortBy,
     onSearch: (value): void => {
-      setSearch(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
 
       // Get current search params
@@ -194,7 +143,6 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
       updateSearchParams(queryArgs)
     },
     onChangeTypes: (value): void => {
-      setTypes(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
 
       // Get current search params
@@ -220,7 +168,6 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
       updateSearchParams(queryArgs)
     },
     onChangeCategories: (value): void => {
-      setCategories(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
 
       // Get current search params
@@ -246,7 +193,6 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
       updateSearchParams(queryArgs)
     },
     onChangeChains: (value): void => {
-      setChains(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
 
       // Get current search params
@@ -272,7 +218,6 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
       updateSearchParams(queryArgs)
     },
     onChangeSortDirection: (value): void => {
-      setSortDirection(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
 
       // Get current search params
@@ -291,7 +236,6 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
       updateSearchParams(queryArgs)
     },
     onChangeSortBy: (value): void => {
-      setSortBy(value)
       const queryArgs: TDict<string | string[] | undefined> = {}
 
       // Get current search params
@@ -310,13 +254,6 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
       updateSearchParams(queryArgs)
     },
     onReset: (): void => {
-      setSearch(null)
-      setTypes(props.defaultTypes || [])
-      setCategories(props.defaultCategories || [])
-      setChains(allChains || [])
-      setSortDirection('desc')
-      setSortBy(defaultSortBy)
-
       const queryArgs: TDict<string | string[] | undefined> = {}
 
       // Get current search params but exclude the ones we're resetting
@@ -335,9 +272,6 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
       updateSearchParams(queryArgs)
     },
     onResetMultiSelect: (): void => {
-      setTypes(props.resetTypes || props.defaultTypes || [])
-      setCategories(props.resetCategories || props.defaultCategories || [])
-      setChains(allChains || [])
       const queryArgs: TDict<string | string[] | undefined> = {}
       searchParams.forEach((val, key) => {
         if (key !== 'types' && key !== 'categories' && key !== 'chains') {

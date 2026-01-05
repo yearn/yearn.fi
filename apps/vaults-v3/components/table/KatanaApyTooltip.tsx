@@ -4,10 +4,8 @@ import { Tooltip } from '@lib/components/Tooltip'
 import { cl, formatAmount } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
-import { VAULT_ADDRESSES } from '../../constants/addresses'
 
 type TKatanaTooltipProps = {
-  extrinsicYield: number
   katanaNativeYield: number
   fixedRateKatanRewardsAPR: number
   katanaAppRewardsAPR: number
@@ -22,7 +20,6 @@ type TKatanaTooltipProps = {
 }
 
 export function KatanaApyTooltipContent({
-  extrinsicYield,
   katanaNativeYield,
   fixedRateKatanRewardsAPR,
   katanaAppRewardsAPR,
@@ -34,25 +31,11 @@ export function KatanaApyTooltipContent({
 }: Omit<TKatanaTooltipProps, 'children' | 'position' | 'className'>): ReactElement {
   const width = maxWidth || 'w-full max-w-[360px]'
 
-  const isTBillVault = currentVault.address.toLowerCase() === VAULT_ADDRESSES.AUSD.toLowerCase()
-  const extrinsicYieldLabel = isTBillVault ? 'T-Bill Yield' : 'Extrinsic Yield'
-  const extrinsicYieldDescription = isTBillVault
-    ? 'Interest from U.S. treasury bills'
-    : 'Yield Earned from underlying bridged assets'
-
   return (
     <div
       className={`${width} rounded-xl border border-border bg-surface-secondary p-4 text-center text-xs text-text-primary`}
     >
       <div className={'flex flex-col items-start justify-start text-left'}>
-        {/* Native APY */}
-        <p
-          className={
-            'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-text-secondary md:text-sm text-bold pb-2'
-          }
-        >
-          {'Native APY'}
-        </p>
         <div
           className={
             'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-text-secondary md:text-sm text-bold pb-2'
@@ -67,30 +50,7 @@ export function KatanaApyTooltipContent({
               width={16}
               height={16}
             />
-            <p>{extrinsicYieldLabel} </p>
-          </div>
-          <span className={'font-number text-right'}>
-            <RenderAmount shouldHideTooltip value={extrinsicYield} symbol={'percent'} decimals={6} />
-          </span>
-        </div>
-        <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
-          {extrinsicYieldDescription}
-        </p>
-        <div
-          className={
-            'flex w-full flex-row items-start justify-between gap-3 whitespace-normal text-text-secondary md:text-sm text-bold pb-2'
-          }
-        >
-          <div className={'flex flex-row items-center space-x-2'}>
-            <ImageWithFallback
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-                currentVault.chainID
-              }/${currentVault.token.address.toLowerCase()}/logo-32.png`}
-              alt={''}
-              width={16}
-              height={16}
-            />
-            <p>{'Katana APY '}</p>
+            <p>{'Katana Native APY '}</p>
           </div>
           <span className={'font-number text-right'}>
             <RenderAmount shouldHideTooltip value={katanaNativeYield} symbol={'percent'} decimals={6} />
@@ -98,18 +58,6 @@ export function KatanaApyTooltipContent({
         </div>
         <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
           {'Yield Earned on Katana'}
-        </p>
-        <p className={'mb-2 w-full text-left text-xs italic text-text-secondary wrap-break-word whitespace-normal'}>
-          {'*This yield is guaranteed but may be paid in KAT tokens if actual rates are lower.'}
-        </p>
-        {/* Rewards APR */}
-        <div className={'my-2 h-px w-full bg-surface-tertiary/60'} />
-        <p
-          className={
-            'mb-1 w-full text-left text-[10px] font-semibold uppercase tracking-wide text-text-secondary md:text-sm text-bold '
-          }
-        >
-          {'Rewards APR'}
         </p>
         <div
           className={

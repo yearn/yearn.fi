@@ -139,9 +139,10 @@ export function getChartWeeklyTicks<T extends { date: string }>(data: T[], omitF
     const weekStart = new Date(date)
     weekStart.setDate(date.getDate() - diffToMonday)
 
-    const key = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}-${String(
-      weekStart.getDate()
-    ).padStart(2, '0')}`
+    const key = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}-${String(weekStart.getDate()).padStart(2, '0')}`
 
     if (key !== lastKey) {
       ticks.push(point.date)

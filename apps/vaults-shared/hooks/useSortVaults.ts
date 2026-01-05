@@ -53,10 +53,9 @@ export function useSortVaults(
         if (katanaAprData) {
           // Calculate total APR excluding legacy katanaRewardsAPR
           aAPY =
-            (katanaAprData.extrinsicYield || 0) +
             (katanaAprData.katanaNativeYield || 0) +
             (katanaAprData.FixedRateKatanaRewards || 0) +
-            (katanaAprData.katanaAppRewardsAPR || 0) +
+            (katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR ?? 0) +
             (katanaAprData.katanaBonusAPY || 0) +
             (katanaAprData.steerPointsPerDollar || 0)
         }
@@ -83,10 +82,9 @@ export function useSortVaults(
         if (katanaAprData) {
           // Calculate total APR excluding legacy katanaRewardsAPR
           bAPY =
-            (katanaAprData.extrinsicYield || 0) +
             (katanaAprData.katanaNativeYield || 0) +
             (katanaAprData.FixedRateKatanaRewards || 0) +
-            (katanaAprData.katanaAppRewardsAPR || 0) +
+            (katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR ?? 0) +
             (katanaAprData.katanaBonusAPY || 0) +
             (katanaAprData.steerPointsPerDollar || 0)
         }

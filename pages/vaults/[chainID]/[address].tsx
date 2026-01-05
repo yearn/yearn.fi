@@ -1,3 +1,4 @@
+import { useScrollSpy } from '@hooks/useScrollSpy'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -22,7 +23,6 @@ import { fetchYBoldVault } from '@vaults-v3/utils/handleYBold'
 import type { ReactElement } from 'react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
-import { useScrollSpy } from '@hooks/useScrollSpy'
 import { useDevFlags } from '/src/contexts/useDevFlags'
 
 function Index(): ReactElement | null {

@@ -119,10 +119,9 @@ function PortfolioPage(): ReactElement {
           const katanaAprData = katanaAprs?.[toAddress(vault.address)]?.apr?.extra
           if (katanaAprData) {
             return (
-              (katanaAprData.extrinsicYield || 0) +
               (katanaAprData.katanaNativeYield || 0) +
               (katanaAprData.FixedRateKatanaRewards || 0) +
-              (katanaAprData.katanaAppRewardsAPR || 0) +
+              (katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR ?? 0) +
               (katanaAprData.katanaBonusAPY || 0) +
               (katanaAprData.steerPointsPerDollar || 0)
             )
