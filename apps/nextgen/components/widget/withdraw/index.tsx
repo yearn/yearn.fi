@@ -199,6 +199,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     isDebouncing: withdrawAmount.isDebouncing,
     requiredShares,
     totalBalance: totalVaultBalance.raw,
+    account,
     isLoadingRoute: activeFlow.periphery.isLoadingRoute,
     flowError: activeFlow.periphery.error,
     routeType,

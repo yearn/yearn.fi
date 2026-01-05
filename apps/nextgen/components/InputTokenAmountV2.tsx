@@ -247,7 +247,7 @@ export const InputTokenAmountV2: FC<Props> = ({
           ) : (
             <div className="text-sm text-text-secondary">${inputUsdValue}</div>
           )}
-          {balance !== undefined && symbol && (
+          {balance !== undefined && balance !== 0n && symbol && (
             <div className="text-sm text-text-secondary">
               Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
             </div>

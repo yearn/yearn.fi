@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import type { Address } from 'viem'
 import type { WithdrawalSource, WithdrawRouteType } from './types'
 
 interface UseWithdrawErrorProps {
@@ -9,6 +10,8 @@ interface UseWithdrawErrorProps {
   // Balance
   requiredShares: bigint
   totalBalance: bigint
+  // Account
+  account?: Address
   // Flow state
   isLoadingRoute: boolean
   flowError?: unknown
@@ -24,6 +27,7 @@ export const useWithdrawError = ({
   isDebouncing,
   requiredShares,
   totalBalance,
+  account,
   isLoadingRoute,
   flowError,
   routeType,
@@ -34,8 +38,9 @@ export const useWithdrawError = ({
     if (hasBothBalances && !withdrawalSource) {
       return 'Please select withdrawal source'
     }
-    console.log(amount, requiredShares, totalBalance)
     if (amount === 0n) return null
+
+    if (!account) return 'Wallet not connected'
 
     if (requiredShares > totalBalance) {
       return 'Insufficient balance'
@@ -55,6 +60,7 @@ export const useWithdrawError = ({
     isDebouncing,
     requiredShares,
     totalBalance,
+    account,
     isLoadingRoute,
     flowError,
     routeType,

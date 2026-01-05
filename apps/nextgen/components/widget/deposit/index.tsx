@@ -141,6 +141,7 @@ export const WidgetDeposit: FC<Props> = ({
     debouncedAmount: depositAmount.debouncedBn,
     isDebouncing: depositAmount.isDebouncing,
     balance: inputToken?.balance.raw || 0n,
+    account,
     isLoadingRoute: activeFlow.periphery.isLoadingRoute,
     flowError: activeFlow.periphery.error,
     selectedToken,

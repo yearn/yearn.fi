@@ -8,6 +8,8 @@ interface UseDepositErrorProps {
   isDebouncing: boolean
   // Balance
   balance: bigint
+  // Account
+  account?: Address
   // Flow state
   isLoadingRoute: boolean
   flowError?: unknown
@@ -22,6 +24,7 @@ export const useDepositError = ({
   debouncedAmount,
   isDebouncing,
   balance,
+  account,
   isLoadingRoute,
   flowError,
   selectedToken,
@@ -30,6 +33,8 @@ export const useDepositError = ({
 }: UseDepositErrorProps): string | null => {
   return useMemo(() => {
     if (amount === 0n) return null
+
+    if (!account) return 'Wallet not connected'
 
     if (amount > balance) return 'Insufficient balance'
 
@@ -48,6 +53,7 @@ export const useDepositError = ({
     debouncedAmount,
     isDebouncing,
     balance,
+    account,
     isLoadingRoute,
     flowError,
     selectedToken,
