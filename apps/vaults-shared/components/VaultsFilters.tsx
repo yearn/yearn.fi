@@ -8,7 +8,17 @@ import { IconFilter } from '@lib/icons/IconFilter'
 import { LogoYearn } from '@lib/icons/LogoYearn'
 import { cl } from '@lib/utils'
 import type { ReactElement, ReactNode, RefObject } from 'react'
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  cloneElement,
+  Fragment,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import { Drawer } from 'vaul'
 
 type TChainButton = {
@@ -447,6 +457,7 @@ export function VaultsFilters({
                     shouldDebounce={shouldDebounce}
                     searchAlertContent={searchAlertContent}
                     leadingControls={leadingControls}
+                    isChainSelectorMinimal={true}
                     enableResponsiveLayout={false}
                   />
                   {hasPanelContent ? filtersPanelContent : null}
@@ -573,19 +584,27 @@ function FilterControls({
             ref={controlsRowRef}
             className={cl('flex w-full items-center gap-3', enableResponsiveLayout ? 'flex-nowrap' : 'flex-wrap')}
           >
-            {leadingControls ? <div className={'shrink-0'}>{leadingControls}</div> : null}
+            {leadingControls ? (
+              <div className={enableResponsiveLayout ? 'shrink-0' : 'w-full'}>
+                {!enableResponsiveLayout && isValidElement(leadingControls)
+                  ? cloneElement(leadingControls, { stretch: true } as Record<string, unknown>)
+                  : leadingControls}
+              </div>
+            ) : null}
             <div
               ref={chainSelectorRef}
-              className={
-                'flex h-10 shrink-0 items-stretch overflow-x-auto scrollbar-themed rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
-              }
+              className={cl(
+                'flex h-10 items-stretch overflow-x-auto scrollbar-themed rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
+                enableResponsiveLayout ? 'shrink-0' : 'w-full'
+              )}
             >
               <button
                 type={'button'}
                 className={cl(
-                  'flex h-full items-center gap-1 px-2 font-medium transition-colors',
+                  'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
                   'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-                  'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+                  'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+                  !enableResponsiveLayout ? 'flex-1' : ''
                 )}
                 data-active={areAllChainsSelected}
                 onClick={onSelectAllChains}
@@ -603,9 +622,10 @@ function FilterControls({
                     key={chain.id}
                     type={'button'}
                     className={cl(
-                      'flex h-full items-center gap-1 px-2 font-medium transition-colors',
+                      'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
                       'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-                      'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+                      'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+                      !enableResponsiveLayout ? 'flex-1' : ''
                     )}
                     data-active={chain.isSelected}
                     onClick={(): void => onSelectChain(chain.id)}
