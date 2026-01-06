@@ -328,17 +328,16 @@ function Index(): ReactElement | null {
           </div>
         </div>
 
-        {/* Mobile: Vault Metrics and User Balance */}
-        <div className="md:hidden space-y-4 mb-4">
+        {/* Mobile Layout */}
+        <div className="md:hidden space-y-4">
+          {/* Vault metrics always at the top */}
           <VaultMetricsGrid currentVault={currentVault} />
-          <UserBalanceGrid currentVault={currentVault} />
-        </div>
 
-        <section className="grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app">
-          <div
-            className={cl('order-1 md:order-2 md:col-span-7 md:col-start-14 md:sticky md:h-fit md:pt-6')}
-            style={{ top: nextSticky }}
-          >
+          {/* User balance grid */}
+          <UserBalanceGrid currentVault={currentVault} />
+
+          {/* Widget */}
+          <div>
             <Widget
               vaultType={isV3 ? 'v3' : 'v2'}
               vaultAddress={currentVault.address}
@@ -349,66 +348,44 @@ function Index(): ReactElement | null {
             />
           </div>
 
-          {/* Mobile: Expandable details toggle and content */}
-          <div className="order-2 md:hidden space-y-4">
-            <button
-              type="button"
-              onClick={toggleMobileDetails}
-              aria-label={isMobileDetailsExpanded ? 'Hide vault details' : 'Show vault details'}
-              aria-controls={mobileDetailsSectionId}
-              aria-expanded={isMobileDetailsExpanded}
-              className={cl(
-                'w-full bg-surface-secondary border border-border rounded-lg',
-                'py-4 px-6 flex items-center justify-between',
-                'transition-all duration-200',
-                'hover:bg-surface-secondary active:scale-[0.99]'
-              )}
+          {/* Expandable details toggle button */}
+          <button
+            type="button"
+            onClick={toggleMobileDetails}
+            aria-label={isMobileDetailsExpanded ? 'Hide vault details' : 'Show vault details'}
+            aria-controls={mobileDetailsSectionId}
+            aria-expanded={isMobileDetailsExpanded}
+            className={cl(
+              'w-full bg-surface-secondary border border-border rounded-lg',
+              'py-4 px-6 flex items-center justify-between',
+              'transition-all duration-200',
+              'hover:bg-surface-secondary active:scale-[0.99]'
+            )}
+          >
+            <span className="text-sm font-semibold text-text-primary">
+              {isMobileDetailsExpanded ? 'Hide Details' : 'View More Details'}
+            </span>
+            <IconChevron direction={isMobileDetailsExpanded ? 'up' : 'down'} className="size-5 text-text-secondary" />
+          </button>
+
+          {/* Expandable details section */}
+          {isMobileDetailsExpanded && (
+            <section
+              id={mobileDetailsSectionId}
+              ref={detailsRef}
+              aria-label="Vault performance and details"
+              className="space-y-4 pb-8"
             >
-              <span className="text-sm font-semibold text-text-primary">
-                {isMobileDetailsExpanded ? 'Hide Details' : 'View More Details'}
-              </span>
-              <IconChevron direction={isMobileDetailsExpanded ? 'up' : 'down'} className="size-5 text-text-secondary" />
-            </button>
+              {renderableSections.map((section) => {
+                const isCollapsible =
+                  section.key === 'about' ||
+                  section.key === 'risk' ||
+                  section.key === 'strategies' ||
+                  section.key === 'info'
 
-            {isMobileDetailsExpanded && (
-              <section
-                id={mobileDetailsSectionId}
-                ref={detailsRef}
-                aria-label="Vault performance and details"
-                className="space-y-4 pb-8"
-              >
-                {renderableSections.map((section) => {
-                  const isCollapsible =
-                    section.key === 'about' ||
-                    section.key === 'risk' ||
-                    section.key === 'strategies' ||
-                    section.key === 'info'
-
-                  if (isCollapsible) {
-                    const typedKey = section.key as SectionKey
-                    const isOpen = openSections[typedKey]
-
-                    return (
-                      <div key={section.key} ref={section.ref} className={'border border-border rounded-lg bg-surface'}>
-                        <button
-                          type={'button'}
-                          className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
-                          onClick={(): void =>
-                            setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
-                          }
-                        >
-                          <span className={'text-base font-semibold text-text-primary'}>
-                            {collapsibleTitles[typedKey]}
-                          </span>
-                          <IconChevron
-                            className={'size-4 text-text-secondary transition-transform duration-200'}
-                            direction={isOpen ? 'up' : 'down'}
-                          />
-                        </button>
-                        {isOpen ? <div>{section.content}</div> : null}
-                      </div>
-                    )
-                  }
+                if (isCollapsible) {
+                  const typedKey = section.key as SectionKey
+                  const isOpen = openSections[typedKey]
 
                   return (
                     <div
@@ -452,15 +429,16 @@ function Index(): ReactElement | null {
           )}
         </div>
 
-          {/* Desktop: Main content column with sticky tabs */}
-          <div className="hidden md:block order-1 space-y-4 md:col-span-13 pb-4">
+        {/* Desktop Layout - Hidden on mobile */}
+        <section className={'hidden md:grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
+          <div className={'space-y-4 md:col-span-13 pb-4'}>
             {renderableSections.length > 0 ? (
               <div className={'w-full sticky z-30'} style={{ top: nextSticky }}>
                 <div className={'bg-app h-6'}></div>
                 <div
                   className={cl(
                     'flex flex-wrap gap-2 md:pb-3 md:gap-3',
-                    'bg-linear-to-b from-app from-90% to-transparent'
+                    'bg-gradient-to-b from-app from-90% to-transparent'
                   )}
                 >
                   <div
@@ -534,6 +512,18 @@ function Index(): ReactElement | null {
                 </div>
               )
             })}
+          </div>
+          <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-6')} style={{ top: nextSticky }}>
+            <div>
+              <Widget
+                vaultType={isV3 ? 'v3' : 'v2'}
+                vaultAddress={currentVault.address}
+                currentVault={currentVault}
+                gaugeAddress={currentVault.staking.address}
+                actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
+                chainId={chainId}
+              />
+            </div>
           </div>
         </section>
       </div>
