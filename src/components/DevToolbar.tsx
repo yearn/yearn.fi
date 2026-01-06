@@ -87,9 +87,11 @@ export function DevToolbar(): ReactElement | null {
                   'inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-semibold transition capitalize',
                   themePreference === 'light'
                     ? 'border-yellow-200 bg-yellow-50 text-yellow-800 hover:border-yellow-300'
-                    : themePreference === 'dark'
-                      ? 'border-neutral-700 bg-neutral-800 text-neutral-0 hover:border-neutral-600'
-                      : 'border-indigo-200 bg-indigo-50 text-indigo-800 hover:border-indigo-300'
+                    : themePreference === 'soft-dark'
+                      ? 'border-indigo-200 bg-indigo-50 text-indigo-800 hover:border-indigo-300'
+                      : themePreference === 'blue-dark'
+                        ? 'border-blue-200 bg-blue-50 text-blue-800 hover:border-blue-300'
+                        : 'border-neutral-200 bg-neutral-800 text-neutral-0 hover:border-neutral-300'
                 )}
               >
                 <span
@@ -97,9 +99,11 @@ export function DevToolbar(): ReactElement | null {
                     'inline-block size-2 rounded-full',
                     themePreference === 'light'
                       ? 'bg-yellow-400'
-                      : themePreference === 'dark'
-                        ? 'bg-neutral-0'
-                        : 'bg-indigo-500'
+                      : themePreference === 'soft-dark'
+                        ? 'bg-indigo-500'
+                        : themePreference === 'blue-dark'
+                          ? 'bg-blue-500'
+                          : 'bg-neutral-0'
                   )}
                 ></span>
                 {themePreference}
@@ -110,7 +114,7 @@ export function DevToolbar(): ReactElement | null {
               <span className={'font-medium text-neutral-700'}>{'Chart Style'}</span>
               <select
                 className={
-                  'h-8 max-w-[10.5rem] rounded-md border border-neutral-200 bg-white px-2 text-xs font-semibold text-neutral-900 shadow-sm transition hover:border-neutral-300 focus:border-neutral-400 focus:outline-none'
+                  'h-8 max-w-[10.5rem] rounded-md border border-neutral-200 bg-white px-2 text-xs font-semibold text-black shadow-sm transition hover:border-neutral-300 focus:border-neutral-400 focus:outline-none'
                 }
                 value={chartStyle}
                 onChange={(event) => setChartStyle(event.target.value as TChartStyle)}

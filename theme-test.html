@@ -15,16 +15,6 @@
             --color-border: hsl(0 0% 90%);
         }
 
-        /* Dark Theme */
-        :root[data-theme='dark'] {
-            --color-app: hsl(0 0% 0%);
-            --color-surface: hsl(0 0% 4%);
-            --color-surface-secondary: hsl(0 0% 9%);
-            --color-text-primary: hsl(0 0% 98%);
-            --color-text-secondary: hsl(0 0% 64%);
-            --color-border: hsl(0 0% 15%);
-        }
-
         /* Soft Dark Theme */
         :root[data-theme='soft-dark'] {
             --color-app: hsl(0 0% 6%);
@@ -33,6 +23,26 @@
             --color-text-primary: hsl(0 0% 96%);
             --color-text-secondary: hsl(0 0% 64%);
             --color-border: hsl(0 0% 20%);
+        }
+
+        /* Blue Dark Theme */
+        :root[data-theme='blue-dark'] {
+            --color-app: hsl(231 100% 6%);
+            --color-surface: hsl(231 100% 10%);
+            --color-surface-secondary: hsl(231 75% 15%);
+            --color-text-primary: hsl(210 40% 96%);
+            --color-text-secondary: hsl(215 20% 70%);
+            --color-border: hsl(231 45% 22%);
+        }
+
+        /* Midnight Theme */
+        :root[data-theme='midnight'] {
+            --color-app: hsl(0 0% 0%);
+            --color-surface: hsl(0 0% 4%);
+            --color-surface-secondary: hsl(0 0% 9%);
+            --color-text-primary: hsl(0 0% 98%);
+            --color-text-secondary: hsl(0 0% 64%);
+            --color-border: hsl(0 0% 15%);
         }
 
         body {
@@ -89,8 +99,9 @@
 
     <div style="margin-bottom: 2rem;">
         <button onclick="setTheme('light')">Light Theme</button>
-        <button onclick="setTheme('dark')">Dark Theme</button>
         <button onclick="setTheme('soft-dark')">Soft-Dark Theme</button>
+        <button onclick="setTheme('blue-dark')">Blue-Dark Theme</button>
+        <button onclick="setTheme('midnight')">Midnight Theme</button>
     </div>
 
     <div class="card">
@@ -110,8 +121,9 @@
         <p>If you can switch between themes using the buttons above, the CSS variable system is working correctly!</p>
         <ul>
             <li>Light theme: White surfaces, dark text</li>
-            <li>Dark theme: Near-black surfaces, light text</li>
             <li>Soft-dark theme: Dark gray surfaces, light text</li>
+            <li>Blue-dark theme: Deep navy surfaces, cool light text</li>
+            <li>Midnight theme: True black surfaces, light text</li>
         </ul>
     </div>
 

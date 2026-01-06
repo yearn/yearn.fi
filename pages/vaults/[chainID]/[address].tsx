@@ -1,4 +1,5 @@
 import { useScrollSpy } from '@hooks/useScrollSpy'
+import { useThemePreference } from '@hooks/useThemePreference'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -29,6 +30,8 @@ function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
+  const themePreference = useThemePreference()
+  const isDarkTheme = themePreference !== 'light'
 
   const { address, isActive } = useWeb3()
   const params = useParams()
@@ -318,7 +321,12 @@ function Index(): ReactElement | null {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-black leading-tight text-text-secondary truncate">
+              <h1
+                className={cl(
+                  'text-lg font-black leading-tight truncate',
+                  isDarkTheme ? 'text-text-primary' : 'text-text-secondary'
+                )}
+              >
                 {getVaultName(currentVault)} yVault
               </h1>
               <p className="text-xs text-text-secondary truncate">
