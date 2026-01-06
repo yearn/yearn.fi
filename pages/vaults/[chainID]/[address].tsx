@@ -1,5 +1,5 @@
-import { useThemePreference } from '@hooks/useThemePreference'
 import { useScrollSpy } from '@hooks/useScrollSpy'
+import { useThemePreference } from '@hooks/useThemePreference'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
