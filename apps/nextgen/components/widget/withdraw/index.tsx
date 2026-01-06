@@ -443,13 +443,23 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       <WithdrawDetailsModal
         isOpen={showWithdrawDetailsModal}
         onClose={() => setShowWithdrawDetailsModal(false)}
-        vaultSymbol={vaultSymbol}
+        sourceTokenSymbol={withdrawalSource === 'staking' ? stakingToken?.symbol || vaultSymbol : vaultSymbol}
+        vaultAssetSymbol={assetToken?.symbol || ''}
+        outputTokenSymbol={outputToken?.symbol || ''}
         withdrawAmount={
           requiredShares > 0n ? formatTAmount({ value: requiredShares, decimals: vault?.decimals ?? 18 }) : '0'
         }
+        expectedOutput={
+          activeFlow.periphery.expectedOut > 0n
+            ? formatTAmount({ value: activeFlow.periphery.expectedOut, decimals: outputToken?.decimals ?? 18 })
+            : undefined
+        }
+        hasInputValue={withdrawAmount.bn > 0n}
         stakingAddress={stakingAddress}
         withdrawalSource={withdrawalSource}
-        stakingTokenSymbol={stakingToken?.symbol}
+        routeType={routeType}
+        isZap={routeType === 'ENSO' && selectedToken !== assetAddress}
+        isLoadingQuote={activeFlow.periphery.isLoadingRoute}
       />
 
       {/* Full-screen Token Selector Overlay */}
