@@ -8,7 +8,17 @@ import { IconFilter } from '@lib/icons/IconFilter'
 import { LogoYearn } from '@lib/icons/LogoYearn'
 import { cl } from '@lib/utils'
 import type { ReactElement, ReactNode, RefObject } from 'react'
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  cloneElement,
+  Fragment,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import { Drawer } from 'vaul'
 
 type TChainButton = {
@@ -384,7 +394,6 @@ export function VaultsFilters({
       <div className={'relative col-span-24 w-full md:col-span-19'}>
         <div className={cl('md:hidden', forceMobileFiltersBar ? 'md:block' : '')}>
           <div className={'mb-5 w-full'}>
-            <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
             <SearchBar
               className={
                 'max-w-none rounded-lg border-none bg-surface-secondary text-text-primary transition-all md:w-full'
@@ -420,9 +429,8 @@ export function VaultsFilters({
               <Drawer.Content className={'fixed inset-x-0 bottom-0 z-99999 flex justify-center outline-hidden'}>
                 <div
                   className={
-                    'w-full max-w-[520px] rounded-t-3xl bg-surface-secondary p-6 border border-border shadow-sm'
+                    'w-full max-w-full rounded-t-3xl bg-surface-secondary p-6 border border-border shadow-sm max-h-[75vh] overflow-y-auto scrollbar-themed'
                   }
-                  style={{ height: '75vh', overflowY: 'auto' }}
                 >
                   <div className={'mb-4 flex items-center justify-between'}>
                     <p className={'text-base font-medium text-text-primary'}>{'Filter Vaults'}</p>
@@ -449,6 +457,7 @@ export function VaultsFilters({
                     shouldDebounce={shouldDebounce}
                     searchAlertContent={searchAlertContent}
                     leadingControls={leadingControls}
+                    isChainSelectorMinimal={true}
                     enableResponsiveLayout={false}
                   />
                   {hasPanelContent ? filtersPanelContent : null}
@@ -575,19 +584,27 @@ function FilterControls({
             ref={controlsRowRef}
             className={cl('flex w-full items-center gap-3', enableResponsiveLayout ? 'flex-nowrap' : 'flex-wrap')}
           >
-            {leadingControls ? <div className={'shrink-0'}>{leadingControls}</div> : null}
+            {leadingControls ? (
+              <div className={enableResponsiveLayout ? 'shrink-0' : 'w-full'}>
+                {!enableResponsiveLayout && isValidElement(leadingControls)
+                  ? cloneElement(leadingControls, { stretch: true } as Record<string, unknown>)
+                  : leadingControls}
+              </div>
+            ) : null}
             <div
               ref={chainSelectorRef}
-              className={
-                'flex h-10 shrink-0 items-stretch overflow-hidden rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
-              }
+              className={cl(
+                'flex h-10 items-stretch overflow-x-auto scrollbar-themed rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
+                enableResponsiveLayout ? 'shrink-0' : 'w-full'
+              )}
             >
               <button
                 type={'button'}
                 className={cl(
-                  'flex h-full items-center gap-1 px-2 font-medium transition-colors',
+                  'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
                   'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-                  'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+                  'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+                  !enableResponsiveLayout ? 'flex-1' : ''
                 )}
                 data-active={areAllChainsSelected}
                 onClick={onSelectAllChains}
@@ -605,9 +622,10 @@ function FilterControls({
                     key={chain.id}
                     type={'button'}
                     className={cl(
-                      'flex h-full items-center gap-1 px-2 font-medium transition-colors',
+                      'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
                       'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-                      'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+                      'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+                      !enableResponsiveLayout ? 'flex-1' : ''
                     )}
                     data-active={chain.isSelected}
                     onClick={(): void => onSelectChain(chain.id)}
@@ -858,7 +876,7 @@ function ChainSelectionModal({
                     <IconCross className={'size-4'} />
                   </button>
                 </div>
-                <div className={'mt-4 max-h-[400px] space-y-1 overflow-y-auto pr-1'}>
+                <div className={'mt-4 max-h-[400px] space-y-1 overflow-y-auto scrollbar-themed pr-1'}>
                   {options.length === 0 ? (
                     <p className={'text-sm text-text-secondary'}>{'No additional chains are available right now.'}</p>
                   ) : (

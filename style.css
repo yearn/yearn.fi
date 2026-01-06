@@ -176,6 +176,25 @@ body {
   .scrollbar-none::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
+
+  .scrollbar-themed {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: var(--color-surface-tertiary) transparent; /* Firefox */
+  }
+  .scrollbar-themed::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-themed::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-themed::-webkit-scrollbar-thumb {
+    background-color: var(--color-surface-tertiary);
+    border-radius: 3px;
+  }
+  .scrollbar-themed::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-text-tertiary);
+  }
 }
 
 @layer components {

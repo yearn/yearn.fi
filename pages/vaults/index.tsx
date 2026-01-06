@@ -388,7 +388,7 @@ function ListOfVaults({
       <div className={'flex flex-col gap-6'}>
         <div>
           <p className={'mb-2 text-sm text-text-secondary'}>{'Protocol'}</p>
-          <div className={'max-h-[260px] space-y-2 overflow-y-auto pr-1'}>
+          <div className={'max-h-[260px] space-y-2 overflow-y-auto scrollbar-themed pr-1'}>
             {PROTOCOL_OPTIONS.map((protocol) => {
               const isChecked = sanitizedProtocols.includes(protocol)
               return (
@@ -540,7 +540,7 @@ function ListOfVaults({
       <div className={'flex flex-col gap-6'}>
         <div>
           <p className={'mb-2 text-sm text-text-secondary'}>{'Protocol'}</p>
-          <div className={'max-h-[320px] space-y-2 overflow-y-auto pr-1'}>
+          <div className={'max-h-[320px] space-y-2 overflow-y-auto scrollbar-themed pr-1'}>
             {PROTOCOL_OPTIONS.map((protocol) => {
               const isChecked = sanitizedProtocols.includes(protocol)
               return (

@@ -132,7 +132,7 @@ function TrendingVaultsCollapsedMarquee({ suggestedVaults }: { suggestedVaults: 
     <div
       className={cl(
         'relative flex min-w-0 flex-1 items-center',
-        prefersReducedMotion ? 'overflow-x-auto scrollbar-none' : 'overflow-hidden'
+        prefersReducedMotion ? 'overflow-x-auto scrollbar-themed' : 'overflow-hidden'
       )}
       onMouseEnter={(): void => setIsInteracting(true)}
       onMouseLeave={(): void => setIsInteracting(false)}
@@ -297,7 +297,7 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
   return (
     <div className={'w-full bg-app pb-2'}>
       <div className={'flex flex-col gap-0 rounded-xl border border-border bg-surface'}>
-        <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-'}>
+        <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-3'}>
           <div className={'flex min-w-0 flex-1 items-center gap-3 '}>
             <div className={'flex flex-col text-left'}>
               <p className={'text-sm font-semibold tracking-wide text-text-secondary'}>{'Trending Vaults'}</p>
@@ -346,7 +346,7 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
         {isTrendingExpanded ? (
           <div
             ref={trendingCarouselRef}
-            className={'overflow-x-auto scrollbar-none px-4 pt-0.5 pb-4 md:px-6 scroll-smooth'}
+            className={'overflow-x-auto scrollbar-themed px-4 pt-0.5 pb-4 md:px-6 scroll-smooth'}
           >
             <div className={'flex gap-4'}>
               {renderedVaults.map((vault, index) => {
