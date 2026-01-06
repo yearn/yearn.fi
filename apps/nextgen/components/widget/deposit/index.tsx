@@ -370,7 +370,10 @@ export const WidgetDeposit: FC<Props> = ({
       <VaultSharesModal
         isOpen={showVaultSharesModal}
         onClose={() => setShowVaultSharesModal(false)}
+        depositTokenSymbol={inputToken?.symbol || ''}
+        vaultAssetSymbol={assetToken?.symbol || ''}
         vaultSymbol={vaultSymbol}
+        stakingTokenSymbol={stakingToken?.symbol}
         expectedShares={
           activeFlow.periphery.expectedOut > 0n
             ? formatTAmount({ value: activeFlow.periphery.expectedOut, decimals: vault?.decimals ?? 18 })
@@ -378,6 +381,7 @@ export const WidgetDeposit: FC<Props> = ({
         }
         stakingAddress={stakingAddress}
         isAutoStakingEnabled={isAutoStakingEnabled}
+        isZap={routeType === 'ENSO' && selectedToken !== assetAddress}
       />
 
       <AnnualReturnModal
