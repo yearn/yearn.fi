@@ -12,6 +12,14 @@ import {
   useWriteContract
 } from 'wagmi'
 import { Button } from '../../lib/components/Button'
+import { SuccessModal } from './widget/shared'
+
+type SuccessModalConfig = {
+  title: string
+  message: string
+  buttonText?: string
+  showConfetti?: boolean
+}
 
 type Props = {
   prepareWrite: UseSimulateContractReturnType
@@ -20,6 +28,8 @@ type Props = {
   loading?: boolean
   onSuccess?: () => void
   notification?: TCreateNotificationParams
+  successModal?: SuccessModalConfig
+  crossChainSubmitModal?: SuccessModalConfig // Shown on cross-chain tx submit (not completion)
 }
 
 export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
@@ -29,6 +39,8 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   loading: _loading,
   onSuccess,
   notification,
+  successModal,
+  crossChainSubmitModal,
   ...props
 }) => {
   const writeContract = useWriteContract()
@@ -40,6 +52,8 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const client = usePublicClient()
   const lastToastedTxHash = useRef<string | undefined>(undefined)
   const { address: account } = useAccount()
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showCrossChainModal, setShowCrossChainModal] = useState(false)
 
   // Track pending execution after chain switch (to wait for React state to update)
   const [pendingChainExecution, setPendingChainExecution] = useState<number | null>(null)
@@ -139,9 +153,14 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
         await handleCreateNotification(result.hash, isCrossChain ? 'submitted' : 'pending')
 
         if (isCrossChain) {
-          // Cross-chain: Don't wait for receipt, show toast and complete
-          toast({ content: 'Transaction submitted', type: 'info' })
-          onSuccess?.()
+          // Cross-chain: Don't wait for receipt, show modal or toast and complete
+          if (crossChainSubmitModal) {
+            setShowCrossChainModal(true)
+            // Don't call onSuccess here - it will be called when modal closes
+          } else {
+            toast({ content: 'Transaction submitted', type: 'info' })
+            onSuccess?.()
+          }
           setNotificationId(undefined)
         } else {
           // Same-chain: Store hash and wait for receipt
@@ -162,7 +181,14 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
       }
       console.error('Enso transaction failed:', error)
     }
-  }, [prepareWrite.data?.request, notification?.type, handleCreateNotification, onSuccess, writeContract])
+  }, [
+    prepareWrite.data?.request,
+    notification?.type,
+    handleCreateNotification,
+    onSuccess,
+    writeContract,
+    crossChainSubmitModal
+  ])
 
   // Execute regular transaction
   const executeRegularTransaction = useCallback(
@@ -259,22 +285,27 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   // Handle transaction success
   useEffect(() => {
     if (isTxSuccess && receipt.data?.transactionHash) {
-      // Prevent duplicate toasts
+      // Prevent duplicate toasts/modals
       if (lastToastedTxHash.current !== receipt.data.transactionHash) {
         lastToastedTxHash.current = receipt.data.transactionHash
-        toast({ content: 'Transaction successful!', type: 'success' })
+        // Show modal if configured, otherwise show toast
+        if (successModal) {
+          setShowSuccessModal(true)
+          // Don't call onSuccess here - it will be called when modal closes
+        } else {
+          toast({ content: 'Transaction successful!', type: 'success' })
+          onSuccess?.()
+        }
       }
 
       // Update notification to success
       handleUpdateNotification({ receipt: receipt.data, status: 'success' })
 
-      onSuccess?.()
-
       // Clear state for next transaction
       if (ensoTxHash) setEnsoTxHash(undefined)
       setNotificationId(undefined)
     }
-  }, [isTxSuccess, receipt.data, onSuccess, ensoTxHash, handleUpdateNotification])
+  }, [isTxSuccess, receipt.data, onSuccess, ensoTxHash, handleUpdateNotification, successModal])
 
   // Handle transaction errors
   useEffect(() => {
@@ -328,16 +359,46 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   }
 
   return (
-    <Button
-      variant={getVariant()}
-      classNameOverride="yearn--button--nextgen w-full"
-      className={props.className}
-      isBusy={isLoading}
-      disabled={disabled}
-      onClick={handleClick}
-      {...props}
-    >
-      {getButtonContent()}
-    </Button>
+    <>
+      <Button
+        variant={getVariant()}
+        classNameOverride="yearn--button--nextgen w-full"
+        className={props.className}
+        isBusy={isLoading}
+        disabled={disabled}
+        onClick={handleClick}
+        {...props}
+      >
+        {getButtonContent()}
+      </Button>
+
+      {successModal && (
+        <SuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => {
+            setShowSuccessModal(false)
+            onSuccess?.()
+          }}
+          title={successModal.title}
+          message={successModal.message}
+          buttonText={successModal.buttonText}
+          showConfetti={successModal.showConfetti}
+        />
+      )}
+
+      {crossChainSubmitModal && (
+        <SuccessModal
+          isOpen={showCrossChainModal}
+          onClose={() => {
+            setShowCrossChainModal(false)
+            onSuccess?.()
+          }}
+          title={crossChainSubmitModal.title}
+          message={crossChainSubmitModal.message}
+          buttonText={crossChainSubmitModal.buttonText}
+          showConfetti={crossChainSubmitModal.showConfetti}
+        />
+      )}
+    </>
   )
 }

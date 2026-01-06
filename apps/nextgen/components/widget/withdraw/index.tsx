@@ -256,6 +256,41 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   }, [outputToken?.address, outputToken?.chainID, getPrice])
 
   // ============================================================================
+  // Success Modal Configurations
+  // ============================================================================
+  const formattedWithdrawAmount = formatTAmount({ value: withdrawAmount.bn, decimals: assetToken?.decimals ?? 18 })
+
+  const approveSuccessModal = useMemo(
+    () => ({
+      title: 'Approval successful',
+      message: `Successfully approved ${formattedWithdrawAmount} ${assetToken?.symbol || ''}. All set for withdrawing.`,
+      buttonText: 'Nice',
+      showConfetti: false
+    }),
+    [formattedWithdrawAmount, assetToken?.symbol]
+  )
+
+  const withdrawSuccessModal = useMemo(
+    () => ({
+      title: 'Withdrawal successful!',
+      message: `You successfully withdrew ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
+      buttonText: "Let's go",
+      showConfetti: true
+    }),
+    [formattedWithdrawAmount, assetToken?.symbol]
+  )
+
+  const crossChainSubmitModal = useMemo(
+    () => ({
+      title: 'Transaction submitted!',
+      message: `Your ${outputToken?.symbol || ''} is on its way.`,
+      buttonText: 'Got it',
+      showConfetti: false
+    }),
+    [outputToken?.symbol]
+  )
+
+  // ============================================================================
   // Handlers
   // ============================================================================
   const handleWithdrawSuccess = useCallback(() => {
@@ -421,6 +456,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
                 }
                 className="w-full"
                 notification={approveNotificationParams}
+                successModal={approveSuccessModal}
               />
             )}
             <TxButton
@@ -436,6 +472,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
               onSuccess={handleWithdrawSuccess}
               className="w-full"
               notification={withdrawNotificationParams}
+              successModal={withdrawSuccessModal}
+              crossChainSubmitModal={crossChainSubmitModal}
             />
           </div>
         )}

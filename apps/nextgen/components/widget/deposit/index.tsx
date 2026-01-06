@@ -201,6 +201,41 @@ export const WidgetDeposit: FC<Props> = ({
   }, [depositToken, assetAddress, assetToken?.address, assetToken?.chainID, getPrice])
 
   // ============================================================================
+  // Success Modal Configurations
+  // ============================================================================
+  const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
+
+  const approveSuccessModal = useMemo(
+    () => ({
+      title: 'Approval successful',
+      message: `Successfully approved ${formattedDepositAmount} ${inputToken?.symbol || ''}. All set for depositing into vault.`,
+      buttonText: 'Nice',
+      showConfetti: false
+    }),
+    [formattedDepositAmount, inputToken?.symbol]
+  )
+
+  const depositSuccessModal = useMemo(
+    () => ({
+      title: 'Deposit successful!',
+      message: `You successfully deposited ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+      buttonText: "Let's go",
+      showConfetti: true
+    }),
+    [formattedDepositAmount, inputToken?.symbol, vaultSymbol]
+  )
+
+  const crossChainSubmitModal = useMemo(
+    () => ({
+      title: 'Transaction submitted!',
+      message: `Your ${inputToken?.symbol || ''} is on its way.`,
+      buttonText: 'Got it',
+      showConfetti: false
+    }),
+    [inputToken?.symbol]
+  )
+
+  // ============================================================================
   // Max Quote (for native tokens)
   // ============================================================================
   const { fetchMaxQuote, isFetching: isFetchingMaxQuote } = useFetchMaxQuote({
@@ -345,6 +380,7 @@ export const WidgetDeposit: FC<Props> = ({
                 }
                 className="w-full"
                 notification={approveNotificationParams}
+                successModal={approveSuccessModal}
               />
             )}
             <TxButton
@@ -363,6 +399,8 @@ export const WidgetDeposit: FC<Props> = ({
               onSuccess={handleDepositSuccess}
               className="w-full"
               notification={depositNotificationParams}
+              successModal={depositSuccessModal}
+              crossChainSubmitModal={crossChainSubmitModal}
             />
           </div>
         )}
