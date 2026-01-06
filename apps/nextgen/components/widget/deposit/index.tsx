@@ -334,7 +334,9 @@ export const WidgetDeposit: FC<Props> = ({
             {!isNativeToken && (
               <TxButton
                 prepareWrite={activeFlow.actions.prepareApprove}
-                transactionName="Approve"
+                transactionName={
+                  depositAmount.bn > 0n && activeFlow.periphery.isAllowanceSufficient ? 'Approved' : 'Approve'
+                }
                 disabled={
                   !activeFlow.periphery.prepareApproveEnabled ||
                   !!depositError ||
