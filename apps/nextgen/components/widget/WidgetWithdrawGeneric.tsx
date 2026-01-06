@@ -767,7 +767,6 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
               prepareWrite={prepareUnstake}
               transactionName="Unstake"
               disabled={!canWithdraw || !!withdrawError}
-              tooltip={withdrawError || undefined}
               className="w-full"
             />
           ) : (
@@ -777,7 +776,6 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                 prepareWrite={prepareApprove}
                 transactionName="Approve"
                 disabled={!prepareApproveEnabled || !!withdrawError || isLoadingAnyQuote}
-                tooltip={withdrawError || (isLoadingAnyQuote ? 'Calculating required amount...' : undefined)}
                 className="w-full"
               />
               <TxButton
@@ -793,7 +791,6 @@ export const WidgetWithdrawGeneric: FC<Props> = ({
                 }
                 disabled={!canWithdraw || isLoadingAnyQuote}
                 loading={isLoadingAnyQuote}
-                tooltip={withdrawError || (!isAllowanceSufficient ? 'Please approve token first' : undefined)}
                 className="w-full"
               />
             </>

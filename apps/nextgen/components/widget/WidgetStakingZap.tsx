@@ -156,34 +156,6 @@ export const WidgetStakingZap: FC<Props> = ({
   )
   const isWithdrawButtonDisabled = useMemo(() => !canWithdraw, [canWithdraw])
 
-  // Error detection for withdraw flow
-  const withdrawError = useMemo(() => {
-    if (activeTab !== 'withdraw') return null
-    if (withdrawAmount.bn === 0n) return null
-
-    if (isWithdrawAmountExceedsBalance) {
-      return 'Insufficient balance to withdraw this amount'
-    }
-
-    if (gaugeTokensNeeded > 0n && !quote && !isLoadingQuote) {
-      return 'Unable to get quote from Cowswap'
-    }
-
-    return null
-  }, [activeTab, withdrawAmount.bn, isWithdrawAmountExceedsBalance, gaugeTokensNeeded, quote, isLoadingQuote])
-
-  // Error detection for deposit flow
-  const depositError = useMemo(() => {
-    if (activeTab !== 'deposit') return null
-    if (depositAmount.bn === 0n) return null
-
-    if (isDepositAmountExceedsBalance) {
-      return 'Insufficient balance to deposit this amount'
-    }
-
-    return null
-  }, [activeTab, depositAmount.bn, isDepositAmountExceedsBalance])
-
   // Success handlers that refetch balances
   const handleDepositSuccess = useCallback(() => {
     refetchTokens()
@@ -235,14 +207,12 @@ export const WidgetStakingZap: FC<Props> = ({
               prepareWrite={prepareDepositApprove}
               transactionName="Approve"
               disabled={!prepareDepositApproveEnabled || isDepositAmountExceedsBalance}
-              tooltip={depositError || undefined}
               className="w-full"
             />
             <TxButton
               prepareWrite={prepareZapIn}
               transactionName="Deposit & Stake"
               disabled={!prepareZapInEnabled || isDepositAmountExceedsBalance}
-              tooltip={depositError || undefined}
               onSuccess={handleDepositSuccess}
               className="w-full"
             />
@@ -262,7 +232,6 @@ export const WidgetStakingZap: FC<Props> = ({
       prepareZapIn,
       prepareZapInEnabled,
       isDepositAmountExceedsBalance,
-      depositError,
       handleDepositSuccess
     ]
   )
@@ -311,7 +280,6 @@ export const WidgetStakingZap: FC<Props> = ({
               prepareWrite={prepareWithdrawApprove}
               transactionName="Approve"
               disabled={!prepareWithdrawApproveEnabled || !quote || isWithdrawAmountExceedsBalance}
-              tooltip={withdrawError || undefined}
               className="w-full"
               loading={isLoadingQuote || isLoadingAllowance}
             />
@@ -319,7 +287,6 @@ export const WidgetStakingZap: FC<Props> = ({
               prepareWrite={prepareCowswapOrder}
               transactionName={isLoadingQuote || isLoadingAllowance ? 'Getting quote...' : `Withdraw ${asset?.symbol}`}
               disabled={isWithdrawButtonDisabled}
-              tooltip={withdrawError || undefined}
               onSuccess={handleWithdrawSuccess}
               className="w-full"
             />
@@ -347,7 +314,6 @@ export const WidgetStakingZap: FC<Props> = ({
       expectedOut,
       prepareCowswapOrder,
       isWithdrawButtonDisabled,
-      withdrawError,
       handleWithdrawSuccess
     ]
   )

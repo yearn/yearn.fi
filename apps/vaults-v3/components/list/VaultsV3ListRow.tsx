@@ -27,12 +27,11 @@ import {
 import { APYSparkline } from '@vaults-v3/components/table/APYSparkline'
 import {
   type TVaultForwardAPYVariant,
-  VaultForwardAPY,
-  VaultForwardAPYInlineDetails
+  VaultForwardAPY
+  // VaultForwardAPYInlineDetails
 } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
-import { RiskScoreInlineDetails, VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -76,8 +75,6 @@ export function VaultsV3ListRow({
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
-  const [isApyOpen, setIsApyOpen] = useState(false)
-  const [isRiskOpen, setIsRiskOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('performance')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
@@ -151,7 +148,7 @@ export function VaultsV3ListRow({
         onKeyDown={handleKeyDown}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
-          'p-6 pt-2 pb-4 pr-16 md:pr-20',
+          'p-6 pt-2 pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
       >
@@ -172,16 +169,15 @@ export function VaultsV3ListRow({
             setIsExpanded((value) => !value)
           }}
           className={cl(
-            'absolute top-4 right-4 z-20 flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
-            'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
-            'md:top-5 md:right-5'
+            'absolute top-5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
+            'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
           )}
         >
           <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
         </button>
 
         <div className={cl('col-span-9 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
-          <div className={'flex flex-row-reverse sm:flex-row w-full justify-between sm:justify-normal gap-4'}>
+          <div className={'flex flex-row w-full gap-4 overflow-hidden'}>
             <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
               <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
@@ -192,7 +188,7 @@ export function VaultsV3ListRow({
                 height={32}
               />
             </div>
-            <div className={'min-w-0'}>
+            <div className={'min-w-0 flex-1'}>
               <strong
                 title={currentVault.name}
                 className={'block truncate font-black text-text-primary md:-mb-0.5 text-lg'}
@@ -227,11 +223,51 @@ export function VaultsV3ListRow({
                 ) : null}
               </div>
             </div>
+            {/* Mobile Holdings + APY + TVL inline */}
+            <div className={'hidden max-md:flex items-center shrink-0 gap-4 text-right'}>
+              {/* Holdings - shown on wider mobile screens */}
+              {flags?.hasHoldings ? (
+                <div className={'hidden min-[420px]:block'}>
+                  <p className={'text-xs text-text-primary/60'}>{'Holdings'}</p>
+                  <VaultHoldingsAmount currentVault={currentVault} valueClassName={'text-sm font-semibold'} />
+                </div>
+              ) : null}
+              <div>
+                <p className={'text-xs text-text-primary/60'}>{'Est. APY'}</p>
+                <VaultForwardAPY
+                  currentVault={currentVault}
+                  valueClassName={'text-sm font-semibold'}
+                  showSubline={false}
+                />
+              </div>
+              <div className={'relative'}>
+                <p className={'text-xs text-text-primary/60'}>{'TVL'}</p>
+                <p className={'text-sm font-semibold text-text-primary'}>
+                  <RenderAmount
+                    value={currentVault.tvl?.tvl}
+                    symbol={'USD'}
+                    decimals={0}
+                    options={{
+                      shouldCompactValue: true,
+                      maximumFractionDigits: 2,
+                      minimumFractionDigits: 0
+                    }}
+                  />
+                </p>
+                {/* Holdings indicator dot - shown on narrow screens when user has holdings */}
+                {flags?.hasHoldings ? (
+                  <div
+                    className={'absolute -right-2 top-0 size-2 rounded-full bg-green-500 min-[420px]:hidden'}
+                    title={'You have holdings in this vault'}
+                  />
+                ) : null}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Desktop metrics grid */}
-        <div className={cl('col-span-15 z-10 gap-4 mt-4', 'md:mt-0 md:grid md:grid-cols-15 md:items-center')}>
+        <div className={cl('col-span-15 z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:grid-cols-15 md:items-center')}>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <VaultForwardAPY
               currentVault={currentVault}
@@ -241,6 +277,8 @@ export function VaultsV3ListRow({
               showBoostDetails={showBoostDetails}
             />
           </div>
+
+          {/* 30D APY */}
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <VaultHistoricalAPY currentVault={currentVault} />
           </div>
@@ -301,87 +339,10 @@ export function VaultsV3ListRow({
             <VaultHoldingsAmount currentVault={currentVault} />
           </div>
         </div>
-
-        {/* Mobile metrics grid; conditionally show Deposited if user has holdings */}
-        <div
-          className={cl(
-            'col-span-8 z-10',
-            'grid grid-cols-2 gap-4 md:hidden',
-            'pt-2 mt-2 md:mt-0 md:pt-0 border-t border-neutral-800/20'
-          )}
-        >
-          {flags?.hasHoldings ? (
-            <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-              <p className={'inline text-start text-dm text-text-primary'}>{'Your Deposit'}</p>
-              <VaultHoldingsAmount currentVault={currentVault} />
-            </div>
-          ) : null}
-          <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
-            <div className={'w-full flex flex-col items-start'}>
-              <div className={'flex w-full flex-row items-center justify-between'}>
-                <p className={'inline text-start text-dm text-text-primary'}>{'Estimated APY'}</p>
-                <VaultForwardAPY
-                  currentVault={currentVault}
-                  onMobileToggle={(): void => setIsApyOpen((v) => !v)}
-                  showSubline={false}
-                  showSublineTooltip
-                  displayVariant={apyDisplayVariant}
-                  showBoostDetails={showBoostDetails}
-                />
-              </div>
-              {isApyOpen ? (
-                <div className={'mt-2 w-full'}>
-                  <VaultForwardAPYInlineDetails currentVault={currentVault} showBoostDetails={showBoostDetails} />
-                </div>
-              ) : null}
-            </div>
-          </div>
-          <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-            <p className={'inline text-start text-dm text-text-primary'}>{'Historical APY'}</p>
-            <VaultHistoricalAPY currentVault={currentVault} />
-          </div>
-          <div className={'yearn--table-data-section-item col-span-2 flex-row items-center'} datatype={'number'}>
-            <p className={'inline text-start text-dm text-text-primary'}>{'TVL'}</p>
-            <div className={'flex justify-end text-right'}>
-              <Tooltip
-                className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
-                openDelayMs={150}
-                toggleOnClick
-                tooltip={tvlNativeTooltip}
-              >
-                <p className={'yearn--table-data-section-item-value'}>
-                  <RenderAmount
-                    value={currentVault.tvl?.tvl}
-                    symbol={'USD'}
-                    decimals={0}
-                    options={{
-                      shouldCompactValue: true,
-                      maximumFractionDigits: 2,
-                      minimumFractionDigits: 0
-                    }}
-                  />
-                </p>
-              </Tooltip>
-            </div>
-          </div>
-          <div className={'yearn--table-data-section-item col-span-2'} datatype={'number'}>
-            <div className={'w-full flex flex-col items-start'} onClick={(event): void => event.stopPropagation()}>
-              <VaultRiskScoreTag
-                riskLevel={currentVault.info.riskLevel}
-                onMobileToggle={(): void => setIsRiskOpen((v) => !v)}
-              />
-              {isRiskOpen ? (
-                <div className={'mt-2 w-full'}>
-                  <RiskScoreInlineDetails riskLevel={currentVault.info.riskLevel} />
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
       </div>
 
       {isExpanded ? (
-        <div className={'bg-surface'}>
+        <div className={'hidden md:block bg-surface'}>
           <div className={'px-6 pb-6 pt-3'}>
             <div className={' bg-surface'}>
               <VaultsV3ExpandedSelector
@@ -414,8 +375,8 @@ export function VaultsV3ListRow({
                     shouldRenderSelectors={false}
                     chartTab={(expandedView === 'apy' ? 'historical-apy' : 'historical-pps') satisfies TVaultChartTab}
                     timeframe={expandedTimeframe}
-                    chartHeightPx={150}
-                    chartHeightMdPx={150}
+                    chartHeightPx={200}
+                    chartHeightMdPx={200}
                   />
                 </div>
               ) : null}

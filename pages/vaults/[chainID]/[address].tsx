@@ -1,3 +1,5 @@
+import { useScrollSpy } from '@hooks/useScrollSpy'
+import { useThemePreference } from '@hooks/useThemePreference'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -28,6 +30,8 @@ function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
+  const themePreference = useThemePreference()
+  const isDarkTheme = themePreference !== 'light'
 
   const { address, isActive } = useWeb3()
   const params = useParams()
@@ -223,6 +227,18 @@ function Index(): ReactElement | null {
   }, [chainId, currentVault, sectionRefs, yDaemonBaseUri])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
+  const scrollSpySections = useMemo(
+    () => renderableSections.map((section) => ({ key: section.key, ref: section.ref })),
+    [renderableSections]
+  )
+
+  useScrollSpy({
+    sections: scrollSpySections,
+    activeKey: activeSection,
+    onActiveKeyChange: setActiveSection,
+    rootMargin: '-250px 0px -60% 0px',
+    enabled: renderableSections.length > 0
+  })
 
   useEffect(() => {
     if (!renderableSections.some((section) => section.key === activeSection) && renderableSections[0]) {
@@ -305,7 +321,12 @@ function Index(): ReactElement | null {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-black leading-tight text-text-secondary truncate">
+              <h1
+                className={cl(
+                  'text-lg font-black leading-tight truncate',
+                  isDarkTheme ? 'text-text-primary' : 'text-text-secondary'
+                )}
+              >
                 {getVaultName(currentVault)} yVault
               </h1>
               <p className="text-xs text-text-secondary truncate">
@@ -375,7 +396,12 @@ function Index(): ReactElement | null {
                   const isOpen = openSections[typedKey]
 
                   return (
-                    <div key={section.key} ref={section.ref} className={'border border-border rounded-lg bg-surface'}>
+                    <div
+                      key={section.key}
+                      ref={section.ref}
+                      data-scroll-spy-key={section.key}
+                      className={'border border-border rounded-lg bg-surface'}
+                    >
                       <button
                         type={'button'}
                         className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
@@ -397,7 +423,12 @@ function Index(): ReactElement | null {
                 }
 
                 return (
-                  <div key={section.key} ref={section.ref} className={'border border-border rounded-lg bg-surface'}>
+                  <div
+                    key={section.key}
+                    ref={section.ref}
+                    data-scroll-spy-key={section.key}
+                    className={'border border-border rounded-lg bg-surface'}
+                  >
                     {section.content}
                   </div>
                 )
@@ -457,6 +488,7 @@ function Index(): ReactElement | null {
                   <div
                     key={section.key}
                     ref={section.ref}
+                    data-scroll-spy-key={section.key}
                     className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
                   >
                     <button
@@ -481,6 +513,7 @@ function Index(): ReactElement | null {
                 <div
                   key={section.key}
                   ref={section.ref}
+                  data-scroll-spy-key={section.key}
                   className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
                 >
                   {section.content}

@@ -1,8 +1,7 @@
-import type { TActionParams } from '@vaults-v2/contexts/useActionFlow'
 import type { Hash, TransactionReceipt } from 'viem'
 import type { TAddress } from './address'
 
-export type TNotificationStatus = 'pending' | 'success' | 'error'
+export type TNotificationStatus = 'pending' | 'submitted' | 'success' | 'error'
 
 export type TNotificationType =
   | 'approve'
@@ -52,27 +51,26 @@ export type TNotificationsContext = {
   setShouldOpenCurtain: (value: boolean) => void
 }
 
-// Base interface for notification handler parameters
-export type TNotificationHandlerParams = {
-  actionParams: Partial<TActionParams>
-  txHash?: Hash
-  type?: TNotificationType
-  receipt?: TransactionReceipt
-  status?: TNotificationStatus
-  idToUpdate?: number
+// New flat notification API types
+export type TCreateNotificationParams = {
+  type: TNotificationType
+  amount: string // pre-formatted by caller
+  fromAddress: TAddress
+  fromSymbol: string
+  fromChainId: number
+  toAddress?: TAddress // optional for approve/claim
+  toSymbol?: string
+  toChainId?: number // only when cross-chain
 }
 
-// Specific parameters for approve notification (no type field)
-export type TApproveNotificationParams = Omit<TNotificationHandlerParams, 'type'>
-
-// Generic notification handler type
-export type TNotificationHandler<T = TNotificationHandlerParams> = (params: T) => Promise<number>
+export type TUpdateNotificationParams = {
+  id: number
+  txHash?: Hash
+  status?: TNotificationStatus
+  receipt?: TransactionReceipt
+}
 
 export type TNotificationsActionsContext = {
-  handleApproveNotification: TNotificationHandler<TApproveNotificationParams>
-  handleDepositNotification: TNotificationHandler
-  handleWithdrawNotification: TNotificationHandler
-  handleStakeNotification: TNotificationHandler
-  handleUnstakeNotification: TNotificationHandler
-  handleClaimNotification: TNotificationHandler
+  createNotification: (params: TCreateNotificationParams) => Promise<number>
+  updateNotification: (params: TUpdateNotificationParams) => Promise<void>
 }

@@ -58,8 +58,14 @@ export function useV3VaultFilter(
 
   const checkHasHoldings = useCallback(
     (vault: TYDaemonVault): boolean => {
-      const vaultBalance = getBalance({ address: vault.address, chainID: vault.chainID })
-      const vaultPrice = getPrice({ address: vault.address, chainID: vault.chainID })
+      const vaultBalance = getBalance({
+        address: vault.address,
+        chainID: vault.chainID
+      })
+      const vaultPrice = getPrice({
+        address: vault.address,
+        chainID: vault.chainID
+      })
 
       if (vault.staking.available) {
         const stakingBalance = getBalance({
@@ -83,14 +89,20 @@ export function useV3VaultFilter(
 
   const checkHasAvailableBalance = useCallback(
     (vault: TYDaemonVault): boolean => {
-      const wantBalance = getBalance({ address: vault.token.address, chainID: vault.chainID })
+      const wantBalance = getBalance({
+        address: vault.token.address,
+        chainID: vault.chainID
+      })
       if (wantBalance.raw > 0n) {
         return true
       }
 
       const nativeWrapper = getNativeTokenWrapperContract(vault.chainID)
       if (toAddress(vault.token.address) === toAddress(nativeWrapper)) {
-        const nativeBalance = getBalance({ address: ETH_TOKEN_ADDRESS, chainID: vault.chainID })
+        const nativeBalance = getBalance({
+          address: ETH_TOKEN_ADDRESS,
+          chainID: vault.chainID
+        })
         if (nativeBalance.raw > 0n) {
           return true
         }

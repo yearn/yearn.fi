@@ -13,6 +13,7 @@ import { useMemo } from 'react'
 
 type TSettingPopover = {
   vault: TYDaemonVault
+  showMaxLoss?: boolean
 }
 
 function Label({ children }: { children: string }): ReactElement {
@@ -86,7 +87,7 @@ function MaxLossSection(): ReactElement {
   )
 }
 
-function ZapSection({ chainID }: { chainID: number }): ReactElement {
+function ZapSection({ chainID, showDivider }: { chainID: number; showDivider: boolean }): ReactElement {
   const { zapProvider, setZapProvider, zapSlippage, setZapSlippage } = useYearn()
 
   const currentZapProvider = useMemo((): TSolver => {
@@ -98,7 +99,7 @@ function ZapSection({ chainID }: { chainID: number }): ReactElement {
 
   return (
     <>
-      <div className={'my-6 h-px w-full bg-neutral-900/20'} />
+      {showDivider ? <div className={'my-6 h-px w-full bg-neutral-900/20'} /> : null}
 
       <div className={'mb-2 flex flex-col space-y-1'}>
         <Label>{'Zap Provider & slippage'}</Label>
@@ -225,7 +226,7 @@ function StakingSection({ currentVault }: { currentVault: TYDaemonVault }): Reac
   )
 }
 
-export function SettingsPopover({ vault }: TSettingPopover): ReactElement {
+export function SettingsPopover({ vault, showMaxLoss = true }: TSettingPopover): ReactElement {
   return (
     <Popover className={'relative flex'}>
       {(): ReactElement => (
@@ -250,8 +251,8 @@ export function SettingsPopover({ vault }: TSettingPopover): ReactElement {
               )}
             >
               <div className={'relative p-4'}>
-                <MaxLossSection />
-                <ZapSection chainID={vault.chainID} />
+                {showMaxLoss ? <MaxLossSection /> : null}
+                <ZapSection chainID={vault.chainID} showDivider={showMaxLoss} />
                 <StakingSection currentVault={vault} />
               </div>
             </PopoverPanel>

@@ -33,8 +33,9 @@ export const useEnsoOrder = ({
   const [error, setError] = useState<Error | null>(null)
   const [txHash, setTxHash] = useState<Hash | undefined>()
   const [waitingForTx, setWaitingForTx] = useState(false)
-  const publicClient = usePublicClient({ chainId })
-  const { data: walletClient } = useWalletClient({ chainId })
+  // Don't specify chainId - use current chain. TxButton handles chain switching before execution.
+  const publicClient = usePublicClient()
+  const { data: walletClient } = useWalletClient()
   const { data: receipt, isSuccess: receiptSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
     chainId
@@ -49,6 +50,13 @@ export const useEnsoOrder = ({
       if (!ensoTx) throw new Error('No Enso transaction data')
       if (!walletClient) throw new Error('No wallet client available')
       if (!publicClient) throw new Error('No public client available')
+
+      // Verify wallet is on the correct chain (use chainId prop, not ensoTx.chainId which may be undefined)
+      if (walletClient.chain?.id !== chainId) {
+        throw new Error(
+          `Chain mismatch: wallet on ${walletClient.chain?.id}, transaction requires ${chainId}. Please try again.`
+        )
+      }
 
       // Send the transaction
       const hash = await walletClient.sendTransaction({
@@ -68,7 +76,7 @@ export const useEnsoOrder = ({
       setIsExecuting(false)
       throw err
     }
-  }, [getEnsoTransaction, walletClient, publicClient])
+  }, [getEnsoTransaction, walletClient, publicClient, chainId])
 
   const ensoTx = getEnsoTransaction()
   // biome-ignore lint/correctness/useExhaustiveDependencies: Clear states when transaction data changes
@@ -102,7 +110,7 @@ export const useEnsoOrder = ({
                 args: [] as readonly unknown[],
                 data: ensoTx.data,
                 value: BigInt(ensoTx.value || 0),
-                chainId: ensoTx.chainId,
+                chainId, // Use chainId prop (source chain), not ensoTx.chainId which may be undefined
                 account: ensoTx.from,
                 // Custom marker to identify this as an Enso order
                 __isEnsoOrder: true,
@@ -127,7 +135,7 @@ export const useEnsoOrder = ({
       fetchStatus: 'idle',
       dataUpdatedAt: Date.now()
     } as UseSimulateContractReturnType
-  }, [enabled, error, isExecuting, executeOrder, ensoTx, txHash, waitingForTx])
+  }, [enabled, error, isExecuting, executeOrder, ensoTx, txHash, waitingForTx, chainId])
 
   return {
     prepareEnsoOrder,

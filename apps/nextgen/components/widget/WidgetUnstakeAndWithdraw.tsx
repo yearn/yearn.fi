@@ -91,20 +91,6 @@ export const WidgetUnstakeAndWithdraw: FC<Props> = ({
   )
   const isWithdrawButtonDisabled = useMemo(() => !canWithdraw, [canWithdraw])
 
-  const withdrawError = useMemo(() => {
-    if (withdrawAmount.debouncedBn === 0n) return null
-
-    if (isWithdrawAmountExceedsBalance) {
-      return 'Insufficient balance to withdraw this amount'
-    }
-
-    if (gaugeTokensNeeded > 0n && !quote && !isLoadingQuote) {
-      return 'Unable to get quote from Cowswap'
-    }
-
-    return null
-  }, [withdrawAmount.debouncedBn, isWithdrawAmountExceedsBalance, gaugeTokensNeeded, quote, isLoadingQuote])
-
   const handleWithdrawSuccess = useCallback(() => {
     refetchTokens()
     handleSuccess?.()
@@ -165,7 +151,6 @@ export const WidgetUnstakeAndWithdraw: FC<Props> = ({
             prepareWrite={prepareApprove}
             transactionName="Approve"
             disabled={!prepareApproveEnabled || !quote || isWithdrawAmountExceedsBalance}
-            tooltip={withdrawError || undefined}
             className="w-full"
             loading={isLoadingQuote || isLoadingAllowance}
           />
@@ -173,7 +158,6 @@ export const WidgetUnstakeAndWithdraw: FC<Props> = ({
             prepareWrite={prepareCowswapOrder}
             transactionName={isLoadingQuote || isLoadingAllowance ? 'Getting quote...' : `Withdraw ${asset?.symbol}`}
             disabled={isWithdrawButtonDisabled}
-            tooltip={withdrawError || undefined}
             onSuccess={handleWithdrawSuccess}
             className="w-full"
           />

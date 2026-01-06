@@ -1,16 +1,16 @@
 import { cl } from '@lib/utils'
 import type { ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
-
 import { V2_SUPPORTED_CHAINS, V3_SUPPORTED_CHAINS } from './constants'
 import { getVaultTypeEmoji, getVaultTypeLabel } from './vaultTypeCopy'
 
 type TVaultVersionToggleProps = {
   className?: string
   showStrategies?: boolean
+  stretch?: boolean
 }
 
-export function VaultVersionToggle({ className, showStrategies }: TVaultVersionToggleProps): ReactElement {
+export function VaultVersionToggle({ className, showStrategies, stretch }: TVaultVersionToggleProps): ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const isFactoryActive = searchParams.get('type') === 'factory'
   const typesParam = searchParams.get('types')
@@ -77,9 +77,10 @@ export function VaultVersionToggle({ className, showStrategies }: TVaultVersionT
       <button
         type={'button'}
         className={cl(
-          'flex h-full items-center gap-1 px-2 font-medium transition-colors',
+          'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
           'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-          'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+          'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+          stretch ? 'flex-1' : ''
         )}
         data-active={isAllocatorActive}
         onClick={goToAllocator}
@@ -97,9 +98,10 @@ export function VaultVersionToggle({ className, showStrategies }: TVaultVersionT
         <button
           type={'button'}
           className={cl(
-            'flex h-full items-center gap-1 px-2 font-medium transition-colors',
+            'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
             'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-            'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+            'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+            stretch ? 'flex-1' : ''
           )}
           data-active={isStrategiesActive}
           onClick={goToStrategies}
@@ -117,9 +119,10 @@ export function VaultVersionToggle({ className, showStrategies }: TVaultVersionT
       <button
         type={'button'}
         className={cl(
-          'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+          'flex h-full items-center justify-center gap-2 px-3 font-medium transition-colors',
           'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-          'data-[active=true]:bg-surface data-[active=true]:text-text-primary'
+          'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+          stretch ? 'flex-1' : ''
         )}
         data-active={isFactoryActive}
         onClick={goToFactory}

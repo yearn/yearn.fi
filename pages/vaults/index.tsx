@@ -17,7 +17,6 @@ import { ALL_VAULTSV3_CATEGORIES } from '@vaults-v3/constants'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-
 import { V2_SUPPORTED_CHAINS, V3_SUPPORTED_CHAINS } from './constants'
 import { VaultVersionToggle } from './VaultVersionToggle'
 import { getVaultTypeLabel, type TVaultType } from './vaultTypeCopy'
@@ -420,7 +419,7 @@ function ListOfVaults({
       <div className={'flex flex-col gap-6'}>
         <div>
           <p className={'mb-2 text-sm text-text-secondary'}>{'Protocol'}</p>
-          <div className={'max-h-[260px] space-y-2 overflow-y-auto pr-1'}>
+          <div className={'max-h-[260px] space-y-2 overflow-y-auto scrollbar-themed pr-1'}>
             {PROTOCOL_OPTIONS.map((protocol) => {
               const isChecked = sanitizedProtocols.includes(protocol)
               return (
@@ -572,7 +571,7 @@ function ListOfVaults({
       <div className={'flex flex-col gap-6'}>
         <div>
           <p className={'mb-2 text-sm text-text-secondary'}>{'Protocol'}</p>
-          <div className={'max-h-[320px] space-y-2 overflow-y-auto pr-1'}>
+          <div className={'max-h-[320px] space-y-2 overflow-y-auto scrollbar-themed pr-1'}>
             {PROTOCOL_OPTIONS.map((protocol) => {
               const isChecked = sanitizedProtocols.includes(protocol)
               return (

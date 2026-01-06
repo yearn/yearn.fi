@@ -101,6 +101,7 @@ export type UseWidgetWithdrawFlowReturn = T<
     }
     gas?: string
     error?: string
+    resetQuote?: () => void
   }
 >
 
@@ -118,9 +119,3 @@ export enum WidgetActionType {
   DepositFinal = 'deposit final',
   WithdrawFinal = 'withdraw final'
 }
-
-export type {
-  TNotificationActionParams,
-  TNotificationTokenOption,
-  TTxButtonNotificationParams
-} from './notifications'

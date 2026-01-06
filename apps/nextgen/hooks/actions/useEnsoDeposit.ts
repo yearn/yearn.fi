@@ -8,6 +8,7 @@ interface UseEnsoDepositParams {
   vaultAddress: Address
   depositToken: Address
   amount: bigint
+  currentAmount?: bigint // Raw undebounced amount for reset triggering
   account?: Address
   chainId: number
   destinationChainId?: number
@@ -38,7 +39,12 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
   const isEnsoAllowanceSufficient =
     isNativeToken || !ensoFlow.periphery.routerAddress || ensoFlow.periphery.allowance >= params.amount
 
-  // Fetch route when amount changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Reset route when raw amount changes to prevent stale error display
+  useEffect(() => {
+    ensoFlow.methods.resetRoute()
+  }, [params.currentAmount])
+
+  // Fetch route when debounced amount changes
   // biome-ignore lint/correctness/useExhaustiveDependencies: Infinite loop
   useEffect(() => {
     if (params.amount > 0n && params.enabled) {

@@ -1,5 +1,5 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
-import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
+import { toggleThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { IconClose } from '@lib/icons/IconClose'
 import { cl } from '@lib/utils'
 import type { MouseEvent, ReactElement } from 'react'
@@ -26,7 +26,7 @@ function TileIcon({ icon, isDark }: { icon?: ReactElement; isDark: boolean }): R
     <div
       className={cl(
         'flex size-8 items-center justify-center rounded-full hover:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
-        isDark ? 'bg-[#0F172A] text-white' : 'bg-white text-neutral-900 dark:bg-[#0F172A] dark:text-white'
+        isDark ? 'bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)]' : 'bg-white text-neutral-900'
       )}
     >
       {icon ?? <LogoYearn className={'size-10! max-h-10! max-w-10!'} front={'text-white'} back={'text-primary'} />}
@@ -34,7 +34,15 @@ function TileIcon({ icon, isDark }: { icon?: ReactElement; isDark: boolean }): R
   )
 }
 
-function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => void }): ReactElement {
+function ThemeToggle({
+  isDark,
+  label,
+  onToggle
+}: {
+  isDark: boolean
+  label: string
+  onToggle: () => void
+}): ReactElement {
   return (
     <button
       type={'button'}
@@ -42,23 +50,21 @@ function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => vo
       aria-pressed={isDark}
       className={cl(
         'flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-        isDark
-          ? 'border-primary/40 text-white'
-          : 'border-neutral-200 text-neutral-700 dark:border-neutral-100 dark:text-neutral-100'
+        isDark ? 'border-primary/40 text-[var(--color-text-primary)]' : 'border-neutral-200 text-neutral-700'
       )}
     >
-      <span className={'sr-only'}>{isDark ? 'Switch to light mode' : 'Switch to dark mode'}</span>
+      <span className={'sr-only'}>{'Cycle theme mode'}</span>
       <span aria-hidden>{'Theme'}</span>
       <span
         aria-hidden
         className={cl(
           'relative flex h-6 w-12 items-center rounded-full px-1 transition-colors',
-          isDark ? 'bg-primary/60 justify-end' : 'bg-neutral-300 justify-start dark:bg-neutral-700'
+          isDark ? 'bg-primary/60 justify-end' : 'bg-neutral-300 justify-start'
         )}
       >
         <span className={'size-4 rounded-full bg-white shadow transition-transform'} />
       </span>
-      <span aria-hidden>{isDark ? 'Dark' : 'Light'}</span>
+      <span aria-hidden>{label}</span>
     </button>
   )
 }
@@ -133,8 +139,8 @@ function LaunchTile({
         className={cl(
           'group relative flex flex-row items-center gap-3 rounded-xl border p-4 align-middle',
           isDark
-            ? 'border-primary/20 bg-transparent hover:bg-primary/5 hover:border-primary'
-            : 'border-neutral-200 hover:border-primary dark:border-neutral-100 dark:bg-neutral-0',
+            ? 'border-[var(--color-border)] bg-[var(--color-surface-secondary)] hover:border-primary hover:bg-[var(--color-surface-tertiary)]'
+            : 'border-neutral-200 bg-white hover:border-primary',
           'data-[active=true]:border-primary! data-[active=true]:shadow-[0_0_0_2px_rgba(62,132,255,0.2)]',
           'active:border-primary!'
         )}
@@ -147,10 +153,7 @@ function LaunchTile({
           </div>
           {item.description && (
             <p
-              className={cl(
-                'line-clamp-1 text-sm',
-                isDark ? 'text-neutral-500' : 'text-neutral-600 dark:text-neutral-500'
-              )}
+              className={cl('line-clamp-1 text-sm', isDark ? 'text-[var(--color-text-secondary)]' : 'text-neutral-600')}
             >
               {item.description}
             </p>
@@ -178,7 +181,15 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
   const [activeGroupTitle, setActiveGroupTitle] = useState(APP_GROUPS[0]?.title ?? '')
   const pathname = location.pathname
   const themePreference = useThemePreference()
-  const isDarkTheme = themePreference === 'dark'
+  const isDarkTheme = themePreference !== 'light'
+  const themeLabel =
+    themePreference === 'soft-dark'
+      ? 'Soft-Dark'
+      : themePreference === 'blue-dark'
+        ? 'Blue-Dark'
+        : themePreference === 'midnight'
+          ? 'Midnight'
+          : 'Light'
 
   const currentHost = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -334,8 +345,8 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
   }, [])
 
   const handleThemeToggle = useCallback((): void => {
-    setThemePreference(isDarkTheme ? 'light' : 'dark')
-  }, [isDarkTheme])
+    toggleThemePreference()
+  }, [])
 
   const handleOpen = useCallback((): void => {
     setIsOpen(true)
@@ -394,22 +405,22 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                   'relative flex h-svh w-full transform flex-col overflow-hidden rounded-none py-6 focus:outline-none',
                   'sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl sm:rounded-3xl sm:border sm:p-8 sm:shadow-2xl',
                   isDarkTheme
-                    ? 'bg-[#050A29] text-white sm:border-primary/30'
-                    : 'bg-white text-neutral-900 dark:bg-neutral-0 dark:text-white sm:border-neutral-100 dark:border-primary/30'
+                    ? 'bg-[var(--color-surface)] text-[var(--color-text-primary)] sm:border-[var(--color-border)]'
+                    : 'bg-white text-neutral-900 sm:border-neutral-100'
                 )}
               >
                 <div className={'flex w-full px-6 justify-between'}>
                   <div className={'text-xl sm:pl-8'}>Yearn App Launcher</div>
                   <div className={'flex items-center gap-3'}>
-                    <ThemeToggle isDark={isDarkTheme} onToggle={handleThemeToggle} />
+                    <ThemeToggle isDark={isDarkTheme} label={themeLabel} onToggle={handleThemeToggle} />
                     <button
                       type={'button'}
                       onClick={handleClose}
                       className={cl(
                         'flex size-6 items-center justify-center rounded-full border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                         isDarkTheme
-                          ? 'bg-[#070A1C] text-neutral-700 hover:bg-[#1a2e5e]'
-                          : 'bg-neutral-0 border-1 border-neutral-500 text-neutral-700 hover:bg-neutral-200 dark:hover:text-neutral-700'
+                          ? 'bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]'
+                          : 'bg-neutral-0 border-1 border-neutral-500 text-neutral-700 hover:bg-neutral-200'
                       )}
                     >
                       <span className={'sr-only'}>{'Close'}</span>
@@ -424,8 +435,8 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                     'mt-6 px-6 flex-1 overflow-y-auto',
                     'lg:min-h-[400px] lg:max-h-[70vh]',
                     isDarkTheme
-                      ? 'lg:rounded-3xl lg:border lg:border-[#1C264F] lg:bg-[#050A29]'
-                      : 'lg:rounded-3xl lg:border lg:border-neutral-200 lg:bg-white lg:dark:bg-neutral-0'
+                      ? 'lg:rounded-3xl lg:border lg:border-[var(--color-border)] lg:bg-[var(--color-surface-secondary)]'
+                      : 'lg:rounded-3xl lg:border lg:border-neutral-200 lg:bg-white'
                   )}
                 >
                   <div className={'hidden h-full flex-col gap-6 p-0 lg:flex lg:flex-row lg:gap-6 lg:p-6'}>
@@ -443,11 +454,11 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                               'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                               isActive
                                 ? isDarkTheme
-                                  ? 'border-primary text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
-                                  : 'border-primary text-neutral-900 font-bold dark:text-white shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
+                                  ? 'border-primary text-[var(--color-text-primary)] shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
+                                  : 'border-primary text-neutral-900 font-bold shadow-[0_0_0_2px_rgba(62,132,255,0.2)]'
                                 : isDarkTheme
-                                  ? 'border-primary/20 bg-transparent text-neutral-500 hover:bg-primary/10 hover:border-primary/70 hover:text-white'
-                                  : 'border-transparent bg-transparent text-neutral-500 hover:border-primary/70 dark:text-neutral-500 dark:hover:border-primary'
+                                  ? 'border-primary/20 bg-transparent text-[var(--color-text-secondary)] hover:bg-primary/10 hover:border-primary/70 hover:text-[var(--color-text-primary)]'
+                                  : 'border-transparent bg-transparent text-neutral-500 hover:border-primary/70'
                             )}
                             aria-pressed={isActive}
                           >
@@ -480,7 +491,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                           id={`launch-group-${group.title}`}
                           className={cl(
                             'text-xs font-semibold uppercase tracking-[0.25em]',
-                            isDarkTheme ? 'text-neutral-400' : 'text-neutral-500 dark:text-neutral-400'
+                            isDarkTheme ? 'text-neutral-400' : 'text-neutral-500'
                           )}
                         >
                           {group.title}

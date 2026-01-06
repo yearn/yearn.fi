@@ -1,4 +1,5 @@
 import { Dialog, Transition } from '@headlessui/react'
+import { useThemePreference } from '@hooks/useThemePreference'
 import { Counter } from '@lib/components/Counter'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
@@ -348,6 +349,8 @@ export function VaultDetailsHeader({
   const { getPrice } = useYearn()
   const { data: blockNumber } = useBlockNumber({ watch: true })
   const { decimals } = currentVault
+  const themePreference = useThemePreference()
+  const isDarkTheme = themePreference !== 'light'
   const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode })
   const [vaultData, setVaultData] = useState<TVaultHoldingsData>({
     deposited: zeroNormalizedBN,
@@ -704,7 +707,8 @@ export function VaultDetailsHeader({
               <strong
                 ref={titleRef}
                 className={cl(
-                  'text-lg font-black leading-tight text-text-secondary md:text-3xl md:leading-10',
+                  'text-lg font-black leading-tight md:text-3xl md:leading-10',
+                  isDarkTheme ? 'text-text-primary' : 'text-text-secondary',
                   isCompressed ? 'md:text-[30px] md:leading-9 max-w-[260px] truncate whitespace-nowrap' : ''
                 )}
               >
@@ -712,9 +716,10 @@ export function VaultDetailsHeader({
               </strong>
               {isCompressed && isTitleClipped ? (
                 <span
-                  className={
-                    'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight text-text-secondary group-hover:block'
-                  }
+                  className={cl(
+                    'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight group-hover:block',
+                    isDarkTheme ? 'text-text-primary' : 'text-text-secondary'
+                  )}
                 >
                   {vaultName} {' yVault'}
                 </span>

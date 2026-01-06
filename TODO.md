@@ -31,6 +31,7 @@ Format:
 | GH-875 | In Progress |  | Add fixed-term (Spectra/Pendle) icons next to Est. APY with tooltip + market link. | /vaults list + APY display | docs/specs/vaults-fixed-term-icons.md | vaults-list-ui | Feat--New-Vault-Page | vaults/list-ui |
 | GH-883 | spec'd | 2026-01-05 | Prefetch factory vaults to eliminate toggle delay. | /vaults filters toggle | docs/specs/vaults-factory-prefetch.md | vaults-filters | Feat--New-Vault-Page | vaults/filters-ui |
 | GH-884 | spec'd | 2026-01-05 | Remove full Dark theme; keep Soft-Dark only. | Dev toolbar / theme selector | docs/specs/remove-full-dark-mode.md | theme-ui | Feat--New-Vault-Page | theme/soft-dark-only |
+| GH-886 | spec'd | 2026-01-05 | Render initial app shell during wallet/data load to avoid blank screen. | global app load / header / all pages | docs/specs/app-initial-load-skeleton.md | app-loading | Feat--New-Vault-Page | app/initial-load-shell |
 |  |  |  |  |  |  |  |  |  |
 
 ## Tech Debt

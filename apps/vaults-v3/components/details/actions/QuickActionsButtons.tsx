@@ -7,12 +7,11 @@ import { useYearn } from '@lib/contexts/useYearn'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
 import type { TNormalizedBN } from '@lib/types'
 import type { TNotificationType } from '@lib/types/notifications'
-import { isZero, toAddress, toBigInt, zeroNormalizedBN } from '@lib/utils'
+import { formatTAmount, isZero, toAddress, toBigInt, zeroNormalizedBN } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@lib/utils/plausible'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { defaultTxStatus } from '@lib/utils/wagmi'
-import type { TActionParams } from '@vaults-v2/contexts/useActionFlow'
 import { useActionFlow } from '@vaults-v2/contexts/useActionFlow'
 import { useSolver } from '@vaults-v2/contexts/useSolver'
 import { useVaultStakingData } from '@vaults-v2/hooks/useVaultStakingData'
@@ -55,7 +54,7 @@ export function VaultDetailsQuickActionsButtons({
     hash
   } = useSolver()
   const { vaultData } = useVaultStakingData({ currentVault })
-  const { handleApproveNotification, handleDepositNotification, handleWithdrawNotification } = useNotificationsActions()
+  const { createNotification, updateNotification } = useNotificationsActions()
 
   /**********************************************************************************************
    ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook
@@ -74,19 +73,17 @@ export function VaultDetailsQuickActionsButtons({
   const onSuccess = useCallback(
     async (
       isDeposit: boolean,
-      type?: TNotificationType,
+      _type?: TNotificationType,
       receipt?: TransactionReceipt,
       notificationIdToUpdate?: number
     ): Promise<void> => {
       const { chainID } = currentVault
 
       if (notificationIdToUpdate) {
-        await handleDepositNotification({
-          actionParams,
-          type,
+        await updateNotification({
+          id: notificationIdToUpdate,
           receipt,
-          status: 'success',
-          idToUpdate: notificationIdToUpdate
+          status: 'success'
         })
       }
 
@@ -152,16 +149,7 @@ export function VaultDetailsQuickActionsButtons({
       }
       onChangeAmount(zeroNormalizedBN)
     },
-    [
-      currentVault,
-      currentSolver,
-      onChangeAmount,
-      handleDepositNotification,
-      actionParams,
-      plausible,
-      onRefresh,
-      isDepositing
-    ]
+    [currentVault, currentSolver, onChangeAmount, updateNotification, actionParams, plausible, onRefresh, isDepositing]
   )
 
   /**********************************************************************************************
@@ -176,27 +164,33 @@ export function VaultDetailsQuickActionsButtons({
       // currentSolver === Solver.enum.Vanilla || TODO: Maybe remove this?
       currentSolver === Solver.enum.InternalMigration
 
-    const id = await handleApproveNotification({ actionParams })
+    const id = await createNotification({
+      type: 'approve',
+      amount: formatTAmount({
+        value: actionParams.amount?.raw || 0n,
+        decimals: actionParams.selectedOptionFrom?.decimals || 18
+      }),
+      fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
+      fromSymbol: actionParams.selectedOptionFrom?.symbol || '',
+      fromChainId: actionParams.selectedOptionFrom?.chainID || 1,
+      toAddress: toAddress(actionParams.selectedOptionTo?.value),
+      toSymbol: actionParams.selectedOptionTo?.symbol || ''
+    })
     onApprove(
       shouldApproveInfinite ? maxUint256 : toBigInt(actionParams.amount?.raw),
       setTxStatusApprove,
       async (receipt?: TransactionReceipt): Promise<void> => {
-        await handleApproveNotification({
-          actionParams,
-          receipt,
-          status: 'success',
-          idToUpdate: id
-        })
+        await updateNotification({ id, receipt, status: 'success' })
         await triggerRetrieveAllowance()
       },
       (txHash: Hash) => {
-        handleApproveNotification({ actionParams, status: 'pending', idToUpdate: id, txHash })
+        updateNotification({ id, status: 'pending', txHash })
       },
       async (): Promise<void> => {
-        await handleApproveNotification({ actionParams, status: 'error', idToUpdate: id })
+        await updateNotification({ id, status: 'error' })
       }
     )
-  }, [currentSolver, handleApproveNotification, actionParams, onApprove, triggerRetrieveAllowance])
+  }, [currentSolver, createNotification, updateNotification, actionParams, onApprove, triggerRetrieveAllowance])
 
   /**********************************************************************************************
    ** Define the condition for the button to be disabled. The button is disabled if the user is
@@ -271,35 +265,27 @@ export function VaultDetailsQuickActionsButtons({
         <Button
           variant={isV3Page ? 'v3' : undefined}
           onClick={async (): Promise<void> => {
-            const correctActionParams: TActionParams = {
-              ...actionParams,
-              selectedOptionTo: {
-                ...actionParams.selectedOptionTo,
-                symbol: vaultData.stakedGaugeSymbol || 'Staked yVault',
-                label: vaultData.stakedGaugeSymbol || 'Staked yVault',
-                decimals: vaultData.stakingDecimals || 18,
-                chainID: currentVault.chainID,
-                value: vaultData.address
-              }
-            }
-            const id = await handleDepositNotification({ actionParams: correctActionParams })
+            const toSymbol = vaultData.stakedGaugeSymbol || 'Staked yVault'
+            const id = await createNotification({
+              type: 'deposit and stake',
+              amount: formatTAmount({
+                value: actionParams.amount?.raw || 0n,
+                decimals: actionParams.selectedOptionFrom?.decimals || 18
+              }),
+              fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
+              fromSymbol: actionParams.selectedOptionFrom?.symbol || '',
+              fromChainId: actionParams.selectedOptionFrom?.chainID || 1,
+              toAddress: toAddress(vaultData.address),
+              toSymbol
+            })
             onExecuteDeposit(
               setTxStatusExecuteDeposit,
               async (receipt?: TransactionReceipt) => onSuccess(true, 'deposit and stake', receipt, id),
               (txHash: Hash) => {
-                handleDepositNotification({
-                  actionParams: correctActionParams,
-                  status: 'pending',
-                  idToUpdate: id,
-                  txHash
-                })
+                updateNotification({ id, status: 'pending', txHash })
               },
               async () => {
-                await handleDepositNotification({
-                  actionParams: correctActionParams,
-                  status: 'error',
-                  idToUpdate: id
-                })
+                await updateNotification({ id, status: 'error' })
               }
             )
           }}
@@ -328,20 +314,26 @@ export function VaultDetailsQuickActionsButtons({
       <Button
         variant={isV3Page ? 'v3' : undefined}
         onClick={async (): Promise<void> => {
-          const id = await handleDepositNotification({ actionParams })
+          const id = await createNotification({
+            type: 'deposit',
+            amount: formatTAmount({
+              value: actionParams.amount?.raw || 0n,
+              decimals: actionParams.selectedOptionFrom?.decimals || 18
+            }),
+            fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
+            fromSymbol: actionParams.selectedOptionFrom?.symbol || '',
+            fromChainId: actionParams.selectedOptionFrom?.chainID || 1,
+            toAddress: toAddress(actionParams.selectedOptionTo?.value),
+            toSymbol: actionParams.selectedOptionTo?.symbol || ''
+          })
           onExecuteDeposit(
             setTxStatusExecuteDeposit,
             async (receipt?: TransactionReceipt) => onSuccess(true, 'deposit', receipt, id),
             (txHash: Hash) => {
-              handleDepositNotification({
-                actionParams: actionParams,
-                status: 'pending',
-                idToUpdate: id,
-                txHash
-              })
+              updateNotification({ id, status: 'pending', txHash })
             },
             async () => {
-              await handleDepositNotification({ actionParams, status: 'error', idToUpdate: id })
+              await updateNotification({ id, status: 'error' })
             }
           )
         }}
@@ -366,23 +358,29 @@ export function VaultDetailsQuickActionsButtons({
     <Button
       variant={isV3Page ? 'v3' : undefined}
       onClick={async (): Promise<void> => {
-        const id = await handleWithdrawNotification({ actionParams })
+        const id = await createNotification({
+          type: 'withdraw',
+          amount: formatTAmount({
+            value: actionParams.amount?.raw || 0n,
+            decimals: actionParams.selectedOptionFrom?.decimals || 18
+          }),
+          fromAddress: toAddress(actionParams.selectedOptionFrom?.value),
+          fromSymbol: actionParams.selectedOptionFrom?.symbol || '',
+          fromChainId: actionParams.selectedOptionFrom?.chainID || 1,
+          toAddress: toAddress(actionParams.selectedOptionTo?.value),
+          toSymbol: actionParams.selectedOptionTo?.symbol || ''
+        })
         onExecuteWithdraw(
           setTxStatusExecuteWithdraw,
           async (receipt?: TransactionReceipt) => {
-            await handleWithdrawNotification({
-              actionParams,
-              receipt,
-              status: 'success',
-              idToUpdate: id
-            })
+            await updateNotification({ id, receipt, status: 'success' })
             await onSuccess(false)
           },
           (txHash: Hash) => {
-            handleWithdrawNotification({ actionParams, status: 'pending', idToUpdate: id, txHash })
+            updateNotification({ id, status: 'pending', txHash })
           },
           async () => {
-            await handleWithdrawNotification({ actionParams, status: 'error', idToUpdate: id })
+            await updateNotification({ id, status: 'error' })
           }
         )
       }}
