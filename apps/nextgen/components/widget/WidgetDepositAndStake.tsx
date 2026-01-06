@@ -53,16 +53,6 @@ export const WidgetDepositAndStake: FC<Props> = ({
     [depositAmount.bn, asset?.balance.raw]
   )
 
-  const depositError = useMemo(() => {
-    if (depositAmount.bn === 0n) return null
-
-    if (isDepositAmountExceedsBalance) {
-      return 'Insufficient balance to deposit this amount'
-    }
-
-    return null
-  }, [depositAmount.bn, isDepositAmountExceedsBalance])
-
   const handleDepositSuccess = useCallback(() => {
     refetchTokens()
     handleSuccess?.()
@@ -95,14 +85,12 @@ export const WidgetDepositAndStake: FC<Props> = ({
             prepareWrite={prepareApprove}
             transactionName="Approve"
             disabled={!prepareApproveEnabled || isDepositAmountExceedsBalance}
-            tooltip={depositError || undefined}
             className="w-full"
           />
           <TxButton
             prepareWrite={prepareZapIn}
             transactionName="Deposit"
             disabled={!prepareZapInEnabled || isDepositAmountExceedsBalance}
-            tooltip={depositError || undefined}
             onSuccess={handleDepositSuccess}
             className="w-full"
           />

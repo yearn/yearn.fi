@@ -1,10 +1,11 @@
+import { toast } from '@lib/components/yToast'
 import { useNotificationsActions } from '@lib/contexts/useNotificationsActions'
-import type { TTxButtonNotificationParams } from '@nextgen/types'
+import type { TCreateNotificationParams } from '@lib/types/notifications'
 import { type ComponentProps, type FC, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import {
   type UseSimulateContractReturnType,
   useAccount,
-  useChains,
+  useChainId,
   usePublicClient,
   useSwitchChain,
   useWaitForTransactionReceipt,
@@ -15,23 +16,10 @@ import { Button } from '../../lib/components/Button'
 type Props = {
   prepareWrite: UseSimulateContractReturnType
   transactionName: string
-  isApproved?: boolean
   disabled?: boolean
   loading?: boolean
-  tooltip?: string // TODO: Add
   onSuccess?: () => void
-  showEmojisplosion?: boolean
-  additionalComponent?: ReactNode
-  addNotification?: (type: string, hash?: string, transactionName?: string) => void
-  notificationParams?: TTxButtonNotificationParams
-}
-
-type ButtonState = 'loading' | 'success' | 'error' | 'default' | 'simulating' | 'approved' | 'notConnected'
-
-const spinnerStyle = {
-  animation: 'spin 1s linear infinite',
-  width: '16px',
-  height: '16px'
+  notification?: TCreateNotificationParams
 }
 
 export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
@@ -39,549 +27,317 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   transactionName = 'Send',
   disabled: _disabled,
   loading: _loading,
-  tooltip,
-  isApproved,
   onSuccess,
-  showEmojisplosion = false,
-  additionalComponent,
-  addNotification,
-  notificationParams,
+  notification,
   ...props
 }) => {
   const writeContract = useWriteContract()
-  const chains = useChains()
+  const currentChainId = useChainId()
   const { switchChainAsync, isPending: isChainSwitching } = useSwitchChain()
   const [ensoTxHash, setEnsoTxHash] = useState<`0x${string}` | undefined>()
   const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash })
-  const [override, setOverride] = useState<ButtonState>()
   const [isSigning, setIsSigning] = useState(false)
   const client = usePublicClient()
-  const ref = useRef<(number | undefined)[]>(undefined)
+  const lastToastedTxHash = useRef<string | undefined>(undefined)
   const { address: account } = useAccount()
 
+  // Track pending execution after chain switch (to wait for React state to update)
+  const [pendingChainExecution, setPendingChainExecution] = useState<number | null>(null)
+
   // Notification system integration
-  const { handleApproveNotification, handleDepositNotification, handleWithdrawNotification } = useNotificationsActions()
+  const { createNotification, updateNotification } = useNotificationsActions()
   const [notificationId, setNotificationId] = useState<number | undefined>()
 
   const txChainId = prepareWrite.data?.request.chainId
-  const currentChain = chains.find((chain) => chain.id === client?.chain?.id)
-
-  const wrongNetwork = txChainId && currentChain?.id !== txChainId
+  const wrongNetwork = txChainId && currentChainId !== txChainId
 
   const { isSuccess: isTxSuccess, isError } = receipt
-  const { isError: isSimulatedError, isFetching: isSimulating } = prepareWrite
+  const { isFetching: isSimulating } = prepareWrite
 
   // For Enso orders, check if we're waiting for transaction
   const isEnsoOrder = !!(prepareWrite.data?.request as any)?.__isEnsoOrder
-  const isWaitingForEnsoTx = isEnsoOrder && !!(prepareWrite.data?.request as any)?.__waitingForTx
-  const isLoading = override === 'loading' || _loading || (isWaitingForEnsoTx && !!ensoTxHash) || isChainSwitching
+  // Loading state: external loading, chain switching, pending chain execution, signing, or waiting for receipt confirmation
+  const isLoading = _loading || isChainSwitching || !!pendingChainExecution || isSigning || receipt.isFetching
 
-  const disabled =
-    _disabled || (!prepareWrite.isSuccess && !wrongNetwork) || isLoading || isSimulating || override === 'error'
+  const disabled = _disabled || (!prepareWrite.isSuccess && !wrongNetwork) || isLoading || isSimulating
 
-  // Helper to convert notification params to legacy TActionParams format
-  const buildActionParamsForNotification = useCallback(() => {
-    if (!notificationParams || !account) return undefined
+  // Create notification with txHash (called after signing succeeds)
+  const handleCreateNotification = useCallback(
+    async (txHash: `0x${string}`, status: 'pending' | 'submitted' = 'pending'): Promise<number | undefined> => {
+      if (!notification || !account) return undefined
 
-    return {
-      amount: notificationParams.actionParams.amount,
-      selectedOptionFrom: notificationParams.actionParams.selectedOptionFrom,
-      selectedOptionTo: notificationParams.actionParams.selectedOptionTo
+      try {
+        const id = await createNotification(notification)
+        setNotificationId(id)
+        // Immediately update with txHash
+        await updateNotification({ id, txHash, status })
+        return id
+      } catch (error) {
+        console.error('Failed to create notification:', error)
+        return undefined
+      }
+    },
+    [notification, account, createNotification, updateNotification]
+  )
+
+  // Update notification with new status/receipt
+  const handleUpdateNotification = useCallback(
+    async (params: { status?: 'pending' | 'success' | 'error'; receipt?: any }) => {
+      if (!notificationId) return
+
+      try {
+        await updateNotification({
+          id: notificationId,
+          status: params.status,
+          receipt: params.receipt
+        })
+      } catch (error) {
+        console.error('Failed to update notification:', error)
+      }
+    },
+    [notificationId, updateNotification]
+  )
+
+  // Handle chain switching
+  const handleChainSwitch = useCallback(async (): Promise<boolean> => {
+    if (!wrongNetwork || !txChainId) return true
+    try {
+      await switchChainAsync({ chainId: txChainId })
+      return true
+    } catch (error) {
+      console.error('Failed to switch chain:', error)
+      toast({ content: 'Failed to switch network', type: 'error' })
+      return false
     }
-  }, [notificationParams, account])
+  }, [wrongNetwork, txChainId, switchChainAsync])
 
-  // Clear override states after timeout
-  useEffect(() => {
-    if (override === 'error' || override === 'success') {
-      const timeout = override === 'error' ? 3000 : 2000
-      const timer = setTimeout(() => {
-        setOverride(undefined)
-      }, timeout)
-      return () => clearTimeout(timer)
+  // Estimate gas with buffer
+  const estimateGas = useCallback(async (): Promise<{ gas?: bigint }> => {
+    if (!prepareWrite.data?.request || !client) return {}
+    try {
+      const gasEstimate = await client.estimateContractGas(prepareWrite.data.request as any)
+      if (gasEstimate) {
+        return { gas: (gasEstimate * BigInt(110)) / BigInt(100) }
+      }
+      return {}
+    } catch (error) {
+      console.error(`Failed gas estimation for ${prepareWrite.data.request.functionName}`, error)
+      return {}
     }
-    return undefined
-  }, [override])
-  const ButtonContentType: ButtonState | undefined = (() => {
-    if (!account) return 'notConnected'
-    if (override === 'loading' || isLoading || isSimulating) return 'loading'
-    if (override === 'success') return 'success'
-    if (override === 'error') return 'error'
-    if (isApproved) return 'approved'
+  }, [prepareWrite.data?.request, client])
 
-    // Only show transaction errors for non-custom orders
-    const isCustomOrder =
-      !!(prepareWrite.data?.request as any)?.__isCowswapOrder || !!(prepareWrite.data?.request as any)?.__isEnsoOrder
-    if (!isCustomOrder && (isError || isSimulatedError)) return 'error'
+  // Execute Enso transaction
+  const executeEnsoTransaction = useCallback(async () => {
+    const customWriteAsync = (prepareWrite.data?.request as any).writeContractAsync
+    const isCrossChain = notification?.type === 'crosschain zap'
 
-    return 'default'
-  })()
+    try {
+      const result = await customWriteAsync()
 
-  const ButtonContent: Record<ButtonState, ReactNode> = {
-    notConnected: <div className="flex items-center gap-2">Connect Wallet</div>,
-    success: (
-      <div className="flex items-center gap-2">
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-        Success!
-      </div>
-    ),
-    default: (
-      <div className="flex items-center gap-2">
-        {transactionName}
-        {additionalComponent}
-      </div>
-    ),
-    error: (
-      <div className="flex items-center gap-2">
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        Try Again
-      </div>
-    ),
-    simulating: (
-      <div className="flex items-center gap-2">
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        Simulating...
-      </div>
-    ),
-    approved: (
-      <div className="flex items-center gap-2">
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        Approved
-      </div>
-    ),
-    loading: (
-      <div className="flex items-center justify-center gap-2">
-        <svg
-          style={spinnerStyle}
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          color="currentColor"
-        >
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          />
-        </svg>
-        <span className="text-text-primary">
-          {_loading && transactionName.includes('...')
-            ? transactionName
-            : ensoTxHash || writeContract.data
-              ? 'Confirming...'
-              : isSigning
-                ? 'Signing...'
-                : 'Loading...'}
-        </span>
-      </div>
-    )
-  }
+      if (result.hash) {
+        // Create notification after signing succeeds (with txHash)
+        await handleCreateNotification(result.hash, isCrossChain ? 'submitted' : 'pending')
 
-  // Determine button variant based on state
-  const getVariant = useCallback(() => {
-    if (!account) return 'filled'
-    if (ButtonContentType === 'error') return 'error'
-    if (ButtonContentType === 'loading') return 'busy'
-    return 'filled'
-  }, [account, ButtonContentType])
-
-  // Handle transaction receipt and update notifications
-  useEffect(() => {
-    if (isTxSuccess && receipt.data) {
-      // Legacy notification callback (backward compatibility)
-      const type = receipt.data.status === 'success' ? 'success' : 'error'
-      addNotification?.(type, receipt.data.transactionHash, transactionName)
-
-      // New notification system
-      if (notificationId && notificationParams) {
-        const actionParams = buildActionParamsForNotification()
-        if (actionParams) {
-          const status = receipt.data.status === 'success' ? 'success' : 'error'
-
-          // Update notification based on type
-          if (notificationParams.type === 'approve') {
-            handleApproveNotification({
-              actionParams,
-              receipt: receipt.data,
-              status,
-              idToUpdate: notificationId
-            })
-          } else if (
-            notificationParams.type === 'deposit' ||
-            notificationParams.type === 'zap' ||
-            notificationParams.type === 'deposit and stake' ||
-            notificationParams.type === 'stake'
-          ) {
-            handleDepositNotification({
-              actionParams,
-              type: notificationParams.type,
-              receipt: receipt.data,
-              status,
-              idToUpdate: notificationId
-            })
-          } else if (
-            notificationParams.type === 'withdraw' ||
-            notificationParams.type === 'crosschain zap' ||
-            notificationParams.type === 'unstake'
-          ) {
-            handleWithdrawNotification({
-              actionParams,
-              type: notificationParams.type,
-              receipt: receipt.data,
-              status,
-              idToUpdate: notificationId
-            })
-          }
+        if (isCrossChain) {
+          // Cross-chain: Don't wait for receipt, show toast and complete
+          toast({ content: 'Transaction submitted', type: 'info' })
+          onSuccess?.()
+          setNotificationId(undefined)
+        } else {
+          // Same-chain: Store hash and wait for receipt
+          setEnsoTxHash(result.hash)
         }
       }
+    } catch (error: any) {
+      setEnsoTxHash(undefined)
+      writeContract.reset()
+
+      const isUserRejection =
+        error?.message?.toLowerCase().includes('rejected') ||
+        error?.message?.toLowerCase().includes('denied') ||
+        error?.code === 4001
+
+      if (!isUserRejection) {
+        toast({ content: 'Transaction failed', type: 'error' })
+      }
+      console.error('Enso transaction failed:', error)
+    }
+  }, [prepareWrite.data?.request, notification?.type, handleCreateNotification, onSuccess, writeContract])
+
+  // Execute regular transaction
+  const executeRegularTransaction = useCallback(
+    async (gasOverrides: { gas?: bigint }) => {
+      if (!prepareWrite.data?.request) return
+
+      try {
+        const hash = await writeContract.writeContractAsync({
+          ...prepareWrite.data.request,
+          ...gasOverrides
+        })
+
+        // Create notification after signing succeeds (with txHash)
+        await handleCreateNotification(hash)
+      } catch (error: any) {
+        writeContract.reset()
+
+        const isUserRejection =
+          error?.message?.toLowerCase().includes('rejected') ||
+          error?.message?.toLowerCase().includes('denied') ||
+          error?.code === 4001
+
+        if (!isUserRejection) {
+          toast({ content: 'Transaction failed', type: 'error' })
+        }
+        console.error('Transaction failed:', error)
+      }
+    },
+    [prepareWrite.data?.request, writeContract, handleCreateNotification]
+  )
+
+  // Core transaction execution logic
+  const executeTransaction = useCallback(async () => {
+    if (!prepareWrite.isSuccess || !prepareWrite.data?.request) return
+
+    setIsSigning(true)
+
+    try {
+      const gasOverrides = await estimateGas()
+
+      if (isEnsoOrder) {
+        await executeEnsoTransaction()
+      } else {
+        await executeRegularTransaction(gasOverrides)
+      }
+    } finally {
+      setIsSigning(false)
     }
   }, [
-    isTxSuccess,
-    receipt.data,
-    transactionName,
-    addNotification,
-    notificationId,
-    notificationParams,
-    buildActionParamsForNotification,
-    handleApproveNotification,
-    handleDepositNotification,
-    handleWithdrawNotification
+    prepareWrite.isSuccess,
+    prepareWrite.data?.request,
+    estimateGas,
+    isEnsoOrder,
+    executeEnsoTransaction,
+    executeRegularTransaction
   ])
 
+  // Keep a ref to the latest executeTransaction to avoid stale closures in effects
+  const executeTransactionRef = useRef(executeTransaction)
+  executeTransactionRef.current = executeTransaction
+
+  // Main click handler
+  const handleClick = useCallback(async () => {
+    // If on wrong network, switch chain and queue execution for after React updates
+    if (wrongNetwork && txChainId) {
+      const chainSwitched = await handleChainSwitch()
+      if (chainSwitched) {
+        // Queue execution for when chain state updates
+        setPendingChainExecution(txChainId)
+      }
+      return
+    }
+
+    // Already on correct chain, execute immediately
+    await executeTransaction()
+  }, [wrongNetwork, txChainId, handleChainSwitch, executeTransaction])
+
+  // Execute pending transaction after chain switch propagates to React state
   useEffect(() => {
-    if (isTxSuccess) {
+    if (!pendingChainExecution || currentChainId !== pendingChainExecution) {
+      return
+    }
+
+    // Delay to ensure all wagmi hooks (walletClient, publicClient) have updated
+    // Use ref to call the latest version of executeTransaction
+    const timeout = setTimeout(() => {
+      setPendingChainExecution(null)
+      executeTransactionRef.current()
+    }, 150)
+
+    return () => clearTimeout(timeout)
+  }, [pendingChainExecution, currentChainId])
+
+  // Handle transaction success
+  useEffect(() => {
+    if (isTxSuccess && receipt.data?.transactionHash) {
+      // Prevent duplicate toasts
+      if (lastToastedTxHash.current !== receipt.data.transactionHash) {
+        lastToastedTxHash.current = receipt.data.transactionHash
+        toast({ content: 'Transaction successful!', type: 'success' })
+      }
+
+      // Update notification to success
+      handleUpdateNotification({ receipt: receipt.data, status: 'success' })
+
       onSuccess?.()
-      setOverride('success')
-      // Clear Enso tx hash after success
-      if (ensoTxHash) {
-        setEnsoTxHash(undefined)
+
+      // Clear state for next transaction
+      if (ensoTxHash) setEnsoTxHash(undefined)
+      setNotificationId(undefined)
+    }
+  }, [isTxSuccess, receipt.data, onSuccess, ensoTxHash, handleUpdateNotification])
+
+  // Handle transaction errors
+  useEffect(() => {
+    if (isError && receipt.error) {
+      const txHash = writeContract.data || ensoTxHash
+
+      console.error('Transaction failed:', receipt.error)
+      writeContract.reset()
+
+      // Prevent duplicate toasts
+      if (txHash && lastToastedTxHash.current !== txHash) {
+        lastToastedTxHash.current = txHash
+        toast({ content: 'Transaction failed', type: 'error' })
+      }
+
+      // Update notification to error
+      handleUpdateNotification({ status: 'error' })
+
+      // Clear state for next transaction
+      if (ensoTxHash) setEnsoTxHash(undefined)
+      setNotificationId(undefined)
+    }
+  }, [isError, receipt.error, writeContract, ensoTxHash, handleUpdateNotification])
+
+  // Determine button content
+  const getButtonContent = (): ReactNode => {
+    if (!account) {
+      return 'Connect Wallet'
+    }
+
+    if (isLoading || isSimulating) {
+      if (_loading && transactionName.includes('...')) {
+        return transactionName
+      }
+      if (ensoTxHash || writeContract.data) {
+        return 'Confirming...'
+      }
+      if (isSigning) {
+        return 'Signing...'
       }
     }
-  }, [isTxSuccess, onSuccess, ensoTxHash])
+
+    return transactionName
+  }
+
+  // Determine button variant
+  const getVariant = (): 'filled' | 'busy' => {
+    if (!account) return 'filled'
+    if (isLoading) return 'busy'
+    return 'filled'
+  }
 
   return (
     <Button
       variant={getVariant()}
       classNameOverride="yearn--button--nextgen w-full"
       className={props.className}
+      isBusy={isLoading}
       disabled={disabled}
-      onClick={async (event: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
-        ref.current = [event?.clientX, event?.clientY]
-
-        // Handle chain switching automatically
-        if (wrongNetwork && txChainId) {
-          try {
-            setOverride('loading')
-            await switchChainAsync({ chainId: txChainId })
-          } catch (error) {
-            console.error('Failed to switch chain:', error)
-            setOverride('error')
-            return
-          }
-        }
-
-        const overrides = await (async () => {
-          if (!prepareWrite.data?.request || !client) return {}
-          try {
-            const gasEstimate = await client.estimateContractGas(prepareWrite.data.request as any)
-            if (gasEstimate) {
-              const gas = (gasEstimate * BigInt(110)) / BigInt(100) // 10% buffer
-              return { gas }
-            }
-            return {}
-          } catch (error) {
-            console.error(`Failed estimation for ${prepareWrite.data.request.functionName}`, error)
-            return {}
-          }
-        })()
-
-        if (prepareWrite.isSuccess && prepareWrite.data?.request) {
-          setOverride('loading')
-
-          // Check if this is a Cowswap or Enso order
-          if ((prepareWrite.data.request as any).__isCowswapOrder || (prepareWrite.data.request as any).__isEnsoOrder) {
-            const customWriteAsync = (prepareWrite.data.request as any).writeContractAsync
-            setIsSigning(true)
-
-            // Create notification when transaction starts (if notificationParams provided)
-            let createdNotificationId: number | undefined
-            if (notificationParams && account) {
-              const actionParams = buildActionParamsForNotification()
-              if (actionParams) {
-                if (notificationParams.type === 'approve') {
-                  createdNotificationId = await handleApproveNotification({ actionParams })
-                } else if (
-                  notificationParams.type === 'deposit' ||
-                  notificationParams.type === 'zap' ||
-                  notificationParams.type === 'crosschain zap' ||
-                  notificationParams.type === 'deposit and stake' ||
-                  notificationParams.type === 'stake'
-                ) {
-                  createdNotificationId = await handleDepositNotification({
-                    actionParams,
-                    type: notificationParams.type
-                  })
-                } else if (notificationParams.type === 'withdraw' || notificationParams.type === 'unstake') {
-                  createdNotificationId = await handleWithdrawNotification({
-                    actionParams,
-                    type: notificationParams.type
-                  })
-                }
-                if (createdNotificationId) {
-                  setNotificationId(createdNotificationId)
-                }
-              }
-            }
-
-            customWriteAsync()
-              .then((result: any) => {
-                if (result.orderUID) {
-                  // Cowswap order
-                  addNotification?.('success', result.orderUID, transactionName)
-                  setOverride('success')
-                } else if (result.hash) {
-                  // Enso transaction - store hash for receipt monitoring
-                  addNotification?.('pending', result.hash, transactionName)
-                  setEnsoTxHash(result.hash)
-
-                  // Update notification with txHash
-                  if (createdNotificationId && notificationParams && account) {
-                    const actionParams = buildActionParamsForNotification()
-                    if (actionParams) {
-                      if (notificationParams.type === 'approve') {
-                        handleApproveNotification({
-                          actionParams,
-                          status: 'pending',
-                          idToUpdate: createdNotificationId,
-                          txHash: result.hash
-                        })
-                      } else if (
-                        notificationParams.type === 'deposit' ||
-                        notificationParams.type === 'zap' ||
-                        notificationParams.type === 'crosschain zap' ||
-                        notificationParams.type === 'deposit and stake' ||
-                        notificationParams.type === 'stake'
-                      ) {
-                        handleDepositNotification({
-                          actionParams,
-                          type: notificationParams.type,
-                          status: 'pending',
-                          idToUpdate: createdNotificationId,
-                          txHash: result.hash
-                        })
-                      } else if (notificationParams.type === 'withdraw' || notificationParams.type === 'unstake') {
-                        handleWithdrawNotification({
-                          actionParams,
-                          type: notificationParams.type,
-                          status: 'pending',
-                          idToUpdate: createdNotificationId,
-                          txHash: result.hash
-                        })
-                      }
-                    }
-                  }
-                  // Keep loading state - will change to success when receipt arrives
-                }
-              })
-              .catch((error: Error) => {
-                setOverride('error')
-                addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
-
-                // Update notification to error state
-                if (createdNotificationId && notificationParams && account) {
-                  const actionParams = buildActionParamsForNotification()
-                  if (actionParams) {
-                    if (notificationParams.type === 'approve') {
-                      handleApproveNotification({
-                        actionParams,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
-                    } else if (
-                      notificationParams.type === 'deposit' ||
-                      notificationParams.type === 'zap' ||
-                      notificationParams.type === 'crosschain zap' ||
-                      notificationParams.type === 'deposit and stake' ||
-                      notificationParams.type === 'stake'
-                    ) {
-                      handleDepositNotification({
-                        actionParams,
-                        type: notificationParams.type,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
-                    } else if (notificationParams.type === 'withdraw' || notificationParams.type === 'unstake') {
-                      handleWithdrawNotification({
-                        actionParams,
-                        type: notificationParams.type,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
-                    }
-                  }
-                }
-
-                console.error('Transaction failed:', error)
-              })
-              .finally(() => {
-                setIsSigning(false)
-              })
-          } else {
-            setIsSigning(true)
-
-            // Create notification when transaction starts (if notificationParams provided)
-            let createdNotificationId: number | undefined
-            if (notificationParams && account) {
-              const actionParams = buildActionParamsForNotification()
-              if (actionParams) {
-                if (notificationParams.type === 'approve') {
-                  createdNotificationId = await handleApproveNotification({ actionParams })
-                } else if (
-                  notificationParams.type === 'deposit' ||
-                  notificationParams.type === 'zap' ||
-                  notificationParams.type === 'deposit and stake' ||
-                  notificationParams.type === 'stake'
-                ) {
-                  createdNotificationId = await handleDepositNotification({
-                    actionParams,
-                    type: notificationParams.type
-                  })
-                } else if (
-                  notificationParams.type === 'withdraw' ||
-                  notificationParams.type === 'crosschain zap' ||
-                  notificationParams.type === 'unstake'
-                ) {
-                  createdNotificationId = await handleWithdrawNotification({
-                    actionParams,
-                    type: notificationParams.type
-                  })
-                }
-                if (createdNotificationId) {
-                  setNotificationId(createdNotificationId)
-                }
-              }
-            }
-
-            writeContract
-              .writeContractAsync({ ...prepareWrite.data.request, ...overrides })
-              .then((hash) => {
-                addNotification?.('pending', hash, transactionName)
-
-                // Update notification with txHash
-                if (createdNotificationId && notificationParams && account) {
-                  const actionParams = buildActionParamsForNotification()
-                  if (actionParams) {
-                    if (notificationParams.type === 'approve') {
-                      handleApproveNotification({
-                        actionParams,
-                        status: 'pending',
-                        idToUpdate: createdNotificationId,
-                        txHash: hash
-                      })
-                    } else if (
-                      notificationParams.type === 'deposit' ||
-                      notificationParams.type === 'zap' ||
-                      notificationParams.type === 'deposit and stake' ||
-                      notificationParams.type === 'stake'
-                    ) {
-                      handleDepositNotification({
-                        actionParams,
-                        type: notificationParams.type,
-                        status: 'pending',
-                        idToUpdate: createdNotificationId,
-                        txHash: hash
-                      })
-                    } else if (
-                      notificationParams.type === 'withdraw' ||
-                      notificationParams.type === 'crosschain zap' ||
-                      notificationParams.type === 'unstake'
-                    ) {
-                      handleWithdrawNotification({
-                        actionParams,
-                        type: notificationParams.type,
-                        status: 'pending',
-                        idToUpdate: createdNotificationId,
-                        txHash: hash
-                      })
-                    }
-                  }
-                }
-              })
-              .catch((error) => {
-                setOverride('error')
-                addNotification?.('error', undefined, `Failed to submit ${transactionName}`)
-
-                // Update notification to error state
-                if (createdNotificationId && notificationParams && account) {
-                  const actionParams = buildActionParamsForNotification()
-                  if (actionParams) {
-                    if (notificationParams.type === 'approve') {
-                      handleApproveNotification({
-                        actionParams,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
-                    } else if (
-                      notificationParams.type === 'deposit' ||
-                      notificationParams.type === 'zap' ||
-                      notificationParams.type === 'deposit and stake' ||
-                      notificationParams.type === 'stake'
-                    ) {
-                      handleDepositNotification({
-                        actionParams,
-                        type: notificationParams.type,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
-                    } else if (
-                      notificationParams.type === 'withdraw' ||
-                      notificationParams.type === 'crosschain zap' ||
-                      notificationParams.type === 'unstake'
-                    ) {
-                      handleWithdrawNotification({
-                        actionParams,
-                        type: notificationParams.type,
-                        status: 'error',
-                        idToUpdate: createdNotificationId
-                      })
-                    }
-                  }
-                }
-
-                console.error('Transaction failed:', error)
-              })
-              .finally(() => {
-                setIsSigning(false)
-              })
-          }
-        }
-      }}
+      onClick={handleClick}
       {...props}
     >
-      {ButtonContent[ButtonContentType]}
+      {getButtonContent()}
     </Button>
   )
 }

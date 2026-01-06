@@ -140,7 +140,6 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
             prepareWrite={prepareApprove}
             transactionName="Approve"
             disabled={!prepareApproveEnabled || !!withdrawError}
-            tooltip={withdrawError || undefined}
             className="w-full"
           />
           <TxButton
@@ -154,7 +153,6 @@ export const WidgetEnsoWithdraw: FC<Props> = ({
             }
             disabled={!canWithdraw || isLoadingRoute || withdrawAmount.isDebouncing}
             loading={isLoadingRoute || withdrawAmount.isDebouncing}
-            tooltip={withdrawError || (!isAllowanceSufficient ? 'Please approve token first' : undefined)}
             className="w-full"
           />
         </div>

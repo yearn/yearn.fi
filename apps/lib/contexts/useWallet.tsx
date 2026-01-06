@@ -2,7 +2,7 @@
 
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
-import { createContext, memo, useCallback, useContext, useMemo } from 'react'
+import { createContext, memo, useCallback, useContext, useMemo, useRef } from 'react'
 import { serialize } from 'wagmi'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
@@ -77,8 +77,25 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     },
     [onUpdate, onUpdateSome]
   )
+
+  /**************************************************************************
+   ** Token cache persists during balance refetches (e.g., chain switches).
+   ** This prevents the UI from flickering to DEFAULT_ERC20 temporarily.
+   **************************************************************************/
+  const tokenCache = useRef<TDict<TToken>>({})
   const getToken = useCallback(
-    ({ address, chainID }: TTokenAndChain): TToken => balances?.[chainID || 1]?.[address] || DEFAULT_ERC20,
+    ({ address, chainID }: TTokenAndChain): TToken => {
+      const cacheKey = `${chainID || 1}-${address}`
+      const token = balances?.[chainID || 1]?.[address]
+
+      // If we have a valid token from balances, update the cache
+      if (token && token.address !== DEFAULT_ERC20.address) {
+        tokenCache.current[cacheKey] = token
+        return token
+      }
+      // If balances is empty (during refetch), return cached token if available
+      return tokenCache.current[cacheKey] || DEFAULT_ERC20
+    },
     [balances]
   )
 

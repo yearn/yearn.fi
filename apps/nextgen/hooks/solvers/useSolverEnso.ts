@@ -62,6 +62,7 @@ interface UseSolverEnsoReturn {
   methods: {
     getRoute: () => Promise<void>
     getEnsoTransaction: () => EnsoRouteResponse['tx'] | undefined
+    resetRoute: () => void
   }
 }
 
@@ -136,6 +137,11 @@ export const useSolverEnso = ({
     return route?.tx
   }, [route])
 
+  const resetRoute = useCallback(() => {
+    setRoute(undefined)
+    setError(undefined)
+  }, [])
+
   const isValidInput = amountIn > 0n
   const isAllowanceSufficient = !routerAddress || allowance >= amountIn
   const prepareApproveEnabled = routerAddress && !isAllowanceSufficient && isValidInput && enabled
@@ -173,7 +179,8 @@ export const useSolverEnso = ({
     },
     methods: {
       getRoute,
-      getEnsoTransaction
+      getEnsoTransaction,
+      resetRoute
     }
   }
 }

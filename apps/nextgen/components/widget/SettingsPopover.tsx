@@ -1,5 +1,5 @@
 import { Popover, PopoverContent } from '@lib/components/Popover'
-import { IconSliders } from '@lib/icons/IconSliders'
+import { IconSettings } from '@lib/icons/IconSettings'
 import { cl } from '@lib/utils'
 import type { FC } from 'react'
 
@@ -18,10 +18,10 @@ export const SettingsPopover: FC<SettingsPopoverProps> = ({
 }) => {
   return (
     <Popover
-      className="!bg-surface-secondary !-mt-1 !shadow-none !border-border !w-89"
+      className="bg-surface-secondary! -mt-2! shadow-none! border-border! w-89!"
       trigger={
-        <button className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-sm p-1.5 transition-colors">
-          <IconSliders className="h-3 w-3 text-primary" />
+        <button className="group inline-flex items-center pt-1.5 pr-1.5 pb-0.5 pl-0.5 justify-center rounded-sm transition-colors">
+          <IconSettings className="h-4 w-4 text-text-secondary transition-transform duration-300 group-hover:rotate-90" />
         </button>
       }
       align="end"

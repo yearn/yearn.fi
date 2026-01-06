@@ -49,4 +49,6 @@ AGENTS.md
 
 # local worktree clones
 yearn.fi-worktree-*
-.worktrees/
+
+# claude settings
+.claude

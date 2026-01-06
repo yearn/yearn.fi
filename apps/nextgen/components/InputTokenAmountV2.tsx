@@ -70,14 +70,12 @@ export const InputTokenAmountV2: FC<Props> = ({
   const [
     {
       formValue,
-      activity: [, setActive],
-      ...inputState
+      activity: [, setActive]
     },
     handleChangeInput,
     setFormValue
   ] = input
 
-  const isDebouncing = 'isDebouncing' in inputState ? inputState.isDebouncing : false
   const disabled = _disabled || !account
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -126,7 +124,7 @@ export const InputTokenAmountV2: FC<Props> = ({
   }
 
   return (
-    <div className={cl('flex flex-col w-full relative border border-border rounded-md', className)}>
+    <div className={cl('flex flex-col w-full relative border border-border rounded-md group', className)}>
       <div className="py-2 px-3 flex flex-col gap-1">
         {/* Top row - Title and percentage buttons */}
         <div className="flex items-center justify-between">
@@ -139,10 +137,8 @@ export const InputTokenAmountV2: FC<Props> = ({
                 type="button"
                 onClick={() => handlePercentageClick(25)}
                 className={cl(
-                  'px-1 py-0.5 text-xs font-medium rounded transition-colors',
-                  disabled
-                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
-                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
+                  'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                  disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
                 )}
                 disabled={disabled}
               >
@@ -152,10 +148,8 @@ export const InputTokenAmountV2: FC<Props> = ({
                 type="button"
                 onClick={() => handlePercentageClick(50)}
                 className={cl(
-                  'px-1 py-0.5 text-xs font-medium rounded transition-colors',
-                  disabled
-                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
-                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
+                  'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                  disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
                 )}
                 disabled={disabled}
               >
@@ -165,10 +159,8 @@ export const InputTokenAmountV2: FC<Props> = ({
                 type="button"
                 onClick={() => handlePercentageClick(75)}
                 className={cl(
-                  'px-1 py-0.5 text-xs font-medium rounded transition-colors',
-                  disabled
-                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
-                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
+                  'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                  disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
                 )}
                 disabled={disabled}
               >
@@ -178,10 +170,10 @@ export const InputTokenAmountV2: FC<Props> = ({
                 type="button"
                 onClick={() => handlePercentageClick(100)}
                 className={cl(
-                  'px-1 py-0.5 text-xs font-medium rounded transition-colors flex items-center justify-center min-w-[42px]',
+                  'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90 flex items-center justify-center min-w-[42px]',
                   disabled || isMaxButtonLoading
-                    ? 'text-text-tertiary bg-transparent cursor-not-allowed'
-                    : 'text-text-secondary bg-transparent hover:bg-surface-secondary'
+                    ? 'text-text-tertiary cursor-not-allowed'
+                    : 'text-text-secondary hover:scale-100'
                 )}
                 disabled={disabled || isMaxButtonLoading}
               >
@@ -205,8 +197,8 @@ export const InputTokenAmountV2: FC<Props> = ({
             onFocus={() => setActive(true)}
             onBlur={() => setActive(false)}
             className={cl(
-              'bg-transparent outline-none text-2xl font-medium flex-1 min-w-0',
-              disabled ? 'text-text-secondary' : 'text-text-primary',
+              'bg-transparent outline-none text-2xl font-medium flex-1 min-w-0 transition-colors duration-200',
+              errorMessage ? 'text-red-500' : disabled ? 'text-text-secondary' : 'text-text-primary',
               'placeholder:text-text-secondary'
             )}
           />
@@ -246,27 +238,21 @@ export const InputTokenAmountV2: FC<Props> = ({
               )}
             </button>
           )}
-
-          {/* Loading indicator */}
-          {isDebouncing && (
-            <div className="absolute -right-8">
-              <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
         </div>
 
-        {/* Bottom row - USD value and balance */}
+        {/* Bottom row - USD value (or error) and balance */}
         <div className="flex items-center justify-between">
-          <div className="text-sm text-text-secondary">${inputUsdValue}</div>
-          {balance !== undefined && symbol && (
+          {errorMessage ? (
+            <div className="text-sm text-red-500">{errorMessage}</div>
+          ) : (
+            <div className="text-sm text-text-secondary">${inputUsdValue}</div>
+          )}
+          {balance !== undefined && balance !== 0n && symbol && (
             <div className="text-sm text-text-secondary">
               Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
             </div>
           )}
         </div>
-
-        {/* Error message */}
-        {errorMessage && <div className="text-red-500 text-sm mt-1">{errorMessage}</div>}
       </div>
 
       {/* Zap Token Section */}
@@ -324,11 +310,17 @@ export const InputTokenAmountV2: FC<Props> = ({
             </div>
             <div className="flex items-center justify-between">
               <div className="text-sm text-text-secondary">${outputUsdValue}</div>
-              {/* Remove Zap button */}
+              {/* Remove Zap button - appears on hover */}
               {onRemoveZap && (
                 <button
+                  type="button"
                   onClick={onRemoveZap}
-                  className="text-sm text-text-secondary hover:text-text-primary transition-colors self-end"
+                  className={cl(
+                    'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                    'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+                    disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
+                  )}
+                  disabled={disabled}
                 >
                   Remove Zap
                 </button>
