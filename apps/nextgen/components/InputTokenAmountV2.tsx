@@ -248,9 +248,14 @@ export const InputTokenAmountV2: FC<Props> = ({
             <div className="text-sm text-text-secondary">${inputUsdValue}</div>
           )}
           {balance !== undefined && balance !== 0n && symbol && (
-            <div className="text-sm text-text-secondary">
+            <button
+              type="button"
+              onClick={() => handlePercentageClick(100)}
+              disabled={disabled || isMaxButtonLoading}
+              className="text-sm text-text-secondary hover:text-text-primary transition-colors disabled:cursor-not-allowed"
+            >
               Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
-            </div>
+            </button>
           )}
         </div>
       </div>
