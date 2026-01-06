@@ -410,7 +410,9 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
             {showApprove && activeFlow.actions.prepareApprove && (
               <TxButton
                 prepareWrite={activeFlow.actions.prepareApprove}
-                transactionName="Approve"
+                transactionName={
+                  withdrawAmount.bn > 0n && activeFlow.periphery.isAllowanceSufficient ? 'Approved' : 'Approve'
+                }
                 disabled={
                   !activeFlow.periphery.prepareApproveEnabled ||
                   !!withdrawError ||
