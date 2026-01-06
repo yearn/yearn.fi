@@ -8,7 +8,7 @@ import { DISABLED_VEYFI_GAUGES_VAULTS_LIST, VEYFI_ADDRESS } from '@lib/utils/con
 import { parseMarkdown } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useUpdateEffect } from '@react-hookz/web'
-import { SettingsPopover } from '@vaults-v2/components/SettingsPopover'
+import { SettingsPopover } from '@vaults-shared/components/SettingsPopover'
 import { Flow, useActionFlow } from '@vaults-v2/contexts/useActionFlow'
 import { useVaultStakingData } from '@vaults-v2/hooks/useVaultStakingData'
 import { VAULT_V3_ABI } from '@vaults-v2/utils/abi/vaultV3.abi'
@@ -316,7 +316,7 @@ export function VaultActionsTabsWrapper({ currentVault }: { currentVault: TYDaem
           </div>
 
           <div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
-            <SettingsPopover vault={currentVault} />
+            <SettingsPopover vault={currentVault} showMaxLoss={false} />
           </div>
         </div>
         <div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />

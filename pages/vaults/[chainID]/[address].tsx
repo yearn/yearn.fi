@@ -1,3 +1,4 @@
+import { useScrollSpy } from '@hooks/useScrollSpy'
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -223,6 +224,18 @@ function Index(): ReactElement | null {
   }, [chainId, currentVault, sectionRefs, yDaemonBaseUri])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
+  const scrollSpySections = useMemo(
+    () => renderableSections.map((section) => ({ key: section.key, ref: section.ref })),
+    [renderableSections]
+  )
+
+  useScrollSpy({
+    sections: scrollSpySections,
+    activeKey: activeSection,
+    onActiveKeyChange: setActiveSection,
+    rootMargin: '-250px 0px -60% 0px',
+    enabled: renderableSections.length > 0
+  })
 
   useEffect(() => {
     if (!renderableSections.some((section) => section.key === activeSection) && renderableSections[0]) {
@@ -398,14 +411,46 @@ function Index(): ReactElement | null {
                   }
 
                   return (
-                    <div key={section.key} ref={section.ref} className={'border border-border rounded-lg bg-surface'}>
-                      {section.content}
+                    <div
+                      key={section.key}
+                      ref={section.ref}
+                      data-scroll-spy-key={section.key}
+                      className={'border border-border rounded-lg bg-surface'}
+                    >
+                      <button
+                        type={'button'}
+                        className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
+                        onClick={(): void =>
+                          setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                        }
+                      >
+                        <span className={'text-base font-semibold text-text-primary'}>
+                          {collapsibleTitles[typedKey]}
+                        </span>
+                        <IconChevron
+                          className={'size-4 text-text-secondary transition-transform duration-200'}
+                          direction={isOpen ? 'up' : 'down'}
+                        />
+                      </button>
+                      {isOpen ? <div>{section.content}</div> : null}
                     </div>
                   )
-                })}
-              </section>
-            )}
-          </div>
+                }
+
+                return (
+                  <div
+                    key={section.key}
+                    ref={section.ref}
+                    data-scroll-spy-key={section.key}
+                    className={'border border-border rounded-lg bg-surface'}
+                  >
+                    {section.content}
+                  </div>
+                )
+              })}
+            </section>
+          )}
+        </div>
 
           {/* Desktop: Main content column with sticky tabs */}
           <div className="hidden md:block order-1 space-y-4 md:col-span-13 pb-4">
@@ -457,6 +502,7 @@ function Index(): ReactElement | null {
                   <div
                     key={section.key}
                     ref={section.ref}
+                    data-scroll-spy-key={section.key}
                     className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
                   >
                     <button
@@ -481,6 +527,7 @@ function Index(): ReactElement | null {
                 <div
                   key={section.key}
                   ref={section.ref}
+                  data-scroll-spy-key={section.key}
                   className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
                 >
                   {section.content}

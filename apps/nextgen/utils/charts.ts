@@ -21,6 +21,12 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
   day: '2-digit',
   year: '2-digit'
 })
+const padTwo = (value: number) => String(value).padStart(2, '0')
+const tooltipDateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric'
+})
 
 export function formatUnixTimestamp(value: number | string): string {
   const timestamp = Number(value)
@@ -28,6 +34,123 @@ export function formatUnixTimestamp(value: number | string): string {
     return 'Invalid date'
   }
   return dateFormatter.format(new Date(timestamp * 1000))
+}
+
+function parseChartDateParts(value: string): { month: number; day: number; year: number } | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const [monthPart, dayPart, yearPart] = value.split('/')
+  const month = Number(monthPart)
+  const day = Number(dayPart)
+  const year = Number(yearPart)
+  if (
+    !Number.isFinite(month) ||
+    month < 1 ||
+    month > 12 ||
+    !Number.isFinite(day) ||
+    day < 1 ||
+    day > 31 ||
+    !Number.isFinite(year)
+  ) {
+    return null
+  }
+
+  return {
+    month,
+    day,
+    year: year < 100 ? 2000 + year : year
+  }
+}
+
+export function formatChartMonthYearLabel(value: string | number): string {
+  if (typeof value !== 'string') {
+    return String(value ?? '')
+  }
+
+  const parts = parseChartDateParts(value)
+  if (!parts) {
+    return value
+  }
+
+  return `${padTwo(parts.month)}/${padTwo(parts.year % 100)}`
+}
+
+export function formatChartWeekLabel(value: string | number): string {
+  if (typeof value !== 'string') {
+    return String(value ?? '')
+  }
+
+  const parts = parseChartDateParts(value)
+  if (!parts) {
+    return value
+  }
+
+  return `${padTwo(parts.month)}/${padTwo(parts.day)}/${padTwo(parts.year % 100)}`
+}
+
+export function formatChartTooltipDate(value: string | number): string {
+  if (typeof value !== 'string') {
+    return String(value ?? '')
+  }
+
+  const parts = parseChartDateParts(value)
+  if (!parts) {
+    return value
+  }
+
+  return tooltipDateFormatter.format(new Date(parts.year, parts.month - 1, parts.day))
+}
+
+export function getChartMonthlyTicks<T extends { date: string }>(data: T[], omitFirst = false): string[] {
+  const ticks: string[] = []
+  let lastKey = ''
+
+  for (const point of data) {
+    const parts = parseChartDateParts(point.date)
+    if (!parts) {
+      continue
+    }
+
+    const key = `${parts.year}-${String(parts.month).padStart(2, '0')}`
+    if (key !== lastKey) {
+      ticks.push(point.date)
+      lastKey = key
+    }
+  }
+
+  return omitFirst ? ticks.slice(1) : ticks
+}
+
+export function getChartWeeklyTicks<T extends { date: string }>(data: T[], omitFirst = false): string[] {
+  const ticks: string[] = []
+  let lastKey = ''
+
+  for (const point of data) {
+    const parts = parseChartDateParts(point.date)
+    if (!parts) {
+      continue
+    }
+
+    const date = new Date(parts.year, parts.month - 1, parts.day)
+    const dayOfWeek = date.getDay()
+    const diffToMonday = (dayOfWeek + 6) % 7
+    const weekStart = new Date(date)
+    weekStart.setDate(date.getDate() - diffToMonday)
+
+    const key = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}-${String(weekStart.getDate()).padStart(2, '0')}`
+
+    if (key !== lastKey) {
+      ticks.push(point.date)
+      lastKey = key
+    }
+  }
+
+  return omitFirst ? ticks.slice(1) : ticks
 }
 
 export function getTimeframeLimit(timeframe: string): number {
