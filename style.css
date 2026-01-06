@@ -397,10 +397,10 @@ body {
 
   /* Variant: Light */
   &[data-variant='light'] {
-    @apply text-neutral-900 bg-neutral-100;
+    @apply text-text-primary bg-surface-secondary;
 
     &:not(:disabled):not([aria-busy='true']):hover {
-      @apply bg-neutral-200;
+      @apply bg-surface-tertiary;
     }
   }
 

@@ -704,7 +704,7 @@ export function VaultDetailsHeader({
               <strong
                 ref={titleRef}
                 className={cl(
-                  'text-lg font-black leading-tight text-text-secondary md:text-3xl md:leading-10',
+                  'text-lg font-black leading-tight text-text-secondary dark:text-text-primary md:text-3xl md:leading-10',
                   isCompressed ? 'md:text-[30px] md:leading-9 max-w-[260px] truncate whitespace-nowrap' : ''
                 )}
               >
@@ -713,7 +713,7 @@ export function VaultDetailsHeader({
               {isCompressed && isTitleClipped ? (
                 <span
                   className={
-                    'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight text-text-secondary group-hover:block'
+                    'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight text-text-secondary dark:text-text-primary group-hover:block'
                   }
                 >
                   {vaultName} {' yVault'}

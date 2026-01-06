@@ -305,7 +305,7 @@ function Index(): ReactElement | null {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-black leading-tight text-text-secondary truncate">
+              <h1 className="text-lg font-black leading-tight text-text-secondary dark:text-text-primary truncate">
                 {getVaultName(currentVault)} yVault
               </h1>
               <p className="text-xs text-text-secondary truncate">
