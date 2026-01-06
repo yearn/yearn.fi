@@ -1,6 +1,13 @@
 import { useChartStyle } from '@lib/contexts/useChartStyle'
 import type { TTvlChartData } from '@nextgen/types/charts'
-import { getTimeframeLimit } from '@nextgen/utils/charts'
+import {
+  formatChartMonthYearLabel,
+  formatChartTooltipDate,
+  formatChartWeekLabel,
+  getChartMonthlyTicks,
+  getChartWeeklyTicks,
+  getTimeframeLimit
+} from '@nextgen/utils/charts'
 import { useId, useMemo } from 'react'
 import { Area, Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
@@ -10,6 +17,14 @@ type TVLChartProps = {
   chartData: TTvlChartData
   timeframe: string
   hideTooltip?: boolean
+}
+
+const formatTvlTick = (value: number | string) => {
+  const numericValue = Number(value)
+  if (numericValue === 0) {
+    return ''
+  }
+  return `$${(numericValue / 1_000_000).toFixed(1)}M`
 }
 
 export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
@@ -24,6 +39,12 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
     }
     return chartData.slice(-limit)
   }, [chartData, timeframe])
+  const isShortTimeframe = timeframe === '30d' || timeframe === '90d'
+  const ticks = useMemo(
+    () => (isShortTimeframe ? getChartWeeklyTicks(filteredData, true) : getChartMonthlyTicks(filteredData, true)),
+    [filteredData, isShortTimeframe]
+  )
+  const tickFormatter = isShortTimeframe ? formatChartWeekLabel : formatChartMonthYearLabel
 
   const chartConfig = useMemo<ChartConfig>(() => {
     return {
@@ -49,13 +70,15 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
           <CartesianGrid vertical={false} />
           <XAxis
             dataKey={'date'}
+            ticks={ticks}
+            tickFormatter={tickFormatter}
             tick={{ fill: 'var(--chart-axis)' }}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
           />
           <YAxis
             domain={[0, 'auto']}
-            tickFormatter={(value) => `$${(value / 1_000_000).toFixed(1)}M`}
+            tickFormatter={formatTvlTick}
             tick={{ fill: 'var(--chart-axis)' }}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
@@ -68,6 +91,7 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
                 })}`,
                 'TVL'
               ]}
+              labelFormatter={formatChartTooltipDate}
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
                 borderRadius: 'var(--chart-tooltip-radius)',
@@ -110,13 +134,15 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
           </defs>
           <XAxis
             dataKey={'date'}
+            ticks={ticks}
+            tickFormatter={tickFormatter}
             tick={{ fill: 'var(--chart-axis)' }}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
           />
           <YAxis
             domain={[0, 'auto']}
-            tickFormatter={(value) => `$${(value / 1_000_000).toFixed(1)}M`}
+            tickFormatter={formatTvlTick}
             tick={{ fill: 'var(--chart-axis)' }}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
@@ -129,6 +155,7 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
                 })}`,
                 'TVL'
               ]}
+              labelFormatter={formatChartTooltipDate}
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
                 borderRadius: 'var(--chart-tooltip-radius)',
@@ -187,6 +214,7 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
               })}`,
               'TVL'
             ]}
+            labelFormatter={formatChartTooltipDate}
             contentStyle={{
               backgroundColor: 'var(--chart-tooltip-bg)',
               borderRadius: 'var(--chart-tooltip-radius)',

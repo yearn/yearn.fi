@@ -22,8 +22,6 @@ export function NotificationsCurtain(props: {
   const isEmpty = cachedEntries.length === 0
 
   const scrollAreaStyle: CSSProperties = {
-    scrollbarColor: '#9E9E9E transparent',
-    scrollbarWidth: 'thin',
     scrollbarGutter: 'stable',
     ...(drawerDirection === 'right' ? {} : { maxHeight: 'calc(90vh - 96px)' })
   }
@@ -77,7 +75,7 @@ export function NotificationsCurtain(props: {
               </div>
               <div
                 className={cl(
-                  'overflow-y-auto overflow-x-hidden pt-2',
+                  'overflow-y-auto overflow-x-hidden pt-2 scrollbar-themed',
                   drawerDirection === 'right' ? 'h-[94.5%]' : 'max-h-full'
                 )}
                 style={scrollAreaStyle}

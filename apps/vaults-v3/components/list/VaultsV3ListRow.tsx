@@ -23,7 +23,6 @@ import {
 import { APYSparkline } from '@vaults-v3/components/table/APYSparkline'
 import { VaultForwardAPY } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
-import { VaultRiskScoreTag } from '@vaults-v3/components/table/VaultRiskScoreTag'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -129,11 +128,7 @@ export function VaultsV3ListRow({
 
         {/* TODO:on hover add list head categories */}
         <div className={cl('col-span-10 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
-          <div
-            className={
-              'flex flex-row-reverse sm:flex-row w-full justify-between sm:justify-normal gap-4 overflow-hidden'
-            }
-          >
+          <div className={'flex flex-row w-full gap-4 overflow-hidden'}>
             <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
               <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
@@ -144,7 +139,7 @@ export function VaultsV3ListRow({
                 height={32}
               />
             </div>
-            <div className={'min-w-0'}>
+            <div className={'min-w-0 flex-1'}>
               <strong
                 title={currentVault.name}
                 className={'block truncate font-black text-text-primary md:-mb-0.5 text-lg'}
@@ -168,6 +163,46 @@ export function VaultsV3ListRow({
                   >
                     {currentVault.category}
                   </span>
+                ) : null}
+              </div>
+            </div>
+            {/* Mobile Holdings + APY + TVL inline */}
+            <div className={'hidden max-md:flex items-center shrink-0 gap-4 text-right'}>
+              {/* Holdings - shown on wider mobile screens */}
+              {flags?.hasHoldings ? (
+                <div className={'hidden min-[420px]:block'}>
+                  <p className={'text-xs text-text-primary/60'}>{'Holdings'}</p>
+                  <VaultHoldingsAmount currentVault={currentVault} valueClassName={'text-sm font-semibold'} />
+                </div>
+              ) : null}
+              <div>
+                <p className={'text-xs text-text-primary/60'}>{'Est. APY'}</p>
+                <VaultForwardAPY
+                  currentVault={currentVault}
+                  valueClassName={'text-sm font-semibold'}
+                  showSubline={false}
+                />
+              </div>
+              <div className={'relative'}>
+                <p className={'text-xs text-text-primary/60'}>{'TVL'}</p>
+                <p className={'text-sm font-semibold text-text-primary'}>
+                  <RenderAmount
+                    value={currentVault.tvl?.tvl}
+                    symbol={'USD'}
+                    decimals={0}
+                    options={{
+                      shouldCompactValue: true,
+                      maximumFractionDigits: 2,
+                      minimumFractionDigits: 0
+                    }}
+                  />
+                </p>
+                {/* Holdings indicator dot - shown on narrow screens when user has holdings */}
+                {flags?.hasHoldings ? (
+                  <div
+                    className={'absolute -right-2 top-0 size-2 rounded-full bg-green-500 min-[420px]:hidden'}
+                    title={'You have holdings in this vault'}
+                  />
                 ) : null}
               </div>
             </div>
@@ -231,60 +266,6 @@ export function VaultsV3ListRow({
             <VaultHoldingsAmount currentVault={currentVault} />
           </div>
         </div>
-
-        {/* Mobile metrics grid */}
-        <div
-          className={cl(
-            'col-span-8 z-10',
-            'flex flex-col md:hidden',
-            'pt-3 mt-3 md:mt-0 md:pt-0 border-t border-neutral-800/20'
-          )}
-        >
-          {/* Estimated APY */}
-          <div className={'flex h-10 flex-row items-center justify-between'} datatype={'number'}>
-            <p className={'text-sm font-medium text-text-primary'}>{'Estimated APY'}</p>
-            <VaultForwardAPY currentVault={currentVault} valueClassName={'text-sm'} showSubline={false} />
-          </div>
-
-          {/* 30D APY Sparkline */}
-          <div className={'flex h-10 flex-row items-center justify-between'} datatype={'number'}>
-            <p className={'text-xs text-text-primary/60'}>{'30D APY'}</p>
-            <div className={'w-24 h-10'}>
-              <APYSparkline chainId={currentVault.chainID} vaultAddress={currentVault.address} />
-            </div>
-          </div>
-
-          {/* TVL */}
-          <div className={'flex h-10 flex-row items-center justify-between'} datatype={'number'}>
-            <p className={'text-xs text-text-primary/60'}>{'TVL'}</p>
-            <p className={'text-sm text-text-primary'}>
-              <RenderAmount
-                value={currentVault.tvl?.tvl}
-                symbol={'USD'}
-                decimals={0}
-                options={{
-                  shouldCompactValue: true,
-                  maximumFractionDigits: 2,
-                  minimumFractionDigits: 0
-                }}
-              />
-            </p>
-          </div>
-
-          {/* Your Deposit */}
-          {flags?.hasHoldings ? (
-            <div className={'flex h-10 flex-row items-center justify-between'} datatype={'number'}>
-              <p className={'text-xs text-text-primary/60'}>{'Your Deposit'}</p>
-              <VaultHoldingsAmount currentVault={currentVault} valueClassName={'text-sm'} />
-            </div>
-          ) : null}
-
-          {/* Risk Score */}
-          <div className={'flex h-10 flex-row items-center justify-between'} datatype={'number'}>
-            <p className={'text-xs text-text-primary/60'}>{'Risk Score'}</p>
-            <VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} variant={'inline'} />
-          </div>
-        </div>
       </div>
 
       {isExpanded ? (
@@ -321,8 +302,8 @@ export function VaultsV3ListRow({
                     shouldRenderSelectors={false}
                     chartTab={(expandedView === 'apy' ? 'historical-apy' : 'historical-pps') satisfies TVaultChartTab}
                     timeframe={expandedTimeframe}
-                    chartHeightPx={150}
-                    chartHeightMdPx={150}
+                    chartHeightPx={200}
+                    chartHeightMdPx={200}
                   />
                 </div>
               ) : null}

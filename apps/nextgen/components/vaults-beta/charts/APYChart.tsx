@@ -1,6 +1,13 @@
 import { useChartStyle } from '@lib/contexts/useChartStyle'
 import type { TAprApyChartData } from '@nextgen/types/charts'
-import { getTimeframeLimit } from '@nextgen/utils/charts'
+import {
+  formatChartMonthYearLabel,
+  formatChartTooltipDate,
+  formatChartWeekLabel,
+  getChartMonthlyTicks,
+  getChartWeeklyTicks,
+  getTimeframeLimit
+} from '@nextgen/utils/charts'
 import { useId, useMemo } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, LineChart, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
@@ -26,6 +33,8 @@ const SERIES_META: Record<SeriesKey, { chartLabel: string; legendLabel: string; 
   }
 }
 
+const formatPercentTick = (value: number | string) => (Number(value) === 0 ? '' : `${value}%`)
+
 type APYChartProps = {
   chartData: TAprApyChartData
   timeframe: string
@@ -44,6 +53,12 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
     }
     return chartData.slice(-limit)
   }, [chartData, timeframe])
+  const isShortTimeframe = timeframe === '30d' || timeframe === '90d'
+  const ticks = useMemo(
+    () => (isShortTimeframe ? getChartWeeklyTicks(filteredData, true) : getChartMonthlyTicks(filteredData, true)),
+    [filteredData, isShortTimeframe]
+  )
+  const tickFormatter = isShortTimeframe ? formatChartWeekLabel : formatChartMonthYearLabel
 
   const chartConfig = useMemo<ChartConfig>(() => {
     return Object.entries(SERIES_META).reduce((acc, [key, meta]) => {
@@ -73,13 +88,15 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey={'date'}
+              ticks={ticks}
+              tickFormatter={tickFormatter}
               tick={{ fill: 'var(--chart-axis)' }}
               axisLine={{ stroke: 'var(--chart-axis)' }}
               tickLine={{ stroke: 'var(--chart-axis)' }}
             />
             <YAxis
               domain={[0, 'auto']}
-              tickFormatter={(value) => `${value}%`}
+              tickFormatter={formatPercentTick}
               tick={{ fill: 'var(--chart-axis)' }}
               axisLine={{ stroke: 'var(--chart-axis)' }}
               tickLine={{ stroke: 'var(--chart-axis)' }}
@@ -89,6 +106,7 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
                 formatter={(value: number, name: string) => {
                   return [`${(value ?? 0).toFixed(2)}%`, formatSeriesLabel(name)]
                 }}
+                labelFormatter={formatChartTooltipDate}
                 contentStyle={{
                   backgroundColor: 'var(--chart-tooltip-bg)',
                   borderRadius: 'var(--chart-tooltip-radius)',
@@ -149,13 +167,15 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
             </defs>
             <XAxis
               dataKey={'date'}
+              ticks={ticks}
+              tickFormatter={tickFormatter}
               tick={{ fill: 'var(--chart-axis)' }}
               axisLine={{ stroke: 'var(--chart-axis)' }}
               tickLine={{ stroke: 'var(--chart-axis)' }}
             />
             <YAxis
               domain={[0, 'auto']}
-              tickFormatter={(value) => `${value}%`}
+              tickFormatter={formatPercentTick}
               tick={{ fill: 'var(--chart-axis)' }}
               axisLine={{ stroke: 'var(--chart-axis)' }}
               tickLine={{ stroke: 'var(--chart-axis)' }}
@@ -175,6 +195,7 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
                 formatter={(value: number, name: string) => {
                   return [`${(value ?? 0).toFixed(2)}%`, formatSeriesLabel(name)]
                 }}
+                labelFormatter={formatChartTooltipDate}
                 contentStyle={{
                   backgroundColor: 'var(--chart-tooltip-bg)',
                   borderRadius: 'var(--chart-tooltip-radius)',
@@ -232,6 +253,7 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
               formatter={(value: number, name: string) => {
                 return [`${(value ?? 0).toFixed(2)}%`, formatSeriesLabel(name)]
               }}
+              labelFormatter={formatChartTooltipDate}
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
                 borderRadius: 'var(--chart-tooltip-radius)',
