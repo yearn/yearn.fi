@@ -112,7 +112,7 @@ type TFormatCurrencyWithPrecision = {
 
 export const defaultOptions: TAmountOptions = {
   minimumFractionDigits: 2,
-  maximumFractionDigits: 4,
+  maximumFractionDigits: 2,
   displayDigits: 0,
   shouldDisplaySymbol: true,
   shouldCompactValue: true
