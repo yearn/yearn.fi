@@ -1,6 +1,7 @@
 import { cl } from '@lib/utils'
 import type { ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
+import { V2_SUPPORTED_CHAINS, V3_SUPPORTED_CHAINS } from './constants'
 import { getVaultTypeEmoji, getVaultTypeLabel } from './vaultTypeCopy'
 
 type TVaultVersionToggleProps = {
@@ -24,10 +25,28 @@ export function VaultVersionToggle({ className, showStrategies, stretch }: TVaul
   const strategiesLabel = 'v3 Strategies'
   const strategiesEmoji = '🧩'
 
+  const sanitizeChainsParam = (params: URLSearchParams, supportedChainIds: number[]): void => {
+    const rawChains = params.get('chains')
+    if (!rawChains || rawChains === '0') {
+      return
+    }
+    const nextChains = rawChains
+      .split('_')
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value) && supportedChainIds.includes(value))
+
+    if (nextChains.length === 0) {
+      params.delete('chains')
+    } else {
+      params.set('chains', nextChains.join('_'))
+    }
+  }
+
   const goToAllocator = (): void => {
     const nextParams = new URLSearchParams(searchParams)
     nextParams.delete('type')
     nextParams.delete('types')
+    sanitizeChainsParam(nextParams, V3_SUPPORTED_CHAINS)
     setSearchParams(nextParams, { replace: true })
   }
 
@@ -36,6 +55,7 @@ export function VaultVersionToggle({ className, showStrategies, stretch }: TVaul
     nextParams.delete('type')
     nextParams.set('types', 'single')
     nextParams.set('showStrategies', '1')
+    sanitizeChainsParam(nextParams, V3_SUPPORTED_CHAINS)
     setSearchParams(nextParams, { replace: true })
   }
 
@@ -43,6 +63,7 @@ export function VaultVersionToggle({ className, showStrategies, stretch }: TVaul
     const nextParams = new URLSearchParams(searchParams)
     nextParams.set('type', 'factory')
     nextParams.delete('types')
+    sanitizeChainsParam(nextParams, V2_SUPPORTED_CHAINS)
     setSearchParams(nextParams, { replace: true })
   }
 

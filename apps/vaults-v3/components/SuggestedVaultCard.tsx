@@ -26,6 +26,7 @@ type TAprDisplay =
 export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactElement {
   const apyData = useVaultApyData(vault)
   const aprDisplay = useMemo<TAprDisplay>(() => {
+    const isV3Vault = vault.version?.startsWith('3') || vault.version?.startsWith('~3')
     const isVeYfi = vault.staking.source === 'VeYFI'
     const boostedApr = apyData.baseForwardApr + apyData.rewardsAprSum
     if (apyData.mode === 'historical' || apyData.mode === 'noForward') {
@@ -41,7 +42,12 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
       return { type: 'value', label: 'Est. APY', prefix: '⚡️', value: boostedApr }
     }
     if (apyData.mode === 'boosted' && apyData.isBoosted) {
-      return { type: 'value', label: 'Est. APY', prefix: '🚀', value: apyData.baseForwardApr }
+      return {
+        type: 'value',
+        label: 'Est. APY',
+        prefix: isV3Vault ? '🚀' : undefined,
+        value: apyData.baseForwardApr
+      }
     }
     return { type: 'value', label: 'Est. APY', value: apyData.baseForwardApr }
   }, [apyData, vault])

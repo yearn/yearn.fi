@@ -173,7 +173,7 @@ export function VaultsV3ListHead({
       >
         <div
           className={cl(
-            'col-span-10',
+            'col-span-9',
             'flex flex-row items-center justify-between',
             'mb-2 py-4 md:mb-0 md:py-0',
             token.className
@@ -182,7 +182,7 @@ export function VaultsV3ListHead({
           {renderItem(token, !isToggleItem(token) && sortBy === token.value, false)}
         </div>
 
-        <div className={cl('col-span-14 z-10', 'grid grid-cols-2 md:grid-cols-14 gap-4', 'mt-4 md:mt-0')}>
+        <div className={cl('col-span-15 z-10', 'grid grid-cols-2 md:grid-cols-15 gap-4', 'mt-4 md:mt-0')}>
           {rest.map((item): ReactElement => renderItem(item, !isToggleItem(item) && sortBy === item.value, true))}
         </div>
       </div>

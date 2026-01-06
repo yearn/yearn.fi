@@ -1,9 +1,12 @@
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { Renderable } from '@lib/components/Renderable'
 import { Tooltip } from '@lib/components/Tooltip'
+import { IconFixedRate } from '@lib/icons/IconFixedRate'
+import { IconLinkOut } from '@lib/icons/IconLinkOut'
 import { cl, formatAmount, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@vaults-v3/constants/addresses'
+import { getFixedTermMarket } from '@vaults-v3/constants/fixedTermMarkets'
 import { useVaultApyData } from '@vaults-v3/hooks/useVaultApyData'
 import type { ReactElement } from 'react'
 import { Fragment, useState } from 'react'
@@ -12,13 +15,17 @@ import { APYSubline, getApySublineLines } from './APYSubline'
 import { APYTooltipContent } from './APYTooltip'
 import { KatanaApyTooltipContent } from './KatanaApyTooltip'
 
+export type TVaultForwardAPYVariant = 'default' | 'factory-list'
+
 export function VaultForwardAPY({
   currentVault,
   onMobileToggle,
   className,
   valueClassName,
   showSubline = true,
-  showSublineTooltip = false
+  showSublineTooltip = false,
+  displayVariant = 'default',
+  showBoostDetails = true
 }: {
   currentVault: TYDaemonVault
   onMobileToggle?: (e: React.MouseEvent) => void
@@ -26,9 +33,19 @@ export function VaultForwardAPY({
   valueClassName?: string
   showSubline?: boolean
   showSublineTooltip?: boolean
+  displayVariant?: TVaultForwardAPYVariant
+  showBoostDetails?: boolean
 }): ReactElement {
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const canOpenModal = displayVariant !== 'factory-list'
+  const valueInteractiveClass = canOpenModal ? 'cursor-pointer' : undefined
+  const fixedTermMarket = getFixedTermMarket(currentVault.address)
+  const fixedTermIndicator = fixedTermMarket ? (
+    <span className={'flex items-center text-text-secondary'} aria-hidden={true}>
+      <IconFixedRate className={'size-3.5'} />
+    </span>
+  ) : null
 
   // Check if vault is eligible for Spectra boost (Katana chain only)
   const isEligibleForSpectraBoost =
@@ -42,19 +59,76 @@ export function VaultForwardAPY({
     steerPointsPerDollar: data.steerPointsPerDollar,
     isEligibleForSpectraBoost
   })
-  const hasSublineTooltip = showSublineTooltip && sublineLines.length > 0
-  const enableSublineTooltipClick = Boolean(onMobileToggle)
-  const sublineTooltipContent = (
-    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
-      {sublineLines.map((line, index) => (
-        <div key={line} className={index === 0 ? '' : 'mt-1'}>
-          {line}
+  const isKatanaVault =
+    currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined
+  const katanaTooltipContent =
+    showSublineTooltip && isKatanaVault ? (
+      <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+        <div className={'flex items-center gap-2'}>
+          <span aria-hidden>{'⚔️'}</span>
+          <span>{'This Vault is receiving KAT incentives'}</span>
         </div>
-      ))}
-    </div>
+        {fixedTermMarket ? (
+          <div className={'mt-1 flex items-center gap-2'}>
+            <IconFixedRate className={'size-3.5 text-text-secondary'} aria-hidden={true} />
+            <span>{'This Vault has fixed rate markets available'}</span>
+          </div>
+        ) : null}
+        {canOpenModal ? (
+          <button
+            type={'button'}
+            className={
+              'mt-2 text-left font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+            }
+            onClick={(event): void => {
+              event.stopPropagation()
+              setIsModalOpen(true)
+            }}
+          >
+            {'Click for more information'}
+          </button>
+        ) : null}
+      </div>
+    ) : null
+
+  const boostTooltipLine =
+    showBoostDetails && displayVariant !== 'factory-list' && data.mode === 'boosted' && data.isBoosted
+      ? `Boost ${formatAmount(data.boost || 0, 2, 2)}x`
+      : null
+  const fixedRateTooltipLine =
+    fixedTermMarket && !isKatanaVault ? `Fixed-rate markets available on ${fixedTermMarket.label}.` : null
+  const standardTooltipLines = [boostTooltipLine, ...sublineLines, fixedRateTooltipLine].filter(
+    (line): line is string => Boolean(line)
   )
+
+  const standardTooltipContent =
+    showSublineTooltip && standardTooltipLines.length > 0 ? (
+      <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+        {standardTooltipLines.map((line, index) => (
+          <div key={line} className={index === 0 ? '' : 'mt-1'}>
+            {line}
+          </div>
+        ))}
+        {fixedTermMarket ? (
+          <a
+            href={fixedTermMarket.marketUrl}
+            target={'_blank'}
+            rel={'noopener noreferrer'}
+            className={
+              'mt-2 inline-flex items-center gap-1 font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+            }
+            onClick={(event): void => event.stopPropagation()}
+          >
+            {`View ${fixedTermMarket.label} market`}
+            <IconLinkOut className={'size-3'} />
+          </a>
+        ) : null}
+      </div>
+    ) : null
+
+  const infoTooltipContent = katanaTooltipContent ?? standardTooltipContent
   const renderValueWithTooltip = (value: ReactElement): ReactElement => {
-    if (!hasSublineTooltip) {
+    if (!infoTooltipContent) {
       return value
     }
 
@@ -62,24 +136,24 @@ export function VaultForwardAPY({
       <Tooltip
         className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
         openDelayMs={150}
-        toggleOnClick={enableSublineTooltipClick}
-        tooltip={sublineTooltipContent}
+        tooltip={infoTooltipContent}
       >
         {value}
       </Tooltip>
     )
   }
   const handleValueClick = (e: React.MouseEvent): void => {
-    if (!(hasSublineTooltip && enableSublineTooltipClick)) {
-      e.stopPropagation()
-    }
     if (onMobileToggle) {
+      e.stopPropagation()
       onMobileToggle(e)
       return
     }
+    if (!canOpenModal) {
+      return
+    }
+    e.stopPropagation()
     setIsModalOpen(true)
   }
-  const handleInfoOpen = (): void => setIsModalOpen(true)
   const handleInfoClose = (): void => setIsModalOpen(false)
 
   // Katana
@@ -104,11 +178,8 @@ export function VaultForwardAPY({
             <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
               <Renderable shouldRender={true} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
-                  <span
-                    className={
-                      'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                    }
-                  >
+                  {fixedTermIndicator}
+                  <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
                     {'⚔️ '}
                     <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
                   </span>
@@ -124,13 +195,14 @@ export function VaultForwardAPY({
               isEligibleForSteer={data.isEligibleForSteer}
               steerPointsPerDollar={data.steerPointsPerDollar}
               isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-              onExtraRewardsClick={handleInfoOpen}
             />
           ) : null}
         </div>
-        <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'Katana APY breakdown'}>
-          {katanaDetails}
-        </APYDetailsModal>
+        {canOpenModal ? (
+          <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'Katana APY breakdown'}>
+            {katanaDetails}
+          </APYDetailsModal>
+        ) : null}
       </Fragment>
     )
   }
@@ -159,11 +231,8 @@ export function VaultForwardAPY({
               <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
                 <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                   <div className={'flex items-center gap-2'}>
-                    <span
-                      className={
-                        'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                      }
-                    >
+                    {fixedTermIndicator}
+                    <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
                       {'⚡️ '}
                       <RenderAmount
                         shouldHideTooltip={hasZeroBoostedAPY}
@@ -184,13 +253,14 @@ export function VaultForwardAPY({
                 isEligibleForSteer={data.isEligibleForSteer}
                 steerPointsPerDollar={data.steerPointsPerDollar}
                 isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-                onExtraRewardsClick={handleInfoOpen}
               />
             ) : null}
           </div>
-          <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
-            {modalContent}
-          </APYDetailsModal>
+          {canOpenModal ? (
+            <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
+              {modalContent}
+            </APYDetailsModal>
+          ) : null}
         </Fragment>
       )
     }
@@ -198,9 +268,15 @@ export function VaultForwardAPY({
     return (
       <div className={cl('relative flex flex-col items-end md:text-right', className)}>
         {renderValueWithTooltip(
-          <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+          <b
+            className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
+            onClick={handleValueClick}
+          >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-              <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
+              <span className={'inline-flex items-center gap-2'}>
+                {fixedTermIndicator}
+                <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
+              </span>
             </Renderable>
           </b>
         )}
@@ -221,13 +297,14 @@ export function VaultForwardAPY({
   // Boosted
   if (data.mode === 'boosted' && data.isBoosted) {
     const unBoostedAPY = data.unboostedApr || 0
+    const boostValue = formatAmount(data.boost || 0, 2, 2)
     const modalContent = (
       <APYTooltipContent
         baseAPY={unBoostedAPY}
         hasPendleArbRewards={data.hasPendleArbRewards}
         hasKelpNEngenlayer={data.hasKelpNEngenlayer}
         hasKelp={data.hasKelp}
-        boost={data.boost}
+        boost={showBoostDetails ? data.boost : undefined}
       />
     )
 
@@ -236,14 +313,12 @@ export function VaultForwardAPY({
         <div className={cl('flex flex-col items-end md:text-right', className)}>
           {renderValueWithTooltip(
             <b
-              className={cl(
-                'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600',
-                valueClassName
-              )}
+              className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
               onClick={handleValueClick}
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-                <div className={'flex cursor-pointer items-center gap-2'}>
+                <div className={cl('flex items-center gap-2', canOpenModal ? 'cursor-pointer' : undefined)}>
+                  {fixedTermIndicator}
                   <RenderAmount
                     shouldHideTooltip
                     value={currentVault.apr.forwardAPR.netAPR}
@@ -254,9 +329,11 @@ export function VaultForwardAPY({
               </Renderable>
             </b>
           )}
-          <small className={'text-xs text-text-primary'}>
-            <Renderable shouldRender={data.isBoosted}>{`BOOST ${formatAmount(data.boost || 0, 2, 2)}x`}</Renderable>
-          </small>
+          {displayVariant !== 'factory-list' && showBoostDetails ? (
+            <small className={'text-xs text-text-primary'}>
+              <Renderable shouldRender={data.isBoosted}>{`BOOST ${boostValue}x`}</Renderable>
+            </small>
+          ) : null}
           {showSubline ? (
             <APYSubline
               hasPendleArbRewards={data.hasPendleArbRewards}
@@ -265,13 +342,14 @@ export function VaultForwardAPY({
               isEligibleForSteer={data.isEligibleForSteer}
               steerPointsPerDollar={data.steerPointsPerDollar}
               isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-              onExtraRewardsClick={handleInfoOpen}
             />
           ) : null}
         </div>
-        <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
-          {modalContent}
-        </APYDetailsModal>
+        {canOpenModal ? (
+          <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
+            {modalContent}
+          </APYDetailsModal>
+        ) : null}
       </Fragment>
     )
   }
@@ -315,11 +393,8 @@ export function VaultForwardAPY({
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
-                  <span
-                    className={
-                      'flex cursor-pointer items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-                    }
-                  >
+                  {fixedTermIndicator}
+                  <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
                     {'⚡️ '}
                     {estAPYRange ? (
                       <Fragment>
@@ -348,13 +423,14 @@ export function VaultForwardAPY({
               isEligibleForSteer={data.isEligibleForSteer}
               steerPointsPerDollar={data.steerPointsPerDollar}
               isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-              onExtraRewardsClick={handleInfoOpen}
             />
           ) : null}
         </div>
-        <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
-          {modalContent}
-        </APYDetailsModal>
+        {canOpenModal ? (
+          <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'APY breakdown'}>
+            {modalContent}
+          </APYDetailsModal>
+        ) : null}
       </Fragment>
     )
   }
@@ -364,10 +440,18 @@ export function VaultForwardAPY({
     return (
       <div className={cl('relative flex flex-col items-end md:text-right', className)}>
         {renderValueWithTooltip(
-          <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+          <b
+            className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
+            onClick={handleValueClick}
+          >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-              {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
-              <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
+              <span className={'inline-flex items-center gap-2'}>
+                {fixedTermIndicator}
+                <span className={'flex items-center gap-1'}>
+                  {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+                  <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
+                </span>
+              </span>
             </Renderable>
           </b>
         )}
@@ -390,13 +474,21 @@ export function VaultForwardAPY({
   return (
     <div className={cl('relative flex flex-col items-end md:text-right', className)}>
       {renderValueWithTooltip(
-        <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+        <b
+          className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
+          onClick={handleValueClick}
+        >
           <Renderable
             shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')}
             fallback={'NEW'}
           >
-            {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
-            <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
+            <span className={'inline-flex items-center gap-2'}>
+              {fixedTermIndicator}
+              <span className={'flex items-center gap-1'}>
+                {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+                <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
+              </span>
+            </span>
           </Renderable>
         </b>
       )}
@@ -415,7 +507,13 @@ export function VaultForwardAPY({
 }
 
 // Inline details for mobile accordion rendering controlled by parent
-export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: TYDaemonVault }): ReactElement | null {
+export function VaultForwardAPYInlineDetails({
+  currentVault,
+  showBoostDetails = true
+}: {
+  currentVault: TYDaemonVault
+  showBoostDetails?: boolean
+}): ReactElement | null {
   const data = useVaultApyData(currentVault)
 
   // Check if vault is eligible for Spectra boost (Katana chain only)
@@ -559,6 +657,9 @@ export function VaultForwardAPYInlineDetails({ currentVault }: { currentVault: T
   }
 
   if (data.mode === 'boosted' && data.isBoosted) {
+    if (!showBoostDetails) {
+      return null
+    }
     const unBoostedAPY = data.unboostedApr || 0
     return (
       <div className={'w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'}>

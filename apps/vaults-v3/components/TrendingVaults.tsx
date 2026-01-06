@@ -169,6 +169,51 @@ function TrendingVaultsCollapsedMarquee({ suggestedVaults }: { suggestedVaults: 
   )
 }
 
+function TrendingVaultsSkeleton(): ReactElement {
+  const placeholderCards = ['one', 'two', 'three', 'four']
+
+  return (
+    <div className={'w-full bg-app pb-2'}>
+      <div className={'flex flex-col gap-0 rounded-xl border border-border bg-surface'}>
+        <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-'}>
+          <div className={'flex min-w-0 flex-1 items-center gap-3'}>
+            <div className={'h-4 w-32 rounded-md bg-surface-tertiary/70 animate-pulse'} />
+            <div className={'hidden h-5 w-24 rounded-md bg-surface-tertiary/60 md:block animate-pulse'} />
+          </div>
+          <div className={'size-6 rounded-full bg-surface-tertiary/60 animate-pulse'} />
+        </div>
+        <div className={'overflow-hidden px-4 pt-0.5 pb-4 md:px-6'}>
+          <div className={'flex gap-4'}>
+            {placeholderCards.map((key) => (
+              <div key={`trending-skeleton-${key}`} className={'w-[272px] flex-shrink-0'}>
+                <div className={'flex h-full flex-col rounded-md border border-border bg-surface p-4'}>
+                  <div className={'flex items-center gap-3'}>
+                    <div className={'size-9 rounded-full bg-surface-tertiary/70 animate-pulse'} />
+                    <div className={'flex-1 space-y-2'}>
+                      <div className={'h-3 w-3/4 rounded bg-surface-tertiary/70 animate-pulse'} />
+                      <div className={'h-2 w-1/2 rounded bg-surface-tertiary/60 animate-pulse'} />
+                    </div>
+                  </div>
+                  <div className={'mt-4 flex items-end justify-between gap-4'}>
+                    <div className={'space-y-2'}>
+                      <div className={'h-2 w-16 rounded bg-surface-tertiary/60 animate-pulse'} />
+                      <div className={'h-6 w-24 rounded bg-surface-tertiary/70 animate-pulse'} />
+                    </div>
+                    <div className={'space-y-2 text-right'}>
+                      <div className={'ml-auto h-2 w-10 rounded bg-surface-tertiary/60 animate-pulse'} />
+                      <div className={'ml-auto h-5 w-14 rounded bg-surface-tertiary/70 animate-pulse'} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): ReactElement | null {
   const [isTrendingExpanded, setIsTrendingExpanded] = useState(true)
   const trendingCarouselRef = useRef<HTMLDivElement>(null)
@@ -291,7 +336,7 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
   }
 
   if (suggestedVaults.length === 0) {
-    return null
+    return <TrendingVaultsSkeleton />
   }
 
   return (

@@ -11,6 +11,10 @@ import { Tooltip } from '@lib/components/Tooltip'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import { IconChevron } from '@lib/icons/IconChevron'
+import { IconSettings } from '@lib/icons/IconSettings'
+import { IconStablecoin } from '@lib/icons/IconStablecoin'
+import { IconStack } from '@lib/icons/IconStack'
+import { IconVolatile } from '@lib/icons/IconVolatile'
 import { cl, formatCounterValue, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
@@ -21,11 +25,17 @@ import {
   VaultChartsSection
 } from '@nextgen/components/vaults-beta/VaultChartsSection'
 import { APYSparkline } from '@vaults-v3/components/table/APYSparkline'
-import { VaultForwardAPY } from '@vaults-v3/components/table/VaultForwardAPY'
+import {
+  type TVaultForwardAPYVariant,
+  VaultForwardAPY
+  // VaultForwardAPYInlineDetails
+} from '@vaults-v3/components/table/VaultForwardAPY'
+import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { VaultsListChip } from './VaultsListChip'
 import { type TVaultsV3ExpandedView, VaultsV3ExpandedSelector } from './VaultsV3ExpandedSelector'
 
 type TVaultRowFlags = {
@@ -37,11 +47,29 @@ type TVaultRowFlags = {
 export function VaultsV3ListRow({
   currentVault,
   flags,
-  hrefOverride
+  hrefOverride,
+  apyDisplayVariant = 'default',
+  showBoostDetails = true,
+  activeChains,
+  activeCategories,
+  activeTypes,
+  onToggleChain,
+  onToggleCategory,
+  onToggleType,
+  showStrategies = false
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
   hrefOverride?: string
+  apyDisplayVariant?: TVaultForwardAPYVariant
+  showBoostDetails?: boolean
+  activeChains?: number[]
+  activeCategories?: string[]
+  activeTypes?: string[]
+  onToggleChain?: (chainId: number) => void
+  onToggleCategory?: (category: string) => void
+  onToggleType?: (type: string) => void
+  showStrategies?: boolean
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
@@ -50,6 +78,30 @@ export function VaultsV3ListRow({
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('performance')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
+  const kindLabel =
+    currentVault.kind === 'Multi Strategy'
+      ? 'Allocator Vault'
+      : currentVault.kind === 'Single Strategy'
+        ? 'Strategy Vault'
+        : currentVault.kind
+  const kindType =
+    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
+  const activeChainIds = activeChains ?? []
+  const activeCategoryLabels = activeCategories ?? []
+  const activeTypeLabels = activeTypes ?? []
+  const showKindChip = showStrategies && Boolean(kindType)
+  const categoryIcon =
+    currentVault.category === 'Stablecoin' ? (
+      <IconStablecoin className={'size-3.5'} />
+    ) : currentVault.category === 'Volatile' ? (
+      <IconVolatile className={'size-3.5'} />
+    ) : null
+  const kindIcon =
+    kindType === 'multi' ? (
+      <IconSettings className={'size-3.5'} />
+    ) : kindType === 'single' ? (
+      <IconStack className={'size-3.5'} />
+    ) : null
   const tvlNativeTooltip = (
     <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       <span className={'font-number'}>
@@ -87,9 +139,7 @@ export function VaultsV3ListRow({
   }, [isExpanded])
 
   return (
-    <div
-      className={cl('w-full overflow-hidden transition-colors bg-surface', isExpanded ? 'border-y border-border' : '')}
-    >
+    <div className={cl('w-full overflow-hidden transition-colors bg-surface')}>
       {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
       <div
         role={'link'}
@@ -126,8 +176,7 @@ export function VaultsV3ListRow({
           <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
         </button>
 
-        {/* TODO:on hover add list head categories */}
-        <div className={cl('col-span-10 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
+        <div className={cl('col-span-9 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
           <div className={'flex flex-row w-full gap-4 overflow-hidden'}>
             <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
               <TokenLogo
@@ -147,22 +196,30 @@ export function VaultsV3ListRow({
                 {currentVault.name}
               </strong>
               <div className={'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'}>
-                <span
-                  className={
-                    'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
-                  }
-                >
-                  <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
-                  <span>{network.name}</span>
-                </span>
+                <VaultsListChip
+                  label={network.name}
+                  icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
+                  isActive={activeChainIds.includes(currentVault.chainID)}
+                  onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
+                  ariaLabel={`Filter by ${network.name}`}
+                />
                 {currentVault.category ? (
-                  <span
-                    className={
-                      'inline-flex items-center gap-2 rounded-lg bg-surface-secondary border border-border px-1 py-0.5'
-                    }
-                  >
-                    {currentVault.category}
-                  </span>
+                  <VaultsListChip
+                    label={currentVault.category}
+                    icon={categoryIcon}
+                    isActive={activeCategoryLabels.includes(currentVault.category)}
+                    onClick={onToggleCategory ? (): void => onToggleCategory(currentVault.category) : undefined}
+                    ariaLabel={`Filter by ${currentVault.category}`}
+                  />
+                ) : null}
+                {showKindChip && kindLabel ? (
+                  <VaultsListChip
+                    label={kindLabel}
+                    icon={kindIcon}
+                    isActive={kindType ? activeTypeLabels.includes(kindType) : false}
+                    onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
+                    ariaLabel={`Filter by ${kindLabel}`}
+                  />
                 ) : null}
               </div>
             </div>
@@ -210,15 +267,31 @@ export function VaultsV3ListRow({
         </div>
 
         {/* Desktop metrics grid */}
-        <div className={cl('col-span-14 z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:grid-cols-14 md:items-center')}>
+        <div className={cl('col-span-15 z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:grid-cols-15 md:items-center')}>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <VaultForwardAPY currentVault={currentVault} showSubline={false} showSublineTooltip />
+            <VaultForwardAPY
+              currentVault={currentVault}
+              showSubline={false}
+              showSublineTooltip
+              displayVariant={apyDisplayVariant}
+              showBoostDetails={showBoostDetails}
+            />
           </div>
-          <div className={'yearn--table-data-section-item col-span-3 flex items-center'} datatype={'number'}>
-            <APYSparkline chainId={currentVault.chainID} vaultAddress={currentVault.address} />
+
+          {/* 30D APY */}
+          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
+            <VaultHistoricalAPY currentVault={currentVault} />
+          </div>
+
+          {/* 30D APY Sparkline */}
+          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
+            <p className={'text-xs text-text-primary/60 md:hidden'}>{'30D APY'}</p>
+            <div className={'w-24 h-10'}>
+              <APYSparkline chainId={currentVault.chainID} vaultAddress={currentVault.address} />
+            </div>
           </div>
           {/* TVL */}
-          <div className={'yearn--table-data-section-item col-span-4'} datatype={'number'}>
+          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <div className={'flex justify-end text-right'}>
               <Tooltip
                 className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
@@ -262,7 +335,7 @@ export function VaultsV3ListRow({
               />
             </p>
           </div> */}
-          <div className={'yearn--table-data-section-item col-span-4'} datatype={'number'}>
+          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <VaultHoldingsAmount currentVault={currentVault} />
           </div>
         </div>
@@ -271,7 +344,7 @@ export function VaultsV3ListRow({
       {isExpanded ? (
         <div className={'hidden md:block bg-surface'}>
           <div className={'px-6 pb-6 pt-3'}>
-            <div className={'border border-border bg-surface'}>
+            <div className={' bg-surface'}>
               <VaultsV3ExpandedSelector
                 className={'p-3'}
                 activeView={expandedView}
@@ -286,7 +359,7 @@ export function VaultsV3ListRow({
                       navigate(href)
                     }}
                     className={
-                      'rounded-lg border border-border bg-surface-secondary px-4 py-2 text-xs font-semibold text-text-primary transition-colors hover:bg-surface-secondary/80'
+                      'rounded-lg  bg-surface-secondary px-4 py-2 text-xs font-semibold text-text-primary transition-colors hover:bg-surface-secondary/80'
                     }
                   >
                     {'Go to Vault'}

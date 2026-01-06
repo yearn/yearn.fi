@@ -1,4 +1,5 @@
 import Link from '@components/Link'
+import { usePrefetchYearnVaults } from '@lib/hooks/useFetchYearnVaults'
 import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
@@ -14,17 +15,14 @@ import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
 import { TrendingVaults } from '@vaults-v3/components/TrendingVaults'
 import { ALL_VAULTSV3_CATEGORIES } from '@vaults-v3/constants'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-
+import { V2_SUPPORTED_CHAINS, V3_SUPPORTED_CHAINS } from './constants'
 import { VaultVersionToggle } from './VaultVersionToggle'
 import { getVaultTypeLabel, type TVaultType } from './vaultTypeCopy'
 
 const AVAILABLE_TOGGLE_VALUE = 'available'
 const HOLDINGS_TOGGLE_VALUE = 'holdings'
-const V2_SUPPORTED_CHAINS = [1, 10, 8453, 42161]
-const V3_SUPPORTED_CHAINS = [1, 747474, 8453, 42161, 137]
 const V3_PRIMARY_CHAIN_IDS = [1, 747474]
 const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
 const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
@@ -221,6 +219,13 @@ function ListOfVaults({
     vaultType === 'factory' ? sanitizedCategories : null,
     vaultType === 'factory' ? sanitizedProtocols : null
   )
+  const { filteredVaults: filteredV2VaultsAllChains } = useV2VaultFilter(
+    vaultType === 'factory' ? sanitizedV2Types : null,
+    null,
+    '',
+    vaultType === 'factory' ? sanitizedCategories : null,
+    vaultType === 'factory' ? sanitizedProtocols : null
+  )
 
   const {
     filteredVaults,
@@ -263,7 +268,7 @@ function ListOfVaults({
   const sortedHoldingsVaults = useSortVaults(holdingsVaults, sortBy, sortDirection)
   const sortedAvailableVaults = useSortVaults(availableVaults, sortBy, sortDirection)
   const sortedSuggestedV3Candidates = useSortVaults(filteredVaultsAllChains, 'featuringScore', 'desc')
-  const sortedSuggestedV2Candidates = useSortVaults(v2FilterResult.filteredVaultsNoSearch, 'featuringScore', 'desc')
+  const sortedSuggestedV2Candidates = useSortVaults(filteredV2VaultsAllChains, 'featuringScore', 'desc')
 
   const pinnedSections = useMemo(() => {
     const sections: Array<{ key: string; vaults: typeof sortedVaults }> = []
@@ -355,6 +360,32 @@ function ListOfVaults({
   const v2FiltersCount = useMemo(() => {
     return sanitizedV2Types.length + sanitizedCategories.length + sanitizedProtocols.length
   }, [sanitizedV2Types, sanitizedCategories, sanitizedProtocols])
+
+  const apyDisplayVariant = vaultType === 'factory' ? 'factory-list' : 'default'
+  const activeChains = chains ?? []
+  const activeCategories = sanitizedCategories
+  const activeTypes = vaultType === 'v3' ? sanitizedV3Types : sanitizedV2Types
+  const handleToggleChain = useCallback(
+    (chainId: number): void => {
+      onChangeChains(toggleNumber(chains, chainId))
+    },
+    [chains, onChangeChains]
+  )
+  const handleToggleCategory = useCallback(
+    (category: string): void => {
+      onChangeCategories(toggleString(sanitizedCategories, category))
+    },
+    [onChangeCategories, sanitizedCategories]
+  )
+  const handleToggleType = useCallback(
+    (type: string): void => {
+      if (vaultType !== 'v3') {
+        return
+      }
+      onChangeTypes(toggleString(sanitizedV3Types, type))
+    },
+    [onChangeTypes, sanitizedV3Types, vaultType]
+  )
 
   const v3FiltersPanel = (
     <div className={'mt-4 grid grid-cols-1 gap-6 md:grid-cols-2'}>
@@ -587,7 +618,7 @@ function ListOfVaults({
       defaultSecondaryChainIds: [],
       chainDisplayOrder: V2_SUPPORTED_CHAINS,
       showMoreChainsButton: false,
-      allChainsLabel: 'All'
+      allChainsLabel: 'All Chains'
     }
   }, [vaultType])
 
@@ -623,15 +654,41 @@ function ListOfVaults({
     }
 
     return (
-      <div className={'flex flex-col gap-px bg-app'}>
+      <div className={'flex flex-col gap-px bg-border'}>
         {pinnedSections.map((section) => (
-          <VaultsV3AuxiliaryList key={section.key} vaults={section.vaults} vaultFlags={vaultFlags} />
+          <VaultsV3AuxiliaryList
+            key={section.key}
+            vaults={section.vaults}
+            vaultFlags={vaultFlags}
+            apyDisplayVariant={apyDisplayVariant}
+            activeChains={activeChains}
+            activeCategories={activeCategories}
+            activeTypes={activeTypes}
+            onToggleChain={handleToggleChain}
+            onToggleCategory={handleToggleCategory}
+            onToggleType={vaultType === 'v3' ? handleToggleType : undefined}
+            showStrategies={showStrategies}
+          />
         ))}
         {mainVaults.length > 0 ? (
-          <div className={'flex flex-col gap-px bg-app'}>
+          <div className={'flex flex-col gap-px bg-border'}>
             {mainVaults.map((vault) => {
               const key = `${vault.chainID}_${toAddress(vault.address)}`
-              return <VaultsV3ListRow key={key} currentVault={vault} flags={vaultFlags[key]} />
+              return (
+                <VaultsV3ListRow
+                  key={key}
+                  currentVault={vault}
+                  flags={vaultFlags[key]}
+                  apyDisplayVariant={apyDisplayVariant}
+                  activeChains={activeChains}
+                  activeCategories={activeCategories}
+                  activeTypes={activeTypes}
+                  onToggleChain={handleToggleChain}
+                  onToggleCategory={handleToggleCategory}
+                  onToggleType={vaultType === 'v3' ? handleToggleType : undefined}
+                  showStrategies={showStrategies}
+                />
+              )
             })}
           </div>
         ) : null}
@@ -726,7 +783,7 @@ function ListOfVaults({
                 label: 'Vault / Featuring Score',
                 value: 'featuringScore',
                 sortable: true,
-                className: 'col-span-10'
+                className: 'col-span-9'
               },
               {
                 type: 'sort',
@@ -744,10 +801,17 @@ function ListOfVaults({
               },
               {
                 type: 'sort',
+                label: 'APY Sparkline',
+                value: 'APY Sparkline',
+                sortable: false,
+                className: 'col-span-3'
+              },
+              {
+                type: 'sort',
                 label: 'TVL',
                 value: 'tvl',
                 sortable: true,
-                className: 'col-span-4'
+                className: 'col-span-3'
               },
               // {
               //   type: 'toggle',
@@ -760,7 +824,7 @@ function ListOfVaults({
                 type: 'toggle',
                 label: 'Holdings',
                 value: HOLDINGS_TOGGLE_VALUE,
-                className: 'col-span-4 justify-end',
+                className: 'col-span-3 justify-end',
                 disabled: holdingsVaults.length === 0
               }
             ]}
@@ -882,6 +946,8 @@ function useVaultListExtraFilters(): {
 }
 
 function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElement {
+  usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType !== 'factory')
+
   const {
     protocols,
     aggressiveness,
