@@ -420,9 +420,8 @@ export function VaultsFilters({
               <Drawer.Content className={'fixed inset-x-0 bottom-0 z-99999 flex justify-center outline-hidden'}>
                 <div
                   className={
-                    'w-full max-w-[520px] rounded-t-3xl bg-surface-secondary p-6 border border-border shadow-sm'
+                    'w-full max-w-full rounded-t-3xl bg-surface-secondary p-6 border border-border shadow-sm max-h-[75vh] overflow-y-auto scrollbar-themed'
                   }
-                  style={{ height: '75vh', overflowY: 'auto' }}
                 >
                   <div className={'mb-4 flex items-center justify-between'}>
                     <p className={'text-base font-medium text-text-primary'}>{'Filter Vaults'}</p>
@@ -579,7 +578,7 @@ function FilterControls({
             <div
               ref={chainSelectorRef}
               className={
-                'flex h-10 shrink-0 items-stretch overflow-hidden rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
+                'flex h-10 shrink-0 items-stretch overflow-x-auto scrollbar-themed rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border'
               }
             >
               <button
@@ -858,7 +857,7 @@ function ChainSelectionModal({
                     <IconCross className={'size-4'} />
                   </button>
                 </div>
-                <div className={'mt-4 max-h-[400px] space-y-1 overflow-y-auto pr-1'}>
+                <div className={'mt-4 max-h-[400px] space-y-1 overflow-y-auto scrollbar-themed pr-1'}>
                   {options.length === 0 ? (
                     <p className={'text-sm text-text-secondary'}>{'No additional chains are available right now.'}</p>
                   ) : (
