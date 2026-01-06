@@ -784,7 +784,7 @@ function ListOfVaults({
                 label: 'Vault / Featuring Score',
                 value: 'featuringScore',
                 sortable: true,
-                className: 'col-span-10'
+                className: 'col-span-9'
               },
               {
                 type: 'sort',
@@ -802,10 +802,17 @@ function ListOfVaults({
               },
               {
                 type: 'sort',
+                label: 'APY Sparkline',
+                value: 'APY Sparkline',
+                sortable: false,
+                className: 'col-span-3'
+              },
+              {
+                type: 'sort',
                 label: 'TVL',
                 value: 'tvl',
                 sortable: true,
-                className: 'col-span-4'
+                className: 'col-span-3'
               },
               // {
               //   type: 'toggle',
@@ -818,7 +825,7 @@ function ListOfVaults({
                 type: 'toggle',
                 label: 'Holdings',
                 value: HOLDINGS_TOGGLE_VALUE,
-                className: 'col-span-4 justify-end',
+                className: 'col-span-3 justify-end',
                 disabled: holdingsVaults.length === 0
               }
             ]}

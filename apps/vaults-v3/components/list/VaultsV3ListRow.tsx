@@ -24,6 +24,7 @@ import {
   type TVaultChartTimeframe,
   VaultChartsSection
 } from '@nextgen/components/vaults-beta/VaultChartsSection'
+import { APYSparkline } from '@vaults-v3/components/table/APYSparkline'
 import {
   type TVaultForwardAPYVariant,
   VaultForwardAPY,
@@ -179,8 +180,7 @@ export function VaultsV3ListRow({
           <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
         </button>
 
-        {/* TODO:on hover add list head categories */}
-        <div className={cl('col-span-10 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
+        <div className={cl('col-span-9 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
           <div className={'flex flex-row-reverse sm:flex-row w-full justify-between sm:justify-normal gap-4'}>
             <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
               <TokenLogo
@@ -231,7 +231,7 @@ export function VaultsV3ListRow({
         </div>
 
         {/* Desktop metrics grid */}
-        <div className={cl('col-span-14 z-10 gap-4 mt-4', 'md:mt-0 md:grid md:grid-cols-14 md:items-center')}>
+        <div className={cl('col-span-15 z-10 gap-4 mt-4', 'md:mt-0 md:grid md:grid-cols-15 md:items-center')}>
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <VaultForwardAPY
               currentVault={currentVault}
@@ -244,8 +244,16 @@ export function VaultsV3ListRow({
           <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <VaultHistoricalAPY currentVault={currentVault} />
           </div>
+
+          {/* 30D APY Sparkline */}
+          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
+            <p className={'text-xs text-text-primary/60 md:hidden'}>{'30D APY'}</p>
+            <div className={'w-24 h-10'}>
+              <APYSparkline chainId={currentVault.chainID} vaultAddress={currentVault.address} />
+            </div>
+          </div>
           {/* TVL */}
-          <div className={'yearn--table-data-section-item col-span-4'} datatype={'number'}>
+          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <div className={'flex justify-end text-right'}>
               <Tooltip
                 className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
@@ -289,7 +297,7 @@ export function VaultsV3ListRow({
               />
             </p>
           </div> */}
-          <div className={'yearn--table-data-section-item col-span-4'} datatype={'number'}>
+          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
             <VaultHoldingsAmount currentVault={currentVault} />
           </div>
         </div>
