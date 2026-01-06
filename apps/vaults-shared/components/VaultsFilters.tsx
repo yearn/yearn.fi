@@ -384,7 +384,6 @@ export function VaultsFilters({
       <div className={'relative col-span-24 w-full md:col-span-19'}>
         <div className={cl('md:hidden', forceMobileFiltersBar ? 'md:block' : '')}>
           <div className={'mb-5 w-full'}>
-            <p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
             <SearchBar
               className={
                 'max-w-none rounded-lg border-none bg-surface-secondary text-text-primary transition-all md:w-full'
