@@ -1,5 +1,5 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
-import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
+import { toggleThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { IconClose } from '@lib/icons/IconClose'
 import { cl } from '@lib/utils'
 import type { MouseEvent, ReactElement } from 'react'
@@ -34,7 +34,15 @@ function TileIcon({ icon, isDark }: { icon?: ReactElement; isDark: boolean }): R
   )
 }
 
-function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => void }): ReactElement {
+function ThemeToggle({
+  isDark,
+  label,
+  onToggle
+}: {
+  isDark: boolean
+  label: string
+  onToggle: () => void
+}): ReactElement {
   return (
     <button
       type={'button'}
@@ -45,7 +53,7 @@ function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => vo
         isDark ? 'border-primary/40 text-[var(--color-text-primary)]' : 'border-neutral-200 text-neutral-700'
       )}
     >
-      <span className={'sr-only'}>{isDark ? 'Switch to light mode' : 'Switch to soft-dark mode'}</span>
+      <span className={'sr-only'}>{'Cycle theme mode'}</span>
       <span aria-hidden>{'Theme'}</span>
       <span
         aria-hidden
@@ -56,7 +64,7 @@ function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => vo
       >
         <span className={'size-4 rounded-full bg-white shadow transition-transform'} />
       </span>
-      <span aria-hidden>{isDark ? 'Soft-Dark' : 'Light'}</span>
+      <span aria-hidden>{label}</span>
     </button>
   )
 }
@@ -173,7 +181,15 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
   const [activeGroupTitle, setActiveGroupTitle] = useState(APP_GROUPS[0]?.title ?? '')
   const pathname = location.pathname
   const themePreference = useThemePreference()
-  const isDarkTheme = themePreference === 'soft-dark'
+  const isDarkTheme = themePreference !== 'light'
+  const themeLabel =
+    themePreference === 'soft-dark'
+      ? 'Soft-Dark'
+      : themePreference === 'blue-dark'
+        ? 'Blue-Dark'
+        : themePreference === 'midnight'
+          ? 'Midnight'
+          : 'Light'
 
   const currentHost = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -329,8 +345,8 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
   }, [])
 
   const handleThemeToggle = useCallback((): void => {
-    setThemePreference(isDarkTheme ? 'light' : 'soft-dark')
-  }, [isDarkTheme])
+    toggleThemePreference()
+  }, [])
 
   const handleOpen = useCallback((): void => {
     setIsOpen(true)
@@ -396,7 +412,7 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                 <div className={'flex w-full px-6 justify-between'}>
                   <div className={'text-xl sm:pl-8'}>Yearn App Launcher</div>
                   <div className={'flex items-center gap-3'}>
-                    <ThemeToggle isDark={isDarkTheme} onToggle={handleThemeToggle} />
+                    <ThemeToggle isDark={isDarkTheme} label={themeLabel} onToggle={handleThemeToggle} />
                     <button
                       type={'button'}
                       onClick={handleClose}

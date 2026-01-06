@@ -37,12 +37,12 @@
       function resolveTheme() {
         // Check new storage key first
         const storedValue = window.localStorage.getItem(NEW_THEME_STORAGE_KEY)
-        if (storedValue === 'light' || storedValue === 'soft-dark') {
+        if (storedValue === 'light' || storedValue === 'soft-dark' || storedValue === 'blue-dark' || storedValue === 'midnight') {
           return storedValue
         }
         if (storedValue === 'dark') {
-          window.localStorage.setItem(NEW_THEME_STORAGE_KEY, 'soft-dark')
-          return 'soft-dark'
+          window.localStorage.setItem(NEW_THEME_STORAGE_KEY, 'midnight')
+          return 'midnight'
         }
 
         // Backward compatibility: check old storage key
@@ -68,7 +68,7 @@
 
         // Keep legacy classes for backward compatibility
         root.classList.remove('dark', 'light', 'v3')
-        if (theme === 'soft-dark') {
+        if (theme === 'soft-dark' || theme === 'blue-dark' || theme === 'midnight') {
           root.classList.add('dark')
           root.classList.add('v3')
         } else {

@@ -4,7 +4,7 @@ const STORAGE_KEY = 'yearn-theme'
 const THEME_CHANGE_EVENT = 'yearn-theme-change'
 const MEDIA_QUERY = '(prefers-color-scheme: dark)'
 
-export type ThemePreference = 'light' | 'soft-dark'
+export type ThemePreference = 'light' | 'soft-dark' | 'blue-dark' | 'midnight'
 
 function readThemePreference(): ThemePreference {
   if (typeof window === 'undefined') {
@@ -12,12 +12,17 @@ function readThemePreference(): ThemePreference {
   }
 
   const storedValue = window.localStorage.getItem(STORAGE_KEY)
-  if (storedValue === 'light' || storedValue === 'soft-dark') {
+  if (
+    storedValue === 'light' ||
+    storedValue === 'soft-dark' ||
+    storedValue === 'blue-dark' ||
+    storedValue === 'midnight'
+  ) {
     return storedValue
   }
   if (storedValue === 'dark') {
-    window.localStorage.setItem(STORAGE_KEY, 'soft-dark')
-    return 'soft-dark'
+    window.localStorage.setItem(STORAGE_KEY, 'midnight')
+    return 'midnight'
   }
 
   // Backward compatibility: Check old storage key
@@ -87,6 +92,8 @@ export function toggleThemePreference(): void {
     return
   }
   const current = readThemePreference()
-  const next = current === 'light' ? 'soft-dark' : 'light'
+  const order: ThemePreference[] = ['light', 'soft-dark', 'blue-dark', 'midnight']
+  const currentIndex = order.indexOf(current)
+  const next = order[(currentIndex + 1) % order.length] ?? 'light'
   setThemePreference(next)
 }

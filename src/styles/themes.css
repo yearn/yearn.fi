@@ -1,4 +1,4 @@
-/* Multi-Theme System - Light, Dark, and Soft-Dark Themes */
+/* Multi-Theme System - Light, Soft-Dark, Blue-Dark, and Midnight Themes */
 /* Uses CSS custom properties with data-theme attribute for flexible theme switching */
 
 /* ============================================
@@ -98,6 +98,78 @@
   --color-input-bg: hsl(0 0% 10%); /* #1a1a1a */
   --color-modal-overlay: hsl(0 0% 0% / 0.7); /* Medium overlay */
   --color-table-row-hover: hsl(0 0% 15%); /* #262626 */
+}
+
+/* ============================================
+   BLUE-DARK THEME (Deep Navy)
+   ============================================ */
+:root[data-theme="blue-dark"] {
+  /* Base neutrals */
+  --color-neutral-300: hsl(231 50% 20%);
+  --color-neutral-200: hsl(231 75% 15%);
+  --color-neutral-100: hsl(231 100% 10%);
+  --color-neutral-0: hsl(231 100% 6%);
+
+  /* Surface tokens (backgrounds) */
+  --color-app: var(--color-neutral-0);
+  --color-surface: var(--color-neutral-100);
+  --color-surface-secondary: var(--color-neutral-200);
+  --color-surface-tertiary: var(--color-neutral-300);
+
+  /* Text tokens */
+  --color-text-primary: hsl(210 40% 96%);
+  --color-text-secondary: hsl(215 20% 70%);
+  --color-text-tertiary: hsl(215 15% 52%);
+
+  /* Border tokens */
+  --color-border: hsl(231 45% 22%);
+  --color-border-hover: hsl(231 40% 30%);
+  --color-border-focus: hsl(210 40% 96%);
+
+  /* Interactive tokens */
+  --color-primary: hsl(220 95% 50%); /* #0657F9 */
+  --color-primary-hover: hsl(220 100% 55%); /* Lighter hover */
+  --color-success: hsl(142 71% 45%); /* #16a34a */
+  --color-warning: hsl(17 88% 48%); /* #ea580c */
+  --color-error: hsl(0 73% 51%); /* #dc2626 */
+
+  /* Component-specific */
+  --color-input-bg: var(--color-neutral-100);
+  --color-modal-overlay: hsl(231 100% 4% / 0.8);
+  --color-table-row-hover: var(--color-neutral-200);
+}
+
+/* ============================================
+   MIDNIGHT THEME (True Dark)
+   ============================================ */
+:root[data-theme="midnight"] {
+  /* Surface tokens (backgrounds) */
+  --color-app: hsl(0 0% 0%); /* #000000 */
+  --color-surface: hsl(0 0% 4%); /* #0a0a0a */
+  --color-surface-secondary: hsl(0 0% 9%); /* #171717 */
+  --color-surface-tertiary: hsl(0 0% 15%); /* #262626 */
+
+  /* Text tokens */
+  --color-text-primary: hsl(0 0% 98%); /* #fafafa */
+  --color-text-secondary: hsl(0 0% 64%); /* #a3a3a3 */
+  --color-text-tertiary: hsl(0 0% 32%); /* #525252 */
+
+  /* Border tokens */
+  --color-border: hsl(0 0% 15%); /* #262626 */
+  --color-border-hover: hsl(0 0% 20%); /* #333333 */
+  --color-border-focus: hsl(0 0% 98%); /* #fafafa */
+
+  /* Interactive tokens */
+  --color-primary: hsl(220 95% 50%); /* #0657F9 */
+  --color-primary-hover: hsl(220 100% 55%); /* Lighter hover for dark bg */
+  --color-success: hsl(142 71% 45%); /* #16a34a */
+  --color-warning: hsl(17 88% 48%); /* #ea580c */
+  --color-error: hsl(0 73% 51%); /* #dc2626 */
+
+  /* Component-specific */
+  --color-input-bg: hsl(0 0% 4%); /* #0a0a0a */
+  --color-modal-overlay: hsl(0 0% 0% / 0.8); /* Darker overlay for dark theme */
+  --color-table-row-hover: hsl(0 0% 9%); /* #171717 */
 }
 
 /* ============================================
