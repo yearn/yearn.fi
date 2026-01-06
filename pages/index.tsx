@@ -5,7 +5,7 @@ import { useThemePreference } from '/src/hooks/useThemePreference'
 
 function Index(): ReactElement {
   const theme = useThemePreference()
-  const isDark = theme === 'dark'
+  const isDark = theme === 'soft-dark'
 
   return (
     // <div className={'bg-gradient-to-b from-[#00051f] to-[#0a1243] text-neutral-900'}>

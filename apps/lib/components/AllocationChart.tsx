@@ -37,7 +37,7 @@ type TAllocationChartProps = {
  ************************************************************************************************/
 function useDarkMode(): boolean {
   const themePreference = useThemePreference()
-  return themePreference === 'dark'
+  return themePreference === 'soft-dark'
 }
 
 export function AllocationChart({

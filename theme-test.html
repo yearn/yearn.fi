@@ -15,16 +15,6 @@
             --color-border: hsl(0 0% 90%);
         }
 
-        /* Dark Theme */
-        :root[data-theme='dark'] {
-            --color-app: hsl(0 0% 0%);
-            --color-surface: hsl(0 0% 4%);
-            --color-surface-secondary: hsl(0 0% 9%);
-            --color-text-primary: hsl(0 0% 98%);
-            --color-text-secondary: hsl(0 0% 64%);
-            --color-border: hsl(0 0% 15%);
-        }
-
         /* Soft Dark Theme */
         :root[data-theme='soft-dark'] {
             --color-app: hsl(0 0% 6%);
@@ -89,7 +79,6 @@
 
     <div style="margin-bottom: 2rem;">
         <button onclick="setTheme('light')">Light Theme</button>
-        <button onclick="setTheme('dark')">Dark Theme</button>
         <button onclick="setTheme('soft-dark')">Soft-Dark Theme</button>
     </div>
 
@@ -110,7 +99,6 @@
         <p>If you can switch between themes using the buttons above, the CSS variable system is working correctly!</p>
         <ul>
             <li>Light theme: White surfaces, dark text</li>
-            <li>Dark theme: Near-black surfaces, light text</li>
             <li>Soft-dark theme: Dark gray surfaces, light text</li>
         </ul>
     </div>

@@ -37,17 +37,27 @@
       function resolveTheme() {
         // Check new storage key first
         const storedValue = window.localStorage.getItem(NEW_THEME_STORAGE_KEY)
-        if (storedValue === 'light' || storedValue === 'dark' || storedValue === 'soft-dark') {
+        if (storedValue === 'light' || storedValue === 'soft-dark') {
           return storedValue
+        }
+        if (storedValue === 'dark') {
+          window.localStorage.setItem(NEW_THEME_STORAGE_KEY, 'soft-dark')
+          return 'soft-dark'
         }
 
         // Backward compatibility: check old storage key
         const oldStoredValue = window.localStorage.getItem(OLD_THEME_STORAGE_KEY)
-        if (oldStoredValue === 'true') return 'dark'
-        if (oldStoredValue === 'false') return 'light'
+        if (oldStoredValue === 'true') {
+          window.localStorage.setItem(NEW_THEME_STORAGE_KEY, 'soft-dark')
+          return 'soft-dark'
+        }
+        if (oldStoredValue === 'false') {
+          window.localStorage.setItem(NEW_THEME_STORAGE_KEY, 'light')
+          return 'light'
+        }
 
         // Default to system preference
-        return darkModeMediaQuery.matches ? 'dark' : 'light'
+        return darkModeMediaQuery.matches ? 'soft-dark' : 'light'
       }
 
       function applyTheme(theme) {
@@ -58,7 +68,7 @@
 
         // Keep legacy classes for backward compatibility
         root.classList.remove('dark', 'light', 'v3')
-        if (theme === 'dark' || theme === 'soft-dark') {
+        if (theme === 'soft-dark') {
           root.classList.add('dark')
           root.classList.add('v3')
         } else {

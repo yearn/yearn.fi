@@ -87,19 +87,13 @@ export function DevToolbar(): ReactElement | null {
                   'inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-semibold transition capitalize',
                   themePreference === 'light'
                     ? 'border-yellow-200 bg-yellow-50 text-yellow-800 hover:border-yellow-300'
-                    : themePreference === 'dark'
-                      ? 'border-neutral-700 bg-neutral-800 text-neutral-0 hover:border-neutral-600'
-                      : 'border-indigo-200 bg-indigo-50 text-indigo-800 hover:border-indigo-300'
+                    : 'border-indigo-200 bg-indigo-50 text-indigo-800 hover:border-indigo-300'
                 )}
               >
                 <span
                   className={cl(
                     'inline-block size-2 rounded-full',
-                    themePreference === 'light'
-                      ? 'bg-yellow-400'
-                      : themePreference === 'dark'
-                        ? 'bg-neutral-0'
-                        : 'bg-indigo-500'
+                    themePreference === 'light' ? 'bg-yellow-400' : 'bg-indigo-500'
                   )}
                 ></span>
                 {themePreference}
