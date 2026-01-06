@@ -2,12 +2,18 @@ import { RenderAmount } from '@lib/components/RenderAmount'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
 import type { TNormalizedBN } from '@lib/types'
-import { toNormalizedBN } from '@lib/utils'
+import { cl, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 
-export function VaultHoldingsAmount({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+export function VaultHoldingsAmount({
+  currentVault,
+  valueClassName
+}: {
+  currentVault: TYDaemonVault
+  valueClassName?: string
+}): ReactElement {
   const { getToken } = useWallet()
   const { getPrice } = useYearn()
 
@@ -51,7 +57,13 @@ export function VaultHoldingsAmount({ currentVault }: { currentVault: TYDaemonVa
 
   return (
     <div className={'flex flex-col items-end pt-0 text-right'}>
-      <p className={`yearn--table-data-section-item-value ${hasBalance ? 'text-text-primary' : 'text-text-tertiary'}`}>
+      <p
+        className={cl(
+          'yearn--table-data-section-item-value',
+          hasBalance ? 'text-text-primary' : 'text-text-tertiary',
+          valueClassName
+        )}
+      >
         <RenderAmount
           value={isDusty ? 0 : value}
           symbol={'USD'}
