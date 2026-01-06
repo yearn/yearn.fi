@@ -114,7 +114,7 @@ export function DevToolbar(): ReactElement | null {
               <span className={'font-medium text-neutral-700'}>{'Chart Style'}</span>
               <select
                 className={
-                  'h-8 max-w-[10.5rem] rounded-md border border-neutral-200 bg-white px-2 text-xs font-semibold text-neutral-900 shadow-sm transition hover:border-neutral-300 focus:border-neutral-400 focus:outline-none dark:text-neutral-900'
+                  'h-8 max-w-[10.5rem] rounded-md border border-neutral-200 bg-white px-2 text-xs font-semibold text-black shadow-sm transition hover:border-neutral-300 focus:border-neutral-400 focus:outline-none'
                 }
                 value={chartStyle}
                 onChange={(event) => setChartStyle(event.target.value as TChartStyle)}
