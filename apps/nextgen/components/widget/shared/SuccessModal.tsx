@@ -6,6 +6,7 @@ import Confetti from 'react-dom-confetti'
 interface SuccessModalProps {
   isOpen: boolean
   onClose: () => void
+  onAfterClose?: () => void
   title: string
   message: string
   buttonText?: string
@@ -63,6 +64,7 @@ const AnimatedCheckmark: FC<{ isVisible: boolean }> = ({ isVisible }) => {
 export const SuccessModal: FC<SuccessModalProps> = ({
   isOpen,
   onClose,
+  onAfterClose,
   title,
   message,
   buttonText = 'Got it!',
@@ -83,7 +85,7 @@ export const SuccessModal: FC<SuccessModalProps> = ({
   }, [isOpen, showConfetti])
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
+    <Transition appear show={isOpen} as={Fragment} afterLeave={onAfterClose}>
       <Dialog as="div" className="relative z-70" onClose={onClose}>
         <Transition.Child
           as={Fragment}

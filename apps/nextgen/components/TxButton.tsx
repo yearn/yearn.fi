@@ -375,10 +375,8 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
       {successModal && (
         <SuccessModal
           isOpen={showSuccessModal}
-          onClose={() => {
-            setShowSuccessModal(false)
-            onSuccess?.()
-          }}
+          onClose={() => setShowSuccessModal(false)}
+          onAfterClose={onSuccess}
           title={successModal.title}
           message={successModal.message}
           buttonText={successModal.buttonText}
@@ -389,10 +387,8 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
       {crossChainSubmitModal && (
         <SuccessModal
           isOpen={showCrossChainModal}
-          onClose={() => {
-            setShowCrossChainModal(false)
-            onSuccess?.()
-          }}
+          onClose={() => setShowCrossChainModal(false)}
+          onAfterClose={onSuccess}
           title={crossChainSubmitModal.title}
           message={crossChainSubmitModal.message}
           buttonText={crossChainSubmitModal.buttonText}
