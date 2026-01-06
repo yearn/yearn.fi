@@ -15,6 +15,7 @@ import { TrendingVaults } from '@vaults-v3/components/TrendingVaults'
 import { ALL_VAULTSV3_CATEGORIES } from '@vaults-v3/constants'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+
 import { useSearchParams } from 'react-router'
 
 import { VaultVersionToggle } from './VaultVersionToggle'
@@ -684,7 +685,9 @@ function ListOfVaults({
       <div className={''}>
         <div
           className={'relative md:sticky md:z-30'}
-          style={{ top: 'calc(var(--header-height) + var(--vaults-filters-height))' }}
+          style={{
+            top: 'calc(var(--header-height) + var(--vaults-filters-height))'
+          }}
         >
           <div
             aria-hidden={true}

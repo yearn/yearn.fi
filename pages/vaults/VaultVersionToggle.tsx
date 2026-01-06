@@ -1,7 +1,6 @@
 import { cl } from '@lib/utils'
 import type { ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
-
 import { getVaultTypeEmoji, getVaultTypeLabel } from './vaultTypeCopy'
 
 type TVaultVersionToggleProps = {

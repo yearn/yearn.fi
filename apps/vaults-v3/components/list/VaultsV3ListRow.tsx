@@ -321,8 +321,8 @@ export function VaultsV3ListRow({
                     shouldRenderSelectors={false}
                     chartTab={(expandedView === 'apy' ? 'historical-apy' : 'historical-pps') satisfies TVaultChartTab}
                     timeframe={expandedTimeframe}
-                    chartHeightPx={150}
-                    chartHeightMdPx={150}
+                    chartHeightPx={200}
+                    chartHeightMdPx={200}
                   />
                 </div>
               ) : null}
