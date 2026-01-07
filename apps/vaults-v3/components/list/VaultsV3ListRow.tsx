@@ -178,7 +178,7 @@ export function VaultsV3ListRow({
 
         <div className={cl('col-span-9 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
           <div className={'flex flex-row w-full gap-4 overflow-hidden'}>
-            <div className={'flex items-center justify-center self-center size-8 min-h-8 min-w-8 rounded-full'}>
+            <div className={'relative flex items-center justify-center self-center size-8 min-h-8 min-w-8'}>
               <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
                   currentVault.chainID
@@ -187,6 +187,13 @@ export function VaultsV3ListRow({
                 width={32}
                 height={32}
               />
+              <div
+                className={
+                  'absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full border border-border bg-surface md:hidden'
+                }
+              >
+                <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={12} height={12} />
+              </div>
             </div>
             <div className={'min-w-0 flex-1'}>
               <strong
@@ -196,13 +203,15 @@ export function VaultsV3ListRow({
                 {currentVault.name}
               </strong>
               <div className={'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'}>
-                <VaultsListChip
-                  label={network.name}
-                  icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
-                  isActive={activeChainIds.includes(currentVault.chainID)}
-                  onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
-                  ariaLabel={`Filter by ${network.name}`}
-                />
+                <div className={'hidden md:block'}>
+                  <VaultsListChip
+                    label={network.name}
+                    icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
+                    isActive={activeChainIds.includes(currentVault.chainID)}
+                    onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
+                    ariaLabel={`Filter by ${network.name}`}
+                  />
+                </div>
                 {currentVault.category ? (
                   <VaultsListChip
                     label={currentVault.category}

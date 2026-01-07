@@ -732,7 +732,8 @@ function ListOfVaults({
         filtersContent={filtersPanelContent}
         filtersPanelContent={filtersPanelContent}
         onClearFilters={onResetMultiSelect}
-        leadingControls={<VaultVersionToggle showStrategies={showStrategies} />}
+        mobileExtraContent={<VaultVersionToggle showStrategies={showStrategies} stretch={true} />}
+        trailingControls={<VaultVersionToggle showStrategies={showStrategies} />}
       />
     </div>
   )
