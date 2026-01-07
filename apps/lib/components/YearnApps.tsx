@@ -53,7 +53,7 @@ const CORE_APPS: TAppTile[] = [
   },
   {
     name: 'LP Vaults',
-    href: '/vaults?type=factory',
+    href: '/vaults?type=lp',
     description: 'LP vaults',
     icon: yearnGlyph({ back: 'text-[#f472b6]', front: 'text-white' }),
     pathnames: ['/vaults'],

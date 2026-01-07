@@ -1,6 +1,10 @@
-export type TVaultType = 'factory' | 'v3'
+export type TVaultType = 'all' | 'factory' | 'v3'
 
 export const VAULT_TYPE_COPY: Record<TVaultType, { label: string; emoji: string }> = {
+  all: {
+    label: 'All Vaults',
+    emoji: '🌐'
+  },
   v3: {
     label: 'Allocator Vaults',
     emoji: '⚙️'
