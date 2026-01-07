@@ -1,7 +1,7 @@
 import { Popover, PopoverContent } from '@lib/components/Popover'
 import { IconSettings } from '@lib/icons/IconSettings'
 import { cl } from '@lib/utils'
-import type { FC } from 'react'
+import { type FC, useCallback, useState } from 'react'
 
 interface SettingsPopoverProps {
   slippage: number
@@ -16,6 +16,16 @@ export const SettingsPopover: FC<SettingsPopoverProps> = ({
   maximizeYield,
   setMaximizeYield
 }) => {
+  // Local state for instant UI feedback
+  const [localSlippage, setLocalSlippage] = useState(slippage)
+
+  // Sync local state to context when popover closes
+  const handleClose = useCallback(() => {
+    if (localSlippage !== slippage) {
+      setSlippage(localSlippage)
+    }
+  }, [localSlippage, slippage, setSlippage])
+
   return (
     <Popover
       className="bg-surface-secondary! -mt-2! shadow-none! border-border! w-89!"
@@ -25,6 +35,7 @@ export const SettingsPopover: FC<SettingsPopoverProps> = ({
         </button>
       }
       align="end"
+      onClose={handleClose}
     >
       <PopoverContent className="w-full">
         <div className="space-y-4">
@@ -38,37 +49,37 @@ export const SettingsPopover: FC<SettingsPopoverProps> = ({
                 <label htmlFor="slippage" className="text-sm text-text-primary">
                   Slippage Tolerance
                 </label>
-                <span className="text-sm text-text-secondary">{slippage}%</span>
+                <span className="text-sm text-text-secondary">{localSlippage}%</span>
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setSlippage(0.1)}
+                  onClick={() => setLocalSlippage(0.1)}
                   className={cl(
                     'px-3 py-1.5 text-xs rounded-md border transition-colors',
-                    slippage === 0.1
-                      ? 'bg-surface-tertiary text-text-primary border-surface-tertiary font-semibold'
+                    localSlippage === 0.1
+                      ? 'bg-surface-tertiary text-text-primary border-surface-tertiary'
                       : 'bg-surface text-text-secondary border-border hover:bg-surface-secondary hover:text-text-primary'
                   )}
                 >
                   0.1%
                 </button>
                 <button
-                  onClick={() => setSlippage(0.5)}
+                  onClick={() => setLocalSlippage(0.5)}
                   className={cl(
                     'px-3 py-1.5 text-xs rounded-md border transition-colors',
-                    slippage === 0.5
-                      ? 'bg-surface-tertiary text-text-primary border-surface-tertiary font-semibold'
+                    localSlippage === 0.5
+                      ? 'bg-surface-tertiary text-text-primary border-surface-tertiary'
                       : 'bg-surface text-text-secondary border-border hover:bg-surface-secondary hover:text-text-primary'
                   )}
                 >
                   0.5%
                 </button>
                 <button
-                  onClick={() => setSlippage(1.0)}
+                  onClick={() => setLocalSlippage(1.0)}
                   className={cl(
                     'px-3 py-1.5 text-xs rounded-md border transition-colors',
-                    slippage === 1.0
-                      ? 'bg-surface-tertiary text-text-primary border-surface-tertiary font-semibold'
+                    localSlippage === 1.0
+                      ? 'bg-surface-tertiary text-text-primary border-surface-tertiary'
                       : 'bg-surface text-text-secondary border-border hover:bg-surface-secondary hover:text-text-primary'
                   )}
                 >
@@ -76,9 +87,9 @@ export const SettingsPopover: FC<SettingsPopoverProps> = ({
                 </button>
                 <input
                   type="number"
-                  value={slippage}
-                  onChange={(e) => setSlippage(parseFloat(e.target.value) || 0)}
-                  className="w-16 px-2 py-1.5 text-xs border border-border text-text-primary bg-surface text-right rounded-md focus:outline-none focus:ring-2 focus:ring-border-focus"
+                  value={localSlippage}
+                  onChange={(e) => setLocalSlippage(parseFloat(e.target.value) || 0)}
+                  className="w-16 px-2 py-1.5 text-xs border border-border text-text-primary bg-surface text-right rounded-md"
                   step="0.1"
                   min="0"
                   max="50"

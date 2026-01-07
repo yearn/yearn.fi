@@ -9,9 +9,10 @@ interface PopoverProps {
   className?: string
   align?: 'start' | 'center' | 'end'
   sideOffset?: number
+  onClose?: () => void
 }
 
-export const Popover: FC<PopoverProps> = ({ trigger, children, className, align = 'end', sideOffset = 8 }) => {
+export const Popover: FC<PopoverProps> = ({ trigger, children, className, align = 'end', sideOffset = 8, onClose }) => {
   return (
     <HeadlessPopover className="relative inline-flex">
       <PopoverButton as={Fragment}>{trigger}</PopoverButton>
@@ -23,6 +24,7 @@ export const Popover: FC<PopoverProps> = ({ trigger, children, className, align 
         leave="transition ease-in duration-150"
         leaveFrom="opacity-100 translate-y-0"
         leaveTo="opacity-0 translate-y-1"
+        afterLeave={onClose}
       >
         <PopoverPanel
           anchor={{
