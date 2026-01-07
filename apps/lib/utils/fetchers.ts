@@ -64,11 +64,17 @@ export async function fetch<T>({ endpoint, schema }: TFetchProps<T>): TFetchRetu
 
 export async function curveFetcher<T>(url: string): Promise<T> {
   const response = await fetchWithTimeout(url)
+  if (!response.ok) {
+    throw new Error(`HTTP error: ${response.status}`)
+  }
   const json = await response.json()
   return json?.data as T
 }
 
 export async function baseFetcher<T>(url: string): Promise<T> {
   const response = await fetchWithTimeout(url)
+  if (!response.ok) {
+    throw new Error(`HTTP error: ${response.status}`)
+  }
   return response.json() as Promise<T>
 }

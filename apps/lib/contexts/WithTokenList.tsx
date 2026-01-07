@@ -95,6 +95,9 @@ export const WithTokenList = ({
     const responses = await Promise.allSettled(
       unhashedLists.map(async (eachURI: string): Promise<TTokenList> => {
         const res = await fetch(eachURI)
+        if (!res.ok) {
+          throw new Error(`Failed to fetch token list: ${res.status}`)
+        }
         return res.json()
       })
     )
@@ -168,7 +171,12 @@ export const WithTokenList = ({
     for (const eachURI of extraTokenlist || []) {
       type TLooseTokenList = TTokenList & { tokens: (TTokenList['tokens'][0] & { chainID?: number })[] }
       const [fromUserList] = await Promise.allSettled([
-        fetch(eachURI).then((res) => res.json() as Promise<TLooseTokenList>)
+        fetch(eachURI).then((res) => {
+          if (!res.ok) {
+            throw new Error(`Failed to fetch token list: ${res.status}`)
+          }
+          return res.json() as Promise<TLooseTokenList>
+        })
       ])
 
       if (fromUserList.status === 'fulfilled') {

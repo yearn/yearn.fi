@@ -3,7 +3,7 @@ import { IconEnter } from '@lib/icons/IconEnter'
 import { IconSearch } from '@lib/icons/IconSearch'
 import { cl } from '@lib/utils'
 import { useDebouncedCallback } from '@react-hookz/web'
-import { type ChangeEvent, type ReactElement, type ReactNode, useEffect, useState } from 'react'
+import { type ChangeEvent, type ReactElement, type ReactNode, useEffect, useRef, useState } from 'react'
 
 type TSearchBar = {
   searchPlaceholder: string
@@ -28,6 +28,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
    ** filtering operations and URL updates that could degrade performance.
    *********************************************************************************************/
   const [localSearchValue, setLocalSearchValue] = useState<string>(props.searchValue || '')
+  const inputRef = useRef<HTMLInputElement>(null)
 
   /**********************************************************************************************
    ** Create a debounced search handler that delays the actual search operation by 300ms.
@@ -63,6 +64,12 @@ export function SearchBar(props: TSearchBar): ReactElement {
     setLocalSearchValue(props.searchValue || '')
   }, [props.searchValue])
 
+  useEffect(() => {
+    if (props.autoFocus) {
+      inputRef.current?.focus()
+    }
+  }, [props.autoFocus])
+
   return (
     <div
       className={cl(
@@ -79,6 +86,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
         <input
           id={'search'}
           suppressHydrationWarning
+          ref={inputRef}
           className={cl(
             props.inputClassName,
             'h-full flex-1 bg-transparent py-2 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none'

@@ -53,7 +53,12 @@ export const useKatanaAprs = (): { data: Partial<TKatanaAprs>; isLoading: boolea
           throw new Error('KATANA_APR_SERVICE_API environment variable is not set')
         }
 
-        const freshData = await fetch(apiUrl).then((res) => res.json())
+        const freshData = await fetch(apiUrl).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error: ${res.status}`)
+          }
+          return res.json()
+        })
 
         const cacheData: TCacheData = {
           data: freshData,
