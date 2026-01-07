@@ -16,15 +16,15 @@ describe('VaultVersionToggle', () => {
   it('marks allocator vaults active when no type param', () => {
     const html = renderToggle('/vaults')
     expect(html).toMatch(/data-active="true".*Allocator Vaults/)
-    expect(html).toMatch(/data-active="false".*Factory Vaults/)
+    expect(html).toMatch(/data-active="false".*LP Vaults/)
     expect(html).not.toMatch(/v3 Strategies/)
     expect(html).toContain('⚙️')
     expect(html).toContain('🏭')
   })
 
-  it('marks factory vaults active when type=factory', () => {
+  it('marks LP vaults active when type=factory', () => {
     const html = renderToggle('/vaults?type=factory')
-    expect(html).toMatch(/data-active="true".*Factory Vaults/)
+    expect(html).toMatch(/data-active="true".*LP Vaults/)
     expect(html).toMatch(/data-active="false".*Allocator Vaults/)
     expect(html).toContain('⚙️')
     expect(html).toContain('🏭')

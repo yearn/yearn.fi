@@ -6,7 +6,7 @@ export const VAULT_TYPE_COPY: Record<TVaultType, { label: string; emoji: string 
     emoji: '⚙️'
   },
   factory: {
-    label: 'Factory Vaults',
+    label: 'LP Vaults',
     emoji: '🏭'
   }
 }

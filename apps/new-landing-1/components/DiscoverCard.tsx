@@ -35,7 +35,7 @@ export function DiscoverCard({ className }: { className?: string }): ReactElemen
           )}
           href={'/vaults?type=factory'}
         >
-          <span>{'Browse legacy vaults'}</span>
+          <span>{'Browse LP vaults'}</span>
           <span className={'text-xs uppercase tracking-[0.35em] text-neutral-900/60'}>{'Vaults'}</span>
         </Link>
         <a

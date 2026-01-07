@@ -52,9 +52,9 @@ const CORE_APPS: TAppTile[] = [
     hosts: ['yearn.fi']
   },
   {
-    name: 'Factory Vaults',
+    name: 'LP Vaults',
     href: '/vaults?type=factory',
-    description: 'LP and Factory Vaults',
+    description: 'LP vaults',
     icon: yearnGlyph({ back: 'text-[#f472b6]', front: 'text-white' }),
     pathnames: ['/vaults'],
     hosts: ['yearn.fi']
