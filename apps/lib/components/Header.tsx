@@ -280,7 +280,9 @@ function AppHeader(_props: { supportedNetworks: Chain[] }): ReactElement {
                           href={'/vaults'}
                           className={cl(
                             'block rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-secondary',
-                            pathname.startsWith('/vaults') && !pathname.includes('type=factory')
+                            pathname.startsWith('/vaults') &&
+                              !location.search.includes('type=lp') &&
+                              !location.search.includes('type=factory')
                               ? 'text-text-primary bg-surface-secondary'
                               : 'text-text-secondary hover:text-text-primary'
                           )}

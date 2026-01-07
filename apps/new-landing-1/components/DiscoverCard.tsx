@@ -33,7 +33,7 @@ export function DiscoverCard({ className }: { className?: string }): ReactElemen
             'flex items-center justify-between rounded-2xl bg-neutral-300 px-4 py-3',
             'text-sm font-semibold text-neutral-900 transition hover:bg-neutral-300'
           )}
-          href={'/vaults?type=factory'}
+          href={'/vaults?type=lp'}
         >
           <span>{'Browse LP vaults'}</span>
           <span className={'text-xs uppercase tracking-[0.35em] text-neutral-900/60'}>{'Vaults'}</span>

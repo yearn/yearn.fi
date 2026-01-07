@@ -1,8 +1,8 @@
 import { cl } from '@lib/utils'
 import type { ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
-import { V2_SUPPORTED_CHAINS, V3_SUPPORTED_CHAINS } from './constants'
 import { getVaultTypeEmoji, getVaultTypeLabel } from './vaultTypeCopy'
+import { getSupportedChainsForVaultType, normalizeVaultTypeParam, sanitizeChainsParam } from './vaultTypeUtils'
 
 type TVaultVersionToggleProps = {
   className?: string
@@ -12,41 +12,36 @@ type TVaultVersionToggleProps = {
 
 export function VaultVersionToggle({ className, showStrategies, stretch }: TVaultVersionToggleProps): ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
-  const isFactoryActive = searchParams.get('type') === 'factory'
+  const normalizedType = normalizeVaultTypeParam(searchParams.get('type'))
+  const isAllActive = normalizedType === 'all'
+  const isLPActive = normalizedType === 'factory'
   const typesParam = searchParams.get('types')
   const activeTypes = typesParam ? typesParam.split('_').filter(Boolean) : []
   const isStrategiesTabVisible = Boolean(showStrategies)
-  const isStrategiesActive = isStrategiesTabVisible && !isFactoryActive && activeTypes.includes('single')
-  const isAllocatorActive = !isFactoryActive && !isStrategiesActive
+  const isStrategiesActive = isStrategiesTabVisible && !isLPActive && !isAllActive && activeTypes.includes('single')
+  const isAllocatorActive = !isLPActive && !isAllActive && !isStrategiesActive
+  const allLabel = getVaultTypeLabel('all')
+  const allEmoji = getVaultTypeEmoji('all')
   const allocatorLabel = getVaultTypeLabel('v3')
   const allocatorEmoji = getVaultTypeEmoji('v3')
-  const factoryLabel = getVaultTypeLabel('factory')
-  const factoryEmoji = getVaultTypeEmoji('factory')
+  const lpLabel = getVaultTypeLabel('factory')
+  const lpEmoji = getVaultTypeEmoji('factory')
   const strategiesLabel = 'v3 Strategies'
   const strategiesEmoji = '🧩'
 
-  const sanitizeChainsParam = (params: URLSearchParams, supportedChainIds: number[]): void => {
-    const rawChains = params.get('chains')
-    if (!rawChains || rawChains === '0') {
-      return
-    }
-    const nextChains = rawChains
-      .split('_')
-      .map((value) => Number(value))
-      .filter((value) => Number.isFinite(value) && supportedChainIds.includes(value))
-
-    if (nextChains.length === 0) {
-      params.delete('chains')
-    } else {
-      params.set('chains', nextChains.join('_'))
-    }
+  const goToAll = (): void => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.set('type', 'all')
+    nextParams.delete('types')
+    sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('all'))
+    setSearchParams(nextParams, { replace: true })
   }
 
   const goToAllocator = (): void => {
     const nextParams = new URLSearchParams(searchParams)
     nextParams.delete('type')
     nextParams.delete('types')
-    sanitizeChainsParam(nextParams, V3_SUPPORTED_CHAINS)
+    sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('v3'))
     setSearchParams(nextParams, { replace: true })
   }
 
@@ -55,15 +50,15 @@ export function VaultVersionToggle({ className, showStrategies, stretch }: TVaul
     nextParams.delete('type')
     nextParams.set('types', 'single')
     nextParams.set('showStrategies', '1')
-    sanitizeChainsParam(nextParams, V3_SUPPORTED_CHAINS)
+    sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('v3'))
     setSearchParams(nextParams, { replace: true })
   }
 
-  const goToFactory = (): void => {
+  const goToLP = (): void => {
     const nextParams = new URLSearchParams(searchParams)
-    nextParams.set('type', 'factory')
+    nextParams.set('type', 'lp')
     nextParams.delete('types')
-    sanitizeChainsParam(nextParams, V2_SUPPORTED_CHAINS)
+    sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('factory'))
     setSearchParams(nextParams, { replace: true })
   }
 
@@ -74,6 +69,26 @@ export function VaultVersionToggle({ className, showStrategies, stretch }: TVaul
         className
       )}
     >
+      <button
+        type={'button'}
+        className={cl(
+          'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
+          'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+          'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+          stretch ? 'flex-1' : ''
+        )}
+        data-active={isAllActive}
+        onClick={goToAll}
+        aria-pressed={isAllActive}
+      >
+        <span
+          aria-hidden={true}
+          className={'size-5 overflow-hidden rounded-full bg-surface/80 flex items-center justify-center'}
+        >
+          {allEmoji}
+        </span>
+        <span className={'whitespace-nowrap'}>{allLabel}</span>
+      </button>
       <button
         type={'button'}
         className={cl(
@@ -124,17 +139,17 @@ export function VaultVersionToggle({ className, showStrategies, stretch }: TVaul
           'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
           stretch ? 'flex-1' : ''
         )}
-        data-active={isFactoryActive}
-        onClick={goToFactory}
-        aria-pressed={isFactoryActive}
+        data-active={isLPActive}
+        onClick={goToLP}
+        aria-pressed={isLPActive}
       >
         <span
           aria-hidden={true}
           className={'size-5 overflow-hidden rounded-full bg-surface/80 flex items-center justify-center'}
         >
-          {factoryEmoji}
+          {lpEmoji}
         </span>
-        <span className={'whitespace-nowrap'}>{factoryLabel}</span>
+        <span className={'whitespace-nowrap'}>{lpLabel}</span>
       </button>
     </div>
   )

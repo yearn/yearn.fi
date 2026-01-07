@@ -19,6 +19,7 @@ type TVaultsV3AuxiliaryListProps = {
   vaults: TYDaemonVault[]
   vaultFlags: TVaultFlagsRecord
   apyDisplayVariant?: TVaultForwardAPYVariant
+  resolveApyDisplayVariant?: (vault: TYDaemonVault) => TVaultForwardAPYVariant
   activeChains?: number[]
   activeCategories?: string[]
   activeTypes?: string[]
@@ -34,6 +35,7 @@ export function VaultsV3AuxiliaryList({
   vaults,
   vaultFlags,
   apyDisplayVariant,
+  resolveApyDisplayVariant,
   activeChains,
   activeCategories,
   activeTypes,
@@ -54,12 +56,13 @@ export function VaultsV3AuxiliaryList({
       <div className={'flex flex-col gap-px'}>
         {vaults.map((vault) => {
           const key = `${vault.chainID}_${toAddress(vault.address)}`
+          const rowApyDisplayVariant = resolveApyDisplayVariant ? resolveApyDisplayVariant(vault) : apyDisplayVariant
           return (
             <VaultsV3ListRow
               key={key}
               currentVault={vault}
               flags={vaultFlags[key]}
-              apyDisplayVariant={apyDisplayVariant}
+              apyDisplayVariant={rowApyDisplayVariant}
               activeChains={activeChains}
               activeCategories={activeCategories}
               activeTypes={activeTypes}

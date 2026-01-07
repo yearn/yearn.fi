@@ -20,6 +20,7 @@ import { useSearchParams } from 'react-router'
 import { V2_SUPPORTED_CHAINS, V3_SUPPORTED_CHAINS } from './constants'
 import { VaultVersionToggle } from './VaultVersionToggle'
 import { getVaultTypeLabel, type TVaultType } from './vaultTypeCopy'
+import { getSupportedChainsForVaultType, normalizeVaultTypeParam } from './vaultTypeUtils'
 
 const AVAILABLE_TOGGLE_VALUE = 'available'
 const HOLDINGS_TOGGLE_VALUE = 'holdings'
@@ -47,8 +48,7 @@ const AGGRESSIVENESS_OPTIONS = [-1, -2, -3]
 
 function useVaultType(): TVaultType {
   const [searchParams] = useSearchParams()
-  const type = searchParams.get('type')
-  return type === 'factory' ? 'factory' : 'v3'
+  return normalizeVaultTypeParam(searchParams.get('type'))
 }
 
 const toggleString = (current: string[] | null, next: string): string[] => {
@@ -120,6 +120,9 @@ function ListOfVaults({
 }: TListOfVaultsProps): ReactElement {
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
+  const isAllVaults = vaultType === 'all'
+  const isV3View = vaultType === 'v3' || isAllVaults
+  const isV2View = vaultType === 'factory' || isAllVaults
 
   useLayoutEffect(() => {
     const filtersElement = filtersRef.current
@@ -155,8 +158,11 @@ function ListOfVaults({
   }, [])
 
   const sanitizedV3Types = useMemo(() => {
-    if (vaultType !== 'v3') {
+    if (!isV3View) {
       return []
+    }
+    if (isAllVaults) {
+      return ['multi']
     }
     const selected = (types || []).filter((type) => type === 'multi' || type === 'single')
     const hasSingle = selected.includes('single')
@@ -164,18 +170,18 @@ function ListOfVaults({
       return ['single']
     }
     return ['multi']
-  }, [types, vaultType, showStrategies])
+  }, [types, isV3View, isAllVaults, showStrategies])
 
   const allocatorTypesForTrending = useMemo(() => {
-    return vaultType === 'v3' ? ['multi'] : null
-  }, [vaultType])
+    return isV3View ? ['multi'] : null
+  }, [isV3View])
 
   const sanitizedV2Types = useMemo(() => {
-    if (vaultType !== 'factory') {
+    if (!isV2View) {
       return []
     }
     return (types || []).filter((type) => type === 'factory' || type === 'legacy')
-  }, [types, vaultType])
+  }, [types, isV2View])
 
   useEffect(() => {
     if (vaultType !== 'v3') {
@@ -190,9 +196,9 @@ function ListOfVaults({
   }, [vaultType, showStrategies, types, onChangeTypes])
 
   const sanitizedCategories = useMemo(() => {
-    const allowed = vaultType === 'v3' ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
+    const allowed = isV3View ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
     return (categories || []).filter((value) => allowed.includes(value))
-  }, [categories, vaultType])
+  }, [categories, isV3View])
 
   const sanitizedProtocols = useMemo(() => {
     return (protocols || []).filter((value) => PROTOCOL_OPTIONS.includes(value))
@@ -204,48 +210,92 @@ function ListOfVaults({
 
   // Use the appropriate filter hook based on vault type
   const v3FilterResult = useV3VaultFilter(
-    vaultType === 'v3' ? sanitizedV3Types : null,
+    isV3View ? sanitizedV3Types : null,
     chains,
     search || '',
-    vaultType === 'v3' ? sanitizedCategories : null,
-    vaultType === 'v3' ? sanitizedProtocols : null,
-    vaultType === 'v3' ? sanitizedAggressiveness : null,
-    vaultType === 'v3' ? showHiddenVaults : undefined
+    isV3View ? sanitizedCategories : null,
+    isV3View ? sanitizedProtocols : null,
+    isV3View ? sanitizedAggressiveness : null,
+    isV3View ? showHiddenVaults : undefined
   )
   const v2FilterResult = useV2VaultFilter(
-    vaultType === 'factory' ? sanitizedV2Types : null,
+    isV2View ? sanitizedV2Types : null,
     chains,
     search || '',
-    vaultType === 'factory' ? sanitizedCategories : null,
-    vaultType === 'factory' ? sanitizedProtocols : null
+    isV2View ? sanitizedCategories : null,
+    isV2View ? sanitizedProtocols : null
   )
   const { filteredVaults: filteredV2VaultsAllChains } = useV2VaultFilter(
-    vaultType === 'factory' ? sanitizedV2Types : null,
+    isV2View ? sanitizedV2Types : null,
     null,
     '',
-    vaultType === 'factory' ? sanitizedCategories : null,
-    vaultType === 'factory' ? sanitizedProtocols : null
+    isV2View ? sanitizedCategories : null,
+    isV2View ? sanitizedProtocols : null
   )
 
-  const {
-    filteredVaults,
-    holdingsVaults,
-    availableVaults,
-    vaultFlags,
-    isLoading: isLoadingVaultList
-  } = vaultType === 'v3' ? v3FilterResult : v2FilterResult
+  const filteredVaults = useMemo(() => {
+    if (vaultType === 'all') {
+      return [...v3FilterResult.filteredVaults, ...v2FilterResult.filteredVaults]
+    }
+    return vaultType === 'v3' ? v3FilterResult.filteredVaults : v2FilterResult.filteredVaults
+  }, [vaultType, v3FilterResult.filteredVaults, v2FilterResult.filteredVaults])
 
-  const totalMatchingVaults = vaultType === 'v3' ? (v3FilterResult.totalMatchingVaults ?? 0) : 0
-  const totalHoldingsMatching = vaultType === 'v3' ? (v3FilterResult.totalHoldingsMatching ?? 0) : 0
+  const holdingsVaults = useMemo(() => {
+    if (vaultType === 'all') {
+      return [...v3FilterResult.holdingsVaults, ...v2FilterResult.holdingsVaults]
+    }
+    return vaultType === 'v3' ? v3FilterResult.holdingsVaults : v2FilterResult.holdingsVaults
+  }, [vaultType, v3FilterResult.holdingsVaults, v2FilterResult.holdingsVaults])
+
+  const availableVaults = useMemo(() => {
+    if (vaultType === 'all') {
+      return [...v3FilterResult.availableVaults, ...v2FilterResult.availableVaults]
+    }
+    return vaultType === 'v3' ? v3FilterResult.availableVaults : v2FilterResult.availableVaults
+  }, [vaultType, v3FilterResult.availableVaults, v2FilterResult.availableVaults])
+
+  const vaultFlags = useMemo(() => {
+    if (vaultType === 'all') {
+      return { ...v3FilterResult.vaultFlags, ...v2FilterResult.vaultFlags }
+    }
+    return vaultType === 'v3' ? v3FilterResult.vaultFlags : v2FilterResult.vaultFlags
+  }, [vaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags])
+
+  const isLoadingVaultList =
+    vaultType === 'all'
+      ? v3FilterResult.isLoading || v2FilterResult.isLoading
+      : vaultType === 'v3'
+        ? v3FilterResult.isLoading
+        : v2FilterResult.isLoading
+
+  const totalMatchingVaults = useMemo(() => {
+    if (vaultType === 'v3') {
+      return v3FilterResult.totalMatchingVaults ?? 0
+    }
+    if (vaultType === 'factory') {
+      return v2FilterResult.filteredVaults.length
+    }
+    return (v3FilterResult.totalMatchingVaults ?? 0) + v2FilterResult.filteredVaults.length
+  }, [vaultType, v3FilterResult.totalMatchingVaults, v2FilterResult.filteredVaults])
+
+  const totalHoldingsMatching = useMemo(() => {
+    if (vaultType === 'v3') {
+      return v3FilterResult.totalHoldingsMatching ?? 0
+    }
+    if (vaultType === 'factory') {
+      return v2FilterResult.holdingsVaults.length
+    }
+    return (v3FilterResult.totalHoldingsMatching ?? 0) + v2FilterResult.holdingsVaults.length
+  }, [vaultType, v3FilterResult.totalHoldingsMatching, v2FilterResult.holdingsVaults])
 
   const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(
     allocatorTypesForTrending,
     null,
     '',
-    vaultType === 'v3' ? sanitizedCategories : null,
-    vaultType === 'v3' ? sanitizedProtocols : null,
-    vaultType === 'v3' ? sanitizedAggressiveness : null,
-    vaultType === 'v3' ? showHiddenVaults : undefined
+    isV3View ? sanitizedCategories : null,
+    isV3View ? sanitizedProtocols : null,
+    isV3View ? sanitizedAggressiveness : null,
+    isV3View ? showHiddenVaults : undefined
   )
 
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
@@ -347,6 +397,12 @@ function ListOfVaults({
         .slice(0, 8),
     [sortedSuggestedV2Candidates, holdingsKeySet]
   )
+  const suggestedVaults = useMemo(() => {
+    if (vaultType === 'all') {
+      return [...suggestedV3Vaults, ...suggestedV2Vaults].slice(0, 8)
+    }
+    return vaultType === 'v3' ? suggestedV3Vaults : suggestedV2Vaults
+  }, [vaultType, suggestedV3Vaults, suggestedV2Vaults])
 
   const v3FiltersCount = useMemo(() => {
     const typeCount = sanitizedV3Types.includes('single') ? 1 : 0
@@ -361,10 +417,12 @@ function ListOfVaults({
     return sanitizedV2Types.length + sanitizedCategories.length + sanitizedProtocols.length
   }, [sanitizedV2Types, sanitizedCategories, sanitizedProtocols])
 
-  const apyDisplayVariant = vaultType === 'factory' ? 'factory-list' : 'default'
   const activeChains = chains ?? []
   const activeCategories = sanitizedCategories
-  const activeTypes = vaultType === 'v3' ? sanitizedV3Types : sanitizedV2Types
+  const activeTypes = isV3View ? sanitizedV3Types : sanitizedV2Types
+  const resolveApyDisplayVariant = useCallback((vault: { version?: string | null }): 'default' | 'factory-list' => {
+    return vault.version?.startsWith('3') || vault.version?.startsWith('~3') ? 'default' : 'factory-list'
+  }, [])
   const handleToggleChain = useCallback(
     (chainId: number): void => {
       onChangeChains(toggleNumber(chains, chainId))
@@ -598,8 +656,8 @@ function ListOfVaults({
     </div>
   )
 
-  const filtersPanelContent = vaultType === 'v3' ? v3FiltersPanel : v2FiltersPanel
-  const filtersCount = vaultType === 'v3' ? v3FiltersCount : v2FiltersCount
+  const filtersPanelContent = vaultType === 'factory' ? v2FiltersPanel : v3FiltersPanel
+  const filtersCount = vaultType === 'all' ? v3FiltersCount : vaultType === 'v3' ? v3FiltersCount : v2FiltersCount
 
   const chainConfig = useMemo(() => {
     if (vaultType === 'v3') {
@@ -608,6 +666,17 @@ function ListOfVaults({
         primaryChainIds: V3_PRIMARY_CHAIN_IDS,
         defaultSecondaryChainIds: V3_DEFAULT_SECONDARY_CHAIN_IDS,
         chainDisplayOrder: V3_SUPPORTED_CHAINS,
+        showMoreChainsButton: false,
+        allChainsLabel: 'All Chains'
+      }
+    }
+    if (vaultType === 'all') {
+      const allChains = getSupportedChainsForVaultType('all')
+      return {
+        supportedChainIds: allChains,
+        primaryChainIds: allChains,
+        defaultSecondaryChainIds: [],
+        chainDisplayOrder: allChains,
         showMoreChainsButton: false,
         allChainsLabel: 'All Chains'
       }
@@ -623,7 +692,7 @@ function ListOfVaults({
   }, [vaultType])
 
   function renderVaultList(): ReactNode {
-    const defaultCategories = vaultType === 'v3' ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
+    const defaultCategories = isV3View ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
 
     if (isLoadingVaultList) {
       return (
@@ -660,7 +729,7 @@ function ListOfVaults({
             key={section.key}
             vaults={section.vaults}
             vaultFlags={vaultFlags}
-            apyDisplayVariant={apyDisplayVariant}
+            resolveApyDisplayVariant={resolveApyDisplayVariant}
             activeChains={activeChains}
             activeCategories={activeCategories}
             activeTypes={activeTypes}
@@ -674,12 +743,13 @@ function ListOfVaults({
           <div className={'flex flex-col gap-px bg-border'}>
             {mainVaults.map((vault) => {
               const key = `${vault.chainID}_${toAddress(vault.address)}`
+              const rowApyDisplayVariant = resolveApyDisplayVariant(vault)
               return (
                 <VaultsV3ListRow
                   key={key}
                   currentVault={vault}
                   flags={vaultFlags[key]}
-                  apyDisplayVariant={apyDisplayVariant}
+                  apyDisplayVariant={rowApyDisplayVariant}
                   activeChains={activeChains}
                   activeCategories={activeCategories}
                   activeTypes={activeTypes}
@@ -696,12 +766,7 @@ function ListOfVaults({
     )
   }
 
-  const suggestedVaultsElement =
-    vaultType === 'v3' ? (
-      <TrendingVaults suggestedVaults={suggestedV3Vaults} />
-    ) : (
-      <TrendingVaults suggestedVaults={suggestedV2Vaults} />
-    )
+  const suggestedVaultsElement = <TrendingVaults suggestedVaults={suggestedVaults} />
 
   const breadcrumbsElement = (
     <div className={'mb-3 mt-2 flex items-center gap-2 text-sm text-text-secondary'}>
@@ -933,7 +998,7 @@ function useVaultListExtraFilters(): {
 }
 
 function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElement {
-  usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType !== 'factory')
+  usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType === 'v3')
 
   const {
     protocols,

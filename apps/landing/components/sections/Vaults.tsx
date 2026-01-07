@@ -82,7 +82,7 @@ const appRows: TRow[] = [
     icon: '/landing/apps/factory.png',
     text: 'LP Vaults',
     description: 'Permissionless Curve Autocompounders',
-    href: 'https://yearn.fi/vaults'
+    href: 'https://yearn.fi/vaults?type=lp'
   },
   {
     icon: '/landing/apps/powerglove.png',
