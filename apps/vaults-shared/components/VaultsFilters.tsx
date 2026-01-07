@@ -64,10 +64,8 @@ export function VaultsFilters({
   const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false)
   const [isFiltersButtonMinimal, setIsFiltersButtonMinimal] = useState(false)
   const [isChainSelectorMinimal, setIsChainSelectorMinimal] = useState(false)
-  const [forceMobileFiltersBar, setForceMobileFiltersBar] = useState(false)
   const hasFiltersContent = Boolean(filtersContent)
   const hasPanelContent = Boolean(filtersPanelContent)
 
@@ -240,7 +238,6 @@ export function VaultsFilters({
 
     let nextFiltersMinimal = hasFiltersContent ? isFiltersButtonMinimal : false
     let nextChainMinimal = isChainSelectorMinimal
-    let nextForceMobile = forceMobileFiltersBar
     const hasOverflow = scrollWidth > clientWidth + 1
 
     if (hasOverflow) {
@@ -249,14 +246,9 @@ export function VaultsFilters({
           nextFiltersMinimal = true
         } else if (!nextChainMinimal) {
           nextChainMinimal = true
-        } else {
-          nextForceMobile = true
         }
       }
     } else {
-      if (nextForceMobile) {
-        nextForceMobile = false
-      }
       let remainingSlack = searchSlack
       if (nextChainMinimal && chainDelta > 0 && remainingSlack >= chainDelta) {
         nextChainMinimal = false
@@ -264,7 +256,6 @@ export function VaultsFilters({
       }
       if (nextFiltersMinimal && filtersDelta > 0 && remainingSlack >= filtersDelta) {
         nextFiltersMinimal = false
-        remainingSlack -= filtersDelta
       }
     }
 
@@ -274,10 +265,7 @@ export function VaultsFilters({
     if (nextChainMinimal !== isChainSelectorMinimal) {
       setIsChainSelectorMinimal(nextChainMinimal)
     }
-    if (nextForceMobile !== forceMobileFiltersBar) {
-      setForceMobileFiltersBar(nextForceMobile)
-    }
-  }, [forceMobileFiltersBar, hasFiltersContent, isChainSelectorMinimal, isFiltersButtonMinimal])
+  }, [hasFiltersContent, isChainSelectorMinimal, isFiltersButtonMinimal])
 
   useLayoutEffect(() => {
     const chainSelector = chainSelectorRef.current
@@ -387,7 +375,7 @@ export function VaultsFilters({
   return (
     <>
       <div className={'relative col-span-24 w-full md:col-span-19'}>
-        <div className={cl('md:hidden', forceMobileFiltersBar ? 'md:block' : '')}>
+        <div className={'md:hidden'}>
           <Drawer.Root
             open={isMobileFiltersOpen}
             onOpenChange={(isOpen): void => {
@@ -491,12 +479,7 @@ export function VaultsFilters({
           </Drawer.Root>
         </div>
 
-        <div
-          className={cl(
-            'hidden md:block',
-            forceMobileFiltersBar ? 'md:block absolute inset-x-0 top-0 invisible pointer-events-none' : ''
-          )}
-        >
+        <div className={'hidden md:block'}>
           <FilterControls
             chainButtons={chainButtons}
             onSelectAllChains={handleSelectAllChains}
@@ -508,22 +491,19 @@ export function VaultsFilters({
             showFiltersButton={hasFiltersContent}
             filtersCount={filtersCount}
             onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
-            showInlineSearch={false}
-            showSearchButton={true}
-            isSearchExpanded={isSearchExpanded}
-            onExpandSearch={(): void => setIsSearchExpanded(true)}
-            onCollapseSearch={(): void => setIsSearchExpanded(false)}
+            showInlineSearch={true}
             searchValue={searchValue}
             onSearch={onSearch}
             shouldDebounce={shouldDebounce}
             searchAlertContent={searchAlertContent}
             isFiltersButtonMinimal={isFiltersButtonMinimal}
+            isChainSelectorMinimal={isChainSelectorMinimal}
             controlsRowRef={controlsRowRef}
             chainSelectorRef={chainSelectorRef}
             filtersButtonRef={filtersButtonRef}
             searchContainerRef={searchContainerRef}
             enableResponsiveLayout={true}
-            trailingControls={trailingControls}
+            leadingControls={trailingControls}
           />
         </div>
       </div>
@@ -570,11 +550,13 @@ function FilterControls({
   shouldDebounce,
   searchAlertContent,
   isFiltersButtonMinimal = false,
+  isChainSelectorMinimal = false,
   controlsRowRef,
   chainSelectorRef,
   filtersButtonRef,
   searchContainerRef,
   enableResponsiveLayout = false,
+  leadingControls,
   trailingControls
 }: {
   chainButtons: TChainButton[]
@@ -601,11 +583,13 @@ function FilterControls({
   shouldDebounce?: boolean
   searchAlertContent?: ReactNode
   isFiltersButtonMinimal?: boolean
+  isChainSelectorMinimal?: boolean
   controlsRowRef?: RefObject<HTMLDivElement | null>
   chainSelectorRef?: RefObject<HTMLDivElement | null>
   filtersButtonRef?: RefObject<HTMLButtonElement | null>
   searchContainerRef?: RefObject<HTMLDivElement | null>
   enableResponsiveLayout?: boolean
+  leadingControls?: ReactNode
   trailingControls?: ReactNode
 }): ReactElement {
   const showFiltersLabel = !isFiltersButtonMinimal
@@ -617,9 +601,10 @@ function FilterControls({
             ref={controlsRowRef}
             className={cl(
               'flex w-full items-center gap-3',
-              enableResponsiveLayout ? 'flex-nowrap justify-between' : 'flex-wrap'
+              enableResponsiveLayout ? 'flex-nowrap justify-between overflow-hidden' : 'flex-wrap'
             )}
           >
+            {leadingControls ? <div className={'shrink-0'}>{leadingControls}</div> : null}
             <div
               ref={chainSelectorRef}
               className={cl(
@@ -642,10 +627,10 @@ function FilterControls({
                 <span className={'size-5 overflow-hidden rounded-full'}>
                   <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
                 </span>
-                {areAllChainsSelected ? <span className={'whitespace-nowrap'}>{allChainsLabel}</span> : null}
+                <span className={'whitespace-nowrap'}>{allChainsLabel}</span>
               </button>
               {chainButtons.map((chain) => {
-                const showChainLabel = chain.isSelected
+                const showChainLabel = !isChainSelectorMinimal || chain.isSelected
                 return (
                   <button
                     key={chain.id}
@@ -686,7 +671,7 @@ function FilterControls({
                 </button>
               ) : null}
             </div>
-            <div className={'flex shrink-0 flex-row items-center gap-2'}>
+            <div className={'flex flex-row items-center gap-3 flex-1 min-w-0'}>
               {showSearchButton && isSearchExpanded ? (
                 <div ref={searchContainerRef} className={'min-w-[180px]'}>
                   <SearchBar
@@ -754,7 +739,7 @@ function FilterControls({
                 </>
               )}
               {showInlineSearch ? (
-                <div ref={searchContainerRef} className={'min-w-[180px]'}>
+                <div ref={searchContainerRef} className={'flex-1 min-w-0'}>
                   <SearchBar
                     className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
                     iconClassName={'text-text-primary'}
