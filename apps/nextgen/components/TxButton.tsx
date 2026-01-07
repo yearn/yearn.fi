@@ -55,6 +55,10 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showCrossChainModal, setShowCrossChainModal] = useState(false)
 
+  // Capture modal config at click time so it doesn't change during tx
+  const capturedSuccessModal = useRef<SuccessModalConfig | null>(null)
+  const capturedCrossChainModal = useRef<SuccessModalConfig | null>(null)
+
   // Track pending execution after chain switch (to wait for React state to update)
   const [pendingChainExecution, setPendingChainExecution] = useState<number | null>(null)
 
@@ -252,6 +256,10 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
 
   // Main click handler
   const handleClick = useCallback(async () => {
+    // Capture modal configs at click time so values don't change during tx
+    if (successModal) capturedSuccessModal.current = { ...successModal }
+    if (crossChainSubmitModal) capturedCrossChainModal.current = { ...crossChainSubmitModal }
+
     // If on wrong network, switch chain and queue execution for after React updates
     if (wrongNetwork && txChainId) {
       const chainSwitched = await handleChainSwitch()
@@ -264,7 +272,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
 
     // Already on correct chain, execute immediately
     await executeTransaction()
-  }, [wrongNetwork, txChainId, handleChainSwitch, executeTransaction])
+  }, [wrongNetwork, txChainId, handleChainSwitch, executeTransaction, successModal, crossChainSubmitModal])
 
   // Execute pending transaction after chain switch propagates to React state
   useEffect(() => {
@@ -372,27 +380,27 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
         {getButtonContent()}
       </Button>
 
-      {successModal && (
+      {capturedSuccessModal.current && (
         <SuccessModal
           isOpen={showSuccessModal}
           onClose={() => setShowSuccessModal(false)}
           onAfterClose={onSuccess}
-          title={successModal.title}
-          message={successModal.message}
-          buttonText={successModal.buttonText}
-          showConfetti={successModal.showConfetti}
+          title={capturedSuccessModal.current.title}
+          message={capturedSuccessModal.current.message}
+          buttonText={capturedSuccessModal.current.buttonText}
+          showConfetti={capturedSuccessModal.current.showConfetti}
         />
       )}
 
-      {crossChainSubmitModal && (
+      {capturedCrossChainModal.current && (
         <SuccessModal
           isOpen={showCrossChainModal}
           onClose={() => setShowCrossChainModal(false)}
           onAfterClose={onSuccess}
-          title={crossChainSubmitModal.title}
-          message={crossChainSubmitModal.message}
-          buttonText={crossChainSubmitModal.buttonText}
-          showConfetti={crossChainSubmitModal.showConfetti}
+          title={capturedCrossChainModal.current.title}
+          message={capturedCrossChainModal.current.message}
+          buttonText={capturedCrossChainModal.current.buttonText}
+          showConfetti={capturedCrossChainModal.current.showConfetti}
         />
       )}
     </>
