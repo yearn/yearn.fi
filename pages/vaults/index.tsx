@@ -28,10 +28,7 @@ const V3_PRIMARY_CHAIN_IDS = [1, 747474]
 const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
 const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
 const V2_ASSET_CATEGORIES = ['Stablecoin', 'Volatile']
-const V2_KIND_OPTIONS = [
-  { value: 'factory', label: 'Factory' },
-  { value: 'legacy', label: 'Legacy' }
-] as const
+const V2_DEFAULT_TYPES = ['factory']
 const PROTOCOL_OPTIONS = [
   'Curve',
   'Velodrome',
@@ -181,7 +178,14 @@ function ListOfVaults({
     if (!isV2View) {
       return []
     }
-    return (types || []).filter((type) => type === 'factory' || type === 'legacy')
+    const selected = (types || []).filter((type) => type === 'factory' || type === 'legacy')
+    if (selected.length === 0) {
+      return V2_DEFAULT_TYPES
+    }
+    if (!selected.includes('factory')) {
+      return ['factory', ...selected]
+    }
+    return selected
   }, [types, isV2View])
 
   useEffect(() => {
@@ -208,6 +212,7 @@ function ListOfVaults({
   const sanitizedAggressiveness = useMemo(() => {
     return (aggressiveness || []).filter((value) => AGGRESSIVENESS_OPTIONS.includes(value))
   }, [aggressiveness])
+  const showLegacyVaults = sanitizedV2Types.includes('legacy')
 
   // Use the appropriate filter hook based on vault type
   const v3FilterResult = useV3VaultFilter(
@@ -415,9 +420,9 @@ function ListOfVaults({
   }, [sanitizedV3Types, sanitizedCategories, sanitizedProtocols, sanitizedAggressiveness, showHiddenVaults])
 
   const v2FiltersCount = useMemo(() => {
-    return sanitizedV2Types.length + sanitizedCategories.length + sanitizedProtocols.length
-  }, [sanitizedV2Types, sanitizedCategories, sanitizedProtocols])
-
+    const legacyCount = showLegacyVaults ? 1 : 0
+    return legacyCount + sanitizedCategories.length + sanitizedProtocols.length
+  }, [sanitizedCategories, sanitizedProtocols, showLegacyVaults])
   const activeChains = chains ?? []
   const activeCategories = sanitizedCategories
   const activeTypes = isV3View ? sanitizedV3Types : sanitizedV2Types
@@ -445,6 +450,20 @@ function ListOfVaults({
       onChangeTypes(toggleString(sanitizedV3Types, type))
     },
     [onChangeTypes, sanitizedV3Types, vaultType]
+  )
+
+  const handleToggleLegacyVaults = useCallback(
+    (shouldShow: boolean): void => {
+      if (!isV2View) {
+        return
+      }
+      if (shouldShow) {
+        onChangeTypes(['factory', 'legacy'])
+      } else {
+        onChangeTypes(['factory'])
+      }
+    },
+    [isV2View, onChangeTypes]
   )
 
   const handleToggleVaultType = useCallback(
@@ -582,6 +601,25 @@ function ListOfVaults({
                 onChange={(event): void => onChangeShowHiddenVaults(event.target.checked)}
               />
             </label>
+
+            {isAllVaults ? (
+              <label
+                className={
+                  'flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2'
+                }
+              >
+                <div className={'min-w-0'}>
+                  <p className={'text-sm font-medium text-text-primary'}>{'Show legacy vaults'}</p>
+                  <p className={'text-xs text-text-secondary'}>{'Includes legacy LP vaults in the list.'}</p>
+                </div>
+                <input
+                  type={'checkbox'}
+                  className={'checkbox accent-blue-500'}
+                  checked={showLegacyVaults}
+                  onChange={(event): void => handleToggleLegacyVaults(event.target.checked)}
+                />
+              </label>
+            ) : null}
           </div>
         </details>
       </div>
@@ -618,30 +656,23 @@ function ListOfVaults({
         </div>
         <details className={'rounded-xl border border-border bg-surface-secondary p-4'}>
           <summary className={'cursor-pointer text-sm font-semibold text-text-primary'}>{'Advanced'}</summary>
-          <div className={'mt-4'}>
-            <p className={'mb-2 text-sm text-text-secondary'}>{'Vault Kind'}</p>
-            <div className={'space-y-2'}>
-              {V2_KIND_OPTIONS.map((option) => {
-                const isChecked = sanitizedV2Types.includes(option.value)
-                return (
-                  <label
-                    key={option.value}
-                    className={cl(
-                      'flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors',
-                      isChecked ? 'border-border bg-surface-tertiary/80' : 'border-border hover:bg-surface-tertiary/40'
-                    )}
-                  >
-                    <span className={'text-sm font-medium text-text-primary'}>{option.label}</span>
-                    <input
-                      type={'checkbox'}
-                      className={'checkbox accent-blue-500'}
-                      checked={isChecked}
-                      onChange={(): void => onChangeTypes(toggleString(sanitizedV2Types, option.value))}
-                    />
-                  </label>
-                )
-              })}
-            </div>
+          <div className={'mt-4 flex flex-col gap-6'}>
+            <label
+              className={
+                'flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2'
+              }
+            >
+              <div className={'min-w-0'}>
+                <p className={'text-sm font-medium text-text-primary'}>{'Show legacy vaults'}</p>
+                <p className={'text-xs text-text-secondary'}>{'Includes legacy LP vaults in the list.'}</p>
+              </div>
+              <input
+                type={'checkbox'}
+                className={'checkbox accent-blue-500'}
+                checked={showLegacyVaults}
+                onChange={(event): void => handleToggleLegacyVaults(event.target.checked)}
+              />
+            </label>
           </div>
         </details>
       </div>
@@ -676,7 +707,12 @@ function ListOfVaults({
   )
 
   const filtersPanelContent = vaultType === 'factory' ? v2FiltersPanel : v3FiltersPanel
-  const filtersCount = vaultType === 'all' ? v3FiltersCount : vaultType === 'v3' ? v3FiltersCount : v2FiltersCount
+  const filtersCount =
+    vaultType === 'all'
+      ? v3FiltersCount + (showLegacyVaults ? 1 : 0)
+      : vaultType === 'v3'
+        ? v3FiltersCount
+        : v2FiltersCount
 
   const chainConfig = useMemo(() => {
     if (vaultType === 'v3') {
@@ -1036,11 +1072,11 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
   } = useVaultListExtraFilters()
 
   const queryArgs = useQueryArguments({
-    defaultTypes: vaultType === 'v3' ? ['multi'] : [],
+    defaultTypes: vaultType === 'v3' ? ['multi'] : V2_DEFAULT_TYPES,
     defaultCategories: [],
     defaultPathname: '/vaults',
     defaultSortBy: 'featuringScore',
-    resetTypes: vaultType === 'v3' ? ['multi'] : [],
+    resetTypes: vaultType === 'v3' ? ['multi'] : V2_DEFAULT_TYPES,
     resetCategories: []
   })
 
