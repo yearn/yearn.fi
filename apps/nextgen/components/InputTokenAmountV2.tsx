@@ -1,5 +1,6 @@
 import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { TokenLogo } from '@lib/components/TokenLogo'
+import { useWeb3 } from '@lib/contexts/useWeb3'
 import { cl, exactToSimple, simpleToExact } from '@lib/utils'
 import type { useDebouncedInput } from 'apps/nextgen/hooks/useDebouncedInput'
 import type { useInput } from 'apps/nextgen/hooks/useInput'
@@ -67,6 +68,7 @@ export const InputTokenAmountV2: FC<Props> = ({
   zapNotificationText
 }) => {
   const account = useAccount()
+  const { openLoginModal } = useWeb3()
   const [
     {
       formValue,
@@ -247,15 +249,27 @@ export const InputTokenAmountV2: FC<Props> = ({
           ) : (
             <div className="text-sm text-text-secondary">${inputUsdValue}</div>
           )}
-          {balance !== undefined && balance !== 0n && symbol && (
+          {!account.address ? (
             <button
               type="button"
-              onClick={() => handlePercentageClick(100)}
-              disabled={disabled || isMaxButtonLoading}
-              className="text-sm text-text-secondary hover:text-text-primary transition-colors disabled:cursor-not-allowed"
+              onClick={openLoginModal}
+              className="text-sm text-text-secondary hover:text-text-primary transition-colors"
             >
-              Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
+              Connect wallet
             </button>
+          ) : (
+            balance !== undefined &&
+            balance !== 0n &&
+            symbol && (
+              <button
+                type="button"
+                onClick={() => handlePercentageClick(100)}
+                disabled={disabled || isMaxButtonLoading}
+                className="text-sm text-text-secondary hover:text-text-primary transition-colors disabled:cursor-not-allowed"
+              >
+                Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
+              </button>
+            )
           )}
         </div>
       </div>
