@@ -263,7 +263,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const approveSuccessModal = useMemo(
     () => ({
       title: 'Approval successful',
-      message: `Successfully approved ${formattedWithdrawAmount} ${assetToken?.symbol || ''}. All set for withdrawing.`,
+      message: `Successfully approved ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.\nAll set for withdrawing.`,
       buttonText: 'Nice',
       showConfetti: false
     }),

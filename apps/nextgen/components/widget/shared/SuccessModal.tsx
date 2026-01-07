@@ -127,7 +127,7 @@ export const SuccessModal: FC<SuccessModalProps> = ({
                   {title}
                 </Dialog.Title>
 
-                <p className="text-sm text-text-secondary text-center mb-6">{message}</p>
+                <p className="text-sm text-text-secondary text-center mb-6 whitespace-pre-line">{message}</p>
 
                 <Button
                   onClick={onClose}

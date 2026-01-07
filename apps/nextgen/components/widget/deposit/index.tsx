@@ -208,7 +208,7 @@ export const WidgetDeposit: FC<Props> = ({
   const approveSuccessModal = useMemo(
     () => ({
       title: 'Approval successful',
-      message: `Successfully approved ${formattedDepositAmount} ${inputToken?.symbol || ''}. All set for depositing into vault.`,
+      message: `Successfully approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nAll set for depositing into vault.`,
       buttonText: 'Nice',
       showConfetti: false
     }),
