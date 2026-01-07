@@ -54,6 +54,8 @@ export function VaultsV3ListRow({
   onToggleChain,
   onToggleCategory,
   onToggleType,
+  activeProductType,
+  onToggleVaultType,
   showStrategies = false
 }: {
   currentVault: TYDaemonVault
@@ -67,6 +69,8 @@ export function VaultsV3ListRow({
   onToggleChain?: (chainId: number) => void
   onToggleCategory?: (category: string) => void
   onToggleType?: (type: string) => void
+  activeProductType?: 'v3' | 'lp' | 'all'
+  onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
 }): ReactElement {
   const navigate = useNavigate()
@@ -80,6 +84,12 @@ export function VaultsV3ListRow({
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
   const metricsColumnSpan = 'col-span-4'
+  const isV3Vault = currentVault.version?.startsWith('3') || currentVault.version?.startsWith('~3')
+  const productType = isV3Vault ? 'v3' : 'lp'
+  const productTypeLabel = isV3Vault ? 'Allocator' : 'LP'
+  const showProductTypeChip = Boolean(activeProductType) || Boolean(onToggleVaultType)
+  const isProductTypeActive =
+    Boolean(activeProductType) && activeProductType !== 'all' && activeProductType === productType
   const kindLabel =
     currentVault.kind === 'Multi Strategy'
       ? 'Allocator Vault'
@@ -91,7 +101,7 @@ export function VaultsV3ListRow({
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
   const activeTypeLabels = activeTypes ?? []
-  const showKindChip = showStrategies && Boolean(kindType)
+  const showKindChip = showStrategies && Boolean(kindType) && Boolean(onToggleType)
   const categoryIcon =
     currentVault.category === 'Stablecoin' ? (
       <IconStablecoin className={'size-3.5'} />
@@ -221,6 +231,14 @@ export function VaultsV3ListRow({
                     isActive={activeCategoryLabels.includes(currentVault.category)}
                     onClick={onToggleCategory ? (): void => onToggleCategory(currentVault.category) : undefined}
                     ariaLabel={`Filter by ${currentVault.category}`}
+                  />
+                ) : null}
+                {showProductTypeChip ? (
+                  <VaultsListChip
+                    label={productTypeLabel}
+                    isActive={isProductTypeActive}
+                    onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
+                    ariaLabel={`Show ${productTypeLabel} vaults`}
                   />
                 ) : null}
                 {showKindChip && kindLabel ? (

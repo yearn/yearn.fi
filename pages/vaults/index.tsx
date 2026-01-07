@@ -20,7 +20,7 @@ import { useSearchParams } from 'react-router'
 import { V2_SUPPORTED_CHAINS, V3_SUPPORTED_CHAINS } from './constants'
 import { VaultVersionToggle } from './VaultVersionToggle'
 import { getVaultTypeLabel, type TVaultType } from './vaultTypeCopy'
-import { getSupportedChainsForVaultType, normalizeVaultTypeParam } from './vaultTypeUtils'
+import { getSupportedChainsForVaultType, normalizeVaultTypeParam, sanitizeChainsParam } from './vaultTypeUtils'
 
 const AVAILABLE_TOGGLE_VALUE = 'available'
 const HOLDINGS_TOGGLE_VALUE = 'holdings'
@@ -120,6 +120,7 @@ function ListOfVaults({
 }: TListOfVaultsProps): ReactElement {
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
   const isAllVaults = vaultType === 'all'
   const isV3View = vaultType === 'v3' || isAllVaults
   const isV2View = vaultType === 'factory' || isAllVaults
@@ -420,6 +421,7 @@ function ListOfVaults({
   const activeChains = chains ?? []
   const activeCategories = sanitizedCategories
   const activeTypes = isV3View ? sanitizedV3Types : sanitizedV2Types
+  const activeProductType = vaultType === 'factory' ? 'lp' : vaultType
   const resolveApyDisplayVariant = useCallback((vault: { version?: string | null }): 'default' | 'factory-list' => {
     return vault.version?.startsWith('3') || vault.version?.startsWith('~3') ? 'default' : 'factory-list'
   }, [])
@@ -443,6 +445,23 @@ function ListOfVaults({
       onChangeTypes(toggleString(sanitizedV3Types, type))
     },
     [onChangeTypes, sanitizedV3Types, vaultType]
+  )
+
+  const handleToggleVaultType = useCallback(
+    (nextType: 'v3' | 'lp'): void => {
+      const nextParams = new URLSearchParams(searchParams)
+      if (nextType === 'v3') {
+        nextParams.delete('type')
+        nextParams.delete('types')
+        sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('v3'))
+      } else {
+        nextParams.set('type', 'lp')
+        nextParams.delete('types')
+        sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('factory'))
+      }
+      setSearchParams(nextParams, { replace: true })
+    },
+    [searchParams, setSearchParams]
   )
 
   const v3FiltersPanel = (
@@ -733,9 +752,11 @@ function ListOfVaults({
             activeChains={activeChains}
             activeCategories={activeCategories}
             activeTypes={activeTypes}
+            activeProductType={activeProductType}
             onToggleChain={handleToggleChain}
             onToggleCategory={handleToggleCategory}
             onToggleType={vaultType === 'v3' ? handleToggleType : undefined}
+            onToggleVaultType={handleToggleVaultType}
             showStrategies={showStrategies}
           />
         ))}
@@ -753,9 +774,11 @@ function ListOfVaults({
                   activeChains={activeChains}
                   activeCategories={activeCategories}
                   activeTypes={activeTypes}
+                  activeProductType={activeProductType}
                   onToggleChain={handleToggleChain}
                   onToggleCategory={handleToggleCategory}
                   onToggleType={vaultType === 'v3' ? handleToggleType : undefined}
+                  onToggleVaultType={handleToggleVaultType}
                   showStrategies={showStrategies}
                 />
               )

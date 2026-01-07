@@ -23,9 +23,11 @@ type TVaultsV3AuxiliaryListProps = {
   activeChains?: number[]
   activeCategories?: string[]
   activeTypes?: string[]
+  activeProductType?: 'v3' | 'lp' | 'all'
   onToggleChain?: (chainId: number) => void
   onToggleCategory?: (category: string) => void
   onToggleType?: (type: string) => void
+  onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
 }
 
@@ -39,9 +41,11 @@ export function VaultsV3AuxiliaryList({
   activeChains,
   activeCategories,
   activeTypes,
+  activeProductType,
   onToggleChain,
   onToggleCategory,
   onToggleType,
+  onToggleVaultType,
   showStrategies
 }: TVaultsV3AuxiliaryListProps): ReactElement | null {
   if (vaults.length === 0) {
@@ -66,9 +70,11 @@ export function VaultsV3AuxiliaryList({
               activeChains={activeChains}
               activeCategories={activeCategories}
               activeTypes={activeTypes}
+              activeProductType={activeProductType}
               onToggleChain={onToggleChain}
               onToggleCategory={onToggleCategory}
               onToggleType={onToggleType}
+              onToggleVaultType={onToggleVaultType}
               showStrategies={showStrategies}
             />
           )
