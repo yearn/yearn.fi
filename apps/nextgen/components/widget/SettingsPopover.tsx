@@ -100,7 +100,7 @@ export const SettingsPopover: FC<SettingsPopoverProps> = ({
                 onClick={() => setMaximizeYield(!maximizeYield)}
                 className={cl(
                   'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                  maximizeYield ? 'bg-blue-600' : 'bg-surface-secondary'
+                  maximizeYield ? 'bg-blue-600' : 'bg-surface-tertiary'
                 )}
               >
                 <span
