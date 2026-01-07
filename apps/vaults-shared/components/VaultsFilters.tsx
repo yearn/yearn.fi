@@ -5,20 +5,11 @@ import { useChainOptions } from '@lib/hooks/useChains'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { IconCross } from '@lib/icons/IconCross'
 import { IconFilter } from '@lib/icons/IconFilter'
+import { IconSearch } from '@lib/icons/IconSearch'
 import { LogoYearn } from '@lib/icons/LogoYearn'
 import { cl } from '@lib/utils'
 import type { ReactElement, ReactNode, RefObject } from 'react'
-import {
-  cloneElement,
-  Fragment,
-  isValidElement,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState
-} from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Drawer } from 'vaul'
 
 type TChainButton = {
@@ -44,12 +35,13 @@ type TVaultsFiltersProps = {
   onSearch: (searchValue: string) => void
   shouldDebounce?: boolean
   searchAlertContent?: ReactNode
-  leadingControls?: ReactNode
   chainConfig: TChainConfig
   filtersCount?: number
   filtersContent?: ReactNode
   filtersPanelContent?: ReactNode
   onClearFilters?: () => void
+  mobileExtraContent?: ReactNode
+  trailingControls?: ReactNode
 }
 
 export function VaultsFilters({
@@ -59,17 +51,20 @@ export function VaultsFilters({
   onSearch,
   shouldDebounce,
   searchAlertContent,
-  leadingControls,
   chainConfig,
   filtersCount = 0,
   filtersContent,
   filtersPanelContent,
-  onClearFilters
+  onClearFilters,
+  mobileExtraContent,
+  trailingControls
 }: TVaultsFiltersProps): ReactElement {
   const SEARCH_MIN_WIDTH = 180
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
+  const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false)
   const [isFiltersButtonMinimal, setIsFiltersButtonMinimal] = useState(false)
   const [isChainSelectorMinimal, setIsChainSelectorMinimal] = useState(false)
   const [forceMobileFiltersBar, setForceMobileFiltersBar] = useState(false)
@@ -393,21 +388,6 @@ export function VaultsFilters({
     <>
       <div className={'relative col-span-24 w-full md:col-span-19'}>
         <div className={cl('md:hidden', forceMobileFiltersBar ? 'md:block' : '')}>
-          <div className={'mb-5 w-full'}>
-            <SearchBar
-              className={
-                'max-w-none rounded-lg border-none bg-surface-secondary text-text-primary transition-all md:w-full'
-              }
-              iconClassName={'text-text-primary'}
-              searchPlaceholder={'YFI Vault'}
-              searchValue={searchValue}
-              onSearch={onSearch}
-              shouldDebounce={shouldDebounce || false}
-              highlightWhenActive={true}
-              alertContent={searchAlertContent}
-            />
-          </div>
-
           <Drawer.Root
             open={isMobileFiltersOpen}
             onOpenChange={(isOpen): void => {
@@ -415,15 +395,61 @@ export function VaultsFilters({
             }}
             direction={'bottom'}
           >
-            <Drawer.Trigger asChild>
-              <button
-                className={
-                  'w-full cursor-pointer rounded-[4px] bg-neutral-800/20 py-2 text-sm text-text-primary transition-colors hover:bg-neutral-800/50'
-                }
-              >
-                {'Filter Vaults'}
-              </button>
-            </Drawer.Trigger>
+            {isMobileSearchExpanded ? (
+              <div className={'flex w-full items-center gap-1'}>
+                <div className={'flex-1'}>
+                  <SearchBar
+                    className={'w-full rounded-[4px] border-none bg-neutral-800/20 text-text-primary'}
+                    iconClassName={'text-text-primary'}
+                    searchPlaceholder={'Search vaults...'}
+                    searchValue={searchValue}
+                    onSearch={onSearch}
+                    shouldDebounce={shouldDebounce || false}
+                    highlightWhenActive={false}
+                    autoFocus={true}
+                    onKeyDown={(e): void => {
+                      if (e.key === 'Escape') {
+                        setIsMobileSearchExpanded(false)
+                      }
+                    }}
+                  />
+                </div>
+                <button
+                  type={'button'}
+                  className={
+                    'flex size-10 shrink-0 items-center justify-center rounded-[4px] bg-neutral-800/20 text-text-secondary transition-colors hover:text-text-primary'
+                  }
+                  onClick={(): void => setIsMobileSearchExpanded(false)}
+                  aria-label={'Close search'}
+                >
+                  <IconCross className={'size-3'} />
+                </button>
+              </div>
+            ) : (
+              <div className={'flex w-full items-center gap-1'}>
+                <Drawer.Trigger asChild>
+                  <button
+                    className={
+                      'h-10 flex-1 cursor-pointer rounded-[4px] bg-neutral-800/20 text-sm text-text-primary transition-colors hover:bg-neutral-800/40'
+                    }
+                  >
+                    {'Filter Vaults'}
+                  </button>
+                </Drawer.Trigger>
+                <button
+                  type={'button'}
+                  className={cl(
+                    'flex size-10 shrink-0 items-center justify-center rounded-[4px] bg-neutral-800/20 text-text-secondary transition-colors hover:text-text-primary',
+                    searchValue ? 'text-text-primary' : ''
+                  )}
+                  onClick={(): void => setIsMobileSearchExpanded(true)}
+                  aria-label={'Search vaults'}
+                >
+                  <IconSearch className={'size-4'} />
+                </button>
+              </div>
+            )}
+            {mobileExtraContent ? <div className={'mt-2 w-full'}>{mobileExtraContent}</div> : null}
             <Drawer.Portal>
               <Drawer.Overlay className={'fixed inset-0 z-99998 bg-black/40 backdrop-blur-xs transition-opacity'} />
               <Drawer.Content className={'fixed inset-x-0 bottom-0 z-99999 flex justify-center outline-hidden'}>
@@ -456,8 +482,6 @@ export function VaultsFilters({
                     onSearch={onSearch}
                     shouldDebounce={shouldDebounce}
                     searchAlertContent={searchAlertContent}
-                    leadingControls={leadingControls}
-                    isChainSelectorMinimal={true}
                     enableResponsiveLayout={false}
                   />
                   {hasPanelContent ? filtersPanelContent : null}
@@ -484,19 +508,22 @@ export function VaultsFilters({
             showFiltersButton={hasFiltersContent}
             filtersCount={filtersCount}
             onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
-            showInlineSearch={true}
+            showInlineSearch={false}
+            showSearchButton={true}
+            isSearchExpanded={isSearchExpanded}
+            onExpandSearch={(): void => setIsSearchExpanded(true)}
+            onCollapseSearch={(): void => setIsSearchExpanded(false)}
             searchValue={searchValue}
             onSearch={onSearch}
             shouldDebounce={shouldDebounce}
             searchAlertContent={searchAlertContent}
-            leadingControls={leadingControls}
             isFiltersButtonMinimal={isFiltersButtonMinimal}
-            isChainSelectorMinimal={isChainSelectorMinimal}
             controlsRowRef={controlsRowRef}
             chainSelectorRef={chainSelectorRef}
             filtersButtonRef={filtersButtonRef}
             searchContainerRef={searchContainerRef}
             enableResponsiveLayout={true}
+            trailingControls={trailingControls}
           />
         </div>
       </div>
@@ -534,18 +561,21 @@ function FilterControls({
   filtersCount,
   onOpenFiltersModal,
   showInlineSearch,
+  showSearchButton = false,
+  isSearchExpanded = false,
+  onExpandSearch,
+  onCollapseSearch,
   searchValue,
   onSearch,
   shouldDebounce,
   searchAlertContent,
-  leadingControls,
   isFiltersButtonMinimal = false,
-  isChainSelectorMinimal = false,
   controlsRowRef,
   chainSelectorRef,
   filtersButtonRef,
   searchContainerRef,
-  enableResponsiveLayout = false
+  enableResponsiveLayout = false,
+  trailingControls
 }: {
   chainButtons: TChainButton[]
   onSelectAllChains: () => void
@@ -562,18 +592,21 @@ function FilterControls({
   filtersCount: number
   onOpenFiltersModal: () => void
   showInlineSearch: boolean
+  showSearchButton?: boolean
+  isSearchExpanded?: boolean
+  onExpandSearch?: () => void
+  onCollapseSearch?: () => void
   searchValue: string
   onSearch: (value: string) => void
   shouldDebounce?: boolean
   searchAlertContent?: ReactNode
-  leadingControls?: ReactNode
   isFiltersButtonMinimal?: boolean
-  isChainSelectorMinimal?: boolean
   controlsRowRef?: RefObject<HTMLDivElement | null>
   chainSelectorRef?: RefObject<HTMLDivElement | null>
   filtersButtonRef?: RefObject<HTMLButtonElement | null>
   searchContainerRef?: RefObject<HTMLDivElement | null>
   enableResponsiveLayout?: boolean
+  trailingControls?: ReactNode
 }): ReactElement {
   const showFiltersLabel = !isFiltersButtonMinimal
   return (
@@ -582,15 +615,11 @@ function FilterControls({
         <div className={'flex flex-col gap-2'}>
           <div
             ref={controlsRowRef}
-            className={cl('flex w-full items-center gap-3', enableResponsiveLayout ? 'flex-nowrap' : 'flex-wrap')}
+            className={cl(
+              'flex w-full items-center gap-3',
+              enableResponsiveLayout ? 'flex-nowrap justify-between' : 'flex-wrap'
+            )}
           >
-            {leadingControls ? (
-              <div className={enableResponsiveLayout ? 'shrink-0' : 'w-full'}>
-                {!enableResponsiveLayout && isValidElement(leadingControls)
-                  ? cloneElement(leadingControls, { stretch: true } as Record<string, unknown>)
-                  : leadingControls}
-              </div>
-            ) : null}
             <div
               ref={chainSelectorRef}
               className={cl(
@@ -613,10 +642,10 @@ function FilterControls({
                 <span className={'size-5 overflow-hidden rounded-full'}>
                   <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
                 </span>
-                <span className={'whitespace-nowrap'}>{allChainsLabel}</span>
+                {areAllChainsSelected ? <span className={'whitespace-nowrap'}>{allChainsLabel}</span> : null}
               </button>
               {chainButtons.map((chain) => {
-                const showChainLabel = !isChainSelectorMinimal || chain.isSelected
+                const showChainLabel = chain.isSelected
                 return (
                   <button
                     key={chain.id}
@@ -657,36 +686,75 @@ function FilterControls({
                 </button>
               ) : null}
             </div>
-            <div className={'flex flex-row items-center gap-3 flex-1 min-w-0'}>
-              {showFiltersButton ? (
-                <button
-                  type={'button'}
-                  className={cl(
-                    'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-border py-2 text-sm font-medium text-text-secondary bg-surface transition-colors',
-                    isFiltersButtonMinimal ? 'px-2' : 'px-4',
-                    'hover:text-text-secondary',
-                    'data-[active=true]:border-border-hover data-[active=true]:text-text-secondary'
-                  )}
-                  onClick={onOpenFiltersModal}
-                  aria-label={'Open filters'}
-                  ref={filtersButtonRef}
-                >
-                  <IconFilter className={'size-4'} />
-                  {showFiltersLabel ? <span>{'Filters'}</span> : null}
-                  {filtersCount > 0 ? (
-                    <span
+            <div className={'flex shrink-0 flex-row items-center gap-2'}>
+              {showSearchButton && isSearchExpanded ? (
+                <div ref={searchContainerRef} className={'min-w-[180px]'}>
+                  <SearchBar
+                    className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
+                    iconClassName={'text-text-primary'}
+                    searchPlaceholder={'Find a Vault'}
+                    searchValue={searchValue}
+                    onSearch={onSearch}
+                    shouldDebounce={shouldDebounce || false}
+                    highlightWhenActive={true}
+                    alertContent={searchAlertContent}
+                    onKeyDown={(e): void => {
+                      if (e.key === 'Escape' && onCollapseSearch) {
+                        onCollapseSearch()
+                      }
+                    }}
+                    autoFocus={true}
+                  />
+                </div>
+              ) : (
+                <>
+                  {trailingControls}
+                  {showFiltersButton ? (
+                    <button
+                      type={'button'}
                       className={cl(
-                        'inline-flex min-w-5 items-center justify-center rounded-full bg-surface-tertiary px-1.5 text-xs text-text-primary',
-                        showFiltersLabel ? 'ml-1' : 'ml-0'
+                        'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-border py-2 text-sm font-medium text-text-secondary bg-surface transition-colors',
+                        isFiltersButtonMinimal ? 'px-2' : 'px-4',
+                        'hover:text-text-secondary',
+                        'data-[active=true]:border-border-hover data-[active=true]:text-text-secondary'
                       )}
+                      onClick={onOpenFiltersModal}
+                      aria-label={'Open filters'}
+                      ref={filtersButtonRef}
                     >
-                      {filtersCount}
-                    </span>
+                      <IconFilter className={'size-4'} />
+                      {showFiltersLabel ? <span>{'Filters'}</span> : null}
+                      {filtersCount > 0 ? (
+                        <span
+                          className={cl(
+                            'inline-flex min-w-5 items-center justify-center rounded-full bg-surface-tertiary px-1.5 text-xs text-text-primary',
+                            showFiltersLabel ? 'ml-1' : 'ml-0'
+                          )}
+                        >
+                          {filtersCount}
+                        </span>
+                      ) : null}
+                    </button>
                   ) : null}
-                </button>
-              ) : null}
+                  {showSearchButton && onExpandSearch ? (
+                    <button
+                      type={'button'}
+                      className={cl(
+                        'flex shrink-0 items-center justify-center border rounded-lg size-10 border-border text-sm font-medium text-text-secondary bg-surface transition-colors',
+                        'hover:text-text-primary hover:border-border-hover',
+                        searchValue ? 'border-border-hover text-text-primary' : ''
+                      )}
+                      onClick={onExpandSearch}
+                      aria-label={'Search vaults'}
+                      data-active={Boolean(searchValue)}
+                    >
+                      <IconSearch className={'size-4'} />
+                    </button>
+                  ) : null}
+                </>
+              )}
               {showInlineSearch ? (
-                <div ref={searchContainerRef} className={'flex-1 min-w-[180px]'}>
+                <div ref={searchContainerRef} className={'min-w-[180px]'}>
                   <SearchBar
                     className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
                     iconClassName={'text-text-primary'}
