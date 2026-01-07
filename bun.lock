@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "yearnfi",
@@ -10,7 +9,6 @@
         "@rainbow-me/rainbowkit": "2.2.9",
         "@react-hookz/web": "24.0.4",
         "@tanstack/react-query": "5.90.7",
-        "axios": "1.12.2",
         "cross-fetch": "4.1.0",
         "ethers": "5.7.2",
         "framer-motion": "12.23.24",

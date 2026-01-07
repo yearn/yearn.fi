@@ -1,8 +1,6 @@
 'use client'
 
 import { useLocalStorageValue } from '@react-hookz/web'
-import type { AxiosResponse } from 'axios'
-import axios from 'axios'
 import type { Dispatch, ReactElement, SetStateAction } from 'react'
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import { isAddressEqual } from 'viem'
@@ -95,15 +93,18 @@ export const WithTokenList = ({
   useAsyncTrigger(async (): Promise<void> => {
     const unhashedLists = hashList.split(',')
     const responses = await Promise.allSettled(
-      unhashedLists.map(async (eachURI: string): Promise<AxiosResponse> => axios.get(eachURI))
+      unhashedLists.map(async (eachURI: string): Promise<TTokenList> => {
+        const res = await fetch(eachURI)
+        return res.json()
+      })
     )
     const tokens: TTokenList['tokens'] = []
     const fromList: TTokenList[] = []
 
     for (const [index, response] of responses.entries()) {
       if (response.status === 'fulfilled') {
-        tokens.push(...(response.value.data as TTokenList).tokens)
-        fromList.push({ ...(response.value.data as TTokenList), uri: unhashedLists[index] })
+        tokens.push(...response.value.tokens)
+        fromList.push({ ...response.value, uri: unhashedLists[index] })
       }
     }
 
@@ -165,22 +166,26 @@ export const WithTokenList = ({
     const fromList: TTokenList[] = []
 
     for (const eachURI of extraTokenlist || []) {
-      const [fromUserList] = await Promise.allSettled([axios.get(eachURI)])
+      type TLooseTokenList = TTokenList & { tokens: (TTokenList['tokens'][0] & { chainID?: number })[] }
+      const [fromUserList] = await Promise.allSettled([
+        fetch(eachURI).then((res) => res.json() as Promise<TLooseTokenList>)
+      ])
 
       if (fromUserList.status === 'fulfilled') {
-        fromList.push({ ...(fromUserList.value.data as TTokenList), uri: eachURI })
-        const { tokens } = fromUserList.value.data
+        fromList.push({ ...fromUserList.value, uri: eachURI })
+        const { tokens } = fromUserList.value
         for (const eachToken of tokens) {
-          if (!tokenListTokens[eachToken.chainId ?? eachToken.chainID]) {
-            tokenListTokens[eachToken.chainId ?? eachToken.chainID] = {}
+          const chainId = eachToken.chainId ?? eachToken.chainID ?? 1
+          if (!tokenListTokens[chainId]) {
+            tokenListTokens[chainId] = {}
           }
-          if (!tokenListTokens[eachToken.chainId ?? eachToken.chainID][toAddress(eachToken.address)]) {
-            tokenListTokens[eachToken.chainId ?? eachToken.chainID][toAddress(eachToken.address)] = {
+          if (!tokenListTokens[chainId][toAddress(eachToken.address)]) {
+            tokenListTokens[chainId][toAddress(eachToken.address)] = {
               address: eachToken.address,
               name: eachToken.name,
               symbol: eachToken.symbol,
               decimals: eachToken.decimals,
-              chainID: eachToken.chainID ?? eachToken.chainId,
+              chainID: chainId,
               logoURI: eachToken.logoURI,
               value: 0,
               balance: zeroNormalizedBN
@@ -194,7 +199,7 @@ export const WithTokenList = ({
           if (
             import.meta.env.VITE_NODE_ENV === 'development' &&
             Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) &&
-            (eachToken.chainID ?? eachToken.chainId) === 1
+            chainId === 1
           ) {
             if (!tokenListTokens[1337]) {
               tokenListTokens[1337] = {}
