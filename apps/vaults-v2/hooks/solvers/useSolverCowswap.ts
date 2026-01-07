@@ -21,7 +21,6 @@ import { getEthersSigner } from '@lib/utils/wagmi/ethersAdapter'
 import { isSolverDisabled } from '@vaults-v2/contexts/useSolver'
 import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
 import { Solver } from '@vaults-v2/types/solvers'
-import axios from 'axios'
 import { ethers } from 'ethers'
 import { useCallback, useMemo, useRef } from 'react'
 import type { Hash, TransactionReceipt } from 'viem'
@@ -223,7 +222,8 @@ export function useSolverCowswap(): TSolverContext {
   const checkOrderStatus = useCallback(
     async (orderUID: string, validTo: number): Promise<{ isSuccessful: boolean; error?: Error }> => {
       for (let i = 0; i < maxIterations; i++) {
-        const { data: order } = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`)
+        const response = await fetch(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`)
+        const order = await response.json()
         if (order?.status === 'fulfilled') {
           return { isSuccessful: true }
         }

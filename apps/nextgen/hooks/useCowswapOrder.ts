@@ -2,7 +2,6 @@ import type { OrderCreation, UnsignedOrder } from '@cowprotocol/cow-sdk'
 import { OrderBookApi, OrderSigningUtils } from '@cowprotocol/cow-sdk'
 import { retrieveConfig } from '@lib/utils/wagmi'
 import { getEthersSigner } from '@lib/utils/wagmi/ethersAdapter'
-import axios from 'axios'
 import { useCallback, useMemo, useState } from 'react'
 import type { UseSimulateContractReturnType } from 'wagmi'
 
@@ -51,7 +50,8 @@ export const useCowswapOrder = ({
       // Wait for order to be executed
       const maxIterations = 100
       for (let i = 0; i < maxIterations; i++) {
-        const { data: order } = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`)
+        const response = await fetch(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`)
+        const order = await response.json()
 
         if (order?.status === 'fulfilled') {
           setIsExecuting(false)

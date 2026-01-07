@@ -23,7 +23,6 @@ import type { TPortalsEstimate } from '@vaults-v2/hooks/usePortalsApi'
 import { getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK } from '@vaults-v2/hooks/usePortalsApi'
 import type { TInitSolverArgs, TSolverContext } from '@vaults-v2/types/solvers'
 import { Solver } from '@vaults-v2/types/solvers'
-import axios from 'axios'
 import { useCallback, useMemo, useRef } from 'react'
 import type { Hash, TransactionReceipt } from 'viem'
 import { BaseError, isHex, maxUint256, zeroAddress } from 'viem'
@@ -70,34 +69,8 @@ async function getQuote(
     return result
   } catch (error) {
     console.error('Portals getQuote error:', error)
-    let errorContent = 'Portals.fi zap not possible. Try again later or pick another token.'
-
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status
-      const description = error.response?.data?.description || error.response?.data?.message
-
-      // Handle specific HTTP status codes
-      switch (status) {
-        case 400:
-          errorContent = 'Invalid request parameters for Portals.fi'
-          break
-        case 429:
-          errorContent = 'Rate limit exceeded. Please try again later.'
-          break
-        case 500:
-          errorContent = 'Portals.fi service temporarily unavailable'
-          break
-        default:
-          errorContent = `Portals.fi error (${status || 'unknown'})`
-      }
-
-      if (description) {
-        errorContent += ` - ${description}`
-      }
-    } else if (error instanceof Error) {
-      errorContent = error.message || errorContent
-    }
-
+    const errorContent =
+      error instanceof Error ? error.message : 'Portals.fi zap not possible. Try again later or pick another token.'
     return { data: null, error: new Error(errorContent) }
   }
 }
@@ -288,15 +261,6 @@ export function useSolverPortals(): TSolverContext {
             type: 'error',
             content: `Portals.fi zap not possible: ${errorMessage}`
           })
-        } else if (axios.isAxiosError(error)) {
-          const status = error.response?.status
-          const message = error.response?.data?.message || error.message
-          finalError = new Error(`Portals API error (${status || 'unknown'}): ${message}`)
-          console.error('Portals Axios error:', finalError.message)
-          toast({
-            type: 'error',
-            content: `Portals.fi service error: ${message}`
-          })
         } else {
           finalError = error instanceof Error ? error : new Error('Unknown Portals execution error')
           console.error('Portals execution error:', finalError.message)
@@ -371,13 +335,7 @@ export function useSolverPortals(): TSolverContext {
       )
       return existingAllowances.current[key]
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status
-        const message = error.response?.data?.message || error.message
-        console.error(`Portals allowance API error (${status || 'unknown'}): ${message}`)
-      } else {
-        console.error('Portals allowance error:', error)
-      }
+      console.error('Portals allowance error:', error)
       return zeroNormalizedBN
     }
   }, [])
