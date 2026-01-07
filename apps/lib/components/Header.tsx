@@ -10,13 +10,12 @@ import { normalizePathname } from '@lib/utils/routes'
 import { truncateHex } from '@lib/utils/tools.address'
 import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
 import type { ReactElement } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
 import { TypeMarkYearn as TypeMarkYearnText } from '../icons/TypeMarkYearn-text-only'
 import { LaunchModal } from './LaunchModal'
-import { ModalMobileMenu } from './ModalMobileMenu'
 
 export type TMenu = {
   path: string
@@ -27,7 +26,7 @@ type TNavbar = { nav: TMenu[]; currentPathName: string }
 
 function Navbar({ nav, currentPathName }: TNavbar): ReactElement {
   return (
-    <nav className={'hidden md:flex gap-6'}>
+    <nav className={'hidden gap-6'}>
       {nav.map(
         (option): ReactElement => (
           <Link key={option.path} target={option.target} href={option.path}>
@@ -128,12 +127,29 @@ function WalletSelector(): ReactElement {
   )
 }
 
-function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
+function AppHeader(_props: { supportedNetworks: Chain[] }): ReactElement {
   const location = useLocation()
   const pathname = location.pathname
   const normalizedPathname = normalizePathname(pathname)
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
   const { setShouldOpenCurtain, notificationStatus } = useNotifications()
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isMenuOpen])
 
   const menu = useMemo((): TMenu[] => {
     // const HOME_MENU = { path: '/apps', label: 'Apps' }
@@ -197,7 +213,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
               <LaunchModal />
             </div>
             <div className={'flex items-center gap-2 md:gap-4'}>
-              <TypeMarkYearnText className={'yearn-typemark h-8 w-auto text-text-primary'} />
+              <TypeMarkYearnText className={'yearn-typemark h-7 w-auto text-text-primary mr-2 mt-[3px]'} />
               {/* <TypeMarkYearnFull className={'yearn-typemark hidden h-8 w-auto md:block'} color={'currentColor'} /> */}
               <div className={'hidden md:flex items-center gap-3 pb-0.5'}>
                 {/* Vaults section with version switch */}
@@ -205,7 +221,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
                   <Link href={'/vaults'}>
                     <span
                       className={cl(
-                        'cursor-pointer text-lg font-medium transition-colors relative',
+                        'cursor-pointer text-base font-medium transition-colors relative',
                         pathname.startsWith('/vaults')
                           ? 'text-text-primary'
                           : 'text-text-secondary hover:text-text-primary'
@@ -223,7 +239,7 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
                 <Link href={'/portfolio'}>
                   <span
                     className={cl(
-                      'cursor-pointer text-lg font-medium transition-colors relative',
+                      'cursor-pointer text-base font-medium transition-colors relative',
                       pathname.startsWith('/portfolio')
                         ? 'text-text-primary'
                         : 'text-text-secondary hover:text-text-primary'
@@ -248,46 +264,68 @@ function AppHeader(props: { supportedNetworks: Chain[] }): ReactElement {
                   <div className={cl('absolute right-4 top-4 size-2 rounded-full', notificationDotColor)} />
                 </button>
                 <WalletSelector />
-                <div className={'flex md:hidden pl-4 text-text-secondary'}>
+                <div ref={menuRef} className={'relative flex pl-4 text-text-secondary'}>
                   <button onClick={(): void => setIsMenuOpen(!isMenuOpen)}>
                     <span className={'sr-only'}>{'Open menu'}</span>
                     <IconBurgerPlain />
                   </button>
+                  {isMenuOpen && (
+                    <div
+                      className={
+                        'absolute right-0 top-full mt-2 w-56 rounded-xl border border-border bg-surface p-4 shadow-lg z-50'
+                      }
+                    >
+                      <div className={'flex flex-col gap-2'}>
+                        <Link
+                          href={'/vaults'}
+                          className={cl(
+                            'block rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-secondary',
+                            pathname.startsWith('/vaults') && !pathname.includes('type=factory')
+                              ? 'text-text-primary bg-surface-secondary'
+                              : 'text-text-secondary hover:text-text-primary'
+                          )}
+                          onClick={(): void => setIsMenuOpen(false)}
+                        >
+                          {'Vaults'}
+                        </Link>
+                        <Link
+                          href={'/portfolio'}
+                          className={cl(
+                            'block rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-secondary',
+                            pathname.startsWith('/portfolio')
+                              ? 'text-text-primary bg-surface-secondary'
+                              : 'text-text-secondary hover:text-text-primary'
+                          )}
+                          onClick={(): void => setIsMenuOpen(false)}
+                        >
+                          {'Portfolio'}
+                        </Link>
+                      </div>
+                      <div className={'my-3 h-px bg-border'} />
+                      <div className={'flex flex-col gap-1'}>
+                        {menu.map((item) => (
+                          <Link
+                            key={item.path}
+                            href={item.path}
+                            target={item.target}
+                            className={
+                              'flex items-center justify-between rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary'
+                            }
+                            onClick={(): void => setIsMenuOpen(false)}
+                          >
+                            <span>{item.label}</span>
+                            {item.target === '_blank' && <span className={'text-xs'}>{'↗'}</span>}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </div>
         </header>
       </div>
-      <ModalMobileMenu
-        shouldUseWallets={true}
-        shouldUseNetworks={true}
-        isOpen={isMenuOpen}
-        onClose={(): void => setIsMenuOpen(false)}
-        supportedNetworks={props.supportedNetworks}
-      >
-        <Link
-          href={'/vaults'}
-          className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
-          onClick={(): void => setIsMenuOpen(false)}
-        >
-          <span className={'text-[32px] font-bold'}>{'V3 Vaults'}</span>
-        </Link>
-        <Link
-          href={'/vaults?type=factory'}
-          className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
-          onClick={(): void => setIsMenuOpen(false)}
-        >
-          <span className={'text-[32px] font-bold'}>{'Factory Vaults'}</span>
-        </Link>
-        <Link
-          href={'/portfolio'}
-          className={'flex items-center gap-2 text-white transition-colors hover:text-primary'}
-          onClick={(): void => setIsMenuOpen(false)}
-        >
-          <span className={'text-[32px] font-bold'}>{'Portfolio'}</span>
-        </Link>
-      </ModalMobileMenu>
     </div>
   )
 }
