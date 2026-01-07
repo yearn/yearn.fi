@@ -174,7 +174,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     account,
     chainId,
     destinationChainId,
-    outputChainId: outputToken.chainID ?? chainId,
+    outputChainId: outputToken?.chainID ?? chainId,
     assetDecimals: assetToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
     outputDecimals: outputToken?.decimals ?? 18,
