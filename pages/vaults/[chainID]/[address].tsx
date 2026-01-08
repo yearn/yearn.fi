@@ -439,7 +439,7 @@ function Index(): ReactElement | null {
 
         {/* Desktop Layout - Hidden on mobile */}
         <section className={'hidden md:grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
-          <div className={'space-y-4 md:col-span-13 pb-4'}>
+          <div className={'space-y-4 md:col-span-13 pb-[60vh]'}>
             {renderableSections.length > 0 ? (
               <div className={'w-full sticky z-30'} style={{ top: nextSticky }}>
                 <div className={'bg-app h-6'}></div>
