@@ -5,7 +5,7 @@ import {
 } from '@nextgen/components/vaults-beta/VaultChartsSection'
 import type { ReactElement } from 'react'
 
-export type TVaultsV3ExpandedView = 'apy' | 'performance' | 'info'
+export type TVaultsV3ExpandedView = 'apy' | 'performance' | 'tvl' | 'info'
 
 type Props = {
   activeView: TVaultsV3ExpandedView
@@ -17,8 +17,9 @@ type Props = {
 }
 
 const VIEW_OPTIONS: Array<{ id: TVaultsV3ExpandedView; label: string }> = [
-  { id: 'apy', label: 'APY' },
+  { id: 'apy', label: '30-Day APY' },
   { id: 'performance', label: 'Performance' },
+  { id: 'tvl', label: 'TVL' },
   { id: 'info', label: 'Vault Info' }
 ]
 

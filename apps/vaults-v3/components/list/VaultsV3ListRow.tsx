@@ -78,7 +78,7 @@ export function VaultsV3ListRow({
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const [isExpanded, setIsExpanded] = useState(false)
-  const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('performance')
+  const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('apy')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
   const isBalancedLayout = layoutVariant === 'balanced'
   const leftColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-9'
@@ -141,7 +141,7 @@ export function VaultsV3ListRow({
 
   useEffect(() => {
     if (isExpanded) {
-      setExpandedView('performance')
+      setExpandedView('apy')
     }
   }, [isExpanded])
 
@@ -372,13 +372,19 @@ export function VaultsV3ListRow({
                 }
               />
 
-              {expandedView === 'apy' || expandedView === 'performance' ? (
+              {expandedView === 'apy' || expandedView === 'performance' || expandedView === 'tvl' ? (
                 <div className={'px-3 pb-4'}>
                   <VaultChartsSection
                     chainId={currentVault.chainID}
                     vaultAddress={currentVault.address}
                     shouldRenderSelectors={false}
-                    chartTab={(expandedView === 'apy' ? 'historical-apy' : 'historical-pps') satisfies TVaultChartTab}
+                    chartTab={
+                      (expandedView === 'apy'
+                        ? 'historical-apy'
+                        : expandedView === 'performance'
+                          ? 'historical-pps'
+                          : 'historical-tvl') satisfies TVaultChartTab
+                    }
                     timeframe={expandedTimeframe}
                     chartHeightPx={200}
                     chartHeightMdPx={200}
