@@ -15,6 +15,15 @@ import { ChartContainer, ChartTooltip } from './ChartPrimitives'
 
 const formatPercentTick = (value: number | string) => (Number(value) === 0 ? '' : `${value}%`)
 
+const CHART_CONFIG: ChartConfig = {
+  thirtyDayApy: {
+    label: '30-Day APY %',
+    color: 'var(--chart-1)'
+  }
+}
+
+const formatThirtyDayAPYTooltip = (value: number) => [`${(value ?? 0).toFixed(2)}%`, '30-Day APY']
+
 type ThirtyDayAPYChartProps = {
   chartData: TAprApyChartData
   timeframe: string
@@ -40,19 +49,10 @@ export function ThirtyDayAPYChart({ chartData, timeframe, hideTooltip }: ThirtyD
   )
   const tickFormatter = isShortTimeframe ? formatChartWeekLabel : formatChartMonthYearLabel
 
-  const chartConfig = useMemo<ChartConfig>(() => {
-    return {
-      thirtyDayApy: {
-        label: '30-Day APY %',
-        color: 'var(--chart-1)'
-      }
-    }
-  }, [])
-
   if (isPowerglove) {
     return (
       <div className={'relative h-full'}>
-        <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
+        <ChartContainer config={CHART_CONFIG} style={{ height: 'inherit' }}>
           <LineChart
             data={filteredData}
             margin={{
@@ -80,9 +80,7 @@ export function ThirtyDayAPYChart({ chartData, timeframe, hideTooltip }: ThirtyD
             />
             {!hideTooltip && (
               <ChartTooltip
-                formatter={(value: number) => {
-                  return [`${(value ?? 0).toFixed(2)}%`, '30-Day APY']
-                }}
+                formatter={formatThirtyDayAPYTooltip}
                 labelFormatter={formatChartTooltipDate}
                 contentStyle={{
                   backgroundColor: 'var(--chart-tooltip-bg)',
@@ -109,7 +107,7 @@ export function ThirtyDayAPYChart({ chartData, timeframe, hideTooltip }: ThirtyD
   if (isBlended) {
     return (
       <div className={'relative h-full'}>
-        <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
+        <ChartContainer config={CHART_CONFIG} style={{ height: 'inherit' }}>
           <ComposedChart
             data={filteredData}
             margin={{
@@ -153,9 +151,7 @@ export function ThirtyDayAPYChart({ chartData, timeframe, hideTooltip }: ThirtyD
             />
             {!hideTooltip && (
               <ChartTooltip
-                formatter={(value: number) => {
-                  return [`${(value ?? 0).toFixed(2)}%`, '30-Day APY']
-                }}
+                formatter={formatThirtyDayAPYTooltip}
                 labelFormatter={formatChartTooltipDate}
                 contentStyle={{
                   backgroundColor: 'var(--chart-tooltip-bg)',
@@ -181,7 +177,7 @@ export function ThirtyDayAPYChart({ chartData, timeframe, hideTooltip }: ThirtyD
 
   return (
     <div className={'relative h-full'}>
-      <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
+      <ChartContainer config={CHART_CONFIG} style={{ height: 'inherit' }}>
         <ComposedChart
           data={filteredData}
           margin={{
@@ -211,9 +207,7 @@ export function ThirtyDayAPYChart({ chartData, timeframe, hideTooltip }: ThirtyD
           />
           {!hideTooltip && (
             <ChartTooltip
-              formatter={(value: number) => {
-                return [`${(value ?? 0).toFixed(2)}%`, '30-Day APY']
-              }}
+              formatter={formatThirtyDayAPYTooltip}
               labelFormatter={formatChartTooltipDate}
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
