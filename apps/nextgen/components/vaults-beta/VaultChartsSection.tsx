@@ -9,6 +9,7 @@ import ChartSkeleton from './charts/ChartSkeleton'
 import ChartsLoader from './charts/ChartsLoader'
 import { FixedHeightChartContainer } from './charts/FixedHeightChartContainer'
 import { PPSChart } from './charts/PPSChart'
+import { ThirtyDayAPYChart } from './charts/ThirtyDayAPYChart'
 import { TVLChart } from './charts/TVLChart'
 
 type VaultChartsSectionProps = {
@@ -37,10 +38,10 @@ export const VAULT_CHART_TIMEFRAME_OPTIONS = [
 
 export type TVaultChartTimeframe = (typeof VAULT_CHART_TIMEFRAME_OPTIONS)[number]['value']
 
-export type TVaultChartTab = 'historical-pps' | 'historical-apy' | 'historical-tvl'
+export type TVaultChartTab = 'historical-pps' | 'historical-apy' | 'historical-tvl' | 'thirty-day-apy'
 
 export const VAULT_CHART_TABS: Array<{ id: TVaultChartTab; label: string }> = [
-  { id: 'historical-tvl', label: 'TVL' },
+  { id: 'thirty-day-apy', label: '30-Day APY' },
   { id: 'historical-pps', label: 'Performance' },
   { id: 'historical-apy', label: 'APY' }
 ]
@@ -66,7 +67,7 @@ export function VaultChartsSection({
   const chartsLoading = isLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData
   const hasError = Boolean(error)
 
-  const [uncontrolledTab, setUncontrolledTab] = useState<TVaultChartTab>('historical-tvl')
+  const [uncontrolledTab, setUncontrolledTab] = useState<TVaultChartTab>('thirty-day-apy')
   const [uncontrolledTimeframe, setUncontrolledTimeframe] = useState<TVaultChartTimeframe>('all')
 
   const activeTab = chartTab ?? uncontrolledTab
@@ -131,6 +132,9 @@ export function VaultChartsSection({
       ) : (
         <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx}>
           <ChartErrorBoundary>
+            {activeTab === 'thirty-day-apy' && transformed.aprApyData ? (
+              <ThirtyDayAPYChart chartData={transformed.aprApyData} timeframe={activeTimeframe} />
+            ) : null}
             {activeTab === 'historical-pps' && transformed.ppsData ? (
               <PPSChart chartData={transformed.ppsData} timeframe={activeTimeframe} />
             ) : null}
