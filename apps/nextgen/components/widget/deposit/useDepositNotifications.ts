@@ -48,7 +48,6 @@ export const useDepositNotifications = ({
 }: UseDepositNotificationsProps): DepositNotificationsResult => {
   const approveNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!inputToken || !vault || !account) return undefined
-    if (routeType === 'DIRECT_DEPOSIT') return undefined
 
     let spenderAddress: Address
     let spenderName: string
@@ -58,7 +57,10 @@ export const useDepositNotifications = ({
       spenderName = routerAddress ? 'Enso Router' : vault.symbol || ''
     } else if (routeType === 'DIRECT_STAKE') {
       spenderAddress = stakingAddress || destinationToken
-      spenderName = 'Staking Contract'
+      spenderName = stakingToken?.symbol || 'Staking Contract'
+    } else if (routeType === 'DIRECT_DEPOSIT') {
+      spenderAddress = destinationToken
+      spenderName = vault.symbol || 'Vault'
     } else {
       return undefined
     }
@@ -66,7 +68,7 @@ export const useDepositNotifications = ({
     return {
       type: 'approve',
       amount: formatTAmount({
-        value: inputToken.balance.raw,
+        value: depositAmount,
         decimals: inputToken.decimals ?? 18,
         options: { maximumFractionDigits: 8 }
       }),
@@ -79,10 +81,12 @@ export const useDepositNotifications = ({
   }, [
     inputToken,
     vault,
+    stakingToken,
     account,
     routeType,
     routerAddress,
     depositToken,
+    depositAmount,
     sourceChainId,
     destinationToken,
     stakingAddress

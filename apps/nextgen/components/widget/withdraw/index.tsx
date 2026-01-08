@@ -131,7 +131,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     }
     const vaultDecimals = vault?.decimals ?? 18
     const underlyingAmount = (totalVaultBalance.raw * (pricePerShare as bigint)) / 10n ** BigInt(vaultDecimals)
-    console.log(totalVaultBalance.raw, underlyingAmount)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
   }, [totalVaultBalance.raw, pricePerShare, vault?.decimals, assetToken])
 
