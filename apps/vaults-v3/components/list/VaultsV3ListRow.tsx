@@ -11,7 +11,6 @@ import { Tooltip } from '@lib/components/Tooltip'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import { IconChevron } from '@lib/icons/IconChevron'
-import { IconClose } from '@lib/icons/IconClose'
 import { IconSettings } from '@lib/icons/IconSettings'
 import { IconStablecoin } from '@lib/icons/IconStablecoin'
 import { IconStack } from '@lib/icons/IconStack'
@@ -358,34 +357,18 @@ export function VaultsV3ListRow({
                 timeframe={expandedTimeframe}
                 onTimeframeChange={setExpandedTimeframe}
                 rightElement={
-                  <div className={'flex items-center gap-2'}>
-                    <button
-                      type={'button'}
-                      onClick={(event): void => {
-                        event.stopPropagation()
-                        navigate(href)
-                      }}
-                      className={
-                        'rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
-                      }
-                    >
-                      {'Go to Vault'}
-                    </button>
-                    <button
-                      type={'button'}
-                      aria-label={'Close expanded row'}
-                      onClick={(event): void => {
-                        event.stopPropagation()
-                        setIsExpanded(false)
-                      }}
-                      className={cl(
-                        'inline-flex size-8 items-center justify-center rounded-lg border border-border bg-surface-secondary text-text-secondary transition-colors',
-                        'hover:bg-surface-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
-                      )}
-                    >
-                      <IconClose className={'size-4'} />
-                    </button>
-                  </div>
+                  <button
+                    type={'button'}
+                    onClick={(event): void => {
+                      event.stopPropagation()
+                      navigate(href)
+                    }}
+                    className={
+                      'rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+                    }
+                  >
+                    {'Go to Vault'}
+                  </button>
                 }
               />
 
