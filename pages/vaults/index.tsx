@@ -5,17 +5,17 @@ import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
 import { cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { VaultsListEmpty } from '@vaults-shared/components/list/VaultsListEmpty'
-import { VaultsFilters } from '@vaults-shared/components/VaultsFilters'
-import type { TPossibleSortBy } from '@vaults-shared/hooks/useSortVaults'
-import { useSortVaults } from '@vaults-shared/hooks/useSortVaults'
-import { useQueryArguments } from '@vaults-shared/hooks/useVaultsQueryArgs'
-import { deriveListKind } from '@vaults-shared/utils/vaultListFacets'
-import { VaultsV3AuxiliaryList } from '@vaults-v3/components/list/VaultsV3AuxiliaryList'
-import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
-import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
-import { TrendingVaults } from '@vaults-v3/components/TrendingVaults'
-import { ALL_VAULTSV3_CATEGORIES } from '@vaults-v3/constants'
+import { VaultsAuxiliaryList } from '@vaults/components/list/VaultsAuxiliaryList'
+import { VaultsListHead } from '@vaults/components/list/VaultsListHead'
+import { VaultsListRow } from '@vaults/components/list/VaultsListRow'
+import { TrendingVaults } from '@vaults/components/TrendingVaults'
+import { ALL_VAULTSV3_CATEGORIES } from '@vaults/constants'
+import { VaultsListEmpty } from '@vaults/shared/components/list/VaultsListEmpty'
+import { VaultsFilters } from '@vaults/shared/components/VaultsFilters'
+import type { TPossibleSortBy } from '@vaults/shared/hooks/useSortVaults'
+import { useSortVaults } from '@vaults/shared/hooks/useSortVaults'
+import { useQueryArguments } from '@vaults/shared/hooks/useVaultsQueryArgs'
+import { deriveListKind } from '@vaults/shared/utils/vaultListFacets'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
@@ -782,7 +782,7 @@ function ListOfVaults({
     return (
       <div className={'flex flex-col gap-px bg-border'}>
         {pinnedSections.map((section) => (
-          <VaultsV3AuxiliaryList
+          <VaultsAuxiliaryList
             key={section.key}
             vaults={section.vaults}
             vaultFlags={vaultFlags}
@@ -804,7 +804,7 @@ function ListOfVaults({
               const key = `${vault.chainID}_${toAddress(vault.address)}`
               const rowApyDisplayVariant = resolveApyDisplayVariant(vault)
               return (
-                <VaultsV3ListRow
+                <VaultsListRow
                   key={key}
                   currentVault={vault}
                   flags={vaultFlags[key]}
@@ -878,7 +878,7 @@ function ListOfVaults({
             className={'pointer-events-none absolute inset-0 z-0 bg-app border-2'}
             style={{ borderColor: 'var(--color-app)' }}
           />
-          <VaultsV3ListHead
+          <VaultsListHead
             containerClassName={'rounded-t-xl bg-surface shrink-0'}
             wrapperClassName={'relative z-10 border border-border rounded-t-xl bg-transparent'}
             layoutVariant={'balanced'}

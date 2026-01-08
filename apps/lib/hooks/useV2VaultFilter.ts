@@ -4,14 +4,14 @@ import { toAddress } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
+import { useAppSettings } from '@vaults/contexts/useAppSettings'
 import {
   deriveAssetCategory,
   deriveListKind,
   deriveProtocol,
   isAllocatorVaultOverride
-} from '@vaults-shared/utils/vaultListFacets'
-import { useAppSettings } from '@vaults-v2/contexts/useAppSettings'
-import { getNativeTokenWrapperContract } from '@vaults-v2/utils'
+} from '@vaults/shared/utils/vaultListFacets'
+import { getNativeTokenWrapperContract } from '@vaults/utils/nativeTokens'
 import { useCallback, useMemo } from 'react'
 
 type TVaultWithMetadata = {

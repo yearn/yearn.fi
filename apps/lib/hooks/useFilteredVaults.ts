@@ -5,7 +5,7 @@ import { toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { isAutomatedVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
-import { useAppSettings } from '@vaults-v2/contexts/useAppSettings'
+import { useAppSettings } from '@vaults/contexts/useAppSettings'
 import { useCallback, useMemo } from 'react'
 
 export function useFilteredVaults(

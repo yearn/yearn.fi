@@ -8,10 +8,10 @@ import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import { IconSpinner } from '@lib/icons/IconSpinner'
 import type { TSortDirection } from '@lib/types'
 import { isZero, toAddress } from '@lib/utils'
-import { type TPossibleSortBy, useSortVaults } from '@vaults-shared/index'
-import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
-import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
-import { SuggestedVaultCard } from '@vaults-v3/components/SuggestedVaultCard'
+import { VaultsListHead } from '@vaults/components/list/VaultsListHead'
+import { VaultsListRow } from '@vaults/components/list/VaultsListRow'
+import { SuggestedVaultCard } from '@vaults/components/SuggestedVaultCard'
+import { type TPossibleSortBy, useSortVaults } from '@vaults/shared/index'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 
@@ -353,7 +353,7 @@ function PortfolioPage(): ReactElement {
           </div>
           <div className={'overflow-hidden rounded-3xl border border-border'}>
             <div className={'flex flex-col'}>
-              <VaultsV3ListHead
+              <VaultsListHead
                 sortBy={sortBy}
                 sortDirection={sortDirection}
                 onSort={(newSortBy, newDirection): void => {
@@ -408,7 +408,7 @@ function PortfolioPage(): ReactElement {
                     const isV3 = vault.version?.startsWith('3') || vault.version?.startsWith('~3')
                     const hrefOverride = isV3 ? undefined : `/vaults/${vault.chainID}/${toAddress(vault.address)}`
                     return (
-                      <VaultsV3ListRow
+                      <VaultsListRow
                         key={key}
                         currentVault={vault}
                         flags={vaultFlags[key]}

@@ -1,7 +1,7 @@
 import { toAddress } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { getNativeTokenWrapperContract } from '@vaults-v2/utils'
+import { getNativeTokenWrapperContract } from '@vaults/utils/nativeTokens'
 
 type TGetBalance = (args: { address: `0x${string}`; chainID: number }) => { raw: bigint; normalized: number }
 type TGetPrice = (args: { address: `0x${string}`; chainID: number }) => { normalized: number }
