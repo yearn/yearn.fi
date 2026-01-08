@@ -4,7 +4,12 @@ import { toAddress } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
-import { deriveAssetCategory, deriveListKind, deriveProtocol } from '@vaults-shared/utils/vaultListFacets'
+import {
+  deriveAssetCategory,
+  deriveListKind,
+  deriveProtocol,
+  isAllocatorVaultOverride
+} from '@vaults-shared/utils/vaultListFacets'
 import { useAppSettings } from '@vaults-v2/contexts/useAppSettings'
 import { getNativeTokenWrapperContract } from '@vaults-v2/utils'
 import { useCallback, useMemo } from 'react'
@@ -121,6 +126,9 @@ export function useV2VaultFilter(
     }
 
     Object.values(vaults).forEach((vault) => {
+      if (isAllocatorVaultOverride(vault)) {
+        return
+      }
       if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
         return
       }
@@ -129,6 +137,9 @@ export function useV2VaultFilter(
     })
 
     Object.values(vaultsMigrations).forEach((vault) => {
+      if (isAllocatorVaultOverride(vault)) {
+        return
+      }
       if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
         return
       }
@@ -144,6 +155,9 @@ export function useV2VaultFilter(
     })
 
     Object.values(vaultsRetired).forEach((vault) => {
+      if (isAllocatorVaultOverride(vault)) {
+        return
+      }
       if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
         return
       }

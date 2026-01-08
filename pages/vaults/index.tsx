@@ -14,6 +14,8 @@ import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
 import { TrendingVaults } from '@vaults-v3/components/TrendingVaults'
 import { ALL_VAULTSV3_CATEGORIES } from '@vaults-v3/constants'
+import { deriveListKind } from '@vaults-shared/utils/vaultListFacets'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
@@ -427,8 +429,9 @@ function ListOfVaults({
   const activeCategories = sanitizedCategories
   const activeTypes = isV3View ? sanitizedV3Types : sanitizedV2Types
   const activeProductType = vaultType === 'factory' ? 'lp' : vaultType
-  const resolveApyDisplayVariant = useCallback((vault: { version?: string | null }): 'default' | 'factory-list' => {
-    return vault.version?.startsWith('3') || vault.version?.startsWith('~3') ? 'default' : 'factory-list'
+  const resolveApyDisplayVariant = useCallback((vault: TYDaemonVault): 'default' | 'factory-list' => {
+    const listKind = deriveListKind(vault)
+    return listKind === 'allocator' || listKind === 'strategy' ? 'default' : 'factory-list'
   }, [])
   const handleToggleChain = useCallback(
     (chainId: number): void => {
