@@ -42,8 +42,6 @@ type TVaultRowFlags = {
   isRetired?: boolean
 }
 
-type TVaultsV3ListRowLayout = 'default' | 'balanced'
-
 export function VaultsV3ListRow({
   currentVault,
   flags,
@@ -56,8 +54,7 @@ export function VaultsV3ListRow({
   onToggleChain,
   onToggleCategory,
   onToggleType,
-  showStrategies = false,
-  layoutVariant = 'default'
+  showStrategies = false
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
@@ -71,7 +68,6 @@ export function VaultsV3ListRow({
   onToggleCategory?: (category: string) => void
   onToggleType?: (type: string) => void
   showStrategies?: boolean
-  layoutVariant?: TVaultsV3ListRowLayout
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
@@ -80,11 +76,10 @@ export function VaultsV3ListRow({
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('apy')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
-  const isBalancedLayout = layoutVariant === 'balanced'
-  const leftColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-9'
-  const rightColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-15'
-  const rightGridColumns = isBalancedLayout ? 'md:grid-cols-12' : 'md:grid-cols-15'
-  const metricsColumnSpan = isBalancedLayout ? 'col-span-4' : 'col-span-5'
+  const leftColumnSpan = 'col-span-12'
+  const rightColumnSpan = 'col-span-12'
+  const rightGridColumns = 'md:grid-cols-12'
+  const metricsColumnSpan = 'col-span-4'
   const kindLabel =
     currentVault.kind === 'Multi Strategy'
       ? 'Allocator Vault'
