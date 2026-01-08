@@ -47,8 +47,6 @@ type TVaultRowFlags = {
   isHidden?: boolean
 }
 
-type TVaultsListRowLayout = 'default' | 'balanced'
-
 export function VaultsListRow({
   currentVault,
   flags,
@@ -60,11 +58,9 @@ export function VaultsListRow({
   onToggleChain,
   onToggleCategory,
   onToggleType,
-
   activeProductType,
   onToggleVaultType,
-  showStrategies = false,
-  layoutVariant = 'default'
+  showStrategies = false
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
@@ -79,7 +75,6 @@ export function VaultsListRow({
   activeProductType?: 'v3' | 'lp' | 'all'
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
-  layoutVariant?: TVaultsListRowLayout
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
@@ -107,12 +102,10 @@ export function VaultsListRow({
       : 'Show LP vaults'
   const showProductTypeChip = Boolean(activeProductType) || Boolean(onToggleVaultType)
   const isProductTypeActive = false
-
-  const isBalancedLayout = layoutVariant === 'balanced'
-  const leftColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-9'
-  const rightColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-15'
-  const rightGridColumns = isBalancedLayout ? 'md:grid-cols-12' : 'md:grid-cols-15'
-  const metricsColumnSpan = isBalancedLayout ? 'col-span-4' : 'col-span-5'
+  const leftColumnSpan = 'col-span-12'
+  const rightColumnSpan = 'col-span-12'
+  const rightGridColumns = 'md:grid-cols-12'
+  const metricsColumnSpan = 'col-span-4'
 
   const isHiddenVault = Boolean(flags?.isHidden)
   const baseKindType =

@@ -35,7 +35,6 @@ export type TListHead = {
   activeToggleValues?: Iterable<string>
   wrapperClassName?: string
   containerClassName?: string
-  layoutVariant?: 'default' | 'balanced'
 }
 
 function isToggleItem(item: TListHeadItem): item is TToggleListHeadItem {
@@ -50,14 +49,12 @@ export function VaultsListHead({
   onToggle,
   activeToggleValues,
   wrapperClassName,
-  containerClassName,
-  layoutVariant = 'default'
+  containerClassName
 }: TListHead): ReactElement {
   const activeToggles = useMemo(() => new Set(activeToggleValues || []), [activeToggleValues])
-  const isBalancedLayout = layoutVariant === 'balanced'
-  const leftColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-9'
-  const rightColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-15'
-  const rightGridColumns = isBalancedLayout ? 'md:grid-cols-12' : 'md:grid-cols-15'
+  const leftColumnSpan = 'col-span-12'
+  const rightColumnSpan = 'col-span-12'
+  const rightGridColumns = 'md:grid-cols-12'
 
   const toggleSortDirection = (newSortBy: string): TSortDirection => {
     if (sortBy === newSortBy) {

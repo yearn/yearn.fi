@@ -795,7 +795,6 @@ function ListOfVaults({
             vaults={section.vaults}
             vaultFlags={vaultFlags}
             resolveApyDisplayVariant={resolveApyDisplayVariant}
-            layoutVariant={'balanced'}
             activeChains={activeChains}
             activeCategories={activeCategories}
             activeProductType={activeProductType}
@@ -817,7 +816,6 @@ function ListOfVaults({
                   currentVault={vault}
                   flags={vaultFlags[key]}
                   apyDisplayVariant={rowApyDisplayVariant}
-                  layoutVariant={'balanced'}
                   activeChains={activeChains}
                   activeCategories={activeCategories}
                   activeProductType={activeProductType}
@@ -889,7 +887,6 @@ function ListOfVaults({
           <VaultsListHead
             containerClassName={'rounded-t-xl bg-surface shrink-0'}
             wrapperClassName={'relative z-10 border border-border rounded-t-xl bg-transparent'}
-            layoutVariant={'balanced'}
             sortBy={sortBy}
             sortDirection={sortDirection}
             onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
