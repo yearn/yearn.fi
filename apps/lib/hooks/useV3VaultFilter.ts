@@ -8,7 +8,8 @@ import {
   deriveAssetCategory,
   deriveListKind,
   deriveProtocol,
-  deriveV3Aggressiveness
+  deriveV3Aggressiveness,
+  isAllocatorVaultOverride
 } from '@vaults-shared/utils/vaultListFacets'
 import { useAppSettings } from '@vaults-v2/contexts/useAppSettings'
 import { getNativeTokenWrapperContract } from '@vaults-v2/utils'
@@ -117,7 +118,9 @@ export function useV3VaultFilter(
     const vaultMap = new Map<string, TVaultWithMetadata>()
 
     Object.values(vaults).forEach((vault) => {
-      if (!vault.version?.startsWith('3') && !vault.version?.startsWith('~3')) {
+      const isV3Vault =
+        vault.version?.startsWith('3') || vault.version?.startsWith('~3') || isAllocatorVaultOverride(vault)
+      if (!isV3Vault) {
         return
       }
 
@@ -136,7 +139,9 @@ export function useV3VaultFilter(
     })
 
     Object.values(vaultsMigrations).forEach((vault) => {
-      if (!vault.version?.startsWith('3') && !vault.version?.startsWith('~3')) {
+      const isV3Vault =
+        vault.version?.startsWith('3') || vault.version?.startsWith('~3') || isAllocatorVaultOverride(vault)
+      if (!isV3Vault) {
         return
       }
 
@@ -165,7 +170,9 @@ export function useV3VaultFilter(
     })
 
     Object.values(vaultsRetired).forEach((vault) => {
-      if (!vault.version?.startsWith('3') && !vault.version?.startsWith('~3')) {
+      const isV3Vault =
+        vault.version?.startsWith('3') || vault.version?.startsWith('~3') || isAllocatorVaultOverride(vault)
+      if (!isV3Vault) {
         return
       }
 

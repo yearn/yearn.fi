@@ -36,6 +36,7 @@ const KNOWN_STABLECOIN_SYMBOLS = new Set([
 
 const PROTOCOL_OVERRIDES: Record<string, TVaultProtocol> = {}
 const AGGRESSIVENESS_OVERRIDES: Record<string, -1 | -2 | -3> = {}
+const ALLOCATOR_VAULT_OVERRIDES = new Set([`1:${toAddress('0x27B5739e22ad9033bcBf192059122d163b60349D')}`])
 
 function getVaultKey(vault: TYDaemonVault): string {
   return `${vault.chainID}:${toAddress(vault.address)}`
@@ -66,6 +67,9 @@ export function deriveAssetCategory(vault: TYDaemonVault): TVaultAssetCategory {
 }
 
 export function deriveListKind(vault: TYDaemonVault): TVaultListKind {
+  if (isAllocatorVaultOverride(vault)) {
+    return 'allocator'
+  }
   const isV3 = Boolean(vault.version?.startsWith('3') || vault.version?.startsWith('~3'))
   if (isV3) {
     if (vault.kind === 'Multi Strategy') return 'allocator'
@@ -119,7 +123,9 @@ export function deriveProtocol(vault: TYDaemonVault, kind: TVaultListKind): TVau
 }
 
 export function deriveV3Aggressiveness(vault: TYDaemonVault): -1 | -2 | -3 | null {
-  const isV3 = Boolean(vault.version?.startsWith('3') || vault.version?.startsWith('~3'))
+  const isV3 = Boolean(
+    vault.version?.startsWith('3') || vault.version?.startsWith('~3') || isAllocatorVaultOverride(vault)
+  )
   if (!isV3) return null
 
   const override = AGGRESSIVENESS_OVERRIDES[getVaultKey(vault)]
@@ -140,4 +146,8 @@ export function deriveV3Aggressiveness(vault: TYDaemonVault): -1 | -2 | -3 | nul
   }
 
   return null
+}
+
+export function isAllocatorVaultOverride(vault: TYDaemonVault): boolean {
+  return ALLOCATOR_VAULT_OVERRIDES.has(getVaultKey(vault))
 }

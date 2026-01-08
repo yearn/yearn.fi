@@ -33,6 +33,7 @@ import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAm
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { deriveListKind } from '@vaults-shared/utils/vaultListFacets'
 import { VaultsListChip } from './VaultsListChip'
 import { type TVaultsV3ExpandedView, VaultsV3ExpandedSelector } from './VaultsV3ExpandedSelector'
 
@@ -80,13 +81,15 @@ export function VaultsV3ListRow({
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('apy')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
+
   const leftColumnSpan = 'col-span-12'
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
   const metricsColumnSpan = 'col-span-4'
-  const isV3Vault = currentVault.version?.startsWith('3') || currentVault.version?.startsWith('~3')
-  const productType = isV3Vault ? 'v3' : 'lp'
-  const productTypeLabel = isV3Vault ? 'Allocator' : 'LP'
+  const listKind = deriveListKind(currentVault)
+  const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
+  const productType = isAllocatorVault ? 'v3' : 'lp'
+  const productTypeLabel = isAllocatorVault ? 'Allocator' : 'LP'
   const showProductTypeChip = Boolean(activeProductType) || Boolean(onToggleVaultType)
   const isProductTypeActive =
     Boolean(activeProductType) && activeProductType !== 'all' && activeProductType === productType
