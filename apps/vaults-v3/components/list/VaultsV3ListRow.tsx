@@ -1,3 +1,4 @@
+import Link from '@components/Link'
 import {
   AllocationChart,
   DARK_MODE_COLORS,
@@ -123,17 +124,6 @@ export function VaultsV3ListRow({
     </div>
   )
 
-  const handleRowClick = (): void => {
-    navigate(href)
-  }
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      navigate(href)
-    }
-  }
-
   useEffect(() => {
     if (isExpanded) {
       setExpandedView('apy')
@@ -141,18 +131,36 @@ export function VaultsV3ListRow({
   }, [isExpanded])
 
   return (
-    <div className={cl('w-full overflow-hidden transition-colors bg-surface')}>
-      {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
-      <div
-        role={'link'}
-        tabIndex={0}
-        onClick={handleRowClick}
-        onKeyDown={handleKeyDown}
+    <div className={cl('w-full overflow-hidden transition-colors bg-surface relative')}>
+      <button
+        type={'button'}
+        aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+        aria-expanded={isExpanded}
+        onClick={(event): void => {
+          event.stopPropagation()
+          setIsExpanded((value) => !value)
+        }}
+        className={cl(
+          'absolute top-5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
+          'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+        )}
+      >
+        <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
+      </button>
+      <Link
+        href={href}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
           'p-6 pt-2 pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
+        onClickCapture={(event): void => {
+          const target = event.target as HTMLElement | null
+          if (!target) return
+          if (target.closest('button, input, select, textarea, [role="button"]')) {
+            event.preventDefault()
+          }
+        }}
       >
         <div
           className={cl(
@@ -161,22 +169,6 @@ export function VaultsV3ListRow({
             'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
           )}
         />
-
-        <button
-          type={'button'}
-          aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
-          aria-expanded={isExpanded}
-          onClick={(event): void => {
-            event.stopPropagation()
-            setIsExpanded((value) => !value)
-          }}
-          className={cl(
-            'absolute top-5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
-            'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
-          )}
-        >
-          <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
-        </button>
 
         <div className={cl(leftColumnSpan, 'z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
           <div className={'flex flex-row w-full gap-4 overflow-hidden'}>
@@ -339,7 +331,7 @@ export function VaultsV3ListRow({
             <VaultHoldingsAmount currentVault={currentVault} />
           </div>
         </div>
-      </div>
+      </Link>
 
       {isExpanded ? (
         <div className={'hidden md:block bg-surface'}>
