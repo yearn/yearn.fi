@@ -339,9 +339,6 @@ export function VaultsV3ListRow({
                 rightElement={
                   <Link
                     to={href}
-                    onClick={(event): void => {
-                      event.stopPropagation()
-                    }}
                     className={
                       'rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
                     }
