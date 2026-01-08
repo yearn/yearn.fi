@@ -52,6 +52,9 @@ export function VaultsV3ListHead({
   containerClassName
 }: TListHead): ReactElement {
   const activeToggles = useMemo(() => new Set(activeToggleValues || []), [activeToggleValues])
+  const leftColumnSpan = 'col-span-12'
+  const rightColumnSpan = 'col-span-12'
+  const rightGridColumns = 'md:grid-cols-12'
 
   const toggleSortDirection = (newSortBy: string): TSortDirection => {
     if (sortBy === newSortBy) {
@@ -173,7 +176,7 @@ export function VaultsV3ListHead({
       >
         <div
           className={cl(
-            'col-span-9',
+            leftColumnSpan,
             'flex flex-row items-center justify-between',
             'mb-2 py-4 md:mb-0 md:py-0',
             token.className
@@ -182,7 +185,7 @@ export function VaultsV3ListHead({
           {renderItem(token, !isToggleItem(token) && sortBy === token.value, false)}
         </div>
 
-        <div className={cl('col-span-15 z-10', 'grid grid-cols-2 md:grid-cols-15 gap-4', 'mt-4 md:mt-0')}>
+        <div className={cl(rightColumnSpan, 'z-10', 'grid grid-cols-2 gap-4', rightGridColumns, 'mt-4 md:mt-0')}>
           {rest.map((item): ReactElement => renderItem(item, !isToggleItem(item) && sortBy === item.value, true))}
         </div>
       </div>

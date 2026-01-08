@@ -368,42 +368,28 @@ function PortfolioPage(): ReactElement {
                     label: 'Vault / Featuring Score',
                     value: 'featuringScore',
                     sortable: true,
-                    className: 'col-span-9'
+                    className: 'col-span-12'
                   },
                   {
                     type: 'sort',
                     label: 'Est. APY',
                     value: 'estAPY',
                     sortable: true,
-                    className: 'col-span-3'
-                  },
-                  {
-                    type: 'sort',
-                    label: '30D. APY',
-                    value: 'APY',
-                    sortable: true,
-                    className: 'col-span-3'
-                  },
-                  {
-                    type: 'sort',
-                    label: 'APY Sparkline',
-                    value: 'APY Sparkline',
-                    sortable: false,
-                    className: 'col-span-3'
+                    className: 'col-span-4'
                   },
                   {
                     type: 'sort',
                     label: 'TVL',
                     value: 'tvl',
                     sortable: true,
-                    className: 'col-span-3 '
+                    className: 'col-span-4'
                   },
                   {
                     type: 'sort',
                     label: 'Your Holdings',
                     value: 'deposited',
                     sortable: true,
-                    className: 'col-span-3 justify-end'
+                    className: 'col-span-4 justify-end'
                   }
                 ]}
               />
