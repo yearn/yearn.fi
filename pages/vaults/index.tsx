@@ -4,18 +4,18 @@ import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
 import { cl, toAddress } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VaultsListEmpty } from '@vaults-shared/components/list/VaultsListEmpty'
 import { VaultsFilters } from '@vaults-shared/components/VaultsFilters'
 import type { TPossibleSortBy } from '@vaults-shared/hooks/useSortVaults'
 import { useSortVaults } from '@vaults-shared/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults-shared/hooks/useVaultsQueryArgs'
+import { deriveListKind } from '@vaults-shared/utils/vaultListFacets'
 import { VaultsV3AuxiliaryList } from '@vaults-v3/components/list/VaultsV3AuxiliaryList'
 import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
 import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
 import { TrendingVaults } from '@vaults-v3/components/TrendingVaults'
 import { ALL_VAULTSV3_CATEGORIES } from '@vaults-v3/constants'
-import { deriveListKind } from '@vaults-shared/utils/vaultListFacets'
-import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
@@ -787,6 +787,7 @@ function ListOfVaults({
             vaults={section.vaults}
             vaultFlags={vaultFlags}
             resolveApyDisplayVariant={resolveApyDisplayVariant}
+            layoutVariant={'balanced'}
             activeChains={activeChains}
             activeCategories={activeCategories}
             activeProductType={activeProductType}
@@ -808,6 +809,7 @@ function ListOfVaults({
                   currentVault={vault}
                   flags={vaultFlags[key]}
                   apyDisplayVariant={rowApyDisplayVariant}
+                  layoutVariant={'balanced'}
                   activeChains={activeChains}
                   activeCategories={activeCategories}
                   activeProductType={activeProductType}
@@ -879,6 +881,7 @@ function ListOfVaults({
           <VaultsV3ListHead
             containerClassName={'rounded-t-xl bg-surface shrink-0'}
             wrapperClassName={'relative z-10 border border-border rounded-t-xl bg-transparent'}
+            layoutVariant={'balanced'}
             sortBy={sortBy}
             sortDirection={sortDirection}
             onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {

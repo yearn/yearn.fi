@@ -3,7 +3,7 @@ import {
   DARK_MODE_COLORS,
   LIGHT_MODE_COLORS,
   type TAllocationChartData,
-  useDarkMode,
+  useDarkMode
 } from '@lib/components/AllocationChart'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
@@ -16,38 +16,34 @@ import { IconStablecoin } from '@lib/icons/IconStablecoin'
 import { IconStack } from '@lib/icons/IconStack'
 import { IconVolatile } from '@lib/icons/IconVolatile'
 import { cl, formatCounterValue, toAddress, toNormalizedBN } from '@lib/utils'
-import type {
-  TYDaemonVault,
-  TYDaemonVaultStrategy,
-} from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import type { TYDaemonVault, TYDaemonVaultStrategy } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
 import { VaultAboutSection } from '@nextgen/components/vaults-beta/VaultAboutSection'
 import {
   type TVaultChartTab,
   type TVaultChartTimeframe,
-  VaultChartsSection,
+  VaultChartsSection
 } from '@nextgen/components/vaults-beta/VaultChartsSection'
+import { deriveListKind } from '@vaults-shared/utils/vaultListFacets'
 import {
   type TVaultForwardAPYVariant,
-  VaultForwardAPY,
+  VaultForwardAPY
   // VaultForwardAPYInlineDetails
 } from '@vaults-v3/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { deriveListKind } from '@vaults-shared/utils/vaultListFacets'
 import { VaultsListChip } from './VaultsListChip'
-import {
-  type TVaultsV3ExpandedView,
-  VaultsV3ExpandedSelector,
-} from './VaultsV3ExpandedSelector'
+import { type TVaultsV3ExpandedView, VaultsV3ExpandedSelector } from './VaultsV3ExpandedSelector'
 
 type TVaultRowFlags = {
   hasHoldings?: boolean
   isMigratable?: boolean
   isRetired?: boolean
 }
+
+type TVaultsV3ListRowLayout = 'default' | 'balanced'
 
 export function VaultsV3ListRow({
   currentVault,
@@ -60,9 +56,11 @@ export function VaultsV3ListRow({
   onToggleChain,
   onToggleCategory,
   onToggleType,
+
   activeProductType,
   onToggleVaultType,
   showStrategies = false,
+  layoutVariant = 'default'
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
@@ -77,42 +75,40 @@ export function VaultsV3ListRow({
   activeProductType?: 'v3' | 'lp' | 'all'
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
+  layoutVariant?: TVaultsV3ListRowLayout
 }): ReactElement {
   const navigate = useNavigate()
-  const href =
-    hrefOverride ??
-    `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
+  const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${
-    currentVault.chainID
-  }/logo-32.png`
+  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const [isExpanded, setIsExpanded] = useState(false)
+
   const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('apy')
-  const [expandedTimeframe, setExpandedTimeframe] =
-    useState<TVaultChartTimeframe>('all')
+  const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const productType = isAllocatorVault ? 'v3' : 'lp'
   const productTypeLabel = isAllocatorVault ? 'Allocator' : 'LP'
-  const showProductTypeChip =
-    Boolean(activeProductType) || Boolean(onToggleVaultType)
+  const showProductTypeChip = Boolean(activeProductType) || Boolean(onToggleVaultType)
   const isProductTypeActive = false
+
+  const isBalancedLayout = layoutVariant === 'balanced'
+  const leftColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-9'
+  const rightColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-15'
+  const rightGridColumns = isBalancedLayout ? 'md:grid-cols-12' : 'md:grid-cols-15'
+  const metricsColumnSpan = isBalancedLayout ? 'col-span-4' : 'col-span-5'
+
   const kindLabel =
     currentVault.kind === 'Multi Strategy'
       ? 'Allocator Vault'
       : currentVault.kind === 'Single Strategy'
-      ? 'Strategy Vault'
-      : currentVault.kind
+        ? 'Strategy Vault'
+        : currentVault.kind
   const kindType =
-    currentVault.kind === 'Multi Strategy'
-      ? 'multi'
-      : currentVault.kind === 'Single Strategy'
-      ? 'single'
-      : undefined
+    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
-  const showKindChip =
-    showStrategies && Boolean(kindType) && Boolean(onToggleType)
+  const showKindChip = showStrategies && Boolean(kindType) && Boolean(onToggleType)
   const isKindActive = false
   const categoryIcon =
     currentVault.category === 'Stablecoin' ? (
@@ -127,37 +123,23 @@ export function VaultsV3ListRow({
       <IconStack className={'size-3.5'} />
     ) : null
   const tvlNativeTooltip = (
-    <div
-      className={
-        'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'
-      }
-    >
+    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       <span className={'font-number'}>
         <RenderAmount
-          value={Number(
-            toNormalizedBN(
-              currentVault.tvl.totalAssets,
-              currentVault.token.decimals
-            ).normalized
-          )}
+          value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
           symbol={''}
           decimals={6}
           shouldFormatDust
           options={{
             shouldCompactValue: true,
             maximumFractionDigits: 2,
-            minimumFractionDigits: 2,
+            minimumFractionDigits: 2
           }}
         />
       </span>
       <span className={'pl-1'}>{currentVault.token.symbol}</span>
     </div>
   )
-
-  const leftColumnSpan = 'col-span-12'
-  const rightColumnSpan = 'col-span-12'
-  const rightGridColumns = 'md:grid-cols-12'
-  const metricsColumnSpan = 'col-span-4'
 
   const handleRowClick = (): void => {
     navigate(href)
@@ -211,25 +193,12 @@ export function VaultsV3ListRow({
             'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
           )}
         >
-          <IconChevron
-            className={'size-4'}
-            direction={isExpanded ? 'up' : 'down'}
-          />
+          <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
         </button>
 
-        <div
-          className={cl(
-            leftColumnSpan,
-            'z-10',
-            'flex flex-row items-center justify-between sm:pt-0'
-          )}
-        >
+        <div className={cl(leftColumnSpan, 'z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
           <div className={'flex flex-row w-full gap-4 overflow-hidden'}>
-            <div
-              className={
-                'relative flex items-center justify-center self-center size-8 min-h-8 min-w-8'
-              }
-            >
+            <div className={'relative flex items-center justify-center self-center size-8 min-h-8 min-w-8'}>
               <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
                   currentVault.chainID
@@ -243,45 +212,23 @@ export function VaultsV3ListRow({
                   'absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full border border-border bg-surface md:hidden'
                 }
               >
-                <TokenLogo
-                  src={chainLogoSrc}
-                  tokenSymbol={network.name}
-                  width={12}
-                  height={12}
-                />
+                <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={12} height={12} />
               </div>
             </div>
             <div className={'min-w-0 flex-1'}>
               <strong
                 title={currentVault.name}
-                className={
-                  'block truncate font-black text-text-primary md:-mb-0.5 text-lg'
-                }
+                className={'block truncate font-black text-text-primary md:-mb-0.5 text-lg'}
               >
                 {currentVault.name}
               </strong>
-              <div
-                className={
-                  'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'
-                }
-              >
+              <div className={'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'}>
                 <div className={'hidden md:block'}>
                   <VaultsListChip
                     label={network.name}
-                    icon={
-                      <TokenLogo
-                        src={chainLogoSrc}
-                        tokenSymbol={network.name}
-                        width={14}
-                        height={14}
-                      />
-                    }
+                    icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
                     isActive={activeChainIds.includes(currentVault.chainID)}
-                    onClick={
-                      onToggleChain
-                        ? (): void => onToggleChain(currentVault.chainID)
-                        : undefined
-                    }
+                    onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
                     ariaLabel={`Filter by ${network.name}`}
                   />
                 </div>
@@ -289,14 +236,8 @@ export function VaultsV3ListRow({
                   <VaultsListChip
                     label={currentVault.category}
                     icon={categoryIcon}
-                    isActive={activeCategoryLabels.includes(
-                      currentVault.category
-                    )}
-                    onClick={
-                      onToggleCategory
-                        ? (): void => onToggleCategory(currentVault.category)
-                        : undefined
-                    }
+                    isActive={activeCategoryLabels.includes(currentVault.category)}
+                    onClick={onToggleCategory ? (): void => onToggleCategory(currentVault.category) : undefined}
                     ariaLabel={`Filter by ${currentVault.category}`}
                   />
                 ) : null}
@@ -304,11 +245,7 @@ export function VaultsV3ListRow({
                   <VaultsListChip
                     label={productTypeLabel}
                     isActive={isProductTypeActive}
-                    onClick={
-                      onToggleVaultType
-                        ? (): void => onToggleVaultType(productType)
-                        : undefined
-                    }
+                    onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
                     ariaLabel={`Show ${productTypeLabel} vaults`}
                   />
                 ) : null}
@@ -317,30 +254,19 @@ export function VaultsV3ListRow({
                     label={kindLabel}
                     icon={kindIcon}
                     isActive={isKindActive}
-                    onClick={
-                      kindType && onToggleType
-                        ? (): void => onToggleType(kindType)
-                        : undefined
-                    }
+                    onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
                     ariaLabel={`Filter by ${kindLabel}`}
                   />
                 ) : null}
               </div>
             </div>
             {/* Mobile Holdings + APY + TVL inline */}
-            <div
-              className={
-                'hidden max-md:flex items-center shrink-0 gap-4 text-right'
-              }
-            >
+            <div className={'hidden max-md:flex items-center shrink-0 gap-4 text-right'}>
               {/* Holdings - shown on wider mobile screens */}
               {flags?.hasHoldings ? (
                 <div className={'hidden min-[420px]:block'}>
                   <p className={'text-xs text-text-primary/60'}>{'Holdings'}</p>
-                  <VaultHoldingsAmount
-                    currentVault={currentVault}
-                    valueClassName={'text-sm font-semibold'}
-                  />
+                  <VaultHoldingsAmount currentVault={currentVault} valueClassName={'text-sm font-semibold'} />
                 </div>
               ) : null}
               <div>
@@ -361,16 +287,14 @@ export function VaultsV3ListRow({
                     options={{
                       shouldCompactValue: true,
                       maximumFractionDigits: 2,
-                      minimumFractionDigits: 0,
+                      minimumFractionDigits: 0
                     }}
                   />
                 </p>
                 {/* Holdings indicator dot - shown on narrow screens when user has holdings */}
                 {flags?.hasHoldings ? (
                   <div
-                    className={
-                      'absolute -right-2 top-0 size-2 rounded-full bg-green-500 min-[420px]:hidden'
-                    }
+                    className={'absolute -right-2 top-0 size-2 rounded-full bg-green-500 min-[420px]:hidden'}
                     title={'You have holdings in this vault'}
                   />
                 ) : null}
@@ -381,17 +305,9 @@ export function VaultsV3ListRow({
 
         {/* Desktop metrics grid */}
         <div
-          className={cl(
-            rightColumnSpan,
-            'z-10 gap-4 mt-4',
-            'hidden md:mt-0 md:grid md:items-center',
-            rightGridColumns
-          )}
+          className={cl(rightColumnSpan, 'z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:items-center', rightGridColumns)}
         >
-          <div
-            className={cl('yearn--table-data-section-item', metricsColumnSpan)}
-            datatype={'number'}
-          >
+          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
             <VaultForwardAPY
               currentVault={currentVault}
               showSubline={false}
@@ -401,10 +317,7 @@ export function VaultsV3ListRow({
             />
           </div>
           {/* TVL */}
-          <div
-            className={cl('yearn--table-data-section-item', metricsColumnSpan)}
-            datatype={'number'}
-          >
+          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
             <div className={'flex justify-end text-right'}>
               <Tooltip
                 className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
@@ -420,7 +333,7 @@ export function VaultsV3ListRow({
                     options={{
                       shouldCompactValue: true,
                       maximumFractionDigits: 2,
-                      minimumFractionDigits: 0,
+                      minimumFractionDigits: 0
                     }}
                   />
                 </p>
@@ -448,10 +361,7 @@ export function VaultsV3ListRow({
               />
             </p>
           </div> */}
-          <div
-            className={cl('yearn--table-data-section-item', metricsColumnSpan)}
-            datatype={'number'}
-          >
+          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
             <VaultHoldingsAmount currentVault={currentVault} />
           </div>
         </div>
@@ -483,9 +393,7 @@ export function VaultsV3ListRow({
                 }
               />
 
-              {expandedView === 'apy' ||
-              expandedView === 'performance' ||
-              expandedView === 'tvl' ? (
+              {expandedView === 'apy' || expandedView === 'performance' || expandedView === 'tvl' ? (
                 <div className={'px-3 pb-4'}>
                   <VaultChartsSection
                     chainId={currentVault.chainID}
@@ -495,8 +403,8 @@ export function VaultsV3ListRow({
                       (expandedView === 'apy'
                         ? 'historical-apy'
                         : expandedView === 'performance'
-                        ? 'historical-pps'
-                        : 'historical-tvl') satisfies TVaultChartTab
+                          ? 'historical-pps'
+                          : 'historical-tvl') satisfies TVaultChartTab
                     }
                     timeframe={expandedTimeframe}
                     chartHeightPx={200}
@@ -506,21 +414,12 @@ export function VaultsV3ListRow({
               ) : null}
 
               {expandedView === 'info' ? (
-                <div
-                  className={
-                    'grid md:grid-cols-2 divide-y divide-border md:divide-y-0 md:divide-x'
-                  }
-                >
+                <div className={'grid md:grid-cols-2 divide-y divide-border md:divide-y-0 md:divide-x'}>
                   <div className={'p-4 md:p-6'}>
-                    <VaultStrategyAllocationPreview
-                      currentVault={currentVault}
-                    />
+                    <VaultStrategyAllocationPreview currentVault={currentVault} />
                   </div>
                   <div className={'p-4 md:p-6'}>
-                    <VaultAboutSection
-                      currentVault={currentVault}
-                      className={'p-0'}
-                    />
+                    <VaultAboutSection currentVault={currentVault} className={'p-0'} />
                   </div>
                 </div>
               ) : null}
@@ -532,15 +431,11 @@ export function VaultsV3ListRow({
   )
 }
 
-function VaultStrategyAllocationPreview({
-  currentVault,
-}: {
-  currentVault: TYDaemonVault
-}): ReactElement {
+function VaultStrategyAllocationPreview({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { vaults } = useYearn()
   const tokenPrice = useYearnTokenPrice({
     address: currentVault.token.address,
-    chainID: currentVault.chainID,
+    chainID: currentVault.chainID
   })
   const isDark = useDarkMode()
 
@@ -556,7 +451,7 @@ function VaultStrategyAllocationPreview({
         list.push({
           ...linkedVault,
           details: strategy.details,
-          status: strategy.status,
+          status: strategy.status
         })
       }
     }
@@ -595,9 +490,7 @@ function VaultStrategyAllocationPreview({
       filteredVaultList
         .filter((strategy) => {
           const hasAllocation =
-            strategy.details?.totalDebt &&
-            strategy.details.totalDebt !== '0' &&
-            strategy.details?.debtRatio
+            strategy.details?.totalDebt && strategy.details.totalDebt !== '0' && strategy.details?.debtRatio
           return hasAllocation
         })
         .map(
@@ -606,29 +499,19 @@ function VaultStrategyAllocationPreview({
             name: strategy.name,
             value: (strategy.details?.debtRatio || 0) / 100,
             amount: formatCounterValue(
-              toNormalizedBN(
-                strategy.details?.totalDebt || 0,
-                currentVault.token.decimals
-              ).display,
+              toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
               tokenPrice
-            ),
+            )
           })
         ),
     [filteredVaultList, currentVault.token.decimals, tokenPrice]
   )
 
   const unallocatedPercentage =
-    100 * 100 -
-    mergedList.reduce(
-      (acc, strategy) => acc + (strategy.details?.debtRatio || 0),
-      0
-    )
+    100 * 100 - mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
   const unallocatedValue =
     Number(currentVault.tvl?.totalAssets || 0) -
-    mergedList.reduce(
-      (acc, strategy) => acc + Number(strategy.details?.totalDebt || 0),
-      0
-    )
+    mergedList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0)
 
   const unallocatedData = useMemo(() => {
     if (unallocatedValue > 0 && unallocatedPercentage > 0) {
@@ -636,39 +519,21 @@ function VaultStrategyAllocationPreview({
         id: 'unallocated',
         name: 'Unallocated',
         value: unallocatedPercentage / 100,
-        amount: formatCounterValue(
-          toNormalizedBN(unallocatedValue, currentVault.token.decimals).display,
-          tokenPrice
-        ),
+        amount: formatCounterValue(toNormalizedBN(unallocatedValue, currentVault.token.decimals).display, tokenPrice)
       }
     }
     return null
-  }, [
-    currentVault.token.decimals,
-    tokenPrice,
-    unallocatedPercentage,
-    unallocatedValue,
-  ])
+  }, [currentVault.token.decimals, tokenPrice, unallocatedPercentage, unallocatedValue])
 
   const allocationChartData = useMemo(
-    () =>
-      [...activeStrategyData, unallocatedData].filter(
-        Boolean
-      ) as TAllocationChartData[],
+    () => [...activeStrategyData, unallocatedData].filter(Boolean) as TAllocationChartData[],
     [activeStrategyData, unallocatedData]
   )
 
-  const legendColors = useMemo(
-    () => (isDark ? DARK_MODE_COLORS : LIGHT_MODE_COLORS),
-    [isDark]
-  )
+  const legendColors = useMemo(() => (isDark ? DARK_MODE_COLORS : LIGHT_MODE_COLORS), [isDark])
 
   if (allocationChartData.length === 0) {
-    return (
-      <div className={'text-sm text-text-secondary'}>
-        {'No strategy allocation data available.'}
-      </div>
-    )
+    return <div className={'text-sm text-text-secondary'}>{'No strategy allocation data available.'}</div>
   }
 
   return (
@@ -681,14 +546,12 @@ function VaultStrategyAllocationPreview({
               <div
                 className={'h-3 w-3 rounded-sm'}
                 style={{
-                  backgroundColor: legendColors[index % legendColors.length],
+                  backgroundColor: legendColors[index % legendColors.length]
                 }}
               />
               <div className={'flex flex-col'}>
                 <span className={'text-sm text-text-primary'}>{item.name}</span>
-                <span className={'text-xs text-text-secondary'}>
-                  {item.amount}
-                </span>
+                <span className={'text-xs text-text-secondary'}>{item.amount}</span>
               </div>
             </div>
           ))}
@@ -696,12 +559,8 @@ function VaultStrategyAllocationPreview({
             <div className={'flex flex-row items-center gap-3'}>
               <div className={'h-3 w-3 rounded-sm bg-surface-tertiary'} />
               <div className={'flex flex-col'}>
-                <span className={'text-sm text-text-secondary'}>
-                  {'Unallocated'}
-                </span>
-                <span className={'text-xs text-text-secondary'}>
-                  {unallocatedData.amount}
-                </span>
+                <span className={'text-sm text-text-secondary'}>{'Unallocated'}</span>
+                <span className={'text-xs text-text-secondary'}>{unallocatedData.amount}</span>
               </div>
             </div>
           ) : null}

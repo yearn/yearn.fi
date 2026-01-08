@@ -28,6 +28,7 @@ type TVaultsV3AuxiliaryListProps = {
   onToggleType?: (type: string) => void
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
+  layoutVariant?: 'default' | 'balanced'
 }
 
 // TODO: the contents of this component override the type filers. This should only happen for HOLDINGS and not AVAILABLE TO DEPOSIT
@@ -44,7 +45,8 @@ export function VaultsV3AuxiliaryList({
   onToggleCategory,
   onToggleType,
   onToggleVaultType,
-  showStrategies
+  showStrategies,
+  layoutVariant
 }: TVaultsV3AuxiliaryListProps): ReactElement | null {
   if (vaults.length === 0) {
     return null
@@ -73,6 +75,7 @@ export function VaultsV3AuxiliaryList({
               onToggleType={onToggleType}
               onToggleVaultType={onToggleVaultType}
               showStrategies={showStrategies}
+              layoutVariant={layoutVariant}
             />
           )
         })}

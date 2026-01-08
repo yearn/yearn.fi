@@ -360,6 +360,7 @@ function PortfolioPage(): ReactElement {
                   setSortBy(newSortBy as TPossibleSortBy)
                   setSortDirection(newDirection)
                 }}
+                layoutVariant={'balanced'}
                 wrapperClassName={'rounded-t-3xl bg-surface-secondary'}
                 containerClassName={'rounded-t-3xl bg-surface-secondary'}
                 items={[
@@ -413,6 +414,7 @@ function PortfolioPage(): ReactElement {
                         flags={vaultFlags[key]}
                         hrefOverride={hrefOverride}
                         showBoostDetails={false}
+                        layoutVariant={'balanced'}
                       />
                     )
                   })}
