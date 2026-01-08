@@ -1,3 +1,4 @@
+import { toggleThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { useNotifications } from '@lib/contexts/useNotifications'
 import useWallet from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
@@ -14,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
+import { LogoYearnMark } from '../icons/LogoYearnMark'
 import { TypeMarkYearn as TypeMarkYearnText } from '../icons/TypeMarkYearn-text-only'
 import { LaunchModal } from './LaunchModal'
 
@@ -134,6 +136,16 @@ function AppHeader(_props: { supportedNetworks: Chain[] }): ReactElement {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
   const { setShouldOpenCurtain, notificationStatus } = useNotifications()
   const menuRef = useRef<HTMLDivElement>(null)
+  const themePreference = useThemePreference()
+  const isDarkTheme = themePreference !== 'light'
+  const themeLabel =
+    themePreference === 'soft-dark'
+      ? 'Soft Dark'
+      : themePreference === 'blue-dark'
+        ? 'Blue Dark'
+        : themePreference === 'midnight'
+          ? 'Midnight'
+          : 'Light'
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent): void => {
@@ -209,9 +221,9 @@ function AppHeader(_props: { supportedNetworks: Chain[] }): ReactElement {
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         <header className={'w-full px-0 flex items-center justify-between h-[var(--header-height)]'}>
           <div className={'direction-row flex items-center justify-start gap-x-2 px-1 py-2 md:py-1'}>
-            <div className={'flex justify-center'}>
-              <LaunchModal />
-            </div>
+            <Link href={'/vaults'} className={'flex justify-center'}>
+              <LogoYearnMark className={'h-8 w-auto text-text-primary hover:text-primary transition-colors'} />
+            </Link>
             <div className={'flex items-center gap-2 md:gap-4'}>
               <TypeMarkYearnText className={'yearn-typemark h-7 w-auto text-text-primary mr-2 mt-[3px]'} />
               {/* <TypeMarkYearnFull className={'yearn-typemark hidden h-8 w-auto md:block'} color={'currentColor'} /> */}
@@ -248,6 +260,24 @@ function AppHeader(_props: { supportedNetworks: Chain[] }): ReactElement {
                     {'Portfolio'}
                   </span>
                 </Link>
+
+                {/* Separator */}
+                <div className={'h-6 w-px bg-text-primary/20'} />
+
+                {/* Ecosystem link */}
+                <LaunchModal
+                  trigger={({ open }): ReactElement => (
+                    <button
+                      type={'button'}
+                      onClick={open}
+                      className={
+                        'cursor-pointer text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
+                      }
+                    >
+                      {'Ecosystem'}
+                    </button>
+                  )}
+                />
               </div>
             </div>
           </div>
@@ -293,16 +323,13 @@ function AppHeader(_props: { supportedNetworks: Chain[] }): ReactElement {
                         <Link
                           href={'/portfolio'}
                           className={cl(
-                            'block rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-secondary',
-                            pathname.startsWith('/portfolio')
-                              ? 'text-text-primary bg-surface-secondary'
-                              : 'text-text-secondary hover:text-text-primary'
+                            'rounded-full px-2 py-0.5 text-xs',
+                            isDarkTheme ? 'bg-primary/20 text-primary' : 'bg-neutral-200 text-neutral-700'
                           )}
-                          onClick={(): void => setIsMenuOpen(false)}
                         >
-                          {'Portfolio'}
-                        </Link>
-                      </div>
+                          {themeLabel}
+                        </span>
+                      </button>
                       <div className={'my-3 h-px bg-border'} />
                       <div className={'flex flex-col gap-1'}>
                         {menu.map((item) => (

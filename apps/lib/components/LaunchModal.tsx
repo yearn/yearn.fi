@@ -1,5 +1,5 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
-import { toggleThemePreference, useThemePreference } from '@hooks/useThemePreference'
+import { useThemePreference } from '@hooks/useThemePreference'
 import { IconClose } from '@lib/icons/IconClose'
 import { cl } from '@lib/utils'
 import type { MouseEvent, ReactElement } from 'react'
@@ -31,41 +31,6 @@ function TileIcon({ icon, isDark }: { icon?: ReactElement; isDark: boolean }): R
     >
       {icon ?? <LogoYearn className={'size-10! max-h-10! max-w-10!'} front={'text-white'} back={'text-primary'} />}
     </div>
-  )
-}
-
-function ThemeToggle({
-  isDark,
-  label,
-  onToggle
-}: {
-  isDark: boolean
-  label: string
-  onToggle: () => void
-}): ReactElement {
-  return (
-    <button
-      type={'button'}
-      onClick={onToggle}
-      aria-pressed={isDark}
-      className={cl(
-        'flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-        isDark ? 'border-primary/40 text-[var(--color-text-primary)]' : 'border-neutral-200 text-neutral-700'
-      )}
-    >
-      <span className={'sr-only'}>{'Cycle theme mode'}</span>
-      <span aria-hidden>{'Theme'}</span>
-      <span
-        aria-hidden
-        className={cl(
-          'relative flex h-6 w-12 items-center rounded-full px-1 transition-colors',
-          isDark ? 'bg-primary/60 justify-end' : 'bg-neutral-300 justify-start'
-        )}
-      >
-        <span className={'size-4 rounded-full bg-white shadow transition-transform'} />
-      </span>
-      <span aria-hidden>{label}</span>
-    </button>
   )
 }
 
@@ -182,14 +147,6 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
   const pathname = location.pathname
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
-  const themeLabel =
-    themePreference === 'soft-dark'
-      ? 'Soft-Dark'
-      : themePreference === 'blue-dark'
-        ? 'Blue-Dark'
-        : themePreference === 'midnight'
-          ? 'Midnight'
-          : 'Light'
 
   const currentHost = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -344,10 +301,6 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
     setActiveGroupTitle(title)
   }, [])
 
-  const handleThemeToggle = useCallback((): void => {
-    toggleThemePreference()
-  }, [])
-
   const handleOpen = useCallback((): void => {
     setIsOpen(true)
   }, [])
@@ -412,7 +365,6 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                 <div className={'flex w-full px-6 justify-between'}>
                   <div className={'text-xl sm:pl-8'}>Yearn App Launcher</div>
                   <div className={'flex items-center gap-3'}>
-                    <ThemeToggle isDark={isDarkTheme} label={themeLabel} onToggle={handleThemeToggle} />
                     <button
                       type={'button'}
                       onClick={handleClose}
