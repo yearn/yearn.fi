@@ -12,6 +12,7 @@ interface UseDepositNotificationsProps {
   stakingToken?: Token
   // Addresses
   depositToken: Address
+  assetAddress: Address
   destinationToken: Address
   stakingAddress?: Address
   // Account & chain
@@ -36,6 +37,7 @@ export const useDepositNotifications = ({
   vault,
   stakingToken,
   depositToken,
+  assetAddress,
   destinationToken,
   stakingAddress,
   account,
@@ -46,6 +48,9 @@ export const useDepositNotifications = ({
   routerAddress,
   isCrossChain
 }: UseDepositNotificationsProps): DepositNotificationsResult => {
+  const isZap = toAddress(depositToken) !== toAddress(assetAddress)
+  const isDepositAndStake = stakingAddress && toAddress(destinationToken) === toAddress(stakingAddress) && !isZap
+
   const approveNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!inputToken || !vault || !account) return undefined
 
@@ -95,15 +100,24 @@ export const useDepositNotifications = ({
   const depositNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!inputToken || !vault || !account || depositAmount === 0n) return undefined
 
-    let notificationType: 'deposit' | 'zap' | 'crosschain zap' | 'stake' = 'deposit'
+    let notificationType: 'deposit' | 'deposit and stake' | 'zap' | 'crosschain zap' | 'stake' = 'deposit'
     if (routeType === 'ENSO') {
-      notificationType = isCrossChain ? 'crosschain zap' : 'zap'
+      if (isCrossChain) {
+        notificationType = 'crosschain zap'
+      } else if (isZap) {
+        notificationType = 'zap'
+      } else if (isDepositAndStake) {
+        notificationType = 'deposit and stake'
+      }
     } else if (routeType === 'DIRECT_STAKE') {
       notificationType = 'stake'
+    } else {
+      notificationType = 'deposit'
     }
 
+    // Use staking token symbol if destination is staking contract
     const destinationTokenSymbol =
-      routeType === 'DIRECT_STAKE' && stakingToken ? stakingToken.symbol || vault.symbol || '' : vault.symbol || ''
+      isDepositAndStake && stakingToken ? stakingToken.symbol || vault.symbol || '' : vault.symbol || ''
 
     return {
       type: notificationType,
@@ -126,6 +140,8 @@ export const useDepositNotifications = ({
     depositAmount,
     routeType,
     isCrossChain,
+    isZap,
+    isDepositAndStake,
     depositToken,
     sourceChainId,
     destinationToken,
