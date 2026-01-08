@@ -7,8 +7,7 @@ import { IconClose } from '@lib/icons/IconClose'
 import { IconCross } from '@lib/icons/IconCross'
 import { IconLoader } from '@lib/icons/IconLoader'
 import type { TNotification, TNotificationStatus } from '@lib/types/notifications'
-import { cl, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@lib/utils'
-import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { cl, SUPPORTED_NETWORKS, truncateHex } from '@lib/utils'
 import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
 import Image from '/src/components/Image'
@@ -392,65 +391,8 @@ function WithdrawNotificationContent({ notification }: { notification: TNotifica
   )
 }
 
-function NotificationContent({
-  notification,
-  fromVault,
-  toVault
-}: {
-  notification: TNotification
-  fromVault?: TYDaemonVault
-  toVault?: TYDaemonVault
-}): ReactElement {
-  const fromChainName = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)?.name || 'Unknown'
-  const toChainName = notification.toChainId
-    ? SUPPORTED_NETWORKS.find((network) => network.id === notification.toChainId)?.name || 'Unknown'
-    : undefined
-  const isCrossChain = !!notification.toChainId && notification.toChainId !== notification.chainId
-
-  const explorerBaseURI = useMemo(() => {
-    const chain = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)
-    return chain?.blockExplorers?.default?.url || 'https://etherscan.io'
-  }, [notification.chainId])
-
-  const fromTokenLabel = useMemo(() => {
-    switch (notification.type) {
-      case 'claim':
-        return 'Token:'
-      case 'withdraw':
-        return 'From vault:'
-      case 'unstake':
-        return 'From vault:'
-      default:
-        return 'From token:'
-    }
-  }, [notification.type])
-
-  const fromTokenLink = useMemo(() => {
-    if (!fromVault) {
-      return `${explorerBaseURI}/address/${notification.fromAddress || '0x0'}`
-    }
-
-    return `/vaults/${fromVault.chainID}/${toAddress(fromVault.address)}`
-  }, [fromVault, explorerBaseURI, notification.fromAddress])
-
-  const toTokenLabel = useMemo(() => {
-    switch (notification.type) {
-      case 'withdraw':
-        return 'To token:'
-      default:
-        return 'To vault:'
-    }
-  }, [notification.type])
-
-  const toTokenLink = useMemo(() => {
-    if (!toVault) {
-      return `${explorerBaseURI}/address/${notification.toAddress || '0x0'}`
-    }
-
-    return `/vaults/${toVault.chainID}/${toAddress(toVault.address)}`
-  }, [toVault, explorerBaseURI, notification.toAddress])
-
-  if (notification.type === 'approve') {
+function NotificationContent({ notification }: { notification: TNotification }): ReactElement {
+  if (['approve', 'claim', 'claim and exit'].includes(notification.type)) {
     return <ApproveNotificationContent notification={notification} />
   }
 
@@ -458,154 +400,15 @@ function NotificationContent({
     return <DepositNotificationContent notification={notification} />
   }
 
-  if (
-    ['withdraw', 'unstake', 'unstake and withdraw', 'withdraw zap', 'crosschain withdraw zap'].includes(
-      notification.type
-    )
-  ) {
-    return <WithdrawNotificationContent notification={notification} />
-  }
-
-  return (
-    <div className={'flex gap-4'}>
-      <div className={'flex flex-col items-center gap-3'}>
-        <div className={'relative'}>
-          <TokenLogo
-            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-            altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-            tokenSymbol={notification.fromTokenName}
-            width={32}
-            height={32}
-            className="rounded-full"
-            loading="eager"
-          />
-          <div className={'absolute bottom-6 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
-            <Image
-              className={'object-contain'}
-              width={14}
-              height={14}
-              alt={'chain'}
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${notification.chainId}/logo.svg`}
-            />
-          </div>
-        </div>
-
-        {notification.toTokenName && <IconArrow className={'size-4 rotate-135'} />}
-
-        {notification.toTokenName && notification.toAddress && (
-          <div className={'relative'}>
-            <TokenLogo
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
-              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
-              tokenSymbol={notification.toTokenName}
-              width={32}
-              height={32}
-              className="rounded-full"
-              loading="eager"
-            />
-            <div className={'absolute bottom-6 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
-              <Image
-                className={'object-contain'}
-                width={14}
-                height={14}
-                alt={'chain'}
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${notification.toChainId || notification.chainId}/logo.svg`}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-      <div className={'flex-1'}>
-        <div className={'grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-text-primary'}>
-          <p>{'Address:'}</p>
-          <p className={'text-right font-bold'}>
-            <Link
-              href={`${explorerBaseURI}/address/${notification.address}`}
-              target={'_blank'}
-              rel={'noopener noreferrer'}
-              aria-label={`View address ${notification.address} on explorer`}
-              className={'text-text-primary hover:text-text-secondary'}
-            >
-              <button className={'text-xs font-medium underline'}>{truncateHex(notification.address, 5)}</button>
-            </Link>
-          </p>
-          <p>{fromTokenLabel}</p>
-          <p className={'text-right font-bold'}>
-            <Link
-              href={fromTokenLink}
-              target={'_blank'}
-              rel={'noopener noreferrer'}
-              aria-label={`View token ${notification.fromTokenName || 'Unknown'} on explorer`}
-              className={'text-text-primary hover:text-text-secondary'}
-            >
-              <button className={'text-xs font-medium underline'}>{notification.fromTokenName || 'Unknown'}</button>
-            </Link>
-          </p>
-          <p>{'Amount:'}</p>
-          <p className={'text-right font-bold'}>{notification.amount}</p>
-          {notification.toTokenName && (
-            <>
-              <p>{toTokenLabel}</p>
-              <p className={'text-right font-bold'}>
-                <Link
-                  href={toTokenLink}
-                  target={'_blank'}
-                  rel={'noopener noreferrer'}
-                  aria-label={`View vault ${notification.toTokenName || 'Unknown'} on explorer`}
-                  className={'text-text-primary hover:text-text-secondary'}
-                >
-                  <button className={'text-xs font-medium underline'}>{notification.toTokenName || 'Unknown'}</button>
-                </Link>
-              </p>
-            </>
-          )}
-          {notification.spenderAddress && (
-            <>
-              <p>{'Spender:'}</p>
-              <p className={'text-right font-bold'}>
-                <Link
-                  href={`${explorerBaseURI}/address/${notification.spenderAddress}`}
-                  target={'_blank'}
-                  rel={'noopener noreferrer'}
-                  aria-label={`View spender ${notification.spenderAddress} on explorer`}
-                  className={'text-text-primary hover:text-text-secondary'}
-                >
-                  <button className={'text-xs font-medium underline'}>
-                    {notification.spenderName || truncateHex(notification.spenderAddress, 5)}
-                  </button>
-                </Link>
-              </p>
-            </>
-          )}
-          {isCrossChain ? (
-            <>
-              <p>{'From chain:'}</p>
-              <p className={'text-right font-bold'}>{fromChainName}</p>
-              <p>{'To chain:'}</p>
-              <p className={'text-right font-bold'}>{toChainName}</p>
-            </>
-          ) : (
-            <>
-              <p>{'Chain:'}</p>
-              <p className={'text-right font-bold'}>{fromChainName}</p>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+  return <WithdrawNotificationContent notification={notification} />
 }
 
 export const Notification = memo(function Notification({
   notification,
-  variant = 'v3',
-  fromVault,
-  toVault
+  variant = 'v3'
 }: {
   notification: TNotification
   variant: 'v2' | 'v3'
-  fromVault?: TYDaemonVault
-  toVault?: TYDaemonVault
 }): ReactElement {
   const { deleteByID } = useNotifications()
   const [isDeleting, setIsDeleting] = useState(false)
@@ -668,8 +471,6 @@ export const Notification = memo(function Notification({
         return 'Claim'
       case 'claim and exit':
         return 'Claim & Exit'
-      case 'migrate':
-        return 'Migrate'
       default:
         return 'Transaction'
     }
@@ -721,7 +522,7 @@ export const Notification = memo(function Notification({
           <NotificationStatus status={notification.status} />
         </div>
 
-        <NotificationContent notification={notification} fromVault={fromVault} toVault={toVault} />
+        <NotificationContent notification={notification} />
 
         {notification.status === 'success' || notification.txHash ? (
           <div

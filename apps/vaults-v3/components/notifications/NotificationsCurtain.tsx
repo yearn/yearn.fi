@@ -1,5 +1,4 @@
 import { useNotifications } from '@lib/contexts/useNotifications'
-import { useYearn } from '@lib/contexts/useYearn'
 import { IconCross } from '@lib/icons/IconCross'
 import { cl } from '@lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -16,8 +15,6 @@ export function NotificationsCurtain(props: {
   const isDesktop = useIsMdUp()
   const drawerDirection = isDesktop ? 'right' : 'bottom'
   const { cachedEntries, setNotificationStatus, isLoading, error } = useNotifications()
-  const { vaults, vaultsMigrations, vaultsRetired } = useYearn()
-  const allVaults = { ...vaults, ...vaultsMigrations, ...vaultsRetired }
 
   const isEmpty = cachedEntries.length === 0
 
@@ -104,13 +101,7 @@ export function NotificationsCurtain(props: {
                   >
                     <AnimatePresence mode={'popLayout'}>
                       {cachedEntries.toReversed().map((entry) => (
-                        <Notification
-                          key={`notification-${entry.id}`}
-                          fromVault={entry.fromAddress ? allVaults[entry.fromAddress] : undefined}
-                          toVault={entry.toAddress ? allVaults[entry.toAddress] : undefined}
-                          notification={entry}
-                          variant={props.variant}
-                        />
+                        <Notification key={`notification-${entry.id}`} notification={entry} variant={props.variant} />
                       ))}
                     </AnimatePresence>
                   </motion.div>

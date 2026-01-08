@@ -17,7 +17,6 @@ export type TNotificationType =
   | 'unstake and withdraw'
   | 'claim'
   | 'claim and exit'
-  | 'migrate'
 
 export type TNotification = {
   id?: number
