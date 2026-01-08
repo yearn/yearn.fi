@@ -12,6 +12,7 @@ interface UseWithdrawNotificationsProps {
   stakingToken?: Token
   // Addresses
   sourceToken: Address
+  assetAddress: Address
   withdrawToken: Address
   // Account & chain
   account?: Address
@@ -20,6 +21,7 @@ interface UseWithdrawNotificationsProps {
   // Amount
   withdrawAmount: bigint
   requiredShares: bigint
+  expectedOut?: bigint
   // Route info
   routeType: WithdrawRouteType
   routerAddress?: string
@@ -38,17 +40,23 @@ export const useWithdrawNotifications = ({
   outputToken,
   stakingToken,
   sourceToken,
+  assetAddress,
   withdrawToken,
   account,
   chainId,
   destinationChainId,
   withdrawAmount,
   requiredShares,
+  expectedOut,
   routeType,
   routerAddress,
   isCrossChain,
   withdrawalSource
 }: UseWithdrawNotificationsProps): WithdrawNotificationsResult => {
+  const isZap = toAddress(withdrawToken) !== toAddress(assetAddress)
+  const isUnstakeAndWithdraw =
+    withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(assetAddress) && !isZap
+
   // Determine source token info based on withdrawal source
   const sourceTokenInfo = useMemo(() => {
     if (withdrawalSource === 'staking' && stakingToken) {
@@ -82,9 +90,18 @@ export const useWithdrawNotifications = ({
   const withdrawNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!vault || !outputToken || !account || withdrawAmount === 0n) return undefined
 
-    let notificationType: 'withdraw' | 'zap' | 'crosschain zap' | 'unstake' = 'withdraw'
+    let notificationType: 'withdraw' | 'withdraw zap' | 'crosschain withdraw zap' | 'unstake' | 'unstake and withdraw' =
+      'withdraw'
     if (routeType === 'ENSO') {
-      notificationType = isCrossChain ? 'crosschain zap' : 'zap'
+      if (isCrossChain) {
+        notificationType = 'crosschain withdraw zap'
+      } else if (isZap) {
+        notificationType = 'withdraw zap'
+      } else if (isUnstakeAndWithdraw) {
+        notificationType = 'unstake and withdraw'
+      } else {
+        notificationType = 'withdraw'
+      }
     } else if (routeType === 'DIRECT_UNSTAKE') {
       notificationType = 'unstake'
     }
@@ -97,6 +114,7 @@ export const useWithdrawNotifications = ({
       fromChainId: chainId,
       toAddress: toAddress(withdrawToken),
       toSymbol: outputToken.symbol || '',
+      toAmount: expectedOut ? formatTAmount({ value: expectedOut, decimals: outputToken.decimals ?? 18 }) : undefined,
       toChainId: isCrossChain ? destinationChainId : undefined
     }
   }, [
@@ -106,11 +124,14 @@ export const useWithdrawNotifications = ({
     withdrawAmount,
     routeType,
     isCrossChain,
+    isZap,
+    isUnstakeAndWithdraw,
     requiredShares,
     sourceTokenInfo,
     sourceToken,
     chainId,
     withdrawToken,
+    expectedOut,
     destinationChainId
   ])
 

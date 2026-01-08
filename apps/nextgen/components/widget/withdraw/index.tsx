@@ -114,7 +114,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     chainId
   })
 
-  const { data: stakingPricePerShare } = useReadContract({
+  const { data: stakingPricePerShare = 1n * 10n ** BigInt(stakingToken?.decimals ?? 18) } = useReadContract({
     address: stakingAddress,
     abi: vaultAbi,
     functionName: 'pricePerShare',
@@ -146,17 +146,13 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const requiredShares = useMemo(() => {
     if (!withdrawAmount.bn || withdrawAmount.bn === 0n) return 0n
 
-    if (isUnstake) {
-      return (withdrawAmount.bn * 10n ** BigInt(stakingToken?.decimals ?? 18)) / (stakingPricePerShare as bigint)
-    }
-
     if (pricePerShare) {
       const vaultDecimals = vault?.decimals ?? 18
       return (withdrawAmount.bn * 10n ** BigInt(vaultDecimals)) / (pricePerShare as bigint)
     }
 
     return 0n
-  }, [withdrawAmount.bn, isUnstake, pricePerShare, stakingToken?.decimals, stakingPricePerShare, vault?.decimals])
+  }, [withdrawAmount.bn, pricePerShare, vault?.decimals])
 
   // ============================================================================
   // Withdraw Flow (routing, actions, periphery)
@@ -214,12 +210,14 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     outputToken,
     stakingToken,
     sourceToken,
+    assetAddress,
     withdrawToken,
     account,
     chainId,
     destinationChainId,
     withdrawAmount: withdrawAmount.bn,
     requiredShares,
+    expectedOut: activeFlow.periphery.expectedOut,
     routeType,
     routerAddress: activeFlow.periphery.routerAddress,
     isCrossChain: activeFlow.periphery.isCrossChain,
@@ -253,6 +251,44 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     if (!outputToken?.address || !outputToken?.chainID) return 0
     return getPrice({ address: toAddress(outputToken.address), chainID: outputToken.chainID }).normalized
   }, [outputToken?.address, outputToken?.chainID, getPrice])
+
+  const zapToken = useMemo(() => {
+    if (withdrawToken === assetAddress) return undefined
+
+    const getExpectedAmount = () => {
+      console.log(requiredShares)
+      console.log(formatAmount(Number(formatUnits(requiredShares, vault?.decimals ?? 18)), 6, 6))
+      if (isUnstake) {
+        return requiredShares > 0n
+          ? formatAmount(Number(formatUnits(requiredShares, vault?.decimals ?? 18)), 6, 6)
+          : '0'
+      }
+      return activeFlow.periphery.expectedOut && activeFlow.periphery.expectedOut > 0n
+        ? formatAmount(Number(formatUnits(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)), 6, 6)
+        : '0'
+    }
+
+    return {
+      symbol: outputToken?.symbol || 'Select Token',
+      address: outputToken?.address || '',
+      chainId: outputToken?.chainID || chainId,
+      expectedAmount: getExpectedAmount(),
+      isLoading: isUnstake ? false : activeFlow.periphery.isLoadingRoute
+    }
+  }, [
+    withdrawToken,
+    assetAddress,
+    isUnstake,
+    requiredShares,
+    vault?.decimals,
+    activeFlow.periphery.expectedOut,
+    activeFlow.periphery.isLoadingRoute,
+    outputToken?.symbol,
+    outputToken?.address,
+    outputToken?.chainID,
+    outputToken?.decimals,
+    chainId
+  ])
 
   // ============================================================================
   // Handlers
@@ -344,24 +380,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
                 }
               }
             }}
-            zapToken={
-              withdrawToken !== assetAddress
-                ? {
-                    symbol: outputToken?.symbol || 'Select Token',
-                    address: outputToken?.address || '',
-                    chainId: outputToken?.chainID || chainId,
-                    expectedAmount:
-                      activeFlow.periphery.expectedOut && activeFlow.periphery.expectedOut > 0n
-                        ? formatAmount(
-                            Number(formatUnits(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)),
-                            6,
-                            6
-                          )
-                        : '0',
-                    isLoading: activeFlow.periphery.isLoadingRoute
-                  }
-                : undefined
-            }
+            zapToken={zapToken}
             onRemoveZap={() => {
               setSelectedToken(assetAddress)
               setSelectedChainId(chainId)
