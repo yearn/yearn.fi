@@ -11,7 +11,10 @@ import { Tooltip } from '@lib/components/Tooltip'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import { IconChevron } from '@lib/icons/IconChevron'
-import { IconSettings } from '@lib/icons/IconSettings'
+import { IconCircle } from '@lib/icons/IconCircle'
+import { IconCirclePile } from '@lib/icons/IconCirclePile'
+import { IconEyeOff } from '@lib/icons/IconEyeOff'
+import { IconRewind } from '@lib/icons/IconRewind'
 import { IconStablecoin } from '@lib/icons/IconStablecoin'
 import { IconStack } from '@lib/icons/IconStack'
 import { IconVolatile } from '@lib/icons/IconVolatile'
@@ -41,6 +44,7 @@ type TVaultRowFlags = {
   hasHoldings?: boolean
   isMigratable?: boolean
   isRetired?: boolean
+  isHidden?: boolean
 }
 
 type TVaultsListRowLayout = 'default' | 'balanced'
@@ -86,8 +90,21 @@ export function VaultsListRow({
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
+  const isLegacyVault = listKind === 'legacy'
   const productType = isAllocatorVault ? 'v3' : 'lp'
-  const productTypeLabel = isAllocatorVault ? 'Allocator' : 'LP'
+  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Vault'
+  const productTypeIcon = isAllocatorVault ? (
+    <IconCircle className={'size-3.5'} />
+  ) : isLegacyVault ? (
+    <IconRewind className={'size-3.5'} />
+  ) : (
+    <IconVolatile className={'size-3.5'} />
+  )
+  const productTypeAriaLabel = isAllocatorVault
+    ? 'Show single asset vaults'
+    : isLegacyVault
+      ? 'Legacy vault'
+      : 'Show LP vaults'
   const showProductTypeChip = Boolean(activeProductType) || Boolean(onToggleVaultType)
   const isProductTypeActive = false
 
@@ -97,17 +114,15 @@ export function VaultsListRow({
   const rightGridColumns = isBalancedLayout ? 'md:grid-cols-12' : 'md:grid-cols-15'
   const metricsColumnSpan = isBalancedLayout ? 'col-span-4' : 'col-span-5'
 
-  const kindLabel =
-    currentVault.kind === 'Multi Strategy'
-      ? 'Allocator Vault'
-      : currentVault.kind === 'Single Strategy'
-        ? 'Strategy Vault'
-        : currentVault.kind
-  const kindType =
+  const isHiddenVault = Boolean(flags?.isHidden)
+  const baseKindType =
     currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
+  const fallbackKindType = listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
+  const kindType = baseKindType ?? fallbackKindType
+  const kindLabel = kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
-  const showKindChip = showStrategies && Boolean(kindType) && Boolean(onToggleType)
+  const showKindChip = showStrategies && Boolean(kindType)
   const isKindActive = false
   const categoryIcon =
     currentVault.category === 'Stablecoin' ? (
@@ -117,7 +132,7 @@ export function VaultsListRow({
     ) : null
   const kindIcon =
     kindType === 'multi' ? (
-      <IconSettings className={'size-3.5'} />
+      <IconCirclePile className={'size-3.5'} />
     ) : kindType === 'single' ? (
       <IconStack className={'size-3.5'} />
     ) : null
@@ -243,10 +258,14 @@ export function VaultsListRow({
                 {showProductTypeChip ? (
                   <VaultsListChip
                     label={productTypeLabel}
+                    icon={productTypeIcon}
                     isActive={isProductTypeActive}
                     onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
-                    ariaLabel={`Show ${productTypeLabel} vaults`}
+                    ariaLabel={productTypeAriaLabel}
                   />
+                ) : null}
+                {isHiddenVault ? (
+                  <VaultsListChip label={'Hidden'} icon={<IconEyeOff className={'size-3.5'} />} />
                 ) : null}
                 {showKindChip && kindLabel ? (
                   <VaultsListChip

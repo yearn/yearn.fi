@@ -28,6 +28,7 @@ type TVaultFlags = {
   hasHoldings: boolean
   isMigratable: boolean
   isRetired: boolean
+  isHidden: boolean
 }
 
 type TV3VaultFilterResult = {
@@ -253,7 +254,8 @@ export function useV3VaultFilter(
         vaultFlags[key] = {
           hasHoldings: hasUserHoldings,
           isMigratable: isMigratableVault,
-          isRetired: isRetiredVault
+          isRetired: isRetiredVault,
+          isHidden: Boolean(vault.info?.isHidden)
         }
 
         totalMatchingVaults++

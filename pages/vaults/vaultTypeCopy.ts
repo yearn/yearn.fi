@@ -6,7 +6,7 @@ export const VAULT_TYPE_COPY: Record<TVaultType, { label: string; emoji: string 
     emoji: '🌐'
   },
   v3: {
-    label: 'Allocator Vaults',
+    label: 'Single Asset Vaults',
     emoji: '⚙️'
   },
   factory: {

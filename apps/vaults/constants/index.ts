@@ -1,7 +1,7 @@
 export const ALL_VAULTSV3_KINDS = {
   highlight: 'Featured',
-  multi: 'Allocator Vault',
-  single: 'Strategy Vault'
+  multi: 'Allocator',
+  single: 'Strategy'
 }
 export const ALL_VAULTSV3_KINDS_KEYS = Object.keys(ALL_VAULTSV3_KINDS)
 
