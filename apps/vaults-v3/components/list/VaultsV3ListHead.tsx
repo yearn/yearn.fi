@@ -35,6 +35,7 @@ export type TListHead = {
   activeToggleValues?: Iterable<string>
   wrapperClassName?: string
   containerClassName?: string
+  layoutVariant?: 'default' | 'balanced'
 }
 
 function isToggleItem(item: TListHeadItem): item is TToggleListHeadItem {
@@ -49,9 +50,14 @@ export function VaultsV3ListHead({
   onToggle,
   activeToggleValues,
   wrapperClassName,
-  containerClassName
+  containerClassName,
+  layoutVariant = 'default'
 }: TListHead): ReactElement {
   const activeToggles = useMemo(() => new Set(activeToggleValues || []), [activeToggleValues])
+  const isBalancedLayout = layoutVariant === 'balanced'
+  const leftColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-9'
+  const rightColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-15'
+  const rightGridColumns = isBalancedLayout ? 'md:grid-cols-12' : 'md:grid-cols-15'
 
   const toggleSortDirection = (newSortBy: string): TSortDirection => {
     if (sortBy === newSortBy) {
@@ -173,7 +179,7 @@ export function VaultsV3ListHead({
       >
         <div
           className={cl(
-            'col-span-9',
+            leftColumnSpan,
             'flex flex-row items-center justify-between',
             'mb-2 py-4 md:mb-0 md:py-0',
             token.className
@@ -182,7 +188,7 @@ export function VaultsV3ListHead({
           {renderItem(token, !isToggleItem(token) && sortBy === token.value, false)}
         </div>
 
-        <div className={cl('col-span-15 z-10', 'grid grid-cols-2 md:grid-cols-15 gap-4', 'mt-4 md:mt-0')}>
+        <div className={cl(rightColumnSpan, 'z-10', 'grid grid-cols-2 gap-4', rightGridColumns, 'mt-4 md:mt-0')}>
           {rest.map((item): ReactElement => renderItem(item, !isToggleItem(item) && sortBy === item.value, true))}
         </div>
       </div>

@@ -24,13 +24,11 @@ import {
   type TVaultChartTimeframe,
   VaultChartsSection
 } from '@nextgen/components/vaults-beta/VaultChartsSection'
-import { APYSparkline } from '@vaults-v3/components/table/APYSparkline'
 import {
   type TVaultForwardAPYVariant,
   VaultForwardAPY
   // VaultForwardAPYInlineDetails
 } from '@vaults-v3/components/table/VaultForwardAPY'
-import { VaultHistoricalAPY } from '@vaults-v3/components/table/VaultHistoricalAPY'
 import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
@@ -44,6 +42,8 @@ type TVaultRowFlags = {
   isRetired?: boolean
 }
 
+type TVaultsV3ListRowLayout = 'default' | 'balanced'
+
 export function VaultsV3ListRow({
   currentVault,
   flags,
@@ -56,7 +56,8 @@ export function VaultsV3ListRow({
   onToggleChain,
   onToggleCategory,
   onToggleType,
-  showStrategies = false
+  showStrategies = false,
+  layoutVariant = 'default'
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
@@ -70,6 +71,7 @@ export function VaultsV3ListRow({
   onToggleCategory?: (category: string) => void
   onToggleType?: (type: string) => void
   showStrategies?: boolean
+  layoutVariant?: TVaultsV3ListRowLayout
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
@@ -78,6 +80,11 @@ export function VaultsV3ListRow({
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsV3ExpandedView>('performance')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
+  const isBalancedLayout = layoutVariant === 'balanced'
+  const leftColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-9'
+  const rightColumnSpan = isBalancedLayout ? 'col-span-12' : 'col-span-15'
+  const rightGridColumns = isBalancedLayout ? 'md:grid-cols-12' : 'md:grid-cols-15'
+  const metricsColumnSpan = isBalancedLayout ? 'col-span-4' : 'col-span-5'
   const kindLabel =
     currentVault.kind === 'Multi Strategy'
       ? 'Allocator Vault'
@@ -176,7 +183,7 @@ export function VaultsV3ListRow({
           <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
         </button>
 
-        <div className={cl('col-span-9 z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
+        <div className={cl(leftColumnSpan, 'z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
           <div className={'flex flex-row w-full gap-4 overflow-hidden'}>
             <div className={'relative flex items-center justify-center self-center size-8 min-h-8 min-w-8'}>
               <TokenLogo
@@ -276,8 +283,10 @@ export function VaultsV3ListRow({
         </div>
 
         {/* Desktop metrics grid */}
-        <div className={cl('col-span-15 z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:grid-cols-15 md:items-center')}>
-          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
+        <div
+          className={cl(rightColumnSpan, 'z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:items-center', rightGridColumns)}
+        >
+          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
             <VaultForwardAPY
               currentVault={currentVault}
               showSubline={false}
@@ -286,21 +295,8 @@ export function VaultsV3ListRow({
               showBoostDetails={showBoostDetails}
             />
           </div>
-
-          {/* 30D APY */}
-          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <VaultHistoricalAPY currentVault={currentVault} />
-          </div>
-
-          {/* 30D APY Sparkline */}
-          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
-            <p className={'text-xs text-text-primary/60 md:hidden'}>{'30D APY'}</p>
-            <div className={'w-24 h-10'}>
-              <APYSparkline chainId={currentVault.chainID} vaultAddress={currentVault.address} />
-            </div>
-          </div>
           {/* TVL */}
-          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
+          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
             <div className={'flex justify-end text-right'}>
               <Tooltip
                 className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
@@ -344,7 +340,7 @@ export function VaultsV3ListRow({
               />
             </p>
           </div> */}
-          <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
+          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
             <VaultHoldingsAmount currentVault={currentVault} />
           </div>
         </div>
