@@ -40,9 +40,9 @@ export type TVaultChartTimeframe = (typeof VAULT_CHART_TIMEFRAME_OPTIONS)[number
 export type TVaultChartTab = 'historical-pps' | 'historical-apy' | 'historical-tvl'
 
 export const VAULT_CHART_TABS: Array<{ id: TVaultChartTab; label: string }> = [
-  { id: 'historical-tvl', label: 'TVL' },
+  { id: 'historical-apy', label: '30-Day APY' },
   { id: 'historical-pps', label: 'Performance' },
-  { id: 'historical-apy', label: 'APY' }
+  { id: 'historical-tvl', label: 'TVL' }
 ]
 
 export function VaultChartsSection({
@@ -66,7 +66,7 @@ export function VaultChartsSection({
   const chartsLoading = isLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData
   const hasError = Boolean(error)
 
-  const [uncontrolledTab, setUncontrolledTab] = useState<TVaultChartTab>('historical-tvl')
+  const [uncontrolledTab, setUncontrolledTab] = useState<TVaultChartTab>('historical-apy')
   const [uncontrolledTimeframe, setUncontrolledTimeframe] = useState<TVaultChartTimeframe>('all')
 
   const activeTab = chartTab ?? uncontrolledTab
