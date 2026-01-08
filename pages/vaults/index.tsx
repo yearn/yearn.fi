@@ -161,16 +161,15 @@ function ListOfVaults({
     if (!isV3View) {
       return []
     }
-    if (isAllVaults) {
+    const selected = (types || []).filter((type) => type === 'multi' || type === 'single')
+    if (!showStrategies) {
       return ['multi']
     }
-    const selected = (types || []).filter((type) => type === 'multi' || type === 'single')
-    const hasSingle = selected.includes('single')
-    if (showStrategies && hasSingle) {
-      return ['single']
+    if (!searchParams.has('types') || selected.length === 0) {
+      return ['multi', 'single']
     }
-    return ['multi']
-  }, [types, isV3View, isAllVaults, showStrategies])
+    return selected
+  }, [types, isV3View, showStrategies, searchParams])
 
   const allocatorTypesForTrending = useMemo(() => {
     return isV3View ? ['multi'] : null
@@ -180,6 +179,9 @@ function ListOfVaults({
     if (!isV2View) {
       return []
     }
+    if (vaultType === 'factory') {
+      return ['factory']
+    }
     const selected = (types || []).filter((type) => type === 'factory' || type === 'legacy')
     if (selected.length === 0) {
       return V2_DEFAULT_TYPES
@@ -188,19 +190,23 @@ function ListOfVaults({
       return ['factory', ...selected]
     }
     return selected
-  }, [types, isV2View])
+  }, [types, isV2View, vaultType])
 
   useEffect(() => {
-    if (vaultType !== 'v3') {
+    if (!isV3View) {
       return
     }
-    if (showStrategies) {
+    const selected = (types || []).filter((type) => type === 'multi' || type === 'single')
+    if (!showStrategies) {
+      if (selected.includes('single')) {
+        onChangeTypes(['multi'])
+      }
       return
     }
-    if (types?.includes('single')) {
-      onChangeTypes(['multi'])
+    if (!searchParams.has('types')) {
+      onChangeTypes(['multi', 'single'])
     }
-  }, [vaultType, showStrategies, types, onChangeTypes])
+  }, [isV3View, showStrategies, types, onChangeTypes, searchParams])
 
   const sanitizedCategories = useMemo(() => {
     const allowed = isV3View ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
@@ -456,7 +462,7 @@ function ListOfVaults({
 
   const handleToggleLegacyVaults = useCallback(
     (shouldShow: boolean): void => {
-      if (!isV2View) {
+      if (!isV2View || !isAllVaults) {
         return
       }
       if (shouldShow) {
@@ -465,7 +471,7 @@ function ListOfVaults({
         onChangeTypes(['factory'])
       }
     },
-    [isV2View, onChangeTypes]
+    [isV2View, isAllVaults, onChangeTypes]
   )
 
   const handleToggleVaultType = useCallback(
@@ -575,7 +581,7 @@ function ListOfVaults({
             >
               <div className={'min-w-0'}>
                 <p className={'text-sm font-medium text-text-primary'}>{'Show strategies'}</p>
-                <p className={'text-xs text-text-secondary'}>{'Enables the v3 Strategies tab.'}</p>
+                <p className={'text-xs text-text-secondary'}>{'Includes strategy vaults in the list.'}</p>
               </div>
               <input
                 type={'checkbox'}
@@ -659,22 +665,24 @@ function ListOfVaults({
         <details className={'rounded-xl border border-border bg-surface-secondary p-4'}>
           <summary className={'cursor-pointer text-sm font-semibold text-text-primary'}>{'Advanced'}</summary>
           <div className={'mt-4 flex flex-col gap-6'}>
-            <label
-              className={
-                'flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2'
-              }
-            >
-              <div className={'min-w-0'}>
-                <p className={'text-sm font-medium text-text-primary'}>{'Show legacy vaults'}</p>
-                <p className={'text-xs text-text-secondary'}>{'Includes legacy LP vaults in the list.'}</p>
-              </div>
-              <input
-                type={'checkbox'}
-                className={'checkbox accent-blue-500'}
-                checked={showLegacyVaults}
-                onChange={(event): void => handleToggleLegacyVaults(event.target.checked)}
-              />
-            </label>
+            {isAllVaults ? (
+              <label
+                className={
+                  'flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2'
+                }
+              >
+                <div className={'min-w-0'}>
+                  <p className={'text-sm font-medium text-text-primary'}>{'Show legacy vaults'}</p>
+                  <p className={'text-xs text-text-secondary'}>{'Includes legacy LP vaults in the list.'}</p>
+                </div>
+                <input
+                  type={'checkbox'}
+                  className={'checkbox accent-blue-500'}
+                  checked={showLegacyVaults}
+                  onChange={(event): void => handleToggleLegacyVaults(event.target.checked)}
+                />
+              </label>
+            ) : null}
           </div>
         </details>
       </div>
@@ -856,8 +864,8 @@ function ListOfVaults({
         filtersContent={filtersPanelContent}
         filtersPanelContent={filtersPanelContent}
         onClearFilters={onResetMultiSelect}
-        mobileExtraContent={<VaultVersionToggle showStrategies={showStrategies} stretch={true} />}
-        trailingControls={<VaultVersionToggle showStrategies={showStrategies} />}
+        mobileExtraContent={<VaultVersionToggle stretch={true} />}
+        trailingControls={<VaultVersionToggle />}
       />
     </div>
   )

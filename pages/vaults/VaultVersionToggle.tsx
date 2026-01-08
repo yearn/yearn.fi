@@ -6,28 +6,21 @@ import { getSupportedChainsForVaultType, normalizeVaultTypeParam, sanitizeChains
 
 type TVaultVersionToggleProps = {
   className?: string
-  showStrategies?: boolean
   stretch?: boolean
 }
 
-export function VaultVersionToggle({ className, showStrategies, stretch }: TVaultVersionToggleProps): ReactElement {
+export function VaultVersionToggle({ className, stretch }: TVaultVersionToggleProps): ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const normalizedType = normalizeVaultTypeParam(searchParams.get('type'))
   const isAllActive = normalizedType === 'all'
   const isLPActive = normalizedType === 'factory'
-  const typesParam = searchParams.get('types')
-  const activeTypes = typesParam ? typesParam.split('_').filter(Boolean) : []
-  const isStrategiesTabVisible = Boolean(showStrategies)
-  const isStrategiesActive = isStrategiesTabVisible && !isLPActive && !isAllActive && activeTypes.includes('single')
-  const isAllocatorActive = !isLPActive && !isAllActive && !isStrategiesActive
+  const isAllocatorActive = !isLPActive && !isAllActive
   const allLabel = getVaultTypeLabel('all')
   const allEmoji = getVaultTypeEmoji('all')
   const allocatorLabel = getVaultTypeLabel('v3')
   const allocatorEmoji = getVaultTypeEmoji('v3')
   const lpLabel = getVaultTypeLabel('factory')
   const lpEmoji = getVaultTypeEmoji('factory')
-  const strategiesLabel = 'v3 Strategies'
-  const strategiesEmoji = '🧩'
 
   const goToAll = (): void => {
     const nextParams = new URLSearchParams(searchParams)
@@ -41,15 +34,6 @@ export function VaultVersionToggle({ className, showStrategies, stretch }: TVaul
     const nextParams = new URLSearchParams(searchParams)
     nextParams.delete('type')
     nextParams.delete('types')
-    sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('v3'))
-    setSearchParams(nextParams, { replace: true })
-  }
-
-  const goToStrategies = (): void => {
-    const nextParams = new URLSearchParams(searchParams)
-    nextParams.delete('type')
-    nextParams.set('types', 'single')
-    nextParams.set('showStrategies', '1')
     sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('v3'))
     setSearchParams(nextParams, { replace: true })
   }
@@ -109,28 +93,6 @@ export function VaultVersionToggle({ className, showStrategies, stretch }: TVaul
         </span>
         <span className={'whitespace-nowrap'}>{allocatorLabel}</span>
       </button>
-      {isStrategiesTabVisible ? (
-        <button
-          type={'button'}
-          className={cl(
-            'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
-            'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-            'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
-            stretch ? 'flex-1' : ''
-          )}
-          data-active={isStrategiesActive}
-          onClick={goToStrategies}
-          aria-pressed={isStrategiesActive}
-        >
-          <span
-            aria-hidden={true}
-            className={'size-5 overflow-hidden rounded-full bg-surface/80 flex items-center justify-center'}
-          >
-            {strategiesEmoji}
-          </span>
-          <span className={'whitespace-nowrap'}>{strategiesLabel}</span>
-        </button>
-      ) : null}
       <button
         type={'button'}
         className={cl(

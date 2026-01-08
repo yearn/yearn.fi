@@ -27,6 +27,7 @@ type TVaultFlags = {
   hasHoldings: boolean
   isMigratable: boolean
   isRetired: boolean
+  isHidden: boolean
 }
 
 type TOptimizedV2VaultFilterResult = {
@@ -218,7 +219,8 @@ export function useV2VaultFilter(
         vaultFlags[key] = {
           hasHoldings: Boolean(hasHoldings || isHoldingsVault),
           isMigratable: isMigratableVault,
-          isRetired: isRetiredVault
+          isRetired: isRetiredVault,
+          isHidden: Boolean(vault.info?.isHidden)
         }
 
         const kind = deriveListKind(vault)
