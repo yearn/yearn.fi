@@ -27,6 +27,7 @@ import {
   type TVaultChartTimeframe,
   VaultChartsSection
 } from '@nextgen/components/vaults-beta/VaultChartsSection'
+import { deriveListKind } from '@vaults-shared/utils/vaultListFacets'
 import {
   type TVaultForwardAPYVariant,
   VaultForwardAPY
@@ -36,7 +37,6 @@ import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAm
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { deriveListKind } from '@vaults-shared/utils/vaultListFacets'
 import { VaultsListChip } from './VaultsListChip'
 import { type TVaultsV3ExpandedView, VaultsV3ExpandedSelector } from './VaultsV3ExpandedSelector'
 
