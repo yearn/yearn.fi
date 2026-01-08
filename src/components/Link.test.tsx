@@ -30,11 +30,11 @@ describe('Link', () => {
     try {
       const html = renderToStaticMarkup(
         <MemoryRouter>
-          <Link href="/apps">Apps</Link>
+          <Link href="/vaults">Vaults</Link>
         </MemoryRouter>
       )
 
-      expect(html).toContain('href="/apps"')
+      expect(html).toContain('href="/vaults"')
       expect(html).not.toContain('target="_blank"')
     } finally {
       ;(globalThis as unknown as { window: unknown }).window = originalWindow

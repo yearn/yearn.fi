@@ -1,18 +1,32 @@
-import { APPS, AppName, type TManifest } from '@lib/components/Apps'
-import type { TMenu } from '@lib/components/Header'
 import homeManifest from '@lib/data/home-manifest.json'
 import landingManifest from '@lib/data/landing-manifest.json'
+import vaultsManifest from '@lib/data/vaults-manifest.json'
 import type { TDict } from '@lib/types'
-import { VaultsHeader } from '@vaults-shared/components/header/VaultsHeader'
-import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 import { useLocation } from 'react-router'
 
 type TCurrentApp = {
-  name: AppName | 'Home' | string
+  name: 'Home' | 'Vaults' | string
   manifest: TManifest
-  header?: ReactElement
-  menu: TMenu[]
+}
+
+export type TManifest = {
+  name?: string
+  short_name?: string
+  description?: string
+  iconPath?: string
+  locale?: string
+  uri?: string
+  og?: string
+  twitter?: string
+  github?: string
+  icons?: { src: string; sizes: string; type: string; purpose?: string }[]
+  theme_color?: string
+  background_color?: string
+  title_color?: string
+  start_url?: string
+  display?: string
+  orientation?: string
 }
 
 export function useCurrentApp(): TCurrentApp {
@@ -21,18 +35,13 @@ export function useCurrentApp(): TCurrentApp {
 
   return useMemo((): TCurrentApp => {
     const appMapping: TDict<TCurrentApp> = {
-      '/v3': {
-        ...APPS[AppName.VAULTSV3],
-        header: <VaultsHeader pathname={pathname} />
-      },
       '/vaults': {
-        ...APPS[AppName.VAULTS],
-        header: <VaultsHeader pathname={pathname} />
+        name: 'Vaults',
+        manifest: vaultsManifest
       },
       '/landing': {
         name: 'Home',
-        manifest: landingManifest,
-        menu: []
+        manifest: landingManifest
       }
     }
 
@@ -40,6 +49,6 @@ export function useCurrentApp(): TCurrentApp {
     if (currentApp) {
       return appMapping[currentApp]
     }
-    return { name: 'Home', manifest: homeManifest, menu: [] }
+    return { name: 'Home', manifest: homeManifest }
   }, [pathname])
 }

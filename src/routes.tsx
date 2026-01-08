@@ -4,7 +4,6 @@ import { Navigate, Route, Routes } from 'react-router'
 
 // Lazy load all page components
 const HomePage = lazy(() => import('../pages/index'))
-const AppsPage = lazy(() => import('../pages/apps/index'))
 const PortfolioPage = lazy(() => import('../pages/portfolio/index'))
 const VaultsPage = lazy(() => import('../pages/vaults/index'))
 const VaultsDetailPage = lazy(() => import('../pages/vaults/[chainID]/[address]'))
@@ -27,7 +26,6 @@ const ExternalRedirect = ({ to }: { to: string }): ReactElement => {
 // Route configuration for reference
 export const routeConfig = {
   home: '/',
-  apps: '/apps',
   vaults: {
     index: '/vaults',
     detail: '/vaults/:chainID/:address'
@@ -52,9 +50,6 @@ export function AppRoutes(): ReactElement {
       <Routes>
         {/* Home page */}
         <Route path="/" element={<HomePage />} />
-
-        {/* Apps page */}
-        <Route path="/apps" element={<AppsPage />} />
 
         {/* Portfolio page */}
         <Route path="/portfolio" element={<PortfolioPage />} />
