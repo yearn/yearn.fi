@@ -1,3 +1,4 @@
+import Link from '@components/Link'
 import {
   AllocationChart,
   DARK_MODE_COLORS,
@@ -32,7 +33,6 @@ import {
 import { VaultHoldingsAmount } from '@vaults-v3/components/table/VaultHoldingsAmount'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
 import { VaultsListChip } from './VaultsListChip'
 import { type TVaultsV3ExpandedView, VaultsV3ExpandedSelector } from './VaultsV3ExpandedSelector'
 
@@ -69,7 +69,6 @@ export function VaultsV3ListRow({
   onToggleType?: (type: string) => void
   showStrategies?: boolean
 }): ReactElement {
-  const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
@@ -123,17 +122,6 @@ export function VaultsV3ListRow({
     </div>
   )
 
-  const handleRowClick = (): void => {
-    navigate(href)
-  }
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      navigate(href)
-    }
-  }
-
   useEffect(() => {
     if (isExpanded) {
       setExpandedView('apy')
@@ -142,16 +130,13 @@ export function VaultsV3ListRow({
 
   return (
     <div className={cl('w-full overflow-hidden transition-colors bg-surface')}>
-      {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
-      <div
-        role={'link'}
-        tabIndex={0}
-        onClick={handleRowClick}
-        onKeyDown={handleKeyDown}
+      <Link
+        to={href}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
           'p-6 pt-2 pb-4 md:pr-20',
-          'cursor-pointer relative group'
+          'cursor-pointer relative group',
+          'no-underline'
         )}
       >
         <div
@@ -339,7 +324,7 @@ export function VaultsV3ListRow({
             <VaultHoldingsAmount currentVault={currentVault} />
           </div>
         </div>
-      </div>
+      </Link>
 
       {isExpanded ? (
         <div className={'hidden md:block bg-surface'}>
@@ -352,18 +337,17 @@ export function VaultsV3ListRow({
                 timeframe={expandedTimeframe}
                 onTimeframeChange={setExpandedTimeframe}
                 rightElement={
-                  <button
-                    type={'button'}
+                  <Link
+                    to={href}
                     onClick={(event): void => {
                       event.stopPropagation()
-                      navigate(href)
                     }}
                     className={
                       'rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
                     }
                   >
                     {'Go to Vault'}
-                  </button>
+                  </Link>
                 }
               />
 

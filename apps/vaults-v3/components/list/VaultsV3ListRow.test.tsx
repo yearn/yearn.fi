@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { fireEvent, render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -67,5 +67,37 @@ describe('VaultsV3ListRow', () => {
 
     expect(queryByText('TKN')).not.toBeNull()
     vi.useRealTimers()
+  })
+
+  it('renders as a semantic link element with proper href', () => {
+    const vault = {
+      chainID: 1,
+      address: '0x1234567890123456789012345678901234567890',
+      name: 'Test Vault',
+      category: 'Stablecoin',
+      kind: 'Multi Strategy',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'TKN',
+        decimals: 6
+      },
+      tvl: {
+        tvl: 1234,
+        totalAssets: 1234567
+      },
+      info: {
+        riskLevel: 3
+      }
+    } as unknown as TYDaemonVault
+
+    const { container } = render(
+      <MemoryRouter>
+        <VaultsV3ListRow currentVault={vault} />
+      </MemoryRouter>
+    )
+
+    const link = container.querySelector('a')
+    expect(link).not.toBeNull()
+    expect(link?.getAttribute('href')).toBe('/vaults/1/0x1234567890123456789012345678901234567890')
   })
 })
