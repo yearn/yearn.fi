@@ -51,7 +51,6 @@ export function VaultsV3ListRow({
   showBoostDetails = true,
   activeChains,
   activeCategories,
-  activeTypes,
   onToggleChain,
   onToggleCategory,
   onToggleType,
@@ -66,7 +65,6 @@ export function VaultsV3ListRow({
   showBoostDetails?: boolean
   activeChains?: number[]
   activeCategories?: string[]
-  activeTypes?: string[]
   onToggleChain?: (chainId: number) => void
   onToggleCategory?: (category: string) => void
   onToggleType?: (type: string) => void
@@ -91,8 +89,7 @@ export function VaultsV3ListRow({
   const productType = isAllocatorVault ? 'v3' : 'lp'
   const productTypeLabel = isAllocatorVault ? 'Allocator' : 'LP'
   const showProductTypeChip = Boolean(activeProductType) || Boolean(onToggleVaultType)
-  const isProductTypeActive =
-    Boolean(activeProductType) && activeProductType !== 'all' && activeProductType === productType
+  const isProductTypeActive = false
   const kindLabel =
     currentVault.kind === 'Multi Strategy'
       ? 'Allocator Vault'
@@ -103,8 +100,8 @@ export function VaultsV3ListRow({
     currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
-  const activeTypeLabels = activeTypes ?? []
   const showKindChip = showStrategies && Boolean(kindType) && Boolean(onToggleType)
+  const isKindActive = false
   const categoryIcon =
     currentVault.category === 'Stablecoin' ? (
       <IconStablecoin className={'size-3.5'} />
@@ -248,7 +245,7 @@ export function VaultsV3ListRow({
                   <VaultsListChip
                     label={kindLabel}
                     icon={kindIcon}
-                    isActive={kindType ? activeTypeLabels.includes(kindType) : false}
+                    isActive={isKindActive}
                     onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
                     ariaLabel={`Filter by ${kindLabel}`}
                   />

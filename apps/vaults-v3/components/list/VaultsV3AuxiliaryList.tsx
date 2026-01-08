@@ -22,7 +22,6 @@ type TVaultsV3AuxiliaryListProps = {
   resolveApyDisplayVariant?: (vault: TYDaemonVault) => TVaultForwardAPYVariant
   activeChains?: number[]
   activeCategories?: string[]
-  activeTypes?: string[]
   activeProductType?: 'v3' | 'lp' | 'all'
   onToggleChain?: (chainId: number) => void
   onToggleCategory?: (category: string) => void
@@ -40,7 +39,6 @@ export function VaultsV3AuxiliaryList({
   resolveApyDisplayVariant,
   activeChains,
   activeCategories,
-  activeTypes,
   activeProductType,
   onToggleChain,
   onToggleCategory,
@@ -69,7 +67,6 @@ export function VaultsV3AuxiliaryList({
               apyDisplayVariant={rowApyDisplayVariant}
               activeChains={activeChains}
               activeCategories={activeCategories}
-              activeTypes={activeTypes}
               activeProductType={activeProductType}
               onToggleChain={onToggleChain}
               onToggleCategory={onToggleCategory}

@@ -427,7 +427,6 @@ function ListOfVaults({
   }, [sanitizedCategories, sanitizedProtocols, showLegacyVaults])
   const activeChains = chains ?? []
   const activeCategories = sanitizedCategories
-  const activeTypes = isV3View ? sanitizedV3Types : sanitizedV2Types
   const activeProductType = vaultType === 'factory' ? 'lp' : vaultType
   const resolveApyDisplayVariant = useCallback((vault: TYDaemonVault): 'default' | 'factory-list' => {
     const listKind = deriveListKind(vault)
@@ -790,7 +789,6 @@ function ListOfVaults({
             resolveApyDisplayVariant={resolveApyDisplayVariant}
             activeChains={activeChains}
             activeCategories={activeCategories}
-            activeTypes={activeTypes}
             activeProductType={activeProductType}
             onToggleChain={handleToggleChain}
             onToggleCategory={handleToggleCategory}
@@ -812,7 +810,6 @@ function ListOfVaults({
                   apyDisplayVariant={rowApyDisplayVariant}
                   activeChains={activeChains}
                   activeCategories={activeCategories}
-                  activeTypes={activeTypes}
                   activeProductType={activeProductType}
                   onToggleChain={handleToggleChain}
                   onToggleCategory={handleToggleCategory}
