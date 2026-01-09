@@ -300,8 +300,22 @@ function ListOfVaults({
   }, [availableVaults.length, isAvailablePinned])
 
   const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
-  const sortedHoldingsVaults = useSortVaults(holdingsVaults, sortBy, sortDirection)
-  const sortedAvailableVaults = useSortVaults(availableVaults, sortBy, sortDirection)
+  const holdingsKeySet = useMemo(
+    () => new Set(holdingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
+    [holdingsVaults]
+  )
+  const availableKeySet = useMemo(
+    () => new Set(availableVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
+    [availableVaults]
+  )
+  const sortedHoldingsVaults = useMemo(
+    () => sortedVaults.filter((vault) => holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`)),
+    [sortedVaults, holdingsKeySet]
+  )
+  const sortedAvailableVaults = useMemo(
+    () => sortedVaults.filter((vault) => availableKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`)),
+    [sortedVaults, availableKeySet]
+  )
   const sortedSuggestedV3Candidates = useSortVaults(filteredVaultsAllChains, 'featuringScore', 'desc')
   const sortedSuggestedV2Candidates = useSortVaults(filteredV2VaultsAllChains, 'featuringScore', 'desc')
 
@@ -361,11 +375,6 @@ function ListOfVaults({
     }
     return sortedVaults.filter((vault) => !pinnedVaultKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
   }, [pinnedVaultKeys, pinnedVaults, sortedVaults])
-
-  const holdingsKeySet = useMemo(
-    () => new Set(holdingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
-    [holdingsVaults]
-  )
 
   const suggestedV3Vaults = useMemo(
     () =>
