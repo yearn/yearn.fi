@@ -7,7 +7,7 @@ import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
 import { useDeepCompareMemo } from '@react-hookz/web'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 export function useYearnTokens({
   vaults,
@@ -25,7 +25,6 @@ export function useYearnTokens({
   const { currentNetworkTokenList } = useTokenList()
 
   const { safeChainID } = useChainID()
-  const [isReady, setIsReady] = useState(false)
   const allVaults = useMemo((): TYDaemonVault[] => {
     if (!isEnabled) {
       return []
@@ -160,18 +159,17 @@ export function useYearnTokens({
       }
     })
 
-    setIsReady(true)
     return tokens
   }, [isEnabled, isLoadingVaultList, allVaults, availableTokenListTokens])
 
   const allTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
-    if (!isEnabled || !isReady) {
+    if (!isEnabled || isLoadingVaultList) {
       return []
     }
     const fromAvailableTokens = Object.values(availableTokens)
     const tokens = [...fromAvailableTokens, ...availableTokenListTokens]
     return tokens
-  }, [isEnabled, isReady, availableTokens, availableTokenListTokens])
+  }, [isEnabled, isLoadingVaultList, availableTokens, availableTokenListTokens])
 
   /**************************************************************************************************
    ** The following function can be used to clone the tokens list for the forknet. This is useful
