@@ -323,9 +323,12 @@ function AppHeader(_props: { supportedNetworks: Chain[] }): ReactElement {
                         <Link
                           href={'/portfolio'}
                           className={cl(
-                            'rounded-full px-2 py-0.5 text-xs',
-                            isDarkTheme ? 'bg-primary/20 text-primary' : 'bg-neutral-200 text-neutral-700'
+                            'block rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-secondary',
+                            pathname.startsWith('/portfolio')
+                              ? 'text-text-primary bg-surface-secondary'
+                              : 'text-text-secondary hover:text-text-primary'
                           )}
+                          onClick={(): void => setIsMenuOpen(false)}
                         >
                           {'Portfolio'}
                         </Link>
