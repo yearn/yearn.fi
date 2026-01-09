@@ -362,23 +362,34 @@ export function LaunchModal({ trigger }: LaunchModalProps = {}): ReactElement {
                     : 'bg-white text-neutral-900 sm:border-neutral-100'
                 )}
               >
-                <div className={'flex w-full px-6 justify-between'}>
-                  <div className={'text-xl sm:pl-8'}>Yearn App Launcher</div>
-                  <div className={'flex items-center gap-3'}>
-                    <button
-                      type={'button'}
-                      onClick={handleClose}
-                      className={cl(
-                        'flex size-6 items-center justify-center rounded-full border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                        isDarkTheme
-                          ? 'bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]'
-                          : 'bg-neutral-0 border-1 border-neutral-500 text-neutral-700 hover:bg-neutral-200'
-                      )}
-                    >
-                      <span className={'sr-only'}>{'Close'}</span>
-                      <IconClose className={'size-4'} />
-                    </button>
+                <div className={'flex w-full px-6 items-center justify-between'}>
+                  <div className={'flex items-center gap-3 sm:pl-8'}>
+                    <LogoYearnMark className={'size-8 text-primary'} />
+                    <div>
+                      <h2 className={'text-xl font-semibold'}>{'Ecosystem'}</h2>
+                      <p
+                        className={cl(
+                          'text-sm',
+                          isDarkTheme ? 'text-[var(--color-text-secondary)]' : 'text-neutral-500'
+                        )}
+                      >
+                        {'Explore Yearn apps and integrations'}
+                      </p>
+                    </div>
                   </div>
+                  <button
+                    type={'button'}
+                    onClick={handleClose}
+                    className={cl(
+                      'flex size-8 items-center justify-center rounded-full border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors',
+                      isDarkTheme
+                        ? 'border-[var(--color-border)] bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]'
+                        : 'border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
+                    )}
+                  >
+                    <span className={'sr-only'}>{'Close'}</span>
+                    <IconClose className={'size-4'} />
+                  </button>
                 </div>
 
                 <div
