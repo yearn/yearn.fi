@@ -6,7 +6,6 @@ import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@lib/
 import { getVaultName, numberSort, stringSort } from '@lib/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy, TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useCallback, useMemo } from 'react'
-import { deserialize, serialize } from 'wagmi'
 
 export type TPossibleSortBy =
   | 'APY'
@@ -29,7 +28,7 @@ export function useSortVaults(
   const { getPrice, katanaAprs } = useYearn()
 
   const sortedByName = useCallback((): TYDaemonVaults => {
-    if (sortBy !== 'estAPY') {
+    if (sortBy !== 'name') {
       return vaultList
     }
     return vaultList.toSorted((a, b): number =>
@@ -230,12 +229,9 @@ export function useSortVaults(
     })
   }, [sortBy, sortDirection, vaultList])
 
-  const stringifiedVaultList = serialize(vaultList)
   const sortedVaults = useMemo((): TYDaemonVaults => {
-    const sortResult = deserialize(stringifiedVaultList) as TYDaemonVaults
-
     if (sortDirection === '') {
-      return sortResult
+      return vaultList
     }
     if (sortBy === 'name') {
       return sortedByName()
@@ -268,9 +264,9 @@ export function useSortVaults(
       return sortByScore()
     }
 
-    return sortResult
+    return vaultList
   }, [
-    stringifiedVaultList,
+    vaultList,
     sortDirection,
     sortBy,
     sortedByName,
