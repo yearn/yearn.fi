@@ -225,6 +225,7 @@ export const InputTokenAmountV2: FC<Props> = ({
                   src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${tokenChainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                   tokenSymbol={symbol ?? ''}
                   tokenName={symbol ?? ''}
+                  chainId={tokenChainId}
                   width={32}
                   height={32}
                   className="rounded-full"
