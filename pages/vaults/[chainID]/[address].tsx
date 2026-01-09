@@ -102,11 +102,7 @@ function Index(): ReactElement | null {
     })}`
   }, [params.address, yDaemonBaseUri])
 
-  const {
-    data: vault,
-    isLoading: isLoadingVault,
-    mutate
-  } = useFetch<TYDaemonVault>({
+  const { data: vault, isLoading: isLoadingVault } = useFetch<TYDaemonVault>({
     endpoint,
     schema: yDaemonVaultSchema,
     config: {
@@ -115,13 +111,6 @@ function Index(): ReactElement | null {
       cacheDuration: 0
     }
   })
-
-  // Force refetch when endpoint changes
-  useEffect(() => {
-    if (endpoint) {
-      mutate()
-    }
-  }, [endpoint, mutate])
 
   // TODO: remove this workaround when possible
   // <WORKAROUND>
