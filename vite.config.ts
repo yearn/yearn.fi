@@ -90,7 +90,9 @@ export default defineConfig({
           'react-vendor': ['react', 'react-dom', 'react-router'],
           'wagmi-vendor': ['wagmi', 'viem'],
           rainbowkit: ['@rainbow-me/rainbowkit'],
-          'ui-vendor': ['@headlessui/react', 'framer-motion', 'recharts']
+          'ui-vendor': ['@headlessui/react'],
+          'motion-vendor': ['framer-motion'],
+          'charts-vendor': ['recharts']
         }
       }
     }
