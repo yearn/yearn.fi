@@ -6,8 +6,8 @@ import setupIndexedDB from 'use-indexeddb'
 import type { IndexedDBConfig } from 'use-indexeddb/dist/interfaces'
 
 const yearnIDBConfig: IndexedDBConfig = {
-  databaseName: 'yearn-notifications',
-  version: 1,
+  databaseName: 'yearn',
+  version: 2,
   stores: [
     {
       name: 'notifications',
@@ -26,6 +26,11 @@ const yearnIDBConfig: IndexedDBConfig = {
         { name: 'timeFinished', keyPath: 'timeFinished' },
         { name: 'txHash', keyPath: 'txHash' }
       ]
+    },
+    {
+      name: 'vaults-cache',
+      id: { keyPath: 'id' },
+      indices: [{ name: 'updatedAt', keyPath: 'updatedAt' }]
     }
   ]
 }

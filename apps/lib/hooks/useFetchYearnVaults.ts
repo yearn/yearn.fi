@@ -9,7 +9,8 @@ import { useDeepCompareMemo } from '@react-hookz/web'
 import { patchYBoldVaults } from '@vaults/domain/normalizeVault'
 
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
+import { useIndexedDBStore } from 'use-indexeddb'
 
 /******************************************************************************
  ** The useFetchYearnVaults hook is used to fetch the vaults from the yDaemon
@@ -47,6 +48,12 @@ const buildVaultsRetiredEndpoint = (baseUri: string): string => {
   })}`
 }
 
+type TVaultsCacheEntry = {
+  id: string
+  updatedAt: number
+  data: TYDaemonVaults
+}
+
 function useFetchYearnVaults(chainIDs?: number[] | undefined): {
   vaults: TDict<TYDaemonVault>
   vaultsMigrations: TDict<TYDaemonVault>
@@ -55,6 +62,8 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
   mutate: () => Promise<TYDaemonVaults | undefined>
 } {
   const { yDaemonBaseUri: yDaemonBaseUriWithoutChain } = useYDaemonBaseURI()
+  const queryClient = useQueryClient()
+  const { add, update, getByID } = useIndexedDBStore<TVaultsCacheEntry>('vaults-cache')
 
   const vaultsEndpoint = buildVaultsEndpoint(yDaemonBaseUriWithoutChain, chainIDs)
   const migrationsEndpoint = buildVaultsMigrationsEndpoint(yDaemonBaseUriWithoutChain, chainIDs)
@@ -83,6 +92,75 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
     endpoint: retiredEndpoint,
     schema: yDaemonVaultsSchema
   })
+
+  const upsertCache = useCallback(
+    async (id: string, data: TYDaemonVaults) => {
+      const entry: TVaultsCacheEntry = {
+        id,
+        updatedAt: Date.now(),
+        data
+      }
+      try {
+        await update(entry)
+      } catch (_error) {
+        try {
+          await add(entry)
+        } catch (innerError) {
+          console.error('[useFetchYearnVaults] Failed to write vault cache:', innerError)
+        }
+      }
+    },
+    [add, update]
+  )
+
+  useEffect(() => {
+    let isMounted = true
+    const loadCache = async (): Promise<void> => {
+      try {
+        const [vaultsCache, migrationsCache, retiredCache] = await Promise.all([
+          getByID(vaultsEndpoint),
+          getByID(migrationsEndpoint),
+          getByID(retiredEndpoint)
+        ])
+
+        if (!isMounted) return
+        if (vaultsCache?.data) {
+          queryClient.setQueryData(getFetchQueryKey(vaultsEndpoint), vaultsCache.data)
+        }
+        if (migrationsCache?.data) {
+          queryClient.setQueryData(getFetchQueryKey(migrationsEndpoint), migrationsCache.data)
+        }
+        if (retiredCache?.data) {
+          queryClient.setQueryData(getFetchQueryKey(retiredEndpoint), retiredCache.data)
+        }
+      } catch (error) {
+        console.error('[useFetchYearnVaults] Failed to read vault cache:', error)
+      }
+    }
+
+    void loadCache()
+    return () => {
+      isMounted = false
+    }
+  }, [getByID, migrationsEndpoint, queryClient, retiredEndpoint, vaultsEndpoint])
+
+  useEffect(() => {
+    if (vaults && vaults.length > 0) {
+      void upsertCache(vaultsEndpoint, vaults)
+    }
+  }, [vaults, vaultsEndpoint, upsertCache])
+
+  useEffect(() => {
+    if (vaultsMigrations && vaultsMigrations.length > 0) {
+      void upsertCache(migrationsEndpoint, vaultsMigrations)
+    }
+  }, [migrationsEndpoint, upsertCache, vaultsMigrations])
+
+  useEffect(() => {
+    if (vaultsRetired && vaultsRetired.length > 0) {
+      void upsertCache(retiredEndpoint, vaultsRetired)
+    }
+  }, [retiredEndpoint, upsertCache, vaultsRetired])
 
   const vaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
     if (!vaults) {
