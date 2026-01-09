@@ -126,8 +126,7 @@ export function useYearnTokens({
         const newToken = {
           address: vault.token.address,
           chainID: vault.chainID,
-
-          decimals: vault.decimals
+          decimals: vault.token.decimals
         }
 
         tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`] = newToken
