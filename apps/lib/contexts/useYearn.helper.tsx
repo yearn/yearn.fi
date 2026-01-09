@@ -13,25 +13,25 @@ export function useYearnTokens({
   vaults,
   vaultsMigrations,
   vaultsRetired,
-  isLoadingVaultList
+  isLoadingVaultList,
+  isEnabled = true
 }: {
   vaults: TDict<TYDaemonVault>
   vaultsMigrations: TDict<TYDaemonVault>
   vaultsRetired: TDict<TYDaemonVault>
   isLoadingVaultList: boolean
+  isEnabled?: boolean
 }): TUseBalancesTokens[] {
   const { currentNetworkTokenList } = useTokenList()
 
   const { safeChainID } = useChainID()
   const [isReady, setIsReady] = useState(false)
-  const allVaults = useMemo(
-    (): TYDaemonVault[] => [
-      ...Object.values(vaults),
-      ...Object.values(vaultsMigrations),
-      ...Object.values(vaultsRetired)
-    ],
-    [vaults, vaultsMigrations, vaultsRetired]
-  )
+  const allVaults = useMemo((): TYDaemonVault[] => {
+    if (!isEnabled) {
+      return []
+    }
+    return [...Object.values(vaults), ...Object.values(vaultsMigrations), ...Object.values(vaultsRetired)]
+  }, [isEnabled, vaults, vaultsMigrations, vaultsRetired])
 
   /**************************************************************************
    ** Define the list of available tokens. This list is retrieved from the
@@ -39,6 +39,9 @@ export function useYearnTokens({
    ** network.
    **************************************************************************/
   const availableTokenListTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
+    if (!isEnabled) {
+      return []
+    }
     const withTokenList = [...Object.values(currentNetworkTokenList)]
     const tokens: TUseBalancesTokens[] = []
     withTokenList.forEach((token): void => {
@@ -62,11 +65,11 @@ export function useYearnTokens({
       })
     }
     return tokens
-  }, [safeChainID, currentNetworkTokenList])
+  }, [isEnabled, safeChainID, currentNetworkTokenList])
 
   //List available tokens
   const availableTokens = useMemo((): TDict<TUseBalancesTokens> => {
-    if (isLoadingVaultList) {
+    if (!isEnabled || isLoadingVaultList) {
       return {}
     }
     const tokens: TDict<TUseBalancesTokens> = {}
@@ -159,16 +162,16 @@ export function useYearnTokens({
 
     setIsReady(true)
     return tokens
-  }, [isLoadingVaultList, allVaults, availableTokenListTokens])
+  }, [isEnabled, isLoadingVaultList, allVaults, availableTokenListTokens])
 
   const allTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
-    if (!isReady) {
+    if (!isEnabled || !isReady) {
       return []
     }
     const fromAvailableTokens = Object.values(availableTokens)
     const tokens = [...fromAvailableTokens, ...availableTokenListTokens]
     return tokens
-  }, [isReady, availableTokens, availableTokenListTokens])
+  }, [isEnabled, isReady, availableTokens, availableTokenListTokens])
 
   /**************************************************************************************************
    ** The following function can be used to clone the tokens list for the forknet. This is useful

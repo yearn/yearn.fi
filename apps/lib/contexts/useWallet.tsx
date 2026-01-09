@@ -9,6 +9,7 @@ import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
 import { DEFAULT_ERC20, toAddress, zeroNormalizedBN } from '../utils'
 import { createUniqueID } from '../utils/tools.identifier'
+import { useWeb3 } from './useWeb3'
 import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
 
@@ -49,7 +50,14 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   shouldWorkOnTestnet?: boolean
 }): ReactElement {
   const { vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, getPrice } = useYearn()
-  const allTokens = useYearnTokens({ vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList })
+  const { address: userAddress } = useWeb3()
+  const allTokens = useYearnTokens({
+    vaults,
+    vaultsMigrations,
+    vaultsRetired,
+    isLoadingVaultList,
+    isEnabled: Boolean(userAddress)
+  })
   const {
     data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
     onUpdate,
