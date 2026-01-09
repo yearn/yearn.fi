@@ -1,6 +1,5 @@
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
-import { toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useAppSettings } from '@vaults/contexts/useAppSettings'
@@ -14,14 +13,28 @@ import { useMemo } from 'react'
 import {
   createCheckHasAvailableBalance,
   createCheckHasHoldings,
-  extractAvailableVaults,
-  extractHoldingsVaults,
   getVaultKey,
   isV3Vault,
-  matchesSearch,
-  type TVaultFlags,
-  type TVaultWithMetadata
+  type TVaultFlags
 } from './useVaultFilterUtils'
+
+type TVaultIndexEntry = {
+  key: string
+  vault: TYDaemonVault
+  searchableText: string
+  kind: ReturnType<typeof deriveListKind>
+  category: string
+  protocol: string | null
+  isHidden: boolean
+  isActive: boolean
+  isMigratable: boolean
+  isRetired: boolean
+}
+
+type TVaultWalletFlags = {
+  hasHoldings: boolean
+  hasAvailableBalance: boolean
+}
 
 type TOptimizedV2VaultFilterResult = {
   filteredVaults: TYDaemonVault[]
@@ -50,34 +63,33 @@ export function useV2VaultFilter(
 
   const checkHasAvailableBalance = useMemo(() => createCheckHasAvailableBalance(getBalance), [getBalance])
 
-  const processedVaults = useDeepCompareMemo(() => {
-    const vaultMap = new Map<string, TVaultWithMetadata>()
+  const vaultIndex = useDeepCompareMemo(() => {
+    const vaultMap = new Map<string, TVaultIndexEntry>()
 
-    const upsertVault = (vault: TYDaemonVault, updates: Partial<Omit<TVaultWithMetadata, 'vault'>> = {}): void => {
+    const upsertVault = (
+      vault: TYDaemonVault,
+      updates: Partial<Pick<TVaultIndexEntry, 'isActive' | 'isMigratable' | 'isRetired'>>
+    ): void => {
       const key = getVaultKey(vault)
-      const hasHoldings = checkHasHoldings(vault)
-      const hasAvailableBalance = checkHasAvailableBalance(vault)
       const existing = vaultMap.get(key)
-
       if (existing) {
-        vaultMap.set(key, {
-          ...existing,
-          hasHoldings: existing.hasHoldings || hasHoldings,
-          hasAvailableBalance: existing.hasAvailableBalance || hasAvailableBalance,
-          isHoldingsVault: existing.isHoldingsVault || hasHoldings,
-          ...updates
-        })
+        vaultMap.set(key, { ...existing, ...updates })
         return
       }
 
+      const kind = deriveListKind(vault)
       vaultMap.set(key, {
+        key,
         vault,
-        hasHoldings,
-        hasAvailableBalance,
-        isHoldingsVault: hasHoldings,
-        isMigratableVault: false,
-        isRetiredVault: false,
-        ...updates
+        searchableText:
+          `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase(),
+        kind,
+        category: deriveAssetCategory(vault),
+        protocol: deriveProtocol(vault, kind),
+        isHidden: Boolean(vault.info?.isHidden),
+        isActive: Boolean(updates.isActive),
+        isMigratable: Boolean(updates.isMigratable),
+        isRetired: Boolean(updates.isRetired)
       })
     }
 
@@ -89,7 +101,7 @@ export function useV2VaultFilter(
         return
       }
 
-      upsertVault(vault)
+      upsertVault(vault, { isActive: true })
     })
 
     Object.values(vaultsMigrations).forEach((vault) => {
@@ -100,14 +112,7 @@ export function useV2VaultFilter(
         return
       }
 
-      if (!checkHasHoldings(vault)) {
-        return
-      }
-
-      upsertVault(vault, {
-        isMigratableVault: true,
-        isHoldingsVault: true
-      })
+      upsertVault(vault, { isMigratable: true })
     })
 
     Object.values(vaultsRetired).forEach((vault) => {
@@ -118,51 +123,88 @@ export function useV2VaultFilter(
         return
       }
 
-      if (!checkHasHoldings(vault)) {
-        return
-      }
-
-      upsertVault(vault, {
-        isRetiredVault: true,
-        isHoldingsVault: true
-      })
+      upsertVault(vault, { isRetired: true })
     })
 
     return vaultMap
-  }, [vaults, vaultsMigrations, vaultsRetired, checkHasHoldings, checkHasAvailableBalance])
+  }, [vaults, vaultsMigrations, vaultsRetired])
 
-  const holdingsVaults = useMemo(() => extractHoldingsVaults(processedVaults), [processedVaults])
+  const walletFlags = useMemo(() => {
+    const flags = new Map<string, TVaultWalletFlags>()
+    vaultIndex.forEach((entry, key) => {
+      flags.set(key, {
+        hasHoldings: checkHasHoldings(entry.vault),
+        hasAvailableBalance: checkHasAvailableBalance(entry.vault)
+      })
+    })
+    return flags
+  }, [vaultIndex, checkHasHoldings, checkHasAvailableBalance])
 
-  const availableVaults = useMemo(() => extractAvailableVaults(processedVaults), [processedVaults])
+  const holdingsVaults = useMemo(() => {
+    return Array.from(vaultIndex.values())
+      .filter(({ key }) => walletFlags.get(key)?.hasHoldings)
+      .map(({ vault }) => vault)
+  }, [vaultIndex, walletFlags])
+
+  const availableVaults = useMemo(() => {
+    return Array.from(vaultIndex.values())
+      .filter(({ key, isActive }) => {
+        const flags = walletFlags.get(key)
+        if (!flags?.hasAvailableBalance) {
+          return false
+        }
+        if (isActive) {
+          return true
+        }
+        return Boolean(flags.hasHoldings)
+      })
+      .map(({ vault }) => vault)
+  }, [vaultIndex, walletFlags])
 
   const filteredResults = useMemo(() => {
     const computeFiltered = (searchValue?: string) => {
       const filteredVaults: TYDaemonVault[] = []
       const vaultFlags: Record<string, TVaultFlags> = {}
 
-      processedVaults.forEach(({ vault, hasHoldings, isHoldingsVault, isMigratableVault, isRetiredVault }) => {
-        if (searchValue && !matchesSearch(vault, searchValue)) {
+      vaultIndex.forEach((entry) => {
+        const { key, vault, searchableText, kind, category, protocol, isHidden, isActive, isMigratable, isRetired } =
+          entry
+        const walletFlag = walletFlags.get(key)
+        const hasHoldings = Boolean(walletFlag?.hasHoldings)
+
+        if (!isActive && !hasHoldings) {
           return
+        }
+
+        if (searchValue) {
+          try {
+            const escapedSearch = searchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            const searchRegex = new RegExp(escapedSearch, 'i')
+            if (!searchRegex.test(searchableText)) {
+              return
+            }
+          } catch {
+            if (!searchableText.includes(searchValue.toLowerCase())) {
+              return
+            }
+          }
         }
 
         if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {
           return
         }
 
-        const key = `${vault.chainID}_${toAddress(vault.address)}`
+        const isMigratableVault = Boolean(isMigratable && hasHoldings)
+        const isRetiredVault = Boolean(isRetired && hasHoldings)
         vaultFlags[key] = {
-          hasHoldings: Boolean(hasHoldings || isHoldingsVault),
+          hasHoldings: Boolean(hasHoldings || isMigratableVault || isRetiredVault),
           isMigratable: isMigratableVault,
           isRetired: isRetiredVault,
-          isHidden: Boolean(vault.info?.isHidden)
+          isHidden
         }
 
-        const kind = deriveListKind(vault)
-        const assetCategory = deriveAssetCategory(vault)
-        const protocol = deriveProtocol(vault, kind)
-
         const matchesKind = !types || types.length === 0 || types.includes(kind)
-        const matchesCategory = !categories || categories.length === 0 || categories.includes(assetCategory)
+        const matchesCategory = !categories || categories.length === 0 || categories.includes(category)
         const matchesProtocol =
           !protocols ||
           protocols.length === 0 ||
@@ -189,7 +231,7 @@ export function useV2VaultFilter(
       filteredVaultsNoSearch: unsearched.filteredVaults,
       vaultFlags: searched.vaultFlags
     }
-  }, [processedVaults, types, chains, search, categories, protocols])
+  }, [vaultIndex, walletFlags, types, chains, search, categories, protocols])
 
   return {
     ...filteredResults,

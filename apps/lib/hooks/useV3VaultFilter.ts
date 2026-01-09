@@ -1,6 +1,5 @@
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
-import { toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useAppSettings } from '@vaults/contexts/useAppSettings'
@@ -15,14 +14,30 @@ import { useMemo } from 'react'
 import {
   createCheckHasAvailableBalance,
   createCheckHasHoldings,
-  extractAvailableVaults,
-  extractHoldingsVaults,
   getVaultKey,
   isV3Vault,
-  matchesSearch,
-  type TVaultFlags,
-  type TVaultWithMetadata
+  type TVaultFlags
 } from './useVaultFilterUtils'
+
+type TVaultIndexEntry = {
+  key: string
+  vault: TYDaemonVault
+  searchableText: string
+  kind: ReturnType<typeof deriveListKind>
+  category: string
+  protocol: string | null
+  aggressiveness: number | null
+  isHidden: boolean
+  isFeatured: boolean
+  isActive: boolean
+  isMigratable: boolean
+  isRetired: boolean
+}
+
+type TVaultWalletFlags = {
+  hasHoldings: boolean
+  hasAvailableBalance: boolean
+}
 
 type TV3VaultFilterResult = {
   filteredVaults: TYDaemonVault[]
@@ -57,91 +72,93 @@ export function useV3VaultFilter(
 
   const checkHasAvailableBalance = useMemo(() => createCheckHasAvailableBalance(getBalance), [getBalance])
 
-  const processedVaults = useDeepCompareMemo(() => {
-    const vaultMap = new Map<string, TVaultWithMetadata>()
+  const vaultIndex = useDeepCompareMemo(() => {
+    const vaultMap = new Map<string, TVaultIndexEntry>()
+
+    const upsertVault = (
+      vault: TYDaemonVault,
+      updates: Partial<Pick<TVaultIndexEntry, 'isActive' | 'isMigratable' | 'isRetired'>>
+    ): void => {
+      const key = getVaultKey(vault)
+      const existing = vaultMap.get(key)
+      if (existing) {
+        vaultMap.set(key, { ...existing, ...updates })
+        return
+      }
+
+      const kind = deriveListKind(vault)
+      vaultMap.set(key, {
+        key,
+        vault,
+        searchableText:
+          `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase(),
+        kind,
+        category: deriveAssetCategory(vault),
+        protocol: deriveProtocol(vault, kind),
+        aggressiveness: deriveV3Aggressiveness(vault),
+        isHidden: Boolean(vault.info?.isHidden),
+        isFeatured: Boolean(vault.info?.isHighlighted),
+        isActive: Boolean(updates.isActive),
+        isMigratable: Boolean(updates.isMigratable),
+        isRetired: Boolean(updates.isRetired)
+      })
+    }
 
     Object.values(vaults).forEach((vault) => {
       if (!isV3Vault(vault, isAllocatorVaultOverride(vault))) {
         return
       }
-
-      const hasHoldings = checkHasHoldings(vault)
-      const hasAvailableBalance = checkHasAvailableBalance(vault)
-      const key = getVaultKey(vault)
-
-      vaultMap.set(key, {
-        vault,
-        hasHoldings,
-        hasAvailableBalance,
-        isHoldingsVault: hasHoldings,
-        isMigratableVault: false,
-        isRetiredVault: false
-      })
+      upsertVault(vault, { isActive: true })
     })
 
     Object.values(vaultsMigrations).forEach((vault) => {
       if (!isV3Vault(vault, isAllocatorVaultOverride(vault))) {
         return
       }
-
-      const hasHoldings = checkHasHoldings(vault)
-      if (!hasHoldings) return
-      const hasAvailableBalance = checkHasAvailableBalance(vault)
-
-      const key = getVaultKey(vault)
-
-      const existing = vaultMap.get(key)
-      if (existing) {
-        existing.isMigratableVault = true
-        existing.hasHoldings = true
-        existing.isHoldingsVault = true
-        existing.hasAvailableBalance = existing.hasAvailableBalance || hasAvailableBalance
-      } else {
-        vaultMap.set(key, {
-          vault,
-          hasHoldings: true,
-          hasAvailableBalance,
-          isHoldingsVault: false,
-          isMigratableVault: true,
-          isRetiredVault: false
-        })
-      }
+      upsertVault(vault, { isMigratable: true })
     })
 
     Object.values(vaultsRetired).forEach((vault) => {
       if (!isV3Vault(vault, isAllocatorVaultOverride(vault))) {
         return
       }
-
-      const hasHoldings = checkHasHoldings(vault)
-      if (!hasHoldings) return
-      const hasAvailableBalance = checkHasAvailableBalance(vault)
-      const key = getVaultKey(vault)
-
-      const existing = vaultMap.get(key)
-      if (existing) {
-        existing.isRetiredVault = true
-        existing.hasHoldings = true
-        existing.isHoldingsVault = false
-        existing.hasAvailableBalance = existing.hasAvailableBalance || hasAvailableBalance
-      } else {
-        vaultMap.set(key, {
-          vault,
-          hasHoldings: true,
-          hasAvailableBalance,
-          isHoldingsVault: false,
-          isMigratableVault: false,
-          isRetiredVault: true
-        })
-      }
+      upsertVault(vault, { isRetired: true })
     })
 
     return vaultMap
-  }, [vaults, vaultsMigrations, vaultsRetired, checkHasHoldings, checkHasAvailableBalance])
+  }, [vaults, vaultsMigrations, vaultsRetired])
 
-  const holdingsVaults = useMemo(() => extractHoldingsVaults(processedVaults), [processedVaults])
+  const walletFlags = useMemo(() => {
+    const flags = new Map<string, TVaultWalletFlags>()
+    vaultIndex.forEach((entry, key) => {
+      flags.set(key, {
+        hasHoldings: checkHasHoldings(entry.vault),
+        hasAvailableBalance: checkHasAvailableBalance(entry.vault)
+      })
+    })
+    return flags
+  }, [vaultIndex, checkHasHoldings, checkHasAvailableBalance])
 
-  const availableVaults = useMemo(() => extractAvailableVaults(processedVaults), [processedVaults])
+  const holdingsVaults = useMemo(() => {
+    return Array.from(vaultIndex.values())
+      .filter(({ key }) => walletFlags.get(key)?.hasHoldings)
+      .map(({ vault }) => vault)
+  }, [vaultIndex, walletFlags])
+
+  const availableVaults = useMemo(() => {
+    return Array.from(vaultIndex.values())
+      .filter(({ key, isActive }) => {
+        const flags = walletFlags.get(key)
+        if (!flags?.hasAvailableBalance) {
+          return false
+        }
+        if (isActive) {
+          return true
+        }
+        return Boolean(flags.hasHoldings)
+      })
+      .map(({ vault }) => vault)
+  }, [vaultIndex, walletFlags])
 
   const filteredResults = useMemo(() => {
     const filteredVaults: TYDaemonVault[] = []
@@ -153,93 +170,118 @@ export function useV3VaultFilter(
     let totalMigratableMatching = 0
     let totalRetiredMatching = 0
 
-    processedVaults.forEach(
-      ({ vault, hasHoldings, hasAvailableBalance, isHoldingsVault, isMigratableVault, isRetiredVault }) => {
-        if (search && !matchesSearch(vault, search)) {
-          return
-        }
+    vaultIndex.forEach((entry) => {
+      const {
+        key,
+        vault,
+        searchableText,
+        kind,
+        category,
+        protocol,
+        aggressiveness: aggressivenessScore,
+        isHidden,
+        isFeatured,
+        isActive,
+        isMigratable,
+        isRetired
+      } = entry
+      const walletFlag = walletFlags.get(key)
+      const hasHoldings = Boolean(walletFlag?.hasHoldings)
+      const hasAvailableBalance = Boolean(walletFlag?.hasAvailableBalance)
 
-        if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {
-          return
-        }
+      if (!isActive && !hasHoldings) {
+        return
+      }
 
-        const key = `${vault.chainID}_${toAddress(vault.address)}`
-        const hasUserHoldings = Boolean(hasHoldings || isHoldingsVault)
-
-        vaultFlags[key] = {
-          hasHoldings: hasUserHoldings,
-          isMigratable: isMigratableVault,
-          isRetired: isRetiredVault,
-          isHidden: Boolean(vault.info?.isHidden)
-        }
-
-        totalMatchingVaults++
-        if (hasUserHoldings) {
-          totalHoldingsMatching++
-        }
-        if (hasAvailableBalance) {
-          totalAvailableMatching++
-        }
-        if (isMigratableVault) {
-          totalMigratableMatching++
-        }
-        if (isRetiredVault) {
-          totalRetiredMatching++
-        }
-
-        const vaultCategorySet = new Set<string>()
-        vaultCategorySet.add(deriveAssetCategory(vault))
-
-        const shouldIncludeByCategory =
-          !categories || categories.length === 0 || categories.some((category) => vaultCategorySet.has(category))
-
-        const isFeatured = Boolean(vault.info?.isHighlighted)
-        const isHidden = Boolean(vault.info?.isHidden)
-        const isPinnedByUserContext = Boolean(hasUserHoldings || isMigratableVault || isRetiredVault)
-        const kind = deriveListKind(vault)
-        const isStrategy = kind === 'strategy'
-        const shouldIncludeByFeaturedGate = Boolean(
-          showHiddenVaults || (!isHidden && (isStrategy || isFeatured || isPinnedByUserContext))
-        )
-
-        let shouldIncludeByKind = true
-        if (types && types.length > 0) {
-          const hasMulti = types.includes('multi')
-          const hasSingle = types.includes('single')
-
-          const matchesAllocator = hasMulti && kind === 'allocator'
-          const matchesStrategy = hasSingle && kind === 'strategy'
-
-          shouldIncludeByKind = Boolean(matchesAllocator || matchesStrategy)
-        }
-
-        let shouldIncludeByProtocol = true
-        if (protocols && protocols.length > 0) {
-          if (kind === 'allocator') {
-            shouldIncludeByProtocol = false
-          } else {
-            const protocol = deriveProtocol(vault, kind)
-            shouldIncludeByProtocol = Boolean(protocol && protocol !== 'Unknown' && protocols.includes(protocol))
+      if (search) {
+        try {
+          const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          const searchRegex = new RegExp(escapedSearch, 'i')
+          if (!searchRegex.test(searchableText)) {
+            return
+          }
+        } catch {
+          if (!searchableText.includes(search.toLowerCase())) {
+            return
           }
         }
+      }
 
-        let shouldIncludeByAggressiveness = true
-        if (aggressiveness && aggressiveness.length > 0) {
-          const score = deriveV3Aggressiveness(vault)
-          shouldIncludeByAggressiveness = Boolean(score !== null && aggressiveness.includes(score))
-        }
+      if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {
+        return
+      }
 
-        if (
-          shouldIncludeByCategory &&
-          shouldIncludeByFeaturedGate &&
-          shouldIncludeByKind &&
-          shouldIncludeByProtocol &&
-          shouldIncludeByAggressiveness
-        ) {
-          filteredVaults.push(vault)
+      const isMigratableVault = Boolean(isMigratable && hasHoldings)
+      const isRetiredVault = Boolean(isRetired && hasHoldings)
+      const hasUserHoldings = Boolean(hasHoldings || isMigratableVault || isRetiredVault)
+
+      vaultFlags[key] = {
+        hasHoldings: hasUserHoldings,
+        isMigratable: isMigratableVault,
+        isRetired: isRetiredVault,
+        isHidden
+      }
+
+      totalMatchingVaults++
+      if (hasUserHoldings) {
+        totalHoldingsMatching++
+      }
+      if (hasAvailableBalance) {
+        totalAvailableMatching++
+      }
+      if (isMigratableVault) {
+        totalMigratableMatching++
+      }
+      if (isRetiredVault) {
+        totalRetiredMatching++
+      }
+
+      const shouldIncludeByCategory =
+        !categories || categories.length === 0 || categories.some((item) => item === category)
+
+      const isPinnedByUserContext = Boolean(hasUserHoldings || isMigratableVault || isRetiredVault)
+      const isStrategy = kind === 'strategy'
+      const shouldIncludeByFeaturedGate = Boolean(
+        showHiddenVaults || (!isHidden && (isStrategy || isFeatured || isPinnedByUserContext))
+      )
+
+      let shouldIncludeByKind = true
+      if (types && types.length > 0) {
+        const hasMulti = types.includes('multi')
+        const hasSingle = types.includes('single')
+
+        const matchesAllocator = hasMulti && kind === 'allocator'
+        const matchesStrategy = hasSingle && kind === 'strategy'
+
+        shouldIncludeByKind = Boolean(matchesAllocator || matchesStrategy)
+      }
+
+      let shouldIncludeByProtocol = true
+      if (protocols && protocols.length > 0) {
+        if (kind === 'allocator') {
+          shouldIncludeByProtocol = false
+        } else {
+          shouldIncludeByProtocol = Boolean(protocol && protocol !== 'Unknown' && protocols.includes(protocol))
         }
       }
-    )
+
+      let shouldIncludeByAggressiveness = true
+      if (aggressiveness && aggressiveness.length > 0) {
+        shouldIncludeByAggressiveness = Boolean(
+          aggressivenessScore !== null && aggressiveness.includes(aggressivenessScore)
+        )
+      }
+
+      if (
+        shouldIncludeByCategory &&
+        shouldIncludeByFeaturedGate &&
+        shouldIncludeByKind &&
+        shouldIncludeByProtocol &&
+        shouldIncludeByAggressiveness
+      ) {
+        filteredVaults.push(vault)
+      }
+    })
 
     return {
       filteredVaults,
@@ -251,7 +293,18 @@ export function useV3VaultFilter(
       totalMigratableMatching,
       totalRetiredMatching
     }
-  }, [processedVaults, types, chains, search, categories, protocols, aggressiveness, holdingsVaults, showHiddenVaults])
+  }, [
+    vaultIndex,
+    walletFlags,
+    types,
+    chains,
+    search,
+    categories,
+    protocols,
+    aggressiveness,
+    showHiddenVaults,
+    holdingsVaults
+  ])
 
   return {
     ...filteredResults,
