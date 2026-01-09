@@ -3,12 +3,10 @@
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useMemo, useRef } from 'react'
-import { serialize } from 'wagmi'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
 import { DEFAULT_ERC20, toAddress, zeroNormalizedBN } from '../utils'
-import { createUniqueID } from '../utils/tools.identifier'
 import { useWeb3 } from './useWeb3'
 import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
@@ -18,7 +16,6 @@ type TWalletContext = {
   getToken: ({ address, chainID }: TTokenAndChain) => TToken
   getBalance: ({ address, chainID }: TTokenAndChain) => TNormalizedBN
   balances: TChainTokens
-  balanceHash: string
   isLoading: boolean
   cumulatedValueInV2Vaults: number
   cumulatedValueInV3Vaults: number
@@ -33,7 +30,6 @@ const defaultProps = {
   getToken: (): TToken => DEFAULT_ERC20,
   getBalance: (): TNormalizedBN => zeroNormalizedBN,
   balances: {},
-  balanceHash: '',
   isLoading: true,
   cumulatedValueInV2Vaults: 0,
   cumulatedValueInV3Vaults: 0,
@@ -116,16 +112,6 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     [balances]
   )
 
-  /**********************************************************************************************
-   ** Balances is an object with multiple level of depth. We want to create a unique hash from
-   ** it to know when it changes. This new hash will be used to trigger the useEffect hook.
-   ** We will use classic hash function to create a hash from the balances object.
-   *********************************************************************************************/
-  const balanceHash = useMemo(() => {
-    const hash = createUniqueID(serialize(balances))
-    return hash
-  }, [balances])
-
   const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
     const allVaults = {
       ...vaults,
@@ -185,22 +171,12 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       getToken,
       getBalance,
       balances,
-      balanceHash,
       isLoading: isLoading || false,
       onRefresh,
       cumulatedValueInV2Vaults,
       cumulatedValueInV3Vaults
     }),
-    [
-      getToken,
-      getBalance,
-      balances,
-      balanceHash,
-      isLoading,
-      onRefresh,
-      cumulatedValueInV2Vaults,
-      cumulatedValueInV3Vaults
-    ]
+    [getToken, getBalance, balances, isLoading, onRefresh, cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
   )
 
   return <WalletContext.Provider value={contextValue}>{props.children}</WalletContext.Provider>
