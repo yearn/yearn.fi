@@ -1,33 +1,28 @@
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
 import { toAddress } from '@lib/utils'
-import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
+import { useAppSettings } from '@vaults/contexts/useAppSettings'
 import {
   deriveAssetCategory,
   deriveListKind,
   deriveProtocol,
-  deriveV3Aggressiveness
-} from '@vaults-shared/utils/vaultListFacets'
-import { useAppSettings } from '@vaults-v2/contexts/useAppSettings'
-import { getNativeTokenWrapperContract } from '@vaults-v2/utils'
-import { useCallback, useMemo } from 'react'
-
-type TVaultWithMetadata = {
-  vault: TYDaemonVault
-  hasHoldings: boolean
-  hasAvailableBalance: boolean
-  isHoldingsVault: boolean
-  isMigratableVault: boolean
-  isRetiredVault: boolean
-}
-
-type TVaultFlags = {
-  hasHoldings: boolean
-  isMigratable: boolean
-  isRetired: boolean
-}
+  deriveV3Aggressiveness,
+  isAllocatorVaultOverride
+} from '@vaults/shared/utils/vaultListFacets'
+import { useMemo } from 'react'
+import {
+  createCheckHasAvailableBalance,
+  createCheckHasHoldings,
+  extractAvailableVaults,
+  extractHoldingsVaults,
+  getVaultKey,
+  isV3Vault,
+  matchesSearch,
+  type TVaultFlags,
+  type TVaultWithMetadata
+} from './useVaultFilterUtils'
 
 type TV3VaultFilterResult = {
   filteredVaults: TYDaemonVault[]
@@ -53,77 +48,26 @@ export function useV3VaultFilter(
 ): TV3VaultFilterResult {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
-  const { shouldHideDust: _shouldHideDust } = useAppSettings()
-  const shouldHideDust = true
+  const { shouldHideDust } = useAppSettings()
 
-  const checkHasHoldings = useCallback(
-    (vault: TYDaemonVault): boolean => {
-      const vaultBalance = getBalance({
-        address: vault.address,
-        chainID: vault.chainID
-      })
-      const vaultPrice = getPrice({
-        address: vault.address,
-        chainID: vault.chainID
-      })
-
-      if (vault.staking.available) {
-        const stakingBalance = getBalance({
-          address: vault.staking.address,
-          chainID: vault.chainID
-        })
-        const hasValidStakedBalance = stakingBalance.raw > 0n
-        const stakedBalanceValue = Number(stakingBalance.normalized) * vaultPrice.normalized
-        if (hasValidStakedBalance && !(shouldHideDust && stakedBalanceValue < 0.01)) {
-          return true
-        }
-      }
-
-      const hasValidBalance = vaultBalance.raw > 0n
-      const balanceValue = Number(vaultBalance.normalized) * vaultPrice.normalized
-
-      return hasValidBalance && !(shouldHideDust && balanceValue < 0.01)
-    },
-    [getBalance, getPrice]
+  const checkHasHoldings = useMemo(
+    () => createCheckHasHoldings(getBalance, getPrice, shouldHideDust),
+    [getBalance, getPrice, shouldHideDust]
   )
 
-  const checkHasAvailableBalance = useCallback(
-    (vault: TYDaemonVault): boolean => {
-      const wantBalance = getBalance({
-        address: vault.token.address,
-        chainID: vault.chainID
-      })
-      if (wantBalance.raw > 0n) {
-        return true
-      }
-
-      const nativeWrapper = getNativeTokenWrapperContract(vault.chainID)
-      if (toAddress(vault.token.address) === toAddress(nativeWrapper)) {
-        const nativeBalance = getBalance({
-          address: ETH_TOKEN_ADDRESS,
-          chainID: vault.chainID
-        })
-        if (nativeBalance.raw > 0n) {
-          return true
-        }
-      }
-
-      return false
-    },
-    [getBalance]
-  )
+  const checkHasAvailableBalance = useMemo(() => createCheckHasAvailableBalance(getBalance), [getBalance])
 
   const processedVaults = useDeepCompareMemo(() => {
     const vaultMap = new Map<string, TVaultWithMetadata>()
 
     Object.values(vaults).forEach((vault) => {
-      if (!vault.version?.startsWith('3') && !vault.version?.startsWith('~3')) {
+      if (!isV3Vault(vault, isAllocatorVaultOverride(vault))) {
         return
       }
 
       const hasHoldings = checkHasHoldings(vault)
       const hasAvailableBalance = checkHasAvailableBalance(vault)
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      const key = getVaultKey(vault)
 
       vaultMap.set(key, {
         vault,
@@ -136,7 +80,7 @@ export function useV3VaultFilter(
     })
 
     Object.values(vaultsMigrations).forEach((vault) => {
-      if (!vault.version?.startsWith('3') && !vault.version?.startsWith('~3')) {
+      if (!isV3Vault(vault, isAllocatorVaultOverride(vault))) {
         return
       }
 
@@ -144,7 +88,7 @@ export function useV3VaultFilter(
       if (!hasHoldings) return
       const hasAvailableBalance = checkHasAvailableBalance(vault)
 
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      const key = getVaultKey(vault)
 
       const existing = vaultMap.get(key)
       if (existing) {
@@ -165,14 +109,14 @@ export function useV3VaultFilter(
     })
 
     Object.values(vaultsRetired).forEach((vault) => {
-      if (!vault.version?.startsWith('3') && !vault.version?.startsWith('~3')) {
+      if (!isV3Vault(vault, isAllocatorVaultOverride(vault))) {
         return
       }
 
       const hasHoldings = checkHasHoldings(vault)
       if (!hasHoldings) return
       const hasAvailableBalance = checkHasAvailableBalance(vault)
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      const key = getVaultKey(vault)
 
       const existing = vaultMap.get(key)
       if (existing) {
@@ -195,17 +139,9 @@ export function useV3VaultFilter(
     return vaultMap
   }, [vaults, vaultsMigrations, vaultsRetired, checkHasHoldings, checkHasAvailableBalance])
 
-  const holdingsVaults = useMemo(() => {
-    return Array.from(processedVaults.values())
-      .filter(({ hasHoldings }) => hasHoldings)
-      .map(({ vault }) => vault)
-  }, [processedVaults])
+  const holdingsVaults = useMemo(() => extractHoldingsVaults(processedVaults), [processedVaults])
 
-  const availableVaults = useMemo(() => {
-    return Array.from(processedVaults.values())
-      .filter(({ hasAvailableBalance }) => hasAvailableBalance)
-      .map(({ vault }) => vault)
-  }, [processedVaults])
+  const availableVaults = useMemo(() => extractAvailableVaults(processedVaults), [processedVaults])
 
   const filteredResults = useMemo(() => {
     const filteredVaults: TYDaemonVault[] = []
@@ -219,21 +155,8 @@ export function useV3VaultFilter(
 
     processedVaults.forEach(
       ({ vault, hasHoldings, hasAvailableBalance, isHoldingsVault, isMigratableVault, isRetiredVault }) => {
-        if (search) {
-          const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
-
-          try {
-            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-            const searchRegex = new RegExp(escapedSearch, 'i')
-            if (!searchRegex.test(searchableText)) {
-              return
-            }
-          } catch {
-            const lowercaseSearch = search.toLowerCase()
-            if (!searchableText.toLowerCase().includes(lowercaseSearch)) {
-              return
-            }
-          }
+        if (search && !matchesSearch(vault, search)) {
+          return
         }
 
         if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {
@@ -246,7 +169,8 @@ export function useV3VaultFilter(
         vaultFlags[key] = {
           hasHoldings: hasUserHoldings,
           isMigratable: isMigratableVault,
-          isRetired: isRetiredVault
+          isRetired: isRetiredVault,
+          isHidden: Boolean(vault.info?.isHidden)
         }
 
         totalMatchingVaults++

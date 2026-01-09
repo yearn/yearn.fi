@@ -1,9 +1,8 @@
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
 import type { TNotification, TNotificationStatus, TNotificationsContext } from '@lib/types/notifications'
-import { NotificationsCurtain } from '@vaults-v3/components/notifications/NotificationsCurtain'
+import { NotificationsCurtain } from '@vaults/components/notifications/NotificationsCurtain'
 import type React from 'react'
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
-import { useLocation } from 'react-router'
 import { useIndexedDBStore } from 'use-indexeddb'
 
 const defaultProps: TNotificationsContext = {
@@ -25,9 +24,6 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
   const [entryNonce, setEntryNonce] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
-
-  const location = useLocation()
-  const isV3 = location.pathname.includes('/v3')
 
   /**************************************************************************
    * State that is used to store latest added/updated notification status
@@ -161,11 +157,7 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
   return (
     <NotificationsContext.Provider value={contextValue}>
       {children}
-      <NotificationsCurtain
-        variant={isV3 ? 'v3' : 'v2'}
-        setShouldOpenCurtain={setShouldOpenCurtain}
-        isOpen={shouldOpenCurtain}
-      />
+      <NotificationsCurtain variant={'v3'} setShouldOpenCurtain={setShouldOpenCurtain} isOpen={shouldOpenCurtain} />
     </NotificationsContext.Provider>
   )
 }
