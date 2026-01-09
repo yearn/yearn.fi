@@ -61,14 +61,15 @@ export function VaultsAuxiliaryList({
       <div className={'flex flex-col gap-px'}>
         {vaults.map((vault) => {
           const key = `${vault.chainID}_${toAddress(vault.address)}`
-          const rowApyDisplayVariant = resolveApyDisplayVariant ? resolveApyDisplayVariant(vault) : apyDisplayVariant
+          const rowApyDisplayVariant = resolveApyDisplayVariant?.(vault) ?? apyDisplayVariant
+          const isSelectedForCompare = isCompareSelected?.(vault) ?? false
           return (
             <VaultsListRow
               key={key}
               currentVault={vault}
               flags={vaultFlags[key]}
               apyDisplayVariant={rowApyDisplayVariant}
-              isCompareSelected={isCompareSelected ? isCompareSelected(vault) : false}
+              isCompareSelected={isSelectedForCompare}
               onToggleCompare={onToggleCompare}
               activeChains={activeChains}
               activeCategories={activeCategories}

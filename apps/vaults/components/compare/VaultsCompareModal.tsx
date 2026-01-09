@@ -20,6 +20,12 @@ type TVaultsCompareModalProps = {
   onClear: () => void
 }
 
+type TVaultInfoItem = {
+  label: string
+  value: string
+  href?: string
+}
+
 const listKindLabels = {
   allocator: 'Allocator',
   strategy: 'Strategy',
@@ -27,34 +33,101 @@ const listKindLabels = {
   legacy: 'Legacy'
 }
 
-const getVaultKey = (vault: TYDaemonVault): string => `${vault.chainID}_${toAddress(vault.address)}`
-
-const formatFee = (value: number | undefined): string => {
-  return formatPercent((value || 0) * 100, 0)
+function getVaultKey(vault: TYDaemonVault): string {
+  return `${vault.chainID}_${toAddress(vault.address)}`
 }
 
-const MetricLabel = ({ label, sublabel }: { label: string; sublabel?: string }): ReactElement => (
-  <div className={'border-b border-border py-3 text-xs font-semibold uppercase tracking-wide text-text-secondary'}>
-    <span>{label}</span>
-    {sublabel ? <span className={'mt-1 block text-[11px] text-text-secondary/70'}>{sublabel}</span> : null}
-  </div>
-)
+function formatFee(value: number | undefined): string {
+  return formatPercent((value ?? 0) * 100, 0)
+}
 
-const MetricValue = ({ children, className }: { children: ReactNode; className?: string }): ReactElement => (
-  <div className={cl('border-b border-border py-3 text-sm text-text-primary', className)}>{children}</div>
-)
+function MetricLabel({ label, sublabel }: { label: string; sublabel?: string }): ReactElement {
+  return (
+    <div className={'border-b border-border py-3 text-xs font-semibold uppercase tracking-wide text-text-secondary'}>
+      <span>{label}</span>
+      {sublabel ? <span className={'mt-1 block text-[11px] text-text-secondary/70'}>{sublabel}</span> : null}
+    </div>
+  )
+}
 
-const renderPercentValue = (value: number | undefined): ReactElement => {
+function MetricValue({ children, className }: { children: ReactNode; className?: string }): ReactElement {
+  return <div className={cl('border-b border-border py-3 text-sm text-text-primary', className)}>{children}</div>
+}
+
+function renderPercentValue(value: number | undefined): ReactElement {
   if (value === undefined || Number.isNaN(value)) {
     return <span className={'text-text-secondary'}>{'—'}</span>
   }
   return <RenderAmount value={value} symbol={'percent'} decimals={6} />
 }
 
-const resolveThirtyDayApy = (vault: TYDaemonVault): number => {
+function resolveThirtyDayApy(vault: TYDaemonVault): number {
   const monthly = vault.apr?.points?.monthAgo ?? 0
   const weekly = vault.apr?.points?.weekAgo ?? 0
   return isZero(monthly) ? weekly : monthly
+}
+
+function normalizeRiskLevel(riskLevel: number): number {
+  return Math.min(Math.max(riskLevel, 0), 5)
+}
+
+function getBlockExplorerUrl(vault: TYDaemonVault): string {
+  const network = getNetwork(vault.chainID)
+  return (
+    network.blockExplorers?.etherscan?.url || network.blockExplorers?.default.url || network.defaultBlockExplorer || ''
+  )
+}
+
+function buildInfoItems(vault: TYDaemonVault, yDaemonBaseUri: string): TVaultInfoItem[] {
+  const blockExplorer = getBlockExplorerUrl(vault)
+  const infoItems: TVaultInfoItem[] = [
+    {
+      label: 'Vault Contract Address',
+      value: vault.address,
+      href: blockExplorer ? `${blockExplorer}/address/${vault.address}` : undefined
+    },
+    {
+      label: 'Token Contract Address',
+      value: vault.token.address,
+      href: blockExplorer ? `${blockExplorer}/address/${vault.token.address}` : undefined
+    }
+  ]
+
+  if (vault.staking?.available) {
+    infoItems.push({
+      label: 'Staking Contract Address',
+      value: vault.staking.address,
+      href: blockExplorer ? `${blockExplorer}/address/${vault.staking.address}` : undefined
+    })
+  }
+
+  const sourceUrl = vault.info?.sourceURL
+  if (sourceUrl?.includes('curve.finance')) {
+    infoItems.push({
+      label: 'Curve deposit URI',
+      value: sourceUrl
+    })
+  }
+
+  if (sourceUrl?.includes('gamma')) {
+    infoItems.push({
+      label: 'Gamma Pair',
+      value: sourceUrl
+    })
+  }
+
+  infoItems.push({
+    label: 'Price Per Share',
+    value: String(vault.apr.pricePerShare.today)
+  })
+
+  infoItems.push({
+    label: 'yDaemon Vault Data',
+    value: 'View API Data',
+    href: `${yDaemonBaseUri}/${vault.chainID}/vaults/${vault.address}`
+  })
+
+  return infoItems
 }
 
 export function VaultsCompareModal({
@@ -234,7 +307,7 @@ export function VaultsCompareModal({
                         <MetricLabel label={'Risk'} sublabel={'Security score'} />
                         {vaults.map((vault) => {
                           const riskLevel = vault.info?.riskLevel ?? -1
-                          const normalizedRisk = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel
+                          const normalizedRisk = normalizeRiskLevel(riskLevel)
                           return (
                             <MetricValue key={`risk-${getVaultKey(vault)}`}>
                               <div className={'flex items-center gap-3'}>
@@ -261,7 +334,7 @@ export function VaultsCompareModal({
 
                         <MetricLabel label={'Strategies'} sublabel={'Underlying positions'} />
                         {vaults.map((vault) => {
-                          const strategies = (vault.strategies || []).filter(
+                          const strategies = (vault.strategies ?? []).filter(
                             (strategy) => strategy.status !== 'not_active'
                           )
                           return (
@@ -271,9 +344,8 @@ export function VaultsCompareModal({
                               ) : (
                                 <div className={'flex flex-col gap-2'}>
                                   {strategies.map((strategy) => {
-                                    const allocation = strategy.details?.debtRatio
-                                      ? formatPercent((strategy.details?.debtRatio || 0) / 100, 0)
-                                      : null
+                                    const debtRatio = strategy.details?.debtRatio
+                                    const allocation = debtRatio ? formatPercent(debtRatio / 100, 0) : null
                                     return (
                                       <div key={strategy.address} className={'flex items-start justify-between gap-2'}>
                                         <span className={'text-text-primary'}>{strategy.name}</span>
@@ -291,63 +363,14 @@ export function VaultsCompareModal({
 
                         <MetricLabel label={'More info'} sublabel={'On-chain details'} />
                         {vaults.map((vault) => {
-                          const network = getNetwork(vault.chainID)
-                          const blockExplorer =
-                            network.blockExplorers?.etherscan?.url ||
-                            network.blockExplorers?.default.url ||
-                            network.defaultBlockExplorer ||
-                            ''
-                          const infoItems: Array<{ label: string; value: string; href?: string }> = [
-                            {
-                              label: 'Vault Contract Address',
-                              value: vault.address,
-                              href: blockExplorer ? `${blockExplorer}/address/${vault.address}` : undefined
-                            },
-                            {
-                              label: 'Token Contract Address',
-                              value: vault.token.address,
-                              href: blockExplorer ? `${blockExplorer}/address/${vault.token.address}` : undefined
-                            }
-                          ]
-
-                          if (vault.staking?.available) {
-                            infoItems.push({
-                              label: 'Staking Contract Address',
-                              value: vault.staking.address,
-                              href: blockExplorer ? `${blockExplorer}/address/${vault.staking.address}` : undefined
-                            })
-                          }
-
-                          if ((vault.info?.sourceURL || '')?.includes('curve.finance')) {
-                            infoItems.push({
-                              label: 'Curve deposit URI',
-                              value: vault.info.sourceURL
-                            })
-                          }
-
-                          if ((vault.info?.sourceURL || '')?.includes('gamma')) {
-                            infoItems.push({
-                              label: 'Gamma Pair',
-                              value: vault.info.sourceURL
-                            })
-                          }
-
-                          infoItems.push({
-                            label: 'Price Per Share',
-                            value: String(vault.apr.pricePerShare.today)
-                          })
-
-                          infoItems.push({
-                            label: 'yDaemon Vault Data',
-                            value: 'View API Data',
-                            href: `${yDaemonBaseUri}/${vault.chainID}/vaults/${vault.address}`
-                          })
+                          const vaultKey = getVaultKey(vault)
+                          const infoItems = buildInfoItems(vault, yDaemonBaseUri)
 
                           return (
-                            <MetricValue key={`info-${getVaultKey(vault)}`} className={'text-xs'}>
+                            <MetricValue key={`info-${vaultKey}`} className={'text-xs'}>
                               <div className={'flex flex-col gap-3'}>
                                 {infoItems.map((item) => (
-                                  <div key={`${getVaultKey(vault)}-${item.label}`} className={'flex flex-col gap-1'}>
+                                  <div key={`${vaultKey}-${item.label}`} className={'flex flex-col gap-1'}>
                                     <span className={'text-text-secondary'}>{item.label}</span>
                                     {item.href ? (
                                       <a

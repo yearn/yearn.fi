@@ -598,6 +598,7 @@ function FilterControls({
   filtersTrailingControls?: ReactNode
 }): ReactElement {
   const showFiltersLabel = !isFiltersButtonMinimal
+  const showAllChainsLabel = !isChainSelectorMinimal || areAllChainsSelected
   return (
     <div className={'flex flex-col gap-4'}>
       <div>
@@ -632,9 +633,7 @@ function FilterControls({
                 <span className={'size-5 overflow-hidden rounded-full'}>
                   <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
                 </span>
-                {!isChainSelectorMinimal || areAllChainsSelected ? (
-                  <span className={'whitespace-nowrap'}>{allChainsLabel}</span>
-                ) : null}
+                {showAllChainsLabel ? <span className={'whitespace-nowrap'}>{allChainsLabel}</span> : null}
               </button>
               {chainButtons.map((chain) => {
                 const showChainLabel = !isChainSelectorMinimal || chain.isSelected

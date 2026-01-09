@@ -42,6 +42,10 @@ import { getSupportedChainsForVaultType, normalizeVaultTypeParam, sanitizeChains
 const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
 const V2_ASSET_CATEGORIES = ['Stablecoin', 'Volatile']
 
+function getVaultKey(vault: TYDaemonVault): string {
+  return `${vault.chainID}_${toAddress(vault.address)}`
+}
+
 function useVaultType(): TVaultType {
   const [searchParams] = useSearchParams()
   return normalizeVaultTypeParam(searchParams.get('type'))
@@ -294,8 +298,7 @@ function ListOfVaults({
   const compareKeySet = useMemo(() => new Set(compareVaultKeys), [compareVaultKeys])
 
   const handleToggleCompare = useCallback((vault: TYDaemonVault): void => {
-    const key = `${vault.chainID}_${toAddress(vault.address)}`
-    setCompareVaultKeys((prev) => (prev.includes(key) ? prev.filter((entry) => entry !== key) : [...prev, key]))
+    setCompareVaultKeys((prev) => toggleInArray(prev, getVaultKey(vault)))
   }, [])
 
   const handleRemoveCompare = useCallback((vaultKey: string): void => {
@@ -318,7 +321,7 @@ function ListOfVaults({
   }, [])
 
   const isVaultSelectedForCompare = useCallback(
-    (vault: TYDaemonVault): boolean => compareKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`),
+    (vault: TYDaemonVault): boolean => compareKeySet.has(getVaultKey(vault)),
     [compareKeySet]
   )
 
@@ -346,7 +349,7 @@ function ListOfVaults({
 
     if (isAvailablePinned) {
       const availableSectionVaults = sortedAvailableVaults.filter((vault) => {
-        const key = `${vault.chainID}_${toAddress(vault.address)}`
+        const key = getVaultKey(vault)
         if (seen.has(key)) {
           return false
         }
@@ -364,7 +367,7 @@ function ListOfVaults({
 
     if (isHoldingsPinned) {
       const holdingsSectionVaults = sortedHoldingsVaults.filter((vault) => {
-        const key = `${vault.chainID}_${toAddress(vault.address)}`
+        const key = getVaultKey(vault)
         if (seen.has(key)) {
           return false
         }
@@ -385,23 +388,20 @@ function ListOfVaults({
 
   const pinnedVaults = useMemo(() => pinnedSections.flatMap((section) => section.vaults), [pinnedSections])
 
-  const pinnedVaultKeys = useMemo(
-    () => new Set(pinnedVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
-    [pinnedVaults]
-  )
+  const pinnedVaultKeys = useMemo(() => new Set(pinnedVaults.map(getVaultKey)), [pinnedVaults])
 
   const mainVaults = useMemo(() => {
     if (pinnedVaults.length === 0) {
       return sortedVaults
     }
-    return sortedVaults.filter((vault) => !pinnedVaultKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
+    return sortedVaults.filter((vault) => !pinnedVaultKeys.has(getVaultKey(vault)))
   }, [pinnedVaultKeys, pinnedVaults, sortedVaults])
 
   const visibleVaults = useMemo(() => [...pinnedVaults, ...mainVaults], [pinnedVaults, mainVaults])
   const compareVaults = useMemo(() => {
     const vaultMap = new Map<string, TYDaemonVault>()
     for (const vault of visibleVaults) {
-      vaultMap.set(`${vault.chainID}_${toAddress(vault.address)}`, vault)
+      vaultMap.set(getVaultKey(vault), vault)
     }
     return compareVaultKeys.map((key) => vaultMap.get(key)).filter((vault): vault is TYDaemonVault => Boolean(vault))
   }, [compareVaultKeys, visibleVaults])
@@ -412,24 +412,15 @@ function ListOfVaults({
     }
   }, [compareVaultKeys.length, isCompareOpen])
 
-  const holdingsKeySet = useMemo(
-    () => new Set(holdingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
-    [holdingsVaults]
-  )
+  const holdingsKeySet = useMemo(() => new Set(holdingsVaults.map(getVaultKey)), [holdingsVaults])
 
   const suggestedV3Vaults = useMemo(
-    () =>
-      sortedSuggestedV3Candidates
-        .filter((vault) => !holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`))
-        .slice(0, 8),
+    () => sortedSuggestedV3Candidates.filter((vault) => !holdingsKeySet.has(getVaultKey(vault))).slice(0, 8),
     [sortedSuggestedV3Candidates, holdingsKeySet]
   )
 
   const suggestedV2Vaults = useMemo(
-    () =>
-      sortedSuggestedV2Candidates
-        .filter((vault) => !holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`))
-        .slice(0, 8),
+    () => sortedSuggestedV2Candidates.filter((vault) => !holdingsKeySet.has(getVaultKey(vault))).slice(0, 8),
     [sortedSuggestedV2Candidates, holdingsKeySet]
   )
   const suggestedVaults = useMemo(() => {
@@ -831,7 +822,7 @@ function ListOfVaults({
         {mainVaults.length > 0 ? (
           <div className={'flex flex-col gap-px bg-border'}>
             {mainVaults.map((vault) => {
-              const key = `${vault.chainID}_${toAddress(vault.address)}`
+              const key = getVaultKey(vault)
               const rowApyDisplayVariant = resolveApyDisplayVariant(vault)
               return (
                 <VaultsListRow
