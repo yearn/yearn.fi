@@ -1,7 +1,6 @@
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
 import { toAddress } from '@lib/utils'
-import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useAppSettings } from '@vaults/contexts/useAppSettings'
@@ -11,24 +10,18 @@ import {
   deriveProtocol,
   isAllocatorVaultOverride
 } from '@vaults/shared/utils/vaultListFacets'
-import { getNativeTokenWrapperContract } from '@vaults/utils/nativeTokens'
-import { useCallback, useMemo } from 'react'
-
-type TVaultWithMetadata = {
-  vault: TYDaemonVault
-  hasHoldings: boolean
-  hasAvailableBalance: boolean
-  isHoldingsVault: boolean
-  isMigratableVault: boolean
-  isRetiredVault: boolean
-}
-
-type TVaultFlags = {
-  hasHoldings: boolean
-  isMigratable: boolean
-  isRetired: boolean
-  isHidden: boolean
-}
+import { useMemo } from 'react'
+import {
+  createCheckHasAvailableBalance,
+  createCheckHasHoldings,
+  extractAvailableVaults,
+  extractHoldingsVaults,
+  getVaultKey,
+  isV3Vault,
+  matchesSearch,
+  type TVaultFlags,
+  type TVaultWithMetadata
+} from './useVaultFilterUtils'
 
 type TOptimizedV2VaultFilterResult = {
   filteredVaults: TYDaemonVault[]
@@ -50,56 +43,18 @@ export function useV2VaultFilter(
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
 
-  const checkHasHoldings = useCallback(
-    (vault: TYDaemonVault): boolean => {
-      const vaultBalance = getBalance({ address: vault.address, chainID: vault.chainID })
-      const vaultPrice = getPrice({ address: vault.address, chainID: vault.chainID })
-
-      if (vault.staking.available) {
-        const stakingBalance = getBalance({
-          address: vault.staking.address,
-          chainID: vault.chainID
-        })
-        const hasValidStakedBalance = stakingBalance.raw > 0n
-        const stakedBalanceValue = Number(stakingBalance.normalized) * vaultPrice.normalized
-        if (hasValidStakedBalance && !(shouldHideDust && stakedBalanceValue < 0.01)) {
-          return true
-        }
-      }
-
-      const hasValidBalance = vaultBalance.raw > 0n
-      const balanceValue = Number(vaultBalance.normalized) * vaultPrice.normalized
-
-      return hasValidBalance && !(shouldHideDust && balanceValue < 0.01)
-    },
+  const checkHasHoldings = useMemo(
+    () => createCheckHasHoldings(getBalance, getPrice, shouldHideDust),
     [getBalance, getPrice, shouldHideDust]
   )
 
-  const checkHasAvailableBalance = useCallback(
-    (vault: TYDaemonVault): boolean => {
-      const wantBalance = getBalance({ address: vault.token.address, chainID: vault.chainID })
-      if (wantBalance.raw > 0n) {
-        return true
-      }
-
-      const nativeWrapper = getNativeTokenWrapperContract(vault.chainID)
-      if (toAddress(vault.token.address) === toAddress(nativeWrapper)) {
-        const nativeBalance = getBalance({ address: ETH_TOKEN_ADDRESS, chainID: vault.chainID })
-        if (nativeBalance.raw > 0n) {
-          return true
-        }
-      }
-
-      return false
-    },
-    [getBalance]
-  )
+  const checkHasAvailableBalance = useMemo(() => createCheckHasAvailableBalance(getBalance), [getBalance])
 
   const processedVaults = useDeepCompareMemo(() => {
     const vaultMap = new Map<string, TVaultWithMetadata>()
 
     const upsertVault = (vault: TYDaemonVault, updates: Partial<Omit<TVaultWithMetadata, 'vault'>> = {}): void => {
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      const key = getVaultKey(vault)
       const hasHoldings = checkHasHoldings(vault)
       const hasAvailableBalance = checkHasAvailableBalance(vault)
       const existing = vaultMap.get(key)
@@ -130,7 +85,7 @@ export function useV2VaultFilter(
       if (isAllocatorVaultOverride(vault)) {
         return
       }
-      if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
+      if (isV3Vault(vault, false)) {
         return
       }
 
@@ -141,7 +96,7 @@ export function useV2VaultFilter(
       if (isAllocatorVaultOverride(vault)) {
         return
       }
-      if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
+      if (isV3Vault(vault, false)) {
         return
       }
 
@@ -159,7 +114,7 @@ export function useV2VaultFilter(
       if (isAllocatorVaultOverride(vault)) {
         return
       }
-      if (vault.version?.startsWith('3') || vault.version?.startsWith('~3')) {
+      if (isV3Vault(vault, false)) {
         return
       }
 
@@ -176,17 +131,9 @@ export function useV2VaultFilter(
     return vaultMap
   }, [vaults, vaultsMigrations, vaultsRetired, checkHasHoldings, checkHasAvailableBalance])
 
-  const holdingsVaults = useMemo(() => {
-    return Array.from(processedVaults.values())
-      .filter(({ hasHoldings }) => hasHoldings)
-      .map(({ vault }) => vault)
-  }, [processedVaults])
+  const holdingsVaults = useMemo(() => extractHoldingsVaults(processedVaults), [processedVaults])
 
-  const availableVaults = useMemo(() => {
-    return Array.from(processedVaults.values())
-      .filter(({ hasAvailableBalance }) => hasAvailableBalance)
-      .map(({ vault }) => vault)
-  }, [processedVaults])
+  const availableVaults = useMemo(() => extractAvailableVaults(processedVaults), [processedVaults])
 
   const filteredResults = useMemo(() => {
     const computeFiltered = (searchValue?: string) => {
@@ -194,21 +141,8 @@ export function useV2VaultFilter(
       const vaultFlags: Record<string, TVaultFlags> = {}
 
       processedVaults.forEach(({ vault, hasHoldings, isHoldingsVault, isMigratableVault, isRetiredVault }) => {
-        if (searchValue) {
-          const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
-
-          try {
-            const escapedSearch = searchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-            const searchRegex = new RegExp(escapedSearch, 'i')
-            if (!searchRegex.test(searchableText)) {
-              return
-            }
-          } catch {
-            const lowercaseSearch = searchValue.toLowerCase()
-            if (!searchableText.toLowerCase().includes(lowercaseSearch)) {
-              return
-            }
-          }
+        if (searchValue && !matchesSearch(vault, searchValue)) {
+          return
         }
 
         if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {

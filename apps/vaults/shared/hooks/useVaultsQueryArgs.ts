@@ -35,6 +35,20 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const defaultSortBy = props.defaultSortBy || 'featuringScore'
+
+  const getQueryArgsExcluding = useCallback(
+    (excludeKeys: string[]): TDict<string | string[] | undefined> => {
+      const queryArgs: TDict<string | string[] | undefined> = {}
+      searchParams.forEach((val, key) => {
+        if (!excludeKeys.includes(key)) {
+          queryArgs[key] = val
+        }
+      })
+      return queryArgs
+    },
+    [searchParams]
+  )
+
   const updateSearchParams = useCallback(
     (queryArgs: TDict<string | string[] | undefined>): void => {
       const newSearchParams = new URLSearchParams()
@@ -51,6 +65,41 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
       setSearchParams(newSearchParams, { replace: true })
     },
     [setSearchParams]
+  )
+
+  const createStringHandler = useCallback(
+    (key: string) =>
+      (value: string): void => {
+        const queryArgs = getQueryArgsExcluding([key])
+        if (value === '') {
+          delete queryArgs[key]
+        } else {
+          queryArgs[key] = value
+        }
+        updateSearchParams(queryArgs)
+      },
+    [getQueryArgsExcluding, updateSearchParams]
+  )
+
+  const createArrayHandler = useCallback(
+    <T extends string | number>(key: string, defaults: T[] | undefined, emptyValue: string) =>
+      (value: T[] | null): void => {
+        const queryArgs = getQueryArgsExcluding([key])
+        if (value === null || value.length === 0) {
+          queryArgs[key] = emptyValue
+        } else if (defaults && value.length === defaults.length) {
+          const isEqual = value.every((v): boolean => (defaults as T[]).includes(v))
+          if (isEqual) {
+            delete queryArgs[key]
+          } else {
+            queryArgs[key] = value.join('_')
+          }
+        } else {
+          queryArgs[key] = value.join('_')
+        }
+        updateSearchParams(queryArgs)
+      },
+    [getQueryArgsExcluding, updateSearchParams]
   )
 
   const parseStringList = useCallback(
@@ -117,6 +166,29 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
   const sortDirection = (searchParams.get('sortDirection') || 'desc') as TSortDirection
   const sortBy = (searchParams.get('sortBy') || defaultSortBy) as TPossibleSortBy
 
+  const onSearch = useMemo(() => createStringHandler('search'), [createStringHandler])
+  const onChangeSortDirection = useMemo(() => createStringHandler('sortDirection'), [createStringHandler])
+  const onChangeSortBy = useMemo(() => createStringHandler('sortBy'), [createStringHandler])
+  const onChangeTypes = useMemo(
+    () => createArrayHandler('types', props.defaultTypes, 'none'),
+    [createArrayHandler, props.defaultTypes]
+  )
+  const onChangeCategories = useMemo(
+    () => createArrayHandler('categories', props.defaultCategories, 'none'),
+    [createArrayHandler, props.defaultCategories]
+  )
+  const onChangeChains = useMemo(() => createArrayHandler('chains', allChains, '0'), [createArrayHandler, allChains])
+
+  const onReset = useCallback((): void => {
+    const queryArgs = getQueryArgsExcluding(['search', 'types', 'categories', 'chains', 'sortDirection', 'sortBy'])
+    updateSearchParams(queryArgs)
+  }, [getQueryArgsExcluding, updateSearchParams])
+
+  const onResetMultiSelect = useCallback((): void => {
+    const queryArgs = getQueryArgsExcluding(['types', 'categories', 'chains'])
+    updateSearchParams(queryArgs)
+  }, [getQueryArgsExcluding, updateSearchParams])
+
   return {
     search,
     types: types as string[],
@@ -124,162 +196,14 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
     chains: chains as number[],
     sortDirection,
     sortBy,
-    onSearch: (value): void => {
-      const queryArgs: TDict<string | string[] | undefined> = {}
-
-      // Get current search params
-      searchParams.forEach((val, key) => {
-        if (key !== 'search') {
-          queryArgs[key] = val
-        }
-      })
-
-      if (value === '') {
-        delete queryArgs.search
-      } else {
-        queryArgs.search = value
-      }
-
-      updateSearchParams(queryArgs)
-    },
-    onChangeTypes: (value): void => {
-      const queryArgs: TDict<string | string[] | undefined> = {}
-
-      // Get current search params
-      searchParams.forEach((val, key) => {
-        if (key !== 'types') {
-          queryArgs[key] = val
-        }
-      })
-
-      if (value === null || value.length === 0) {
-        queryArgs.types = 'none'
-      } else if (value.length === props.defaultTypes?.length) {
-        const isEqual = value.every((category): boolean => Boolean(props.defaultTypes?.includes(category)))
-        if (isEqual) {
-          delete queryArgs.types
-        } else {
-          queryArgs.types = value.join('_')
-        }
-      } else {
-        queryArgs.types = value.join('_')
-      }
-
-      updateSearchParams(queryArgs)
-    },
-    onChangeCategories: (value): void => {
-      const queryArgs: TDict<string | string[] | undefined> = {}
-
-      // Get current search params
-      searchParams.forEach((val, key) => {
-        if (key !== 'categories') {
-          queryArgs[key] = val
-        }
-      })
-
-      if (value === null || value.length === 0) {
-        queryArgs.categories = 'none'
-      } else if (value.length === props.defaultCategories?.length) {
-        const isEqual = value.every((category): boolean => Boolean(props.defaultCategories?.includes(category)))
-        if (isEqual) {
-          delete queryArgs.categories
-        } else {
-          queryArgs.categories = value.join('_')
-        }
-      } else {
-        queryArgs.categories = value.join('_')
-      }
-
-      updateSearchParams(queryArgs)
-    },
-    onChangeChains: (value): void => {
-      const queryArgs: TDict<string | string[] | undefined> = {}
-
-      // Get current search params
-      searchParams.forEach((val, key) => {
-        if (key !== 'chains') {
-          queryArgs[key] = val
-        }
-      })
-
-      if (value === null || value.length === 0) {
-        queryArgs.chains = '0'
-      } else if (value.length === allChains.length) {
-        const isEqual = value.every((chain): boolean => allChains.includes(chain))
-        if (isEqual) {
-          delete queryArgs.chains
-        } else {
-          queryArgs.chains = value.join('_')
-        }
-      } else {
-        queryArgs.chains = value.join('_')
-      }
-
-      updateSearchParams(queryArgs)
-    },
-    onChangeSortDirection: (value): void => {
-      const queryArgs: TDict<string | string[] | undefined> = {}
-
-      // Get current search params
-      searchParams.forEach((val, key) => {
-        if (key !== 'sortDirection') {
-          queryArgs[key] = val
-        }
-      })
-
-      if (value === '') {
-        delete queryArgs.sortDirection
-      } else {
-        queryArgs.sortDirection = value as string
-      }
-
-      updateSearchParams(queryArgs)
-    },
-    onChangeSortBy: (value): void => {
-      const queryArgs: TDict<string | string[] | undefined> = {}
-
-      // Get current search params
-      searchParams.forEach((val, key) => {
-        if (key !== 'sortBy') {
-          queryArgs[key] = val
-        }
-      })
-
-      if (value === '') {
-        delete queryArgs.sortBy
-      } else {
-        queryArgs.sortBy = value
-      }
-
-      updateSearchParams(queryArgs)
-    },
-    onReset: (): void => {
-      const queryArgs: TDict<string | string[] | undefined> = {}
-
-      // Get current search params but exclude the ones we're resetting
-      searchParams.forEach((val, key) => {
-        if (
-          key !== 'search' &&
-          key !== 'types' &&
-          key !== 'categories' &&
-          key !== 'chains' &&
-          key !== 'sortDirection' &&
-          key !== 'sortBy'
-        ) {
-          queryArgs[key] = val
-        }
-      })
-      updateSearchParams(queryArgs)
-    },
-    onResetMultiSelect: (): void => {
-      const queryArgs: TDict<string | string[] | undefined> = {}
-      searchParams.forEach((val, key) => {
-        if (key !== 'types' && key !== 'categories' && key !== 'chains') {
-          queryArgs[key] = val
-        }
-      })
-      updateSearchParams(queryArgs)
-    }
+    onSearch,
+    onChangeTypes,
+    onChangeCategories,
+    onChangeChains,
+    onChangeSortDirection: onChangeSortDirection as TQueryArgs['onChangeSortDirection'],
+    onChangeSortBy: onChangeSortBy as TQueryArgs['onChangeSortBy'],
+    onReset,
+    onResetMultiSelect
   }
 }
 
