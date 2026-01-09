@@ -3,15 +3,15 @@ import { Button } from '@lib/components/Button'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
-import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
-import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import { IconSpinner } from '@lib/icons/IconSpinner'
 import type { TSortDirection } from '@lib/types'
 import { isZero, toAddress } from '@lib/utils'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { VaultsListHead } from '@vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@vaults/components/list/VaultsListRow'
 import { SuggestedVaultCard } from '@vaults/components/SuggestedVaultCard'
 import { type TPossibleSortBy, useSortVaults } from '@vaults/shared/index'
+import { isAllocatorVaultOverride } from '@vaults/shared/utils/vaultListFacets'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 
@@ -50,51 +50,108 @@ function HoldingsEmptyState({ isActive, onConnect }: { isActive: boolean; onConn
 }
 
 function PortfolioPage(): ReactElement {
-  const { cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading: isWalletLoading, getBalance } = useWallet()
+  const {
+    cumulatedValueInV2Vaults,
+    cumulatedValueInV3Vaults,
+    isLoading: isWalletLoading,
+    getBalance,
+    balances
+  } = useWallet()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
-  const { getPrice, katanaAprs } = useYearn()
-  const {
-    holdingsVaults: v3HoldingsVaults,
-    filteredVaults: v3FilteredVaults,
-    vaultFlags: v3VaultFlags,
-    isLoading: isV3Loading
-  } = useV3VaultFilter(null, null, '', null)
-  const {
-    holdingsVaults: v2HoldingsVaults,
-    vaultFlags: v2VaultFlags,
-    isLoading: isV2Loading
-  } = useV2VaultFilter(null, null, '')
+  const { getPrice, katanaAprs, vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList } = useYearn()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
 
-  const holdingsVaults = useMemo(() => {
-    const combined = [...v3HoldingsVaults, ...v2HoldingsVaults]
-    const seen = new Set<string>()
-    return combined.filter((vault) => {
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
-      if (seen.has(key)) {
-        return false
+  const vaultLookup = useMemo(() => {
+    const map = new Map<string, TYDaemonVault>()
+    const allVaults = {
+      ...vaults,
+      ...vaultsMigrations,
+      ...vaultsRetired
+    }
+
+    Object.values(allVaults).forEach((vault) => {
+      const vaultKey = `${vault.chainID}_${toAddress(vault.address)}`
+      map.set(vaultKey, vault)
+
+      if (vault.staking?.available && vault.staking.address) {
+        const stakingKey = `${vault.chainID}_${toAddress(vault.staking.address)}`
+        map.set(stakingKey, vault)
       }
-      seen.add(key)
-      return true
     })
-  }, [v3HoldingsVaults, v2HoldingsVaults])
+
+    return map
+  }, [vaults, vaultsMigrations, vaultsRetired])
+
+  const holdingsVaults = useMemo(() => {
+    const result: TYDaemonVault[] = []
+    const seen = new Set<string>()
+
+    Object.values(balances || {}).forEach((perChain) => {
+      Object.values(perChain || {}).forEach((token) => {
+        if (!token?.balance || token.balance.raw <= 0n) {
+          return
+        }
+        const tokenKey = `${token.chainID}_${toAddress(token.address)}`
+        const vault = vaultLookup.get(tokenKey)
+        if (!vault) {
+          return
+        }
+        const vaultKey = `${vault.chainID}_${toAddress(vault.address)}`
+        if (seen.has(vaultKey)) {
+          return
+        }
+        seen.add(vaultKey)
+        result.push(vault)
+      })
+    })
+
+    return result
+  }, [balances, vaultLookup])
+
+  const migratableSet = useMemo(
+    () => new Set(Object.keys(vaultsMigrations).map((address) => toAddress(address))),
+    [vaultsMigrations]
+  )
+  const retiredSet = useMemo(
+    () => new Set(Object.keys(vaultsRetired).map((address) => toAddress(address))),
+    [vaultsRetired]
+  )
 
   const vaultFlags = useMemo(() => {
-    const merged: typeof v3VaultFlags = { ...v2VaultFlags }
-    Object.entries(v3VaultFlags).forEach(([key, value]) => {
-      merged[key] = { ...merged[key], ...value }
+    const flags: Record<
+      string,
+      { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }
+    > = {}
+
+    holdingsVaults.forEach((vault) => {
+      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      flags[key] = {
+        hasHoldings: true,
+        isMigratable: migratableSet.has(toAddress(vault.address)),
+        isRetired: retiredSet.has(toAddress(vault.address)),
+        isHidden: Boolean(vault.info?.isHidden)
+      }
     })
-    return merged
-  }, [v2VaultFlags, v3VaultFlags])
+
+    return flags
+  }, [holdingsVaults, migratableSet, retiredSet])
 
   const isSearchingBalances =
     (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)
-  const isLoading = isV3Loading || isV2Loading
+  const isLoading = isLoadingVaultList
   const isHoldingsLoading = (isLoading && isActive) || isSearchingBalances
 
+  const v3Vaults = useMemo(
+    () =>
+      Object.values(vaults).filter(
+        (vault) => vault.version?.startsWith('3') || vault.version?.startsWith('~3') || isAllocatorVaultOverride(vault)
+      ),
+    [vaults]
+  )
+
   const sortedHoldings = useSortVaults(holdingsVaults, sortBy, sortDirection)
-  const sortedCandidates = useSortVaults(v3FilteredVaults, 'featuringScore', 'desc')
+  const sortedCandidates = useSortVaults(v3Vaults, 'featuringScore', 'desc')
 
   const holdingsKeySet = useMemo(
     () => new Set(sortedHoldings.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
