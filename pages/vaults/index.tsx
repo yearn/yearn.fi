@@ -880,7 +880,8 @@ function ListOfVaults({
       className={cl(
         'flex shrink-0 items-center gap-2 border rounded-lg h-10 border-border px-4 text-sm font-medium text-text-secondary bg-surface transition-colors',
         'hover:text-text-secondary',
-        'data-[active=true]:border-border-hover data-[active=true]:text-text-secondary'
+        'data-[active=true]:border-primary  data-[active=true]:text-text-primary',
+        isCompareMode ? 'bg-primary/50' : null
       )}
       onClick={handleToggleCompareMode}
       data-active={isCompareMode}

@@ -632,7 +632,9 @@ function FilterControls({
                 <span className={'size-5 overflow-hidden rounded-full'}>
                   <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
                 </span>
-                {!isChainSelectorMinimal ? <span className={'whitespace-nowrap'}>{allChainsLabel}</span> : null}
+                {!isChainSelectorMinimal || areAllChainsSelected ? (
+                  <span className={'whitespace-nowrap'}>{allChainsLabel}</span>
+                ) : null}
               </button>
               {chainButtons.map((chain) => {
                 const showChainLabel = !isChainSelectorMinimal || chain.isSelected
