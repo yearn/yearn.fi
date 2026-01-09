@@ -168,13 +168,12 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
   const handleSelect = useCallback(
     (address: Address) => {
-      // Pass the selected chain ID when it's different from the original chain
-      onChange(address, selectedChainId !== chainId ? selectedChainId : undefined)
+      onChange(address, selectedChainId)
       if (onClose) {
         onClose()
       }
     },
-    [onChange, onClose, selectedChainId, chainId]
+    [onChange, onClose, selectedChainId]
   )
   return (
     <div
