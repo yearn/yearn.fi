@@ -20,6 +20,8 @@ type TVaultsAuxiliaryListProps = {
   vaultFlags: TVaultFlagsRecord
   apyDisplayVariant?: TVaultForwardAPYVariant
   resolveApyDisplayVariant?: (vault: TYDaemonVault) => TVaultForwardAPYVariant
+  isCompareSelected?: (vault: TYDaemonVault) => boolean
+  onToggleCompare?: (vault: TYDaemonVault) => void
   activeChains?: number[]
   activeCategories?: string[]
   activeProductType?: 'v3' | 'lp' | 'all'
@@ -37,6 +39,8 @@ export function VaultsAuxiliaryList({
   vaultFlags,
   apyDisplayVariant,
   resolveApyDisplayVariant,
+  isCompareSelected,
+  onToggleCompare,
   activeChains,
   activeCategories,
   activeProductType,
@@ -64,6 +68,8 @@ export function VaultsAuxiliaryList({
               currentVault={vault}
               flags={vaultFlags[key]}
               apyDisplayVariant={rowApyDisplayVariant}
+              isCompareSelected={isCompareSelected ? isCompareSelected(vault) : false}
+              onToggleCompare={onToggleCompare}
               activeChains={activeChains}
               activeCategories={activeCategories}
               activeProductType={activeProductType}

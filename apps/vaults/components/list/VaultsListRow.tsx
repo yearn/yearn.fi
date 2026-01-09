@@ -53,6 +53,8 @@ export function VaultsListRow({
   hrefOverride,
   apyDisplayVariant = 'default',
   showBoostDetails = true,
+  isCompareSelected = false,
+  onToggleCompare,
   activeChains,
   activeCategories,
   onToggleChain,
@@ -67,6 +69,8 @@ export function VaultsListRow({
   hrefOverride?: string
   apyDisplayVariant?: TVaultForwardAPYVariant
   showBoostDetails?: boolean
+  isCompareSelected?: boolean
+  onToggleCompare?: (vault: TYDaemonVault) => void
   activeChains?: number[]
   activeCategories?: string[]
   onToggleChain?: (chainId: number) => void
@@ -106,6 +110,7 @@ export function VaultsListRow({
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
   const metricsColumnSpan = 'col-span-4'
+  const showCompareToggle = Boolean(onToggleCompare)
 
   const isHiddenVault = Boolean(flags?.isHidden)
   const baseKindType =
@@ -205,6 +210,25 @@ export function VaultsListRow({
 
         <div className={cl(leftColumnSpan, 'z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
           <div className={'flex flex-row w-full gap-4 overflow-hidden'}>
+            {showCompareToggle ? (
+              <div
+                className={'flex items-center justify-center'}
+                onClick={(event): void => event.stopPropagation()}
+                onKeyDown={(event): void => event.stopPropagation()}
+              >
+                <input
+                  type={'checkbox'}
+                  className={'checkbox accent-blue-500'}
+                  checked={isCompareSelected}
+                  aria-label={
+                    isCompareSelected
+                      ? `Remove ${currentVault.name} from comparison`
+                      : `Add ${currentVault.name} to comparison`
+                  }
+                  onChange={(): void => onToggleCompare?.(currentVault)}
+                />
+              </div>
+            ) : null}
             <div className={'relative flex items-center justify-center self-center size-8 min-h-8 min-w-8'}>
               <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
