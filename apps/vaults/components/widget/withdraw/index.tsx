@@ -267,6 +267,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     if (stakingAddress) {
       tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
     }
+
     refreshWalletBalances(tokensToRefresh)
     refetchPriorityTokens()
     onWithdrawSuccess?.()
