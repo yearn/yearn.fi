@@ -1,4 +1,4 @@
-import { useFetch } from '@lib/hooks/useFetch'
+import { getFetchQueryKey, useFetch } from '@lib/hooks/useFetch'
 import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
 import type { TDict } from '@lib/types'
 import { toAddress } from '@lib/utils'
@@ -8,9 +8,8 @@ import { yDaemonVaultsSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { patchYBoldVaults } from '@vaults/domain/normalizeVault'
 
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
-import type { KeyedMutator } from 'swr'
-import { mutate } from 'swr'
 
 /******************************************************************************
  ** The useFetchYearnVaults hook is used to fetch the vaults from the yDaemon
@@ -53,7 +52,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
   vaultsMigrations: TDict<TYDaemonVault>
   vaultsRetired: TDict<TYDaemonVault>
   isLoading: boolean
-  mutate: KeyedMutator<TYDaemonVaults>
+  mutate: () => Promise<TYDaemonVaults | undefined>
 } {
   const { yDaemonBaseUri: yDaemonBaseUriWithoutChain } = useYDaemonBaseURI()
 
@@ -146,6 +145,7 @@ const prefetchedEndpoints = new Set<string>()
 function usePrefetchYearnVaults(chainIDs?: number[] | undefined, enabled = true): void {
   const { yDaemonBaseUri: yDaemonBaseUriWithoutChain } = useYDaemonBaseURI()
   const resolvedChainIds = chainIDs ?? DEFAULT_CHAIN_IDS
+  const queryClient = useQueryClient()
 
   const endpoints = useMemo(
     () => [
@@ -167,9 +167,20 @@ function usePrefetchYearnVaults(chainIDs?: number[] | undefined, enabled = true)
       }
 
       prefetchedEndpoints.add(endpoint)
-      void mutate(endpoint, baseFetcher(endpoint), { revalidate: false })
+      void queryClient.prefetchQuery({
+        queryKey: getFetchQueryKey(endpoint),
+        queryFn: async () => {
+          const data = await baseFetcher(endpoint)
+          const parsed = yDaemonVaultsSchema.safeParse(data)
+          if (!parsed.success) {
+            console.error('[usePrefetchYearnVaults] Schema validation failed:', parsed.error)
+            throw parsed.error
+          }
+          return parsed.data
+        }
+      })
     })
-  }, [enabled, endpoints])
+  }, [enabled, endpoints, queryClient])
 }
 
 export { useFetchYearnVaults, usePrefetchYearnVaults }

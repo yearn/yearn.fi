@@ -1,7 +1,7 @@
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { toAddress } from '@lib/utils'
 import { vaultChartTimeseriesSchema } from '@lib/utils/schemas/vaultChartsSchema'
 import type { TChartTimeseriesResponse } from '@vaults/types/charts'
-import useSWR from 'swr'
 
 const DEFAULT_LIMIT = 1000
 const MAX_LIMIT = 2000
@@ -122,18 +122,17 @@ export function useVaultChartTimeseries({ chainId, address, limit }: UseVaultCha
 
   const shouldFetch = normalizedAddress && Number.isInteger(chainId)
 
-  return useSWR<TChartTimeseriesResponse>(
-    shouldFetch ? ['vault-charts', chainId, normalizedAddress, limitValue] : null,
-    ([, chainIdValue, addressValue, limitParam]) =>
+  return useQuery<TChartTimeseriesResponse>({
+    queryKey: shouldFetch ? ['vault-charts', chainId, normalizedAddress, limitValue] : ['vault-charts', 'disabled'],
+    queryFn: () =>
       fetchVaultCharts({
-        chainId: Number(chainIdValue),
-        address: String(addressValue),
-        limit: Number(limitParam)
+        chainId: Number(chainId),
+        address: String(normalizedAddress),
+        limit: Number(limitValue)
       }),
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 5 * 60 * 1000,
-      keepPreviousData: true
-    }
-  )
+    enabled: Boolean(shouldFetch),
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData
+  })
 }

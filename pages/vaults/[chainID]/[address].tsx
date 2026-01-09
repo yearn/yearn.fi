@@ -111,9 +111,8 @@ function Index(): ReactElement | null {
     schema: yDaemonVaultSchema,
     config: {
       // Force re-fetch when vault key changes
-      revalidateOnMount: true,
       keepPreviousData: false,
-      dedupingInterval: 0 // Disable deduping to ensure fresh fetch
+      cacheDuration: 0
     }
   })
 

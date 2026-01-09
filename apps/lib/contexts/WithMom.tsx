@@ -3,12 +3,10 @@ import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
-import { SWRConfig } from 'swr'
 import type { Chain } from 'viem/chains'
 import type { Config, State } from 'wagmi'
 import { WagmiProvider } from 'wagmi'
 import { isIframe } from '../utils'
-import { defaultSWRConfig } from '../utils/swrConfig'
 import { getConfig } from '../utils/wagmi/config'
 import { Web3ContextApp } from './useWeb3'
 import { WithTokenList } from './WithTokenList'
@@ -49,13 +47,11 @@ function WithMom({
   return (
     <WagmiProvider config={config as Config} reconnectOnMount={!isIframe()} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
-        <SWRConfig value={defaultSWRConfig}>
-          <RainbowKitProvider {...rainbowConfig}>
-            <Web3ContextApp defaultNetwork={defaultNetwork}>
-              <WithTokenList lists={tokenLists}>{children}</WithTokenList>
-            </Web3ContextApp>
-          </RainbowKitProvider>
-        </SWRConfig>
+        <RainbowKitProvider {...rainbowConfig}>
+          <Web3ContextApp defaultNetwork={defaultNetwork}>
+            <WithTokenList lists={tokenLists}>{children}</WithTokenList>
+          </Web3ContextApp>
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   )
