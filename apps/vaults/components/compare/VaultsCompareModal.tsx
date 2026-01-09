@@ -2,9 +2,12 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { Button } from '@lib/components/Button'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
+import { getVaultKey } from '@lib/hooks/useVaultFilterUtils'
 import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
+import { IconCopy } from '@lib/icons/IconCopy'
 import { IconClose } from '@lib/icons/IconClose'
-import { cl, formatPercent, isZero, toAddress } from '@lib/utils'
+import { cl, formatPercent, isAddress, isZero, truncateHex } from '@lib/utils'
+import { copyToClipboard } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
 import { VaultRiskScoreTag } from '@vaults/components/table/VaultRiskScoreTag'
@@ -26,15 +29,13 @@ type TVaultInfoItem = {
   href?: string
 }
 
+type TVaultStrategyItem = NonNullable<TYDaemonVault['strategies']>[number]
+
 const listKindLabels = {
   allocator: 'Allocator',
   strategy: 'Strategy',
   factory: 'Factory',
   legacy: 'Legacy'
-}
-
-function getVaultKey(vault: TYDaemonVault): string {
-  return `${vault.chainID}_${toAddress(vault.address)}`
 }
 
 function formatFee(value: number | undefined): string {
@@ -65,6 +66,18 @@ function resolveThirtyDayApy(vault: TYDaemonVault): number {
   const monthly = vault.apr?.points?.monthAgo ?? 0
   const weekly = vault.apr?.points?.weekAgo ?? 0
   return isZero(monthly) ? weekly : monthly
+}
+
+function hasAllocatedFunds(strategy: TVaultStrategyItem): boolean {
+  const debtRatio = strategy.details?.debtRatio
+  const totalDebt = strategy.details?.totalDebt
+  if (!debtRatio || debtRatio <= 0) {
+    return false
+  }
+  if (!totalDebt || totalDebt === '0') {
+    return false
+  }
+  return true
 }
 
 function normalizeRiskLevel(riskLevel: number): number {
@@ -335,7 +348,7 @@ export function VaultsCompareModal({
                         <MetricLabel label={'Strategies'} sublabel={'Underlying positions'} />
                         {vaults.map((vault) => {
                           const strategies = (vault.strategies ?? []).filter(
-                            (strategy) => strategy.status !== 'not_active'
+                            (strategy) => strategy.status !== 'not_active' && hasAllocatedFunds(strategy)
                           )
                           return (
                             <MetricValue key={`strategies-${getVaultKey(vault)}`} className={'text-xs'}>
@@ -372,19 +385,44 @@ export function VaultsCompareModal({
                                 {infoItems.map((item) => (
                                   <div key={`${vaultKey}-${item.label}`} className={'flex flex-col gap-1'}>
                                     <span className={'text-text-secondary'}>{item.label}</span>
-                                    {item.href ? (
-                                      <a
-                                        href={item.href}
-                                        target={'_blank'}
-                                        rel={'noopener noreferrer'}
-                                        className={'font-number text-text-primary hover:underline break-all'}
-                                        suppressHydrationWarning
-                                      >
-                                        {item.value}
-                                      </a>
-                                    ) : (
-                                      <span className={'font-number text-text-primary break-all'}>{item.value}</span>
-                                    )}
+                                    {(() => {
+                                      const isAddressValue = isAddress(item.value)
+                                      const displayValue = isAddressValue ? truncateHex(item.value, 6) : item.value
+                                      const valueClassName = cl(
+                                        'font-number text-text-primary',
+                                        isAddressValue ? 'font-mono' : 'break-all'
+                                      )
+
+                                      return (
+                                        <div className={'flex items-center gap-2'}>
+                                          {item.href ? (
+                                            <a
+                                              href={item.href}
+                                              target={'_blank'}
+                                              rel={'noopener noreferrer'}
+                                              className={cl(valueClassName, 'hover:underline')}
+                                              suppressHydrationWarning
+                                            >
+                                              {displayValue}
+                                            </a>
+                                          ) : (
+                                            <span className={valueClassName}>{displayValue}</span>
+                                          )}
+                                          {isAddressValue ? (
+                                            <button
+                                              type={'button'}
+                                              onClick={(): void => copyToClipboard(item.value)}
+                                              className={
+                                                'text-text-secondary transition-colors hover:text-text-primary'
+                                              }
+                                              aria-label={`Copy ${item.label}`}
+                                            >
+                                              <IconCopy className={'size-4'} />
+                                            </button>
+                                          ) : null}
+                                        </div>
+                                      )
+                                    })()}
                                   </div>
                                 ))}
                               </div>
