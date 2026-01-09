@@ -467,6 +467,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
         chainId={chainId}
         value={selectedToken}
         excludeTokens={stakingAddress ? [stakingAddress] : undefined}
+        priorityTokens={stakingAddress ? [vaultAddress] : undefined}
       />
     </div>
   )

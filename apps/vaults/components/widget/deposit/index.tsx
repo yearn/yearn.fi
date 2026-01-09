@@ -396,6 +396,7 @@ export const WidgetDeposit: FC<Props> = ({
         onChange={handleTokenChange}
         chainId={sourceChainId}
         value={selectedToken}
+        priorityTokens={[assetAddress]}
       />
     </div>
   )

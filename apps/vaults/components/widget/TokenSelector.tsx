@@ -12,6 +12,7 @@ interface TokenSelectorProps {
   chainId: number
   limitTokens?: Address[]
   excludeTokens?: Address[]
+  priorityTokens?: Address[] // Always show these tokens even without balance
   onClose?: () => void
 }
 
@@ -54,6 +55,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   chainId,
   limitTokens,
   excludeTokens,
+  priorityTokens,
   onClose
 }) => {
   const [searchText, setSearchText] = useState('')
@@ -98,6 +100,18 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       }
     }
 
+    // Include priority tokens even if they have no balance
+    if (priorityTokens && priorityTokens.length > 0) {
+      for (const priorityAddress of priorityTokens) {
+        if (!tokenList.some((t) => t.address?.toLowerCase() === priorityAddress.toLowerCase())) {
+          const priorityToken = getToken({ address: toAddress(priorityAddress), chainID: selectedChainId })
+          if (priorityToken.symbol) {
+            tokenList.push(priorityToken)
+          }
+        }
+      }
+    }
+
     // Include custom address if valid
     if (
       customAddress &&
@@ -111,7 +125,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     }
 
     return tokenList
-  }, [balances, selectedChainId, value, customAddress, getToken])
+  }, [balances, selectedChainId, value, customAddress, getToken, priorityTokens])
 
   // Filter tokens based on search and limits
   const filteredTokens = useMemo(() => {
