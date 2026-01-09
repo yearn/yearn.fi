@@ -81,6 +81,8 @@ function Index(): ReactElement | null {
     charts: 'Performance'
   }
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
+  const sectionScrollOffset = 275
+  const compressedHeaderHeight = 117.5
 
   // Reset state when vault changes
   useEffect(() => {
@@ -240,7 +242,7 @@ function Index(): ReactElement | null {
     sections: scrollSpySections,
     activeKey: activeSection,
     onActiveKeyChange: setActiveSection,
-    offsetTop: 275,
+    offsetTop: sectionScrollOffset,
     enabled: renderableSections.length > 0
   })
 
@@ -255,8 +257,11 @@ function Index(): ReactElement | null {
     const element = sectionRefs[key]?.current
     if (!element || typeof window === 'undefined') return
 
-    const defaultOffset = 275
-    const scrollOffset = key === 'charts' ? 275 : defaultOffset
+    const defaultOffset = sectionScrollOffset
+    const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
+    const headerExpansionOffset = Math.max(0, headerHeight - compressedHeaderHeight)
+    const dynamicOffset = defaultOffset + headerExpansionOffset
+    const scrollOffset = dynamicOffset
     const top = element.getBoundingClientRect().top + window.scrollY - scrollOffset
     const targetTop = key === 'charts' ? Math.max(top, 1) : top
 
@@ -303,7 +308,7 @@ function Index(): ReactElement | null {
   // Calculate sticky positions for the collapsible header (desktop only)
   // On mobile, natural scroll behavior is used
   const headerStickyTop = 'var(--header-height)'
-  const nextSticky = `calc(var(--header-height) + 117.5px)`
+  const nextSticky = `calc(var(--header-height) + ${compressedHeaderHeight}px)`
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>

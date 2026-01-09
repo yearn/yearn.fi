@@ -40,14 +40,16 @@ export function useScrollSpy<Key extends string>({
     let rafId = 0
 
     const updateActive = (): void => {
+      const activationThreshold = 8
       const candidates = sections
         .map((section) => {
           const element = section.ref.current
           if (!element) return null
+          const top = element.getBoundingClientRect().top - offsetTop
           return {
             key: section.key,
-            isIntersecting: element.getBoundingClientRect().top <= offsetTop,
-            top: element.getBoundingClientRect().top
+            isIntersecting: top <= activationThreshold,
+            top
           }
         })
         .filter(Boolean) as ScrollSpyCandidate<Key>[]
