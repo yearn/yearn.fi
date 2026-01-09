@@ -12,7 +12,7 @@ interface TokenSelectorProps {
   chainId: number
   limitTokens?: Address[]
   excludeTokens?: Address[]
-  priorityTokens?: Address[] // Always show these tokens even without balance
+  priorityTokens?: Record<number, Address[]> // chainId -> addresses to always show
   onClose?: () => void
 }
 
@@ -101,13 +101,12 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     }
 
     // Include priority tokens even if they have no balance
-    if (priorityTokens && priorityTokens.length > 0) {
-      for (const priorityAddress of priorityTokens) {
-        if (!tokenList.some((t) => t.address?.toLowerCase() === priorityAddress.toLowerCase())) {
-          const priorityToken = getToken({ address: toAddress(priorityAddress), chainID: selectedChainId })
-          if (priorityToken.symbol) {
-            tokenList.push(priorityToken)
-          }
+    const chainPriorityTokens = priorityTokens?.[selectedChainId] || []
+    for (const priorityAddress of chainPriorityTokens) {
+      if (!tokenList.some((t) => t.address?.toLowerCase() === priorityAddress.toLowerCase())) {
+        const priorityToken = getToken({ address: toAddress(priorityAddress), chainID: selectedChainId })
+        if (priorityToken.symbol) {
+          tokenList.push(priorityToken)
         }
       }
     }

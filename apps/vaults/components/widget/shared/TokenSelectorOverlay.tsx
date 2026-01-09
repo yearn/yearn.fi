@@ -10,7 +10,7 @@ interface TokenSelectorOverlayProps {
   chainId: number
   value?: Address
   excludeTokens?: Address[]
-  priorityTokens?: Address[]
+  priorityTokens?: Record<number, Address[]>
 }
 
 export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
