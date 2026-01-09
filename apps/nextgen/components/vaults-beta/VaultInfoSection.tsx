@@ -14,12 +14,12 @@ export function VaultInfoSection({
     getNetwork(currentVault.chainID).blockExplorers?.default.url
 
   return (
-    <div className={'grid w-full grid-cols-1 gap-10 p-4 md:p-8'}>
+    <div className={'grid w-full grid-cols-1 gap-10 p-4 md:p-8 md:pt-0'}>
       <div className={'col-span-1 grid w-full gap-1'}>
-        <div className={'flex flex-col items-center md:flex-row'}>
+        <div className={'flex flex-col items-start md:flex-row md:items-center'}>
           <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Vault Contract Address'}</p>
           <a
-            className={'font-number text-sm text-text-primary hover:underline'}
+            className={'text-sm text-text-primary hover:underline'}
             href={`${blockExplorer}/address/${currentVault.address}`}
             target={'_blank'}
             rel={'noopener noreferrer'}
@@ -29,13 +29,13 @@ export function VaultInfoSection({
           </a>
         </div>
 
-        <div className={'flex flex-col items-center md:flex-row'}>
+        <div className={'flex flex-col items-start md:flex-row md:items-center'}>
           <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Token Contract Address'}</p>
           <a
             href={`${blockExplorer}/address/${currentVault.token.address}`}
             target={'_blank'}
             rel={'noopener noreferrer'}
-            className={'font-number text-sm text-text-primary hover:underline'}
+            className={'text-sm text-text-primary hover:underline'}
             suppressHydrationWarning
           >
             {currentVault.token.address}
@@ -43,13 +43,13 @@ export function VaultInfoSection({
         </div>
 
         {currentVault.staking.available ? (
-          <div className={'flex flex-col items-center md:flex-row'}>
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
             <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Staking Contract Address'}</p>
             <a
               href={`${blockExplorer}/address/${currentVault.staking.address}`}
               target={'_blank'}
               rel={'noopener noreferrer'}
-              className={'font-number text-sm text-text-primary hover:underline'}
+              className={'text-sm text-text-primary hover:underline'}
               suppressHydrationWarning
             >
               {currentVault.staking.address}
@@ -58,13 +58,13 @@ export function VaultInfoSection({
         ) : null}
 
         {(currentVault.info?.sourceURL || '')?.includes('curve.finance') ? (
-          <div className={'flex flex-col items-center md:flex-row'}>
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
             <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Curve deposit URI'}</p>
             <a
               href={currentVault.info.sourceURL}
               target={'_blank'}
               rel={'noopener noreferrer'}
-              className={'font-number text-sm text-text-primary hover:underline'}
+              className={'text-sm text-text-primary hover:underline'}
               suppressHydrationWarning
             >
               {currentVault.info.sourceURL}
@@ -73,13 +73,13 @@ export function VaultInfoSection({
         ) : null}
 
         {(currentVault.info?.sourceURL || '')?.includes('gamma') ? (
-          <div className={'flex flex-col items-center md:flex-row'}>
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
             <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Gamma Pair'}</p>
             <a
               href={currentVault.info.sourceURL}
               target={'_blank'}
               rel={'noopener noreferrer'}
-              className={'font-number whitespace-nowrap text-sm text-text-primary hover:underline'}
+              className={'whitespace-nowrap text-sm text-text-primary hover:underline'}
               suppressHydrationWarning
             >
               {currentVault.info.sourceURL}
@@ -87,14 +87,14 @@ export function VaultInfoSection({
           </div>
         ) : null}
 
-        <div className={'flex flex-col items-center md:flex-row'}>
-          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Price Per Share'}</p>
-          <p className={'font-number text-sm text-text-primary'} suppressHydrationWarning>
+        <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Current Price Per Share'}</p>
+          <p className={'text-sm text-text-primary'} suppressHydrationWarning>
             {currentVault.apr.pricePerShare.today}
           </p>
         </div>
 
-        <div className={'flex flex-col items-center md:flex-row'}>
+        <div className={'flex flex-col items-start md:flex-row md:items-center'}>
           <p className={'w-full text-sm text-text-secondary md:w-44'}>{'yDaemon Vault Data'}</p>
           <a
             href={`${yDaemonBaseUri}/vaults/${currentVault.address}`}

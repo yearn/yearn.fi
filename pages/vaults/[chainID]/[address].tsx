@@ -75,7 +75,7 @@ function Index(): ReactElement | null {
   })
   const collapsibleTitles: Record<SectionKey, string> = {
     about: 'Description',
-    risk: 'Risk',
+    risk: 'Risk Score',
     strategies: 'Strategies',
     info: 'More Info',
     charts: 'Performance'
@@ -228,7 +228,11 @@ function Index(): ReactElement | null {
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const scrollSpySections = useMemo(
-    () => renderableSections.map((section) => ({ key: section.key, ref: section.ref })),
+    () =>
+      renderableSections.map((section) => ({
+        key: section.key,
+        ref: section.ref
+      })),
     [renderableSections]
   )
 
@@ -260,7 +264,10 @@ function Index(): ReactElement | null {
       // Scroll to details when expanding
       if (newState && detailsRef.current) {
         setTimeout(() => {
-          detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          detailsRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest'
+          })
         }, 100)
       }
       return newState
@@ -314,7 +321,9 @@ function Index(): ReactElement | null {
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+                  currentVault.chainID
+                }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
                 alt={currentVault.token.symbol || ''}
                 width={40}
                 height={40}
@@ -406,7 +415,10 @@ function Index(): ReactElement | null {
                         type={'button'}
                         className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
                         onClick={(): void =>
-                          setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                          setOpenSections((previous) => ({
+                            ...previous,
+                            [typedKey]: !previous[typedKey]
+                          }))
                         }
                       >
                         <span className={'text-base font-semibold text-text-primary'}>
@@ -493,9 +505,12 @@ function Index(): ReactElement | null {
                   >
                     <button
                       type={'button'}
-                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
+                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4'}
                       onClick={(): void =>
-                        setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                        setOpenSections((previous) => ({
+                          ...previous,
+                          [typedKey]: !previous[typedKey]
+                        }))
                       }
                     >
                       <span className={'text-base font-semibold text-text-primary'}>{collapsibleTitles[typedKey]}</span>
