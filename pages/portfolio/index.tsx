@@ -87,12 +87,15 @@ function PortfolioPage(): ReactElement {
     const result: TYDaemonVault[] = []
     const seen = new Set<string>()
 
-    Object.values(balances || {}).forEach((perChain) => {
+    Object.entries(balances || {}).forEach(([chainIDKey, perChain]) => {
+      const parsedChainID = Number(chainIDKey)
+      const chainID = Number.isFinite(parsedChainID) ? parsedChainID : undefined
       Object.values(perChain || {}).forEach((token) => {
         if (!token?.balance || token.balance.raw <= 0n) {
           return
         }
-        const tokenKey = `${token.chainID}_${toAddress(token.address)}`
+        const tokenChainID = chainID ?? token.chainID
+        const tokenKey = `${tokenChainID}_${toAddress(token.address)}`
         const vault = vaultLookup.get(tokenKey)
         if (!vault) {
           return
