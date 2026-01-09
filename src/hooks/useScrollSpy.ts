@@ -16,8 +16,7 @@ export type UseScrollSpyOptions<Key extends string> = {
   sections: ScrollSpySection<Key>[]
   activeKey: Key | undefined
   onActiveKeyChange: (key: Key) => void
-  rootMargin?: string
-  threshold?: number | number[]
+  offsetTop?: number
   enabled?: boolean
 }
 
@@ -25,8 +24,7 @@ export function useScrollSpy<Key extends string>({
   sections,
   activeKey,
   onActiveKeyChange,
-  rootMargin = '0px',
-  threshold = 0,
+  offsetTop = 0,
   enabled = true
 }: UseScrollSpyOptions<Key>): void {
   const activeKeyRef = useRef<Key | undefined>(activeKey)
@@ -37,77 +35,49 @@ export function useScrollSpy<Key extends string>({
 
   useEffect(() => {
     if (!enabled || sections.length === 0) return
-    if (typeof IntersectionObserver === 'undefined') return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const candidates = entries
-          .map((entry) => {
-            const target = entry.target as HTMLElement
-            const key = target.dataset.scrollSpyKey as Key | undefined
-            if (!key) return null
-            return {
-              key,
-              isIntersecting: entry.isIntersecting,
-              top: entry.boundingClientRect.top
-            }
-          })
-          .filter(Boolean) as ScrollSpyCandidate<Key>[]
-
-        const nextKey = pickActiveScrollSpyKey(candidates, activeKeyRef.current)
-        if (nextKey && nextKey !== activeKeyRef.current) {
-          onActiveKeyChange(nextKey)
-        }
-      },
-      { rootMargin, threshold }
-    )
-
-    sections.forEach((section) => {
-      if (section.ref.current) {
-        observer.observe(section.ref.current)
-      }
-    })
-
-    return () => observer.disconnect()
-  }, [enabled, onActiveKeyChange, rootMargin, sections, threshold])
-
-  useEffect(() => {
-    if (!enabled || sections.length === 0) return
     if (typeof window === 'undefined') return
 
-    const handleScroll = (): void => {
-      const scrollTop = window.scrollY || window.pageYOffset
-      const scrollHeight = Math.max(document.documentElement?.scrollHeight ?? 0, document.body?.scrollHeight ?? 0)
-      const lastSection = sections[sections.length - 1]
-      const lastElement = lastSection?.ref.current
-      const lastHeight = lastElement?.offsetHeight ?? lastElement?.getBoundingClientRect?.().height ?? 0
-      const viewportHeight = window.innerHeight || document.documentElement?.clientHeight || 0
-      if (scrollHeight <= viewportHeight) return
+    let rafId = 0
 
-      const bottomThreshold = Math.max(lastHeight, 1)
-      const distanceFromBottom = scrollHeight - (scrollTop + viewportHeight)
-      const isNearBottom = distanceFromBottom <= bottomThreshold
+    const updateActive = (): void => {
+      const candidates = sections
+        .map((section) => {
+          const element = section.ref.current
+          if (!element) return null
+          return {
+            key: section.key,
+            isIntersecting: element.getBoundingClientRect().top <= offsetTop,
+            top: element.getBoundingClientRect().top
+          }
+        })
+        .filter(Boolean) as ScrollSpyCandidate<Key>[]
 
-      const lastKey = lastSection?.key
-      const previousKey = sections[sections.length - 2]?.key
-
-      if (isNearBottom) {
-        if (lastKey && lastKey !== activeKeyRef.current) {
-          onActiveKeyChange(lastKey)
-        }
-        return
-      }
-
-      if (lastKey && previousKey && activeKeyRef.current === lastKey) {
-        onActiveKeyChange(previousKey)
+      const nextKey = pickActiveScrollSpyKey(candidates, sections[0]?.key)
+      if (nextKey && nextKey !== activeKeyRef.current) {
+        onActiveKeyChange(nextKey)
       }
     }
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
+    const onScroll = (): void => {
+      cancelAnimationFrame(rafId)
+      rafId = window.requestAnimationFrame(updateActive)
+    }
 
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [enabled, onActiveKeyChange, sections])
+    const onResize = (): void => {
+      cancelAnimationFrame(rafId)
+      rafId = window.requestAnimationFrame(updateActive)
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onResize)
+    updateActive()
+
+    return (): void => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onResize)
+    }
+  }, [enabled, offsetTop, onActiveKeyChange, sections])
 }
 
 export function pickActiveScrollSpyKey<Key extends string>(

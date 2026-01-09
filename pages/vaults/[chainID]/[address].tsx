@@ -240,7 +240,7 @@ function Index(): ReactElement | null {
     sections: scrollSpySections,
     activeKey: activeSection,
     onActiveKeyChange: setActiveSection,
-    rootMargin: '-250px 0px -60% 0px',
+    offsetTop: 275,
     enabled: renderableSections.length > 0
   })
 
@@ -253,9 +253,14 @@ function Index(): ReactElement | null {
   const handleSelectSection = (key: SectionKey): void => {
     setActiveSection(key)
     const element = sectionRefs[key]?.current
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    if (!element || typeof window === 'undefined') return
+
+    const defaultOffset = 275
+    const scrollOffset = key === 'charts' ? 275 : defaultOffset
+    const top = element.getBoundingClientRect().top + window.scrollY - scrollOffset
+    const targetTop = key === 'charts' ? Math.max(top, 1) : top
+
+    window.scrollTo({ top: targetTop, behavior: 'smooth' })
   }
 
   const toggleMobileDetails = (): void => {
@@ -501,7 +506,7 @@ function Index(): ReactElement | null {
                     key={section.key}
                     ref={section.ref}
                     data-scroll-spy-key={section.key}
-                    className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
+                    className={'border border-border rounded-lg bg-surface scroll-mt-[275px]'}
                   >
                     <button
                       type={'button'}
@@ -529,12 +534,13 @@ function Index(): ReactElement | null {
                   key={section.key}
                   ref={section.ref}
                   data-scroll-spy-key={section.key}
-                  className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
+                  className={'border border-border rounded-lg bg-surface scroll-mt-[275px]'}
                 >
                   {section.content}
                 </div>
               )
             })}
+            {renderableSections.length > 0 ? <div aria-hidden className={'h-[60vh]'} /> : null}
           </div>
           <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-6')} style={{ top: nextSticky }}>
             <div>
