@@ -55,6 +55,18 @@ export function useV2VaultFilter(
   const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
+  const searchRegex = useMemo(() => {
+    if (!search) {
+      return null
+    }
+    try {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      return new RegExp(escapedSearch, 'i')
+    } catch {
+      return null
+    }
+  }, [search])
+  const lowercaseSearch = useMemo(() => (search ? search.toLowerCase() : ''), [search])
 
   const checkHasHoldings = useMemo(
     () => createCheckHasHoldings(getBalance, getPrice, shouldHideDust),
@@ -177,16 +189,12 @@ export function useV2VaultFilter(
         }
 
         if (searchValue) {
-          try {
-            const escapedSearch = searchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-            const searchRegex = new RegExp(escapedSearch, 'i')
+          if (searchRegex) {
             if (!searchRegex.test(searchableText)) {
               return
             }
-          } catch {
-            if (!searchableText.includes(searchValue.toLowerCase())) {
-              return
-            }
+          } else if (!searchableText.includes(lowercaseSearch)) {
+            return
           }
         }
 
@@ -231,7 +239,7 @@ export function useV2VaultFilter(
       filteredVaultsNoSearch: unsearched.filteredVaults,
       vaultFlags: searched.vaultFlags
     }
-  }, [vaultIndex, walletFlags, types, chains, search, categories, protocols])
+  }, [vaultIndex, walletFlags, types, chains, search, categories, protocols, searchRegex, lowercaseSearch])
 
   return {
     ...filteredResults,

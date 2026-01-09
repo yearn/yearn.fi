@@ -64,6 +64,18 @@ export function useV3VaultFilter(
   const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
+  const searchRegex = useMemo(() => {
+    if (!search) {
+      return null
+    }
+    try {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      return new RegExp(escapedSearch, 'i')
+    } catch {
+      return null
+    }
+  }, [search])
+  const lowercaseSearch = useMemo(() => (search ? search.toLowerCase() : ''), [search])
 
   const checkHasHoldings = useMemo(
     () => createCheckHasHoldings(getBalance, getPrice, shouldHideDust),
@@ -192,18 +204,13 @@ export function useV3VaultFilter(
       if (!isActive && !hasHoldings) {
         return
       }
-
       if (search) {
-        try {
-          const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-          const searchRegex = new RegExp(escapedSearch, 'i')
+        if (searchRegex) {
           if (!searchRegex.test(searchableText)) {
             return
           }
-        } catch {
-          if (!searchableText.includes(search.toLowerCase())) {
-            return
-          }
+        } else if (!searchableText.includes(lowercaseSearch)) {
+          return
         }
       }
 
@@ -302,8 +309,10 @@ export function useV3VaultFilter(
     categories,
     protocols,
     aggressiveness,
+    holdingsVaults,
     showHiddenVaults,
-    holdingsVaults
+    searchRegex,
+    lowercaseSearch
   ])
 
   return {
