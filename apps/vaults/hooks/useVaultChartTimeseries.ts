@@ -1,6 +1,6 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { toAddress } from '@lib/utils'
 import { vaultChartTimeseriesSchema } from '@lib/utils/schemas/vaultChartsSchema'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { TChartTimeseriesResponse } from '@vaults/types/charts'
 
 const DEFAULT_LIMIT = 1000

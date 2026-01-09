@@ -6,9 +6,8 @@ import { baseFetcher } from '@lib/utils/fetchers'
 import type { TYDaemonVault, TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultsSchema } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
-import { patchYBoldVaults } from '@vaults/domain/normalizeVault'
-
 import { useQueryClient } from '@tanstack/react-query'
+import { patchYBoldVaults } from '@vaults/domain/normalizeVault'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useIndexedDBStore } from 'use-indexeddb'
 
