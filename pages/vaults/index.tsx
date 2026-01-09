@@ -290,6 +290,7 @@ function ListOfVaults({
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
   const [compareVaultKeys, setCompareVaultKeys] = useState<string[]>([])
   const [isCompareOpen, setIsCompareOpen] = useState(false)
+  const [isCompareMode, setIsCompareMode] = useState(false)
   const compareKeySet = useMemo(() => new Set(compareVaultKeys), [compareVaultKeys])
 
   const handleToggleCompare = useCallback((vault: TYDaemonVault): void => {
@@ -303,6 +304,17 @@ function ListOfVaults({
 
   const handleClearCompare = useCallback((): void => {
     setCompareVaultKeys([])
+  }, [])
+
+  const handleToggleCompareMode = useCallback((): void => {
+    setIsCompareMode((prev) => {
+      const next = !prev
+      if (!next) {
+        setCompareVaultKeys([])
+        setIsCompareOpen(false)
+      }
+      return next
+    })
   }, [])
 
   const isVaultSelectedForCompare = useCallback(
@@ -804,8 +816,8 @@ function ListOfVaults({
             vaults={section.vaults}
             vaultFlags={vaultFlags}
             resolveApyDisplayVariant={resolveApyDisplayVariant}
-            isCompareSelected={isVaultSelectedForCompare}
-            onToggleCompare={handleToggleCompare}
+            isCompareSelected={isCompareMode ? isVaultSelectedForCompare : undefined}
+            onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
             activeChains={activeChains}
             activeCategories={activeCategories}
             activeProductType={activeProductType}
@@ -827,8 +839,8 @@ function ListOfVaults({
                   currentVault={vault}
                   flags={vaultFlags[key]}
                   apyDisplayVariant={rowApyDisplayVariant}
-                  isCompareSelected={isVaultSelectedForCompare(vault)}
-                  onToggleCompare={handleToggleCompare}
+                  isCompareSelected={isCompareMode ? isVaultSelectedForCompare(vault) : false}
+                  onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
                   activeChains={activeChains}
                   activeCategories={activeCategories}
                   activeProductType={activeProductType}
@@ -862,6 +874,21 @@ function ListOfVaults({
     </div>
   )
 
+  const compareToggleControl = (
+    <button
+      type={'button'}
+      className={cl(
+        'flex shrink-0 items-center gap-2 border rounded-lg h-10 border-border px-4 text-sm font-medium text-text-secondary bg-surface transition-colors',
+        'hover:text-text-secondary',
+        'data-[active=true]:border-border-hover data-[active=true]:text-text-secondary'
+      )}
+      onClick={handleToggleCompareMode}
+      data-active={isCompareMode}
+    >
+      {'Compare'}
+    </button>
+  )
+
   const filtersElement = (
     <div ref={filtersRef} className={'sticky z-40 w-full bg-app pb-2 shrink-0'} style={{ top: 'var(--header-height)' }}>
       {breadcrumbsElement}
@@ -879,6 +906,7 @@ function ListOfVaults({
         onClearFilters={onResetMultiSelect}
         mobileExtraContent={<VaultVersionToggle stretch={true} />}
         trailingControls={<VaultVersionToggle />}
+        filtersTrailingControls={compareToggleControl}
       />
     </div>
   )
@@ -972,7 +1000,7 @@ function ListOfVaults({
   )
 
   const compareCount = compareVaultKeys.length
-  const shouldShowCompareBar = compareCount >= 2 && !isCompareOpen
+  const shouldShowCompareBar = isCompareMode && compareCount >= 1 && !isCompareOpen
   const compareBarElement = shouldShowCompareBar ? (
     <div className={'fixed bottom-4 left-1/2 z-[55] w-[calc(100%-2rem)] max-w-[720px] -translate-x-1/2'}>
       <div
@@ -980,7 +1008,9 @@ function ListOfVaults({
           'flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xl sm:flex-row sm:items-center sm:justify-between'
         }
       >
-        <div className={'text-sm text-text-secondary'}>{`Selected ${compareCount} vaults`}</div>
+        <div className={'text-sm text-text-secondary'}>
+          {compareCount === 1 ? 'Selected 1 vault. Select one more to compare' : `Selected ${compareCount} vaults`}
+        </div>
         <div className={'flex flex-wrap gap-2'}>
           <Button
             variant={'outlined'}
@@ -993,6 +1023,7 @@ function ListOfVaults({
             variant={'filled'}
             onClick={(): void => setIsCompareOpen(true)}
             classNameOverride={'yearn--button--nextgen yearn--button-smaller'}
+            isDisabled={compareCount < 2}
           >
             {`Compare (${compareCount})`}
           </Button>

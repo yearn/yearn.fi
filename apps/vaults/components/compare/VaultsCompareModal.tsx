@@ -2,13 +2,14 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { Button } from '@lib/components/Button'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
+import { useYDaemonBaseURI } from '@lib/hooks/useYDaemonBaseURI'
 import { IconClose } from '@lib/icons/IconClose'
-import { cl, formatPercent, toAddress } from '@lib/utils'
+import { cl, formatPercent, isZero, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
 import { VaultRiskScoreTag } from '@vaults/components/table/VaultRiskScoreTag'
 import { deriveListKind } from '@vaults/shared/utils/vaultListFacets'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { Fragment } from 'react'
 
 type TVaultsCompareModalProps = {
@@ -33,18 +34,14 @@ const formatFee = (value: number | undefined): string => {
 }
 
 const MetricLabel = ({ label, sublabel }: { label: string; sublabel?: string }): ReactElement => (
-  <div className={'text-xs font-semibold uppercase tracking-wide text-text-secondary'}>
+  <div className={'border-b border-border py-3 text-xs font-semibold uppercase tracking-wide text-text-secondary'}>
     <span>{label}</span>
     {sublabel ? <span className={'mt-1 block text-[11px] text-text-secondary/70'}>{sublabel}</span> : null}
   </div>
 )
 
-const MetricValue = ({ children, className }: { children: ReactElement; className?: string }): ReactElement => (
-  <div
-    className={cl('rounded-xl border border-border bg-surface-secondary/40 p-3 text-sm text-text-primary', className)}
-  >
-    {children}
-  </div>
+const MetricValue = ({ children, className }: { children: ReactNode; className?: string }): ReactElement => (
+  <div className={cl('border-b border-border py-3 text-sm text-text-primary', className)}>{children}</div>
 )
 
 const renderPercentValue = (value: number | undefined): ReactElement => {
@@ -54,6 +51,12 @@ const renderPercentValue = (value: number | undefined): ReactElement => {
   return <RenderAmount value={value} symbol={'percent'} decimals={6} />
 }
 
+const resolveThirtyDayApy = (vault: TYDaemonVault): number => {
+  const monthly = vault.apr?.points?.monthAgo ?? 0
+  const weekly = vault.apr?.points?.weekAgo ?? 0
+  return isZero(monthly) ? weekly : monthly
+}
+
 export function VaultsCompareModal({
   isOpen,
   onClose,
@@ -61,6 +64,7 @@ export function VaultsCompareModal({
   onRemove,
   onClear
 }: TVaultsCompareModalProps): ReactElement {
+  const { yDaemonBaseUri } = useYDaemonBaseURI()
   const columnsCount = Math.max(vaults.length, 1)
   const gridTemplateColumns = `minmax(160px, 220px) repeat(${columnsCount}, minmax(180px, 1fr))`
   const hasVaults = vaults.length > 0
@@ -134,8 +138,8 @@ export function VaultsCompareModal({
                 ) : (
                   <div className={'mt-6 overflow-x-auto'}>
                     <div className={'min-w-[640px]'}>
-                      <div className={'grid gap-x-4 gap-y-4'} style={{ gridTemplateColumns }}>
-                        <div />
+                      <div className={'grid gap-x-4'} style={{ gridTemplateColumns }}>
+                        <div className={'border-b border-border pb-4'} />
                         {vaults.map((vault) => {
                           const network = getNetwork(vault.chainID)
                           const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${vault.chainID}/logo-32.png`
@@ -143,9 +147,7 @@ export function VaultsCompareModal({
                           return (
                             <div
                               key={`header-${vaultKey}`}
-                              className={
-                                'flex items-start justify-between gap-3 rounded-xl border border-border bg-surface-secondary/40 p-3'
-                              }
+                              className={'flex items-start justify-between gap-3 border-b border-border pb-4'}
                             >
                               <div className={'min-w-0'}>
                                 <div className={'flex items-center gap-3'}>
@@ -160,7 +162,6 @@ export function VaultsCompareModal({
                                     <div className={'mt-1 flex items-center gap-2 text-xs text-text-secondary'}>
                                       <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
                                       <span>{network.name}</span>
-                                      <span>{vault.token.symbol}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -189,6 +190,15 @@ export function VaultsCompareModal({
                           </MetricValue>
                         ))}
 
+                        <MetricLabel label={'30 Day APY'} sublabel={'Average realized APY'} />
+                        {vaults.map((vault) => (
+                          <MetricValue key={`apy-30d-${getVaultKey(vault)}`}>
+                            <div className={'flex items-center gap-2'}>
+                              {renderPercentValue(resolveThirtyDayApy(vault))}
+                            </div>
+                          </MetricValue>
+                        ))}
+
                         <MetricLabel label={'TVL'} sublabel={'Total value locked'} />
                         {vaults.map((vault) => (
                           <MetricValue key={`tvl-${getVaultKey(vault)}`}>
@@ -205,7 +215,7 @@ export function VaultsCompareModal({
                           </MetricValue>
                         ))}
 
-                        <MetricLabel label={'Fees'} sublabel={'Management / Performance / Withdrawal'} />
+                        <MetricLabel label={'Fees'} sublabel={'Management / Performance'} />
                         {vaults.map((vault) => (
                           <MetricValue key={`fees-${getVaultKey(vault)}`} className={'text-xs'}>
                             <div className={'grid grid-cols-2 gap-x-2 gap-y-1'}>
@@ -216,10 +226,6 @@ export function VaultsCompareModal({
                               <span className={'text-text-secondary'}>{'Performance'}</span>
                               <span className={'text-right font-number text-text-primary'}>
                                 {formatFee(vault.apr?.fees?.performance)}
-                              </span>
-                              <span className={'text-text-secondary'}>{'Withdrawal'}</span>
-                              <span className={'text-right font-number text-text-primary'}>
-                                {formatFee(vault.apr?.fees?.withdrawal)}
                               </span>
                             </div>
                           </MetricValue>
@@ -248,6 +254,116 @@ export function VaultsCompareModal({
                               <div className={'flex flex-col gap-1'}>
                                 <span className={'text-sm font-semibold text-text-primary'}>{label}</span>
                                 <span className={'text-xs text-text-secondary'}>{vault.kind}</span>
+                              </div>
+                            </MetricValue>
+                          )
+                        })}
+
+                        <MetricLabel label={'Strategies'} sublabel={'Underlying positions'} />
+                        {vaults.map((vault) => {
+                          const strategies = (vault.strategies || []).filter(
+                            (strategy) => strategy.status !== 'not_active'
+                          )
+                          return (
+                            <MetricValue key={`strategies-${getVaultKey(vault)}`} className={'text-xs'}>
+                              {strategies.length === 0 ? (
+                                <span className={'text-text-secondary'}>{'—'}</span>
+                              ) : (
+                                <div className={'flex flex-col gap-2'}>
+                                  {strategies.map((strategy) => {
+                                    const allocation = strategy.details?.debtRatio
+                                      ? formatPercent((strategy.details?.debtRatio || 0) / 100, 0)
+                                      : null
+                                    return (
+                                      <div key={strategy.address} className={'flex items-start justify-between gap-2'}>
+                                        <span className={'text-text-primary'}>{strategy.name}</span>
+                                        {allocation ? (
+                                          <span className={'font-number text-text-secondary'}>{allocation}</span>
+                                        ) : null}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </MetricValue>
+                          )
+                        })}
+
+                        <MetricLabel label={'More info'} sublabel={'On-chain details'} />
+                        {vaults.map((vault) => {
+                          const network = getNetwork(vault.chainID)
+                          const blockExplorer =
+                            network.blockExplorers?.etherscan?.url ||
+                            network.blockExplorers?.default.url ||
+                            network.defaultBlockExplorer ||
+                            ''
+                          const infoItems: Array<{ label: string; value: string; href?: string }> = [
+                            {
+                              label: 'Vault Contract Address',
+                              value: vault.address,
+                              href: blockExplorer ? `${blockExplorer}/address/${vault.address}` : undefined
+                            },
+                            {
+                              label: 'Token Contract Address',
+                              value: vault.token.address,
+                              href: blockExplorer ? `${blockExplorer}/address/${vault.token.address}` : undefined
+                            }
+                          ]
+
+                          if (vault.staking?.available) {
+                            infoItems.push({
+                              label: 'Staking Contract Address',
+                              value: vault.staking.address,
+                              href: blockExplorer ? `${blockExplorer}/address/${vault.staking.address}` : undefined
+                            })
+                          }
+
+                          if ((vault.info?.sourceURL || '')?.includes('curve.finance')) {
+                            infoItems.push({
+                              label: 'Curve deposit URI',
+                              value: vault.info.sourceURL
+                            })
+                          }
+
+                          if ((vault.info?.sourceURL || '')?.includes('gamma')) {
+                            infoItems.push({
+                              label: 'Gamma Pair',
+                              value: vault.info.sourceURL
+                            })
+                          }
+
+                          infoItems.push({
+                            label: 'Price Per Share',
+                            value: String(vault.apr.pricePerShare.today)
+                          })
+
+                          infoItems.push({
+                            label: 'yDaemon Vault Data',
+                            value: 'View API Data',
+                            href: `${yDaemonBaseUri}/${vault.chainID}/vaults/${vault.address}`
+                          })
+
+                          return (
+                            <MetricValue key={`info-${getVaultKey(vault)}`} className={'text-xs'}>
+                              <div className={'flex flex-col gap-3'}>
+                                {infoItems.map((item) => (
+                                  <div key={`${getVaultKey(vault)}-${item.label}`} className={'flex flex-col gap-1'}>
+                                    <span className={'text-text-secondary'}>{item.label}</span>
+                                    {item.href ? (
+                                      <a
+                                        href={item.href}
+                                        target={'_blank'}
+                                        rel={'noopener noreferrer'}
+                                        className={'font-number text-text-primary hover:underline break-all'}
+                                        suppressHydrationWarning
+                                      >
+                                        {item.value}
+                                      </a>
+                                    ) : (
+                                      <span className={'font-number text-text-primary break-all'}>{item.value}</span>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
                             </MetricValue>
                           )

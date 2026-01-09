@@ -42,6 +42,7 @@ type TVaultsFiltersProps = {
   onClearFilters?: () => void
   mobileExtraContent?: ReactNode
   trailingControls?: ReactNode
+  filtersTrailingControls?: ReactNode
 }
 
 export function VaultsFilters({
@@ -57,7 +58,8 @@ export function VaultsFilters({
   filtersPanelContent,
   onClearFilters,
   mobileExtraContent,
-  trailingControls
+  trailingControls,
+  filtersTrailingControls
 }: TVaultsFiltersProps): ReactElement {
   const SEARCH_MIN_WIDTH = 180
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
@@ -65,7 +67,7 @@ export function VaultsFilters({
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
   const [isFiltersButtonMinimal, setIsFiltersButtonMinimal] = useState(false)
-  const [isChainSelectorMinimal, setIsChainSelectorMinimal] = useState(false)
+  const [isChainSelectorMinimal, setIsChainSelectorMinimal] = useState(true)
   const hasFiltersContent = Boolean(filtersContent)
   const hasPanelContent = Boolean(filtersPanelContent)
 
@@ -504,6 +506,7 @@ export function VaultsFilters({
             searchContainerRef={searchContainerRef}
             enableResponsiveLayout={true}
             leadingControls={trailingControls}
+            filtersTrailingControls={filtersTrailingControls}
           />
         </div>
       </div>
@@ -557,7 +560,8 @@ function FilterControls({
   searchContainerRef,
   enableResponsiveLayout = false,
   leadingControls,
-  trailingControls
+  trailingControls,
+  filtersTrailingControls
 }: {
   chainButtons: TChainButton[]
   onSelectAllChains: () => void
@@ -591,6 +595,7 @@ function FilterControls({
   enableResponsiveLayout?: boolean
   leadingControls?: ReactNode
   trailingControls?: ReactNode
+  filtersTrailingControls?: ReactNode
 }): ReactElement {
   const showFiltersLabel = !isFiltersButtonMinimal
   return (
@@ -627,7 +632,7 @@ function FilterControls({
                 <span className={'size-5 overflow-hidden rounded-full'}>
                   <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
                 </span>
-                <span className={'whitespace-nowrap'}>{allChainsLabel}</span>
+                {!isChainSelectorMinimal ? <span className={'whitespace-nowrap'}>{allChainsLabel}</span> : null}
               </button>
               {chainButtons.map((chain) => {
                 const showChainLabel = !isChainSelectorMinimal || chain.isSelected
@@ -721,6 +726,7 @@ function FilterControls({
                       ) : null}
                     </button>
                   ) : null}
+                  {filtersTrailingControls ? <div className={'shrink-0'}>{filtersTrailingControls}</div> : null}
                   {showSearchButton && onExpandSearch ? (
                     <button
                       type={'button'}
