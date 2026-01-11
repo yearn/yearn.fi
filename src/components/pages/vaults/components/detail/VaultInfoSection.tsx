@@ -1,3 +1,4 @@
+import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { truncateHex } from '@shared/utils'
@@ -42,13 +43,7 @@ function AddressLink({
   )
 }
 
-export function VaultInfoSection({
-  currentVault,
-  yDaemonBaseUri
-}: {
-  currentVault: TYDaemonVault
-  yDaemonBaseUri: string
-}): ReactElement {
+export function VaultInfoSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const blockExplorer =
     getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
     getNetwork(currentVault.chainID).blockExplorers?.default.url
@@ -118,18 +113,16 @@ export function VaultInfoSection({
         </div>
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'yDaemon Vault Data'}</p>
-          <div className={'flex md:flex-1 md:justify-end'}>
-            <a
-              href={`${yDaemonBaseUri}/vaults/${currentVault.address}`}
-              target={'_blank'}
-              rel={'noopener noreferrer'}
-              className={'text-sm text-text-primary hover:underline'}
-              suppressHydrationWarning
-            >
-              {'View API Data'}
-            </a>
-          </div>
+          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Vault Snapshot Data'}</p>
+          <a
+            href={`${KONG_REST_BASE}/snapshot/${currentVault.chainID}/${currentVault.address}`}
+            target={'_blank'}
+            rel={'noopener noreferrer'}
+            className={'text-sm text-text-primary hover:underline'}
+            suppressHydrationWarning
+          >
+            {'View API Data'}
+          </a>
         </div>
       </div>
     </div>

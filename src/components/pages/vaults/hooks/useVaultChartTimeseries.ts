@@ -1,12 +1,12 @@
 import type { TChartTimeseriesResponse } from '@pages/vaults/types/charts'
+import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { toAddress } from '@shared/utils'
 import { vaultChartTimeseriesSchema } from '@shared/utils/schemas/vaultChartsSchema'
 import useSWR from 'swr'
 
 const DEFAULT_LIMIT = 1000
 const MAX_LIMIT = 2000
-const REST_BASE = (import.meta.env.VITE_KONG_REST_URL || 'https://kong.yearn.fi/api/rest').replace(/\/$/, '')
-const TIMESERIES_BASE = `${REST_BASE}/timeseries`
+const TIMESERIES_BASE = `${KONG_REST_BASE}/timeseries`
 
 type RestTimeseriesPoint = {
   time: number | string
