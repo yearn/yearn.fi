@@ -1,4 +1,3 @@
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { TokenLogo } from '@lib/components/TokenLogo'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { cl, exactToSimple, simpleToExact } from '@lib/utils'
@@ -227,6 +226,7 @@ export const InputTokenAmountV2: FC<Props> = ({
                   src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${tokenChainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                   tokenSymbol={symbol ?? ''}
                   tokenName={symbol ?? ''}
+                  chainId={tokenChainId}
                   width={32}
                   height={32}
                   className="rounded-full"
@@ -306,17 +306,16 @@ export const InputTokenAmountV2: FC<Props> = ({
                   className={cl(
                     'px-2 py-1 rounded-lg flex items-center gap-2 transition-colors',
                     disabled ? 'bg-transparent cursor-not-allowed' : 'bg-transparent hover:bg-surface-secondary',
-                    'text-text-primary text-2xl font-medium'
+                    'text-text-primary text-xl font-medium'
                   )}
                 >
                   {zapToken.address && zapToken.chainId && (
-                    <ImageWithFallback
-                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-                        zapToken.chainId
-                      }/${zapToken.address.toLowerCase()}/logo-32.png`}
-                      alt={zapToken.symbol}
-                      width={28}
-                      height={28}
+                    <TokenLogo
+                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
+                      tokenSymbol={zapToken.symbol}
+                      chainId={zapToken.chainId}
+                      width={32}
+                      height={32}
                       className="rounded-full"
                     />
                   )}

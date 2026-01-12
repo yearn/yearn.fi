@@ -47,7 +47,10 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
   const currentChainId = useChainId()
   const { switchChainAsync, isPending: isChainSwitching } = useSwitchChain()
   const [ensoTxHash, setEnsoTxHash] = useState<`0x${string}` | undefined>()
-  const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash })
+
+  // Fast chains like BASE need extra confirmations for RPC to index new state
+  const confirmations = currentChainId === 8453 ? 2 : 1
+  const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash, confirmations })
   const [isSigning, setIsSigning] = useState(false)
   const client = usePublicClient()
   const lastToastedTxHash = useRef<string | undefined>(undefined)
