@@ -1,70 +1,46 @@
 import { cl } from '@lib/utils'
 import type { ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
-import { V2_SUPPORTED_CHAINS, V3_SUPPORTED_CHAINS } from './constants'
+import type { TVaultType } from './vaultTypeCopy'
 import { getVaultTypeEmoji, getVaultTypeLabel } from './vaultTypeCopy'
+import { getSupportedChainsForVaultType, normalizeVaultTypeParam, sanitizeChainsParam } from './vaultTypeUtils'
 
 type TVaultVersionToggleProps = {
   className?: string
-  showStrategies?: boolean
   stretch?: boolean
 }
 
-export function VaultVersionToggle({ className, showStrategies, stretch }: TVaultVersionToggleProps): ReactElement {
+type TButtonConfig = {
+  type: TVaultType
+  typeParam: string | null
+}
+
+const BUTTON_CONFIGS: TButtonConfig[] = [
+  { type: 'all', typeParam: 'all' },
+  { type: 'v3', typeParam: null },
+  { type: 'factory', typeParam: 'lp' }
+]
+
+export function VaultVersionToggle({ className, stretch }: TVaultVersionToggleProps): ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
-  const isFactoryActive = searchParams.get('type') === 'factory'
-  const typesParam = searchParams.get('types')
-  const activeTypes = typesParam ? typesParam.split('_').filter(Boolean) : []
-  const isStrategiesTabVisible = Boolean(showStrategies)
-  const isStrategiesActive = isStrategiesTabVisible && !isFactoryActive && activeTypes.includes('single')
-  const isAllocatorActive = !isFactoryActive && !isStrategiesActive
-  const allocatorLabel = getVaultTypeLabel('v3')
-  const allocatorEmoji = getVaultTypeEmoji('v3')
-  const factoryLabel = getVaultTypeLabel('factory')
-  const factoryEmoji = getVaultTypeEmoji('factory')
-  const strategiesLabel = 'v3 Strategies'
-  const strategiesEmoji = '🧩'
+  const normalizedType = normalizeVaultTypeParam(searchParams.get('type'))
 
-  const sanitizeChainsParam = (params: URLSearchParams, supportedChainIds: number[]): void => {
-    const rawChains = params.get('chains')
-    if (!rawChains || rawChains === '0') {
-      return
-    }
-    const nextChains = rawChains
-      .split('_')
-      .map((value) => Number(value))
-      .filter((value) => Number.isFinite(value) && supportedChainIds.includes(value))
-
-    if (nextChains.length === 0) {
-      params.delete('chains')
+  const handleClick = (config: TButtonConfig): void => {
+    const nextParams = new URLSearchParams(searchParams)
+    if (config.typeParam === null) {
+      nextParams.delete('type')
     } else {
-      params.set('chains', nextChains.join('_'))
+      nextParams.set('type', config.typeParam)
     }
-  }
-
-  const goToAllocator = (): void => {
-    const nextParams = new URLSearchParams(searchParams)
-    nextParams.delete('type')
     nextParams.delete('types')
-    sanitizeChainsParam(nextParams, V3_SUPPORTED_CHAINS)
+    sanitizeChainsParam(nextParams, getSupportedChainsForVaultType(config.type))
     setSearchParams(nextParams, { replace: true })
   }
 
-  const goToStrategies = (): void => {
-    const nextParams = new URLSearchParams(searchParams)
-    nextParams.delete('type')
-    nextParams.set('types', 'single')
-    nextParams.set('showStrategies', '1')
-    sanitizeChainsParam(nextParams, V3_SUPPORTED_CHAINS)
-    setSearchParams(nextParams, { replace: true })
-  }
-
-  const goToFactory = (): void => {
-    const nextParams = new URLSearchParams(searchParams)
-    nextParams.set('type', 'factory')
-    nextParams.delete('types')
-    sanitizeChainsParam(nextParams, V2_SUPPORTED_CHAINS)
-    setSearchParams(nextParams, { replace: true })
+  const isActive = (type: TVaultType): boolean => {
+    if (type === 'all') return normalizedType === 'all'
+    if (type === 'factory') return normalizedType === 'factory'
+    return normalizedType !== 'all' && normalizedType !== 'factory'
   }
 
   return (
@@ -74,68 +50,32 @@ export function VaultVersionToggle({ className, showStrategies, stretch }: TVaul
         className
       )}
     >
-      <button
-        type={'button'}
-        className={cl(
-          'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
-          'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-          'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
-          stretch ? 'flex-1' : ''
-        )}
-        data-active={isAllocatorActive}
-        onClick={goToAllocator}
-        aria-pressed={isAllocatorActive}
-      >
-        <span
-          aria-hidden={true}
-          className={'size-5 overflow-hidden rounded-full bg-surface/80 flex items-center justify-center'}
-        >
-          {allocatorEmoji}
-        </span>
-        <span className={'whitespace-nowrap'}>{allocatorLabel}</span>
-      </button>
-      {isStrategiesTabVisible ? (
-        <button
-          type={'button'}
-          className={cl(
-            'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
-            'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-            'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
-            stretch ? 'flex-1' : ''
-          )}
-          data-active={isStrategiesActive}
-          onClick={goToStrategies}
-          aria-pressed={isStrategiesActive}
-        >
-          <span
-            aria-hidden={true}
-            className={'size-5 overflow-hidden rounded-full bg-surface/80 flex items-center justify-center'}
+      {BUTTON_CONFIGS.map((config) => {
+        const active = isActive(config.type)
+        return (
+          <button
+            key={config.type}
+            type={'button'}
+            className={cl(
+              'flex h-full items-center justify-center gap-2 px-3 font-medium transition-colors',
+              'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+              'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+              stretch ? 'flex-1' : ''
+            )}
+            data-active={active}
+            onClick={() => handleClick(config)}
+            aria-pressed={active}
           >
-            {strategiesEmoji}
-          </span>
-          <span className={'whitespace-nowrap'}>{strategiesLabel}</span>
-        </button>
-      ) : null}
-      <button
-        type={'button'}
-        className={cl(
-          'flex h-full items-center justify-center gap-2 px-3 font-medium transition-colors',
-          'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-          'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
-          stretch ? 'flex-1' : ''
-        )}
-        data-active={isFactoryActive}
-        onClick={goToFactory}
-        aria-pressed={isFactoryActive}
-      >
-        <span
-          aria-hidden={true}
-          className={'size-5 overflow-hidden rounded-full bg-surface/80 flex items-center justify-center'}
-        >
-          {factoryEmoji}
-        </span>
-        <span className={'whitespace-nowrap'}>{factoryLabel}</span>
-      </button>
+            <span
+              aria-hidden={true}
+              className={'size-5 overflow-hidden rounded-full bg-surface/80 flex items-center justify-center'}
+            >
+              {getVaultTypeEmoji(config.type)}
+            </span>
+            <span className={'whitespace-nowrap'}>{getVaultTypeLabel(config.type)}</span>
+          </button>
+        )
+      })}
     </div>
   )
 }

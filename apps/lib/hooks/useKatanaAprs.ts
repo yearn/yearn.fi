@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { useEffect, useState } from 'react'
 
 const CACHE_KEY = 'katana-aprs-cache'
@@ -54,7 +53,7 @@ export const useKatanaAprs = (): { data: Partial<TKatanaAprs>; isLoading: boolea
           throw new Error('KATANA_APR_SERVICE_API environment variable is not set')
         }
 
-        const freshData = await axios.get(apiUrl).then((res) => res.data)
+        const freshData = await fetch(apiUrl).then((res) => res.json())
 
         const cacheData: TCacheData = {
           data: freshData,

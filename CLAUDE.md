@@ -57,20 +57,24 @@ src/                    # App entry and core shared code
 pages/                  # Route pages (lazy-loaded)
 ├── vaults/            # Vault listing and detail pages
 ├── portfolio/         # Portfolio page
-└── apps/              # Apps showcase
+└── index.tsx          # Landing page
 
 apps/                   # Feature-specific modules
-├── lib/               # Shared library (40+ components, 28+ hooks)
+├── lib/               # Shared library (components, hooks, utils)
 │   ├── components/    # Buttons, Dropdowns, Headers, Icons
 │   ├── contexts/      # useWallet, useYearn, useWeb3
+│   ├── contracts/     # ABI source of truth
 │   ├── hooks/         # Vault data, balances, filtering hooks
 │   ├── utils/         # Format, calculations, chain constants
 │   └── icons/         # 50+ icon components
-├── vaults-v2/         # V2 vault interface
-├── vaults-v3/         # V3 vault interface
-├── vaults-shared/     # Shared vault components
-├── landing/           # Landing page sections
-└── nextgen/           # Next-gen deposit/withdraw widgets
+├── vaults/            # Canonical vaults feature (list + detail + widget)
+│   ├── components/    # Vaults UI (list, detail, widget, notifications)
+│   ├── contexts/      # Vault settings context
+│   ├── domain/        # Domain helpers (reports, normalization)
+│   ├── hooks/         # Vault-specific hooks
+│   ├── shared/        # Shared vault list/filter utilities
+│   └── utils/         # Vault utilities (charts, yBOLD, filters)
+└── landing/           # Landing page sections
 
 api/                    # Vercel serverless functions
 ```
@@ -87,11 +91,8 @@ api/                    # Vercel serverless functions
 ### Path Aliases (vite.config.ts)
 
 - `@lib/*` → `apps/lib/*`
-- `@vaults-v2/*` → `apps/vaults-v2/*`
-- `@vaults-v3/*` → `apps/vaults-v3/*`
-- `@vaults-shared/*` → `apps/vaults-shared/*`
+- `@vaults/*` → `apps/vaults/*`
 - `@landing/*` → `apps/landing/*`
-- `@nextgen/*` → `apps/nextgen/*`
 
 ### Key Patterns
 

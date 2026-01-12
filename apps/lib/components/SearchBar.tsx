@@ -17,6 +17,8 @@ type TSearchBar = {
   onSearchClick?: () => void
   highlightWhenActive?: boolean
   alertContent?: ReactNode
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  autoFocus?: boolean
 }
 
 export function SearchBar(props: TSearchBar): ReactElement {
@@ -88,6 +90,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
             handleSearchChange(e.target.value)
           }}
           onKeyDown={(e) => {
+            props.onKeyDown?.(e)
             if (!props.shouldSearchByClick) {
               return
             }

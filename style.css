@@ -119,7 +119,7 @@
   --text-8xl--line-height: 6.5rem; /* 104px */
 
   /* Layout Heights */
-  --header-height: 3.25rem; /* 48px - matches h-12 */
+  --header-height: 4.25rem; /* 68px */
 }
 
 @layer theme {

@@ -3,15 +3,16 @@ import { Button } from '@lib/components/Button'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
-import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
-import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import { IconSpinner } from '@lib/icons/IconSpinner'
 import type { TSortDirection } from '@lib/types'
 import { isZero, toAddress } from '@lib/utils'
-import { type TPossibleSortBy, useSortVaults } from '@vaults-shared/index'
-import { VaultsV3ListHead } from '@vaults-v3/components/list/VaultsV3ListHead'
-import { VaultsV3ListRow } from '@vaults-v3/components/list/VaultsV3ListRow'
-import { SuggestedVaultCard } from '@vaults-v3/components/SuggestedVaultCard'
+import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { calculateVaultEstimatedAPY } from '@lib/utils/vaultApy'
+import { VaultsListHead } from '@vaults/components/list/VaultsListHead'
+import { VaultsListRow } from '@vaults/components/list/VaultsListRow'
+import { SuggestedVaultCard } from '@vaults/components/SuggestedVaultCard'
+import { type TPossibleSortBy, useSortVaults } from '@vaults/shared/index'
+import { isAllocatorVaultOverride } from '@vaults/shared/utils/vaultListFacets'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 
@@ -50,51 +51,111 @@ function HoldingsEmptyState({ isActive, onConnect }: { isActive: boolean; onConn
 }
 
 function PortfolioPage(): ReactElement {
-  const { cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading: isWalletLoading, getBalance } = useWallet()
+  const {
+    cumulatedValueInV2Vaults,
+    cumulatedValueInV3Vaults,
+    isLoading: isWalletLoading,
+    getBalance,
+    balances
+  } = useWallet()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
-  const { getPrice, katanaAprs } = useYearn()
-  const {
-    holdingsVaults: v3HoldingsVaults,
-    filteredVaults: v3FilteredVaults,
-    vaultFlags: v3VaultFlags,
-    isLoading: isV3Loading
-  } = useV3VaultFilter(null, null, '', null)
-  const {
-    holdingsVaults: v2HoldingsVaults,
-    vaultFlags: v2VaultFlags,
-    isLoading: isV2Loading
-  } = useV2VaultFilter(null, null, '')
+  const { getPrice, katanaAprs, vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList } = useYearn()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
 
-  const holdingsVaults = useMemo(() => {
-    const combined = [...v3HoldingsVaults, ...v2HoldingsVaults]
-    const seen = new Set<string>()
-    return combined.filter((vault) => {
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
-      if (seen.has(key)) {
-        return false
+  const vaultLookup = useMemo(() => {
+    const map = new Map<string, TYDaemonVault>()
+    const allVaults = {
+      ...vaults,
+      ...vaultsMigrations,
+      ...vaultsRetired
+    }
+
+    Object.values(allVaults).forEach((vault) => {
+      const vaultKey = `${vault.chainID}_${toAddress(vault.address)}`
+      map.set(vaultKey, vault)
+
+      if (vault.staking?.available && vault.staking.address) {
+        const stakingKey = `${vault.chainID}_${toAddress(vault.staking.address)}`
+        map.set(stakingKey, vault)
       }
-      seen.add(key)
-      return true
     })
-  }, [v3HoldingsVaults, v2HoldingsVaults])
+
+    return map
+  }, [vaults, vaultsMigrations, vaultsRetired])
+
+  const holdingsVaults = useMemo(() => {
+    const result: TYDaemonVault[] = []
+    const seen = new Set<string>()
+
+    Object.entries(balances || {}).forEach(([chainIDKey, perChain]) => {
+      const parsedChainID = Number(chainIDKey)
+      const chainID = Number.isFinite(parsedChainID) ? parsedChainID : undefined
+      Object.values(perChain || {}).forEach((token) => {
+        if (!token?.balance || token.balance.raw <= 0n) {
+          return
+        }
+        const tokenChainID = chainID ?? token.chainID
+        const tokenKey = `${tokenChainID}_${toAddress(token.address)}`
+        const vault = vaultLookup.get(tokenKey)
+        if (!vault) {
+          return
+        }
+        const vaultKey = `${vault.chainID}_${toAddress(vault.address)}`
+        if (seen.has(vaultKey)) {
+          return
+        }
+        seen.add(vaultKey)
+        result.push(vault)
+      })
+    })
+
+    return result
+  }, [balances, vaultLookup])
+
+  const migratableSet = useMemo(
+    () => new Set(Object.keys(vaultsMigrations).map((address) => toAddress(address))),
+    [vaultsMigrations]
+  )
+  const retiredSet = useMemo(
+    () => new Set(Object.keys(vaultsRetired).map((address) => toAddress(address))),
+    [vaultsRetired]
+  )
 
   const vaultFlags = useMemo(() => {
-    const merged: typeof v3VaultFlags = { ...v2VaultFlags }
-    Object.entries(v3VaultFlags).forEach(([key, value]) => {
-      merged[key] = { ...merged[key], ...value }
+    const flags: Record<
+      string,
+      { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }
+    > = {}
+
+    holdingsVaults.forEach((vault) => {
+      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      flags[key] = {
+        hasHoldings: true,
+        isMigratable: migratableSet.has(toAddress(vault.address)),
+        isRetired: retiredSet.has(toAddress(vault.address)),
+        isHidden: Boolean(vault.info?.isHidden)
+      }
     })
-    return merged
-  }, [v2VaultFlags, v3VaultFlags])
+
+    return flags
+  }, [holdingsVaults, migratableSet, retiredSet])
 
   const isSearchingBalances =
     (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)
-  const isLoading = isV3Loading || isV2Loading
+  const isLoading = isLoadingVaultList
   const isHoldingsLoading = (isLoading && isActive) || isSearchingBalances
 
+  const v3Vaults = useMemo(
+    () =>
+      Object.values(vaults).filter(
+        (vault) => vault.version?.startsWith('3') || vault.version?.startsWith('~3') || isAllocatorVaultOverride(vault)
+      ),
+    [vaults]
+  )
+
   const sortedHoldings = useSortVaults(holdingsVaults, sortBy, sortDirection)
-  const sortedCandidates = useSortVaults(v3FilteredVaults, 'featuringScore', 'desc')
+  const sortedCandidates = useSortVaults(v3Vaults, 'featuringScore', 'desc')
 
   const holdingsKeySet = useMemo(
     () => new Set(sortedHoldings.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
@@ -115,40 +176,8 @@ function PortfolioPage(): ReactElement {
   const getVaultEstimatedAPY = useMemo(
     () =>
       (vault: (typeof holdingsVaults)[number]): number | null => {
-        if (vault.chainID === 747474) {
-          const katanaAprData = katanaAprs?.[toAddress(vault.address)]?.apr?.extra
-          if (katanaAprData) {
-            return (
-              (katanaAprData.katanaNativeYield || 0) +
-              (katanaAprData.FixedRateKatanaRewards || 0) +
-              (katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR ?? 0) +
-              (katanaAprData.katanaBonusAPY || 0) +
-              (katanaAprData.steerPointsPerDollar || 0)
-            )
-          }
-        }
-
-        if (vault.apr?.forwardAPR?.type === '') {
-          return (vault.apr?.extra?.stakingRewardsAPR || 0) + (vault.apr?.netAPR || 0)
-        }
-
-        if (
-          vault.chainID === 1 &&
-          vault.apr?.forwardAPR?.composite?.boost > 0 &&
-          !vault.apr?.extra?.stakingRewardsAPR
-        ) {
-          return vault.apr?.forwardAPR?.netAPR || 0
-        }
-
-        const sumOfRewardsAPY = (vault.apr?.extra?.stakingRewardsAPR || 0) + (vault.apr?.extra?.gammaRewardAPR || 0)
-        const hasCurrentAPY = !isZero(vault?.apr?.forwardAPR?.netAPR || 0)
-        if (sumOfRewardsAPY > 0) {
-          return sumOfRewardsAPY + (vault.apr?.forwardAPR?.netAPR || 0)
-        }
-        if (hasCurrentAPY) {
-          return vault.apr?.forwardAPR?.netAPR || 0
-        }
-        return vault.apr?.netAPR ?? null
+        const apy = calculateVaultEstimatedAPY(vault, katanaAprs)
+        return apy === 0 && !vault.apr?.netAPR ? null : apy
       },
     [katanaAprs]
   )
@@ -353,7 +382,7 @@ function PortfolioPage(): ReactElement {
           </div>
           <div className={'overflow-hidden rounded-3xl border border-border'}>
             <div className={'flex flex-col'}>
-              <VaultsV3ListHead
+              <VaultsListHead
                 sortBy={sortBy}
                 sortDirection={sortDirection}
                 onSort={(newSortBy, newDirection): void => {
@@ -368,42 +397,28 @@ function PortfolioPage(): ReactElement {
                     label: 'Vault / Featuring Score',
                     value: 'featuringScore',
                     sortable: true,
-                    className: 'col-span-9'
+                    className: 'col-span-12'
                   },
                   {
                     type: 'sort',
                     label: 'Est. APY',
                     value: 'estAPY',
                     sortable: true,
-                    className: 'col-span-3'
-                  },
-                  {
-                    type: 'sort',
-                    label: '30D. APY',
-                    value: 'APY',
-                    sortable: true,
-                    className: 'col-span-3'
-                  },
-                  {
-                    type: 'sort',
-                    label: 'APY Sparkline',
-                    value: 'APY Sparkline',
-                    sortable: false,
-                    className: 'col-span-3'
+                    className: 'col-span-4'
                   },
                   {
                     type: 'sort',
                     label: 'TVL',
                     value: 'tvl',
                     sortable: true,
-                    className: 'col-span-3 '
+                    className: 'col-span-4'
                   },
                   {
                     type: 'sort',
                     label: 'Your Holdings',
                     value: 'deposited',
                     sortable: true,
-                    className: 'col-span-3 justify-end'
+                    className: 'col-span-4 justify-end'
                   }
                 ]}
               />
@@ -421,7 +436,7 @@ function PortfolioPage(): ReactElement {
                     const isV3 = vault.version?.startsWith('3') || vault.version?.startsWith('~3')
                     const hrefOverride = isV3 ? undefined : `/vaults/${vault.chainID}/${toAddress(vault.address)}`
                     return (
-                      <VaultsV3ListRow
+                      <VaultsListRow
                         key={key}
                         currentVault={vault}
                         flags={vaultFlags[key]}
