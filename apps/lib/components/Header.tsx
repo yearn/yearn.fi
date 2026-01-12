@@ -13,7 +13,7 @@ import { normalizePathname } from '@lib/utils/routes'
 import { truncateHex } from '@lib/utils/tools.address'
 import { useChainModal } from '@rainbow-me/rainbowkit'
 import type { ReactElement } from 'react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import Link from '/src/components/Link'
 import { AccountDropdown } from './AccountDropdown'
@@ -92,7 +92,7 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
         className={'text-xs font-normal text-text-secondary transition-colors hover:text-text-primary md:text-sm'}
       >
         {walletIdentity ? (
-          <span className={'inline-flex items-center gap-2'}>
+          <span className={'inline-flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-1.5'}>
             <span>{walletIdentity}</span>
             {shouldShowSpinner && <IconSpinner className={'size-3.5 text-text-tertiary'} />}
           </span>
@@ -101,7 +101,7 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
             <IconWallet className={'mt-0.5 block size-4 text-text-secondary md:hidden'} />
             <span
               className={
-                'relative hidden h-8 cursor-pointer items-center justify-center rounded-sm border border-transparent bg-text-primary px-2 text-xs font-normal text-surface transition-all hover:opacity-90 md:flex'
+                'relative hidden h-8 cursor-pointer items-center justify-center rounded-xl border border-transparent bg-text-primary px-3 text-xs font-normal text-surface transition-all hover:opacity-90 md:flex'
               }
             >
               {'Connect wallet'}
@@ -118,11 +118,26 @@ function AppHeader(): ReactElement {
   const pathname = location.pathname
   const [isLauncherOpen, setIsLauncherOpen] = useState(false)
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false)
+  const launcherTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const { notificationStatus } = useNotifications()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
 
   const isHomePage = normalizePathname(pathname) === '/'
+
+  const handleLauncherMouseEnter = (): void => {
+    if (launcherTimeoutRef.current) {
+      clearTimeout(launcherTimeoutRef.current)
+      launcherTimeoutRef.current = null
+    }
+    setIsLauncherOpen(true)
+  }
+
+  const handleLauncherMouseLeave = (): void => {
+    launcherTimeoutRef.current = setTimeout(() => {
+      setIsLauncherOpen(false)
+    }, 150)
+  }
 
   const navLinkClass = (isActive: boolean): string =>
     cl(
@@ -135,11 +150,10 @@ function AppHeader(): ReactElement {
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         <header className={'flex h-[var(--header-height)] w-full items-center justify-between px-0'}>
           <div className={'flex items-center justify-start gap-x-4 px-1 py-2 md:py-1'}>
-            <div className={'relative'}>
+            <div className={'relative'} onMouseEnter={handleLauncherMouseEnter} onMouseLeave={handleLauncherMouseLeave}>
               <button
                 type={'button'}
                 onMouseDown={(e) => e.stopPropagation()}
-                onClick={() => setIsLauncherOpen(!isLauncherOpen)}
                 className={'flex items-center gap-1 transition-colors hover:opacity-80'}
               >
                 <TypeMarkYearn className={'h-8 w-auto'} color={isDarkTheme ? '#FFFFFF' : '#0657F9'} />

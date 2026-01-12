@@ -89,19 +89,18 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
   return (
     <div className={'flex flex-col'}>
       <div className={cl('rounded-2xl p-4', isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100')}>
-        <div className={'mb-3 flex items-start justify-between'}>
-          <div className={'flex items-center gap-3'}>
-            {clusters?.avatar ? (
-              <img src={clusters.avatar} alt={''} className={'size-10 rounded-xl'} />
+        <div className={'mb-4 flex items-start justify-between'}>
+          <div className={'flex flex-col'}>
+            <p className={'text-sm font-medium text-text-primary'}>{displayName}</p>
+            {isWalletLoading ? (
+              <div className={'mt-1 h-7 w-20 animate-pulse rounded bg-surface-tertiary'} />
             ) : (
-              <div
-                className={cl(
-                  'flex size-10 items-center justify-center rounded-xl',
-                  isDarkTheme ? 'bg-surface-tertiary' : 'bg-neutral-200'
-                )}
-              >
-                <LogoYearn className={'size-6'} front={'text-white'} back={'text-primary'} />
-              </div>
+              <p className={'text-2xl font-bold text-text-primary'}>
+                <span>{formatUSD(Math.floor(totalValue), 0, 0)}</span>
+                <span className={'text-text-secondary'}>
+                  {totalValue > 0 ? `.${(totalValue % 1).toFixed(2).substring(2)}` : ''}
+                </span>
+              </p>
             )}
           </div>
           <div className={'flex items-center gap-1'}>
@@ -112,21 +111,6 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
               <IconPower className={'size-4'} />
             </button>
           </div>
-        </div>
-
-        <p className={'mb-2 text-sm font-medium text-text-primary'}>{displayName}</p>
-
-        <div className={'mb-4'}>
-          {isWalletLoading ? (
-            <div className={'h-8 w-24 animate-pulse rounded bg-surface-tertiary'} />
-          ) : (
-            <p className={'text-2xl font-bold text-text-primary'}>
-              <span>{formatUSD(Math.floor(totalValue), 0, 0)}</span>
-              <span className={'text-text-secondary'}>
-                {totalValue > 0 ? `.${(totalValue % 1).toFixed(2).substring(2)}` : ''}
-              </span>
-            </p>
-          )}
         </div>
 
         <button
