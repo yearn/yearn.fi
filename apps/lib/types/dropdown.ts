@@ -30,26 +30,3 @@ export type TDropdownProps = {
 export type TDropdownItemProps = {
   option: TDropdownOption
 }
-
-export type TDropdownGaugeOption = {
-  label: string
-  icon?: ReactElement
-  value: {
-    name: string
-    tokenAddress: TAddress
-    poolAddress: TAddress
-    gaugeAddress: TAddress
-    APY: number
-  }
-}
-
-export type TDropdownGaugeProps = {
-  options: TDropdownGaugeOption[]
-  selected?: TDropdownGaugeOption
-  placeholder?: string
-  onSelect: React.Dispatch<React.SetStateAction<TDropdownGaugeOption>> | ((option: TDropdownGaugeOption) => void)
-}
-
-export type TDropdownGaugeItemProps = {
-  option: TDropdownGaugeOption
-}

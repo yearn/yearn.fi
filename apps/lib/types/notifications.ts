@@ -9,12 +9,14 @@ export type TNotificationType =
   | 'withdraw'
   | 'zap'
   | 'crosschain zap'
+  | 'withdraw zap'
+  | 'crosschain withdraw zap'
   | 'deposit and stake'
   | 'stake'
   | 'unstake'
+  | 'unstake and withdraw'
   | 'claim'
   | 'claim and exit'
-  | 'migrate'
 
 export type TNotification = {
   id?: number
@@ -30,6 +32,7 @@ export type TNotification = {
   fromAmount?: string
   toAddress?: TAddress // Vault token to receive
   toTokenName?: string
+  toAmount?: string // Expected output amount for withdrawals
   txHash?: Hash
   timeFinished?: number
   blockNumber?: bigint
@@ -60,6 +63,7 @@ export type TCreateNotificationParams = {
   fromChainId: number
   toAddress?: TAddress // optional for approve/claim
   toSymbol?: string
+  toAmount?: string // expected output amount for withdrawals
   toChainId?: number // only when cross-chain
 }
 

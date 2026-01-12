@@ -11,7 +11,6 @@ import { cl, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
-import Image from '/src/components/Image'
 import Link from '/src/components/Link'
 
 const STATUS: { [key: string]: [string, string, ReactElement] } = {
@@ -103,50 +102,30 @@ function NotificationContent({
   return (
     <div className={'flex gap-4'}>
       <div className={'flex flex-col items-center gap-3'}>
-        <div className={'relative'}>
+        <TokenLogo
+          src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          tokenSymbol={notification.fromTokenName}
+          chainId={notification.chainId}
+          width={32}
+          height={32}
+          className="rounded-full"
+          loading="eager"
+        />
+
+        {notification.toTokenName && <IconArrow className={'size-4 rotate-135'} />}
+
+        {notification.toTokenName && notification.toAddress && (
           <TokenLogo
-            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-            altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-            tokenSymbol={notification.fromTokenName}
+            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
+            altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
+            tokenSymbol={notification.toTokenName}
+            chainId={notification.toChainId || notification.chainId}
             width={32}
             height={32}
             className="rounded-full"
             loading="eager"
           />
-          <div className={'absolute bottom-6 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
-            <Image
-              className={'object-contain'}
-              width={14}
-              height={14}
-              alt={'chain'}
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${notification.chainId}/logo.svg`}
-            />
-          </div>
-        </div>
-
-        {notification.toTokenName && <IconArrow className={'size-4 rotate-135'} />}
-
-        {notification.toTokenName && notification.toAddress && (
-          <div className={'relative'}>
-            <TokenLogo
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
-              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-128.png`}
-              tokenSymbol={notification.toTokenName}
-              width={32}
-              height={32}
-              className="rounded-full"
-              loading="eager"
-            />
-            <div className={'absolute bottom-6 left-5 flex size-4 items-center justify-center rounded-full bg-white'}>
-              <Image
-                className={'object-contain'}
-                width={14}
-                height={14}
-                alt={'chain'}
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${notification.toChainId || notification.chainId}/logo.svg`}
-              />
-            </div>
-          </div>
         )}
       </div>
       <div className={'flex-1'}>
@@ -296,8 +275,6 @@ export const Notification = memo(function Notification({
         return 'Claim'
       case 'claim and exit':
         return 'Claim & Exit'
-      case 'migrate':
-        return 'Migrate'
       default:
         return 'Transaction'
     }

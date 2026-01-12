@@ -1,5 +1,5 @@
-import { ImageWithFallback } from '@lib/components/ImageWithFallback'
 import { TokenLogo } from '@lib/components/TokenLogo'
+import { useWeb3 } from '@lib/contexts/useWeb3'
 import { cl, exactToSimple, simpleToExact } from '@lib/utils'
 import type { useDebouncedInput } from '@vaults/hooks/useDebouncedInput'
 import type { useInput } from '@vaults/hooks/useInput'
@@ -67,6 +67,7 @@ export const InputTokenAmountV2: FC<Props> = ({
   zapNotificationText
 }) => {
   const account = useAccount()
+  const { openLoginModal } = useWeb3()
   const [
     {
       formValue,
@@ -225,6 +226,7 @@ export const InputTokenAmountV2: FC<Props> = ({
                   src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${tokenChainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                   tokenSymbol={symbol ?? ''}
                   tokenName={symbol ?? ''}
+                  chainId={tokenChainId}
                   width={32}
                   height={32}
                   className="rounded-full"
@@ -247,10 +249,27 @@ export const InputTokenAmountV2: FC<Props> = ({
           ) : (
             <div className="text-sm text-text-secondary">${inputUsdValue}</div>
           )}
-          {balance !== undefined && balance !== 0n && symbol && (
-            <div className="text-sm text-text-secondary">
-              Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
-            </div>
+          {!account.address ? (
+            <button
+              type="button"
+              onClick={openLoginModal}
+              className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Connect wallet
+            </button>
+          ) : (
+            balance !== undefined &&
+            balance !== 0n &&
+            symbol && (
+              <button
+                type="button"
+                onClick={() => handlePercentageClick(100)}
+                disabled={disabled || isMaxButtonLoading}
+                className="text-sm text-text-secondary hover:text-text-primary transition-colors disabled:cursor-not-allowed"
+              >
+                Balance: {exactToSimple(balance, decimals ?? input[0].decimals)} {symbol}
+              </button>
+            )
           )}
         </div>
       </div>
@@ -287,17 +306,16 @@ export const InputTokenAmountV2: FC<Props> = ({
                   className={cl(
                     'px-2 py-1 rounded-lg flex items-center gap-2 transition-colors',
                     disabled ? 'bg-transparent cursor-not-allowed' : 'bg-transparent hover:bg-surface-secondary',
-                    'text-text-primary text-2xl font-medium'
+                    'text-text-primary text-xl font-medium'
                   )}
                 >
                   {zapToken.address && zapToken.chainId && (
-                    <ImageWithFallback
-                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-                        zapToken.chainId
-                      }/${zapToken.address.toLowerCase()}/logo-32.png`}
-                      alt={zapToken.symbol}
-                      width={28}
-                      height={28}
+                    <TokenLogo
+                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
+                      tokenSymbol={zapToken.symbol}
+                      chainId={zapToken.chainId}
+                      width={32}
+                      height={32}
                       className="rounded-full"
                     />
                   )}

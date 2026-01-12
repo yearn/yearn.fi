@@ -12,6 +12,7 @@ interface TokenSelectorProps {
   chainId: number
   limitTokens?: Address[]
   excludeTokens?: Address[]
+  priorityTokens?: Record<number, Address[]> // chainId -> addresses to always show
   onClose?: () => void
 }
 
@@ -54,6 +55,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   chainId,
   limitTokens,
   excludeTokens,
+  priorityTokens,
   onClose
 }) => {
   const [searchText, setSearchText] = useState('')
@@ -98,6 +100,17 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       }
     }
 
+    // Include priority tokens even if they have no balance
+    const chainPriorityTokens = priorityTokens?.[selectedChainId] || []
+    for (const priorityAddress of chainPriorityTokens) {
+      if (!tokenList.some((t) => t.address?.toLowerCase() === priorityAddress.toLowerCase())) {
+        const priorityToken = getToken({ address: toAddress(priorityAddress), chainID: selectedChainId })
+        if (priorityToken.symbol) {
+          tokenList.push(priorityToken)
+        }
+      }
+    }
+
     // Include custom address if valid
     if (
       customAddress &&
@@ -111,7 +124,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     }
 
     return tokenList
-  }, [balances, selectedChainId, value, customAddress, getToken])
+  }, [balances, selectedChainId, value, customAddress, getToken, priorityTokens])
 
   // Filter tokens based on search and limits
   const filteredTokens = useMemo(() => {
@@ -155,13 +168,12 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
   const handleSelect = useCallback(
     (address: Address) => {
-      // Pass the selected chain ID when it's different from the original chain
-      onChange(address, selectedChainId !== chainId ? selectedChainId : undefined)
+      onChange(address, selectedChainId)
       if (onClose) {
         onClose()
       }
     },
-    [onChange, onClose, selectedChainId, chainId]
+    [onChange, onClose, selectedChainId]
   )
   return (
     <div

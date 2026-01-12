@@ -28,7 +28,7 @@ function WithLayout(): ReactElement {
   return (
     <>
       <div className={'sticky top-0 z-60 w-full'}>
-        <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
+        <AppHeader />
       </div>
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>

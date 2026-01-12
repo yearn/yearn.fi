@@ -65,8 +65,6 @@ export function AppRoutes(): ReactElement {
         <Route path="/v2/*" element={<Navigate to="/vaults?type=lp" replace />} />
         <Route path="/v3" element={<Navigate to="/vaults" replace />} />
         <Route path="/v3/*" element={<Navigate to="/vaults" replace />} />
-        <Route path="/vaults" element={<Navigate to="/vaults" replace />} />
-        <Route path="/vaults/*" element={<Navigate to="/vaults" replace />} />
 
         {/* External redirects */}
         <Route path="/ybribe/*" element={<ExternalRedirect to="https://ybribe.yearn.fi" />} />

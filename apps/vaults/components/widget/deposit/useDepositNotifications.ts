@@ -12,6 +12,7 @@ interface UseDepositNotificationsProps {
   stakingToken?: Token
   // Addresses
   depositToken: Address
+  assetAddress: Address
   destinationToken: Address
   stakingAddress?: Address
   // Account & chain
@@ -36,6 +37,7 @@ export const useDepositNotifications = ({
   vault,
   stakingToken,
   depositToken,
+  assetAddress,
   destinationToken,
   stakingAddress,
   account,
@@ -46,9 +48,11 @@ export const useDepositNotifications = ({
   routerAddress,
   isCrossChain
 }: UseDepositNotificationsProps): DepositNotificationsResult => {
+  const isZap = toAddress(depositToken) !== toAddress(assetAddress)
+  const isDepositAndStake = stakingAddress && toAddress(destinationToken) === toAddress(stakingAddress) && !isZap
+
   const approveNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!inputToken || !vault || !account) return undefined
-    if (routeType === 'DIRECT_DEPOSIT') return undefined
 
     let spenderAddress: Address
     let spenderName: string
@@ -58,7 +62,10 @@ export const useDepositNotifications = ({
       spenderName = routerAddress ? 'Enso Router' : vault.symbol || ''
     } else if (routeType === 'DIRECT_STAKE') {
       spenderAddress = stakingAddress || destinationToken
-      spenderName = 'Staking Contract'
+      spenderName = stakingToken?.symbol || 'Staking Contract'
+    } else if (routeType === 'DIRECT_DEPOSIT') {
+      spenderAddress = destinationToken
+      spenderName = vault.symbol || 'Vault'
     } else {
       return undefined
     }
@@ -66,7 +73,7 @@ export const useDepositNotifications = ({
     return {
       type: 'approve',
       amount: formatTAmount({
-        value: inputToken.balance.raw,
+        value: depositAmount,
         decimals: inputToken.decimals ?? 18,
         options: { maximumFractionDigits: 8 }
       }),
@@ -79,10 +86,12 @@ export const useDepositNotifications = ({
   }, [
     inputToken,
     vault,
+    stakingToken,
     account,
     routeType,
     routerAddress,
     depositToken,
+    depositAmount,
     sourceChainId,
     destinationToken,
     stakingAddress
@@ -91,15 +100,24 @@ export const useDepositNotifications = ({
   const depositNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!inputToken || !vault || !account || depositAmount === 0n) return undefined
 
-    let notificationType: 'deposit' | 'zap' | 'crosschain zap' | 'stake' = 'deposit'
+    let notificationType: 'deposit' | 'deposit and stake' | 'zap' | 'crosschain zap' | 'stake' = 'deposit'
     if (routeType === 'ENSO') {
-      notificationType = isCrossChain ? 'crosschain zap' : 'zap'
+      if (isCrossChain) {
+        notificationType = 'crosschain zap'
+      } else if (isZap) {
+        notificationType = 'zap'
+      } else if (isDepositAndStake) {
+        notificationType = 'deposit and stake'
+      }
     } else if (routeType === 'DIRECT_STAKE') {
       notificationType = 'stake'
+    } else {
+      notificationType = 'deposit'
     }
 
+    // Use staking token symbol if destination is staking contract
     const destinationTokenSymbol =
-      routeType === 'DIRECT_STAKE' && stakingToken ? stakingToken.symbol || vault.symbol || '' : vault.symbol || ''
+      isDepositAndStake && stakingToken ? stakingToken.symbol || vault.symbol || '' : vault.symbol || ''
 
     return {
       type: notificationType,
@@ -122,6 +140,8 @@ export const useDepositNotifications = ({
     depositAmount,
     routeType,
     isCrossChain,
+    isZap,
+    isDepositAndStake,
     depositToken,
     sourceChainId,
     destinationToken,

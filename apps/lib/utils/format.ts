@@ -433,13 +433,6 @@ export function formatPercent(n: number, min = 2, max = 2, upperLimit = 500): st
   return `${formatAmount(safeN || 0, min, max)}%`
 }
 
-export const formatNumberOver10K = (n: number): string => {
-  if (n >= 10000) {
-    return formatAmount(n, 0, 0) ?? ''
-  }
-  return formatAmount(n) ?? ''
-}
-
 export function formatCounterValue(amount: number | string, price: number): string {
   if (!amount || !price) {
     return `$${formatAmount(0, 2, 2)}`
@@ -450,17 +443,6 @@ export function formatCounterValue(amount: number | string, price: number): stri
     return `$${formatAmount(value, 0, 0)}`
   }
   return `$${formatAmount(value, 2, 2)}`
-}
-
-export function formatCounterValueRaw(amount: number | string, price: number): string {
-  if (!amount || !price) {
-    return ''
-  }
-  const value = (Number(amount) || 0) * (price || 0)
-  if (value > 10000) {
-    return formatAmount(value, 0, 0)
-  }
-  return formatAmount(value, 2, 2)
 }
 
 /******************************************************************

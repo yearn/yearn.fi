@@ -8,7 +8,8 @@ import type { ReactElement, ReactNode } from 'react'
 import type { Chain } from 'viem'
 import Link from '/src/components/Link'
 import { LogoGithub } from '../icons/LogoGithub'
-import type { TMenu } from './Header'
+
+type TMenu = { path: string; label: string | ReactElement; target?: string }
 
 const menu: TMenu[] = [
   { path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank' },
