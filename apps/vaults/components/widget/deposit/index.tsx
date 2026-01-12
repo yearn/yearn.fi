@@ -163,6 +163,7 @@ export const WidgetDeposit: FC<Props> = ({
     vault,
     stakingToken,
     depositToken,
+    assetAddress,
     destinationToken,
     stakingAddress,
     account,
