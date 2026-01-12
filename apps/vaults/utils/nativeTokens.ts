@@ -9,24 +9,6 @@ import {
   ZAP_FTM_WFTM_CONTRACT,
   ZERO_ADDRESS
 } from '@lib/utils/constants'
-import { zeroAddress } from 'viem'
-
-export function getMessariSubgraphEndpoint(chainID: number): string {
-  switch (chainID) {
-    case 1:
-      return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum'
-    case 250:
-      return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-fantom'
-    case 42161:
-      return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-arbitrum'
-    //testnets
-    case 1337:
-      return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum'
-    default:
-      return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum'
-  }
-}
-
 export function getEthZapperContract(chainID: number): TAddress {
   switch (chainID) {
     case 1:
@@ -61,38 +43,4 @@ export function getNativeTokenWrapperContract(chainID: number): TAddress {
     default:
       return ZERO_ADDRESS
   }
-}
-
-export function getNativeTokenWrapperName(chainID: number): string {
-  switch (chainID) {
-    case 1:
-      return 'ETH'
-    case 10:
-      return 'OPT'
-    case 250:
-      return 'FTM'
-    case 42161:
-      return 'ARB'
-    // testnets
-    case 1337:
-      return 'ETH'
-    default:
-      return 'ETH'
-  }
-}
-
-export function truncateHexTx(hash: string | undefined, size: number): string {
-  if (hash !== undefined) {
-    if (size === 0) {
-      return hash
-    }
-    if (hash.length <= size * 2 + 4) {
-      return hash
-    }
-    return `0x${hash.slice(2, size + 2)}...${hash.slice(-size)}`
-  }
-  if (size === 0) {
-    return zeroAddress
-  }
-  return `0x${zeroAddress.slice(2, size)}...${zeroAddress.slice(-size)}`
 }

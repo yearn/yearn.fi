@@ -121,17 +121,6 @@ export type TTokenList = {
   }[]
 }
 
-export type TGraphData = {
-  name: string
-  value: number
-}
-
-export type TMessariGraphData = {
-  name: string
-  tvl: number
-  pps: number
-}
-
 export type TYToken = TToken & {
   stakingValue: number
 }
