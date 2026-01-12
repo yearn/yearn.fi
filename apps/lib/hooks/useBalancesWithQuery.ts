@@ -15,7 +15,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
   const { address: userAddress } = useWeb3()
   const queryClient = useQueryClient()
 
-  const tokens = useMemo(() => props?.tokens || [], [props?.tokens])
+  const tokens = useMemo(() => (userAddress ? props?.tokens || [] : []), [props?.tokens, userAddress])
 
   // Use the new TanStack Query hook
   const {
