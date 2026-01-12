@@ -19,6 +19,8 @@ const AllocationChart = lazy(() =>
 )
 
 export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+  // codex: Global vault registry used to resolve strategy addresses that are also standalone vaults (v3).
+  // RG: same note as before, if someone visits this page directly we should lazy load the vaults list after initial render.
   const { vaults } = useYearn()
   const isDark = useDarkMode()
   const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
@@ -26,33 +28,44 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
     defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
     defaultPathname: '/vaults/[chainID]/[address]'
   })
+  // codex: Token price is used to format strategy allocation amounts in the chart and list.
   const tokenPrice = useYearnTokenPrice({
     address: currentVault.token.address,
     chainID: currentVault.chainID
   })
 
+  // codex: Build a list of strategies that are also vaults (v3 allocators/strategies live in the vaults map).
+  /** Gets the strategies for the vault and looks for them in the vaults list to get their details.
+   * This will only pick up v3 strategies since those are also vaults.
+   */
   const vaultList = useMemo((): TYDaemonVault[] => {
     const _vaultList = []
     for (const strategy of currentVault?.strategies || []) {
+      console.dir(strategy)
       _vaultList.push({
         ...vaults[strategy.address],
         details: strategy.details,
         status: strategy.status
       })
     }
+    console.dir('_vaultlist', _vaultList)
     return _vaultList.filter((vault) => !!vault.address)
   }, [vaults, currentVault])
 
+  // codex: Collect strategies that are not represented as vaults (legacy/v2 style strategies).
   const strategyList = useMemo((): TYDaemonVaultStrategy[] => {
     const _stratList = []
     for (const strategy of currentVault?.strategies || []) {
+      console.dir('strategies2', strategy)
       if (!vaults[strategy.address]) {
         _stratList.push(strategy)
       }
     }
+    console.dir('_stratlist', _stratList)
     return _stratList
   }, [vaults, currentVault])
 
+  // codex: Merge both sources into one list the UI can sort, chart, and render.
   const mergedList = useMemo(
     () =>
       [...vaultList, ...strategyList] as (TYDaemonVault & {
@@ -62,23 +75,27 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
     [vaultList, strategyList]
   )
 
+  // codex: Compute unallocated values by subtracting strategy allocations from total assets.
   const unallocatedPercentage =
     100 * 100 - mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
   const unallocatedValue =
     Number(currentVault.tvl.totalAssets) -
     mergedList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0)
 
+  // codex: Drop inactive strategies before charting/sorting; list rendering uses this filtered set.
   const filteredVaultList = useMemo(() => {
     const strategies = mergedList.filter((vault) => vault.status !== 'not_active')
     return strategies
   }, [mergedList])
 
+  // codex: Sort strategies using query params so the list and table are consistent with user choice.
   const sortedVaultsToDisplay = useSortVaults(filteredVaultList, sortBy, sortDirection) as (TYDaemonVault & {
     details: TYDaemonVaultStrategy['details']
     status: TYDaemonVaultStrategy['status']
     netAPR: TYDaemonVaultStrategy['netAPR']
   })[]
 
+  // codex: Build chart series from allocated strategies only (needs debtRatio + non-zero totalDebt).
   const activeStrategyData = useMemo(() => {
     return filteredVaultList
       .filter((strategy) => {
@@ -97,6 +114,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
       }))
   }, [filteredVaultList, currentVault.token.decimals, tokenPrice])
 
+  // codex: Add the unallocated slice to the allocation chart if there is remaining value.
   const allocationChartData = useMemo(() => {
     const unallocatedData =
       unallocatedValue > 0

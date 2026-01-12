@@ -60,6 +60,11 @@ function Index(): ReactElement | null {
   const params = useParams()
   const chainId = Number(params.chainID)
   const { onRefresh } = useWallet()
+
+  // codex: Pull the base vault registries; strategies that are also vaults are resolved from here.
+  // This is coming from context that preloads all vaults. We don't need this when loading a page directly.
+  // RG: ideally we dont need all of this on initial load of this page as we only need the specific vault data.
+  // RG: It would be good to lazy load the full vaults list after initial render and getting the primary page data.
   const { vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
@@ -155,23 +160,33 @@ function Index(): ReactElement | null {
     }
   }, [vaultKey])
 
+  /**RG: This seems to be getting vault info from the existing vaults array if it exists.
+   * Great if the user is coming from the vaults page, but if not, ideally we don't have to fetch this data yet.
+   * */
+  // codex: Select the base yDaemon vault record (includes strategies + details) that we later augment.
   const baseVault = useMemo(() => {
     if (!params.address) return undefined
     const resolvedAddress = toAddress(params.address)
     return vaults[resolvedAddress] ?? vaultsMigrations[resolvedAddress] ?? vaultsRetired[resolvedAddress]
   }, [params.address, vaults, vaultsMigrations, vaultsRetired])
 
+  /**RG: This should have almost everything we need and fetches the latest vault info from the snapshot API */
+  // codex: Fetch the Kong REST snapshot for this vault, used to enrich strategy debt + meta.
   const { data: snapshotVault, isLoading: isLoadingSnapshotVault, mutate: mutateSnapshot } = useVaultSnapshot({
     chainId,
     address: params.address
   })
 
+  /**RG: I think we can get rid of this too and use only data from useVaultSnapshot */
+  // codex: Fetch Kong GraphQL strategy details (names/APR/etc) used to override strategy rows when needed.
   const { strategies: kongStrategies, isLoading: isLoadingKongStrategies } = useVaultStrategiesKong({
     chainId,
     address: params.address
   })
 
+  // codex: Merge snapshot data into the base vault so strategies and metrics have the latest snapshot values.
   const baseMergedVault = useMemo(() => mergeVaultSnapshot(baseVault, snapshotVault), [baseVault, snapshotVault])
+  // codex: Detect whether Kong strategies include allocation data; used to avoid replacing valid base strategies.
   const hasKongAllocations = useMemo(() => {
     if (!kongStrategies || kongStrategies.length === 0) return false
     return kongStrategies.some((strategy) => {
@@ -186,6 +201,7 @@ function Index(): ReactElement | null {
       }
     })
   }, [kongStrategies])
+  // codex: Prefer Kong strategies only when they contain allocation data (or base lacks strategies).
   const vaultWithStrategies = useMemo(() => {
     if (!baseMergedVault) return undefined
     const shouldUseKongStrategies =
@@ -199,22 +215,26 @@ function Index(): ReactElement | null {
     return baseMergedVault
   }, [baseMergedVault, kongStrategies, hasKongAllocations])
 
+  // codex: yBOLD needs an additional staking vault snapshot to override strategy data.
   const isYBold = useMemo(() => {
     if (!vaultWithStrategies?.address && !params.address) return false
     const resolvedAddress = vaultWithStrategies?.address ?? toAddress(params.address ?? '')
     return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
   }, [vaultWithStrategies?.address, params.address])
 
+  // codex: Fetch the yBOLD staking vault snapshot so we can merge it into the current vault.
   const { data: yBoldSnapshot, mutate: mutateYBoldSnapshot } = useVaultSnapshot({
     chainId: isYBold ? chainId : undefined,
     address: isYBold ? YBOLD_STAKING_ADDRESS : undefined
   })
 
+  // codex: Build the staking vault payload (including strategies) that will be merged into yBOLD.
   const yBoldStakingVault = useMemo(() => {
     if (!isYBold) return undefined
     const baseStakingVault = vaults[toAddress(YBOLD_STAKING_ADDRESS)]
     return mergeVaultSnapshot(baseStakingVault, yBoldSnapshot)
   }, [isYBold, vaults, yBoldSnapshot])
+  // codex: Final vault payload consumed by VaultStrategiesSection (after snapshot + Kong + yBOLD merges).
   const currentVault = useMemo(() => {
     if (!vaultWithStrategies) return undefined
     if (isYBold && yBoldStakingVault) {
@@ -412,6 +432,7 @@ function Index(): ReactElement | null {
       },
       {
         key: 'strategies' as const,
+        // codex: Only render the Strategies section when the final vault payload includes strategies.
         shouldRender: Number(currentVault.strategies?.length || 0) > 0,
         ref: sectionRefs.strategies,
         content: <VaultStrategiesSection currentVault={currentVault} />
