@@ -40,7 +40,7 @@ export function DevToolbar(): ReactElement | null {
   }
 
   return (
-    <div className={'pointer-events-none fixed right-4 top-4 z-[120] flex flex-col items-end'}>
+    <div className={'pointer-events-none fixed right-32 top-4 z-[120] flex flex-col items-end'}>
       <button
         type={'button'}
         onClick={(): void => setIsOpen((previous) => !previous)}

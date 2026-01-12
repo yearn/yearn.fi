@@ -1,12 +1,12 @@
 import { useWallet } from '@lib/contexts/useWallet'
 import { useYearn } from '@lib/contexts/useYearn'
 import type { TSortDirection } from '@lib/types'
-import { isZero, toAddress, toNormalizedBN } from '@lib/utils'
+import { toAddress, toNormalizedBN } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { getVaultName, numberSort, stringSort } from '@lib/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy, TYDaemonVaults } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { calculateVaultEstimatedAPY } from '@lib/utils/vaultApy'
 import { useCallback, useMemo } from 'react'
-import { deserialize, serialize } from 'wagmi'
 
 export type TPossibleSortBy =
   | 'APY'
@@ -29,7 +29,7 @@ export function useSortVaults(
   const { getPrice, katanaAprs } = useYearn()
 
   const sortedByName = useCallback((): TYDaemonVaults => {
-    if (sortBy !== 'estAPY') {
+    if (sortBy !== 'name') {
       return vaultList
     }
     return vaultList.toSorted((a, b): number =>
@@ -45,70 +45,13 @@ export function useSortVaults(
     if (sortBy !== 'estAPY') {
       return vaultList
     }
-    return vaultList.toSorted((a, b): number => {
-      let aAPY = 0
-      // Handle Katana vaults (chainID 747474)
-      if (a.chainID === 747474) {
-        const katanaAprData = katanaAprs?.[toAddress(a.address)]?.apr?.extra
-        if (katanaAprData) {
-          // Calculate total APR excluding legacy katanaRewardsAPR
-          aAPY =
-            (katanaAprData.katanaNativeYield || 0) +
-            (katanaAprData.FixedRateKatanaRewards || 0) +
-            (katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR ?? 0) +
-            (katanaAprData.katanaBonusAPY || 0) +
-            (katanaAprData.steerPointsPerDollar || 0)
-        }
-      } else if (a.apr?.forwardAPR.type === '') {
-        aAPY = a.apr.extra.stakingRewardsAPR + a.apr.netAPR
-      } else if (a.chainID === 1 && a.apr.forwardAPR.composite.boost > 0 && !a.apr.extra.stakingRewardsAPR) {
-        aAPY = a.apr.forwardAPR.netAPR
-      } else {
-        const sumOfRewardsAPY = a.apr?.extra.stakingRewardsAPR + a.apr?.extra.gammaRewardAPR
-        const hasCurrentAPY = !isZero(a?.apr?.forwardAPR.netAPR)
-        if (sumOfRewardsAPY > 0) {
-          aAPY = sumOfRewardsAPY + a.apr?.forwardAPR.netAPR
-        } else if (hasCurrentAPY) {
-          aAPY = a.apr?.forwardAPR.netAPR
-        } else {
-          aAPY = a.apr?.netAPR
-        }
-      }
-
-      let bAPY = 0
-      // Handle Katana vaults (chainID 747474)
-      if (b.chainID === 747474) {
-        const katanaAprData = katanaAprs?.[toAddress(b.address)]?.apr?.extra
-        if (katanaAprData) {
-          // Calculate total APR excluding legacy katanaRewardsAPR
-          bAPY =
-            (katanaAprData.katanaNativeYield || 0) +
-            (katanaAprData.FixedRateKatanaRewards || 0) +
-            (katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR ?? 0) +
-            (katanaAprData.katanaBonusAPY || 0) +
-            (katanaAprData.steerPointsPerDollar || 0)
-        }
-      } else if (b.apr?.forwardAPR.type === '') {
-        bAPY = b.apr?.extra.stakingRewardsAPR + b.apr?.netAPR
-      } else if (b.chainID === 1 && b.apr?.forwardAPR.composite.boost > 0 && !b.apr?.extra.stakingRewardsAPR) {
-        bAPY = b.apr?.forwardAPR.netAPR
-      } else {
-        const sumOfRewardsAPY = b.apr?.extra.stakingRewardsAPR + b.apr?.extra.gammaRewardAPR
-        const hasCurrentAPY = !isZero(b?.apr?.forwardAPR.netAPR)
-        if (sumOfRewardsAPY > 0) {
-          bAPY = sumOfRewardsAPY + b.apr?.forwardAPR.netAPR
-        } else if (hasCurrentAPY) {
-          bAPY = b.apr?.forwardAPR.netAPR
-        } else {
-          bAPY = b.apr?.netAPR
-        }
-      }
-      return numberSort({
-        a: aAPY,
-        b: bAPY,
+    return vaultList.toSorted((a, b): number =>
+      numberSort({
+        a: calculateVaultEstimatedAPY(a, katanaAprs),
+        b: calculateVaultEstimatedAPY(b, katanaAprs),
         sortDirection
       })
-    })
+    )
   }, [sortDirection, vaultList, sortBy, katanaAprs])
 
   const sortedByAPY = useCallback((): TYDaemonVaults => {
@@ -230,12 +173,9 @@ export function useSortVaults(
     })
   }, [sortBy, sortDirection, vaultList])
 
-  const stringifiedVaultList = serialize(vaultList)
   const sortedVaults = useMemo((): TYDaemonVaults => {
-    const sortResult = deserialize(stringifiedVaultList) as TYDaemonVaults
-
     if (sortDirection === '') {
-      return sortResult
+      return vaultList
     }
     if (sortBy === 'name') {
       return sortedByName()
@@ -268,9 +208,9 @@ export function useSortVaults(
       return sortByScore()
     }
 
-    return sortResult
+    return vaultList
   }, [
-    stringifiedVaultList,
+    vaultList,
     sortDirection,
     sortBy,
     sortedByName,

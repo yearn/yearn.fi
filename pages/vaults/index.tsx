@@ -300,8 +300,22 @@ function ListOfVaults({
   }, [availableVaults.length, isAvailablePinned])
 
   const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
-  const sortedHoldingsVaults = useSortVaults(holdingsVaults, sortBy, sortDirection)
-  const sortedAvailableVaults = useSortVaults(availableVaults, sortBy, sortDirection)
+  const holdingsKeySet = useMemo(
+    () => new Set(holdingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
+    [holdingsVaults]
+  )
+  const availableKeySet = useMemo(
+    () => new Set(availableVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
+    [availableVaults]
+  )
+  const sortedHoldingsVaults = useMemo(
+    () => sortedVaults.filter((vault) => holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`)),
+    [sortedVaults, holdingsKeySet]
+  )
+  const sortedAvailableVaults = useMemo(
+    () => sortedVaults.filter((vault) => availableKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`)),
+    [sortedVaults, availableKeySet]
+  )
   const sortedSuggestedV3Candidates = useSortVaults(filteredVaultsAllChains, 'featuringScore', 'desc')
   const sortedSuggestedV2Candidates = useSortVaults(filteredV2VaultsAllChains, 'featuringScore', 'desc')
 
@@ -361,11 +375,6 @@ function ListOfVaults({
     }
     return sortedVaults.filter((vault) => !pinnedVaultKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
   }, [pinnedVaultKeys, pinnedVaults, sortedVaults])
-
-  const holdingsKeySet = useMemo(
-    () => new Set(holdingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
-    [holdingsVaults]
-  )
 
   const suggestedV3Vaults = useMemo(
     () =>
@@ -1031,6 +1040,7 @@ function useVaultListExtraFilters(): {
 
 function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElement {
   usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType === 'v3')
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const {
     protocols,
@@ -1052,12 +1062,26 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
     resetTypes: vaultType === 'v3' ? ['multi'] : V2_DEFAULT_TYPES,
     resetCategories: []
   })
+  const [sortBy, setSortBy] = useState<TPossibleSortBy>('featuringScore')
+  const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
+
+  useEffect(() => {
+    if (!searchParams.has('sortDirection') && !searchParams.has('sortBy')) {
+      return
+    }
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('sortDirection')
+    nextParams.delete('sortBy')
+    setSearchParams(nextParams, { replace: true })
+  }, [searchParams, setSearchParams])
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
       <div className={'mx-auto w-full max-w-[1232px] px-4 pb-4'}>
         <ListOfVaults
           {...queryArgs}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
           protocols={protocols}
           aggressiveness={aggressiveness}
           showHiddenVaults={showHiddenVaults}
@@ -1066,6 +1090,20 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
           onChangeAggressiveness={onChangeAggressiveness}
           onChangeShowHiddenVaults={onChangeShowHiddenVaults}
           onChangeShowStrategies={onChangeShowStrategies}
+          onChangeSortBy={(value): void => {
+            if (!value) {
+              setSortBy('featuringScore')
+              return
+            }
+            setSortBy(value)
+          }}
+          onChangeSortDirection={(value): void => {
+            if (!value) {
+              setSortDirection('desc')
+              return
+            }
+            setSortDirection(value)
+          }}
           onResetMultiSelect={(): void => {
             queryArgs.onResetMultiSelect()
             onResetExtraFilters()

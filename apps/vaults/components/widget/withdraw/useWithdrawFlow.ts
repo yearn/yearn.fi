@@ -90,7 +90,7 @@ export const useWithdrawFlow = ({
   // Direct unstake flow (staking → vault)
   const directUnstake = useDirectUnstake({
     stakingAddress,
-    amount: currentAmount,
+    amount: requiredShares,
     account,
     chainId,
     enabled: routeType === 'DIRECT_UNSTAKE' && currentAmount > 0n

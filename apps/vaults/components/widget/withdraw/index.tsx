@@ -168,7 +168,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     chainId
   })
 
-  const { data: stakingPricePerShare } = useReadContract({
+  const { data: stakingPricePerShare = 1n * 10n ** BigInt(stakingToken?.decimals ?? 18) } = useReadContract({
     address: stakingAddress,
     abi: vaultAbi,
     functionName: 'pricePerShare',
@@ -185,7 +185,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     }
     const vaultDecimals = vault?.decimals ?? 18
     const underlyingAmount = (totalVaultBalance.raw * (pricePerShare as bigint)) / 10n ** BigInt(vaultDecimals)
-    console.log(totalVaultBalance.raw, underlyingAmount)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
   }, [totalVaultBalance.raw, pricePerShare, vault?.decimals, assetToken])
 
@@ -201,17 +200,13 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const requiredShares = useMemo(() => {
     if (!withdrawAmount.bn || withdrawAmount.bn === 0n) return 0n
 
-    if (isUnstake) {
-      return (withdrawAmount.bn * 10n ** BigInt(stakingToken?.decimals ?? 18)) / (stakingPricePerShare as bigint)
-    }
-
     if (pricePerShare) {
       const vaultDecimals = vault?.decimals ?? 18
       return (withdrawAmount.bn * 10n ** BigInt(vaultDecimals)) / (pricePerShare as bigint)
     }
 
     return 0n
-  }, [withdrawAmount.bn, isUnstake, pricePerShare, stakingToken?.decimals, stakingPricePerShare, vault?.decimals])
+  }, [withdrawAmount.bn, pricePerShare, vault?.decimals])
 
   // ============================================================================
   // Withdraw Flow (routing, actions, periphery)
@@ -228,7 +223,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     account,
     chainId,
     destinationChainId,
-    outputChainId: outputToken.chainID ?? chainId,
+    outputChainId: outputToken?.chainID ?? chainId,
     assetDecimals: assetToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
     outputDecimals: outputToken?.decimals ?? 18,
@@ -269,12 +264,14 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     outputToken,
     stakingToken,
     sourceToken,
+    assetAddress,
     withdrawToken,
     account,
     chainId,
     destinationChainId,
     withdrawAmount: withdrawAmount.bn,
     requiredShares,
+    expectedOut: activeFlow.periphery.expectedOut,
     routeType,
     routerAddress: activeFlow.periphery.routerAddress,
     isCrossChain: activeFlow.periphery.isCrossChain,
@@ -308,6 +305,79 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     if (!outputToken?.address || !outputToken?.chainID) return 0
     return getPrice({ address: toAddress(outputToken.address), chainID: outputToken.chainID }).normalized
   }, [outputToken?.address, outputToken?.chainID, getPrice])
+
+  const zapToken = useMemo(() => {
+    if (withdrawToken === assetAddress) return undefined
+
+    const getExpectedAmount = () => {
+      console.log(requiredShares)
+      console.log(formatAmount(Number(formatUnits(requiredShares, vault?.decimals ?? 18)), 6, 6))
+      if (isUnstake) {
+        return requiredShares > 0n
+          ? formatAmount(Number(formatUnits(requiredShares, vault?.decimals ?? 18)), 6, 6)
+          : '0'
+      }
+      return activeFlow.periphery.expectedOut && activeFlow.periphery.expectedOut > 0n
+        ? formatAmount(Number(formatUnits(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)), 6, 6)
+        : '0'
+    }
+
+    return {
+      symbol: outputToken?.symbol || 'Select Token',
+      address: outputToken?.address || '',
+      chainId: outputToken?.chainID || chainId,
+      expectedAmount: getExpectedAmount(),
+      isLoading: isUnstake ? false : activeFlow.periphery.isLoadingRoute
+    }
+  }, [
+    withdrawToken,
+    assetAddress,
+    isUnstake,
+    requiredShares,
+    vault?.decimals,
+    activeFlow.periphery.expectedOut,
+    activeFlow.periphery.isLoadingRoute,
+    outputToken?.symbol,
+    outputToken?.address,
+    outputToken?.chainID,
+    outputToken?.decimals,
+    chainId
+  ])
+
+  // ============================================================================
+  // Success Modal Configurations
+  // ============================================================================
+  const formattedWithdrawAmount = formatTAmount({ value: withdrawAmount.bn, decimals: assetToken?.decimals ?? 18 })
+
+  const approveSuccessModal = useMemo(
+    () => ({
+      title: 'Approval successful',
+      message: `Successfully approved ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.\nAll set for withdrawing.`,
+      buttonText: 'Nice',
+      showConfetti: false
+    }),
+    [formattedWithdrawAmount, assetToken?.symbol]
+  )
+
+  const withdrawSuccessModal = useMemo(
+    () => ({
+      title: 'Withdrawal successful!',
+      message: `You successfully withdrew ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
+      buttonText: "Let's go",
+      showConfetti: true
+    }),
+    [formattedWithdrawAmount, assetToken?.symbol]
+  )
+
+  const crossChainSubmitModal = useMemo(
+    () => ({
+      title: 'Transaction submitted!',
+      message: `Your ${outputToken?.symbol || ''} is on its way.`,
+      buttonText: 'Got it',
+      showConfetti: false
+    }),
+    [outputToken?.symbol]
+  )
 
   // ============================================================================
   // Handlers
@@ -400,24 +470,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
                 }
               }
             }}
-            zapToken={
-              withdrawToken !== assetAddress
-                ? {
-                    symbol: outputToken?.symbol || 'Select Token',
-                    address: outputToken?.address || '',
-                    chainId: outputToken?.chainID || chainId,
-                    expectedAmount:
-                      activeFlow.periphery.expectedOut && activeFlow.periphery.expectedOut > 0n
-                        ? formatAmount(
-                            Number(formatUnits(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)),
-                            6,
-                            6
-                          )
-                        : '0',
-                    isLoading: activeFlow.periphery.isLoadingRoute
-                  }
-                : undefined
-            }
+            zapToken={zapToken}
             onRemoveZap={() => {
               setSelectedToken(assetAddress)
               setSelectedChainId(chainId)
@@ -465,7 +518,9 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
             {showApprove && activeFlow.actions.prepareApprove && (
               <TxButton
                 prepareWrite={activeFlow.actions.prepareApprove}
-                transactionName="Approve"
+                transactionName={
+                  withdrawAmount.bn > 0n && activeFlow.periphery.isAllowanceSufficient ? 'Approved' : 'Approve'
+                }
                 disabled={
                   !activeFlow.periphery.prepareApproveEnabled ||
                   !!withdrawError ||
@@ -474,6 +529,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
                 }
                 className="w-full"
                 notification={approveNotificationParams}
+                successModal={approveSuccessModal}
               />
             )}
             <TxButton
@@ -489,6 +545,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
               onSuccess={handleWithdrawSuccess}
               className="w-full"
               notification={withdrawNotificationParams}
+              successModal={withdrawSuccessModal}
+              crossChainSubmitModal={crossChainSubmitModal}
             />
           </div>
         )}
@@ -498,13 +556,23 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       <WithdrawDetailsModal
         isOpen={showWithdrawDetailsModal}
         onClose={() => setShowWithdrawDetailsModal(false)}
-        vaultSymbol={vaultSymbol}
+        sourceTokenSymbol={withdrawalSource === 'staking' ? stakingToken?.symbol || vaultSymbol : vaultSymbol}
+        vaultAssetSymbol={assetToken?.symbol || ''}
+        outputTokenSymbol={outputToken?.symbol || ''}
         withdrawAmount={
           requiredShares > 0n ? formatTAmount({ value: requiredShares, decimals: vault?.decimals ?? 18 }) : '0'
         }
+        expectedOutput={
+          activeFlow.periphery.expectedOut > 0n
+            ? formatTAmount({ value: activeFlow.periphery.expectedOut, decimals: outputToken?.decimals ?? 18 })
+            : undefined
+        }
+        hasInputValue={withdrawAmount.bn > 0n}
         stakingAddress={stakingAddress}
         withdrawalSource={withdrawalSource}
-        stakingTokenSymbol={stakingToken?.symbol}
+        routeType={routeType}
+        isZap={routeType === 'ENSO' && selectedToken !== assetAddress}
+        isLoadingQuote={activeFlow.periphery.isLoadingRoute}
       />
 
       {/* Full-screen Token Selector Overlay */}

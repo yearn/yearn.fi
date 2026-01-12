@@ -163,6 +163,7 @@ export const WidgetDeposit: FC<Props> = ({
     vault,
     stakingToken,
     depositToken,
+    assetAddress,
     destinationToken,
     stakingAddress,
     account,
@@ -199,6 +200,41 @@ export const WidgetDeposit: FC<Props> = ({
     if (!assetToken?.address || !assetToken?.chainID) return 0
     return getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
   }, [depositToken, assetAddress, assetToken?.address, assetToken?.chainID, getPrice])
+
+  // ============================================================================
+  // Success Modal Configurations
+  // ============================================================================
+  const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
+
+  const approveSuccessModal = useMemo(
+    () => ({
+      title: 'Approval successful',
+      message: `Successfully approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nAll set for depositing into vault.`,
+      buttonText: 'Nice',
+      showConfetti: false
+    }),
+    [formattedDepositAmount, inputToken?.symbol]
+  )
+
+  const depositSuccessModal = useMemo(
+    () => ({
+      title: 'Deposit successful!',
+      message: `You successfully deposited ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+      buttonText: "Let's go",
+      showConfetti: true
+    }),
+    [formattedDepositAmount, inputToken?.symbol, vaultSymbol]
+  )
+
+  const crossChainSubmitModal = useMemo(
+    () => ({
+      title: 'Transaction submitted!',
+      message: `Your ${inputToken?.symbol || ''} is on its way.`,
+      buttonText: 'Got it',
+      showConfetti: false
+    }),
+    [inputToken?.symbol]
+  )
 
   // ============================================================================
   // Max Quote (for native tokens)
@@ -334,7 +370,9 @@ export const WidgetDeposit: FC<Props> = ({
             {!isNativeToken && (
               <TxButton
                 prepareWrite={activeFlow.actions.prepareApprove}
-                transactionName="Approve"
+                transactionName={
+                  depositAmount.bn > 0n && activeFlow.periphery.isAllowanceSufficient ? 'Approved' : 'Approve'
+                }
                 disabled={
                   !activeFlow.periphery.prepareApproveEnabled ||
                   !!depositError ||
@@ -343,6 +381,7 @@ export const WidgetDeposit: FC<Props> = ({
                 }
                 className="w-full"
                 notification={approveNotificationParams}
+                successModal={approveSuccessModal}
               />
             )}
             <TxButton
@@ -361,6 +400,8 @@ export const WidgetDeposit: FC<Props> = ({
               onSuccess={handleDepositSuccess}
               className="w-full"
               notification={depositNotificationParams}
+              successModal={depositSuccessModal}
+              crossChainSubmitModal={crossChainSubmitModal}
             />
           </div>
         )}
@@ -370,7 +411,10 @@ export const WidgetDeposit: FC<Props> = ({
       <VaultSharesModal
         isOpen={showVaultSharesModal}
         onClose={() => setShowVaultSharesModal(false)}
+        depositTokenSymbol={inputToken?.symbol || ''}
+        vaultAssetSymbol={assetToken?.symbol || ''}
         vaultSymbol={vaultSymbol}
+        stakingTokenSymbol={stakingToken?.symbol}
         expectedShares={
           activeFlow.periphery.expectedOut > 0n
             ? formatTAmount({ value: activeFlow.periphery.expectedOut, decimals: vault?.decimals ?? 18 })
@@ -378,6 +422,7 @@ export const WidgetDeposit: FC<Props> = ({
         }
         stakingAddress={stakingAddress}
         isAutoStakingEnabled={isAutoStakingEnabled}
+        isZap={routeType === 'ENSO' && selectedToken !== assetAddress}
       />
 
       <AnnualReturnModal

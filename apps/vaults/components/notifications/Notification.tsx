@@ -275,8 +275,6 @@ export const Notification = memo(function Notification({
         return 'Claim'
       case 'claim and exit':
         return 'Claim & Exit'
-      case 'migrate':
-        return 'Migrate'
       default:
         return 'Transaction'
     }
