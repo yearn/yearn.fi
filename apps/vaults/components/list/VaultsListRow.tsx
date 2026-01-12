@@ -13,11 +13,7 @@ import { cl, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
 import type { TVaultChartTimeframe } from '@vaults/components/detail/VaultChartsSection'
-import {
-  type TVaultForwardAPYVariant,
-  VaultForwardAPY
-  // VaultForwardAPYInlineDetails
-} from '@vaults/components/table/VaultForwardAPY'
+import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@vaults/components/table/VaultHoldingsAmount'
 import { deriveListKind } from '@vaults/shared/utils/vaultListFacets'
 import type { ReactElement } from 'react'
@@ -349,27 +345,6 @@ export function VaultsListRow({
               </Tooltip>
             </div>
           </div>
-          {/* <div className={'col-span-3'}>
-            <VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
-          </div> */}
-          {/* Available to deposit */}
-          {/* <div className={'yearn--table-data-section-item col-span-3 flex-row md:flex-col'} datatype={'number'}>
-            <p
-              className={`yearn--table-data-section-item-value ${isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'}`}
-            >
-              <RenderAmount
-                value={Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized)}
-                symbol={currentVault.token.symbol}
-                decimals={currentVault.token.decimals}
-                shouldFormatDust
-                options={{
-                  shouldDisplaySymbol: false,
-                  maximumFractionDigits:
-                    Number(toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized) > 1000 ? 2 : 4
-                }}
-              />
-            </p>
-          </div> */}
           <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
             <VaultHoldingsAmount currentVault={currentVault} />
           </div>

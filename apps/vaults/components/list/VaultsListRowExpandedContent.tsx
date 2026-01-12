@@ -19,6 +19,15 @@ import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 import { type TVaultsExpandedView, VaultsExpandedSelector } from './VaultsExpandedSelector'
 
+const EXPANDED_VIEW_TO_CHART_TAB: Record<
+  Extract<TVaultsExpandedView, 'apy' | 'performance' | 'tvl'>,
+  TVaultChartTab
+> = {
+  apy: 'historical-apy',
+  performance: 'historical-pps',
+  tvl: 'historical-tvl'
+}
+
 type TVaultsListRowExpandedContentProps = {
   currentVault: TYDaemonVault
   expandedView: TVaultsExpandedView
@@ -62,19 +71,13 @@ export default function VaultsListRowExpandedContent({
             }
           />
 
-          {expandedView === 'apy' || expandedView === 'performance' || expandedView === 'tvl' ? (
+          {expandedView in EXPANDED_VIEW_TO_CHART_TAB ? (
             <div className={'px-3 pb-4'}>
               <VaultChartsSection
                 chainId={currentVault.chainID}
                 vaultAddress={currentVault.address}
                 shouldRenderSelectors={false}
-                chartTab={
-                  (expandedView === 'apy'
-                    ? 'historical-apy'
-                    : expandedView === 'performance'
-                      ? 'historical-pps'
-                      : 'historical-tvl') satisfies TVaultChartTab
-                }
+                chartTab={EXPANDED_VIEW_TO_CHART_TAB[expandedView as keyof typeof EXPANDED_VIEW_TO_CHART_TAB]}
                 timeframe={expandedTimeframe}
                 chartHeightPx={200}
                 chartHeightMdPx={200}

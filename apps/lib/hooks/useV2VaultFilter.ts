@@ -38,7 +38,6 @@ type TVaultWalletFlags = {
 
 type TOptimizedV2VaultFilterResult = {
   filteredVaults: TYDaemonVault[]
-  filteredVaultsNoSearch: TYDaemonVault[]
   holdingsVaults: TYDaemonVault[]
   availableVaults: TYDaemonVault[]
   vaultFlags: Record<string, TVaultFlags>
@@ -174,71 +173,57 @@ export function useV2VaultFilter(
   }, [vaultIndex, walletFlags])
 
   const filteredResults = useMemo(() => {
-    const computeFiltered = (searchValue?: string) => {
-      const filteredVaults: TYDaemonVault[] = []
-      const vaultFlags: Record<string, TVaultFlags> = {}
+    const filteredVaults: TYDaemonVault[] = []
+    const vaultFlags: Record<string, TVaultFlags> = {}
 
-      vaultIndex.forEach((entry) => {
-        const { key, vault, searchableText, kind, category, protocol, isHidden, isActive, isMigratable, isRetired } =
-          entry
-        const walletFlag = walletFlags.get(key)
-        const hasHoldings = Boolean(walletFlag?.hasHoldings)
+    vaultIndex.forEach((entry) => {
+      const { key, vault, searchableText, kind, category, protocol, isHidden, isActive, isMigratable, isRetired } =
+        entry
+      const walletFlag = walletFlags.get(key)
+      const hasHoldings = Boolean(walletFlag?.hasHoldings)
 
-        if (!isActive && !hasHoldings) {
-          return
-        }
+      if (!isActive && !hasHoldings) {
+        return
+      }
 
-        if (searchValue) {
-          if (searchRegex) {
-            if (!searchRegex.test(searchableText)) {
-              return
-            }
-          } else if (!searchableText.includes(lowercaseSearch)) {
+      if (search) {
+        if (searchRegex) {
+          if (!searchRegex.test(searchableText)) {
             return
           }
-        }
-
-        if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {
+        } else if (!searchableText.includes(lowercaseSearch)) {
           return
         }
-
-        const isMigratableVault = Boolean(isMigratable && hasHoldings)
-        const isRetiredVault = Boolean(isRetired && hasHoldings)
-        vaultFlags[key] = {
-          hasHoldings: Boolean(hasHoldings || isMigratableVault || isRetiredVault),
-          isMigratable: isMigratableVault,
-          isRetired: isRetiredVault,
-          isHidden
-        }
-
-        const matchesKind = !types || types.length === 0 || types.includes(kind)
-        const matchesCategory = !categories || categories.length === 0 || categories.includes(category)
-        const matchesProtocol =
-          !protocols ||
-          protocols.length === 0 ||
-          Boolean(protocol && protocol !== 'Unknown' && protocols.includes(protocol))
-
-        if (!(matchesKind && matchesCategory && matchesProtocol)) {
-          return
-        }
-
-        filteredVaults.push(vault)
-      })
-
-      return {
-        filteredVaults,
-        vaultFlags
       }
-    }
 
-    const searched = computeFiltered(search)
-    const unsearched = computeFiltered(undefined)
+      if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {
+        return
+      }
 
-    return {
-      filteredVaults: searched.filteredVaults,
-      filteredVaultsNoSearch: unsearched.filteredVaults,
-      vaultFlags: searched.vaultFlags
-    }
+      const isMigratableVault = Boolean(isMigratable && hasHoldings)
+      const isRetiredVault = Boolean(isRetired && hasHoldings)
+      vaultFlags[key] = {
+        hasHoldings: Boolean(hasHoldings || isMigratableVault || isRetiredVault),
+        isMigratable: isMigratableVault,
+        isRetired: isRetiredVault,
+        isHidden
+      }
+
+      const matchesKind = !types || types.length === 0 || types.includes(kind)
+      const matchesCategory = !categories || categories.length === 0 || categories.includes(category)
+      const matchesProtocol =
+        !protocols ||
+        protocols.length === 0 ||
+        Boolean(protocol && protocol !== 'Unknown' && protocols.includes(protocol))
+
+      if (!(matchesKind && matchesCategory && matchesProtocol)) {
+        return
+      }
+
+      filteredVaults.push(vault)
+    })
+
+    return { filteredVaults, vaultFlags }
   }, [vaultIndex, walletFlags, types, chains, search, categories, protocols, searchRegex, lowercaseSearch])
 
   return {
