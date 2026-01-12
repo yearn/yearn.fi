@@ -5,7 +5,6 @@ import type { EncodeFunctionDataParameters, Hex } from 'viem'
 import { encodeFunctionData, toHex } from 'viem'
 import type { TSortDirection } from '../types/mixed'
 import { toNormalizedBN } from './format'
-import { isObject } from './tools.is'
 
 export function getVaultName(vault: TYDaemonVault): string {
   const baseName = vault.name
@@ -43,21 +42,6 @@ export function copyToClipboard(value: string): void {
 }
 
 /***************************************************************************
- ** Used to slugify a string.
- ** Src: https://gist.github.com/mathewbyrne/1280286
- **************************************************************************/
-export function slugify(text: string): string {
-  return text
-    .toString()
-    .toLowerCase()
-    .replace(/\s+/g, '-') // Replace spaces with -
-    .replace(/[^\w-]+/g, '') // Remove all non-word chars
-    .replace(/--+/g, '-') // Replace multiple - with single -
-    .replace(/^-+/, '') // Trim - from start of text
-    .replace(/-+$/, '') // Trim - from end of text
-}
-
-/***************************************************************************
  ** Detect is we are running from an Iframe
  **************************************************************************/
 export function isIframe(): boolean {
@@ -68,16 +52,6 @@ export function isIframe(): boolean {
     return true
   }
   return false
-}
-
-/***************************************************************************
- ** Framer Motion animation constants
- **************************************************************************/
-export const motionTransition = { duration: 0.4, ease: 'easeInOut' }
-export const motionVariants = {
-  initial: { y: -80, opacity: 0, motionTransition },
-  enter: { y: 0, opacity: 1, motionTransition },
-  exit: { y: -80, opacity: 0, motionTransition }
 }
 
 /***************************************************************************
@@ -105,35 +79,6 @@ export const bigNumberSort = ({
   b: bigint
   sortDirection: TSortDirection
 }): number => Number(toNormalizedBN(sortDirection === 'desc' ? b - a : a - b, 18).normalized)
-
-/***************************************************************************
- ** Helper function to deep merge two objects
- **************************************************************************/
-export function deepMerge(target: unknown, source: unknown): unknown {
-  if (!isObject(target) || !isObject(source)) {
-    return target
-  }
-
-  Object.keys(target).forEach((key: string | number): void => {
-    const targetValue = target[key]
-    target[key] = targetValue
-  })
-
-  Object.keys(source).forEach((key: string | number): void => {
-    const targetValue = target[key]
-    const sourceValue = source[key]
-
-    if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
-      target[key] = sourceValue //no concat, replace
-    } else if (isObject(targetValue) && isObject(sourceValue)) {
-      target[key] = deepMerge({ ...targetValue }, sourceValue)
-    } else {
-      target[key] = sourceValue
-    }
-  })
-
-  return target
-}
 
 /***************************************************************************
  ** Helper function to encode the function call
