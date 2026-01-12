@@ -174,7 +174,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     account,
     chainId,
     destinationChainId,
-    outputChainId: outputToken.chainID ?? chainId,
+    outputChainId: outputToken?.chainID ?? chainId,
     assetDecimals: assetToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
     outputDecimals: outputToken?.decimals ?? 18,
@@ -254,6 +254,41 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     if (!outputToken?.address || !outputToken?.chainID) return 0
     return getPrice({ address: toAddress(outputToken.address), chainID: outputToken.chainID }).normalized
   }, [outputToken?.address, outputToken?.chainID, getPrice])
+
+  // ============================================================================
+  // Success Modal Configurations
+  // ============================================================================
+  const formattedWithdrawAmount = formatTAmount({ value: withdrawAmount.bn, decimals: assetToken?.decimals ?? 18 })
+
+  const approveSuccessModal = useMemo(
+    () => ({
+      title: 'Approval successful',
+      message: `Successfully approved ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.\nAll set for withdrawing.`,
+      buttonText: 'Nice',
+      showConfetti: false
+    }),
+    [formattedWithdrawAmount, assetToken?.symbol]
+  )
+
+  const withdrawSuccessModal = useMemo(
+    () => ({
+      title: 'Withdrawal successful!',
+      message: `You successfully withdrew ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
+      buttonText: "Let's go",
+      showConfetti: true
+    }),
+    [formattedWithdrawAmount, assetToken?.symbol]
+  )
+
+  const crossChainSubmitModal = useMemo(
+    () => ({
+      title: 'Transaction submitted!',
+      message: `Your ${outputToken?.symbol || ''} is on its way.`,
+      buttonText: 'Got it',
+      showConfetti: false
+    }),
+    [outputToken?.symbol]
+  )
 
   // ============================================================================
   // Handlers
@@ -410,7 +445,9 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
             {showApprove && activeFlow.actions.prepareApprove && (
               <TxButton
                 prepareWrite={activeFlow.actions.prepareApprove}
-                transactionName="Approve"
+                transactionName={
+                  withdrawAmount.bn > 0n && activeFlow.periphery.isAllowanceSufficient ? 'Approved' : 'Approve'
+                }
                 disabled={
                   !activeFlow.periphery.prepareApproveEnabled ||
                   !!withdrawError ||
@@ -419,6 +456,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
                 }
                 className="w-full"
                 notification={approveNotificationParams}
+                successModal={approveSuccessModal}
               />
             )}
             <TxButton
@@ -434,6 +472,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
               onSuccess={handleWithdrawSuccess}
               className="w-full"
               notification={withdrawNotificationParams}
+              successModal={withdrawSuccessModal}
+              crossChainSubmitModal={crossChainSubmitModal}
             />
           </div>
         )}
@@ -443,13 +483,23 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       <WithdrawDetailsModal
         isOpen={showWithdrawDetailsModal}
         onClose={() => setShowWithdrawDetailsModal(false)}
-        vaultSymbol={vaultSymbol}
+        sourceTokenSymbol={withdrawalSource === 'staking' ? stakingToken?.symbol || vaultSymbol : vaultSymbol}
+        vaultAssetSymbol={assetToken?.symbol || ''}
+        outputTokenSymbol={outputToken?.symbol || ''}
         withdrawAmount={
           requiredShares > 0n ? formatTAmount({ value: requiredShares, decimals: vault?.decimals ?? 18 }) : '0'
         }
+        expectedOutput={
+          activeFlow.periphery.expectedOut > 0n
+            ? formatTAmount({ value: activeFlow.periphery.expectedOut, decimals: outputToken?.decimals ?? 18 })
+            : undefined
+        }
+        hasInputValue={withdrawAmount.bn > 0n}
         stakingAddress={stakingAddress}
         withdrawalSource={withdrawalSource}
-        stakingTokenSymbol={stakingToken?.symbol}
+        routeType={routeType}
+        isZap={routeType === 'ENSO' && selectedToken !== assetAddress}
+        isLoadingQuote={activeFlow.periphery.isLoadingRoute}
       />
 
       {/* Full-screen Token Selector Overlay */}
