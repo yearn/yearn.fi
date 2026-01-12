@@ -32,7 +32,15 @@ export function createCheckHasHoldings(
 ): (vault: TYDaemonVault) => boolean {
   return function checkHasHoldings(vault: TYDaemonVault): boolean {
     const vaultBalance = getBalance({ address: vault.address, chainID: vault.chainID })
-    const vaultPrice = getPrice({ address: vault.address, chainID: vault.chainID })
+    const hasVaultBalance = vaultBalance.raw > 0n
+    let vaultPrice: { normalized: number } | null = null
+
+    const getVaultPrice = (): { normalized: number } => {
+      if (!vaultPrice) {
+        vaultPrice = getPrice({ address: vault.address, chainID: vault.chainID })
+      }
+      return vaultPrice
+    }
 
     if (vault.staking.available) {
       const stakingBalance = getBalance({
@@ -40,16 +48,23 @@ export function createCheckHasHoldings(
         chainID: vault.chainID
       })
       const hasValidStakedBalance = stakingBalance.raw > 0n
-      const stakedBalanceValue = Number(stakingBalance.normalized) * vaultPrice.normalized
-      if (hasValidStakedBalance && !(shouldHideDust && stakedBalanceValue < 0.01)) {
-        return true
+      if (hasValidStakedBalance) {
+        const price = getVaultPrice()
+        const stakedBalanceValue = Number(stakingBalance.normalized) * price.normalized
+        if (!(shouldHideDust && stakedBalanceValue < 0.01)) {
+          return true
+        }
       }
     }
 
-    const hasValidBalance = vaultBalance.raw > 0n
-    const balanceValue = Number(vaultBalance.normalized) * vaultPrice.normalized
+    if (!hasVaultBalance) {
+      return false
+    }
 
-    return hasValidBalance && !(shouldHideDust && balanceValue < 0.01)
+    const price = getVaultPrice()
+    const balanceValue = Number(vaultBalance.normalized) * price.normalized
+
+    return !(shouldHideDust && balanceValue < 0.01)
   }
 }
 
