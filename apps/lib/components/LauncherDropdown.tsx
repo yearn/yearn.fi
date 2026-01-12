@@ -1,0 +1,204 @@
+import { useThemePreference } from '@hooks/useThemePreference'
+import { IconChevron } from '@lib/icons/IconChevron'
+import { IconDiscord } from '@lib/icons/IconDiscord'
+import { IconTwitter } from '@lib/icons/IconTwitter'
+import { LogoGithub } from '@lib/icons/LogoGithub'
+import { cl } from '@lib/utils'
+import type { ReactElement } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router'
+import Link from '/src/components/Link'
+import { DropdownPanel } from './DropdownPanel'
+import { APP_GROUPS, type TAppTile } from './YearnApps'
+
+function isExternalHref(href: string): boolean {
+  return /^https?:\/\//i.test(href)
+}
+
+function findGroupItems(title: string): TAppTile[] {
+  return APP_GROUPS.find((g) => g.title === title)?.items ?? []
+}
+
+const APPS = findGroupItems('Apps')
+const TOOLS = findGroupItems('Analytics and Tools')
+const RESOURCES = findGroupItems('Resources')
+const DEPRECATED = findGroupItems('Deprecated Projects')
+
+function AppTile({ item, isDark }: { item: TAppTile; isDark: boolean }): ReactElement {
+  return (
+    <Link href={item.href}>
+      <div
+        className={cl(
+          'flex items-center gap-3 rounded-xl p-3 transition-colors',
+          isDark ? 'hover:bg-surface-secondary' : 'hover:bg-neutral-100'
+        )}
+      >
+        <div
+          className={cl(
+            'flex size-10 items-center justify-center rounded-lg',
+            isDark ? 'bg-surface-secondary' : 'bg-neutral-100'
+          )}
+        >
+          {item.icon}
+        </div>
+        <div className={'flex-1'}>
+          <div className={'flex items-center gap-1'}>
+            <span className={'text-sm font-semibold text-text-primary'}>{item.name}</span>
+            {isExternalHref(item.href) && <span className={'text-xs text-text-secondary'}>{'↗'}</span>}
+          </div>
+          {item.description && <p className={'text-xs text-text-secondary'}>{item.description}</p>}
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+function LinkItem({ item, isDark }: { item: TAppTile; isDark: boolean }): ReactElement {
+  return (
+    <Link href={item.href}>
+      <div
+        className={cl(
+          'flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition-colors',
+          isDark
+            ? 'text-white hover:bg-surface-secondary'
+            : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+        )}
+      >
+        <span>{item.name}</span>
+        {isExternalHref(item.href) && <span className={'text-xs'}>{'↗'}</span>}
+      </div>
+    </Link>
+  )
+}
+
+type TLauncherDropdownProps = {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function LauncherDropdown({ isOpen, onClose }: TLauncherDropdownProps): ReactElement {
+  const location = useLocation()
+  const previousPathname = useRef(location.pathname)
+  const [isDeprecatedExpanded, setIsDeprecatedExpanded] = useState(false)
+  const themePreference = useThemePreference()
+  const isDarkTheme = themePreference !== 'light'
+
+  useEffect(() => {
+    const pathnameChanged = previousPathname.current !== location.pathname
+    previousPathname.current = location.pathname
+
+    if (pathnameChanged && isOpen) {
+      onClose()
+    }
+  }, [isOpen, location.pathname, onClose])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsDeprecatedExpanded(false)
+    }
+  }, [isOpen])
+
+  const sectionHeaderClass = cl(
+    'mb-2 px-2 text-xs font-semibold uppercase tracking-wider',
+    isDarkTheme ? 'text-text-secondary' : 'text-neutral-500'
+  )
+
+  const dividerClass = cl('h-px', isDarkTheme ? 'bg-border' : 'bg-neutral-200')
+
+  const socialIconClass = cl(
+    'flex size-8 items-center justify-center rounded-lg transition-colors',
+    isDarkTheme
+      ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+      : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
+  )
+
+  return (
+    <DropdownPanel isOpen={isOpen} onClose={onClose} anchor={'left'} className={'w-[420px] max-md:w-full'}>
+      <div className={'flex flex-col gap-4'}>
+        <div>
+          <h3 className={sectionHeaderClass}>{'Apps'}</h3>
+          <div className={'grid grid-cols-2 gap-1'}>
+            {APPS.map((item) => (
+              <div key={item.href} onClick={onClose}>
+                <AppTile item={item} isDark={isDarkTheme} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={dividerClass} />
+
+        <div className={'grid grid-cols-2 gap-4'}>
+          <div>
+            <h3 className={sectionHeaderClass}>{'Tools'}</h3>
+            <div className={'flex flex-col'}>
+              {TOOLS.map((item) => (
+                <div key={item.href} onClick={onClose}>
+                  <LinkItem item={item} isDark={isDarkTheme} />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3 className={sectionHeaderClass}>{'Resources'}</h3>
+            <div className={'flex flex-col'}>
+              {RESOURCES.map((item) => (
+                <div key={item.href} onClick={onClose}>
+                  <LinkItem item={item} isDark={isDarkTheme} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className={dividerClass} />
+
+        <div>
+          <div className={'flex items-center justify-between'}>
+            <button
+              type={'button'}
+              onClick={() => setIsDeprecatedExpanded(!isDeprecatedExpanded)}
+              className={cl(
+                'flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors',
+                isDarkTheme
+                  ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+                  : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
+              )}
+            >
+              <span>{'Deprecated'}</span>
+              <IconChevron className={cl('size-3 transition-transform', isDeprecatedExpanded ? 'rotate-180' : '')} />
+            </button>
+
+            <div className={'flex items-center gap-2'}>
+              <Link href={'https://github.com/yearn'}>
+                <div className={socialIconClass}>
+                  <LogoGithub className={'size-5'} />
+                </div>
+              </Link>
+              <Link href={'https://x.com/yearnfi'}>
+                <div className={socialIconClass}>
+                  <IconTwitter className={'size-5'} />
+                </div>
+              </Link>
+              <Link href={'https://discord.gg/yearn'}>
+                <div className={socialIconClass}>
+                  <IconDiscord className={'size-5'} />
+                </div>
+              </Link>
+            </div>
+          </div>
+
+          {isDeprecatedExpanded && (
+            <div className={'mt-2 flex flex-wrap gap-x-1'}>
+              {DEPRECATED.map((item) => (
+                <div key={item.href} onClick={onClose}>
+                  <LinkItem item={item} isDark={isDarkTheme} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </DropdownPanel>
+  )
+}

@@ -13,8 +13,9 @@ import { LogoYearn } from '@lib/icons/LogoYearn'
 import { cl, formatUSD } from '@lib/utils'
 import { truncateHex } from '@lib/utils/tools.address'
 import type { ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { DropdownPanel } from './DropdownPanel'
 
 type TAccountDropdownProps = {
   isOpen: boolean
@@ -59,13 +60,13 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
     onClose()
   }, [setShouldOpenCurtain, onClose])
 
-  const formatDate = (timestamp?: number) => {
+  function formatDate(timestamp?: number): string {
     if (!timestamp) return ''
     const date = new Date(timestamp)
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
-  const getStatusColor = (status: string) => {
+  function getStatusColor(status: string): string {
     switch (status) {
       case 'success':
         return 'text-[#0C9000]'
@@ -78,11 +79,16 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
     }
   }
 
+  const iconButtonClass = cl(
+    'flex size-7 items-center justify-center rounded-full transition-colors',
+    isDarkTheme
+      ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+      : 'text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700'
+  )
+
   return (
     <div className={'flex flex-col'}>
-      {/* Account Card */}
       <div className={cl('rounded-2xl p-4', isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100')}>
-        {/* Header with avatar, settings, disconnect */}
         <div className={'mb-3 flex items-start justify-between'}>
           <div className={'flex items-center gap-3'}>
             {clusters?.avatar ? (
@@ -99,35 +105,17 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
             )}
           </div>
           <div className={'flex items-center gap-1'}>
-            <button
-              onClick={onSettingsClick}
-              className={cl(
-                'flex size-7 items-center justify-center rounded-full transition-colors',
-                isDarkTheme
-                  ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
-                  : 'text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700'
-              )}
-            >
+            <button onClick={onSettingsClick} className={iconButtonClass}>
               <IconSettings className={'size-4'} />
             </button>
-            <button
-              onClick={handleDisconnect}
-              className={cl(
-                'flex size-7 items-center justify-center rounded-full transition-colors',
-                isDarkTheme
-                  ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
-                  : 'text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700'
-              )}
-            >
+            <button onClick={handleDisconnect} className={iconButtonClass}>
               <IconPower className={'size-4'} />
             </button>
           </div>
         </div>
 
-        {/* Address */}
         <p className={'mb-2 text-sm font-medium text-text-primary'}>{displayName}</p>
 
-        {/* Portfolio Value */}
         <div className={'mb-4'}>
           {isWalletLoading ? (
             <div className={'h-8 w-24 animate-pulse rounded bg-surface-tertiary'} />
@@ -141,7 +129,6 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
           )}
         </div>
 
-        {/* View Portfolio Button */}
         <button
           onClick={handleViewPortfolio}
           className={cl(
@@ -156,7 +143,6 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
         </button>
       </div>
 
-      {/* Recent Activity */}
       <div className={'mt-4'}>
         <h3 className={'mb-3 text-sm font-semibold text-text-primary'}>{'Recent activity'}</h3>
         {recentActivity.length > 0 ? (
@@ -208,30 +194,47 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
   )
 }
 
+const DARK_VARIANT_LABELS: Record<string, string> = {
+  'soft-dark': 'Soft Dark',
+  'blue-dark': 'Blue Dark',
+  midnight: 'Midnight'
+}
+
 function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
 
+  const backButtonClass = cl(
+    'flex size-7 items-center justify-center rounded-full transition-colors',
+    isDarkTheme
+      ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+      : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
+  )
+
+  const menuItemClass = cl(
+    'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+    isDarkTheme
+      ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+      : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+  )
+
+  function getVariantButtonClass(variant: string): string {
+    if (themePreference === variant) {
+      return 'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary'
+    }
+    return menuItemClass
+  }
+
   return (
     <div className={'flex flex-col'}>
-      {/* Header */}
       <div className={'mb-4 flex items-center'}>
-        <button
-          onClick={onBack}
-          className={cl(
-            'flex size-7 items-center justify-center rounded-full transition-colors',
-            isDarkTheme
-              ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-              : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
-          )}
-        >
+        <button onClick={onBack} className={backButtonClass}>
           <IconArrowLeft className={'size-4'} />
         </button>
         <h2 className={'flex-1 text-center text-base font-semibold text-text-primary'}>{'Settings'}</h2>
         <div className={'w-7'} />
       </div>
 
-      {/* Theme Picker */}
       <div className={'mb-4 flex items-center justify-between'}>
         <span className={'text-sm font-medium text-text-primary'}>{'Theme'}</span>
         <div className={cl('flex rounded-full p-0.5', isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100')}>
@@ -256,7 +259,6 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
         </div>
       </div>
 
-      {/* Dark Theme Variants */}
       {isDarkTheme && (
         <div className={'mb-4'}>
           <span className={'mb-2 block text-xs font-medium text-text-secondary'}>{'Dark variant'}</span>
@@ -265,18 +267,9 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
               <button
                 key={variant}
                 onClick={() => setThemePreference(variant)}
-                className={cl(
-                  'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  themePreference === variant
-                    ? 'bg-primary/10 text-primary'
-                    : isDarkTheme
-                      ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-                      : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-                )}
+                className={getVariantButtonClass(variant)}
               >
-                <span>
-                  {variant === 'soft-dark' ? 'Soft Dark' : variant === 'blue-dark' ? 'Blue Dark' : 'Midnight'}
-                </span>
+                <span>{DARK_VARIANT_LABELS[variant]}</span>
                 {themePreference === variant && <IconChevron className={'size-4 -rotate-90'} />}
               </button>
             ))}
@@ -284,15 +277,7 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
         </div>
       )}
 
-      {/* Advanced Link */}
-      <button
-        className={cl(
-          'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-          isDarkTheme
-            ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-            : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-        )}
-      >
+      <button className={menuItemClass}>
         <span>{'Advanced'}</span>
         <IconChevron className={'size-4 -rotate-90'} />
       </button>
@@ -300,11 +285,8 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
   )
 }
 
-export function AccountDropdown({ isOpen, onClose }: TAccountDropdownProps): ReactElement | null {
+export function AccountDropdown({ isOpen, onClose }: TAccountDropdownProps): ReactElement {
   const [view, setView] = useState<TView>('account')
-  const themePreference = useThemePreference()
-  const isDarkTheme = themePreference !== 'light'
-  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!isOpen) {
@@ -312,45 +294,13 @@ export function AccountDropdown({ isOpen, onClose }: TAccountDropdownProps): Rea
     }
   }, [isOpen])
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent): void => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        onClose()
-      }
-    }
-
-    const handleEscape = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        onClose()
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      document.addEventListener('keydown', handleEscape)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleEscape)
-    }
-  }, [isOpen, onClose])
-
-  if (!isOpen) return null
-
   return (
-    <div
-      ref={dropdownRef}
-      className={cl(
-        'absolute right-0 top-full mt-2 w-80 rounded-2xl border p-4 shadow-xl z-[100]',
-        isDarkTheme ? 'border-border bg-surface' : 'border-neutral-200 bg-white'
-      )}
-    >
+    <DropdownPanel isOpen={isOpen} onClose={onClose} anchor={'right'} className={'w-80 max-md:w-full'}>
       {view === 'account' ? (
         <AccountView onSettingsClick={() => setView('settings')} onClose={onClose} />
       ) : (
         <SettingsView onBack={() => setView('account')} />
       )}
-    </div>
+    </DropdownPanel>
   )
 }
