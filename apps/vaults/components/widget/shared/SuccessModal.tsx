@@ -1,7 +1,7 @@
 import { Dialog, Transition } from '@headlessui/react'
 import { Button } from '@lib/components/Button'
 import { type FC, Fragment, useEffect, useState } from 'react'
-import Confetti from 'react-dom-confetti'
+import { useReward } from 'react-rewards'
 
 interface SuccessModalProps {
   isOpen: boolean
@@ -11,19 +11,6 @@ interface SuccessModalProps {
   message: string
   buttonText?: string
   showConfetti?: boolean
-}
-
-const confettiConfig = {
-  angle: 90,
-  spread: 360,
-  startVelocity: 40,
-  elementCount: 70,
-  dragFriction: 0.12,
-  duration: 3000,
-  stagger: 3,
-  width: '10px',
-  height: '10px',
-  colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
 }
 
 // Animated success checkmark component
@@ -70,17 +57,21 @@ export const SuccessModal: FC<SuccessModalProps> = ({
   buttonText = 'Got it!',
   showConfetti = false
 }) => {
-  const [confettiActive, setConfettiActive] = useState(false)
+  const { reward } = useReward('successConfetti', 'confetti', {
+    spread: 80,
+    elementCount: 80,
+    startVelocity: 35,
+    decay: 0.91,
+    lifetime: 200,
+    colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
+  })
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: excessive dep
   useEffect(() => {
     if (isOpen && showConfetti) {
-      // Small delay to ensure the modal is rendered before triggering confetti
-      const timeout = setTimeout(() => {
-        setConfettiActive(true)
-      }, 100)
+      const timeout = setTimeout(() => reward(), 100)
       return () => clearTimeout(timeout)
     }
-    setConfettiActive(false)
     return undefined
   }, [isOpen, showConfetti])
 
@@ -100,13 +91,6 @@ export const SuccessModal: FC<SuccessModalProps> = ({
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-hidden">
-          {/* Confetti container - fixed position, centered on screen */}
-          {showConfetti && (
-            <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50 overflow-hidden">
-              <Confetti active={confettiActive} config={confettiConfig} />
-            </div>
-          )}
-
           <div className="flex min-h-full items-center justify-center p-4 text-center overflow-y-auto">
             <Transition.Child
               as={Fragment}
@@ -119,7 +103,9 @@ export const SuccessModal: FC<SuccessModalProps> = ({
             >
               <Dialog.Panel className="w-full max-w-md transform rounded-2xl bg-surface p-6 text-left align-middle shadow-xl transition-all relative">
                 {/* Animated success icon */}
-                <div className="flex justify-center mb-4">
+                <div className="flex justify-center mb-4 relative">
+                  {/** biome-ignore lint/correctness/useUniqueElementIds: rewards api needs id */}
+                  <span id="successConfetti" className="absolute top-1/2 left-1/2" />
                   <AnimatedCheckmark isVisible={isOpen} />
                 </div>
 
