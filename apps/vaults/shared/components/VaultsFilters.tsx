@@ -240,10 +240,6 @@ export function VaultsFilters({
     const isSearchWide = searchWidth >= SEARCH_EXPAND_WIDTH - 1
     const isSearchWideForFilters = searchWidth >= FILTERS_EXPAND_WIDTH - 1
 
-    console.log('searchWidth', searchWidth)
-    console.log('isSearchWide', isSearchWide)
-    console.log('isSearchWideForFilters', isSearchWideForFilters)
-
     let nextFiltersMinimal = hasFiltersContent ? isFiltersButtonMinimal : false
     let nextChainMinimal = isChainSelectorMinimal
     const hasOverflow = scrollWidth > clientWidth + 1

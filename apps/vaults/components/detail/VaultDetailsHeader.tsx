@@ -360,6 +360,7 @@ export function VaultDetailsHeader({
     rewardTokenDecimal: 0,
     earnedValue: 0
   })
+  console.log('vaultData', vaultData)
 
   const tokenPrice = currentVault.tvl.price || 0
 

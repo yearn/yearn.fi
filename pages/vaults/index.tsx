@@ -458,11 +458,11 @@ function ListOfVaults({
     (nextType: 'v3' | 'lp'): void => {
       const nextParams = new URLSearchParams(searchParams)
       if (nextType === 'v3') {
-        nextParams.delete('type')
+        nextParams.set('type', 'single')
         nextParams.delete('types')
         sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('v3'))
       } else {
-        nextParams.set('type', 'lp')
+        nextParams.set('type', 'liquidity')
         nextParams.delete('types')
         sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('factory'))
       }

@@ -61,8 +61,8 @@ export function AppRoutes(): ReactElement {
         </Route>
 
         {/* Legacy redirects to new /vaults routes */}
-        <Route path="/v2" element={<Navigate to="/vaults?type=lp" replace />} />
-        <Route path="/v2/*" element={<Navigate to="/vaults?type=lp" replace />} />
+        <Route path="/v2" element={<Navigate to="/vaults?type=liquidity" replace />} />
+        <Route path="/v2/*" element={<Navigate to="/vaults?type=liquidity" replace />} />
         <Route path="/v3" element={<Navigate to="/vaults" replace />} />
         <Route path="/v3/*" element={<Navigate to="/vaults" replace />} />
 

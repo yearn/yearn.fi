@@ -3,7 +3,6 @@ import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
 import { Tooltip } from '@lib/components/Tooltip'
 import { IconChevron } from '@lib/icons/IconChevron'
-import { IconCircle } from '@lib/icons/IconCircle'
 import { IconCirclePile } from '@lib/icons/IconCirclePile'
 import { IconEyeOff } from '@lib/icons/IconEyeOff'
 import { IconRewind } from '@lib/icons/IconRewind'
@@ -82,21 +81,23 @@ export function VaultsListRow({
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
   const productType = isAllocatorVault ? 'v3' : 'lp'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Vault'
+  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'Liquidity Vault'
   const productTypeIcon = isAllocatorVault ? (
-    <IconCircle className={'size-3.5'} />
+    <span className={'text-sm leading-none'}>{'⚙️'}</span>
   ) : isLegacyVault ? (
     <IconRewind className={'size-3.5'} />
   ) : (
-    <IconVolatile className={'size-3.5'} />
+    <span className={'text-sm leading-none'}>{'🏭'}</span>
   )
   const productTypeAriaLabel = isAllocatorVault
     ? 'Show single asset vaults'
     : isLegacyVault
       ? 'Legacy vault'
-      : 'Show LP vaults'
+      : 'Show liquidity vaults'
   const showProductTypeChip = Boolean(activeProductType) || Boolean(onToggleVaultType)
-  const isProductTypeActive = false
+  const isProductTypeActive = activeProductType === productType
+  const shouldCollapseProductTypeChip =
+    !isLegacyVault && activeProductType !== 'all' && activeProductType === productType
   const leftColumnSpan = 'col-span-12'
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
@@ -239,6 +240,7 @@ export function VaultsListRow({
                     label={productTypeLabel}
                     icon={productTypeIcon}
                     isActive={isProductTypeActive}
+                    isCollapsed={shouldCollapseProductTypeChip}
                     onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
                     ariaLabel={productTypeAriaLabel}
                   />

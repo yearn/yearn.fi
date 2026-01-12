@@ -12,13 +12,13 @@ type TVaultVersionToggleProps = {
 
 type TButtonConfig = {
   type: TVaultType
-  typeParam: string | null
+  typeParam: string
 }
 
 const BUTTON_CONFIGS: TButtonConfig[] = [
   { type: 'all', typeParam: 'all' },
-  { type: 'v3', typeParam: null },
-  { type: 'factory', typeParam: 'lp' }
+  { type: 'v3', typeParam: 'single' },
+  { type: 'factory', typeParam: 'liquidity' }
 ]
 
 export function VaultVersionToggle({ className, stretch }: TVaultVersionToggleProps): ReactElement {
@@ -27,7 +27,7 @@ export function VaultVersionToggle({ className, stretch }: TVaultVersionTogglePr
 
   const handleClick = (config: TButtonConfig): void => {
     const nextParams = new URLSearchParams(searchParams)
-    if (config.typeParam === null) {
+    if (config.typeParam === 'all') {
       nextParams.delete('type')
     } else {
       nextParams.set('type', config.typeParam)
