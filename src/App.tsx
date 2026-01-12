@@ -15,7 +15,7 @@ import { IconAlertError } from '@lib/icons/IconAlertError'
 import { IconCheckmark } from '@lib/icons/IconCheckmark'
 import { cl } from '@lib/utils'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
-import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
+import { AppSettingsContextApp } from '@vaults/contexts/useAppSettings'
 import type { ReactElement } from 'react'
 import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
@@ -28,7 +28,7 @@ function WithLayout(): ReactElement {
   return (
     <>
       <div className={'sticky top-0 z-60 w-full'}>
-        <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
+        <AppHeader />
       </div>
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>

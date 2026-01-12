@@ -1,10 +1,8 @@
 import { IconDiscord } from '@lib/icons/IconDiscord'
-import { IconTwitter } from '@lib/icons/IconTwitter'
 import { LogoGimme } from '@lib/icons/LogoGimme'
-import { LogoGithub } from '@lib/icons/LogoGithub'
+import { LogoYearn } from '@lib/icons/LogoYearn'
 import type { ReactElement } from 'react'
 import Image from '/src/components/Image'
-import { LogoYearn } from '../icons/LogoYearn'
 
 const BASE_YEARN_ASSET_URI = import.meta.env?.VITE_BASE_YEARN_ASSETS_URI ?? ''
 
@@ -41,25 +39,6 @@ export type TAppGroup = {
 
 const CORE_APPS: TAppTile[] = [
   {
-    name: 'V3 Vaults',
-    href: '/vaults',
-    description: 'Single asset vaults',
-    icon: yearnGlyph({
-      gradient: { start: '#FB245A', end: '#0657F9' },
-      front: 'text-white'
-    }),
-    pathnames: ['/vaults'],
-    hosts: ['yearn.fi']
-  },
-  {
-    name: 'Factory Vaults',
-    href: '/vaults?type=factory',
-    description: 'LP and Factory Vaults',
-    icon: yearnGlyph({ back: 'text-[#f472b6]', front: 'text-white' }),
-    pathnames: ['/vaults'],
-    hosts: ['yearn.fi']
-  },
-  {
     name: 'yCRV',
     href: 'https://ycrv.yearn.fi',
     description: 'CRV Liquid Locker',
@@ -94,36 +73,11 @@ const CORE_APPS: TAppTile[] = [
     hosts: ['veyfi.yearn.fi']
   },
   {
-    name: 'yETH',
-    href: 'https://yeth.yearn.fi',
-    description: 'ETH LST Aggregator',
-    icon: (
-      <Image
-        alt={'yETH'}
-        className={'size-8! max-h-8! max-w-8!'}
-        width={64}
-        height={64}
-        src={`${BASE_YEARN_ASSET_URI}/tokens/1/0x1bed97cbc3c24a4fb5c069c6e311a967386131f7/logo-128.png`}
-        loading={'eager'}
-        priority
-      />
-    ),
-    hosts: ['yeth.yearn.fi']
-  },
-  {
     name: 'YearnX',
     href: 'https://yearn.space',
     description: 'Yearn Partner Pages',
     icon: yearnGlyph({ back: 'text-black', front: 'text-white' }),
     hosts: ['yearn.space']
-  },
-  {
-    name: 'Vaults',
-    href: '/vaults',
-    description: 'Vaults',
-    icon: yearnGlyph({ back: 'text-white', front: 'text-blue-500' }),
-    pathnames: ['/vaults'],
-    hosts: ['yearn.fi']
   }
 ]
 
@@ -193,18 +147,6 @@ const RESOURCES: TAppTile[] = [
     icon: <IconDiscord />
   },
   {
-    name: 'Github',
-    href: 'https://github.com/yearn',
-    description: 'Yearn Github',
-    icon: <LogoGithub />
-  },
-  {
-    name: 'X (Twitter)',
-    href: 'https://x.com/yearnfi',
-    description: 'Yearn X (Twitter)',
-    icon: <IconTwitter className={'size-8'} />
-  },
-  {
     name: 'Blog',
     href: 'https://blog.yearn.fi/',
     description: 'Product updates',
@@ -226,6 +168,23 @@ const RESOURCES: TAppTile[] = [
 ]
 
 const DEPRECATED: TAppTile[] = [
+  {
+    name: 'yETH',
+    href: 'https://yeth.yearn.fi',
+    description: 'ETH LST Aggregator',
+    icon: (
+      <Image
+        alt={'yETH'}
+        className={'size-8! max-h-8! max-w-8!'}
+        width={64}
+        height={64}
+        src={`${BASE_YEARN_ASSET_URI}/tokens/1/0x1bed97cbc3c24a4fb5c069c6e311a967386131f7/logo-128.png`}
+        loading={'eager'}
+        priority
+      />
+    ),
+    hosts: ['yeth.yearn.fi']
+  },
   {
     name: 'Bearn',
     href: 'https://bearn.sucks/',
