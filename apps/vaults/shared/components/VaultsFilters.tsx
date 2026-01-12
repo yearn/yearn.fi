@@ -60,6 +60,8 @@ export function VaultsFilters({
   trailingControls
 }: TVaultsFiltersProps): ReactElement {
   const SEARCH_MIN_WIDTH = 180
+  const SEARCH_EXPAND_WIDTH = 400
+  const FILTERS_EXPAND_WIDTH = 300
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
@@ -235,27 +237,37 @@ export function VaultsFilters({
     const filtersDelta = filtersWidths.full && filtersWidths.minimal ? filtersWidths.full - filtersWidths.minimal : 0
     const searchSlack = Math.max(0, searchWidth - SEARCH_MIN_WIDTH)
     const isSearchAtMin = searchWidth <= SEARCH_MIN_WIDTH + 1
+    const isSearchWide = searchWidth >= SEARCH_EXPAND_WIDTH - 1
+    const isSearchWideForFilters = searchWidth >= FILTERS_EXPAND_WIDTH - 1
+
+    console.log('searchWidth', searchWidth)
+    console.log('isSearchWide', isSearchWide)
+    console.log('isSearchWideForFilters', isSearchWideForFilters)
 
     let nextFiltersMinimal = hasFiltersContent ? isFiltersButtonMinimal : false
     let nextChainMinimal = isChainSelectorMinimal
     const hasOverflow = scrollWidth > clientWidth + 1
+    const shouldCollapse = isSearchAtMin || (hasOverflow && !isSearchWideForFilters)
 
-    if (hasOverflow) {
-      if (isSearchAtMin) {
-        if (hasFiltersContent && !nextFiltersMinimal) {
-          nextFiltersMinimal = true
-        } else if (!nextChainMinimal) {
-          nextChainMinimal = true
-        }
+    if (shouldCollapse) {
+      if (hasFiltersContent && !nextFiltersMinimal) {
+        nextFiltersMinimal = true
+      } else if (!nextChainMinimal) {
+        nextChainMinimal = true
       }
     } else {
       let remainingSlack = searchSlack
-      if (nextChainMinimal && chainDelta > 0 && remainingSlack >= chainDelta) {
-        nextChainMinimal = false
-        remainingSlack -= chainDelta
-      }
-      if (nextFiltersMinimal && filtersDelta > 0 && remainingSlack >= filtersDelta) {
+      const canExpandFilters =
+        isSearchWideForFilters && (filtersDelta === 0 || (filtersDelta > 0 && remainingSlack >= filtersDelta))
+      if (nextFiltersMinimal && canExpandFilters) {
         nextFiltersMinimal = false
+        if (filtersDelta > 0) {
+          remainingSlack -= filtersDelta
+        }
+      }
+      const canExpandChains = isSearchWide && (chainDelta === 0 || (chainDelta > 0 && remainingSlack >= chainDelta))
+      if (nextChainMinimal && canExpandChains) {
+        nextChainMinimal = false
       }
     }
 
@@ -609,7 +621,7 @@ function FilterControls({
               ref={chainSelectorRef}
               className={cl(
                 'flex h-10 items-stretch overflow-x-auto scrollbar-themed rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
-                enableResponsiveLayout ? 'shrink-0' : 'w-full'
+                enableResponsiveLayout ? 'min-w-0' : 'w-full'
               )}
             >
               <button

@@ -7,7 +7,7 @@ export function normalizeVaultTypeParam(typeParam: string | null): TVaultType {
   if (typeParam === 'all') return 'all'
   if (typeParam === 'lp' || typeParam === 'factory' || typeParam === 'v2') return 'factory'
   if (typeParam === 'v3') return 'v3'
-  return 'v3'
+  return 'all'
 }
 
 export function sanitizeChainsParam(params: URLSearchParams, supportedChainIds: number[]): void {
