@@ -3,7 +3,13 @@ import { useYearn } from '@lib/contexts/useYearn'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useAppSettings } from '@vaults/contexts/useAppSettings'
-import { deriveAssetCategory, deriveListKind, isAllocatorVaultOverride } from '@vaults/shared/utils/vaultListFacets'
+import {
+  deriveAssetCategory,
+  deriveListKind,
+  deriveV3Aggressiveness,
+  isAllocatorVaultOverride,
+  type TVaultAggressiveness
+} from '@vaults/shared/utils/vaultListFacets'
 import { useMemo } from 'react'
 import {
   createCheckHasAvailableBalance,
@@ -19,6 +25,7 @@ type TVaultIndexEntry = {
   searchableText: string
   kind: ReturnType<typeof deriveListKind>
   category: string
+  aggressiveness: TVaultAggressiveness | null
   isHidden: boolean
   isActive: boolean
   isMigratable: boolean
@@ -43,6 +50,7 @@ export function useV2VaultFilter(
   chains: number[] | null,
   search?: string,
   categories?: string[] | null,
+  aggressiveness?: TVaultAggressiveness[] | null,
   showHiddenVaults?: boolean
 ): TOptimizedV2VaultFilterResult {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
@@ -90,6 +98,7 @@ export function useV2VaultFilter(
           `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase(),
         kind,
         category: deriveAssetCategory(vault),
+        aggressiveness: deriveV3Aggressiveness(vault),
         isHidden: Boolean(vault.info?.isHidden),
         isActive: Boolean(updates.isActive),
         isMigratable: Boolean(updates.isMigratable),
@@ -171,7 +180,18 @@ export function useV2VaultFilter(
     const shouldShowHidden = Boolean(showHiddenVaults)
 
     vaultIndex.forEach((entry) => {
-      const { key, vault, searchableText, kind, category, isHidden, isActive, isMigratable, isRetired } = entry
+      const {
+        key,
+        vault,
+        searchableText,
+        kind,
+        category,
+        aggressiveness: aggressivenessScore,
+        isHidden,
+        isActive,
+        isMigratable,
+        isRetired
+      } = entry
       const walletFlag = walletFlags.get(key)
       const hasHoldings = Boolean(walletFlag?.hasHoldings)
 
@@ -209,8 +229,12 @@ export function useV2VaultFilter(
 
       const matchesKind = !types || types.length === 0 || types.includes(kind)
       const matchesCategory = !categories || categories.length === 0 || categories.includes(category)
+      const matchesAggressiveness =
+        !aggressiveness || aggressiveness.length === 0
+          ? true
+          : Boolean(aggressivenessScore && aggressiveness.includes(aggressivenessScore))
 
-      if (!(matchesKind && matchesCategory)) {
+      if (!(matchesKind && matchesCategory && matchesAggressiveness)) {
         return
       }
 
@@ -218,7 +242,18 @@ export function useV2VaultFilter(
     })
 
     return { filteredVaults, vaultFlags }
-  }, [vaultIndex, walletFlags, types, chains, search, categories, searchRegex, lowercaseSearch, showHiddenVaults])
+  }, [
+    vaultIndex,
+    walletFlags,
+    types,
+    chains,
+    search,
+    categories,
+    aggressiveness,
+    searchRegex,
+    lowercaseSearch,
+    showHiddenVaults
+  ])
 
   return {
     ...filteredResults,

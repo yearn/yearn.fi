@@ -71,33 +71,33 @@ export function deriveListKind(vault: TYDaemonVault): TVaultListKind {
   return 'legacy'
 }
 
-const AGGRESSIVENESS_MAP: Record<-1 | -2 | -3, TVaultAggressiveness> = {
-  [-1]: 'Conservative',
-  [-2]: 'Moderate',
-  [-3]: 'Aggressive'
+function getAggressivenessForRiskLevel(value: number): TVaultAggressiveness | null {
+  switch (value) {
+    case -1:
+      return 'Conservative'
+    case 1:
+      return 'Conservative'
+    case 2:
+      return 'Moderate'
+    case 3:
+      return 'Aggressive'
+    default:
+      return null
+  }
 }
 
 export function deriveV3Aggressiveness(vault: TYDaemonVault): TVaultAggressiveness | null {
-  const isV3 = Boolean(
-    vault.version?.startsWith('3') || vault.version?.startsWith('~3') || isAllocatorVaultOverride(vault)
-  )
-  if (!isV3) return null
-
   const override = AGGRESSIVENESS_OVERRIDES[getVaultKey(vault)]
   if (override) {
     return override
   }
 
   const riskLevel = vault.info?.riskLevel
-  if (riskLevel === -1 || riskLevel === -2 || riskLevel === -3) {
-    return AGGRESSIVENESS_MAP[riskLevel]
-  }
-
-  const comment = String(vault.info?.riskScoreComment || '')
-  const match = comment.match(/(-1|-2|-3)/)
-  if (match) {
-    const value = Number(match[1])
-    if (value === -1 || value === -2 || value === -3) return AGGRESSIVENESS_MAP[value]
+  if (typeof riskLevel === 'number') {
+    const mapped = getAggressivenessForRiskLevel(riskLevel)
+    if (mapped) {
+      return mapped
+    }
   }
 
   return null

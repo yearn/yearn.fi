@@ -184,6 +184,7 @@ function ListOfVaults({
     chains,
     search || '',
     isV2View ? sanitizedCategories : null,
+    isV2View ? sanitizedAggressiveness : null,
     showHiddenVaults
   )
   const { filteredVaults: filteredV2VaultsAllChains } = useV2VaultFilter(
@@ -191,6 +192,7 @@ function ListOfVaults({
     null,
     '',
     isV2View ? sanitizedCategories : null,
+    isV2View ? sanitizedAggressiveness : null,
     showHiddenVaults
   )
 
