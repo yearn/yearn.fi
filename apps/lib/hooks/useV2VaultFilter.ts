@@ -3,12 +3,7 @@ import { useYearn } from '@lib/contexts/useYearn'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useAppSettings } from '@vaults/contexts/useAppSettings'
-import {
-  deriveAssetCategory,
-  deriveListKind,
-  deriveProtocol,
-  isAllocatorVaultOverride
-} from '@vaults/shared/utils/vaultListFacets'
+import { deriveAssetCategory, deriveListKind, isAllocatorVaultOverride } from '@vaults/shared/utils/vaultListFacets'
 import { useMemo } from 'react'
 import {
   createCheckHasAvailableBalance,
@@ -24,7 +19,6 @@ type TVaultIndexEntry = {
   searchableText: string
   kind: ReturnType<typeof deriveListKind>
   category: string
-  protocol: string | null
   isHidden: boolean
   isActive: boolean
   isMigratable: boolean
@@ -48,8 +42,7 @@ export function useV2VaultFilter(
   types: string[] | null,
   chains: number[] | null,
   search?: string,
-  categories?: string[] | null,
-  protocols?: string[] | null
+  categories?: string[] | null
 ): TOptimizedV2VaultFilterResult {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
@@ -96,7 +89,6 @@ export function useV2VaultFilter(
           `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase(),
         kind,
         category: deriveAssetCategory(vault),
-        protocol: deriveProtocol(vault, kind),
         isHidden: Boolean(vault.info?.isHidden),
         isActive: Boolean(updates.isActive),
         isMigratable: Boolean(updates.isMigratable),
@@ -177,8 +169,7 @@ export function useV2VaultFilter(
     const vaultFlags: Record<string, TVaultFlags> = {}
 
     vaultIndex.forEach((entry) => {
-      const { key, vault, searchableText, kind, category, protocol, isHidden, isActive, isMigratable, isRetired } =
-        entry
+      const { key, vault, searchableText, kind, category, isHidden, isActive, isMigratable, isRetired } = entry
       const walletFlag = walletFlags.get(key)
       const hasHoldings = Boolean(walletFlag?.hasHoldings)
 
@@ -211,12 +202,8 @@ export function useV2VaultFilter(
 
       const matchesKind = !types || types.length === 0 || types.includes(kind)
       const matchesCategory = !categories || categories.length === 0 || categories.includes(category)
-      const matchesProtocol =
-        !protocols ||
-        protocols.length === 0 ||
-        Boolean(protocol && protocol !== 'Unknown' && protocols.includes(protocol))
 
-      if (!(matchesKind && matchesCategory && matchesProtocol)) {
+      if (!(matchesKind && matchesCategory)) {
         return
       }
 
@@ -224,7 +211,7 @@ export function useV2VaultFilter(
     })
 
     return { filteredVaults, vaultFlags }
-  }, [vaultIndex, walletFlags, types, chains, search, categories, protocols, searchRegex, lowercaseSearch])
+  }, [vaultIndex, walletFlags, types, chains, search, categories, searchRegex, lowercaseSearch])
 
   return {
     ...filteredResults,

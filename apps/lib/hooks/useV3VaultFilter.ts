@@ -6,9 +6,9 @@ import { useAppSettings } from '@vaults/contexts/useAppSettings'
 import {
   deriveAssetCategory,
   deriveListKind,
-  deriveProtocol,
   deriveV3Aggressiveness,
-  isAllocatorVaultOverride
+  isAllocatorVaultOverride,
+  type TVaultAggressiveness
 } from '@vaults/shared/utils/vaultListFacets'
 import { useMemo } from 'react'
 import {
@@ -25,8 +25,7 @@ type TVaultIndexEntry = {
   searchableText: string
   kind: ReturnType<typeof deriveListKind>
   category: string
-  protocol: string | null
-  aggressiveness: number | null
+  aggressiveness: TVaultAggressiveness | null
   isHidden: boolean
   isFeatured: boolean
   isActive: boolean
@@ -57,8 +56,7 @@ export function useV3VaultFilter(
   chains: number[] | null,
   search?: string,
   categories?: string[] | null,
-  protocols?: string[] | null,
-  aggressiveness?: number[] | null,
+  aggressiveness?: TVaultAggressiveness[] | null,
   showHiddenVaults?: boolean
 ): TV3VaultFilterResult {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
@@ -106,7 +104,6 @@ export function useV3VaultFilter(
           `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase(),
         kind,
         category: deriveAssetCategory(vault),
-        protocol: deriveProtocol(vault, kind),
         aggressiveness: deriveV3Aggressiveness(vault),
         isHidden: Boolean(vault.info?.isHidden),
         isFeatured: Boolean(vault.info?.isHighlighted),
@@ -189,7 +186,6 @@ export function useV3VaultFilter(
         searchableText,
         kind,
         category,
-        protocol,
         aggressiveness: aggressivenessScore,
         isHidden,
         isFeatured,
@@ -263,15 +259,6 @@ export function useV3VaultFilter(
         shouldIncludeByKind = Boolean(matchesAllocator || matchesStrategy)
       }
 
-      let shouldIncludeByProtocol = true
-      if (protocols && protocols.length > 0) {
-        if (kind === 'allocator') {
-          shouldIncludeByProtocol = false
-        } else {
-          shouldIncludeByProtocol = Boolean(protocol && protocol !== 'Unknown' && protocols.includes(protocol))
-        }
-      }
-
       let shouldIncludeByAggressiveness = true
       if (aggressiveness && aggressiveness.length > 0) {
         shouldIncludeByAggressiveness = Boolean(
@@ -283,7 +270,6 @@ export function useV3VaultFilter(
         shouldIncludeByCategory &&
         shouldIncludeByFeaturedGate &&
         shouldIncludeByKind &&
-        shouldIncludeByProtocol &&
         shouldIncludeByAggressiveness
       ) {
         filteredVaults.push(vault)
@@ -307,7 +293,6 @@ export function useV3VaultFilter(
     chains,
     search,
     categories,
-    protocols,
     aggressiveness,
     holdingsVaults,
     showHiddenVaults,
