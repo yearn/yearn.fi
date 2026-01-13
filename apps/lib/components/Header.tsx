@@ -139,17 +139,13 @@ function AppHeader(): ReactElement {
     }, 150)
   }
 
-  const navLinkClass = (isActive: boolean): string =>
-    cl(
-      'cursor-pointer text-base font-medium transition-colors relative',
-      isHomePage
-        ? isActive
-          ? 'text-white'
-          : 'text-neutral-400 hover:text-white'
-        : isActive
-          ? 'text-text-primary'
-          : 'text-text-secondary hover:text-text-primary'
-    )
+  function navLinkClass(isActive: boolean): string {
+    const baseClass = 'cursor-pointer text-base font-medium transition-colors relative'
+    if (isHomePage) {
+      return cl(baseClass, isActive ? 'text-white' : 'text-neutral-400 hover:text-white')
+    }
+    return cl(baseClass, isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary')
+  }
 
   return (
     <div
