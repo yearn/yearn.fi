@@ -144,13 +144,17 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Create notification with txHash (called after signing succeeds)
   const handleCreateNotification = useCallback(
-    async (txHash: `0x${string}`, notification?: TCreateNotificationParams): Promise<number | undefined> => {
+    async (
+      txHash: `0x${string}`,
+      notification?: TCreateNotificationParams,
+      status: 'pending' | 'submitted' = 'pending'
+    ): Promise<number | undefined> => {
       if (!notification || !account) return undefined
 
       try {
         const id = await createNotification(notification)
         setNotificationId(id)
-        await updateNotification({ id, txHash, status: 'pending' })
+        await updateNotification({ id, txHash, status })
         return id
       } catch (error) {
         console.error('Failed to create notification:', error)
@@ -206,17 +210,28 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       }
     }
 
-    // Check if it's an Enso order
     const isEnsoOrder = !!(step.prepare.data.request as any)?.__isEnsoOrder
+    const isCrossChain = step.notification?.type === 'crosschain zap'
 
     try {
       if (isEnsoOrder) {
         const customWriteAsync = (step.prepare.data.request as any).writeContractAsync
         const result = await customWriteAsync()
         if (result.hash) {
-          setEnsoTxHash(result.hash)
-          setOverlayState('pending')
-          await handleCreateNotification(result.hash, step.notification)
+          // For cross-chain: use 'submitted' status and show success immediately
+          if (isCrossChain) {
+            await handleCreateNotification(result.hash, step.notification, 'submitted')
+            setOverlayState('success')
+            if (step.showConfetti) {
+              setTimeout(() => reward(), 100)
+            }
+            setNotificationId(undefined)
+          } else {
+            // Same-chain Enso: wait for receipt
+            setEnsoTxHash(result.hash)
+            setOverlayState('pending')
+            await handleCreateNotification(result.hash, step.notification)
+          }
         }
       } else {
         // Estimate gas with buffer
@@ -248,11 +263,24 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       if (isUserRejection) {
         onClose()
       } else {
+        console.error('Transaction failed:', error)
         setOverlayState('error')
-        setErrorMessage('Transaction failed. Please try again.')
+        // Show more specific error if available
+        const errorMsg = error?.shortMessage || error?.message || 'Transaction failed. Please try again.'
+        setErrorMessage(errorMsg.length > 100 ? 'Transaction failed. Please try again.' : errorMsg)
       }
     }
-  }, [step, currentChainId, switchChainAsync, client, writeContract, onClose, handleCreateNotification, isLastStep])
+  }, [
+    step,
+    currentChainId,
+    switchChainAsync,
+    client,
+    writeContract,
+    onClose,
+    handleCreateNotification,
+    isLastStep,
+    reward
+  ])
 
   const handleNextStep = useCallback(() => {
     if (wasLastStepRef.current) {
