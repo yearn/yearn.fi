@@ -1,4 +1,5 @@
 import { Button } from '@lib/components/Button'
+import { cl } from '@lib/utils'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
 import {
@@ -257,81 +258,103 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({ isOpen, onClos
     }
   }, [receipt.isError, receipt.error, overlayState])
 
-  if (!isOpen) return null
-
   const capturedStep = stepsToUse[currentStepIndex]
 
   return (
-    <div className="absolute inset-0 bg-surface rounded-lg z-50 flex flex-col">
-      {/* Close button - only shown in success/error states */}
-      {(overlayState === 'success' || overlayState === 'error') && (
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 p-1 hover:bg-surface-secondary rounded-lg transition-colors z-10"
-          type="button"
-        >
-          <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      )}
-
-      {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        {/* Confirming State */}
-        {overlayState === 'confirming' && (
-          <>
-            <Spinner />
-            <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Confirm in your wallet</h3>
-            <p className="text-sm text-text-secondary whitespace-pre-line">{capturedStep?.confirmMessage}</p>
-          </>
+    <div
+      className="absolute z-50"
+      style={{
+        top: '-48px', // Cover the tabs
+        left: 0,
+        right: 0,
+        bottom: 0,
+        pointerEvents: isOpen ? 'auto' : 'none'
+      }}
+    >
+      {/* Semi-transparent backdrop with fade animation */}
+      <div
+        className={cl(
+          'absolute inset-0 bg-black/5 rounded-xl transition-opacity duration-200',
+          isOpen ? 'opacity-100' : 'opacity-0'
+        )}
+      />
+      {/* Overlay content with slide and fade animation */}
+      <div
+        className={cl(
+          'absolute inset-0 bg-surface rounded-xl transition-all duration-300 ease-out flex flex-col',
+          isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+        )}
+      >
+        {/* Close button - only shown in success/error states */}
+        {(overlayState === 'success' || overlayState === 'error') && (
+          <button
+            onClick={handleClose}
+            className="absolute top-4 right-4 p-1 hover:bg-surface-secondary rounded-lg transition-colors z-10"
+            type="button"
+          >
+            <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         )}
 
-        {/* Pending State */}
-        {overlayState === 'pending' && (
-          <>
-            <Spinner />
-            <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction pending</h3>
-            <p className="text-sm text-text-secondary">Waiting for confirmation...</p>
-          </>
-        )}
+        {/* Content */}
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          {/* Confirming State */}
+          {overlayState === 'confirming' && (
+            <>
+              <Spinner />
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Confirm in your wallet</h3>
+              <p className="text-sm text-text-secondary whitespace-pre-line">{capturedStep?.confirmMessage}</p>
+            </>
+          )}
 
-        {/* Success State */}
-        {overlayState === 'success' && (
-          <>
-            <div className="relative">
-              <span id={confettiId} className="absolute top-1/2 left-1/2" />
-              <AnimatedCheckmark isVisible />
-            </div>
-            <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{capturedStep?.successTitle}</h3>
-            <p className="text-sm text-text-secondary whitespace-pre-line mb-6">{capturedStep?.successMessage}</p>
-            <Button
-              onClick={handleNextStep}
-              variant="filled"
-              className="w-full max-w-xs"
-              classNameOverride="yearn--button--nextgen w-full"
-            >
-              {isLastStep ? 'Nice' : nextStep?.label || 'Continue'}
-            </Button>
-          </>
-        )}
+          {/* Pending State */}
+          {overlayState === 'pending' && (
+            <>
+              <Spinner />
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction pending</h3>
+              <p className="text-sm text-text-secondary">Waiting for confirmation...</p>
+            </>
+          )}
 
-        {/* Error State */}
-        {overlayState === 'error' && (
-          <>
-            <ErrorIcon />
-            <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction failed</h3>
-            <p className="text-sm text-text-secondary mb-6">{errorMessage}</p>
-            <Button
-              onClick={handleRetry}
-              variant="filled"
-              className="w-full max-w-xs"
-              classNameOverride="yearn--button--nextgen w-full"
-            >
-              Try Again
-            </Button>
-          </>
-        )}
+          {/* Success State */}
+          {overlayState === 'success' && (
+            <>
+              <div className="relative">
+                <span id={confettiId} className="absolute top-1/2 left-1/2" />
+                <AnimatedCheckmark isVisible />
+              </div>
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{capturedStep?.successTitle}</h3>
+              <p className="text-sm text-text-secondary whitespace-pre-line mb-6">{capturedStep?.successMessage}</p>
+              <Button
+                onClick={handleNextStep}
+                variant="filled"
+                className="w-full max-w-xs"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                {isLastStep ? 'Nice' : nextStep?.label || 'Continue'}
+              </Button>
+            </>
+          )}
+
+          {/* Error State */}
+          {overlayState === 'error' && (
+            <>
+              <ErrorIcon />
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction failed</h3>
+              <p className="text-sm text-text-secondary mb-6">{errorMessage}</p>
+              <Button
+                onClick={handleRetry}
+                variant="filled"
+                className="w-full max-w-xs"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                Try Again
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
