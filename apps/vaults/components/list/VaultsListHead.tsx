@@ -1,6 +1,4 @@
 import { IconChevron } from '@lib/icons/IconChevron'
-import { IconMinus } from '@lib/icons/IconMinus'
-import { IconPlus } from '@lib/icons/IconPlus'
 import type { TSortDirection } from '@lib/types'
 import { cl } from '@lib/utils'
 
@@ -143,9 +141,9 @@ export function VaultsListHead({
         </p>
         <span className={'flex items-center justify-center'}>
           {isActive ? (
-            <IconMinus className={'size-2 text-text-primary'} />
+            <IconChevron className={'size-4 min-w-[16px] text-text-primary'} direction="up" />
           ) : (
-            <IconPlus className={'size-2 text-text-primary/60 group-hover:text-text-primary'} />
+            <IconChevron className={'size-4 min-w-[16px] text-text-primary/60 group-hover:text-text-primary'} />
           )}
         </span>
       </button>
