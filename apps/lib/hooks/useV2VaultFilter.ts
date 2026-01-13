@@ -42,7 +42,8 @@ export function useV2VaultFilter(
   types: string[] | null,
   chains: number[] | null,
   search?: string,
-  categories?: string[] | null
+  categories?: string[] | null,
+  showHiddenVaults?: boolean
 ): TOptimizedV2VaultFilterResult {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
@@ -167,6 +168,7 @@ export function useV2VaultFilter(
   const filteredResults = useMemo(() => {
     const filteredVaults: TYDaemonVault[] = []
     const vaultFlags: Record<string, TVaultFlags> = {}
+    const shouldShowHidden = Boolean(showHiddenVaults)
 
     vaultIndex.forEach((entry) => {
       const { key, vault, searchableText, kind, category, isHidden, isActive, isMigratable, isRetired } = entry
@@ -193,8 +195,13 @@ export function useV2VaultFilter(
 
       const isMigratableVault = Boolean(isMigratable && hasHoldings)
       const isRetiredVault = Boolean(isRetired && hasHoldings)
+      const hasUserHoldings = Boolean(hasHoldings || isMigratableVault || isRetiredVault)
+
+      if (!shouldShowHidden && isHidden && !hasUserHoldings) {
+        return
+      }
       vaultFlags[key] = {
-        hasHoldings: Boolean(hasHoldings || isMigratableVault || isRetiredVault),
+        hasHoldings: hasUserHoldings,
         isMigratable: isMigratableVault,
         isRetired: isRetiredVault,
         isHidden
@@ -211,7 +218,7 @@ export function useV2VaultFilter(
     })
 
     return { filteredVaults, vaultFlags }
-  }, [vaultIndex, walletFlags, types, chains, search, categories, searchRegex, lowercaseSearch])
+  }, [vaultIndex, walletFlags, types, chains, search, categories, searchRegex, lowercaseSearch, showHiddenVaults])
 
   return {
     ...filteredResults,

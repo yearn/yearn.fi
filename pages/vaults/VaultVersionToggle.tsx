@@ -32,7 +32,6 @@ export function VaultVersionToggle({ className, stretch }: TVaultVersionTogglePr
     } else {
       nextParams.set('type', config.typeParam)
     }
-    nextParams.delete('types')
     sanitizeChainsParam(nextParams, getSupportedChainsForVaultType(config.type))
     setSearchParams(nextParams, { replace: true })
   }
