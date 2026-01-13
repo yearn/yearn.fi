@@ -6,12 +6,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from '/src/components/Image'
 
 type TRow = {
-  bgClass: string
   icon: string
   text: string
   description?: string
   href: string
   address?: string
+  bgClass?: string
 }
 
 type TVault = {
@@ -48,57 +48,53 @@ const vaultsRows = [
   {
     symbol: 'ETH',
     icon: '/landing/vaults/eth.png',
-    href: '/v3/1/0xAc37729B76db6438CE62042AE1270ee574CA7571',
+    href: '/vaults/1/0xAc37729B76db6438CE62042AE1270ee574CA7571',
     address: '0xAc37729B76db6438CE62042AE1270ee574CA7571'
   },
   {
     symbol: 'USDS',
     icon: '/landing/vaults/usds.png',
-    href: '/v3/1/0x182863131F9a4630fF9E27830d945B1413e347E8',
+    href: '/vaults/1/0x182863131F9a4630fF9E27830d945B1413e347E8',
     address: '0x182863131F9a4630fF9E27830d945B1413e347E8'
   },
   {
     symbol: 'USDC',
     icon: '/landing/vaults/usdc.png',
-    href: '/v3/1/0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
+    href: '/vaults/1/0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
     address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204'
   },
   {
     symbol: 'crvUSD',
     icon: '/landing/vaults/crvusd.png',
-    href: '/v3/1/0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F',
+    href: '/vaults/1/0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F',
     address: '0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F'
   }
 ]
 
 const appRows: TRow[] = [
   {
-    bgClass: 'bg-black/50',
-    icon: '/landing/apps/veyfi.png',
-    text: 'veYFI',
-    description: 'Earn yield, boost gauges, and take part in governance',
-    href: 'https://veyfi.yearn.fi/'
-  },
-  {
-    bgClass: 'bg-black/30',
     icon: '/landing/apps/ycrv.png',
     text: 'yCRV',
     description: 'Put your yCRV to work',
     href: 'https://ycrv.yearn.fi/'
   },
   {
-    bgClass: 'bg-black/50',
-    icon: '/landing/apps/yeth.png',
-    text: 'yETH',
-    description: 'A basket of LSTs in a single token',
-    href: 'https://yeth.yearn.fi/'
+    icon: '/landing/apps/factory.png',
+    text: 'LP Vaults',
+    description: 'Permissionless Curve Autocompounders',
+    href: 'https://yearn.fi/vaults?type=lp'
   },
   {
-    bgClass: 'bg-black/30',
-    icon: '/landing/apps/bearn.png',
-    text: 'Bearn',
-    description: 'Liquid locker for Berachain',
-    href: 'https://bearn.sucks'
+    icon: '/landing/apps/powerglove.png',
+    text: 'Analytics',
+    description: 'Analytics for all Yearn Vaults',
+    href: 'https://powerglove.yearn.fi'
+  },
+  {
+    icon: '/landing/apps/veyfi.png',
+    text: 'veYFI',
+    description: 'Earn yield, boost gauges, and take part in governance',
+    href: 'https://veyfi.yearn.fi/'
   }
 ]
 
@@ -135,7 +131,15 @@ export const Vaults: FC = () => {
           address: vault.address
         }
       }),
-      appRows
+      appRows.map((app, index) => {
+        return {
+          bgClass: index % 2 === 0 ? 'bg-black/50' : 'bg-black/30',
+          icon: app.icon,
+          text: app.text,
+          description: app.description,
+          href: app.href
+        }
+      })
     ]
   }, [vaults])
 
