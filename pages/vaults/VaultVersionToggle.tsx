@@ -18,7 +18,7 @@ type TButtonConfig = {
 const BUTTON_CONFIGS: TButtonConfig[] = [
   { type: 'all', typeParam: 'all' },
   { type: 'v3', typeParam: 'single' },
-  { type: 'factory', typeParam: 'liquidity' }
+  { type: 'factory', typeParam: 'lp' }
 ]
 
 export function VaultVersionToggle({ className, stretch }: TVaultVersionToggleProps): ReactElement {

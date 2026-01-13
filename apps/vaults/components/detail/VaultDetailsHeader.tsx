@@ -642,7 +642,7 @@ export function VaultDetailsHeader({
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
   const productType = isAllocatorVault ? 'v3' : 'lp'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'Liquidity Vault'
+  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
   const productTypeIcon = isAllocatorVault ? (
     <span className={'text-sm leading-none'}>{'⚙️'}</span>
   ) : isLegacyVault ? (

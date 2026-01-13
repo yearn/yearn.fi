@@ -17,16 +17,16 @@ describe('VaultVersionToggle', () => {
     const html = renderToggle('/vaults')
     expect(html).toMatch(/data-active="true".*All Vaults/)
     expect(html).toMatch(/data-active="false".*Single Asset/)
-    expect(html).toMatch(/data-active="false".*Liquidity/)
+    expect(html).toMatch(/data-active="false".*LP Token/)
     expect(html).not.toMatch(/v3 Strategies/)
     expect(html).toContain('🌐')
     expect(html).toContain('⚙️')
     expect(html).toContain('🏭')
   })
 
-  it('marks liquidity vaults active when type=liquidity', () => {
-    const html = renderToggle('/vaults?type=liquidity')
-    expect(html).toMatch(/data-active="true".*Liquidity/)
+  it('marks lp token vaults active when type=lp', () => {
+    const html = renderToggle('/vaults?type=lp')
+    expect(html).toMatch(/data-active="true".*LP Token/)
     expect(html).toMatch(/data-active="false".*Single Asset/)
     expect(html).toMatch(/data-active="false".*All Vaults/)
     expect(html).toContain('🌐')
@@ -38,6 +38,6 @@ describe('VaultVersionToggle', () => {
     const html = renderToggle('/vaults?type=single')
     expect(html).toMatch(/data-active="false".*All Vaults/)
     expect(html).toMatch(/data-active="true".*Single Asset/)
-    expect(html).toMatch(/data-active="false".*Liquidity/)
+    expect(html).toMatch(/data-active="false".*LP Token/)
   })
 })
