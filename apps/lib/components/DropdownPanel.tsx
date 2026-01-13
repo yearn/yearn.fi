@@ -57,7 +57,7 @@ export function DropdownPanel({
         'absolute top-full mt-2 rounded-2xl border p-4 shadow-xl z-[100]',
         'max-md:fixed max-md:inset-x-0 max-md:top-[var(--header-height)] max-md:mt-0 max-md:rounded-none max-md:border-x-0 max-md:border-t',
         anchor === 'left' ? 'left-0' : 'right-0',
-        isDarkTheme ? 'border-border bg-surface' : 'border-neutral-200 bg-white',
+        isDarkTheme ? 'border-white/10 bg-[#0a0a0a]' : 'border-neutral-200 bg-white',
         className
       )}
     >

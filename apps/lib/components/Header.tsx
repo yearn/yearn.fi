@@ -170,7 +170,11 @@ function AppHeader(): ReactElement {
                   )}
                 />
               </button>
-              <LauncherDropdown isOpen={isLauncherOpen} onClose={() => setIsLauncherOpen(false)} />
+              <LauncherDropdown
+                isOpen={isLauncherOpen}
+                onClose={() => setIsLauncherOpen(false)}
+                forceDark={isHomePage}
+              />
             </div>
             <div className={'hidden items-center gap-3 pb-0.5 md:flex'}>
               <Link href={'/vaults'}>
