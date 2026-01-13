@@ -6,12 +6,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from '/src/components/Image'
 
 type TRow = {
+  bgClass: string
   icon: string
   text: string
   description?: string
   href: string
   address?: string
-  bgClass?: string
 }
 
 type TVault = {
@@ -48,58 +48,59 @@ const vaultsRows = [
   {
     symbol: 'ETH',
     icon: '/landing/vaults/eth.png',
-    href: '/vaults/1/0xAc37729B76db6438CE62042AE1270ee574CA7571',
+    href: '/v3/1/0xAc37729B76db6438CE62042AE1270ee574CA7571',
     address: '0xAc37729B76db6438CE62042AE1270ee574CA7571'
   },
   {
     symbol: 'USDS',
     icon: '/landing/vaults/usds.png',
-    href: '/vaults/1/0x182863131F9a4630fF9E27830d945B1413e347E8',
+    href: '/v3/1/0x182863131F9a4630fF9E27830d945B1413e347E8',
     address: '0x182863131F9a4630fF9E27830d945B1413e347E8'
   },
   {
     symbol: 'USDC',
     icon: '/landing/vaults/usdc.png',
-    href: '/vaults/1/0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
+    href: '/v3/1/0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
     address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204'
   },
   {
     symbol: 'crvUSD',
     icon: '/landing/vaults/crvusd.png',
-    href: '/vaults/1/0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F',
+    href: '/v3/1/0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F',
     address: '0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F'
   }
 ]
 
 const appRows: TRow[] = [
   {
+    bgClass: 'bg-black/50',
+    icon: '/landing/apps/veyfi.png',
+    text: 'veYFI',
+    description: 'Earn yield, boost gauges, and take part in governance',
+    href: 'https://veyfi.yearn.fi/'
+  },
+  {
+    bgClass: 'bg-black/30',
     icon: '/landing/apps/ycrv.png',
     text: 'yCRV',
     description: 'Put your yCRV to work',
     href: 'https://ycrv.yearn.fi/'
   },
   {
-    icon: '/landing/apps/factory.png',
-    text: 'LP Vaults',
-    description: 'Permissionless Curve Autocompounders',
-    href: 'https://yearn.fi/vaults?type=lp'
+    bgClass: 'bg-black/50',
+    icon: '/landing/apps/yeth.png',
+    text: 'yETH',
+    description: 'A basket of LSTs in a single token',
+    href: 'https://yeth.yearn.fi/'
   },
   {
-    icon: '/landing/apps/powerglove.png',
-    text: 'Analytics',
-    description: 'Analytics for all Yearn Vaults',
-    href: 'https://powerglove.yearn.fi'
-  },
-  {
-    icon: '/landing/apps/veyfi.png',
-    text: 'veYFI',
-    description: 'Earn yield, boost gauges, and take part in governance',
-    href: 'https://veyfi.yearn.fi/'
+    bgClass: 'bg-black/30',
+    icon: '/landing/apps/bearn.png',
+    text: 'Bearn',
+    description: 'Liquid locker for Berachain',
+    href: 'https://bearn.sucks'
   }
 ]
-
-const getRowBgClass = (index: number): string =>
-  `${index % 2 === 0 ? 'bg-surface' : 'bg-card'} border border-neutral-200 hover:bg-app hover:scale-[1.005] hover:shadow-md transition-colors duration-200`
 
 export const Vaults: FC = () => {
   const { vaults, isLoadingVaultList } = useYearn()
@@ -114,7 +115,7 @@ export const Vaults: FC = () => {
         // no data? skip or default APR to 0
         if (!vaultData) {
           return {
-            bgClass: getRowBgClass(index),
+            bgClass: index % 2 === 0 ? 'bg-black/50' : 'bg-black/30',
             icon: vault.icon,
             text: `Earn on ${vault.symbol}`,
             href: vault.href,
@@ -127,14 +128,14 @@ export const Vaults: FC = () => {
         const apr = extra > 0 ? forward + extra : forward
 
         return {
-          bgClass: getRowBgClass(index),
+          bgClass: index % 2 === 0 ? 'bg-black/50' : 'bg-black/30',
           icon: vault.icon,
           text: apr > 0 ? `Earn up to ${formatPercent(apr * 100, 2, 2)} on ${vault.symbol}` : `Earn on ${vault.symbol}`,
           href: vault.href,
           address: vault.address
         }
       }),
-      appRows.map((row, index) => ({ ...row, bgClass: getRowBgClass(index) }))
+      appRows
     ]
   }, [vaults])
 
@@ -170,13 +171,11 @@ export const Vaults: FC = () => {
   }, [nextSlide, isHovering])
 
   return (
-    <section
-      className={'flex w-full justify-center border-t border-neutral-200 bg-surface px-4 py-16 md:px-8 lg:py-32'}
-    >
+    <section className={'flex w-full justify-center border-t border-white/10 px-4 py-16 md:px-8 lg:py-32'}>
       <div className={'w-full max-w-[1180px]'}>
         {/* Slides */}
         <div
-          className={'relative mb-8 overflow-hidden rounded-3xl md:mb-12'}
+          className={'relative mb-8 overflow-hidden md:mb-12'}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
         >
@@ -192,7 +191,7 @@ export const Vaults: FC = () => {
                 <div className={'md:min-h-auto relative hidden min-h-[300px] w-full md:flex md:w-2/5'}>
                   <div
                     className={
-                      'relative flex size-full items-center justify-center overflow-hidden rounded-3xl border border-neutral-200 bg-neutral-000'
+                      'relative flex size-full items-center justify-center overflow-hidden rounded-[24px] border border-[#ffffff]/10'
                     }
                     style={{
                       backgroundImage: `url(${slide.background})`,
@@ -222,7 +221,7 @@ export const Vaults: FC = () => {
                   </div>
                   <div
                     className={
-                      'flex w-full flex-col gap-2 overflow-hidden rounded-[16px] bg-surface md:flex-col md:rounded-3xl md:bg-card md:p-2'
+                      'flex w-full flex-col gap-2 overflow-hidden md:flex-col md:rounded-[24px] md:bg-white/5 md:p-[8px]'
                     }
                   >
                     {rows[activeSlide].map((row) => {
@@ -231,24 +230,26 @@ export const Vaults: FC = () => {
                         <a
                           key={row.href}
                           href={row.href}
-                          className={`${row.bgClass} flex cursor-pointer items-center justify-between rounded-[12px] p-2 transition-opacity duration-200 md:rounded-[16px] md:p-[8px]`}
+                          className={`${row.bgClass} flex cursor-pointer items-center justify-between rounded-[12px] p-2 transition-opacity duration-200 hover:opacity-50 md:rounded-[16px] md:p-[8px]`}
                         >
                           <div className={'flex items-center'}>
                             <div className={' mr-2 rounded-2xl p-1 md:mr-3'}>
-                              <div className={'flex size-5 items-center justify-center rounded-2xl bg-card md:size-6'}>
+                              <div
+                                className={'flex size-5 items-center justify-center rounded-2xl bg-gray-900 md:size-6'}
+                              >
                                 <Image src={row.icon} alt={row.text} width={24} height={24} />
                               </div>
                             </div>
                             <div className={'flex flex-col gap-1 md:flex-row md:gap-2'}>
                               {isVaultLoading ? (
                                 <div className={'flex items-center space-x-2'}>
-                                  <div className={'h-6 w-48 animate-pulse rounded-sm bg-neutral-300'} />
+                                  <div className={'h-6 w-48 animate-pulse rounded-sm bg-gray-600'} />
                                 </div>
                               ) : (
                                 <span className={':text-base font-medium'}>{row.text}</span>
                               )}
                               {row.description && (
-                                <span className={'hidden font-light text-neutral-600 md:block md:text-base'}>
+                                <span className={'hidden font-light text-gray-400 md:block md:text-base'}>
                                   {row.description}
                                 </span>
                               )}
@@ -289,7 +290,7 @@ export const Vaults: FC = () => {
                 key={index}
                 onClick={() => goToSlide(index)}
                 className={`size-2 rounded-full transition-all duration-300 ${
-                  index === activeSlide ? 'scale-125 bg-neutral-900' : 'bg-neutral-300'
+                  index === activeSlide ? 'scale-125 bg-white' : 'bg-gray-600'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />

@@ -16,7 +16,7 @@ const FAQItem: FC<TFAQItem> = ({ title, children, isOpen, onToggle }) => {
       <button
         onClick={onToggle}
         className={
-          'flex w-full items-center justify-between rounded-lg border border-neutral-200 bg-surface px-6 py-5 text-neutral-900 transition-colors hover:bg-card'
+          'flex w-full items-center justify-between rounded-lg bg-black/70 px-6 py-5 text-neutral-900 transition-colors hover:bg-black/80'
         }
       >
         <span className={'text-lg'}>{title}</span>
@@ -27,11 +27,7 @@ const FAQItem: FC<TFAQItem> = ({ title, children, isOpen, onToggle }) => {
           {'+'}
         </span>
       </button>
-      {isOpen && (
-        <div className={'mt-px rounded-b-lg border border-neutral-200 bg-surface px-6 py-4 text-base text-neutral-700'}>
-          {children}
-        </div>
-      )}
+      {isOpen && <div className={'mt-px rounded-b-lg bg-black/70 px-6 py-4 text-base text-gray-300'}>{children}</div>}
     </div>
   )
 }
@@ -89,7 +85,7 @@ export const FAQs: FC = () => {
   }
 
   return (
-    <section className={'flex w-full justify-center border-t border-neutral-200 bg-app pb-8 pt-16 lg:pt-32'}>
+    <section className={'flex w-full justify-center pb-8 pt-16 lg:pt-32'}>
       <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between md:flex-row'}>
         <div className={'w-full px-4'}>
           <div className={'mb-10 flex flex-col justify-between gap-y-6 md:flex-row'}>
@@ -100,11 +96,11 @@ export const FAQs: FC = () => {
             />
           </div>
           <div className={'flex flex-col gap-8 md:flex-row'}>
-            <div className={'hidden h-[427px] w-[427px] flex-shrink-0 md:block'}>
+            <div className={'hidden h-[427px] w-[427px] shrink-0 md:block'}>
               <Image
                 src={'/landing/pill4.png'}
                 height={427}
-                alt={'blue'}
+                alt={'blue-pill'}
                 className={'size-full rounded-lg object-cover'}
               />
             </div>

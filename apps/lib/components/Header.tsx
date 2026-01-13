@@ -146,7 +146,10 @@ function AppHeader(): ReactElement {
     )
 
   return (
-    <div id={'head'} className={'sticky inset-x-0 top-0 z-50 w-full bg-app backdrop-blur-md'}>
+    <div
+      id={'head'}
+      className={cl('sticky inset-x-0 top-0 z-50 w-full backdrop-blur-md', isHomePage ? 'bg-transparent' : 'bg-app')}
+    >
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         <header className={'flex h-[var(--header-height)] w-full items-center justify-between px-0'}>
           <div className={'flex items-center justify-start gap-x-4 px-1 py-2 md:py-1'}>

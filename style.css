@@ -78,6 +78,7 @@
   --color-red-200: hsl(0 100% 90%);
 
   --color-blue-500: hsl(220 95% 50%);
+  --color-blue-700: oklch(48.8% .243 264.376);
   --color-blue-800: hsl(230 93% 38%);
   --color-blue-900: hsl(231 100% 25%);
   --color-steel-gray-500: hsl(218 14% 71%);
