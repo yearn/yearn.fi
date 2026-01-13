@@ -341,28 +341,25 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   ])
 
   // ============================================================================
-  // Transaction Steps Configuration
+  // Transaction Step Configuration
   // ============================================================================
   const formattedWithdrawAmount = formatTAmount({ value: withdrawAmount.bn, decimals: assetToken?.decimals ?? 18 })
+  const needsApproval = showApprove && !activeFlow.periphery.isAllowanceSufficient
 
-  const transactionSteps = useMemo(() => {
-    const steps: TransactionStep[] = []
-
-    // Add approve step if needed (for ENSO route)
-    if (showApprove && activeFlow.actions.prepareApprove && !activeFlow.periphery.isAllowanceSufficient) {
-      steps.push({
+  const currentStep: TransactionStep | undefined = useMemo(() => {
+    if (needsApproval && activeFlow.actions.prepareApprove) {
+      return {
         prepare: activeFlow.actions.prepareApprove,
         label: 'Approve',
         confirmMessage: `Approving ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
         successTitle: 'Approval successful',
         successMessage: `Approved ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.\nReady to withdraw.`,
         notification: approveNotificationParams
-      })
+      }
     }
 
-    // Add withdraw step
     const withdrawLabel = routeType === 'DIRECT_UNSTAKE' ? 'Unstake' : 'Withdraw'
-    steps.push({
+    return {
       prepare: activeFlow.actions.prepareWithdraw,
       label: withdrawLabel,
       confirmMessage: `${routeType === 'DIRECT_UNSTAKE' ? 'Unstaking' : 'Withdrawing'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
@@ -370,14 +367,11 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       successMessage: `You ${routeType === 'DIRECT_UNSTAKE' ? 'unstaked' : 'withdrew'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
       showConfetti: true,
       notification: withdrawNotificationParams
-    })
-
-    return steps
+    }
   }, [
-    showApprove,
+    needsApproval,
     activeFlow.actions.prepareApprove,
     activeFlow.actions.prepareWithdraw,
-    activeFlow.periphery.isAllowanceSufficient,
     formattedWithdrawAmount,
     assetToken?.symbol,
     routeType,
@@ -551,7 +545,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       <TransactionOverlay
         isOpen={showTransactionOverlay}
         onClose={() => setShowTransactionOverlay(false)}
-        steps={transactionSteps}
+        step={currentStep}
+        isLastStep={!needsApproval}
         onAllComplete={handleWithdrawSuccess}
       />
 

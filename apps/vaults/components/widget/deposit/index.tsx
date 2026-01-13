@@ -192,27 +192,24 @@ export const WidgetDeposit: FC<Props> = ({
   }, [depositToken, assetAddress, assetToken?.address, assetToken?.chainID, getPrice])
 
   // ============================================================================
-  // Transaction Steps Configuration
+  // Transaction Step Configuration
   // ============================================================================
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
+  const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
 
-  const transactionSteps = useMemo(() => {
-    const steps: TransactionStep[] = []
-
-    // Add approve step if needed (not native token and allowance not sufficient)
-    if (!isNativeToken && !activeFlow.periphery.isAllowanceSufficient) {
-      steps.push({
+  const currentStep: TransactionStep | undefined = useMemo(() => {
+    if (needsApproval) {
+      return {
         prepare: activeFlow.actions.prepareApprove,
         label: 'Approve',
         confirmMessage: `Approving ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Approval successful',
         successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to deposit.`,
         notification: approveNotificationParams
-      })
+      }
     }
 
-    // Add deposit step
-    steps.push({
+    return {
       prepare: activeFlow.actions.prepareDeposit,
       label: routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit',
       confirmMessage: `${routeType === 'DIRECT_STAKE' ? 'Staking' : 'Depositing'} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
@@ -220,12 +217,9 @@ export const WidgetDeposit: FC<Props> = ({
       successMessage: `You ${routeType === 'DIRECT_STAKE' ? 'staked' : 'deposited'} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
       showConfetti: true,
       notification: depositNotificationParams
-    })
-
-    return steps
+    }
   }, [
-    isNativeToken,
-    activeFlow.periphery.isAllowanceSufficient,
+    needsApproval,
     activeFlow.actions.prepareApprove,
     activeFlow.actions.prepareDeposit,
     formattedDepositAmount,
@@ -396,7 +390,8 @@ export const WidgetDeposit: FC<Props> = ({
       <TransactionOverlay
         isOpen={showTransactionOverlay}
         onClose={() => setShowTransactionOverlay(false)}
-        steps={transactionSteps}
+        step={currentStep}
+        isLastStep={!needsApproval}
         onAllComplete={handleDepositSuccess}
       />
 
