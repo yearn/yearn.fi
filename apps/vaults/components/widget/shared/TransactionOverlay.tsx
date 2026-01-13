@@ -89,12 +89,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({ isOpen, onClos
   const confirmations = currentChainId === 8453 ? 2 : 1
   const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash, confirmations })
 
-  const currentStep = steps[currentStepIndex]
-  const isLastStep = currentStepIndex === steps.length - 1
-  const nextStep = !isLastStep ? steps[currentStepIndex + 1] : null
-
   // Capture step config at start so values don't change
   const capturedSteps = useRef<TransactionStep[]>([])
+
+  // Use captured steps for navigation to prevent issues when steps prop changes mid-transaction
+  const stepsToUse = capturedSteps.current.length > 0 ? capturedSteps.current : steps
+  const isLastStep = currentStepIndex === stepsToUse.length - 1
+  const nextStep = !isLastStep ? stepsToUse[currentStepIndex + 1] : null
 
   const confettiId = useId()
   const { reward } = useReward(confettiId, 'confetti', {
@@ -258,7 +259,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({ isOpen, onClos
 
   if (!isOpen) return null
 
-  const capturedStep = capturedSteps.current[currentStepIndex] || currentStep
+  const capturedStep = stepsToUse[currentStepIndex]
 
   return (
     <div className="absolute inset-0 bg-surface rounded-lg z-50 flex flex-col">
