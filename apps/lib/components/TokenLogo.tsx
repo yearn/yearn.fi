@@ -8,10 +8,11 @@ interface TokenLogoProps extends Omit<ImageProps, 'alt' | 'src'> {
   altSrc?: string
   tokenSymbol?: string
   tokenName?: string
+  chainId?: number
 }
 
 function TokenLogo(props: TokenLogoProps): ReactElement {
-  const { src, altSrc, tokenSymbol, tokenName, className, width = 32, height = 32, ...rest } = props
+  const { src, altSrc, tokenSymbol, tokenName, chainId, className, width = 32, height = 32, ...rest } = props
   const [imageSrc, setImageSrc] = useState<string>(src)
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -125,45 +126,69 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
   )
   const showFallback = hasError || isLoading
 
+  // Calculate chain icon size based on token logo size
+  const chainIconSize = Math.max(12, Math.floor(sizeInPx * 0.45))
+
   return (
     <div
       ref={containerRef}
-      className="relative inline-block overflow-hidden"
+      className="relative inline-block"
       style={{
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height
       }}
     >
-      {showFallback ? (
-        // Fallback with text (YV/YG/YS or first letter) - circle border with subtle background while loading/errored
+      <div className="relative overflow-hidden" style={{ width: '100%', height: '100%' }}>
+        {showFallback ? (
+          // Fallback with text (YV/YG/YS or first letter) - circle border with subtle background while loading/errored
+          <div
+            className={cl(
+              'absolute inset-0 flex items-center justify-center rounded-full border-2 border-gray-400 text-gray-400 font-bold bg-surface-secondary',
+              fontSize,
+              className
+            )}
+            style={{
+              width: typeof width === 'number' ? `${width}px` : width,
+              height: typeof height === 'number' ? `${height}px` : height
+            }}
+          >
+            {fallbackText}
+          </div>
+        ) : null}
+        {isVisible && !hasError ? (
+          <img
+            ref={imgRef}
+            src={imageSrc}
+            alt={tokenSymbol || tokenName || 'Token'}
+            className={imageClassName}
+            onLoad={handleLoad}
+            onError={handleError}
+            width={width}
+            height={height}
+            decoding="async"
+            {...rest}
+          />
+        ) : null}
+      </div>
+      {chainId && (
         <div
-          className={cl(
-            'absolute inset-0 flex items-center justify-center rounded-full border-2 border-gray-400 text-gray-400 font-bold bg-surface-secondary',
-            fontSize,
-            className
-          )}
+          className="absolute flex items-center justify-center rounded-full bg-white border border-gray-200"
           style={{
-            width: typeof width === 'number' ? `${width}px` : width,
-            height: typeof height === 'number' ? `${height}px` : height
+            width: `${chainIconSize}px`,
+            height: `${chainIconSize}px`,
+            bottom: '-2px',
+            right: '-2px'
           }}
         >
-          {fallbackText}
+          <img
+            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`}
+            alt="Network"
+            width={chainIconSize - 4}
+            height={chainIconSize - 4}
+            className="object-contain"
+          />
         </div>
-      ) : null}
-      {isVisible && !hasError ? (
-        <img
-          ref={imgRef}
-          src={imageSrc}
-          alt={tokenSymbol || tokenName || 'Token'}
-          className={imageClassName}
-          onLoad={handleLoad}
-          onError={handleError}
-          width={width}
-          height={height}
-          decoding="async"
-          {...rest}
-        />
-      ) : null}
+      )}
     </div>
   )
 }

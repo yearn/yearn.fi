@@ -1,8 +1,7 @@
-import axios from 'axios'
 import { useEffect, useState } from 'react'
 
 const CACHE_KEY = 'katana-aprs-cache'
-const CACHE_TTL = 5 * 60 * 1000 // 5 min
+const CACHE_TTL = 15 * 60 * 1000 // 15 min
 
 export type TKatanaAprs = {
   [key: string]: {
@@ -18,7 +17,6 @@ export type TKatanaAprData = {
   katanaAppRewardsAPR: number // rewards from Morpho, Sushi, Yearn, etc.
   FixedRateKatanaRewards: number // fixed rate rewards from Katana
   katanaBonusAPY: number // bonus APR from Katana for not leaving the vault
-  extrinsicYield: number // yield from underlying assets in bridge
   katanaNativeYield: number // yield from katana markets (the netAPR). This is subsidized if low.
   steerPointsPerDollar?: number // points per dollar from APR oracle (metadata, not part of APR sum).
 }
@@ -55,7 +53,7 @@ export const useKatanaAprs = (): { data: Partial<TKatanaAprs>; isLoading: boolea
           throw new Error('KATANA_APR_SERVICE_API environment variable is not set')
         }
 
-        const freshData = await axios.get(apiUrl).then((res) => res.data)
+        const freshData = await fetch(apiUrl).then((res) => res.json())
 
         const cacheData: TCacheData = {
           data: freshData,

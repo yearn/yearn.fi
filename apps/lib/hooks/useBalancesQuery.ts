@@ -3,6 +3,7 @@ import type { TAddress } from '../types/address'
 import type { TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
 import { isZeroAddress } from '../utils/tools.is'
+import { getChainCacheConfig } from './balanceQueryConfig'
 import { getBalances, type TUseBalancesTokens } from './useBalances.multichains'
 
 /*******************************************************************************
@@ -21,36 +22,6 @@ export const balanceQueryKeys = {
       'tokens',
       tokenAddresses.map(toAddress).toSorted().join(',')
     ] as const
-}
-
-/*******************************************************************************
- ** Cache configuration per chain - different chains have different rate limits
- ******************************************************************************/
-const CHAIN_CACHE_CONFIG: Record<
-  number,
-  {
-    staleTime: number
-    gcTime: number
-  }
-> = {
-  // Mainnet - longer cache times
-  1: { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000 }, // 5 min stale, 10 min cache
-  // Optimism
-  10: { staleTime: 3 * 60 * 1000, gcTime: 7 * 60 * 1000 },
-  // BSC
-  56: { staleTime: 3 * 60 * 1000, gcTime: 7 * 60 * 1000 },
-  // Polygon
-  137: { staleTime: 3 * 60 * 1000, gcTime: 7 * 60 * 1000 },
-  // Arbitrum
-  42161: { staleTime: 3 * 60 * 1000, gcTime: 7 * 60 * 1000 },
-  // Base - shorter cache due to rate limiting issues
-  8453: { staleTime: 10 * 60 * 1000, gcTime: 15 * 60 * 1000 }
-}
-
-const DEFAULT_CACHE_CONFIG = { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000 }
-
-function getChainCacheConfig(chainId: number) {
-  return CHAIN_CACHE_CONFIG[chainId] || DEFAULT_CACHE_CONFIG
 }
 
 /*******************************************************************************

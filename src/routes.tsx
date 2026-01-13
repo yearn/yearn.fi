@@ -4,7 +4,6 @@ import { Navigate, Route, Routes } from 'react-router'
 
 // Lazy load all page components
 const HomePage = lazy(() => import('../pages/index'))
-const AppsPage = lazy(() => import('../pages/apps/index'))
 const PortfolioPage = lazy(() => import('../pages/portfolio/index'))
 const VaultsPage = lazy(() => import('../pages/vaults/index'))
 const VaultsDetailPage = lazy(() => import('../pages/vaults/[chainID]/[address]'))
@@ -27,7 +26,6 @@ const ExternalRedirect = ({ to }: { to: string }): ReactElement => {
 // Route configuration for reference
 export const routeConfig = {
   home: '/',
-  apps: '/apps',
   vaults: {
     index: '/vaults',
     detail: '/vaults/:chainID/:address'
@@ -53,9 +51,6 @@ export function AppRoutes(): ReactElement {
         {/* Home page */}
         <Route path="/" element={<HomePage />} />
 
-        {/* Apps page */}
-        <Route path="/apps" element={<AppsPage />} />
-
         {/* Portfolio page */}
         <Route path="/portfolio" element={<PortfolioPage />} />
 
@@ -66,12 +61,10 @@ export function AppRoutes(): ReactElement {
         </Route>
 
         {/* Legacy redirects to new /vaults routes */}
-        <Route path="/v2" element={<Navigate to="/vaults?type=v2" replace />} />
-        <Route path="/v2/*" element={<Navigate to="/vaults?type=v2" replace />} />
+        <Route path="/v2" element={<Navigate to="/vaults?type=lp" replace />} />
+        <Route path="/v2/*" element={<Navigate to="/vaults?type=lp" replace />} />
         <Route path="/v3" element={<Navigate to="/vaults" replace />} />
         <Route path="/v3/*" element={<Navigate to="/vaults" replace />} />
-        <Route path="/vaults" element={<Navigate to="/vaults" replace />} />
-        <Route path="/vaults/*" element={<Navigate to="/vaults" replace />} />
 
         {/* External redirects */}
         <Route path="/ybribe/*" element={<ExternalRedirect to="https://ybribe.yearn.fi" />} />

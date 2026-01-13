@@ -10,11 +10,14 @@ export const Tooltip: FC<{
   className?: string
   children: ReactElement
   tooltip: string | ReactElement
-}> = ({ children, tooltip, className }) => {
+  openDelayMs?: number
+  toggleOnClick?: boolean
+}> = ({ children, tooltip, className, openDelayMs = 0, toggleOnClick = false }) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const triggerRef = useRef<HTMLDivElement>(null)
   const closeTimeoutRef = useRef<number | null>(null)
+  const openTimeoutRef = useRef<number | null>(null)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
 
   const cancelScheduledClose = useCallback((): void => {
@@ -28,8 +31,20 @@ export const Tooltip: FC<{
     }
   }, [])
 
+  const cancelScheduledOpen = useCallback((): void => {
+    if (openTimeoutRef.current !== null) {
+      if (typeof window !== 'undefined') {
+        window.clearTimeout(openTimeoutRef.current)
+      } else {
+        clearTimeout(openTimeoutRef.current)
+      }
+      openTimeoutRef.current = null
+    }
+  }, [])
+
   const scheduleClose = useCallback((): void => {
     cancelScheduledClose()
+    cancelScheduledOpen()
     if (typeof window === 'undefined') {
       setIsTooltipVisible(false)
       return
@@ -38,7 +53,7 @@ export const Tooltip: FC<{
       setIsTooltipVisible(false)
       closeTimeoutRef.current = null
     }, 100)
-  }, [cancelScheduledClose])
+  }, [cancelScheduledClose, cancelScheduledOpen])
 
   useEffect(() => {
     return () => {
@@ -47,6 +62,13 @@ export const Tooltip: FC<{
           window.clearTimeout(closeTimeoutRef.current)
         } else {
           clearTimeout(closeTimeoutRef.current)
+        }
+      }
+      if (openTimeoutRef.current !== null) {
+        if (typeof window !== 'undefined') {
+          window.clearTimeout(openTimeoutRef.current)
+        } else {
+          clearTimeout(openTimeoutRef.current)
         }
       }
     }
@@ -63,10 +85,19 @@ export const Tooltip: FC<{
     }
   }, [])
 
-  const handleMouseEnter = useCallback((): void => {
+  const scheduleOpen = useCallback((): void => {
     cancelScheduledClose()
+    cancelScheduledOpen()
+    if (openDelayMs > 0 && typeof window !== 'undefined') {
+      openTimeoutRef.current = window.setTimeout(showTooltip, openDelayMs)
+      return
+    }
     showTooltip()
-  }, [cancelScheduledClose, showTooltip])
+  }, [cancelScheduledClose, cancelScheduledOpen, openDelayMs, showTooltip])
+
+  const handleMouseEnter = useCallback((): void => {
+    scheduleOpen()
+  }, [scheduleOpen])
 
   const handleMouseLeave = useCallback(
     (event: MouseEvent<HTMLDivElement>): void => {
@@ -94,6 +125,23 @@ export const Tooltip: FC<{
     [scheduleClose]
   )
 
+  const handleClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>): void => {
+      if (!toggleOnClick) {
+        return
+      }
+      event.stopPropagation()
+      cancelScheduledClose()
+      cancelScheduledOpen()
+      if (isTooltipVisible) {
+        setIsTooltipVisible(false)
+        return
+      }
+      showTooltip()
+    },
+    [cancelScheduledClose, cancelScheduledOpen, isTooltipVisible, showTooltip, toggleOnClick]
+  )
+
   useEffect(() => {
     if (!isTooltipVisible) {
       return
@@ -118,6 +166,7 @@ export const Tooltip: FC<{
       ref={triggerRef}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
       className={cl('flex w-fit items-center justify-end gap-4 md:justify-center relative h-6', className)}
     >
       {children}

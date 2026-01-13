@@ -37,13 +37,13 @@ type TAllocationChartProps = {
  ************************************************************************************************/
 function useDarkMode(): boolean {
   const themePreference = useThemePreference()
-  return themePreference === 'dark'
+  return themePreference !== 'light'
 }
 
 export function AllocationChart({
   allocationChartData,
   colors,
-  textColor = 'bg-neutral-900',
+  textColor = 'fill-[var(--color-text-primary)]',
   strokeColor,
   fillColor = 'white',
   width = 150,

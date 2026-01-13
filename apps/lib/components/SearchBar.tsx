@@ -17,6 +17,8 @@ type TSearchBar = {
   onSearchClick?: () => void
   highlightWhenActive?: boolean
   alertContent?: ReactNode
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  autoFocus?: boolean
 }
 
 export function SearchBar(props: TSearchBar): ReactElement {
@@ -67,8 +69,8 @@ export function SearchBar(props: TSearchBar): ReactElement {
         'flex h-10 items-center gap-2 px-2 rounded-md',
         props.highlightWhenActive
           ? localSearchValue
-            ? 'bg-surface-secondary border border-border'
-            : 'border border-border bg-surface-secondary focus-within:bg-surface-secondary focus-within:border-border-hover'
+            ? 'bg-surface border border-border'
+            : 'border border-border bg-surface focus-within:bg-surface-secondary focus-within:border-border-hover'
           : 'border border-border bg-surface',
         props.className
       )}
@@ -88,6 +90,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
             handleSearchChange(e.target.value)
           }}
           onKeyDown={(e) => {
+            props.onKeyDown?.(e)
             if (!props.shouldSearchByClick) {
               return
             }

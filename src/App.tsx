@@ -1,6 +1,7 @@
 import AppHeader from '@lib/components/Header'
 import { Meta } from '@lib/components/Meta'
 import { WithFonts } from '@lib/components/WithFonts'
+import { ChartStyleContextApp } from '@lib/contexts/useChartStyle'
 import { IndexedDB } from '@lib/contexts/useIndexedDB'
 import { WithNotifications } from '@lib/contexts/useNotifications'
 import { WithNotificationsActions } from '@lib/contexts/useNotificationsActions'
@@ -13,7 +14,7 @@ import { IconAlertError } from '@lib/icons/IconAlertError'
 import { IconCheckmark } from '@lib/icons/IconCheckmark'
 import { cl } from '@lib/utils'
 import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
-import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
+import { AppSettingsContextApp } from '@vaults/contexts/useAppSettings'
 import type { ReactElement } from 'react'
 import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
@@ -26,7 +27,7 @@ function WithLayout(): ReactElement {
   return (
     <>
       <div className={'sticky top-0 z-60 w-full'}>
-        <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
+        <AppHeader />
       </div>
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>
@@ -83,20 +84,22 @@ function App(): ReactElement {
               ]}
             >
               <AppSettingsContextApp>
-                <YearnContextApp>
-                  <WalletContextApp>
-                    <IndexedDB>
-                      <WithNotifications>
-                        <WithNotificationsActions>
-                          <DevFlagsProvider>
-                            <WithLayout />
-                            {/* <DevToolbar /> */}
-                          </DevFlagsProvider>
-                        </WithNotificationsActions>
-                      </WithNotifications>
-                    </IndexedDB>
-                  </WalletContextApp>
-                </YearnContextApp>
+                <ChartStyleContextApp>
+                  <YearnContextApp>
+                    <WalletContextApp>
+                      <IndexedDB>
+                        <WithNotifications>
+                          <WithNotificationsActions>
+                            <DevFlagsProvider>
+                              <WithLayout />
+                              {/* <DevToolbar /> */}
+                            </DevFlagsProvider>
+                          </WithNotificationsActions>
+                        </WithNotifications>
+                      </IndexedDB>
+                    </WalletContextApp>
+                  </YearnContextApp>
+                </ChartStyleContextApp>
               </AppSettingsContextApp>
             </WithMom>
           </PlausibleProvider>
