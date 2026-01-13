@@ -359,6 +359,20 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     }
 
     const withdrawLabel = routeType === 'DIRECT_UNSTAKE' ? 'Unstake' : 'Withdraw'
+
+    // Cross-chain transactions show different success messages
+    if (isCrossChain) {
+      return {
+        prepare: activeFlow.actions.prepareWithdraw,
+        label: withdrawLabel,
+        confirmMessage: `${routeType === 'DIRECT_UNSTAKE' ? 'Unstaking' : 'Withdrawing'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
+        successTitle: 'Transaction Submitted',
+        successMessage: `Your cross-chain ${withdrawLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
+        showConfetti: true,
+        notification: withdrawNotificationParams
+      }
+    }
+
     return {
       prepare: activeFlow.actions.prepareWithdraw,
       label: withdrawLabel,
@@ -376,7 +390,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     assetToken?.symbol,
     routeType,
     approveNotificationParams,
-    withdrawNotificationParams
+    withdrawNotificationParams,
+    isCrossChain
   ])
 
   // ============================================================================

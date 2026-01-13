@@ -428,7 +428,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
                 className="w-full max-w-xs"
                 classNameOverride="yearn--button--nextgen w-full"
               >
-                {wasLastStepRef.current ? 'Nice' : step?.label || 'Continue'}
+                {executedStepRef.current?.notification?.type === 'crosschain zap'
+                  ? 'Got it'
+                  : wasLastStepRef.current
+                    ? 'Nice'
+                    : step?.label || 'Continue'}
               </Button>
             </>
           )}

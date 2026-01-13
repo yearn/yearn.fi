@@ -209,12 +209,27 @@ export const WidgetDeposit: FC<Props> = ({
       }
     }
 
+    const actionVerb = routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'
+    const actionVerbPast = routeType === 'DIRECT_STAKE' ? 'staked' : 'deposited'
+
+    if (isCrossChain) {
+      return {
+        prepare: activeFlow.actions.prepareDeposit,
+        label: actionVerb,
+        confirmMessage: `${routeType === 'DIRECT_STAKE' ? 'Staking' : 'Depositing'} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
+        successTitle: 'Transaction Submitted',
+        successMessage: `Your cross-chain ${actionVerb.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
+        showConfetti: true,
+        notification: depositNotificationParams
+      }
+    }
+
     return {
       prepare: activeFlow.actions.prepareDeposit,
-      label: routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit',
+      label: actionVerb,
       confirmMessage: `${routeType === 'DIRECT_STAKE' ? 'Staking' : 'Depositing'} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
-      successTitle: `${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'} successful!`,
-      successMessage: `You ${routeType === 'DIRECT_STAKE' ? 'staked' : 'deposited'} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+      successTitle: `${actionVerb} successful!`,
+      successMessage: `You ${actionVerbPast} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
       showConfetti: true,
       notification: depositNotificationParams
     }
@@ -227,7 +242,8 @@ export const WidgetDeposit: FC<Props> = ({
     vaultSymbol,
     routeType,
     approveNotificationParams,
-    depositNotificationParams
+    depositNotificationParams,
+    isCrossChain
   ])
 
   // ============================================================================
