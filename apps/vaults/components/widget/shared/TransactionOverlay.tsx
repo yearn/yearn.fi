@@ -1,9 +1,12 @@
 import { Button } from '@lib/components/Button'
+import { useNotificationsActions } from '@lib/contexts/useNotificationsActions'
+import type { TCreateNotificationParams } from '@lib/types/notifications'
 import { cl } from '@lib/utils'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
 import {
   type UseSimulateContractReturnType,
+  useAccount,
   useChainId,
   usePublicClient,
   useSwitchChain,
@@ -20,6 +23,7 @@ export type TransactionStep = {
   successTitle: string
   successMessage: string
   showConfetti?: boolean
+  notification?: TCreateNotificationParams
 }
 
 type TransactionOverlayProps = {
@@ -85,6 +89,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({ isOpen, onClos
   const { switchChainAsync } = useSwitchChain()
   const [ensoTxHash, setEnsoTxHash] = useState<`0x${string}` | undefined>()
   const client = usePublicClient()
+  const { address: account } = useAccount()
+
+  // Notification system integration
+  const { createNotification, updateNotification } = useNotificationsActions()
+  const [notificationId, setNotificationId] = useState<number | undefined>()
 
   // Fast chains like BASE need extra confirmations
   const confirmations = currentChainId === 8453 ? 2 : 1
@@ -120,96 +129,178 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({ isOpen, onClos
       setErrorMessage('')
       setEnsoTxHash(undefined)
       hasStartedRef.current = false
+      setNotificationId(undefined)
       writeContract.reset()
     }
   }, [isOpen])
 
-  const executeCurrentStep = useCallback(async () => {
-    const step = capturedSteps.current[currentStepIndex] || steps[currentStepIndex]
-    if (!step?.prepare.isSuccess || !step?.prepare.data?.request) {
-      setOverlayState('error')
-      setErrorMessage('Transaction not ready. Please try again.')
-      return
-    }
+  // Create notification with txHash (called after signing succeeds)
+  const handleCreateNotification = useCallback(
+    async (txHash: `0x${string}`, notification?: TCreateNotificationParams): Promise<number | undefined> => {
+      if (!notification || !account) return undefined
 
-    setOverlayState('confirming')
-    setErrorMessage('')
-
-    const txChainId = step.prepare.data.request.chainId
-    const wrongNetwork = txChainId && currentChainId !== txChainId
-
-    // Handle chain switch if needed
-    if (wrongNetwork && txChainId) {
       try {
-        await switchChainAsync({ chainId: txChainId })
-      } catch {
-        // User rejected chain switch - silent close
-        onClose()
+        const id = await createNotification(notification)
+        setNotificationId(id)
+        await updateNotification({ id, txHash, status: 'pending' })
+        return id
+      } catch (error) {
+        console.error('Failed to create notification:', error)
+        return undefined
+      }
+    },
+    [account, createNotification, updateNotification]
+  )
+
+  // Update notification with new status/receipt
+  const handleUpdateNotification = useCallback(
+    async (params: { status?: 'pending' | 'success' | 'error'; receipt?: any }) => {
+      if (!notificationId) return
+
+      try {
+        await updateNotification({
+          id: notificationId,
+          status: params.status,
+          receipt: params.receipt
+        })
+      } catch (error) {
+        console.error('Failed to update notification:', error)
+      }
+    },
+    [notificationId, updateNotification]
+  )
+
+  const executeCurrentStep = useCallback(
+    async (stepIndex?: number, retryCount = 0) => {
+      const index = stepIndex ?? currentStepIndex
+
+      // For steps after the first, use live steps as prepare data needs to reflect current state
+      // The parent may have removed earlier steps (e.g., approve removed after allowance granted)
+      // So we match by label from captured steps to find the right live step
+      const capturedStep = capturedSteps.current[index]
+      let step = capturedStep
+
+      // Try to find matching live step by label (more reliable after steps array changes)
+      if (capturedStep) {
+        const liveStep = steps.find((s) => s.label === capturedStep.label)
+        if (liveStep?.prepare.isSuccess && liveStep?.prepare.data?.request) {
+          step = liveStep
+        }
+      }
+
+      // If step prepare isn't ready, check live steps as fallback
+      if (!step?.prepare.isSuccess || !step?.prepare.data?.request) {
+        const liveStep = steps.find((s) => s.label === capturedStep?.label) || steps[0]
+        if (liveStep?.prepare.isSuccess && liveStep?.prepare.data?.request) {
+          step = liveStep
+        }
+      }
+
+      // If still not ready, retry a few times (allowance query may still be updating)
+      if (!step?.prepare.isSuccess || !step?.prepare.data?.request) {
+        if (retryCount < 10) {
+          setTimeout(() => executeCurrentStep(stepIndex, retryCount + 1), 500)
+          return
+        }
+        setOverlayState('error')
+        setErrorMessage('Transaction not ready. Please try again.')
         return
       }
-    }
 
-    // Check if it's an Enso order
-    const isEnsoOrder = !!(step.prepare.data.request as any)?.__isEnsoOrder
+      setOverlayState('confirming')
+      setErrorMessage('')
 
-    try {
-      if (isEnsoOrder) {
-        const customWriteAsync = (step.prepare.data.request as any).writeContractAsync
-        const result = await customWriteAsync()
-        if (result.hash) {
-          setEnsoTxHash(result.hash)
-          setOverlayState('pending')
+      const txChainId = step.prepare.data.request.chainId
+      const wrongNetwork = txChainId && currentChainId !== txChainId
+
+      // Handle chain switch if needed
+      if (wrongNetwork && txChainId) {
+        try {
+          await switchChainAsync({ chainId: txChainId })
+        } catch {
+          // User rejected chain switch - silent close
+          onClose()
+          return
         }
-      } else {
-        // Estimate gas with buffer
-        let gasOverrides: { gas?: bigint } = {}
-        if (client) {
-          try {
-            const gasEstimate = await client.estimateContractGas(step.prepare.data.request as any)
-            if (gasEstimate) {
-              gasOverrides = { gas: (gasEstimate * BigInt(110)) / BigInt(100) }
-            }
-          } catch {
-            // Gas estimation failed, proceed without override
+      }
+
+      // Check if it's an Enso order
+      const isEnsoOrder = !!(step.prepare.data.request as any)?.__isEnsoOrder
+
+      try {
+        if (isEnsoOrder) {
+          const customWriteAsync = (step.prepare.data.request as any).writeContractAsync
+          const result = await customWriteAsync()
+          if (result.hash) {
+            setEnsoTxHash(result.hash)
+            setOverlayState('pending')
+            // Create notification after signing succeeds
+            await handleCreateNotification(result.hash, step.notification)
           }
+        } else {
+          // Estimate gas with buffer
+          let gasOverrides: { gas?: bigint } = {}
+          if (client) {
+            try {
+              const gasEstimate = await client.estimateContractGas(step.prepare.data.request as any)
+              if (gasEstimate) {
+                gasOverrides = { gas: (gasEstimate * BigInt(110)) / BigInt(100) }
+              }
+            } catch {
+              // Gas estimation failed, proceed without override
+            }
+          }
+
+          const hash = await writeContract.writeContractAsync({
+            ...step.prepare.data.request,
+            ...gasOverrides
+          })
+          setOverlayState('pending')
+          // Create notification after signing succeeds
+          await handleCreateNotification(hash, step.notification)
         }
+      } catch (error: any) {
+        const isUserRejection =
+          error?.message?.toLowerCase().includes('rejected') ||
+          error?.message?.toLowerCase().includes('denied') ||
+          error?.code === 4001
 
-        await writeContract.writeContractAsync({
-          ...step.prepare.data.request,
-          ...gasOverrides
-        })
-        setOverlayState('pending')
+        if (isUserRejection) {
+          // Silent close on rejection
+          onClose()
+        } else {
+          setOverlayState('error')
+          setErrorMessage('Transaction failed. Please try again.')
+        }
       }
-    } catch (error: any) {
-      const isUserRejection =
-        error?.message?.toLowerCase().includes('rejected') ||
-        error?.message?.toLowerCase().includes('denied') ||
-        error?.code === 4001
-
-      if (isUserRejection) {
-        // Silent close on rejection
-        onClose()
-      } else {
-        setOverlayState('error')
-        setErrorMessage('Transaction failed. Please try again.')
-      }
-    }
-  }, [currentStepIndex, steps, currentChainId, switchChainAsync, client, writeContract, onClose])
+    },
+    [
+      currentStepIndex,
+      steps,
+      currentChainId,
+      switchChainAsync,
+      client,
+      writeContract,
+      onClose,
+      handleCreateNotification
+    ]
+  )
 
   const handleNextStep = useCallback(() => {
     if (isLastStep) {
       onAllComplete?.()
       onClose()
     } else {
-      setCurrentStepIndex((prev) => prev + 1)
-      setOverlayState('idle')
-      // Will trigger executeCurrentStep via useEffect
+      const nextIndex = currentStepIndex + 1
+      setCurrentStepIndex(nextIndex)
+      writeContract.reset()
+      setEnsoTxHash(undefined)
+      // Execute next step with explicit index to avoid stale closure
       setTimeout(() => {
-        setOverlayState('idle')
-        executeCurrentStep()
+        executeCurrentStep(nextIndex)
       }, 100)
     }
-  }, [isLastStep, onAllComplete, onClose, executeCurrentStep])
+  }, [isLastStep, onAllComplete, onClose, currentStepIndex, writeContract, executeCurrentStep])
 
   const handleRetry = useCallback(() => {
     writeContract.reset()
@@ -239,13 +330,24 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({ isOpen, onClos
       writeContract.reset()
       setEnsoTxHash(undefined)
 
+      // Update notification to success
+      handleUpdateNotification({ receipt: receipt.data, status: 'success' })
+      setNotificationId(undefined)
+
       // Fire confetti if this step has it
       const step = capturedSteps.current[currentStepIndex]
       if (step?.showConfetti) {
         setTimeout(() => reward(), 100)
       }
     }
-  }, [receipt.isSuccess, receipt.data?.transactionHash, overlayState, currentStepIndex, reward])
+  }, [
+    receipt.isSuccess,
+    receipt.data?.transactionHash,
+    overlayState,
+    currentStepIndex,
+    reward,
+    handleUpdateNotification
+  ])
 
   // Handle transaction error
   // biome-ignore lint/correctness/useExhaustiveDependencies: writeContract excluded to prevent loops
@@ -255,8 +357,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({ isOpen, onClos
       setErrorMessage('Transaction failed. Please try again.')
       writeContract.reset()
       setEnsoTxHash(undefined)
+
+      // Update notification to error
+      handleUpdateNotification({ status: 'error' })
+      setNotificationId(undefined)
     }
-  }, [receipt.isError, receipt.error, overlayState])
+  }, [receipt.isError, receipt.error, overlayState, handleUpdateNotification])
 
   const capturedStep = stepsToUse[currentStepIndex]
 

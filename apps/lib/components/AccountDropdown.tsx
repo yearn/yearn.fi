@@ -42,7 +42,7 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
   }, [address, ens, clusters])
 
   const recentActivity = useMemo(() => {
-    return cachedEntries.sort((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)).slice(0, 3)
+    return cachedEntries.toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)).slice(0, 3)
   }, [cachedEntries])
 
   const handleViewPortfolio = useCallback(() => {

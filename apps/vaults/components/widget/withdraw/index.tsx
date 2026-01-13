@@ -18,6 +18,7 @@ import { SourceSelector } from './SourceSelector'
 import type { WithdrawalSource, WithdrawWidgetProps } from './types'
 import { useWithdrawError } from './useWithdrawError'
 import { useWithdrawFlow } from './useWithdrawFlow'
+import { useWithdrawNotifications } from './useWithdrawNotifications'
 import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsModal } from './WithdrawDetailsModal'
 
@@ -234,9 +235,27 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   })
 
   // ============================================================================
-  // Loading State
+  // Notifications
   // ============================================================================
-  // const isLoadingQuote = useLoadingQuote(withdrawAmount.isDebouncing, activeFlow.periphery.isLoadingRoute)
+  const isCrossChain = destinationChainId !== chainId
+  const { approveNotificationParams, withdrawNotificationParams } = useWithdrawNotifications({
+    vault,
+    outputToken,
+    stakingToken,
+    sourceToken,
+    assetAddress,
+    withdrawToken,
+    account,
+    chainId,
+    destinationChainId,
+    withdrawAmount: withdrawAmount.debouncedBn,
+    requiredShares,
+    expectedOut: activeFlow.periphery.expectedOut,
+    routeType,
+    routerAddress: activeFlow.periphery.routerAddress,
+    isCrossChain,
+    withdrawalSource: withdrawalSource || 'vault'
+  })
 
   // ============================================================================
   // Error Handling
@@ -336,7 +355,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
         label: 'Approve',
         confirmMessage: `Approving ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
         successTitle: 'Approval successful',
-        successMessage: `Approved ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.\nReady to withdraw.`
+        successMessage: `Approved ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.\nReady to withdraw.`,
+        notification: approveNotificationParams
       })
     }
 
@@ -348,7 +368,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       confirmMessage: `${routeType === 'DIRECT_UNSTAKE' ? 'Unstaking' : 'Withdrawing'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
       successTitle: `${withdrawLabel} successful!`,
       successMessage: `You ${routeType === 'DIRECT_UNSTAKE' ? 'unstaked' : 'withdrew'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
-      showConfetti: true
+      showConfetti: true,
+      notification: withdrawNotificationParams
     })
 
     return steps
@@ -359,7 +380,9 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     activeFlow.periphery.isAllowanceSufficient,
     formattedWithdrawAmount,
     assetToken?.symbol,
-    routeType
+    routeType,
+    approveNotificationParams,
+    withdrawNotificationParams
   ])
 
   // ============================================================================

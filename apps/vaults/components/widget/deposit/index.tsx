@@ -17,6 +17,7 @@ import { AnnualReturnModal } from './AnnualReturnModal'
 import { DepositDetails } from './DepositDetails'
 import { useDepositError } from './useDepositError'
 import { useDepositFlow } from './useDepositFlow'
+import { useDepositNotifications } from './useDepositNotifications'
 import { useFetchMaxQuote } from './useFetchMaxQuote'
 import { VaultSharesModal } from './VaultSharesModal'
 
@@ -128,9 +129,25 @@ export const WidgetDeposit: FC<Props> = ({
   })
 
   // ============================================================================
-  // Loading State
+  // Notifications
   // ============================================================================
-  // const isLoadingQuote = useLoadingQuote(depositAmount.isDebouncing, activeFlow.periphery.isLoadingRoute)
+  const isCrossChain = sourceChainId !== chainId
+  const { approveNotificationParams, depositNotificationParams } = useDepositNotifications({
+    inputToken,
+    vault,
+    stakingToken,
+    depositToken,
+    assetAddress,
+    destinationToken,
+    stakingAddress,
+    account,
+    sourceChainId,
+    chainId,
+    depositAmount: depositAmount.debouncedBn,
+    routeType,
+    routerAddress: activeFlow.periphery.routerAddress,
+    isCrossChain
+  })
 
   // ============================================================================
   // Error Handling
@@ -189,7 +206,8 @@ export const WidgetDeposit: FC<Props> = ({
         label: 'Approve',
         confirmMessage: `Approving ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Approval successful',
-        successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to deposit.`
+        successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to deposit.`,
+        notification: approveNotificationParams
       })
     }
 
@@ -200,7 +218,8 @@ export const WidgetDeposit: FC<Props> = ({
       confirmMessage: `${routeType === 'DIRECT_STAKE' ? 'Staking' : 'Depositing'} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
       successTitle: `${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'} successful!`,
       successMessage: `You ${routeType === 'DIRECT_STAKE' ? 'staked' : 'deposited'} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
-      showConfetti: true
+      showConfetti: true,
+      notification: depositNotificationParams
     })
 
     return steps
@@ -212,7 +231,9 @@ export const WidgetDeposit: FC<Props> = ({
     formattedDepositAmount,
     inputToken?.symbol,
     vaultSymbol,
-    routeType
+    routeType,
+    approveNotificationParams,
+    depositNotificationParams
   ])
 
   // ============================================================================
