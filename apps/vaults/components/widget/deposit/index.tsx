@@ -380,6 +380,7 @@ export const WidgetDeposit: FC<Props> = ({
                   depositAmount.isDebouncing
                 }
                 className="w-full"
+                data-testid="approve-button"
                 notification={approveNotificationParams}
                 successModal={approveSuccessModal}
               />
@@ -399,6 +400,7 @@ export const WidgetDeposit: FC<Props> = ({
               loading={activeFlow.periphery.isLoadingRoute}
               onSuccess={handleDepositSuccess}
               className="w-full"
+              data-testid="deposit-button"
               notification={depositNotificationParams}
               successModal={depositSuccessModal}
               crossChainSubmitModal={crossChainSubmitModal}
