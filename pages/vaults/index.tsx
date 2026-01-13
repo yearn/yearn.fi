@@ -5,6 +5,7 @@ import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@lib/types'
 import { cl, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
+import { useMediaQuery } from '@react-hookz/web'
 import { VaultsAuxiliaryList } from '@vaults/components/list/VaultsAuxiliaryList'
 import { VaultsListHead } from '@vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@vaults/components/list/VaultsListRow'
@@ -102,6 +103,10 @@ function ListOfVaults({
   const isAllVaults = vaultType === 'all'
   const isV3View = vaultType === 'v3' || isAllVaults
   const isV2View = vaultType === 'factory' || isAllVaults
+  const shouldCollapseChips =
+    useMediaQuery('(max-width: 1000px)', {
+      initializeWithValue: false
+    }) ?? false
 
   useLayoutEffect(() => {
     const filtersElement = filtersRef.current
@@ -782,6 +787,7 @@ function ListOfVaults({
             onToggleCategory={handleToggleCategory}
             onToggleType={vaultType === 'v3' ? handleToggleType : undefined}
             onToggleVaultType={handleToggleVaultType}
+            shouldCollapseChips={shouldCollapseChips}
             showStrategies={showStrategies}
           />
         ))}
@@ -803,6 +809,7 @@ function ListOfVaults({
                   onToggleCategory={handleToggleCategory}
                   onToggleType={vaultType === 'v3' ? handleToggleType : undefined}
                   onToggleVaultType={handleToggleVaultType}
+                  shouldCollapseChips={shouldCollapseChips}
                   showStrategies={showStrategies}
                 />
               )

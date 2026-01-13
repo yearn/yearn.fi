@@ -5,6 +5,7 @@ import { Tooltip } from '@lib/components/Tooltip'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { IconCirclePile } from '@lib/icons/IconCirclePile'
 import { IconEyeOff } from '@lib/icons/IconEyeOff'
+import { IconMigratable } from '@lib/icons/IconMigratable'
 import { IconRewind } from '@lib/icons/IconRewind'
 import { IconStablecoin } from '@lib/icons/IconStablecoin'
 import { IconStack } from '@lib/icons/IconStack'
@@ -54,7 +55,8 @@ export function VaultsListRow({
   onToggleType,
   activeProductType,
   onToggleVaultType,
-  showStrategies = false
+  showStrategies = false,
+  shouldCollapseChips = false
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
@@ -69,6 +71,7 @@ export function VaultsListRow({
   activeProductType?: 'v3' | 'lp' | 'all'
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
+  shouldCollapseChips?: boolean
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
@@ -98,6 +101,9 @@ export function VaultsListRow({
   const isProductTypeActive = activeProductType === productType
   const shouldCollapseProductTypeChip =
     !isLegacyVault && activeProductType !== 'all' && activeProductType === productType
+  const isChipsCompressed = Boolean(shouldCollapseChips)
+  const shouldCollapseProductType = isChipsCompressed || shouldCollapseProductTypeChip
+  const showCollapsedTooltip = isChipsCompressed
   const leftColumnSpan = 'col-span-12'
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
@@ -125,6 +131,8 @@ export function VaultsListRow({
     ) : kindType === 'single' ? (
       <IconStack className={'size-3.5'} />
     ) : null
+  const migratableIcon = <IconMigratable className={'size-3.5'} />
+  const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
   const tvlNativeTooltip = (
     <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       <span className={'font-number'}>
@@ -191,7 +199,7 @@ export function VaultsListRow({
         />
 
         <div className={cl(leftColumnSpan, 'z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
-          <div className={'flex flex-row w-full gap-4 overflow-hidden'}>
+          <div className={'flex flex-row w-full gap-4 overflow-visible'}>
             <div className={'relative flex items-center justify-center self-center size-8 min-h-8 min-w-8'}>
               <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
@@ -216,12 +224,14 @@ export function VaultsListRow({
               >
                 {currentVault.name}
               </strong>
-              <div className={'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'}>
+              <div className={'mt-1 flex items-center gap-1 text-xs text-text-primary/70 whitespace-nowrap'}>
                 <div className={'hidden md:block'}>
                   <VaultsListChip
                     label={network.name}
                     icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
                     isActive={activeChainIds.includes(currentVault.chainID)}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
                     onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
                     ariaLabel={`Filter by ${network.name}`}
                   />
@@ -231,6 +241,8 @@ export function VaultsListRow({
                     label={currentVault.category}
                     icon={categoryIcon}
                     isActive={activeCategoryLabels.includes(currentVault.category)}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
                     onClick={onToggleCategory ? (): void => onToggleCategory(currentVault.category) : undefined}
                     ariaLabel={`Filter by ${currentVault.category}`}
                   />
@@ -240,21 +252,45 @@ export function VaultsListRow({
                     label={productTypeLabel}
                     icon={productTypeIcon}
                     isActive={isProductTypeActive}
-                    isCollapsed={shouldCollapseProductTypeChip}
+                    isCollapsed={shouldCollapseProductType}
+                    showCollapsedTooltip={showCollapsedTooltip}
                     onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
                     ariaLabel={productTypeAriaLabel}
                   />
-                ) : null}
-                {isHiddenVault ? (
-                  <VaultsListChip label={'Hidden'} icon={<IconEyeOff className={'size-3.5'} />} />
                 ) : null}
                 {showKindChip && kindLabel ? (
                   <VaultsListChip
                     label={kindLabel}
                     icon={kindIcon}
                     isActive={isKindActive}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
                     onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
                     ariaLabel={`Filter by ${kindLabel}`}
+                  />
+                ) : null}
+                {flags?.isRetired ? (
+                  <VaultsListChip
+                    label={'Retired'}
+                    icon={retiredIcon}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                  />
+                ) : null}
+                {flags?.isMigratable ? (
+                  <VaultsListChip
+                    label={'Migratable'}
+                    icon={migratableIcon}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                  />
+                ) : null}
+                {isHiddenVault ? (
+                  <VaultsListChip
+                    label={'Hidden'}
+                    icon={<IconEyeOff className={'size-3.5'} />}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
                   />
                 ) : null}
               </div>
