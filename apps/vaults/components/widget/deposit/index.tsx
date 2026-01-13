@@ -6,19 +6,17 @@ import { vaultAbi } from '@lib/contracts/abi/vaultV2.abi'
 import { formatTAmount, toAddress } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { InputTokenAmountV2 } from '@vaults/components/widget/InputTokenAmountV2'
-import { TxButton } from '@vaults/components/widget/TxButton'
 import { useDebouncedInput } from '@vaults/hooks/useDebouncedInput'
 import { useTokens } from '@vaults/hooks/useTokens'
 import { type FC, useCallback, useMemo, useState } from 'react'
 import { type Address, formatUnits } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
 import { SettingsPopover } from '../SettingsPopover'
-import { TokenSelectorOverlay } from '../shared'
+import { TokenSelectorOverlay, TransactionOverlay, type TransactionStep } from '../shared'
 import { AnnualReturnModal } from './AnnualReturnModal'
 import { DepositDetails } from './DepositDetails'
 import { useDepositError } from './useDepositError'
 import { useDepositFlow } from './useDepositFlow'
-import { useDepositNotifications } from './useDepositNotifications'
 import { useFetchMaxQuote } from './useFetchMaxQuote'
 import { VaultSharesModal } from './VaultSharesModal'
 
@@ -56,6 +54,7 @@ export const WidgetDeposit: FC<Props> = ({
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
+  const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
 
   // ============================================================================
   // Token Data
@@ -149,32 +148,6 @@ export const WidgetDeposit: FC<Props> = ({
     isAutoStakingEnabled
   })
 
-  const canDeposit =
-    activeFlow.periphery.prepareDepositEnabled &&
-    activeFlow.periphery.isAllowanceSufficient &&
-    !depositError &&
-    depositAmount.bn > 0n
-
-  // ============================================================================
-  // Notifications
-  // ============================================================================
-  const { approveNotificationParams, depositNotificationParams } = useDepositNotifications({
-    inputToken,
-    vault,
-    stakingToken,
-    depositToken,
-    assetAddress,
-    destinationToken,
-    stakingAddress,
-    account,
-    sourceChainId,
-    chainId,
-    depositAmount: depositAmount.bn,
-    routeType,
-    routerAddress: activeFlow.periphery.routerAddress,
-    isCrossChain: activeFlow.periphery.isCrossChain
-  })
-
   // ============================================================================
   // Computed Values
   // ============================================================================
@@ -202,39 +175,45 @@ export const WidgetDeposit: FC<Props> = ({
   }, [depositToken, assetAddress, assetToken?.address, assetToken?.chainID, getPrice])
 
   // ============================================================================
-  // Success Modal Configurations
+  // Transaction Steps Configuration
   // ============================================================================
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
 
-  const approveSuccessModal = useMemo(
-    () => ({
-      title: 'Approval successful',
-      message: `Successfully approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nAll set for depositing into vault.`,
-      buttonText: 'Nice',
-      showConfetti: false
-    }),
-    [formattedDepositAmount, inputToken?.symbol]
-  )
+  const transactionSteps = useMemo(() => {
+    const steps: TransactionStep[] = []
 
-  const depositSuccessModal = useMemo(
-    () => ({
-      title: 'Deposit successful!',
-      message: `You successfully deposited ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
-      buttonText: "Let's go",
+    // Add approve step if needed (not native token and allowance not sufficient)
+    if (!isNativeToken && !activeFlow.periphery.isAllowanceSufficient) {
+      steps.push({
+        prepare: activeFlow.actions.prepareApprove,
+        label: 'Approve',
+        confirmMessage: `Approving ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
+        successTitle: 'Approval successful',
+        successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to deposit.`
+      })
+    }
+
+    // Add deposit step
+    steps.push({
+      prepare: activeFlow.actions.prepareDeposit,
+      label: routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit',
+      confirmMessage: `${routeType === 'DIRECT_STAKE' ? 'Staking' : 'Depositing'} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
+      successTitle: `${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'} successful!`,
+      successMessage: `You ${routeType === 'DIRECT_STAKE' ? 'staked' : 'deposited'} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
       showConfetti: true
-    }),
-    [formattedDepositAmount, inputToken?.symbol, vaultSymbol]
-  )
+    })
 
-  const crossChainSubmitModal = useMemo(
-    () => ({
-      title: 'Transaction submitted!',
-      message: `Your ${inputToken?.symbol || ''} is on its way.`,
-      buttonText: 'Got it',
-      showConfetti: false
-    }),
-    [inputToken?.symbol]
-  )
+    return steps
+  }, [
+    isNativeToken,
+    activeFlow.periphery.isAllowanceSufficient,
+    activeFlow.actions.prepareApprove,
+    activeFlow.actions.prepareDeposit,
+    formattedDepositAmount,
+    inputToken?.symbol,
+    vaultSymbol,
+    routeType
+  ])
 
   // ============================================================================
   // Max Quote (for native tokens)
@@ -354,7 +333,7 @@ export const WidgetDeposit: FC<Props> = ({
         onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
       />
 
-      {/* Action Buttons */}
+      {/* Action Button */}
       <div className="px-6 pt-6 pb-6">
         {!account ? (
           <Button
@@ -366,46 +345,39 @@ export const WidgetDeposit: FC<Props> = ({
             Connect Wallet
           </Button>
         ) : (
-          <div className="flex gap-2 w-full">
-            {!isNativeToken && (
-              <TxButton
-                prepareWrite={activeFlow.actions.prepareApprove}
-                transactionName={
-                  depositAmount.bn > 0n && activeFlow.periphery.isAllowanceSufficient ? 'Approved' : 'Approve'
-                }
-                disabled={
-                  !activeFlow.periphery.prepareApproveEnabled ||
-                  !!depositError ||
-                  activeFlow.periphery.isLoadingRoute ||
-                  depositAmount.isDebouncing
-                }
-                className="w-full"
-                notification={approveNotificationParams}
-                successModal={approveSuccessModal}
-              />
-            )}
-            <TxButton
-              prepareWrite={activeFlow.actions.prepareDeposit}
-              transactionName={
-                activeFlow.periphery.isLoadingRoute
-                  ? 'Fetching quote'
-                  : !activeFlow.periphery.isAllowanceSufficient && !isNativeToken
-                    ? 'Deposit'
-                    : routeType === 'DIRECT_STAKE'
-                      ? 'Stake'
-                      : 'Deposit'
-              }
-              disabled={!canDeposit}
-              loading={activeFlow.periphery.isLoadingRoute}
-              onSuccess={handleDepositSuccess}
-              className="w-full"
-              notification={depositNotificationParams}
-              successModal={depositSuccessModal}
-              crossChainSubmitModal={crossChainSubmitModal}
-            />
-          </div>
+          <Button
+            onClick={() => setShowTransactionOverlay(true)}
+            variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
+            isBusy={activeFlow.periphery.isLoadingRoute}
+            disabled={
+              !!depositError ||
+              depositAmount.bn === 0n ||
+              activeFlow.periphery.isLoadingRoute ||
+              depositAmount.isDebouncing ||
+              (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
+              (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled)
+            }
+            className="w-full"
+            classNameOverride="yearn--button--nextgen w-full"
+          >
+            {activeFlow.periphery.isLoadingRoute
+              ? 'Fetching quote'
+              : !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
+                ? `Approve & ${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'}`
+                : routeType === 'DIRECT_STAKE'
+                  ? 'Stake'
+                  : 'Deposit'}
+          </Button>
         )}
       </div>
+
+      {/* Transaction Overlay */}
+      <TransactionOverlay
+        isOpen={showTransactionOverlay}
+        onClose={() => setShowTransactionOverlay(false)}
+        steps={transactionSteps}
+        onAllComplete={handleDepositSuccess}
+      />
 
       {/* Modals */}
       <VaultSharesModal

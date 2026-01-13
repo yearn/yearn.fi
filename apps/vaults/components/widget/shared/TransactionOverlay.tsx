@@ -1,0 +1,337 @@
+import { Button } from '@lib/components/Button'
+import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useReward } from 'react-rewards'
+import {
+  type UseSimulateContractReturnType,
+  useChainId,
+  usePublicClient,
+  useSwitchChain,
+  useWaitForTransactionReceipt,
+  useWriteContract
+} from 'wagmi'
+
+type OverlayState = 'idle' | 'confirming' | 'pending' | 'success' | 'error'
+
+export type TransactionStep = {
+  prepare: UseSimulateContractReturnType
+  label: string
+  confirmMessage: string
+  successTitle: string
+  successMessage: string
+  showConfetti?: boolean
+}
+
+type TransactionOverlayProps = {
+  isOpen: boolean
+  onClose: () => void
+  steps: TransactionStep[]
+  onAllComplete?: () => void
+}
+
+const AnimatedCheckmark: FC<{ isVisible: boolean }> = ({ isVisible }) => {
+  const [animate, setAnimate] = useState(false)
+
+  useEffect(() => {
+    if (isVisible) {
+      const timeout = setTimeout(() => setAnimate(true), 100)
+      return () => clearTimeout(timeout)
+    }
+    setAnimate(false)
+    return undefined
+  }, [isVisible])
+
+  return (
+    <div
+      className={`w-14 h-14 rounded-full border-2 border-green-500 flex items-center justify-center transition-all duration-300 ${
+        animate ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
+      }`}
+    >
+      <svg className="w-7 h-7 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M5 13l4 4L19 7"
+          style={{
+            strokeDasharray: 30,
+            strokeDashoffset: animate ? 0 : 30,
+            transition: 'stroke-dashoffset 0.4s ease-out 0.15s'
+          }}
+        />
+      </svg>
+    </div>
+  )
+}
+
+const Spinner: FC = () => (
+  <div className="w-12 h-12 border-3 border-border border-t-primary rounded-full animate-spin" />
+)
+
+const ErrorIcon: FC = () => (
+  <div className="w-14 h-14 rounded-full border-2 border-red-500 flex items-center justify-center">
+    <svg className="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  </div>
+)
+
+export const TransactionOverlay: FC<TransactionOverlayProps> = ({ isOpen, onClose, steps, onAllComplete }) => {
+  const [overlayState, setOverlayState] = useState<OverlayState>('idle')
+  const [currentStepIndex, setCurrentStepIndex] = useState(0)
+  const [errorMessage, setErrorMessage] = useState<string>('')
+
+  const writeContract = useWriteContract()
+  const currentChainId = useChainId()
+  const { switchChainAsync } = useSwitchChain()
+  const [ensoTxHash, setEnsoTxHash] = useState<`0x${string}` | undefined>()
+  const client = usePublicClient()
+
+  // Fast chains like BASE need extra confirmations
+  const confirmations = currentChainId === 8453 ? 2 : 1
+  const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash, confirmations })
+
+  const currentStep = steps[currentStepIndex]
+  const isLastStep = currentStepIndex === steps.length - 1
+  const nextStep = !isLastStep ? steps[currentStepIndex + 1] : null
+
+  // Capture step config at start so values don't change
+  const capturedSteps = useRef<TransactionStep[]>([])
+
+  const confettiId = useId()
+  const { reward } = useReward(confettiId, 'confetti', {
+    spread: 80,
+    elementCount: 80,
+    startVelocity: 35,
+    decay: 0.91,
+    lifetime: 200,
+    colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
+  })
+
+  // Track if we've started execution to prevent re-triggering
+  const hasStartedRef = useRef(false)
+
+  // Reset state when overlay closes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Only trigger on isOpen change to prevent infinite loops
+  useEffect(() => {
+    if (!isOpen) {
+      setOverlayState('idle')
+      setCurrentStepIndex(0)
+      setErrorMessage('')
+      setEnsoTxHash(undefined)
+      hasStartedRef.current = false
+      writeContract.reset()
+    }
+  }, [isOpen])
+
+  const executeCurrentStep = useCallback(async () => {
+    const step = capturedSteps.current[currentStepIndex] || steps[currentStepIndex]
+    if (!step?.prepare.isSuccess || !step?.prepare.data?.request) {
+      setOverlayState('error')
+      setErrorMessage('Transaction not ready. Please try again.')
+      return
+    }
+
+    setOverlayState('confirming')
+    setErrorMessage('')
+
+    const txChainId = step.prepare.data.request.chainId
+    const wrongNetwork = txChainId && currentChainId !== txChainId
+
+    // Handle chain switch if needed
+    if (wrongNetwork && txChainId) {
+      try {
+        await switchChainAsync({ chainId: txChainId })
+      } catch {
+        // User rejected chain switch - silent close
+        onClose()
+        return
+      }
+    }
+
+    // Check if it's an Enso order
+    const isEnsoOrder = !!(step.prepare.data.request as any)?.__isEnsoOrder
+
+    try {
+      if (isEnsoOrder) {
+        const customWriteAsync = (step.prepare.data.request as any).writeContractAsync
+        const result = await customWriteAsync()
+        if (result.hash) {
+          setEnsoTxHash(result.hash)
+          setOverlayState('pending')
+        }
+      } else {
+        // Estimate gas with buffer
+        let gasOverrides: { gas?: bigint } = {}
+        if (client) {
+          try {
+            const gasEstimate = await client.estimateContractGas(step.prepare.data.request as any)
+            if (gasEstimate) {
+              gasOverrides = { gas: (gasEstimate * BigInt(110)) / BigInt(100) }
+            }
+          } catch {
+            // Gas estimation failed, proceed without override
+          }
+        }
+
+        await writeContract.writeContractAsync({
+          ...step.prepare.data.request,
+          ...gasOverrides
+        })
+        setOverlayState('pending')
+      }
+    } catch (error: any) {
+      const isUserRejection =
+        error?.message?.toLowerCase().includes('rejected') ||
+        error?.message?.toLowerCase().includes('denied') ||
+        error?.code === 4001
+
+      if (isUserRejection) {
+        // Silent close on rejection
+        onClose()
+      } else {
+        setOverlayState('error')
+        setErrorMessage('Transaction failed. Please try again.')
+      }
+    }
+  }, [currentStepIndex, steps, currentChainId, switchChainAsync, client, writeContract, onClose])
+
+  const handleNextStep = useCallback(() => {
+    if (isLastStep) {
+      onAllComplete?.()
+      onClose()
+    } else {
+      setCurrentStepIndex((prev) => prev + 1)
+      setOverlayState('idle')
+      // Will trigger executeCurrentStep via useEffect
+      setTimeout(() => {
+        setOverlayState('idle')
+        executeCurrentStep()
+      }, 100)
+    }
+  }, [isLastStep, onAllComplete, onClose, executeCurrentStep])
+
+  const handleRetry = useCallback(() => {
+    writeContract.reset()
+    setEnsoTxHash(undefined)
+    executeCurrentStep()
+  }, [writeContract, executeCurrentStep])
+
+  const handleClose = useCallback(() => {
+    onClose()
+  }, [onClose])
+
+  // Start first step when overlay opens
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Only depend on isOpen and overlayState to prevent infinite loops from steps/executeCurrentStep changing
+  useEffect(() => {
+    if (isOpen && overlayState === 'idle' && steps.length > 0 && !hasStartedRef.current) {
+      hasStartedRef.current = true
+      capturedSteps.current = steps.map((s) => ({ ...s }))
+      executeCurrentStep()
+    }
+  }, [isOpen, overlayState])
+
+  // Handle transaction success
+  // biome-ignore lint/correctness/useExhaustiveDependencies: writeContract excluded to prevent loops
+  useEffect(() => {
+    if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending') {
+      setOverlayState('success')
+      writeContract.reset()
+      setEnsoTxHash(undefined)
+
+      // Fire confetti if this step has it
+      const step = capturedSteps.current[currentStepIndex]
+      if (step?.showConfetti) {
+        setTimeout(() => reward(), 100)
+      }
+    }
+  }, [receipt.isSuccess, receipt.data?.transactionHash, overlayState, currentStepIndex, reward])
+
+  // Handle transaction error
+  // biome-ignore lint/correctness/useExhaustiveDependencies: writeContract excluded to prevent loops
+  useEffect(() => {
+    if (receipt.isError && receipt.error && overlayState === 'pending') {
+      setOverlayState('error')
+      setErrorMessage('Transaction failed. Please try again.')
+      writeContract.reset()
+      setEnsoTxHash(undefined)
+    }
+  }, [receipt.isError, receipt.error, overlayState])
+
+  if (!isOpen) return null
+
+  const capturedStep = capturedSteps.current[currentStepIndex] || currentStep
+
+  return (
+    <div className="absolute inset-0 bg-surface rounded-lg z-50 flex flex-col">
+      {/* Close button - only shown in success/error states */}
+      {(overlayState === 'success' || overlayState === 'error') && (
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 p-1 hover:bg-surface-secondary rounded-lg transition-colors z-10"
+          type="button"
+        >
+          <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+
+      {/* Content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        {/* Confirming State */}
+        {overlayState === 'confirming' && (
+          <>
+            <Spinner />
+            <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Confirm in your wallet</h3>
+            <p className="text-sm text-text-secondary whitespace-pre-line">{capturedStep?.confirmMessage}</p>
+          </>
+        )}
+
+        {/* Pending State */}
+        {overlayState === 'pending' && (
+          <>
+            <Spinner />
+            <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction pending</h3>
+            <p className="text-sm text-text-secondary">Waiting for confirmation...</p>
+          </>
+        )}
+
+        {/* Success State */}
+        {overlayState === 'success' && (
+          <>
+            <div className="relative">
+              <span id={confettiId} className="absolute top-1/2 left-1/2" />
+              <AnimatedCheckmark isVisible />
+            </div>
+            <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{capturedStep?.successTitle}</h3>
+            <p className="text-sm text-text-secondary whitespace-pre-line mb-6">{capturedStep?.successMessage}</p>
+            <Button
+              onClick={handleNextStep}
+              variant="filled"
+              className="w-full max-w-xs"
+              classNameOverride="yearn--button--nextgen w-full"
+            >
+              {isLastStep ? 'Nice' : nextStep?.label || 'Continue'}
+            </Button>
+          </>
+        )}
+
+        {/* Error State */}
+        {overlayState === 'error' && (
+          <>
+            <ErrorIcon />
+            <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction failed</h3>
+            <p className="text-sm text-text-secondary mb-6">{errorMessage}</p>
+            <Button
+              onClick={handleRetry}
+              variant="filled"
+              className="w-full max-w-xs"
+              classNameOverride="yearn--button--nextgen w-full"
+            >
+              Try Again
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
