@@ -74,14 +74,15 @@ function LinkItem({ item, isDark }: { item: TAppTile; isDark: boolean }): ReactE
 type TLauncherDropdownProps = {
   isOpen: boolean
   onClose: () => void
+  forceDark?: boolean
 }
 
-export function LauncherDropdown({ isOpen, onClose }: TLauncherDropdownProps): ReactElement {
+export function LauncherDropdown({ isOpen, onClose, forceDark }: TLauncherDropdownProps): ReactElement {
   const location = useLocation()
   const previousPathname = useRef(location.pathname)
   const [isDeprecatedExpanded, setIsDeprecatedExpanded] = useState(false)
   const themePreference = useThemePreference()
-  const isDarkTheme = themePreference !== 'light'
+  const isDarkTheme = forceDark ?? themePreference !== 'light'
 
   useEffect(() => {
     const pathnameChanged = previousPathname.current !== location.pathname
@@ -113,7 +114,13 @@ export function LauncherDropdown({ isOpen, onClose }: TLauncherDropdownProps): R
   )
 
   return (
-    <DropdownPanel isOpen={isOpen} onClose={onClose} anchor={'left'} className={'w-[420px] max-md:w-full'}>
+    <DropdownPanel
+      isOpen={isOpen}
+      onClose={onClose}
+      anchor={'left'}
+      className={'w-[420px] max-md:w-full'}
+      forceDark={forceDark}
+    >
       <div className={'flex flex-col gap-4'}>
         <div>
           <h3 className={sectionHeaderClass}>{'Apps'}</h3>

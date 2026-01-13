@@ -142,7 +142,13 @@ function AppHeader(): ReactElement {
   const navLinkClass = (isActive: boolean): string =>
     cl(
       'cursor-pointer text-base font-medium transition-colors relative',
-      isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'
+      isHomePage
+        ? isActive
+          ? 'text-white'
+          : 'text-neutral-400 hover:text-white'
+        : isActive
+          ? 'text-text-primary'
+          : 'text-text-secondary hover:text-text-primary'
     )
 
   return (
@@ -159,9 +165,13 @@ function AppHeader(): ReactElement {
                 onMouseDown={(e) => e.stopPropagation()}
                 className={'flex items-center gap-1 transition-colors hover:opacity-80'}
               >
-                <TypeMarkYearn className={'h-8 w-auto'} color={isDarkTheme ? '#FFFFFF' : '#0657F9'} />
+                <TypeMarkYearn className={'h-8 w-auto'} color={isHomePage || isDarkTheme ? '#FFFFFF' : '#0657F9'} />
                 <IconChevron
-                  className={cl('size-4 text-text-secondary transition-transform', isLauncherOpen ? 'rotate-180' : '')}
+                  className={cl(
+                    'size-4 transition-transform',
+                    isHomePage ? 'text-neutral-400' : 'text-text-secondary',
+                    isLauncherOpen ? 'rotate-180' : ''
+                  )}
                 />
               </button>
               <LauncherDropdown isOpen={isLauncherOpen} onClose={() => setIsLauncherOpen(false)} />
@@ -171,7 +181,7 @@ function AppHeader(): ReactElement {
                 <span className={navLinkClass(pathname.startsWith('/vaults'))}>{'Vaults'}</span>
               </Link>
 
-              <div className={'h-6 w-px bg-text-primary/20'} />
+              <div className={cl('h-6 w-px', isHomePage ? 'bg-white/20' : 'bg-text-primary/20')} />
 
               <Link href={'/portfolio'}>
                 <span className={navLinkClass(pathname.startsWith('/portfolio'))}>{'Portfolio'}</span>

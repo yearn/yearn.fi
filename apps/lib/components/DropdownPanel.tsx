@@ -9,6 +9,7 @@ type TDropdownPanelProps = {
   anchor?: 'left' | 'right'
   className?: string
   children: ReactNode
+  forceDark?: boolean
 }
 
 export function DropdownPanel({
@@ -16,11 +17,12 @@ export function DropdownPanel({
   onClose,
   anchor = 'left',
   className,
-  children
+  children,
+  forceDark
 }: TDropdownPanelProps): ReactElement | null {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const themePreference = useThemePreference()
-  const isDarkTheme = themePreference !== 'light'
+  const isDarkTheme = forceDark ?? themePreference !== 'light'
 
   useEffect(() => {
     if (!isOpen) return
