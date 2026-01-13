@@ -102,10 +102,16 @@ function ListOfVaults({
   const isAllVaults = vaultType === 'all'
   const isV3View = vaultType === 'v3' || isAllVaults
   const isV2View = vaultType === 'factory' || isAllVaults
-  const shouldCollapseChips =
+  const isBelow1000 =
     useMediaQuery('(max-width: 1000px)', {
       initializeWithValue: false
     }) ?? false
+  const isBelow768 =
+    useMediaQuery('(max-width: 767px)', {
+      initializeWithValue: false
+    }) ?? false
+  const shouldCollapseChips = isBelow1000
+  const shouldStackFilters = isBelow1000 && !isBelow768
 
   useLayoutEffect(() => {
     const filtersElement = filtersRef.current
@@ -616,6 +622,7 @@ function ListOfVaults({
         onClearFilters={onResetMultiSelect}
         mobileExtraContent={<VaultVersionToggle stretch={true} />}
         trailingControls={<VaultVersionToggle />}
+        isStackedLayout={shouldStackFilters}
       />
     </div>
   )

@@ -42,6 +42,7 @@ type TVaultsFiltersProps = {
   onClearFilters?: () => void
   mobileExtraContent?: ReactNode
   trailingControls?: ReactNode
+  isStackedLayout?: boolean
 }
 
 export function VaultsFilters({
@@ -57,7 +58,8 @@ export function VaultsFilters({
   filtersPanelContent,
   onClearFilters,
   mobileExtraContent,
-  trailingControls
+  trailingControls,
+  isStackedLayout: isStackedLayoutProp
 }: TVaultsFiltersProps): ReactElement {
   const SEARCH_MIN_WIDTH = 180
   const SEARCH_EXPAND_WIDTH = 400
@@ -68,8 +70,10 @@ export function VaultsFilters({
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
   const [isFiltersButtonMinimal, setIsFiltersButtonMinimal] = useState(false)
   const [isChainSelectorMinimal, setIsChainSelectorMinimal] = useState(false)
-  const hasFiltersContent = Boolean(filtersContent)
+  const isStackedLayout = Boolean(isStackedLayoutProp)
+  const hasFiltersContent = Boolean(filtersContent ?? filtersPanelContent)
   const hasPanelContent = Boolean(filtersPanelContent)
+  const filtersModalContent = filtersContent ?? filtersPanelContent
 
   const {
     supportedChainIds,
@@ -217,6 +221,9 @@ export function VaultsFilters({
   })
 
   const updateResponsiveControls = useCallback(() => {
+    if (isStackedLayout) {
+      return
+    }
     const row = controlsRowRef.current
     if (!row) {
       return
@@ -273,7 +280,15 @@ export function VaultsFilters({
     if (nextChainMinimal !== isChainSelectorMinimal) {
       setIsChainSelectorMinimal(nextChainMinimal)
     }
-  }, [hasFiltersContent, isChainSelectorMinimal, isFiltersButtonMinimal])
+  }, [hasFiltersContent, isChainSelectorMinimal, isFiltersButtonMinimal, isStackedLayout])
+
+  useEffect(() => {
+    if (!isStackedLayout) {
+      return
+    }
+    setIsFiltersButtonMinimal(false)
+    setIsChainSelectorMinimal(true)
+  }, [isStackedLayout])
 
   useLayoutEffect(() => {
     const chainSelector = chainSelectorRef.current
@@ -380,6 +395,8 @@ export function VaultsFilters({
     return () => observer.disconnect()
   }, [updateResponsiveControls])
 
+  const stackedControls = mobileExtraContent ?? trailingControls
+
   return (
     <>
       <div className={'relative col-span-24 w-full md:col-span-19'}>
@@ -391,6 +408,7 @@ export function VaultsFilters({
             }}
             direction={'bottom'}
           >
+            {mobileExtraContent ? <div className={'mb-2 w-full'}>{mobileExtraContent}</div> : null}
             {isMobileSearchExpanded ? (
               <div className={'flex w-full items-center gap-1'}>
                 <div className={'flex-1'}>
@@ -445,7 +463,6 @@ export function VaultsFilters({
                 </button>
               </div>
             )}
-            {mobileExtraContent ? <div className={'mt-2 w-full'}>{mobileExtraContent}</div> : null}
             <Drawer.Portal>
               <Drawer.Overlay className={'fixed inset-0 z-99998 bg-black/40 backdrop-blur-xs transition-opacity'} />
               <Drawer.Content className={'fixed inset-x-0 bottom-0 z-99999 flex justify-center outline-hidden'}>
@@ -470,7 +487,7 @@ export function VaultsFilters({
                     onOpenChainModal={(): void => setIsChainModalOpen(true)}
                     showMoreChainsButton={showMoreChainsButton}
                     allChainsLabel={allChainsLabel}
-                    showFiltersButton={hasFiltersContent && !hasPanelContent}
+                    showFiltersButton={Boolean(filtersContent) && !hasPanelContent}
                     filtersCount={filtersCount}
                     onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
                     showInlineSearch={false}
@@ -504,14 +521,16 @@ export function VaultsFilters({
             onSearch={onSearch}
             shouldDebounce={shouldDebounce}
             searchAlertContent={searchAlertContent}
-            isFiltersButtonMinimal={isFiltersButtonMinimal}
-            isChainSelectorMinimal={isChainSelectorMinimal}
+            isFiltersButtonMinimal={isStackedLayout ? false : isFiltersButtonMinimal}
+            isChainSelectorMinimal={isStackedLayout ? true : isChainSelectorMinimal}
             controlsRowRef={controlsRowRef}
             chainSelectorRef={chainSelectorRef}
             filtersButtonRef={filtersButtonRef}
             searchContainerRef={searchContainerRef}
-            enableResponsiveLayout={true}
-            leadingControls={trailingControls}
+            enableResponsiveLayout={!isStackedLayout}
+            layout={isStackedLayout ? 'stacked' : 'inline'}
+            leadingControls={isStackedLayout ? stackedControls : trailingControls}
+            trailingControls={isStackedLayout ? undefined : undefined}
           />
         </div>
       </div>
@@ -525,12 +544,12 @@ export function VaultsFilters({
           onApply={handleApplyAdditionalChains}
         />
       ) : null}
-      {hasFiltersContent ? (
+      {hasFiltersContent && filtersModalContent ? (
         <FiltersModal
           isOpen={isFiltersModalOpen}
           onClose={(): void => setIsFiltersModalOpen(false)}
           onClear={onClearFilters}
-          filtersContent={filtersContent}
+          filtersContent={filtersModalContent}
         />
       ) : null}
     </>
@@ -564,6 +583,7 @@ function FilterControls({
   filtersButtonRef,
   searchContainerRef,
   enableResponsiveLayout = false,
+  layout = 'inline',
   leadingControls,
   trailingControls
 }: {
@@ -597,10 +617,172 @@ function FilterControls({
   filtersButtonRef?: RefObject<HTMLButtonElement | null>
   searchContainerRef?: RefObject<HTMLDivElement | null>
   enableResponsiveLayout?: boolean
+  layout?: 'inline' | 'stacked'
   leadingControls?: ReactNode
   trailingControls?: ReactNode
 }): ReactElement {
+  const isStacked = layout === 'stacked'
   const showFiltersLabel = !isFiltersButtonMinimal
+  const filtersButtonElement = showFiltersButton ? (
+    <button
+      type={'button'}
+      className={cl(
+        'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-border py-2 text-sm font-medium text-text-secondary bg-surface transition-colors',
+        isFiltersButtonMinimal ? 'px-2' : 'px-4',
+        'hover:text-text-secondary',
+        'data-[active=true]:border-border-hover data-[active=true]:text-text-secondary'
+      )}
+      onClick={onOpenFiltersModal}
+      aria-label={'Open filters'}
+      ref={filtersButtonRef}
+    >
+      <IconFilter className={'size-4'} />
+      {showFiltersLabel ? <span>{'Filters'}</span> : null}
+      {filtersCount > 0 ? (
+        <span
+          className={cl(
+            'inline-flex min-w-5 items-center justify-center rounded-full bg-surface-tertiary px-1.5 text-xs text-text-primary',
+            showFiltersLabel ? 'ml-1' : 'ml-0'
+          )}
+        >
+          {filtersCount}
+        </span>
+      ) : null}
+    </button>
+  ) : null
+  const inlineSearchElement = showInlineSearch ? (
+    <div ref={searchContainerRef} className={'flex-1 min-w-0'}>
+      <SearchBar
+        className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
+        iconClassName={'text-text-primary'}
+        searchPlaceholder={'Find a Vault'}
+        searchValue={searchValue}
+        onSearch={onSearch}
+        shouldDebounce={shouldDebounce || false}
+        highlightWhenActive={true}
+        alertContent={searchAlertContent}
+      />
+    </div>
+  ) : null
+  const expandedSearchElement =
+    showSearchButton && isSearchExpanded ? (
+      <div ref={searchContainerRef} className={'min-w-[180px]'}>
+        <SearchBar
+          className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
+          iconClassName={'text-text-primary'}
+          searchPlaceholder={'Find a Vault'}
+          searchValue={searchValue}
+          onSearch={onSearch}
+          shouldDebounce={shouldDebounce || false}
+          highlightWhenActive={true}
+          alertContent={searchAlertContent}
+          onKeyDown={(e): void => {
+            if (e.key === 'Escape' && onCollapseSearch) {
+              onCollapseSearch()
+            }
+          }}
+          autoFocus={true}
+        />
+      </div>
+    ) : null
+  const searchButtonElement =
+    showSearchButton && onExpandSearch ? (
+      <button
+        type={'button'}
+        className={cl(
+          'flex shrink-0 items-center justify-center border rounded-lg size-10 border-border text-sm font-medium text-text-secondary bg-surface transition-colors',
+          'hover:text-text-primary hover:border-border-hover',
+          searchValue ? 'border-border-hover text-text-primary' : ''
+        )}
+        onClick={onExpandSearch}
+        aria-label={'Search vaults'}
+        data-active={Boolean(searchValue)}
+      >
+        <IconSearch className={'size-4'} />
+      </button>
+    ) : null
+  const chainSelectorElement = (
+    <div
+      ref={chainSelectorRef}
+      className={cl(
+        'flex h-10 items-stretch overflow-x-auto scrollbar-themed rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
+        isStacked ? 'min-w-0 shrink-0' : enableResponsiveLayout ? 'min-w-0' : 'w-full'
+      )}
+    >
+      <button
+        type={'button'}
+        className={cl(
+          'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
+          'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+          'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+          !enableResponsiveLayout && !isStacked ? 'flex-1' : ''
+        )}
+        data-active={areAllChainsSelected}
+        onClick={onSelectAllChains}
+        aria-pressed={areAllChainsSelected}
+      >
+        <span className={'size-5 overflow-hidden rounded-full'}>
+          <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
+        </span>
+        <span className={'whitespace-nowrap'}>{allChainsLabel}</span>
+      </button>
+      {chainButtons.map((chain) => {
+        const showChainLabel = !isChainSelectorMinimal || chain.isSelected
+        return (
+          <button
+            key={chain.id}
+            type={'button'}
+            className={cl(
+              'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
+              'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+              'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+              !enableResponsiveLayout && !isStacked ? 'flex-1' : ''
+            )}
+            data-active={chain.isSelected}
+            onClick={(): void => onSelectChain(chain.id)}
+            aria-pressed={chain.isSelected}
+            aria-label={showChainLabel ? undefined : chain.label}
+          >
+            {chain.icon ? (
+              <span className={'size-5 overflow-hidden rounded-full bg-surface/80'}>{chain.icon}</span>
+            ) : null}
+            {showChainLabel ? <span className={'whitespace-nowrap'}>{chain.label}</span> : null}
+          </button>
+        )
+      })}
+
+      {showMoreChainsButton ? (
+        <button
+          type={'button'}
+          className={cl(
+            'flex h-full items-center gap-2 px-3 font-medium transition-colors',
+            'text-text-secondary hover:bg-surface/30 hover:text-text-primary'
+          )}
+          onClick={onOpenChainModal}
+        >
+          <span className={'whitespace-nowrap'}>{'More'}</span>
+          <span className={'flex items-center'}>
+            <IconChevron direction={'right'} className={'size-4'} />
+            <IconChevron direction={'right'} className={'-ml-3 size-4'} />
+          </span>
+        </button>
+      ) : null}
+    </div>
+  )
+
+  if (isStacked) {
+    return (
+      <div className={'flex flex-col gap-3'}>
+        {leadingControls ? <div className={'w-full'}>{leadingControls}</div> : null}
+        <div ref={controlsRowRef} className={'flex w-full items-center gap-3'}>
+          {chainSelectorElement}
+          {filtersButtonElement}
+          {inlineSearchElement}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={'flex flex-col gap-4'}>
       <div>
@@ -613,153 +795,18 @@ function FilterControls({
             )}
           >
             {leadingControls ? <div className={'shrink-0'}>{leadingControls}</div> : null}
-            <div
-              ref={chainSelectorRef}
-              className={cl(
-                'flex h-10 items-stretch overflow-x-auto scrollbar-themed rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
-                enableResponsiveLayout ? 'min-w-0' : 'w-full'
-              )}
-            >
-              <button
-                type={'button'}
-                className={cl(
-                  'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
-                  'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-                  'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
-                  !enableResponsiveLayout ? 'flex-1' : ''
-                )}
-                data-active={areAllChainsSelected}
-                onClick={onSelectAllChains}
-                aria-pressed={areAllChainsSelected}
-              >
-                <span className={'size-5 overflow-hidden rounded-full'}>
-                  <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
-                </span>
-                <span className={'whitespace-nowrap'}>{allChainsLabel}</span>
-              </button>
-              {chainButtons.map((chain) => {
-                const showChainLabel = !isChainSelectorMinimal || chain.isSelected
-                return (
-                  <button
-                    key={chain.id}
-                    type={'button'}
-                    className={cl(
-                      'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
-                      'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-                      'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
-                      !enableResponsiveLayout ? 'flex-1' : ''
-                    )}
-                    data-active={chain.isSelected}
-                    onClick={(): void => onSelectChain(chain.id)}
-                    aria-pressed={chain.isSelected}
-                    aria-label={showChainLabel ? undefined : chain.label}
-                  >
-                    {chain.icon ? (
-                      <span className={'size-5 overflow-hidden rounded-full bg-surface/80'}>{chain.icon}</span>
-                    ) : null}
-                    {showChainLabel ? <span className={'whitespace-nowrap'}>{chain.label}</span> : null}
-                  </button>
-                )
-              })}
-
-              {showMoreChainsButton ? (
-                <button
-                  type={'button'}
-                  className={cl(
-                    'flex h-full items-center gap-2 px-3 font-medium transition-colors',
-                    'text-text-secondary hover:bg-surface/30 hover:text-text-primary'
-                  )}
-                  onClick={onOpenChainModal}
-                >
-                  <span className={'whitespace-nowrap'}>{'More'}</span>
-                  <span className={'flex items-center'}>
-                    <IconChevron direction={'right'} className={'size-4'} />
-                    <IconChevron direction={'right'} className={'-ml-3 size-4'} />
-                  </span>
-                </button>
-              ) : null}
-            </div>
+            {chainSelectorElement}
             <div className={'flex flex-row items-center gap-3 flex-1 min-w-0'}>
               {showSearchButton && isSearchExpanded ? (
-                <div ref={searchContainerRef} className={'min-w-[180px]'}>
-                  <SearchBar
-                    className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
-                    iconClassName={'text-text-primary'}
-                    searchPlaceholder={'Find a Vault'}
-                    searchValue={searchValue}
-                    onSearch={onSearch}
-                    shouldDebounce={shouldDebounce || false}
-                    highlightWhenActive={true}
-                    alertContent={searchAlertContent}
-                    onKeyDown={(e): void => {
-                      if (e.key === 'Escape' && onCollapseSearch) {
-                        onCollapseSearch()
-                      }
-                    }}
-                    autoFocus={true}
-                  />
-                </div>
+                expandedSearchElement
               ) : (
                 <>
                   {trailingControls}
-                  {showFiltersButton ? (
-                    <button
-                      type={'button'}
-                      className={cl(
-                        'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-border py-2 text-sm font-medium text-text-secondary bg-surface transition-colors',
-                        isFiltersButtonMinimal ? 'px-2' : 'px-4',
-                        'hover:text-text-secondary',
-                        'data-[active=true]:border-border-hover data-[active=true]:text-text-secondary'
-                      )}
-                      onClick={onOpenFiltersModal}
-                      aria-label={'Open filters'}
-                      ref={filtersButtonRef}
-                    >
-                      <IconFilter className={'size-4'} />
-                      {showFiltersLabel ? <span>{'Filters'}</span> : null}
-                      {filtersCount > 0 ? (
-                        <span
-                          className={cl(
-                            'inline-flex min-w-5 items-center justify-center rounded-full bg-surface-tertiary px-1.5 text-xs text-text-primary',
-                            showFiltersLabel ? 'ml-1' : 'ml-0'
-                          )}
-                        >
-                          {filtersCount}
-                        </span>
-                      ) : null}
-                    </button>
-                  ) : null}
-                  {showSearchButton && onExpandSearch ? (
-                    <button
-                      type={'button'}
-                      className={cl(
-                        'flex shrink-0 items-center justify-center border rounded-lg size-10 border-border text-sm font-medium text-text-secondary bg-surface transition-colors',
-                        'hover:text-text-primary hover:border-border-hover',
-                        searchValue ? 'border-border-hover text-text-primary' : ''
-                      )}
-                      onClick={onExpandSearch}
-                      aria-label={'Search vaults'}
-                      data-active={Boolean(searchValue)}
-                    >
-                      <IconSearch className={'size-4'} />
-                    </button>
-                  ) : null}
+                  {filtersButtonElement}
+                  {searchButtonElement}
                 </>
               )}
-              {showInlineSearch ? (
-                <div ref={searchContainerRef} className={'flex-1 min-w-0'}>
-                  <SearchBar
-                    className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
-                    iconClassName={'text-text-primary'}
-                    searchPlaceholder={'Find a Vault'}
-                    searchValue={searchValue}
-                    onSearch={onSearch}
-                    shouldDebounce={shouldDebounce || false}
-                    highlightWhenActive={true}
-                    alertContent={searchAlertContent}
-                  />
-                </div>
-              ) : null}
+              {inlineSearchElement}
             </div>
           </div>
         </div>
