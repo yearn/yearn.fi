@@ -83,7 +83,12 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
   }
 
   return (
-    <div onMouseDown={(e) => e.stopPropagation()} onClick={handleClick} className={'relative cursor-pointer'}>
+    <div
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={handleClick}
+      className={'relative cursor-pointer'}
+      data-testid="connect-wallet-button"
+    >
       {walletIdentity && notificationStatus && (
         <div className={cl('absolute -right-0.5 -top-0.5 size-2 rounded-full', notificationDotColor)} />
       )}

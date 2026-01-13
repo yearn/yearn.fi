@@ -528,6 +528,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
                   withdrawAmount.isDebouncing
                 }
                 className="w-full"
+                data-testid="approve-button"
                 notification={approveNotificationParams}
                 successModal={approveSuccessModal}
               />
@@ -544,6 +545,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
               loading={activeFlow.periphery.isLoadingRoute}
               onSuccess={handleWithdrawSuccess}
               className="w-full"
+              data-testid="withdraw-button"
               notification={withdrawNotificationParams}
               successModal={withdrawSuccessModal}
               crossChainSubmitModal={crossChainSubmitModal}

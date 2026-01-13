@@ -30,6 +30,7 @@ type Props = {
   notification?: TCreateNotificationParams
   successModal?: SuccessModalConfig
   crossChainSubmitModal?: SuccessModalConfig // Shown on cross-chain tx submit (not completion)
+  'data-testid'?: string
 }
 
 export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
@@ -364,6 +365,7 @@ export const TxButton: FC<Props & ComponentProps<typeof Button>> = ({
     <>
       <Button
         variant={getVariant()}
+        data-testid={props['data-testid']}
         classNameOverride="yearn--button--nextgen w-full"
         className={props.className}
         isBusy={isLoading}
