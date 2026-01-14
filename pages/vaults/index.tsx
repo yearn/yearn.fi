@@ -117,7 +117,7 @@ type TVaultsFiltersBarProps = {
     allChainsLabel?: string
   }
   filtersCount: number
-  filtersPanelContent: ReactNode
+  filtersPanel: ReactNode
   onClearFilters: () => void
   mobileExtraContent: ReactNode
   trailingControls: ReactNode
@@ -131,7 +131,7 @@ function VaultsFiltersBar({
   onSearch,
   chainConfig,
   filtersCount,
-  filtersPanelContent,
+  filtersPanel,
   onClearFilters,
   mobileExtraContent,
   trailingControls,
@@ -146,8 +146,8 @@ function VaultsFiltersBar({
       onSearch={onSearch}
       chainConfig={chainConfig}
       filtersCount={filtersCount}
-      filtersContent={filtersPanelContent}
-      filtersPanelContent={filtersPanelContent}
+      filtersContent={filtersPanel}
+      filtersPanelContent={filtersPanel}
       onClearFilters={onClearFilters}
       mobileExtraContent={mobileExtraContent}
       trailingControls={trailingControls}
@@ -1004,7 +1004,7 @@ function ListOfVaults({
       onSearch={onSearch}
       chainConfig={chainConfig}
       filtersCount={filtersCount}
-      filtersPanelContent={filtersPanelContent}
+      filtersPanel={filtersPanelContent}
       onClearFilters={handleResetMultiSelect}
       mobileExtraContent={
         <VaultVersionToggle
