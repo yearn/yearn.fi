@@ -3,6 +3,7 @@ import { Button } from '@lib/components/Button'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
+import { getVaultKey } from '@lib/hooks/useVaultFilterUtils'
 import { IconSpinner } from '@lib/icons/IconSpinner'
 import type { TSortDirection } from '@lib/types'
 import { isZero, toAddress } from '@lib/utils'
@@ -27,6 +28,10 @@ const percentFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2
 })
+
+function getChainAddressKey(chainID: number | undefined, address: string): string {
+  return `${chainID}_${toAddress(address)}`
+}
 
 function HoldingsEmptyState({ isActive, onConnect }: { isActive: boolean; onConnect: () => void }): ReactElement {
   return (
@@ -72,11 +77,11 @@ function PortfolioPage(): ReactElement {
     }
 
     Object.values(allVaults).forEach((vault) => {
-      const vaultKey = `${vault.chainID}_${toAddress(vault.address)}`
+      const vaultKey = getVaultKey(vault)
       map.set(vaultKey, vault)
 
       if (vault.staking?.available && vault.staking.address) {
-        const stakingKey = `${vault.chainID}_${toAddress(vault.staking.address)}`
+        const stakingKey = getChainAddressKey(vault.chainID, vault.staking.address)
         map.set(stakingKey, vault)
       }
     })
@@ -96,12 +101,12 @@ function PortfolioPage(): ReactElement {
           return
         }
         const tokenChainID = chainID ?? token.chainID
-        const tokenKey = `${tokenChainID}_${toAddress(token.address)}`
+        const tokenKey = getChainAddressKey(tokenChainID, token.address)
         const vault = vaultLookup.get(tokenKey)
         if (!vault) {
           return
         }
-        const vaultKey = `${vault.chainID}_${toAddress(vault.address)}`
+        const vaultKey = getVaultKey(vault)
         if (seen.has(vaultKey)) {
           return
         }
@@ -129,7 +134,7 @@ function PortfolioPage(): ReactElement {
     > = {}
 
     holdingsVaults.forEach((vault) => {
-      const key = `${vault.chainID}_${toAddress(vault.address)}`
+      const key = getVaultKey(vault)
       flags[key] = {
         hasHoldings: true,
         isMigratable: migratableSet.has(key),
@@ -157,16 +162,10 @@ function PortfolioPage(): ReactElement {
   const sortedHoldings = useSortVaults(holdingsVaults, sortBy, sortDirection)
   const sortedCandidates = useSortVaults(v3Vaults, 'featuringScore', 'desc')
 
-  const holdingsKeySet = useMemo(
-    () => new Set(sortedHoldings.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
-    [sortedHoldings]
-  )
+  const holdingsKeySet = useMemo(() => new Set(sortedHoldings.map((vault) => getVaultKey(vault))), [sortedHoldings])
 
   const suggestedVaults = useMemo(
-    () =>
-      sortedCandidates
-        .filter((vault) => !holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`))
-        .slice(0, 4),
+    () => sortedCandidates.filter((vault) => !holdingsKeySet.has(getVaultKey(vault))).slice(0, 4),
     [sortedCandidates, holdingsKeySet]
   )
 
@@ -432,7 +431,7 @@ function PortfolioPage(): ReactElement {
               ) : hasHoldings ? (
                 <div className={'flex flex-col gap-px'}>
                   {sortedHoldings.map((vault) => {
-                    const key = `${vault.chainID}_${toAddress(vault.address)}`
+                    const key = getVaultKey(vault)
                     const isV3 = vault.version?.startsWith('3') || vault.version?.startsWith('~3')
                     const hrefOverride = isV3 ? undefined : `/vaults/${vault.chainID}/${toAddress(vault.address)}`
                     return (
@@ -463,7 +462,7 @@ function PortfolioPage(): ReactElement {
             </div>
             <div className={'grid gap-4 md:grid-cols-2 xl:grid-cols-4'}>
               {suggestedVaults.map((vault) => {
-                const key = `${vault.chainID}_${toAddress(vault.address)}`
+                const key = getVaultKey(vault)
                 return <SuggestedVaultCard key={key} vault={vault} />
               })}
             </div>
