@@ -26,7 +26,8 @@ export const VaultShareValueModal: FC<VaultShareValueModalProps> = ({
           <p className="font-medium text-sm text-text-primary">What this value means</p>
           <p className="text-sm text-text-secondary">
             This is the amount of <span className="font-medium text-text-primary">{assetSymbol}</span> you could redeem
-            immediately after depositing. It represents the current value of your vault shares in the underlying asset.
+            immediately after depositing. It represents the value of vault shares to be received converted to the
+            underlying asset.
           </p>
         </div>
 
