@@ -368,7 +368,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
         confirmMessage: `${routeType === 'DIRECT_UNSTAKE' ? 'Unstaking' : 'Withdrawing'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
         successTitle: 'Transaction Submitted',
         successMessage: `Your cross-chain ${withdrawLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
-        showConfetti: true,
         notification: withdrawNotificationParams
       }
     }
@@ -379,7 +378,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       confirmMessage: `${routeType === 'DIRECT_UNSTAKE' ? 'Unstaking' : 'Withdrawing'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
       successTitle: `${withdrawLabel} successful!`,
       successMessage: `You have ${routeType === 'DIRECT_UNSTAKE' ? 'unstaked' : 'withdrawn'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
-      showConfetti: true,
       notification: withdrawNotificationParams
     }
   }, [

@@ -229,7 +229,7 @@ export const WidgetDeposit: FC<Props> = ({
       label: actionVerb,
       confirmMessage: `${routeType === 'DIRECT_STAKE' ? 'Staking' : 'Depositing'} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
       successTitle: `${actionVerb} successful!`,
-      successMessage: `You ${actionVerbPast} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+      successMessage: `You have ${actionVerbPast} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
       showConfetti: true,
       notification: depositNotificationParams
     }
