@@ -1,3 +1,4 @@
+import { ALL_VAULTSV3_CATEGORIES } from '@vaults/constants'
 import type { TVaultAggressiveness } from '@vaults/shared/utils/vaultListFacets'
 
 export const V2_SUPPORTED_CHAINS = [1, 10, 8453]
@@ -9,6 +10,8 @@ export const V3_PRIMARY_CHAIN_IDS = [1, 747474]
 export const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
 export const V2_DEFAULT_TYPES = ['factory']
 export const AGGRESSIVENESS_OPTIONS: TVaultAggressiveness[] = ['Conservative', 'Moderate', 'Aggressive']
+export const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
+export const V2_ASSET_CATEGORIES = ['Stablecoin', 'Volatile']
 
 export function toggleInArray<T>(current: T[] | null, next: T): T[] {
   const existing = current ?? []
