@@ -7,7 +7,7 @@ import { VaultsListRow } from '@vaults/components/list/VaultsListRow'
 import { SuggestedVaultCard } from '@vaults/components/SuggestedVaultCard'
 import type { TPossibleSortBy } from '@vaults/shared/index'
 import type { ReactElement } from 'react'
-import { usePortfolioModel, type TPortfolioModel } from './usePortfolioModel'
+import { type TPortfolioModel, usePortfolioModel } from './usePortfolioModel'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -304,6 +304,7 @@ function PortfolioPage(): ReactElement {
 
   return (
     <PortfolioPageLayout>
+      {/** biome-ignore lint/complexity/noUselessFragments: <lint error without> */}
       <>
         <PortfolioHeaderSection
           blendedMetrics={model.blendedMetrics}
