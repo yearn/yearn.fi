@@ -15,20 +15,23 @@ export function Footer(): ReactElement {
     <div className={'flex w-full max-w-[1180px] flex-col items-center justify-center px-4 pb-16 md:py-16'}>
       <div
         className={
-          'flex w-full flex-wrap items-center justify-center gap-6 rounded-[24px] border border-white/10 bg-black/30 px-8 py-6 md:gap-12'
+          'flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-3 px-4 py-6 md:justify-between md:gap-0 md:px-8'
         }
       >
-        {footerLinks.map((link) => (
+        {footerLinks.flatMap((link, index) => [
           <Link
             key={link.path}
             href={link.path}
             target={'_blank'}
             className={'flex items-center gap-1 text-neutral-900 transition-colors hover:text-white'}
           >
-            <span className={'text-base md:text-lg'}>{link.label}</span>
+            <span className={'text-sm md:text-lg'}>{link.label}</span>
             <span>{'↗'}</span>
-          </Link>
-        ))}
+          </Link>,
+          index < footerLinks.length - 1 && (
+            <span key={`spacer-${link.path}`} className={'hidden size-1 rounded-full bg-white/30 md:block'} />
+          )
+        ])}
       </div>
     </div>
   )
