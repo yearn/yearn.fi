@@ -3,7 +3,7 @@ import { Button } from '@lib/components/Button'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
-import { getVaultKey } from '@lib/hooks/useVaultFilterUtils'
+import { getVaultKey, isV3Vault } from '@lib/hooks/useVaultFilterUtils'
 import { IconSpinner } from '@lib/icons/IconSpinner'
 import type { TSortDirection } from '@lib/types'
 import { isZero, toAddress } from '@lib/utils'
@@ -31,6 +31,10 @@ const percentFormatter = new Intl.NumberFormat('en-US', {
 
 function getChainAddressKey(chainID: number | undefined, address: string): string {
   return `${chainID}_${toAddress(address)}`
+}
+
+function isPortfolioV3Vault(vault: TYDaemonVault): boolean {
+  return isV3Vault(vault, isAllocatorVaultOverride(vault))
 }
 
 function HoldingsEmptyState({ isActive, onConnect }: { isActive: boolean; onConnect: () => void }): ReactElement {
@@ -151,13 +155,7 @@ function PortfolioPage(): ReactElement {
   const isLoading = isLoadingVaultList
   const isHoldingsLoading = (isLoading && isActive) || isSearchingBalances
 
-  const v3Vaults = useMemo(
-    () =>
-      Object.values(vaults).filter(
-        (vault) => vault.version?.startsWith('3') || vault.version?.startsWith('~3') || isAllocatorVaultOverride(vault)
-      ),
-    [vaults]
-  )
+  const v3Vaults = useMemo(() => Object.values(vaults).filter((vault) => isPortfolioV3Vault(vault)), [vaults])
 
   const sortedHoldings = useSortVaults(holdingsVaults, sortBy, sortDirection)
   const sortedCandidates = useSortVaults(v3Vaults, 'featuringScore', 'desc')
@@ -432,7 +430,7 @@ function PortfolioPage(): ReactElement {
                 <div className={'flex flex-col gap-px'}>
                   {sortedHoldings.map((vault) => {
                     const key = getVaultKey(vault)
-                    const isV3 = vault.version?.startsWith('3') || vault.version?.startsWith('~3')
+                    const isV3 = isPortfolioV3Vault(vault)
                     const hrefOverride = isV3 ? undefined : `/vaults/${vault.chainID}/${toAddress(vault.address)}`
                     return (
                       <VaultsListRow
