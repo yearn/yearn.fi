@@ -8,6 +8,7 @@ type TVaultListEmpty = {
   currentChains: number[] | null
   onReset: () => void
   isLoading: boolean
+  loadingLabel?: string
   defaultCategories?: string[]
   potentialResultsCount?: number
   // @deprecated: retained for compatibility with existing usages in worktrees being cleaned up
@@ -19,17 +20,19 @@ export function VaultsListEmpty({
   currentChains,
   onReset,
   isLoading,
+  loadingLabel,
   defaultCategories = [],
   potentialResultsCount = 0
 }: TVaultListEmpty): ReactElement {
   if (isLoading) {
+    const label = loadingLabel ?? 'Fetching Vaults…'
     return (
       <div
         className={
           'mt-2 flex h-96 w-full animate-pulse flex-col items-center justify-center gap-2 rounded-[12px] bg-white/5 px-10 py-2'
         }
       >
-        <b className={'text-lg font-medium'}>{'Fetching Vaults…'}</b>
+        <b className={'text-lg font-medium'}>{label}</b>
         <div className={'flex h-10 items-center justify-center'}>
           <span className={'loader'} />
         </div>

@@ -19,7 +19,16 @@ import { useSortVaults } from '@vaults/shared/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults/shared/hooks/useVaultsQueryArgs'
 import { deriveListKind, type TVaultAggressiveness } from '@vaults/shared/utils/vaultListFacets'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition
+} from 'react'
 import { useSearchParams } from 'react-router'
 import {
   AGGRESSIVENESS_OPTIONS,
@@ -98,10 +107,12 @@ function ListOfVaults({
 }: TListOfVaultsProps): ReactElement {
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
+  const [isPending, startTransition] = useTransition()
   const [searchParams, setSearchParams] = useSearchParams()
-  const isAllVaults = vaultType === 'all'
-  const isV3View = vaultType === 'v3' || isAllVaults
-  const isV2View = vaultType === 'factory' || isAllVaults
+  const listVaultType = useDeferredValue(vaultType)
+  const isAllVaults = listVaultType === 'all'
+  const isV3View = listVaultType === 'v3' || isAllVaults
+  const isV2View = listVaultType === 'factory' || isAllVaults
   const isBelow1000 =
     useMediaQuery('(max-width: 1000px)', {
       initializeWithValue: false
@@ -112,6 +123,7 @@ function ListOfVaults({
     }) ?? false
   const shouldCollapseChips = isBelow1000
   const shouldStackFilters = isBelow1000 && !isBelow768
+  const [optimisticVaultType, setOptimisticVaultType] = useState<TVaultType | null>(null)
 
   useLayoutEffect(() => {
     const filtersElement = filtersRef.current
@@ -146,6 +158,12 @@ function ListOfVaults({
     observer.observe(filtersElement)
     return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+    if (optimisticVaultType && optimisticVaultType === vaultType) {
+      setOptimisticVaultType(null)
+    }
+  }, [optimisticVaultType, vaultType])
 
   const sanitizedV3Types = useMemo(() => {
     const selected = (types || []).filter((type) => type === 'multi' || type === 'single')
@@ -207,51 +225,51 @@ function ListOfVaults({
   )
 
   const filteredVaults = useMemo(
-    () => selectVaultsByType(vaultType, v3FilterResult.filteredVaults, v2FilterResult.filteredVaults, true),
-    [vaultType, v3FilterResult.filteredVaults, v2FilterResult.filteredVaults]
+    () => selectVaultsByType(listVaultType, v3FilterResult.filteredVaults, v2FilterResult.filteredVaults, true),
+    [listVaultType, v3FilterResult.filteredVaults, v2FilterResult.filteredVaults]
   )
 
   const holdingsVaults = useMemo(
-    () => selectVaultsByType(vaultType, v3FilterResult.holdingsVaults, v2FilterResult.holdingsVaults, true),
-    [vaultType, v3FilterResult.holdingsVaults, v2FilterResult.holdingsVaults]
+    () => selectVaultsByType(listVaultType, v3FilterResult.holdingsVaults, v2FilterResult.holdingsVaults, true),
+    [listVaultType, v3FilterResult.holdingsVaults, v2FilterResult.holdingsVaults]
   )
 
   const availableVaults = useMemo(
-    () => selectVaultsByType(vaultType, v3FilterResult.availableVaults, v2FilterResult.availableVaults, true),
-    [vaultType, v3FilterResult.availableVaults, v2FilterResult.availableVaults]
+    () => selectVaultsByType(listVaultType, v3FilterResult.availableVaults, v2FilterResult.availableVaults, true),
+    [listVaultType, v3FilterResult.availableVaults, v2FilterResult.availableVaults]
   )
 
   const vaultFlags = useMemo(
-    () => selectVaultsByType(vaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags),
-    [vaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags]
+    () => selectVaultsByType(listVaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags),
+    [listVaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags]
   )
 
   let isLoadingVaultList = v2FilterResult.isLoading
-  if (vaultType === 'all') {
+  if (listVaultType === 'all') {
     isLoadingVaultList = v3FilterResult.isLoading || v2FilterResult.isLoading
-  } else if (vaultType === 'v3') {
+  } else if (listVaultType === 'v3') {
     isLoadingVaultList = v3FilterResult.isLoading
   }
 
   const totalMatchingVaults = useMemo(() => {
-    if (vaultType === 'v3') {
+    if (listVaultType === 'v3') {
       return v3FilterResult.totalMatchingVaults ?? 0
     }
-    if (vaultType === 'factory') {
+    if (listVaultType === 'factory') {
       return v2FilterResult.filteredVaults.length
     }
     return (v3FilterResult.totalMatchingVaults ?? 0) + v2FilterResult.filteredVaults.length
-  }, [vaultType, v3FilterResult.totalMatchingVaults, v2FilterResult.filteredVaults])
+  }, [listVaultType, v3FilterResult.totalMatchingVaults, v2FilterResult.filteredVaults])
 
   const totalHoldingsMatching = useMemo(() => {
-    if (vaultType === 'v3') {
+    if (listVaultType === 'v3') {
       return v3FilterResult.totalHoldingsMatching ?? 0
     }
-    if (vaultType === 'factory') {
+    if (listVaultType === 'factory') {
       return v2FilterResult.holdingsVaults.length
     }
     return (v3FilterResult.totalHoldingsMatching ?? 0) + v2FilterResult.holdingsVaults.length
-  }, [vaultType, v3FilterResult.totalHoldingsMatching, v2FilterResult.holdingsVaults])
+  }, [listVaultType, v3FilterResult.totalHoldingsMatching, v2FilterResult.holdingsVaults])
 
   const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(
     allocatorTypesForTrending,
@@ -266,6 +284,8 @@ function ListOfVaults({
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
+  const displayedVaultType = optimisticVaultType ?? vaultType
+  const isSwitchingVaultType = Boolean(optimisticVaultType && optimisticVaultType !== vaultType) || isPending
 
   useEffect(() => {
     if (holdingsVaults.length === 0 && isHoldingsPinned) {
@@ -372,14 +392,14 @@ function ListOfVaults({
     [sortedSuggestedV2Candidates, holdingsKeySet]
   )
   const suggestedVaults = useMemo(() => {
-    if (vaultType === 'all') {
+    if (listVaultType === 'all') {
       return [...suggestedV3Vaults, ...suggestedV2Vaults].slice(0, 8)
     }
-    if (vaultType === 'v3') {
+    if (listVaultType === 'v3') {
       return suggestedV3Vaults
     }
     return suggestedV2Vaults
-  }, [vaultType, suggestedV3Vaults, suggestedV2Vaults])
+  }, [listVaultType, suggestedV3Vaults, suggestedV2Vaults])
 
   const filtersCount = useMemo(() => {
     const typeCount = sanitizedV3Types.includes('single') ? 1 : 0
@@ -389,9 +409,9 @@ function ListOfVaults({
     const aggressivenessCount = sanitizedAggressiveness.length
     return typeCount + legacyCount + hiddenCount + categoryCount + aggressivenessCount
   }, [sanitizedV3Types, showLegacyVaults, showHiddenVaults, sanitizedCategories, sanitizedAggressiveness])
-  const activeChains = chains ?? []
+  const activeChains = useMemo(() => chains ?? [], [chains])
   const activeCategories = sanitizedCategories
-  const activeProductType = vaultType === 'factory' ? 'lp' : vaultType
+  const activeProductType = useMemo(() => (listVaultType === 'factory' ? 'lp' : listVaultType), [listVaultType])
   const resolveApyDisplayVariant = useCallback((vault: TYDaemonVault): 'default' | 'factory-list' => {
     const listKind = deriveListKind(vault)
     return listKind === 'allocator' || listKind === 'strategy' ? 'default' : 'factory-list'
@@ -410,12 +430,12 @@ function ListOfVaults({
   )
   const handleToggleType = useCallback(
     (type: string): void => {
-      if (vaultType !== 'v3') {
+      if (listVaultType !== 'v3') {
         return
       }
       onChangeTypes(toggleInArray(sanitizedV3Types, type))
     },
-    [onChangeTypes, sanitizedV3Types, vaultType]
+    [listVaultType, onChangeTypes, sanitizedV3Types]
   )
 
   const handleToggleLegacyVaults = useCallback(
@@ -438,6 +458,27 @@ function ListOfVaults({
       setSearchParams(nextParams, { replace: true })
     },
     [searchParams, setSearchParams]
+  )
+  const handleVaultVersionToggle = useCallback(
+    (nextType: TVaultType): void => {
+      if (nextType === vaultType && !optimisticVaultType) {
+        return
+      }
+      setOptimisticVaultType(nextType)
+      startTransition(() => {
+        const nextParams = new URLSearchParams(searchParams)
+        if (nextType === 'all') {
+          nextParams.delete('type')
+        } else if (nextType === 'v3') {
+          nextParams.set('type', 'single')
+        } else {
+          nextParams.set('type', 'lp')
+        }
+        sanitizeChainsParam(nextParams, getSupportedChainsForVaultType(nextType))
+        setSearchParams(nextParams, { replace: true })
+      })
+    },
+    [optimisticVaultType, searchParams, setSearchParams, vaultType]
   )
 
   const filtersSections: TVaultsFiltersPanelSection[] = [
@@ -487,7 +528,7 @@ function ListOfVaults({
   const filtersPanelContent = <VaultsFiltersPanel sections={filtersSections} />
 
   const chainConfig = useMemo(() => {
-    if (vaultType === 'v3') {
+    if (listVaultType === 'v3') {
       return {
         supportedChainIds: V3_SUPPORTED_CHAINS,
         primaryChainIds: V3_PRIMARY_CHAIN_IDS,
@@ -497,7 +538,7 @@ function ListOfVaults({
         allChainsLabel: 'All Chains'
       }
     }
-    if (vaultType === 'all') {
+    if (listVaultType === 'all') {
       const allChains = getSupportedChainsForVaultType('all')
       return {
         supportedChainIds: allChains,
@@ -516,11 +557,10 @@ function ListOfVaults({
       showMoreChainsButton: false,
       allChainsLabel: 'All Chains'
     }
-  }, [vaultType])
+  }, [listVaultType])
 
-  function renderVaultList(): ReactNode {
-    const defaultCategories = isV3View ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
-
+  const defaultCategories = isV3View ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
+  const vaultListContent = useMemo(() => {
     if (isLoadingVaultList) {
       return (
         <VaultsListEmpty
@@ -562,7 +602,7 @@ function ListOfVaults({
             activeProductType={activeProductType}
             onToggleChain={handleToggleChain}
             onToggleCategory={handleToggleCategory}
-            onToggleType={vaultType === 'v3' ? handleToggleType : undefined}
+            onToggleType={listVaultType === 'v3' ? handleToggleType : undefined}
             onToggleVaultType={handleToggleVaultType}
             shouldCollapseChips={shouldCollapseChips}
             showStrategies={showStrategies}
@@ -584,7 +624,7 @@ function ListOfVaults({
                   activeProductType={activeProductType}
                   onToggleChain={handleToggleChain}
                   onToggleCategory={handleToggleCategory}
-                  onToggleType={vaultType === 'v3' ? handleToggleType : undefined}
+                  onToggleType={listVaultType === 'v3' ? handleToggleType : undefined}
                   onToggleVaultType={handleToggleVaultType}
                   shouldCollapseChips={shouldCollapseChips}
                   showStrategies={showStrategies}
@@ -595,7 +635,30 @@ function ListOfVaults({
         ) : null}
       </div>
     )
-  }
+  }, [
+    activeCategories,
+    activeChains,
+    activeProductType,
+    chains,
+    defaultCategories,
+    handleToggleCategory,
+    handleToggleChain,
+    handleToggleType,
+    handleToggleVaultType,
+    isLoadingVaultList,
+    listVaultType,
+    mainVaults,
+    onResetMultiSelect,
+    pinnedSections,
+    pinnedVaults.length,
+    resolveApyDisplayVariant,
+    sanitizedCategories,
+    search,
+    shouldCollapseChips,
+    showStrategies,
+    totalMatchingVaults,
+    vaultFlags
+  ])
 
   const suggestedVaultsElement = <TrendingVaults suggestedVaults={suggestedVaults} />
 
@@ -609,7 +672,7 @@ function ListOfVaults({
         {'Vaults'}
       </Link>
       <span>{'>'}</span>
-      <span className={'font-medium text-text-primary'}>{getVaultTypeLabel(vaultType)}</span>
+      <span className={'font-medium text-text-primary'}>{getVaultTypeLabel(displayedVaultType)}</span>
     </div>
   )
 
@@ -628,16 +691,29 @@ function ListOfVaults({
         filtersContent={filtersPanelContent}
         filtersPanelContent={filtersPanelContent}
         onClearFilters={onResetMultiSelect}
-        mobileExtraContent={<VaultVersionToggle stretch={true} />}
-        trailingControls={<VaultVersionToggle />}
+        mobileExtraContent={
+          <VaultVersionToggle
+            stretch={true}
+            activeType={displayedVaultType}
+            onTypeChange={handleVaultVersionToggle}
+            isPending={isSwitchingVaultType}
+          />
+        }
+        trailingControls={
+          <VaultVersionToggle
+            activeType={displayedVaultType}
+            onTypeChange={handleVaultVersionToggle}
+            isPending={isSwitchingVaultType}
+          />
+        }
         isStackedLayout={shouldStackFilters}
       />
     </div>
   )
 
   const listElement = (
-    <div className={'w-full rounded-xl bg-surface'}>
-      <div className={''}>
+    <div aria-busy={isSwitchingVaultType || undefined} className={'relative w-full rounded-xl bg-surface'}>
+      <div className={isSwitchingVaultType ? 'pointer-events-none opacity-70 transition' : 'transition'}>
         <div
           className={'relative md:sticky md:z-30'}
           style={{
@@ -716,10 +792,21 @@ function ListOfVaults({
         </div>
         {/* <div className={'overflow-hidden rounded-b-xl'}> */}
         <div className={'flex flex-col border-x border-b border-border rounded-b-xl overflow-hidden'}>
-          {renderVaultList()}
+          {vaultListContent}
         </div>
         {/* </div> */}
       </div>
+      {isSwitchingVaultType ? (
+        <output
+          aria-live={'polite'}
+          className={'absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-app/30 text-text-primary'}
+        >
+          <span className={'flex flex-col items-center gap-2'}>
+            <span className={'loader'} />
+            <span className={'text-sm font-medium'}>{'Updating vaults…'}</span>
+          </span>
+        </output>
+      ) : null}
     </div>
   )
 
