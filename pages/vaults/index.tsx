@@ -925,7 +925,7 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
 
 function Index(): ReactElement {
   const vaultType = useVaultType()
-  return <VaultsIndexContent key={vaultType} vaultType={vaultType} />
+  return <VaultsIndexContent vaultType={vaultType} />
 }
 
 export default Index
