@@ -76,6 +76,8 @@ function getAggressivenessForRiskLevel(value: number): TVaultAggressiveness | nu
   switch (value) {
     case -1:
       return 'Conservative'
+    case 0:
+      return 'Conservative'
     case 1:
       return 'Conservative'
     case 2:

@@ -42,6 +42,7 @@ type TVaultsFiltersProps = {
   onClearFilters?: () => void
   mobileExtraContent?: ReactNode
   trailingControls?: ReactNode
+  searchTrailingControls?: ReactNode
   isStackedLayout?: boolean
 }
 
@@ -59,6 +60,7 @@ export function VaultsFilters({
   onClearFilters,
   mobileExtraContent,
   trailingControls,
+  searchTrailingControls,
   isStackedLayout: isStackedLayoutProp
 }: TVaultsFiltersProps): ReactElement {
   const SEARCH_MIN_WIDTH = 180
@@ -495,6 +497,7 @@ export function VaultsFilters({
                     onSearch={onSearch}
                     shouldDebounce={shouldDebounce}
                     searchAlertContent={searchAlertContent}
+                    searchTrailingControls={searchTrailingControls}
                     enableResponsiveLayout={false}
                   />
                   {hasPanelContent ? filtersPanelContent : null}
@@ -530,6 +533,7 @@ export function VaultsFilters({
             enableResponsiveLayout={!isStackedLayout}
             layout={isStackedLayout ? 'stacked' : 'inline'}
             leadingControls={isStackedLayout ? stackedControls : trailingControls}
+            searchTrailingControls={searchTrailingControls}
             trailingControls={isStackedLayout ? undefined : undefined}
           />
         </div>
@@ -582,6 +586,7 @@ function FilterControls({
   chainSelectorRef,
   filtersButtonRef,
   searchContainerRef,
+  searchTrailingControls,
   enableResponsiveLayout = false,
   layout = 'inline',
   leadingControls,
@@ -616,6 +621,7 @@ function FilterControls({
   chainSelectorRef?: RefObject<HTMLDivElement | null>
   filtersButtonRef?: RefObject<HTMLButtonElement | null>
   searchContainerRef?: RefObject<HTMLDivElement | null>
+  searchTrailingControls?: ReactNode
   enableResponsiveLayout?: boolean
   layout?: 'inline' | 'stacked'
   leadingControls?: ReactNode
@@ -769,6 +775,8 @@ function FilterControls({
       ) : null}
     </div>
   )
+  const searchTrailingElement =
+    showInlineSearch && searchTrailingControls ? <div className={'shrink-0'}>{searchTrailingControls}</div> : null
 
   if (isStacked) {
     return (
@@ -778,6 +786,7 @@ function FilterControls({
           {chainSelectorElement}
           {filtersButtonElement}
           {inlineSearchElement}
+          {searchTrailingElement}
         </div>
       </div>
     )
@@ -807,6 +816,7 @@ function FilterControls({
                 </>
               )}
               {inlineSearchElement}
+              {searchTrailingElement}
             </div>
           </div>
         </div>
