@@ -114,11 +114,11 @@ function PortfolioPage(): ReactElement {
   }, [balances, vaultLookup])
 
   const migratableSet = useMemo(
-    () => new Set(Object.keys(vaultsMigrations).map((address) => toAddress(address))),
+    () => new Set(Object.values(vaultsMigrations).map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
     [vaultsMigrations]
   )
   const retiredSet = useMemo(
-    () => new Set(Object.keys(vaultsRetired).map((address) => toAddress(address))),
+    () => new Set(Object.values(vaultsRetired).map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
     [vaultsRetired]
   )
 
@@ -132,8 +132,8 @@ function PortfolioPage(): ReactElement {
       const key = `${vault.chainID}_${toAddress(vault.address)}`
       flags[key] = {
         hasHoldings: true,
-        isMigratable: migratableSet.has(toAddress(vault.address)),
-        isRetired: retiredSet.has(toAddress(vault.address)),
+        isMigratable: migratableSet.has(key),
+        isRetired: retiredSet.has(key),
         isHidden: Boolean(vault.info?.isHidden)
       }
     })
