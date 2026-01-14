@@ -48,6 +48,7 @@ import { getSupportedChainsForVaultType, normalizeVaultTypeParam, sanitizeChains
 
 const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
 const V2_ASSET_CATEGORIES = ['Stablecoin', 'Volatile']
+const DEFAULT_VAULT_TYPES = ['multi', 'single']
 
 function useVaultType(): TVaultType {
   const [searchParams] = useSearchParams()
@@ -126,21 +127,36 @@ function ListOfVaults({
   const shouldStackFilters = isBelow1000 && !isBelow768
   const [optimisticVaultType, setOptimisticVaultType] = useState<TVaultType | null>(null)
   const [optimisticChains, setOptimisticChains] = useState<number[] | null>(null)
+  const [optimisticTypes, setOptimisticTypes] = useState<string[] | null>(null)
+  const [optimisticCategories, setOptimisticCategories] = useState<string[] | null>(null)
+  const [optimisticAggressiveness, setOptimisticAggressiveness] = useState<string[] | null>(null)
+  const [optimisticShowLegacyVaults, setOptimisticShowLegacyVaults] = useState<boolean | null>(null)
+  const [optimisticShowHiddenVaults, setOptimisticShowHiddenVaults] = useState<boolean | null>(null)
+  const [optimisticShowStrategies, setOptimisticShowStrategies] = useState<boolean | null>(null)
   const listChains = useDeferredValue(chains)
-  const areChainsEquivalent = useCallback((a: number[] | null | undefined, b: number[] | null | undefined): boolean => {
-    const normalize = (value: number[] | null | undefined): number[] => {
-      if (!value || value.length === 0) {
-        return []
+  const listTypes = useDeferredValue(types)
+  const listCategories = useDeferredValue(categories)
+  const listAggressiveness = useDeferredValue(aggressiveness)
+  const listShowLegacyVaults = useDeferredValue(showLegacyVaults)
+  const listShowHiddenVaults = useDeferredValue(showHiddenVaults)
+  const listShowStrategies = useDeferredValue(showStrategies)
+  const areArraysEquivalent = useCallback(
+    (a: Array<string | number> | null | undefined, b: Array<string | number> | null | undefined): boolean => {
+      const normalize = (value: Array<string | number> | null | undefined): Array<string | number> => {
+        if (!value || value.length === 0) {
+          return []
+        }
+        return [...new Set(value)].sort((left, right) => String(left).localeCompare(String(right)))
       }
-      return [...new Set(value)].sort((left, right) => left - right)
-    }
-    const normalizedA = normalize(a)
-    const normalizedB = normalize(b)
-    if (normalizedA.length !== normalizedB.length) {
-      return false
-    }
-    return normalizedA.every((value, index) => value === normalizedB[index])
-  }, [])
+      const normalizedA = normalize(a)
+      const normalizedB = normalize(b)
+      if (normalizedA.length !== normalizedB.length) {
+        return false
+      }
+      return normalizedA.every((value, index) => value === normalizedB[index])
+    },
+    []
+  )
 
   useLayoutEffect(() => {
     const filtersElement = filtersRef.current
@@ -183,70 +199,137 @@ function ListOfVaults({
   }, [optimisticVaultType, vaultType])
 
   useEffect(() => {
-    if (optimisticChains && areChainsEquivalent(optimisticChains, chains)) {
+    if (optimisticChains && areArraysEquivalent(optimisticChains, chains)) {
       setOptimisticChains(null)
     }
-    if (!optimisticChains && !chains?.length) {
-      setOptimisticChains(null)
-    }
-  }, [optimisticChains, chains, areChainsEquivalent])
+  }, [optimisticChains, chains, areArraysEquivalent])
 
-  const sanitizedV3Types = useMemo(() => {
-    const selected = (types || []).filter((type) => type === 'multi' || type === 'single')
-    if (!showStrategies) {
-      return ['multi']
+  useEffect(() => {
+    if (optimisticTypes && areArraysEquivalent(optimisticTypes, types)) {
+      setOptimisticTypes(null)
     }
-    if (!searchParams.has('types') || selected.length === 0) {
-      return ['multi', 'single']
+  }, [optimisticTypes, types, areArraysEquivalent])
+
+  useEffect(() => {
+    if (optimisticCategories && areArraysEquivalent(optimisticCategories, categories)) {
+      setOptimisticCategories(null)
     }
-    return selected
-  }, [types, showStrategies, searchParams])
+  }, [optimisticCategories, categories, areArraysEquivalent])
+
+  useEffect(() => {
+    if (optimisticAggressiveness && areArraysEquivalent(optimisticAggressiveness, aggressiveness)) {
+      setOptimisticAggressiveness(null)
+    }
+  }, [optimisticAggressiveness, aggressiveness, areArraysEquivalent])
+
+  useEffect(() => {
+    if (optimisticShowLegacyVaults !== null && optimisticShowLegacyVaults === showLegacyVaults) {
+      setOptimisticShowLegacyVaults(null)
+    }
+  }, [optimisticShowLegacyVaults, showLegacyVaults])
+
+  useEffect(() => {
+    if (optimisticShowHiddenVaults !== null && optimisticShowHiddenVaults === showHiddenVaults) {
+      setOptimisticShowHiddenVaults(null)
+    }
+  }, [optimisticShowHiddenVaults, showHiddenVaults])
+
+  useEffect(() => {
+    if (optimisticShowStrategies !== null && optimisticShowStrategies === showStrategies) {
+      setOptimisticShowStrategies(null)
+    }
+  }, [optimisticShowStrategies, showStrategies])
+
+  const displayedVaultType = optimisticVaultType ?? vaultType
+  const displayedChains = optimisticChains ?? chains
+  const displayedTypes = optimisticTypes ?? types
+  const displayedCategories = optimisticCategories ?? categories
+  const displayedAggressiveness = optimisticAggressiveness ?? aggressiveness
+  const displayedShowLegacyVaults = optimisticShowLegacyVaults ?? showLegacyVaults
+  const displayedShowHiddenVaults = optimisticShowHiddenVaults ?? showHiddenVaults
+  const displayedShowStrategies = optimisticShowStrategies ?? showStrategies
+  const hasDisplayedTypesParam = searchParams.has('types') || optimisticTypes !== null
+  const hasListTypesParam = searchParams.has('types')
+
+  const resolveV3Types = useCallback(
+    (selected: string[] | null | undefined, shouldShowStrategies: boolean, hasTypesParam: boolean): string[] => {
+      const filtered = (selected || []).filter((type) => type === 'multi' || type === 'single')
+      if (!shouldShowStrategies) {
+        return ['multi']
+      }
+      if (!hasTypesParam || filtered.length === 0) {
+        return ['multi', 'single']
+      }
+      return filtered
+    },
+    []
+  )
+
+  const displayedV3Types = useMemo(
+    () => resolveV3Types(displayedTypes, displayedShowStrategies, hasDisplayedTypesParam),
+    [displayedTypes, displayedShowStrategies, hasDisplayedTypesParam, resolveV3Types]
+  )
+  const listV3Types = useMemo(
+    () => resolveV3Types(listTypes, listShowStrategies, hasListTypesParam),
+    [listTypes, listShowStrategies, hasListTypesParam, resolveV3Types]
+  )
 
   const allocatorTypesForTrending = useMemo(() => {
     return isV3View ? ['multi'] : null
   }, [isV3View])
 
-  const sanitizedV2Types = useMemo(() => {
-    return showLegacyVaults ? ['factory', 'legacy'] : ['factory']
-  }, [showLegacyVaults])
+  const listV2Types = useMemo(
+    () => (listShowLegacyVaults ? ['factory', 'legacy'] : ['factory']),
+    [listShowLegacyVaults]
+  )
 
-  const sanitizedCategories = useMemo(() => {
+  const displayedCategoriesSanitized = useMemo(() => {
     const allowed = V3_ASSET_CATEGORIES
-    return (categories || []).filter((value) => allowed.includes(value))
-  }, [categories])
+    return (displayedCategories || []).filter((value) => allowed.includes(value))
+  }, [displayedCategories])
+  const listCategoriesSanitized = useMemo(() => {
+    const allowed = V3_ASSET_CATEGORIES
+    return (listCategories || []).filter((value) => allowed.includes(value))
+  }, [listCategories])
 
-  const sanitizedAggressiveness = useMemo(() => {
+  const displayedAggressivenessSanitized = useMemo(() => {
     const allowed = new Set(AGGRESSIVENESS_OPTIONS)
-    return (aggressiveness || []).filter((value): value is TVaultAggressiveness =>
+    return (displayedAggressiveness || []).filter((value): value is TVaultAggressiveness =>
       allowed.has(value as TVaultAggressiveness)
     )
-  }, [aggressiveness])
+  }, [displayedAggressiveness])
+  const listAggressivenessSanitized = useMemo(() => {
+    const allowed = new Set(AGGRESSIVENESS_OPTIONS)
+    return (listAggressiveness || []).filter((value): value is TVaultAggressiveness =>
+      allowed.has(value as TVaultAggressiveness)
+    )
+  }, [listAggressiveness])
   // Use the appropriate filter hook based on vault type
   const v3FilterResult = useV3VaultFilter(
-    isV3View ? sanitizedV3Types : null,
+    isV3View ? listV3Types : null,
     listChains,
     searchValue,
-    isV3View ? sanitizedCategories : null,
-    isV3View ? sanitizedAggressiveness : null,
-    isV3View ? showHiddenVaults : undefined,
+    isV3View ? listCategoriesSanitized : null,
+    isV3View ? listAggressivenessSanitized : null,
+    isV3View ? listShowHiddenVaults : undefined,
     isV3View
   )
   const v2FilterResult = useV2VaultFilter(
-    isV2View ? sanitizedV2Types : null,
+    isV2View ? listV2Types : null,
     listChains,
     searchValue,
-    isV2View ? sanitizedCategories : null,
-    isV2View ? sanitizedAggressiveness : null,
-    showHiddenVaults,
+    isV2View ? listCategoriesSanitized : null,
+    isV2View ? listAggressivenessSanitized : null,
+    listShowHiddenVaults,
     isV2View
   )
   const { filteredVaults: filteredV2VaultsAllChains } = useV2VaultFilter(
-    isV2View ? sanitizedV2Types : null,
+    isV2View ? listV2Types : null,
     null,
     '',
-    isV2View ? sanitizedCategories : null,
-    isV2View ? sanitizedAggressiveness : null,
-    showHiddenVaults,
+    isV2View ? listCategoriesSanitized : null,
+    isV2View ? listAggressivenessSanitized : null,
+    listShowHiddenVaults,
     isV2View
   )
 
@@ -305,17 +388,15 @@ function ListOfVaults({
     allocatorTypesForTrending,
     null,
     '',
-    isV3View ? sanitizedCategories : null,
-    isV3View ? sanitizedAggressiveness : null,
-    isV3View ? showHiddenVaults : undefined,
+    isV3View ? listCategoriesSanitized : null,
+    isV3View ? listAggressivenessSanitized : null,
+    isV3View ? listShowHiddenVaults : undefined,
     isV3View
   )
 
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
-  const displayedVaultType = optimisticVaultType ?? vaultType
-  const displayedChains = optimisticChains ?? chains
   const isSwitchingVaultType = Boolean(optimisticVaultType && optimisticVaultType !== vaultType) || isPending
 
   useEffect(() => {
@@ -433,16 +514,25 @@ function ListOfVaults({
   }, [listVaultType, suggestedV3Vaults, suggestedV2Vaults])
 
   const filtersCount = useMemo(() => {
-    const typeCount = sanitizedV3Types.includes('single') ? 1 : 0
-    const legacyCount = showLegacyVaults ? 1 : 0
-    const hiddenCount = showHiddenVaults ? 1 : 0
-    const categoryCount = sanitizedCategories.length
-    const aggressivenessCount = sanitizedAggressiveness.length
+    const typeCount = displayedV3Types.includes('single') ? 1 : 0
+    const legacyCount = displayedShowLegacyVaults ? 1 : 0
+    const hiddenCount = displayedShowHiddenVaults ? 1 : 0
+    const categoryCount = displayedCategoriesSanitized.length
+    const aggressivenessCount = displayedAggressivenessSanitized.length
     return typeCount + legacyCount + hiddenCount + categoryCount + aggressivenessCount
-  }, [sanitizedV3Types, showLegacyVaults, showHiddenVaults, sanitizedCategories, sanitizedAggressiveness])
-  const activeChains = useMemo(() => listChains ?? [], [listChains])
-  const activeCategories = sanitizedCategories
-  const activeProductType = useMemo(() => (listVaultType === 'factory' ? 'lp' : listVaultType), [listVaultType])
+  }, [
+    displayedAggressivenessSanitized.length,
+    displayedCategoriesSanitized.length,
+    displayedShowHiddenVaults,
+    displayedShowLegacyVaults,
+    displayedV3Types
+  ])
+  const activeChains = useMemo(() => displayedChains ?? [], [displayedChains])
+  const activeCategories = displayedCategoriesSanitized
+  const activeProductType = useMemo(
+    () => (displayedVaultType === 'factory' ? 'lp' : displayedVaultType),
+    [displayedVaultType]
+  )
   const resolveApyDisplayVariant = useCallback((vault: TYDaemonVault): 'default' | 'factory-list' => {
     const listKind = deriveListKind(vault)
     return listKind === 'allocator' || listKind === 'strategy' ? 'default' : 'factory-list'
@@ -457,6 +547,63 @@ function ListOfVaults({
     },
     [onChangeChains]
   )
+  const handleTypesChange = useCallback(
+    (nextTypes: string[] | null): void => {
+      const normalizedTypes = nextTypes ?? []
+      setOptimisticTypes(normalizedTypes)
+      startTransition(() => {
+        onChangeTypes(nextTypes)
+      })
+    },
+    [onChangeTypes]
+  )
+  const handleCategoriesChange = useCallback(
+    (nextCategories: string[] | null): void => {
+      const normalizedCategories = nextCategories ?? []
+      setOptimisticCategories(normalizedCategories)
+      startTransition(() => {
+        onChangeCategories(nextCategories)
+      })
+    },
+    [onChangeCategories]
+  )
+  const handleAggressivenessChange = useCallback(
+    (nextAggressiveness: string[] | null): void => {
+      const normalizedAggressiveness = nextAggressiveness ?? []
+      setOptimisticAggressiveness(normalizedAggressiveness)
+      startTransition(() => {
+        onChangeAggressiveness(nextAggressiveness)
+      })
+    },
+    [onChangeAggressiveness]
+  )
+  const handleShowLegacyVaultsChange = useCallback(
+    (nextValue: boolean): void => {
+      setOptimisticShowLegacyVaults(nextValue)
+      startTransition(() => {
+        onChangeShowLegacyVaults(nextValue)
+      })
+    },
+    [onChangeShowLegacyVaults]
+  )
+  const handleShowHiddenVaultsChange = useCallback(
+    (nextValue: boolean): void => {
+      setOptimisticShowHiddenVaults(nextValue)
+      startTransition(() => {
+        onChangeShowHiddenVaults(nextValue)
+      })
+    },
+    [onChangeShowHiddenVaults]
+  )
+  const handleShowStrategiesChange = useCallback(
+    (nextValue: boolean): void => {
+      setOptimisticShowStrategies(nextValue)
+      startTransition(() => {
+        onChangeShowStrategies(nextValue)
+      })
+    },
+    [onChangeShowStrategies]
+  )
   const handleToggleChain = useCallback(
     (chainId: number): void => {
       handleChainsChange(toggleInArray(displayedChains ?? null, chainId))
@@ -465,34 +612,20 @@ function ListOfVaults({
   )
   const handleToggleCategory = useCallback(
     (category: string): void => {
-      onChangeCategories(toggleInArray(sanitizedCategories, category))
+      handleCategoriesChange(toggleInArray(displayedCategoriesSanitized, category))
     },
-    [onChangeCategories, sanitizedCategories]
+    [displayedCategoriesSanitized, handleCategoriesChange]
   )
   const handleToggleType = useCallback(
     (type: string): void => {
-      if (listVaultType !== 'v3') {
+      if (displayedVaultType !== 'v3') {
         return
       }
-      onChangeTypes(toggleInArray(sanitizedV3Types, type))
+      handleTypesChange(toggleInArray(displayedV3Types, type))
     },
-    [listVaultType, onChangeTypes, sanitizedV3Types]
+    [displayedVaultType, displayedV3Types, handleTypesChange]
   )
 
-  const handleToggleVaultType = useCallback(
-    (nextType: 'v3' | 'lp'): void => {
-      const nextParams = new URLSearchParams(searchParams)
-      if (nextType === 'v3') {
-        nextParams.set('type', 'single')
-        sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('v3'))
-      } else {
-        nextParams.set('type', 'liquidity')
-        sanitizeChainsParam(nextParams, getSupportedChainsForVaultType('factory'))
-      }
-      setSearchParams(nextParams, { replace: true })
-    },
-    [searchParams, setSearchParams]
-  )
   const handleVaultVersionToggle = useCallback(
     (nextType: TVaultType): void => {
       if (nextType === vaultType && !optimisticVaultType) {
@@ -514,6 +647,26 @@ function ListOfVaults({
     },
     [optimisticVaultType, searchParams, setSearchParams, vaultType]
   )
+  const handleToggleVaultType = useCallback(
+    (nextType: 'v3' | 'lp'): void => {
+      const targetType = nextType === 'lp' ? 'factory' : 'v3'
+      handleVaultVersionToggle(targetType)
+    },
+    [handleVaultVersionToggle]
+  )
+
+  const handleResetMultiSelect = useCallback((): void => {
+    setOptimisticChains([])
+    setOptimisticCategories([])
+    setOptimisticAggressiveness([])
+    setOptimisticTypes(DEFAULT_VAULT_TYPES)
+    setOptimisticShowLegacyVaults(false)
+    setOptimisticShowHiddenVaults(false)
+    setOptimisticShowStrategies(false)
+    startTransition(() => {
+      onResetMultiSelect()
+    })
+  }, [onResetMultiSelect])
 
   const filtersSections: TVaultsFiltersPanelSection[] = [
     {
@@ -521,8 +674,8 @@ function ListOfVaults({
       title: 'Asset Category',
       options: V3_ASSET_CATEGORIES.map((value) => ({
         label: value,
-        checked: sanitizedCategories.includes(value),
-        onToggle: (): void => onChangeCategories(toggleInArray(sanitizedCategories, value))
+        checked: displayedCategoriesSanitized.includes(value),
+        onToggle: (): void => handleCategoriesChange(toggleInArray(displayedCategoriesSanitized, value))
       }))
     },
     {
@@ -530,8 +683,8 @@ function ListOfVaults({
       title: 'Vault Aggressiveness',
       options: AGGRESSIVENESS_OPTIONS.map((value) => ({
         label: value,
-        checked: sanitizedAggressiveness.includes(value),
-        onToggle: (): void => onChangeAggressiveness(toggleInArray(sanitizedAggressiveness, value))
+        checked: displayedAggressivenessSanitized.includes(value),
+        onToggle: (): void => handleAggressivenessChange(toggleInArray(displayedAggressivenessSanitized, value))
       }))
     },
     {
@@ -541,20 +694,20 @@ function ListOfVaults({
         {
           label: 'Show single asset strategies',
           description: 'Checking this will show the underlying strategies used in Single Asset Vaults in the list.',
-          checked: showStrategies,
-          onChange: (checked: boolean): void => onChangeShowStrategies(checked)
+          checked: displayedShowStrategies,
+          onChange: (checked: boolean): void => handleShowStrategiesChange(checked)
         },
         {
           label: 'Show legacy vaults',
           description: 'Includes legacy vaults in the list.',
-          checked: showLegacyVaults,
-          onChange: (checked: boolean): void => onChangeShowLegacyVaults(checked)
+          checked: displayedShowLegacyVaults,
+          onChange: (checked: boolean): void => handleShowLegacyVaultsChange(checked)
         },
         {
           label: 'Show hidden vaults',
           description: 'Checking this will show deprioritized and hidden vaults in the list',
-          checked: showHiddenVaults,
-          onChange: (checked: boolean): void => onChangeShowHiddenVaults(checked)
+          checked: displayedShowHiddenVaults,
+          onChange: (checked: boolean): void => handleShowHiddenVaultsChange(checked)
         }
       ]
     }
@@ -600,9 +753,9 @@ function ListOfVaults({
         <VaultsListEmpty
           isLoading={isLoadingVaultList}
           currentSearch={searchValue}
-          currentCategories={sanitizedCategories}
+          currentCategories={listCategoriesSanitized}
           currentChains={listChains}
-          onReset={onResetMultiSelect}
+          onReset={handleResetMultiSelect}
           defaultCategories={defaultCategories}
           potentialResultsCount={totalMatchingVaults}
         />
@@ -614,9 +767,9 @@ function ListOfVaults({
         <VaultsListEmpty
           isLoading={false}
           currentSearch={searchValue}
-          currentCategories={sanitizedCategories}
+          currentCategories={listCategoriesSanitized}
           currentChains={listChains}
-          onReset={onResetMultiSelect}
+          onReset={handleResetMultiSelect}
           defaultCategories={defaultCategories}
           potentialResultsCount={totalMatchingVaults}
         />
@@ -639,7 +792,7 @@ function ListOfVaults({
             onToggleType={listVaultType === 'v3' ? handleToggleType : undefined}
             onToggleVaultType={handleToggleVaultType}
             shouldCollapseChips={shouldCollapseChips}
-            showStrategies={showStrategies}
+            showStrategies={displayedShowStrategies}
           />
         ))}
         {mainVaults.length > 0 ? (
@@ -661,7 +814,7 @@ function ListOfVaults({
                   onToggleType={listVaultType === 'v3' ? handleToggleType : undefined}
                   onToggleVaultType={handleToggleVaultType}
                   shouldCollapseChips={shouldCollapseChips}
-                  showStrategies={showStrategies}
+                  showStrategies={displayedShowStrategies}
                 />
               )
             })}
@@ -682,14 +835,14 @@ function ListOfVaults({
     listChains,
     listVaultType,
     mainVaults,
-    onResetMultiSelect,
+    handleResetMultiSelect,
     pinnedSections,
     pinnedVaults.length,
     resolveApyDisplayVariant,
-    sanitizedCategories,
+    listCategoriesSanitized,
     searchValue,
     shouldCollapseChips,
-    showStrategies,
+    displayedShowStrategies,
     totalMatchingVaults,
     vaultFlags
   ])
@@ -724,7 +877,7 @@ function ListOfVaults({
         filtersCount={filtersCount}
         filtersContent={filtersPanelContent}
         filtersPanelContent={filtersPanelContent}
-        onClearFilters={onResetMultiSelect}
+        onClearFilters={handleResetMultiSelect}
         mobileExtraContent={
           <VaultVersionToggle
             stretch={true}
