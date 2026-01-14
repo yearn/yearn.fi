@@ -20,6 +20,7 @@ import { useDepositFlow } from './useDepositFlow'
 import { useDepositNotifications } from './useDepositNotifications'
 import { useFetchMaxQuote } from './useFetchMaxQuote'
 import { VaultSharesModal } from './VaultSharesModal'
+import { VaultShareValueModal } from './VaultShareValueModal'
 
 interface Props {
   vaultAddress: Address
@@ -53,6 +54,7 @@ export const WidgetDeposit: FC<Props> = ({
   const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
+  const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
@@ -190,6 +192,32 @@ export const WidgetDeposit: FC<Props> = ({
     if (!assetToken?.address || !assetToken?.chainID) return 0
     return getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
   }, [depositToken, assetAddress, assetToken?.address, assetToken?.chainID, getPrice])
+
+  const assetTokenPrice = useMemo(() => {
+    if (!assetToken?.address || !assetToken?.chainID) return 0
+    return getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
+  }, [assetToken?.address, assetToken?.chainID, getPrice])
+
+  const vaultShareValue = useMemo(() => {
+    const expectedOut = activeFlow.periphery.expectedOut
+    const vaultDecimals = vault?.decimals ?? 18
+    const assetDecimals = assetToken?.decimals ?? 18
+
+    const valueInAsset =
+      expectedOut > 0n && pricePerShare && pricePerShare > 0n
+        ? (expectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
+        : 0n
+
+    const formatted = formatTAmount({
+      value: valueInAsset,
+      decimals: assetDecimals,
+      options: { maximumFractionDigits: 6 }
+    })
+
+    const usd = (Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice).toFixed(2)
+
+    return { formatted, usd }
+  }, [activeFlow.periphery.expectedOut, vault?.decimals, assetToken?.decimals, pricePerShare, assetTokenPrice])
 
   // ============================================================================
   // Transaction Step Configuration
@@ -359,7 +387,10 @@ export const WidgetDeposit: FC<Props> = ({
         assetTokenDecimals={assetToken?.decimals ?? 18}
         expectedVaultShares={activeFlow.periphery.expectedOut}
         vaultDecimals={vault?.decimals ?? 18}
+        pricePerShare={pricePerShare || 0n}
+        assetUsdPrice={assetTokenPrice}
         onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
+        onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
         estimatedAnnualReturn={estimatedAnnualReturn}
         onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
         allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
@@ -444,6 +475,19 @@ export const WidgetDeposit: FC<Props> = ({
         tokenSymbol={inputToken?.symbol}
         estimatedReturn={estimatedAnnualReturn}
         currentAPR={vaultAPR}
+      />
+
+      <VaultShareValueModal
+        isOpen={showVaultShareValueModal}
+        onClose={() => setShowVaultShareValueModal(false)}
+        sharesAmount={formatTAmount({
+          value: activeFlow.periphery.expectedOut,
+          decimals: vault?.decimals ?? 18,
+          options: { maximumFractionDigits: 4 }
+        })}
+        shareValue={vaultShareValue.formatted}
+        assetSymbol={assetToken?.symbol || ''}
+        usdValue={vaultShareValue.usd}
       />
 
       {/* Token Selector Overlay */}
