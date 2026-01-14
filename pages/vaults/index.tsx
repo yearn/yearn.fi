@@ -7,7 +7,7 @@ import { toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useMediaQuery } from '@react-hookz/web'
 import { VaultsAuxiliaryList } from '@vaults/components/list/VaultsAuxiliaryList'
-import { VaultsListHead } from '@vaults/components/list/VaultsListHead'
+import { type TListHead, VaultsListHead } from '@vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@vaults/components/list/VaultsListRow'
 import { TrendingVaults } from '@vaults/components/TrendingVaults'
 import { ALL_VAULTSV3_CATEGORIES } from '@vaults/constants'
@@ -18,7 +18,7 @@ import type { TPossibleSortBy } from '@vaults/shared/hooks/useSortVaults'
 import { useSortVaults } from '@vaults/shared/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults/shared/hooks/useVaultsQueryArgs'
 import { deriveListKind, type TVaultAggressiveness } from '@vaults/shared/utils/vaultListFacets'
-import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import type { CSSProperties, ReactElement, ReactNode, RefObject } from 'react'
 import {
   useCallback,
   useDeferredValue,
@@ -55,6 +55,153 @@ function useVaultType(): TVaultType {
   return normalizeVaultTypeParam(searchParams.get('type'))
 }
 
+type TVaultsPageLayoutProps = {
+  varsRef: RefObject<HTMLDivElement | null>
+  stickyHeader: ReactNode
+  list: ReactNode
+}
+
+function VaultsPageLayout({ varsRef, stickyHeader, list }: TVaultsPageLayoutProps): ReactElement {
+  return (
+    <div ref={varsRef} className={'flex flex-col'} style={{ '--vaults-filters-height': '0px' } as CSSProperties}>
+      {stickyHeader}
+      {list}
+    </div>
+  )
+}
+
+type TVaultsStickyHeaderProps = {
+  filtersRef: RefObject<HTMLDivElement | null>
+  children: ReactNode
+}
+
+function VaultsStickyHeader({ filtersRef, children }: TVaultsStickyHeaderProps): ReactElement {
+  return (
+    <div ref={filtersRef} className={'sticky z-40 w-full bg-app pb-2 shrink-0'} style={{ top: 'var(--header-height)' }}>
+      {children}
+    </div>
+  )
+}
+
+function VaultsBreadcrumbs({ vaultType }: { vaultType: TVaultType }): ReactElement {
+  return (
+    <div className={'mb-3 mt-2 flex items-center gap-2 text-sm text-text-secondary'}>
+      <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
+        {'Home'}
+      </Link>
+      <span>{'>'}</span>
+      <Link to={'/vaults'} className={'transition-colors hover:text-text-primary'}>
+        {'Vaults'}
+      </Link>
+      <span>{'>'}</span>
+      <span className={'font-medium text-text-primary'}>{getVaultTypeLabel(vaultType)}</span>
+    </div>
+  )
+}
+
+function TrendingVaultsSection({ suggestedVaults }: { suggestedVaults: TYDaemonVault[] }): ReactElement {
+  return <TrendingVaults suggestedVaults={suggestedVaults} />
+}
+
+type TVaultsFiltersBarProps = {
+  searchValue: string
+  chains: number[] | null
+  onChangeChains: (chains: number[] | null) => void
+  onSearch: (searchValue: string) => void
+  chainConfig: {
+    supportedChainIds: number[]
+    primaryChainIds?: number[]
+    defaultSecondaryChainIds?: number[]
+    chainDisplayOrder?: number[]
+    showMoreChainsButton?: boolean
+    allChainsLabel?: string
+  }
+  filtersCount: number
+  filtersPanelContent: ReactNode
+  onClearFilters: () => void
+  mobileExtraContent: ReactNode
+  trailingControls: ReactNode
+  isStackedLayout: boolean
+}
+
+function VaultsFiltersBar({
+  searchValue,
+  chains,
+  onChangeChains,
+  onSearch,
+  chainConfig,
+  filtersCount,
+  filtersPanelContent,
+  onClearFilters,
+  mobileExtraContent,
+  trailingControls,
+  isStackedLayout
+}: TVaultsFiltersBarProps): ReactElement {
+  return (
+    <VaultsFilters
+      shouldDebounce={true}
+      searchValue={searchValue}
+      chains={chains}
+      onChangeChains={onChangeChains}
+      onSearch={onSearch}
+      chainConfig={chainConfig}
+      filtersCount={filtersCount}
+      filtersContent={filtersPanelContent}
+      filtersPanelContent={filtersPanelContent}
+      onClearFilters={onClearFilters}
+      mobileExtraContent={mobileExtraContent}
+      trailingControls={trailingControls}
+      isStackedLayout={isStackedLayout}
+    />
+  )
+}
+
+type TVaultsListSectionProps = {
+  isSwitchingVaultType: boolean
+  listHeadProps: TListHead
+  vaultListContent: ReactNode
+}
+
+function VaultsListSection({
+  isSwitchingVaultType,
+  listHeadProps,
+  vaultListContent
+}: TVaultsListSectionProps): ReactElement {
+  return (
+    <div aria-busy={isSwitchingVaultType || undefined} className={'relative w-full rounded-xl bg-surface'}>
+      <div className={isSwitchingVaultType ? 'pointer-events-none opacity-70 transition' : 'transition'}>
+        <div
+          className={'relative md:sticky md:z-30'}
+          style={{
+            top: 'calc(var(--header-height) + var(--vaults-filters-height))'
+          }}
+        >
+          <div
+            aria-hidden={true}
+            className={'pointer-events-none absolute inset-0 z-0 bg-app border-2'}
+            style={{ borderColor: 'var(--color-app)' }}
+          />
+          <VaultsListHead {...listHeadProps} />
+        </div>
+        <div className={'flex flex-col border-x border-b border-border rounded-b-xl overflow-hidden'}>
+          {vaultListContent}
+        </div>
+      </div>
+      {isSwitchingVaultType ? (
+        <output
+          aria-live={'polite'}
+          className={'absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-app/30 text-text-primary'}
+        >
+          <span className={'flex flex-col items-center gap-2'}>
+            <span className={'loader'} />
+            <span className={'text-sm font-medium'}>{'Updating vaults…'}</span>
+          </span>
+        </output>
+      ) : null}
+    </div>
+  )
+}
+
 type TListOfVaultsProps = {
   search: string | null | undefined
   types: string[] | null
@@ -78,7 +225,6 @@ type TListOfVaultsProps = {
   onChangeSortBy: (value: TPossibleSortBy | '') => void
   onResetMultiSelect: () => void
   vaultType: TVaultType
-  children?: (renderProps: { filters: ReactNode; list: ReactNode }) => ReactNode
 }
 
 function ListOfVaults({
@@ -103,8 +249,7 @@ function ListOfVaults({
   onChangeSortDirection,
   onChangeSortBy,
   onResetMultiSelect,
-  vaultType,
-  children
+  vaultType
 }: TListOfVaultsProps): ReactElement {
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
@@ -847,171 +992,121 @@ function ListOfVaults({
     vaultFlags
   ])
 
-  const suggestedVaultsElement = <TrendingVaults suggestedVaults={suggestedVaults} />
+  const breadcrumbsElement = <VaultsBreadcrumbs vaultType={displayedVaultType} />
 
-  const breadcrumbsElement = (
-    <div className={'mb-3 mt-2 flex items-center gap-2 text-sm text-text-secondary'}>
-      <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
-        {'Home'}
-      </Link>
-      <span>{'>'}</span>
-      <Link to={'/vaults'} className={'transition-colors hover:text-text-primary'}>
-        {'Vaults'}
-      </Link>
-      <span>{'>'}</span>
-      <span className={'font-medium text-text-primary'}>{getVaultTypeLabel(displayedVaultType)}</span>
-    </div>
+  const trendingElement = <TrendingVaultsSection suggestedVaults={suggestedVaults} />
+
+  const filtersBarElement = (
+    <VaultsFiltersBar
+      searchValue={searchValue}
+      chains={displayedChains}
+      onChangeChains={handleChainsChange}
+      onSearch={onSearch}
+      chainConfig={chainConfig}
+      filtersCount={filtersCount}
+      filtersPanelContent={filtersPanelContent}
+      onClearFilters={handleResetMultiSelect}
+      mobileExtraContent={
+        <VaultVersionToggle
+          stretch={true}
+          activeType={displayedVaultType}
+          onTypeChange={handleVaultVersionToggle}
+          isPending={isSwitchingVaultType}
+        />
+      }
+      trailingControls={
+        <VaultVersionToggle
+          activeType={displayedVaultType}
+          onTypeChange={handleVaultVersionToggle}
+          isPending={isSwitchingVaultType}
+        />
+      }
+      isStackedLayout={shouldStackFilters}
+    />
   )
 
-  const filtersElement = (
-    <div ref={filtersRef} className={'sticky z-40 w-full bg-app pb-2 shrink-0'} style={{ top: 'var(--header-height)' }}>
+  const stickyHeaderElement = (
+    <VaultsStickyHeader filtersRef={filtersRef}>
       {breadcrumbsElement}
-      {suggestedVaultsElement}
-      <VaultsFilters
-        shouldDebounce={true}
-        searchValue={searchValue}
-        chains={displayedChains}
-        onChangeChains={handleChainsChange}
-        onSearch={onSearch}
-        chainConfig={chainConfig}
-        filtersCount={filtersCount}
-        filtersContent={filtersPanelContent}
-        filtersPanelContent={filtersPanelContent}
-        onClearFilters={handleResetMultiSelect}
-        mobileExtraContent={
-          <VaultVersionToggle
-            stretch={true}
-            activeType={displayedVaultType}
-            onTypeChange={handleVaultVersionToggle}
-            isPending={isSwitchingVaultType}
-          />
-        }
-        trailingControls={
-          <VaultVersionToggle
-            activeType={displayedVaultType}
-            onTypeChange={handleVaultVersionToggle}
-            isPending={isSwitchingVaultType}
-          />
-        }
-        isStackedLayout={shouldStackFilters}
-      />
-    </div>
+      {trendingElement}
+      {filtersBarElement}
+    </VaultsStickyHeader>
   )
 
-  const listElement = (
-    <div aria-busy={isSwitchingVaultType || undefined} className={'relative w-full rounded-xl bg-surface'}>
-      <div className={isSwitchingVaultType ? 'pointer-events-none opacity-70 transition' : 'transition'}>
-        <div
-          className={'relative md:sticky md:z-30'}
-          style={{
-            top: 'calc(var(--header-height) + var(--vaults-filters-height))'
-          }}
-        >
-          <div
-            aria-hidden={true}
-            className={'pointer-events-none absolute inset-0 z-0 bg-app border-2'}
-            style={{ borderColor: 'var(--color-app)' }}
-          />
-          <VaultsListHead
-            containerClassName={'rounded-t-xl bg-surface shrink-0'}
-            wrapperClassName={'relative z-10 border border-border rounded-t-xl bg-transparent'}
-            sortBy={sortBy}
-            sortDirection={sortDirection}
-            onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-              let targetSortBy = newSortBy as TPossibleSortBy
-              let targetSortDirection = newSortDirection as TSortDirection
+  const listHeadProps: TListHead = {
+    containerClassName: 'rounded-t-xl bg-surface shrink-0',
+    wrapperClassName: 'relative z-10 border border-border rounded-t-xl bg-transparent',
+    sortBy,
+    sortDirection,
+    onSort: (newSortBy: string, newSortDirection: TSortDirection): void => {
+      let targetSortBy = newSortBy as TPossibleSortBy
+      let targetSortDirection = newSortDirection as TSortDirection
 
-              if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
-                targetSortBy = 'featuringScore'
-                targetSortDirection = 'desc'
-              }
+      if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
+        targetSortBy = 'featuringScore'
+        targetSortDirection = 'desc'
+      }
 
-              onChangeSortBy(targetSortBy)
-              onChangeSortDirection(targetSortDirection)
-            }}
-            onToggle={(value): void => {
-              setActiveToggleValues((prev) => {
-                if (prev.includes(value)) {
-                  return prev.filter((entry) => entry !== value)
-                }
-                return [value]
-              })
-            }}
-            activeToggleValues={activeToggleValues}
-            items={[
-              {
-                type: 'sort',
-                label: 'Vault / Featuring Score',
-                value: 'featuringScore',
-                sortable: true,
-                className: 'col-span-12'
-              },
-              {
-                type: 'sort',
-                label: 'Est. APY',
-                value: 'estAPY',
-                sortable: true,
-                className: 'col-span-4'
-              },
-              {
-                type: 'sort',
-                label: 'TVL',
-                value: 'tvl',
-                sortable: true,
-                className: 'col-span-4'
-              },
-              // {
-              //   type: 'toggle',
-              //   label: 'Available',
-              //   value: AVAILABLE_TOGGLE_VALUE,
-              //   className: 'col-span-3',
-              //   disabled: availableVaults.length === 0
-              // },
-              {
-                type: 'toggle',
-                label: 'Holdings',
-                value: HOLDINGS_TOGGLE_VALUE,
-                className: 'col-span-4 justify-end',
-                disabled: holdingsVaults.length === 0
-              }
-            ]}
-          />
-        </div>
-        {/* <div className={'overflow-hidden rounded-b-xl'}> */}
-        <div className={'flex flex-col border-x border-b border-border rounded-b-xl overflow-hidden'}>
-          {vaultListContent}
-        </div>
-        {/* </div> */}
-      </div>
-      {isSwitchingVaultType ? (
-        <output
-          aria-live={'polite'}
-          className={'absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-app/30 text-text-primary'}
-        >
-          <span className={'flex flex-col items-center gap-2'}>
-            <span className={'loader'} />
-            <span className={'text-sm font-medium'}>{'Updating vaults…'}</span>
-          </span>
-        </output>
-      ) : null}
-    </div>
-  )
-
-  if (typeof children === 'function') {
-    const content = children({ filters: filtersElement, list: listElement })
-    return (
-      <div ref={varsRef} className={'flex flex-col'} style={{ '--vaults-filters-height': '0px' } as CSSProperties}>
-        {content}
-      </div>
-    )
+      onChangeSortBy(targetSortBy)
+      onChangeSortDirection(targetSortDirection)
+    },
+    onToggle: (value): void => {
+      setActiveToggleValues((prev) => {
+        if (prev.includes(value)) {
+          return prev.filter((entry) => entry !== value)
+        }
+        return [value]
+      })
+    },
+    activeToggleValues,
+    items: [
+      {
+        type: 'sort',
+        label: 'Vault / Featuring Score',
+        value: 'featuringScore',
+        sortable: true,
+        className: 'col-span-12'
+      },
+      {
+        type: 'sort',
+        label: 'Est. APY',
+        value: 'estAPY',
+        sortable: true,
+        className: 'col-span-4'
+      },
+      {
+        type: 'sort',
+        label: 'TVL',
+        value: 'tvl',
+        sortable: true,
+        className: 'col-span-4'
+      },
+      // {
+      //   type: 'toggle',
+      //   label: 'Available',
+      //   value: AVAILABLE_TOGGLE_VALUE,
+      //   className: 'col-span-3',
+      //   disabled: availableVaults.length === 0
+      // },
+      {
+        type: 'toggle',
+        label: 'Holdings',
+        value: HOLDINGS_TOGGLE_VALUE,
+        className: 'col-span-4 justify-end',
+        disabled: holdingsVaults.length === 0
+      }
+    ]
   }
 
-  return (
-    <div ref={varsRef} className={'flex flex-col'} style={{ '--vaults-filters-height': '0px' } as CSSProperties}>
-      {filtersElement}
-      {listElement}
-    </div>
+  const listElement = (
+    <VaultsListSection
+      isSwitchingVaultType={isSwitchingVaultType}
+      listHeadProps={listHeadProps}
+      vaultListContent={vaultListContent}
+    />
   )
+
+  return <VaultsPageLayout varsRef={varsRef} stickyHeader={stickyHeaderElement} list={listElement} />
 }
 
 function useVaultListExtraFilters(): {
@@ -1179,14 +1274,7 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
             onResetExtraFilters()
           }}
           vaultType={vaultType}
-        >
-          {({ filters, list }) => (
-            <div className={'flex flex-col'}>
-              {filters}
-              {list}
-            </div>
-          )}
-        </ListOfVaults>
+        />
       </div>
     </div>
   )
