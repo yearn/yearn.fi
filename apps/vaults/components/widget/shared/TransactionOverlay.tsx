@@ -369,7 +369,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       <div
         className={cl(
           'absolute inset-0 bg-surface rounded-xl transition-all duration-300 ease-out flex flex-col',
-          isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+          isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         )}
       >
         {/* Close button - only shown in success/error states */}
