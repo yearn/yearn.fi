@@ -12,7 +12,6 @@ import { VaultsListEmpty } from '@vaults/shared/components/list/VaultsListEmpty'
 import { VaultsFilters } from '@vaults/shared/components/VaultsFilters'
 import { type TVaultsFiltersPanelSection, VaultsFiltersPanel } from '@vaults/shared/components/VaultsFiltersPanel'
 import type { TPossibleSortBy } from '@vaults/shared/hooks/useSortVaults'
-import { useQueryArguments } from '@vaults/shared/hooks/useVaultsQueryArgs'
 import { deriveListKind, type TVaultAggressiveness } from '@vaults/shared/utils/vaultListFacets'
 import type { CSSProperties, ReactElement, ReactNode, RefObject } from 'react'
 import {
@@ -25,12 +24,10 @@ import {
   useState,
   useTransition
 } from 'react'
-import { useSearchParams } from 'react-router'
 import {
   AGGRESSIVENESS_OPTIONS,
   AVAILABLE_TOGGLE_VALUE,
   HOLDINGS_TOGGLE_VALUE,
-  readBooleanParam,
   toggleInArray,
   V2_SUPPORTED_CHAINS,
   V3_ASSET_CATEGORIES,
@@ -39,16 +36,12 @@ import {
   V3_SUPPORTED_CHAINS
 } from './constants'
 import { useVaultsListModel } from './useVaultsListModel'
+import { useVaultsQueryState } from './useVaultsQueryState'
 import { VaultVersionToggle } from './VaultVersionToggle'
 import { getVaultTypeLabel, type TVaultType } from './vaultTypeCopy'
-import { getSupportedChainsForVaultType, normalizeVaultTypeParam, sanitizeChainsParam } from './vaultTypeUtils'
+import { getSupportedChainsForVaultType } from './vaultTypeUtils'
 
 const DEFAULT_VAULT_TYPES = ['multi', 'single']
-
-function useVaultType(): TVaultType {
-  const [searchParams] = useSearchParams()
-  return normalizeVaultTypeParam(searchParams.get('type'))
-}
 
 type TVaultsPageLayoutProps = {
   varsRef: RefObject<HTMLDivElement | null>
@@ -216,10 +209,12 @@ type TListOfVaultsProps = {
   onChangeShowHiddenVaults: (value: boolean) => void
   onChangeShowStrategies: (value: boolean) => void
   onChangeChains: (value: number[] | null) => void
+  onChangeVaultType: (value: TVaultType) => void
   onChangeSortDirection: (value: TSortDirection | '') => void
   onChangeSortBy: (value: TPossibleSortBy | '') => void
   onResetMultiSelect: () => void
   vaultType: TVaultType
+  hasTypesParam: boolean
 }
 
 function ListOfVaults({
@@ -241,15 +236,16 @@ function ListOfVaults({
   onChangeShowHiddenVaults,
   onChangeShowStrategies,
   onChangeChains,
+  onChangeVaultType,
   onChangeSortDirection,
   onChangeSortBy,
   onResetMultiSelect,
-  vaultType
+  vaultType,
+  hasTypesParam
 }: TListOfVaultsProps): ReactElement {
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
   const [isPending, startTransition] = useTransition()
-  const [searchParams, setSearchParams] = useSearchParams()
   const searchValue = search ?? ''
   const listVaultType = useDeferredValue(vaultType)
   const isBelow1000 =
@@ -385,8 +381,8 @@ function ListOfVaults({
   const displayedShowLegacyVaults = optimisticShowLegacyVaults ?? showLegacyVaults
   const displayedShowHiddenVaults = optimisticShowHiddenVaults ?? showHiddenVaults
   const displayedShowStrategies = optimisticShowStrategies ?? showStrategies
-  const hasDisplayedTypesParam = searchParams.has('types') || optimisticTypes !== null
-  const hasListTypesParam = searchParams.has('types')
+  const hasDisplayedTypesParam = hasTypesParam || optimisticTypes !== null
+  const hasListTypesParam = hasTypesParam
 
   const resolveV3Types = useCallback(
     (selected: string[] | null | undefined, shouldShowStrategies: boolean, hasTypesParam: boolean): string[] => {
@@ -587,19 +583,10 @@ function ListOfVaults({
       }
       setOptimisticVaultType(nextType)
       startTransition(() => {
-        const nextParams = new URLSearchParams(searchParams)
-        if (nextType === 'all') {
-          nextParams.delete('type')
-        } else if (nextType === 'v3') {
-          nextParams.set('type', 'single')
-        } else {
-          nextParams.set('type', 'lp')
-        }
-        sanitizeChainsParam(nextParams, getSupportedChainsForVaultType(nextType))
-        setSearchParams(nextParams, { replace: true })
+        onChangeVaultType(nextType)
       })
     },
-    [optimisticVaultType, searchParams, setSearchParams, vaultType]
+    [optimisticVaultType, onChangeVaultType, vaultType]
   )
   const handleToggleVaultType = useCallback(
     (nextType: 'v3' | 'lp'): void => {
@@ -917,121 +904,30 @@ function ListOfVaults({
   return <VaultsPageLayout varsRef={varsRef} stickyHeader={stickyHeaderElement} list={listElement} />
 }
 
-function useVaultListExtraFilters(): {
-  aggressiveness: string[] | null
-  showLegacyVaults: boolean
-  showHiddenVaults: boolean
-  showStrategies: boolean
-  onChangeAggressiveness: (value: string[] | null) => void
-  onChangeShowLegacyVaults: (value: boolean) => void
-  onChangeShowHiddenVaults: (value: boolean) => void
-  onChangeShowStrategies: (value: boolean) => void
-  onResetExtraFilters: () => void
-} {
-  const [searchParams, setSearchParams] = useSearchParams()
-
-  const readStringList = (key: string): string[] => {
-    const raw = searchParams.get(key)
-    if (!raw || raw === 'none') return []
-    return raw
-      .split('_')
-      .map((value) => value.trim())
-      .filter(Boolean)
-  }
-
-  const aggressiveness = readStringList('aggr')
-  const showHiddenVaults = readBooleanParam(searchParams, 'showHidden')
-  const showStrategies = readBooleanParam(searchParams, 'showStrategies')
-  const showLegacyParam = searchParams.get('showLegacy')
-  const showLegacyFromParam = showLegacyParam !== null ? readBooleanParam(searchParams, 'showLegacy') : false
-  const legacyFallback = readStringList('types').includes('legacy')
-  const showLegacyVaults = showLegacyParam !== null ? showLegacyFromParam : Boolean(legacyFallback)
-
-  const updateParam = (key: string, value: string[] | null): void => {
-    const nextParams = new URLSearchParams(searchParams)
-    if (!value || value.length === 0) {
-      nextParams.delete(key)
-    } else {
-      nextParams.set(key, value.join('_'))
-    }
-    setSearchParams(nextParams, { replace: true })
-  }
-
-  return {
-    aggressiveness,
-    showLegacyVaults,
-    showHiddenVaults,
-    showStrategies,
-    onChangeAggressiveness: (value): void => {
-      updateParam('aggr', value)
-    },
-    onChangeShowLegacyVaults: (value): void => {
-      const nextParams = new URLSearchParams(searchParams)
-      if (value) {
-        nextParams.set('showLegacy', '1')
-      } else {
-        nextParams.delete('showLegacy')
-        const rawTypes = nextParams.get('types')
-        if (rawTypes) {
-          const nextTypes = rawTypes
-            .split('_')
-            .map((type) => type.trim())
-            .filter((type) => type && type !== 'legacy' && type !== 'factory')
-          if (nextTypes.length === 0) {
-            nextParams.delete('types')
-          } else {
-            nextParams.set('types', nextTypes.join('_'))
-          }
-        }
-      }
-      setSearchParams(nextParams, { replace: true })
-    },
-    onChangeShowHiddenVaults: (value): void => {
-      const nextParams = new URLSearchParams(searchParams)
-      if (value) {
-        nextParams.set('showHidden', '1')
-      } else {
-        nextParams.delete('showHidden')
-      }
-      setSearchParams(nextParams, { replace: true })
-    },
-    onChangeShowStrategies: (value): void => {
-      const nextParams = new URLSearchParams(searchParams)
-      if (value) {
-        nextParams.set('showStrategies', '1')
-      } else {
-        nextParams.delete('showStrategies')
-      }
-      setSearchParams(nextParams, { replace: true })
-    },
-    onResetExtraFilters: (): void => {
-      const nextParams = new URLSearchParams(searchParams)
-      nextParams.delete('aggr')
-      nextParams.delete('showLegacy')
-      nextParams.delete('showHidden')
-      nextParams.delete('showStrategies')
-      setSearchParams(nextParams, { replace: true })
-    }
-  }
-}
-
-function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElement {
-  usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType === 'v3')
-  const [searchParams, setSearchParams] = useSearchParams()
-
+function VaultsIndexContent(): ReactElement {
   const {
+    vaultType,
+    hasTypesParam,
+    search,
+    types,
+    categories,
+    chains,
     aggressiveness,
     showLegacyVaults,
     showHiddenVaults,
     showStrategies,
+    onSearch,
+    onChangeTypes,
+    onChangeCategories,
+    onChangeChains,
     onChangeAggressiveness,
     onChangeShowLegacyVaults,
     onChangeShowHiddenVaults,
     onChangeShowStrategies,
+    onChangeVaultType,
+    onResetMultiSelect,
     onResetExtraFilters
-  } = useVaultListExtraFilters()
-
-  const queryArgs = useQueryArguments({
+  } = useVaultsQueryState({
     defaultTypes: ['multi', 'single'],
     defaultCategories: [],
     defaultPathname: '/vaults',
@@ -1039,18 +935,11 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
     resetTypes: ['multi', 'single'],
     resetCategories: []
   })
+
+  usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType === 'v3')
+
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('featuringScore')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
-
-  useEffect(() => {
-    if (!searchParams.has('sortDirection') && !searchParams.has('sortBy')) {
-      return
-    }
-    const nextParams = new URLSearchParams(searchParams)
-    nextParams.delete('sortDirection')
-    nextParams.delete('sortBy')
-    setSearchParams(nextParams, { replace: true })
-  }, [searchParams, setSearchParams])
 
   function handleSortByChange(value: TPossibleSortBy | ''): void {
     setSortBy(value || 'featuringScore')
@@ -1064,7 +953,16 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
       <div className={'mx-auto w-full max-w-[1232px] px-4 pb-4'}>
         <ListOfVaults
-          {...queryArgs}
+          search={search}
+          types={types}
+          categories={categories}
+          chains={chains}
+          onSearch={onSearch}
+          onChangeTypes={onChangeTypes}
+          onChangeCategories={onChangeCategories}
+          onChangeChains={onChangeChains}
+          onChangeSortBy={handleSortByChange}
+          onChangeSortDirection={handleSortDirectionChange}
           sortBy={sortBy}
           sortDirection={sortDirection}
           aggressiveness={aggressiveness}
@@ -1075,13 +973,13 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
           onChangeShowLegacyVaults={onChangeShowLegacyVaults}
           onChangeShowHiddenVaults={onChangeShowHiddenVaults}
           onChangeShowStrategies={onChangeShowStrategies}
-          onChangeSortBy={handleSortByChange}
-          onChangeSortDirection={handleSortDirectionChange}
           onResetMultiSelect={(): void => {
-            queryArgs.onResetMultiSelect()
+            onResetMultiSelect()
             onResetExtraFilters()
           }}
           vaultType={vaultType}
+          onChangeVaultType={onChangeVaultType}
+          hasTypesParam={hasTypesParam}
         />
       </div>
     </div>
@@ -1089,8 +987,7 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
 }
 
 function Index(): ReactElement {
-  const vaultType = useVaultType()
-  return <VaultsIndexContent vaultType={vaultType} />
+  return <VaultsIndexContent />
 }
 
 export default Index
