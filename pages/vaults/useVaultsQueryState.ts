@@ -63,6 +63,12 @@ type TVaultsQuerySnapshot = {
   sortDirection: TSortDirection
 }
 
+type TVaultsQueryDefaults = {
+  defaultTypes: string[]
+  defaultCategories: string[]
+  defaultSortBy: TPossibleSortBy
+}
+
 type TNormalizedSortDirection = 'asc' | 'desc'
 
 const DEFAULT_SORT_DIRECTION: TNormalizedSortDirection = 'desc'
@@ -91,6 +97,14 @@ function clearVaultQueryParams(params: URLSearchParams): URLSearchParams {
     nextParams.delete(key)
   })
   return nextParams
+}
+
+function applyBooleanParam(params: URLSearchParams, key: string, value: boolean): void {
+  if (value) {
+    params.set(key, '1')
+  } else {
+    params.delete(key)
+  }
 }
 
 function sanitizeStringList(values: string[] | null | undefined): string[] {
@@ -219,14 +233,7 @@ function areQuerySnapshotsEqual(left: TVaultsQuerySnapshot, right: TVaultsQueryS
   )
 }
 
-function buildSnapshotFromParams(
-  params: URLSearchParams,
-  defaults: {
-    defaultTypes: string[]
-    defaultCategories: string[]
-    defaultSortBy: TPossibleSortBy
-  }
-): TVaultsQuerySnapshot {
+function buildSnapshotFromParams(params: URLSearchParams, defaults: TVaultsQueryDefaults): TVaultsQuerySnapshot {
   const vaultType = normalizeVaultTypeParam(params.get('type'))
   const rawTypes = parseStringList(params.get('types'))
   const hasTypesParam = params.has('types')
@@ -263,14 +270,7 @@ function buildSnapshotFromParams(
   }
 }
 
-function readSnapshotFromStorage(
-  storageKey: string,
-  defaults: {
-    defaultTypes: string[]
-    defaultCategories: string[]
-    defaultSortBy: TPossibleSortBy
-  }
-): TVaultsQuerySnapshot | null {
+function readSnapshotFromStorage(storageKey: string, defaults: TVaultsQueryDefaults): TVaultsQuerySnapshot | null {
   if (!storageKey || typeof window === 'undefined') {
     return null
   }
@@ -312,45 +312,40 @@ function readSnapshotFromStorage(
 export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQueryState {
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
-  const defaultSortBy = config.defaultSortBy || 'featuringScore'
-  const defaultTypes = useMemo(() => config.defaultTypes ?? [], [config.defaultTypes])
-  const defaultCategories = useMemo(() => config.defaultCategories ?? [], [config.defaultCategories])
+  const defaults = useMemo(
+    (): TVaultsQueryDefaults => ({
+      defaultTypes: config.defaultTypes ?? [],
+      defaultCategories: config.defaultCategories ?? [],
+      defaultSortBy: config.defaultSortBy || 'featuringScore'
+    }),
+    [config.defaultCategories, config.defaultSortBy, config.defaultTypes]
+  )
+  const { defaultCategories, defaultSortBy, defaultTypes } = defaults
   const storageKey = config.storageKey ?? ''
   const shouldPersistToStorage = Boolean(config.persistToStorage && storageKey)
   const shouldClearUrlAfterInit = Boolean(config.clearUrlAfterInit)
   const shouldShareUpdateUrl = config.shareUpdatesUrl ?? true
 
-  const [snapshot, setSnapshot] = useState<TVaultsQuerySnapshot>(() =>
-    (() => {
-      const defaults = {
-        defaultTypes,
-        defaultCategories,
-        defaultSortBy
+  const [snapshot, setSnapshot] = useState<TVaultsQuerySnapshot>(() => {
+    if (hasVaultQueryParams(searchParams)) {
+      return buildSnapshotFromParams(searchParams, defaults)
+    }
+    if (shouldPersistToStorage) {
+      const storedSnapshot = readSnapshotFromStorage(storageKey, defaults)
+      if (storedSnapshot) {
+        return storedSnapshot
       }
-      if (hasVaultQueryParams(searchParams)) {
-        return buildSnapshotFromParams(searchParams, defaults)
-      }
-      if (shouldPersistToStorage) {
-        const storedSnapshot = readSnapshotFromStorage(storageKey, defaults)
-        if (storedSnapshot) {
-          return storedSnapshot
-        }
-      }
-      return buildSnapshotFromParams(new URLSearchParams(), defaults)
-    })()
-  )
+    }
+    return buildSnapshotFromParams(new URLSearchParams(), defaults)
+  })
 
-  const hasVaultParams = useMemo(() => hasVaultQueryParams(searchParams), [searchParams])
+  const hasVaultParams = hasVaultQueryParams(searchParams)
 
   useEffect(() => {
     if (!hasVaultParams) {
       return
     }
-    const nextSnapshot = buildSnapshotFromParams(searchParams, {
-      defaultTypes,
-      defaultCategories,
-      defaultSortBy
-    })
+    const nextSnapshot = buildSnapshotFromParams(searchParams, defaults)
     setSnapshot((prev) => (areQuerySnapshotsEqual(prev, nextSnapshot) ? prev : nextSnapshot))
     if (!shouldClearUrlAfterInit) {
       return
@@ -359,15 +354,7 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     if (clearedParams.toString() !== searchParams.toString()) {
       setSearchParams(clearedParams, { replace: true })
     }
-  }, [
-    hasVaultParams,
-    defaultTypes,
-    defaultCategories,
-    defaultSortBy,
-    searchParams,
-    setSearchParams,
-    shouldClearUrlAfterInit
-  ])
+  }, [defaults, hasVaultParams, searchParams, setSearchParams, shouldClearUrlAfterInit])
 
   useEffect(() => {
     if (!shouldPersistToStorage || typeof window === 'undefined') {
@@ -510,23 +497,9 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
       nextParams.delete('aggr')
     }
 
-    if (snapshot.showLegacyVaults) {
-      nextParams.set('showLegacy', '1')
-    } else {
-      nextParams.delete('showLegacy')
-    }
-
-    if (snapshot.showHiddenVaults) {
-      nextParams.set('showHidden', '1')
-    } else {
-      nextParams.delete('showHidden')
-    }
-
-    if (snapshot.showStrategies) {
-      nextParams.set('showStrategies', '1')
-    } else {
-      nextParams.delete('showStrategies')
-    }
+    applyBooleanParam(nextParams, 'showLegacy', snapshot.showLegacyVaults)
+    applyBooleanParam(nextParams, 'showHidden', snapshot.showHiddenVaults)
+    applyBooleanParam(nextParams, 'showStrategies', snapshot.showStrategies)
 
     if (snapshot.sortBy !== defaultSortBy) {
       nextParams.set('sortBy', snapshot.sortBy)
