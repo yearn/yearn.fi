@@ -21,14 +21,14 @@ const Cards: {
     description: 'Yearn Contracts are audited thoroughly by a variety of auditors.',
     href: 'https://docs.yearn.fi/developers/security/',
     imageSrc: '/landing/yearn-apps-logo.png',
-    bgColor: 'bg-[#6B2FEC]'
+    bgColor: 'bg-gradient-to-br from-[#0657F9] to-[#0B4DD0]'
   },
   [SecurityCardType.BugBounties]: {
     title: 'Bug Bounties',
     description: 'Security is our top priority. Report vulnerabilities and get rewarded.',
     href: 'https://immunefi.com/bug-bounty/yearnfinance',
     imageSrc: '/landing/integrations.png',
-    bgColor: 'bg-[#0B5DD0]'
+    bgColor: 'bg-gradient-to-br from-[#0657F9] to-[#0B4DD0]'
   }
 }
 
@@ -76,18 +76,10 @@ const SecurityCard: FC<{
             }}
           />
         )}
-        <div className={'group-hover:bg/80 relative z-10  p-8 transition-all duration-300'}>
-          <h3 className={'mb-4 text-3xl transition-colors duration-300 group-hover:text-neutral-900'}>{title}</h3>
-          <p
-            className={
-              'mb-4 text-[18px] text-neutral-900/70 transition-colors duration-300 group-hover:text-neutral-900/90 '
-            }
-          >
-            {description}
-          </p>
-          <div
-            className={'group-hover:text-blue-200 flex items-center text-neutral-900 transition-colors duration-300'}
-          >
+        <div className={'relative z-10 p-8 transition-all duration-300'}>
+          <h3 className={'mb-4 text-3xl text-white'}>{title}</h3>
+          <p className={'mb-4 text-[18px] font-light text-white/70'}>{description}</p>
+          <div className={'flex items-center text-white/90 transition-colors duration-300 group-hover:text-white'}>
             {'Learn More →'}
           </div>
         </div>
