@@ -1,21 +1,17 @@
 import Link from '@components/Link'
 import { usePrefetchYearnVaults } from '@lib/hooks/useFetchYearnVaults'
-import { useV2VaultFilter } from '@lib/hooks/useV2VaultFilter'
-import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
+import { getVaultKey } from '@lib/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@lib/types'
-import { toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useMediaQuery } from '@react-hookz/web'
 import { VaultsAuxiliaryList } from '@vaults/components/list/VaultsAuxiliaryList'
 import { type TListHead, VaultsListHead } from '@vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@vaults/components/list/VaultsListRow'
 import { TrendingVaults } from '@vaults/components/TrendingVaults'
-import { ALL_VAULTSV3_CATEGORIES } from '@vaults/constants'
 import { VaultsListEmpty } from '@vaults/shared/components/list/VaultsListEmpty'
 import { VaultsFilters } from '@vaults/shared/components/VaultsFilters'
 import { type TVaultsFiltersPanelSection, VaultsFiltersPanel } from '@vaults/shared/components/VaultsFiltersPanel'
 import type { TPossibleSortBy } from '@vaults/shared/hooks/useSortVaults'
-import { useSortVaults } from '@vaults/shared/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults/shared/hooks/useVaultsQueryArgs'
 import { deriveListKind, type TVaultAggressiveness } from '@vaults/shared/utils/vaultListFacets'
 import type { CSSProperties, ReactElement, ReactNode, RefObject } from 'react'
@@ -35,19 +31,18 @@ import {
   AVAILABLE_TOGGLE_VALUE,
   HOLDINGS_TOGGLE_VALUE,
   readBooleanParam,
-  selectVaultsByType,
   toggleInArray,
   V2_SUPPORTED_CHAINS,
+  V3_ASSET_CATEGORIES,
   V3_DEFAULT_SECONDARY_CHAIN_IDS,
   V3_PRIMARY_CHAIN_IDS,
   V3_SUPPORTED_CHAINS
 } from './constants'
+import { useVaultsListModel } from './useVaultsListModel'
 import { VaultVersionToggle } from './VaultVersionToggle'
 import { getVaultTypeLabel, type TVaultType } from './vaultTypeCopy'
 import { getSupportedChainsForVaultType, normalizeVaultTypeParam, sanitizeChainsParam } from './vaultTypeUtils'
 
-const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
-const V2_ASSET_CATEGORIES = ['Stablecoin', 'Volatile']
 const DEFAULT_VAULT_TYPES = ['multi', 'single']
 
 function useVaultType(): TVaultType {
@@ -257,9 +252,6 @@ function ListOfVaults({
   const [searchParams, setSearchParams] = useSearchParams()
   const searchValue = search ?? ''
   const listVaultType = useDeferredValue(vaultType)
-  const isAllVaults = listVaultType === 'all'
-  const isV3View = listVaultType === 'v3' || isAllVaults
-  const isV2View = listVaultType === 'factory' || isAllVaults
   const isBelow1000 =
     useMediaQuery('(max-width: 1000px)', {
       initializeWithValue: false
@@ -419,23 +411,10 @@ function ListOfVaults({
     [listTypes, listShowStrategies, hasListTypesParam, resolveV3Types]
   )
 
-  const allocatorTypesForTrending = useMemo(() => {
-    return isV3View ? ['multi'] : null
-  }, [isV3View])
-
-  const listV2Types = useMemo(
-    () => (listShowLegacyVaults ? ['factory', 'legacy'] : ['factory']),
-    [listShowLegacyVaults]
-  )
-
   const displayedCategoriesSanitized = useMemo(() => {
     const allowed = V3_ASSET_CATEGORIES
     return (displayedCategories || []).filter((value) => allowed.includes(value))
   }, [displayedCategories])
-  const listCategoriesSanitized = useMemo(() => {
-    const allowed = V3_ASSET_CATEGORIES
-    return (listCategories || []).filter((value) => allowed.includes(value))
-  }, [listCategories])
 
   const displayedAggressivenessSanitized = useMemo(() => {
     const allowed = new Set(AGGRESSIVENESS_OPTIONS)
@@ -443,105 +422,37 @@ function ListOfVaults({
       allowed.has(value as TVaultAggressiveness)
     )
   }, [displayedAggressiveness])
-  const listAggressivenessSanitized = useMemo(() => {
-    const allowed = new Set(AGGRESSIVENESS_OPTIONS)
-    return (listAggressiveness || []).filter((value): value is TVaultAggressiveness =>
-      allowed.has(value as TVaultAggressiveness)
-    )
-  }, [listAggressiveness])
-  // Use the appropriate filter hook based on vault type
-  const v3FilterResult = useV3VaultFilter(
-    isV3View ? listV3Types : null,
-    listChains,
-    searchValue,
-    isV3View ? listCategoriesSanitized : null,
-    isV3View ? listAggressivenessSanitized : null,
-    isV3View ? listShowHiddenVaults : undefined,
-    isV3View
-  )
-  const v2FilterResult = useV2VaultFilter(
-    isV2View ? listV2Types : null,
-    listChains,
-    searchValue,
-    isV2View ? listCategoriesSanitized : null,
-    isV2View ? listAggressivenessSanitized : null,
-    listShowHiddenVaults,
-    isV2View
-  )
-  const { filteredVaults: filteredV2VaultsAllChains } = useV2VaultFilter(
-    isV2View ? listV2Types : null,
-    null,
-    '',
-    isV2View ? listCategoriesSanitized : null,
-    isV2View ? listAggressivenessSanitized : null,
-    listShowHiddenVaults,
-    isV2View
-  )
-
-  const filteredVaults = useMemo(
-    () => selectVaultsByType(listVaultType, v3FilterResult.filteredVaults, v2FilterResult.filteredVaults, true),
-    [listVaultType, v3FilterResult.filteredVaults, v2FilterResult.filteredVaults]
-  )
-
-  const holdingsVaults = useMemo(
-    () => selectVaultsByType(listVaultType, v3FilterResult.holdingsVaults, v2FilterResult.holdingsVaults, true),
-    [listVaultType, v3FilterResult.holdingsVaults, v2FilterResult.holdingsVaults]
-  )
-
-  const availableVaults = useMemo(
-    () => selectVaultsByType(listVaultType, v3FilterResult.availableVaults, v2FilterResult.availableVaults, true),
-    [listVaultType, v3FilterResult.availableVaults, v2FilterResult.availableVaults]
-  )
-
-  const vaultFlags = useMemo(
-    () => selectVaultsByType(listVaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags),
-    [listVaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags]
-  )
-
-  let isLoadingVaultList = v2FilterResult.isLoading
-  if (listVaultType === 'all') {
-    isLoadingVaultList = v3FilterResult.isLoading || v2FilterResult.isLoading
-  } else if (listVaultType === 'v3') {
-    isLoadingVaultList = v3FilterResult.isLoading
-  }
-
-  const totalMatchingVaults = useMemo(() => {
-    const v3Total = v3FilterResult.totalMatchingVaults ?? 0
-    const v2Total = v2FilterResult.filteredVaults.length
-    if (listVaultType === 'v3') {
-      return v3Total
-    }
-    if (listVaultType === 'factory') {
-      return v2Total
-    }
-    return v3Total + v2Total
-  }, [listVaultType, v3FilterResult.totalMatchingVaults, v2FilterResult.filteredVaults])
-
-  const totalHoldingsMatching = useMemo(() => {
-    const v3Total = v3FilterResult.totalHoldingsMatching ?? 0
-    const v2Total = v2FilterResult.holdingsVaults.length
-    if (listVaultType === 'v3') {
-      return v3Total
-    }
-    if (listVaultType === 'factory') {
-      return v2Total
-    }
-    return v3Total + v2Total
-  }, [listVaultType, v3FilterResult.totalHoldingsMatching, v2FilterResult.holdingsVaults])
-
-  const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(
-    allocatorTypesForTrending,
-    null,
-    '',
-    isV3View ? listCategoriesSanitized : null,
-    isV3View ? listAggressivenessSanitized : null,
-    isV3View ? listShowHiddenVaults : undefined,
-    isV3View
-  )
-
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
+  const {
+    defaultCategories,
+    listCategoriesSanitized,
+    holdingsVaults,
+    availableVaults,
+    vaultFlags,
+    pinnedSections,
+    pinnedVaults,
+    mainVaults,
+    suggestedVaults,
+    totalMatchingVaults,
+    totalHoldingsMatching,
+    isLoadingVaultList
+  } = useVaultsListModel({
+    listVaultType,
+    listChains,
+    listV3Types,
+    listCategories,
+    listAggressiveness,
+    listShowLegacyVaults,
+    listShowHiddenVaults,
+    searchValue,
+    sortBy,
+    sortDirection,
+    isHoldingsPinned,
+    isAvailablePinned
+  })
+
   const isSwitchingVaultType = Boolean(optimisticVaultType && optimisticVaultType !== vaultType) || isPending
 
   useEffect(() => {
@@ -555,108 +466,6 @@ function ListOfVaults({
       setActiveToggleValues((prev) => prev.filter((value) => value !== AVAILABLE_TOGGLE_VALUE))
     }
   }, [availableVaults.length, isAvailablePinned])
-
-  const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
-  const holdingsKeySet = useMemo(
-    () => new Set(holdingsVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
-    [holdingsVaults]
-  )
-  const availableKeySet = useMemo(
-    () => new Set(availableVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
-    [availableVaults]
-  )
-  const sortedHoldingsVaults = useMemo(
-    () => sortedVaults.filter((vault) => holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`)),
-    [sortedVaults, holdingsKeySet]
-  )
-  const sortedAvailableVaults = useMemo(
-    () => sortedVaults.filter((vault) => availableKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`)),
-    [sortedVaults, availableKeySet]
-  )
-  const sortedSuggestedV3Candidates = useSortVaults(filteredVaultsAllChains, 'featuringScore', 'desc')
-  const sortedSuggestedV2Candidates = useSortVaults(filteredV2VaultsAllChains, 'featuringScore', 'desc')
-
-  const pinnedSections = useMemo(() => {
-    const sections: Array<{ key: string; vaults: typeof sortedVaults }> = []
-    const seen = new Set<string>()
-
-    if (isAvailablePinned) {
-      const availableSectionVaults = sortedAvailableVaults.filter((vault) => {
-        const key = `${vault.chainID}_${toAddress(vault.address)}`
-        if (seen.has(key)) {
-          return false
-        }
-        seen.add(key)
-        return true
-      })
-
-      if (availableSectionVaults.length > 0) {
-        sections.push({
-          key: AVAILABLE_TOGGLE_VALUE,
-          vaults: availableSectionVaults
-        })
-      }
-    }
-
-    if (isHoldingsPinned) {
-      const holdingsSectionVaults = sortedHoldingsVaults.filter((vault) => {
-        const key = `${vault.chainID}_${toAddress(vault.address)}`
-        if (seen.has(key)) {
-          return false
-        }
-        seen.add(key)
-        return true
-      })
-
-      if (holdingsSectionVaults.length > 0) {
-        sections.push({
-          key: HOLDINGS_TOGGLE_VALUE,
-          vaults: holdingsSectionVaults
-        })
-      }
-    }
-
-    return sections
-  }, [isAvailablePinned, sortedAvailableVaults, isHoldingsPinned, sortedHoldingsVaults])
-
-  const pinnedVaults = useMemo(() => pinnedSections.flatMap((section) => section.vaults), [pinnedSections])
-
-  const pinnedVaultKeys = useMemo(
-    () => new Set(pinnedVaults.map((vault) => `${vault.chainID}_${toAddress(vault.address)}`)),
-    [pinnedVaults]
-  )
-
-  const mainVaults = useMemo(() => {
-    if (pinnedVaults.length === 0) {
-      return sortedVaults
-    }
-    return sortedVaults.filter((vault) => !pinnedVaultKeys.has(`${vault.chainID}_${toAddress(vault.address)}`))
-  }, [pinnedVaultKeys, pinnedVaults, sortedVaults])
-
-  const suggestedV3Vaults = useMemo(
-    () =>
-      sortedSuggestedV3Candidates
-        .filter((vault) => !holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`))
-        .slice(0, 8),
-    [sortedSuggestedV3Candidates, holdingsKeySet]
-  )
-
-  const suggestedV2Vaults = useMemo(
-    () =>
-      sortedSuggestedV2Candidates
-        .filter((vault) => !holdingsKeySet.has(`${vault.chainID}_${toAddress(vault.address)}`))
-        .slice(0, 8),
-    [sortedSuggestedV2Candidates, holdingsKeySet]
-  )
-  const suggestedVaults = useMemo(() => {
-    if (listVaultType === 'all') {
-      return [...suggestedV3Vaults, ...suggestedV2Vaults].slice(0, 8)
-    }
-    if (listVaultType === 'v3') {
-      return suggestedV3Vaults
-    }
-    return suggestedV2Vaults
-  }, [listVaultType, suggestedV3Vaults, suggestedV2Vaults])
 
   const filtersCount = useMemo(() => {
     const typeCount = displayedV3Types.includes('single') ? 1 : 0
@@ -891,7 +700,6 @@ function ListOfVaults({
     }
   }, [listVaultType])
 
-  const defaultCategories = isV3View ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
   const vaultListContent = useMemo(() => {
     if (isLoadingVaultList) {
       return (
@@ -943,7 +751,7 @@ function ListOfVaults({
         {mainVaults.length > 0 ? (
           <div className={'flex flex-col gap-px bg-border'}>
             {mainVaults.map((vault) => {
-              const key = `${vault.chainID}_${toAddress(vault.address)}`
+              const key = getVaultKey(vault)
               const rowApyDisplayVariant = resolveApyDisplayVariant(vault)
               return (
                 <VaultsListRow
