@@ -1,6 +1,6 @@
 import { formatAmount, formatTAmount } from '@lib/utils'
 import type { FC } from 'react'
-import { formatUnits } from 'viem'
+import { formatUnits, maxUint256 } from 'viem'
 
 interface DepositDetailsProps {
   // Deposit amount info
@@ -20,6 +20,10 @@ interface DepositDetailsProps {
   // Annual return info
   estimatedAnnualReturn: string
   onShowAnnualReturnModal: () => void
+  // Approval info
+  allowance?: bigint
+  allowanceTokenDecimals?: number
+  allowanceTokenSymbol?: string
 }
 
 export const DepositDetails: FC<DepositDetailsProps> = ({
@@ -35,8 +39,19 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   vaultDecimals,
   onShowVaultSharesModal,
   estimatedAnnualReturn,
-  onShowAnnualReturnModal
+  onShowAnnualReturnModal,
+  allowance,
+  allowanceTokenDecimals,
+  allowanceTokenSymbol
 }) => {
+  // Format allowance display
+  const formatAllowance = () => {
+    if (allowance === undefined || allowanceTokenDecimals === undefined) return null
+    if (allowance >= maxUint256 / 2n) return 'Unlimited'
+    return `${formatTAmount({ value: allowance, decimals: allowanceTokenDecimals })} ${allowanceTokenSymbol || ''}`
+  }
+
+  const allowanceDisplay = formatAllowance()
   return (
     <div className="px-6">
       <div className="flex flex-col gap-2">
@@ -134,6 +149,14 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
             </p>
           </div>
         </div>
+
+        {/* Approved allowance */}
+        {allowanceDisplay && (
+          <div className="flex items-center justify-between h-5">
+            <p className="text-sm text-text-secondary">Approved</p>
+            <p className="text-sm text-text-primary">{allowanceDisplay}</p>
+          </div>
+        )}
       </div>
     </div>
   )

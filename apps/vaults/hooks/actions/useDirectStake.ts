@@ -125,6 +125,7 @@ export function useDirectStake(params: UseDirectStakeParams): UseWidgetDepositFl
       prepareApproveEnabled,
       prepareDepositEnabled, // Renamed from prepareStakeEnabled for unified interface
       isAllowanceSufficient,
+      allowance,
       expectedOut, // Renamed from expectedStakeAmount for unified interface
       isLoadingRoute: false,
       isCrossChain: false,

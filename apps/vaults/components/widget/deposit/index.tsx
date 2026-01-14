@@ -362,6 +362,9 @@ export const WidgetDeposit: FC<Props> = ({
         onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
         estimatedAnnualReturn={estimatedAnnualReturn}
         onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
+        allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
+        allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
+        allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
       />
 
       {/* Action Button */}

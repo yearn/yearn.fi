@@ -74,6 +74,7 @@ export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepos
       prepareApproveEnabled,
       prepareDepositEnabled,
       isAllowanceSufficient,
+      allowance,
       expectedOut,
       isLoadingRoute: false,
       isCrossChain: false,

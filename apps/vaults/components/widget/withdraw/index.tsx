@@ -513,6 +513,9 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
         assetSymbol={assetToken?.symbol}
         routeType={routeType}
         onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
+        allowance={showApprove ? activeFlow.periphery.allowance : undefined}
+        allowanceTokenDecimals={showApprove ? (vault?.decimals ?? 18) : undefined}
+        allowanceTokenSymbol={showApprove ? vault?.symbol : undefined}
       />
 
       {/* Action Button */}

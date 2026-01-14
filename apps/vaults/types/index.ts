@@ -64,6 +64,7 @@ export type UseWidgetDepositFlowReturn = T<
     prepareApproveEnabled: boolean
     prepareDepositEnabled: boolean
     isAllowanceSufficient: boolean
+    allowance: bigint
     expectedOut: bigint
     isLoadingRoute: boolean
     isCrossChain: boolean
@@ -89,6 +90,7 @@ export type UseWidgetWithdrawFlowReturn = T<
     prepareWithdrawEnabled: boolean
     prepareApproveEnabled?: boolean // Optional: only needed for ENSO withdrawals
     isAllowanceSufficient: boolean // always true for direct withdraw (no approval needed)
+    allowance: bigint
     expectedOut: bigint
     isLoadingRoute: boolean
     isCrossChain: boolean

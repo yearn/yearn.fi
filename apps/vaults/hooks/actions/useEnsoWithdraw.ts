@@ -68,6 +68,7 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
         prepareApproveEnabled: ensoFlow.periphery.prepareApproveEnabled,
         prepareWithdrawEnabled: !!canWithdraw && !ensoFlow.periphery.isLoadingRoute,
         isAllowanceSufficient,
+        allowance: ensoFlow.periphery.allowance,
         expectedOut: ensoFlow.periphery.expectedOut.raw,
         isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
         isCrossChain: ensoFlow.periphery.isCrossChain,
