@@ -199,14 +199,16 @@ export function useV2VaultFilter(
         return
       }
 
+      let matchesSearch = true
       if (search) {
         if (searchRegex) {
-          if (!searchRegex.test(searchableText)) {
-            return
-          }
-        } else if (!searchableText.includes(lowercaseSearch)) {
-          return
+          matchesSearch = searchRegex.test(searchableText)
+        } else {
+          matchesSearch = searchableText.includes(lowercaseSearch)
         }
+      }
+      if (!matchesSearch) {
+        return
       }
 
       if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {
@@ -215,7 +217,7 @@ export function useV2VaultFilter(
 
       const isMigratableVault = Boolean(isMigratable && hasHoldings)
       const isRetiredVault = Boolean(isRetired && hasHoldings)
-      const hasUserHoldings = Boolean(hasHoldings || isMigratableVault || isRetiredVault)
+      const hasUserHoldings = hasHoldings || isMigratableVault || isRetiredVault
 
       if (!shouldShowHidden && isHidden && !hasUserHoldings) {
         return
@@ -232,7 +234,7 @@ export function useV2VaultFilter(
       const matchesAggressiveness =
         !aggressiveness || aggressiveness.length === 0
           ? true
-          : Boolean(aggressivenessScore && aggressiveness.includes(aggressivenessScore))
+          : aggressivenessScore !== null && aggressiveness.includes(aggressivenessScore)
 
       if (!(matchesKind && matchesCategory && matchesAggressiveness)) {
         return

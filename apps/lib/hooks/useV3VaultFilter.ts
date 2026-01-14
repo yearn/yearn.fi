@@ -200,14 +200,16 @@ export function useV3VaultFilter(
       if (!isActive && !hasHoldings) {
         return
       }
+      let matchesSearch = true
       if (search) {
         if (searchRegex) {
-          if (!searchRegex.test(searchableText)) {
-            return
-          }
-        } else if (!searchableText.includes(lowercaseSearch)) {
-          return
+          matchesSearch = searchRegex.test(searchableText)
+        } else {
+          matchesSearch = searchableText.includes(lowercaseSearch)
         }
+      }
+      if (!matchesSearch) {
+        return
       }
 
       if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {
@@ -216,7 +218,7 @@ export function useV3VaultFilter(
 
       const isMigratableVault = Boolean(isMigratable && hasHoldings)
       const isRetiredVault = Boolean(isRetired && hasHoldings)
-      const hasUserHoldings = Boolean(hasHoldings || isMigratableVault || isRetiredVault)
+      const hasUserHoldings = hasHoldings || isMigratableVault || isRetiredVault
 
       vaultFlags[key] = {
         hasHoldings: hasUserHoldings,
@@ -239,32 +241,20 @@ export function useV3VaultFilter(
         totalRetiredMatching++
       }
 
-      const shouldIncludeByCategory =
-        !categories || categories.length === 0 || categories.some((item) => item === category)
-
-      const isPinnedByUserContext = Boolean(hasUserHoldings || isMigratableVault || isRetiredVault)
+      const shouldIncludeByCategory = !categories || categories.length === 0 || categories.includes(category)
+      const isPinnedByUserContext = hasUserHoldings || isMigratableVault || isRetiredVault
       const isStrategy = kind === 'strategy'
-      const shouldIncludeByFeaturedGate = Boolean(
+      const shouldIncludeByFeaturedGate =
         showHiddenVaults || (!isHidden && (isStrategy || isFeatured || isPinnedByUserContext))
-      )
-
-      let shouldIncludeByKind = true
-      if (types && types.length > 0) {
-        const hasMulti = types.includes('multi')
-        const hasSingle = types.includes('single')
-
-        const matchesAllocator = hasMulti && kind === 'allocator'
-        const matchesStrategy = hasSingle && kind === 'strategy'
-
-        shouldIncludeByKind = Boolean(matchesAllocator || matchesStrategy)
-      }
-
-      let shouldIncludeByAggressiveness = true
-      if (aggressiveness && aggressiveness.length > 0) {
-        shouldIncludeByAggressiveness = Boolean(
-          aggressivenessScore !== null && aggressiveness.includes(aggressivenessScore)
-        )
-      }
+      const shouldIncludeByKind =
+        !types ||
+        types.length === 0 ||
+        (types.includes('multi') && kind === 'allocator') ||
+        (types.includes('single') && kind === 'strategy')
+      const shouldIncludeByAggressiveness =
+        !aggressiveness ||
+        aggressiveness.length === 0 ||
+        (aggressivenessScore !== null && aggressiveness.includes(aggressivenessScore))
 
       if (
         shouldIncludeByCategory &&

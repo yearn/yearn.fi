@@ -60,14 +60,17 @@ export function useScrollSpy<Key extends string>({
       }
     }
 
-    const onScroll = (): void => {
+    const scheduleUpdate = (): void => {
       cancelAnimationFrame(rafId)
       rafId = window.requestAnimationFrame(updateActive)
     }
 
+    const onScroll = (): void => {
+      scheduleUpdate()
+    }
+
     const onResize = (): void => {
-      cancelAnimationFrame(rafId)
-      rafId = window.requestAnimationFrame(updateActive)
+      scheduleUpdate()
     }
 
     window.addEventListener('scroll', onScroll, { passive: true })

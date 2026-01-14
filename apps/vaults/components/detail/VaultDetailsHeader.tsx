@@ -368,8 +368,6 @@ export function VaultDetailsHeader({
     rewardTokenDecimal: 0,
     earnedValue: 0
   })
-  console.log('vaultData', vaultData)
-
   const tokenPrice = currentVault.tvl.price || 0
 
   /**********************************************************************************************
@@ -641,39 +639,53 @@ export function VaultDetailsHeader({
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
-  const productType = isAllocatorVault ? 'v3' : 'lp'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
-  const productTypeIcon = isAllocatorVault ? (
-    <span className={'text-sm leading-none'}>{'⚙️'}</span>
-  ) : isLegacyVault ? (
-    <IconRewind className={'size-3.5'} />
-  ) : (
-    <span className={'text-sm leading-none'}>{'🏭'}</span>
-  )
-  const categoryIcon =
-    currentVault.category === 'Stablecoin' ? (
-      <IconStablecoin className={'size-3.5'} />
-    ) : currentVault.category === 'Volatile' ? (
-      <IconVolatile className={'size-3.5'} />
-    ) : null
-  const baseKindType =
-    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
-  const fallbackKindType = listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
+  let productTypeLabel = 'LP Token Vault'
+  let productTypeIcon = <span className={'text-sm leading-none'}>{'🏭'}</span>
+  if (isAllocatorVault) {
+    productTypeLabel = 'Single Asset Vault'
+    productTypeIcon = <span className={'text-sm leading-none'}>{'⚙️'}</span>
+  } else if (isLegacyVault) {
+    productTypeLabel = 'Legacy'
+    productTypeIcon = <IconRewind className={'size-3.5'} />
+  }
+
+  let categoryIcon: ReactElement | null = null
+  if (currentVault.category === 'Stablecoin') {
+    categoryIcon = <IconStablecoin className={'size-3.5'} />
+  } else if (currentVault.category === 'Volatile') {
+    categoryIcon = <IconVolatile className={'size-3.5'} />
+  }
+
+  let baseKindType: 'multi' | 'single' | undefined
+  if (currentVault.kind === 'Multi Strategy') {
+    baseKindType = 'multi'
+  } else if (currentVault.kind === 'Single Strategy') {
+    baseKindType = 'single'
+  }
+
+  let fallbackKindType: 'multi' | 'single' | undefined
+  if (listKind === 'allocator') {
+    fallbackKindType = 'multi'
+  } else if (listKind === 'strategy') {
+    fallbackKindType = 'single'
+  }
   const kindType = baseKindType ?? fallbackKindType
-  const kindLabel = kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
-  const kindIcon =
-    kindType === 'multi' ? (
-      <IconCirclePile className={'size-3.5'} />
-    ) : kindType === 'single' ? (
-      <IconStack className={'size-3.5'} />
-    ) : null
+  let kindLabel: string | undefined = currentVault.kind
+  let kindIcon: ReactElement | null = null
+  if (kindType === 'multi') {
+    kindLabel = 'Allocator'
+    kindIcon = <IconCirclePile className={'size-3.5'} />
+  } else if (kindType === 'single') {
+    kindLabel = 'Strategy'
+    kindIcon = <IconStack className={'size-3.5'} />
+  }
   const isMigratable = Boolean(currentVault.migration?.available)
   const isRetired = Boolean(currentVault.info?.isRetired)
   const migratableIcon = <IconMigratable className={'size-3.5'} />
   const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
   const showKindChip = Boolean(kindLabel)
   const shouldShowMetadata =
-    showChainChip || showCategoryChip || showKindChip || Boolean(productType) || isMigratable || isRetired
+    showChainChip || showCategoryChip || showKindChip || Boolean(productTypeLabel) || isMigratable || isRetired
   const [isTitleClipped, setIsTitleClipped] = useState(false)
   const titleRef = useRef<HTMLSpanElement>(null)
   const vaultName = getVaultName(currentVault)

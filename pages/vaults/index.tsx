@@ -132,11 +132,12 @@ function ListOfVaults({
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
       const borderBoxSize = entry?.borderBoxSize as unknown
-      const borderBoxHeight = Array.isArray(borderBoxSize)
-        ? borderBoxSize[0]?.blockSize
-        : borderBoxSize && typeof borderBoxSize === 'object' && 'blockSize' in borderBoxSize
-          ? (borderBoxSize as ResizeObserverSize).blockSize
-          : undefined
+      let borderBoxHeight: number | undefined
+      if (Array.isArray(borderBoxSize)) {
+        borderBoxHeight = borderBoxSize[0]?.blockSize
+      } else if (borderBoxSize && typeof borderBoxSize === 'object' && 'blockSize' in borderBoxSize) {
+        borderBoxHeight = (borderBoxSize as ResizeObserverSize).blockSize
+      }
       const height = borderBoxHeight ?? filtersElement.getBoundingClientRect().height
       varsElement.style.setProperty('--vaults-filters-height', `${height}px`)
     })
@@ -222,12 +223,12 @@ function ListOfVaults({
     [vaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags]
   )
 
-  const isLoadingVaultList =
-    vaultType === 'all'
-      ? v3FilterResult.isLoading || v2FilterResult.isLoading
-      : vaultType === 'v3'
-        ? v3FilterResult.isLoading
-        : v2FilterResult.isLoading
+  let isLoadingVaultList = v2FilterResult.isLoading
+  if (vaultType === 'all') {
+    isLoadingVaultList = v3FilterResult.isLoading || v2FilterResult.isLoading
+  } else if (vaultType === 'v3') {
+    isLoadingVaultList = v3FilterResult.isLoading
+  }
 
   const totalMatchingVaults = useMemo(() => {
     if (vaultType === 'v3') {
@@ -370,7 +371,10 @@ function ListOfVaults({
     if (vaultType === 'all') {
       return [...suggestedV3Vaults, ...suggestedV2Vaults].slice(0, 8)
     }
-    return vaultType === 'v3' ? suggestedV3Vaults : suggestedV2Vaults
+    if (vaultType === 'v3') {
+      return suggestedV3Vaults
+    }
+    return suggestedV2Vaults
   }, [vaultType, suggestedV3Vaults, suggestedV2Vaults])
 
   const filtersCount = useMemo(() => {

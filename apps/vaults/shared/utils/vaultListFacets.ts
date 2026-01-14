@@ -60,8 +60,9 @@ export function deriveListKind(vault: TYDaemonVault): TVaultListKind {
   }
   const isV3 = Boolean(vault.version?.startsWith('3') || vault.version?.startsWith('~3'))
   if (isV3) {
-    if (vault.kind === 'Multi Strategy') return 'allocator'
-    if (vault.kind === 'Single Strategy') return 'strategy'
+    if (vault.kind === 'Multi Strategy') {
+      return 'allocator'
+    }
     return 'strategy'
   }
 
