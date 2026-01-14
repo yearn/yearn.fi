@@ -35,7 +35,7 @@ export function VaultVersionToggle({
   const normalizedType = normalizeVaultTypeParam(searchParams.get('type'))
   const resolvedType = activeType ?? normalizedType
 
-  const handleClick = (config: TButtonConfig): void => {
+  function handleClick(config: TButtonConfig): void {
     if (onTypeChange) {
       onTypeChange(config.type)
       return
@@ -50,10 +50,15 @@ export function VaultVersionToggle({
     setSearchParams(nextParams, { replace: true })
   }
 
-  const isActive = (type: TVaultType): boolean => {
-    if (type === 'all') return resolvedType === 'all'
-    if (type === 'factory') return resolvedType === 'factory'
-    return resolvedType !== 'all' && resolvedType !== 'factory'
+  function isActive(type: TVaultType): boolean {
+    switch (type) {
+      case 'all':
+        return resolvedType === 'all'
+      case 'factory':
+        return resolvedType === 'factory'
+      default:
+        return resolvedType !== 'all' && resolvedType !== 'factory'
+    }
   }
 
   return (

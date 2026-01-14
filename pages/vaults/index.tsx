@@ -109,6 +109,7 @@ function ListOfVaults({
   const filtersRef = useRef<HTMLDivElement | null>(null)
   const [isPending, startTransition] = useTransition()
   const [searchParams, setSearchParams] = useSearchParams()
+  const searchValue = search ?? ''
   const listVaultType = useDeferredValue(vaultType)
   const isAllVaults = listVaultType === 'all'
   const isV3View = listVaultType === 'v3' || isAllVaults
@@ -199,7 +200,7 @@ function ListOfVaults({
   const v3FilterResult = useV3VaultFilter(
     isV3View ? sanitizedV3Types : null,
     chains,
-    search || '',
+    searchValue,
     isV3View ? sanitizedCategories : null,
     isV3View ? sanitizedAggressiveness : null,
     isV3View ? showHiddenVaults : undefined,
@@ -208,7 +209,7 @@ function ListOfVaults({
   const v2FilterResult = useV2VaultFilter(
     isV2View ? sanitizedV2Types : null,
     chains,
-    search || '',
+    searchValue,
     isV2View ? sanitizedCategories : null,
     isV2View ? sanitizedAggressiveness : null,
     showHiddenVaults,
@@ -252,23 +253,27 @@ function ListOfVaults({
   }
 
   const totalMatchingVaults = useMemo(() => {
+    const v3Total = v3FilterResult.totalMatchingVaults ?? 0
+    const v2Total = v2FilterResult.filteredVaults.length
     if (listVaultType === 'v3') {
-      return v3FilterResult.totalMatchingVaults ?? 0
+      return v3Total
     }
     if (listVaultType === 'factory') {
-      return v2FilterResult.filteredVaults.length
+      return v2Total
     }
-    return (v3FilterResult.totalMatchingVaults ?? 0) + v2FilterResult.filteredVaults.length
+    return v3Total + v2Total
   }, [listVaultType, v3FilterResult.totalMatchingVaults, v2FilterResult.filteredVaults])
 
   const totalHoldingsMatching = useMemo(() => {
+    const v3Total = v3FilterResult.totalHoldingsMatching ?? 0
+    const v2Total = v2FilterResult.holdingsVaults.length
     if (listVaultType === 'v3') {
-      return v3FilterResult.totalHoldingsMatching ?? 0
+      return v3Total
     }
     if (listVaultType === 'factory') {
-      return v2FilterResult.holdingsVaults.length
+      return v2Total
     }
-    return (v3FilterResult.totalHoldingsMatching ?? 0) + v2FilterResult.holdingsVaults.length
+    return v3Total + v2Total
   }, [listVaultType, v3FilterResult.totalHoldingsMatching, v2FilterResult.holdingsVaults])
 
   const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(
@@ -438,13 +443,6 @@ function ListOfVaults({
     [listVaultType, onChangeTypes, sanitizedV3Types]
   )
 
-  const handleToggleLegacyVaults = useCallback(
-    (shouldShow: boolean): void => {
-      onChangeShowLegacyVaults(shouldShow)
-    },
-    [onChangeShowLegacyVaults]
-  )
-
   const handleToggleVaultType = useCallback(
     (nextType: 'v3' | 'lp'): void => {
       const nextParams = new URLSearchParams(searchParams)
@@ -514,7 +512,7 @@ function ListOfVaults({
           label: 'Show legacy vaults',
           description: 'Includes legacy vaults in the list.',
           checked: showLegacyVaults,
-          onChange: (checked: boolean): void => handleToggleLegacyVaults(checked)
+          onChange: (checked: boolean): void => onChangeShowLegacyVaults(checked)
         },
         {
           label: 'Show hidden vaults',
@@ -565,7 +563,7 @@ function ListOfVaults({
       return (
         <VaultsListEmpty
           isLoading={isLoadingVaultList}
-          currentSearch={search || ''}
+          currentSearch={searchValue}
           currentCategories={sanitizedCategories}
           currentChains={chains}
           onReset={onResetMultiSelect}
@@ -579,7 +577,7 @@ function ListOfVaults({
       return (
         <VaultsListEmpty
           isLoading={false}
-          currentSearch={search || ''}
+          currentSearch={searchValue}
           currentCategories={sanitizedCategories}
           currentChains={chains}
           onReset={onResetMultiSelect}
@@ -653,7 +651,7 @@ function ListOfVaults({
     pinnedVaults.length,
     resolveApyDisplayVariant,
     sanitizedCategories,
-    search,
+    searchValue,
     shouldCollapseChips,
     showStrategies,
     totalMatchingVaults,
@@ -682,7 +680,7 @@ function ListOfVaults({
       {suggestedVaultsElement}
       <VaultsFilters
         shouldDebounce={true}
-        searchValue={search || ''}
+        searchValue={searchValue}
         chains={chains}
         onChangeChains={onChangeChains}
         onSearch={onSearch}
@@ -854,12 +852,7 @@ function useVaultListExtraFilters(): {
   const showStrategies = readBooleanParam(searchParams, 'showStrategies')
   const showLegacyParam = searchParams.get('showLegacy')
   const showLegacyFromParam = showLegacyParam !== null ? readBooleanParam(searchParams, 'showLegacy') : false
-  const legacyFallback = searchParams
-    .get('types')
-    ?.split('_')
-    .map((value) => value.trim())
-    .filter(Boolean)
-    .includes('legacy')
+  const legacyFallback = readStringList('types').includes('legacy')
   const showLegacyVaults = showLegacyParam !== null ? showLegacyFromParam : Boolean(legacyFallback)
 
   const updateParam = (key: string, value: string[] | null): void => {
@@ -967,6 +960,14 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
     setSearchParams(nextParams, { replace: true })
   }, [searchParams, setSearchParams])
 
+  function handleSortByChange(value: TPossibleSortBy | ''): void {
+    setSortBy(value || 'featuringScore')
+  }
+
+  function handleSortDirectionChange(value: TSortDirection | ''): void {
+    setSortDirection(value || 'desc')
+  }
+
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
       <div className={'mx-auto w-full max-w-[1232px] px-4 pb-4'}>
@@ -982,20 +983,8 @@ function VaultsIndexContent({ vaultType }: { vaultType: TVaultType }): ReactElem
           onChangeShowLegacyVaults={onChangeShowLegacyVaults}
           onChangeShowHiddenVaults={onChangeShowHiddenVaults}
           onChangeShowStrategies={onChangeShowStrategies}
-          onChangeSortBy={(value): void => {
-            if (!value) {
-              setSortBy('featuringScore')
-              return
-            }
-            setSortBy(value)
-          }}
-          onChangeSortDirection={(value): void => {
-            if (!value) {
-              setSortDirection('desc')
-              return
-            }
-            setSortDirection(value)
-          }}
+          onChangeSortBy={handleSortByChange}
+          onChangeSortDirection={handleSortDirectionChange}
           onResetMultiSelect={(): void => {
             queryArgs.onResetMultiSelect()
             onResetExtraFilters()

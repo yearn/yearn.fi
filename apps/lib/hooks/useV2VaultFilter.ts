@@ -58,18 +58,23 @@ export function useV2VaultFilter(
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
   const isEnabled = enabled ?? true
+  const searchValue = search ?? ''
+  const isSearchEnabled = isEnabled && searchValue !== ''
   const searchRegex = useMemo(() => {
-    if (!isEnabled || !search) {
+    if (!isSearchEnabled) {
       return null
     }
     try {
-      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const escapedSearch = searchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       return new RegExp(escapedSearch, 'i')
     } catch {
       return null
     }
-  }, [isEnabled, search])
-  const lowercaseSearch = useMemo(() => (search && isEnabled ? search.toLowerCase() : ''), [search, isEnabled])
+  }, [isSearchEnabled, searchValue])
+  const lowercaseSearch = useMemo(
+    () => (isSearchEnabled ? searchValue.toLowerCase() : ''),
+    [isSearchEnabled, searchValue]
+  )
 
   const checkHasHoldings = useMemo(
     () => createCheckHasHoldings(getBalance, getPrice, shouldHideDust),
@@ -83,6 +88,9 @@ export function useV2VaultFilter(
       return new Map<string, TVaultIndexEntry>()
     }
     const vaultMap = new Map<string, TVaultIndexEntry>()
+
+    const shouldIncludeVault = (vault: TYDaemonVault): boolean =>
+      !isAllocatorVaultOverride(vault) && !isV3Vault(vault, false)
 
     const upsertVault = (
       vault: TYDaemonVault,
@@ -112,10 +120,7 @@ export function useV2VaultFilter(
     }
 
     Object.values(vaults).forEach((vault) => {
-      if (isAllocatorVaultOverride(vault)) {
-        return
-      }
-      if (isV3Vault(vault, false)) {
+      if (!shouldIncludeVault(vault)) {
         return
       }
 
@@ -123,10 +128,7 @@ export function useV2VaultFilter(
     })
 
     Object.values(vaultsMigrations).forEach((vault) => {
-      if (isAllocatorVaultOverride(vault)) {
-        return
-      }
-      if (isV3Vault(vault, false)) {
+      if (!shouldIncludeVault(vault)) {
         return
       }
 
@@ -134,10 +136,7 @@ export function useV2VaultFilter(
     })
 
     Object.values(vaultsRetired).forEach((vault) => {
-      if (isAllocatorVaultOverride(vault)) {
-        return
-      }
-      if (isV3Vault(vault, false)) {
+      if (!shouldIncludeVault(vault)) {
         return
       }
 
@@ -168,13 +167,7 @@ export function useV2VaultFilter(
     return Array.from(vaultIndex.values())
       .filter(({ key, isActive }) => {
         const flags = walletFlags.get(key)
-        if (!flags?.hasAvailableBalance) {
-          return false
-        }
-        if (isActive) {
-          return true
-        }
-        return Boolean(flags.hasHoldings)
+        return Boolean(flags?.hasAvailableBalance && (isActive || flags?.hasHoldings))
       })
       .map(({ vault }) => vault)
   }, [vaultIndex, walletFlags])
@@ -183,6 +176,20 @@ export function useV2VaultFilter(
     const filteredVaults: TYDaemonVault[] = []
     const vaultFlags: Record<string, TVaultFlags> = {}
     const shouldShowHidden = Boolean(showHiddenVaults)
+    const hasChainFilter = Boolean(chains?.length)
+    const hasTypeFilter = Boolean(types?.length)
+    const hasCategoryFilter = Boolean(categories?.length)
+    const hasAggressivenessFilter = Boolean(aggressiveness?.length)
+
+    const matchesSearch = (searchableText: string): boolean => {
+      if (!isSearchEnabled) {
+        return true
+      }
+      if (searchRegex) {
+        return searchRegex.test(searchableText)
+      }
+      return searchableText.includes(lowercaseSearch)
+    }
 
     vaultIndex.forEach((entry) => {
       const {
@@ -204,19 +211,11 @@ export function useV2VaultFilter(
         return
       }
 
-      let matchesSearch = true
-      if (search) {
-        if (searchRegex) {
-          matchesSearch = searchRegex.test(searchableText)
-        } else {
-          matchesSearch = searchableText.includes(lowercaseSearch)
-        }
-      }
-      if (!matchesSearch) {
+      if (!matchesSearch(searchableText)) {
         return
       }
 
-      if (chains && chains.length > 0 && !chains.includes(vault.chainID)) {
+      if (hasChainFilter && !chains?.includes(vault.chainID)) {
         return
       }
 
@@ -234,12 +233,11 @@ export function useV2VaultFilter(
         isHidden
       }
 
-      const matchesKind = !types || types.length === 0 || types.includes(kind)
-      const matchesCategory = !categories || categories.length === 0 || categories.includes(category)
+      const matchesKind = !hasTypeFilter || Boolean(types?.includes(kind))
+      const matchesCategory = !hasCategoryFilter || Boolean(categories?.includes(category))
       const matchesAggressiveness =
-        !aggressiveness || aggressiveness.length === 0
-          ? true
-          : aggressivenessScore !== null && aggressiveness.includes(aggressivenessScore)
+        !hasAggressivenessFilter ||
+        (aggressivenessScore !== null && Boolean(aggressiveness?.includes(aggressivenessScore)))
 
       if (!(matchesKind && matchesCategory && matchesAggressiveness)) {
         return
@@ -254,11 +252,11 @@ export function useV2VaultFilter(
     walletFlags,
     types,
     chains,
-    search,
     categories,
     aggressiveness,
     searchRegex,
     lowercaseSearch,
+    isSearchEnabled,
     showHiddenVaults
   ])
 
