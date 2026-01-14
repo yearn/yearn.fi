@@ -28,6 +28,7 @@ type TVaultsAuxiliaryListProps = {
   onToggleType?: (type: string) => void
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
+  shouldCollapseChips?: boolean
 }
 
 // TODO: the contents of this component override the type filers. This should only happen for HOLDINGS and not AVAILABLE TO DEPOSIT
@@ -43,7 +44,8 @@ export function VaultsAuxiliaryList({
   onToggleChain,
   onToggleCategory,
   onToggleType,
-  showStrategies
+  showStrategies,
+  shouldCollapseChips
 }: TVaultsAuxiliaryListProps): ReactElement | null {
   if (vaults.length === 0) {
     return null
@@ -70,6 +72,7 @@ export function VaultsAuxiliaryList({
               onToggleChain={onToggleChain}
               onToggleCategory={onToggleCategory}
               onToggleType={onToggleType}
+              shouldCollapseChips={shouldCollapseChips}
               showStrategies={showStrategies}
             />
           )

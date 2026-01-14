@@ -1,10 +1,11 @@
+import Link from '@components/Link'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
 import { Tooltip } from '@lib/components/Tooltip'
 import { IconChevron } from '@lib/icons/IconChevron'
-import { IconCircle } from '@lib/icons/IconCircle'
 import { IconCirclePile } from '@lib/icons/IconCirclePile'
 import { IconEyeOff } from '@lib/icons/IconEyeOff'
+import { IconMigratable } from '@lib/icons/IconMigratable'
 import { IconRewind } from '@lib/icons/IconRewind'
 import { IconStablecoin } from '@lib/icons/IconStablecoin'
 import { IconStack } from '@lib/icons/IconStack'
@@ -54,7 +55,8 @@ export function VaultsListRow({
   onToggleType,
   activeProductType,
   onToggleVaultType,
-  showStrategies = false
+  showStrategies = false,
+  shouldCollapseChips = false
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
@@ -69,6 +71,7 @@ export function VaultsListRow({
   activeProductType?: 'v3' | 'lp' | 'all'
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
+  shouldCollapseChips?: boolean
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
@@ -81,48 +84,69 @@ export function VaultsListRow({
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
   const productType = isAllocatorVault ? 'v3' : 'lp'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Vault'
-  const productTypeIcon = isAllocatorVault ? (
-    <IconCircle className={'size-3.5'} />
-  ) : isLegacyVault ? (
-    <IconRewind className={'size-3.5'} />
-  ) : (
-    <IconVolatile className={'size-3.5'} />
-  )
-  const productTypeAriaLabel = isAllocatorVault
-    ? 'Show single asset vaults'
-    : isLegacyVault
-      ? 'Legacy vault'
-      : 'Show LP vaults'
+  let productTypeLabel = 'LP Token Vault'
+  let productTypeIcon = <span className={'text-sm leading-none'}>{'🏭'}</span>
+  let productTypeAriaLabel = 'Show LP token vaults'
+  if (isAllocatorVault) {
+    productTypeLabel = 'Single Asset Vault'
+    productTypeIcon = <span className={'text-sm leading-none'}>{'⚙️'}</span>
+    productTypeAriaLabel = 'Show single asset vaults'
+  } else if (isLegacyVault) {
+    productTypeLabel = 'Legacy'
+    productTypeIcon = <IconRewind className={'size-3.5'} />
+    productTypeAriaLabel = 'Legacy vault'
+  }
   const showProductTypeChip = Boolean(activeProductType) || Boolean(onToggleVaultType)
-  const isProductTypeActive = false
+  const isProductTypeActive = activeProductType === productType
+  const shouldCollapseProductTypeChip =
+    !isLegacyVault && activeProductType !== 'all' && activeProductType === productType
+  const isChipsCompressed = Boolean(shouldCollapseChips)
+  const shouldCollapseProductType = isChipsCompressed || shouldCollapseProductTypeChip
+  const showCollapsedTooltip = isChipsCompressed
   const leftColumnSpan = 'col-span-12'
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
   const metricsColumnSpan = 'col-span-4'
 
   const isHiddenVault = Boolean(flags?.isHidden)
-  const baseKindType =
-    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
-  const fallbackKindType = listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
+  let baseKindType: 'multi' | 'single' | undefined
+  if (currentVault.kind === 'Multi Strategy') {
+    baseKindType = 'multi'
+  } else if (currentVault.kind === 'Single Strategy') {
+    baseKindType = 'single'
+  }
+
+  let fallbackKindType: 'multi' | 'single' | undefined
+  if (listKind === 'allocator') {
+    fallbackKindType = 'multi'
+  } else if (listKind === 'strategy') {
+    fallbackKindType = 'single'
+  }
   const kindType = baseKindType ?? fallbackKindType
-  const kindLabel = kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
+  let kindLabel: string | undefined = currentVault.kind
+  if (kindType === 'multi') {
+    kindLabel = 'Allocator'
+  } else if (kindType === 'single') {
+    kindLabel = 'Strategy'
+  }
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
   const showKindChip = showStrategies && Boolean(kindType)
   const isKindActive = false
-  const categoryIcon =
-    currentVault.category === 'Stablecoin' ? (
-      <IconStablecoin className={'size-3.5'} />
-    ) : currentVault.category === 'Volatile' ? (
-      <IconVolatile className={'size-3.5'} />
-    ) : null
-  const kindIcon =
-    kindType === 'multi' ? (
-      <IconCirclePile className={'size-3.5'} />
-    ) : kindType === 'single' ? (
-      <IconStack className={'size-3.5'} />
-    ) : null
+  let categoryIcon: ReactElement | null = null
+  if (currentVault.category === 'Stablecoin') {
+    categoryIcon = <IconStablecoin className={'size-3.5'} />
+  } else if (currentVault.category === 'Volatile') {
+    categoryIcon = <IconVolatile className={'size-3.5'} />
+  }
+  let kindIcon: ReactElement | null = null
+  if (kindType === 'multi') {
+    kindIcon = <IconCirclePile className={'size-3.5'} />
+  } else if (kindType === 'single') {
+    kindIcon = <IconStack className={'size-3.5'} />
+  }
+  const migratableIcon = <IconMigratable className={'size-3.5'} />
+  const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
   const tvlNativeTooltip = (
     <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       <span className={'font-number'}>
@@ -142,17 +166,6 @@ export function VaultsListRow({
     </div>
   )
 
-  const handleRowClick = (): void => {
-    navigate(href)
-  }
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      navigate(href)
-    }
-  }
-
   useEffect(() => {
     if (isExpanded) {
       setExpandedView('apy')
@@ -160,18 +173,36 @@ export function VaultsListRow({
   }, [isExpanded])
 
   return (
-    <div className={cl('w-full overflow-hidden transition-colors bg-surface')}>
-      {/* biome-ignore lint/a11y/useSemanticElements: Using a div with link-like behavior for row navigation */}
-      <div
-        role={'link'}
-        tabIndex={0}
-        onClick={handleRowClick}
-        onKeyDown={handleKeyDown}
+    <div className={cl('w-full overflow-hidden transition-colors bg-surface relative')}>
+      <button
+        type={'button'}
+        aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+        aria-expanded={isExpanded}
+        onClick={(event): void => {
+          event.stopPropagation()
+          setIsExpanded((value) => !value)
+        }}
+        className={cl(
+          'absolute top-5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
+          'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+        )}
+      >
+        <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
+      </button>
+      <Link
+        href={href}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
           'p-6 pt-2 pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
+        onClickCapture={(event): void => {
+          const target = event.target as HTMLElement | null
+          if (!target) return
+          if (target.closest('button, input, select, textarea, [role="button"]')) {
+            event.preventDefault()
+          }
+        }}
       >
         <div
           className={cl(
@@ -181,24 +212,8 @@ export function VaultsListRow({
           )}
         />
 
-        <button
-          type={'button'}
-          aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
-          aria-expanded={isExpanded}
-          onClick={(event): void => {
-            event.stopPropagation()
-            setIsExpanded((value) => !value)
-          }}
-          className={cl(
-            'absolute top-5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
-            'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
-          )}
-        >
-          <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
-        </button>
-
         <div className={cl(leftColumnSpan, 'z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
-          <div className={'flex flex-row w-full gap-4 overflow-hidden'}>
+          <div className={'flex flex-row w-full gap-4 overflow-visible'}>
             <div className={'relative flex items-center justify-center self-center size-8 min-h-8 min-w-8'}>
               <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
@@ -223,12 +238,14 @@ export function VaultsListRow({
               >
                 {currentVault.name}
               </strong>
-              <div className={'mt-1 flex flex-wrap items-center gap-1 text-xs text-text-primary/70'}>
+              <div className={'mt-1 flex items-center gap-1 text-xs text-text-primary/70 whitespace-nowrap'}>
                 <div className={'hidden md:block'}>
                   <VaultsListChip
                     label={network.name}
                     icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
                     isActive={activeChainIds.includes(currentVault.chainID)}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
                     onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
                     ariaLabel={`Filter by ${network.name}`}
                   />
@@ -238,6 +255,8 @@ export function VaultsListRow({
                     label={currentVault.category}
                     icon={categoryIcon}
                     isActive={activeCategoryLabels.includes(currentVault.category)}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
                     onClick={onToggleCategory ? (): void => onToggleCategory(currentVault.category) : undefined}
                     ariaLabel={`Filter by ${currentVault.category}`}
                   />
@@ -247,20 +266,45 @@ export function VaultsListRow({
                     label={productTypeLabel}
                     icon={productTypeIcon}
                     isActive={isProductTypeActive}
+                    isCollapsed={shouldCollapseProductType}
+                    showCollapsedTooltip={showCollapsedTooltip}
                     onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
                     ariaLabel={productTypeAriaLabel}
                   />
-                ) : null}
-                {isHiddenVault ? (
-                  <VaultsListChip label={'Hidden'} icon={<IconEyeOff className={'size-3.5'} />} />
                 ) : null}
                 {showKindChip && kindLabel ? (
                   <VaultsListChip
                     label={kindLabel}
                     icon={kindIcon}
                     isActive={isKindActive}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
                     onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
                     ariaLabel={`Filter by ${kindLabel}`}
+                  />
+                ) : null}
+                {flags?.isRetired ? (
+                  <VaultsListChip
+                    label={'Retired'}
+                    icon={retiredIcon}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                  />
+                ) : null}
+                {flags?.isMigratable ? (
+                  <VaultsListChip
+                    label={'Migratable'}
+                    icon={migratableIcon}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                  />
+                ) : null}
+                {isHiddenVault ? (
+                  <VaultsListChip
+                    label={'Hidden'}
+                    icon={<IconEyeOff className={'size-3.5'} />}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
                   />
                 ) : null}
               </div>
@@ -349,7 +393,7 @@ export function VaultsListRow({
             <VaultHoldingsAmount currentVault={currentVault} />
           </div>
         </div>
-      </div>
+      </Link>
 
       {isExpanded ? (
         <Suspense fallback={<ExpandedRowFallback />}>

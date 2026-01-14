@@ -75,12 +75,14 @@ function Index(): ReactElement | null {
   })
   const collapsibleTitles: Record<SectionKey, string> = {
     about: 'Description',
-    risk: 'Risk',
+    risk: 'Risk Score',
     strategies: 'Strategies',
     info: 'More Info',
     charts: 'Performance'
   }
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
+  const sectionScrollOffset = 275
+  const compressedHeaderHeight = 117.5
 
   // Reset state when vault changes
   useEffect(() => {
@@ -228,7 +230,11 @@ function Index(): ReactElement | null {
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const scrollSpySections = useMemo(
-    () => renderableSections.map((section) => ({ key: section.key, ref: section.ref })),
+    () =>
+      renderableSections.map((section) => ({
+        key: section.key,
+        ref: section.ref
+      })),
     [renderableSections]
   )
 
@@ -236,7 +242,7 @@ function Index(): ReactElement | null {
     sections: scrollSpySections,
     activeKey: activeSection,
     onActiveKeyChange: setActiveSection,
-    rootMargin: '-250px 0px -60% 0px',
+    offsetTop: sectionScrollOffset,
     enabled: renderableSections.length > 0
   })
 
@@ -249,9 +255,17 @@ function Index(): ReactElement | null {
   const handleSelectSection = (key: SectionKey): void => {
     setActiveSection(key)
     const element = sectionRefs[key]?.current
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    if (!element || typeof window === 'undefined') return
+
+    const defaultOffset = sectionScrollOffset
+    const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
+    const headerExpansionOffset = Math.max(0, headerHeight - compressedHeaderHeight)
+    const dynamicOffset = defaultOffset + headerExpansionOffset
+    const scrollOffset = dynamicOffset
+    const top = element.getBoundingClientRect().top + window.scrollY - scrollOffset
+    const targetTop = key === 'charts' ? Math.max(top, 1) : top
+
+    window.scrollTo({ top: targetTop, behavior: 'smooth' })
   }
 
   const toggleMobileDetails = (): void => {
@@ -260,7 +274,10 @@ function Index(): ReactElement | null {
       // Scroll to details when expanding
       if (newState && detailsRef.current) {
         setTimeout(() => {
-          detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          detailsRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest'
+          })
         }, 100)
       }
       return newState
@@ -291,7 +308,7 @@ function Index(): ReactElement | null {
   // Calculate sticky positions for the collapsible header (desktop only)
   // On mobile, natural scroll behavior is used
   const headerStickyTop = 'var(--header-height)'
-  const nextSticky = `calc(var(--header-height) + 117.5px)`
+  const nextSticky = `calc(var(--header-height) + ${compressedHeaderHeight}px)`
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
@@ -314,7 +331,9 @@ function Index(): ReactElement | null {
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+                  currentVault.chainID
+                }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
                 alt={currentVault.token.symbol || ''}
                 width={40}
                 height={40}
@@ -406,7 +425,10 @@ function Index(): ReactElement | null {
                         type={'button'}
                         className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
                         onClick={(): void =>
-                          setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                          setOpenSections((previous) => ({
+                            ...previous,
+                            [typedKey]: !previous[typedKey]
+                          }))
                         }
                       >
                         <span className={'text-base font-semibold text-text-primary'}>
@@ -489,13 +511,16 @@ function Index(): ReactElement | null {
                     key={section.key}
                     ref={section.ref}
                     data-scroll-spy-key={section.key}
-                    className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
+                    className={'border border-border rounded-lg bg-surface scroll-mt-[275px]'}
                   >
                     <button
                       type={'button'}
-                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
+                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4'}
                       onClick={(): void =>
-                        setOpenSections((previous) => ({ ...previous, [typedKey]: !previous[typedKey] }))
+                        setOpenSections((previous) => ({
+                          ...previous,
+                          [typedKey]: !previous[typedKey]
+                        }))
                       }
                     >
                       <span className={'text-base font-semibold text-text-primary'}>{collapsibleTitles[typedKey]}</span>
@@ -514,12 +539,13 @@ function Index(): ReactElement | null {
                   key={section.key}
                   ref={section.ref}
                   data-scroll-spy-key={section.key}
-                  className={'border border-border rounded-lg bg-surface scroll-mt-[250px]'}
+                  className={'border border-border rounded-lg bg-surface scroll-mt-[275px]'}
                 >
                   {section.content}
                 </div>
               )
             })}
+            {renderableSections.length > 0 ? <div aria-hidden className={'h-[60vh]'} /> : null}
           </div>
           <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-6')} style={{ top: nextSticky }}>
             <div>

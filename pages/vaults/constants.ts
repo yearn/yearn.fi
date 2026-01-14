@@ -1,3 +1,5 @@
+import type { TVaultAggressiveness } from '@vaults/shared/utils/vaultListFacets'
+
 export const V2_SUPPORTED_CHAINS = [1, 10, 8453]
 export const V3_SUPPORTED_CHAINS = [1, 747474, 8453, 42161, 137]
 
@@ -6,19 +8,7 @@ export const HOLDINGS_TOGGLE_VALUE = 'holdings'
 export const V3_PRIMARY_CHAIN_IDS = [1, 747474]
 export const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453, 42161, 137]
 export const V2_DEFAULT_TYPES = ['factory']
-export const PROTOCOL_OPTIONS = [
-  'Curve',
-  'Velodrome',
-  'Aerodrome',
-  'Balancer',
-  'Fluid',
-  'Morpho',
-  'Aave',
-  'Sky',
-  'Silo',
-  'Compound'
-]
-export const AGGRESSIVENESS_OPTIONS = [-1, -2, -3]
+export const AGGRESSIVENESS_OPTIONS: TVaultAggressiveness[] = ['Conservative', 'Moderate', 'Aggressive']
 
 export function toggleInArray<T>(current: T[] | null, next: T): T[] {
   const existing = current ?? []

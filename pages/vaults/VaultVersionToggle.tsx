@@ -8,43 +8,62 @@ import { getSupportedChainsForVaultType, normalizeVaultTypeParam, sanitizeChains
 type TVaultVersionToggleProps = {
   className?: string
   stretch?: boolean
+  activeType?: TVaultType
+  onTypeChange?: (type: TVaultType) => void
+  isPending?: boolean
 }
 
 type TButtonConfig = {
   type: TVaultType
-  typeParam: string | null
+  typeParam: string
 }
 
 const BUTTON_CONFIGS: TButtonConfig[] = [
   { type: 'all', typeParam: 'all' },
-  { type: 'v3', typeParam: null },
+  { type: 'v3', typeParam: 'single' },
   { type: 'factory', typeParam: 'lp' }
 ]
 
-export function VaultVersionToggle({ className, stretch }: TVaultVersionToggleProps): ReactElement {
+export function VaultVersionToggle({
+  className,
+  stretch,
+  activeType,
+  onTypeChange,
+  isPending
+}: TVaultVersionToggleProps): ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const normalizedType = normalizeVaultTypeParam(searchParams.get('type'))
+  const resolvedType = activeType ?? normalizedType
 
-  const handleClick = (config: TButtonConfig): void => {
+  function handleClick(config: TButtonConfig): void {
+    if (onTypeChange) {
+      onTypeChange(config.type)
+      return
+    }
     const nextParams = new URLSearchParams(searchParams)
-    if (config.typeParam === null) {
+    if (config.typeParam === 'all') {
       nextParams.delete('type')
     } else {
       nextParams.set('type', config.typeParam)
     }
-    nextParams.delete('types')
     sanitizeChainsParam(nextParams, getSupportedChainsForVaultType(config.type))
     setSearchParams(nextParams, { replace: true })
   }
 
-  const isActive = (type: TVaultType): boolean => {
-    if (type === 'all') return normalizedType === 'all'
-    if (type === 'factory') return normalizedType === 'factory'
-    return normalizedType !== 'all' && normalizedType !== 'factory'
+  function isActive(type: TVaultType): boolean {
+    switch (type) {
+      case 'all':
+        return resolvedType === 'all'
+      case 'factory':
+        return resolvedType === 'factory'
+      default:
+        return resolvedType !== 'all' && resolvedType !== 'factory'
+    }
   }
 
   return (
     <div
+      aria-busy={isPending || undefined}
       className={cl(
         'flex h-10 shrink-0 items-stretch overflow-hidden rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
         className
@@ -57,7 +76,7 @@ export function VaultVersionToggle({ className, stretch }: TVaultVersionTogglePr
             key={config.type}
             type={'button'}
             className={cl(
-              'flex h-full items-center justify-center gap-2 px-3 font-medium transition-colors',
+              'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
               'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
               'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
               stretch ? 'flex-1' : ''

@@ -11,7 +11,13 @@ import { V3_STAKING_REWARDS_ABI } from '@lib/contracts/abi/V3StakingRewards.abi'
 import { VAULT_V3_ABI } from '@lib/contracts/abi/vaultV3.abi'
 import { VEYFI_GAUGE_ABI } from '@lib/contracts/abi/veYFIGauge.abi'
 import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
+import { IconCirclePile } from '@lib/icons/IconCirclePile'
 import { IconLinkOut } from '@lib/icons/IconLinkOut'
+import { IconMigratable } from '@lib/icons/IconMigratable'
+import { IconRewind } from '@lib/icons/IconRewind'
+import { IconStablecoin } from '@lib/icons/IconStablecoin'
+import { IconStack } from '@lib/icons/IconStack'
+import { IconVolatile } from '@lib/icons/IconVolatile'
 import type { TAddress, TNormalizedBN } from '@lib/types'
 import {
   cl,
@@ -30,9 +36,11 @@ import { getVaultName } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { retrieveConfig } from '@lib/utils/wagmi'
 import { getNetwork } from '@lib/utils/wagmi/utils'
+import { VaultsListChip } from '@vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults/components/table/VaultHistoricalAPY'
 import { useHeaderCompression } from '@vaults/hooks/useHeaderCompression'
+import { deriveListKind } from '@vaults/shared/utils/vaultListFacets'
 import { useAvailableToDeposit } from '@vaults/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
@@ -360,7 +368,6 @@ export function VaultDetailsHeader({
     rewardTokenDecimal: 0,
     earnedValue: 0
   })
-
   const tokenPrice = currentVault.tvl.price || 0
 
   /**********************************************************************************************
@@ -629,8 +636,56 @@ export function VaultDetailsHeader({
   const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
   const showChainChip = !isCompressed
   const showCategoryChip = Boolean(currentVault.category)
-  const showKindChip = Boolean(currentVault.kind)
-  const shouldShowMetadata = showChainChip || showCategoryChip || showKindChip
+  const listKind = deriveListKind(currentVault)
+  const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
+  const isLegacyVault = listKind === 'legacy'
+  let productTypeLabel = 'LP Token Vault'
+  let productTypeIcon = <span className={'text-sm leading-none'}>{'🏭'}</span>
+  if (isAllocatorVault) {
+    productTypeLabel = 'Single Asset Vault'
+    productTypeIcon = <span className={'text-sm leading-none'}>{'⚙️'}</span>
+  } else if (isLegacyVault) {
+    productTypeLabel = 'Legacy'
+    productTypeIcon = <IconRewind className={'size-3.5'} />
+  }
+
+  let categoryIcon: ReactElement | null = null
+  if (currentVault.category === 'Stablecoin') {
+    categoryIcon = <IconStablecoin className={'size-3.5'} />
+  } else if (currentVault.category === 'Volatile') {
+    categoryIcon = <IconVolatile className={'size-3.5'} />
+  }
+
+  let baseKindType: 'multi' | 'single' | undefined
+  if (currentVault.kind === 'Multi Strategy') {
+    baseKindType = 'multi'
+  } else if (currentVault.kind === 'Single Strategy') {
+    baseKindType = 'single'
+  }
+
+  let fallbackKindType: 'multi' | 'single' | undefined
+  if (listKind === 'allocator') {
+    fallbackKindType = 'multi'
+  } else if (listKind === 'strategy') {
+    fallbackKindType = 'single'
+  }
+  const kindType = baseKindType ?? fallbackKindType
+  let kindLabel: string | undefined = currentVault.kind
+  let kindIcon: ReactElement | null = null
+  if (kindType === 'multi') {
+    kindLabel = 'Allocator'
+    kindIcon = <IconCirclePile className={'size-3.5'} />
+  } else if (kindType === 'single') {
+    kindLabel = 'Strategy'
+    kindIcon = <IconStack className={'size-3.5'} />
+  }
+  const isMigratable = Boolean(currentVault.migration?.available)
+  const isRetired = Boolean(currentVault.info?.isRetired)
+  const migratableIcon = <IconMigratable className={'size-3.5'} />
+  const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
+  const showKindChip = Boolean(kindLabel)
+  const shouldShowMetadata =
+    showChainChip || showCategoryChip || showKindChip || Boolean(productTypeLabel) || isMigratable || isRetired
   const [isTitleClipped, setIsTitleClipped] = useState(false)
   const titleRef = useRef<HTMLSpanElement>(null)
   const vaultName = getVaultName(currentVault)
@@ -741,32 +796,50 @@ export function VaultDetailsHeader({
         {shouldShowMetadata ? (
           <div className={'flex flex-wrap items-center gap-1 text-xs text-text-primary/70 md:text-xs mt-1'}>
             {showChainChip ? (
-              <span
-                className={
-                  'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
-                }
-              >
-                <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={14} height={14} priority />
-                <span>{chainName}</span>
-              </span>
+              <VaultsListChip
+                label={chainName}
+                icon={<TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={14} height={14} priority />}
+                isCollapsed={isCompressed}
+                showCollapsedTooltip={isCompressed}
+              />
             ) : null}
             {showCategoryChip ? (
-              <span
-                className={
-                  'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
-                }
-              >
-                {currentVault.category}
-              </span>
+              <VaultsListChip
+                label={currentVault.category || ''}
+                icon={categoryIcon}
+                isCollapsed={isCompressed}
+                showCollapsedTooltip={isCompressed}
+              />
             ) : null}
+            <VaultsListChip
+              label={productTypeLabel}
+              icon={productTypeIcon}
+              isCollapsed={isCompressed}
+              showCollapsedTooltip={isCompressed}
+            />
             {showKindChip ? (
-              <span
-                className={
-                  'inline-flex items-center gap-2 rounded-md bg-surface-secondary border border-border px-3 py-1'
-                }
-              >
-                {currentVault.kind}
-              </span>
+              <VaultsListChip
+                label={kindLabel}
+                icon={kindIcon}
+                isCollapsed={isCompressed}
+                showCollapsedTooltip={isCompressed}
+              />
+            ) : null}
+            {isRetired ? (
+              <VaultsListChip
+                label={'Retired'}
+                icon={retiredIcon}
+                isCollapsed={isCompressed}
+                showCollapsedTooltip={isCompressed}
+              />
+            ) : null}
+            {isMigratable ? (
+              <VaultsListChip
+                label={'Migratable'}
+                icon={migratableIcon}
+                isCollapsed={isCompressed}
+                showCollapsedTooltip={isCompressed}
+              />
             ) : null}
             {isCompressed && explorerHref ? (
               <a
