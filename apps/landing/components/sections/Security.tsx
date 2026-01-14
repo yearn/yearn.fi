@@ -1,5 +1,5 @@
 import { SectionHeader } from '@lib/components/SectionHeader'
-import { type FC, useRef, useState } from 'react'
+import type { FC } from 'react'
 import Link from '/src/components/Link'
 
 enum SecurityCardType {
@@ -36,47 +36,13 @@ const SecurityCard: FC<{
   type: SecurityCardType
 }> = ({ type }) => {
   const { title, description, href, bgColor } = Cards[type]
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  const [isHovered, setIsHovered] = useState(false)
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
-    if (!cardRef.current) {
-      return
-    }
-
-    const rect = cardRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-
-    setMousePosition({ x, y })
-  }
-
-  const handleMouseEnter = (): void => setIsHovered(true)
-
-  const handleMouseLeave = (): void => {
-    setIsHovered(false)
-    setMousePosition({ x: 0, y: 0 })
-  }
 
   return (
     <Link href={href} className={'flex'}>
       <div
-        ref={cardRef}
-        className={`${bgColor} group relative cursor-pointer overflow-hidden rounded-2xl transition-all duration-300`}
-        onMouseMove={handleMouseMove}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        className={`${bgColor} group cursor-pointer overflow-hidden rounded-2xl transition-all duration-300 hover:brightness-90`}
       >
-        {isHovered && (
-          <div
-            className={'pointer-events-none absolute inset-0 opacity-60 transition-opacity duration-300'}
-            style={{
-              background: `radial-gradient(200px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.25) 0%, transparent 100%)`
-            }}
-          />
-        )}
-        <div className={'relative z-10 p-8 transition-all duration-300'}>
+        <div className={'p-8'}>
           <h3 className={'mb-4 text-3xl text-white'}>{title}</h3>
           <p className={'mb-4 text-[18px] font-light text-white/70'}>{description}</p>
           <div className={'flex items-center text-white/90 transition-colors duration-300 group-hover:text-white'}>

@@ -74,11 +74,7 @@ const PartnerLogo: FC<TPartner> = ({ image, alt, href, size = 60 }) => {
           alt={alt}
           width={size}
           height={size}
-          className={'object-contain'}
-          style={{
-            maxWidth: `${size}px`,
-            maxHeight: `${size}px`
-          }}
+          className={'max-h-12 max-w-12 object-contain lg:max-h-16 lg:max-w-16'}
         />
       </div>
     </Link>

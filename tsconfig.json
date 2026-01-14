@@ -41,7 +41,7 @@
     "isolatedModules": true,
     "types": ["vite/client"]
   },
-  "exclude": ["node_modules", "_app", "api", "worktrees"],
+  "exclude": ["node_modules", "_app", "api", "worktrees", "vitest.config.ts"],
   "include": [
     "**/*.css",
     "**/*.ts",
@@ -51,7 +51,6 @@
     "postcss.config.js",
     "tailwind.config.js",
     "vite.config.ts",
-    "vitest.config.ts",
     "worker/index.js",
     "env.d.ts"
   ]
