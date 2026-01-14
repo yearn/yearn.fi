@@ -27,6 +27,20 @@ export function useSortVaults(
 ): TYDaemonVaults {
   const { getBalance } = useWallet()
   const { getPrice, katanaAprs } = useYearn()
+  const isFeaturingScoreSortedDesc = useMemo((): boolean => {
+    if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
+      return false
+    }
+    let previousScore = Number.POSITIVE_INFINITY
+    for (const vault of vaultList) {
+      const score = Number.isFinite(vault.featuringScore) ? vault.featuringScore : 0
+      if (score > previousScore) {
+        return false
+      }
+      previousScore = score
+    }
+    return true
+  }, [vaultList, sortBy, sortDirection])
 
   const sortedByName = useCallback((): TYDaemonVaults => {
     if (sortBy !== 'name') {
@@ -174,7 +188,7 @@ export function useSortVaults(
   }, [sortBy, sortDirection, vaultList])
 
   const sortedVaults = useMemo((): TYDaemonVaults => {
-    if (sortDirection === '') {
+    if (sortDirection === '' || isFeaturingScoreSortedDesc) {
       return vaultList
     }
     if (sortBy === 'name') {
@@ -222,7 +236,8 @@ export function useSortVaults(
     sortedByDeposited,
     sortedByAvailable,
     sortedByFeaturingScore,
-    sortByScore
+    sortByScore,
+    isFeaturingScoreSortedDesc
   ])
 
   return sortedVaults
