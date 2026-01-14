@@ -77,11 +77,7 @@ const IntegrationItem: FC<TIntegration & { index: number }> = ({ name, imageSrc,
               {'↗'}
             </span>
           </div>
-          <div
-            className={
-              'hidden text-base text-neutral-400 transition-colors duration-300 ease-in-out hover:text-neutral-300 md:block md:max-w-[60%] md:text-right'
-            }
-          >
+          <div className={'hidden font-light text-gray-400 md:block md:max-w-[60%] md:text-base md:text-right'}>
             {description}
           </div>
         </div>

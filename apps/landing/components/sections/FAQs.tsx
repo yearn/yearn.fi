@@ -101,7 +101,7 @@ export const FAQs: FC = () => {
                 src={'/landing/pill4.png'}
                 height={427}
                 alt={'blue-pill'}
-                className={'size-full rounded-lg object-cover'}
+                className={'size-full rounded-lg border border-[#ffffff]/10 object-cover'}
               />
             </div>
             <div className={'flex flex-1 flex-col space-y-2'}>
