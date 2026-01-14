@@ -125,6 +125,22 @@ function ListOfVaults({
   const shouldCollapseChips = isBelow1000
   const shouldStackFilters = isBelow1000 && !isBelow768
   const [optimisticVaultType, setOptimisticVaultType] = useState<TVaultType | null>(null)
+  const [optimisticChains, setOptimisticChains] = useState<number[] | null>(null)
+  const listChains = useDeferredValue(chains)
+  const areChainsEquivalent = useCallback((a: number[] | null | undefined, b: number[] | null | undefined): boolean => {
+    const normalize = (value: number[] | null | undefined): number[] => {
+      if (!value || value.length === 0) {
+        return []
+      }
+      return [...new Set(value)].sort((left, right) => left - right)
+    }
+    const normalizedA = normalize(a)
+    const normalizedB = normalize(b)
+    if (normalizedA.length !== normalizedB.length) {
+      return false
+    }
+    return normalizedA.every((value, index) => value === normalizedB[index])
+  }, [])
 
   useLayoutEffect(() => {
     const filtersElement = filtersRef.current
@@ -166,6 +182,15 @@ function ListOfVaults({
     }
   }, [optimisticVaultType, vaultType])
 
+  useEffect(() => {
+    if (optimisticChains && areChainsEquivalent(optimisticChains, chains)) {
+      setOptimisticChains(null)
+    }
+    if (!optimisticChains && !chains?.length) {
+      setOptimisticChains(null)
+    }
+  }, [optimisticChains, chains, areChainsEquivalent])
+
   const sanitizedV3Types = useMemo(() => {
     const selected = (types || []).filter((type) => type === 'multi' || type === 'single')
     if (!showStrategies) {
@@ -199,7 +224,7 @@ function ListOfVaults({
   // Use the appropriate filter hook based on vault type
   const v3FilterResult = useV3VaultFilter(
     isV3View ? sanitizedV3Types : null,
-    chains,
+    listChains,
     searchValue,
     isV3View ? sanitizedCategories : null,
     isV3View ? sanitizedAggressiveness : null,
@@ -208,7 +233,7 @@ function ListOfVaults({
   )
   const v2FilterResult = useV2VaultFilter(
     isV2View ? sanitizedV2Types : null,
-    chains,
+    listChains,
     searchValue,
     isV2View ? sanitizedCategories : null,
     isV2View ? sanitizedAggressiveness : null,
@@ -290,6 +315,7 @@ function ListOfVaults({
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
   const displayedVaultType = optimisticVaultType ?? vaultType
+  const displayedChains = optimisticChains ?? chains
   const isSwitchingVaultType = Boolean(optimisticVaultType && optimisticVaultType !== vaultType) || isPending
 
   useEffect(() => {
@@ -414,18 +440,28 @@ function ListOfVaults({
     const aggressivenessCount = sanitizedAggressiveness.length
     return typeCount + legacyCount + hiddenCount + categoryCount + aggressivenessCount
   }, [sanitizedV3Types, showLegacyVaults, showHiddenVaults, sanitizedCategories, sanitizedAggressiveness])
-  const activeChains = useMemo(() => chains ?? [], [chains])
+  const activeChains = useMemo(() => listChains ?? [], [listChains])
   const activeCategories = sanitizedCategories
   const activeProductType = useMemo(() => (listVaultType === 'factory' ? 'lp' : listVaultType), [listVaultType])
   const resolveApyDisplayVariant = useCallback((vault: TYDaemonVault): 'default' | 'factory-list' => {
     const listKind = deriveListKind(vault)
     return listKind === 'allocator' || listKind === 'strategy' ? 'default' : 'factory-list'
   }, [])
+  const handleChainsChange = useCallback(
+    (nextChains: number[] | null): void => {
+      const normalizedChains = nextChains ?? []
+      setOptimisticChains(normalizedChains)
+      startTransition(() => {
+        onChangeChains(nextChains)
+      })
+    },
+    [onChangeChains]
+  )
   const handleToggleChain = useCallback(
     (chainId: number): void => {
-      onChangeChains(toggleInArray(chains, chainId))
+      handleChainsChange(toggleInArray(displayedChains ?? null, chainId))
     },
-    [chains, onChangeChains]
+    [displayedChains, handleChainsChange]
   )
   const handleToggleCategory = useCallback(
     (category: string): void => {
@@ -565,7 +601,7 @@ function ListOfVaults({
           isLoading={isLoadingVaultList}
           currentSearch={searchValue}
           currentCategories={sanitizedCategories}
-          currentChains={chains}
+          currentChains={listChains}
           onReset={onResetMultiSelect}
           defaultCategories={defaultCategories}
           potentialResultsCount={totalMatchingVaults}
@@ -579,7 +615,7 @@ function ListOfVaults({
           isLoading={false}
           currentSearch={searchValue}
           currentCategories={sanitizedCategories}
-          currentChains={chains}
+          currentChains={listChains}
           onReset={onResetMultiSelect}
           defaultCategories={defaultCategories}
           potentialResultsCount={totalMatchingVaults}
@@ -637,13 +673,13 @@ function ListOfVaults({
     activeCategories,
     activeChains,
     activeProductType,
-    chains,
     defaultCategories,
     handleToggleCategory,
     handleToggleChain,
     handleToggleType,
     handleToggleVaultType,
     isLoadingVaultList,
+    listChains,
     listVaultType,
     mainVaults,
     onResetMultiSelect,
@@ -681,8 +717,8 @@ function ListOfVaults({
       <VaultsFilters
         shouldDebounce={true}
         searchValue={searchValue}
-        chains={chains}
-        onChangeChains={onChangeChains}
+        chains={displayedChains}
+        onChangeChains={handleChainsChange}
         onSearch={onSearch}
         chainConfig={chainConfig}
         filtersCount={filtersCount}
