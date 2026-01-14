@@ -301,16 +301,6 @@ export function VaultsCompareModal({
                     </div>
                   </div>
                 )}
-
-                <div className={'mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end'}>
-                  <Button
-                    variant={'outlined'}
-                    onClick={onClose}
-                    classNameOverride={'yearn--button--nextgen yearn--button-smaller'}
-                  >
-                    {'Back to list'}
-                  </Button>
-                </div>
               </Dialog.Panel>
             </TransitionChild>
           </div>

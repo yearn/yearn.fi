@@ -20,7 +20,7 @@ type TVaultsAuxiliaryListProps = {
   vaultFlags: TVaultFlagsRecord
   apyDisplayVariant?: TVaultForwardAPYVariant
   resolveApyDisplayVariant?: (vault: TYDaemonVault) => TVaultForwardAPYVariant
-  isCompareSelected?: (vault: TYDaemonVault) => boolean
+  compareVaultKeys?: string[]
   onToggleCompare?: (vault: TYDaemonVault) => void
   activeChains?: number[]
   activeCategories?: string[]
@@ -40,7 +40,7 @@ export function VaultsAuxiliaryList({
   vaultFlags,
   apyDisplayVariant,
   resolveApyDisplayVariant,
-  isCompareSelected,
+  compareVaultKeys,
   onToggleCompare,
   activeChains,
   activeCategories,
@@ -65,14 +65,13 @@ export function VaultsAuxiliaryList({
         {vaults.map((vault) => {
           const key = `${vault.chainID}_${toAddress(vault.address)}`
           const rowApyDisplayVariant = resolveApyDisplayVariant?.(vault) ?? apyDisplayVariant
-          const isSelectedForCompare = isCompareSelected?.(vault) ?? false
           return (
             <VaultsListRow
               key={key}
               currentVault={vault}
               flags={vaultFlags[key]}
               apyDisplayVariant={rowApyDisplayVariant}
-              isCompareSelected={isSelectedForCompare}
+              compareVaultKeys={compareVaultKeys}
               onToggleCompare={onToggleCompare}
               activeChains={activeChains}
               activeCategories={activeCategories}
