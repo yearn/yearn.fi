@@ -365,6 +365,11 @@ export const WidgetDeposit: FC<Props> = ({
         allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
         allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
         allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
+        onAllowanceClick={
+          !isNativeToken && activeFlow.periphery.allowance > 0n
+            ? () => setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
+            : undefined
+        }
       />
 
       {/* Action Button */}

@@ -26,6 +26,7 @@ interface WithdrawDetailsProps {
   allowance?: bigint
   allowanceTokenDecimals?: number
   allowanceTokenSymbol?: string
+  onAllowanceClick?: () => void
 }
 
 export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
@@ -43,7 +44,8 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
   onShowDetailsModal,
   allowance,
   allowanceTokenDecimals,
-  allowanceTokenSymbol
+  allowanceTokenSymbol,
+  onAllowanceClick
 }) => {
   // Format allowance display
   const formatAllowance = () => {
@@ -128,7 +130,17 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
         {allowanceDisplay && (
           <div className="flex items-center justify-between h-5">
             <p className="text-sm text-text-secondary">Approved</p>
-            <p className="text-sm text-text-primary">{allowanceDisplay}</p>
+            {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
+              <button
+                type="button"
+                onClick={onAllowanceClick}
+                className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
+              >
+                {allowanceDisplay}
+              </button>
+            ) : (
+              <p className="text-sm text-text-primary">{allowanceDisplay}</p>
+            )}
           </div>
         )}
       </div>

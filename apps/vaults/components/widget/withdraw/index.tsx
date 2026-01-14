@@ -516,6 +516,16 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
         allowance={showApprove ? activeFlow.periphery.allowance : undefined}
         allowanceTokenDecimals={showApprove ? (vault?.decimals ?? 18) : undefined}
         allowanceTokenSymbol={showApprove ? vault?.symbol : undefined}
+        onAllowanceClick={
+          showApprove && activeFlow.periphery.allowance > 0n && pricePerShare
+            ? () => {
+                // Convert vault shares allowance to underlying asset amount
+                const underlyingAmount =
+                  (activeFlow.periphery.allowance * (pricePerShare as bigint)) / 10n ** BigInt(vault?.decimals ?? 18)
+                setWithdrawInput(formatUnits(underlyingAmount, assetToken?.decimals ?? 18))
+              }
+            : undefined
+        }
       />
 
       {/* Action Button */}
