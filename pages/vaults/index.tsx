@@ -2,6 +2,7 @@ import Link from '@components/Link'
 import { usePrefetchYearnVaults } from '@lib/hooks/useFetchYearnVaults'
 import { getVaultKey } from '@lib/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@lib/types'
+import { cl } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useMediaQuery } from '@react-hookz/web'
 import { VaultsAuxiliaryList } from '@vaults/components/list/VaultsAuxiliaryList'
@@ -42,6 +43,7 @@ import { getVaultTypeLabel, type TVaultType } from './vaultTypeCopy'
 import { getSupportedChainsForVaultType } from './vaultTypeUtils'
 
 const DEFAULT_VAULT_TYPES = ['multi', 'single']
+const VAULTS_FILTERS_STORAGE_KEY = 'yearn.fi/vaults-filters@1'
 
 type TVaultsPageLayoutProps = {
   varsRef: RefObject<HTMLDivElement | null>
@@ -107,6 +109,7 @@ type TVaultsFiltersBarProps = {
   filtersCount: number
   filtersPanel: ReactNode
   onClearFilters: () => void
+  searchTrailingControls?: ReactNode
   mobileExtraContent: ReactNode
   trailingControls: ReactNode
   isStackedLayout: boolean
@@ -121,6 +124,7 @@ function VaultsFiltersBar({
   filtersCount,
   filtersPanel,
   onClearFilters,
+  searchTrailingControls,
   mobileExtraContent,
   trailingControls,
   isStackedLayout
@@ -138,6 +142,7 @@ function VaultsFiltersBar({
       filtersPanelContent={filtersPanel}
       onClearFilters={onClearFilters}
       mobileExtraContent={mobileExtraContent}
+      searchTrailingControls={searchTrailingControls}
       trailingControls={trailingControls}
       isStackedLayout={isStackedLayout}
     />
@@ -213,6 +218,7 @@ type TListOfVaultsProps = {
   onChangeSortDirection: (value: TSortDirection | '') => void
   onChangeSortBy: (value: TPossibleSortBy | '') => void
   onResetMultiSelect: () => void
+  onShareFilters: () => void
   vaultType: TVaultType
   hasTypesParam: boolean
 }
@@ -240,6 +246,7 @@ function ListOfVaults({
   onChangeSortDirection,
   onChangeSortBy,
   onResetMultiSelect,
+  onShareFilters,
   vaultType,
   hasTypesParam
 }: TListOfVaultsProps): ReactElement {
@@ -687,6 +694,34 @@ function ListOfVaults({
     }
   }, [listVaultType])
 
+  const shareButtonElement = (
+    <button
+      type={'button'}
+      className={cl(
+        'flex h-10 shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-3',
+        'text-sm font-medium text-text-secondary',
+        'transition-colors hover:border-border-hover hover:text-text-primary'
+      )}
+      onClick={onShareFilters}
+      aria-label={'Share filters'}
+    >
+      <svg
+        xmlns={'http://www.w3.org/2000/svg'}
+        viewBox={'0 0 24 24'}
+        fill={'none'}
+        stroke={'currentColor'}
+        strokeWidth={'2'}
+        strokeLinecap={'round'}
+        strokeLinejoin={'round'}
+        className={'size-4'}
+      >
+        <path d={'M12 2v13'} />
+        <path d={'m16 6-4-4-4 4'} />
+        <path d={'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8'} />
+      </svg>
+    </button>
+  )
+
   const vaultListContent = useMemo(() => {
     if (isLoadingVaultList) {
       return (
@@ -801,6 +836,7 @@ function ListOfVaults({
       filtersCount={filtersCount}
       filtersPanel={filtersPanelContent}
       onClearFilters={handleResetMultiSelect}
+      searchTrailingControls={shareButtonElement}
       mobileExtraContent={
         <VaultVersionToggle
           stretch={true}
@@ -925,29 +961,27 @@ function VaultsIndexContent(): ReactElement {
     onChangeShowHiddenVaults,
     onChangeShowStrategies,
     onChangeVaultType,
+    onChangeSortBy,
+    onChangeSortDirection,
     onResetMultiSelect,
-    onResetExtraFilters
+    onResetExtraFilters,
+    onShareFilters,
+    sortBy,
+    sortDirection
   } = useVaultsQueryState({
-    defaultTypes: ['multi', 'single'],
+    defaultTypes: DEFAULT_VAULT_TYPES,
     defaultCategories: [],
     defaultPathname: '/vaults',
     defaultSortBy: 'featuringScore',
-    resetTypes: ['multi', 'single'],
-    resetCategories: []
+    resetTypes: DEFAULT_VAULT_TYPES,
+    resetCategories: [],
+    persistToStorage: true,
+    storageKey: VAULTS_FILTERS_STORAGE_KEY,
+    clearUrlAfterInit: true,
+    shareUpdatesUrl: false
   })
 
   usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType === 'v3')
-
-  const [sortBy, setSortBy] = useState<TPossibleSortBy>('featuringScore')
-  const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
-
-  function handleSortByChange(value: TPossibleSortBy | ''): void {
-    setSortBy(value || 'featuringScore')
-  }
-
-  function handleSortDirectionChange(value: TSortDirection | ''): void {
-    setSortDirection(value || 'desc')
-  }
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
@@ -961,8 +995,8 @@ function VaultsIndexContent(): ReactElement {
           onChangeTypes={onChangeTypes}
           onChangeCategories={onChangeCategories}
           onChangeChains={onChangeChains}
-          onChangeSortBy={handleSortByChange}
-          onChangeSortDirection={handleSortDirectionChange}
+          onChangeSortBy={onChangeSortBy}
+          onChangeSortDirection={onChangeSortDirection}
           sortBy={sortBy}
           sortDirection={sortDirection}
           aggressiveness={aggressiveness}
@@ -980,6 +1014,7 @@ function VaultsIndexContent(): ReactElement {
           vaultType={vaultType}
           onChangeVaultType={onChangeVaultType}
           hasTypesParam={hasTypesParam}
+          onShareFilters={onShareFilters}
         />
       </div>
     </div>
