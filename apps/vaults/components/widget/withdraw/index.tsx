@@ -378,7 +378,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       label: withdrawLabel,
       confirmMessage: `${routeType === 'DIRECT_UNSTAKE' ? 'Unstaking' : 'Withdrawing'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
       successTitle: `${withdrawLabel} successful!`,
-      successMessage: `You ${routeType === 'DIRECT_UNSTAKE' ? 'unstaked' : 'withdrawn'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
+      successMessage: `You have ${routeType === 'DIRECT_UNSTAKE' ? 'unstaked' : 'withdrawn'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
       showConfetti: true,
       notification: withdrawNotificationParams
     }
