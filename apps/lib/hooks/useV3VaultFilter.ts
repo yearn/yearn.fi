@@ -57,13 +57,15 @@ export function useV3VaultFilter(
   search?: string,
   categories?: string[] | null,
   aggressiveness?: TVaultAggressiveness[] | null,
-  showHiddenVaults?: boolean
+  showHiddenVaults?: boolean,
+  enabled?: boolean
 ): TV3VaultFilterResult {
   const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
+  const isEnabled = enabled ?? true
   const searchRegex = useMemo(() => {
-    if (!search) {
+    if (!isEnabled || !search) {
       return null
     }
     try {
@@ -72,8 +74,8 @@ export function useV3VaultFilter(
     } catch {
       return null
     }
-  }, [search])
-  const lowercaseSearch = useMemo(() => (search ? search.toLowerCase() : ''), [search])
+  }, [isEnabled, search])
+  const lowercaseSearch = useMemo(() => (search && isEnabled ? search.toLowerCase() : ''), [search, isEnabled])
 
   const checkHasHoldings = useMemo(
     () => createCheckHasHoldings(getBalance, getPrice, shouldHideDust),
@@ -83,6 +85,9 @@ export function useV3VaultFilter(
   const checkHasAvailableBalance = useMemo(() => createCheckHasAvailableBalance(getBalance), [getBalance])
 
   const vaultIndex = useDeepCompareMemo(() => {
+    if (!isEnabled) {
+      return new Map<string, TVaultIndexEntry>()
+    }
     const vaultMap = new Map<string, TVaultIndexEntry>()
 
     const upsertVault = (
@@ -135,7 +140,7 @@ export function useV3VaultFilter(
     })
 
     return vaultMap
-  }, [vaults, vaultsMigrations, vaultsRetired])
+  }, [isEnabled, isEnabled ? vaults : null, isEnabled ? vaultsMigrations : null, isEnabled ? vaultsRetired : null])
 
   const walletFlags = useMemo(() => {
     const flags = new Map<string, TVaultWalletFlags>()
@@ -293,6 +298,6 @@ export function useV3VaultFilter(
   return {
     ...filteredResults,
     availableVaults,
-    isLoading: isLoadingVaultList
+    isLoading: isEnabled ? isLoadingVaultList : false
   }
 }

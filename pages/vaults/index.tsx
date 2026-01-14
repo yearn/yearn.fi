@@ -184,7 +184,8 @@ function ListOfVaults({
     search || '',
     isV3View ? sanitizedCategories : null,
     isV3View ? sanitizedAggressiveness : null,
-    isV3View ? showHiddenVaults : undefined
+    isV3View ? showHiddenVaults : undefined,
+    isV3View
   )
   const v2FilterResult = useV2VaultFilter(
     isV2View ? sanitizedV2Types : null,
@@ -192,7 +193,8 @@ function ListOfVaults({
     search || '',
     isV2View ? sanitizedCategories : null,
     isV2View ? sanitizedAggressiveness : null,
-    showHiddenVaults
+    showHiddenVaults,
+    isV2View
   )
   const { filteredVaults: filteredV2VaultsAllChains } = useV2VaultFilter(
     isV2View ? sanitizedV2Types : null,
@@ -200,7 +202,8 @@ function ListOfVaults({
     '',
     isV2View ? sanitizedCategories : null,
     isV2View ? sanitizedAggressiveness : null,
-    showHiddenVaults
+    showHiddenVaults,
+    isV2View
   )
 
   const filteredVaults = useMemo(
@@ -256,7 +259,8 @@ function ListOfVaults({
     '',
     isV3View ? sanitizedCategories : null,
     isV3View ? sanitizedAggressiveness : null,
-    isV3View ? showHiddenVaults : undefined
+    isV3View ? showHiddenVaults : undefined,
+    isV3View
   )
 
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
