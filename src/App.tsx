@@ -1,4 +1,5 @@
 import { DevToolbar } from '@components/DevToolbar'
+import { IframeAutoConnect } from '@components/IframeAutoConnect'
 import AppHeader from '@lib/components/Header'
 import { Meta } from '@lib/components/Meta'
 import { WithFonts } from '@lib/components/WithFonts'
@@ -7,22 +8,32 @@ import { IndexedDB } from '@lib/contexts/useIndexedDB'
 import { WithNotifications } from '@lib/contexts/useNotifications'
 import { WithNotificationsActions } from '@lib/contexts/useNotificationsActions'
 import { WalletContextApp } from '@lib/contexts/useWallet'
+import { Web3ContextApp } from '@lib/contexts/useWeb3'
 import { YearnContextApp } from '@lib/contexts/useYearn'
-import { WithMom } from '@lib/contexts/WithMom'
+import { WithTokenList } from '@lib/contexts/WithTokenList'
 import { useCurrentApp } from '@lib/hooks/useCurrentApp'
 import { IconAlertCritical } from '@lib/icons/IconAlertCritical'
 import { IconAlertError } from '@lib/icons/IconAlertError'
 import { IconCheckmark } from '@lib/icons/IconCheckmark'
 import { cl } from '@lib/utils'
-import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
+import { isIframe } from '@lib/utils/helpers'
+import { defaultSWRConfig } from '@lib/utils/swrConfig'
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppSettingsContextApp } from '@vaults/contexts/useAppSettings'
 import type { ReactElement } from 'react'
 import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router'
+import { SWRConfig } from 'swr'
+import { WagmiProvider } from 'wagmi'
+import { wagmiConfig } from '@/config/wagmi'
+import { ChainsProvider } from '@/context/ChainsProvider'
 import { DevFlagsProvider } from '/src/contexts/useDevFlags'
 import PlausibleProvider from './components/PlausibleProvider'
 import { AppRoutes } from './routes'
+
+const queryClient = new QueryClient()
 
 function WithLayout(): ReactElement {
   return (
@@ -74,32 +85,45 @@ function App(): ReactElement {
       <WithFonts>
         <main className={'font-aeonik size-full min-h-screen'}>
           <PlausibleProvider domain={'yearn.fi'} enabled={true}>
-            <WithMom
-              supportedChains={SUPPORTED_NETWORKS}
-              tokenLists={[
-                'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
-                'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
-              ]}
-            >
-              <AppSettingsContextApp>
-                <ChartStyleContextApp>
-                  <YearnContextApp>
-                    <WalletContextApp>
-                      <IndexedDB>
-                        <WithNotifications>
-                          <WithNotificationsActions>
-                            <DevFlagsProvider>
-                              <WithLayout />
-                              <DevToolbar />
-                            </DevFlagsProvider>
-                          </WithNotificationsActions>
-                        </WithNotifications>
-                      </IndexedDB>
-                    </WalletContextApp>
-                  </YearnContextApp>
-                </ChartStyleContextApp>
-              </AppSettingsContextApp>
-            </WithMom>
+            <WagmiProvider config={wagmiConfig} reconnectOnMount={!isIframe()}>
+              <QueryClientProvider client={queryClient}>
+                <SWRConfig value={defaultSWRConfig}>
+                  <ChainsProvider>
+                    <RainbowKitProvider>
+                      <IframeAutoConnect>
+                        <Web3ContextApp>
+                          <WithTokenList
+                            lists={[
+                              'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
+                              'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
+                            ]}
+                          >
+                            <AppSettingsContextApp>
+                              <ChartStyleContextApp>
+                                <YearnContextApp>
+                                  <WalletContextApp>
+                                    <IndexedDB>
+                                      <WithNotifications>
+                                        <WithNotificationsActions>
+                                          <DevFlagsProvider>
+                                            <WithLayout />
+                                            <DevToolbar />
+                                          </DevFlagsProvider>
+                                        </WithNotificationsActions>
+                                      </WithNotifications>
+                                    </IndexedDB>
+                                  </WalletContextApp>
+                                </YearnContextApp>
+                              </ChartStyleContextApp>
+                            </AppSettingsContextApp>
+                          </WithTokenList>
+                        </Web3ContextApp>
+                      </IframeAutoConnect>
+                    </RainbowKitProvider>
+                  </ChainsProvider>
+                </SWRConfig>
+              </QueryClientProvider>
+            </WagmiProvider>
           </PlausibleProvider>
           <Toaster
             toastOptions={{
