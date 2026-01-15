@@ -129,7 +129,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
         {/* Approved allowance (for zap withdrawals) */}
         {allowanceDisplay && (
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-text-secondary">Approved</p>
+            <p className="text-sm text-text-secondary">Existing Approval</p>
             {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
               <button
                 type="button"

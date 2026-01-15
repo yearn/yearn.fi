@@ -7,9 +7,10 @@ interface InfoOverlayProps {
   onClose: () => void
   title: string
   children: ReactNode
+  hideButton?: boolean
 }
 
-export const InfoOverlay: FC<InfoOverlayProps> = ({ isOpen, onClose, title, children }) => {
+export const InfoOverlay: FC<InfoOverlayProps> = ({ isOpen, onClose, title, children, hideButton }) => {
   return (
     <div
       className="absolute z-50"
@@ -51,16 +52,18 @@ export const InfoOverlay: FC<InfoOverlayProps> = ({ isOpen, onClose, title, chil
         <div className="flex-1 flex flex-col p-6 min-h-0">
           <h3 className="text-lg font-semibold text-text-primary mb-4 shrink-0">{title}</h3>
           <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain">{children}</div>
-          <div className="mt-6 shrink-0">
-            <Button
-              onClick={onClose}
-              variant="filled"
-              className="w-full"
-              classNameOverride="yearn--button--nextgen w-full"
-            >
-              Got it
-            </Button>
-          </div>
+          {!hideButton && (
+            <div className="mt-6 shrink-0">
+              <Button
+                onClick={onClose}
+                variant="filled"
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                Got it
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

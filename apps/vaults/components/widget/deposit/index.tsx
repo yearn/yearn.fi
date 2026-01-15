@@ -14,6 +14,7 @@ import { useAccount, useReadContract } from 'wagmi'
 import { SettingsPopover } from '../SettingsPopover'
 import { TokenSelectorOverlay, TransactionOverlay, type TransactionStep } from '../shared'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
+import { ApprovalOverlay } from './ApprovalOverlay'
 import { DepositDetails } from './DepositDetails'
 import { useDepositError } from './useDepositError'
 import { useDepositFlow } from './useDepositFlow'
@@ -56,6 +57,7 @@ export const WidgetDeposit: FC<Props> = ({
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
+  const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
 
@@ -396,11 +398,13 @@ export const WidgetDeposit: FC<Props> = ({
         allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
         allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
         allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
+        approvalSpenderName={!isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined}
         onAllowanceClick={
           !isNativeToken && activeFlow.periphery.allowance > 0n
             ? () => setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
             : undefined
         }
+        onShowApprovalOverlay={!isNativeToken ? () => setShowApprovalOverlay(true) : undefined}
       />
 
       {/* Action Button */}
@@ -488,6 +492,28 @@ export const WidgetDeposit: FC<Props> = ({
         shareValue={vaultShareValue.formatted}
         assetSymbol={assetToken?.symbol || ''}
         usdValue={vaultShareValue.usd}
+      />
+
+      <ApprovalOverlay
+        isOpen={showApprovalOverlay}
+        onClose={() => setShowApprovalOverlay(false)}
+        tokenSymbol={inputToken?.symbol || ''}
+        tokenAddress={toAddress(depositToken)}
+        tokenDecimals={inputToken?.decimals ?? 18}
+        spenderAddress={toAddress(
+          routeType === 'ENSO'
+            ? activeFlow.periphery.routerAddress || destinationToken
+            : routeType === 'DIRECT_STAKE'
+              ? stakingAddress || destinationToken
+              : destinationToken
+        )}
+        spenderName={routeType === 'ENSO' ? 'Enso Router' : 'Vault'}
+        chainId={sourceChainId}
+        currentAllowance={
+          activeFlow.periphery.allowance >= BigInt(2) ** BigInt(255)
+            ? 'Unlimited'
+            : formatTAmount({ value: activeFlow.periphery.allowance, decimals: inputToken?.decimals ?? 18 })
+        }
       />
 
       {/* Token Selector Overlay */}

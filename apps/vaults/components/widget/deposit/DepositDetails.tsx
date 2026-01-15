@@ -27,7 +27,9 @@ interface DepositDetailsProps {
   allowance?: bigint
   allowanceTokenDecimals?: number
   allowanceTokenSymbol?: string
+  approvalSpenderName?: string
   onAllowanceClick?: () => void
+  onShowApprovalOverlay?: () => void
 }
 
 export const DepositDetails: FC<DepositDetailsProps> = ({
@@ -50,7 +52,9 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   allowance,
   allowanceTokenDecimals,
   allowanceTokenSymbol,
-  onAllowanceClick
+  approvalSpenderName,
+  onAllowanceClick,
+  onShowApprovalOverlay
 }) => {
   // Format allowance display
   const formatAllowance = () => {
@@ -208,18 +212,42 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
         {/* Approved allowance */}
         {allowanceDisplay && (
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-text-secondary">Approved</p>
-            {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
-              <button
-                type="button"
-                onClick={onAllowanceClick}
-                className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
-              >
-                {allowanceDisplay}
-              </button>
-            ) : (
-              <p className="text-sm text-text-primary">{allowanceDisplay}</p>
-            )}
+            <p className="text-sm text-text-secondary">
+              Existing Approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
+            </p>
+            <div className="flex items-center gap-1">
+              {onShowApprovalOverlay && (
+                <button
+                  onClick={onShowApprovalOverlay}
+                  className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-full p-0.5 transition-colors"
+                >
+                  <svg
+                    className="h-3.5 w-3.5 text-text-tertiary hover:text-text-secondary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </button>
+              )}
+              {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
+                <button
+                  type="button"
+                  onClick={onAllowanceClick}
+                  className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
+                >
+                  {allowanceDisplay}
+                </button>
+              ) : (
+                <p className="text-sm text-text-primary">{allowanceDisplay}</p>
+              )}
+            </div>
           </div>
         )}
       </div>

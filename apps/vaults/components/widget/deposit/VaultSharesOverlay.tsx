@@ -40,15 +40,15 @@ export const VaultSharesOverlay: FC<VaultSharesOverlayProps> = ({
           <p className="text-sm text-text-secondary">
             {isZap ? (
               <>
-                Your <span className="font-medium text-text-primary">{depositTokenSymbol}</span> will be swapped to{' '}
-                <span className="font-medium text-text-primary">{vaultAssetSymbol}</span>, then deposited into the
-                vault. You'll receive <span className="font-medium text-text-primary">{receiveTokenSymbol}</span>{' '}
+                Your <span className="font-semibold text-text-primary">{depositTokenSymbol}</span> will be swapped to{' '}
+                <span className="font-semibold text-text-primary">{vaultAssetSymbol}</span>, then deposited into the
+                vault. You'll receive <span className="font-semibold text-text-primary">{receiveTokenSymbol}</span>{' '}
                 shares.
               </>
             ) : (
               <>
-                You're depositing <span className="font-medium text-text-primary">{depositTokenSymbol}</span> into the
-                vault. You'll receive <span className="font-medium text-text-primary">{receiveTokenSymbol}</span>{' '}
+                You're depositing <span className="font-semibold text-text-primary">{depositTokenSymbol}</span> into the
+                vault. You'll receive <span className="font-semibold text-text-primary">{receiveTokenSymbol}</span>{' '}
                 shares.
               </>
             )}
@@ -71,7 +71,7 @@ export const VaultSharesOverlay: FC<VaultSharesOverlayProps> = ({
           <ul className="list-disc list-inside space-y-1 text-sm text-text-secondary ml-2">
             <li>
               You'll receive:{' '}
-              <span className="font-medium text-text-primary">
+              <span className="font-semibold text-text-primary">
                 {expectedShares} {receiveTokenSymbol}
               </span>
             </li>

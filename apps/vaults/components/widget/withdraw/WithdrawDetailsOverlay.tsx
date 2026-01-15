@@ -41,13 +41,13 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
   const renderReceiveValue = () => {
     // No input value - just show symbol
     if (!hasInputValue) {
-      return <span className="font-medium text-text-primary">{outputTokenSymbol}</span>
+      return <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>
     }
 
     // Zap route
     if (isZap) {
       return (
-        <span className="font-medium text-text-primary">
+        <span className="font-semibold text-text-primary">
           {expectedOutput || '0'} {outputTokenSymbol}
         </span>
       )
@@ -56,14 +56,14 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
     // Direct withdraw/unstake with value
     if (expectedOutput) {
       return (
-        <span className="font-medium text-text-primary">
+        <span className="font-semibold text-text-primary">
           {expectedOutput} {outputTokenSymbol}
         </span>
       )
     }
 
     // Fallback - just symbol
-    return <span className="font-medium text-text-primary">{outputTokenSymbol}</span>
+    return <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>
   }
 
   const receiveLabel = isZap && hasInputValue ? "You'll receive at least:" : "You'll receive:"
@@ -77,19 +77,19 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
           <p className="text-sm text-text-secondary">
             {isZap ? (
               <>
-                Your <span className="font-medium text-text-primary">{sourceTokenSymbol}</span> shares will be redeemed
-                for <span className="font-medium text-text-primary">{vaultAssetSymbol}</span>, then swapped to{' '}
-                <span className="font-medium text-text-primary">{outputTokenSymbol}</span>.
+                Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> shares will be
+                redeemed for <span className="font-semibold text-text-primary">{vaultAssetSymbol}</span>, then swapped
+                to <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
               </>
             ) : isUnstake ? (
               <>
-                Your <span className="font-medium text-text-primary">{sourceTokenSymbol}</span> will be unstaked. You'll
-                receive <span className="font-medium text-text-primary">{outputTokenSymbol}</span>.
+                Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> will be unstaked.
+                You'll receive <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
               </>
             ) : (
               <>
-                Your <span className="font-medium text-text-primary">{sourceTokenSymbol}</span> shares will be redeemed.
-                You'll receive <span className="font-medium text-text-primary">{outputTokenSymbol}</span>.
+                Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> shares will be
+                redeemed. You'll receive <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
               </>
             )}
           </p>
@@ -112,7 +112,7 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
             {hasInputValue && (
               <li>
                 Withdrawing:{' '}
-                <span className="font-medium text-text-primary">
+                <span className="font-semibold text-text-primary">
                   {withdrawAmount} {sourceTokenSymbol}
                 </span>
               </li>

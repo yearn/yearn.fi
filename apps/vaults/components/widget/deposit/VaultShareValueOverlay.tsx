@@ -25,8 +25,8 @@ export const VaultShareValueOverlay: FC<VaultShareValueOverlayProps> = ({
         <div className="space-y-2">
           <p className="font-medium text-sm text-text-primary">What this value means</p>
           <p className="text-sm text-text-secondary">
-            This is the amount of <span className="font-medium text-text-primary">{assetSymbol}</span> you could redeem
-            immediately after depositing. It represents the value of vault shares to be received converted to the
+            This is the amount of <span className="font-semibold text-text-primary">{assetSymbol}</span> you could
+            redeem immediately after depositing. It represents the value of vault shares to be received converted to the
             underlying asset.
           </p>
         </div>
@@ -35,8 +35,8 @@ export const VaultShareValueOverlay: FC<VaultShareValueOverlayProps> = ({
         <div className="space-y-2">
           <p className="font-medium text-sm text-text-primary">In your case:</p>
           <p className="text-sm text-text-secondary">
-            <span className="font-medium text-text-primary">{sharesAmount} Vault shares</span> will be convertible to{' '}
-            <span className="font-medium text-text-primary">
+            <span className="font-semibold text-text-primary">{sharesAmount} Vault shares</span> will be convertible to{' '}
+            <span className="font-semibold text-text-primary">
               {shareValue} {assetSymbol}
             </span>{' '}
             (${usdValue})
