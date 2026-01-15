@@ -357,20 +357,12 @@ export function VaultForwardAPY({
   // Rewards (VeYFI or generic)
   if (data.mode === 'rewards') {
     const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
-    let veYFIRange: [number, number] | undefined
-    let estAPYRange: [number, number] | undefined
-    let boostedAPY: number
-    let hasZeroBoostedAPY: boolean
-
-    if (isSourceVeYFI) {
-      veYFIRange = data.veYfiRange
-      boostedAPY = (veYFIRange?.[0] || 0) + data.baseForwardApr
-      hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
-      estAPYRange = data.estAprRange
-    } else {
-      boostedAPY = data.rewardsAprSum + data.baseForwardApr
-      hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
-    }
+    const veYFIRange: [number, number] | undefined = isSourceVeYFI ? data.veYfiRange : undefined
+    const estAPYRange: [number, number] | undefined = isSourceVeYFI ? data.estAprRange : undefined
+    const boostedAPY = isSourceVeYFI
+      ? (veYFIRange?.[0] || 0) + data.baseForwardApr
+      : data.rewardsAprSum + data.baseForwardApr
+    const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 
     const modalContent = (
       <APYTooltipContent

@@ -31,15 +31,12 @@ export function useSortVaults(
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
       return false
     }
-    let previousScore = Number.POSITIVE_INFINITY
-    for (const vault of vaultList) {
-      const score = Number.isFinite(vault.featuringScore) ? vault.featuringScore : 0
-      if (score > previousScore) {
-        return false
-      }
-      previousScore = score
-    }
-    return true
+    return vaultList.every((vault, index, arr) => {
+      if (index === 0) return true
+      const prevScore = Number.isFinite(arr[index - 1].featuringScore) ? arr[index - 1].featuringScore : 0
+      const currentScore = Number.isFinite(vault.featuringScore) ? vault.featuringScore : 0
+      return currentScore <= prevScore
+    })
   }, [vaultList, sortBy, sortDirection])
 
   const sortedVaults = useMemo((): TYDaemonVaults => {
@@ -49,10 +46,9 @@ export function useSortVaults(
 
     const getDepositedValue = (vault: TYDaemonVault): number => {
       const depositedBalance = Number(getBalance({ address: vault.address, chainID: vault.chainID })?.normalized || 0)
-      let stakedBalance = 0
-      if (vault.staking.available) {
-        stakedBalance = Number(getBalance({ address: vault.staking.address, chainID: vault.chainID })?.normalized || 0)
-      }
+      const stakedBalance = vault.staking.available
+        ? Number(getBalance({ address: vault.staking.address, chainID: vault.chainID })?.normalized || 0)
+        : 0
       const price = getPrice({ address: vault.address, chainID: vault.chainID }).normalized || 0
       return price * (depositedBalance + stakedBalance)
     }
@@ -106,13 +102,16 @@ export function useSortVaults(
         )
       case 'available':
         return vaultList.toSorted((a, b): number => {
-          let aBalance = Number(getBalance({ address: a.token.address, chainID: a.chainID })?.normalized || 0)
-          let bBalance = Number(getBalance({ address: b.token.address, chainID: b.chainID })?.normalized || 0)
-          if ([WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(a.token.address))) {
-            aBalance += Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: a.chainID })?.normalized || 0)
-          } else if ([WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(b.token.address))) {
-            bBalance += Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: b.chainID })?.normalized || 0)
-          }
+          const aBaseBalance = Number(getBalance({ address: a.token.address, chainID: a.chainID })?.normalized || 0)
+          const bBaseBalance = Number(getBalance({ address: b.token.address, chainID: b.chainID })?.normalized || 0)
+          const aEthBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(a.token.address))
+            ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: a.chainID })?.normalized || 0)
+            : 0
+          const bEthBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(b.token.address))
+            ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: b.chainID })?.normalized || 0)
+            : 0
+          const aBalance = aBaseBalance + aEthBalance
+          const bBalance = bBaseBalance + bEthBalance
 
           const direction = sortDirection === 'asc' ? 1 : -1
           return direction * (aBalance - bBalance)

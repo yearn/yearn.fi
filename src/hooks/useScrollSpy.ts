@@ -92,12 +92,7 @@ export function pickActiveScrollSpyKey<Key extends string>(
   const intersecting = candidates.filter((candidate) => candidate.isIntersecting)
   if (intersecting.length === 0) return fallback
 
-  let closest = intersecting[0]
-  for (const candidate of intersecting.slice(1)) {
-    if (Math.abs(candidate.top) < Math.abs(closest.top)) {
-      closest = candidate
-    }
-  }
+  const closest = intersecting.reduce((prev, curr) => (Math.abs(curr.top) < Math.abs(prev.top) ? curr : prev))
 
   return closest.key
 }

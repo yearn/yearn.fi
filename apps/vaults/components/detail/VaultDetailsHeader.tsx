@@ -486,16 +486,16 @@ export function VaultDetailsHeader({
         functionName: 'rewardTokensLength'
       })
 
-      const rewardTokensCalls: Parameters<typeof readContracts>[1]['contracts'][number][] = []
-      for (let i = 0; i < Number(rewardTokensLength); i++) {
-        rewardTokensCalls.push({
+      const rewardTokensCalls: Parameters<typeof readContracts>[1]['contracts'][number][] = Array.from(
+        { length: Number(rewardTokensLength) },
+        (_, i) => ({
           address: toAddress(currentVault.staking.address),
           chainId: currentVault.chainID,
           abi: V3_STAKING_REWARDS_ABI,
-          functionName: 'rewardTokens',
+          functionName: 'rewardTokens' as const,
           args: [toBigInt(i)]
         })
-      }
+      )
       const result = await readContracts(retrieveConfig(), {
         contracts: [
           {
@@ -639,46 +639,36 @@ export function VaultDetailsHeader({
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
-  let productTypeLabel = 'LP Token Vault'
-  let productTypeIcon = <span className={'text-sm leading-none'}>{'🏭'}</span>
-  if (isAllocatorVault) {
-    productTypeLabel = 'Single Asset Vault'
-    productTypeIcon = <span className={'text-sm leading-none'}>{'⚙️'}</span>
-  } else if (isLegacyVault) {
-    productTypeLabel = 'Legacy'
-    productTypeIcon = <IconRewind className={'size-3.5'} />
-  }
+  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
+  const productTypeIcon = isAllocatorVault ? (
+    <span className={'text-sm leading-none'}>{'⚙️'}</span>
+  ) : isLegacyVault ? (
+    <IconRewind className={'size-3.5'} />
+  ) : (
+    <span className={'text-sm leading-none'}>{'🏭'}</span>
+  )
 
-  let categoryIcon: ReactElement | null = null
-  if (currentVault.category === 'Stablecoin') {
-    categoryIcon = <IconStablecoin className={'size-3.5'} />
-  } else if (currentVault.category === 'Volatile') {
-    categoryIcon = <IconVolatile className={'size-3.5'} />
-  }
+  const categoryIcon: ReactElement | null =
+    currentVault.category === 'Stablecoin' ? (
+      <IconStablecoin className={'size-3.5'} />
+    ) : currentVault.category === 'Volatile' ? (
+      <IconVolatile className={'size-3.5'} />
+    ) : null
 
-  let baseKindType: 'multi' | 'single' | undefined
-  if (currentVault.kind === 'Multi Strategy') {
-    baseKindType = 'multi'
-  } else if (currentVault.kind === 'Single Strategy') {
-    baseKindType = 'single'
-  }
+  const baseKindType: 'multi' | 'single' | undefined =
+    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
 
-  let fallbackKindType: 'multi' | 'single' | undefined
-  if (listKind === 'allocator') {
-    fallbackKindType = 'multi'
-  } else if (listKind === 'strategy') {
-    fallbackKindType = 'single'
-  }
+  const fallbackKindType: 'multi' | 'single' | undefined =
+    listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
   const kindType = baseKindType ?? fallbackKindType
-  let kindLabel: string | undefined = currentVault.kind
-  let kindIcon: ReactElement | null = null
-  if (kindType === 'multi') {
-    kindLabel = 'Allocator'
-    kindIcon = <IconCirclePile className={'size-3.5'} />
-  } else if (kindType === 'single') {
-    kindLabel = 'Strategy'
-    kindIcon = <IconStack className={'size-3.5'} />
-  }
+  const kindLabel: string | undefined =
+    kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
+  const kindIcon: ReactElement | null =
+    kindType === 'multi' ? (
+      <IconCirclePile className={'size-3.5'} />
+    ) : kindType === 'single' ? (
+      <IconStack className={'size-3.5'} />
+    ) : null
   const isMigratable = Boolean(currentVault.migration?.available)
   const isRetired = Boolean(currentVault.info?.isRetired)
   const migratableIcon = <IconMigratable className={'size-3.5'} />

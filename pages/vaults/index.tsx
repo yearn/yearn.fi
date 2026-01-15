@@ -310,12 +310,11 @@ function ListOfVaults({
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
       const borderBoxSize = entry?.borderBoxSize as unknown
-      let borderBoxHeight: number | undefined
-      if (Array.isArray(borderBoxSize)) {
-        borderBoxHeight = borderBoxSize[0]?.blockSize
-      } else if (borderBoxSize && typeof borderBoxSize === 'object' && 'blockSize' in borderBoxSize) {
-        borderBoxHeight = (borderBoxSize as ResizeObserverSize).blockSize
-      }
+      const borderBoxHeight: number | undefined = Array.isArray(borderBoxSize)
+        ? borderBoxSize[0]?.blockSize
+        : borderBoxSize && typeof borderBoxSize === 'object' && 'blockSize' in borderBoxSize
+          ? (borderBoxSize as ResizeObserverSize).blockSize
+          : undefined
       const height = borderBoxHeight ?? filtersElement.getBoundingClientRect().height
       varsElement.style.setProperty('--vaults-filters-height', `${height}px`)
     })
@@ -834,13 +833,9 @@ function ListOfVaults({
     sortBy,
     sortDirection,
     onSort: (newSortBy: string, newSortDirection: TSortDirection): void => {
-      let targetSortBy = newSortBy as TPossibleSortBy
-      let targetSortDirection = newSortDirection as TSortDirection
-
-      if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
-        targetSortBy = 'featuringScore'
-        targetSortDirection = 'desc'
-      }
+      const needsFallback = newSortBy === 'deposited' && totalHoldingsMatching === 0
+      const targetSortBy = needsFallback ? 'featuringScore' : (newSortBy as TPossibleSortBy)
+      const targetSortDirection = needsFallback ? 'desc' : (newSortDirection as TSortDirection)
 
       onChangeSortBy(targetSortBy)
       onChangeSortDirection(targetSortDirection)

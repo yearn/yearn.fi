@@ -133,13 +133,13 @@ function initIndexedWagmiChains(): TNDict<TExtendedChain> {
   const _indexedWagmiChains: TNDict<TExtendedChain> = {}
   for (const chain of Object.values({ ...wagmiChains, rari, katana })) {
     if (isChain(chain)) {
-      let extendedChain = chain as unknown as TExtendedChain
-      if (extendedChain.id === 1337) {
-        extendedChain = localhost as unknown as TExtendedChain
-      }
-      if (extendedChain.id === 5402) {
-        extendedChain = anotherLocalhost as unknown as TExtendedChain
-      }
+      const baseChain = chain as unknown as TExtendedChain
+      const extendedChain =
+        baseChain.id === 1337
+          ? (localhost as unknown as TExtendedChain)
+          : baseChain.id === 5402
+            ? (anotherLocalhost as unknown as TExtendedChain)
+            : baseChain
 
       extendedChain.contracts = {
         ...extendedChain.contracts
@@ -205,7 +205,7 @@ export function getClient(chainID: number): PublicClient {
   const newRPC = import.meta.env.VITE_RPC_URI_FOR?.[chainID] || ''
   const oldRPC = import.meta.env.VITE_JSON_RPC_URI?.[chainID] || import.meta.env.VITE_JSON_RPC_URL?.[chainID]
 
-  let url =
+  const url =
     newRPC ||
     oldRPC ||
     chainConfig.rpcUrls.default.http[0] ||
@@ -217,15 +217,12 @@ export function getClient(chainID: number): PublicClient {
   try {
     new URL(url)
     const urlAsNodeURL = new URL(url)
-    let headers = {}
     if (urlAsNodeURL.username && urlAsNodeURL.password) {
-      headers = {
-        Authorization: `Basic ${btoa(urlAsNodeURL.username + ':' + urlAsNodeURL.password)}`
-      }
-      url = urlAsNodeURL.href.replace(`${urlAsNodeURL.username}:${urlAsNodeURL.password}@`, '')
+      const headers = { Authorization: `Basic ${btoa(urlAsNodeURL.username + ':' + urlAsNodeURL.password)}` }
+      const cleanUrl = urlAsNodeURL.href.replace(`${urlAsNodeURL.username}:${urlAsNodeURL.password}@`, '')
       return createPublicClient({
         chain: indexedWagmiChains[chainID],
-        transport: http(url, { fetchOptions: { headers } })
+        transport: http(cleanUrl, { fetchOptions: { headers } })
       })
     }
     return createPublicClient({ chain: indexedWagmiChains[chainID], transport: http(url) })

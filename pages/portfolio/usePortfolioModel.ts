@@ -210,14 +210,13 @@ export function usePortfolioModel(): TPortfolioModel {
         })
         const baseValue = shareBalance.normalized * price.normalized
 
-        let stakingValue = 0
-        if (vault.staking?.available && vault.staking.address) {
-          const stakingBalance = getBalance({
-            address: vault.staking.address,
-            chainID: vault.chainID
-          })
-          stakingValue = stakingBalance.normalized * price.normalized
-        }
+        const stakingValue =
+          vault.staking?.available && vault.staking.address
+            ? getBalance({
+                address: vault.staking.address,
+                chainID: vault.chainID
+              }).normalized * price.normalized
+            : 0
 
         return baseValue + stakingValue
       },
@@ -225,32 +224,38 @@ export function usePortfolioModel(): TPortfolioModel {
   )
 
   const blendedMetrics = useMemo(() => {
-    let totalValue = 0
-    let weightedCurrent = 0
-    let weightedHistorical = 0
-    let hasCurrent = false
-    let hasHistorical = false
+    const { totalValue, weightedCurrent, weightedHistorical, hasCurrent, hasHistorical } = holdingsVaults.reduce(
+      (acc, vault) => {
+        const value = getVaultValue(vault)
+        if (!Number.isFinite(value) || value <= 0) {
+          return acc
+        }
 
-    holdingsVaults.forEach((vault) => {
-      const value = getVaultValue(vault)
-      if (!Number.isFinite(value) || value <= 0) {
-        return
-      }
+        const estimatedAPY = getVaultEstimatedAPY(vault)
+        const newWeightedCurrent =
+          typeof estimatedAPY === 'number' && Number.isFinite(estimatedAPY)
+            ? acc.weightedCurrent + value * estimatedAPY
+            : acc.weightedCurrent
+        const newHasCurrent = acc.hasCurrent || (typeof estimatedAPY === 'number' && Number.isFinite(estimatedAPY))
 
-      const estimatedAPY = getVaultEstimatedAPY(vault)
-      if (typeof estimatedAPY === 'number' && Number.isFinite(estimatedAPY)) {
-        weightedCurrent += value * estimatedAPY
-        hasCurrent = true
-      }
+        const historicalAPY = getVaultHistoricalAPY(vault)
+        const newWeightedHistorical =
+          typeof historicalAPY === 'number' && Number.isFinite(historicalAPY)
+            ? acc.weightedHistorical + value * historicalAPY
+            : acc.weightedHistorical
+        const newHasHistorical =
+          acc.hasHistorical || (typeof historicalAPY === 'number' && Number.isFinite(historicalAPY))
 
-      const historicalAPY = getVaultHistoricalAPY(vault)
-      if (typeof historicalAPY === 'number' && Number.isFinite(historicalAPY)) {
-        weightedHistorical += value * historicalAPY
-        hasHistorical = true
-      }
-
-      totalValue += value
-    })
+        return {
+          totalValue: acc.totalValue + value,
+          weightedCurrent: newWeightedCurrent,
+          weightedHistorical: newWeightedHistorical,
+          hasCurrent: newHasCurrent,
+          hasHistorical: newHasHistorical
+        }
+      },
+      { totalValue: 0, weightedCurrent: 0, weightedHistorical: 0, hasCurrent: false, hasHistorical: false }
+    )
 
     const blendedCurrentAPY = totalValue > 0 && hasCurrent ? weightedCurrent / totalValue : null
     const blendedHistoricalAPY = totalValue > 0 && hasHistorical ? weightedHistorical / totalValue : null

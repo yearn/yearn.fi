@@ -70,27 +70,36 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
   const hasKelpNEngenlayer = isKelpEigenVault(vault)
   const hasKelp = isKelpVault(vault)
 
-  let mode: TVaultApyMode = 'historical'
-  let veYfiRange: [number, number] | undefined
-  let estAprRange: [number, number] | undefined
-
-  if (katanaExtras && katanaTotalApr !== undefined) {
-    mode = 'katana'
-  } else if (vault.apr.forwardAPR.type === '') {
-    mode = 'noForward'
-  } else if (isBoosted) {
-    mode = 'boosted'
-  } else if (rewardsAprSum > 0) {
-    mode = 'rewards'
-    if (vault.staking.source === 'VeYFI') {
-      veYfiRange = projectVeYfiRange(vault)
-      estAprRange = [baseForwardApr, (veYfiRange?.[1] || 0) + baseForwardApr]
+  const { mode, veYfiRange, estAprRange } = ((): {
+    mode: TVaultApyMode
+    veYfiRange?: [number, number]
+    estAprRange?: [number, number]
+  } => {
+    if (katanaExtras && katanaTotalApr !== undefined) {
+      return { mode: 'katana' }
     }
-  } else if (!isZero(baseForwardApr)) {
-    mode = 'spot'
-  } else {
-    mode = 'historical'
-  }
+    if (vault.apr.forwardAPR.type === '') {
+      return { mode: 'noForward' }
+    }
+    if (isBoosted) {
+      return { mode: 'boosted' }
+    }
+    if (rewardsAprSum > 0) {
+      if (vault.staking.source === 'VeYFI') {
+        const veYfiRange = projectVeYfiRange(vault)
+        return {
+          mode: 'rewards',
+          veYfiRange,
+          estAprRange: [baseForwardApr, (veYfiRange?.[1] || 0) + baseForwardApr]
+        }
+      }
+      return { mode: 'rewards' }
+    }
+    if (!isZero(baseForwardApr)) {
+      return { mode: 'spot' }
+    }
+    return { mode: 'historical' }
+  })()
 
   const isEligibleForSteer = (katanaExtras?.steerPointsPerDollar || 0) > 0
   const steerPointsPerDollar = katanaExtras?.steerPointsPerDollar

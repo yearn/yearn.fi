@@ -50,13 +50,10 @@ function RiskScoreItem({
 }
 
 export function VaultRiskSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
-  const hasRiskScore = useMemo(() => {
-    let sum = 0
-    currentVault.info.riskScore?.forEach((score) => {
-      sum += score
-    })
-    return sum
-  }, [currentVault.info.riskScore])
+  const hasRiskScore = useMemo(
+    () => (currentVault.info.riskScore || []).reduce((sum, score) => sum + score, 0),
+    [currentVault.info.riskScore]
+  )
 
   return <SimpleRiskScore hasRiskScore={hasRiskScore} currentVault={currentVault} />
 }
