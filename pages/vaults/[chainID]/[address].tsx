@@ -104,27 +104,15 @@ function Index(): ReactElement | null {
     })}`
   }, [params.address, yDaemonBaseUri])
 
-  const {
-    data: vault,
-    isLoading: isLoadingVault,
-    mutate
-  } = useFetch<TYDaemonVault>({
+  const { data: vault, isLoading: isLoadingVault } = useFetch<TYDaemonVault>({
     endpoint,
     schema: yDaemonVaultSchema,
     config: {
       // Force re-fetch when vault key changes
-      revalidateOnMount: true,
       keepPreviousData: false,
-      dedupingInterval: 0 // Disable deduping to ensure fresh fetch
+      cacheDuration: 0
     }
   })
-
-  // Force refetch when endpoint changes
-  useEffect(() => {
-    if (endpoint) {
-      mutate()
-    }
-  }, [endpoint, mutate])
 
   // TODO: remove this workaround when possible
   // <WORKAROUND>

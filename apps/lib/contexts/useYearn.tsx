@@ -11,7 +11,6 @@ import { useLocalStorageValue } from '@react-hookz/web'
 import { Solver, type TSolver } from '@vaults/types/solvers'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useMemo } from 'react'
-import type { KeyedMutator } from 'swr'
 import { deserialize, serialize } from 'wagmi'
 
 export const DEFAULT_SLIPPAGE = 0.5
@@ -32,7 +31,7 @@ export type TYearnContext = {
   maxLoss: bigint
   zapProvider: TSolver
   isAutoStakingEnabled: boolean
-  mutateVaultList: KeyedMutator<TYDaemonVaults>
+  mutateVaultList: () => Promise<TYDaemonVaults | undefined>
   setMaxLoss: (value: bigint) => void
   setZapSlippage: (value: number) => void
   setZapProvider: (value: TSolver) => void
@@ -60,7 +59,7 @@ const YearnContext = createContext<TYearnContext>({
   zapSlippage: 0.1,
   zapProvider: Solver.enum.Cowswap,
   isAutoStakingEnabled: true,
-  mutateVaultList: (): Promise<TYDaemonVaults> => Promise.resolve([]),
+  mutateVaultList: (): Promise<TYDaemonVaults | undefined> => Promise.resolve([]),
   setMaxLoss: (): void => undefined,
   setZapSlippage: (): void => undefined,
   setZapProvider: (): void => undefined,
