@@ -2,14 +2,15 @@ import { cl } from '@lib/utils'
 import { useVaultChartTimeseries } from '@vaults/hooks/useVaultChartTimeseries'
 import { transformVaultChartData } from '@vaults/utils/charts'
 import type { ReactElement } from 'react'
-import { useMemo, useState } from 'react'
-import { APYChart } from './charts/APYChart'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { ChartErrorBoundary } from './charts/ChartErrorBoundary'
 import ChartSkeleton from './charts/ChartSkeleton'
 import ChartsLoader from './charts/ChartsLoader'
 import { FixedHeightChartContainer } from './charts/FixedHeightChartContainer'
-import { PPSChart } from './charts/PPSChart'
-import { TVLChart } from './charts/TVLChart'
+
+const APYChart = lazy(() => import('./charts/APYChart').then((m) => ({ default: m.APYChart })))
+const PPSChart = lazy(() => import('./charts/PPSChart').then((m) => ({ default: m.PPSChart })))
+const TVLChart = lazy(() => import('./charts/TVLChart').then((m) => ({ default: m.TVLChart })))
 
 type VaultChartsSectionProps = {
   chainId: number
@@ -131,15 +132,17 @@ export function VaultChartsSection({
       ) : (
         <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx}>
           <ChartErrorBoundary>
-            {activeTab === 'historical-pps' && transformed.ppsData ? (
-              <PPSChart chartData={transformed.ppsData} timeframe={activeTimeframe} />
-            ) : null}
-            {activeTab === 'historical-apy' && transformed.aprApyData ? (
-              <APYChart chartData={transformed.aprApyData} timeframe={activeTimeframe} />
-            ) : null}
-            {activeTab === 'historical-tvl' && transformed.tvlData ? (
-              <TVLChart chartData={transformed.tvlData} timeframe={activeTimeframe} />
-            ) : null}
+            <Suspense fallback={<ChartSkeleton />}>
+              {activeTab === 'historical-pps' && transformed.ppsData ? (
+                <PPSChart chartData={transformed.ppsData} timeframe={activeTimeframe} />
+              ) : null}
+              {activeTab === 'historical-apy' && transformed.aprApyData ? (
+                <APYChart chartData={transformed.aprApyData} timeframe={activeTimeframe} />
+              ) : null}
+              {activeTab === 'historical-tvl' && transformed.tvlData ? (
+                <TVLChart chartData={transformed.tvlData} timeframe={activeTimeframe} />
+              ) : null}
+            </Suspense>
           </ChartErrorBoundary>
         </FixedHeightChartContainer>
       )}

@@ -152,7 +152,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     }
 
     // Sort by balance (highest first)
-    return filtered.sort((a, b) => {
+    return filtered.toSorted((a, b) => {
       const aBalance = a.balance?.raw || 0n
       const bBalance = b.balance?.raw || 0n
       return bBalance > aBalance ? 1 : -1

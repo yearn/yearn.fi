@@ -1,5 +1,5 @@
 import type { TAllocationChartData } from '@lib/components/AllocationChart'
-import { AllocationChart, DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@lib/components/AllocationChart'
+import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@lib/components/AllocationChart'
 import { useYearn } from '@lib/contexts/useYearn'
 import { useYearnTokenPrice } from '@lib/hooks/useYearnTokenPrice'
 import type { TSortDirection } from '@lib/types'
@@ -10,9 +10,13 @@ import type { TPossibleSortBy } from '@vaults/shared/hooks/useSortVaults'
 import { useSortVaults } from '@vaults/shared/hooks/useSortVaults'
 import { useQueryArguments } from '@vaults/shared/hooks/useVaultsQueryArgs'
 import type { ReactElement } from 'react'
-import { useMemo } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 import { VaultsListHead } from './VaultsListHead'
 import { VaultsListStrategy } from './VaultsListStrategy'
+
+const AllocationChart = lazy(() =>
+  import('@lib/components/AllocationChart').then((m) => ({ default: m.AllocationChart }))
+)
 
 export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { vaults } = useYearn()
@@ -126,7 +130,9 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
             {allocationChartData.length > 0 ? (
               <div className={'flex flex-col gap-4'}>
                 <div className={'flex flex-row items-center gap-8'}>
-                  <AllocationChart allocationChartData={allocationChartData} />
+                  <Suspense fallback={<div className={'h-32 w-32 animate-pulse rounded-full bg-surface-secondary'} />}>
+                    <AllocationChart allocationChartData={allocationChartData} />
+                  </Suspense>
                   <div className={'flex flex-col gap-2'}>
                     {activeStrategyData.map((item, index) => {
                       const colors = isDark ? DARK_MODE_COLORS : LIGHT_MODE_COLORS
