@@ -181,6 +181,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
               setTimeout(() => reward(), 100)
             }
             setNotificationId(undefined)
+            // Trigger onAllComplete immediately for cross-chain success
+            if (wasLastStepRef.current) {
+              onAllComplete?.()
+            }
           } else {
             // Same-chain Enso: wait for receipt
             setEnsoTxHash(result.hash)
@@ -234,12 +238,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     onClose,
     handleCreateNotification,
     isLastStep,
-    reward
+    reward,
+    onAllComplete
   ])
 
   const handleNextStep = useCallback(() => {
     if (wasLastStepRef.current) {
-      onAllComplete?.()
       onClose()
     } else {
       // Reset for next step - parent will provide the new step
@@ -247,7 +251,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       setEnsoTxHash(undefined)
       executeStep()
     }
-  }, [onAllComplete, onClose, writeContract, executeStep])
+  }, [onClose, writeContract, executeStep])
 
   const handleRetry = useCallback(() => {
     writeContract.reset()
@@ -284,8 +288,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       if (executedStepRef.current?.showConfetti) {
         setTimeout(() => reward(), 100)
       }
+
+      // Trigger onAllComplete immediately when last step succeeds
+      if (wasLastStepRef.current) {
+        onAllComplete?.()
+      }
     }
-  }, [receipt.isSuccess, receipt.data?.transactionHash, overlayState, reward, handleUpdateNotification])
+  }, [receipt.isSuccess, receipt.data?.transactionHash, overlayState, reward, handleUpdateNotification, onAllComplete])
 
   // Handle transaction error
   // biome-ignore lint/correctness/useExhaustiveDependencies: writeContract excluded to prevent loops

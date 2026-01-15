@@ -2,15 +2,14 @@ import { Button } from '@lib/components/Button'
 import { useWallet } from '@lib/contexts/useWallet'
 import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
-import { vaultAbi } from '@lib/contracts/abi/vaultV2.abi'
 import { formatTAmount, toAddress } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
 import { InputTokenAmountV2 } from '@vaults/components/widget/InputTokenAmountV2'
 import { useDebouncedInput } from '@vaults/hooks/useDebouncedInput'
-import { useTokens } from '@vaults/hooks/useTokens'
+import { useVaultUserData } from '@vaults/hooks/useVaultUserData'
 import { type FC, useCallback, useMemo, useState } from 'react'
 import { type Address, formatUnits } from 'viem'
-import { useAccount, useReadContract } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { SettingsPopover } from '../SettingsPopover'
 import { TokenSelectorOverlay, TransactionOverlay, type TransactionStep } from '../shared'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
@@ -62,21 +61,22 @@ export const WidgetDeposit: FC<Props> = ({
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
 
   // ============================================================================
-  // Token Data
+  // Token Data (shared with VaultDetailsHeader via cache)
   // ============================================================================
-  const priorityTokenAddresses = useMemo(() => {
-    const addresses: (Address | undefined)[] = [assetAddress, vaultAddress]
-    if (stakingAddress) addresses.push(stakingAddress)
-    return addresses
-  }, [assetAddress, vaultAddress, stakingAddress])
-
   const {
-    tokens: priorityTokens,
-    isLoading: isLoadingPriorityTokens,
-    refetch: refetchPriorityTokens
-  } = useTokens(priorityTokenAddresses, chainId, account)
-
-  const [assetToken, vault, stakingToken] = priorityTokens
+    assetToken,
+    vaultToken: vault,
+    stakingToken,
+    pricePerShare,
+    isLoading: isLoadingVaultData,
+    refetch: refetchVaultUserData
+  } = useVaultUserData({
+    vaultAddress,
+    assetAddress,
+    stakingAddress,
+    chainId,
+    account
+  })
 
   // Derived token values
   const depositToken = selectedToken || assetAddress
@@ -100,16 +100,6 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
-
-  // ============================================================================
-  // Contract Reads
-  // ============================================================================
-  const { data: pricePerShare } = useReadContract({
-    address: vaultAddress,
-    abi: vaultAbi,
-    functionName: 'pricePerShare',
-    chainId
-  })
 
   // ============================================================================
   // Deposit Flow (routing, actions, periphery)
@@ -305,7 +295,7 @@ export const WidgetDeposit: FC<Props> = ({
       tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
     }
     refreshWalletBalances(tokensToRefresh)
-    refetchPriorityTokens()
+    refetchVaultUserData()
     onDepositSuccess?.()
   }, [
     setDepositInput,
@@ -315,7 +305,7 @@ export const WidgetDeposit: FC<Props> = ({
     vaultAddress,
     chainId,
     stakingAddress,
-    refetchPriorityTokens,
+    refetchVaultUserData,
     onDepositSuccess
   ])
 
@@ -332,7 +322,7 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   // Loading State
   // ============================================================================
-  if (isLoadingPriorityTokens) {
+  if (isLoadingVaultData) {
     return (
       <div className="p-6 flex items-center justify-center h-[317px]">
         <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />

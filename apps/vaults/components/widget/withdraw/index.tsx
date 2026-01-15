@@ -6,7 +6,7 @@ import { vaultAbi } from '@lib/contracts/abi/vaultV2.abi'
 import type { TNormalizedBN } from '@lib/types'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@lib/utils'
 import { useDebouncedInput } from '@vaults/hooks/useDebouncedInput'
-import { useTokens } from '@vaults/hooks/useTokens'
+import { useVaultUserData } from '@vaults/hooks/useVaultUserData'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
@@ -46,13 +46,22 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
 
   // ============================================================================
-  // Token Data
+  // Token Data (shared with VaultDetailsHeader via TanStack Query cache)
   // ============================================================================
-  const priorityTokenAddresses = useMemo(() => {
-    const addresses: (Address | undefined)[] = [assetAddress, vaultAddress]
-    if (stakingAddress) addresses.push(stakingAddress)
-    return addresses
-  }, [assetAddress, vaultAddress, stakingAddress])
+  const {
+    assetToken,
+    vaultToken: vault,
+    stakingToken,
+    pricePerShare,
+    isLoading: isLoadingVaultData,
+    refetch: refetchVaultUserData
+  } = useVaultUserData({
+    vaultAddress,
+    assetAddress,
+    stakingAddress,
+    chainId,
+    account
+  })
 
   // Common tokens to always show in token selector (even without balance)
   const commonTokensByChain = useMemo((): Record<number, Address[]> => {
@@ -108,14 +117,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     return baseTokens
   }, [chainId, stakingAddress, vaultAddress])
 
-  const {
-    tokens: priorityTokens,
-    isLoading: isLoadingPriorityTokens,
-    refetch: refetchPriorityTokens
-  } = useTokens(priorityTokenAddresses, chainId, account)
-
-  const [assetToken, vault, stakingToken] = priorityTokens
-
   // Derived token values
   const withdrawToken = selectedToken || assetAddress
   const destinationChainId = selectedChainId || chainId
@@ -161,13 +162,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   // ============================================================================
   // Contract Reads
   // ============================================================================
-  const { data: pricePerShare } = useReadContract({
-    address: vaultAddress,
-    abi: vaultAbi,
-    functionName: 'pricePerShare',
-    chainId
-  })
-
   const { data: stakingPricePerShare = 1n * 10n ** BigInt(stakingToken?.decimals ?? 18) } = useReadContract({
     address: stakingAddress,
     abi: vaultAbi,
@@ -180,11 +174,11 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   // Balance Conversions
   // ============================================================================
   const totalBalanceInUnderlying: TNormalizedBN = useMemo(() => {
-    if (!pricePerShare || totalVaultBalance.raw === 0n || !assetToken) {
+    if (pricePerShare === 0n || totalVaultBalance.raw === 0n || !assetToken) {
       return zeroNormalizedBN
     }
     const vaultDecimals = vault?.decimals ?? 18
-    const underlyingAmount = (totalVaultBalance.raw * (pricePerShare as bigint)) / 10n ** BigInt(vaultDecimals)
+    const underlyingAmount = (totalVaultBalance.raw * pricePerShare) / 10n ** BigInt(vaultDecimals)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
   }, [totalVaultBalance.raw, pricePerShare, vault?.decimals, assetToken])
 
@@ -200,9 +194,9 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const requiredShares = useMemo(() => {
     if (!withdrawAmount.bn || withdrawAmount.bn === 0n) return 0n
 
-    if (pricePerShare) {
+    if (pricePerShare > 0n) {
       const vaultDecimals = vault?.decimals ?? 18
-      return (withdrawAmount.bn * 10n ** BigInt(vaultDecimals)) / (pricePerShare as bigint)
+      return (withdrawAmount.bn * 10n ** BigInt(vaultDecimals)) / pricePerShare
     }
 
     return 0n
@@ -227,7 +221,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     assetDecimals: assetToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
     outputDecimals: outputToken?.decimals ?? 18,
-    pricePerShare: pricePerShare || 0n,
+    pricePerShare,
     slippage: zapSlippage,
     withdrawalSource,
     isUnstake,
@@ -406,7 +400,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     }
 
     refreshWalletBalances(tokensToRefresh)
-    refetchPriorityTokens()
+    refetchVaultUserData()
     onWithdrawSuccess?.()
   }, [
     setWithdrawInput,
@@ -416,14 +410,14 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     chainId,
     stakingAddress,
     refreshWalletBalances,
-    refetchPriorityTokens,
+    refetchVaultUserData,
     onWithdrawSuccess
   ])
 
   // ============================================================================
   // Loading State
   // ============================================================================
-  if (isLoadingPriorityTokens) {
+  if (isLoadingVaultData) {
     return (
       <div className="p-6 flex items-center justify-center h-[317px]">
         <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
@@ -517,11 +511,11 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
         allowanceTokenDecimals={showApprove ? (vault?.decimals ?? 18) : undefined}
         allowanceTokenSymbol={showApprove ? vault?.symbol : undefined}
         onAllowanceClick={
-          showApprove && activeFlow.periphery.allowance > 0n && pricePerShare
+          showApprove && activeFlow.periphery.allowance > 0n && pricePerShare > 0n
             ? () => {
                 // Convert vault shares allowance to underlying asset amount
                 const underlyingAmount =
-                  (activeFlow.periphery.allowance * (pricePerShare as bigint)) / 10n ** BigInt(vault?.decimals ?? 18)
+                  (activeFlow.periphery.allowance * pricePerShare) / 10n ** BigInt(vault?.decimals ?? 18)
                 setWithdrawInput(formatUnits(underlyingAmount, assetToken?.decimals ?? 18))
               }
             : undefined
