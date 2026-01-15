@@ -1,9 +1,9 @@
 import type { FC } from 'react'
 import type { Address } from 'viem'
-import { InfoModal } from '../shared'
+import { InfoOverlay } from '../shared'
 import type { WithdrawalSource, WithdrawRouteType } from './types'
 
-interface WithdrawDetailsModalProps {
+interface WithdrawDetailsOverlayProps {
   isOpen: boolean
   onClose: () => void
 
@@ -22,7 +22,7 @@ interface WithdrawDetailsModalProps {
   isLoadingQuote: boolean
 }
 
-export const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
+export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
   isOpen,
   onClose,
   sourceTokenSymbol,
@@ -69,7 +69,7 @@ export const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
   const receiveLabel = isZap && hasInputValue ? "You'll receive at least:" : "You'll receive:"
 
   return (
-    <InfoModal isOpen={isOpen} onClose={onClose} title="Withdrawal Details">
+    <InfoOverlay isOpen={isOpen} onClose={onClose} title="Withdrawal Details">
       <div className="space-y-4">
         {/* What you're withdrawing */}
         <div className="space-y-2">
@@ -123,6 +123,6 @@ export const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
           </ul>
         </div>
       </div>
-    </InfoModal>
+    </InfoOverlay>
   )
 }

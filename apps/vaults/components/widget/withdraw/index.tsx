@@ -20,7 +20,7 @@ import { useWithdrawError } from './useWithdrawError'
 import { useWithdrawFlow } from './useWithdrawFlow'
 import { useWithdrawNotifications } from './useWithdrawNotifications'
 import { WithdrawDetails } from './WithdrawDetails'
-import { WithdrawDetailsModal } from './WithdrawDetailsModal'
+import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
 
 export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   vaultAddress,
@@ -576,8 +576,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
         onAllComplete={handleWithdrawSuccess}
       />
 
-      {/* Withdraw Details Modal */}
-      <WithdrawDetailsModal
+      {/* Withdraw Details Overlay */}
+      <WithdrawDetailsOverlay
         isOpen={showWithdrawDetailsModal}
         onClose={() => setShowWithdrawDetailsModal(false)}
         sourceTokenSymbol={withdrawalSource === 'staking' ? stakingToken?.symbol || vaultSymbol : vaultSymbol}

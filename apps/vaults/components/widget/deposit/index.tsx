@@ -13,14 +13,14 @@ import { type Address, formatUnits } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
 import { SettingsPopover } from '../SettingsPopover'
 import { TokenSelectorOverlay, TransactionOverlay, type TransactionStep } from '../shared'
-import { AnnualReturnModal } from './AnnualReturnModal'
+import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { DepositDetails } from './DepositDetails'
 import { useDepositError } from './useDepositError'
 import { useDepositFlow } from './useDepositFlow'
 import { useDepositNotifications } from './useDepositNotifications'
 import { useFetchMaxQuote } from './useFetchMaxQuote'
-import { VaultSharesModal } from './VaultSharesModal'
-import { VaultShareValueModal } from './VaultShareValueModal'
+import { VaultSharesOverlay } from './VaultSharesOverlay'
+import { VaultShareValueOverlay } from './VaultShareValueOverlay'
 
 interface Props {
   vaultAddress: Address
@@ -451,7 +451,7 @@ export const WidgetDeposit: FC<Props> = ({
       />
 
       {/* Modals */}
-      <VaultSharesModal
+      <VaultSharesOverlay
         isOpen={showVaultSharesModal}
         onClose={() => setShowVaultSharesModal(false)}
         depositTokenSymbol={inputToken?.symbol || ''}
@@ -468,7 +468,7 @@ export const WidgetDeposit: FC<Props> = ({
         isZap={routeType === 'ENSO' && selectedToken !== assetAddress}
       />
 
-      <AnnualReturnModal
+      <AnnualReturnOverlay
         isOpen={showAnnualReturnModal}
         onClose={() => setShowAnnualReturnModal(false)}
         depositAmount={formatTAmount({ value: depositAmount.debouncedBn, decimals: inputToken?.decimals ?? 18 })}
@@ -477,7 +477,7 @@ export const WidgetDeposit: FC<Props> = ({
         currentAPR={vaultAPR}
       />
 
-      <VaultShareValueModal
+      <VaultShareValueOverlay
         isOpen={showVaultShareValueModal}
         onClose={() => setShowVaultShareValueModal(false)}
         sharesAmount={formatTAmount({

@@ -1,7 +1,7 @@
 import type { FC } from 'react'
-import { InfoModal } from '../shared'
+import { InfoOverlay } from '../shared'
 
-interface VaultShareValueModalProps {
+interface VaultShareValueOverlayProps {
   isOpen: boolean
   onClose: () => void
   sharesAmount: string
@@ -10,7 +10,7 @@ interface VaultShareValueModalProps {
   usdValue: string
 }
 
-export const VaultShareValueModal: FC<VaultShareValueModalProps> = ({
+export const VaultShareValueOverlay: FC<VaultShareValueOverlayProps> = ({
   isOpen,
   onClose,
   sharesAmount,
@@ -19,7 +19,7 @@ export const VaultShareValueModal: FC<VaultShareValueModalProps> = ({
   usdValue
 }) => {
   return (
-    <InfoModal isOpen={isOpen} onClose={onClose} title="Vault Share Value">
+    <InfoOverlay isOpen={isOpen} onClose={onClose} title="Vault Share Value">
       <div className="space-y-4">
         {/* What this value means */}
         <div className="space-y-2">
@@ -43,6 +43,6 @@ export const VaultShareValueModal: FC<VaultShareValueModalProps> = ({
           </p>
         </div>
       </div>
-    </InfoModal>
+    </InfoOverlay>
   )
 }

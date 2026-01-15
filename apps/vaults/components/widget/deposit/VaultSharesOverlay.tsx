@@ -1,8 +1,8 @@
 import type { FC } from 'react'
 import type { Address } from 'viem'
-import { InfoModal } from '../shared'
+import { InfoOverlay } from '../shared'
 
-interface VaultSharesModalProps {
+interface VaultSharesOverlayProps {
   isOpen: boolean
   onClose: () => void
 
@@ -17,7 +17,7 @@ interface VaultSharesModalProps {
   isZap: boolean
 }
 
-export const VaultSharesModal: FC<VaultSharesModalProps> = ({
+export const VaultSharesOverlay: FC<VaultSharesOverlayProps> = ({
   isOpen,
   onClose,
   depositTokenSymbol,
@@ -32,7 +32,7 @@ export const VaultSharesModal: FC<VaultSharesModalProps> = ({
   const receiveTokenSymbol = isAutoStakingEnabled && stakingAddress ? stakingTokenSymbol : vaultSymbol
 
   return (
-    <InfoModal isOpen={isOpen} onClose={onClose} title="Vault Shares">
+    <InfoOverlay isOpen={isOpen} onClose={onClose} title="Vault Shares">
       <div className="space-y-4">
         {/* What you'll receive */}
         <div className="space-y-2">
@@ -79,6 +79,6 @@ export const VaultSharesModal: FC<VaultSharesModalProps> = ({
           </ul>
         </div>
       </div>
-    </InfoModal>
+    </InfoOverlay>
   )
 }
