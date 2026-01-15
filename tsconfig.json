@@ -3,6 +3,7 @@
     "rootDirs": ["."],
     "baseUrl": ".",
     "paths": {
+      "@/*": ["src/*"],
       "@components/*": ["src/components/*"],
       "@hooks/*": ["src/hooks/*"],
       "@lib/*": ["apps/lib/*"],

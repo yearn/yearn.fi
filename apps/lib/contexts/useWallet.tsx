@@ -1,5 +1,3 @@
-'use client'
-
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useMemo, useRef } from 'react'
@@ -63,7 +61,6 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     tokens: allTokens,
     priorityChainID: 1
   })
-  // console.log('in WalletContext')
   const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
     const _tokens = { ...tokensRaw }
 

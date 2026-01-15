@@ -176,3 +176,9 @@ export function retrieveConfig(): ResolvedRegister['config'] {
   }
   throw new Error('Config not set')
 }
+
+export function registerConfig(config: Config): void {
+  CONFIG = config
+  CONFIG_WITH_WINDOW = typeof window !== 'undefined'
+  CONFIG_CHAINS = [...config.chains]
+}
