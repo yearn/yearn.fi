@@ -30,7 +30,6 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
     chainErrorStatus
   } = useBalancesQueries(userAddress, tokens, {
     priorityChainId: props?.priorityChainID,
-    enabledChainIds: props?.enabledChainIds,
     enabled: tokens.length > 0
   })
   /***************************************************************************

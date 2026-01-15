@@ -28,7 +28,6 @@ export type TUseBalancesReq = {
   key?: string | number
   tokens: TUseBalancesTokens[]
   priorityChainID?: number
-  enabledChainIds?: number[] | null
   effectDependencies?: DependencyList
   provider?: Connector
 }

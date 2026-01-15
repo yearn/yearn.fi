@@ -44,7 +44,6 @@ export function useBalancesQueries(
   options?: {
     priorityChainId?: number
     enabled?: boolean
-    enabledChainIds?: number[] | null
   }
 ): {
   data: TChainTokens
@@ -95,11 +94,7 @@ export function useBalancesQueries(
         queryKey,
         queryFn: () => fetchTokenBalances(chainId, userAddress, chainTokens),
         enabled: Boolean(
-          options?.enabled !== false &&
-            (!options?.enabledChainIds || options.enabledChainIds.includes(chainId)) &&
-            userAddress &&
-            !isZeroAddress(userAddress) &&
-            chainTokens.length > 0
+          options?.enabled !== false && userAddress && !isZeroAddress(userAddress) && chainTokens.length > 0
         ),
         staleTime: config.cache.staleTime,
         gcTime: config.cache.gcTime,
@@ -113,7 +108,7 @@ export function useBalancesQueries(
 
       return queryOption
     })
-  }, [tokensByChain, userAddress, options?.enabled, options?.enabledChainIds])
+  }, [tokensByChain, userAddress, options?.enabled])
 
   // Create queries for each chain
   const queries = useQueries({
