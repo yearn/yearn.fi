@@ -177,10 +177,9 @@ export function useVaultFilter(
     }
 
     if (categories?.includes('featured')) {
-      _vaultList.sort(
-        (a, b): number => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0)
-      )
-      _vaultList = _vaultList.slice(0, 10)
+      _vaultList = _vaultList
+        .toSorted((a, b): number => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0))
+        .slice(0, 10)
     }
     if (categories?.includes('curveF')) {
       _vaultList = [..._vaultList, ...curveFactoryVaults]

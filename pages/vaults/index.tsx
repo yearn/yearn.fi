@@ -279,7 +279,7 @@ function ListOfVaults({
         if (!value || value.length === 0) {
           return []
         }
-        return [...new Set(value)].sort((left, right) => String(left).localeCompare(String(right)))
+        return [...new Set(value)].toSorted((left, right) => String(left).localeCompare(String(right)))
       }
       const normalizedA = normalize(a)
       const normalizedB = normalize(b)

@@ -178,7 +178,7 @@ function normalizeSeries(series?: TChartTimeseriesResponse[keyof TChartTimeserie
       }
     })
     .filter((point): point is TTimeseriesPoint => Boolean(point))
-    .sort((a, b) => a.time - b.time)
+    .toSorted((a, b) => a.time - b.time)
 }
 
 function findTimestampBounds(series: TTimeseriesPoint[][]): { earliest: number; latest: number } | null {

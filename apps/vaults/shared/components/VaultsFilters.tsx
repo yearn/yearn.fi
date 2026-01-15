@@ -173,7 +173,7 @@ export function VaultsFilters({
   }, [chainDisplayOrder])
 
   const chainModalOptions = useMemo(() => {
-    return [...chainOptions].sort((a, b) => {
+    return [...chainOptions].toSorted((a, b) => {
       const rankA = chainOrderMap.get(Number(a.value)) ?? Number.MAX_SAFE_INTEGER
       const rankB = chainOrderMap.get(Number(b.value)) ?? Number.MAX_SAFE_INTEGER
       if (rankA === rankB) {
