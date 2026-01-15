@@ -13,6 +13,11 @@ import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
 import Link from '/src/components/Link'
 
+const NETWORK_BY_CHAIN_ID = new Map(SUPPORTED_NETWORKS.map((network) => [network.id, network] as const)) as ReadonlyMap<
+  number,
+  (typeof SUPPORTED_NETWORKS)[number]
+>
+
 const STATUS: { [key: string]: [string, string, ReactElement] } = {
   success: ['Success', 'text-white bg-[#00796D]', <IconCheck className={'size-4'} key={'success'} />],
   submitted: ['Submitted', 'text-white bg-[#2563EB]', <IconCheck className={'size-4'} key={'submitted'} />],
@@ -48,14 +53,14 @@ function NotificationContent({
   fromVault?: TYDaemonVault
   toVault?: TYDaemonVault
 }): ReactElement {
-  const fromChainName = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)?.name || 'Unknown'
+  const fromChainName = NETWORK_BY_CHAIN_ID.get(notification.chainId)?.name || 'Unknown'
   const toChainName = notification.toChainId
-    ? SUPPORTED_NETWORKS.find((network) => network.id === notification.toChainId)?.name || 'Unknown'
+    ? NETWORK_BY_CHAIN_ID.get(notification.toChainId)?.name || 'Unknown'
     : undefined
   const isCrossChain = !!notification.toChainId && notification.toChainId !== notification.chainId
 
   const explorerBaseURI = useMemo(() => {
-    const chain = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)
+    const chain = NETWORK_BY_CHAIN_ID.get(notification.chainId)
     return chain?.blockExplorers?.default?.url || 'https://etherscan.io'
   }, [notification.chainId])
 
@@ -248,7 +253,7 @@ export const Notification = memo(function Notification({
       return null
     }
 
-    const chain = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)
+    const chain = NETWORK_BY_CHAIN_ID.get(notification.chainId)
     const explorerBaseURI = chain?.blockExplorers?.default?.url || 'https://etherscan.io'
     return `${explorerBaseURI}/tx/${notification.txHash}`
   }, [notification.chainId, notification.txHash])
