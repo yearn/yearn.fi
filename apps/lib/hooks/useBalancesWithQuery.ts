@@ -4,7 +4,7 @@ import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens, TDict, TToken } from '../types/mixed'
 import { isZeroAddress } from '../utils/tools.is'
 import type { TChainStatus, TUseBalancesReq, TUseBalancesRes, TUseBalancesTokens } from './useBalances.multichains'
-import { fetchTokenBalancesWithRateLimit, useBalancesQueries } from './useBalancesQueries'
+import { fetchTokenBalances, useBalancesQueries } from './useBalancesQueries'
 import { balanceQueryKeys } from './useBalancesQuery'
 
 /*******************************************************************************
@@ -30,6 +30,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
     chainErrorStatus
   } = useBalancesQueries(userAddress, tokens, {
     priorityChainId: props?.priorityChainID,
+    enabledChainIds: props?.enabledChainIds,
     enabled: tokens.length > 0
   })
   /***************************************************************************
@@ -68,7 +69,7 @@ export function useBalancesWithQuery(props?: TUseBalancesReq): TUseBalancesRes {
         const chainId = Number(chainIdStr)
 
         // Fetch fresh balances for the requested tokens
-        const freshBalances = await fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens, true)
+        const freshBalances = await fetchTokenBalances(chainId, userAddress, chainTokens, true)
 
         // Update ALL possible query keys that might contain these tokens
         const allQueries = queryClient.getQueriesData<TDict<TToken>>({
