@@ -11,7 +11,6 @@ import { TypeMarkYearn } from '@lib/icons/TypeMarkYearn'
 import { cl } from '@lib/utils'
 import { normalizePathname } from '@lib/utils/routes'
 import { truncateHex } from '@lib/utils/tools.address'
-import { useChainModal } from '@rainbow-me/rainbowkit'
 import type { ReactElement } from 'react'
 import { useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
@@ -25,36 +24,18 @@ type TWalletSelectorProps = {
 }
 
 function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorProps): ReactElement {
-  const { openChainModal } = useChainModal()
-  const {
-    isActive,
-    isUserConnecting,
-    isIdentityLoading,
-    isNetworkMismatch,
-    address,
-    ens,
-    clusters,
-    lensProtocolHandle,
-    openLoginModal
-  } = useWeb3()
+  const { isActive, isUserConnecting, isIdentityLoading, address, ens, clusters, openLoginModal } = useWeb3()
   const { isLoading: isWalletLoading } = useWallet()
 
   const walletIdentity = useMemo((): string | undefined => {
     if (isUserConnecting) return 'Connecting...'
-    if (isNetworkMismatch && address) return 'Invalid Network'
     if (ens) return ens
     if (clusters) return clusters.name
-    if (lensProtocolHandle) return lensProtocolHandle
     if (address) return truncateHex(address, 4)
     return undefined
-  }, [ens, clusters, lensProtocolHandle, address, isUserConnecting, isNetworkMismatch])
+  }, [ens, clusters, address, isUserConnecting])
 
-  const shouldShowSpinner =
-    address &&
-    walletIdentity &&
-    walletIdentity !== 'Invalid Network' &&
-    !isUserConnecting &&
-    (isIdentityLoading || isWalletLoading)
+  const shouldShowSpinner = address && walletIdentity && !isUserConnecting && (isIdentityLoading || isWalletLoading)
 
   const notificationDotColor = useMemo((): string => {
     switch (notificationStatus) {
@@ -71,12 +52,8 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
   }, [notificationStatus])
 
   function handleClick(): void {
-    if (isActive && !isNetworkMismatch) {
+    if (isActive) {
       onAccountClick()
-      return
-    }
-    if (isNetworkMismatch && address) {
-      openChainModal?.()
       return
     }
     openLoginModal()
