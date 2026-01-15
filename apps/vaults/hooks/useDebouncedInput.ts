@@ -72,13 +72,12 @@ export const useDebouncedInput = (decimals = 18, debounceMs = 500): UseDebounced
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | undefined) => {
       if (!event) return
 
-      let nextUserInput = event.target.value.replace(/,/g, '.')
+      const rawInput = event.target.value.replace(/,/g, '.')
 
-      if (nextUserInput === '' || inputRegex.test(escapeRegExp(nextUserInput))) {
-        const [whole, fraction] = nextUserInput.split('.')
-        if (fraction && fraction.length > decimals) {
-          nextUserInput = `${whole}.${fraction.slice(0, decimals)}`
-        }
+      if (rawInput === '' || inputRegex.test(escapeRegExp(rawInput))) {
+        const [whole, fraction] = rawInput.split('.')
+        const nextUserInput =
+          fraction && fraction.length > decimals ? `${whole}.${fraction.slice(0, decimals)}` : rawInput
         setFormValue(nextUserInput)
       }
     },

@@ -247,13 +247,12 @@ function getPayloadConfig(config: ChartConfig, payload: unknown, key: string) {
       ? ((payload as any).payload as Record<string, unknown>)
       : undefined
 
-  let configLabelKey = key
-
-  if (key in (payload as Record<string, unknown>) && typeof (payload as Record<string, unknown>)[key] === 'string') {
-    configLabelKey = (payload as Record<string, string>)[key]
-  } else if (payloadPayload && key in payloadPayload && typeof payloadPayload[key] === 'string') {
-    configLabelKey = payloadPayload[key] as string
-  }
+  const configLabelKey =
+    key in (payload as Record<string, unknown>) && typeof (payload as Record<string, unknown>)[key] === 'string'
+      ? (payload as Record<string, string>)[key]
+      : payloadPayload && key in payloadPayload && typeof payloadPayload[key] === 'string'
+        ? (payloadPayload[key] as string)
+        : key
 
   return configLabelKey in config ? config[configLabelKey] : config[key as keyof typeof config]
 }

@@ -85,27 +85,28 @@ export async function performCall(
   tokens: TUseBalancesTokens[],
   ownerAddress: TAddress
 ): Promise<[TDict<TToken>, Error | undefined]> {
-  let results: (
-    | {
-        error?: undefined
-        result: never
-        status: 'success'
-      }
-    | {
-        error: Error
-        result?: undefined
-        status: 'failure'
-      }
-  )[] = []
-  try {
-    results = await multicall(retrieveConfig(), {
-      contracts: chunckCalls as never[],
-      chainId: chainID
-    })
-  } catch (error) {
-    console.error(`Failed to trigger multicall on chain ${chainID}`, error)
-    return [{}, error as Error]
+  type TMulticallResult =
+    | { error?: undefined; result: never; status: 'success' }
+    | { error: Error; result?: undefined; status: 'failure' }
+
+  const multicallResult = await (async (): Promise<{ results: TMulticallResult[]; error?: Error }> => {
+    try {
+      const results = await multicall(retrieveConfig(), {
+        contracts: chunckCalls as never[],
+        chainId: chainID
+      })
+      return { results }
+    } catch (error) {
+      console.error(`Failed to trigger multicall on chain ${chainID}`, error)
+      return { results: [], error: error as Error }
+    }
+  })()
+
+  if (multicallResult.error) {
+    return [{}, multicallResult.error]
   }
+
+  const results = multicallResult.results
 
   const _data: TDict<TToken> = {}
   const hasOwnerAddress = Boolean(ownerAddress) && !isZeroAddress(ownerAddress)
@@ -114,24 +115,17 @@ export async function performCall(
     tokensAsObject[toAddress(token.address)] = token
   }
 
-  const callAndResult: {
-    call: (typeof chunckCalls)[0]
-    result: (typeof results)[0]
-  }[] = []
-  for (let i = 0; i < chunckCalls.length; i++) {
-    const call = chunckCalls[i]
-    const result = results[i]
-    callAndResult.push({ call, result })
-  }
+  const callAndResult = chunckCalls.map((call, i) => ({
+    call,
+    result: results[i]
+  }))
 
   for (const { call, result } of callAndResult) {
-    let element = tokensAsObject[toAddress(call.address)]
+    const element =
+      tokensAsObject[toAddress(call.address)] ??
+      (call.functionName === 'getEthBalance' ? tokensAsObject[toAddress(ETH_TOKEN_ADDRESS)] : null)
     if (!element) {
-      if (call.functionName === 'getEthBalance') {
-        element = tokensAsObject[toAddress(ETH_TOKEN_ADDRESS)]
-      } else {
-        continue
-      }
+      continue
     }
 
     /******************************************************************************************
@@ -213,20 +207,25 @@ export async function getBalances(
   tokens: TUseBalancesTokens[],
   shouldForceFetch = false
 ): Promise<[TDict<TToken>, Error | undefined]> {
-  let result: TDict<TToken> = {}
   const ownerAddress = address
+
+  const cachedResults: TDict<TToken> = {}
+  for (const element of tokens) {
+    const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(element.address)}`]
+    if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000 && !shouldForceFetch) {
+      if (toAddress(tokenUpdateInfo.owner) === toAddress(ownerAddress)) {
+        cachedResults[toAddress(element.address)] = tokenUpdateInfo
+      }
+    }
+  }
 
   const calls: MulticallParameters['contracts'][number][] = []
 
   for (const element of tokens) {
     const { address: token } = element
 
-    const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(element.address)}`]
-    if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000 && !shouldForceFetch) {
-      if (toAddress(tokenUpdateInfo.owner) === toAddress(ownerAddress)) {
-        result[toAddress(token)] = tokenUpdateInfo
-        continue
-      }
+    if (cachedResults[toAddress(token)]) {
+      continue
     }
 
     if (isEthAddress(token)) {
@@ -271,13 +270,11 @@ export async function getBalances(
 
   try {
     const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress))
-
-    result = { ...result, ...callResult }
-
+    const result = { ...cachedResults, ...callResult }
     return [result, undefined]
   } catch (_error) {
     console.error(_error)
-    return [result, _error as Error]
+    return [cachedResults, _error as Error]
   }
 }
 
@@ -391,10 +388,9 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
       }
 
       // Chunk and process
-      const chunks = []
-      for (let i = 0; i < tokens.length; i += 200) {
-        chunks.push(tokens.slice(i, i + 200))
-      }
+      const chunks = Array.from({ length: Math.ceil(tokens.length / 200) }, (_, i) =>
+        tokens.slice(i * 200, (i + 1) * 200)
+      )
 
       const allPromises = chunks.map(async (chunkTokens) => {
         const [newRawData, err] = await getBalances(chainID, userAddress, chunkTokens, shouldForceFetch)

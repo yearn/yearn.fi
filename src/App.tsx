@@ -53,16 +53,13 @@ function App(): ReactElement {
   const asPath = location.pathname
 
   // Get most basic og and uri info
-  let ogUrl = manifest.og || 'https://yearn.fi/og.png'
-  let pageUri = manifest.uri || 'https://yearn.fi'
-
   const ogBaseUrl = 'https://og.yearn.fi'
-
-  if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
-    const [, , chainID, address] = asPath.split('/')
-    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
-    pageUri = `https://yearn.fi${asPath}`
-  }
+  const isVaultDetailPage = asPath.startsWith('/vaults/') && asPath.split('/').length === 4
+  const [, , chainID, address] = isVaultDetailPage ? asPath.split('/') : []
+  const ogUrl = isVaultDetailPage
+    ? `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
+    : manifest.og || 'https://yearn.fi/og.png'
+  const pageUri = isVaultDetailPage ? `https://yearn.fi${asPath}` : manifest.uri || 'https://yearn.fi'
 
   return (
     <>
