@@ -173,7 +173,7 @@ function AppHeader(): ReactElement {
               <LauncherDropdown
                 isOpen={isLauncherOpen}
                 onClose={() => setIsLauncherOpen(false)}
-                forceDark={isHomePage}
+                forceDark={isHomePage || undefined}
               />
             </div>
             <div className={'hidden items-center gap-3 pb-0.5 md:flex'}>
