@@ -1,6 +1,7 @@
 import { Button } from '@lib/components/Button'
 import { cl } from '@lib/utils'
 import type { FC, ReactNode } from 'react'
+import { CloseIcon } from './Icons'
 
 interface InfoOverlayProps {
   isOpen: boolean
@@ -43,9 +44,7 @@ export const InfoOverlay: FC<InfoOverlayProps> = ({ isOpen, onClose, title, chil
           className="absolute top-4 right-4 p-1 hover:bg-surface-secondary rounded-lg transition-colors z-10"
           type="button"
         >
-          <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <CloseIcon className="w-5 h-5 text-text-secondary" />
         </button>
 
         {/* Content */}

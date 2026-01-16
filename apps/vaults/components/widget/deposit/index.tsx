@@ -4,14 +4,15 @@ import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import { formatTAmount, toAddress } from '@lib/utils'
 import { ETH_TOKEN_ADDRESS } from '@lib/utils/constants'
-import { InputTokenAmountV2 } from '@vaults/components/widget/InputTokenAmountV2'
+import { InputTokenAmount } from '@vaults/components/widget/InputTokenAmount'
 import { useDebouncedInput } from '@vaults/hooks/useDebouncedInput'
 import { useVaultUserData } from '@vaults/hooks/useVaultUserData'
 import { type FC, useCallback, useMemo, useState } from 'react'
-import { type Address, formatUnits } from 'viem'
+import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { SettingsPopover } from '../SettingsPopover'
-import { TokenSelectorOverlay, TransactionOverlay, type TransactionStep } from '../shared'
+import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
+import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
 import { DepositDetails } from './DepositDetails'
@@ -23,9 +24,9 @@ import { VaultSharesOverlay } from './VaultSharesOverlay'
 import { VaultShareValueOverlay } from './VaultShareValueOverlay'
 
 interface Props {
-  vaultAddress: Address
-  assetAddress: Address
-  stakingAddress?: Address
+  vaultAddress: `0x${string}`
+  assetAddress: `0x${string}`
+  stakingAddress?: `0x${string}`
   chainId: number
   vaultAPR: number
   vaultSymbol: string
@@ -51,7 +52,7 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   // UI State
   // ============================================================================
-  const [selectedToken, setSelectedToken] = useState<Address | undefined>(assetAddress)
+  const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
@@ -174,27 +175,20 @@ export const WidgetDeposit: FC<Props> = ({
     return (activeFlow.periphery.expectedOut * pricePerShare) / 10n ** BigInt(assetToken.decimals)
   }, [activeFlow.periphery.expectedOut, assetToken?.decimals, pricePerShare, depositAmount.bn])
 
-  const inputTokenPrice = useMemo(() => {
-    if (!inputToken?.address || !inputToken?.chainID) return 0
-    return getPrice({
-      address: toAddress(inputToken.address),
-      chainID: inputToken.chainID
-    }).normalized
-  }, [inputToken?.address, inputToken?.chainID, getPrice])
+  const inputTokenPrice =
+    inputToken?.address && inputToken?.chainID
+      ? getPrice({ address: toAddress(inputToken.address), chainID: inputToken.chainID }).normalized
+      : 0
 
-  const outputTokenPrice = useMemo(() => {
-    if (depositToken === assetAddress) return 0
-    if (!assetToken?.address || !assetToken?.chainID) return 0
-    return getPrice({
-      address: toAddress(assetToken.address),
-      chainID: assetToken.chainID
-    }).normalized
-  }, [depositToken, assetAddress, assetToken?.address, assetToken?.chainID, getPrice])
+  const outputTokenPrice =
+    depositToken !== assetAddress && assetToken?.address && assetToken?.chainID
+      ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
+      : 0
 
-  const assetTokenPrice = useMemo(() => {
-    if (!assetToken?.address || !assetToken?.chainID) return 0
-    return getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
-  }, [assetToken?.address, assetToken?.chainID, getPrice])
+  const assetTokenPrice =
+    assetToken?.address && assetToken?.chainID
+      ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
+      : 0
 
   const vaultShareValue = useMemo(() => {
     const expectedOut = activeFlow.periphery.expectedOut
@@ -316,7 +310,7 @@ export const WidgetDeposit: FC<Props> = ({
   ])
 
   const handleTokenChange = useCallback(
-    (address: Address, tokenChainId?: number) => {
+    (address: `0x${string}`, tokenChainId?: number) => {
       setDepositInput('')
       setSelectedToken(address)
       setSelectedChainId(tokenChainId)
@@ -353,7 +347,7 @@ export const WidgetDeposit: FC<Props> = ({
 
       {/* Amount Section */}
       <div className="px-6 pb-6">
-        <InputTokenAmountV2
+        <InputTokenAmount
           input={depositInput}
           title="Amount"
           placeholder="0.00"
@@ -530,13 +524,3 @@ export const WidgetDeposit: FC<Props> = ({
     </div>
   )
 }
-
-// Re-export types
-export type {
-  DepositFlow,
-  DepositFlowActions,
-  DepositFlowPeriphery,
-  DepositRouteType,
-  DepositState,
-  DepositWidgetProps
-} from './types'

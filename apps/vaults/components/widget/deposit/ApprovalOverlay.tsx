@@ -1,8 +1,8 @@
 import { Button } from '@lib/components/Button'
 import { type FC, useCallback, useEffect, useState } from 'react'
-import { type Address, erc20Abi, maxUint256 } from 'viem'
+import { erc20Abi, maxUint256 } from 'viem'
 import { useAccount, useChainId, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
-import { InfoOverlay } from '../shared'
+import { InfoOverlay } from '../shared/InfoOverlay'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from '../shared/TransactionStateIndicators'
 
 type TxState = 'idle' | 'confirming' | 'pending' | 'success' | 'error'
@@ -11,13 +11,12 @@ interface ApprovalOverlayProps {
   isOpen: boolean
   onClose: () => void
   tokenSymbol: string
-  tokenAddress: Address
+  tokenAddress: `0x${string}`
   tokenDecimals: number
-  spenderAddress: Address
+  spenderAddress: `0x${string}`
   spenderName: string
   chainId: number
   currentAllowance: string
-  onAllowanceChange?: () => void
 }
 
 export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
@@ -28,8 +27,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   spenderAddress,
   spenderName,
   chainId,
-  currentAllowance,
-  onAllowanceChange
+  currentAllowance
 }) => {
   const [txState, setTxState] = useState<TxState>('idle')
   const [errorMessage, setErrorMessage] = useState('')
@@ -53,10 +51,9 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   useEffect(() => {
     if (receipt.isSuccess && txState === 'pending') {
       setTxState('success')
-      onAllowanceChange?.()
       reset()
     }
-  }, [receipt.isSuccess, txState, onAllowanceChange, reset])
+  }, [receipt.isSuccess, txState, reset])
 
   // Handle transaction error
   useEffect(() => {

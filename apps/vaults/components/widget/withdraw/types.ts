@@ -1,46 +1,12 @@
-import type { Address } from 'viem'
-import type { UseSimulateContractReturnType } from 'wagmi'
-
 export type WithdrawRouteType = 'DIRECT_WITHDRAW' | 'DIRECT_UNSTAKE' | 'ENSO'
 
 export type WithdrawalSource = 'vault' | 'staking' | null
 
-export interface WithdrawFlowActions {
-  prepareApprove: UseSimulateContractReturnType
-  prepareWithdraw: UseSimulateContractReturnType
-}
-
-export interface WithdrawFlowPeriphery {
-  prepareApproveEnabled: boolean
-  prepareWithdrawEnabled: boolean
-  isAllowanceSufficient: boolean
-  allowance: bigint
-  expectedOut: bigint
-  isLoadingRoute: boolean
-  isCrossChain: boolean
-  routerAddress?: string
-  error?: unknown
-}
-
-export interface WithdrawFlow {
-  actions: WithdrawFlowActions
-  periphery: WithdrawFlowPeriphery
-}
-
 export interface WithdrawWidgetProps {
-  vaultAddress: Address
-  assetAddress: Address
-  stakingAddress?: Address
+  vaultAddress: `0x${string}`
+  assetAddress: `0x${string}`
+  stakingAddress?: `0x${string}`
   chainId: number
   vaultSymbol: string
-  vaultType?: 'v2' | 'v3'
   handleWithdrawSuccess?: () => void
-}
-
-export interface WithdrawState {
-  selectedToken?: Address
-  selectedChainId?: number
-  showWithdrawDetailsModal: boolean
-  showTokenSelector: boolean
-  withdrawalSource: WithdrawalSource
 }
