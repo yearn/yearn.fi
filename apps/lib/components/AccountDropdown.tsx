@@ -62,7 +62,7 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
 
   function formatDate(timestamp?: number): string {
     if (!timestamp) return ''
-    const date = new Date(timestamp)
+    const date = new Date(timestamp * 1000)
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
@@ -85,7 +85,7 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
       ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
       : 'text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700'
   )
-
+  console.log(recentActivity)
   return (
     <div className={'flex flex-col'}>
       <div className={cl('rounded-2xl p-4', isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100')}>
