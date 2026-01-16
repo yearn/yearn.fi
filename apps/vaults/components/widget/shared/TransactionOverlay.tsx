@@ -275,7 +275,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   // Handle transaction success
   // biome-ignore lint/correctness/useExhaustiveDependencies: writeContract excluded to prevent loops
   useEffect(() => {
-    if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending') {
+    // For multi-step flows, wait until next step is ready before showing success
+    // Check that step has changed (different label) and is ready
+    const isNextStepReady = step?.label !== executedStepRef.current?.label && isStepReady
+    const canShowSuccess = wasLastStepRef.current || isNextStepReady
+    if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending' && canShowSuccess) {
       setOverlayState('success')
       writeContract.reset()
       setEnsoTxHash(undefined)
@@ -294,7 +298,16 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         onAllComplete?.()
       }
     }
-  }, [receipt.isSuccess, receipt.data?.transactionHash, overlayState, reward, handleUpdateNotification, onAllComplete])
+  }, [
+    receipt.isSuccess,
+    receipt.data?.transactionHash,
+    overlayState,
+    reward,
+    handleUpdateNotification,
+    onAllComplete,
+    isStepReady,
+    step?.label
+  ])
 
   // Handle transaction error
   // biome-ignore lint/correctness/useExhaustiveDependencies: writeContract excluded to prevent loops
