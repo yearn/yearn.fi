@@ -48,6 +48,8 @@ export function VaultsListRow({
   hrefOverride,
   apyDisplayVariant = 'default',
   showBoostDetails = true,
+  compareVaultKeys,
+  onToggleCompare,
   activeChains,
   activeCategories,
   onToggleChain,
@@ -63,6 +65,8 @@ export function VaultsListRow({
   hrefOverride?: string
   apyDisplayVariant?: TVaultForwardAPYVariant
   showBoostDetails?: boolean
+  compareVaultKeys?: string[]
+  onToggleCompare?: (vault: TYDaemonVault) => void
   activeChains?: number[]
   activeCategories?: string[]
   onToggleChain?: (chainId: number) => void
@@ -108,6 +112,9 @@ export function VaultsListRow({
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
   const metricsColumnSpan = 'col-span-4'
+  const showCompareToggle = Boolean(onToggleCompare)
+  const vaultKey = `${currentVault.chainID}_${toAddress(currentVault.address)}`
+  const isCompareSelected = compareVaultKeys?.includes(vaultKey) ?? false
 
   const isHiddenVault = Boolean(flags?.isHidden)
   const baseKindType: 'multi' | 'single' | undefined =
@@ -203,6 +210,47 @@ export function VaultsListRow({
 
         <div className={cl(leftColumnSpan, 'z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
           <div className={'flex flex-row w-full gap-4 overflow-visible'}>
+            {showCompareToggle ? (
+              // biome-ignore lint/a11y/useSemanticElements: native checkbox has double-firing issues with parent Link's onClickCapture
+              <div
+                role={'checkbox'}
+                aria-checked={isCompareSelected}
+                aria-label={
+                  isCompareSelected
+                    ? `Remove ${currentVault.name} from comparison`
+                    : `Add ${currentVault.name} to comparison`
+                }
+                tabIndex={0}
+                className={'flex items-center justify-center cursor-pointer'}
+                onClick={(event): void => {
+                  event.stopPropagation()
+                  event.preventDefault()
+                  onToggleCompare?.(currentVault)
+                }}
+                onKeyDown={(event): void => {
+                  event.stopPropagation()
+                  if (event.key === ' ' || event.key === 'Enter') {
+                    event.preventDefault()
+                    onToggleCompare?.(currentVault)
+                  }
+                }}
+              >
+                <div
+                  className={cl(
+                    'size-4 rounded border-2 flex items-center justify-center transition-colors',
+                    isCompareSelected
+                      ? 'bg-blue-500 border-blue-500'
+                      : 'border-text-secondary/50 hover:border-text-secondary'
+                  )}
+                >
+                  {isCompareSelected ? (
+                    <svg className={'size-3 text-white'} fill={'none'} viewBox={'0 0 24 24'} stroke={'currentColor'}>
+                      <path strokeLinecap={'round'} strokeLinejoin={'round'} strokeWidth={3} d={'M5 13l4 4L19 7'} />
+                    </svg>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
             <div className={'relative flex items-center justify-center self-center size-8 min-h-8 min-w-8'}>
               <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${

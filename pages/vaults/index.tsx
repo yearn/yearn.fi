@@ -1,10 +1,12 @@
 import Link from '@components/Link'
+import { Button } from '@lib/components/Button'
 import { usePrefetchYearnVaults } from '@lib/hooks/useFetchYearnVaults'
 import { getVaultKey } from '@lib/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@lib/types'
 import { cl } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useMediaQuery } from '@react-hookz/web'
+import { VaultsCompareModal } from '@vaults/components/compare/VaultsCompareModal'
 import { VaultsAuxiliaryList } from '@vaults/components/list/VaultsAuxiliaryList'
 import { type TListHead, VaultsListHead } from '@vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@vaults/components/list/VaultsListRow'
@@ -110,6 +112,7 @@ type TVaultsFiltersBarProps = {
   filtersPanel: ReactNode
   onClearFilters: () => void
   searchTrailingControls?: ReactNode
+  filtersTrailingControls?: ReactNode
   mobileExtraContent: ReactNode
   trailingControls: ReactNode
   isStackedLayout: boolean
@@ -125,6 +128,7 @@ function VaultsFiltersBar({
   filtersPanel,
   onClearFilters,
   searchTrailingControls,
+  filtersTrailingControls,
   mobileExtraContent,
   trailingControls,
   isStackedLayout
@@ -143,6 +147,7 @@ function VaultsFiltersBar({
       onClearFilters={onClearFilters}
       mobileExtraContent={mobileExtraContent}
       searchTrailingControls={searchTrailingControls}
+      filtersTrailingControls={filtersTrailingControls}
       trailingControls={trailingControls}
       isStackedLayout={isStackedLayout}
     />
@@ -456,6 +461,32 @@ function ListOfVaults({
   })
 
   const isSwitchingVaultType = Boolean(optimisticVaultType && optimisticVaultType !== vaultType) || isPending
+  const [compareVaultKeys, setCompareVaultKeys] = useState<string[]>([])
+  const [isCompareOpen, setIsCompareOpen] = useState(false)
+  const [isCompareMode, setIsCompareMode] = useState(false)
+
+  const handleToggleCompare = useCallback((vault: TYDaemonVault): void => {
+    setCompareVaultKeys((prev) => toggleInArray(prev, getVaultKey(vault)))
+  }, [])
+
+  const handleRemoveCompare = useCallback((vaultKey: string): void => {
+    setCompareVaultKeys((prev) => prev.filter((entry) => entry !== vaultKey))
+  }, [])
+
+  const handleClearCompare = useCallback((): void => {
+    setCompareVaultKeys([])
+  }, [])
+
+  const handleToggleCompareMode = useCallback((): void => {
+    setIsCompareMode((prev) => {
+      const next = !prev
+      if (!next) {
+        setCompareVaultKeys([])
+        setIsCompareOpen(false)
+      }
+      return next
+    })
+  }, [])
 
   useEffect(() => {
     if (holdingsVaults.length === 0 && isHoldingsPinned) {
@@ -468,6 +499,21 @@ function ListOfVaults({
       setActiveToggleValues((prev) => prev.filter((value) => value !== AVAILABLE_TOGGLE_VALUE))
     }
   }, [availableVaults.length, isAvailablePinned])
+
+  const visibleVaults = useMemo(() => [...pinnedVaults, ...mainVaults], [pinnedVaults, mainVaults])
+  const compareVaults = useMemo(() => {
+    const vaultMap = new Map<string, TYDaemonVault>()
+    for (const vault of visibleVaults) {
+      vaultMap.set(getVaultKey(vault), vault)
+    }
+    return compareVaultKeys.map((key) => vaultMap.get(key)).filter((vault): vault is TYDaemonVault => Boolean(vault))
+  }, [compareVaultKeys, visibleVaults])
+
+  useEffect(() => {
+    if (isCompareOpen && compareVaultKeys.length < 2) {
+      setIsCompareOpen(false)
+    }
+  }, [compareVaultKeys.length, isCompareOpen])
 
   const filtersCount = useMemo(() => {
     const typeCount = displayedV3Types.includes('single') ? 1 : 0
@@ -721,6 +767,22 @@ function ListOfVaults({
     </button>
   )
 
+  const compareToggleControl = (
+    <button
+      type={'button'}
+      className={cl(
+        'flex shrink-0 items-center gap-2 border rounded-lg h-10 border-border px-4 text-sm font-medium text-text-secondary bg-surface transition-colors',
+        'hover:text-text-secondary',
+        'data-[active=true]:border-primary  data-[active=true]:text-text-primary',
+        isCompareMode ? 'bg-primary/50' : null
+      )}
+      onClick={handleToggleCompareMode}
+      data-active={isCompareMode}
+    >
+      {'Compare'}
+    </button>
+  )
+
   const vaultListContent = useMemo(() => {
     if (isLoadingVaultList) {
       return (
@@ -758,6 +820,8 @@ function ListOfVaults({
             vaults={section.vaults}
             vaultFlags={vaultFlags}
             resolveApyDisplayVariant={resolveApyDisplayVariant}
+            compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
+            onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
             activeChains={activeChains}
             activeCategories={activeCategories}
             activeProductType={activeProductType}
@@ -780,6 +844,8 @@ function ListOfVaults({
                   currentVault={vault}
                   flags={vaultFlags[key]}
                   apyDisplayVariant={rowApyDisplayVariant}
+                  compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
+                  onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
                   activeChains={activeChains}
                   activeCategories={activeCategories}
                   activeProductType={activeProductType}
@@ -812,6 +878,9 @@ function ListOfVaults({
     handleResetMultiSelect,
     pinnedSections,
     pinnedVaults.length,
+    isCompareMode,
+    compareVaultKeys,
+    handleToggleCompare,
     resolveApyDisplayVariant,
     listCategoriesSanitized,
     searchValue,
@@ -836,6 +905,7 @@ function ListOfVaults({
       filtersPanel={filtersPanelContent}
       onClearFilters={handleResetMultiSelect}
       searchTrailingControls={shareButtonElement}
+      filtersTrailingControls={compareToggleControl}
       mobileExtraContent={
         <VaultVersionToggle
           stretch={true}
@@ -932,7 +1002,56 @@ function ListOfVaults({
     />
   )
 
-  return <VaultsPageLayout varsRef={varsRef} stickyHeader={stickyHeaderElement} list={listElement} />
+  const compareCount = compareVaultKeys.length
+  const shouldShowCompareBar = isCompareMode && compareCount >= 1 && !isCompareOpen
+  const compareBarElement = shouldShowCompareBar ? (
+    <div className={'fixed bottom-4 left-1/2 z-[55] w-[calc(100%-2rem)] max-w-[720px] -translate-x-1/2'}>
+      <div
+        className={
+          'flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xl sm:flex-row sm:items-center sm:justify-between'
+        }
+      >
+        <div className={'text-sm text-text-secondary'}>
+          {compareCount === 1 ? 'Selected 1 vault. Select one more to compare' : `Selected ${compareCount} vaults`}
+        </div>
+        <div className={'flex flex-wrap gap-2'}>
+          <Button
+            variant={'outlined'}
+            onClick={handleClearCompare}
+            classNameOverride={'yearn--button--nextgen yearn--button-smaller'}
+          >
+            {'Clear'}
+          </Button>
+          <Button
+            variant={'filled'}
+            onClick={(): void => setIsCompareOpen(true)}
+            classNameOverride={'yearn--button--nextgen yearn--button-smaller'}
+            isDisabled={compareCount < 2}
+          >
+            {`Compare (${compareCount})`}
+          </Button>
+        </div>
+      </div>
+    </div>
+  ) : null
+
+  const compareModalElement = (
+    <VaultsCompareModal
+      isOpen={isCompareOpen}
+      onClose={(): void => setIsCompareOpen(false)}
+      vaults={compareVaults}
+      onRemove={handleRemoveCompare}
+      onClear={handleClearCompare}
+    />
+  )
+
+  return (
+    <>
+      <VaultsPageLayout varsRef={varsRef} stickyHeader={stickyHeaderElement} list={listElement} />
+      {compareBarElement}
+      {compareModalElement}
+    </>
+  )
 }
 
 function VaultsIndexContent(): ReactElement {

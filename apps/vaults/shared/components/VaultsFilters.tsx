@@ -43,6 +43,7 @@ type TVaultsFiltersProps = {
   mobileExtraContent?: ReactNode
   trailingControls?: ReactNode
   searchTrailingControls?: ReactNode
+  filtersTrailingControls?: ReactNode
   isStackedLayout?: boolean
 }
 
@@ -61,6 +62,7 @@ export function VaultsFilters({
   mobileExtraContent,
   trailingControls,
   searchTrailingControls,
+  filtersTrailingControls,
   isStackedLayout: isStackedLayoutProp
 }: TVaultsFiltersProps): ReactElement {
   const SEARCH_MIN_WIDTH = 180
@@ -534,6 +536,7 @@ export function VaultsFilters({
             layout={isStackedLayout ? 'stacked' : 'inline'}
             leadingControls={isStackedLayout ? stackedControls : trailingControls}
             searchTrailingControls={searchTrailingControls}
+            filtersTrailingControls={filtersTrailingControls}
             trailingControls={isStackedLayout ? undefined : undefined}
           />
         </div>
@@ -587,6 +590,7 @@ function FilterControls({
   filtersButtonRef,
   searchContainerRef,
   searchTrailingControls,
+  filtersTrailingControls,
   enableResponsiveLayout = false,
   layout = 'inline',
   leadingControls,
@@ -622,6 +626,7 @@ function FilterControls({
   filtersButtonRef?: RefObject<HTMLButtonElement | null>
   searchContainerRef?: RefObject<HTMLDivElement | null>
   searchTrailingControls?: ReactNode
+  filtersTrailingControls?: ReactNode
   enableResponsiveLayout?: boolean
   layout?: 'inline' | 'stacked'
   leadingControls?: ReactNode
@@ -812,6 +817,7 @@ function FilterControls({
                 <>
                   {trailingControls}
                   {filtersButtonElement}
+                  {filtersTrailingControls ? <div className={'shrink-0'}>{filtersTrailingControls}</div> : null}
                   {searchButtonElement}
                 </>
               )}
