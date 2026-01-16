@@ -1,8 +1,8 @@
 import { formatPercent } from '@lib/utils'
 import type { FC } from 'react'
-import { InfoModal } from '../shared'
+import { InfoOverlay } from '../shared'
 
-interface AnnualReturnModalProps {
+interface AnnualReturnOverlayProps {
   isOpen: boolean
   onClose: () => void
   depositAmount: string
@@ -11,7 +11,7 @@ interface AnnualReturnModalProps {
   currentAPR: number
 }
 
-export const AnnualReturnModal: FC<AnnualReturnModalProps> = ({
+export const AnnualReturnOverlay: FC<AnnualReturnOverlayProps> = ({
   isOpen,
   onClose,
   depositAmount,
@@ -20,7 +20,7 @@ export const AnnualReturnModal: FC<AnnualReturnModalProps> = ({
   currentAPR
 }) => {
   return (
-    <InfoModal isOpen={isOpen} onClose={onClose} title="Estimated Annual Return">
+    <InfoOverlay isOpen={isOpen} onClose={onClose} title="Estimated Annual Return">
       <div className="space-y-4">
         <p className="text-sm text-text-secondary">
           The estimated annual return is calculated based on the vault's historical performance and current market
@@ -43,6 +43,6 @@ export const AnnualReturnModal: FC<AnnualReturnModalProps> = ({
           volatility and vault strategy adjustments.
         </p>
       </div>
-    </InfoModal>
+    </InfoOverlay>
   )
 }

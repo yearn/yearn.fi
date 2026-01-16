@@ -1,9 +1,9 @@
 import type { FC } from 'react'
 import type { Address } from 'viem'
-import { InfoModal } from '../shared'
+import { InfoOverlay } from '../shared'
 import type { WithdrawalSource, WithdrawRouteType } from './types'
 
-interface WithdrawDetailsModalProps {
+interface WithdrawDetailsOverlayProps {
   isOpen: boolean
   onClose: () => void
 
@@ -22,7 +22,7 @@ interface WithdrawDetailsModalProps {
   isLoadingQuote: boolean
 }
 
-export const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
+export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
   isOpen,
   onClose,
   sourceTokenSymbol,
@@ -41,13 +41,13 @@ export const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
   const renderReceiveValue = () => {
     // No input value - just show symbol
     if (!hasInputValue) {
-      return <span className="font-medium text-text-primary">{outputTokenSymbol}</span>
+      return <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>
     }
 
     // Zap route
     if (isZap) {
       return (
-        <span className="font-medium text-text-primary">
+        <span className="font-semibold text-text-primary">
           {expectedOutput || '0'} {outputTokenSymbol}
         </span>
       )
@@ -56,20 +56,20 @@ export const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
     // Direct withdraw/unstake with value
     if (expectedOutput) {
       return (
-        <span className="font-medium text-text-primary">
+        <span className="font-semibold text-text-primary">
           {expectedOutput} {outputTokenSymbol}
         </span>
       )
     }
 
     // Fallback - just symbol
-    return <span className="font-medium text-text-primary">{outputTokenSymbol}</span>
+    return <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>
   }
 
   const receiveLabel = isZap && hasInputValue ? "You'll receive at least:" : "You'll receive:"
 
   return (
-    <InfoModal isOpen={isOpen} onClose={onClose} title="Withdrawal Details">
+    <InfoOverlay isOpen={isOpen} onClose={onClose} title="Withdrawal Details">
       <div className="space-y-4">
         {/* What you're withdrawing */}
         <div className="space-y-2">
@@ -77,19 +77,19 @@ export const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
           <p className="text-sm text-text-secondary">
             {isZap ? (
               <>
-                Your <span className="font-medium text-text-primary">{sourceTokenSymbol}</span> shares will be redeemed
-                for <span className="font-medium text-text-primary">{vaultAssetSymbol}</span>, then swapped to{' '}
-                <span className="font-medium text-text-primary">{outputTokenSymbol}</span>.
+                Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> shares will be
+                redeemed for <span className="font-semibold text-text-primary">{vaultAssetSymbol}</span>, then swapped
+                to <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
               </>
             ) : isUnstake ? (
               <>
-                Your <span className="font-medium text-text-primary">{sourceTokenSymbol}</span> will be unstaked. You'll
-                receive <span className="font-medium text-text-primary">{outputTokenSymbol}</span>.
+                Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> will be unstaked.
+                You'll receive <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
               </>
             ) : (
               <>
-                Your <span className="font-medium text-text-primary">{sourceTokenSymbol}</span> shares will be redeemed.
-                You'll receive <span className="font-medium text-text-primary">{outputTokenSymbol}</span>.
+                Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> shares will be
+                redeemed. You'll receive <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
               </>
             )}
           </p>
@@ -112,7 +112,7 @@ export const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
             {hasInputValue && (
               <li>
                 Withdrawing:{' '}
-                <span className="font-medium text-text-primary">
+                <span className="font-semibold text-text-primary">
                   {withdrawAmount} {sourceTokenSymbol}
                 </span>
               </li>
@@ -123,6 +123,6 @@ export const WithdrawDetailsModal: FC<WithdrawDetailsModalProps> = ({
           </ul>
         </div>
       </div>
-    </InfoModal>
+    </InfoOverlay>
   )
 }

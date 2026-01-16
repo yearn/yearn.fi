@@ -1,6 +1,6 @@
 import { formatAmount, formatTAmount } from '@lib/utils'
 import type { FC } from 'react'
-import { formatUnits } from 'viem'
+import { formatUnits, maxUint256 } from 'viem'
 import type { WithdrawRouteType } from './types'
 
 interface WithdrawDetailsProps {
@@ -22,6 +22,11 @@ interface WithdrawDetailsProps {
   routeType: WithdrawRouteType
   // Modal trigger
   onShowDetailsModal: () => void
+  // Approval info (for zap withdrawals)
+  allowance?: bigint
+  allowanceTokenDecimals?: number
+  allowanceTokenSymbol?: string
+  onAllowanceClick?: () => void
 }
 
 export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
@@ -36,8 +41,20 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
   withdrawAmountSimple,
   assetSymbol,
   routeType,
-  onShowDetailsModal
+  onShowDetailsModal,
+  allowance,
+  allowanceTokenDecimals,
+  allowanceTokenSymbol,
+  onAllowanceClick
 }) => {
+  // Format allowance display
+  const formatAllowance = () => {
+    if (allowance === undefined || allowanceTokenDecimals === undefined) return null
+    if (allowance >= maxUint256 / 2n) return 'Unlimited'
+    return `${formatTAmount({ value: allowance, decimals: allowanceTokenDecimals })} ${allowanceTokenSymbol || ''}`
+  }
+
+  const allowanceDisplay = formatAllowance()
   return (
     <div className="px-6">
       <div className="flex flex-col gap-2">
@@ -108,6 +125,24 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
             </p>
           </div>
         </div>
+
+        {/* Approved allowance (for zap withdrawals) */}
+        {allowanceDisplay && (
+          <div className="flex items-center justify-between h-5">
+            <p className="text-sm text-text-secondary">Existing Approval</p>
+            {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
+              <button
+                type="button"
+                onClick={onAllowanceClick}
+                className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
+              >
+                {allowanceDisplay}
+              </button>
+            ) : (
+              <p className="text-sm text-text-primary">{allowanceDisplay}</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

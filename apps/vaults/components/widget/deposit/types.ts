@@ -11,6 +11,7 @@ export interface DepositFlowPeriphery {
   prepareApproveEnabled: boolean
   prepareDepositEnabled: boolean
   isAllowanceSufficient: boolean
+  allowance: bigint
   expectedOut: bigint
   isLoadingRoute: boolean
   isCrossChain: boolean

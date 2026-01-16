@@ -14,6 +14,7 @@ export interface WithdrawFlowPeriphery {
   prepareApproveEnabled: boolean
   prepareWithdrawEnabled: boolean
   isAllowanceSufficient: boolean
+  allowance: bigint
   expectedOut: bigint
   isLoadingRoute: boolean
   isCrossChain: boolean

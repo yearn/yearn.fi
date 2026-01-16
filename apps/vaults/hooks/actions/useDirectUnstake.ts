@@ -1,6 +1,7 @@
 import { gaugeV2Abi } from '@lib/contracts/abi/gaugeV2.abi'
 import type { UseWidgetWithdrawFlowReturn } from '@vaults/types'
 import type { Address } from 'viem'
+import { maxUint256 } from 'viem'
 import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 
 interface UseDirectUnstakeParams {
@@ -31,8 +32,10 @@ export function useDirectUnstake(params: UseDirectUnstakeParams): UseWidgetWithd
       prepareWithdraw
     },
     periphery: {
+      prepareApproveEnabled: false, // No approval needed for unstaking own shares
       prepareWithdrawEnabled,
       isAllowanceSufficient: true, // No approval needed for unstaking own shares
+      allowance: maxUint256, // No approval needed - unlimited
       expectedOut: params.amount, // User gets the vault tokens they unstake
       isLoadingRoute: false, // No routing needed for direct unstake
       isCrossChain: false, // Direct unstake is always same-chain

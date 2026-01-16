@@ -4,13 +4,7 @@ import { Counter } from '@lib/components/Counter'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
 import { useWeb3 } from '@lib/contexts/useWeb3'
-import { useYearn } from '@lib/contexts/useYearn'
-import { JUICED_STAKING_REWARDS_ABI } from '@lib/contracts/abi/juicedStakingRewards.abi'
-import { STAKING_REWARDS_ABI } from '@lib/contracts/abi/stakingRewards.abi'
-import { V3_STAKING_REWARDS_ABI } from '@lib/contracts/abi/V3StakingRewards.abi'
-import { VAULT_V3_ABI } from '@lib/contracts/abi/vaultV3.abi'
-import { VEYFI_GAUGE_ABI } from '@lib/contracts/abi/veYFIGauge.abi'
-import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
+
 import { IconCirclePile } from '@lib/icons/IconCirclePile'
 import { IconLinkOut } from '@lib/icons/IconLinkOut'
 import { IconMigratable } from '@lib/icons/IconMigratable'
@@ -18,45 +12,22 @@ import { IconRewind } from '@lib/icons/IconRewind'
 import { IconStablecoin } from '@lib/icons/IconStablecoin'
 import { IconStack } from '@lib/icons/IconStack'
 import { IconVolatile } from '@lib/icons/IconVolatile'
-import type { TAddress, TNormalizedBN } from '@lib/types'
-import {
-  cl,
-  decodeAsAddress,
-  decodeAsBigInt,
-  decodeAsNumber,
-  decodeAsString,
-  formatUSD,
-  isZeroAddress,
-  toAddress,
-  toBigInt,
-  toNormalizedBN,
-  zeroNormalizedBN
-} from '@lib/utils'
+import { cl, formatUSD, toAddress, toNormalizedBN } from '@lib/utils'
 import { getVaultName } from '@lib/utils/helpers'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { retrieveConfig } from '@lib/utils/wagmi'
 import { getNetwork } from '@lib/utils/wagmi/utils'
 import { VaultsListChip } from '@vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults/components/table/VaultHistoricalAPY'
 import { useHeaderCompression } from '@vaults/hooks/useHeaderCompression'
+
+import { useVaultUserData } from '@vaults/hooks/useVaultUserData'
+
 import { deriveListKind } from '@vaults/shared/utils/vaultListFacets'
-import { useAvailableToDeposit } from '@vaults/utils/useAvailableToDeposit'
+
 import type { ReactElement } from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { erc20Abi, zeroAddress } from 'viem'
-import { useBlockNumber } from 'wagmi'
-import { readContract, readContracts } from 'wagmi/actions'
-
-type TVaultHoldingsData = {
-  deposited: TNormalizedBN
-  valueInToken: TNormalizedBN
-  earnedAmount: TNormalizedBN
-  rewardTokenSymbol: string
-  rewardTokenDecimal: number
-  earnedValue: number
-}
 
 const METRIC_VALUE_CLASS = 'font-semibold text-[20px] leading-tight md:text-[22px]'
 const METRIC_FOOTNOTE_CLASS = 'text-xs text-text-secondary'
@@ -268,18 +239,20 @@ function VaultOverviewCard({
 
 function UserHoldingsCard({
   currentVault,
-  vaultData,
+  availableToDeposit,
+  depositedValue,
   tokenPrice,
   isCompressed
 }: {
   currentVault: TYDaemonVault
-  vaultData: TVaultHoldingsData
+  availableToDeposit: bigint
+  depositedValue: bigint
   tokenPrice: number
   isCompressed: boolean
 }): ReactElement {
-  const availableToDeposit = useAvailableToDeposit(currentVault)
   const availableAmount = toNormalizedBN(availableToDeposit, currentVault.token.decimals)
-  const depositedValueUSD = vaultData.valueInToken.normalized * tokenPrice
+  const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
+  const depositedValueUSD = depositedAmount.normalized * tokenPrice
   const availableValueUSD = availableAmount.normalized * tokenPrice
 
   const sections: TMetricBlock[] = [
@@ -328,13 +301,13 @@ function UserHoldingsCard({
       footnote: (
         <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
           <RenderAmount
-            value={Number(vaultData.valueInToken.normalized)}
+            value={Number(depositedAmount.normalized)}
             symbol={currentVault.token.symbol}
             decimals={currentVault.token.decimals}
             shouldFormatDust
             options={{
               shouldDisplaySymbol: false,
-              maximumFractionDigits: Number(vaultData.valueInToken.normalized) > 1000 ? 2 : 4
+              maximumFractionDigits: Number(depositedAmount.normalized) > 1000 ? 2 : 4
             }}
           />
           <span className={'pl-1'}>{currentVault.token.symbol || 'tokens'}</span>
@@ -354,277 +327,19 @@ export function VaultDetailsHeader({
   isCollapsibleMode?: boolean
 }): ReactElement {
   const { address } = useWeb3()
-  const { getPrice } = useYearn()
-  const { data: blockNumber } = useBlockNumber({ watch: true })
-  const { decimals } = currentVault
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
   const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode })
-  const [vaultData, setVaultData] = useState<TVaultHoldingsData>({
-    deposited: zeroNormalizedBN,
-    valueInToken: zeroNormalizedBN,
-    earnedAmount: zeroNormalizedBN,
-    rewardTokenSymbol: '',
-    rewardTokenDecimal: 0,
-    earnedValue: 0
+
+  // Shared hook with widget - cache updates automatically when widget refetches
+  const { availableToDeposit, depositedValue } = useVaultUserData({
+    vaultAddress: toAddress(currentVault.address),
+    assetAddress: toAddress(currentVault.token.address),
+    stakingAddress: currentVault.staking.available ? toAddress(currentVault.staking.address) : undefined,
+    chainId: currentVault.chainID,
+    account: address
   })
   const tokenPrice = currentVault.tvl.price || 0
-
-  /**********************************************************************************************
-   ** Retrieve some data from the vault and the staking contract to display a comprehensive view
-   ** of the user's holdings in the vault.
-   **********************************************************************************************/
-  const refetch = useAsyncTrigger(async (): Promise<void> => {
-    const stakingSource = currentVault.staking.source
-    let balanceOf = 0n
-    let stakingBalance = 0n
-    let pps = 0n
-    let rewardsToken: TAddress = zeroAddress
-    let earned = 0n
-    /******************************************************************************************
-     ** To have the most up-to-date data, we fetch a few informations directly onChain, such as:
-     ** - The user's balance in the vault
-     ** - The user's balance in staking contract (0 if no staking contract)
-     ** - The price per share of the vault (to calculate current value of the user's holdings)
-     ** - The address of the rewards token
-     ** - The amount of rewards earned by the user
-     ******************************************************************************************/
-    if (stakingSource === 'OP Boost' || stakingSource === 'VeYFI') {
-      const result = await readContracts(retrieveConfig(), {
-        contracts: [
-          {
-            address: toAddress(currentVault.address),
-            abi: VAULT_V3_ABI,
-            chainId: currentVault.chainID,
-            functionName: 'balanceOf',
-            args: [toAddress(address)]
-          },
-          {
-            address: toAddress(currentVault.staking.address),
-            abi: erc20Abi,
-            chainId: currentVault.chainID,
-            functionName: 'balanceOf',
-            args: [toAddress(address)]
-          },
-          {
-            address: toAddress(currentVault.address),
-            abi: VAULT_V3_ABI,
-            chainId: currentVault.chainID,
-            functionName: 'pricePerShare'
-          },
-          {
-            address: toAddress(currentVault.staking.address),
-            chainId: currentVault.chainID,
-            abi: stakingSource === 'OP Boost' ? STAKING_REWARDS_ABI : VEYFI_GAUGE_ABI,
-            functionName: stakingSource === 'OP Boost' ? 'rewardsToken' : 'REWARD_TOKEN'
-          },
-          {
-            address: toAddress(currentVault.staking.address),
-            abi: STAKING_REWARDS_ABI,
-            chainId: currentVault.chainID,
-            functionName: 'earned',
-            args: [toAddress(address)]
-          }
-        ]
-      })
-      balanceOf = decodeAsBigInt(result[0])
-      stakingBalance = decodeAsBigInt(result[1])
-      pps = decodeAsBigInt(result[2])
-      rewardsToken = decodeAsAddress(result[3])
-      earned = decodeAsBigInt(result[4])
-    } else if (stakingSource === 'Juiced') {
-      const result = await readContracts(retrieveConfig(), {
-        contracts: [
-          {
-            address: toAddress(currentVault.address),
-            abi: VAULT_V3_ABI,
-            chainId: currentVault.chainID,
-            functionName: 'balanceOf',
-            args: [toAddress(address)]
-          },
-          {
-            address: toAddress(currentVault.staking.address),
-            abi: erc20Abi,
-            chainId: currentVault.chainID,
-            functionName: 'balanceOf',
-            args: [toAddress(address)]
-          },
-          {
-            address: toAddress(currentVault.address),
-            abi: VAULT_V3_ABI,
-            chainId: currentVault.chainID,
-            functionName: 'pricePerShare'
-          },
-          {
-            address: toAddress(currentVault.staking.address),
-            chainId: currentVault.chainID,
-            abi: JUICED_STAKING_REWARDS_ABI,
-            functionName: 'rewardTokens',
-            args: [0n]
-          }
-        ]
-      })
-      balanceOf = decodeAsBigInt(result[0])
-      stakingBalance = decodeAsBigInt(result[1])
-      pps = decodeAsBigInt(result[2])
-      rewardsToken = decodeAsAddress(result[3])
-
-      const earnedRaw = await readContract(retrieveConfig(), {
-        address: toAddress(currentVault.staking.address),
-        abi: JUICED_STAKING_REWARDS_ABI,
-        chainId: currentVault.chainID,
-        functionName: 'earned',
-        args: [toAddress(address), rewardsToken]
-      })
-
-      earned = earnedRaw
-    } else if (stakingSource === 'V3 Staking') {
-      const rewardTokensLength = await readContract(retrieveConfig(), {
-        address: toAddress(currentVault.staking.address),
-        chainId: currentVault.chainID,
-        abi: V3_STAKING_REWARDS_ABI,
-        functionName: 'rewardTokensLength'
-      })
-
-      const rewardTokensCalls: Parameters<typeof readContracts>[1]['contracts'][number][] = Array.from(
-        { length: Number(rewardTokensLength) },
-        (_, i) => ({
-          address: toAddress(currentVault.staking.address),
-          chainId: currentVault.chainID,
-          abi: V3_STAKING_REWARDS_ABI,
-          functionName: 'rewardTokens' as const,
-          args: [toBigInt(i)]
-        })
-      )
-      const result = await readContracts(retrieveConfig(), {
-        contracts: [
-          {
-            address: toAddress(currentVault.address),
-            abi: VAULT_V3_ABI,
-            chainId: currentVault.chainID,
-            functionName: 'balanceOf',
-            args: [toAddress(address)]
-          },
-          {
-            address: toAddress(currentVault.staking.address),
-            abi: erc20Abi,
-            chainId: currentVault.chainID,
-            functionName: 'balanceOf',
-            args: [toAddress(address)]
-          },
-          {
-            address: toAddress(currentVault.address),
-            abi: VAULT_V3_ABI,
-            chainId: currentVault.chainID,
-            functionName: 'pricePerShare'
-          },
-          ...rewardTokensCalls
-        ]
-      })
-      balanceOf = decodeAsBigInt(result[0])
-      stakingBalance = decodeAsBigInt(result[1])
-      pps = decodeAsBigInt(result[2])
-      rewardsToken = decodeAsAddress(result[3])
-
-      const earnedRaw = await readContract(retrieveConfig(), {
-        address: toAddress(currentVault.staking.address),
-        abi: V3_STAKING_REWARDS_ABI,
-        chainId: currentVault.chainID,
-        functionName: 'earned',
-        args: [toAddress(address), rewardsToken]
-      })
-      earned = isZeroAddress(address) ? 0n : earnedRaw
-    } else {
-      const result = await readContracts(retrieveConfig(), {
-        contracts: [
-          {
-            address: toAddress(currentVault.address),
-            abi: VAULT_V3_ABI,
-            chainId: currentVault.chainID,
-            functionName: 'balanceOf',
-            args: [toAddress(address)]
-          },
-          {
-            address: toAddress(currentVault.staking.address),
-            abi: erc20Abi,
-            chainId: currentVault.chainID,
-            functionName: 'balanceOf',
-            args: [toAddress(address)]
-          },
-          {
-            address: toAddress(currentVault.address),
-            abi: VAULT_V3_ABI,
-            chainId: currentVault.chainID,
-            functionName: 'pricePerShare'
-          }
-        ]
-      })
-      balanceOf = decodeAsBigInt(result[0])
-      stakingBalance = decodeAsBigInt(result[1])
-      pps = decodeAsBigInt(result[2])
-    }
-    const total = balanceOf + stakingBalance
-
-    /******************************************************************************************
-     ** Some extra elements are required at this point to be able to display a comprehensive
-     ** view of the user's holdings in the vault: we need to know what is the reward token. This
-     ** means we need to retrieve the token's symbol and decimals.
-     ******************************************************************************************/
-    const rewardResult = await readContracts(retrieveConfig(), {
-      contracts: [
-        {
-          address: rewardsToken,
-          abi: erc20Abi,
-          chainId: currentVault.chainID,
-          functionName: 'symbol'
-        },
-        {
-          address: rewardsToken,
-          abi: erc20Abi,
-          chainId: currentVault.chainID,
-          functionName: 'decimals'
-        }
-      ]
-    })
-    const rewardSymbol = decodeAsString(rewardResult[0])
-    const rewardDecimals = decodeAsNumber(rewardResult[1])
-    const priceOfRewardsToken = getPrice({ address: rewardsToken, chainID: 1 })
-    const amountEarned = isZeroAddress(address) ? zeroNormalizedBN : toNormalizedBN(earned, rewardDecimals)
-    const earnedValue = amountEarned.normalized * priceOfRewardsToken.normalized
-
-    setVaultData({
-      deposited: isZeroAddress(address) ? zeroNormalizedBN : toNormalizedBN(total, decimals),
-      valueInToken: toNormalizedBN((total * pps) / toBigInt(10 ** decimals), decimals),
-      rewardTokenSymbol: rewardSymbol,
-      rewardTokenDecimal: rewardDecimals,
-      earnedValue: earnedValue,
-      earnedAmount: amountEarned
-    })
-  }, [
-    address,
-    currentVault.address,
-    currentVault.chainID,
-    currentVault.staking.address,
-    currentVault.staking.source,
-    decimals,
-    getPrice
-  ])
-
-  /**********************************************************************************************
-   ** As we want live data, we want the data to be refreshed every time the block number changes.
-   ** This way, the user will always have the most up-to-date data.
-   ** For Base chain (8453), we limit updates to reduce RPC calls and prevent rate limiting.
-   **********************************************************************************************/
-
-  useEffect(() => {
-    if (currentVault.chainID === 8453) {
-      if (blockNumber && Number(blockNumber) % 10 === 0) {
-        refetch()
-      }
-    } else {
-      refetch()
-    }
-  }, [blockNumber, refetch, currentVault.chainID])
 
   const chainName = getNetwork(currentVault.chainID).name
 
@@ -860,7 +575,8 @@ export function VaultDetailsHeader({
       >
         <UserHoldingsCard
           currentVault={currentVault}
-          vaultData={vaultData}
+          availableToDeposit={availableToDeposit}
+          depositedValue={depositedValue}
           tokenPrice={tokenPrice}
           isCompressed={isCompressed}
         />

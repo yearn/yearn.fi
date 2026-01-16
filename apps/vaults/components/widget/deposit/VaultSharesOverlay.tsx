@@ -1,8 +1,8 @@
 import type { FC } from 'react'
 import type { Address } from 'viem'
-import { InfoModal } from '../shared'
+import { InfoOverlay } from '../shared'
 
-interface VaultSharesModalProps {
+interface VaultSharesOverlayProps {
   isOpen: boolean
   onClose: () => void
 
@@ -17,7 +17,7 @@ interface VaultSharesModalProps {
   isZap: boolean
 }
 
-export const VaultSharesModal: FC<VaultSharesModalProps> = ({
+export const VaultSharesOverlay: FC<VaultSharesOverlayProps> = ({
   isOpen,
   onClose,
   depositTokenSymbol,
@@ -32,7 +32,7 @@ export const VaultSharesModal: FC<VaultSharesModalProps> = ({
   const receiveTokenSymbol = isAutoStakingEnabled && stakingAddress ? stakingTokenSymbol : vaultSymbol
 
   return (
-    <InfoModal isOpen={isOpen} onClose={onClose} title="Vault Shares">
+    <InfoOverlay isOpen={isOpen} onClose={onClose} title="Vault Shares">
       <div className="space-y-4">
         {/* What you'll receive */}
         <div className="space-y-2">
@@ -40,15 +40,15 @@ export const VaultSharesModal: FC<VaultSharesModalProps> = ({
           <p className="text-sm text-text-secondary">
             {isZap ? (
               <>
-                Your <span className="font-medium text-text-primary">{depositTokenSymbol}</span> will be swapped to{' '}
-                <span className="font-medium text-text-primary">{vaultAssetSymbol}</span>, then deposited into the
-                vault. You'll receive <span className="font-medium text-text-primary">{receiveTokenSymbol}</span>{' '}
+                Your <span className="font-semibold text-text-primary">{depositTokenSymbol}</span> will be swapped to{' '}
+                <span className="font-semibold text-text-primary">{vaultAssetSymbol}</span>, then deposited into the
+                vault. You'll receive <span className="font-semibold text-text-primary">{receiveTokenSymbol}</span>{' '}
                 shares.
               </>
             ) : (
               <>
-                You're depositing <span className="font-medium text-text-primary">{depositTokenSymbol}</span> into the
-                vault. You'll receive <span className="font-medium text-text-primary">{receiveTokenSymbol}</span>{' '}
+                You're depositing <span className="font-semibold text-text-primary">{depositTokenSymbol}</span> into the
+                vault. You'll receive <span className="font-semibold text-text-primary">{receiveTokenSymbol}</span>{' '}
                 shares.
               </>
             )}
@@ -71,7 +71,7 @@ export const VaultSharesModal: FC<VaultSharesModalProps> = ({
           <ul className="list-disc list-inside space-y-1 text-sm text-text-secondary ml-2">
             <li>
               You'll receive:{' '}
-              <span className="font-medium text-text-primary">
+              <span className="font-semibold text-text-primary">
                 {expectedShares} {receiveTokenSymbol}
               </span>
             </li>
@@ -79,6 +79,6 @@ export const VaultSharesModal: FC<VaultSharesModalProps> = ({
           </ul>
         </div>
       </div>
-    </InfoModal>
+    </InfoOverlay>
   )
 }

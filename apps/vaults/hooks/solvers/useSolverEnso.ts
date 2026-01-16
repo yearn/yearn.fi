@@ -9,6 +9,16 @@ import { useTokenAllowance } from '../useTokenAllowance'
 const ENSO_API_BASE = 'https://api.enso.finance/api/v1'
 const ENSO_API_KEY = import.meta.env.VITE_ENSO_API_KEY
 
+// Known Enso router addresses per chain for pre-fetching allowance
+const ENSO_ROUTER_ADDRESSES: Record<number, Address> = {
+  1: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Ethereum
+  10: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Optimism
+  137: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Polygon
+  42161: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Arbitrum
+  8453: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Base
+  747474: '0x3067BDBa0e6628497d527bEF511c22DA8b32cA3F' // Katana
+}
+
 interface EnsoError {
   error: string
   message: string
@@ -85,13 +95,17 @@ export const useSolverEnso = ({
   const isCrossChain = destinationChainId !== undefined && destinationChainId !== chainId
   const routerAddress = route?.tx?.to
 
+  // Use known Enso router for pre-fetching allowance, fall back to actual router from route
+  const knownRouterAddress = ENSO_ROUTER_ADDRESSES[chainId]
+  const allowanceSpender = routerAddress || knownRouterAddress
+
   const { allowance = 0n, isLoading: isLoadingAllowance } = useTokenAllowance({
     account: fromAddress,
     token: tokenIn,
-    spender: routerAddress,
+    spender: allowanceSpender,
     watch: true,
     chainId,
-    enabled: !!routerAddress
+    enabled: !!allowanceSpender
   })
 
   const getRoute = useCallback(async () => {
@@ -143,7 +157,7 @@ export const useSolverEnso = ({
   }, [])
 
   const isValidInput = amountIn > 0n
-  const isAllowanceSufficient = !routerAddress || allowance >= amountIn
+  const isAllowanceSufficient = !allowanceSpender || allowance >= amountIn
   const prepareApproveEnabled = routerAddress && !isAllowanceSufficient && isValidInput && enabled
   const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
     abi: erc20Abi,

@@ -2,6 +2,7 @@ import { erc4626Abi } from '@lib/contracts/abi/4626.abi'
 import { toAddress } from '@lib/utils'
 import type { UseWidgetWithdrawFlowReturn } from '@vaults/types'
 import type { Address } from 'viem'
+import { maxUint256 } from 'viem'
 import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 
 interface UseDirectWithdrawParams {
@@ -42,8 +43,10 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
       prepareWithdraw
     },
     periphery: {
+      prepareApproveEnabled: false, // No approval needed for withdrawing own shares
       prepareWithdrawEnabled,
       isAllowanceSufficient: true, // No approval needed for withdrawing own shares
+      allowance: maxUint256, // No approval needed - unlimited
       expectedOut: params.amount, // User gets what they requested
       isLoadingRoute: false, // No routing needed for direct withdraw
       isCrossChain: false, // Direct withdraw is always same-chain

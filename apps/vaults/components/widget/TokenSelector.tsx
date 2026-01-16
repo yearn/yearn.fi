@@ -207,7 +207,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           placeholder="Search by name or paste address"
-          className="w-full px-3 py-2 bg-surface text-text-primary text-sm border border-border rounded-lg focus:outline-none focus:border-border-focus"
+          className="w-full px-3 py-2 bg-surface text-text-primary text-sm border border-border rounded-lg"
         />
       </div>
 
