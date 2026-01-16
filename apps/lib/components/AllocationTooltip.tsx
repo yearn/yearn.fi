@@ -26,7 +26,7 @@ export function AllocationTooltip({
         {data.value && (
           <div className={'mt-1 flex justify-between text-xs'}>
             <span>{data.name === 'Unallocated' ? 'Percentage:' : 'Allocation:'}</span>
-            <span>
+            <span className={'font-semibold'}>
               {data.value.toFixed(2)}
               {'%'}
             </span>
@@ -35,7 +35,7 @@ export function AllocationTooltip({
         {data.amount && (
           <div className={'flex justify-between text-xs'}>
             <span>{'Amount:'}</span>
-            <span>{data.amount}</span>
+            <span className={'font-semibold'}>{data.amount}</span>
           </div>
         )}
       </div>

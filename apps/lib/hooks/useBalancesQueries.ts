@@ -1,20 +1,18 @@
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { type UseQueryOptions, useQueries } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { TAddress } from '../types/address'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
 import { isZeroAddress } from '../utils/tools.is'
-import { getChainConfig, getChainRateLimit } from './balanceQueryConfig'
+import { getChainConfig } from './balanceQueryConfig'
 import { getBalances, type TUseBalancesTokens } from './useBalances.multichains'
 import { balanceQueryKeys } from './useBalancesQuery'
 
 /*******************************************************************************
- ** Rate limited fetch function
+ ** Fetch token balances for a chain
  ******************************************************************************/
-const chainQueues: Record<number, Promise<void>> = {}
-
-export async function fetchTokenBalancesWithRateLimit(
+export async function fetchTokenBalances(
   chainId: number,
   userAddress: TAddress | undefined,
   tokens: TUseBalancesTokens[],
@@ -23,26 +21,13 @@ export async function fetchTokenBalancesWithRateLimit(
   if (!userAddress || isZeroAddress(userAddress) || tokens.length === 0) {
     return {}
   }
-  const rateLimit = getChainRateLimit(chainId)
-
-  // Wait for previous requests on this chain to complete with rate limiting
-  // @ts-expect-error - This is checking for an existing promise
-  if (chainQueues[chainId]) {
-    await chainQueues[chainId]
-  }
-
-  // Create a new queue promise that resolves after the delay
-  chainQueues[chainId] = new Promise((resolve) => {
-    setTimeout(resolve, rateLimit.delayMs)
-  })
 
   const validTokens = tokens.filter((token) => !isZeroAddress(token.address))
-
   if (validTokens.length === 0) {
     return {}
   }
-  const [balances, error] = await getBalances(chainId, userAddress, validTokens, shouldForceFetch)
 
+  const [balances, error] = await getBalances(chainId, userAddress, validTokens, shouldForceFetch)
   if (error) {
     throw error
   }
@@ -100,8 +85,6 @@ export function useBalancesQueries(
       const tokenAddresses = chainTokens.map((t) => t.address)
       const queryKey = balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses)
 
-      // console.log(`Creating query for chain ${chainId}, tokens: ${tokenAddresses.length}, key:`, queryKey)
-
       const queryOption: UseQueryOptions<
         TDict<TToken>,
         Error,
@@ -109,7 +92,7 @@ export function useBalancesQueries(
         ReturnType<typeof balanceQueryKeys.byTokens>
       > = {
         queryKey,
-        queryFn: () => fetchTokenBalancesWithRateLimit(chainId, userAddress, chainTokens),
+        queryFn: () => fetchTokenBalances(chainId, userAddress, chainTokens),
         enabled: Boolean(
           options?.enabled !== false && userAddress && !isZeroAddress(userAddress) && chainTokens.length > 0
         ),
@@ -153,48 +136,28 @@ export function useBalancesQueries(
   const isSuccess = queries.every((q) => q.isSuccess)
   const error = queries.find((q) => q.error)?.error || null
 
-  // Chain-specific status
-  const chainLoadingStatus = useMemo(() => {
-    const status: TNDict<boolean> = {}
+  // Chain-specific status - consolidated into single memo
+  const { chainLoadingStatus, chainSuccessStatus, chainErrorStatus } = useMemo(() => {
     const chainIds = Object.keys(tokensByChain).map(Number)
+    const loading: TNDict<boolean> = {}
+    const success: TNDict<boolean> = {}
+    const error: TNDict<boolean> = {}
 
     queries.forEach((query, index) => {
       const chainId = chainIds[index]
-      status[chainId] = query.isLoading
+      loading[chainId] = query.isLoading
+      success[chainId] = query.isSuccess
+      error[chainId] = query.isError
     })
 
-    return status
+    return { chainLoadingStatus: loading, chainSuccessStatus: success, chainErrorStatus: error }
   }, [queries, tokensByChain])
 
-  const chainSuccessStatus = useMemo(() => {
-    const status: TNDict<boolean> = {}
-    const chainIds = Object.keys(tokensByChain).map(Number)
-
-    queries.forEach((query, index) => {
-      const chainId = chainIds[index]
-      status[chainId] = query.isSuccess
-    })
-
-    return status
-  }, [queries, tokensByChain])
-
-  const chainErrorStatus = useMemo(() => {
-    const status: TNDict<boolean> = {}
-    const chainIds = Object.keys(tokensByChain).map(Number)
-
-    queries.forEach((query, index) => {
-      const chainId = chainIds[index]
-      status[chainId] = query.isError
-    })
-
-    return status
-  }, [queries, tokensByChain])
-
-  const refetch = async () => {
+  const refetch = useCallback(() => {
     queries.forEach((q) => {
       q.refetch()
     })
-  }
+  }, [queries])
 
   return {
     data,

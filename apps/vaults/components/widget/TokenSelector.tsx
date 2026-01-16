@@ -128,31 +128,21 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
   // Filter tokens based on search and limits
   const filteredTokens = useMemo(() => {
-    let filtered = tokens
-
-    // Apply limitTokens filter
-    if (limitTokens && limitTokens.length > 0) {
-      filtered = filtered.filter((token) => limitTokens.includes(token.address as Address))
-    }
-
-    // Apply excludeTokens filter
-    if (excludeTokens && excludeTokens.length > 0) {
-      filtered = filtered.filter((token) => !excludeTokens.includes(token.address as Address))
-    }
-
-    // Apply search filter
-    if (searchText) {
-      const search = searchText.toLowerCase()
-      filtered = filtered.filter(
-        (token) =>
+    const filtered = tokens
+      .filter((token) => !limitTokens?.length || limitTokens.includes(token.address as Address))
+      .filter((token) => !excludeTokens?.length || !excludeTokens.includes(token.address as Address))
+      .filter((token) => {
+        if (!searchText) return true
+        const search = searchText.toLowerCase()
+        return (
           token.symbol?.toLowerCase().includes(search) ||
           token.name?.toLowerCase().includes(search) ||
           token.address?.toLowerCase().includes(search)
-      )
-    }
+        )
+      })
 
     // Sort by balance (highest first)
-    return filtered.sort((a, b) => {
+    return filtered.toSorted((a, b) => {
       const aBalance = a.balance?.raw || 0n
       const bBalance = b.balance?.raw || 0n
       return bBalance > aBalance ? 1 : -1

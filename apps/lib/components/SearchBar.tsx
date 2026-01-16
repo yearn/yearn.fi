@@ -81,7 +81,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
           suppressHydrationWarning
           className={cl(
             props.inputClassName,
-            'h-full flex-1 bg-transparent py-2 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none'
+            'h-full min-w-0 flex-1 bg-transparent py-2 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none'
           )}
           type={'text'}
           placeholder={props.searchPlaceholder}
@@ -100,7 +100,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
           }}
         />
         {props.alertContent ? (
-          <div className={'flex shrink-0 items-center gap-2 text-xs text-text-secondary'}>{props.alertContent}</div>
+          <div className={'flex items-center gap-2 text-xs text-text-secondary'}>{props.alertContent}</div>
         ) : null}
         <div
           role={localSearchValue ? 'button' : 'div'}

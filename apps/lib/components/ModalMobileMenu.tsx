@@ -1,4 +1,3 @@
-'use client'
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { IconClose } from '@lib/icons/IconClose'
 import { IconDiscord } from '@lib/icons/IconDiscord'

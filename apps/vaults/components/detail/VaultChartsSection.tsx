@@ -2,14 +2,15 @@ import { cl } from '@lib/utils'
 import { useVaultChartTimeseries } from '@vaults/hooks/useVaultChartTimeseries'
 import { transformVaultChartData } from '@vaults/utils/charts'
 import type { ReactElement } from 'react'
-import { useMemo, useState } from 'react'
-import { APYChart } from './charts/APYChart'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { ChartErrorBoundary } from './charts/ChartErrorBoundary'
 import ChartSkeleton from './charts/ChartSkeleton'
 import ChartsLoader from './charts/ChartsLoader'
 import { FixedHeightChartContainer } from './charts/FixedHeightChartContainer'
-import { PPSChart } from './charts/PPSChart'
-import { TVLChart } from './charts/TVLChart'
+
+const APYChart = lazy(() => import('./charts/APYChart').then((m) => ({ default: m.APYChart })))
+const PPSChart = lazy(() => import('./charts/PPSChart').then((m) => ({ default: m.PPSChart })))
+const TVLChart = lazy(() => import('./charts/TVLChart').then((m) => ({ default: m.TVLChart })))
 
 type VaultChartsSectionProps = {
   chainId: number
@@ -40,9 +41,9 @@ export type TVaultChartTimeframe = (typeof VAULT_CHART_TIMEFRAME_OPTIONS)[number
 export type TVaultChartTab = 'historical-pps' | 'historical-apy' | 'historical-tvl'
 
 export const VAULT_CHART_TABS: Array<{ id: TVaultChartTab; label: string }> = [
-  { id: 'historical-tvl', label: 'TVL' },
+  { id: 'historical-apy', label: '30-Day APY' },
   { id: 'historical-pps', label: 'Performance' },
-  { id: 'historical-apy', label: 'APY' }
+  { id: 'historical-tvl', label: 'TVL' }
 ]
 
 export function VaultChartsSection({
@@ -66,7 +67,7 @@ export function VaultChartsSection({
   const chartsLoading = isLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData
   const hasError = Boolean(error)
 
-  const [uncontrolledTab, setUncontrolledTab] = useState<TVaultChartTab>('historical-tvl')
+  const [uncontrolledTab, setUncontrolledTab] = useState<TVaultChartTab>('historical-apy')
   const [uncontrolledTimeframe, setUncontrolledTimeframe] = useState<TVaultChartTimeframe>('all')
 
   const activeTab = chartTab ?? uncontrolledTab
@@ -131,15 +132,17 @@ export function VaultChartsSection({
       ) : (
         <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx}>
           <ChartErrorBoundary>
-            {activeTab === 'historical-pps' && transformed.ppsData ? (
-              <PPSChart chartData={transformed.ppsData} timeframe={activeTimeframe} />
-            ) : null}
-            {activeTab === 'historical-apy' && transformed.aprApyData ? (
-              <APYChart chartData={transformed.aprApyData} timeframe={activeTimeframe} />
-            ) : null}
-            {activeTab === 'historical-tvl' && transformed.tvlData ? (
-              <TVLChart chartData={transformed.tvlData} timeframe={activeTimeframe} />
-            ) : null}
+            <Suspense fallback={<ChartSkeleton />}>
+              {activeTab === 'historical-pps' && transformed.ppsData ? (
+                <PPSChart chartData={transformed.ppsData} timeframe={activeTimeframe} />
+              ) : null}
+              {activeTab === 'historical-apy' && transformed.aprApyData ? (
+                <APYChart chartData={transformed.aprApyData} timeframe={activeTimeframe} />
+              ) : null}
+              {activeTab === 'historical-tvl' && transformed.tvlData ? (
+                <TVLChart chartData={transformed.tvlData} timeframe={activeTimeframe} />
+              ) : null}
+            </Suspense>
           </ChartErrorBoundary>
         </FixedHeightChartContainer>
       )}

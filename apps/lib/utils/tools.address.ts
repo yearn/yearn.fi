@@ -94,15 +94,13 @@ export function getColorFromAdddress({ address }: { address: TAddress }): string
   if (!address) {
     return '#000000'
   }
-  let hash = 0
-  for (let i = 0; i < address.length; i++) {
-    hash = address.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  let color = '#'
-  for (let i = 0; i < 3; i++) {
-    const value = (hash >> (i * 8)) & 0xff
-    color += value.toString(16).padStart(2, '0')
-  }
+  const hash = Array.from(address).reduce((h, char) => char.charCodeAt(0) + ((h << 5) - h), 0)
+  const color =
+    '#' +
+    Array.from({ length: 3 }, (_, i) => {
+      const value = (hash >> (i * 8)) & 0xff
+      return value.toString(16).padStart(2, '0')
+    }).join('')
   return color
 }
 

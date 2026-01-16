@@ -30,23 +30,27 @@ function AppTile({ item, isDark }: { item: TAppTile; isDark: boolean }): ReactEl
       <div
         className={cl(
           'flex items-center gap-3 rounded-xl p-3 transition-colors',
-          isDark ? 'hover:bg-surface-secondary' : 'hover:bg-neutral-100'
+          isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'
         )}
       >
         <div
           className={cl(
             'flex size-10 items-center justify-center rounded-lg',
-            isDark ? 'bg-surface-secondary' : 'bg-neutral-100'
+            isDark ? 'bg-white/10' : 'bg-neutral-100'
           )}
         >
           {item.icon}
         </div>
         <div className={'flex-1'}>
           <div className={'flex items-center gap-1'}>
-            <span className={'text-sm font-semibold text-text-primary'}>{item.name}</span>
-            {isExternalHref(item.href) && <span className={'text-xs text-text-secondary'}>{'↗'}</span>}
+            <span className={cl('text-sm font-semibold', isDark ? 'text-white' : 'text-neutral-900')}>{item.name}</span>
+            {isExternalHref(item.href) && (
+              <span className={cl('text-xs', isDark ? 'text-neutral-400' : 'text-neutral-500')}>{'↗'}</span>
+            )}
           </div>
-          {item.description && <p className={'text-xs text-text-secondary'}>{item.description}</p>}
+          {item.description && (
+            <p className={cl('text-xs', isDark ? 'text-neutral-400' : 'text-neutral-500')}>{item.description}</p>
+          )}
         </div>
       </div>
     </Link>
@@ -59,9 +63,7 @@ function LinkItem({ item, isDark }: { item: TAppTile; isDark: boolean }): ReactE
       <div
         className={cl(
           'flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition-colors',
-          isDark
-            ? 'text-white hover:bg-surface-secondary'
-            : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+          isDark ? 'text-white hover:bg-white/10' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
         )}
       >
         <span>{item.name}</span>
@@ -74,14 +76,15 @@ function LinkItem({ item, isDark }: { item: TAppTile; isDark: boolean }): ReactE
 type TLauncherDropdownProps = {
   isOpen: boolean
   onClose: () => void
+  forceDark?: boolean
 }
 
-export function LauncherDropdown({ isOpen, onClose }: TLauncherDropdownProps): ReactElement {
+export function LauncherDropdown({ isOpen, onClose, forceDark }: TLauncherDropdownProps): ReactElement {
   const location = useLocation()
   const previousPathname = useRef(location.pathname)
   const [isDeprecatedExpanded, setIsDeprecatedExpanded] = useState(false)
   const themePreference = useThemePreference()
-  const isDarkTheme = themePreference !== 'light'
+  const isDarkTheme = forceDark ?? themePreference !== 'light'
 
   useEffect(() => {
     const pathnameChanged = previousPathname.current !== location.pathname
@@ -100,20 +103,26 @@ export function LauncherDropdown({ isOpen, onClose }: TLauncherDropdownProps): R
 
   const sectionHeaderClass = cl(
     'mb-2 px-2 text-xs font-semibold uppercase tracking-wider',
-    isDarkTheme ? 'text-text-secondary' : 'text-neutral-500'
+    isDarkTheme ? 'text-neutral-400' : 'text-neutral-500'
   )
 
-  const dividerClass = cl('h-px', isDarkTheme ? 'bg-border' : 'bg-neutral-200')
+  const dividerClass = cl('h-px', isDarkTheme ? 'bg-white/10' : 'bg-neutral-200')
 
   const socialIconClass = cl(
     'flex size-8 items-center justify-center rounded-lg transition-colors',
     isDarkTheme
-      ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+      ? 'text-neutral-400 hover:bg-white/10 hover:text-white'
       : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
   )
 
   return (
-    <DropdownPanel isOpen={isOpen} onClose={onClose} anchor={'left'} className={'w-[420px] max-md:w-full'}>
+    <DropdownPanel
+      isOpen={isOpen}
+      onClose={onClose}
+      anchor={'left'}
+      className={'w-[420px] max-md:w-full'}
+      forceDark={forceDark}
+    >
       <div className={'flex flex-col gap-4'}>
         <div>
           <h3 className={sectionHeaderClass}>{'Apps'}</h3>
@@ -161,7 +170,7 @@ export function LauncherDropdown({ isOpen, onClose }: TLauncherDropdownProps): R
               className={cl(
                 'flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors',
                 isDarkTheme
-                  ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+                  ? 'text-neutral-400 hover:bg-white/10 hover:text-white'
                   : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
               )}
             >

@@ -104,51 +104,47 @@ export function formatChartTooltipDate(value: string | number): string {
 }
 
 export function getChartMonthlyTicks<T extends { date: string }>(data: T[], omitFirst = false): string[] {
-  const ticks: string[] = []
-  let lastKey = ''
+  const ticks = data.reduce<{ ticks: string[]; lastKey: string }>(
+    (acc, point) => {
+      const parts = parseChartDateParts(point.date)
+      if (!parts) return acc
 
-  for (const point of data) {
-    const parts = parseChartDateParts(point.date)
-    if (!parts) {
-      continue
-    }
-
-    const key = `${parts.year}-${String(parts.month).padStart(2, '0')}`
-    if (key !== lastKey) {
-      ticks.push(point.date)
-      lastKey = key
-    }
-  }
+      const key = `${parts.year}-${String(parts.month).padStart(2, '0')}`
+      if (key !== acc.lastKey) {
+        return { ticks: [...acc.ticks, point.date], lastKey: key }
+      }
+      return acc
+    },
+    { ticks: [], lastKey: '' }
+  ).ticks
 
   return omitFirst ? ticks.slice(1) : ticks
 }
 
 export function getChartWeeklyTicks<T extends { date: string }>(data: T[], omitFirst = false): string[] {
-  const ticks: string[] = []
-  let lastKey = ''
+  const ticks = data.reduce<{ ticks: string[]; lastKey: string }>(
+    (acc, point) => {
+      const parts = parseChartDateParts(point.date)
+      if (!parts) return acc
 
-  for (const point of data) {
-    const parts = parseChartDateParts(point.date)
-    if (!parts) {
-      continue
-    }
+      const date = new Date(parts.year, parts.month - 1, parts.day)
+      const dayOfWeek = date.getDay()
+      const diffToMonday = (dayOfWeek + 6) % 7
+      const weekStart = new Date(date)
+      weekStart.setDate(date.getDate() - diffToMonday)
 
-    const date = new Date(parts.year, parts.month - 1, parts.day)
-    const dayOfWeek = date.getDay()
-    const diffToMonday = (dayOfWeek + 6) % 7
-    const weekStart = new Date(date)
-    weekStart.setDate(date.getDate() - diffToMonday)
+      const key = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(
+        2,
+        '0'
+      )}-${String(weekStart.getDate()).padStart(2, '0')}`
 
-    const key = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(
-      2,
-      '0'
-    )}-${String(weekStart.getDate()).padStart(2, '0')}`
-
-    if (key !== lastKey) {
-      ticks.push(point.date)
-      lastKey = key
-    }
-  }
+      if (key !== acc.lastKey) {
+        return { ticks: [...acc.ticks, point.date], lastKey: key }
+      }
+      return acc
+    },
+    { ticks: [], lastKey: '' }
+  ).ticks
 
   return omitFirst ? ticks.slice(1) : ticks
 }
@@ -178,7 +174,7 @@ function normalizeSeries(series?: TChartTimeseriesResponse[keyof TChartTimeserie
       }
     })
     .filter((point): point is TTimeseriesPoint => Boolean(point))
-    .sort((a, b) => a.time - b.time)
+    .toSorted((a, b) => a.time - b.time)
 }
 
 function findTimestampBounds(series: TTimeseriesPoint[][]): { earliest: number; latest: number } | null {
@@ -208,20 +204,12 @@ export function fillMissingDailyData(series: TTimeseriesPoint[], earliest: numbe
     indexed.set(Math.floor(point.time / DAY_IN_SECONDS) * DAY_IN_SECONDS, point)
   })
 
-  const filled: TTimeseriesPoint[] = []
-  for (let current = earliest; current <= latest; current += DAY_IN_SECONDS) {
+  const dayCount = Math.floor((latest - earliest) / DAY_IN_SECONDS) + 1
+  const filled: TTimeseriesPoint[] = Array.from({ length: dayCount }, (_, i) => {
+    const current = earliest + i * DAY_IN_SECONDS
     const existing = indexed.get(current)
-    if (existing) {
-      filled.push(existing)
-      continue
-    }
-
-    filled.push({
-      ...template,
-      time: current,
-      value: null
-    })
-  }
+    return existing ?? { ...template, time: current, value: null }
+  })
 
   return filled
 }
@@ -232,51 +220,44 @@ export function calculateAprFromPps(series: TTimeseriesPoint[], smoothingWindowD
   }
 
   const window = Math.max(1, Math.floor(smoothingWindowDays))
-  const aprSeries: TTimeseriesPoint[] = []
 
   const smoothedValues = series.map((_, index) => {
     const windowStart = Math.max(0, index - window + 1)
-    let sum = 0
-    let count = 0
-
-    for (let i = windowStart; i <= index; i++) {
-      const value = series[i].value
-      if (value !== null) {
-        sum += value
-        count += 1
-      }
-    }
-
+    const windowSlice = series.slice(windowStart, index + 1)
+    const { sum, count } = windowSlice.reduce(
+      (acc, item) => {
+        if (item.value !== null) {
+          return { sum: acc.sum + item.value, count: acc.count + 1 }
+        }
+        return acc
+      },
+      { sum: 0, count: 0 }
+    )
     return count > 0 ? sum / count : null
   })
 
-  for (let i = 0; i < series.length; i += 1) {
-    const current = series[i]
-    const currentSmoothed = smoothedValues[i]
-
+  const aprSeries: TTimeseriesPoint[] = series.map((current, i) => {
     if (i === 0) {
-      aprSeries.push({ ...current, value: null })
-      continue
+      return { ...current, value: null }
     }
 
+    const currentSmoothed = smoothedValues[i]
     const previous = series[i - 1]
     const previousSmoothed = smoothedValues[i - 1]
 
     if (current.value === null || previous.value === null || currentSmoothed === null || previousSmoothed === null) {
-      aprSeries.push({ ...current, value: null })
-      continue
+      return { ...current, value: null }
     }
 
     const deltaDays = (current.time - previous.time) / DAY_IN_SECONDS
     if (deltaDays <= 0) {
-      aprSeries.push({ ...current, value: null })
-      continue
+      return { ...current, value: null }
     }
 
     const periodReturn = (currentSmoothed - previousSmoothed) / previousSmoothed
     const apr = periodReturn * (365 / deltaDays)
-    aprSeries.push({ ...current, value: apr })
-  }
+    return { ...current, value: apr }
+  })
 
   return aprSeries
 }

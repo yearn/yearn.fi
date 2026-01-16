@@ -176,13 +176,19 @@ export const WidgetDeposit: FC<Props> = ({
 
   const inputTokenPrice = useMemo(() => {
     if (!inputToken?.address || !inputToken?.chainID) return 0
-    return getPrice({ address: toAddress(inputToken.address), chainID: inputToken.chainID }).normalized
+    return getPrice({
+      address: toAddress(inputToken.address),
+      chainID: inputToken.chainID
+    }).normalized
   }, [inputToken?.address, inputToken?.chainID, getPrice])
 
   const outputTokenPrice = useMemo(() => {
     if (depositToken === assetAddress) return 0
     if (!assetToken?.address || !assetToken?.chainID) return 0
-    return getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
+    return getPrice({
+      address: toAddress(assetToken.address),
+      chainID: assetToken.chainID
+    }).normalized
   }, [depositToken, assetAddress, assetToken?.address, assetToken?.chainID, getPrice])
 
   const assetTokenPrice = useMemo(() => {
@@ -336,7 +342,7 @@ export const WidgetDeposit: FC<Props> = ({
   return (
     <div className="flex flex-col relative group/widget">
       {/* Settings Popover */}
-      <div className="flex justify-end md:opacity-0 md:group-hover/widget:opacity-100 transition-opacity duration-200">
+      <div className="flex justify-end md:opacity-0 md:group-hover/widget:opacity-100 transition-opacity duration-200 h-7">
         <SettingsPopover
           slippage={zapSlippage}
           setSlippage={setZapSlippage}
@@ -454,7 +460,10 @@ export const WidgetDeposit: FC<Props> = ({
         stakingTokenSymbol={stakingToken?.symbol}
         expectedShares={
           activeFlow.periphery.expectedOut > 0n
-            ? formatTAmount({ value: activeFlow.periphery.expectedOut, decimals: vault?.decimals ?? 18 })
+            ? formatTAmount({
+                value: activeFlow.periphery.expectedOut,
+                decimals: vault?.decimals ?? 18
+              })
             : '0'
         }
         stakingAddress={stakingAddress}
@@ -465,7 +474,10 @@ export const WidgetDeposit: FC<Props> = ({
       <AnnualReturnOverlay
         isOpen={showAnnualReturnModal}
         onClose={() => setShowAnnualReturnModal(false)}
-        depositAmount={formatTAmount({ value: depositAmount.debouncedBn, decimals: inputToken?.decimals ?? 18 })}
+        depositAmount={formatTAmount({
+          value: depositAmount.debouncedBn,
+          decimals: inputToken?.decimals ?? 18
+        })}
         tokenSymbol={inputToken?.symbol}
         estimatedReturn={estimatedAnnualReturn}
         currentAPR={vaultAPR}

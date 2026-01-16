@@ -9,16 +9,15 @@ export function handleInputChangeEventValue(e: React.ChangeEvent<HTMLInputElemen
     return { ...DefaultTNormalizedBN, decimals: resolvedDecimals }
   }
   if (amount === 0) {
-    let amountStr = value.replace(/,/g, '.').replace(/[^0-9.]/g, '')
-    const amountParts = amountStr.split('.')
+    const baseAmountStr = value.replace(/,/g, '.').replace(/[^0-9.]/g, '')
+    const amountParts = baseAmountStr.split('.')
     if (amountParts[0]?.length > 1 && Number(amountParts[0]) === 0) {
       //
     } else {
       //check if we have 0 everywhere
       if (amountParts.every((part: string): boolean => Number(part) === 0)) {
-        if (amountParts.length === 2) {
-          amountStr = amountParts[0] + '.' + amountParts[1].slice(0, resolvedDecimals)
-        }
+        const amountStr =
+          amountParts.length === 2 ? amountParts[0] + '.' + amountParts[1].slice(0, resolvedDecimals) : baseAmountStr
         const raw = parseUnits((amountStr || '0') as `${number}`, resolvedDecimals)
         return { raw, normalized: Number(amountStr) || 0, display: amountStr, decimals: resolvedDecimals }
       }

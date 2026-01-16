@@ -288,12 +288,18 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
 
   const assetTokenPrice = useMemo(() => {
     if (!assetToken?.address || !assetToken?.chainID) return 0
-    return getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
+    return getPrice({
+      address: toAddress(assetToken.address),
+      chainID: assetToken.chainID
+    }).normalized
   }, [assetToken?.address, assetToken?.chainID, getPrice])
 
   const outputTokenPrice = useMemo(() => {
     if (!outputToken?.address || !outputToken?.chainID) return 0
-    return getPrice({ address: toAddress(outputToken.address), chainID: outputToken.chainID }).normalized
+    return getPrice({
+      address: toAddress(outputToken.address),
+      chainID: outputToken.chainID
+    }).normalized
   }, [outputToken?.address, outputToken?.chainID, getPrice])
 
   const zapToken = useMemo(() => {
@@ -431,7 +437,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   return (
     <div className="flex flex-col relative group/widget">
       {/* Settings Popover */}
-      <div className="flex justify-end md:opacity-0 md:group-hover/widget:opacity-100 transition-opacity duration-200">
+      <div className="flex justify-end md:opacity-0 md:group-hover/widget:opacity-100 transition-opacity duration-200 h-7">
         <SettingsPopover
           slippage={zapSlippage}
           setSlippage={setZapSlippage}
@@ -578,7 +584,12 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
         vaultAssetSymbol={assetToken?.symbol || ''}
         outputTokenSymbol={outputToken?.symbol || ''}
         withdrawAmount={
-          requiredShares > 0n ? formatTAmount({ value: requiredShares, decimals: vault?.decimals ?? 18 }) : '0'
+          requiredShares > 0n
+            ? formatTAmount({
+                value: requiredShares,
+                decimals: vault?.decimals ?? 18
+              })
+            : '0'
         }
         expectedOutput={
           activeFlow.periphery.expectedOut > 0n

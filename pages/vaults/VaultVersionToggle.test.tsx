@@ -13,31 +13,31 @@ function renderToggle(entry: string): string {
 }
 
 describe('VaultVersionToggle', () => {
-  it('marks allocator vaults active when no type param', () => {
+  it('marks all vaults active when no type param', () => {
     const html = renderToggle('/vaults')
-    expect(html).toMatch(/data-active="false".*All Vaults/)
-    expect(html).toMatch(/data-active="true".*Single Asset Vaults/)
-    expect(html).toMatch(/data-active="false".*LP Vaults/)
+    expect(html).toMatch(/data-active="true".*All Vaults/)
+    expect(html).toMatch(/data-active="false".*Single Asset/)
+    expect(html).toMatch(/data-active="false".*LP Token/)
     expect(html).not.toMatch(/v3 Strategies/)
     expect(html).toContain('🌐')
     expect(html).toContain('⚙️')
     expect(html).toContain('🏭')
   })
 
-  it('marks LP vaults active when type=factory', () => {
-    const html = renderToggle('/vaults?type=factory')
-    expect(html).toMatch(/data-active="true".*LP Vaults/)
-    expect(html).toMatch(/data-active="false".*Single Asset Vaults/)
+  it('marks lp token vaults active when type=lp', () => {
+    const html = renderToggle('/vaults?type=lp')
+    expect(html).toMatch(/data-active="true".*LP Token/)
+    expect(html).toMatch(/data-active="false".*Single Asset/)
     expect(html).toMatch(/data-active="false".*All Vaults/)
     expect(html).toContain('🌐')
     expect(html).toContain('⚙️')
     expect(html).toContain('🏭')
   })
 
-  it('marks all vaults active when type=all', () => {
-    const html = renderToggle('/vaults?type=all')
-    expect(html).toMatch(/data-active="true".*All Vaults/)
-    expect(html).toMatch(/data-active="false".*Single Asset Vaults/)
-    expect(html).toMatch(/data-active="false".*LP Vaults/)
+  it('marks single asset vaults active when type=single', () => {
+    const html = renderToggle('/vaults?type=single')
+    expect(html).toMatch(/data-active="false".*All Vaults/)
+    expect(html).toMatch(/data-active="true".*Single Asset/)
+    expect(html).toMatch(/data-active="false".*LP Token/)
   })
 })

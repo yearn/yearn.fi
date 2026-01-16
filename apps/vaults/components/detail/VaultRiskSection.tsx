@@ -36,13 +36,13 @@ function RiskScoreItem({
         </button>
         <div className={'flex items-end font-bold'}>
           <p className={cl('mr-2', isOverall ? 'text-xl' : 'text-lg')}>{score}</p>
-          <span className={'text-text-primary/40'}>{' / 5'}</span>
+          <span className={'text-text-tertiary'}>{' / 5'}</span>
         </div>
         {rightContent ? <div className={'flex items-end'}>{rightContent}</div> : null}
       </div>
       {isOpen && (
         <div className={'mt-2 w-full'}>
-          <small className={'whitespace-break-spaces text-sm text-text-primary/70'}>{explanation}</small>
+          <small className={'whitespace-break-spaces text-sm text-text-secondary'}>{explanation}</small>
         </div>
       )}
     </div>
@@ -50,13 +50,10 @@ function RiskScoreItem({
 }
 
 export function VaultRiskSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
-  const hasRiskScore = useMemo(() => {
-    let sum = 0
-    currentVault.info.riskScore?.forEach((score) => {
-      sum += score
-    })
-    return sum
-  }, [currentVault.info.riskScore])
+  const hasRiskScore = useMemo(
+    () => (currentVault.info.riskScore || []).reduce((sum, score) => sum + score, 0),
+    [currentVault.info.riskScore]
+  )
 
   return <SimpleRiskScore hasRiskScore={hasRiskScore} currentVault={currentVault} />
 }
@@ -102,13 +99,13 @@ function SimpleRiskScore({
                 <div className={'flex items-end gap-4'}>
                   <div className={'flex items-center font-bold'}>
                     <p className={'mr-2 text-xl'}>{multiStrategyRiskScore.score}</p>
-                    <span className={'text-text-primary/40'}>{' / 5'}</span>
+                    <span className={'text-text-tertiary'}>{' / 5'}</span>
                   </div>
                   {renderInlineRiskScoreTag()}
                 </div>
               </div>
               <div className={'mt-2 w-full'}>
-                <small className={'whitespace-break-spaces text-sm text-text-primary/70'}>
+                <small className={'whitespace-break-spaces text-sm text-text-secondary'}>
                   {multiStrategyRiskScore.explanation}
                 </small>
               </div>
@@ -196,7 +193,7 @@ function SimpleRiskScore({
   ]
 
   return (
-    <div className={'grid grid-cols-1 gap-4 p-4 md:grid-cols-12 md:gap-10 md:p-8'}>
+    <div className={'grid grid-cols-1 gap-4 p-4 md:grid-cols-12 md:gap-10 md:px-6 pt-0'}>
       <div className={'col-span-12 mt-6 w-full space-y-1 md:mt-0'}>
         {hasRiskScore ? (
           riskScoreData.map((item, index) => (

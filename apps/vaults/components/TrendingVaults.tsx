@@ -1,6 +1,7 @@
 import Link from '@components/Link'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
+import { useLocalStorage } from '@lib/hooks/useLocalStorage'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { cl, toAddress } from '@lib/utils'
 import { formatPercent } from '@lib/utils/format'
@@ -215,7 +216,10 @@ function TrendingVaultsSkeleton(): ReactElement {
 }
 
 export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): ReactElement | null {
-  const [isTrendingExpanded, setIsTrendingExpanded] = useState(true)
+  const [isTrendingExpanded, setIsTrendingExpanded] = useLocalStorage<boolean>(
+    'yearn.fi/trending-vaults-expanded@0.0.1',
+    false
+  )
   const trendingCarouselRef = useRef<HTMLDivElement>(null)
   const pendingPrependWidthRef = useRef(0)
   const pendingPrependScrollDeltaRef = useRef<number | null>(null)

@@ -91,7 +91,7 @@ export function VaultAboutSection({
   return (
     <div className={cl('space-y-4 p-8 pt-0', className)}>
       <div className={'w-full'}>
-        <div className={'mt-2 text-text-primary/50'}>
+        <div className={'text-sm text-text-secondary'}>
           {typeof getVaultDescription() === 'string' ? (
             <p
               // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled description content
@@ -106,24 +106,20 @@ export function VaultAboutSection({
       </div>
 
       <div className={'w-full'}>
-        <b className={'text-text-primary'}>{'Fees'}</b>
+        <b className={'text-semibold text-text-primary'}>{'Fees'}</b>
         <div className={'mt-2 grid grid-cols-4 gap-8'}>
           <VaultFeesLineItem label={'Management'}>
-            <p className={'font-number text-xl text-text-primary'}>
-              {formatPercent((apr.fees.management || 0) * 100, 0)}
-            </p>
+            <p className={'text-xl text-text-primary'}>{formatPercent((apr.fees.management || 0) * 100, 0)}</p>
           </VaultFeesLineItem>
           <VaultFeesLineItem label={'Performance'}>
-            <p className={'font-number text-xl text-text-primary'}>
-              {formatPercent((apr.fees.performance || 0) * 100, 0)}
-            </p>
+            <p className={'text-xl text-text-primary'}>{formatPercent((apr.fees.performance || 0) * 100, 0)}</p>
           </VaultFeesLineItem>
           {(currentVault.apr.forwardAPR.composite?.keepVELO || 0) > 0 ? (
             <VaultFeesLineItem
               label={'keepVELO'}
               tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}
             >
-              <b className={'font-number text-xl text-text-secondary'}>
+              <b className={'text-xl text-text-secondary'}>
                 {`${formatAmount((currentVault.apr.forwardAPR.composite?.keepVELO || 0) * 100, 0, 2)} %`}
               </b>
             </VaultFeesLineItem>

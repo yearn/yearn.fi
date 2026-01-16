@@ -28,7 +28,7 @@ export function LandingAppHeader(): ReactElement {
                 className={cl('size-4 text-neutral-400 transition-transform', isLauncherOpen ? 'rotate-180' : '')}
               />
             </button>
-            <LauncherDropdown isOpen={isLauncherOpen} onClose={() => setIsLauncherOpen(false)} />
+            <LauncherDropdown isOpen={isLauncherOpen} onClose={() => setIsLauncherOpen(false)} forceDark />
           </div>
         </header>
       </div>
