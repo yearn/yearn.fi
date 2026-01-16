@@ -27,14 +27,13 @@ export function VaultHoldingsAmount({
       chainID: currentVault.chainID
     })
 
-    let totalRawBalance = vaultToken.balance.raw
-    if (currentVault.staking.available) {
-      const stakingToken = getToken({
-        chainID: currentVault.chainID,
-        address: currentVault.staking.address
-      })
-      totalRawBalance += stakingToken.balance.raw
-    }
+    const stakingBalance = currentVault.staking.available
+      ? getToken({
+          chainID: currentVault.chainID,
+          address: currentVault.staking.address
+        }).balance.raw
+      : 0n
+    const totalRawBalance = vaultToken.balance.raw + stakingBalance
 
     const total: TNormalizedBN = toNormalizedBN(totalRawBalance, vaultToken.decimals)
     return {

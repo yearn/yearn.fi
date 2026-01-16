@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
-
-import { useWeb3 } from '../contexts/useWeb3'
+import { useChains } from '@/context/chainsContext'
 
 export type TUseChainIDRes = {
   chainID: number
@@ -15,20 +14,16 @@ export const toSafeChainID = (chainID: number, fallback: number): number => {
   return chainID
 }
 
-/***************************************************************************
- ** This hook can be used to grab the current injected wallet provider.
- ** It will return the name and icon of the wallet provider.
- **************************************************************************/
 export function useChainID(defaultChainID?: number): TUseChainIDRes {
-  const { chainID, onSwitchChain } = useWeb3()
+  const { chainId, switchNetwork } = useChains()
   const safeChainID = useMemo((): number => {
     const fallbackChainID = defaultChainID || 1
-    return toSafeChainID(chainID, fallbackChainID)
-  }, [chainID, defaultChainID])
+    return toSafeChainID(chainId, fallbackChainID)
+  }, [chainId, defaultChainID])
 
   return {
-    chainID: Number(chainID || defaultChainID || 1),
-    updateChainID: onSwitchChain,
+    chainID: Number(chainId || defaultChainID || 1),
+    updateChainID: switchNetwork,
     safeChainID
   }
 }

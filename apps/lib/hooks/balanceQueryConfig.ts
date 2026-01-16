@@ -26,29 +26,8 @@ export function getChainCacheConfig(chainId: number) {
   return CHAIN_CACHE_CONFIG[chainId] || DEFAULT_CACHE_CONFIG
 }
 
-/*******************************************************************************
- ** Rate limiting configuration per chain
- ******************************************************************************/
-export const CHAIN_RATE_LIMITS: Record<number, { maxConcurrent: number; delayMs: number }> = {
-  // Base - most restrictive due to rate limiting
-  8453: { maxConcurrent: 2, delayMs: 500 },
-  // Other chains with moderate limits
-  1: { maxConcurrent: 5, delayMs: 100 },
-  10: { maxConcurrent: 3, delayMs: 200 },
-  56: { maxConcurrent: 3, delayMs: 200 },
-  137: { maxConcurrent: 3, delayMs: 200 },
-  42161: { maxConcurrent: 3, delayMs: 200 }
-}
-
-export const DEFAULT_RATE_LIMIT = { maxConcurrent: 3, delayMs: 200 }
-
-export function getChainRateLimit(chainId: number) {
-  return CHAIN_RATE_LIMITS[chainId] || DEFAULT_RATE_LIMIT
-}
-
 export function getChainConfig(chainId: number) {
   return {
-    cache: getChainCacheConfig(chainId),
-    rateLimit: getChainRateLimit(chainId)
+    cache: getChainCacheConfig(chainId)
   }
 }

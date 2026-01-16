@@ -1,5 +1,3 @@
-'use client'
-
 import { useLocalStorageValue } from '@react-hookz/web'
 import type { Dispatch, ReactElement, SetStateAction } from 'react'
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'

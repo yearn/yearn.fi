@@ -84,18 +84,19 @@ export function VaultsListRow({
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
   const productType = isAllocatorVault ? 'v3' : 'lp'
-  let productTypeLabel = 'LP Token Vault'
-  let productTypeIcon = <span className={'text-sm leading-none'}>{'🏭'}</span>
-  let productTypeAriaLabel = 'Show LP token vaults'
-  if (isAllocatorVault) {
-    productTypeLabel = 'Single Asset Vault'
-    productTypeIcon = <span className={'text-sm leading-none'}>{'⚙️'}</span>
-    productTypeAriaLabel = 'Show single asset vaults'
-  } else if (isLegacyVault) {
-    productTypeLabel = 'Legacy'
-    productTypeIcon = <IconRewind className={'size-3.5'} />
-    productTypeAriaLabel = 'Legacy vault'
-  }
+  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
+  const productTypeIcon = isAllocatorVault ? (
+    <span className={'text-sm leading-none'}>{'⚙️'}</span>
+  ) : isLegacyVault ? (
+    <IconRewind className={'size-3.5'} />
+  ) : (
+    <span className={'text-sm leading-none'}>{'🏭'}</span>
+  )
+  const productTypeAriaLabel = isAllocatorVault
+    ? 'Show single asset vaults'
+    : isLegacyVault
+      ? 'Legacy vault'
+      : 'Show LP token vaults'
   const showProductTypeChip = Boolean(activeProductType) || Boolean(onToggleVaultType)
   const isProductTypeActive = activeProductType === productType
   const shouldCollapseProductTypeChip =
@@ -109,42 +110,30 @@ export function VaultsListRow({
   const metricsColumnSpan = 'col-span-4'
 
   const isHiddenVault = Boolean(flags?.isHidden)
-  let baseKindType: 'multi' | 'single' | undefined
-  if (currentVault.kind === 'Multi Strategy') {
-    baseKindType = 'multi'
-  } else if (currentVault.kind === 'Single Strategy') {
-    baseKindType = 'single'
-  }
+  const baseKindType: 'multi' | 'single' | undefined =
+    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
 
-  let fallbackKindType: 'multi' | 'single' | undefined
-  if (listKind === 'allocator') {
-    fallbackKindType = 'multi'
-  } else if (listKind === 'strategy') {
-    fallbackKindType = 'single'
-  }
+  const fallbackKindType: 'multi' | 'single' | undefined =
+    listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
   const kindType = baseKindType ?? fallbackKindType
-  let kindLabel: string | undefined = currentVault.kind
-  if (kindType === 'multi') {
-    kindLabel = 'Allocator'
-  } else if (kindType === 'single') {
-    kindLabel = 'Strategy'
-  }
+  const kindLabel: string | undefined =
+    kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
   const showKindChip = showStrategies && Boolean(kindType)
   const isKindActive = false
-  let categoryIcon: ReactElement | null = null
-  if (currentVault.category === 'Stablecoin') {
-    categoryIcon = <IconStablecoin className={'size-3.5'} />
-  } else if (currentVault.category === 'Volatile') {
-    categoryIcon = <IconVolatile className={'size-3.5'} />
-  }
-  let kindIcon: ReactElement | null = null
-  if (kindType === 'multi') {
-    kindIcon = <IconCirclePile className={'size-3.5'} />
-  } else if (kindType === 'single') {
-    kindIcon = <IconStack className={'size-3.5'} />
-  }
+  const categoryIcon: ReactElement | null =
+    currentVault.category === 'Stablecoin' ? (
+      <IconStablecoin className={'size-3.5'} />
+    ) : currentVault.category === 'Volatile' ? (
+      <IconVolatile className={'size-3.5'} />
+    ) : null
+  const kindIcon: ReactElement | null =
+    kindType === 'multi' ? (
+      <IconCirclePile className={'size-3.5'} />
+    ) : kindType === 'single' ? (
+      <IconStack className={'size-3.5'} />
+    ) : null
   const migratableIcon = <IconMigratable className={'size-3.5'} />
   const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
   const tvlNativeTooltip = (

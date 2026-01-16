@@ -1,5 +1,3 @@
-'use client'
-
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useMemo, useRef } from 'react'
@@ -63,7 +61,6 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     tokens: allTokens,
     priorityChainID: 1
   })
-  // console.log('in WalletContext')
   const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
     const _tokens = { ...tokensRaw }
 
@@ -132,24 +129,19 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         const tokenPrice = getPrice({ address: tokenData.address, chainID: tokenData.chainID })
         const tokenValue = tokenBalance.normalized * tokenPrice.normalized
 
-        let stakingValue = 0
         const vaultDetails = allVaults[toAddress(tokenAddress)]
 
-        if (vaultDetails?.staking) {
-          // Check if vaultDetails and its staking property exist
-          const { staking } = vaultDetails // Safe to destructure now
+        const stakingValue = (() => {
+          if (!vaultDetails?.staking) return 0
+          const { staking } = vaultDetails
           const hasStaking = staking.available ?? false
-          if (hasStaking && staking.address) {
-            // Ensure staking.address is also valid
-            const stakingAddress = staking.address
-            const stakingBalance = getBalance({
-              address: stakingAddress,
-              chainID: tokenData.chainID
-            })
-
-            stakingValue = stakingBalance.normalized * tokenPrice.normalized
-          }
-        }
+          if (!hasStaking || !staking.address) return 0
+          const stakingBalance = getBalance({
+            address: staking.address,
+            chainID: tokenData.chainID
+          })
+          return stakingBalance.normalized * tokenPrice.normalized
+        })()
 
         if (allVaults?.[toAddress(tokenAddress)]) {
           if (vaultDetails.version.split('.')?.[0] === '3' || vaultDetails.version.split('.')?.[0] === '~3') {

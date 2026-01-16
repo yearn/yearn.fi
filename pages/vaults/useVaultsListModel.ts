@@ -136,12 +136,12 @@ export function useVaultsListModel({
     [listVaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags]
   )
 
-  let isLoadingVaultList = v2FilterResult.isLoading
-  if (listVaultType === 'all') {
-    isLoadingVaultList = v3FilterResult.isLoading || v2FilterResult.isLoading
-  } else if (listVaultType === 'v3') {
-    isLoadingVaultList = v3FilterResult.isLoading
-  }
+  const isLoadingVaultList =
+    listVaultType === 'all'
+      ? v3FilterResult.isLoading || v2FilterResult.isLoading
+      : listVaultType === 'v3'
+        ? v3FilterResult.isLoading
+        : v2FilterResult.isLoading
 
   const totalMatchingVaults = useMemo(() => {
     const v3Total = v3FilterResult.totalMatchingVaults ?? 0
