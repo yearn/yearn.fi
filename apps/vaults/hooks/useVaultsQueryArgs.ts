@@ -1,6 +1,6 @@
 import { useSupportedChains } from '@lib/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@lib/types'
-import type { TPossibleSortBy } from '@vaults/shared/hooks/useSortVaults'
+import type { TPossibleSortBy } from '@vaults/hooks/useSortVaults'
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 

@@ -1,11 +1,12 @@
 import Link from '@components/Link'
+import { Breadcrumbs } from '@lib/components/Breadcrumbs'
 import { Button } from '@lib/components/Button'
 import { IconSpinner } from '@lib/icons/IconSpinner'
 import type { TSortDirection } from '@lib/types'
 import { VaultsListHead } from '@vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@vaults/components/list/VaultsListRow'
 import { SuggestedVaultCard } from '@vaults/components/SuggestedVaultCard'
-import type { TPossibleSortBy } from '@vaults/shared/index'
+import type { TPossibleSortBy } from '@vaults/hooks/useSortVaults'
 import type { ReactElement } from 'react'
 import { type TPortfolioModel, usePortfolioModel } from './usePortfolioModel'
 
@@ -81,13 +82,13 @@ function PortfolioHeaderSection({
 }: TPortfolioHeaderProps): ReactElement {
   return (
     <section className={'flex flex-col gap-4'}>
-      <div className={'flex items-center gap-2 mt-2 text-sm text-text-secondary'}>
-        <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
-          {'Home'}
-        </Link>
-        <span>{'>'}</span>
-        <span className={'font-medium text-text-primary'}>{'Account Overview'}</span>
-      </div>
+      <Breadcrumbs
+        className={'mt-2'}
+        items={[
+          { label: 'Home', href: '/' },
+          { label: 'Account Overview', isCurrent: true }
+        ]}
+      />
       <div>
         <h1 className={'text-4xl font-black text-text-primary'}>{'Account Overview'}</h1>
       </div>

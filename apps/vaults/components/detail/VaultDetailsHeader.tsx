@@ -20,11 +20,8 @@ import { VaultsListChip } from '@vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults/components/table/VaultHistoricalAPY'
 import { useHeaderCompression } from '@vaults/hooks/useHeaderCompression'
-
 import { useVaultUserData } from '@vaults/hooks/useVaultUserData'
-
-import { deriveListKind } from '@vaults/shared/utils/vaultListFacets'
-
+import { deriveListKind } from '@vaults/utils/vaultListFacets'
 import type { ReactElement } from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'

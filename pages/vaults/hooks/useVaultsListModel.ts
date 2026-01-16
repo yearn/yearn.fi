@@ -3,9 +3,7 @@ import { useV3VaultFilter } from '@lib/hooks/useV3VaultFilter'
 import { getVaultKey } from '@lib/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@lib/types'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
-import { type TPossibleSortBy, useSortVaults } from '@vaults/shared/hooks/useSortVaults'
-import type { TVaultAggressiveness } from '@vaults/shared/utils/vaultListFacets'
-import { useMemo } from 'react'
+import { type TPossibleSortBy, useSortVaults } from '@vaults/hooks/useSortVaults'
 import {
   AGGRESSIVENESS_OPTIONS,
   AVAILABLE_TOGGLE_VALUE,
@@ -13,8 +11,10 @@ import {
   selectVaultsByType,
   V2_ASSET_CATEGORIES,
   V3_ASSET_CATEGORIES
-} from './constants'
-import type { TVaultType } from './vaultTypeCopy'
+} from '@vaults/utils/constants'
+import type { TVaultAggressiveness } from '@vaults/utils/vaultListFacets'
+import type { TVaultType } from '@vaults/utils/vaultTypeCopy'
+import { useMemo } from 'react'
 
 type TVaultsPinnedSection = {
   key: string

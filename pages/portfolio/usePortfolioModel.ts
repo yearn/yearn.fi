@@ -6,8 +6,8 @@ import type { TSortDirection } from '@lib/types'
 import { isZero, toAddress } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { calculateVaultEstimatedAPY } from '@lib/utils/vaultApy'
-import { type TPossibleSortBy, useSortVaults } from '@vaults/shared/index'
-import { isAllocatorVaultOverride } from '@vaults/shared/utils/vaultListFacets'
+import { type TPossibleSortBy, useSortVaults } from '@vaults/hooks/useSortVaults'
+import { isAllocatorVaultOverride } from '@vaults/utils/vaultListFacets'
 import { useMemo, useState } from 'react'
 
 type THoldingsRow = {
