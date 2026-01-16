@@ -74,7 +74,7 @@ function Index(): ReactElement | null {
     charts: true
   })
   const collapsibleTitles: Record<SectionKey, string> = {
-    about: 'Description',
+    about: 'Vault Info',
     risk: 'Risk Score',
     strategies: 'Strategies',
     info: 'More Info',

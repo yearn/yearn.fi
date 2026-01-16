@@ -41,6 +41,14 @@ import { VaultForwardAPY } from '@vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@vaults/components/table/VaultHistoricalAPY'
 import { useHeaderCompression } from '@vaults/hooks/useHeaderCompression'
 import { deriveListKind } from '@vaults/shared/utils/vaultListFacets'
+import {
+  getCategoryDescription,
+  getChainDescription,
+  getKindDescription,
+  getProductTypeDescription,
+  MIGRATABLE_TAG_DESCRIPTION,
+  RETIRED_TAG_DESCRIPTION
+} from '@vaults/shared/utils/vaultTagCopy'
 import { useAvailableToDeposit } from '@vaults/utils/useAvailableToDeposit'
 import type { ReactElement } from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
@@ -669,6 +677,10 @@ export function VaultDetailsHeader({
     ) : kindType === 'single' ? (
       <IconStack className={'size-3.5'} />
     ) : null
+  const chainDescription = getChainDescription(currentVault.chainID)
+  const categoryDescription = getCategoryDescription(currentVault.category)
+  const productTypeDescription = getProductTypeDescription(listKind)
+  const kindDescription = getKindDescription(kindType, kindLabel)
   const isMigratable = Boolean(currentVault.migration?.available)
   const isRetired = Boolean(currentVault.info?.isRetired)
   const migratableIcon = <IconMigratable className={'size-3.5'} />
@@ -791,6 +803,7 @@ export function VaultDetailsHeader({
                 icon={<TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={14} height={14} priority />}
                 isCollapsed={isCompressed}
                 showCollapsedTooltip={isCompressed}
+                tooltipDescription={chainDescription}
               />
             ) : null}
             {showCategoryChip ? (
@@ -799,6 +812,7 @@ export function VaultDetailsHeader({
                 icon={categoryIcon}
                 isCollapsed={isCompressed}
                 showCollapsedTooltip={isCompressed}
+                tooltipDescription={categoryDescription || undefined}
               />
             ) : null}
             <VaultsListChip
@@ -806,6 +820,7 @@ export function VaultDetailsHeader({
               icon={productTypeIcon}
               isCollapsed={isCompressed}
               showCollapsedTooltip={isCompressed}
+              tooltipDescription={productTypeDescription}
             />
             {showKindChip ? (
               <VaultsListChip
@@ -813,6 +828,7 @@ export function VaultDetailsHeader({
                 icon={kindIcon}
                 isCollapsed={isCompressed}
                 showCollapsedTooltip={isCompressed}
+                tooltipDescription={kindDescription}
               />
             ) : null}
             {isRetired ? (
@@ -821,6 +837,7 @@ export function VaultDetailsHeader({
                 icon={retiredIcon}
                 isCollapsed={isCompressed}
                 showCollapsedTooltip={isCompressed}
+                tooltipDescription={RETIRED_TAG_DESCRIPTION}
               />
             ) : null}
             {isMigratable ? (
@@ -829,6 +846,7 @@ export function VaultDetailsHeader({
                 icon={migratableIcon}
                 isCollapsed={isCompressed}
                 showCollapsedTooltip={isCompressed}
+                tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
               />
             ) : null}
             {isCompressed && explorerHref ? (

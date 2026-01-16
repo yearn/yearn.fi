@@ -1,6 +1,7 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { SearchBar } from '@lib/components/SearchBar'
+import { Tooltip } from '@lib/components/Tooltip'
 import { useChainOptions } from '@lib/hooks/useChains'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { IconCross } from '@lib/icons/IconCross'
@@ -8,6 +9,7 @@ import { IconFilter } from '@lib/icons/IconFilter'
 import { IconSearch } from '@lib/icons/IconSearch'
 import { LogoYearn } from '@lib/icons/LogoYearn'
 import { cl } from '@lib/utils'
+import { getChainDescription, TOOLTIP_DELAY_MS } from '@vaults/shared/utils/vaultTagCopy'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Drawer } from 'vaul'
@@ -707,6 +709,30 @@ function FilterControls({
         <IconSearch className={'size-4'} />
       </button>
     ) : null
+  const shouldStretchChainButtons = !enableResponsiveLayout && !isStacked
+  const chainTooltipWrapperClass = cl('h-full', shouldStretchChainButtons ? 'flex-1 w-full' : '')
+  const renderChainTooltip = (label: string, description?: string): ReactElement => (
+    <div
+      className={
+        'max-w-[220px] rounded-lg border border-border bg-surface-secondary px-3 py-2 text-xs text-text-primary shadow-md'
+      }
+    >
+      <p className={'font-semibold'}>{label}</p>
+      {description ? <p className={'text-text-secondary'}>{description}</p> : null}
+    </div>
+  )
+  const wrapChainButton = (button: ReactElement, label: string, description?: string): ReactElement => {
+    const tooltipContent = renderChainTooltip(label, description)
+    return (
+      <Tooltip
+        className={chainTooltipWrapperClass}
+        openDelayMs={isChainSelectorMinimal ? 0 : TOOLTIP_DELAY_MS}
+        tooltip={tooltipContent}
+      >
+        {button}
+      </Tooltip>
+    )
+  }
   const chainSelectorElement = (
     <div
       ref={chainSelectorRef}
@@ -734,7 +760,7 @@ function FilterControls({
       </button>
       {chainButtons.map((chain) => {
         const showChainLabel = !isChainSelectorMinimal || chain.isSelected
-        return (
+        const chainButton = (
           <button
             key={chain.id}
             type={'button'}
@@ -754,6 +780,9 @@ function FilterControls({
             ) : null}
             {showChainLabel ? <span className={'whitespace-nowrap'}>{chain.label}</span> : null}
           </button>
+        )
+        return (
+          <Fragment key={chain.id}>{wrapChainButton(chainButton, chain.label, getChainDescription(chain.id))}</Fragment>
         )
       })}
 

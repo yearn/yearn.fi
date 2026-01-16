@@ -1,8 +1,10 @@
+import { Tooltip } from '@lib/components/Tooltip'
 import { cl } from '@lib/utils'
+import { TOOLTIP_DELAY_MS } from '@vaults/shared/utils/vaultTagCopy'
 import type { ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
 import type { TVaultType } from './vaultTypeCopy'
-import { getVaultTypeEmoji, getVaultTypeLabel } from './vaultTypeCopy'
+import { getVaultTypeDescription, getVaultTypeEmoji, getVaultTypeLabel } from './vaultTypeCopy'
 import { getSupportedChainsForVaultType, normalizeVaultTypeParam, sanitizeChainsParam } from './vaultTypeUtils'
 
 type TVaultVersionToggleProps = {
@@ -71,7 +73,8 @@ export function VaultVersionToggle({
     >
       {BUTTON_CONFIGS.map((config) => {
         const active = isActive(config.type)
-        return (
+        const description = getVaultTypeDescription(config.type)
+        const button = (
           <button
             key={config.type}
             type={'button'}
@@ -93,6 +96,33 @@ export function VaultVersionToggle({
             </span>
             <span className={'whitespace-nowrap'}>{getVaultTypeLabel(config.type)}</span>
           </button>
+        )
+
+        if (!description) {
+          return button
+        }
+
+        return (
+          <Tooltip
+            key={config.type}
+            className={cl('h-full', stretch ? 'flex-1 w-full' : '')}
+            openDelayMs={TOOLTIP_DELAY_MS}
+            tooltip={
+              <div
+                className={
+                  'max-w-[220px] rounded-lg border border-border bg-surface-secondary px-3 py-2 text-xs text-text-primary shadow-md'
+                }
+              >
+                <div className={'flex items-center gap-1 font-semibold'}>
+                  <span aria-hidden={true}>{getVaultTypeEmoji(config.type)}</span>
+                  <span>{getVaultTypeLabel(config.type)}</span>
+                </div>
+                <p className={'text-text-secondary'}>{description}</p>
+              </div>
+            }
+          >
+            {button}
+          </Tooltip>
         )
       })}
     </div>
