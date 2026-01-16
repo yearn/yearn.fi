@@ -1,6 +1,5 @@
 import type { FC } from 'react'
-import type { Address } from 'viem'
-import { InfoOverlay } from '../shared'
+import { InfoOverlay } from '../shared/InfoOverlay'
 
 interface VaultSharesOverlayProps {
   isOpen: boolean
@@ -12,7 +11,7 @@ interface VaultSharesOverlayProps {
   stakingTokenSymbol?: string
 
   expectedShares: string
-  stakingAddress?: Address
+  stakingAddress?: `0x${string}`
   isAutoStakingEnabled: boolean
   isZap: boolean
 }

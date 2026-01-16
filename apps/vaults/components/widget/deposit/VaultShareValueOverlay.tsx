@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { InfoOverlay } from '../shared'
+import { InfoOverlay } from '../shared/InfoOverlay'
 
 interface VaultShareValueOverlayProps {
   isOpen: boolean
