@@ -1,9 +1,13 @@
 import { cl } from '@lib/utils'
+import type { TVaultType } from '@vaults/utils/vaultTypeCopy'
+import { getVaultTypeEmoji, getVaultTypeLabel } from '@vaults/utils/vaultTypeCopy'
+import {
+  getSupportedChainsForVaultType,
+  normalizeVaultTypeParam,
+  sanitizeChainsParam
+} from '@vaults/utils/vaultTypeUtils'
 import type { ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
-import type { TVaultType } from './vaultTypeCopy'
-import { getVaultTypeEmoji, getVaultTypeLabel } from './vaultTypeCopy'
-import { getSupportedChainsForVaultType, normalizeVaultTypeParam, sanitizeChainsParam } from './vaultTypeUtils'
 
 type TVaultVersionToggleProps = {
   className?: string
