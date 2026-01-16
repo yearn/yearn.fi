@@ -1,11 +1,11 @@
 import type { TSortDirection } from '@lib/types'
 import { copyToClipboard } from '@lib/utils/helpers'
-import type { TPossibleSortBy } from '@vaults/shared/hooks/useSortVaults'
+import type { TPossibleSortBy } from '@vaults/hooks/useSortVaults'
+import { readBooleanParam } from '@vaults/utils/constants'
+import type { TVaultType } from '@vaults/utils/vaultTypeCopy'
+import { getSupportedChainsForVaultType, normalizeVaultTypeParam } from '@vaults/utils/vaultTypeUtils'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router'
-import { readBooleanParam } from './constants'
-import type { TVaultType } from './vaultTypeCopy'
-import { getSupportedChainsForVaultType, normalizeVaultTypeParam } from './vaultTypeUtils'
 
 type TVaultsQueryStateConfig = {
   defaultTypes?: string[]

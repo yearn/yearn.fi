@@ -1,5 +1,5 @@
 import { ALL_VAULTSV3_CATEGORIES } from '@vaults/constants'
-import type { TVaultAggressiveness } from '@vaults/shared/utils/vaultListFacets'
+import type { TVaultAggressiveness } from '@vaults/utils/vaultListFacets'
 
 export const V2_SUPPORTED_CHAINS = [1, 10, 8453]
 export const V3_SUPPORTED_CHAINS = [1, 747474, 8453, 42161, 137]

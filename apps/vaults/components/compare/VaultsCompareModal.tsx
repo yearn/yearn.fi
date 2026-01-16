@@ -8,7 +8,7 @@ import { cl, formatPercent, isZero } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
 import { VaultRiskScoreTag } from '@vaults/components/table/VaultRiskScoreTag'
-import { deriveListKind } from '@vaults/shared/utils/vaultListFacets'
+import { deriveListKind } from '@vaults/utils/vaultListFacets'
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment } from 'react'
 
