@@ -35,6 +35,9 @@ type TVaultsListRowExpandedContentProps = {
   onExpandedViewChange: (nextView: TVaultsExpandedView) => void
   onExpandedTimeframeChange: (nextTimeframe: TVaultChartTimeframe) => void
   onNavigateToVault: () => void
+  showKindTag?: boolean
+  showHiddenTag?: boolean
+  isHidden?: boolean
 }
 
 export default function VaultsListRowExpandedContent({
@@ -43,7 +46,10 @@ export default function VaultsListRowExpandedContent({
   expandedTimeframe,
   onExpandedViewChange,
   onExpandedTimeframeChange,
-  onNavigateToVault
+  onNavigateToVault,
+  showKindTag = true,
+  showHiddenTag = false,
+  isHidden
 }: TVaultsListRowExpandedContentProps): ReactElement {
   return (
     <div className={'hidden md:block bg-surface'}>
@@ -91,7 +97,13 @@ export default function VaultsListRowExpandedContent({
                 <VaultStrategyAllocationPreview currentVault={currentVault} />
               </div>
               <div className={'p-4 md:p-6'}>
-                <VaultAboutSection currentVault={currentVault} className={'p-0'} />
+                <VaultAboutSection
+                  currentVault={currentVault}
+                  className={'p-0'}
+                  showKindTag={showKindTag}
+                  showHiddenTag={showHiddenTag}
+                  isHidden={isHidden}
+                />
               </div>
             </div>
           ) : null}

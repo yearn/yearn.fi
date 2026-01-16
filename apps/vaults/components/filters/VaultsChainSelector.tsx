@@ -1,6 +1,8 @@
+import { Tooltip } from '@lib/components/Tooltip'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { LogoYearn } from '@lib/icons/LogoYearn'
 import { cl } from '@lib/utils'
+import { TOOLTIP_DELAY_MS } from '@vaults/utils/vaultTagCopy'
 import type { ReactElement, RefObject } from 'react'
 
 type TVaultsChainButton = {
@@ -8,6 +10,7 @@ type TVaultsChainButton = {
   label: string
   icon?: ReactElement
   isSelected: boolean
+  description?: string
 }
 
 type TVaultsChainSelectorProps = {
@@ -37,6 +40,9 @@ export function VaultsChainSelector({
   onOpenChainModal,
   selectorRef
 }: TVaultsChainSelectorProps): ReactElement {
+  const shouldStretchChainButtons = !enableResponsiveLayout && !isStacked
+  const tooltipWrapperClass = cl('h-full', shouldStretchChainButtons ? 'flex-1 w-full' : '')
+
   return (
     <div
       ref={selectorRef}
@@ -64,7 +70,7 @@ export function VaultsChainSelector({
       </button>
       {chainButtons.map((chain) => {
         const showChainLabel = !isMinimal || chain.isSelected
-        return (
+        const button = (
           <button
             key={chain.id}
             type={'button'}
@@ -84,6 +90,36 @@ export function VaultsChainSelector({
             ) : null}
             {showChainLabel ? <span className={'whitespace-nowrap'}>{chain.label}</span> : null}
           </button>
+        )
+
+        if (!chain.description) {
+          return button
+        }
+
+        return (
+          <Tooltip
+            key={chain.id}
+            className={tooltipWrapperClass}
+            openDelayMs={TOOLTIP_DELAY_MS}
+            align={'start'}
+            tooltip={
+              <div
+                className={
+                  'max-w-[220px] rounded-lg border border-border bg-surface-secondary px-3 py-2 text-xs text-text-primary shadow-md'
+                }
+              >
+                <div className={'flex items-center gap-1 font-semibold'}>
+                  {chain.icon ? (
+                    <span className={'size-4 overflow-hidden rounded-full bg-surface/80'}>{chain.icon}</span>
+                  ) : null}
+                  <span>{chain.label}</span>
+                </div>
+                <p className={'text-text-secondary'}>{chain.description}</p>
+              </div>
+            }
+          >
+            {button}
+          </Tooltip>
         )
       })}
 
