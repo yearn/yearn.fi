@@ -464,7 +464,6 @@ function ListOfVaults({
   const [compareVaultKeys, setCompareVaultKeys] = useState<string[]>([])
   const [isCompareOpen, setIsCompareOpen] = useState(false)
   const [isCompareMode, setIsCompareMode] = useState(false)
-  const compareKeySet = useMemo(() => new Set(compareVaultKeys), [compareVaultKeys])
 
   const handleToggleCompare = useCallback((vault: TYDaemonVault): void => {
     setCompareVaultKeys((prev) => toggleInArray(prev, getVaultKey(vault)))
@@ -488,11 +487,6 @@ function ListOfVaults({
       return next
     })
   }, [])
-
-  const isVaultSelectedForCompare = useCallback(
-    (vault: TYDaemonVault): boolean => compareKeySet.has(getVaultKey(vault)),
-    [compareKeySet]
-  )
 
   useEffect(() => {
     if (holdingsVaults.length === 0 && isHoldingsPinned) {
@@ -826,7 +820,7 @@ function ListOfVaults({
             vaults={section.vaults}
             vaultFlags={vaultFlags}
             resolveApyDisplayVariant={resolveApyDisplayVariant}
-            isCompareSelected={isCompareMode ? isVaultSelectedForCompare : undefined}
+            compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
             onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
             activeChains={activeChains}
             activeCategories={activeCategories}
@@ -844,14 +838,13 @@ function ListOfVaults({
             {mainVaults.map((vault) => {
               const key = getVaultKey(vault)
               const rowApyDisplayVariant = resolveApyDisplayVariant(vault)
-              const isSelectedForCompare = isCompareMode ? isVaultSelectedForCompare(vault) : false
               return (
                 <VaultsListRow
                   key={key}
                   currentVault={vault}
                   flags={vaultFlags[key]}
                   apyDisplayVariant={rowApyDisplayVariant}
-                  isCompareSelected={isSelectedForCompare}
+                  compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
                   onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
                   activeChains={activeChains}
                   activeCategories={activeCategories}
@@ -886,7 +879,7 @@ function ListOfVaults({
     pinnedSections,
     pinnedVaults.length,
     isCompareMode,
-    isVaultSelectedForCompare,
+    compareVaultKeys,
     handleToggleCompare,
     resolveApyDisplayVariant,
     listCategoriesSanitized,
