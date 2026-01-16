@@ -306,8 +306,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     if (withdrawToken === assetAddress) return undefined
 
     const getExpectedAmount = () => {
-      console.log(requiredShares)
-      console.log(formatAmount(Number(formatUnits(requiredShares, vault?.decimals ?? 18)), 6, 6))
       if (isUnstake) {
         return requiredShares > 0n
           ? formatAmount(Number(formatUnits(requiredShares, vault?.decimals ?? 18)), 6, 6)
