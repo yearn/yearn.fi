@@ -31,9 +31,7 @@ const EXPANDED_VIEW_TO_CHART_TAB: Record<
 type TVaultsListRowExpandedContentProps = {
   currentVault: TYDaemonVault
   expandedView: TVaultsExpandedView
-  expandedTimeframe: TVaultChartTimeframe
   onExpandedViewChange: (nextView: TVaultsExpandedView) => void
-  onExpandedTimeframeChange: (nextTimeframe: TVaultChartTimeframe) => void
   onNavigateToVault: () => void
   showKindTag?: boolean
   showHiddenTag?: boolean
@@ -43,70 +41,60 @@ type TVaultsListRowExpandedContentProps = {
 export default function VaultsListRowExpandedContent({
   currentVault,
   expandedView,
-  expandedTimeframe,
   onExpandedViewChange,
-  onExpandedTimeframeChange,
   onNavigateToVault,
   showKindTag = true,
   showHiddenTag = false,
   isHidden
 }: TVaultsListRowExpandedContentProps): ReactElement {
+  const chartTimeframe: TVaultChartTimeframe = '1y'
+
   return (
     <div className={'hidden md:block bg-surface'}>
-      <div className={'px-6 pb-6 pt-3'}>
-        <div className={' bg-surface'}>
-          <VaultsExpandedSelector
-            className={'p-3'}
-            activeView={expandedView}
-            onViewChange={onExpandedViewChange}
-            timeframe={expandedTimeframe}
-            onTimeframeChange={onExpandedTimeframeChange}
-            rightElement={
-              <button
-                type={'button'}
-                onClick={(event): void => {
-                  event.stopPropagation()
-                  onNavigateToVault()
-                }}
-                className={
-                  'rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
-                }
-              >
-                {'Go to Vault'}
-              </button>
-            }
-          />
-
-          {expandedView in EXPANDED_VIEW_TO_CHART_TAB ? (
-            <div className={'px-3 pb-4'}>
+      <div className={'px-6 pb-6 md'}>
+        <div className={'grid gap-6 md:grid-cols-24'}>
+          <div className={'col-span-12 border-r border-border'}>
+            <VaultAboutSection
+              currentVault={currentVault}
+              className={'p-0'}
+              showKindTag={showKindTag}
+              showHiddenTag={showHiddenTag}
+              isHidden={isHidden}
+            />
+          </div>
+          <div className={'col-span-12 flex flex-col gap-4'}>
+            <VaultsExpandedSelector
+              activeView={expandedView}
+              onViewChange={onExpandedViewChange}
+              rightElement={
+                <button
+                  type={'button'}
+                  onClick={(event): void => {
+                    event.stopPropagation()
+                    onNavigateToVault()
+                  }}
+                  className={
+                    'h-full rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+                  }
+                >
+                  {'Go to Vault'}
+                </button>
+              }
+            />
+            {expandedView in EXPANDED_VIEW_TO_CHART_TAB ? (
               <VaultChartsSection
                 chainId={currentVault.chainID}
                 vaultAddress={currentVault.address}
                 shouldRenderSelectors={false}
                 chartTab={EXPANDED_VIEW_TO_CHART_TAB[expandedView as keyof typeof EXPANDED_VIEW_TO_CHART_TAB]}
-                timeframe={expandedTimeframe}
+                timeframe={chartTimeframe}
                 chartHeightPx={200}
                 chartHeightMdPx={200}
               />
-            </div>
-          ) : null}
-
-          {expandedView === 'info' ? (
-            <div className={'grid md:grid-cols-2 divide-y divide-border md:divide-y-0 md:divide-x'}>
-              <div className={'p-4 md:p-6'}>
-                <VaultStrategyAllocationPreview currentVault={currentVault} />
-              </div>
-              <div className={'p-4 md:p-6'}>
-                <VaultAboutSection
-                  currentVault={currentVault}
-                  className={'p-0'}
-                  showKindTag={showKindTag}
-                  showHiddenTag={showHiddenTag}
-                  isHidden={isHidden}
-                />
-              </div>
-            </div>
-          ) : null}
+            ) : (
+              <VaultStrategyAllocationPreview currentVault={currentVault} />
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -220,28 +208,30 @@ function VaultStrategyAllocationPreview({ currentVault }: { currentVault: TYDaem
 
   return (
     <div className={'flex flex-col gap-6'}>
-      <div className={'flex flex-col gap-6 lg:flex-row lg:items-center'}>
-        <AllocationChart allocationChartData={allocationChartData} />
-        <div className={'flex flex-col gap-3'}>
+      <div className={'flex flex-row items-center gap-6'}>
+        <div className={'flex-none'}>
+          <AllocationChart allocationChartData={allocationChartData} />
+        </div>
+        <div className={'flex min-w-0 flex-1 flex-col gap-3'}>
           {activeStrategyData.map((item, index) => (
-            <div key={item.id} className={'flex flex-row items-center gap-3'}>
+            <div key={item.id} className={'flex min-w-0 flex-row items-center gap-3'}>
               <div
-                className={'h-3 w-3 rounded-sm'}
+                className={'h-3 w-3 shrink-0 rounded-sm'}
                 style={{
                   backgroundColor: legendColors[index % legendColors.length]
                 }}
               />
-              <div className={'flex flex-col'}>
-                <span className={'text-sm text-text-primary'}>{item.name}</span>
+              <div className={'flex min-w-0 flex-col'}>
+                <span className={'text-sm text-text-primary break-words'}>{item.name}</span>
                 <span className={'text-xs text-text-secondary'}>{item.amount}</span>
               </div>
             </div>
           ))}
           {unallocatedData ? (
-            <div className={'flex flex-row items-center gap-3'}>
-              <div className={'h-3 w-3 rounded-sm bg-surface-tertiary'} />
-              <div className={'flex flex-col'}>
-                <span className={'text-sm text-text-secondary'}>{'Unallocated'}</span>
+            <div className={'flex min-w-0 flex-row items-center gap-3'}>
+              <div className={'h-3 w-3 shrink-0 rounded-sm bg-surface-tertiary'} />
+              <div className={'flex min-w-0 flex-col'}>
+                <span className={'text-sm text-text-secondary break-words'}>{'Unallocated'}</span>
                 <span className={'text-xs text-text-secondary'}>{unallocatedData.amount}</span>
               </div>
             </div>

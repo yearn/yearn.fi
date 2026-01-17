@@ -12,6 +12,12 @@ import { useId, useMemo } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, LineChart, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
 import { ChartContainer, ChartTooltip } from './ChartPrimitives'
+import {
+  CHART_WITH_AXES_MARGIN,
+  CHART_Y_AXIS_TICK_MARGIN,
+  CHART_Y_AXIS_TICK_STYLE,
+  CHART_Y_AXIS_WIDTH
+} from './chartLayout'
 
 type PercentSeriesKey = 'derivedApr'
 
@@ -47,7 +53,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
   }, [chartData, timeframe])
   const isShortTimeframe = timeframe === '30d' || timeframe === '90d'
   const ticks = useMemo(
-    () => (isShortTimeframe ? getChartWeeklyTicks(filteredData, true) : getChartMonthlyTicks(filteredData, true)),
+    () => (isShortTimeframe ? getChartWeeklyTicks(filteredData) : getChartMonthlyTicks(filteredData)),
     [filteredData, isShortTimeframe]
   )
   const tickFormatter = isShortTimeframe ? formatChartWeekLabel : formatChartMonthYearLabel
@@ -74,15 +80,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
   if (isPowerglove) {
     return (
       <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
-        <LineChart
-          data={filteredData}
-          margin={{
-            top: 20,
-            right: 30,
-            left: 10,
-            bottom: 20
-          }}
-        >
+        <LineChart data={filteredData} margin={CHART_WITH_AXES_MARGIN}>
           <CartesianGrid vertical={false} />
           <XAxis
             dataKey={'date'}
@@ -95,7 +93,10 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           <YAxis
             domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']}
             tickFormatter={(value) => (isPercentSeries ? formatPercentTick(value) : formatPpsTick(value))}
-            tick={{ fill: 'var(--chart-axis)' }}
+            mirror
+            width={CHART_Y_AXIS_WIDTH}
+            tickMargin={CHART_Y_AXIS_TICK_MARGIN}
+            tick={CHART_Y_AXIS_TICK_STYLE}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
           />
@@ -131,15 +132,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
   if (isBlended) {
     return (
       <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
-        <ComposedChart
-          data={filteredData}
-          margin={{
-            top: 20,
-            right: 30,
-            left: 10,
-            bottom: 20
-          }}
-        >
+        <ComposedChart data={filteredData} margin={CHART_WITH_AXES_MARGIN}>
           <CartesianGrid vertical={false} />
           <defs>
             <linearGradient id={`${gradientId}-pps`} x1="0" x2="0" y1="0" y2="1">
@@ -158,7 +151,10 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           <YAxis
             domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']}
             tickFormatter={(value) => (isPercentSeries ? formatPercentTick(value) : formatPpsTick(value))}
-            tick={{ fill: 'var(--chart-axis)' }}
+            mirror
+            width={CHART_Y_AXIS_WIDTH}
+            tickMargin={CHART_Y_AXIS_TICK_MARGIN}
+            tick={CHART_Y_AXIS_TICK_STYLE}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
           />
