@@ -7,13 +7,13 @@ import { IconCirclePile } from '@lib/icons/IconCirclePile'
 import { IconEyeOff } from '@lib/icons/IconEyeOff'
 import { IconMigratable } from '@lib/icons/IconMigratable'
 import { IconRewind } from '@lib/icons/IconRewind'
+import { IconScissors } from '@lib/icons/IconScissors'
 import { IconStablecoin } from '@lib/icons/IconStablecoin'
 import { IconStack } from '@lib/icons/IconStack'
 import { IconVolatile } from '@lib/icons/IconVolatile'
-import { cl, toAddress, toNormalizedBN } from '@lib/utils'
+import { cl, formatAmount, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
-import type { TVaultChartTimeframe } from '@vaults/components/detail/VaultChartsSection'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@vaults/components/table/VaultHoldingsAmount'
 import { deriveListKind } from '@vaults/shared/utils/vaultListFacets'
@@ -87,8 +87,7 @@ export function VaultsListRow({
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const [isExpanded, setIsExpanded] = useState(false)
-  const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('apy')
-  const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
+  const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('strategies')
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
@@ -147,6 +146,11 @@ export function VaultsListRow({
   const categoryDescription = getCategoryDescription(currentVault.category)
   const productTypeDescription = getProductTypeDescription(listKind)
   const kindDescription = getKindDescription(kindType, kindLabel)
+  const fees = currentVault.apr?.fees
+  const showFeesChip = Boolean(fees) && !isChipsCompressed
+  const feesChipLabel = fees
+    ? `${formatAmount((fees.management || 0) * 100, 0, 2)}/${formatAmount((fees.performance || 0) * 100, 0, 2)}`
+    : ''
   const migratableIcon = <IconMigratable className={'size-3.5'} />
   const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
   const tvlNativeTooltip = (
@@ -170,7 +174,7 @@ export function VaultsListRow({
 
   useEffect(() => {
     if (isExpanded) {
-      setExpandedView('apy')
+      setExpandedView('strategies')
     }
   }, [isExpanded])
 
@@ -275,6 +279,15 @@ export function VaultsListRow({
                     tooltipDescription={productTypeDescription}
                     onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
                     ariaLabel={productTypeAriaLabel}
+                  />
+                ) : null}
+                {showFeesChip ? (
+                  <VaultsListChip
+                    label={feesChipLabel}
+                    icon={<IconScissors className={'size-3.5'} />}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={'Management/Performance fees'}
                   />
                 ) : null}
                 {showKindChip && kindLabel ? (
@@ -409,9 +422,7 @@ export function VaultsListRow({
           <VaultsListRowExpandedContent
             currentVault={currentVault}
             expandedView={expandedView}
-            expandedTimeframe={expandedTimeframe}
             onExpandedViewChange={setExpandedView}
-            onExpandedTimeframeChange={setExpandedTimeframe}
             onNavigateToVault={() => navigate(href)}
             showKindTag={showKindChip}
             showHiddenTag={isHiddenVault}
