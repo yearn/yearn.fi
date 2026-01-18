@@ -39,6 +39,30 @@ const shouldOmitZeroTick = (value: number | string) => Number(value) === 0
 const formatPercentTick = (value: number | string) => (shouldOmitZeroTick(value) ? '' : `${value}%`)
 const formatPpsTick = (value: number | string) => (shouldOmitZeroTick(value) ? '' : Number(value).toFixed(3))
 
+type YAxisTickProps = {
+  x?: number
+  y?: number
+  payload?: { value?: number | string }
+  index?: number
+}
+
+const renderPpsTick = ({ x = 0, y = 0, payload, index }: YAxisTickProps) => {
+  const formattedValue = index === 0 ? '' : formatPpsTick(payload?.value ?? '')
+
+  return (
+    <text
+      x={x}
+      y={y}
+      dx={CHART_Y_AXIS_TICK_STYLE.dx}
+      dy={4}
+      fill={CHART_Y_AXIS_TICK_STYLE.fill}
+      textAnchor={CHART_Y_AXIS_TICK_STYLE.textAnchor}
+    >
+      {formattedValue}
+    </text>
+  )
+}
+
 export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }: PPSChartProps) {
   const gradientId = useId().replace(/:/g, '')
   const { chartStyle } = useChartStyle()
@@ -59,6 +83,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
   const tickFormatter = isShortTimeframe ? formatChartWeekLabel : formatChartMonthYearLabel
 
   const isPercentSeries = dataKey !== 'PPS'
+  const shouldHideFirstPpsTick = dataKey === 'PPS'
   const seriesColor = isPercentSeries ? `var(--color-${dataKey})` : 'var(--color-pps)'
   const chartConfig = useMemo<ChartConfig>(() => {
     const config: ChartConfig = {}
@@ -92,11 +117,11 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           />
           <YAxis
             domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']}
-            tickFormatter={(value) => (isPercentSeries ? formatPercentTick(value) : formatPpsTick(value))}
+            tickFormatter={isPercentSeries ? formatPercentTick : undefined}
             mirror
             width={CHART_Y_AXIS_WIDTH}
             tickMargin={CHART_Y_AXIS_TICK_MARGIN}
-            tick={CHART_Y_AXIS_TICK_STYLE}
+            tick={shouldHideFirstPpsTick ? renderPpsTick : CHART_Y_AXIS_TICK_STYLE}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
           />
@@ -150,11 +175,11 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           />
           <YAxis
             domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']}
-            tickFormatter={(value) => (isPercentSeries ? formatPercentTick(value) : formatPpsTick(value))}
+            tickFormatter={isPercentSeries ? formatPercentTick : undefined}
             mirror
             width={CHART_Y_AXIS_WIDTH}
             tickMargin={CHART_Y_AXIS_TICK_MARGIN}
-            tick={CHART_Y_AXIS_TICK_STYLE}
+            tick={shouldHideFirstPpsTick ? renderPpsTick : CHART_Y_AXIS_TICK_STYLE}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
           />

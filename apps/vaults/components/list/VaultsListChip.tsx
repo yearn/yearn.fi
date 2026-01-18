@@ -98,6 +98,7 @@ export function VaultsListChip({
       className={'h-auto'}
       openDelayMs={tooltipDelayMs ?? (tooltipDescription || tooltip ? TOOLTIP_DELAY_MS : 0)}
       tooltip={tooltipContent}
+      align={'start'}
     >
       {chip}
     </Tooltip>
