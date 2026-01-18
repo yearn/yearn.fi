@@ -227,7 +227,11 @@ export function VaultAboutSection({
 
           <ExpandableInfoItem label={'Fees'} value={feesSummary} icon={feesIcon}>
             <div className={'space-y-3'}>
-              <p>{'Management fees are claimed from earned yield, up to the stated percentage of principal.'}</p>
+              <p>
+                {
+                  'Management fees are claimed from earned yield, pro-rated and up to the stated percentage of principal.'
+                }
+              </p>
               <p>{'Performance fees are claimed from earned yield, up to the stated percentage of yield earned.'}</p>
             </div>
           </ExpandableInfoItem>
