@@ -33,13 +33,28 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
       return { type: 'value', label: '30D APY', value: apyData.netApr }
     }
     if (apyData.mode === 'katana' && apyData.katanaTotalApr !== undefined) {
-      return { type: 'value', label: 'Est. APY', prefix: '⚔️', value: apyData.katanaTotalApr }
+      return {
+        type: 'value',
+        label: 'Est. APY',
+        prefix: '',
+        value: apyData.katanaTotalApr
+      }
     }
     if (apyData.mode === 'rewards') {
       if (isVeYfi && apyData.estAprRange) {
-        return { type: 'range', label: 'Est. APY', prefix: '⚡️', range: apyData.estAprRange }
+        return {
+          type: 'range',
+          label: 'Est. APY',
+          prefix: '⚡️',
+          range: apyData.estAprRange
+        }
       }
-      return { type: 'value', label: 'Est. APY', prefix: '⚡️', value: boostedApr }
+      return {
+        type: 'value',
+        label: 'Est. APY',
+        prefix: '⚡️',
+        value: boostedApr
+      }
     }
     if (apyData.mode === 'boosted' && apyData.isBoosted) {
       return {
@@ -97,7 +112,11 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
               value={vault.tvl?.tvl || 0}
               symbol={'USD'}
               decimals={0}
-              options={{ shouldCompactValue: true, maximumFractionDigits: 2, minimumFractionDigits: 0 }}
+              options={{
+                shouldCompactValue: true,
+                maximumFractionDigits: 2,
+                minimumFractionDigits: 0
+              }}
             />
           </p>
         </div>

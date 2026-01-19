@@ -91,12 +91,12 @@ function PortfolioHeaderSection({
       />
       <div>
         <h1 className={'text-4xl font-black text-text-primary'}>{'Account Overview'}</h1>
+        <p className={'mt-2 text-base text-text-secondary'}>
+          {'Monitor your balances, returns, and discover new vaults.'}
+        </p>
       </div>
       {isActive ? (
         <div>
-          <p className={'mt-2 text-base text-text-secondary'}>
-            {'Monitor your balances, returns, and discover new vaults.'}
-          </p>
           <div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
             <div className={'rounded-3xl border border-border bg-surface p-6'}>
               <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>{'Total balance'}</p>
