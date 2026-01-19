@@ -1,3 +1,4 @@
+import { useWeb3 } from '@lib/contexts/useWeb3'
 import { usePrefetchYearnVaults } from '@lib/hooks/useFetchYearnVaults'
 import type { TSortDirection } from '@lib/types'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -154,6 +155,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
   const searchValue = search ?? ''
+  const { isActive: isWalletActive } = useWeb3()
   const listVaultType = useDeferredValue(vaultType)
   const isBelow1000 =
     useMediaQuery('(max-width: 1000px)', {
@@ -607,6 +609,53 @@ export function useVaultsPageModel(): TVaultsPageModel {
     }
   }, [listVaultType])
 
+  const apyColumnSpan = isWalletActive ? 'col-span-4' : 'col-span-6'
+  const tvlColumnSpan = isWalletActive ? 'col-span-4' : 'col-span-5'
+  const listHeadItems: TListHead['items'] = [
+    {
+      type: 'sort',
+      label: 'Vault / Featuring Score',
+      value: 'featuringScore',
+      sortable: true,
+      className: 'col-span-12'
+    },
+    {
+      type: 'sort',
+      label: 'Est. APY',
+      value: 'estAPY',
+      sortable: true,
+      className: apyColumnSpan
+    },
+    {
+      type: 'sort',
+      label: 'TVL',
+      value: 'tvl',
+      sortable: true,
+      className: tvlColumnSpan
+    }
+  ]
+
+  if (!isWalletActive) {
+    listHeadItems.push({
+      type: 'sort',
+      label: '',
+      value: 'spacer',
+      sortable: false,
+      disabled: true,
+      className: 'col-span-1'
+    })
+  }
+
+  if (isWalletActive) {
+    listHeadItems.push({
+      type: 'toggle',
+      label: 'Holdings',
+      value: HOLDINGS_TOGGLE_VALUE,
+      className: 'col-span-4 justify-end',
+      disabled: holdingsVaults.length === 0
+    })
+  }
+
   const listHeadProps: TListHead = {
     containerClassName: 'rounded-t-xl bg-surface shrink-0',
     wrapperClassName: 'relative z-10 border border-border rounded-t-xl bg-transparent',
@@ -633,43 +682,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       })
     },
     activeToggleValues,
-    items: [
-      {
-        type: 'sort',
-        label: 'Vault / Featuring Score',
-        value: 'featuringScore',
-        sortable: true,
-        className: 'col-span-12'
-      },
-      {
-        type: 'sort',
-        label: 'Est. APY',
-        value: 'estAPY',
-        sortable: true,
-        className: 'col-span-4'
-      },
-      {
-        type: 'sort',
-        label: 'TVL',
-        value: 'tvl',
-        sortable: true,
-        className: 'col-span-4'
-      },
-      // {
-      //   type: 'toggle',
-      //   label: 'Available',
-      //   value: AVAILABLE_TOGGLE_VALUE,
-      //   className: 'col-span-3',
-      //   disabled: availableVaults.length === 0
-      // },
-      {
-        type: 'toggle',
-        label: 'Holdings',
-        value: HOLDINGS_TOGGLE_VALUE,
-        className: 'col-span-4 justify-end',
-        disabled: holdingsVaults.length === 0
-      }
-    ]
+    items: listHeadItems
   }
 
   return {

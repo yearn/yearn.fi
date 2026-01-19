@@ -2,6 +2,7 @@ import Link from '@components/Link'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
 import { Tooltip } from '@lib/components/Tooltip'
+import { useWeb3 } from '@lib/contexts/useWeb3'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { IconCirclePile } from '@lib/icons/IconCirclePile'
 import { IconEyeOff } from '@lib/icons/IconEyeOff'
@@ -81,6 +82,7 @@ export function VaultsListRow({
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
+  const { isActive: isWalletActive } = useWeb3()
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('apy')
   const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
@@ -111,7 +113,10 @@ export function VaultsListRow({
   const leftColumnSpan = 'col-span-12'
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
-  const metricsColumnSpan = 'col-span-4'
+  const showHoldingsColumn = isWalletActive
+  const apyColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-6'
+  const tvlColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-5'
+  const holdingsColumnSpan = 'col-span-4'
   const showCompareToggle = Boolean(onToggleCompare)
   const vaultKey = `${currentVault.chainID}_${toAddress(currentVault.address)}`
   const isCompareSelected = compareVaultKeys?.includes(vaultKey) ?? false
@@ -354,7 +359,7 @@ export function VaultsListRow({
             {/* Mobile Holdings + APY + TVL inline */}
             <div className={'hidden max-md:flex items-center shrink-0 gap-4 text-right'}>
               {/* Holdings - shown on wider mobile screens */}
-              {flags?.hasHoldings ? (
+              {showHoldingsColumn ? (
                 <div className={'hidden min-[420px]:block'}>
                   <p className={'text-xs text-text-primary/60'}>{'Holdings'}</p>
                   <VaultHoldingsAmount currentVault={currentVault} valueClassName={'text-sm font-semibold'} />
@@ -383,7 +388,7 @@ export function VaultsListRow({
                   />
                 </p>
                 {/* Holdings indicator dot - shown on narrow screens when user has holdings */}
-                {flags?.hasHoldings ? (
+                {showHoldingsColumn && flags?.hasHoldings ? (
                   <div
                     className={'absolute -right-2 top-0 size-2 rounded-full bg-green-500 min-[420px]:hidden'}
                     title={'You have holdings in this vault'}
@@ -398,7 +403,7 @@ export function VaultsListRow({
         <div
           className={cl(rightColumnSpan, 'z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:items-center', rightGridColumns)}
         >
-          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
+          <div className={cl('yearn--table-data-section-item', apyColumnSpan)} datatype={'number'}>
             <VaultForwardAPY
               currentVault={currentVault}
               showSubline={false}
@@ -408,7 +413,7 @@ export function VaultsListRow({
             />
           </div>
           {/* TVL */}
-          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
+          <div className={cl('yearn--table-data-section-item', tvlColumnSpan)} datatype={'number'}>
             <div className={'flex justify-end text-right'}>
               <Tooltip
                 className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
@@ -431,9 +436,12 @@ export function VaultsListRow({
               </Tooltip>
             </div>
           </div>
-          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
-            <VaultHoldingsAmount currentVault={currentVault} />
-          </div>
+          {!showHoldingsColumn ? <div className={'col-span-1'} /> : null}
+          {showHoldingsColumn ? (
+            <div className={cl('yearn--table-data-section-item', holdingsColumnSpan)} datatype={'number'}>
+              <VaultHoldingsAmount currentVault={currentVault} />
+            </div>
+          ) : null}
         </div>
       </Link>
 
