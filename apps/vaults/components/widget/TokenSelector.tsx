@@ -4,15 +4,16 @@ import { useWallet } from '@lib/contexts/useWallet'
 import type { TToken } from '@lib/types'
 import { cl, toAddress } from '@lib/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
-import { type Address, isAddress } from 'viem'
+import { isAddress } from 'viem'
+import { CloseIcon } from './shared/Icons'
 
 interface TokenSelectorProps {
-  value: Address | undefined
-  onChange: (address: Address, chainId?: number) => void
+  value: `0x${string}` | undefined
+  onChange: (address: `0x${string}`, chainId?: number) => void
   chainId: number
-  limitTokens?: Address[]
-  excludeTokens?: Address[]
-  priorityTokens?: Record<number, Address[]> // chainId -> addresses to always show
+  limitTokens?: `0x${string}`[]
+  excludeTokens?: `0x${string}`[]
+  priorityTokens?: Record<number, `0x${string}`[]> // chainId -> addresses to always show
   onClose?: () => void
 }
 
@@ -59,7 +60,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   onClose
 }) => {
   const [searchText, setSearchText] = useState('')
-  const [customAddress, setCustomAddress] = useState<Address | undefined>()
+  const [customAddress, setCustomAddress] = useState<`0x${string}` | undefined>()
   const [selectedChainId, setSelectedChainId] = useState(chainId)
   const { getToken, isLoading, balances } = useWallet()
 
@@ -129,8 +130,8 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   // Filter tokens based on search and limits
   const filteredTokens = useMemo(() => {
     const filtered = tokens
-      .filter((token) => !limitTokens?.length || limitTokens.includes(token.address as Address))
-      .filter((token) => !excludeTokens?.length || !excludeTokens.includes(token.address as Address))
+      .filter((token) => !limitTokens?.length || limitTokens.includes(token.address as `0x${string}`))
+      .filter((token) => !excludeTokens?.length || !excludeTokens.includes(token.address as `0x${string}`))
       .filter((token) => {
         if (!searchText) return true
         const search = searchText.toLowerCase()
@@ -152,12 +153,12 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   // Check if search text is a valid address
   useEffect(() => {
     if (searchText && isAddress(searchText) && searchText !== customAddress) {
-      setCustomAddress(searchText as Address)
+      setCustomAddress(searchText as `0x${string}`)
     }
   }, [searchText, customAddress])
 
   const handleSelect = useCallback(
-    (address: Address) => {
+    (address: `0x${string}`) => {
       onChange(address, selectedChainId)
       if (onClose) {
         onClose()
@@ -194,9 +195,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           ))}
         </div>
         <button onClick={onClose} className="p-1 hover:bg-surface-secondary rounded-lg transition-colors" type="button">
-          <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <CloseIcon className="w-5 h-5 text-text-secondary" />
         </button>
       </div>
 
@@ -228,7 +227,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                 key={token.address}
                 token={token}
                 selected={token.address === value}
-                onSelect={() => handleSelect(token.address as Address)}
+                onSelect={() => handleSelect(token.address as `0x${string}`)}
               />
             ))}
           </div>

@@ -1,6 +1,6 @@
 import { formatPercent } from '@lib/utils'
 import type { FC } from 'react'
-import { InfoOverlay } from '../shared'
+import { InfoOverlay } from '../shared/InfoOverlay'
 
 interface AnnualReturnOverlayProps {
   isOpen: boolean

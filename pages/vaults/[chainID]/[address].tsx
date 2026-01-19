@@ -134,8 +134,6 @@ function Index(): ReactElement | null {
     return undefined
   }, [overrideVault, _currentVault])
 
-  const isV3 = currentVault?.version.startsWith('3') || currentVault?.version.startsWith('~3')
-
   useEffect(() => {
     if (!hasFetchedOverride && _currentVault && _currentVault.address) {
       setHasFetchedOverride(true)
@@ -366,11 +364,10 @@ function Index(): ReactElement | null {
           {/* Widget */}
           <div>
             <Widget
-              vaultType={isV3 ? 'v3' : 'v2'}
               vaultAddress={currentVault.address}
               currentVault={currentVault}
               gaugeAddress={currentVault.staking.address}
-              actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
+              actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
               chainId={chainId}
             />
           </div>
@@ -550,11 +547,10 @@ function Index(): ReactElement | null {
           <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-6')} style={{ top: nextSticky }}>
             <div>
               <Widget
-                vaultType={isV3 ? 'v3' : 'v2'}
                 vaultAddress={currentVault.address}
                 currentVault={currentVault}
                 gaugeAddress={currentVault.staking.address}
-                actions={[WidgetActionType.DepositFinal, WidgetActionType.WithdrawFinal]}
+                actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
                 chainId={chainId}
               />
             </div>

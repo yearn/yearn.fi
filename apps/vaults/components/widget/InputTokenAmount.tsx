@@ -1,7 +1,10 @@
-import { cl, exactToSimple, simpleToExact } from '@lib/utils'
+import { TokenLogo } from '@lib/components/TokenLogo'
+import { useWeb3 } from '@lib/contexts/useWeb3'
+import { cl, formatTAmount, simpleToExact } from '@lib/utils'
 import type { useDebouncedInput } from '@vaults/hooks/useDebouncedInput'
 import type { useInput } from '@vaults/hooks/useInput'
-import { type ChangeEvent, type FC, useState } from 'react'
+import { type ChangeEvent, type FC, useMemo } from 'react'
+import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 
 interface Props {
@@ -9,16 +12,32 @@ interface Props {
   className?: string
   balance?: bigint
   decimals?: number
-  defaultSymbol?: string
   symbol?: string
   placeholder?: string
   title?: string
   disabled?: boolean
+  isMaxButtonLoading?: boolean // Loading state for MAX button
   errorMessage?: string
   onInputChange?: (value: bigint) => void
-  onButtonClick?: () => void
+  onMaxClick?: () => Promise<void> | void // Optional callback when MAX is clicked
   showTokenSelector?: boolean
-  tokenSelectorElement?: React.ReactNode
+  onTokenSelectorClick?: () => void
+  // USD prices
+  inputTokenUsdPrice?: number
+  outputTokenUsdPrice?: number
+  // Token info for logo
+  tokenAddress?: string
+  tokenChainId?: number
+  // Zap token display
+  zapToken?: {
+    symbol: string
+    address: string
+    chainId: number
+    expectedAmount?: string
+    isLoading?: boolean
+  }
+  onRemoveZap?: () => void
+  zapNotificationText?: string
 }
 
 export const InputTokenAmount: FC<Props> = ({
@@ -29,27 +48,31 @@ export const InputTokenAmount: FC<Props> = ({
   symbol,
   placeholder,
   disabled: _disabled,
+  isMaxButtonLoading = false,
   errorMessage,
   onInputChange,
-  onButtonClick,
-  title,
-  defaultSymbol = 'Select Vault',
+  onMaxClick,
+  title = 'Amount',
   showTokenSelector = false,
-  tokenSelectorElement
+  onTokenSelectorClick,
+  inputTokenUsdPrice = 0,
+  outputTokenUsdPrice = 0,
+  tokenAddress,
+  tokenChainId,
+  zapToken,
+  onRemoveZap,
+  zapNotificationText
 }) => {
   const account = useAccount()
-  const [showSelector, setShowSelector] = useState(false)
+  const { openLoginModal } = useWeb3()
   const [
     {
       formValue,
-      activity: [, setActive],
-      ...inputState
+      activity: [, setActive]
     },
     handleChangeInput,
     setFormValue
   ] = input
-
-  const isDebouncing = 'isDebouncing' in inputState ? inputState.isDebouncing : false
 
   const disabled = _disabled || !account
 
@@ -59,38 +82,109 @@ export const InputTokenAmount: FC<Props> = ({
   }
 
   const handleTokenButtonClick = () => {
-    if (showTokenSelector) {
-      setShowSelector(!showSelector)
-    } else if (onButtonClick) {
-      onButtonClick()
+    if (showTokenSelector && onTokenSelectorClick) {
+      onTokenSelectorClick()
     }
   }
 
+  // Calculate USD value for input token
+  const inputUsdValue = formValue ? (parseFloat(formValue) * inputTokenUsdPrice).toFixed(2) : '0.00'
+
+  // Calculate USD value for output token (when zapping)
+  const outputUsdValue = useMemo(() => {
+    if (!zapToken?.expectedAmount || !outputTokenUsdPrice) return '0.00'
+    return (parseFloat(zapToken.expectedAmount) * outputTokenUsdPrice).toFixed(2)
+  }, [zapToken?.expectedAmount, outputTokenUsdPrice])
+
+  // Calculate percentage amounts
+  const handlePercentageClick = async (percentage: number) => {
+    if (!balance || balance === 0n) {
+      setFormValue?.('0')
+      return
+    }
+
+    const tokenDecimals = decimals ?? input[0].decimals
+
+    if (percentage === 100) {
+      // If onMaxClick is provided, call it (it will handle setting the input)
+      if (onMaxClick) {
+        await onMaxClick()
+      } else {
+        // No onMaxClick, just use balance directly
+        setFormValue?.(formatUnits(balance, tokenDecimals))
+        onInputChange?.(balance)
+      }
+      return
+    }
+    const fullAmount = formatUnits(balance, tokenDecimals)
+    const percentageAmount = ((+fullAmount * percentage) / 100).toFixed(tokenDecimals)
+    setFormValue?.(percentageAmount)
+  }
+
   return (
-    <div className={cl('flex flex-col w-full space-y-1 h-30', className)}>
-      {title && (
-        <div className="flex items-center gap-2 p-1 justify-between">
-          <label className="text-sm font-normal text-black">{title}</label>
-          <button
-            className={
-              'font-xs flex-center text-xs px-2 py-1 bg-neutral-700 text-neutral-400 rounded-xl  hover:bg-neutral-800 transition-colors cursor-pointer whitespace-nowrap'
-            }
-            type="button"
-            onClick={() => {
-              if (!balance || balance === 0n) {
-                setFormValue?.('0')
-                return
-              }
-              const tokenDecimals = decimals ?? input[0].decimals
-              setFormValue?.(exactToSimple(balance, tokenDecimals).toString())
-            }}
-          >
-            Max
-          </button>
+    <div className={cl('flex flex-col w-full relative border border-border rounded-md group', className)}>
+      <div className="py-2 px-3 flex flex-col gap-1">
+        {/* Top row - Title and percentage buttons */}
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-text-primary">{title}</label>
+
+          {/* Percentage buttons */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => handlePercentageClick(25)}
+              className={cl(
+                'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
+              )}
+              disabled={disabled}
+            >
+              25%
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePercentageClick(50)}
+              className={cl(
+                'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
+              )}
+              disabled={disabled}
+            >
+              50%
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePercentageClick(75)}
+              className={cl(
+                'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
+              )}
+              disabled={disabled}
+            >
+              75%
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePercentageClick(100)}
+              className={cl(
+                'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90 flex items-center justify-center min-w-[42px]',
+                disabled || isMaxButtonLoading
+                  ? 'text-text-tertiary cursor-not-allowed'
+                  : 'text-text-secondary hover:scale-100'
+              )}
+              disabled={disabled || isMaxButtonLoading}
+            >
+              {isMaxButtonLoading ? (
+                <div className="w-3 h-3 border-2 border-border border-t-transparent rounded-full animate-spin" />
+              ) : (
+                'Max'
+              )}
+            </button>
+          </div>
         </div>
-      )}
-      <div className="bg-black/5 rounded-xl p-3 flex flex-col gap-2">
-        <div className={cl('flex flex-row justify-between gap-2 items-center w-full')}>
+
+        {/* Middle row - Input and token selector */}
+        <div className="flex items-center gap-2 relative">
           <input
             disabled={disabled}
             placeholder={placeholder ?? '0.00'}
@@ -99,63 +193,154 @@ export const InputTokenAmount: FC<Props> = ({
             onFocus={() => setActive(true)}
             onBlur={() => setActive(false)}
             className={cl(
-              'flex-grow bg-transparent outline-none text-lg sm:text-[20px] font-mono min-w-0',
-              disabled ? 'text-gray-700' : 'text-gray-900',
-              'placeholder:text-gray-400'
+              'bg-transparent outline-none text-2xl font-medium flex-1 min-w-0 transition-colors duration-200',
+              errorMessage ? 'text-red-500' : disabled ? 'text-text-secondary' : 'text-text-primary',
+              'placeholder:text-text-secondary'
             )}
           />
-          {isDebouncing && (
-            <div className="flex items-center">
-              <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
+
+          {/* Token selector button */}
           {(symbol || showTokenSelector) && (
             <button
               type="button"
               onClick={handleTokenButtonClick}
               data-token-selector-button
+              disabled={!showTokenSelector && disabled}
               className={cl(
-                'px-2 sm:px-3 py-1 rounded-xl flex items-center font-medium transition-colors cursor-pointer whitespace-nowrap max-w-[120px] h-8 sm:max-w-none truncate flex-shrink-0',
+                'px-2 py-1 rounded-lg flex items-center gap-2 transition-colors',
+                'text-text-primary text-xl font-medium', // Match input text size
                 showTokenSelector
-                  ? 'bg-white border border-gray-200 text-gray-900 hover:border-gray-300'
-                  : 'bg-blue-300 text-neutral-900 hover:bg-blue-300'
+                  ? 'bg-transparent hover:bg-surface-secondary'
+                  : disabled
+                    ? 'bg-transparent cursor-not-allowed'
+                    : 'bg-transparent'
               )}
             >
-              {symbol ?? defaultSymbol}
+              {tokenAddress && tokenChainId && (
+                <TokenLogo
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${tokenChainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                  tokenSymbol={symbol ?? ''}
+                  tokenName={symbol ?? ''}
+                  chainId={tokenChainId}
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                />
+              )}
+              <span>{symbol ?? 'Select Token'}</span>
               {showTokenSelector && (
-                <svg className="w-3 h-3 ml-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               )}
             </button>
           )}
         </div>
-        <div className={cl('flex flex-row justify-between gap-2 items-center w-full min-w-0')}>
-          <div className="text-xs text-gray-400 truncate min-w-0 flex-1">
-            {!symbol ? 'No Vault Selected' : `${exactToSimple(balance, decimals ?? input[0].decimals)} ${symbol}`}
+
+        {/* Bottom row - USD value (or error) and balance */}
+        <div className="flex items-center justify-between">
+          {errorMessage ? (
+            <div className="text-sm text-red-500">{errorMessage}</div>
+          ) : (
+            <div className="text-sm text-text-secondary">${inputUsdValue}</div>
+          )}
+          {!account.address ? (
+            <button
+              type="button"
+              onClick={openLoginModal}
+              className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Connect wallet
+            </button>
+          ) : (
+            balance !== undefined &&
+            balance !== 0n &&
+            symbol && (
+              <button
+                type="button"
+                onClick={() => handlePercentageClick(100)}
+                disabled={disabled || isMaxButtonLoading}
+                className="text-sm text-text-secondary hover:text-blue-500 transition-colors disabled:cursor-not-allowed"
+              >
+                Balance: {formatTAmount({ value: balance, decimals: decimals ?? input[0].decimals })} {symbol}
+              </button>
+            )
+          )}
+        </div>
+      </div>
+
+      {/* Zap Token Section */}
+      {zapToken && (
+        <div className="mt-1">
+          {/* Notification text */}
+          {zapNotificationText && (
+            <div className="flex items-center gap-2 px-3">
+              <div className="flex-1 h-px bg-border"></div>
+              <span className="text-sm text-text-secondary">{zapNotificationText}</span>
+              <div className="flex-1 h-px bg-border"></div>
+            </div>
+          )}
+
+          {/* Zap token display */}
+          <div className="rounded-md py-2 px-3 flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {zapToken.isLoading ? (
+                  <div className="h-8 w-24 bg-surface-secondary rounded animate-pulse" />
+                ) : (
+                  <div className="text-text-secondary text-2xl font-medium">{zapToken.expectedAmount || '0'}</div>
+                )}
+              </div>
+
+              {/* Right side - Token info */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onTokenSelectorClick}
+                  disabled={disabled}
+                  className={cl(
+                    'px-2 py-1 rounded-lg flex items-center gap-2 transition-colors',
+                    disabled ? 'bg-transparent cursor-not-allowed' : 'bg-transparent hover:bg-surface-secondary',
+                    'text-text-primary text-xl font-medium'
+                  )}
+                >
+                  {zapToken.address && zapToken.chainId && (
+                    <TokenLogo
+                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
+                      tokenSymbol={zapToken.symbol}
+                      chainId={zapToken.chainId}
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  )}
+                  <span>{zapToken.symbol}</span>
+                  <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-text-secondary">${outputUsdValue}</div>
+              {/* Remove Zap button - appears on hover */}
+              {onRemoveZap && (
+                <button
+                  type="button"
+                  onClick={onRemoveZap}
+                  className={cl(
+                    'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
+                    'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+                    disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
+                  )}
+                  disabled={disabled}
+                >
+                  Remove Zap
+                </button>
+              )}
+            </div>
           </div>
         </div>
-        {errorMessage && <div className={cl('text-red-500 text-sm', className)}>{errorMessage}</div>}
-      </div>
-      {showTokenSelector && tokenSelectorElement && (
-        <>
-          {/* Semi-transparent backdrop with fade animation */}
-          <div
-            className={cl(
-              'absolute inset-0 bg-black/5 rounded-xl z-40 transition-opacity duration-200',
-              showSelector ? 'opacity-100' : 'opacity-0 pointer-events-none'
-            )}
-          />
-          {/* Token selector overlay with slide and fade animation */}
-          <div
-            className={cl(
-              'absolute inset-0 z-50 transition-all duration-300 ease-out',
-              showSelector ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
-            )}
-          >
-            {tokenSelectorElement}
-          </div>
-        </>
       )}
     </div>
   )

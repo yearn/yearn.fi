@@ -1,3 +1,4 @@
+// TODO: Implement claim widget functionality
 import type { FC } from 'react'
 
 // would need to cover:

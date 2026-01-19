@@ -1,6 +1,5 @@
 import type { FC } from 'react'
-import type { Address } from 'viem'
-import { InfoOverlay } from '../shared'
+import { InfoOverlay } from '../shared/InfoOverlay'
 import type { WithdrawalSource, WithdrawRouteType } from './types'
 
 interface WithdrawDetailsOverlayProps {
@@ -15,7 +14,7 @@ interface WithdrawDetailsOverlayProps {
   expectedOutput?: string
   hasInputValue: boolean
 
-  stakingAddress?: Address
+  stakingAddress?: `0x${string}`
   withdrawalSource: WithdrawalSource
   routeType: WithdrawRouteType
   isZap: boolean
