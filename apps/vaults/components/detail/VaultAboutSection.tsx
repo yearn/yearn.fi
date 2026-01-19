@@ -15,10 +15,7 @@ import {
   getChainDescription,
   getChainWebsite,
   getKindDescription,
-  getProductTypeDescription,
-  HIDDEN_TAG_DESCRIPTION,
-  MIGRATABLE_TAG_DESCRIPTION,
-  RETIRED_TAG_DESCRIPTION
+  getProductTypeDescription
 } from '@vaults/utils/vaultTagCopy'
 import { type ReactElement, type ReactNode, useState } from 'react'
 
