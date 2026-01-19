@@ -195,8 +195,13 @@ export function VaultsListRow({
         onClickCapture={(event): void => {
           const target = event.target as HTMLElement | null
           if (!target) return
-          if (target.closest('button, input, select, textarea, [role="button"]')) {
+          if (target.closest('button, input, select, textarea, [role="button"], [role="checkbox"]')) {
             event.preventDefault()
+            return
+          }
+          if (showCompareToggle && onToggleCompare) {
+            event.preventDefault()
+            onToggleCompare(currentVault)
           }
         }}
       >
