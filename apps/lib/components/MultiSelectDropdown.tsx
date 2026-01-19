@@ -59,10 +59,7 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
               {option.icon}
             </div>
           ) : null}
-          <p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
-            {option.label}{' '}
-            <span className={'pl-1 text-xs text-neutral-900 transition-opacity hover:opacity-100'}>{'(only)'}</span>
-          </p>
+          <p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>{option.label}</p>
         </div>
         <input
           type={'checkbox'}
@@ -227,8 +224,8 @@ export function MultiSelectDropdown({
           <ComboboxButton
             onClick={(): void => setIsOpen(!isOpen)}
             className={cl(
-              props.buttonClassName,
-              'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
+              'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3',
+              props.buttonClassName
             )}
           >
             {customMultipleRender && options.filter((o) => o.isSelected).length > 1 && !areAllSelected ? (
@@ -265,8 +262,8 @@ export function MultiSelectDropdown({
         >
           <ComboboxOptions
             className={cl(
-              props.comboboxOptionsClassName,
-              'absolute top-12 z-50 flex w-full min-w-[256px] cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none origin-top will-change-[opacity,transform] transform-gpu'
+              'absolute top-12 z-50 flex w-full min-w-[256px] cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none origin-top will-change-[opacity,transform] transform-gpu',
+              props.comboboxOptionsClassName
             )}
           >
             <SelectAllOption

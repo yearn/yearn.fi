@@ -1,7 +1,8 @@
 import type { TSortDirection } from '@lib/types'
 import { copyToClipboard } from '@lib/utils/helpers'
 import type { TPossibleSortBy } from '@vaults/hooks/useSortVaults'
-import { readBooleanParam } from '@vaults/utils/constants'
+import { DEFAULT_MIN_TVL, readBooleanParam } from '@vaults/utils/constants'
+import { normalizeUnderlyingAssetSymbol } from '@vaults/utils/vaultListFacets'
 import type { TVaultType } from '@vaults/utils/vaultTypeCopy'
 import { getSupportedChainsForVaultType, normalizeVaultTypeParam } from '@vaults/utils/vaultTypeUtils'
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -29,6 +30,8 @@ type TVaultsQueryState = {
   categories: string[] | null
   chains: number[] | null
   aggressiveness: string[] | null
+  underlyingAssets: string[]
+  minTvl: number
   showLegacyVaults: boolean
   showHiddenVaults: boolean
   showStrategies: boolean
@@ -39,6 +42,8 @@ type TVaultsQueryState = {
   onChangeCategories: (value: string[] | null) => void
   onChangeChains: (value: number[] | null) => void
   onChangeAggressiveness: (value: string[] | null) => void
+  onChangeUnderlyingAssets: (value: string[] | null) => void
+  onChangeMinTvl: (value: number) => void
   onChangeShowLegacyVaults: (value: boolean) => void
   onChangeShowHiddenVaults: (value: boolean) => void
   onChangeShowStrategies: (value: boolean) => void
@@ -57,6 +62,8 @@ type TVaultsQuerySnapshot = {
   categories: string[]
   chains: number[] | null
   aggressiveness: string[]
+  underlyingAssets: string[]
+  minTvl: number
   showLegacyVaults: boolean
   showHiddenVaults: boolean
   showStrategies: boolean
@@ -81,6 +88,8 @@ const VAULTS_QUERY_KEYS = [
   'categories',
   'chains',
   'aggr',
+  'assets',
+  'minTvl',
   'showLegacy',
   'showHidden',
   'showStrategies',
@@ -150,6 +159,24 @@ function normalizeStringList(values: string[] | null | undefined): string[] {
 function normalizeNumberList(values: number[] | null | undefined): number[] {
   const sanitized = sanitizeNumberList(values)
   return sanitized.sort((left, right) => left - right)
+}
+
+function normalizeUnderlyingAssetList(values: string[] | null | undefined): string[] {
+  const sanitized = sanitizeStringList(values)
+    .map((value) => normalizeUnderlyingAssetSymbol(value))
+    .filter(Boolean)
+  return normalizeStringList(sanitized)
+}
+
+function normalizeMinTvl(value: string | number | null | undefined, fallback = DEFAULT_MIN_TVL): number {
+  if (value === null || value === undefined || value === '') {
+    return fallback
+  }
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) {
+    return fallback
+  }
+  return Math.max(0, numeric)
 }
 
 function areStringListsEqual(left: string[] | null | undefined, right: string[] | null | undefined): boolean {
@@ -226,6 +253,8 @@ function areQuerySnapshotsEqual(left: TVaultsQuerySnapshot, right: TVaultsQueryS
     areStringListsEqual(left.categories, right.categories) &&
     areNumberListsEqual(left.chains ?? [], right.chains ?? []) &&
     areStringListsEqual(left.aggressiveness, right.aggressiveness) &&
+    areStringListsEqual(left.underlyingAssets, right.underlyingAssets) &&
+    left.minTvl === right.minTvl &&
     left.showLegacyVaults === right.showLegacyVaults &&
     left.showHiddenVaults === right.showHiddenVaults &&
     left.showStrategies === right.showStrategies &&
@@ -246,6 +275,10 @@ function buildSnapshotFromParams(params: URLSearchParams, defaults: TVaultsQuery
     getSupportedChainsForVaultType(vaultType)
   )
   const aggressiveness = parseStringList(params.get('aggr'))
+  const underlyingAssets = normalizeUnderlyingAssetList(
+    params.has('assets') ? parseStringList(params.get('assets')) : []
+  )
+  const minTvl = normalizeMinTvl(params.get('minTvl'), DEFAULT_MIN_TVL)
   const search = params.get('search') ?? ''
   const showLegacyParam = params.get('showLegacy')
   const showLegacyFromParam = showLegacyParam !== null ? readBooleanParam(params, 'showLegacy') : false
@@ -263,6 +296,8 @@ function buildSnapshotFromParams(params: URLSearchParams, defaults: TVaultsQuery
     categories,
     chains,
     aggressiveness,
+    underlyingAssets,
+    minTvl,
     showLegacyVaults,
     showHiddenVaults,
     showStrategies,
@@ -288,6 +323,10 @@ function readSnapshotFromStorage(storageKey: string, defaults: TVaultsQueryDefau
     const types = normalizeV3Types(Array.isArray(parsed.types) ? parsed.types : null)
     const categories = sanitizeStringList(Array.isArray(parsed.categories) ? parsed.categories : null)
     const rawChains = Array.isArray(parsed.chains) ? parsed.chains.map((value) => Number(value)) : null
+    const underlyingAssets = normalizeUnderlyingAssetList(
+      Array.isArray(parsed.underlyingAssets) ? parsed.underlyingAssets : null
+    )
+    const minTvl = normalizeMinTvl(parsed.minTvl, DEFAULT_MIN_TVL)
 
     return {
       vaultType,
@@ -296,6 +335,8 @@ function readSnapshotFromStorage(storageKey: string, defaults: TVaultsQueryDefau
       categories: categories.length > 0 ? categories : defaults.defaultCategories,
       chains: normalizeChainsSelection(rawChains, getSupportedChainsForVaultType(vaultType)),
       aggressiveness: sanitizeStringList(Array.isArray(parsed.aggressiveness) ? parsed.aggressiveness : null),
+      underlyingAssets,
+      minTvl,
       showLegacyVaults: Boolean(parsed.showLegacyVaults),
       showHiddenVaults: Boolean(parsed.showHiddenVaults),
       showStrategies: Boolean(parsed.showStrategies),
@@ -417,6 +458,18 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     setSnapshot((prev) => ({ ...prev, aggressiveness: nextAggressiveness }))
   }, [])
 
+  const onChangeUnderlyingAssets = useCallback((value: string[] | null): void => {
+    isOwnUrlUpdateRef.current = true
+    const nextAssets = normalizeUnderlyingAssetList(value)
+    setSnapshot((prev) => ({ ...prev, underlyingAssets: nextAssets }))
+  }, [])
+
+  const onChangeMinTvl = useCallback((value: number): void => {
+    isOwnUrlUpdateRef.current = true
+    const nextMinTvl = normalizeMinTvl(value, DEFAULT_MIN_TVL)
+    setSnapshot((prev) => ({ ...prev, minTvl: nextMinTvl }))
+  }, [])
+
   const onChangeShowLegacyVaults = useCallback((value: boolean): void => {
     isOwnUrlUpdateRef.current = true
     setSnapshot((prev) => ({ ...prev, showLegacyVaults: value }))
@@ -468,6 +521,8 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     setSnapshot((prev) => ({
       ...prev,
       aggressiveness: [],
+      underlyingAssets: [],
+      minTvl: DEFAULT_MIN_TVL,
       showLegacyVaults: false,
       showHiddenVaults: false,
       showStrategies: false
@@ -508,6 +563,15 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
       const normalizedAggressiveness = normalizeStringList(snap.aggressiveness)
       if (normalizedAggressiveness.length > 0) {
         params.set('aggr', normalizedAggressiveness.join('_'))
+      }
+
+      const normalizedUnderlyingAssets = normalizeUnderlyingAssetList(snap.underlyingAssets)
+      if (normalizedUnderlyingAssets.length > 0) {
+        params.set('assets', normalizedUnderlyingAssets.join('_'))
+      }
+
+      if (snap.minTvl !== DEFAULT_MIN_TVL) {
+        params.set('minTvl', String(snap.minTvl))
       }
 
       applyBooleanParam(params, 'showLegacy', snap.showLegacyVaults)
@@ -576,6 +640,8 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     categories: snapshot.categories,
     chains: snapshot.chains,
     aggressiveness: snapshot.aggressiveness,
+    underlyingAssets: snapshot.underlyingAssets,
+    minTvl: snapshot.minTvl,
     showLegacyVaults: snapshot.showLegacyVaults,
     showHiddenVaults: snapshot.showHiddenVaults,
     showStrategies: snapshot.showStrategies,
@@ -586,6 +652,8 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     onChangeCategories,
     onChangeChains,
     onChangeAggressiveness,
+    onChangeUnderlyingAssets,
+    onChangeMinTvl,
     onChangeShowLegacyVaults,
     onChangeShowHiddenVaults,
     onChangeShowStrategies,

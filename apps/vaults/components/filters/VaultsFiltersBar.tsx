@@ -5,6 +5,7 @@ import { useChainOptions } from '@lib/hooks/useChains'
 import { IconCross } from '@lib/icons/IconCross'
 import { IconSearch } from '@lib/icons/IconSearch'
 import { cl } from '@lib/utils'
+import { DEFAULT_MIN_TVL } from '@vaults/utils/constants'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Drawer } from 'vaul'
@@ -484,6 +485,8 @@ function FilterControls({
 const EMPTY_FILTERS_STATE: TPendingFiltersState = {
   categories: [],
   aggressiveness: [],
+  underlyingAssets: [],
+  minTvl: DEFAULT_MIN_TVL,
   showStrategies: false,
   showLegacyVaults: false,
   showHiddenVaults: false

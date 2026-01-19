@@ -1,8 +1,11 @@
+import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
+import { TokenLogo } from '@lib/components/TokenLogo'
 import { usePrefetchYearnVaults } from '@lib/hooks/useFetchYearnVaults'
 import type { TSortDirection } from '@lib/types'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useMediaQuery } from '@react-hookz/web'
 import type { TChainConfig } from '@vaults/components/filters/VaultsFiltersBar'
+import { VaultsAssetFilter } from '@vaults/components/filters/VaultsAssetFilter'
 import type {
   TFiltersConfig,
   TPendingFiltersState,
@@ -13,6 +16,7 @@ import type { TPossibleSortBy } from '@vaults/hooks/useSortVaults'
 import {
   AGGRESSIVENESS_OPTIONS,
   AVAILABLE_TOGGLE_VALUE,
+  DEFAULT_MIN_TVL,
   HOLDINGS_TOGGLE_VALUE,
   toggleInArray,
   V2_SUPPORTED_CHAINS,
@@ -21,11 +25,26 @@ import {
   V3_PRIMARY_CHAIN_IDS,
   V3_SUPPORTED_CHAINS
 } from '@vaults/utils/constants'
-import { deriveListKind, type TVaultAggressiveness } from '@vaults/utils/vaultListFacets'
+import {
+  deriveListKind,
+  getUnderlyingAssetLabel,
+  normalizeUnderlyingAssetSymbol,
+  type TVaultAggressiveness
+} from '@vaults/utils/vaultListFacets'
 import type { TVaultType } from '@vaults/utils/vaultTypeCopy'
 import { getSupportedChainsForVaultType } from '@vaults/utils/vaultTypeUtils'
 import type { RefObject } from 'react'
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type ChangeEvent,
+  createElement,
+  startTransition,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import { useVaultsListModel } from './useVaultsListModel'
 import { useVaultsQueryState } from './useVaultsQueryState'
 
@@ -117,6 +136,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
     categories,
     chains,
     aggressiveness,
+    underlyingAssets,
+    minTvl,
     showLegacyVaults,
     showHiddenVaults,
     showStrategies,
@@ -125,6 +146,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
     onChangeCategories,
     onChangeChains,
     onChangeAggressiveness,
+    onChangeUnderlyingAssets,
+    onChangeMinTvl,
     onChangeShowLegacyVaults,
     onChangeShowHiddenVaults,
     onChangeShowStrategies,
@@ -170,6 +193,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const [optimisticTypes, setOptimisticTypes] = useState<string[] | null>(null)
   const [optimisticCategories, setOptimisticCategories] = useState<string[] | null>(null)
   const [optimisticAggressiveness, setOptimisticAggressiveness] = useState<string[] | null>(null)
+  const [optimisticUnderlyingAssets, setOptimisticUnderlyingAssets] = useState<string[] | null>(null)
+  const [optimisticMinTvl, setOptimisticMinTvl] = useState<number | null>(null)
   const [optimisticShowLegacyVaults, setOptimisticShowLegacyVaults] = useState<boolean | null>(null)
   const [optimisticShowHiddenVaults, setOptimisticShowHiddenVaults] = useState<boolean | null>(null)
   const [optimisticShowStrategies, setOptimisticShowStrategies] = useState<boolean | null>(null)
@@ -177,6 +202,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const listTypes = useDeferredValue(types)
   const listCategories = useDeferredValue(categories)
   const listAggressiveness = useDeferredValue(aggressiveness)
+  const listUnderlyingAssets = useDeferredValue(underlyingAssets)
+  const listMinTvl = useDeferredValue(minTvl)
   const listShowLegacyVaults = useDeferredValue(showLegacyVaults)
   const listShowHiddenVaults = useDeferredValue(showHiddenVaults)
   const listShowStrategies = useDeferredValue(showStrategies)
@@ -229,6 +256,18 @@ export function useVaultsPageModel(): TVaultsPageModel {
   }, [optimisticAggressiveness, aggressiveness, areArraysEquivalent])
 
   useEffect(() => {
+    if (optimisticUnderlyingAssets && areArraysEquivalent(optimisticUnderlyingAssets, underlyingAssets)) {
+      setOptimisticUnderlyingAssets(null)
+    }
+  }, [optimisticUnderlyingAssets, underlyingAssets, areArraysEquivalent])
+
+  useEffect(() => {
+    if (optimisticMinTvl !== null && optimisticMinTvl === minTvl) {
+      setOptimisticMinTvl(null)
+    }
+  }, [optimisticMinTvl, minTvl])
+
+  useEffect(() => {
     if (optimisticShowLegacyVaults !== null && optimisticShowLegacyVaults === showLegacyVaults) {
       setOptimisticShowLegacyVaults(null)
     }
@@ -251,6 +290,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const displayedTypes = optimisticTypes ?? types
   const displayedCategories = optimisticCategories ?? categories
   const displayedAggressiveness = optimisticAggressiveness ?? aggressiveness
+  const displayedUnderlyingAssets = optimisticUnderlyingAssets ?? underlyingAssets
+  const displayedMinTvl = optimisticMinTvl ?? minTvl
   const displayedShowLegacyVaults = optimisticShowLegacyVaults ?? showLegacyVaults
   const displayedShowHiddenVaults = optimisticShowHiddenVaults ?? showHiddenVaults
   const displayedShowStrategies = optimisticShowStrategies ?? showStrategies
@@ -291,6 +332,20 @@ export function useVaultsPageModel(): TVaultsPageModel {
       allowed.has(value as TVaultAggressiveness)
     )
   }, [displayedAggressiveness])
+
+  const displayedUnderlyingAssetsSanitized = useMemo(() => {
+    const normalized = (displayedUnderlyingAssets || [])
+      .map((asset) => normalizeUnderlyingAssetSymbol(asset))
+      .filter(Boolean)
+    return Array.from(new Set(normalized))
+  }, [displayedUnderlyingAssets])
+
+  const listUnderlyingAssetsSanitized = useMemo(() => {
+    const normalized = (listUnderlyingAssets || [])
+      .map((asset) => normalizeUnderlyingAssetSymbol(asset))
+      .filter(Boolean)
+    return Array.from(new Set(normalized))
+  }, [listUnderlyingAssets])
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
@@ -300,6 +355,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     holdingsVaults,
     availableVaults,
     vaultFlags,
+    underlyingAssetVaults,
     pinnedSections,
     pinnedVaults,
     mainVaults,
@@ -313,6 +369,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
     listV3Types,
     listCategories,
     listAggressiveness,
+    listUnderlyingAssets: listUnderlyingAssetsSanitized,
+    listMinTvl,
     listShowLegacyVaults,
     listShowHiddenVaults,
     searchValue,
@@ -342,12 +400,18 @@ export function useVaultsPageModel(): TVaultsPageModel {
     const hiddenCount = displayedShowHiddenVaults ? 1 : 0
     const categoryCount = displayedCategoriesSanitized.length
     const aggressivenessCount = displayedAggressivenessSanitized.length
-    return typeCount + legacyCount + hiddenCount + categoryCount + aggressivenessCount
+    const underlyingAssetCount = displayedUnderlyingAssetsSanitized.length
+    const minTvlCount = displayedMinTvl !== DEFAULT_MIN_TVL ? 1 : 0
+    return (
+      typeCount + legacyCount + hiddenCount + categoryCount + aggressivenessCount + underlyingAssetCount + minTvlCount
+    )
   }, [
     displayedAggressivenessSanitized.length,
     displayedCategoriesSanitized.length,
     displayedShowHiddenVaults,
     displayedShowLegacyVaults,
+    displayedUnderlyingAssetsSanitized.length,
+    displayedMinTvl,
     displayedV3Types
   ])
   const activeChains = useMemo(() => displayedChains ?? [], [displayedChains])
@@ -392,6 +456,26 @@ export function useVaultsPageModel(): TVaultsPageModel {
     },
     [onChangeAggressiveness]
   )
+  const handleUnderlyingAssetsChange = useCallback(
+    (nextAssets: string[] | null): void => {
+      const normalizedAssets = nextAssets ?? []
+      setOptimisticUnderlyingAssets(normalizedAssets)
+      startTransition(() => {
+        onChangeUnderlyingAssets(nextAssets)
+      })
+    },
+    [onChangeUnderlyingAssets]
+  )
+  const handleMinTvlChange = useCallback(
+    (nextValue: number): void => {
+      const normalizedValue = Number.isFinite(nextValue) ? Math.max(0, nextValue) : DEFAULT_MIN_TVL
+      setOptimisticMinTvl(normalizedValue)
+      startTransition(() => {
+        onChangeMinTvl(normalizedValue)
+      })
+    },
+    [onChangeMinTvl]
+  )
   const handleShowLegacyVaultsChange = useCallback(
     (nextValue: boolean): void => {
       setOptimisticShowLegacyVaults(nextValue)
@@ -435,6 +519,48 @@ export function useVaultsPageModel(): TVaultsPageModel {
     [displayedVaultType, displayedV3Types, handleTypesChange]
   )
 
+  const underlyingAssetOptions = useMemo((): TMultiSelectOptionProps[] => {
+    const selectedAssets = new Set(displayedUnderlyingAssetsSanitized)
+    const options: TMultiSelectOptionProps[] = Object.entries(underlyingAssetVaults).map(([assetKey, vault]) => {
+      const label = getUnderlyingAssetLabel(assetKey)
+      const tokenAddress = vault.token.address.toLowerCase()
+      const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainID}/${tokenAddress}/logo-32.png`
+      return {
+        label,
+        value: assetKey,
+        isSelected: selectedAssets.has(assetKey),
+        icon: createElement(TokenLogo, {
+          src: tokenLogoSrc,
+          tokenSymbol: vault.token.symbol,
+          width: 20,
+          height: 20
+        })
+      }
+    })
+    for (const assetKey of selectedAssets) {
+      if (options.some((option) => option.value === assetKey)) {
+        continue
+      }
+      options.push({
+        label: getUnderlyingAssetLabel(assetKey),
+        value: assetKey,
+        isSelected: true
+      })
+    }
+
+    return options.sort((left, right) => left.label.localeCompare(right.label))
+  }, [displayedUnderlyingAssetsSanitized, underlyingAssetVaults])
+
+  const handleUnderlyingAssetsSelect = useCallback(
+    (options: TMultiSelectOptionProps[]): void => {
+      const selected = options.filter((option) => option.isSelected).map((option) => String(option.value))
+      const isAllSelected = options.length > 0 && selected.length === options.length
+      const nextSelection = selected.length > 0 ? selected : null
+      handleUnderlyingAssetsChange(isAllSelected ? null : nextSelection)
+    },
+    [handleUnderlyingAssetsChange]
+  )
+
   const handleVaultVersionToggle = useCallback(
     (nextType: TVaultType): void => {
       if (nextType === vaultType && !optimisticVaultType) {
@@ -457,6 +583,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
     setOptimisticChains([])
     setOptimisticCategories([])
     setOptimisticAggressiveness([])
+    setOptimisticUnderlyingAssets([])
+    setOptimisticMinTvl(DEFAULT_MIN_TVL)
     setOptimisticTypes(DEFAULT_VAULT_TYPES)
     setOptimisticShowLegacyVaults(false)
     setOptimisticShowHiddenVaults(false)
@@ -465,7 +593,36 @@ export function useVaultsPageModel(): TVaultsPageModel {
     onResetExtraFilters()
   }, [onResetExtraFilters, onResetMultiSelect])
 
+  const minTvlInput = createElement(
+    'div',
+    { className: 'flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2' },
+    createElement('span', { className: 'text-sm text-text-secondary' }, '$'),
+    createElement('input', {
+      type: 'number',
+      min: 0,
+      step: 1,
+      value: displayedMinTvl,
+      onChange: (event: ChangeEvent<HTMLInputElement>): void => handleMinTvlChange(Number(event.target.value)),
+      className: 'w-full bg-transparent text-sm text-text-primary outline-hidden',
+      'aria-label': 'Minimum TVL'
+    })
+  )
+
   const filtersSections: TVaultsFiltersPanelSection[] = [
+    {
+      type: 'custom',
+      title: 'Underlying Asset',
+      content: createElement(VaultsAssetFilter, {
+        options: underlyingAssetOptions,
+        onSelect: handleUnderlyingAssetsSelect,
+        buttonLabel: 'Filter by assets'
+      })
+    },
+    {
+      type: 'custom',
+      title: 'Minimum TVL',
+      content: minTvlInput
+    },
     {
       type: 'checklist',
       title: 'Asset Category',
@@ -530,15 +687,19 @@ export function useVaultsPageModel(): TVaultsPageModel {
           label: 'Show hidden vaults',
           description: 'Checking this will show deprioritized and hidden vaults in the list'
         }
-      ]
+      ],
+      underlyingAssetOptions,
+      minTvlEnabled: true
     }),
-    []
+    [underlyingAssetOptions]
   )
 
   const filtersInitialState = useMemo(
     (): TPendingFiltersState => ({
       categories: displayedCategoriesSanitized,
       aggressiveness: displayedAggressivenessSanitized,
+      underlyingAssets: displayedUnderlyingAssetsSanitized,
+      minTvl: displayedMinTvl,
       showStrategies: displayedShowStrategies,
       showLegacyVaults: displayedShowLegacyVaults,
       showHiddenVaults: displayedShowHiddenVaults
@@ -546,6 +707,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
     [
       displayedCategoriesSanitized,
       displayedAggressivenessSanitized,
+      displayedUnderlyingAssetsSanitized,
+      displayedMinTvl,
       displayedShowStrategies,
       displayedShowLegacyVaults,
       displayedShowHiddenVaults
@@ -556,12 +719,16 @@ export function useVaultsPageModel(): TVaultsPageModel {
     (state: TPendingFiltersState): void => {
       setOptimisticCategories(state.categories)
       setOptimisticAggressiveness(state.aggressiveness)
+      setOptimisticUnderlyingAssets(state.underlyingAssets)
+      setOptimisticMinTvl(state.minTvl)
       setOptimisticShowStrategies(state.showStrategies)
       setOptimisticShowLegacyVaults(state.showLegacyVaults)
       setOptimisticShowHiddenVaults(state.showHiddenVaults)
 
       onChangeCategories(state.categories.length > 0 ? state.categories : null)
       onChangeAggressiveness(state.aggressiveness.length > 0 ? state.aggressiveness : null)
+      onChangeUnderlyingAssets(state.underlyingAssets.length > 0 ? state.underlyingAssets : null)
+      onChangeMinTvl(state.minTvl)
       onChangeShowStrategies(state.showStrategies)
       onChangeShowLegacyVaults(state.showLegacyVaults)
       onChangeShowHiddenVaults(state.showHiddenVaults)
@@ -569,6 +736,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
     [
       onChangeCategories,
       onChangeAggressiveness,
+      onChangeUnderlyingAssets,
+      onChangeMinTvl,
       onChangeShowStrategies,
       onChangeShowLegacyVaults,
       onChangeShowHiddenVaults

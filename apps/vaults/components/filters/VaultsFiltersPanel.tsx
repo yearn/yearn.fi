@@ -1,9 +1,14 @@
+import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { cl } from '@lib/utils'
-import type { ReactElement } from 'react'
+import { DEFAULT_MIN_TVL } from '@vaults/utils/constants'
+import type { ReactElement, ReactNode } from 'react'
+import { VaultsAssetFilter } from './VaultsAssetFilter'
 
 export type TPendingFiltersState = {
   categories: string[]
   aggressiveness: string[]
+  underlyingAssets: string[]
+  minTvl: number
   showStrategies: boolean
   showLegacyVaults: boolean
   showHiddenVaults: boolean
@@ -17,6 +22,8 @@ export type TFiltersConfig = {
     label: string
     description?: string
   }>
+  underlyingAssetOptions?: TMultiSelectOptionProps[]
+  minTvlEnabled?: boolean
 }
 
 type TFilterChecklistOption = {
@@ -43,6 +50,12 @@ type TVaultsFiltersPanelSection =
       type: 'advanced'
       title: string
       toggles: TFilterToggleOption[]
+      className?: string
+    }
+  | {
+      type: 'custom'
+      title: string
+      content: ReactNode
       className?: string
     }
 
@@ -120,11 +133,29 @@ function renderAdvancedSection(
   )
 }
 
+function renderCustomSection(section: Extract<TVaultsFiltersPanelSection, { type: 'custom' }>): ReactElement | null {
+  if (!section.content) {
+    return null
+  }
+
+  return (
+    <div className={cl('flex flex-col gap-2', section.className)}>
+      <div>
+        <p className={'mb-2 text-sm text-text-secondary'}>{section.title}</p>
+        {section.content}
+      </div>
+    </div>
+  )
+}
+
 export function VaultsFiltersPanel({ sections }: { sections: TVaultsFiltersPanelSection[] }): ReactElement | null {
   const renderedSections = sections
     .map((section) => {
       if (section.type === 'checklist') {
         return renderChecklist(section)
+      }
+      if (section.type === 'custom') {
+        return renderCustomSection(section)
       }
       return renderAdvancedSection(section)
     })
@@ -134,7 +165,7 @@ export function VaultsFiltersPanel({ sections }: { sections: TVaultsFiltersPanel
     return null
   }
 
-  return <div className={'mt-4 flex flex-col gap-6'}>{renderedSections}</div>
+  return <div className={'relative mt-4 flex flex-col gap-6'}>{renderedSections}</div>
 }
 
 function toggleInArray<T>(arr: T[], value: T): T[] {
@@ -153,7 +184,60 @@ export function VaultsFiltersPanelControlled({
   state: TPendingFiltersState
   onStateChange: (state: TPendingFiltersState) => void
 }): ReactElement | null {
-  const sections: TVaultsFiltersPanelSection[] = [
+  const sections: TVaultsFiltersPanelSection[] = []
+  const baseAssetOptions = config.underlyingAssetOptions ?? []
+
+  if (baseAssetOptions.length > 0) {
+    const selectedAssetKeys = new Set(state.underlyingAssets)
+    const assetOptions = baseAssetOptions.map((option) => ({
+      ...option,
+      isSelected: selectedAssetKeys.has(String(option.value))
+    }))
+
+    sections.push({
+      type: 'custom',
+      title: 'Underlying Asset',
+      content: (
+        <VaultsAssetFilter
+          options={assetOptions}
+          onSelect={(options): void => {
+            const selected = options.filter((option) => option.isSelected).map((option) => String(option.value))
+            const isAllSelected = options.length > 0 && selected.length === options.length
+            onStateChange({ ...state, underlyingAssets: isAllSelected ? [] : selected })
+          }}
+          buttonLabel={'Filter by assets'}
+        />
+      )
+    })
+  }
+
+  if (config.minTvlEnabled) {
+    const normalizedMinTvl = Number.isFinite(state.minTvl) ? Math.max(0, state.minTvl) : DEFAULT_MIN_TVL
+    sections.push({
+      type: 'custom',
+      title: 'Minimum TVL',
+      content: (
+        <div className={'flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2'}>
+          <span className={'text-sm text-text-secondary'}>{'$'}</span>
+          <input
+            type={'number'}
+            min={0}
+            step={1}
+            value={normalizedMinTvl}
+            onChange={(event): void => {
+              const nextValue = Number(event.target.value)
+              const normalizedValue = Number.isFinite(nextValue) ? Math.max(0, nextValue) : DEFAULT_MIN_TVL
+              onStateChange({ ...state, minTvl: normalizedValue })
+            }}
+            className={'w-full bg-transparent text-sm text-text-primary outline-hidden'}
+            aria-label={'Minimum TVL'}
+          />
+        </div>
+      )
+    })
+  }
+
+  sections.push(
     {
       type: 'checklist',
       title: 'Asset Category',
@@ -188,7 +272,7 @@ export function VaultsFiltersPanelControlled({
         }
       }))
     }
-  ]
+  )
 
   return <VaultsFiltersPanel sections={sections} />
 }
