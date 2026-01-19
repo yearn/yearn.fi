@@ -12,6 +12,12 @@ import { useId, useMemo } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, LineChart, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
 import { ChartContainer, ChartTooltip } from './ChartPrimitives'
+import {
+  CHART_WITH_AXES_MARGIN,
+  CHART_Y_AXIS_TICK_MARGIN,
+  CHART_Y_AXIS_TICK_STYLE,
+  CHART_Y_AXIS_WIDTH
+} from './chartLayout'
 
 type PercentSeriesKey = 'derivedApr'
 
@@ -33,6 +39,30 @@ const shouldOmitZeroTick = (value: number | string) => Number(value) === 0
 const formatPercentTick = (value: number | string) => (shouldOmitZeroTick(value) ? '' : `${value}%`)
 const formatPpsTick = (value: number | string) => (shouldOmitZeroTick(value) ? '' : Number(value).toFixed(3))
 
+type YAxisTickProps = {
+  x?: number
+  y?: number
+  payload?: { value?: number | string }
+  index?: number
+}
+
+const renderPpsTick = ({ x = 0, y = 0, payload, index }: YAxisTickProps) => {
+  const formattedValue = index === 0 ? '' : formatPpsTick(payload?.value ?? '')
+
+  return (
+    <text
+      x={x}
+      y={y}
+      dx={CHART_Y_AXIS_TICK_STYLE.dx}
+      dy={4}
+      fill={CHART_Y_AXIS_TICK_STYLE.fill}
+      textAnchor={CHART_Y_AXIS_TICK_STYLE.textAnchor}
+    >
+      {formattedValue}
+    </text>
+  )
+}
+
 export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }: PPSChartProps) {
   const gradientId = useId().replace(/:/g, '')
   const { chartStyle } = useChartStyle()
@@ -47,12 +77,13 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
   }, [chartData, timeframe])
   const isShortTimeframe = timeframe === '30d' || timeframe === '90d'
   const ticks = useMemo(
-    () => (isShortTimeframe ? getChartWeeklyTicks(filteredData, true) : getChartMonthlyTicks(filteredData, true)),
+    () => (isShortTimeframe ? getChartWeeklyTicks(filteredData) : getChartMonthlyTicks(filteredData)),
     [filteredData, isShortTimeframe]
   )
   const tickFormatter = isShortTimeframe ? formatChartWeekLabel : formatChartMonthYearLabel
 
   const isPercentSeries = dataKey !== 'PPS'
+  const shouldHideFirstPpsTick = dataKey === 'PPS'
   const seriesColor = isPercentSeries ? `var(--color-${dataKey})` : 'var(--color-pps)'
   const chartConfig = useMemo<ChartConfig>(() => {
     const config: ChartConfig = {}
@@ -74,15 +105,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
   if (isPowerglove) {
     return (
       <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
-        <LineChart
-          data={filteredData}
-          margin={{
-            top: 20,
-            right: 30,
-            left: 10,
-            bottom: 20
-          }}
-        >
+        <LineChart data={filteredData} margin={CHART_WITH_AXES_MARGIN}>
           <CartesianGrid vertical={false} />
           <XAxis
             dataKey={'date'}
@@ -94,8 +117,11 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           />
           <YAxis
             domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']}
-            tickFormatter={(value) => (isPercentSeries ? formatPercentTick(value) : formatPpsTick(value))}
-            tick={{ fill: 'var(--chart-axis)' }}
+            tickFormatter={isPercentSeries ? formatPercentTick : undefined}
+            mirror
+            width={CHART_Y_AXIS_WIDTH}
+            tickMargin={CHART_Y_AXIS_TICK_MARGIN}
+            tick={shouldHideFirstPpsTick ? renderPpsTick : CHART_Y_AXIS_TICK_STYLE}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
           />
@@ -131,15 +157,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
   if (isBlended) {
     return (
       <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
-        <ComposedChart
-          data={filteredData}
-          margin={{
-            top: 20,
-            right: 30,
-            left: 10,
-            bottom: 20
-          }}
-        >
+        <ComposedChart data={filteredData} margin={CHART_WITH_AXES_MARGIN}>
           <CartesianGrid vertical={false} />
           <defs>
             <linearGradient id={`${gradientId}-pps`} x1="0" x2="0" y1="0" y2="1">
@@ -157,8 +175,11 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           />
           <YAxis
             domain={isPercentSeries ? [0, 'auto'] : ['auto', 'auto']}
-            tickFormatter={(value) => (isPercentSeries ? formatPercentTick(value) : formatPpsTick(value))}
-            tick={{ fill: 'var(--chart-axis)' }}
+            tickFormatter={isPercentSeries ? formatPercentTick : undefined}
+            mirror
+            width={CHART_Y_AXIS_WIDTH}
+            tickMargin={CHART_Y_AXIS_TICK_MARGIN}
+            tick={shouldHideFirstPpsTick ? renderPpsTick : CHART_Y_AXIS_TICK_STYLE}
             axisLine={{ stroke: 'var(--chart-axis)' }}
             tickLine={{ stroke: 'var(--chart-axis)' }}
           />

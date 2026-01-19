@@ -5,6 +5,7 @@ import { useChainOptions } from '@lib/hooks/useChains'
 import { IconCross } from '@lib/icons/IconCross'
 import { IconSearch } from '@lib/icons/IconSearch'
 import { cl } from '@lib/utils'
+import { getChainDescription } from '@vaults/utils/vaultTagCopy'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Drawer } from 'vaul'
@@ -148,7 +149,8 @@ export function VaultsFiltersBar({
           id,
           label: option.label,
           icon: option.icon,
-          isSelected: selectedChainSet.has(id)
+          isSelected: selectedChainSet.has(id),
+          description: getChainDescription(id)
         }
       })
       .filter(Boolean) as TVaultsChainButton[]
