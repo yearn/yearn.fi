@@ -71,9 +71,7 @@ export function VaultsChainSelector({
           {chain.icon ? (
             <span className={'size-5 overflow-hidden rounded-full bg-surface/80'}>{chain.icon}</span>
           ) : null}
-          <span className={cl('whitespace-nowrap', chain.isSelected ? '' : 'hidden min-[1250px]:inline')}>
-            {chain.label}
-          </span>
+          <span className={cl('whitespace-nowrap', chain.isSelected ? '' : 'hidden')}>{chain.label}</span>
         </button>
       ))}
 
