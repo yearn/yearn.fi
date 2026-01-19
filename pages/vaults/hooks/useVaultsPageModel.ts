@@ -2,7 +2,12 @@ import { usePrefetchYearnVaults } from '@lib/hooks/useFetchYearnVaults'
 import type { TSortDirection } from '@lib/types'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useMediaQuery } from '@react-hookz/web'
-import type { TVaultsFiltersPanelSection } from '@vaults/components/filters/VaultsFiltersPanel'
+import type { TChainConfig } from '@vaults/components/filters/VaultsFiltersBar'
+import type {
+  TFiltersConfig,
+  TPendingFiltersState,
+  TVaultsFiltersPanelSection
+} from '@vaults/components/filters/VaultsFiltersPanel'
 import type { TListHead } from '@vaults/components/list/VaultsListHead'
 import type { TPossibleSortBy } from '@vaults/hooks/useSortVaults'
 import {
@@ -27,32 +32,33 @@ import { useVaultsQueryState } from './useVaultsQueryState'
 const DEFAULT_VAULT_TYPES = ['multi', 'single']
 const VAULTS_FILTERS_STORAGE_KEY = 'yearn.fi/vaults-filters@1'
 
-type TVaultsChainConfig = {
-  supportedChainIds: number[]
-  primaryChainIds?: number[]
-  defaultSecondaryChainIds?: number[]
-  chainDisplayOrder?: number[]
-  showMoreChainsButton?: boolean
-  allChainsLabel?: string
-}
-
 type TVaultsPinnedSection = {
   key: string
   vaults: TYDaemonVault[]
 }
 
 type TVaultsFiltersBarModel = {
-  searchValue: string
-  chains: number[] | null
-  chainConfig: TVaultsChainConfig
-  filtersCount: number
-  filtersSections: TVaultsFiltersPanelSection[]
+  search: {
+    value: string
+    onChange: (value: string) => void
+    trailingControls?: React.ReactNode
+  }
+  filters: {
+    count: number
+    sections: TVaultsFiltersPanelSection[]
+    config: TFiltersConfig
+    initialState: TPendingFiltersState
+    onApply: (state: TPendingFiltersState) => void
+    onClear: () => void
+  }
+  chains: {
+    selected: number[] | null
+    onChange: (value: number[] | null) => void
+    config: TChainConfig
+  }
   shouldStackFilters: boolean
   isSwitchingVaultType: boolean
   activeVaultType: TVaultType
-  onSearch: (value: string) => void
-  onChangeChains: (value: number[] | null) => void
-  onClearFilters: () => void
   onShareFilters: () => void
   onChangeVaultType: (value: TVaultType) => void
 }
@@ -524,7 +530,74 @@ export function useVaultsPageModel(): TVaultsPageModel {
     }
   ]
 
-  const chainConfig = useMemo((): TVaultsChainConfig => {
+  const filtersConfig = useMemo(
+    (): TFiltersConfig => ({
+      categoryOptions: V3_ASSET_CATEGORIES,
+      aggressivenessOptions: AGGRESSIVENESS_OPTIONS,
+      toggleOptions: [
+        {
+          key: 'showStrategies',
+          label: 'Show single asset strategies',
+          description: 'Checking this will show the underlying strategies used in Single Asset Vaults in the list.'
+        },
+        {
+          key: 'showLegacyVaults',
+          label: 'Show legacy vaults',
+          description: 'Includes legacy vaults in the list.'
+        },
+        {
+          key: 'showHiddenVaults',
+          label: 'Show hidden vaults',
+          description: 'Checking this will show deprioritized and hidden vaults in the list'
+        }
+      ]
+    }),
+    []
+  )
+
+  const filtersInitialState = useMemo(
+    (): TPendingFiltersState => ({
+      categories: displayedCategoriesSanitized,
+      aggressiveness: displayedAggressivenessSanitized,
+      showStrategies: displayedShowStrategies,
+      showLegacyVaults: displayedShowLegacyVaults,
+      showHiddenVaults: displayedShowHiddenVaults
+    }),
+    [
+      displayedCategoriesSanitized,
+      displayedAggressivenessSanitized,
+      displayedShowStrategies,
+      displayedShowLegacyVaults,
+      displayedShowHiddenVaults
+    ]
+  )
+
+  const onApplyFilters = useCallback(
+    (state: TPendingFiltersState): void => {
+      setOptimisticCategories(state.categories)
+      setOptimisticAggressiveness(state.aggressiveness)
+      setOptimisticShowStrategies(state.showStrategies)
+      setOptimisticShowLegacyVaults(state.showLegacyVaults)
+      setOptimisticShowHiddenVaults(state.showHiddenVaults)
+
+      startTransition(() => {
+        onChangeCategories(state.categories.length > 0 ? state.categories : null)
+        onChangeAggressiveness(state.aggressiveness.length > 0 ? state.aggressiveness : null)
+        onChangeShowStrategies(state.showStrategies)
+        onChangeShowLegacyVaults(state.showLegacyVaults)
+        onChangeShowHiddenVaults(state.showHiddenVaults)
+      })
+    },
+    [
+      onChangeCategories,
+      onChangeAggressiveness,
+      onChangeShowStrategies,
+      onChangeShowLegacyVaults,
+      onChangeShowHiddenVaults
+    ]
+  )
+
+  const chainConfig = useMemo((): TChainConfig => {
     if (listVaultType === 'v3') {
       return {
         supportedChainIds: V3_SUPPORTED_CHAINS,
@@ -631,17 +704,26 @@ export function useVaultsPageModel(): TVaultsPageModel {
       suggestedVaults
     },
     filtersBar: {
-      searchValue,
-      chains: displayedChains,
-      chainConfig,
-      filtersCount,
-      filtersSections,
+      search: {
+        value: searchValue,
+        onChange: onSearch
+      },
+      filters: {
+        count: filtersCount,
+        sections: filtersSections,
+        config: filtersConfig,
+        initialState: filtersInitialState,
+        onApply: onApplyFilters,
+        onClear: handleResetFilters
+      },
+      chains: {
+        selected: displayedChains,
+        onChange: handleChainsChange,
+        config: chainConfig
+      },
       shouldStackFilters,
       isSwitchingVaultType,
       activeVaultType: displayedVaultType,
-      onSearch,
-      onChangeChains: handleChainsChange,
-      onClearFilters: handleResetFilters,
       onShareFilters,
       onChangeVaultType: handleVaultVersionToggle
     },

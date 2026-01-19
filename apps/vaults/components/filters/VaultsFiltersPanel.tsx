@@ -1,6 +1,24 @@
 import { cl } from '@lib/utils'
 import type { ReactElement } from 'react'
 
+export type TPendingFiltersState = {
+  categories: string[]
+  aggressiveness: string[]
+  showStrategies: boolean
+  showLegacyVaults: boolean
+  showHiddenVaults: boolean
+}
+
+export type TFiltersConfig = {
+  categoryOptions: string[]
+  aggressivenessOptions: string[]
+  toggleOptions: Array<{
+    key: 'showStrategies' | 'showLegacyVaults' | 'showHiddenVaults'
+    label: string
+    description?: string
+  }>
+}
+
 type TFilterChecklistOption = {
   label: string
   checked: boolean
@@ -117,6 +135,62 @@ export function VaultsFiltersPanel({ sections }: { sections: TVaultsFiltersPanel
   }
 
   return <div className={'mt-4 flex flex-col gap-6'}>{renderedSections}</div>
+}
+
+function toggleInArray<T>(arr: T[], value: T): T[] {
+  if (arr.includes(value)) {
+    return arr.filter((item) => item !== value)
+  }
+  return [...arr, value]
+}
+
+export function VaultsFiltersPanelControlled({
+  config,
+  state,
+  onStateChange
+}: {
+  config: TFiltersConfig
+  state: TPendingFiltersState
+  onStateChange: (state: TPendingFiltersState) => void
+}): ReactElement | null {
+  const sections: TVaultsFiltersPanelSection[] = [
+    {
+      type: 'checklist',
+      title: 'Asset Category',
+      options: config.categoryOptions.map((value) => ({
+        label: value,
+        checked: state.categories.includes(value),
+        onToggle: (): void => {
+          onStateChange({ ...state, categories: toggleInArray(state.categories, value) })
+        }
+      }))
+    },
+    {
+      type: 'checklist',
+      title: 'Vault Aggressiveness',
+      options: config.aggressivenessOptions.map((value) => ({
+        label: value,
+        checked: state.aggressiveness.includes(value),
+        onToggle: (): void => {
+          onStateChange({ ...state, aggressiveness: toggleInArray(state.aggressiveness, value) })
+        }
+      }))
+    },
+    {
+      type: 'advanced',
+      title: 'Advanced',
+      toggles: config.toggleOptions.map((toggle) => ({
+        label: toggle.label,
+        description: toggle.description,
+        checked: state[toggle.key],
+        onChange: (checked: boolean): void => {
+          onStateChange({ ...state, [toggle.key]: checked })
+        }
+      }))
+    }
+  ]
+
+  return <VaultsFiltersPanel sections={sections} />
 }
 
 export type { TVaultsFiltersPanelSection, TFilterChecklistOption, TFilterToggleOption }

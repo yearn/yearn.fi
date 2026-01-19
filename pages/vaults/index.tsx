@@ -64,17 +64,12 @@ export default function Index(): ReactElement {
   const { varsRef, filtersRef } = refs
   const { vaultType, suggestedVaults } = header
   const {
-    searchValue,
+    search,
+    filters,
     chains,
-    chainConfig,
-    filtersCount,
-    filtersSections,
     shouldStackFilters,
     isSwitchingVaultType,
     activeVaultType,
-    onSearch,
-    onChangeChains,
-    onClearFilters,
     onShareFilters,
     onChangeVaultType
   } = filtersBar
@@ -145,7 +140,7 @@ export default function Index(): ReactElement {
     }
   }, [compareVaultKeys.length, isCompareOpen])
 
-  const filtersContent = <VaultsFiltersPanel sections={filtersSections} />
+  const filtersContent = <VaultsFiltersPanel sections={filters.sections} />
 
   const shareButtonElement = <ShareButton onClick={onShareFilters} ariaLabel={'Share filters'} />
 
@@ -170,7 +165,7 @@ export default function Index(): ReactElement {
       return (
         <VaultsListEmpty
           isLoading={isLoading}
-          currentSearch={searchValue}
+          currentSearch={search.value}
           currentCategories={listCategoriesSanitized}
           currentChains={listChains}
           onReset={onResetFilters}
@@ -184,7 +179,7 @@ export default function Index(): ReactElement {
       return (
         <VaultsListEmpty
           isLoading={false}
-          currentSearch={searchValue}
+          currentSearch={search.value}
           currentCategories={listCategoriesSanitized}
           currentChains={listChains}
           onReset={onResetFilters}
@@ -266,7 +261,7 @@ export default function Index(): ReactElement {
     pinnedSections,
     pinnedVaults.length,
     resolveApyDisplayVariant,
-    searchValue,
+    search.value,
     shouldCollapseChips,
     totalMatchingVaults,
     vaultFlags
@@ -335,17 +330,17 @@ export default function Index(): ReactElement {
               />
               <TrendingVaults suggestedVaults={suggestedVaults} />
               <VaultsFiltersBar
-                shouldDebounce={true}
-                searchValue={searchValue}
+                search={{
+                  ...search,
+                  shouldDebounce: true,
+                  trailingControls: shareButtonElement
+                }}
+                filters={{
+                  ...filters,
+                  content: filtersContent,
+                  trailingControls: compareToggleControl
+                }}
                 chains={chains}
-                onChangeChains={onChangeChains}
-                onSearch={onSearch}
-                chainConfig={chainConfig}
-                filtersCount={filtersCount}
-                filtersContent={filtersContent}
-                onClearFilters={onClearFilters}
-                searchTrailingControls={shareButtonElement}
-                filtersTrailingControls={compareToggleControl}
                 mobileExtraContent={
                   <VaultVersionToggle
                     stretch={true}
