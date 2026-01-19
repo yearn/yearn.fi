@@ -545,16 +545,7 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     copyToClipboard(shareUrl)
   }, [buildShareParams, location.pathname, setSearchParams, shouldShareUpdateUrl])
 
-  const searchParamsRef = useRef(searchParams)
-  const pendingQueryRef = useRef<string | null>(null)
-
-  // Only update searchParamsRef if there's no pending update
-  // or if searchParams now matches the pending update (meaning it completed)
-  const currentSearchQuery = searchParams.toString()
-  if (pendingQueryRef.current === null || currentSearchQuery === pendingQueryRef.current) {
-    searchParamsRef.current = searchParams
-    pendingQueryRef.current = null
-  }
+  const lastSyncedQueryRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!shouldSyncUrlOnChange) {
@@ -566,20 +557,16 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     }
     const nextParams = buildUrlParamsFromSnapshot(snapshot)
     const nextQuery = nextParams.toString()
-    const currentQuery = searchParamsRef.current.toString()
-    // Skip if we already have a pending update to this same query
-    if (pendingQueryRef.current === nextQuery) {
+    const currentQuery = searchParams.toString()
+    if (nextQuery === currentQuery || nextQuery === lastSyncedQueryRef.current) {
       return
     }
-    if (nextQuery !== currentQuery) {
-      isOwnUrlUpdateRef.current = true
-      pendingQueryRef.current = nextQuery
-      searchParamsRef.current = nextParams
-      startTransition(() => {
-        setSearchParams(nextParams, { replace: true })
-      })
-    }
-  }, [snapshot, buildUrlParamsFromSnapshot, setSearchParams, shouldSyncUrlOnChange])
+    lastSyncedQueryRef.current = nextQuery
+    isOwnUrlUpdateRef.current = true
+    startTransition(() => {
+      setSearchParams(nextParams, { replace: true })
+    })
+  }, [snapshot, buildUrlParamsFromSnapshot, searchParams, setSearchParams, shouldSyncUrlOnChange])
 
   return {
     vaultType: snapshot.vaultType,
