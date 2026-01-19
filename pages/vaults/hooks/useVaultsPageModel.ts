@@ -25,7 +25,7 @@ import { deriveListKind, type TVaultAggressiveness } from '@vaults/utils/vaultLi
 import type { TVaultType } from '@vaults/utils/vaultTypeCopy'
 import { getSupportedChainsForVaultType } from '@vaults/utils/vaultTypeUtils'
 import type { RefObject } from 'react'
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useVaultsListModel } from './useVaultsListModel'
 import { useVaultsQueryState } from './useVaultsQueryState'
 
@@ -59,7 +59,6 @@ type TVaultsFiltersBarModel = {
   shouldStackFilters: boolean
   isSwitchingVaultType: boolean
   activeVaultType: TVaultType
-  onShareFilters: () => void
   onChangeVaultType: (value: TVaultType) => void
 }
 
@@ -134,7 +133,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
     onChangeSortDirection,
     onResetMultiSelect,
     onResetExtraFilters,
-    onShareFilters,
     sortBy,
     sortDirection
   } = useVaultsQueryState({
@@ -146,15 +144,15 @@ export function useVaultsPageModel(): TVaultsPageModel {
     resetCategories: [],
     persistToStorage: true,
     storageKey: VAULTS_FILTERS_STORAGE_KEY,
-    clearUrlAfterInit: true,
-    shareUpdatesUrl: false
+    clearUrlAfterInit: false,
+    shareUpdatesUrl: true,
+    syncUrlOnChange: true
   })
 
   usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType === 'v3')
 
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
-  const [isPending, startTransition] = useTransition()
   const searchValue = search ?? ''
   const listVaultType = useDeferredValue(vaultType)
   const isBelow1000 =
@@ -324,7 +322,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     isAvailablePinned
   })
 
-  const isSwitchingVaultType = Boolean(optimisticVaultType && optimisticVaultType !== vaultType) || isPending
+  const isSwitchingVaultType = Boolean(optimisticVaultType && optimisticVaultType !== vaultType)
 
   useEffect(() => {
     if (holdingsVaults.length === 0 && isHoldingsPinned) {
@@ -366,9 +364,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     (nextChains: number[] | null): void => {
       const normalizedChains = nextChains ?? []
       setOptimisticChains(normalizedChains)
-      startTransition(() => {
-        onChangeChains(nextChains)
-      })
+      onChangeChains(nextChains)
     },
     [onChangeChains]
   )
@@ -376,9 +372,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     (nextTypes: string[] | null): void => {
       const normalizedTypes = nextTypes ?? []
       setOptimisticTypes(normalizedTypes)
-      startTransition(() => {
-        onChangeTypes(nextTypes)
-      })
+      onChangeTypes(nextTypes)
     },
     [onChangeTypes]
   )
@@ -386,9 +380,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     (nextCategories: string[] | null): void => {
       const normalizedCategories = nextCategories ?? []
       setOptimisticCategories(normalizedCategories)
-      startTransition(() => {
-        onChangeCategories(nextCategories)
-      })
+      onChangeCategories(nextCategories)
     },
     [onChangeCategories]
   )
@@ -396,36 +388,28 @@ export function useVaultsPageModel(): TVaultsPageModel {
     (nextAggressiveness: string[] | null): void => {
       const normalizedAggressiveness = nextAggressiveness ?? []
       setOptimisticAggressiveness(normalizedAggressiveness)
-      startTransition(() => {
-        onChangeAggressiveness(nextAggressiveness)
-      })
+      onChangeAggressiveness(nextAggressiveness)
     },
     [onChangeAggressiveness]
   )
   const handleShowLegacyVaultsChange = useCallback(
     (nextValue: boolean): void => {
       setOptimisticShowLegacyVaults(nextValue)
-      startTransition(() => {
-        onChangeShowLegacyVaults(nextValue)
-      })
+      onChangeShowLegacyVaults(nextValue)
     },
     [onChangeShowLegacyVaults]
   )
   const handleShowHiddenVaultsChange = useCallback(
     (nextValue: boolean): void => {
       setOptimisticShowHiddenVaults(nextValue)
-      startTransition(() => {
-        onChangeShowHiddenVaults(nextValue)
-      })
+      onChangeShowHiddenVaults(nextValue)
     },
     [onChangeShowHiddenVaults]
   )
   const handleShowStrategiesChange = useCallback(
     (nextValue: boolean): void => {
       setOptimisticShowStrategies(nextValue)
-      startTransition(() => {
-        onChangeShowStrategies(nextValue)
-      })
+      onChangeShowStrategies(nextValue)
     },
     [onChangeShowStrategies]
   )
@@ -457,9 +441,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
         return
       }
       setOptimisticVaultType(nextType)
-      startTransition(() => {
-        onChangeVaultType(nextType)
-      })
+      onChangeVaultType(nextType)
     },
     [optimisticVaultType, onChangeVaultType, vaultType]
   )
@@ -479,10 +461,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
     setOptimisticShowLegacyVaults(false)
     setOptimisticShowHiddenVaults(false)
     setOptimisticShowStrategies(false)
-    startTransition(() => {
-      onResetMultiSelect()
-      onResetExtraFilters()
-    })
+    onResetMultiSelect()
+    onResetExtraFilters()
   }, [onResetExtraFilters, onResetMultiSelect])
 
   const filtersSections: TVaultsFiltersPanelSection[] = [
@@ -580,13 +560,11 @@ export function useVaultsPageModel(): TVaultsPageModel {
       setOptimisticShowLegacyVaults(state.showLegacyVaults)
       setOptimisticShowHiddenVaults(state.showHiddenVaults)
 
-      startTransition(() => {
-        onChangeCategories(state.categories.length > 0 ? state.categories : null)
-        onChangeAggressiveness(state.aggressiveness.length > 0 ? state.aggressiveness : null)
-        onChangeShowStrategies(state.showStrategies)
-        onChangeShowLegacyVaults(state.showLegacyVaults)
-        onChangeShowHiddenVaults(state.showHiddenVaults)
-      })
+      onChangeCategories(state.categories.length > 0 ? state.categories : null)
+      onChangeAggressiveness(state.aggressiveness.length > 0 ? state.aggressiveness : null)
+      onChangeShowStrategies(state.showStrategies)
+      onChangeShowLegacyVaults(state.showLegacyVaults)
+      onChangeShowHiddenVaults(state.showHiddenVaults)
     },
     [
       onChangeCategories,
@@ -724,7 +702,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
       shouldStackFilters,
       isSwitchingVaultType,
       activeVaultType: displayedVaultType,
-      onShareFilters,
       onChangeVaultType: handleVaultVersionToggle
     },
     list: {

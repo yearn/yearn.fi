@@ -1,6 +1,5 @@
 import { Breadcrumbs } from '@lib/components/Breadcrumbs'
 import { Button } from '@lib/components/Button'
-import { ShareButton } from '@lib/components/ShareButton'
 import { getVaultKey } from '@lib/hooks/useVaultFilterUtils'
 import { cl } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
@@ -63,16 +62,8 @@ export default function Index(): ReactElement {
   const { refs, header, filtersBar, list } = useVaultsPageModel()
   const { varsRef, filtersRef } = refs
   const { vaultType, suggestedVaults } = header
-  const {
-    search,
-    filters,
-    chains,
-    shouldStackFilters,
-    isSwitchingVaultType,
-    activeVaultType,
-    onShareFilters,
-    onChangeVaultType
-  } = filtersBar
+  const { search, filters, chains, shouldStackFilters, isSwitchingVaultType, activeVaultType, onChangeVaultType } =
+    filtersBar
   const {
     listHeadProps,
     listVaultType,
@@ -141,8 +132,6 @@ export default function Index(): ReactElement {
   }, [compareVaultKeys.length, isCompareOpen])
 
   const filtersContent = <VaultsFiltersPanel sections={filters.sections} />
-
-  const shareButtonElement = <ShareButton onClick={onShareFilters} ariaLabel={'Share filters'} />
 
   const compareToggleControl = (
     <button
@@ -332,8 +321,7 @@ export default function Index(): ReactElement {
               <VaultsFiltersBar
                 search={{
                   ...search,
-                  shouldDebounce: true,
-                  trailingControls: shareButtonElement
+                  shouldDebounce: true
                 }}
                 filters={{
                   ...filters,
