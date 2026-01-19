@@ -491,6 +491,7 @@ function FilterControls({
         <div ref={controlsRowRef} className={'flex w-full items-center gap-3'}>
           {chainSelectorElement}
           {filtersButtonElement}
+          {filtersTrailingControls ? <div className={'shrink-0'}>{filtersTrailingControls}</div> : null}
           {inlineSearchElement}
           {searchTrailingElement}
         </div>
