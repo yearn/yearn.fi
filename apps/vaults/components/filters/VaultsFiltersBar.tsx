@@ -6,7 +6,7 @@ import { IconCross } from '@lib/icons/IconCross'
 import { IconSearch } from '@lib/icons/IconSearch'
 import { cl } from '@lib/utils'
 import type { ReactElement, ReactNode, RefObject } from 'react'
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Drawer } from 'vaul'
 import { type TVaultsChainButton, VaultsChainSelector } from './VaultsChainSelector'
 import { VaultsFiltersButton } from './VaultsFiltersButton'
@@ -55,15 +55,10 @@ export function VaultsFiltersBar({
   filtersTrailingControls,
   isStackedLayout: isStackedLayoutProp
 }: TVaultsFiltersBarProps): ReactElement {
-  const SEARCH_MIN_WIDTH = 180
-  const SEARCH_EXPAND_WIDTH = 400
-  const FILTERS_EXPAND_WIDTH = 300
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false)
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
-  const [isFiltersButtonMinimal, setIsFiltersButtonMinimal] = useState(false)
-  const [isChainSelectorMinimal, setIsChainSelectorMinimal] = useState(false)
   const isStackedLayout = Boolean(isStackedLayoutProp)
   const hasFiltersContent = Boolean(filtersContent)
 
@@ -204,188 +199,7 @@ export function VaultsFiltersBar({
   }
 
   const controlsRowRef = useRef<HTMLDivElement | null>(null)
-  const chainSelectorRef = useRef<HTMLDivElement | null>(null)
-  const filtersButtonRef = useRef<HTMLButtonElement | null>(null)
   const searchContainerRef = useRef<HTMLDivElement | null>(null)
-  const measurementsRef = useRef({
-    chain: { full: 0, minimal: 0 },
-    filters: { full: 0, minimal: 0 }
-  })
-
-  const updateResponsiveControls = useCallback(() => {
-    if (isStackedLayout) {
-      return
-    }
-    const row = controlsRowRef.current
-    if (!row) {
-      return
-    }
-    const clientWidth = row.clientWidth
-    if (clientWidth === 0) {
-      return
-    }
-    const searchContainer = searchContainerRef.current
-    if (!searchContainer) {
-      return
-    }
-    const scrollWidth = row.scrollWidth
-    const searchWidth = searchContainer.offsetWidth
-    const chainWidths = measurementsRef.current.chain
-    const filtersWidths = measurementsRef.current.filters
-    const chainDelta = chainWidths.full && chainWidths.minimal ? chainWidths.full - chainWidths.minimal : 0
-    const filtersDelta = filtersWidths.full && filtersWidths.minimal ? filtersWidths.full - filtersWidths.minimal : 0
-    const searchSlack = Math.max(0, searchWidth - SEARCH_MIN_WIDTH)
-    const isSearchAtMin = searchWidth <= SEARCH_MIN_WIDTH + 1
-    const isSearchWide = searchWidth >= SEARCH_EXPAND_WIDTH - 1
-    const isSearchWideForFilters = searchWidth >= FILTERS_EXPAND_WIDTH - 1
-
-    let nextFiltersMinimal = hasFiltersContent ? isFiltersButtonMinimal : false
-    let nextChainMinimal = isChainSelectorMinimal
-    const hasOverflow = scrollWidth > clientWidth + 1
-    const shouldCollapse = isSearchAtMin || (hasOverflow && !isSearchWideForFilters)
-
-    if (shouldCollapse) {
-      if (hasFiltersContent && !nextFiltersMinimal) {
-        nextFiltersMinimal = true
-      } else if (!nextChainMinimal) {
-        nextChainMinimal = true
-      }
-    } else {
-      let remainingSlack = searchSlack
-      const canExpandFilters =
-        isSearchWideForFilters && (filtersDelta === 0 || (filtersDelta > 0 && remainingSlack >= filtersDelta))
-      if (nextFiltersMinimal && canExpandFilters) {
-        nextFiltersMinimal = false
-        if (filtersDelta > 0) {
-          remainingSlack -= filtersDelta
-        }
-      }
-      const canExpandChains = isSearchWide && (chainDelta === 0 || (chainDelta > 0 && remainingSlack >= chainDelta))
-      if (nextChainMinimal && canExpandChains) {
-        nextChainMinimal = false
-      }
-    }
-
-    if (nextFiltersMinimal !== isFiltersButtonMinimal) {
-      setIsFiltersButtonMinimal(nextFiltersMinimal)
-    }
-    if (nextChainMinimal !== isChainSelectorMinimal) {
-      setIsChainSelectorMinimal(nextChainMinimal)
-    }
-  }, [hasFiltersContent, isChainSelectorMinimal, isFiltersButtonMinimal, isStackedLayout])
-
-  useEffect(() => {
-    if (!isStackedLayout) {
-      return
-    }
-    setIsFiltersButtonMinimal(false)
-    setIsChainSelectorMinimal(true)
-  }, [isStackedLayout])
-
-  useLayoutEffect(() => {
-    const chainSelector = chainSelectorRef.current
-    if (!chainSelector) {
-      return
-    }
-    const width = chainSelector.offsetWidth
-    if (isChainSelectorMinimal) {
-      measurementsRef.current.chain.minimal = width
-    } else {
-      measurementsRef.current.chain.full = width
-    }
-    updateResponsiveControls()
-  }, [isChainSelectorMinimal, updateResponsiveControls])
-
-  useEffect(() => {
-    if (typeof ResizeObserver === 'undefined') {
-      return
-    }
-    const chainSelector = chainSelectorRef.current
-    if (!chainSelector) {
-      return
-    }
-    const observer = new ResizeObserver(() => {
-      const width = chainSelector.offsetWidth
-      if (isChainSelectorMinimal) {
-        measurementsRef.current.chain.minimal = width
-      } else {
-        measurementsRef.current.chain.full = width
-      }
-      updateResponsiveControls()
-    })
-    observer.observe(chainSelector)
-    return () => observer.disconnect()
-  }, [isChainSelectorMinimal, updateResponsiveControls])
-
-  useLayoutEffect(() => {
-    if (!hasFiltersContent) {
-      measurementsRef.current.filters = { full: 0, minimal: 0 }
-      updateResponsiveControls()
-      return
-    }
-    const filtersButton = filtersButtonRef.current
-    if (!filtersButton) {
-      return
-    }
-    const width = filtersButton.offsetWidth
-    if (isFiltersButtonMinimal) {
-      measurementsRef.current.filters.minimal = width
-    } else {
-      measurementsRef.current.filters.full = width
-    }
-    updateResponsiveControls()
-  }, [hasFiltersContent, isFiltersButtonMinimal, updateResponsiveControls])
-
-  useEffect(() => {
-    if (!hasFiltersContent || typeof ResizeObserver === 'undefined') {
-      return
-    }
-    const filtersButton = filtersButtonRef.current
-    if (!filtersButton) {
-      return
-    }
-    const observer = new ResizeObserver(() => {
-      const width = filtersButton.offsetWidth
-      if (isFiltersButtonMinimal) {
-        measurementsRef.current.filters.minimal = width
-      } else {
-        measurementsRef.current.filters.full = width
-      }
-      updateResponsiveControls()
-    })
-    observer.observe(filtersButton)
-    return () => observer.disconnect()
-  }, [hasFiltersContent, isFiltersButtonMinimal, updateResponsiveControls])
-
-  useEffect(() => {
-    if (typeof ResizeObserver === 'undefined') {
-      return
-    }
-    const searchContainer = searchContainerRef.current
-    if (!searchContainer) {
-      return
-    }
-    const observer = new ResizeObserver(() => {
-      window.requestAnimationFrame(updateResponsiveControls)
-    })
-    observer.observe(searchContainer)
-    return () => observer.disconnect()
-  }, [updateResponsiveControls])
-
-  useEffect(() => {
-    if (typeof ResizeObserver === 'undefined') {
-      return
-    }
-    const row = controlsRowRef.current
-    if (!row) {
-      return
-    }
-    const observer = new ResizeObserver(() => {
-      window.requestAnimationFrame(updateResponsiveControls)
-    })
-    observer.observe(row)
-    return () => observer.disconnect()
-  }, [updateResponsiveControls])
 
   const stackedControls = mobileExtraContent ?? trailingControls
 
@@ -488,7 +302,6 @@ export function VaultsFiltersBar({
                     shouldDebounce={shouldDebounce}
                     searchAlertContent={searchAlertContent}
                     searchTrailingControls={searchTrailingControls}
-                    enableResponsiveLayout={false}
                   />
                   {filtersContent}
                 </div>
@@ -514,13 +327,8 @@ export function VaultsFiltersBar({
             onSearch={onSearch}
             shouldDebounce={shouldDebounce}
             searchAlertContent={searchAlertContent}
-            isFiltersButtonMinimal={isStackedLayout ? false : isFiltersButtonMinimal}
-            isChainSelectorMinimal={isStackedLayout ? true : isChainSelectorMinimal}
             controlsRowRef={controlsRowRef}
-            chainSelectorRef={chainSelectorRef}
-            filtersButtonRef={filtersButtonRef}
             searchContainerRef={searchContainerRef}
-            enableResponsiveLayout={!isStackedLayout}
             layout={isStackedLayout ? 'stacked' : 'inline'}
             leadingControls={isStackedLayout ? stackedControls : trailingControls}
             searchTrailingControls={searchTrailingControls}
@@ -571,15 +379,10 @@ function FilterControls({
   onSearch,
   shouldDebounce,
   searchAlertContent,
-  isFiltersButtonMinimal = false,
-  isChainSelectorMinimal = false,
   controlsRowRef,
-  chainSelectorRef,
-  filtersButtonRef,
   searchContainerRef,
   searchTrailingControls,
   filtersTrailingControls,
-  enableResponsiveLayout = false,
   layout = 'inline',
   leadingControls,
   trailingControls
@@ -589,10 +392,6 @@ function FilterControls({
   areAllChainsSelected: boolean
   onSelectChain: (chainId: number) => void
   onOpenChainModal: () => void
-  /**
-   * Controls whether the "More" chain button is shown.
-   * Disable when all supported chains fit inline; re-enable if/when we add more chains.
-   */
   showMoreChainsButton?: boolean
   allChainsLabel: string
   showFiltersButton?: boolean
@@ -607,27 +406,17 @@ function FilterControls({
   onSearch: (value: string) => void
   shouldDebounce?: boolean
   searchAlertContent?: ReactNode
-  isFiltersButtonMinimal?: boolean
-  isChainSelectorMinimal?: boolean
   controlsRowRef?: RefObject<HTMLDivElement | null>
-  chainSelectorRef?: RefObject<HTMLDivElement | null>
-  filtersButtonRef?: RefObject<HTMLButtonElement | null>
   searchContainerRef?: RefObject<HTMLDivElement | null>
   searchTrailingControls?: ReactNode
   filtersTrailingControls?: ReactNode
-  enableResponsiveLayout?: boolean
   layout?: 'inline' | 'stacked'
   leadingControls?: ReactNode
   trailingControls?: ReactNode
 }): ReactElement {
   const isStacked = layout === 'stacked'
   const filtersButtonElement = showFiltersButton ? (
-    <VaultsFiltersButton
-      filtersCount={filtersCount}
-      isMinimal={isFiltersButtonMinimal}
-      onClick={onOpenFiltersModal}
-      buttonRef={filtersButtonRef}
-    />
+    <VaultsFiltersButton filtersCount={filtersCount} onClick={onOpenFiltersModal} />
   ) : null
   const inlineSearchElement = showInlineSearch ? (
     <div ref={searchContainerRef} className={'flex-1 min-w-0'}>
@@ -682,13 +471,10 @@ function FilterControls({
     ) : null
   const chainSelectorElement = (
     <VaultsChainSelector
-      selectorRef={chainSelectorRef}
       chainButtons={chainButtons}
       areAllChainsSelected={areAllChainsSelected}
       allChainsLabel={allChainsLabel}
       showMoreChainsButton={showMoreChainsButton}
-      isMinimal={isChainSelectorMinimal}
-      enableResponsiveLayout={enableResponsiveLayout}
       isStacked={isStacked}
       onSelectAllChains={onSelectAllChains}
       onSelectChain={onSelectChain}
@@ -705,6 +491,7 @@ function FilterControls({
         <div ref={controlsRowRef} className={'flex w-full items-center gap-3'}>
           {chainSelectorElement}
           {filtersButtonElement}
+          {filtersTrailingControls ? <div className={'shrink-0'}>{filtersTrailingControls}</div> : null}
           {inlineSearchElement}
           {searchTrailingElement}
         </div>
@@ -716,15 +503,9 @@ function FilterControls({
     <div className={'flex flex-col gap-4'}>
       <div>
         <div className={'flex flex-col gap-2'}>
-          <div
-            ref={controlsRowRef}
-            className={cl(
-              'flex w-full items-center gap-3',
-              enableResponsiveLayout ? 'flex-nowrap justify-between overflow-hidden' : 'flex-wrap'
-            )}
-          >
+          <div ref={controlsRowRef} className={'flex w-full items-center gap-3 flex-wrap'}>
             {leadingControls ? <div className={'shrink-0'}>{leadingControls}</div> : null}
-            {chainSelectorElement}
+            <div className={'shrink min-w-0 max-w-[580px]'}>{chainSelectorElement}</div>
             <div className={'flex flex-row items-center gap-3 flex-1 min-w-0'}>
               {showSearchButton && isSearchExpanded ? (
                 expandedSearchElement

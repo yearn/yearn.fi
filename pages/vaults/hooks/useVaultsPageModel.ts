@@ -20,16 +20,7 @@ import { deriveListKind, type TVaultAggressiveness } from '@vaults/utils/vaultLi
 import type { TVaultType } from '@vaults/utils/vaultTypeCopy'
 import { getSupportedChainsForVaultType } from '@vaults/utils/vaultTypeUtils'
 import type { RefObject } from 'react'
-import {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition
-} from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useVaultsListModel } from './useVaultsListModel'
 import { useVaultsQueryState } from './useVaultsQueryState'
 
@@ -110,47 +101,6 @@ export type TVaultsPageModel = {
   }
   filtersBar: TVaultsFiltersBarModel
   list: TVaultsListModel
-}
-
-type TVaultsPageLayoutRefProps = {
-  varsRef: RefObject<HTMLDivElement | null>
-  filtersRef: RefObject<HTMLDivElement | null>
-}
-
-function useVaultsFiltersHeight({ varsRef, filtersRef }: TVaultsPageLayoutRefProps): void {
-  useLayoutEffect(() => {
-    const filtersElement = filtersRef.current
-    const varsElement = varsRef.current
-    if (!filtersElement || !varsElement) return
-
-    if (typeof ResizeObserver === 'undefined') {
-      const updateHeight = (): void => {
-        varsElement.style.setProperty('--vaults-filters-height', `${filtersElement.getBoundingClientRect().height}px`)
-      }
-
-      updateHeight()
-      const handleResize = (): void => updateHeight()
-      window.addEventListener('resize', handleResize, { passive: true })
-      return () => window.removeEventListener('resize', handleResize)
-    }
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0]
-      const borderBoxSize = entry?.borderBoxSize as unknown
-      let borderBoxHeight: number | undefined
-      if (Array.isArray(borderBoxSize)) {
-        borderBoxHeight = borderBoxSize[0]?.blockSize
-      } else if (borderBoxSize && typeof borderBoxSize === 'object' && 'blockSize' in borderBoxSize) {
-        borderBoxHeight = (borderBoxSize as ResizeObserverSize).blockSize
-      }
-      const height = borderBoxHeight ?? filtersElement.getBoundingClientRect().height
-      varsElement.style.setProperty('--vaults-filters-height', `${height}px`)
-    })
-
-    varsElement.style.setProperty('--vaults-filters-height', `${filtersElement.getBoundingClientRect().height}px`)
-    observer.observe(filtersElement)
-    return () => observer.disconnect()
-  }, [filtersRef, varsRef])
 }
 
 export function useVaultsPageModel(): TVaultsPageModel {
@@ -243,8 +193,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
     },
     []
   )
-
-  useVaultsFiltersHeight({ varsRef, filtersRef })
 
   useEffect(() => {
     if (optimisticVaultType && optimisticVaultType === vaultType) {
