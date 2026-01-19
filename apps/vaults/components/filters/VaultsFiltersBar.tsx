@@ -2,22 +2,14 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import type { TMultiSelectOptionProps } from '@lib/components/MultiSelectDropdown'
 import { SearchBar } from '@lib/components/SearchBar'
 import { useChainOptions } from '@lib/hooks/useChains'
-import { IconChevron } from '@lib/icons/IconChevron'
 import { IconCross } from '@lib/icons/IconCross'
-import { IconFilter } from '@lib/icons/IconFilter'
 import { IconSearch } from '@lib/icons/IconSearch'
-import { LogoYearn } from '@lib/icons/LogoYearn'
 import { cl } from '@lib/utils'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Drawer } from 'vaul'
-
-type TChainButton = {
-  id: number
-  label: string
-  icon?: ReactElement
-  isSelected: boolean
-}
+import { type TVaultsChainButton, VaultsChainSelector } from './VaultsChainSelector'
+import { VaultsFiltersButton } from './VaultsFiltersButton'
 
 type TChainConfig = {
   supportedChainIds: number[]
@@ -28,7 +20,7 @@ type TChainConfig = {
   allChainsLabel?: string
 }
 
-type TVaultsFiltersProps = {
+type TVaultsFiltersBarProps = {
   chains: number[] | null
   searchValue: string
   onChangeChains: (chains: number[] | null) => void
@@ -38,7 +30,6 @@ type TVaultsFiltersProps = {
   chainConfig: TChainConfig
   filtersCount?: number
   filtersContent?: ReactNode
-  filtersPanelContent?: ReactNode
   onClearFilters?: () => void
   mobileExtraContent?: ReactNode
   trailingControls?: ReactNode
@@ -47,7 +38,7 @@ type TVaultsFiltersProps = {
   isStackedLayout?: boolean
 }
 
-export function VaultsFilters({
+export function VaultsFiltersBar({
   chains,
   searchValue,
   onChangeChains,
@@ -57,14 +48,13 @@ export function VaultsFilters({
   chainConfig,
   filtersCount = 0,
   filtersContent,
-  filtersPanelContent,
   onClearFilters,
   mobileExtraContent,
   trailingControls,
   searchTrailingControls,
   filtersTrailingControls,
   isStackedLayout: isStackedLayoutProp
-}: TVaultsFiltersProps): ReactElement {
+}: TVaultsFiltersBarProps): ReactElement {
   const SEARCH_MIN_WIDTH = 180
   const SEARCH_EXPAND_WIDTH = 400
   const FILTERS_EXPAND_WIDTH = 300
@@ -75,9 +65,7 @@ export function VaultsFilters({
   const [isFiltersButtonMinimal, setIsFiltersButtonMinimal] = useState(false)
   const [isChainSelectorMinimal, setIsChainSelectorMinimal] = useState(false)
   const isStackedLayout = Boolean(isStackedLayoutProp)
-  const hasFiltersContent = Boolean(filtersContent ?? filtersPanelContent)
-  const hasPanelContent = Boolean(filtersPanelContent)
-  const filtersModalContent = filtersContent ?? filtersPanelContent
+  const hasFiltersContent = Boolean(filtersContent)
 
   const {
     supportedChainIds,
@@ -149,7 +137,7 @@ export function VaultsFilters({
 
   const selectedChainSet = useMemo(() => new Set(chains ?? []), [chains])
 
-  const chainButtons = useMemo((): TChainButton[] => {
+  const chainButtons = useMemo((): TVaultsChainButton[] => {
     return visibleChainIds
       .map((id) => {
         const option = chainOptionMap.get(id)
@@ -163,7 +151,7 @@ export function VaultsFilters({
           isSelected: selectedChainSet.has(id)
         }
       })
-      .filter(Boolean) as TChainButton[]
+      .filter(Boolean) as TVaultsChainButton[]
   }, [visibleChainIds, chainOptionMap, selectedChainSet])
 
   const areAllChainsSelected = !chains || chains.length === 0
@@ -491,7 +479,7 @@ export function VaultsFilters({
                     onOpenChainModal={(): void => setIsChainModalOpen(true)}
                     showMoreChainsButton={showMoreChainsButton}
                     allChainsLabel={allChainsLabel}
-                    showFiltersButton={Boolean(filtersContent) && !hasPanelContent}
+                    showFiltersButton={false}
                     filtersCount={filtersCount}
                     onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
                     showInlineSearch={false}
@@ -502,7 +490,7 @@ export function VaultsFilters({
                     searchTrailingControls={searchTrailingControls}
                     enableResponsiveLayout={false}
                   />
-                  {hasPanelContent ? filtersPanelContent : null}
+                  {filtersContent}
                 </div>
               </Drawer.Content>
             </Drawer.Portal>
@@ -551,12 +539,12 @@ export function VaultsFilters({
           onApply={handleApplyAdditionalChains}
         />
       ) : null}
-      {hasFiltersContent && filtersModalContent ? (
+      {hasFiltersContent && filtersContent ? (
         <FiltersModal
           isOpen={isFiltersModalOpen}
           onClose={(): void => setIsFiltersModalOpen(false)}
           onClear={onClearFilters}
-          filtersContent={filtersModalContent}
+          filtersContent={filtersContent}
         />
       ) : null}
     </>
@@ -596,7 +584,7 @@ function FilterControls({
   leadingControls,
   trailingControls
 }: {
-  chainButtons: TChainButton[]
+  chainButtons: TVaultsChainButton[]
   onSelectAllChains: () => void
   areAllChainsSelected: boolean
   onSelectChain: (chainId: number) => void
@@ -633,33 +621,13 @@ function FilterControls({
   trailingControls?: ReactNode
 }): ReactElement {
   const isStacked = layout === 'stacked'
-  const showFiltersLabel = !isFiltersButtonMinimal
   const filtersButtonElement = showFiltersButton ? (
-    <button
-      type={'button'}
-      className={cl(
-        'flex shrink-0 items-center gap-1 border rounded-lg h-10 border-border py-2 text-sm font-medium text-text-secondary bg-surface transition-colors',
-        isFiltersButtonMinimal ? 'px-2' : 'px-4',
-        'hover:text-text-secondary',
-        'data-[active=true]:border-border-hover data-[active=true]:text-text-secondary'
-      )}
+    <VaultsFiltersButton
+      filtersCount={filtersCount}
+      isMinimal={isFiltersButtonMinimal}
       onClick={onOpenFiltersModal}
-      aria-label={'Open filters'}
-      ref={filtersButtonRef}
-    >
-      <IconFilter className={'size-4'} />
-      {showFiltersLabel ? <span>{'Filters'}</span> : null}
-      {filtersCount > 0 ? (
-        <span
-          className={cl(
-            'inline-flex min-w-5 items-center justify-center rounded-full bg-surface-tertiary px-1.5 text-xs text-text-primary',
-            showFiltersLabel ? 'ml-1' : 'ml-0'
-          )}
-        >
-          {filtersCount}
-        </span>
-      ) : null}
-    </button>
+      buttonRef={filtersButtonRef}
+    />
   ) : null
   const inlineSearchElement = showInlineSearch ? (
     <div ref={searchContainerRef} className={'flex-1 min-w-0'}>
@@ -713,72 +681,19 @@ function FilterControls({
       </button>
     ) : null
   const chainSelectorElement = (
-    <div
-      ref={chainSelectorRef}
-      className={cl(
-        'flex h-10 items-stretch overflow-x-auto scrollbar-themed rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
-        isStacked ? 'min-w-0 shrink-0' : enableResponsiveLayout ? 'min-w-0' : 'w-full'
-      )}
-    >
-      <button
-        type={'button'}
-        className={cl(
-          'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
-          'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-          'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
-          !enableResponsiveLayout && !isStacked ? 'flex-1' : ''
-        )}
-        data-active={areAllChainsSelected}
-        onClick={onSelectAllChains}
-        aria-pressed={areAllChainsSelected}
-      >
-        <span className={'size-5 overflow-hidden rounded-full'}>
-          <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
-        </span>
-        <span className={'whitespace-nowrap'}>{allChainsLabel}</span>
-      </button>
-      {chainButtons.map((chain) => {
-        const showChainLabel = !isChainSelectorMinimal || chain.isSelected
-        return (
-          <button
-            key={chain.id}
-            type={'button'}
-            className={cl(
-              'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
-              'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-              'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
-              !enableResponsiveLayout && !isStacked ? 'flex-1' : ''
-            )}
-            data-active={chain.isSelected}
-            onClick={(): void => onSelectChain(chain.id)}
-            aria-pressed={chain.isSelected}
-            aria-label={showChainLabel ? undefined : chain.label}
-          >
-            {chain.icon ? (
-              <span className={'size-5 overflow-hidden rounded-full bg-surface/80'}>{chain.icon}</span>
-            ) : null}
-            {showChainLabel ? <span className={'whitespace-nowrap'}>{chain.label}</span> : null}
-          </button>
-        )
-      })}
-
-      {showMoreChainsButton ? (
-        <button
-          type={'button'}
-          className={cl(
-            'flex h-full items-center gap-2 px-3 font-medium transition-colors',
-            'text-text-secondary hover:bg-surface/30 hover:text-text-primary'
-          )}
-          onClick={onOpenChainModal}
-        >
-          <span className={'whitespace-nowrap'}>{'More'}</span>
-          <span className={'flex items-center'}>
-            <IconChevron direction={'right'} className={'size-4'} />
-            <IconChevron direction={'right'} className={'-ml-3 size-4'} />
-          </span>
-        </button>
-      ) : null}
-    </div>
+    <VaultsChainSelector
+      selectorRef={chainSelectorRef}
+      chainButtons={chainButtons}
+      areAllChainsSelected={areAllChainsSelected}
+      allChainsLabel={allChainsLabel}
+      showMoreChainsButton={showMoreChainsButton}
+      isMinimal={isChainSelectorMinimal}
+      enableResponsiveLayout={enableResponsiveLayout}
+      isStacked={isStacked}
+      onSelectAllChains={onSelectAllChains}
+      onSelectChain={onSelectChain}
+      onOpenChainModal={onOpenChainModal}
+    />
   )
   const searchTrailingElement =
     showInlineSearch && searchTrailingControls ? <div className={'shrink-0'}>{searchTrailingControls}</div> : null

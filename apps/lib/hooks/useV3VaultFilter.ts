@@ -9,7 +9,7 @@ import {
   deriveV3Aggressiveness,
   isAllocatorVaultOverride,
   type TVaultAggressiveness
-} from '@vaults/shared/utils/vaultListFacets'
+} from '@vaults/utils/vaultListFacets'
 import { useMemo } from 'react'
 import {
   createCheckHasAvailableBalance,
