@@ -6,6 +6,30 @@ export type TVaultAssetCategory = 'Stablecoin' | 'Volatile'
 export type TVaultListKind = 'allocator' | 'strategy' | 'factory' | 'legacy'
 export type TVaultAggressiveness = 'Conservative' | 'Moderate' | 'Aggressive'
 
+export const UNDERLYING_ASSET_OVERRIDES: Record<string, string> = {
+  ETH: 'ETH',
+  WETH: 'ETH',
+  VBETH: 'ETH'
+}
+
+const UNDERLYING_ASSET_LABEL_OVERRIDES: Record<string, string> = {}
+const UNDERLYING_ASSET_GROUPS = Object.entries(UNDERLYING_ASSET_OVERRIDES).reduce(
+  (acc, [symbol, group]) => {
+    const normalizedSymbol = symbol.trim().toUpperCase()
+    const normalizedGroup = group.trim().toUpperCase()
+    if (!normalizedSymbol || !normalizedGroup) {
+      return acc
+    }
+    if (!acc[normalizedGroup]) {
+      acc[normalizedGroup] = new Set<string>()
+    }
+    acc[normalizedGroup].add(normalizedGroup)
+    acc[normalizedGroup].add(normalizedSymbol)
+    return acc
+  },
+  {} as Record<string, Set<string>>
+)
+
 const KNOWN_STABLECOIN_SYMBOLS = new Set([
   'USDC',
   'USDT',
@@ -108,4 +132,50 @@ export function deriveV3Aggressiveness(vault: TYDaemonVault): TVaultAggressivene
 
 export function isAllocatorVaultOverride(vault: TYDaemonVault): boolean {
   return ALLOCATOR_VAULT_OVERRIDES.has(getVaultKey(vault))
+}
+
+export function normalizeUnderlyingAssetSymbol(symbol?: string | null): string {
+  if (!symbol) {
+    return ''
+  }
+  const normalized = symbol.trim().toUpperCase()
+  if (!normalized) {
+    return ''
+  }
+  return normalized
+}
+
+export function expandUnderlyingAssetSelection(assets: Iterable<string>): Set<string> {
+  const expanded = new Set<string>()
+  const groupsToExpand = new Set<string>()
+
+  for (const asset of assets) {
+    const normalized = normalizeUnderlyingAssetSymbol(asset)
+    if (!normalized) {
+      continue
+    }
+    const groupKey = UNDERLYING_ASSET_OVERRIDES[normalized] ?? normalized
+    if (UNDERLYING_ASSET_GROUPS[groupKey]) {
+      groupsToExpand.add(groupKey)
+      continue
+    }
+    expanded.add(normalized)
+  }
+
+  for (const groupKey of groupsToExpand) {
+    const groupMembers = UNDERLYING_ASSET_GROUPS[groupKey]
+    if (!groupMembers) {
+      expanded.add(groupKey)
+      continue
+    }
+    groupMembers.forEach((member) => {
+      expanded.add(member)
+    })
+  }
+
+  return expanded
+}
+
+export function getUnderlyingAssetLabel(assetKey: string): string {
+  return UNDERLYING_ASSET_LABEL_OVERRIDES[assetKey] ?? assetKey
 }

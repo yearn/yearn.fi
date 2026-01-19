@@ -1,5 +1,5 @@
 import { cl } from '@lib/utils'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 type TFilterChecklistOption = {
   label: string
@@ -25,6 +25,12 @@ type TVaultsFiltersPanelSection =
       type: 'advanced'
       title: string
       toggles: TFilterToggleOption[]
+      className?: string
+    }
+  | {
+      type: 'custom'
+      title: string
+      content: ReactNode
       className?: string
     }
 
@@ -102,11 +108,29 @@ function renderAdvancedSection(
   )
 }
 
+function renderCustomSection(section: Extract<TVaultsFiltersPanelSection, { type: 'custom' }>): ReactElement | null {
+  if (!section.content) {
+    return null
+  }
+
+  return (
+    <div className={cl('flex flex-col gap-2', section.className)}>
+      <div>
+        <p className={'mb-2 text-sm text-text-secondary'}>{section.title}</p>
+        {section.content}
+      </div>
+    </div>
+  )
+}
+
 export function VaultsFiltersPanel({ sections }: { sections: TVaultsFiltersPanelSection[] }): ReactElement | null {
   const renderedSections = sections
     .map((section) => {
       if (section.type === 'checklist') {
         return renderChecklist(section)
+      }
+      if (section.type === 'custom') {
+        return renderCustomSection(section)
       }
       return renderAdvancedSection(section)
     })
@@ -116,7 +140,7 @@ export function VaultsFiltersPanel({ sections }: { sections: TVaultsFiltersPanel
     return null
   }
 
-  return <div className={'mt-4 flex flex-col gap-6'}>{renderedSections}</div>
+  return <div className={'relative mt-4 flex flex-col gap-6'}>{renderedSections}</div>
 }
 
 export type { TVaultsFiltersPanelSection, TFilterChecklistOption, TFilterToggleOption }
