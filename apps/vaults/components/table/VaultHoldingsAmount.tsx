@@ -1,5 +1,6 @@
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { useWallet } from '@lib/contexts/useWallet'
+import { useWeb3 } from '@lib/contexts/useWeb3'
 import { useYearn } from '@lib/contexts/useYearn'
 import type { TNormalizedBN } from '@lib/types'
 import { cl, toNormalizedBN } from '@lib/utils'
@@ -15,6 +16,7 @@ export function VaultHoldingsAmount({
   valueClassName?: string
 }): ReactElement {
   const { getToken } = useWallet()
+  const { isActive: isWalletActive } = useWeb3()
   const { getPrice } = useYearn()
 
   const { tokenPrice, staked, hasBalance } = useMemo(() => {
@@ -53,6 +55,7 @@ export function VaultHoldingsAmount({
   const value = staked.normalized * tokenPrice.normalized
 
   const isDusty = value < 0.01
+  const shouldShowDash = isWalletActive && !hasBalance
 
   return (
     <div className={'flex flex-col items-end pt-0 text-right'}>
@@ -63,16 +66,20 @@ export function VaultHoldingsAmount({
           valueClassName
         )}
       >
-        <RenderAmount
-          value={isDusty ? 0 : value}
-          symbol={'USD'}
-          decimals={0}
-          options={{
-            shouldCompactValue: true,
-            maximumFractionDigits: 2,
-            minimumFractionDigits: 2
-          }}
-        />
+        {shouldShowDash ? (
+          '-'
+        ) : (
+          <RenderAmount
+            value={isDusty ? 0 : value}
+            symbol={'USD'}
+            decimals={0}
+            options={{
+              shouldCompactValue: true,
+              maximumFractionDigits: 2,
+              minimumFractionDigits: 2
+            }}
+          />
+        )}
       </p>
       {/* <small
         className={cl(

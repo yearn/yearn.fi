@@ -1,5 +1,6 @@
 import { Tooltip } from '@lib/components/Tooltip'
 import { cl } from '@lib/utils'
+import { TOOLTIP_DELAY_MS } from '@vaults/utils/vaultTagCopy'
 import type { ReactElement, ReactNode } from 'react'
 
 type TVaultsListChipProps = {
@@ -8,6 +9,9 @@ type TVaultsListChipProps = {
   isActive?: boolean
   isCollapsed?: boolean
   showCollapsedTooltip?: boolean
+  tooltipDescription?: string
+  tooltip?: string | ReactElement
+  tooltipDelayMs?: number
   onClick?: () => void
   ariaLabel?: string
   disabled?: boolean
@@ -19,13 +23,15 @@ export function VaultsListChip({
   isActive = false,
   isCollapsed = false,
   showCollapsedTooltip = false,
+  tooltipDescription,
+  tooltip,
+  tooltipDelayMs,
   onClick,
   ariaLabel,
   disabled = false
 }: TVaultsListChipProps): ReactElement {
   const isInteractive = Boolean(onClick) && !disabled
   const shouldCollapse = isCollapsed && Boolean(icon)
-  const shouldShowTooltip = shouldCollapse && showCollapsedTooltip
   const iconNode = icon ? (
     <span className={'flex size-4 items-center justify-center text-text-secondary'}>{icon}</span>
   ) : null
@@ -58,23 +64,41 @@ export function VaultsListChip({
     </button>
   )
 
-  if (!shouldShowTooltip) {
+  const tooltipContent =
+    tooltip ||
+    (tooltipDescription ? (
+      <div
+        className={
+          'max-w-[220px] rounded-lg border border-border bg-surface-secondary px-3 py-2 text-xs text-text-primary shadow-md'
+        }
+      >
+        <div className={'flex items-center gap-1 font-semibold'}>
+          {iconNode}
+          <span>{label}</span>
+        </div>
+        <p className={'text-text-secondary'}>{tooltipDescription}</p>
+      </div>
+    ) : shouldCollapse && showCollapsedTooltip ? (
+      <div
+        className={
+          'flex items-center gap-1 rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs font-medium text-text-primary shadow-md'
+        }
+      >
+        {iconNode}
+        <span>{label}</span>
+      </div>
+    ) : null)
+
+  if (!tooltipContent) {
     return chip
   }
 
   return (
     <Tooltip
       className={'h-auto'}
-      tooltip={
-        <div
-          className={
-            'flex items-center gap-1 rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs font-medium text-text-primary shadow-md'
-          }
-        >
-          {iconNode}
-          <span>{label}</span>
-        </div>
-      }
+      openDelayMs={tooltipDelayMs ?? (tooltipDescription || tooltip ? TOOLTIP_DELAY_MS : 0)}
+      tooltip={tooltipContent}
+      align={'start'}
     >
       {chip}
     </Tooltip>
