@@ -1,4 +1,3 @@
-import homeManifest from '@shared/data/home-manifest.json'
 import landingManifest from '@shared/data/landing-manifest.json'
 import vaultsManifest from '@shared/data/vaults-manifest.json'
 import type { TDict } from '@shared/types'
@@ -49,6 +48,6 @@ export function useCurrentApp(): TCurrentApp {
     if (currentApp) {
       return appMapping[currentApp]
     }
-    return { name: 'Home', manifest: homeManifest }
+    return { name: 'Vaults', manifest: vaultsManifest }
   }, [pathname])
 }
