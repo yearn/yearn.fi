@@ -5,13 +5,15 @@ import { useChainOptions } from '@lib/hooks/useChains'
 import { IconCross } from '@lib/icons/IconCross'
 import { IconSearch } from '@lib/icons/IconSearch'
 import { cl } from '@lib/utils'
+import { DEFAULT_MIN_TVL } from '@vaults/utils/constants'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Drawer } from 'vaul'
 import { type TVaultsChainButton, VaultsChainSelector } from './VaultsChainSelector'
 import { VaultsFiltersButton } from './VaultsFiltersButton'
+import { type TFiltersConfig, type TPendingFiltersState, VaultsFiltersPanelControlled } from './VaultsFiltersPanel'
 
-type TChainConfig = {
+export type TChainConfig = {
   supportedChainIds: number[]
   primaryChainIds?: number[]
   defaultSecondaryChainIds?: number[]
@@ -20,39 +22,45 @@ type TChainConfig = {
   allChainsLabel?: string
 }
 
-type TVaultsFiltersBarProps = {
-  chains: number[] | null
-  searchValue: string
-  onChangeChains: (chains: number[] | null) => void
-  onSearch: (searchValue: string) => void
+export type TSearchProps = {
+  value: string
+  onChange: (value: string) => void
   shouldDebounce?: boolean
-  searchAlertContent?: ReactNode
-  chainConfig: TChainConfig
-  filtersCount?: number
-  filtersContent?: ReactNode
-  onClearFilters?: () => void
+  alertContent?: ReactNode
+  trailingControls?: ReactNode
+}
+
+export type TFiltersProps = {
+  count: number
+  content?: ReactNode
+  config?: TFiltersConfig
+  initialState?: TPendingFiltersState
+  onApply?: (state: TPendingFiltersState) => void
+  onClear?: () => void
+  trailingControls?: ReactNode
+}
+
+export type TChainProps = {
+  selected: number[] | null
+  onChange: (chains: number[] | null) => void
+  config: TChainConfig
+}
+
+type TVaultsFiltersBarProps = {
+  search: TSearchProps
+  filters: TFiltersProps
+  chains: TChainProps
   mobileExtraContent?: ReactNode
   trailingControls?: ReactNode
-  searchTrailingControls?: ReactNode
-  filtersTrailingControls?: ReactNode
   isStackedLayout?: boolean
 }
 
 export function VaultsFiltersBar({
+  search,
+  filters,
   chains,
-  searchValue,
-  onChangeChains,
-  onSearch,
-  shouldDebounce,
-  searchAlertContent,
-  chainConfig,
-  filtersCount = 0,
-  filtersContent,
-  onClearFilters,
   mobileExtraContent,
   trailingControls,
-  searchTrailingControls,
-  filtersTrailingControls,
   isStackedLayout: isStackedLayoutProp
 }: TVaultsFiltersBarProps): ReactElement {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
@@ -60,7 +68,7 @@ export function VaultsFiltersBar({
   const [isChainModalOpen, setIsChainModalOpen] = useState(false)
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false)
   const isStackedLayout = Boolean(isStackedLayoutProp)
-  const hasFiltersContent = Boolean(filtersContent)
+  const hasFiltersContent = Boolean(filters.content)
 
   const {
     supportedChainIds,
@@ -69,7 +77,7 @@ export function VaultsFiltersBar({
     chainDisplayOrder = supportedChainIds,
     showMoreChainsButton = false,
     allChainsLabel = 'All Chains'
-  } = chainConfig
+  } = chains.config
 
   const [customChainIds, setCustomChainIds] = useState<number[]>(defaultSecondaryChainIds)
 
@@ -77,7 +85,7 @@ export function VaultsFiltersBar({
     setCustomChainIds(defaultSecondaryChainIds)
   }, [defaultSecondaryChainIds])
 
-  const chainOptions = useChainOptions(chains).filter((option): boolean =>
+  const chainOptions = useChainOptions(chains.selected).filter((option): boolean =>
     supportedChainIds.includes(Number(option.value))
   )
 
@@ -130,7 +138,7 @@ export function VaultsFiltersBar({
     return ordered
   }, [primaryChainIds, supportedChainIds, pinnedChainIds, chainOptionMap])
 
-  const selectedChainSet = useMemo(() => new Set(chains ?? []), [chains])
+  const selectedChainSet = useMemo(() => new Set(chains.selected ?? []), [chains.selected])
 
   const chainButtons = useMemo((): TVaultsChainButton[] => {
     return visibleChainIds
@@ -149,7 +157,7 @@ export function VaultsFiltersBar({
       .filter(Boolean) as TVaultsChainButton[]
   }, [visibleChainIds, chainOptionMap, selectedChainSet])
 
-  const areAllChainsSelected = !chains || chains.length === 0
+  const areAllChainsSelected = !chains.selected || chains.selected.length === 0
 
   const chainOrderMap = useMemo(() => {
     const map = new Map<number, number>()
@@ -171,15 +179,15 @@ export function VaultsFiltersBar({
   }, [chainOptions, chainOrderMap])
 
   const handleSelectAllChains = (): void => {
-    onChangeChains(null)
+    chains.onChange(null)
   }
 
   const handleChainToggle = (chainId: number): void => {
-    if (chains && chains.length === 1 && chains[0] === chainId) {
-      onChangeChains(null)
+    if (chains.selected && chains.selected.length === 1 && chains.selected[0] === chainId) {
+      chains.onChange(null)
       return
     }
-    onChangeChains([chainId])
+    chains.onChange([chainId])
   }
 
   const handleApplyAdditionalChains = (ids: number[]): void => {
@@ -222,9 +230,9 @@ export function VaultsFiltersBar({
                     className={'w-full rounded-[4px] border-none bg-neutral-800/20 text-text-primary'}
                     iconClassName={'text-text-primary'}
                     searchPlaceholder={'Search vaults...'}
-                    searchValue={searchValue}
-                    onSearch={onSearch}
-                    shouldDebounce={shouldDebounce || false}
+                    searchValue={search.value}
+                    onSearch={search.onChange}
+                    shouldDebounce={search.shouldDebounce || false}
                     highlightWhenActive={false}
                     autoFocus={true}
                     onKeyDown={(e): void => {
@@ -260,7 +268,7 @@ export function VaultsFiltersBar({
                   type={'button'}
                   className={cl(
                     'flex size-10 shrink-0 items-center justify-center rounded-[4px] bg-neutral-800/20 text-text-secondary transition-colors hover:text-text-primary',
-                    searchValue ? 'text-text-primary' : ''
+                    search.value ? 'text-text-primary' : ''
                   )}
                   onClick={(): void => setIsMobileSearchExpanded(true)}
                   aria-label={'Search vaults'}
@@ -294,16 +302,16 @@ export function VaultsFiltersBar({
                     showMoreChainsButton={showMoreChainsButton}
                     allChainsLabel={allChainsLabel}
                     showFiltersButton={false}
-                    filtersCount={filtersCount}
+                    filtersCount={filters.count}
                     onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
                     showInlineSearch={false}
-                    searchValue={searchValue}
-                    onSearch={onSearch}
-                    shouldDebounce={shouldDebounce}
-                    searchAlertContent={searchAlertContent}
-                    searchTrailingControls={searchTrailingControls}
+                    searchValue={search.value}
+                    onSearch={search.onChange}
+                    shouldDebounce={search.shouldDebounce}
+                    searchAlertContent={search.alertContent}
+                    searchTrailingControls={search.trailingControls}
                   />
-                  {filtersContent}
+                  {filters.content}
                 </div>
               </Drawer.Content>
             </Drawer.Portal>
@@ -320,20 +328,19 @@ export function VaultsFiltersBar({
             showMoreChainsButton={showMoreChainsButton}
             allChainsLabel={allChainsLabel}
             showFiltersButton={hasFiltersContent}
-            filtersCount={filtersCount}
+            filtersCount={filters.count}
             onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
             showInlineSearch={true}
-            searchValue={searchValue}
-            onSearch={onSearch}
-            shouldDebounce={shouldDebounce}
-            searchAlertContent={searchAlertContent}
+            searchValue={search.value}
+            onSearch={search.onChange}
+            shouldDebounce={search.shouldDebounce}
+            searchAlertContent={search.alertContent}
             controlsRowRef={controlsRowRef}
             searchContainerRef={searchContainerRef}
             layout={isStackedLayout ? 'stacked' : 'inline'}
             leadingControls={isStackedLayout ? stackedControls : trailingControls}
-            searchTrailingControls={searchTrailingControls}
-            filtersTrailingControls={filtersTrailingControls}
-            trailingControls={isStackedLayout ? undefined : undefined}
+            searchTrailingControls={search.trailingControls}
+            filtersTrailingControls={filters.trailingControls}
           />
         </div>
       </div>
@@ -347,12 +354,15 @@ export function VaultsFiltersBar({
           onApply={handleApplyAdditionalChains}
         />
       ) : null}
-      {hasFiltersContent && filtersContent ? (
+      {hasFiltersContent ? (
         <FiltersModal
           isOpen={isFiltersModalOpen}
           onClose={(): void => setIsFiltersModalOpen(false)}
-          onClear={onClearFilters}
-          filtersContent={filtersContent}
+          onClear={filters.onClear}
+          filtersContent={filters.content}
+          filtersConfig={filters.config}
+          filtersInitialState={filters.initialState}
+          onApplyFilters={filters.onApply}
         />
       ) : null}
     </>
@@ -371,10 +381,6 @@ function FilterControls({
   filtersCount,
   onOpenFiltersModal,
   showInlineSearch,
-  showSearchButton = false,
-  isSearchExpanded = false,
-  onExpandSearch,
-  onCollapseSearch,
   searchValue,
   onSearch,
   shouldDebounce,
@@ -384,8 +390,7 @@ function FilterControls({
   searchTrailingControls,
   filtersTrailingControls,
   layout = 'inline',
-  leadingControls,
-  trailingControls
+  leadingControls
 }: {
   chainButtons: TVaultsChainButton[]
   onSelectAllChains: () => void
@@ -398,10 +403,6 @@ function FilterControls({
   filtersCount: number
   onOpenFiltersModal: () => void
   showInlineSearch: boolean
-  showSearchButton?: boolean
-  isSearchExpanded?: boolean
-  onExpandSearch?: () => void
-  onCollapseSearch?: () => void
   searchValue: string
   onSearch: (value: string) => void
   shouldDebounce?: boolean
@@ -412,7 +413,6 @@ function FilterControls({
   filtersTrailingControls?: ReactNode
   layout?: 'inline' | 'stacked'
   leadingControls?: ReactNode
-  trailingControls?: ReactNode
 }): ReactElement {
   const isStacked = layout === 'stacked'
   const filtersButtonElement = showFiltersButton ? (
@@ -432,43 +432,6 @@ function FilterControls({
       />
     </div>
   ) : null
-  const expandedSearchElement =
-    showSearchButton && isSearchExpanded ? (
-      <div ref={searchContainerRef} className={'min-w-[180px]'}>
-        <SearchBar
-          className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
-          iconClassName={'text-text-primary'}
-          searchPlaceholder={'Find a Vault'}
-          searchValue={searchValue}
-          onSearch={onSearch}
-          shouldDebounce={shouldDebounce || false}
-          highlightWhenActive={true}
-          alertContent={searchAlertContent}
-          onKeyDown={(e): void => {
-            if (e.key === 'Escape' && onCollapseSearch) {
-              onCollapseSearch()
-            }
-          }}
-          autoFocus={true}
-        />
-      </div>
-    ) : null
-  const searchButtonElement =
-    showSearchButton && onExpandSearch ? (
-      <button
-        type={'button'}
-        className={cl(
-          'flex shrink-0 items-center justify-center border rounded-lg size-10 border-border text-sm font-medium text-text-secondary bg-surface transition-colors',
-          'hover:text-text-primary hover:border-border-hover',
-          searchValue ? 'border-border-hover text-text-primary' : ''
-        )}
-        onClick={onExpandSearch}
-        aria-label={'Search vaults'}
-        data-active={Boolean(searchValue)}
-      >
-        <IconSearch className={'size-4'} />
-      </button>
-    ) : null
   const chainSelectorElement = (
     <VaultsChainSelector
       chainButtons={chainButtons}
@@ -507,16 +470,8 @@ function FilterControls({
             {leadingControls ? <div className={'shrink-0'}>{leadingControls}</div> : null}
             <div className={'shrink min-w-0 max-w-[580px]'}>{chainSelectorElement}</div>
             <div className={'flex flex-row items-center gap-3 flex-1 min-w-0'}>
-              {showSearchButton && isSearchExpanded ? (
-                expandedSearchElement
-              ) : (
-                <>
-                  {trailingControls}
-                  {filtersButtonElement}
-                  {filtersTrailingControls ? <div className={'shrink-0'}>{filtersTrailingControls}</div> : null}
-                  {searchButtonElement}
-                </>
-              )}
+              {filtersButtonElement}
+              {filtersTrailingControls ? <div className={'shrink-0'}>{filtersTrailingControls}</div> : null}
               {inlineSearchElement}
               {searchTrailingElement}
             </div>
@@ -527,17 +482,60 @@ function FilterControls({
   )
 }
 
+const EMPTY_FILTERS_STATE: TPendingFiltersState = {
+  categories: [],
+  aggressiveness: [],
+  underlyingAssets: [],
+  minTvl: DEFAULT_MIN_TVL,
+  showStrategies: false,
+  showLegacyVaults: false,
+  showHiddenVaults: false
+}
+
 function FiltersModal({
   isOpen,
   onClose,
   onClear,
-  filtersContent
+  filtersContent,
+  filtersConfig,
+  filtersInitialState,
+  onApplyFilters
 }: {
   isOpen: boolean
   onClose: () => void
   onClear?: () => void
-  filtersContent: ReactNode
+  filtersContent?: ReactNode
+  filtersConfig?: TFiltersConfig
+  filtersInitialState?: TPendingFiltersState
+  onApplyFilters?: (state: TPendingFiltersState) => void
 }): ReactElement {
+  const [pendingState, setPendingState] = useState<TPendingFiltersState>(filtersInitialState ?? EMPTY_FILTERS_STATE)
+
+  useEffect(() => {
+    if (isOpen && filtersInitialState) {
+      setPendingState(filtersInitialState)
+    }
+  }, [isOpen, filtersInitialState])
+
+  const handleClear = (): void => {
+    setPendingState(EMPTY_FILTERS_STATE)
+  }
+
+  const handleSave = (): void => {
+    if (onApplyFilters) {
+      onApplyFilters(pendingState)
+    }
+    onClose()
+  }
+
+  const useDeferredMode = Boolean(filtersConfig && onApplyFilters)
+
+  const renderedContent = useDeferredMode ? (
+    <VaultsFiltersPanelControlled config={filtersConfig!} state={pendingState} onStateChange={setPendingState} />
+  ) : (
+    filtersContent
+  )
+
   return (
     <Transition show={isOpen} as={Fragment}>
       <Dialog as={'div'} className={'relative z-70'} onClose={onClose}>
@@ -581,27 +579,27 @@ function FiltersModal({
                     <IconCross className={'size-4'} />
                   </button>
                 </div>
-                {filtersContent}
+                {renderedContent}
                 <div className={'mt-6 flex justify-end gap-3'}>
-                  {onClear ? (
+                  {(useDeferredMode || onClear) && (
                     <button
                       type={'button'}
                       className={
                         'rounded-full border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-border-hover'
                       }
-                      onClick={onClear}
+                      onClick={useDeferredMode ? handleClear : onClear}
                     >
                       {'Clear'}
                     </button>
-                  ) : null}
+                  )}
                   <button
                     type={'button'}
                     className={
                       'rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-surface transition-colors hover:bg-neutral-800'
                     }
-                    onClick={onClose}
+                    onClick={useDeferredMode ? handleSave : onClose}
                   >
-                    {'Done'}
+                    {'Save'}
                   </button>
                 </div>
               </Dialog.Panel>

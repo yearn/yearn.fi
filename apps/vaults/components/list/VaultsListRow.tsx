@@ -2,21 +2,31 @@ import Link from '@components/Link'
 import { RenderAmount } from '@lib/components/RenderAmount'
 import { TokenLogo } from '@lib/components/TokenLogo'
 import { Tooltip } from '@lib/components/Tooltip'
+import { useWeb3 } from '@lib/contexts/useWeb3'
 import { IconChevron } from '@lib/icons/IconChevron'
 import { IconCirclePile } from '@lib/icons/IconCirclePile'
 import { IconEyeOff } from '@lib/icons/IconEyeOff'
 import { IconMigratable } from '@lib/icons/IconMigratable'
 import { IconRewind } from '@lib/icons/IconRewind'
+import { IconScissors } from '@lib/icons/IconScissors'
 import { IconStablecoin } from '@lib/icons/IconStablecoin'
 import { IconStack } from '@lib/icons/IconStack'
 import { IconVolatile } from '@lib/icons/IconVolatile'
-import { cl, toAddress, toNormalizedBN } from '@lib/utils'
+import { cl, formatAmount, toAddress, toNormalizedBN } from '@lib/utils'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@lib/utils/wagmi'
-import type { TVaultChartTimeframe } from '@vaults/components/detail/VaultChartsSection'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@vaults/components/table/VaultHoldingsAmount'
 import { deriveListKind } from '@vaults/utils/vaultListFacets'
+import {
+  getCategoryDescription,
+  getChainDescription,
+  getKindDescription,
+  getProductTypeDescription,
+  HIDDEN_TAG_DESCRIPTION,
+  MIGRATABLE_TAG_DESCRIPTION,
+  RETIRED_TAG_DESCRIPTION
+} from '@vaults/utils/vaultTagCopy'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -81,9 +91,9 @@ export function VaultsListRow({
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
+  const { isActive: isWalletActive } = useWeb3()
   const [isExpanded, setIsExpanded] = useState(false)
-  const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('apy')
-  const [expandedTimeframe, setExpandedTimeframe] = useState<TVaultChartTimeframe>('all')
+  const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('strategies')
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
@@ -111,7 +121,10 @@ export function VaultsListRow({
   const leftColumnSpan = 'col-span-12'
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
-  const metricsColumnSpan = 'col-span-4'
+  const showHoldingsColumn = isWalletActive
+  const apyColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-6'
+  const tvlColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-5'
+  const holdingsColumnSpan = 'col-span-4'
   const showCompareToggle = Boolean(onToggleCompare)
   const vaultKey = `${currentVault.chainID}_${toAddress(currentVault.address)}`
   const isCompareSelected = compareVaultKeys?.includes(vaultKey) ?? false
@@ -141,6 +154,15 @@ export function VaultsListRow({
     ) : kindType === 'single' ? (
       <IconStack className={'size-3.5'} />
     ) : null
+  const chainDescription = getChainDescription(currentVault.chainID)
+  const categoryDescription = getCategoryDescription(currentVault.category)
+  const productTypeDescription = getProductTypeDescription(listKind)
+  const kindDescription = getKindDescription(kindType, kindLabel)
+  const fees = currentVault.apr?.fees
+  const showFeesChip = Boolean(fees) && !isChipsCompressed
+  const feesChipLabel = fees
+    ? `${formatAmount((fees.management || 0) * 100, 0, 2)}% | ${formatAmount((fees.performance || 0) * 100, 0, 2)}%`
+    : ''
   const migratableIcon = <IconMigratable className={'size-3.5'} />
   const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
   const tvlNativeTooltip = (
@@ -164,7 +186,7 @@ export function VaultsListRow({
 
   useEffect(() => {
     if (isExpanded) {
-      setExpandedView('apy')
+      setExpandedView('strategies')
     }
   }, [isExpanded])
 
@@ -288,6 +310,7 @@ export function VaultsListRow({
                     isActive={activeChainIds.includes(currentVault.chainID)}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={chainDescription}
                     onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
                     ariaLabel={`Filter by ${network.name}`}
                   />
@@ -299,6 +322,7 @@ export function VaultsListRow({
                     isActive={activeCategoryLabels.includes(currentVault.category)}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={categoryDescription || undefined}
                     onClick={onToggleCategory ? (): void => onToggleCategory(currentVault.category) : undefined}
                     ariaLabel={`Filter by ${currentVault.category}`}
                   />
@@ -310,8 +334,18 @@ export function VaultsListRow({
                     isActive={isProductTypeActive}
                     isCollapsed={shouldCollapseProductType}
                     showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={productTypeDescription}
                     onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
                     ariaLabel={productTypeAriaLabel}
+                  />
+                ) : null}
+                {showFeesChip ? (
+                  <VaultsListChip
+                    label={feesChipLabel}
+                    icon={<IconScissors className={'size-3.5'} />}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={'Management fee | Performance fee'}
                   />
                 ) : null}
                 {showKindChip && kindLabel ? (
@@ -321,6 +355,7 @@ export function VaultsListRow({
                     isActive={isKindActive}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={kindDescription}
                     onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
                     ariaLabel={`Filter by ${kindLabel}`}
                   />
@@ -331,6 +366,7 @@ export function VaultsListRow({
                     icon={retiredIcon}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={RETIRED_TAG_DESCRIPTION}
                   />
                 ) : null}
                 {flags?.isMigratable ? (
@@ -339,6 +375,7 @@ export function VaultsListRow({
                     icon={migratableIcon}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
                   />
                 ) : null}
                 {isHiddenVault ? (
@@ -347,6 +384,7 @@ export function VaultsListRow({
                     icon={<IconEyeOff className={'size-3.5'} />}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={HIDDEN_TAG_DESCRIPTION}
                   />
                 ) : null}
               </div>
@@ -354,7 +392,7 @@ export function VaultsListRow({
             {/* Mobile Holdings + APY + TVL inline */}
             <div className={'hidden max-md:flex items-center shrink-0 gap-4 text-right'}>
               {/* Holdings - shown on wider mobile screens */}
-              {flags?.hasHoldings ? (
+              {showHoldingsColumn ? (
                 <div className={'hidden min-[420px]:block'}>
                   <p className={'text-xs text-text-primary/60'}>{'Holdings'}</p>
                   <VaultHoldingsAmount currentVault={currentVault} valueClassName={'text-sm font-semibold'} />
@@ -383,7 +421,7 @@ export function VaultsListRow({
                   />
                 </p>
                 {/* Holdings indicator dot - shown on narrow screens when user has holdings */}
-                {flags?.hasHoldings ? (
+                {showHoldingsColumn && flags?.hasHoldings ? (
                   <div
                     className={'absolute -right-2 top-0 size-2 rounded-full bg-green-500 min-[420px]:hidden'}
                     title={'You have holdings in this vault'}
@@ -398,7 +436,7 @@ export function VaultsListRow({
         <div
           className={cl(rightColumnSpan, 'z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:items-center', rightGridColumns)}
         >
-          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
+          <div className={cl('yearn--table-data-section-item', apyColumnSpan)} datatype={'number'}>
             <VaultForwardAPY
               currentVault={currentVault}
               showSubline={false}
@@ -408,7 +446,7 @@ export function VaultsListRow({
             />
           </div>
           {/* TVL */}
-          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
+          <div className={cl('yearn--table-data-section-item', tvlColumnSpan)} datatype={'number'}>
             <div className={'flex justify-end text-right'}>
               <Tooltip
                 className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
@@ -431,9 +469,12 @@ export function VaultsListRow({
               </Tooltip>
             </div>
           </div>
-          <div className={cl('yearn--table-data-section-item', metricsColumnSpan)} datatype={'number'}>
-            <VaultHoldingsAmount currentVault={currentVault} />
-          </div>
+          {!showHoldingsColumn ? <div className={'col-span-1'} /> : null}
+          {showHoldingsColumn ? (
+            <div className={cl('yearn--table-data-section-item', holdingsColumnSpan)} datatype={'number'}>
+              <VaultHoldingsAmount currentVault={currentVault} />
+            </div>
+          ) : null}
         </div>
       </Link>
 
@@ -442,10 +483,11 @@ export function VaultsListRow({
           <VaultsListRowExpandedContent
             currentVault={currentVault}
             expandedView={expandedView}
-            expandedTimeframe={expandedTimeframe}
             onExpandedViewChange={setExpandedView}
-            onExpandedTimeframeChange={setExpandedTimeframe}
             onNavigateToVault={() => navigate(href)}
+            showKindTag={showKindChip}
+            showHiddenTag={isHiddenVault}
+            isHidden={isHiddenVault}
           />
         </Suspense>
       ) : null}

@@ -3,11 +3,14 @@ import { useYearn } from '@lib/contexts/useYearn'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useAppSettings } from '@vaults/contexts/useAppSettings'
+import { DEFAULT_MIN_TVL } from '@vaults/utils/constants'
 import {
   deriveAssetCategory,
   deriveListKind,
   deriveV3Aggressiveness,
+  expandUnderlyingAssetSelection,
   isAllocatorVaultOverride,
+  normalizeUnderlyingAssetSymbol,
   type TVaultAggressiveness
 } from '@vaults/utils/vaultListFacets'
 import { useMemo } from 'react'
@@ -42,6 +45,8 @@ type TOptimizedV2VaultFilterResult = {
   holdingsVaults: TYDaemonVault[]
   availableVaults: TYDaemonVault[]
   vaultFlags: Record<string, TVaultFlags>
+  availableUnderlyingAssets: string[]
+  underlyingAssetVaults: Record<string, TYDaemonVault>
   isLoading: boolean
 }
 
@@ -51,6 +56,8 @@ export function useV2VaultFilter(
   search?: string,
   categories?: string[] | null,
   aggressiveness?: TVaultAggressiveness[] | null,
+  underlyingAssets?: string[] | null,
+  minTvl?: number,
   showHiddenVaults?: boolean,
   enabled?: boolean
 ): TOptimizedV2VaultFilterResult {
@@ -59,6 +66,7 @@ export function useV2VaultFilter(
   const { shouldHideDust } = useAppSettings()
   const isEnabled = enabled ?? true
   const searchValue = search ?? ''
+  const minTvlValue = Number.isFinite(minTvl) ? Math.max(0, minTvl || 0) : DEFAULT_MIN_TVL
   const isSearchEnabled = isEnabled && searchValue !== ''
   const searchRegex = useMemo(() => {
     if (!isSearchEnabled) {
@@ -74,6 +82,17 @@ export function useV2VaultFilter(
   const lowercaseSearch = useMemo(
     () => (isSearchEnabled ? searchValue.toLowerCase() : ''),
     [isSearchEnabled, searchValue]
+  )
+  const normalizedUnderlyingAssets = useMemo(() => {
+    if (!underlyingAssets || underlyingAssets.length === 0) {
+      return new Set<string>()
+    }
+    const normalized = underlyingAssets.map((asset) => normalizeUnderlyingAssetSymbol(asset)).filter(Boolean)
+    return new Set(normalized)
+  }, [underlyingAssets])
+  const expandedUnderlyingAssets = useMemo(
+    () => expandUnderlyingAssetSelection(normalizedUnderlyingAssets),
+    [normalizedUnderlyingAssets]
   )
 
   const checkHasHoldings = useMemo(
@@ -180,6 +199,9 @@ export function useV2VaultFilter(
     const hasTypeFilter = Boolean(types?.length)
     const hasCategoryFilter = Boolean(categories?.length)
     const hasAggressivenessFilter = Boolean(aggressiveness?.length)
+    const hasUnderlyingAssetFilter = normalizedUnderlyingAssets.size > 0
+    const availableUnderlyingAssets = new Set<string>()
+    const underlyingAssetVaults: Record<string, TYDaemonVault> = {}
 
     const matchesSearch = (searchableText: string): boolean => {
       if (!isSearchEnabled) {
@@ -219,6 +241,11 @@ export function useV2VaultFilter(
         return
       }
 
+      const vaultTvl = vault.tvl?.tvl || 0
+      if (vaultTvl < minTvlValue) {
+        return
+      }
+
       const isMigratableVault = Boolean(isMigratable && hasHoldings)
       const isRetiredVault = Boolean(isRetired && hasHoldings)
       const hasUserHoldings = hasHoldings || isMigratableVault || isRetiredVault
@@ -239,14 +266,30 @@ export function useV2VaultFilter(
         !hasAggressivenessFilter ||
         (aggressivenessScore !== null && Boolean(aggressiveness?.includes(aggressivenessScore)))
 
-      if (!(matchesKind && matchesCategory && matchesAggressiveness)) {
-        return
-      }
+      if (matchesKind && matchesCategory && matchesAggressiveness) {
+        const assetKey = normalizeUnderlyingAssetSymbol(vault.token?.symbol)
+        if (assetKey && !underlyingAssetVaults[assetKey]) {
+          availableUnderlyingAssets.add(assetKey)
+          underlyingAssetVaults[assetKey] = vault
+        } else if (assetKey) {
+          availableUnderlyingAssets.add(assetKey)
+        }
 
-      filteredVaults.push(vault)
+        const matchesUnderlyingAsset = !hasUnderlyingAssetFilter || (assetKey && expandedUnderlyingAssets.has(assetKey))
+        if (!matchesUnderlyingAsset) {
+          return
+        }
+
+        filteredVaults.push(vault)
+      }
     })
 
-    return { filteredVaults, vaultFlags }
+    return {
+      filteredVaults,
+      vaultFlags,
+      availableUnderlyingAssets: Array.from(availableUnderlyingAssets),
+      underlyingAssetVaults
+    }
   }, [
     vaultIndex,
     walletFlags,
@@ -254,6 +297,9 @@ export function useV2VaultFilter(
     chains,
     categories,
     aggressiveness,
+    normalizedUnderlyingAssets,
+    expandedUnderlyingAssets,
+    minTvlValue,
     searchRegex,
     lowercaseSearch,
     isSearchEnabled,

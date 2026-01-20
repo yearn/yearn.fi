@@ -12,6 +12,7 @@ export const V2_DEFAULT_TYPES = ['factory']
 export const AGGRESSIVENESS_OPTIONS: TVaultAggressiveness[] = ['Conservative', 'Moderate', 'Aggressive']
 export const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
 export const V2_ASSET_CATEGORIES = ['Stablecoin', 'Volatile']
+export const DEFAULT_MIN_TVL = 500
 
 export function toggleInArray<T>(current: T[] | null, next: T): T[] {
   const existing = current ?? []

@@ -27,6 +27,8 @@ type TVaultsListModelArgs = {
   listV3Types: string[]
   listCategories: string[] | null
   listAggressiveness: string[] | null
+  listUnderlyingAssets: string[] | null
+  listMinTvl: number
   listShowLegacyVaults: boolean
   listShowHiddenVaults: boolean
   searchValue: string
@@ -42,6 +44,7 @@ type TVaultsListModel = {
   holdingsVaults: TYDaemonVault[]
   availableVaults: TYDaemonVault[]
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
+  underlyingAssetVaults: Record<string, TYDaemonVault>
   pinnedSections: TVaultsPinnedSection[]
   pinnedVaults: TYDaemonVault[]
   mainVaults: TYDaemonVault[]
@@ -57,6 +60,8 @@ export function useVaultsListModel({
   listV3Types,
   listCategories,
   listAggressiveness,
+  listUnderlyingAssets,
+  listMinTvl,
   listShowLegacyVaults,
   listShowHiddenVaults,
   searchValue,
@@ -92,6 +97,8 @@ export function useVaultsListModel({
     searchValue,
     isV3View ? listCategoriesSanitized : null,
     isV3View ? listAggressivenessSanitized : null,
+    isV3View ? listUnderlyingAssets : null,
+    listMinTvl,
     isV3View ? listShowHiddenVaults : undefined,
     isV3View
   )
@@ -102,6 +109,8 @@ export function useVaultsListModel({
     searchValue,
     isV2View ? listCategoriesSanitized : null,
     isV2View ? listAggressivenessSanitized : null,
+    isV2View ? listUnderlyingAssets : null,
+    listMinTvl,
     listShowHiddenVaults,
     isV2View
   )
@@ -112,6 +121,8 @@ export function useVaultsListModel({
     '',
     isV2View ? listCategoriesSanitized : null,
     isV2View ? listAggressivenessSanitized : null,
+    isV2View ? listUnderlyingAssets : null,
+    listMinTvl,
     listShowHiddenVaults,
     isV2View
   )
@@ -175,6 +186,8 @@ export function useVaultsListModel({
     '',
     isV3View ? listCategoriesSanitized : null,
     isV3View ? listAggressivenessSanitized : null,
+    isV3View ? listUnderlyingAssets : null,
+    listMinTvl,
     isV3View ? listShowHiddenVaults : undefined,
     isV3View
   )
@@ -273,6 +286,15 @@ export function useVaultsListModel({
   }, [listVaultType, suggestedV3Vaults, suggestedV2Vaults])
 
   const defaultCategories = isV3View ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
+  const underlyingAssetVaults = useMemo(() => {
+    if (listVaultType === 'all') {
+      return { ...v3FilterResult.underlyingAssetVaults, ...v2FilterResult.underlyingAssetVaults }
+    }
+    if (listVaultType === 'v3') {
+      return v3FilterResult.underlyingAssetVaults
+    }
+    return v2FilterResult.underlyingAssetVaults
+  }, [listVaultType, v2FilterResult.underlyingAssetVaults, v3FilterResult.underlyingAssetVaults])
 
   return {
     defaultCategories,
@@ -280,6 +302,7 @@ export function useVaultsListModel({
     holdingsVaults,
     availableVaults,
     vaultFlags,
+    underlyingAssetVaults,
     pinnedSections,
     pinnedVaults,
     mainVaults,
