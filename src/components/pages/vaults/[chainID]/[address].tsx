@@ -8,6 +8,7 @@ import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSecti
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
 import { Widget } from '@pages/vaults/components/widget'
+import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WidgetActionType } from '@pages/vaults/types'
 import { fetchYBoldVault } from '@pages/vaults/utils/handleYBold'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
@@ -368,6 +369,36 @@ function Index(): ReactElement | null {
           {/* User balance grid */}
           <UserBalanceGrid currentVault={currentVault} />
 
+          {/* Widget */}
+          <div className="space-y-4">
+            <Widget
+              vaultAddress={currentVault.address}
+              currentVault={currentVault}
+              gaugeAddress={currentVault.staking.address}
+              actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
+              chainId={chainId}
+            />
+            <WidgetRewards
+              stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
+              stakingSource={currentVault.staking.source}
+              rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
+                address: r.address,
+                symbol: r.symbol,
+                decimals: r.decimals,
+                price: r.price,
+                isFinished: r.isFinished
+              }))}
+              chainId={chainId}
+              onClaimSuccess={() => {
+                mutate()
+                onRefresh([
+                  { address: currentVault.address, chainID: currentVault.chainID },
+                  { address: currentVault.token.address, chainID: currentVault.chainID }
+                ])
+              }}
+            />
+          </div>
+
           {/* Expandable details toggle button */}
           <button
             type="button"
@@ -553,6 +584,36 @@ function Index(): ReactElement | null {
               )
             })}
             {renderableSections.length > 0 ? <div aria-hidden className={'h-[60vh]'} /> : null}
+          </div>
+          <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-6')} style={{ top: nextSticky }}>
+            <div className="space-y-4">
+              <Widget
+                vaultAddress={currentVault.address}
+                currentVault={currentVault}
+                gaugeAddress={currentVault.staking.address}
+                actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
+                chainId={chainId}
+              />
+              <WidgetRewards
+                stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
+                stakingSource={currentVault.staking.source}
+                rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
+                  address: r.address,
+                  symbol: r.symbol,
+                  decimals: r.decimals,
+                  price: r.price,
+                  isFinished: r.isFinished
+                }))}
+                chainId={chainId}
+                onClaimSuccess={() => {
+                  mutate()
+                  onRefresh([
+                    { address: currentVault.address, chainID: currentVault.chainID },
+                    { address: currentVault.token.address, chainID: currentVault.chainID }
+                  ])
+                }}
+              />
+            </div>
           </div>
         </section>
       </div>
