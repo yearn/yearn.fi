@@ -13,7 +13,8 @@ export const Tooltip: FC<{
   openDelayMs?: number
   toggleOnClick?: boolean
   align?: 'center' | 'start'
-}> = ({ children, tooltip, className, openDelayMs = 0, toggleOnClick = false, align = 'center' }) => {
+  side?: 'top' | 'bottom'
+}> = ({ children, tooltip, className, openDelayMs = 0, toggleOnClick = false, align = 'center', side = 'bottom' }) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const triggerRef = useRef<HTMLDivElement>(null)
@@ -79,13 +80,14 @@ export const Tooltip: FC<{
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect()
       const x = align === 'start' ? rect.left : rect.left + rect.width / 2
+      const y = side === 'top' ? rect.top : rect.bottom
       setTooltipPosition({
         x,
-        y: rect.bottom
+        y
       })
       setIsTooltipVisible(true)
     }
-  }, [align])
+  }, [align, side])
 
   const scheduleOpen = useCallback((): void => {
     cancelScheduledClose()
@@ -190,7 +192,10 @@ export const Tooltip: FC<{
               left: tooltipPosition.x,
               top: tooltipPosition.y,
               paddingTop: 8,
-              transform: align === 'start' ? 'translateX(0)' : 'translateX(-50%)',
+              paddingBottom: 0,
+              transform:
+                `${align === 'start' ? 'translateX(0)' : 'translateX(-50%)'}` +
+                `${side === 'top' ? ' translateY(-100%)' : ''}`,
               zIndex: 9999,
               pointerEvents: 'auto'
             }}

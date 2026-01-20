@@ -1,5 +1,6 @@
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { Tooltip } from '@shared/components/Tooltip'
 import { cl, formatAmount } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
@@ -12,11 +13,26 @@ interface StatCardProps {
 }
 
 function StatCard({ label, value, subValue }: StatCardProps): ReactElement {
+  const valueElement = <p className={'text-base font-semibold text-text-primary'}>{value}</p>
+
   return (
     <div className={cl('rounded-lg bg-surface-secondary border border-border p-3')}>
       <p className={'text-xs text-text-secondary mb-1'}>{label}</p>
-      <p className={'text-base font-semibold text-text-primary'}>{value}</p>
-      {subValue && <p className={'text-xs text-text-secondary mt-0.5'}>{subValue}</p>}
+      {subValue ? (
+        <Tooltip
+          className={'h-auto'}
+          openDelayMs={150}
+          tooltip={
+            <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
+              {subValue}
+            </div>
+          }
+        >
+          <span className={'inline-flex'}>{valueElement}</span>
+        </Tooltip>
+      ) : (
+        valueElement
+      )}
     </div>
   )
 }

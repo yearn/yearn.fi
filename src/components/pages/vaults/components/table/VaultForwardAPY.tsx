@@ -151,7 +151,7 @@ export function VaultForwardAPY({
   const infoTooltipContent = katanaTooltipContent ?? standardTooltipContent
   const shouldShowKatanaAsterisk = currentVault.chainID === KATANA_CHAIN_ID
   const tooltipUnderlineClass = infoTooltipContent
-    ? 'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600'
+    ? 'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
     : undefined
   const renderApyValue = (content: ReactNode): ReactElement => (
     <span className={cl('relative inline-flex items-center gap-1', valueInteractiveClass, tooltipUnderlineClass)}>
@@ -176,6 +176,7 @@ export function VaultForwardAPY({
         className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
         openDelayMs={150}
         tooltip={infoTooltipContent}
+        align={'center'}
       >
         {value}
       </Tooltip>
