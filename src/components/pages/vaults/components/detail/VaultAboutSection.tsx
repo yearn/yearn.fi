@@ -80,11 +80,13 @@ function ExpandableInfoItem({ label, value, children, className, icon }: TExpand
 export function VaultAboutSection({
   currentVault,
   className,
-  showKindTag = true
+  showKindTag = true,
+  showVaultAddress = false
 }: {
   currentVault: TYDaemonVault
   className?: string
   showKindTag?: boolean
+  showVaultAddress?: boolean
   showHiddenTag?: boolean
   isHidden?: boolean
 }): ReactElement {
@@ -181,7 +183,7 @@ export function VaultAboutSection({
     <div className={cl('p-8 pt-0', className)}>
       <div className={'flex flex-col gap-2'}>
         <div className={'px-4 text-sm text-text-secondary'}>
-          <div className="mt-2">
+          <div className="">
             {isDescriptionString ? (
               <div
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled description content
@@ -193,31 +195,32 @@ export function VaultAboutSection({
               <div>{vaultDescription}</div>
             )}
           </div>
-          <div className={'flex flex-wrap items-center py-3 gap-2 text-sm border-b border-border'}>
-            {/* <span className={'text-text-secondary'}>{'Vault address:'}</span> */}
-            <span className={'text-text-secondary'} title={currentVault.address}>
-              {currentVault.address}
-            </span>
-            <button
-              type={'button'}
-              onClick={(): void => copyToClipboard(currentVault.address)}
-              className={'text-text-secondary transition-colors hover:text-text-primary'}
-              aria-label={'Copy vault address'}
-            >
-              <IconCopy className={'size-3'} />
-            </button>
-            {explorerHref ? (
-              <a
-                href={explorerHref}
-                target={'_blank'}
-                rel={'noopener noreferrer'}
+          {showVaultAddress ? (
+            <div className={'flex flex-wrap items-center py-3 gap-2 text-sm border-b border-border'}>
+              <span className={'text-text-secondary'} title={currentVault.address}>
+                {currentVault.address}
+              </span>
+              <button
+                type={'button'}
+                onClick={(): void => copyToClipboard(currentVault.address)}
                 className={'text-text-secondary transition-colors hover:text-text-primary'}
-                aria-label={'View vault on block explorer'}
+                aria-label={'Copy vault address'}
               >
-                <IconLinkOut className={'size-3'} />
-              </a>
-            ) : null}
-          </div>
+                <IconCopy className={'size-3'} />
+              </button>
+              {explorerHref ? (
+                <a
+                  href={explorerHref}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className={'text-text-secondary transition-colors hover:text-text-primary'}
+                  aria-label={'View vault on block explorer'}
+                >
+                  <IconLinkOut className={'size-3'} />
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className={'flex flex-col gap-1.5 px-4'}>
