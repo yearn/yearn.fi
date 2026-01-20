@@ -82,7 +82,7 @@ function Index(): ReactElement | null {
   }
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
   const sectionScrollOffset = 275
-  const compressedHeaderHeight = 117.5
+  const compressedHeaderHeight = 126
 
   // Reset state when vault changes
   useEffect(() => {

@@ -114,19 +114,18 @@ export function VaultForwardAPY({
     fixedTermProviders.length > 0 && !isKatanaVault
       ? fixedTermProviders.map((market) => `Fixed-rate markets available on ${market.label}.`)
       : []
-  const standardTooltipLines = [boostTooltipLine, ...sublineLines, ...fixedRateTooltipLines].filter(
-    (line): line is string => Boolean(line)
-  )
+  const extraTooltipLines = showSublineTooltip ? [...sublineLines, ...fixedRateTooltipLines] : []
+  const standardTooltipLines = [boostTooltipLine, ...extraTooltipLines].filter((line): line is string => Boolean(line))
 
   const standardTooltipContent =
-    showSublineTooltip && standardTooltipLines.length > 0 ? (
+    standardTooltipLines.length > 0 && (showSublineTooltip || Boolean(boostTooltipLine)) ? (
       <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
         {standardTooltipLines.map((line, index) => (
           <div key={line} className={index === 0 ? '' : 'mt-1'}>
             {line}
           </div>
         ))}
-        {fixedTermProviders.length > 0 ? (
+        {showSublineTooltip && fixedTermProviders.length > 0 ? (
           <div className={'mt-2 flex flex-col gap-1'}>
             {fixedTermProviders.map((market) => (
               <a
@@ -338,7 +337,6 @@ export function VaultForwardAPY({
   // Boosted
   if (data.mode === 'boosted' && data.isBoosted) {
     const unBoostedAPY = data.unboostedApr || 0
-    const boostValue = formatAmount(data.boost || 0, 2, 2)
     const modalContent = (
       <APYTooltipContent
         baseAPY={unBoostedAPY}
@@ -372,11 +370,6 @@ export function VaultForwardAPY({
               </Renderable>
             </b>
           )}
-          {displayVariant !== 'factory-list' && showBoostDetails ? (
-            <small className={'text-xs text-text-primary'}>
-              <Renderable shouldRender={data.isBoosted}>{`BOOST ${boostValue}x`}</Renderable>
-            </small>
-          ) : null}
           {showSubline ? (
             <APYSubline
               hasPendleArbRewards={data.hasPendleArbRewards}
