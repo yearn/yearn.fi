@@ -46,37 +46,38 @@ Naming:
 ### Directory Structure
 
 ```
-src/                    # App entry and core shared code
-├── main.tsx           # Vite entry point
-├── App.tsx            # Root with context providers
-├── routes.tsx         # React Router configuration
-├── components/        # Core shared components
-├── hooks/             # Core hooks (useThemePreference, usePlausible)
-└── contexts/          # App-level contexts
+src/
+├── main.tsx              # Vite entry point
+├── App.tsx               # Root with context providers
+├── routes.tsx            # React Router configuration
+├── components/
+│   ├── shared/           # Shared library (@shared alias)
+│   │   ├── components/       # Buttons, Dropdowns, Headers, Icons
+│   │   ├── contexts/         # useWallet, useYearn, useWeb3
+│   │   ├── contracts/        # ABI source of truth
+│   │   ├── hooks/            # Vault data, balances, filtering hooks
+│   │   ├── utils/            # Format, calculations, chain constants
+│   │   ├── icons/            # 50+ icon components
+│   │   └── types/            # Shared type definitions
+│   └── pages/            # Route pages and feature components (@pages alias)
+│       ├── index.tsx         # Home/Landing page
+│       ├── landing/          # Landing page sections
+│       ├── portfolio/        # Portfolio page
+│       │   ├── index.tsx
+│       │   └── usePortfolioModel.ts
+│       └── vaults/           # Vaults pages and components
+│           ├── index.tsx         # Vaults list page
+│           ├── [chainID]/        # Vault detail page
+│           │   └── [address].tsx
+│           ├── components/       # Vaults UI (list, detail, widget)
+│           ├── contexts/         # Vault settings context
+│           ├── domain/           # Domain helpers (reports, normalization)
+│           ├── hooks/            # Vault-specific hooks
+│           └── utils/            # Vault utilities (charts, yBOLD, filters)
+├── hooks/                # Core hooks (useThemePreference, usePlausible)
+└── contexts/             # App-level contexts
 
-pages/                  # Route pages (lazy-loaded)
-├── vaults/            # Vault listing and detail pages
-├── portfolio/         # Portfolio page
-└── index.tsx          # Landing page
-
-apps/                   # Feature-specific modules
-├── lib/               # Shared library (components, hooks, utils)
-│   ├── components/    # Buttons, Dropdowns, Headers, Icons
-│   ├── contexts/      # useWallet, useYearn, useWeb3
-│   ├── contracts/     # ABI source of truth
-│   ├── hooks/         # Vault data, balances, filtering hooks
-│   ├── utils/         # Format, calculations, chain constants
-│   └── icons/         # 50+ icon components
-├── vaults/            # Canonical vaults feature (list + detail + widget)
-│   ├── components/    # Vaults UI (list, detail, widget, notifications)
-│   ├── contexts/      # Vault settings context
-│   ├── domain/        # Domain helpers (reports, normalization)
-│   ├── hooks/         # Vault-specific hooks
-│   ├── shared/        # Shared vault list/filter utilities
-│   └── utils/         # Vault utilities (charts, yBOLD, filters)
-└── landing/           # Landing page sections
-
-api/                    # Vercel serverless functions
+api/                      # Vercel serverless functions
 ```
 
 ### Tech Stack
@@ -90,19 +91,21 @@ api/                    # Vercel serverless functions
 
 ### Path Aliases (vite.config.ts)
 
-- `@lib/*` → `apps/lib/*`
-- `@vaults/*` → `apps/vaults/*`
-- `@landing/*` → `apps/landing/*`
+- `@/*` → `src/*`
+- `@shared/*` → `src/components/shared/*`
+- `@pages/*` → `src/components/pages/*`
+- `@components/*` → `src/components/*`
+- `@hooks/*` → `src/hooks/*`
 
 ### Key Patterns
 
 **Context Providers**: Nested in App.tsx - WalletContextApp → YearnContextApp → AppSettingsContextApp
 
-**Data Flow**: Vault data fetched via useYearn context hooks, filtered/sorted via custom hooks in apps/lib/hooks
+**Data Flow**: Vault data fetched via useYearn context hooks, filtered/sorted via custom hooks in src/components/shared/hooks
 
 ## Multi-Chain Support
 
-Supported networks (configured in `apps/lib/utils/constants.tsx`):
+Supported networks (configured in `src/components/shared/utils/constants.tsx`):
 - Ethereum (1), Optimism (10), Gnosis (100), Polygon (137), Fantom (250), Arbitrum (42161), Base (8453)
 
 RPC URIs configured via environment variables: `RPC_URI_FOR_<chainId>`

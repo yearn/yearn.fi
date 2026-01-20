@@ -1,5 +1,5 @@
-import { useAsyncTrigger } from '@lib/hooks/useAsyncTrigger'
-import { isIframe } from '@lib/utils/helpers'
+import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
+import { isIframe } from '@shared/utils/helpers'
 import type { FC, PropsWithChildren } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 

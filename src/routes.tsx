@@ -1,12 +1,12 @@
 import type { ReactElement } from 'react'
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router'
+import { Navigate, Route, Routes as RouterRoutes } from 'react-router'
 
 // Lazy load all page components
-const HomePage = lazy(() => import('../pages/index'))
-const PortfolioPage = lazy(() => import('../pages/portfolio/index'))
-const VaultsPage = lazy(() => import('../pages/vaults/index'))
-const VaultsDetailPage = lazy(() => import('../pages/vaults/[chainID]/[address]'))
+const HomePage = lazy(() => import('@pages/landing'))
+const PortfolioPage = lazy(() => import('@pages/portfolio/index'))
+const VaultsPage = lazy(() => import('@pages/vaults/index'))
+const VaultsDetailPage = lazy(() => import('@pages/vaults/[chainID]/[address]'))
 
 // Loading component
 const PageLoader = (): ReactElement => (
@@ -23,31 +23,11 @@ const ExternalRedirect = ({ to }: { to: string }): ReactElement => {
   return <PageLoader />
 }
 
-// Route configuration for reference
-export const routeConfig = {
-  home: '/',
-  vaults: {
-    index: '/vaults',
-    detail: '/vaults/:chainID/:address'
-  },
-  external: {
-    ybribe: '/ybribe/*',
-    ycrv: '/ycrv/*',
-    veyfi: '/veyfi/*',
-    twitter: '/twitter',
-    telegram: '/telegram',
-    medium: '/medium',
-    governance: '/governance',
-    snapshot: '/snapshot',
-    github: '/github'
-  }
-}
-
 // Main routes component
-export function AppRoutes(): ReactElement {
+export function Routes(): ReactElement {
   return (
     <Suspense fallback={<PageLoader />}>
-      <Routes>
+      <RouterRoutes>
         {/* Home page */}
         <Route path="/" element={<HomePage />} />
 
@@ -79,7 +59,7 @@ export function AppRoutes(): ReactElement {
 
         {/* Catch all - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      </RouterRoutes>
     </Suspense>
   )
 }
