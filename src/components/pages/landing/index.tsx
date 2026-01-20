@@ -1,6 +1,5 @@
-import { FAQs, Footer, Hero, Integrations, Partners, Security, Vaults } from './components/sections'
-
 import type { ReactElement } from 'react'
+import { FAQs, Footer, Hero, Integrations, Partners, Security, Vaults } from './components/sections'
 
 function Index(): ReactElement {
   return (
