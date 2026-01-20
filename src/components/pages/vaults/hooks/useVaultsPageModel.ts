@@ -77,7 +77,6 @@ type TVaultsFiltersBarModel = {
     config: TChainConfig
   }
   shouldStackFilters: boolean
-  isSwitchingVaultType: boolean
   activeVaultType: TVaultType
   onChangeVaultType: (value: TVaultType) => void
 }
@@ -381,8 +380,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
     isHoldingsPinned,
     isAvailablePinned
   })
-
-  const isSwitchingVaultType = Boolean(optimisticVaultType && optimisticVaultType !== vaultType)
 
   useEffect(() => {
     if (holdingsVaults.length === 0 && isHoldingsPinned) {
@@ -875,7 +872,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
         config: chainConfig
       },
       shouldStackFilters,
-      isSwitchingVaultType,
       activeVaultType: displayedVaultType,
       onChangeVaultType: handleVaultVersionToggle
     },
