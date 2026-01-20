@@ -30,6 +30,7 @@ import { getSupportedChainsForVaultType } from '@pages/vaults/utils/vaultTypeUti
 import { useMediaQuery } from '@react-hookz/web'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { useWeb3 } from '@shared/contexts/useWeb3'
 import { usePrefetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import type { TSortDirection } from '@shared/types'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -128,6 +129,7 @@ export type TVaultsPageModel = {
 }
 
 export function useVaultsPageModel(): TVaultsPageModel {
+  const { isActive: isWalletActive } = useWeb3()
   const {
     vaultType,
     hasTypesParam,
@@ -815,14 +817,14 @@ export function useVaultsPageModel(): TVaultsPageModel {
         label: 'Est. APY',
         value: 'estAPY',
         sortable: true,
-        className: 'col-span-4'
+        className: isWalletActive ? 'col-span-4' : 'col-span-6'
       },
       {
         type: 'sort',
         label: 'TVL',
         value: 'tvl',
         sortable: true,
-        className: 'col-span-4'
+        className: isWalletActive ? 'col-span-4' : 'col-span-5'
       },
       // {
       //   type: 'toggle',
@@ -831,13 +833,17 @@ export function useVaultsPageModel(): TVaultsPageModel {
       //   className: 'col-span-3',
       //   disabled: availableVaults.length === 0
       // },
-      {
-        type: 'toggle',
-        label: 'Holdings',
-        value: HOLDINGS_TOGGLE_VALUE,
-        className: 'col-span-4 justify-end',
-        disabled: holdingsVaults.length === 0
-      }
+      ...(isWalletActive
+        ? ([
+            {
+              type: 'toggle',
+              label: 'Holdings',
+              value: HOLDINGS_TOGGLE_VALUE,
+              className: 'col-span-4 justify-end',
+              disabled: holdingsVaults.length === 0
+            }
+          ] satisfies TListHead['items'])
+        : [])
     ]
   }
 
