@@ -4,8 +4,8 @@ import { usePrefetchYearnVaults } from '@lib/hooks/useFetchYearnVaults'
 import type { TSortDirection } from '@lib/types'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useMediaQuery } from '@react-hookz/web'
-import type { TChainConfig } from '@vaults/components/filters/VaultsFiltersBar'
 import { VaultsAssetFilter } from '@vaults/components/filters/VaultsAssetFilter'
+import type { TChainConfig } from '@vaults/components/filters/VaultsFiltersBar'
 import type {
   TFiltersConfig,
   TPendingFiltersState,
