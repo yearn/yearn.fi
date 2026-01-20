@@ -31,7 +31,7 @@ import { wagmiConfig } from '@/config/wagmi'
 import { ChainsProvider } from '@/context/ChainsProvider'
 import { DevFlagsProvider } from '/src/contexts/useDevFlags'
 import PlausibleProvider from './components/PlausibleProvider'
-import { AppRoutes } from './routes'
+import { Routes } from './routes'
 
 const queryClient = new QueryClient()
 
@@ -43,7 +43,7 @@ function WithLayout(): ReactElement {
       </div>
       <div id={'app'} className={cl('mx-auto mb-0 flex')}>
         <div className={'block size-full min-h-max'}>
-          <AppRoutes />
+          <Routes />
         </div>
       </div>
     </>

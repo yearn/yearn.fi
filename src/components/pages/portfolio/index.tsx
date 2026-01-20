@@ -8,7 +8,7 @@ import { Button } from '@shared/components/Button'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
 import type { ReactElement } from 'react'
-import { type TPortfolioModel, usePortfolioModel } from './usePortfolioModel'
+import { type TPortfolioModel, usePortfolioModel } from './hooks/usePortfolioModel'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',

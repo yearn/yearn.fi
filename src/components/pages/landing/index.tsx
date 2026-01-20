@@ -1,4 +1,4 @@
-import { FAQs, Footer, Hero, Integrations, Partners, Security, Vaults } from '@pages/landing/components/sections'
+import { FAQs, Footer, Hero, Integrations, Partners, Security, Vaults } from './components/sections'
 
 import type { ReactElement } from 'react'
 
