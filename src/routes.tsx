@@ -3,10 +3,10 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
 
 // Lazy load all page components
-const HomePage = lazy(() => import('../pages/index'))
-const PortfolioPage = lazy(() => import('../pages/portfolio/index'))
-const VaultsPage = lazy(() => import('../pages/vaults/index'))
-const VaultsDetailPage = lazy(() => import('../pages/vaults/[chainID]/[address]'))
+const HomePage = lazy(() => import('@pages/index'))
+const PortfolioPage = lazy(() => import('@pages/portfolio/index'))
+const VaultsPage = lazy(() => import('@pages/vaults/index'))
+const VaultsDetailPage = lazy(() => import('@pages/vaults/[chainID]/[address]'))
 
 // Loading component
 const PageLoader = (): ReactElement => (

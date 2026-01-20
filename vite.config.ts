@@ -58,11 +58,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@lib': path.resolve(__dirname, './apps/lib'),
+      '@shared': path.resolve(__dirname, './src/components/shared'),
+      '@pages': path.resolve(__dirname, './src/components/pages'),
       '@components': path.resolve(__dirname, './src/components'),
       '@hooks': path.resolve(__dirname, './src/hooks'),
-      '@vaults': path.resolve(__dirname, './apps/vaults'),
-      '@landing': path.resolve(__dirname, './apps/landing'),
       '@safe-global/safe-apps-sdk': path.resolve(__dirname, 'node_modules/@safe-global/safe-apps-sdk/dist/esm'),
       // Polyfill node-fetch for browser
       'node-fetch': 'cross-fetch'

@@ -1,4 +1,4 @@
-import { getNetwork, registerConfig } from '@lib/utils/wagmi'
+import { getNetwork, registerConfig } from '@shared/utils/wagmi'
 import { connectorsForWallets } from '@rainbow-me/rainbowkit'
 import {
   frameWallet,

@@ -4,11 +4,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@shared/*": ["src/components/shared/*"],
+      "@pages/*": ["src/components/pages/*"],
       "@components/*": ["src/components/*"],
       "@hooks/*": ["src/hooks/*"],
-      "@lib/*": ["apps/lib/*"],
-      "@vaults/*": ["apps/vaults/*"],
-      "@landing/*": ["apps/landing/*"],
       "/src/*": ["src/*"]
     },
     /* Basic Options */

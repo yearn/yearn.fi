@@ -8,8 +8,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@vaults': path.resolve(__dirname, './apps/vaults'),
-      '@lib': path.resolve(__dirname, './apps/lib'),
+      '@': path.resolve(__dirname, './src'),
+      '@shared': path.resolve(__dirname, './src/components/shared'),
+      '@pages': path.resolve(__dirname, './src/components/pages'),
       '@components': path.resolve(__dirname, './src/components'),
       '@hooks': path.resolve(__dirname, './src/hooks')
     }
@@ -18,7 +19,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     deps: {
-      inline: ['@lib']
+      inline: ['@shared']
     }
   }
 })
