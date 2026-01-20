@@ -9,7 +9,7 @@ import { IconPendle } from '@shared/icons/IconPendle'
 import { IconSpectra } from '@shared/icons/IconSpectra'
 import { cl, formatAmount, isZero } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { Fragment, useState } from 'react'
 import { APYDetailsModal } from './APYDetailsModal'
 import { APYSubline, getApySublineLines } from './APYSubline'
@@ -76,10 +76,13 @@ export function VaultForwardAPY({
       <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
         <div className={'flex items-center gap-2'}>
           <span aria-hidden>{'⚔️'}</span>
-          <span>{'This Vault is receiving KAT incentives'}</span>
+          <div className={'flex flex-col'}>
+            <span>{'This Vault is receiving KAT incentives'}</span>
+            <span>{'*There are conditions to earn this rate'}</span>
+          </div>
         </div>
         {fixedTermProviders.length > 0 ? (
-          <div className={'mt-1 flex items-center gap-2'}>
+          <div className={'mt-1 flex items-center gap-3'}>
             <span className={'flex items-center gap-1 text-text-secondary'} aria-hidden={true}>
               {fixedTermIcons}
             </span>
@@ -90,7 +93,7 @@ export function VaultForwardAPY({
           <button
             type={'button'}
             className={
-              'mt-2 text-left font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+              'mt-2 mx-auto block font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
             }
             onClick={(event): void => {
               event.stopPropagation()
@@ -146,6 +149,23 @@ export function VaultForwardAPY({
     ) : null
 
   const infoTooltipContent = katanaTooltipContent ?? standardTooltipContent
+  const shouldShowKatanaAsterisk = currentVault.chainID === KATANA_CHAIN_ID
+  const tooltipUnderlineClass = infoTooltipContent
+    ? 'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600'
+    : undefined
+  const renderApyValue = (content: ReactNode): ReactElement => (
+    <span className={cl('relative inline-flex items-center gap-1', valueInteractiveClass, tooltipUnderlineClass)}>
+      {content}
+      {shouldShowKatanaAsterisk ? (
+        <span
+          aria-hidden={true}
+          className={'pointer-events-none absolute left-full -top-px ml-px text-xs text-text-secondary'}
+        >
+          {'*'}
+        </span>
+      ) : null}
+    </span>
+  )
   const renderValueWithTooltip = (value: ReactElement): ReactElement => {
     if (!infoTooltipContent) {
       return value
@@ -198,9 +218,7 @@ export function VaultForwardAPY({
               <Renderable shouldRender={true} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
                   {fixedTermIndicator}
-                  <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
-                    <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />
-                  </span>
+                  {renderApyValue(<RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />)}
                 </div>
               </Renderable>
             </b>
@@ -250,15 +268,17 @@ export function VaultForwardAPY({
                 <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                   <div className={'flex items-center gap-2'}>
                     {fixedTermIndicator}
-                    <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
-                      {'⚡️ '}
-                      <RenderAmount
-                        shouldHideTooltip={hasZeroBoostedAPY}
-                        value={boostedAPY}
-                        symbol={'percent'}
-                        decimals={6}
-                      />
-                    </span>
+                    {renderApyValue(
+                      <>
+                        {'⚡️ '}
+                        <RenderAmount
+                          shouldHideTooltip={hasZeroBoostedAPY}
+                          value={boostedAPY}
+                          symbol={'percent'}
+                          decimals={6}
+                        />
+                      </>
+                    )}
                   </div>
                 </Renderable>
               </b>
@@ -293,7 +313,9 @@ export function VaultForwardAPY({
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <span className={'inline-flex items-center gap-2'}>
                 {fixedTermIndicator}
-                <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
+                {renderApyValue(
+                  <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
+                )}
               </span>
             </Renderable>
           </b>
@@ -337,12 +359,14 @@ export function VaultForwardAPY({
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={cl('flex items-center gap-2', canOpenModal ? 'cursor-pointer' : undefined)}>
                   {fixedTermIndicator}
-                  <RenderAmount
-                    shouldHideTooltip
-                    value={currentVault.apr.forwardAPR.netAPR}
-                    symbol={'percent'}
-                    decimals={6}
-                  />
+                  {renderApyValue(
+                    <RenderAmount
+                      shouldHideTooltip
+                      value={currentVault.apr.forwardAPR.netAPR}
+                      symbol={'percent'}
+                      decimals={6}
+                    />
+                  )}
                 </div>
               </Renderable>
             </b>
@@ -404,23 +428,25 @@ export function VaultForwardAPY({
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
                   {fixedTermIndicator}
-                  <span className={cl('flex items-center gap-1', valueInteractiveClass)}>
-                    {'⚡️ '}
-                    {estAPYRange ? (
-                      <Fragment>
-                        <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
-                        &nbsp;&rarr;&nbsp;
-                        <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
-                      </Fragment>
-                    ) : (
-                      <RenderAmount
-                        shouldHideTooltip={hasZeroBoostedAPY}
-                        value={boostedAPY}
-                        symbol={'percent'}
-                        decimals={6}
-                      />
-                    )}
-                  </span>
+                  {renderApyValue(
+                    <>
+                      {'⚡️ '}
+                      {estAPYRange ? (
+                        <Fragment>
+                          <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
+                          &nbsp;&rarr;&nbsp;
+                          <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
+                        </Fragment>
+                      ) : (
+                        <RenderAmount
+                          shouldHideTooltip={hasZeroBoostedAPY}
+                          value={boostedAPY}
+                          symbol={'percent'}
+                          decimals={6}
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
               </Renderable>
             </b>
@@ -457,10 +483,12 @@ export function VaultForwardAPY({
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <span className={'inline-flex items-center gap-2'}>
                 {fixedTermIndicator}
-                <span className={'flex items-center gap-1'}>
-                  {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
-                  <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
-                </span>
+                {renderApyValue(
+                  <>
+                    {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+                    <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
+                  </>
+                )}
               </span>
             </Renderable>
           </b>
@@ -494,10 +522,12 @@ export function VaultForwardAPY({
           >
             <span className={'inline-flex items-center gap-2'}>
               {fixedTermIndicator}
-              <span className={'flex items-center gap-1'}>
-                {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
-                <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
-              </span>
+              {renderApyValue(
+                <>
+                  {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+                  <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
+                </>
+              )}
             </span>
           </Renderable>
         </b>
