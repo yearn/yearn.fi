@@ -16,6 +16,10 @@ type TTrendingVaultsProps = {
   suggestedVaults: TYDaemonVault[]
 }
 
+const MAX_EXPANDED_VAULTS = 4
+const EXPANDED_CARD_WIDTH = 272
+const EXPANDED_CARD_GAP = 16
+
 function usePrefersReducedMotion(): boolean {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
 
@@ -220,124 +224,62 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
     'yearn.fi/trending-vaults-expanded@0.0.1',
     false
   )
-  const trendingCarouselRef = useRef<HTMLDivElement>(null)
-  const pendingPrependWidthRef = useRef(0)
-  const pendingPrependScrollDeltaRef = useRef<number | null>(null)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(false)
-  const [renderedVaults, setRenderedVaults] = useState<TYDaemonVault[]>(suggestedVaults)
-
-  const getScrollStep = useCallback((): number => {
-    const viewport = trendingCarouselRef.current
-    if (!viewport) {
-      return 0
-    }
-
-    const items = viewport.querySelectorAll<HTMLElement>('[data-trending-vault-card]')
-    if (items.length >= 2) {
-      const first = items[0].getBoundingClientRect()
-      const second = items[1].getBoundingClientRect()
-      const step = Math.round(second.left - first.left)
-      if (step > 0) {
-        return step
-      }
-      return Math.round(first.width)
-    }
-    if (items.length === 1) {
-      return Math.round(items[0].getBoundingClientRect().width)
-    }
-    return 0
-  }, [])
+  const expandedCardsRef = useRef<HTMLDivElement>(null)
+  const [visibleExpandedCards, setVisibleExpandedCards] = useState(() =>
+    Math.min(MAX_EXPANDED_VAULTS, suggestedVaults.length)
+  )
 
   useEffect(() => {
-    setRenderedVaults(suggestedVaults)
-    pendingPrependWidthRef.current = 0
-  }, [suggestedVaults])
+    setVisibleExpandedCards(Math.min(MAX_EXPANDED_VAULTS, suggestedVaults.length))
+  }, [suggestedVaults.length])
 
-  const updateScrollButtons = (): void => {
-    if (!trendingCarouselRef.current) {
-      return
-    }
-    if (!isTrendingExpanded || suggestedVaults.length <= 1 || suggestedVaults.length <= 4) {
-      setCanScrollLeft(false)
-      setCanScrollRight(false)
-      return
-    }
-    const { scrollWidth, clientWidth } = trendingCarouselRef.current
-    const isScrollable = scrollWidth > clientWidth + 1
-    setCanScrollLeft(isScrollable)
-    setCanScrollRight(isScrollable)
-  }
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <>
-  useEffect(() => {
-    const container = trendingCarouselRef.current
+  const updateVisibleExpandedCards = useCallback((): void => {
+    const container = expandedCardsRef.current
     if (!container) {
       return
     }
-
-    updateScrollButtons()
-    container.addEventListener('scroll', updateScrollButtons)
-    window.addEventListener('resize', updateScrollButtons)
-
-    return () => {
-      container.removeEventListener('scroll', updateScrollButtons)
-      window.removeEventListener('resize', updateScrollButtons)
+    const availableWidth = container.clientWidth
+    if (availableWidth <= 0) {
+      return
     }
-  }, [isTrendingExpanded, suggestedVaults.length])
+    const fitCount = Math.max(
+      1,
+      Math.floor((availableWidth + EXPANDED_CARD_GAP) / (EXPANDED_CARD_WIDTH + EXPANDED_CARD_GAP))
+    )
+    const nextCount = Math.min(MAX_EXPANDED_VAULTS, suggestedVaults.length, fitCount)
+    setVisibleExpandedCards((prev) => (prev === nextCount ? prev : nextCount))
+  }, [suggestedVaults.length])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we intentionally re-run after list growth to apply pending prepend scroll adjustment
   useEffect(() => {
-    const container = trendingCarouselRef.current
-    const pending = pendingPrependWidthRef.current
-    if (!container || pending === 0) {
+    if (!isTrendingExpanded) {
       return
     }
-    container.scrollLeft += pending
-    pendingPrependWidthRef.current = 0
+    updateVisibleExpandedCards()
+  }, [isTrendingExpanded, updateVisibleExpandedCards])
 
-    const delta = pendingPrependScrollDeltaRef.current
-    if (delta !== null) {
-      pendingPrependScrollDeltaRef.current = null
-      container.scrollTo({
-        left: container.scrollLeft + delta,
-        behavior: 'smooth'
-      })
+  useEffect(() => {
+    if (!isTrendingExpanded) {
+      return
     }
-  }, [renderedVaults.length])
+    const container = expandedCardsRef.current
+    if (!container) {
+      return
+    }
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => updateVisibleExpandedCards())
+      observer.observe(container)
+      return () => observer.disconnect()
+    }
+    window.addEventListener('resize', updateVisibleExpandedCards)
+    return () => {
+      window.removeEventListener('resize', updateVisibleExpandedCards)
+    }
+  }, [isTrendingExpanded, updateVisibleExpandedCards])
 
-  const onScrollBack = (): void => {
-    if (!trendingCarouselRef.current) {
-      return
-    }
-    const step = getScrollStep() || 280 + 16 // fallback to legacy sizing
-    if (trendingCarouselRef.current.scrollLeft <= step + 1) {
-      pendingPrependWidthRef.current += step * suggestedVaults.length
-      pendingPrependScrollDeltaRef.current = -step
-      setRenderedVaults((prev) => [...suggestedVaults, ...prev])
-      return
-    }
-    trendingCarouselRef.current.scrollTo({
-      left: trendingCarouselRef.current.scrollLeft - step,
-      behavior: 'smooth'
-    })
-  }
-
-  const onScrollForward = (): void => {
-    if (!trendingCarouselRef.current) {
-      return
-    }
-    const step = getScrollStep() || 280 + 16 // fallback to legacy sizing
-    const { scrollLeft, clientWidth, scrollWidth } = trendingCarouselRef.current
-    const isAtEnd = scrollLeft + clientWidth >= scrollWidth - step - 1
-    if (isAtEnd) {
-      setRenderedVaults((prev) => [...prev, ...suggestedVaults])
-    }
-    trendingCarouselRef.current.scrollTo({
-      left: trendingCarouselRef.current.scrollLeft + step,
-      behavior: 'smooth'
-    })
-  }
+  const expandedVaults = useMemo(
+    () => suggestedVaults.slice(0, visibleExpandedCards),
+    [suggestedVaults, visibleExpandedCards]
+  )
 
   if (suggestedVaults.length === 0) {
     return <TrendingVaultsSkeleton />
@@ -349,37 +291,9 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
         <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-3'}>
           <div className={'flex min-w-0 flex-1 items-center gap-3 '}>
             <div className={'flex flex-col text-left'}>
-              <p className={'text-sm font-semibold tracking-wide text-text-secondary'}>{'Trending Vaults'}</p>
+              <p className={'text-sm font-semibold tracking-wide text-text-secondary'}>{'Curated Vaults'}</p>
             </div>
             {!isTrendingExpanded ? <TrendingVaultsCollapsedMarquee suggestedVaults={suggestedVaults} /> : null}
-            {isTrendingExpanded && suggestedVaults.length > 4 ? (
-              <div className={'hidden gap-3 md:flex'}>
-                <button
-                  onClick={onScrollBack}
-                  disabled={!canScrollLeft}
-                  className={cl(
-                    'flex h-5! items-center rounded-[4px] px-2 outline-solid outline-1! outline-border transition-colors ',
-                    canScrollLeft
-                      ? 'text-text-secondary hover:bg-surface-secondary'
-                      : 'text-text-tertiary cursor-not-allowed'
-                  )}
-                >
-                  <IconChevron className={'size-3 rotate-90'} />
-                </button>
-                <button
-                  onClick={onScrollForward}
-                  disabled={!canScrollRight}
-                  className={cl(
-                    'flex h-5! items-center rounded-[4px] px-2  transition-colors outline-solid outline-1! outline-border',
-                    canScrollRight
-                      ? 'text-text-secondary hover:bg-surface-secondary'
-                      : 'text-text-tertiary cursor-not-allowed'
-                  )}
-                >
-                  <IconChevron className={'size-3 -rotate-90'} />
-                </button>
-              </div>
-            ) : null}
           </div>
           <button
             type={'button'}
@@ -393,19 +307,21 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
           </button>
         </div>
         {isTrendingExpanded ? (
-          <div
-            ref={trendingCarouselRef}
-            className={'overflow-x-auto scrollbar-themed px-4 pt-0.5 pb-4 md:px-6 scroll-smooth'}
-          >
-            <div className={'flex gap-4'}>
-              {renderedVaults.map((vault, index) => {
-                const key = `${vault.chainID}_${toAddress(vault.address)}_${index}`
-                return (
-                  <div key={key} data-trending-vault-card className={'w-[272px] flex-shrink-0'}>
-                    <SuggestedVaultCard vault={vault} />
-                  </div>
-                )
-              })}
+          <div className={'overflow-hidden px-4 pt-0.5 pb-4 md:px-6'}>
+            <div ref={expandedCardsRef} className={'w-full'}>
+              <div
+                className={'grid gap-4'}
+                style={{ gridTemplateColumns: `repeat(${expandedVaults.length}, minmax(0, 1fr))` }}
+              >
+                {expandedVaults.map((vault, index) => {
+                  const key = `${vault.chainID}_${toAddress(vault.address)}_${index}`
+                  return (
+                    <div key={key} className={'min-w-0'}>
+                      <SuggestedVaultCard vault={vault} />
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         ) : null}

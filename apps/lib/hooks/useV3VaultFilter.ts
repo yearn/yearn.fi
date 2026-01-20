@@ -3,11 +3,14 @@ import { useYearn } from '@lib/contexts/useYearn'
 import type { TYDaemonVault } from '@lib/utils/schemas/yDaemonVaultsSchemas'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useAppSettings } from '@vaults/contexts/useAppSettings'
+import { DEFAULT_MIN_TVL } from '@vaults/utils/constants'
 import {
   deriveAssetCategory,
   deriveListKind,
   deriveV3Aggressiveness,
+  expandUnderlyingAssetSelection,
   isAllocatorVaultOverride,
+  normalizeUnderlyingAssetSymbol,
   type TVaultAggressiveness
 } from '@vaults/utils/vaultListFacets'
 import { useMemo } from 'react'
@@ -43,6 +46,8 @@ type TV3VaultFilterResult = {
   holdingsVaults: TYDaemonVault[]
   availableVaults: TYDaemonVault[]
   vaultFlags: Record<string, TVaultFlags>
+  availableUnderlyingAssets: string[]
+  underlyingAssetVaults: Record<string, TYDaemonVault>
   totalMatchingVaults: number
   totalHoldingsMatching: number
   totalAvailableMatching: number
@@ -57,6 +62,8 @@ export function useV3VaultFilter(
   search?: string,
   categories?: string[] | null,
   aggressiveness?: TVaultAggressiveness[] | null,
+  underlyingAssets?: string[] | null,
+  minTvl?: number,
   showHiddenVaults?: boolean,
   enabled?: boolean
 ): TV3VaultFilterResult {
@@ -65,6 +72,7 @@ export function useV3VaultFilter(
   const { shouldHideDust } = useAppSettings()
   const isEnabled = enabled ?? true
   const searchValue = search ?? ''
+  const minTvlValue = Number.isFinite(minTvl) ? Math.max(0, minTvl || 0) : DEFAULT_MIN_TVL
   const isSearchEnabled = isEnabled && searchValue !== ''
   const searchRegex = useMemo(() => {
     if (!isSearchEnabled) {
@@ -80,6 +88,17 @@ export function useV3VaultFilter(
   const lowercaseSearch = useMemo(
     () => (isSearchEnabled ? searchValue.toLowerCase() : ''),
     [isSearchEnabled, searchValue]
+  )
+  const normalizedUnderlyingAssets = useMemo(() => {
+    if (!underlyingAssets || underlyingAssets.length === 0) {
+      return new Set<string>()
+    }
+    const normalized = underlyingAssets.map((asset) => normalizeUnderlyingAssetSymbol(asset)).filter(Boolean)
+    return new Set(normalized)
+  }, [underlyingAssets])
+  const expandedUnderlyingAssets = useMemo(
+    () => expandUnderlyingAssetSelection(normalizedUnderlyingAssets),
+    [normalizedUnderlyingAssets]
   )
 
   const checkHasHoldings = useMemo(
@@ -184,10 +203,13 @@ export function useV3VaultFilter(
     let totalAvailableMatching = 0
     let totalMigratableMatching = 0
     let totalRetiredMatching = 0
+    const availableUnderlyingAssets = new Set<string>()
+    const underlyingAssetVaults: Record<string, TYDaemonVault> = {}
     const hasChainFilter = Boolean(chains?.length)
     const hasCategoryFilter = Boolean(categories?.length)
     const hasAggressivenessFilter = Boolean(aggressiveness?.length)
     const hasTypeFilter = Boolean(types?.length)
+    const hasUnderlyingAssetFilter = normalizedUnderlyingAssets.size > 0
 
     const matchesSearch = (searchableText: string): boolean => {
       if (!isSearchEnabled) {
@@ -225,6 +247,11 @@ export function useV3VaultFilter(
       }
 
       if (hasChainFilter && !chains?.includes(vault.chainID)) {
+        return
+      }
+
+      const vaultTvl = vault.tvl?.tvl || 0
+      if (vaultTvl < minTvlValue) {
         return
       }
 
@@ -272,7 +299,19 @@ export function useV3VaultFilter(
         shouldIncludeByKind &&
         shouldIncludeByAggressiveness
       ) {
-        filteredVaults.push(vault)
+        const assetKey = normalizeUnderlyingAssetSymbol(vault.token?.symbol)
+        if (assetKey && !underlyingAssetVaults[assetKey]) {
+          availableUnderlyingAssets.add(assetKey)
+          underlyingAssetVaults[assetKey] = vault
+        } else if (assetKey) {
+          availableUnderlyingAssets.add(assetKey)
+        }
+
+        const matchesUnderlyingAsset = !hasUnderlyingAssetFilter || (assetKey && expandedUnderlyingAssets.has(assetKey))
+
+        if (matchesUnderlyingAsset) {
+          filteredVaults.push(vault)
+        }
       }
     })
 
@@ -280,6 +319,8 @@ export function useV3VaultFilter(
       filteredVaults,
       holdingsVaults,
       vaultFlags,
+      availableUnderlyingAssets: Array.from(availableUnderlyingAssets),
+      underlyingAssetVaults,
       totalMatchingVaults,
       totalHoldingsMatching,
       totalAvailableMatching,
@@ -293,6 +334,9 @@ export function useV3VaultFilter(
     chains,
     categories,
     aggressiveness,
+    normalizedUnderlyingAssets,
+    expandedUnderlyingAssets,
+    minTvlValue,
     holdingsVaults,
     showHiddenVaults,
     searchRegex,

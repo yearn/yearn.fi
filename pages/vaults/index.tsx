@@ -11,7 +11,6 @@ import { VaultsAuxiliaryList } from '@vaults/components/list/VaultsAuxiliaryList
 import { VaultsListEmpty } from '@vaults/components/list/VaultsListEmpty'
 import { VaultsListHead } from '@vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@vaults/components/list/VaultsListRow'
-import { TrendingVaults } from '@vaults/components/TrendingVaults'
 import { toggleInArray } from '@vaults/utils/constants'
 import { getVaultTypeLabel } from '@vaults/utils/vaultTypeCopy'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
@@ -61,7 +60,7 @@ function VaultsListSection({ isSwitchingVaultType, listHead, children }: TVaults
 export default function Index(): ReactElement {
   const { refs, header, filtersBar, list } = useVaultsPageModel()
   const { varsRef, filtersRef } = refs
-  const { vaultType, suggestedVaults } = header
+  const { vaultType } = header
   const { search, filters, chains, shouldStackFilters, isSwitchingVaultType, activeVaultType, onChangeVaultType } =
     filtersBar
   const {
@@ -259,7 +258,7 @@ export default function Index(): ReactElement {
   const compareCount = compareVaultKeys.length
   const shouldShowCompareBar = isCompareMode && compareCount >= 1 && !isCompareOpen
   const compareBarElement = shouldShowCompareBar ? (
-    <div className={'fixed bottom-4 left-1/2 z-[55] w-[calc(100%-2rem)] max-w-[720px] -translate-x-1/2'}>
+    <div className={'fixed bottom-4 left-1/2 z-55 w-[calc(100%-2rem)] max-w-[720px] -translate-x-1/2'}>
       <div
         className={
           'flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xl sm:flex-row sm:items-center sm:justify-between'
@@ -317,7 +316,8 @@ export default function Index(): ReactElement {
                   { label: getVaultTypeLabel(vaultType), isCurrent: true }
                 ]}
               />
-              <TrendingVaults suggestedVaults={suggestedVaults} />
+              {/* turn back on when ready for primetime */}
+              {/* <TrendingVaults suggestedVaults={suggestedVaults} /> */}
               <VaultsFiltersBar
                 search={{
                   ...search,
