@@ -1,3 +1,8 @@
+<<<<<<<< HEAD:src/components/pages/landing/index.tsx
+========
+import { FAQs, Footer, Hero, Integrations, Partners, Security, Vaults } from '@pages/landing/components/sections'
+
+>>>>>>>> 3f17c032 (feat: restructure):src/components/pages/index.tsx
 import type { ReactElement } from 'react'
 import { FAQs, Footer, Hero, Integrations, Partners, Security, Vaults } from './components/sections'
 
