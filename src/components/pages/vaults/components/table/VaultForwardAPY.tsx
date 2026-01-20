@@ -1,11 +1,12 @@
 import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
-import { getFixedTermMarket } from '@pages/vaults/constants/fixedTermMarkets'
+import { getFixedTermMarkets } from '@pages/vaults/constants/fixedTermMarkets'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { Renderable } from '@shared/components/Renderable'
 import { Tooltip } from '@shared/components/Tooltip'
-import { IconFixedRate } from '@shared/icons/IconFixedRate'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
+import { IconPendle } from '@shared/icons/IconPendle'
+import { IconSpectra } from '@shared/icons/IconSpectra'
 import { cl, formatAmount, isZero } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
@@ -40,12 +41,21 @@ export function VaultForwardAPY({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const canOpenModal = displayVariant !== 'factory-list'
   const valueInteractiveClass = canOpenModal ? 'cursor-pointer' : undefined
-  const fixedTermMarket = getFixedTermMarket(currentVault.address)
-  const fixedTermIndicator = fixedTermMarket ? (
-    <span className={'flex items-center text-text-secondary'} aria-hidden={true}>
-      <IconFixedRate className={'size-3.5'} />
-    </span>
-  ) : null
+  const fixedTermMarkets = getFixedTermMarkets(currentVault.address)
+  const fixedTermProviders = fixedTermMarkets.filter(
+    (market, index, list) => list.findIndex((item) => item.provider === market.provider) === index
+  )
+  const fixedTermIcons = fixedTermProviders.map((market) => {
+    const Icon = market.provider === 'pendle' ? IconPendle : IconSpectra
+    return <Icon key={market.provider} className={'size-3.5'} />
+  })
+  const fixedTermProviderLabel = fixedTermProviders.map((market) => market.label).join(' & ')
+  const fixedTermIndicator =
+    fixedTermProviders.length > 0 ? (
+      <span className={'flex items-center gap-1 text-text-secondary'} aria-hidden={true}>
+        {fixedTermIcons}
+      </span>
+    ) : null
 
   // Check if vault is eligible for Spectra boost (Katana chain only)
   const isEligibleForSpectraBoost =
@@ -68,10 +78,12 @@ export function VaultForwardAPY({
           <span aria-hidden>{'⚔️'}</span>
           <span>{'This Vault is receiving KAT incentives'}</span>
         </div>
-        {fixedTermMarket ? (
+        {fixedTermProviders.length > 0 ? (
           <div className={'mt-1 flex items-center gap-2'}>
-            <IconFixedRate className={'size-3.5 text-text-secondary'} aria-hidden={true} />
-            <span>{'This Vault has fixed rate markets available'}</span>
+            <span className={'flex items-center gap-1 text-text-secondary'} aria-hidden={true}>
+              {fixedTermIcons}
+            </span>
+            <span>{`Fixed-rate markets available on ${fixedTermProviderLabel}`}</span>
           </div>
         ) : null}
         {canOpenModal ? (
@@ -95,9 +107,11 @@ export function VaultForwardAPY({
     showBoostDetails && displayVariant !== 'factory-list' && data.mode === 'boosted' && data.isBoosted
       ? `Boost ${formatAmount(data.boost || 0, 2, 2)}x`
       : null
-  const fixedRateTooltipLine =
-    fixedTermMarket && !isKatanaVault ? `Fixed-rate markets available on ${fixedTermMarket.label}.` : null
-  const standardTooltipLines = [boostTooltipLine, ...sublineLines, fixedRateTooltipLine].filter(
+  const fixedRateTooltipLines =
+    fixedTermProviders.length > 0 && !isKatanaVault
+      ? fixedTermProviders.map((market) => `Fixed-rate markets available on ${market.label}.`)
+      : []
+  const standardTooltipLines = [boostTooltipLine, ...sublineLines, ...fixedRateTooltipLines].filter(
     (line): line is string => Boolean(line)
   )
 
@@ -109,19 +123,24 @@ export function VaultForwardAPY({
             {line}
           </div>
         ))}
-        {fixedTermMarket ? (
-          <a
-            href={fixedTermMarket.marketUrl}
-            target={'_blank'}
-            rel={'noopener noreferrer'}
-            className={
-              'mt-2 inline-flex items-center gap-1 font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-            }
-            onClick={(event): void => event.stopPropagation()}
-          >
-            {`View ${fixedTermMarket.label} market`}
-            <IconLinkOut className={'size-3'} />
-          </a>
+        {fixedTermProviders.length > 0 ? (
+          <div className={'mt-2 flex flex-col gap-1'}>
+            {fixedTermProviders.map((market) => (
+              <a
+                key={market.provider}
+                href={market.marketUrl}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'inline-flex items-center gap-1 font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                }
+                onClick={(event): void => event.stopPropagation()}
+              >
+                {`View ${market.label} market`}
+                <IconLinkOut className={'size-3'} />
+              </a>
+            ))}
+          </div>
         ) : null}
       </div>
     ) : null
