@@ -109,5 +109,50 @@ export type UseWidgetWithdrawFlowReturn = T<
 
 export enum WidgetActionType {
   Deposit = 'deposit',
-  Withdraw = 'withdraw'
+  Withdraw = 'withdraw',
+  Migrate = 'migrate'
 }
+
+// Migrate flow types
+export type MigrateRouteType = 'PERMIT' | 'APPROVE'
+
+export type MigratePermitData = {
+  domain: {
+    name: string
+    version: string
+    chainId: number
+    verifyingContract: TAddress
+  }
+  types: {
+    Permit: { name: string; type: string }[]
+  }
+  primaryType: 'Permit'
+  message: {
+    owner: TAddress
+    spender: TAddress
+    value: bigint
+    nonce: bigint
+    deadline: bigint
+  }
+}
+
+export type UseMigrateFlowReturn = T<
+  {
+    prepareApprove: UseSimulateContractReturnType
+    prepareMigrate: UseSimulateContractReturnType
+  },
+  {
+    routeType: MigrateRouteType
+    supportsPermit: boolean
+    isAllowanceSufficient: boolean
+    allowance: bigint
+    balance: bigint
+    prepareApproveEnabled: boolean
+    prepareMigrateEnabled: boolean
+    permitSignature: `0x${string}` | undefined
+    setPermitSignature: (sig: `0x${string}` | undefined) => void
+    permitData?: MigratePermitData
+    deadline: bigint
+    error?: string
+  }
+>

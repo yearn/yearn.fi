@@ -4,11 +4,13 @@ import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { cl } from '@shared/utils'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
+import type { TypedData, TypedDataDomain } from 'viem'
 import {
   type UseSimulateContractReturnType,
   useAccount,
   useChainId,
   usePublicClient,
+  useSignTypedData,
   useSwitchChain,
   useWaitForTransactionReceipt,
   useWriteContract
@@ -16,6 +18,13 @@ import {
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
 
 type OverlayState = 'idle' | 'confirming' | 'pending' | 'success' | 'error'
+
+export type PermitData = {
+  domain: TypedDataDomain
+  types: TypedData
+  message: Record<string, unknown>
+  primaryType: string
+}
 
 export type TransactionStep = {
   prepare: UseSimulateContractReturnType
@@ -25,6 +34,10 @@ export type TransactionStep = {
   successMessage: string
   showConfetti?: boolean
   notification?: TCreateNotificationParams
+  // Permit-specific fields
+  isPermit?: boolean
+  permitData?: PermitData
+  onPermitSigned?: (signature: `0x${string}`) => void
 }
 
 type TransactionOverlayProps = {
@@ -42,10 +55,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   isLastStep = true,
   onAllComplete
 }) => {
-  const [overlayState, setOverlayState] = useState<OverlayState>('idle')
+  const [overlayState, setOverlayState] = useState<OverlayState>('success')
   const [errorMessage, setErrorMessage] = useState<string>('')
 
   const writeContract = useWriteContract()
+  const { signTypedDataAsync } = useSignTypedData()
   const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
   const [ensoTxHash, setEnsoTxHash] = useState<`0x${string}` | undefined>()
@@ -138,6 +152,47 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   )
 
   const executeStep = useCallback(async () => {
+    // For permit steps, we don't need prepare.isSuccess - we need permitData
+    if (step?.isPermit && step?.permitData) {
+      // Handle permit signing flow
+      executedStepRef.current = step
+      wasLastStepRef.current = isLastStep
+
+      setOverlayState('confirming')
+      setErrorMessage('')
+
+      try {
+        const signature = await signTypedDataAsync({
+          domain: step.permitData.domain,
+          types: step.permitData.types,
+          primaryType: step.permitData.primaryType,
+          message: step.permitData.message
+        })
+
+        // Pass signature back to the flow
+        step.onPermitSigned?.(signature)
+        setOverlayState('success')
+
+        if (step.showConfetti) {
+          setTimeout(() => reward(), 100)
+        }
+      } catch (error: any) {
+        const isUserRejection =
+          error?.message?.toLowerCase().includes('rejected') ||
+          error?.message?.toLowerCase().includes('denied') ||
+          error?.code === 4001
+
+        if (isUserRejection) {
+          onClose()
+        } else {
+          console.error('Permit signing failed:', error)
+          setOverlayState('error')
+          setErrorMessage('Failed to sign permit. Please try again.')
+        }
+      }
+      return
+    }
+
     if (!step?.prepare.isSuccess || !step?.prepare.data?.request) {
       setOverlayState('error')
       setErrorMessage('Transaction not ready. Please try again.')
@@ -235,6 +290,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     switchChainAsync,
     client,
     writeContract,
+    signTypedDataAsync,
     onClose,
     handleCreateNotification,
     isLastStep,

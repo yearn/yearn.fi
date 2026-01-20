@@ -187,6 +187,14 @@ function Index(): ReactElement | null {
     currentVault?.staking.address
   ])
 
+  const widgetActions = useMemo(() => {
+    const actions = [WidgetActionType.Deposit, WidgetActionType.Withdraw]
+    if (chainId === 1 && currentVault?.migration?.available) {
+      actions.push(WidgetActionType.Migrate)
+    }
+    return actions
+  }, [chainId, currentVault?.migration?.available])
+
   const sections = useMemo(() => {
     if (!currentVault || !yDaemonBaseUri) {
       return []
@@ -367,7 +375,7 @@ function Index(): ReactElement | null {
               vaultAddress={currentVault.address}
               currentVault={currentVault}
               gaugeAddress={currentVault.staking.address}
-              actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
+              actions={widgetActions}
               chainId={chainId}
             />
           </div>
@@ -465,7 +473,7 @@ function Index(): ReactElement | null {
                 <div
                   className={cl(
                     'flex flex-wrap gap-2 md:pb-3 md:gap-3',
-                    'bg-gradient-to-b from-app from-90% to-transparent'
+                    'bg-linear-to-b from-app from-90% to-transparent'
                   )}
                 >
                   <div
@@ -550,7 +558,7 @@ function Index(): ReactElement | null {
                 vaultAddress={currentVault.address}
                 currentVault={currentVault}
                 gaugeAddress={currentVault.staking.address}
-                actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
+                actions={widgetActions}
                 chainId={chainId}
               />
             </div>

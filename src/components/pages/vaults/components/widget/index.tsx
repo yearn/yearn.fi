@@ -4,6 +4,7 @@ import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { type FC, useMemo, useState } from 'react'
 import { WidgetDeposit } from './deposit'
+import { WidgetMigrate } from './migrate'
 import { WidgetWithdraw } from './withdraw'
 
 interface Props {
@@ -21,6 +22,8 @@ const getActionLabel = (action: ActionType): string => {
       return 'Deposit'
     case ActionType.Withdraw:
       return 'Withdraw'
+    case ActionType.Migrate:
+      return 'Migrate'
   }
 }
 
@@ -52,6 +55,18 @@ export const Widget: FC<Props> = ({ currentVault, vaultAddress, gaugeAddress, ac
             chainId={chainId}
             vaultSymbol={currentVault?.symbol || ''}
             handleWithdrawSuccess={handleSuccess}
+          />
+        )
+      case ActionType.Migrate:
+        return (
+          <WidgetMigrate
+            vaultAddress={toAddress(vaultAddress)}
+            assetAddress={toAddress(assetToken)}
+            stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
+            chainId={chainId}
+            vaultSymbol={currentVault?.symbol || ''}
+            migrationTarget={toAddress(currentVault?.migration?.address)}
+            handleMigrateSuccess={handleSuccess}
           />
         )
     }
