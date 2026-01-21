@@ -98,30 +98,10 @@ export const WidgetMigrate: FC<Props> = ({
   }, [migrateBalance, pricePerShare, vaultToken?.decimals])
 
   // Transaction steps
-  const needsApproval = !periphery.isAllowanceSufficient && periphery.routeType === 'APPROVE'
-  const needsPermit = periphery.supportsPermit && !periphery.isAllowanceSufficient && !periphery.permitSignature
+  const needsApproval = !periphery.isAllowanceSufficient
 
   const currentStep: TransactionStep | undefined = useMemo(() => {
-    // Step 1: Permit signing (if vault supports EIP-2612 and no signature yet)
-    if (needsPermit && periphery.permitData) {
-      return {
-        prepare: actions.prepareMigrate, // Dummy - not used for permit
-        label: 'Permit',
-        confirmMessage: `Sign permit for ${formattedBalance} ${vaultSymbol}`,
-        successTitle: 'Permit signed',
-        successMessage: `Permit signed.\nReady to migrate.`,
-        isPermit: true,
-        permitData: {
-          domain: periphery.permitData.domain,
-          types: periphery.permitData.types,
-          message: periphery.permitData.message,
-          primaryType: periphery.permitData.primaryType
-        },
-        onPermitSigned: periphery.setPermitSignature
-      }
-    }
-
-    // Step 2: Approve (if vault doesn't support permit)
+    // Step 1: Approve
     if (needsApproval) {
       return {
         prepare: actions.prepareApprove,
@@ -139,7 +119,7 @@ export const WidgetMigrate: FC<Props> = ({
       }
     }
 
-    // Step 3: Migrate
+    // Step 2: Migrate
     return {
       prepare: actions.prepareMigrate,
       label: 'Migrate',
@@ -157,10 +137,7 @@ export const WidgetMigrate: FC<Props> = ({
       }
     }
   }, [
-    needsPermit,
     needsApproval,
-    periphery.permitData,
-    periphery.setPermitSignature,
     actions.prepareApprove,
     actions.prepareMigrate,
     formattedBalance,
@@ -178,38 +155,24 @@ export const WidgetMigrate: FC<Props> = ({
 
   // Button text
   const buttonText = useMemo(() => {
-    if (needsPermit) return 'Permit & Migrate'
     if (needsApproval) return 'Approve & Migrate'
     return 'Migrate All'
-  }, [needsPermit, needsApproval])
+  }, [needsApproval])
 
   // Button disabled state
   const isButtonDisabled = useMemo(() => {
     if (migrateError) return true
     if (migrateBalance === 0n) return true
-    // For permit flow: need permitData when allowance insufficient
-    if (periphery.supportsPermit && !periphery.isAllowanceSufficient && !periphery.permitData) {
+    // For approve flow: need prepareApproveEnabled
+    if (needsApproval && !periphery.prepareApproveEnabled) {
       return true
     }
-    // For approve flow: need prepareApproveEnabled when allowance insufficient
-    if (!periphery.supportsPermit && !periphery.isAllowanceSufficient && !periphery.prepareApproveEnabled) {
-      return true
-    }
-    // For migrate step (when allowance is sufficient or permit signed): need prepareMigrateEnabled
-    if ((periphery.isAllowanceSufficient || periphery.permitSignature) && !periphery.prepareMigrateEnabled) {
+    // For migrate step: need prepareMigrateEnabled
+    if (!needsApproval && !periphery.prepareMigrateEnabled) {
       return true
     }
     return false
-  }, [
-    migrateError,
-    migrateBalance,
-    periphery.supportsPermit,
-    periphery.isAllowanceSufficient,
-    periphery.permitData,
-    periphery.permitSignature,
-    periphery.prepareApproveEnabled,
-    periphery.prepareMigrateEnabled
-  ])
+  }, [migrateError, migrateBalance, needsApproval, periphery.prepareApproveEnabled, periphery.prepareMigrateEnabled])
 
   // Loading state
   if (isLoadingVaultData) {
@@ -325,7 +288,7 @@ export const WidgetMigrate: FC<Props> = ({
         isOpen={showTransactionOverlay}
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
-        isLastStep={!needsPermit && !needsApproval}
+        isLastStep={!needsApproval}
         onAllComplete={handleMigrateSuccess}
       />
     </div>
