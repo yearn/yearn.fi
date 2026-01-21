@@ -52,26 +52,26 @@ type TPortfolioSuggestedProps = Pick<TPortfolioModel, 'suggestedRows'>
 function PortfolioPageLayout({ children }: { children: ReactElement }): ReactElement {
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
-      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-5 px-4 pb-16'}>{children}</div>
+      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16 sm:gap-5'}>{children}</div>
     </div>
   )
 }
 
 function HoldingsEmptyState({ isActive, onConnect }: { isActive: boolean; onConnect: () => void }): ReactElement {
   return (
-    <div className={'flex flex-col items-center justify-center gap-4 px-6 py-16 text-center'}>
-      <p className={'text-lg font-semibold text-text-primary'}>
+    <div className={'flex flex-col items-center justify-center gap-4 px-4 py-12 text-center sm:px-6 sm:py-16'}>
+      <p className={'text-base font-semibold text-text-primary sm:text-lg'}>
         {isActive ? 'No vault positions yet' : 'Connect a wallet to get started'}
       </p>
       <p className={'max-w-md text-sm text-text-secondary'}>
         {isActive ? 'Deposit into a Yearn vault to see it here.' : 'Link a wallet to load your Yearn balances.'}
       </p>
       {isActive ? (
-        <Link to="/vaults" className={'yearn--button'} data-variant={'filled'}>
+        <Link to="/vaults" className={'yearn--button min-h-[44px] px-6'} data-variant={'filled'}>
           {'Browse vaults'}
         </Link>
       ) : (
-        <Button onClick={onConnect} variant={'filled'}>
+        <Button onClick={onConnect} variant={'filled'} className={'min-h-[44px] px-6'}>
           {'Connect wallet'}
         </Button>
       )}
@@ -114,30 +114,8 @@ function PortfolioHeaderSection({
     )
   }
 
-  const renderTitleWithTooltip = (label: string, tooltip: string | null): ReactElement => {
-    const labelClasses =
-      'text-sm font-semibold uppercase tracking-wide text-text-secondary cursor-pointer underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600'
-    if (!tooltip) {
-      return <span className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>{label}</span>
-    }
-    return (
-      <Tooltip
-        className={'gap-0 h-auto justify-start md:justify-start'}
-        openDelayMs={150}
-        side={'top'}
-        tooltip={
-          <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
-            {tooltip}
-          </div>
-        }
-      >
-        <span className={labelClasses}>{label}</span>
-      </Tooltip>
-    )
-  }
-
   return (
-    <section className={'flex flex-col gap-2'}>
+    <section className={'flex flex-col gap-3 sm:gap-4'}>
       <Breadcrumbs
         className={'mt-2'}
         items={[
@@ -146,17 +124,38 @@ function PortfolioHeaderSection({
         ]}
       />
       <div>
-        <h1 className={'text-4xl font-black text-text-primary'}>{'Account Overview'}</h1>
+        <h1 className={'text-2xl font-black text-text-primary sm:text-3xl md:text-4xl'}>{'Account Overview'}</h1>
+        <p className={'mt-1.5 text-sm text-text-secondary sm:mt-2 sm:text-base'}>
+          {'Monitor your balances, returns, and discover new vaults.'}
+        </p>
       </div>
       {isActive ? (
         <div>
-          <div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
-            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
-              <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>{'Total balance'}</p>
-              <p className={'mt-1 text-3xl font-black text-text-primary'}>
+          <div className={'grid grid-cols-2 gap-2 min-[375px]:gap-3 sm:gap-4 md:grid-cols-4'}>
+            <div
+              className={
+                'col-span-2 rounded-xl min-[375px]:rounded-2xl border border-border bg-surface p-3 min-[375px]:p-4 sm:col-span-1 sm:rounded-3xl sm:p-6'
+              }
+            >
+              <p
+                className={
+                  'text-[10px] min-[375px]:text-xs font-semibold uppercase tracking-wide text-text-secondary sm:text-sm'
+                }
+              >
+                {'Total balance'}
+              </p>
+              <p
+                className={
+                  'mt-1.5 min-[375px]:mt-2 text-xl min-[375px]:text-2xl font-black text-text-primary sm:mt-3 sm:text-3xl'
+                }
+              >
                 {isSearchingBalances ? (
-                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
-                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
+                  <span
+                    className={
+                      'inline-flex h-7 min-[375px]:h-8 w-24 min-[375px]:w-32 items-center justify-center rounded-xl bg-surface-secondary animate-pulse sm:h-9 sm:w-40'
+                    }
+                  >
+                    <IconSpinner className={'size-4 text-text-secondary'} />
                   </span>
                 ) : (
                   currencyFormatter.format(totalPortfolioValue)
@@ -164,64 +163,115 @@ function PortfolioHeaderSection({
               </p>
             </div>
 
-            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
-              <div>
-                {renderTitleWithTooltip(
-                  'Blended Current APY',
-                  'Weighted by your total deposits across all Yearn vaults.'
-                )}
-              </div>
-              <div className={'mt-1 text-3xl font-black text-text-primary'}>
+            <div
+              className={
+                'rounded-xl min-[375px]:rounded-2xl border border-border bg-surface p-3 min-[375px]:p-4 sm:rounded-3xl sm:p-6'
+              }
+            >
+              <p
+                className={
+                  'text-[10px] min-[375px]:text-xs font-semibold uppercase tracking-wide text-text-secondary sm:text-sm'
+                }
+              >
+                <span className={'hidden min-[375px]:inline'}>{'Current APY'}</span>
+                <span className={'min-[375px]:hidden'}>{'APY'}</span>
+              </p>
+              <p
+                className={
+                  'mt-1.5 min-[375px]:mt-2 text-xl min-[375px]:text-2xl font-black text-text-primary sm:mt-3 sm:text-3xl'
+                }
+              >
                 {isHoldingsLoading ? (
-                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
-                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
+                  <span
+                    className={
+                      'inline-flex h-7 min-[375px]:h-8 w-12 min-[375px]:w-16 items-center justify-center animate-spin sm:h-9 sm:w-20'
+                    }
+                  >
+                    <IconSpinner className={'size-4 text-text-secondary sm:size-5'} />
                   </span>
                 ) : blendedMetrics.blendedCurrentAPY !== null ? (
                   renderApyValue(`${percentFormatter.format(blendedMetrics.blendedCurrentAPY)}%`, hasKatanaHoldings)
                 ) : (
                   '—'
                 )}
-              </div>
+              </p>
+              <p className={'mt-1.5 hidden text-sm text-text-secondary sm:mt-2 sm:block'}>
+                {'Weighted by your total deposits across all Yearn vaults.'}
+              </p>
             </div>
 
-            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
-              <div>
-                {renderTitleWithTooltip(
-                  'Blended 30-day APY',
-                  'Blended 30-day performance using your current positions.'
-                )}
-              </div>
-              <div className={'mt-1 text-3xl font-black text-text-primary'}>
+            <div
+              className={
+                'rounded-xl min-[375px]:rounded-2xl border border-border bg-surface p-3 min-[375px]:p-4 sm:rounded-3xl sm:p-6'
+              }
+            >
+              <p
+                className={
+                  'text-[10px] min-[375px]:text-xs font-semibold uppercase tracking-wide text-text-secondary sm:text-sm'
+                }
+              >
+                <span className={'hidden min-[375px]:inline'}>{'30-day APY'}</span>
+                <span className={'min-[375px]:hidden'}>{'30d APY'}</span>
+              </p>
+              <p
+                className={
+                  'mt-1.5 min-[375px]:mt-2 text-xl min-[375px]:text-2xl font-black text-text-primary sm:mt-3 sm:text-3xl'
+                }
+              >
                 {isHoldingsLoading ? (
-                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
-                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
+                  <span
+                    className={
+                      'inline-flex h-7 min-[375px]:h-8 w-12 min-[375px]:w-16 items-center justify-center animate-spin sm:h-9 sm:w-20'
+                    }
+                  >
+                    <IconSpinner className={'size-4 text-text-secondary sm:size-5'} />
                   </span>
                 ) : blendedMetrics.blendedHistoricalAPY !== null ? (
                   renderApyValue(`${percentFormatter.format(blendedMetrics.blendedHistoricalAPY)}%`, hasKatanaHoldings)
                 ) : (
                   '—'
                 )}
-              </div>
+              </p>
+              <p className={'mt-1.5 hidden text-sm text-text-secondary sm:mt-2 sm:block'}>
+                {'Blended 30-day performance using your current positions.'}
+              </p>
             </div>
 
-            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
-              <div>
-                {renderTitleWithTooltip(
-                  'Estimated Annual Return',
-                  'Projects potential returns based on your blended current APY.'
-                )}
-              </div>
-              <div className={'mt-1 text-3xl font-black text-text-primary'}>
+            <div
+              className={
+                'rounded-xl min-[375px]:rounded-2xl border border-border bg-surface p-3 min-[375px]:p-4 sm:rounded-3xl sm:p-6'
+              }
+            >
+              <p
+                className={
+                  'text-[10px] min-[375px]:text-xs font-semibold uppercase tracking-wide text-text-secondary sm:text-sm'
+                }
+              >
+                <span className={'hidden min-[375px]:inline'}>{'Est. Annual'}</span>
+                <span className={'min-[375px]:hidden'}>{'Annual'}</span>
+              </p>
+              <p
+                className={
+                  'mt-1.5 min-[375px]:mt-2 text-xl min-[375px]:text-2xl font-black text-text-primary sm:mt-3 sm:text-3xl'
+                }
+              >
                 {isHoldingsLoading ? (
-                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
-                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
+                  <span
+                    className={
+                      'inline-flex h-7 min-[375px]:h-8 w-16 min-[375px]:w-24 items-center justify-center rounded-xl bg-surface-secondary animate-pulse sm:h-9 sm:w-40'
+                    }
+                  >
+                    <IconSpinner className={'size-4 text-text-secondary'} />
                   </span>
                 ) : blendedMetrics.estimatedAnnualReturn !== null ? (
                   currencyFormatter.format(blendedMetrics.estimatedAnnualReturn)
                 ) : (
                   '—'
                 )}
-              </div>
+              </p>
+              <p className={'mt-1.5 hidden text-sm text-text-secondary sm:mt-2 sm:block'}>
+                {'Projects potential returns based on your blended current APY.'}
+              </p>
             </div>
           </div>
         </div>
@@ -246,41 +296,28 @@ function PortfolioHoldingsSection({
     setSortBy(newSortBy as TPossibleSortBy)
     setSortDirection(newDirection)
   }
-  const holdingsTooltip = 'Track every Yearn position you currently hold.'
 
   return (
-    <section className={'flex flex-col gap-2'}>
-      <div className={'flex flex-wrap items-center justify-between gap-4'}>
+    <section className={'flex flex-col gap-3 sm:gap-4'}>
+      <div className={'flex flex-wrap items-center justify-between gap-3 sm:gap-4'}>
         <div>
-          <Tooltip
-            className={'h-auto gap-0'}
-            openDelayMs={150}
-            side={'top'}
-            tooltip={
-              <div
-                className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}
-              >
-                {holdingsTooltip}
-              </div>
-            }
-          >
-            <h2 className={'text-2xl font-semibold text-text-primary'}>{'Your Vaults'}</h2>
-          </Tooltip>
+          <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'Your vaults'}</h2>
+          <p className={'text-xs text-text-secondary sm:text-sm'}>{'Track every Yearn position you currently hold.'}</p>
         </div>
         {hasHoldings ? (
-          <Link to="/vaults" className={'yearn--button text-sm'} data-variant={'light'}>
+          <Link to="/vaults" className={'yearn--button min-h-[44px] px-4 text-sm'} data-variant={'light'}>
             {'Browse more vaults'}
           </Link>
         ) : null}
       </div>
-      <div className={'overflow-hidden rounded-3xl border border-border'}>
+      <div className={'overflow-hidden rounded-2xl border border-border sm:rounded-3xl'}>
         <div className={'flex flex-col'}>
           <VaultsListHead
             sortBy={sortBy}
             sortDirection={sortDirection}
             onSort={handleSort}
-            wrapperClassName={'rounded-t-3xl bg-surface-secondary'}
-            containerClassName={'rounded-t-3xl bg-surface-secondary'}
+            wrapperClassName={'rounded-t-2xl bg-surface-secondary sm:rounded-t-3xl'}
+            containerClassName={'rounded-t-2xl bg-surface-secondary sm:rounded-t-3xl'}
             items={[
               {
                 type: 'sort',
@@ -313,12 +350,16 @@ function PortfolioHoldingsSection({
             ]}
           />
           {isHoldingsLoading ? (
-            <div className={'flex flex-col items-center justify-center gap-3 px-6 py-16 text-sm text-text-secondary'}>
-              <IconSpinner className={'h-6 w-6 text-text-secondary'} />
+            <div
+              className={
+                'flex flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16'
+              }
+            >
+              <IconSpinner className={'size-5 text-text-secondary sm:size-6'} />
               <span>{'Searching for Yearn balances...'}</span>
             </div>
           ) : hasHoldings ? (
-            <div className={'flex flex-col gap-px'}>
+            <div className={'flex flex-col gap-px bg-border'}>
               {holdingsRows.map((row) => (
                 <VaultsListRow
                   key={row.key}
@@ -347,22 +388,14 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
   }
 
   return (
-    <section className={'flex flex-col gap-2'}>
+    <section className={'flex flex-col gap-3 sm:gap-4'}>
       <div>
-        <Tooltip
-          className={'h-auto gap-0'}
-          openDelayMs={150}
-          side={'top'}
-          tooltip={
-            <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
-              {'Vaults picked for you based on performance and popularity.'}
-            </div>
-          }
-        >
-          <h2 className={'text-2xl font-semibold text-text-primary'}>{'You Might Like:'}</h2>
-        </Tooltip>
+        <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'You might like'}</h2>
+        <p className={'text-xs text-text-secondary sm:text-sm'}>
+          {'Vaults picked for you based on performance and popularity.'}
+        </p>
       </div>
-      <div className={'grid gap-4 md:grid-cols-2 xl:grid-cols-4'}>
+      <div className={'grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 xl:grid-cols-4'}>
         {suggestedRows.map((row) => (
           <SuggestedVaultCard key={row.key} vault={row.vault} />
         ))}

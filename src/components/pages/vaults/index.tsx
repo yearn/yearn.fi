@@ -84,10 +84,12 @@ export default function Index(): ReactElement {
     onResetFilters,
     resolveApyDisplayVariant
   } = list
+  const { sortBy, sortDirection, onSort } = listHeadProps
   const {
     isLoading,
     pinnedSections,
     pinnedVaults,
+    hasHoldings,
     mainVaults,
     vaultFlags,
     listCategoriesSanitized,
@@ -364,6 +366,12 @@ export default function Index(): ReactElement {
                   trailingControls: compareToggleControl
                 }}
                 chains={chains}
+                mobileSort={{
+                  sortBy,
+                  sortDirection,
+                  onSort,
+                  hasHoldings
+                }}
                 mobileExtraContent={
                   <VaultVersionToggle
                     stretch={true}

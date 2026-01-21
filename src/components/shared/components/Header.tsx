@@ -2,6 +2,7 @@ import { setThemePreference, useThemePreference } from '@hooks/useThemePreferenc
 import { useNotifications } from '@shared/contexts/useNotifications'
 import useWallet from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { IconBurgerPlain } from '@shared/icons/IconBurgerPlain'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconMoon } from '@shared/icons/IconMoon'
 import { IconSpinner } from '@shared/icons/IconSpinner'
@@ -17,6 +18,7 @@ import { useLocation } from 'react-router'
 import Link from '/src/components/Link'
 import { AccountDropdown } from './AccountDropdown'
 import { LauncherDropdown } from './LauncherDropdown'
+import { MobileNavMenu } from './MobileNavMenu'
 
 type TWalletSelectorProps = {
   onAccountClick: () => void
@@ -95,6 +97,7 @@ function AppHeader(): ReactElement {
   const pathname = location.pathname
   const [isLauncherOpen, setIsLauncherOpen] = useState(false)
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const launcherTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const { notificationStatus } = useNotifications()
   const themePreference = useThemePreference()
@@ -165,28 +168,54 @@ function AppHeader(): ReactElement {
               </Link>
             </div>
           </div>
-          <div className={'flex w-1/2 items-center justify-end'}>
+          <div className={'flex items-center justify-end gap-2'}>
             {!isHomePage && (
-              <div className={'flex items-center justify-end'}>
-                <button
-                  className={'rounded-full p-4 text-text-secondary transition-colors hover:text-text-primary'}
-                  onClick={() => setThemePreference(isDarkTheme ? 'light' : 'soft-dark')}
-                  title={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
-                >
-                  {isDarkTheme ? <IconSun className={'size-4'} /> : <IconMoon className={'size-4'} />}
-                </button>
-                <div className={'relative'}>
-                  <WalletSelector
-                    onAccountClick={() => setIsAccountSidebarOpen(!isAccountSidebarOpen)}
-                    notificationStatus={notificationStatus}
-                  />
-                  <AccountDropdown isOpen={isAccountSidebarOpen} onClose={() => setIsAccountSidebarOpen(false)} />
+              <>
+                <div className={'hidden items-center justify-end md:flex'}>
+                  <button
+                    className={
+                      'min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary'
+                    }
+                    onClick={() => setThemePreference(isDarkTheme ? 'light' : 'soft-dark')}
+                    title={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
+                  >
+                    {isDarkTheme ? <IconSun className={'size-5'} /> : <IconMoon className={'size-5'} />}
+                  </button>
+                  <div className={'relative'}>
+                    <WalletSelector
+                      onAccountClick={() => setIsAccountSidebarOpen(!isAccountSidebarOpen)}
+                      notificationStatus={notificationStatus}
+                    />
+                    <AccountDropdown isOpen={isAccountSidebarOpen} onClose={() => setIsAccountSidebarOpen(false)} />
+                  </div>
                 </div>
-              </div>
+                <button
+                  className={cl(
+                    'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 transition-colors md:hidden',
+                    isHomePage ? 'text-white hover:bg-white/10' : 'text-text-primary hover:bg-surface-secondary'
+                  )}
+                  onClick={() => setIsMobileMenuOpen(true)}
+                  aria-label={'Open navigation menu'}
+                >
+                  <IconBurgerPlain className={'size-6'} />
+                </button>
+              </>
             )}
           </div>
         </header>
       </div>
+      <MobileNavMenu
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        pathname={pathname}
+        isDarkTheme={isDarkTheme}
+        onThemeToggle={() => setThemePreference(isDarkTheme ? 'light' : 'soft-dark')}
+        onAccountClick={() => {
+          setIsMobileMenuOpen(false)
+          setIsAccountSidebarOpen(true)
+        }}
+        notificationStatus={notificationStatus}
+      />
     </div>
   )
 }

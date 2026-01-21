@@ -218,7 +218,7 @@ export function VaultsListRow({
         href={href}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
-          'p-6 pt-2 pb-4 md:pr-20',
+          'p-4 sm:p-6 pt-2 pb-3 sm:pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
         onClickCapture={(event): void => {
@@ -316,7 +316,7 @@ export function VaultsListRow({
             <div className={'min-w-0 flex-1'}>
               <strong
                 title={currentVault.name}
-                className={'block truncate font-black text-text-primary md:-mb-0.5 text-lg'}
+                className={'block truncate-safe font-black text-text-primary md:-mb-0.5 text-lg leading-tight'}
               >
                 {currentVault.name}
               </strong>
@@ -416,26 +416,29 @@ export function VaultsListRow({
               </div>
             </div>
             {/* Mobile Holdings + APY + TVL inline */}
-            <div className={'hidden max-md:flex items-center shrink-0 gap-4 text-right'}>
+            <div className={'hidden max-md:flex items-center shrink-0 gap-2 min-[375px]:gap-3 sm:gap-4 text-right'}>
               {/* Holdings - shown on wider mobile screens */}
               {showHoldingsColumn ? (
-                <div className={'hidden min-[420px]:block'}>
-                  <p className={'text-xs text-text-primary/60'}>{'Holdings'}</p>
-                  <VaultHoldingsAmount currentVault={currentVault} valueClassName={'text-sm font-semibold'} />
+                <div className={'hidden min-[420px]:block min-w-[52px] min-[375px]:min-w-[60px]'}>
+                  <p className={'text-mobile-label text-text-primary/60'}>{'Holdings'}</p>
+                  <VaultHoldingsAmount
+                    currentVault={currentVault}
+                    valueClassName={'text-sm min-[375px]:text-base font-semibold'}
+                  />
                 </div>
               ) : null}
-              <div>
-                <p className={'text-xs text-text-primary/60'}>{'Est. APY'}</p>
+              <div className={'min-w-[44px] min-[375px]:min-w-[56px]'}>
+                <p className={'text-mobile-label text-text-primary/60'}>{'APY'}</p>
                 <VaultForwardAPY
                   currentVault={currentVault}
-                  valueClassName={'text-sm font-semibold'}
+                  valueClassName={'text-sm min-[375px]:text-base font-semibold'}
                   showSubline={false}
                   onInteractiveHoverChange={handleInteractiveHoverChange}
                 />
               </div>
-              <div className={'relative'}>
-                <p className={'text-xs text-text-primary/60'}>{'TVL'}</p>
-                <p className={'text-sm font-semibold text-text-primary'}>
+              <div className={'relative min-w-[40px] min-[375px]:min-w-[48px]'}>
+                <p className={'text-mobile-label text-text-primary/60'}>{'TVL'}</p>
+                <p className={'text-sm min-[375px]:text-base font-semibold text-text-primary font-number'}>
                   <RenderAmount
                     value={currentVault.tvl?.tvl}
                     symbol={'USD'}

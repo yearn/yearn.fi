@@ -119,6 +119,21 @@
   --text-8xl: 5.5rem; /* 88px */
   --text-8xl--line-height: 6.5rem; /* 104px */
 
+  /* Mobile Typography Scale - prevents iOS zoom and ensures readability */
+  --text-mobile-xs: 0.875rem; /* 14px - minimum for mobile labels */
+  --text-mobile-xs--line-height: 1.25rem; /* 20px */
+  --text-mobile-sm: 0.9375rem; /* 15px - small text on mobile */
+  --text-mobile-sm--line-height: 1.375rem; /* 22px */
+  --text-mobile-base: 1rem; /* 16px - base text, prevents iOS zoom */
+  --text-mobile-base--line-height: 1.5rem; /* 24px */
+
+  /* Mobile Spacing Scale - consistent rhythm */
+  --spacing-mobile-xs: 0.25rem; /* 4px */
+  --spacing-mobile-sm: 0.5rem; /* 8px */
+  --spacing-mobile-md: 1rem; /* 16px */
+  --spacing-mobile-lg: 1.5rem; /* 24px */
+  --spacing-mobile-xl: 2rem; /* 32px */
+
   /* Layout Heights */
   --header-height: 4.25rem; /* 68px */
 }
@@ -146,6 +161,11 @@
 html {
   overflow: auto !important;
   padding-right: 0 !important;
+  /* Base font size 16px prevents iOS zoom on form inputs */
+  font-size: 16px;
+  /* Prevent font scaling in landscape while allowing user zoom */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 html {
@@ -157,11 +177,18 @@ body {
   color: var(--color-text-primary);
   font-family: aeonik, 'aeonik Fallback', 'Source Code Pro',
     'Source Code Pro Fallback', sans-serif;
+  /* Mobile-optimized line height for readability */
+  line-height: 1.5;
+  /* Prevent horizontal overflow on all devices */
+  overflow-x: hidden;
 }
 
 #root {
   min-height: 100vh;
   background-color: var(--color-app);
+  /* Prevent horizontal overflow on all devices */
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 @layer utilities {
@@ -195,6 +222,87 @@ body {
   }
   .scrollbar-themed::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-text-tertiary);
+  }
+
+  /* Touch target utilities for mobile accessibility */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .touch-target-inline {
+    @apply relative;
+  }
+
+  .touch-target-inline::before {
+    content: '';
+    @apply absolute -inset-2;
+  }
+
+  /* Mobile Typography Utilities */
+  /* Use text-mobile-label for labels that need to remain readable on mobile */
+  .text-mobile-label {
+    font-size: var(--text-mobile-xs);
+    line-height: var(--text-mobile-xs--line-height);
+  }
+
+  /* Use text-mobile-body for body text that needs optimal mobile readability */
+  .text-mobile-body {
+    font-size: var(--text-mobile-base);
+    line-height: var(--text-mobile-base--line-height);
+  }
+
+  /* Input text size - prevents iOS zoom */
+  .text-input {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  /* Mobile-optimized line heights */
+  .leading-mobile {
+    line-height: 1.5;
+  }
+
+  .leading-mobile-relaxed {
+    line-height: 1.625;
+  }
+
+  /* Spacing utilities for consistent mobile layout */
+  .gap-mobile {
+    gap: var(--spacing-mobile-md);
+  }
+
+  .p-mobile {
+    padding: var(--spacing-mobile-md);
+  }
+
+  .px-mobile {
+    padding-left: var(--spacing-mobile-md);
+    padding-right: var(--spacing-mobile-md);
+  }
+
+  .py-mobile {
+    padding-top: var(--spacing-mobile-md);
+    padding-bottom: var(--spacing-mobile-md);
+  }
+
+  /* Safe truncation - allows wrapping for critical info on mobile */
+  .truncate-safe {
+    @apply truncate;
+  }
+
+  @media (max-width: 767px) {
+    .truncate-safe {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+      word-break: break-word;
+    }
+  }
+
+  /* Prevent text from becoming too small on mobile */
+  .text-min-readable {
+    font-size: max(0.875rem, 14px);
+    line-height: 1.4;
   }
 }
 
@@ -360,6 +468,11 @@ body {
 
 .yearn--next-switch {
   @apply relative flex h-[18px] w-8 border-neutral-500 rounded-full cursor-pointer transition-colors ease-in-out duration-200 p-0 items-center border-2;
+  /* Expand touch target with pseudo-element for mobile accessibility */
+  &::before {
+    content: '';
+    @apply absolute -inset-3;
+  }
   &[aria-checked='true'] {
     @apply bg-neutral-400 border-neutral-900;
     & > div {
@@ -387,8 +500,8 @@ body {
  * Provides consistent button styling across all variants with proper state management
  *************************************************************************************************/
 .yearn--button {
-  /* Base button styles */
-  @apply cursor-pointer px-5 flex justify-center items-center h-10 text-base transition-all relative;
+  /* Base button styles - 44px min touch target for mobile accessibility */
+  @apply cursor-pointer px-5 flex justify-center items-center min-h-[44px] text-base transition-all relative;
   @apply font-normal border border-transparent;
   @apply rounded-lg;
 
@@ -464,8 +577,8 @@ body {
 }
 
 .yearn--button--nextgen {
-  /* Base button styles */
-  @apply cursor-pointer px-5 flex justify-center items-center h-10 text-base transition-all relative;
+  /* Base button styles - 44px min touch target for mobile accessibility */
+  @apply cursor-pointer px-5 flex justify-center items-center min-h-[44px] text-base transition-all relative;
   @apply font-normal border border-transparent;
   @apply rounded-lg;
 
@@ -558,7 +671,7 @@ body {
   }
 }
 .yearn--button-smaller {
-  @apply h-8 text-xs py-2 px-2;
+  @apply min-h-[44px] text-xs py-2 px-3;
 }
 .yearn--button-smaller.reverted {
   @apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
@@ -584,7 +697,7 @@ body {
 }
 
 .yearn--dropdown-menu-item {
-  @apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
+  @apply w-full flex flex-row items-center cursor-pointer min-h-[44px] py-2 pr-4 pl-3 transition-colors;
 
   &[data-active='true'] {
     @apply bg-neutral-0/40;
@@ -599,7 +712,7 @@ body {
   @apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60 text-neutral-900 bg-neutral-0;
 }
 .yearn--listbox-menu-item {
-  @apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
+  @apply w-full flex flex-row items-center cursor-pointer min-h-[44px] py-2 pr-4 pl-3 transition-colors;
   &[data-active='true'] {
     @apply bg-neutral-0/40;
   }
@@ -609,7 +722,7 @@ body {
  * Tab Component Styles
  *************************************************************************************************/
 .tab {
-  @apply font-normal text-neutral-600 transition-colors hover:text-neutral-900 cursor-pointer border-b-2 border-transparent pb-4 z-20;
+  @apply font-normal text-neutral-600 transition-colors hover:text-neutral-900 cursor-pointer border-b-2 border-transparent pb-4 z-20 min-h-[44px] flex items-center;
   &[aria-selected='true'] {
     @apply font-bold text-neutral-900 border-neutral-900;
   }

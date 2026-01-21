@@ -16,18 +16,22 @@ const FAQItem: FC<TFAQItem> = ({ title, children, isOpen, onToggle }) => {
       <button
         onClick={onToggle}
         className={
-          'flex w-full items-center justify-between rounded-lg bg-black/70 px-6 py-5 text-neutral-900 transition-colors hover:bg-black/80'
+          'flex w-full min-h-[56px] items-center justify-between rounded-lg bg-black/70 px-4 py-4 text-neutral-900 transition-colors hover:bg-black/80 sm:min-h-[60px] sm:px-6 sm:py-5'
         }
       >
-        <span className={'text-lg'}>{title}</span>
+        <span className={'text-left text-base sm:text-lg'}>{title}</span>
         <span
-          className={'text-2xl transition-transform'}
+          className={'ml-3 shrink-0 text-xl transition-transform sm:text-2xl'}
           style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
         >
           {'+'}
         </span>
       </button>
-      {isOpen && <div className={'mt-px rounded-b-lg bg-black/70 px-6 py-4 text-base text-gray-300'}>{children}</div>}
+      {isOpen && (
+        <div className={'mt-px rounded-b-lg bg-black/70 px-4 py-3 text-sm text-gray-300 sm:px-6 sm:py-4 sm:text-base'}>
+          {children}
+        </div>
+      )}
     </div>
   )
 }
@@ -85,17 +89,17 @@ export const FAQs: FC = () => {
   }
 
   return (
-    <section className={'flex w-full justify-center pb-8 pt-16 lg:pt-32'}>
+    <section className={'flex w-full justify-center pb-8 pt-12 sm:pt-16 lg:pt-32'}>
       <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between md:flex-row'}>
         <div className={'w-full px-4'}>
-          <div className={'mb-10 flex flex-col justify-between gap-y-6 md:flex-row'}>
+          <div className={'mb-6 flex flex-col justify-between gap-y-6 sm:mb-8 md:mb-10 md:flex-row'}>
             <SectionHeader
               tagline={'Education'}
               title={'FAQs'}
               description={'Frequently asked questions about Yearn'}
             />
           </div>
-          <div className={'flex flex-col gap-8 md:flex-row'}>
+          <div className={'flex flex-col gap-6 sm:gap-8 md:flex-row'}>
             <div className={'hidden h-[427px] w-[427px] shrink-0 md:block'}>
               <Image
                 src={'/landing/pill4.png'}
