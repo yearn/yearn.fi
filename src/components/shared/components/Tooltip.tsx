@@ -14,7 +14,17 @@ export const Tooltip: FC<{
   toggleOnClick?: boolean
   align?: 'center' | 'start'
   side?: 'top' | 'bottom'
-}> = ({ children, tooltip, className, openDelayMs = 0, toggleOnClick = false, align = 'center', side = 'bottom' }) => {
+  zIndex?: number
+}> = ({
+  children,
+  tooltip,
+  className,
+  openDelayMs = 0,
+  toggleOnClick = false,
+  align = 'center',
+  side = 'bottom',
+  zIndex = 9999
+}) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const triggerRef = useRef<HTMLDivElement>(null)
@@ -196,7 +206,7 @@ export const Tooltip: FC<{
               transform:
                 `${align === 'start' ? 'translateX(0)' : 'translateX(-50%)'}` +
                 `${side === 'top' ? ' translateY(-100%)' : ''}`,
-              zIndex: 9999,
+              zIndex,
               pointerEvents: 'auto'
             }}
           >

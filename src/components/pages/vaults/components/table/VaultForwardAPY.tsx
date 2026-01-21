@@ -176,6 +176,7 @@ export function VaultForwardAPY({
         openDelayMs={150}
         tooltip={infoTooltipContent}
         align={'center'}
+        zIndex={90}
       >
         {value}
       </Tooltip>
