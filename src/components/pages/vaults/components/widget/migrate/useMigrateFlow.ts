@@ -1,10 +1,12 @@
 import { useTokenAllowance } from '@pages/vaults/hooks/useTokenAllowance'
 import type { MigrateRouteType, UseMigrateFlowReturn } from '@pages/vaults/types'
 import { ERC_4626_ROUTER_ABI } from '@shared/contracts/abi/erc4626Router.abi'
+import { getMigratorConfig, type MigratorConfig } from '@shared/utils/migratorRegistry'
 import { useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { erc20Abi } from 'viem'
 import { type UseSimulateContractReturnType, useReadContract, useSimulateContract } from 'wagmi'
+import { YEARN_4626_ROUTER } from '@/components/shared/utils'
 import { usePermitSupport } from './usePermitSupport'
 
 // EIP-2612 permit nonce ABI
@@ -52,6 +54,26 @@ export const useMigrateFlow = ({
 }: UseMigrateFlowProps): UseMigrateFlowReturn => {
   const [permitSignature, setPermitSignature] = useState<`0x${string}` | undefined>()
 
+  // Get migrator config from registry or fallback to ERC_4626_ROUTER
+  const migratorConfig = useMemo((): MigratorConfig => {
+    const config = getMigratorConfig(router)
+
+    // Fallback to ERC_4626_ROUTER for unknown contracts (v3 migration)
+    if (!config) {
+      const isSourceV3 = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3')
+      return {
+        abi: ERC_4626_ROUTER_ABI,
+        functionName: isSourceV3 ? 'migrate' : 'migrateFromV2',
+        routerAddress: YEARN_4626_ROUTER
+      }
+    }
+
+    return config
+  }, [router, vaultVersion])
+
+  // Use fallback router address if config specifies one, otherwise use the provided router
+  const effectiveRouter = migratorConfig.routerAddress ?? router
+
   // Check if source vault supports EIP-2612 permit
   // TODO: Permit flow is disabled for now due to signature verification issues
   // The vault's permit domain/version might differ from standard EIP-2612
@@ -85,7 +107,7 @@ export const useMigrateFlow = ({
   const { allowance = 0n } = useTokenAllowance({
     account,
     token: vaultFrom,
-    spender: router,
+    spender: effectiveRouter,
     watch: true,
     chainId,
     enabled
@@ -106,7 +128,7 @@ export const useMigrateFlow = ({
     abi: erc20Abi,
     functionName: 'approve',
     address: vaultFrom,
-    args: balance > 0n ? [router, balance] : undefined,
+    args: balance > 0n ? [effectiveRouter, balance] : undefined,
     chainId,
     query: { enabled: prepareApproveEnabled }
   })
@@ -141,23 +163,19 @@ export const useMigrateFlow = ({
       primaryType: 'Permit' as const,
       message: {
         owner: account,
-        spender: router,
+        spender: effectiveRouter,
         value: balance,
         nonce,
         deadline
       }
     }
-  }, [account, nonce, tokenName, chainId, vaultFrom, router, balance, deadline])
-
-  const isSourceV3 = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3')
-  const migrateFunctionName = isSourceV3 ? 'migrate' : 'migrateFromV2'
-  const migrateArgs = balance > 0n ? ([vaultFrom, vaultTo, balance, 0n] as const) : undefined
+  }, [account, nonce, tokenName, chainId, vaultFrom, effectiveRouter, balance, deadline])
 
   const prepareMigrate: UseSimulateContractReturnType = useSimulateContract({
-    abi: ERC_4626_ROUTER_ABI,
-    functionName: migrateFunctionName,
-    address: router,
-    args: migrateArgs,
+    abi: migratorConfig.abi,
+    functionName: migratorConfig.functionName,
+    address: effectiveRouter,
+    args: balance > 0n ? [vaultFrom, vaultTo, balance] : undefined,
     account,
     chainId,
     query: { enabled: prepareMigrateEnabled }
