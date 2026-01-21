@@ -3,7 +3,7 @@ import { Button } from '@shared/components/Button'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { formatTAmount } from '@shared/utils'
+import { formatTAmount, isZeroAddress } from '@shared/utils'
 import { type FC, useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { formatUnits } from 'viem'
@@ -18,7 +18,9 @@ interface Props {
   stakingAddress?: `0x${string}`
   chainId: number
   vaultSymbol: string
+  vaultVersion?: string
   migrationTarget: `0x${string}`
+  migrationContract: `0x${string}`
   migrationTargetSymbol?: string
   handleMigrateSuccess?: () => void
 }
@@ -29,7 +31,9 @@ export const WidgetMigrate: FC<Props> = ({
   stakingAddress,
   chainId,
   vaultSymbol,
+  vaultVersion,
   migrationTarget,
+  migrationContract,
   migrationTargetSymbol,
   handleMigrateSuccess: onMigrateSuccess
 }) => {
@@ -64,10 +68,12 @@ export const WidgetMigrate: FC<Props> = ({
   const { actions, periphery } = useMigrateFlow({
     vaultFrom: vaultAddress,
     vaultTo: migrationTarget,
+    router: migrationContract,
+    vaultVersion,
     balance: migrateBalance,
     account,
     chainId,
-    enabled: chainId === 1 && migrateBalance > 0n
+    enabled: migrateBalance > 0n && !isZeroAddress(migrationContract)
   })
 
   // Error handling

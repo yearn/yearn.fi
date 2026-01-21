@@ -65,7 +65,9 @@ export const Widget: FC<Props> = ({ currentVault, vaultAddress, gaugeAddress, ac
             stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
             chainId={chainId}
             vaultSymbol={currentVault?.symbol || ''}
+            vaultVersion={currentVault?.version}
             migrationTarget={toAddress(currentVault?.migration?.address)}
+            migrationContract={toAddress(currentVault?.migration?.contract)}
             handleMigrateSuccess={handleSuccess}
           />
         )

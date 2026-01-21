@@ -32,7 +32,7 @@ export const usePermitSupport = ({
     abi: DOMAIN_SEPARATOR_ABI,
     functionName: 'DOMAIN_SEPARATOR',
     chainId,
-    query: { enabled: enabled && !!vaultAddress && chainId === 1 }
+    query: { enabled: enabled && !!vaultAddress }
   })
 
   return {

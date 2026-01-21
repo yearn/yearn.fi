@@ -1,7 +1,6 @@
 import { useTokenAllowance } from '@pages/vaults/hooks/useTokenAllowance'
 import type { MigrateRouteType, UseMigrateFlowReturn } from '@pages/vaults/types'
-import { VAULT_MIGRATOR_ABI } from '@shared/contracts/abi/vaultMigrator.abi'
-import { YEARN_4626_ROUTER } from '@shared/utils/constants'
+import { ERC_4626_ROUTER_ABI } from '@shared/contracts/abi/erc4626Router.abi'
 import { useMemo, useState } from 'react'
 import type { Address } from 'viem'
 import { erc20Abi } from 'viem'
@@ -33,6 +32,8 @@ const NAME_ABI = [
 interface UseMigrateFlowProps {
   vaultFrom: Address
   vaultTo: Address
+  router: Address
+  vaultVersion?: string
   balance: bigint
   account?: Address
   chainId: number
@@ -42,6 +43,8 @@ interface UseMigrateFlowProps {
 export const useMigrateFlow = ({
   vaultFrom,
   vaultTo,
+  router,
+  vaultVersion,
   balance,
   account,
   chainId,
@@ -82,9 +85,10 @@ export const useMigrateFlow = ({
   const { allowance = 0n } = useTokenAllowance({
     account,
     token: vaultFrom,
-    spender: YEARN_4626_ROUTER,
+    spender: router,
     watch: true,
-    chainId
+    chainId,
+    enabled
   })
 
   const isAllowanceSufficient = allowance >= balance
@@ -102,7 +106,7 @@ export const useMigrateFlow = ({
     abi: erc20Abi,
     functionName: 'approve',
     address: vaultFrom,
-    args: balance > 0n ? [YEARN_4626_ROUTER, balance] : undefined,
+    args: balance > 0n ? [router, balance] : undefined,
     chainId,
     query: { enabled: prepareApproveEnabled }
   })
@@ -137,19 +141,23 @@ export const useMigrateFlow = ({
       primaryType: 'Permit' as const,
       message: {
         owner: account,
-        spender: YEARN_4626_ROUTER,
+        spender: router,
         value: balance,
         nonce,
         deadline
       }
     }
-  }, [account, nonce, tokenName, chainId, vaultFrom, balance, deadline])
+  }, [account, nonce, tokenName, chainId, vaultFrom, router, balance, deadline])
+
+  const isSourceV3 = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3')
+  const migrateFunctionName = isSourceV3 ? 'migrate' : 'migrateFromV2'
+  const migrateArgs = balance > 0n ? ([vaultFrom, vaultTo, balance, 0n] as const) : undefined
 
   const prepareMigrate: UseSimulateContractReturnType = useSimulateContract({
-    abi: VAULT_MIGRATOR_ABI,
-    functionName: permitSignature ? 'migrateSharesWithPermit' : 'migrateShares',
-    address: YEARN_4626_ROUTER,
-    args: permitSignature ? [vaultFrom, vaultTo, balance, deadline, permitSignature] : [vaultFrom, vaultTo, balance],
+    abi: ERC_4626_ROUTER_ABI,
+    functionName: migrateFunctionName,
+    address: router,
+    args: migrateArgs,
     account,
     chainId,
     query: { enabled: prepareMigrateEnabled }

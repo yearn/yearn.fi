@@ -189,11 +189,11 @@ function Index(): ReactElement | null {
 
   const widgetActions = useMemo(() => {
     const actions = [WidgetActionType.Deposit, WidgetActionType.Withdraw]
-    if (chainId === 1 && currentVault?.migration?.available) {
+    if (currentVault?.migration?.available) {
       actions.push(WidgetActionType.Migrate)
     }
     return actions
-  }, [chainId, currentVault?.migration?.available])
+  }, [currentVault?.migration?.available])
 
   const sections = useMemo(() => {
     if (!currentVault || !yDaemonBaseUri) {
