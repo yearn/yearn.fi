@@ -369,17 +369,6 @@ function Index(): ReactElement | null {
           {/* User balance grid */}
           <UserBalanceGrid currentVault={currentVault} />
 
-          {/* Widget */}
-          <div>
-            <Widget
-              vaultAddress={currentVault.address}
-              currentVault={currentVault}
-              gaugeAddress={currentVault.staking.address}
-              actions={widgetActions}
-              chainId={chainId}
-            />
-          </div>
-
           {/* Expandable details toggle button */}
           <button
             type="button"
@@ -464,9 +453,23 @@ function Index(): ReactElement | null {
           )}
         </div>
 
-        {/* Desktop Layout - Hidden on mobile */}
-        <section className={'hidden md:grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
-          <div className={'space-y-4 md:col-span-13 pb-4'}>
+        {/* Main Content Grid - Responsive layout */}
+        <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
+          <div
+            className={cl('order-1 md:order-2', 'md:col-span-7 md:col-start-14 md:sticky md:h-fit md:pt-6')}
+            style={{ top: nextSticky }}
+          >
+            <Widget
+              vaultAddress={currentVault.address}
+              currentVault={currentVault}
+              gaugeAddress={currentVault.staking.address}
+              actions={widgetActions}
+              chainId={chainId}
+            />
+          </div>
+
+          {/* Desktop sections - Hidden on mobile */}
+          <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 pb-4'}>
             {renderableSections.length > 0 ? (
               <div className={'w-full sticky z-30'} style={{ top: nextSticky }}>
                 <div className={'bg-app h-6'}></div>
@@ -551,17 +554,6 @@ function Index(): ReactElement | null {
               )
             })}
             {renderableSections.length > 0 ? <div aria-hidden className={'h-[60vh]'} /> : null}
-          </div>
-          <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-6')} style={{ top: nextSticky }}>
-            <div>
-              <Widget
-                vaultAddress={currentVault.address}
-                currentVault={currentVault}
-                gaugeAddress={currentVault.staking.address}
-                actions={widgetActions}
-                chainId={chainId}
-              />
-            </div>
           </div>
         </section>
       </div>
