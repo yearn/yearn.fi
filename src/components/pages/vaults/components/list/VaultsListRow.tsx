@@ -68,7 +68,9 @@ export function VaultsListRow({
   activeProductType,
   onToggleVaultType,
   showStrategies = false,
-  shouldCollapseChips = false
+  shouldCollapseChips = false,
+  disableExpandedRowHover = false,
+  disableExpandedRowNavigation = false
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
@@ -86,6 +88,8 @@ export function VaultsListRow({
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
   shouldCollapseChips?: boolean
+  disableExpandedRowHover?: boolean
+  disableExpandedRowNavigation?: boolean
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
@@ -128,6 +132,8 @@ export function VaultsListRow({
   const showCompareToggle = Boolean(onToggleCompare)
   const vaultKey = `${currentVault.chainID}_${toAddress(currentVault.address)}`
   const isCompareSelected = compareVaultKeys?.includes(vaultKey) ?? false
+  const shouldDisableExpandedHover = disableExpandedRowHover && isExpanded
+  const shouldDisableExpandedNavigation = disableExpandedRowNavigation && isExpanded
 
   const isHiddenVault = Boolean(flags?.isHidden)
   const baseKindType: 'multi' | 'single' | undefined =
@@ -212,11 +218,18 @@ export function VaultsListRow({
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
           'p-6 pt-2 pb-4 md:pr-20',
-          'cursor-pointer relative group'
+          'relative',
+          shouldDisableExpandedNavigation ? 'cursor-default' : 'cursor-pointer',
+          shouldDisableExpandedHover ? '' : 'group'
         )}
+        aria-disabled={shouldDisableExpandedNavigation || undefined}
         onClickCapture={(event): void => {
           const target = event.target as HTMLElement | null
           if (!target) return
+          if (target.closest('[data-vault-apy-click]')) {
+            event.preventDefault()
+            return
+          }
           if (target.closest('button, input, select, textarea, [role="button"], [role="checkbox"]')) {
             event.preventDefault()
             return
@@ -224,16 +237,22 @@ export function VaultsListRow({
           if (showCompareToggle && onToggleCompare) {
             event.preventDefault()
             onToggleCompare(currentVault)
+            return
+          }
+          if (shouldDisableExpandedNavigation) {
+            event.preventDefault()
           }
         }}
       >
-        <div
-          className={cl(
-            'absolute inset-0',
-            'opacity-0 transition-opacity duration-300 group-hover:opacity-20 group-focus-visible:opacity-20 pointer-events-none',
-            'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
-          )}
-        />
+        {!shouldDisableExpandedHover ? (
+          <div
+            className={cl(
+              'absolute inset-0',
+              'opacity-0 transition-opacity duration-300 group-hover:opacity-20 group-focus-visible:opacity-20 pointer-events-none',
+              'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
+            )}
+          />
+        ) : null}
 
         <div className={cl(leftColumnSpan, 'z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
           <div className={'flex flex-row w-full gap-4 overflow-visible'}>

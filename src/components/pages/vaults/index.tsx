@@ -11,7 +11,7 @@ import { getVaultTypeLabel } from '@pages/vaults/utils/vaultTypeCopy'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
-import { cl } from '@shared/utils'
+import { cl, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -22,6 +22,14 @@ type TVaultsListSectionProps = {
   isUpdatingList: boolean
   listHead: ReactElement
   children: ReactNode
+}
+
+type TVaultsPageProps = {
+  vaultsBasePath?: string
+  listRowOverrides?: {
+    disableExpandedRowHover?: boolean
+    disableExpandedRowNavigation?: boolean
+  }
 }
 
 function VaultsListSection({
@@ -68,8 +76,8 @@ function VaultsListSection({
   )
 }
 
-export default function Index(): ReactElement {
-  const { refs, header, filtersBar, list } = useVaultsPageModel()
+export function VaultsPage({ vaultsBasePath = '/vaults', listRowOverrides }: TVaultsPageProps): ReactElement {
+  const { refs, header, filtersBar, list } = useVaultsPageModel({ defaultPathname: vaultsBasePath })
   const { varsRef, filtersRef } = refs
   const { vaultType } = header
   const { search, filters, chains, shouldStackFilters, activeVaultType, onChangeVaultType } = filtersBar
@@ -219,6 +227,7 @@ export default function Index(): ReactElement {
             key={section.key}
             vaults={section.vaults}
             vaultFlags={vaultFlags}
+            vaultsBasePath={vaultsBasePath}
             resolveApyDisplayVariant={resolveApyDisplayVariant}
             compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
             onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
@@ -231,6 +240,8 @@ export default function Index(): ReactElement {
             onToggleVaultType={onToggleVaultType}
             shouldCollapseChips={shouldCollapseChips}
             showStrategies={displayedShowStrategies}
+            disableExpandedRowHover={listRowOverrides?.disableExpandedRowHover}
+            disableExpandedRowNavigation={listRowOverrides?.disableExpandedRowNavigation}
           />
         ))}
         {mainVaults.length > 0 ? (
@@ -243,6 +254,7 @@ export default function Index(): ReactElement {
                   key={key}
                   currentVault={vault}
                   flags={vaultFlags[key]}
+                  hrefOverride={`${vaultsBasePath}/${vault.chainID}/${toAddress(vault.address)}`}
                   apyDisplayVariant={rowApyDisplayVariant}
                   compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
                   onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
@@ -255,6 +267,8 @@ export default function Index(): ReactElement {
                   onToggleVaultType={onToggleVaultType}
                   shouldCollapseChips={shouldCollapseChips}
                   showStrategies={displayedShowStrategies}
+                  disableExpandedRowHover={listRowOverrides?.disableExpandedRowHover}
+                  disableExpandedRowNavigation={listRowOverrides?.disableExpandedRowNavigation}
                 />
               )
             })}
@@ -287,7 +301,10 @@ export default function Index(): ReactElement {
     search.value,
     shouldCollapseChips,
     totalMatchingVaults,
-    vaultFlags
+    vaultFlags,
+    vaultsBasePath,
+    listRowOverrides?.disableExpandedRowHover,
+    listRowOverrides?.disableExpandedRowNavigation
   ])
 
   const compareCount = compareVaultKeys.length
@@ -347,7 +364,7 @@ export default function Index(): ReactElement {
                 className={'mb-3 mt-2'}
                 items={[
                   { label: 'Home', href: '/' },
-                  { label: 'Vaults', href: '/vaults' },
+                  { label: 'Vaults', href: vaultsBasePath },
                   { label: getVaultTypeLabel(vaultType), isCurrent: true }
                 ]}
               />
@@ -397,3 +414,5 @@ export default function Index(): ReactElement {
     </>
   )
 }
+
+export default VaultsPage

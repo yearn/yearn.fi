@@ -6,6 +6,7 @@ import { Navigate, Route, Routes as RouterRoutes } from 'react-router'
 const HomePage = lazy(() => import('@pages/landing'))
 const PortfolioPage = lazy(() => import('@pages/portfolio/index'))
 const VaultsPage = lazy(() => import('@pages/vaults/index'))
+const VaultsTestPage = lazy(() => import('@pages/vaults-test-1/index'))
 const VaultsDetailPage = lazy(() => import('@pages/vaults/[chainID]/[address]'))
 
 // Loading component
@@ -37,6 +38,11 @@ export function Routes(): ReactElement {
         {/* Unified Vaults routes */}
         <Route path="/vaults">
           <Route index element={<VaultsPage />} />
+          <Route path=":chainID/:address" element={<VaultsDetailPage />} />
+        </Route>
+
+        <Route path="/vaults-test-1">
+          <Route index element={<VaultsTestPage />} />
           <Route path=":chainID/:address" element={<VaultsDetailPage />} />
         </Route>
 

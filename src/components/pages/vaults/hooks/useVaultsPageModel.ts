@@ -127,7 +127,11 @@ export type TVaultsPageModel = {
   list: TVaultsListModel
 }
 
-export function useVaultsPageModel(): TVaultsPageModel {
+type TVaultsPageModelConfig = {
+  defaultPathname?: string
+}
+
+export function useVaultsPageModel({ defaultPathname = '/vaults' }: TVaultsPageModelConfig = {}): TVaultsPageModel {
   const { isActive: isWalletActive } = useWeb3()
   const {
     vaultType,
@@ -162,7 +166,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
   } = useVaultsQueryState({
     defaultTypes: DEFAULT_VAULT_TYPES,
     defaultCategories: [],
-    defaultPathname: '/vaults',
+    defaultPathname,
     defaultSortBy: 'featuringScore',
     resetTypes: DEFAULT_VAULT_TYPES,
     resetCategories: [],

@@ -215,7 +215,11 @@ export function VaultForwardAPY({
       <Fragment>
         <div className={cl('relative flex flex-col items-end md:text-right', className)}>
           {renderValueWithTooltip(
-            <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+            <b
+              className={cl('yearn--table-data-section-item-value', valueClassName)}
+              onClick={handleValueClick}
+              data-vault-apy-click={true}
+            >
               <Renderable shouldRender={true} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
                   {fixedTermIndicator}
@@ -265,7 +269,11 @@ export function VaultForwardAPY({
         <Fragment>
           <div className={cl('relative flex flex-col items-end md:text-right', className)}>
             {renderValueWithTooltip(
-              <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+              <b
+                className={cl('yearn--table-data-section-item-value', valueClassName)}
+                onClick={handleValueClick}
+                data-vault-apy-click={true}
+              >
                 <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                   <div className={'flex items-center gap-2'}>
                     {fixedTermIndicator}
@@ -310,6 +318,7 @@ export function VaultForwardAPY({
           <b
             className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
             onClick={handleValueClick}
+            data-vault-apy-click={true}
           >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <span className={'inline-flex items-center gap-2'}>
@@ -355,6 +364,7 @@ export function VaultForwardAPY({
             <b
               className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
               onClick={handleValueClick}
+              data-vault-apy-click={true}
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={cl('flex items-center gap-2', canOpenModal ? 'cursor-pointer' : undefined)}>
@@ -419,6 +429,7 @@ export function VaultForwardAPY({
             <b
               className={cl('yearn--table-data-section-item-value whitespace-nowrap', valueClassName)}
               onClick={handleValueClick}
+              data-vault-apy-click={true}
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
@@ -474,6 +485,7 @@ export function VaultForwardAPY({
           <b
             className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
             onClick={handleValueClick}
+            data-vault-apy-click={true}
           >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <span className={'inline-flex items-center gap-2'}>
@@ -510,6 +522,7 @@ export function VaultForwardAPY({
         <b
           className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
           onClick={handleValueClick}
+          data-vault-apy-click={true}
         >
           <Renderable
             shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')}

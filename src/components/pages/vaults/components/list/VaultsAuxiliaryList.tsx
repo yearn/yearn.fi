@@ -18,6 +18,7 @@ type TVaultsAuxiliaryListProps = {
   title?: string
   vaults: TYDaemonVault[]
   vaultFlags: TVaultFlagsRecord
+  vaultsBasePath?: string
   apyDisplayVariant?: TVaultForwardAPYVariant
   resolveApyDisplayVariant?: (vault: TYDaemonVault) => TVaultForwardAPYVariant
   compareVaultKeys?: string[]
@@ -31,6 +32,8 @@ type TVaultsAuxiliaryListProps = {
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
   shouldCollapseChips?: boolean
+  disableExpandedRowHover?: boolean
+  disableExpandedRowNavigation?: boolean
 }
 
 // TODO: the contents of this component override the type filers. This should only happen for HOLDINGS and not AVAILABLE TO DEPOSIT
@@ -38,6 +41,7 @@ export function VaultsAuxiliaryList({
   title,
   vaults,
   vaultFlags,
+  vaultsBasePath,
   apyDisplayVariant,
   resolveApyDisplayVariant,
   compareVaultKeys,
@@ -50,11 +54,15 @@ export function VaultsAuxiliaryList({
   onToggleType,
   onToggleVaultType,
   showStrategies,
-  shouldCollapseChips
+  shouldCollapseChips,
+  disableExpandedRowHover,
+  disableExpandedRowNavigation
 }: TVaultsAuxiliaryListProps): ReactElement | null {
   if (vaults.length === 0) {
     return null
   }
+
+  const hrefBase = vaultsBasePath ?? '/vaults'
 
   return (
     <div className={'flex flex-col gap-2 border-b border-border pb-3'}>
@@ -70,6 +78,7 @@ export function VaultsAuxiliaryList({
               key={key}
               currentVault={vault}
               flags={vaultFlags[key]}
+              hrefOverride={`${hrefBase}/${vault.chainID}/${toAddress(vault.address)}`}
               apyDisplayVariant={rowApyDisplayVariant}
               compareVaultKeys={compareVaultKeys}
               onToggleCompare={onToggleCompare}
@@ -82,6 +91,8 @@ export function VaultsAuxiliaryList({
               onToggleVaultType={onToggleVaultType}
               shouldCollapseChips={shouldCollapseChips}
               showStrategies={showStrategies}
+              disableExpandedRowHover={disableExpandedRowHover}
+              disableExpandedRowNavigation={disableExpandedRowNavigation}
             />
           )
         })}
