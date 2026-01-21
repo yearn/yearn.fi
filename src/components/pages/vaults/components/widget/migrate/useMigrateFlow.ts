@@ -1,12 +1,15 @@
 import { useTokenAllowance } from '@pages/vaults/hooks/useTokenAllowance'
-import type { UseMigrateFlowReturn } from '@pages/vaults/types'
+import type { MigrateRouteType, UseMigrateFlowReturn } from '@pages/vaults/types'
 import { ERC_4626_ROUTER_ABI } from '@shared/contracts/abi/erc4626Router.abi'
+import { isPermitSupported, type TPermitSignature } from '@shared/hooks/usePermit'
 import { getMigratorConfig, type MigratorConfig } from '@shared/utils/migratorRegistry'
-import { useMemo } from 'react'
-import type { Address } from 'viem'
-import { erc20Abi } from 'viem'
-import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
+import { useEffect, useMemo, useState } from 'react'
+import { type Address, encodeFunctionData, erc20Abi } from 'viem'
+import { type UseSimulateContractReturnType, usePublicClient, useSimulateContract } from 'wagmi'
 import { YEARN_4626_ROUTER } from '@/components/shared/utils'
+
+// Default permit deadline: 20 minutes from now
+const DEFAULT_PERMIT_DEADLINE_MINUTES = 20
 
 interface UseMigrateFlowProps {
   vaultFrom: Address
@@ -17,6 +20,7 @@ interface UseMigrateFlowProps {
   account?: Address
   chainId: number
   enabled: boolean
+  permitSignature?: TPermitSignature // Provided after user signs permit
 }
 
 export const useMigrateFlow = ({
@@ -27,8 +31,13 @@ export const useMigrateFlow = ({
   balance,
   account,
   chainId,
-  enabled
+  enabled,
+  permitSignature
 }: UseMigrateFlowProps): UseMigrateFlowReturn => {
+  const client = usePublicClient({ chainId })
+  const [supportsPermit, setSupportsPermit] = useState(false)
+  const [isCheckingPermit, setIsCheckingPermit] = useState(true)
+
   // Get migrator config from registry or fallback to ERC_4626_ROUTER
   const migratorConfig = useMemo((): MigratorConfig => {
     const config = getMigratorConfig(router)
@@ -47,7 +56,24 @@ export const useMigrateFlow = ({
   }, [router, vaultVersion])
 
   // Use fallback router address if config specifies one, otherwise use the provided router
-  const effectiveRouter = migratorConfig.routerAddress ?? router
+  const effectiveRouter = (migratorConfig.routerAddress ?? router) as Address
+
+  // Check if vault token supports permit
+  useEffect(() => {
+    const checkPermitSupport = async () => {
+      if (!enabled || !client) {
+        setIsCheckingPermit(false)
+        return
+      }
+
+      setIsCheckingPermit(true)
+      const supported = await isPermitSupported(client, vaultFrom, chainId)
+      setSupportsPermit(supported)
+      setIsCheckingPermit(false)
+    }
+
+    checkPermitSupport()
+  }, [client, vaultFrom, chainId, enabled])
 
   // Check current allowance to the router
   const { allowance = 0n } = useTokenAllowance({
@@ -62,8 +88,16 @@ export const useMigrateFlow = ({
   const isAllowanceSufficient = allowance >= balance
   const hasBalance = balance > 0n
 
-  // Prepare approve (when allowance insufficient)
-  const prepareApproveEnabled = !isAllowanceSufficient && hasBalance && !!account && enabled
+  // Determine route type: permit (if supported) or approve
+  const routeType: MigrateRouteType = supportsPermit ? 'permit' : 'approve'
+
+  // Permit deadline - 20 minutes from now
+  const permitDeadline = useMemo(() => {
+    return BigInt(Math.floor(Date.now() / 1000) + 60 * DEFAULT_PERMIT_DEADLINE_MINUTES)
+  }, [])
+
+  // Prepare approve (when using approve flow and allowance insufficient)
+  const prepareApproveEnabled = routeType === 'approve' && !isAllowanceSufficient && hasBalance && !!account && enabled
   const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
     abi: erc20Abi,
     functionName: 'approve',
@@ -73,9 +107,8 @@ export const useMigrateFlow = ({
     query: { enabled: prepareApproveEnabled }
   })
 
-  // Prepare migrate transaction
-  const prepareMigrateEnabled = hasBalance && !!account && enabled && isAllowanceSufficient
-
+  // Prepare direct migrate transaction (for approve flow after approval)
+  const prepareMigrateEnabled = routeType === 'approve' && hasBalance && !!account && enabled && isAllowanceSufficient
   const prepareMigrate: UseSimulateContractReturnType = useSimulateContract({
     abi: migratorConfig.abi,
     functionName: migratorConfig.functionName,
@@ -86,12 +119,66 @@ export const useMigrateFlow = ({
     query: { enabled: prepareMigrateEnabled }
   })
 
-  const error = prepareMigrate.isError ? 'Migration simulation failed' : undefined
+  // Prepare multicall transaction (for permit flow: selfPermit + migrate)
+  const hasValidPermitSignature = !!permitSignature && permitSignature.deadline > BigInt(Math.floor(Date.now() / 1000))
+  const prepareMulticallEnabled =
+    routeType === 'permit' && hasBalance && !!account && enabled && hasValidPermitSignature
+
+  // Encode multicall data: selfPermit + migrate
+  const multicallData = useMemo(() => {
+    if (!prepareMulticallEnabled || !permitSignature || balance <= 0n) {
+      return undefined
+    }
+
+    // Encode selfPermit call
+    const selfPermitData = encodeFunctionData({
+      abi: ERC_4626_ROUTER_ABI,
+      functionName: 'selfPermit',
+      args: [vaultFrom, balance, permitSignature.deadline, permitSignature.v, permitSignature.r, permitSignature.s]
+    })
+    console.log({ selfPermitData })
+    // Encode migrate call
+    const migrateData = encodeFunctionData({
+      abi: migratorConfig.abi,
+      functionName: migratorConfig.functionName,
+      args: [vaultFrom, vaultTo, balance]
+    })
+    console.log({ migrateData })
+
+    return [selfPermitData, migrateData]
+  }, [
+    prepareMulticallEnabled,
+    permitSignature,
+    balance,
+    vaultFrom,
+    vaultTo,
+    migratorConfig.abi,
+    migratorConfig.functionName
+  ])
+
+  const prepareMulticall: UseSimulateContractReturnType = useSimulateContract({
+    abi: ERC_4626_ROUTER_ABI,
+    functionName: 'multicall',
+    address: effectiveRouter,
+    args: multicallData ? [multicallData] : undefined,
+    account,
+    chainId,
+    query: { enabled: prepareMulticallEnabled && !!multicallData }
+  })
+
+  // Determine error state
+  const error = useMemo(() => {
+    if (isCheckingPermit) return undefined
+    if (routeType === 'approve' && prepareMigrate.isError) return 'Migration simulation failed'
+    if (routeType === 'permit' && prepareMulticall.isError) return 'Migration simulation failed'
+    return undefined
+  }, [isCheckingPermit, routeType, prepareMigrate.isError, prepareMulticall.isError])
 
   return {
     actions: {
       prepareApprove,
-      prepareMigrate
+      prepareMigrate,
+      prepareMulticall
     },
     periphery: {
       isAllowanceSufficient,
@@ -99,6 +186,11 @@ export const useMigrateFlow = ({
       balance,
       prepareApproveEnabled,
       prepareMigrateEnabled,
+      prepareMulticallEnabled,
+      routeType,
+      supportsPermit,
+      permitDeadline,
+      routerAddress: effectiveRouter,
       error
     }
   }

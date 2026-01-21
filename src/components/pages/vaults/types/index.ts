@@ -114,10 +114,13 @@ export enum WidgetActionType {
 }
 
 // Migrate flow types
+export type MigrateRouteType = 'permit' | 'approve'
+
 export type UseMigrateFlowReturn = T<
   {
     prepareApprove: UseSimulateContractReturnType
     prepareMigrate: UseSimulateContractReturnType
+    prepareMulticall: UseSimulateContractReturnType // For permit flow: multicall(selfPermit + migrate)
   },
   {
     isAllowanceSufficient: boolean
@@ -125,6 +128,11 @@ export type UseMigrateFlowReturn = T<
     balance: bigint
     prepareApproveEnabled: boolean
     prepareMigrateEnabled: boolean
+    prepareMulticallEnabled: boolean
+    routeType: MigrateRouteType
+    supportsPermit: boolean
+    permitDeadline: bigint
+    routerAddress: TAddress
     error?: string
   }
 >

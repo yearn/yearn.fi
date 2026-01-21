@@ -19,12 +19,18 @@ import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicat
 
 type OverlayState = 'idle' | 'confirming' | 'pending' | 'success' | 'error'
 
-export type PermitData = {
+export type PermitDataDirect = {
   domain: TypedDataDomain
   types: TypedData
   message: Record<string, unknown>
   primaryType: string
 }
+
+export type PermitDataAsync = {
+  getPermitData: () => Promise<PermitDataDirect | undefined>
+}
+
+export type PermitData = PermitDataDirect | PermitDataAsync
 
 export type TransactionStep = {
   prepare: UseSimulateContractReturnType
@@ -150,7 +156,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     },
     [notificationId, updateNotification]
   )
-
+  console.log(step)
   const executeStep = useCallback(async () => {
     // For permit steps, we don't need prepare.isSuccess - we need permitData
     if (step?.isPermit && step?.permitData) {
@@ -162,11 +168,23 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       setErrorMessage('')
 
       try {
+        // Get permit data - either direct or via async getter
+        let permitDataDirect: PermitDataDirect | undefined
+        if ('getPermitData' in step.permitData) {
+          permitDataDirect = await step.permitData.getPermitData()
+        } else {
+          permitDataDirect = step.permitData
+        }
+
+        if (!permitDataDirect) {
+          throw new Error('Failed to get permit data')
+        }
+
         const signature = await signTypedDataAsync({
-          domain: step.permitData.domain,
-          types: step.permitData.types,
-          primaryType: step.permitData.primaryType,
-          message: step.permitData.message
+          domain: permitDataDirect.domain,
+          types: permitDataDirect.types,
+          primaryType: permitDataDirect.primaryType,
+          message: permitDataDirect.message
         })
 
         // Pass signature back to the flow

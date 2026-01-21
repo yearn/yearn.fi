@@ -3,11 +3,12 @@ import { Button } from '@shared/components/Button'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { formatTAmount, isZeroAddress } from '@shared/utils'
 import { type FC, useCallback, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
-import { useAccount } from 'wagmi'
+import { useAccount, usePublicClient } from 'wagmi'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { useMigrateError } from './useMigrateError'
 import { useMigrateFlow } from './useMigrateFlow'
@@ -40,8 +41,10 @@ export const WidgetMigrate: FC<Props> = ({
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { getToken } = useWallet()
+  const client = usePublicClient({ chainId })
 
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
+  const [permitSignature, setPermitSignature] = useState<TPermitSignature | undefined>()
 
   // Get destination vault token info
   const destinationVault = getToken({ address: migrationTarget, chainID: chainId })
@@ -72,7 +75,8 @@ export const WidgetMigrate: FC<Props> = ({
     balance: migrateBalance,
     account,
     chainId,
-    enabled: migrateBalance > 0n && !isZeroAddress(migrationContract)
+    enabled: migrateBalance > 0n && !isZeroAddress(migrationContract),
+    permitSignature
   })
 
   // Error handling
@@ -80,7 +84,7 @@ export const WidgetMigrate: FC<Props> = ({
     balance: migrateBalance,
     account,
     simulationError: periphery.error,
-    isSimulating: actions.prepareMigrate.isLoading
+    isSimulating: actions.prepareMigrate.isLoading || actions.prepareMulticall.isLoading
   })
 
   // Formatted values
@@ -97,10 +101,145 @@ export const WidgetMigrate: FC<Props> = ({
     return formatUnits(valueInAsset, 18).slice(0, 10)
   }, [migrateBalance, pricePerShare, vaultToken?.decimals])
 
-  // Transaction steps
-  const needsApproval = !periphery.isAllowanceSufficient
+  // Determine flow based on routeType
+  const isPermitFlow = periphery.routeType === 'permit'
 
+  // For approve flow: needs approval if allowance insufficient
+  const needsApproval = !isPermitFlow && !periphery.isAllowanceSufficient
+
+  // For permit flow: needs permit signing if no valid signature
+  const needsPermitSign = isPermitFlow && !permitSignature
+
+  // Permit data for signing (async getter to read contract data)
+  const getPermitData = useCallback(async () => {
+    if (!account || !client) return undefined
+
+    // Read contract metadata
+    const [nonceResult, nameResult, versionResult, apiVersionResult] = await Promise.allSettled([
+      client.readContract({
+        address: vaultAddress,
+        abi: PERMIT_ABI,
+        functionName: 'nonces',
+        args: [account]
+      }),
+      client.readContract({
+        address: vaultAddress,
+        abi: PERMIT_ABI,
+        functionName: 'name'
+      }),
+      client.readContract({
+        address: vaultAddress,
+        abi: PERMIT_ABI,
+        functionName: 'version'
+      }),
+      client.readContract({
+        address: vaultAddress,
+        abi: PERMIT_ABI,
+        functionName: 'apiVersion'
+      })
+    ])
+
+    const nonce = nonceResult.status === 'fulfilled' ? nonceResult.value : 0n
+    const name = nameResult.status === 'fulfilled' ? nameResult.value : ''
+    // Yearn V3 vaults use apiVersion for EIP-712 domain, prioritize it over version()
+    const version =
+      apiVersionResult.status === 'fulfilled' && apiVersionResult.value
+        ? apiVersionResult.value
+        : versionResult.status === 'fulfilled' && versionResult.value
+          ? versionResult.value
+          : '1'
+
+    return {
+      domain: {
+        name,
+        version: version || '1',
+        chainId,
+        verifyingContract: vaultAddress
+      },
+      types: {
+        Permit: [
+          { name: 'owner', type: 'address' },
+          { name: 'spender', type: 'address' },
+          { name: 'value', type: 'uint256' },
+          { name: 'nonce', type: 'uint256' },
+          { name: 'deadline', type: 'uint256' }
+        ]
+      },
+      message: {
+        owner: account,
+        spender: periphery.routerAddress,
+        value: migrateBalance,
+        nonce,
+        deadline: periphery.permitDeadline
+      },
+      primaryType: 'Permit'
+    }
+  }, [account, client, vaultAddress, chainId, periphery.routerAddress, migrateBalance, periphery.permitDeadline])
+
+  // Handle permit signed callback
+  const handlePermitSigned = useCallback(
+    (signature: `0x${string}`) => {
+      // Parse signature into r, s, v
+      const r = `0x${signature.slice(2, 66)}` as `0x${string}`
+      const s = `0x${signature.slice(66, 130)}` as `0x${string}`
+      const v = parseInt(signature.slice(130, 132), 16)
+
+      setPermitSignature({
+        r,
+        s,
+        v,
+        deadline: periphery.permitDeadline,
+        signature
+      })
+    },
+    [periphery.permitDeadline]
+  )
+  console.log(permitSignature)
+  // Transaction steps
   const currentStep: TransactionStep | undefined = useMemo(() => {
+    // PERMIT FLOW
+    if (isPermitFlow) {
+      // Step 1: Sign permit
+      if (needsPermitSign) {
+        return {
+          prepare: { isSuccess: true, data: { request: {} } } as any, // Permit doesn't need prepare
+          label: 'Sign Permit',
+          confirmMessage: `Sign permit for ${formattedBalance} ${vaultSymbol}`,
+          successTitle: 'Permit signed',
+          successMessage: 'Ready to migrate.',
+          isPermit: true,
+          permitData: { getPermitData } as any,
+          onPermitSigned: handlePermitSigned,
+          notification: {
+            type: 'approve' as const,
+            amount: formattedBalance,
+            fromAddress: vaultAddress,
+            fromSymbol: vaultSymbol,
+            fromChainId: chainId
+          }
+        }
+      }
+
+      // Step 2: Execute multicall (selfPermit + migrate)
+      return {
+        prepare: actions.prepareMulticall,
+        label: 'Migrate',
+        confirmMessage: `Migrating ${formattedBalance} ${vaultSymbol}`,
+        successTitle: 'Migration successful!',
+        successMessage: 'Your funds have been migrated to the new vault.',
+        showConfetti: true,
+        notification: {
+          type: 'migrate' as const,
+          amount: formattedBalance,
+          fromAddress: vaultAddress,
+          fromSymbol: vaultSymbol,
+          fromChainId: chainId,
+          toAddress: migrationTarget
+        }
+      }
+    }
+
+    // APPROVE FLOW
     // Step 1: Approve
     if (needsApproval) {
       return {
@@ -125,7 +264,7 @@ export const WidgetMigrate: FC<Props> = ({
       label: 'Migrate',
       confirmMessage: `Migrating ${formattedBalance} ${vaultSymbol}`,
       successTitle: 'Migration successful!',
-      successMessage: `Your funds have been migrated to the new vault.`,
+      successMessage: 'Your funds have been migrated to the new vault.',
       showConfetti: true,
       notification: {
         type: 'migrate' as const,
@@ -137,9 +276,14 @@ export const WidgetMigrate: FC<Props> = ({
       }
     }
   }, [
+    isPermitFlow,
+    needsPermitSign,
     needsApproval,
+    getPermitData,
+    handlePermitSigned,
     actions.prepareApprove,
     actions.prepareMigrate,
+    actions.prepareMulticall,
     formattedBalance,
     vaultSymbol,
     vaultAddress,
@@ -149,30 +293,68 @@ export const WidgetMigrate: FC<Props> = ({
 
   // Handlers
   const handleMigrateSuccess = useCallback(() => {
+    setPermitSignature(undefined) // Clear permit signature after successful migration
     refetchVaultUserData()
     onMigrateSuccess?.()
   }, [refetchVaultUserData, onMigrateSuccess])
 
+  const handleOverlayClose = useCallback(() => {
+    setShowTransactionOverlay(false)
+    // Clear permit signature if user closes during permit flow (they can re-sign)
+    if (needsPermitSign) {
+      setPermitSignature(undefined)
+    }
+  }, [needsPermitSign])
+
   // Button text
   const buttonText = useMemo(() => {
+    if (isPermitFlow) {
+      return needsPermitSign ? 'Sign & Migrate' : 'Migrate All'
+    }
     if (needsApproval) return 'Approve & Migrate'
     return 'Migrate All'
-  }, [needsApproval])
+  }, [isPermitFlow, needsPermitSign, needsApproval])
 
   // Button disabled state
   const isButtonDisabled = useMemo(() => {
     if (migrateError) return true
     if (migrateBalance === 0n) return true
-    // For approve flow: need prepareApproveEnabled
+
+    // Permit flow: always enabled if we have balance (permit signing happens in overlay)
+    if (isPermitFlow) {
+      // If we have signature, check if multicall is ready
+      if (permitSignature && !periphery.prepareMulticallEnabled) {
+        return true
+      }
+      return false
+    }
+
+    // Approve flow
     if (needsApproval && !periphery.prepareApproveEnabled) {
       return true
     }
-    // For migrate step: need prepareMigrateEnabled
     if (!needsApproval && !periphery.prepareMigrateEnabled) {
       return true
     }
     return false
-  }, [migrateError, migrateBalance, needsApproval, periphery.prepareApproveEnabled, periphery.prepareMigrateEnabled])
+  }, [
+    migrateError,
+    migrateBalance,
+    isPermitFlow,
+    permitSignature,
+    needsApproval,
+    periphery.prepareApproveEnabled,
+    periphery.prepareMigrateEnabled,
+    periphery.prepareMulticallEnabled
+  ])
+
+  // Determine if current step is the last step
+  const isLastStep = useMemo(() => {
+    if (isPermitFlow) {
+      return !needsPermitSign // Last step when we have permit signature
+    }
+    return !needsApproval // Last step when we have approval
+  }, [isPermitFlow, needsPermitSign, needsApproval])
 
   // Loading state
   if (isLoadingVaultData) {
@@ -286,9 +468,9 @@ export const WidgetMigrate: FC<Props> = ({
       {/* Transaction Overlay */}
       <TransactionOverlay
         isOpen={showTransactionOverlay}
-        onClose={() => setShowTransactionOverlay(false)}
+        onClose={handleOverlayClose}
         step={currentStep}
-        isLastStep={!needsApproval}
+        isLastStep={isLastStep}
         onAllComplete={handleMigrateSuccess}
       />
     </div>
