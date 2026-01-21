@@ -3,9 +3,9 @@ import { Button } from '@shared/components/Button'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { formatTAmount, isZeroAddress } from '@shared/utils'
 import { type FC, useCallback, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
@@ -37,7 +37,6 @@ export const WidgetMigrate: FC<Props> = ({
   migrationTargetSymbol,
   handleMigrateSuccess: onMigrateSuccess
 }) => {
-  const navigate = useNavigate()
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { getToken } = useWallet()
@@ -266,9 +265,10 @@ export const WidgetMigrate: FC<Props> = ({
         <div className="flex justify-between items-center mb-2">
           <span className="text-xs text-text-secondary">Destination</span>
         </div>
-        <button
-          type="button"
-          onClick={() => navigate(`/vaults/${chainId}/${migrationTarget}`)}
+        <a
+          href={`/vaults/${chainId}/${migrationTarget}`}
+          target="_blank"
+          rel="noopener noreferrer"
           className="w-full flex items-center justify-between p-3 bg-surface-secondary hover:bg-surface-secondary/80 rounded-lg transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-3">
@@ -292,10 +292,8 @@ export const WidgetMigrate: FC<Props> = ({
               </p>
             </div>
           </div>
-          <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+          <IconLinkOut className="w-4 h-4 text-text-secondary" />
+        </a>
       </div>
 
       {/* Action Button */}

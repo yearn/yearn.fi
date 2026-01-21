@@ -188,11 +188,10 @@ function Index(): ReactElement | null {
   ])
 
   const widgetActions = useMemo(() => {
-    const actions = [WidgetActionType.Deposit, WidgetActionType.Withdraw]
     if (currentVault?.migration?.available) {
-      actions.push(WidgetActionType.Migrate)
+      return [WidgetActionType.Migrate, WidgetActionType.Withdraw]
     }
-    return actions
+    return [WidgetActionType.Deposit, WidgetActionType.Withdraw]
   }, [currentVault?.migration?.available])
 
   const sections = useMemo(() => {
