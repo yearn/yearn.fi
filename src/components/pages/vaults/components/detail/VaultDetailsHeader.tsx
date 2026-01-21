@@ -100,7 +100,7 @@ function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): 
         >
           <span
             className={
-              'cursor-pointer underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600'
+              'cursor-default underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600'
             }
           >
             {label}

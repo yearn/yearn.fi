@@ -40,7 +40,6 @@ export function VaultForwardAPY({
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const canOpenModal = displayVariant !== 'factory-list'
-  const valueInteractiveClass = canOpenModal ? 'cursor-pointer' : undefined
   const fixedTermMarkets = getFixedTermMarkets(currentVault.address)
   const fixedTermProviders = fixedTermMarkets.filter(
     (market, index, list) => list.findIndex((item) => item.provider === market.provider) === index
@@ -152,8 +151,14 @@ export function VaultForwardAPY({
   const tooltipUnderlineClass = infoTooltipContent
     ? 'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
     : undefined
-  const renderApyValue = (content: ReactNode): ReactElement => (
-    <span className={cl('relative inline-flex items-center gap-1', valueInteractiveClass, tooltipUnderlineClass)}>
+  const renderApyValue = (content: ReactNode, isValueClickable: boolean): ReactElement => (
+    <span
+      className={cl(
+        'relative inline-flex items-center gap-1',
+        isValueClickable ? 'cursor-pointer' : undefined,
+        tooltipUnderlineClass
+      )}
+    >
       {content}
       {shouldShowKatanaAsterisk ? (
         <span
@@ -182,17 +187,25 @@ export function VaultForwardAPY({
       </Tooltip>
     )
   }
-  const handleValueClick = (e: React.MouseEvent): void => {
+  const handleValueClick = (event: React.MouseEvent, shouldOpenModal: boolean): void => {
     if (onMobileToggle) {
-      e.stopPropagation()
-      onMobileToggle(e)
+      event.stopPropagation()
+      onMobileToggle(event)
       return
     }
-    if (!canOpenModal) {
+    if (!canOpenModal || !shouldOpenModal) {
       return
     }
-    e.stopPropagation()
+    event.stopPropagation()
     setIsModalOpen(true)
+  }
+  const getValueClickProps = (shouldOpenModal: boolean) => {
+    const isValueClickable = Boolean(onMobileToggle) || (canOpenModal && shouldOpenModal)
+    return {
+      isValueClickable,
+      valueInteractiveClass: isValueClickable ? 'cursor-pointer' : undefined,
+      onClick: (event: React.MouseEvent) => handleValueClick(event, shouldOpenModal)
+    }
   }
   const handleInfoClose = (): void => setIsModalOpen(false)
 
@@ -210,20 +223,24 @@ export function VaultForwardAPY({
         maxWidth={'w-full'}
       />
     )
+    const valueClick = getValueClickProps(true)
 
     return (
       <Fragment>
         <div className={cl('relative flex flex-col items-end md:text-right', className)}>
           {renderValueWithTooltip(
             <b
-              className={cl('yearn--table-data-section-item-value', valueClassName)}
-              onClick={handleValueClick}
-              data-vault-apy-click={true}
+              className={cl('yearn--table-data-section-item-value', valueClassName, valueClick.valueInteractiveClass)}
+              onClick={valueClick.onClick}
+              data-vault-apy-click={valueClick.isValueClickable || undefined}
             >
               <Renderable shouldRender={true} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
                   {fixedTermIndicator}
-                  {renderApyValue(<RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />)}
+                  {renderApyValue(
+                    <RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />,
+                    valueClick.isValueClickable
+                  )}
                 </div>
               </Renderable>
             </b>
@@ -255,6 +272,7 @@ export function VaultForwardAPY({
     const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 
     if (data.rewardsAprSum > 0) {
+      const valueClick = getValueClickProps(true)
       const modalContent = (
         <APYTooltipContent
           baseAPY={data.netApr}
@@ -270,9 +288,9 @@ export function VaultForwardAPY({
           <div className={cl('relative flex flex-col items-end md:text-right', className)}>
             {renderValueWithTooltip(
               <b
-                className={cl('yearn--table-data-section-item-value', valueClassName)}
-                onClick={handleValueClick}
-                data-vault-apy-click={true}
+                className={cl('yearn--table-data-section-item-value', valueClassName, valueClick.valueInteractiveClass)}
+                onClick={valueClick.onClick}
+                data-vault-apy-click={valueClick.isValueClickable || undefined}
               >
                 <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                   <div className={'flex items-center gap-2'}>
@@ -286,7 +304,8 @@ export function VaultForwardAPY({
                           symbol={'percent'}
                           decimals={6}
                         />
-                      </>
+                      </>,
+                      valueClick.isValueClickable
                     )}
                   </div>
                 </Renderable>
@@ -312,19 +331,21 @@ export function VaultForwardAPY({
       )
     }
 
+    const valueClick = getValueClickProps(false)
     return (
       <div className={cl('relative flex flex-col items-end md:text-right', className)}>
         {renderValueWithTooltip(
           <b
-            className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
-            onClick={handleValueClick}
-            data-vault-apy-click={true}
+            className={cl('yearn--table-data-section-item-value', valueClassName, valueClick.valueInteractiveClass)}
+            onClick={valueClick.onClick}
+            data-vault-apy-click={valueClick.isValueClickable || undefined}
           >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <span className={'inline-flex items-center gap-2'}>
                 {fixedTermIndicator}
                 {renderApyValue(
-                  <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />
+                  <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />,
+                  valueClick.isValueClickable
                 )}
               </span>
             </Renderable>
@@ -347,6 +368,7 @@ export function VaultForwardAPY({
   // Boosted
   if (data.mode === 'boosted' && data.isBoosted) {
     const unBoostedAPY = data.unboostedApr || 0
+    const valueClick = getValueClickProps(true)
     const modalContent = (
       <APYTooltipContent
         baseAPY={unBoostedAPY}
@@ -362,12 +384,12 @@ export function VaultForwardAPY({
         <div className={cl('flex flex-col items-end md:text-right', className)}>
           {renderValueWithTooltip(
             <b
-              className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
-              onClick={handleValueClick}
-              data-vault-apy-click={true}
+              className={cl('yearn--table-data-section-item-value', valueClassName, valueClick.valueInteractiveClass)}
+              onClick={valueClick.onClick}
+              data-vault-apy-click={valueClick.isValueClickable || undefined}
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
-                <div className={cl('flex items-center gap-2', canOpenModal ? 'cursor-pointer' : undefined)}>
+                <div className={cl('flex items-center gap-2', valueClick.valueInteractiveClass)}>
                   {fixedTermIndicator}
                   {renderApyValue(
                     <RenderAmount
@@ -375,7 +397,8 @@ export function VaultForwardAPY({
                       value={currentVault.apr.forwardAPR.netAPR}
                       symbol={'percent'}
                       decimals={6}
-                    />
+                    />,
+                    valueClick.isValueClickable
                   )}
                 </div>
               </Renderable>
@@ -421,15 +444,20 @@ export function VaultForwardAPY({
         range={veYFIRange}
       />
     )
+    const valueClick = getValueClickProps(true)
 
     return (
       <Fragment>
         <div className={cl('relative flex flex-col items-end md:text-right', className)}>
           {renderValueWithTooltip(
             <b
-              className={cl('yearn--table-data-section-item-value whitespace-nowrap', valueClassName)}
-              onClick={handleValueClick}
-              data-vault-apy-click={true}
+              className={cl(
+                'yearn--table-data-section-item-value whitespace-nowrap',
+                valueClassName,
+                valueClick.valueInteractiveClass
+              )}
+              onClick={valueClick.onClick}
+              data-vault-apy-click={valueClick.isValueClickable || undefined}
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
@@ -451,7 +479,8 @@ export function VaultForwardAPY({
                           decimals={6}
                         />
                       )}
-                    </>
+                    </>,
+                    valueClick.isValueClickable
                   )}
                 </div>
               </Renderable>
@@ -479,13 +508,14 @@ export function VaultForwardAPY({
 
   // Spot forward APY
   if (data.mode === 'spot') {
+    const valueClick = getValueClickProps(false)
     return (
       <div className={cl('relative flex flex-col items-end md:text-right', className)}>
         {renderValueWithTooltip(
           <b
-            className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
-            onClick={handleValueClick}
-            data-vault-apy-click={true}
+            className={cl('yearn--table-data-section-item-value', valueClassName, valueClick.valueInteractiveClass)}
+            onClick={valueClick.onClick}
+            data-vault-apy-click={valueClick.isValueClickable || undefined}
           >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <span className={'inline-flex items-center gap-2'}>
@@ -494,7 +524,8 @@ export function VaultForwardAPY({
                   <>
                     {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
                     <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
-                  </>
+                  </>,
+                  valueClick.isValueClickable
                 )}
               </span>
             </Renderable>
@@ -516,13 +547,14 @@ export function VaultForwardAPY({
 
   // Fallback historical APY - This will always be reached for any unhandled case
   const hasZeroAPY = isZero(data.netApr) || Number((data.netApr || 0).toFixed(2)) === 0
+  const valueClick = getValueClickProps(false)
   return (
     <div className={cl('relative flex flex-col items-end md:text-right', className)}>
       {renderValueWithTooltip(
         <b
-          className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
-          onClick={handleValueClick}
-          data-vault-apy-click={true}
+          className={cl('yearn--table-data-section-item-value', valueClassName, valueClick.valueInteractiveClass)}
+          onClick={valueClick.onClick}
+          data-vault-apy-click={valueClick.isValueClickable || undefined}
         >
           <Renderable
             shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')}
@@ -534,7 +566,8 @@ export function VaultForwardAPY({
                 <>
                   {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
                   <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
-                </>
+                </>,
+                valueClick.isValueClickable
               )}
             </span>
           </Renderable>
