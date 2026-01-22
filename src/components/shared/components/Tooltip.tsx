@@ -12,8 +12,8 @@ export const Tooltip: FC<{
   tooltip: string | ReactElement
   openDelayMs?: number
   toggleOnClick?: boolean
-  align?: 'center' | 'start'
-  side?: 'top' | 'bottom'
+  align?: 'center' | 'start' | 'left' | 'right'
+  side?: 'top' | 'bottom' | 'left' | 'right'
   zIndex?: number
 }> = ({
   children,
@@ -89,8 +89,26 @@ export const Tooltip: FC<{
   const showTooltip = useCallback((): void => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect()
-      const x = align === 'start' ? rect.left : rect.left + rect.width / 2
-      const y = side === 'top' ? rect.top : rect.bottom
+      const resolvedAlign = align === 'start' || align === 'left' ? 'start' : align === 'right' ? 'end' : 'center'
+      const isSideHorizontal = side === 'left' || side === 'right'
+      const x = isSideHorizontal
+        ? side === 'left'
+          ? rect.left
+          : rect.right
+        : resolvedAlign === 'start'
+          ? rect.left
+          : resolvedAlign === 'end'
+            ? rect.right
+            : rect.left + rect.width / 2
+      const y = isSideHorizontal
+        ? resolvedAlign === 'start'
+          ? rect.top
+          : resolvedAlign === 'end'
+            ? rect.bottom
+            : rect.top + rect.height / 2
+        : side === 'top'
+          ? rect.top
+          : rect.bottom
       setTooltipPosition({
         x,
         y
@@ -201,11 +219,34 @@ export const Tooltip: FC<{
               position: 'fixed',
               left: tooltipPosition.x,
               top: tooltipPosition.y,
-              paddingTop: 8,
-              paddingBottom: 0,
-              transform:
-                `${align === 'start' ? 'translateX(0)' : 'translateX(-50%)'}` +
-                `${side === 'top' ? ' translateY(-100%)' : ''}`,
+              paddingTop: side === 'bottom' ? 8 : 0,
+              paddingBottom: side === 'top' ? 8 : 0,
+              paddingLeft: side === 'right' ? 8 : 0,
+              paddingRight: side === 'left' ? 8 : 0,
+              transform: (() => {
+                const resolvedAlign =
+                  align === 'start' || align === 'left' ? 'start' : align === 'right' ? 'end' : 'center'
+                const horizontalShift =
+                  resolvedAlign === 'start'
+                    ? 'translateX(0)'
+                    : resolvedAlign === 'end'
+                      ? 'translateX(-100%)'
+                      : 'translateX(-50%)'
+                const verticalShift =
+                  resolvedAlign === 'start'
+                    ? 'translateY(0)'
+                    : resolvedAlign === 'end'
+                      ? 'translateY(-100%)'
+                      : 'translateY(-50%)'
+
+                if (side === 'left') {
+                  return `translateX(-100%) ${verticalShift}`
+                }
+                if (side === 'right') {
+                  return `translateX(0) ${verticalShift}`
+                }
+                return `${horizontalShift}${side === 'top' ? ' translateY(-100%)' : ''}`
+              })(),
               zIndex,
               pointerEvents: 'auto'
             }}

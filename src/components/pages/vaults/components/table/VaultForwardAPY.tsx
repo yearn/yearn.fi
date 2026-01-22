@@ -158,7 +158,7 @@ export function VaultForwardAPY({
       {shouldShowKatanaAsterisk ? (
         <span
           aria-hidden={true}
-          className={'pointer-events-none absolute left-full -top-px ml-px text-xs text-text-secondary'}
+          className={'pointer-events-none absolute left-full -top-px ml-px text-sm text-text-secondary'}
         >
           {'*'}
         </span>

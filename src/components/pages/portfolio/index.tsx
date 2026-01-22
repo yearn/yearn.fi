@@ -89,7 +89,8 @@ function PortfolioHeaderSection({
 }: TPortfolioHeaderProps): ReactElement {
   const tooltipContent = (
     <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
-      {'One or more vaults are receiving extra incentives. There may be conditions to earn this rate.'}
+      <p>{'*One or more vaults are receiving extra incentives.'}</p>
+      <p>{'*There may be conditions to earn this rate.'}</p>
     </div>
   )
   const renderApyValue = (value: string, shouldShowAsterisk: boolean): ReactElement => {
@@ -100,12 +101,14 @@ function PortfolioHeaderSection({
       <span className={'relative inline-flex items-center'}>
         {value}
         <Tooltip
-          className={'absolute left-full -top-px ml-px h-auto w-auto gap-0 justify-start md:justify-start'}
+          className={
+            '!absolute cursor-default left-full -top-2 ml-px !h-auto !w-auto !gap-0 !justify-start md:!justify-start'
+          }
           openDelayMs={150}
-          side={'top'}
+          side={'right'}
           tooltip={tooltipContent}
         >
-          <span className={'text-xs text-text-secondary'}>{'*'}</span>
+          <span className={'text-md text-text-secondary hover:text-accent-500'}>{'*'}</span>
         </Tooltip>
       </span>
     )
