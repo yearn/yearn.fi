@@ -56,7 +56,8 @@ describe('SuggestedVaultCard', () => {
       hasKelp: false,
       hasKelpNEngenlayer: false,
       katanaExtras: undefined,
-      katanaTotalApr: undefined
+      katanaThirtyDayApr: undefined,
+      katanaEstApr: undefined
     })
 
     const html = renderCard(baseVault)
@@ -75,7 +76,8 @@ describe('SuggestedVaultCard', () => {
       hasKelp: false,
       hasKelpNEngenlayer: false,
       katanaExtras: undefined,
-      katanaTotalApr: undefined
+      katanaThirtyDayApr: undefined,
+      katanaEstApr: undefined
     })
 
     const html = renderCard(baseVault)
@@ -93,7 +95,8 @@ describe('SuggestedVaultCard', () => {
       hasKelp: false,
       hasKelpNEngenlayer: false,
       katanaExtras: undefined,
-      katanaTotalApr: undefined
+      katanaThirtyDayApr: undefined,
+      katanaEstApr: undefined
     })
 
     const html = renderCard(baseVault)

@@ -1,13 +1,14 @@
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import { isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
+import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
-import { isZero, toAddress } from '@shared/utils'
+import { toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { calculateVaultEstimatedAPY } from '@shared/utils/vaultApy'
+import { calculateVaultEstimatedAPY, calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { useMemo, useState } from 'react'
 
 type THoldingsRow = {
@@ -34,6 +35,7 @@ export type TPortfolioModel = {
   isActive: boolean
   isHoldingsLoading: boolean
   isSearchingBalances: boolean
+  hasKatanaHoldings: boolean
   openLoginModal: () => void
   sortBy: TPossibleSortBy
   sortDirection: TSortDirection
@@ -175,6 +177,10 @@ export function usePortfolioModel(): TPortfolioModel {
   )
 
   const hasHoldings = sortedHoldings.length > 0
+  const hasKatanaHoldings = useMemo(
+    () => holdingsVaults.some((vault) => vault.chainID === KATANA_CHAIN_ID),
+    [holdingsVaults]
+  )
   const totalPortfolioValue = (cumulatedValueInV2Vaults || 0) + (cumulatedValueInV3Vaults || 0)
 
   const getVaultEstimatedAPY = useMemo(
@@ -189,12 +195,9 @@ export function usePortfolioModel(): TPortfolioModel {
   const getVaultHistoricalAPY = useMemo(
     () =>
       (vault: (typeof holdingsVaults)[number]): number | null => {
-        const monthlyAPY = vault.apr?.points?.monthAgo
-        const weeklyAPY = vault.apr?.points?.weekAgo
-        const chosenAPY = !isZero(monthlyAPY || 0) ? monthlyAPY : weeklyAPY
-        return typeof chosenAPY === 'number' ? chosenAPY : null
+        return calculateVaultHistoricalAPY(vault, katanaAprs)
       },
-    []
+    [katanaAprs]
   )
 
   const getVaultValue = useMemo(
@@ -277,6 +280,7 @@ export function usePortfolioModel(): TPortfolioModel {
     isActive,
     isHoldingsLoading,
     isSearchingBalances,
+    hasKatanaHoldings,
     openLoginModal,
     sortBy,
     sortDirection,

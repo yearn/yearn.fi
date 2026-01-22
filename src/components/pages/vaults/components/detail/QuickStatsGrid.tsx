@@ -1,3 +1,5 @@
+import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
+import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -67,8 +69,15 @@ interface VaultMetricsGridProps {
 
 export function VaultMetricsGrid({ currentVault }: VaultMetricsGridProps): ReactElement {
   // Get APY data
-  const forwardAPY = currentVault.apr.forwardAPR.netAPR
-  const historicalAPY = currentVault.apr.netAPR || currentVault.apr.points?.weekAgo || 0
+  const apyData = useVaultApyData(currentVault)
+  const forwardAPY =
+    apyData.mode === 'katana' && apyData.katanaEstApr !== undefined
+      ? apyData.katanaEstApr
+      : currentVault.apr.forwardAPR.netAPR
+  const historicalAPY =
+    currentVault.chainID === KATANA_CHAIN_ID && apyData.katanaThirtyDayApr !== undefined
+      ? apyData.katanaThirtyDayApr
+      : currentVault.apr.netAPR || currentVault.apr.points?.weekAgo || 0
 
   return (
     <div className="md:hidden">

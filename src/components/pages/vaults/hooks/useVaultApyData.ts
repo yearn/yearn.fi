@@ -31,14 +31,19 @@ export type TVaultApyData = {
   isEligibleForSteer?: boolean
   steerPointsPerDollar?: number
   katanaExtras?: TKatanaAprData
-  katanaTotalApr?: number
+  katanaThirtyDayApr?: number
+  katanaEstApr?: number
 }
 
-export function computeKatanaTotalApr(katanaExtras?: Partial<TKatanaAprData>): number | undefined {
+export function computeKatanaTotalApr(
+  katanaExtras?: Partial<TKatanaAprData>,
+  baseAprOverride?: number
+): number | undefined {
   if (!katanaExtras) return undefined
 
   const appRewardsApr = katanaExtras.katanaAppRewardsAPR ?? katanaExtras.katanaRewardsAPR
-  const parts = [katanaExtras.katanaNativeYield, katanaExtras.FixedRateKatanaRewards, appRewardsApr].filter(
+  const baseApr = typeof baseAprOverride === 'number' ? baseAprOverride : katanaExtras.katanaNativeYield
+  const parts = [baseApr, katanaExtras.FixedRateKatanaRewards, appRewardsApr].filter(
     (value): value is number => typeof value === 'number' && !Number.isNaN(value)
   )
 
@@ -50,21 +55,25 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
   const { katanaAprs } = useYearn()
   const shouldUseKatanaAPRs = vault.chainID === KATANA_CHAIN_ID
 
-  const katanaExtras = useMemo(() => {
-    if (!shouldUseKatanaAPRs) return undefined
-    return katanaAprs?.[toAddress(vault.address)]?.apr?.extra as TKatanaAprData | undefined
-  }, [shouldUseKatanaAPRs, katanaAprs, vault.address])
-
-  const katanaTotalApr = useMemo(() => {
-    return computeKatanaTotalApr(katanaExtras)
-  }, [katanaExtras])
-
   const baseForwardApr = vault.apr.forwardAPR.netAPR
   const netApr = vault.apr.netAPR
   const rewardsAprSum = vault.apr.extra.stakingRewardsAPR + vault.apr.extra.gammaRewardAPR
   const isBoosted =
     vault.chainID === 1 && (vault.apr.forwardAPR.composite?.boost || 0) > 0 && !vault.apr.extra.stakingRewardsAPR
   const { boost, unboosted } = calcBoostedApr(vault)
+
+  const katanaExtras = useMemo(() => {
+    if (!shouldUseKatanaAPRs) return undefined
+    return katanaAprs?.[toAddress(vault.address)]?.apr?.extra as TKatanaAprData | undefined
+  }, [shouldUseKatanaAPRs, katanaAprs, vault.address])
+
+  const katanaThirtyDayApr = useMemo(() => {
+    return computeKatanaTotalApr(katanaExtras)
+  }, [katanaExtras])
+
+  const katanaEstApr = useMemo(() => {
+    return computeKatanaTotalApr(katanaExtras, baseForwardApr)
+  }, [katanaExtras, baseForwardApr])
 
   const hasPendleArbRewards = isPendleArbVault(vault)
   const hasKelpNEngenlayer = isKelpEigenVault(vault)
@@ -75,7 +84,7 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
     veYfiRange?: [number, number]
     estAprRange?: [number, number]
   } => {
-    if (katanaExtras && katanaTotalApr !== undefined) {
+    if (katanaExtras && katanaEstApr !== undefined) {
       return { mode: 'katana' }
     }
     if (vault.apr.forwardAPR.type === '') {
@@ -120,6 +129,7 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
     isEligibleForSteer,
     steerPointsPerDollar,
     katanaExtras,
-    katanaTotalApr
+    katanaThirtyDayApr,
+    katanaEstApr
   }
 }

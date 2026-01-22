@@ -39,6 +39,7 @@ export function VaultForwardAPY({
 }): ReactElement {
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [katanaBreakdown, setKatanaBreakdown] = useState<'est' | '30d'>('est')
   const canOpenModal = displayVariant !== 'factory-list'
   const valueInteractiveClass = canOpenModal ? 'cursor-pointer' : undefined
   const fixedTermMarkets = getFixedTermMarkets(currentVault.address)
@@ -69,8 +70,7 @@ export function VaultForwardAPY({
     steerPointsPerDollar: data.steerPointsPerDollar,
     isEligibleForSpectraBoost
   })
-  const isKatanaVault =
-    currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined
+  const isKatanaVault = currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaEstApr !== undefined
   const katanaTooltipContent =
     showSublineTooltip && isKatanaVault ? (
       <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
@@ -197,10 +197,13 @@ export function VaultForwardAPY({
   const handleInfoClose = (): void => setIsModalOpen(false)
 
   // Katana
-  if (currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined) {
+  if (currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaEstApr !== undefined) {
+    const katanaBreakdownTitle = katanaBreakdown === 'est' ? 'Katana Est. APY breakdown' : 'Katana 30 Day APY breakdown'
+    const katanaBreakdownBaseApr =
+      katanaBreakdown === 'est' ? data.baseForwardApr : (data.katanaExtras.katanaNativeYield ?? 0)
     const katanaDetails = (
       <KatanaApyTooltipContent
-        katanaNativeYield={data.katanaExtras.katanaNativeYield ?? 0}
+        katanaNativeYield={katanaBreakdownBaseApr}
         fixedRateKatanRewardsAPR={data.katanaExtras.FixedRateKatanaRewards ?? 0}
         katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR ?? data.katanaExtras.katanaRewardsAPR ?? 0}
         katanaBonusAPR={data.katanaExtras.katanaBonusAPY ?? 0}
@@ -210,6 +213,10 @@ export function VaultForwardAPY({
         maxWidth={'w-full'}
       />
     )
+    const katanaBreakdownOptions = [
+      { id: 'est', label: 'Katana Est. APY breakdown' },
+      { id: '30d', label: 'Katana 30 Day APY breakdown' }
+    ] as const
 
     return (
       <Fragment>
@@ -219,7 +226,7 @@ export function VaultForwardAPY({
               <Renderable shouldRender={true} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
                   {fixedTermIndicator}
-                  {renderApyValue(<RenderAmount value={data.katanaTotalApr} symbol={'percent'} decimals={6} />)}
+                  {renderApyValue(<RenderAmount value={data.katanaEstApr} symbol={'percent'} decimals={6} />)}
                 </div>
               </Renderable>
             </b>
@@ -236,8 +243,29 @@ export function VaultForwardAPY({
           ) : null}
         </div>
         {canOpenModal ? (
-          <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={'Katana APY breakdown'}>
-            {katanaDetails}
+          <APYDetailsModal isOpen={isModalOpen} onClose={handleInfoClose} title={katanaBreakdownTitle}>
+            <div className={'flex flex-col gap-3'}>
+              <div
+                className={'flex w-full flex-col gap-2 rounded-lg bg-surface-secondary p-1 shadow-inner md:flex-row'}
+              >
+                {katanaBreakdownOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    type={'button'}
+                    onClick={() => setKatanaBreakdown(option.id)}
+                    className={cl(
+                      'flex-1 rounded-sm px-3 py-1 text-[11px] font-semibold leading-tight transition-all md:text-xs',
+                      katanaBreakdown === option.id
+                        ? 'bg-surface text-text-primary'
+                        : 'bg-transparent text-text-secondary hover:text-text-secondary'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {katanaDetails}
+            </div>
           </APYDetailsModal>
         ) : null}
       </Fragment>
@@ -556,19 +584,14 @@ export function VaultForwardAPYInlineDetails({
     currentVault.chainID === KATANA_CHAIN_ID &&
     SPECTRA_BOOST_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
 
-  if (currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaTotalApr !== undefined) {
+  if (currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaEstApr !== undefined) {
     return (
       <div className={'w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'}>
         <div className={'flex flex-col gap-2'}>
           <div className={'flex items-center justify-between'}>
             <p className={'text-xs text-text-primary'}>{'Katana Native APY'}</p>
             <span className={'font-number'}>
-              <RenderAmount
-                shouldHideTooltip
-                value={data.katanaExtras.katanaNativeYield ?? 0}
-                symbol={'percent'}
-                decimals={6}
-              />
+              <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
             </span>
           </div>
           <div className={'flex items-center justify-between'}>

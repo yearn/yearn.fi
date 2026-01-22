@@ -42,12 +42,12 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
     if (apyData.mode === 'historical' || apyData.mode === 'noForward') {
       return { type: 'value', label: '30D APY', value: apyData.netApr }
     }
-    if (apyData.mode === 'katana' && apyData.katanaTotalApr !== undefined) {
+    if (apyData.mode === 'katana' && apyData.katanaEstApr !== undefined) {
       return {
         type: 'value',
         label: 'Est. APY',
         prefix: '',
-        value: apyData.katanaTotalApr
+        value: apyData.katanaEstApr
       }
     }
     if (apyData.mode === 'rewards') {
