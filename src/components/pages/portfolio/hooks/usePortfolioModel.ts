@@ -1,6 +1,6 @@
+import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import { isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
-import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'

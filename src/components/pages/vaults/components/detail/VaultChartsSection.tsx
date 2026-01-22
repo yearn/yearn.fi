@@ -100,7 +100,7 @@ export function VaultChartsSection({
               ))}
             </div>
             {showApyDisclaimer ? (
-              <p className={'pointer-events-none absolute left-0 top-full mt-1 text-[11px] text-text-secondary'}>
+              <p className={'pointer-events-none absolute left-0 top-full mt-1 text-xxs text-text-secondary'}>
                 {'*This chart does not include KAT and other incentives.'}
               </p>
             ) : null}
