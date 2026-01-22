@@ -156,7 +156,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     },
     [notificationId, updateNotification]
   )
-  console.log(step)
   const executeStep = useCallback(async () => {
     // For permit steps, we don't need prepare.isSuccess - we need permitData
     if (step?.isPermit && step?.permitData) {

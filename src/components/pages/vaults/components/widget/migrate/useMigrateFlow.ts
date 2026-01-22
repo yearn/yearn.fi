@@ -1,7 +1,7 @@
 import { useTokenAllowance } from '@pages/vaults/hooks/useTokenAllowance'
 import type { MigrateRouteType, UseMigrateFlowReturn } from '@pages/vaults/types'
 import { ERC_4626_ROUTER_ABI } from '@shared/contracts/abi/erc4626Router.abi'
-import { isPermitSupported, type TPermitSignature } from '@shared/hooks/usePermit'
+import { detectPermitType, type PermitType, type TPermitSignature } from '@shared/hooks/usePermit'
 import { getMigratorConfig, type MigratorConfig } from '@shared/utils/migratorRegistry'
 import { useEffect, useMemo, useState } from 'react'
 import { type Address, encodeFunctionData, erc20Abi } from 'viem'
@@ -35,7 +35,7 @@ export const useMigrateFlow = ({
   permitSignature
 }: UseMigrateFlowProps): UseMigrateFlowReturn => {
   const client = usePublicClient({ chainId })
-  const [supportsPermit, setSupportsPermit] = useState(false)
+  const [permitType, setPermitType] = useState<PermitType>('none')
   const [isCheckingPermit, setIsCheckingPermit] = useState(true)
 
   // Get migrator config from registry or fallback to ERC_4626_ROUTER
@@ -58,7 +58,7 @@ export const useMigrateFlow = ({
   // Use fallback router address if config specifies one, otherwise use the provided router
   const effectiveRouter = (migratorConfig.routerAddress ?? router) as Address
 
-  // Check if vault token supports permit
+  // Check what type of permit the vault token supports
   useEffect(() => {
     const checkPermitSupport = async () => {
       if (!enabled || !client) {
@@ -67,13 +67,13 @@ export const useMigrateFlow = ({
       }
 
       setIsCheckingPermit(true)
-      const supported = await isPermitSupported(client, vaultFrom, chainId)
-      setSupportsPermit(supported)
+      const type = await detectPermitType(client, vaultFrom)
+      setPermitType(type)
       setIsCheckingPermit(false)
     }
 
     checkPermitSupport()
-  }, [client, vaultFrom, chainId, enabled])
+  }, [client, vaultFrom, enabled])
 
   // Check current allowance to the router
   const { allowance = 0n } = useTokenAllowance({
@@ -88,7 +88,14 @@ export const useMigrateFlow = ({
   const isAllowanceSufficient = allowance >= balance
   const hasBalance = balance > 0n
 
-  // Determine route type: permit (if supported) or approve
+  // Check if this is a V2 vault (V2 vaults have non-standard permit that doesn't work with router's selfPermit)
+  const isV2Vault = !vaultVersion?.startsWith('3') && !vaultVersion?.startsWith('~3')
+
+  // Only use permit flow for V3 vaults with EIP-2612 style permits
+  // V2 vaults have a different permit signature (Bytes[65] instead of v,r,s) that's incompatible with selfPermit
+  const supportsPermit = permitType === 'eip2612' && !isV2Vault
+
+  // Determine route type: permit (if V3 with EIP-2612) or approve (V2 or no permit)
   const routeType: MigrateRouteType = supportsPermit ? 'permit' : 'approve'
 
   // Permit deadline - 20 minutes from now
@@ -107,7 +114,6 @@ export const useMigrateFlow = ({
     query: { enabled: prepareApproveEnabled }
   })
 
-  // Prepare direct migrate transaction (for approve flow after approval)
   const prepareMigrateEnabled = routeType === 'approve' && hasBalance && !!account && enabled && isAllowanceSufficient
   const prepareMigrate: UseSimulateContractReturnType = useSimulateContract({
     abi: migratorConfig.abi,
@@ -136,14 +142,12 @@ export const useMigrateFlow = ({
       functionName: 'selfPermit',
       args: [vaultFrom, balance, permitSignature.deadline, permitSignature.v, permitSignature.r, permitSignature.s]
     })
-    console.log({ selfPermitData })
-    // Encode migrate call
+
     const migrateData = encodeFunctionData({
       abi: migratorConfig.abi,
       functionName: migratorConfig.functionName,
       args: [vaultFrom, vaultTo, balance]
     })
-    console.log({ migrateData })
 
     return [selfPermitData, migrateData]
   }, [

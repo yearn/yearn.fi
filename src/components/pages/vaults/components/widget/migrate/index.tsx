@@ -7,7 +7,7 @@ import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { formatTAmount, isZeroAddress } from '@shared/utils'
 import { type FC, useCallback, useMemo, useState } from 'react'
-import { formatUnits } from 'viem'
+import { formatUnits, hexToNumber, slice } from 'viem'
 import { useAccount, usePublicClient } from 'wagmi'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { useMigrateError } from './useMigrateError'
@@ -110,6 +110,9 @@ export const WidgetMigrate: FC<Props> = ({
   // For permit flow: needs permit signing if no valid signature
   const needsPermitSign = isPermitFlow && !permitSignature
 
+  // Check if this is a V3 vault
+  const isV3Vault = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3')
+
   // Permit data for signing (async getter to read contract data)
   const getPermitData = useCallback(async () => {
     if (!account || !client) return undefined
@@ -140,8 +143,10 @@ export const WidgetMigrate: FC<Props> = ({
     ])
 
     const nonce = nonceResult.status === 'fulfilled' ? nonceResult.value : 0n
-    const name = nameResult.status === 'fulfilled' ? nameResult.value : ''
-    // Yearn V3 vaults use apiVersion for EIP-712 domain, prioritize it over version()
+    const tokenName = nameResult.status === 'fulfilled' ? nameResult.value : ''
+
+    const domainName = isV3Vault ? 'Yearn Vault' : tokenName
+
     const version =
       apiVersionResult.status === 'fulfilled' && apiVersionResult.value
         ? apiVersionResult.value
@@ -151,7 +156,7 @@ export const WidgetMigrate: FC<Props> = ({
 
     return {
       domain: {
-        name,
+        name: domainName,
         version: version || '1',
         chainId,
         verifyingContract: vaultAddress
@@ -174,15 +179,26 @@ export const WidgetMigrate: FC<Props> = ({
       },
       primaryType: 'Permit'
     }
-  }, [account, client, vaultAddress, chainId, periphery.routerAddress, migrateBalance, periphery.permitDeadline])
+  }, [
+    account,
+    client,
+    vaultAddress,
+    chainId,
+    periphery.routerAddress,
+    migrateBalance,
+    periphery.permitDeadline,
+    isV3Vault
+  ])
 
   // Handle permit signed callback
   const handlePermitSigned = useCallback(
     (signature: `0x${string}`) => {
-      // Parse signature into r, s, v
-      const r = `0x${signature.slice(2, 66)}` as `0x${string}`
-      const s = `0x${signature.slice(66, 130)}` as `0x${string}`
-      const v = parseInt(signature.slice(130, 132), 16)
+      // Parse signature into r, s, v using viem utilities
+      const r = slice(signature, 0, 32)
+      const s = slice(signature, 32, 64)
+      const vRaw = hexToNumber(slice(signature, 64, 65))
+      // Normalize v to 27 or 28 (some wallets return 0 or 1)
+      const v = vRaw < 27 ? vRaw + 27 : vRaw
 
       setPermitSignature({
         r,
@@ -194,7 +210,6 @@ export const WidgetMigrate: FC<Props> = ({
     },
     [periphery.permitDeadline]
   )
-  console.log(permitSignature)
   // Transaction steps
   const currentStep: TransactionStep | undefined = useMemo(() => {
     // PERMIT FLOW
@@ -318,12 +333,13 @@ export const WidgetMigrate: FC<Props> = ({
   // Button disabled state
   const isButtonDisabled = useMemo(() => {
     if (migrateError) return true
+
     if (migrateBalance === 0n) return true
 
     // Permit flow: always enabled if we have balance (permit signing happens in overlay)
     if (isPermitFlow) {
-      // If we have signature, check if multicall is ready
-      if (permitSignature && !periphery.prepareMulticallEnabled) {
+      // If we have signature, check if multicall simulation is ready
+      if (permitSignature && !actions.prepareMulticall.isSuccess) {
         return true
       }
       return false
@@ -345,7 +361,7 @@ export const WidgetMigrate: FC<Props> = ({
     needsApproval,
     periphery.prepareApproveEnabled,
     periphery.prepareMigrateEnabled,
-    periphery.prepareMulticallEnabled
+    actions.prepareMulticall.isSuccess
   ])
 
   // Determine if current step is the last step
