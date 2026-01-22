@@ -6,10 +6,10 @@ import type { UseSimulateContractReturnType } from 'wagmi'
 import { useChainId, useSwitchChain, useWriteContract } from 'wagmi'
 import type { TransactionStep } from '../shared/TransactionOverlay'
 import { RewardRow } from './RewardRow'
-import type { TMerkleReward } from './types'
+import type { TGroupedMerkleReward } from './types'
 
 type TMerkleRewardRowProps = {
-  reward: TMerkleReward
+  groupedReward: TGroupedMerkleReward
   userAddress: `0x${string}`
   chainId: number
   onStartClaim: (step: TransactionStep) => void
@@ -17,19 +17,18 @@ type TMerkleRewardRowProps = {
 }
 
 export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
-  const { reward, userAddress, chainId, onStartClaim, isLast } = props
+  const { groupedReward, userAddress, chainId, onStartClaim, isLast } = props
   const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
   const { isPending } = useWriteContract()
 
   const { prepare } = useClaimMerkleRewards({
-    reward,
+    groupedReward,
     userAddress,
-    chainId,
-    enabled: true
+    chainId
   })
 
-  const normalizedAmount = toNormalizedValue(reward.unclaimed, reward.token.decimals)
+  const normalizedAmount = toNormalizedValue(groupedReward.totalUnclaimed, groupedReward.token.decimals)
   const formattedAmount = normalizedAmount.toFixed(4)
 
   const step = useMemo((): TransactionStep | undefined => {
@@ -39,12 +38,12 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
     return {
       prepare: prepare as unknown as UseSimulateContractReturnType,
       label: 'Claim',
-      confirmMessage: `Claim ${formattedAmount} ${reward.token.symbol}`,
+      confirmMessage: `Claim ${formattedAmount} ${groupedReward.token.symbol}`,
       successTitle: 'Rewards Claimed',
-      successMessage: `You claimed ${formattedAmount} ${reward.token.symbol}`,
+      successMessage: `You claimed ${formattedAmount} ${groupedReward.token.symbol}`,
       showConfetti: true
     }
-  }, [prepare, formattedAmount, reward.token.symbol])
+  }, [prepare, formattedAmount, groupedReward.token.symbol])
 
   const handleClaim = useCallback(async () => {
     if (currentChainId !== chainId) {
@@ -62,10 +61,10 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
   return (
     <RewardRow
       chainId={chainId}
-      tokenAddress={reward.token.address}
-      symbol={reward.token.symbol}
+      tokenAddress={groupedReward.token.address}
+      symbol={groupedReward.token.symbol}
       amount={normalizedAmount.toString()}
-      usdValue={reward.usdValue}
+      usdValue={groupedReward.totalUsdValue}
       onClaim={handleClaim}
       isClaimPending={isPending}
       isClaimReady={prepare.isSuccess}

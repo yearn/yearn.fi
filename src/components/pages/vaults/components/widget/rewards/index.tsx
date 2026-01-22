@@ -23,11 +23,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false)
   const [activeStep, setActiveStep] = useState<TransactionStep | undefined>()
 
-  const {
-    rewards: stakingRewards,
-    isLoading: isLoadingStaking,
-    refetch: refetchStaking
-  } = useStakingRewards({
+  const { rewards: stakingRewards, refetch: refetchStaking } = useStakingRewards({
     stakingAddress,
     stakingSource,
     rewardTokens,
@@ -36,11 +32,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
     enabled: isActive && !!stakingAddress
   })
 
-  const {
-    rewards: merkleRewards,
-    isLoading: isLoadingMerkle,
-    refetch: refetchMerkle
-  } = useMerkleRewards({
+  const { groupedRewards: merkleRewards, refetch: refetchMerkle } = useMerkleRewards({
     userAddress,
     chainId,
     enabled: isActive
@@ -49,11 +41,10 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   const hasStakingRewards = stakingRewards.length > 0
   const hasMerkleRewards = merkleRewards.length > 0
   const hasAnyRewards = hasStakingRewards || hasMerkleRewards
-  const isLoading = isLoadingStaking || isLoadingMerkle
 
   const totalUsd = useMemo(() => {
     const stakingTotal = stakingRewards.reduce((acc, r) => acc + r.usdValue, 0)
-    const merkleTotal = merkleRewards.reduce((acc, r) => acc + r.usdValue, 0)
+    const merkleTotal = merkleRewards.reduce((acc, r) => acc + r.totalUsdValue, 0)
     return stakingTotal + merkleTotal
   }, [stakingRewards, merkleRewards])
 
@@ -75,11 +66,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
     setActiveStep(undefined)
   }, [])
 
-  if (!isActive || (!hasAnyRewards && !isLoading)) {
-    return null
-  }
-
-  if (isLoading && !hasAnyRewards) {
+  if (!isActive || !hasAnyRewards) {
     return null
   }
 
@@ -102,10 +89,10 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
               isLast={!hasMerkleRewards && index === stakingRewards.length - 1}
             />
           ))}
-          {merkleRewards.map((reward, index) => (
+          {merkleRewards.map((groupedReward, index) => (
             <MerkleRewardRow
-              key={reward.token.address}
-              reward={reward}
+              key={groupedReward.token.symbol}
+              groupedReward={groupedReward}
               userAddress={userAddress!}
               chainId={chainId}
               onStartClaim={handleStartClaim}
