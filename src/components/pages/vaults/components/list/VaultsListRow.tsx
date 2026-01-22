@@ -240,6 +240,16 @@ export function VaultsListRow({
             'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
           )}
         />
+        {isExpanded ? (
+          <div
+            className={cl(
+              'absolute inset-0',
+              'opacity-0 transition-opacity duration-300 pointer-events-none',
+              !isHoveringInteractive ? 'group-hover:opacity-100 group-focus-visible:opacity-100' : '',
+              'bg-[linear-gradient(180deg,transparent,var(--color-surface))]'
+            )}
+          />
+        ) : null}
 
         <div className={cl(leftColumnSpan, 'z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
           <div className={'flex flex-row w-full gap-4 overflow-visible'}>
