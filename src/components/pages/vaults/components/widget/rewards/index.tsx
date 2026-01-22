@@ -74,9 +74,10 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
     <div className="flex w-full flex-col gap-0">
       <div className="relative overflow-hidden rounded-lg border border-border bg-surface">
         <div className="flex flex-col gap-1 bg-surface-secondary p-4">
-          <h1 className="text-lg font-medium text-text-primary">Claim Rewards</h1>
-          {totalUsd > 0 && <span className="text-2xl font-bold text-text-primary">{formatUSD(totalUsd, 2, 2)}</span>}
+          <span className="text-xs font-medium uppercase tracking-wide text-text-secondary">Claimable Rewards</span>
+          <span className="text-2xl font-bold text-text-primary">{formatUSD(totalUsd, 2, 2)}</span>
         </div>
+        <div className="h-px w-full bg-border" />
         <div className="p-4">
           {stakingRewards.map((reward, index) => (
             <StakingRewardRow

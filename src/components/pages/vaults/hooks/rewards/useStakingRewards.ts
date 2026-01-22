@@ -33,9 +33,7 @@ type UseStakingRewardsReturn = {
 export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRewardsReturn {
   const { stakingAddress, stakingSource, rewardTokens, userAddress, chainId, enabled = true } = params
 
-  const activeRewardTokens = useMemo(() => rewardTokens.filter((token) => !token.isFinished), [rewardTokens])
-
-  const isEnabled = enabled && !!stakingAddress && !!userAddress && activeRewardTokens.length > 0
+  const isEnabled = enabled && !!stakingAddress && !!userAddress && rewardTokens.length > 0
 
   // V3 staking uses earnedMulti to get all rewards in one call
   const isV3Staking = stakingSource === 'V3 Staking'
@@ -67,18 +65,18 @@ export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRe
     query: { enabled: isEnabled && isVeYFIGauge }
   })
 
-  // Juiced/OP Boost uses earned(account, rewardsToken) for each token
-  const isJuiced = stakingSource === 'Juiced' || stakingSource === 'OP Boost'
+  // Juiced uses earned(account, rewardsToken) for each token
+  const isJuiced = stakingSource === 'Juiced'
   const juicedContracts = useMemo(() => {
     if (!isJuiced || !stakingAddress || !userAddress) return []
-    return activeRewardTokens.map((token) => ({
+    return rewardTokens.map((token) => ({
       address: stakingAddress,
       abi: JUICED_STAKING_REWARDS_ABI,
       functionName: 'earned' as const,
       args: [userAddress, token.address] as const,
       chainId
     }))
-  }, [isJuiced, stakingAddress, userAddress, activeRewardTokens, chainId])
+  }, [isJuiced, stakingAddress, userAddress, rewardTokens, chainId])
 
   const {
     data: juicedEarned,
@@ -89,8 +87,9 @@ export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRe
     query: { enabled: isEnabled && isJuiced && juicedContracts.length > 0 }
   })
 
-  // Legacy staking uses earned(account) for single reward token
-  const isLegacy = stakingSource === 'Legacy' || (!isV3Staking && !isVeYFIGauge && !isJuiced)
+  // Legacy/OP Boost staking uses earned(account) for single reward token
+  const isLegacy =
+    stakingSource === 'Legacy' || stakingSource === 'OP Boost' || (!isV3Staking && !isVeYFIGauge && !isJuiced)
   const {
     data: legacyEarned,
     isLoading: isLoadingLegacy,
@@ -101,14 +100,14 @@ export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRe
     functionName: 'earned',
     args: [userAddress!],
     chainId,
-    query: { enabled: isEnabled && isLegacy && activeRewardTokens.length === 1 }
+    query: { enabled: isEnabled && isLegacy && rewardTokens.length === 1 }
   })
 
   const rewards = useMemo((): TStakingReward[] => {
     if (!isEnabled) return []
 
     if (isV3Staking && v3EarnedMulti) {
-      return activeRewardTokens
+      return rewardTokens
         .map((token, index) => {
           const amount = v3EarnedMulti[index] ?? 0n
           const normalized = toNormalizedValue(amount, token.decimals)
@@ -124,8 +123,8 @@ export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRe
         .filter((r) => r.amount > 0n)
     }
 
-    if (isVeYFIGauge && veYFIEarned !== undefined && activeRewardTokens.length > 0) {
-      const token = activeRewardTokens[0]
+    if (isVeYFIGauge && veYFIEarned !== undefined && rewardTokens.length > 0) {
+      const token = rewardTokens[0]
       const amount = veYFIEarned
       const normalized = toNormalizedValue(amount, token.decimals)
       if (amount > 0n) {
@@ -144,7 +143,7 @@ export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRe
     }
 
     if (isJuiced && juicedEarned) {
-      return activeRewardTokens
+      return rewardTokens
         .map((token, index) => {
           const result = juicedEarned[index]
           const amount = result?.status === 'success' ? (result.result as bigint) : 0n
@@ -161,8 +160,8 @@ export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRe
         .filter((r) => r.amount > 0n)
     }
 
-    if (isLegacy && legacyEarned !== undefined && activeRewardTokens.length > 0) {
-      const token = activeRewardTokens[0]
+    if (isLegacy && legacyEarned !== undefined && rewardTokens.length > 0) {
+      const token = rewardTokens[0]
       const amount = legacyEarned
       const normalized = toNormalizedValue(amount, token.decimals)
       if (amount > 0n) {
@@ -191,7 +190,7 @@ export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRe
     veYFIEarned,
     juicedEarned,
     legacyEarned,
-    activeRewardTokens
+    rewardTokens
   ])
 
   const isLoading = isLoadingV3 || isLoadingVeYFI || isLoadingJuiced || isLoadingLegacy
