@@ -18,6 +18,8 @@ interface UseWithdrawFlowProps {
   amount: bigint
   currentAmount: bigint
   requiredShares: bigint
+  maxShares: bigint
+  isMaxWithdraw: boolean
   // Account & chain
   account?: Address
   chainId: number
@@ -50,6 +52,8 @@ export const useWithdrawFlow = ({
   amount,
   currentAmount,
   requiredShares,
+  maxShares,
+  isMaxWithdraw,
   account,
   chainId,
   destinationChainId,
@@ -79,6 +83,8 @@ export const useWithdrawFlow = ({
     vaultAddress,
     assetAddress,
     amount,
+    maxShares,
+    redeemAll: isMaxWithdraw,
     pricePerShare,
     account,
     chainId,
