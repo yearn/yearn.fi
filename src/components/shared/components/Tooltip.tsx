@@ -214,6 +214,10 @@ export const Tooltip: FC<{
             }}
             onClick={(event): void => {
               event.stopPropagation()
+              const target = event.target as HTMLElement | null
+              if (target?.closest('[data-tooltip-close="true"]')) {
+                setIsTooltipVisible(false)
+              }
             }}
             style={{
               position: 'fixed',

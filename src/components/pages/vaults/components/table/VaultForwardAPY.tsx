@@ -107,11 +107,11 @@ export function VaultForwardAPY({
         {canOpenModal ? (
           <button
             type={'button'}
+            data-tooltip-close={'true'}
             className={
               'mt-2 mx-auto block font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
             }
-            onClick={(event): void => {
-              event.stopPropagation()
+            onClick={(_event): void => {
               setIsModalOpen(true)
             }}
           >
