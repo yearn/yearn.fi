@@ -226,9 +226,9 @@ function PortfolioHoldingsSection({
             items={[
               {
                 type: 'sort',
-                label: 'Vault / Featuring Score',
-                value: 'featuringScore',
-                sortable: true,
+                label: 'Vault Name',
+                value: 'vault',
+                sortable: false,
                 className: 'col-span-12'
               },
               {

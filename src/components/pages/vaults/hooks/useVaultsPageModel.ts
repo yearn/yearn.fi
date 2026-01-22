@@ -50,6 +50,7 @@ import { useVaultsListModel } from './useVaultsListModel'
 import { useVaultsQueryState } from './useVaultsQueryState'
 
 const DEFAULT_VAULT_TYPES = ['multi', 'single']
+const DEFAULT_SORT_BY: TPossibleSortBy = 'tvl'
 const VAULTS_FILTERS_STORAGE_KEY = 'yearn.fi/vaults-filters@1'
 
 type TVaultsPinnedSection = {
@@ -163,7 +164,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     defaultTypes: DEFAULT_VAULT_TYPES,
     defaultCategories: [],
     defaultPathname: '/vaults',
-    defaultSortBy: 'featuringScore',
+    defaultSortBy: DEFAULT_SORT_BY,
     resetTypes: DEFAULT_VAULT_TYPES,
     resetCategories: [],
     persistToStorage: true,
@@ -174,6 +175,16 @@ export function useVaultsPageModel(): TVaultsPageModel {
   })
 
   usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType === 'v3')
+
+  useEffect(() => {
+    if (sortBy !== 'featuringScore') {
+      return
+    }
+    onChangeSortBy(DEFAULT_SORT_BY)
+    if (sortDirection !== 'desc') {
+      onChangeSortDirection('desc')
+    }
+  }, [sortBy, sortDirection, onChangeSortBy, onChangeSortDirection])
 
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
@@ -348,6 +359,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
     return Array.from(new Set(normalized))
   }, [listUnderlyingAssets])
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
+  const effectiveSortBy = sortBy === 'featuringScore' ? DEFAULT_SORT_BY : sortBy
+  const effectiveSortDirection = sortBy === 'featuringScore' ? 'desc' : sortDirection
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
   const {
@@ -375,8 +388,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
     listShowLegacyVaults,
     listShowHiddenVaults,
     searchValue,
-    sortBy,
-    sortDirection,
+    sortBy: effectiveSortBy,
+    sortDirection: effectiveSortDirection,
     isHoldingsPinned,
     isAvailablePinned
   })
@@ -778,14 +791,14 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const listHeadProps: TListHead = {
     containerClassName: 'rounded-t-xl bg-surface shrink-0',
     wrapperClassName: 'relative z-10 border border-border rounded-t-xl bg-transparent',
-    sortBy,
-    sortDirection,
+    sortBy: effectiveSortBy,
+    sortDirection: effectiveSortDirection,
     onSort: (newSortBy: string, newSortDirection: TSortDirection): void => {
       let targetSortBy = newSortBy as TPossibleSortBy
       let targetSortDirection = newSortDirection as TSortDirection
 
       if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
-        targetSortBy = 'featuringScore'
+        targetSortBy = DEFAULT_SORT_BY
         targetSortDirection = 'desc'
       }
 
@@ -804,9 +817,9 @@ export function useVaultsPageModel(): TVaultsPageModel {
     items: [
       {
         type: 'sort',
-        label: 'Vault / Featuring Score',
-        value: 'featuringScore',
-        sortable: true,
+        label: 'Vault',
+        value: 'vault',
+        sortable: false,
         className: 'col-span-12'
       },
       {
