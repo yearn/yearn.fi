@@ -146,7 +146,7 @@ export const useMigrateFlow = ({
     const migrateData = encodeFunctionData({
       abi: migratorConfig.abi,
       functionName: migratorConfig.functionName,
-      args: [vaultFrom, vaultTo, balance]
+      args: [vaultFrom, vaultTo, balance, 0n]
     })
 
     return [selfPermitData, migrateData]
@@ -169,7 +169,7 @@ export const useMigrateFlow = ({
     chainId,
     query: { enabled: prepareMulticallEnabled && !!multicallData }
   })
-
+  console.log(prepareMulticall)
   // Determine error state
   const error = useMemo(() => {
     if (isCheckingPermit) return undefined
@@ -186,6 +186,7 @@ export const useMigrateFlow = ({
     },
     periphery: {
       isAllowanceSufficient,
+      isCheckingPermit,
       allowance,
       balance,
       prepareApproveEnabled,

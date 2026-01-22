@@ -124,6 +124,7 @@ export type UseMigrateFlowReturn = T<
   },
   {
     isAllowanceSufficient: boolean
+    isCheckingPermit: boolean
     allowance: bigint
     balance: bigint
     prepareApproveEnabled: boolean

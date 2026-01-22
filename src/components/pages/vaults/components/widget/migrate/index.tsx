@@ -6,7 +6,7 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { formatTAmount, isZeroAddress } from '@shared/utils'
-import { type FC, useCallback, useMemo, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits, hexToNumber, slice } from 'viem'
 import { useAccount, usePublicClient } from 'wagmi'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
@@ -45,6 +45,8 @@ export const WidgetMigrate: FC<Props> = ({
 
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [permitSignature, setPermitSignature] = useState<TPermitSignature | undefined>()
+  const [permitData, setPermitData] = useState<any>(undefined)
+  const [isLoadingPermitData, setIsLoadingPermitData] = useState(false)
 
   // Get destination vault token info
   const destinationVault = getToken({ address: migrationTarget, chainID: chainId })
@@ -113,73 +115,89 @@ export const WidgetMigrate: FC<Props> = ({
   // Check if this is a V3 vault
   const isV3Vault = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3')
 
-  // Permit data for signing (async getter to read contract data)
-  const getPermitData = useCallback(async () => {
-    if (!account || !client) return undefined
+  // Pre-fetch permit data when in permit flow
+  useEffect(() => {
+    const fetchPermitData = async () => {
+      if (!isPermitFlow || !account || !client || migrateBalance === 0n) {
+        setPermitData(undefined)
+        return
+      }
 
-    // Read contract metadata
-    const [nonceResult, nameResult, versionResult, apiVersionResult] = await Promise.allSettled([
-      client.readContract({
-        address: vaultAddress,
-        abi: PERMIT_ABI,
-        functionName: 'nonces',
-        args: [account]
-      }),
-      client.readContract({
-        address: vaultAddress,
-        abi: PERMIT_ABI,
-        functionName: 'name'
-      }),
-      client.readContract({
-        address: vaultAddress,
-        abi: PERMIT_ABI,
-        functionName: 'version'
-      }),
-      client.readContract({
-        address: vaultAddress,
-        abi: PERMIT_ABI,
-        functionName: 'apiVersion'
-      })
-    ])
+      setIsLoadingPermitData(true)
 
-    const nonce = nonceResult.status === 'fulfilled' ? nonceResult.value : 0n
-    const tokenName = nameResult.status === 'fulfilled' ? nameResult.value : ''
+      try {
+        // Read contract metadata
+        const [nonceResult, nameResult, versionResult, apiVersionResult] = await Promise.allSettled([
+          client.readContract({
+            address: vaultAddress,
+            abi: PERMIT_ABI,
+            functionName: 'nonces',
+            args: [account]
+          }),
+          client.readContract({
+            address: vaultAddress,
+            abi: PERMIT_ABI,
+            functionName: 'name'
+          }),
+          client.readContract({
+            address: vaultAddress,
+            abi: PERMIT_ABI,
+            functionName: 'version'
+          }),
+          client.readContract({
+            address: vaultAddress,
+            abi: PERMIT_ABI,
+            functionName: 'apiVersion'
+          })
+        ])
 
-    const domainName = isV3Vault ? 'Yearn Vault' : tokenName
+        const nonce = nonceResult.status === 'fulfilled' ? nonceResult.value : 0n
+        const tokenName = nameResult.status === 'fulfilled' ? nameResult.value : ''
 
-    const version =
-      apiVersionResult.status === 'fulfilled' && apiVersionResult.value
-        ? apiVersionResult.value
-        : versionResult.status === 'fulfilled' && versionResult.value
-          ? versionResult.value
-          : '1'
+        const domainName = isV3Vault ? 'Yearn Vault' : tokenName
 
-    return {
-      domain: {
-        name: domainName,
-        version: version || '1',
-        chainId,
-        verifyingContract: vaultAddress
-      },
-      types: {
-        Permit: [
-          { name: 'owner', type: 'address' },
-          { name: 'spender', type: 'address' },
-          { name: 'value', type: 'uint256' },
-          { name: 'nonce', type: 'uint256' },
-          { name: 'deadline', type: 'uint256' }
-        ]
-      },
-      message: {
-        owner: account,
-        spender: periphery.routerAddress,
-        value: migrateBalance,
-        nonce,
-        deadline: periphery.permitDeadline
-      },
-      primaryType: 'Permit'
+        const version =
+          apiVersionResult.status === 'fulfilled' && apiVersionResult.value
+            ? apiVersionResult.value
+            : versionResult.status === 'fulfilled' && versionResult.value
+              ? versionResult.value
+              : '1'
+
+        setPermitData({
+          domain: {
+            name: domainName,
+            version: version || '1',
+            chainId,
+            verifyingContract: vaultAddress
+          },
+          types: {
+            Permit: [
+              { name: 'owner', type: 'address' },
+              { name: 'spender', type: 'address' },
+              { name: 'value', type: 'uint256' },
+              { name: 'nonce', type: 'uint256' },
+              { name: 'deadline', type: 'uint256' }
+            ]
+          },
+          message: {
+            owner: account,
+            spender: periphery.routerAddress,
+            value: migrateBalance,
+            nonce,
+            deadline: periphery.permitDeadline
+          },
+          primaryType: 'Permit'
+        })
+      } catch {
+        setPermitData(undefined)
+      } finally {
+        setIsLoadingPermitData(false)
+      }
     }
+
+    fetchPermitData()
   }, [
+    isPermitFlow,
     account,
     client,
     vaultAddress,
@@ -189,6 +207,11 @@ export const WidgetMigrate: FC<Props> = ({
     periphery.permitDeadline,
     isV3Vault
   ])
+
+  // Getter for permit data (returns cached data)
+  const getPermitData = useCallback(async () => {
+    return permitData
+  }, [permitData])
 
   // Handle permit signed callback
   const handlePermitSigned = useCallback(
@@ -323,12 +346,13 @@ export const WidgetMigrate: FC<Props> = ({
 
   // Button text
   const buttonText = useMemo(() => {
+    if (isLoadingPermitData || periphery.isCheckingPermit) return 'Loading...'
     if (isPermitFlow) {
       return needsPermitSign ? 'Sign & Migrate' : 'Migrate All'
     }
     if (needsApproval) return 'Approve & Migrate'
     return 'Migrate All'
-  }, [isPermitFlow, needsPermitSign, needsApproval])
+  }, [isPermitFlow, isLoadingPermitData, needsPermitSign, needsApproval, periphery.isCheckingPermit])
 
   // Button disabled state
   const isButtonDisabled = useMemo(() => {
@@ -336,9 +360,10 @@ export const WidgetMigrate: FC<Props> = ({
 
     if (migrateBalance === 0n) return true
 
-    // Permit flow: always enabled if we have balance (permit signing happens in overlay)
+    if (isLoadingPermitData || !permitData || periphery.isCheckingPermit) return true
+
+    // Permit flow
     if (isPermitFlow) {
-      // If we have signature, check if multicall simulation is ready
       if (permitSignature && !actions.prepareMulticall.isSuccess) {
         return true
       }
@@ -357,11 +382,14 @@ export const WidgetMigrate: FC<Props> = ({
     migrateError,
     migrateBalance,
     isPermitFlow,
+    isLoadingPermitData,
+    permitData,
     permitSignature,
     needsApproval,
     periphery.prepareApproveEnabled,
     periphery.prepareMigrateEnabled,
-    actions.prepareMulticall.isSuccess
+    actions.prepareMulticall.isSuccess,
+    periphery.isCheckingPermit
   ])
 
   // Determine if current step is the last step
