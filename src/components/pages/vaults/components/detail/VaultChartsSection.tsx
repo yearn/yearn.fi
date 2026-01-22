@@ -1,3 +1,4 @@
+import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
 import { transformVaultChartData } from '@pages/vaults/utils/charts'
 import { cl } from '@shared/utils'
@@ -74,12 +75,13 @@ export function VaultChartsSection({
   const activeTimeframe = timeframe ?? uncontrolledTimeframe
   const setActiveTab = onChartTabChange ?? setUncontrolledTab
   const setActiveTimeframe = onTimeframeChange ?? setUncontrolledTimeframe
+  const showApyDisclaimer = shouldRenderSelectors && activeTab === 'historical-apy' && chainId === KATANA_CHAIN_ID
 
   return (
     <div className={'space-y-4 pt-3 rounded-lg'}>
       {shouldRenderSelectors ? (
         <div className={'flex flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between'}>
-          <div className={'flex flex-wrap gap-3'}>
+          <div className={'relative flex flex-wrap gap-3'}>
             <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner'}>
               {VAULT_CHART_TABS.map((tab) => (
                 <button
@@ -97,6 +99,11 @@ export function VaultChartsSection({
                 </button>
               ))}
             </div>
+            {showApyDisclaimer ? (
+              <p className={'pointer-events-none absolute left-0 top-full mt-1 text-xxs text-text-secondary'}>
+                {'*This chart does not include KAT and other incentives.'}
+              </p>
+            ) : null}
           </div>
           <div className={'flex flex-wrap gap-3'}>
             <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner'}>

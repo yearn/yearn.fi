@@ -34,7 +34,8 @@ describe('VaultForwardAPY', () => {
       isEligibleForSteer: false,
       steerPointsPerDollar: 0,
       katanaExtras: undefined,
-      katanaTotalApr: undefined
+      katanaThirtyDayApr: undefined,
+      katanaEstApr: undefined
     })
 
     const { container, queryByText } = render(

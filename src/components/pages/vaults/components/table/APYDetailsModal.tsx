@@ -14,7 +14,7 @@ type TAPYDetailsModalProps = {
 export function APYDetailsModal({ isOpen, onClose, title, children }: TAPYDetailsModalProps): ReactElement {
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog as={'div'} className={'relative z-[60]'} onClose={onClose}>
+      <Dialog as={'div'} className={'relative z-[100]'} onClose={onClose}>
         <TransitionChild
           as={Fragment}
           enter={'duration-200 ease-out'}

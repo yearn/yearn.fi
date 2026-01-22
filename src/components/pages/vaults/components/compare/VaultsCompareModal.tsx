@@ -4,10 +4,13 @@ import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { Button } from '@shared/components/Button'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { useYearn } from '@shared/contexts/useYearn'
+import type { TKatanaAprs } from '@shared/hooks/useKatanaAprs'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconClose } from '@shared/icons/IconClose'
-import { cl, formatPercent, isZero } from '@shared/utils'
+import { cl, formatPercent } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import { calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment } from 'react'
@@ -46,17 +49,15 @@ function MetricValue({ children, className }: { children: ReactNode; className?:
   return <div className={cl('border-b border-border py-3 text-sm text-text-primary', className)}>{children}</div>
 }
 
-function renderPercentValue(value: number | undefined): ReactElement {
-  if (value === undefined || Number.isNaN(value)) {
+function renderPercentValue(value: number | null | undefined): ReactElement {
+  if (value === null || value === undefined || Number.isNaN(value)) {
     return <span className={'text-text-secondary'}>{'—'}</span>
   }
   return <RenderAmount value={value} symbol={'percent'} decimals={6} />
 }
 
-function resolveThirtyDayApy(vault: TYDaemonVault): number {
-  const monthly = vault.apr?.points?.monthAgo ?? 0
-  const weekly = vault.apr?.points?.weekAgo ?? 0
-  return isZero(monthly) ? weekly : monthly
+function resolveThirtyDayApy(vault: TYDaemonVault, katanaAprs: Partial<TKatanaAprs> | undefined): number | null {
+  return calculateVaultHistoricalAPY(vault, katanaAprs)
 }
 
 function hasAllocatedFunds(strategy: TVaultStrategyItem): boolean {
@@ -75,6 +76,7 @@ export function VaultsCompareModal({
   onRemove,
   onClear
 }: TVaultsCompareModalProps): ReactElement {
+  const { katanaAprs } = useYearn()
   const columnsCount = Math.max(vaults.length, 1)
   const gridTemplateColumns = `minmax(160px, 220px) repeat(${columnsCount}, minmax(180px, 1fr))`
   const hasVaults = vaults.length > 0
@@ -204,7 +206,7 @@ export function VaultsCompareModal({
                         {vaults.map((vault) => (
                           <MetricValue key={`apy-30d-${getVaultKey(vault)}`}>
                             <div className={'flex items-center gap-2'}>
-                              {renderPercentValue(resolveThirtyDayApy(vault))}
+                              {renderPercentValue(resolveThirtyDayApy(vault, katanaAprs))}
                             </div>
                           </MetricValue>
                         ))}

@@ -12,8 +12,19 @@ export const Tooltip: FC<{
   tooltip: string | ReactElement
   openDelayMs?: number
   toggleOnClick?: boolean
-  align?: 'center' | 'start'
-}> = ({ children, tooltip, className, openDelayMs = 0, toggleOnClick = false, align = 'center' }) => {
+  align?: 'center' | 'start' | 'left' | 'right'
+  side?: 'top' | 'bottom' | 'left' | 'right'
+  zIndex?: number
+}> = ({
+  children,
+  tooltip,
+  className,
+  openDelayMs = 0,
+  toggleOnClick = false,
+  align = 'center',
+  side = 'bottom',
+  zIndex = 9999
+}) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const triggerRef = useRef<HTMLDivElement>(null)
@@ -78,14 +89,33 @@ export const Tooltip: FC<{
   const showTooltip = useCallback((): void => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect()
-      const x = align === 'start' ? rect.left : rect.left + rect.width / 2
+      const resolvedAlign = align === 'start' || align === 'left' ? 'start' : align === 'right' ? 'end' : 'center'
+      const isSideHorizontal = side === 'left' || side === 'right'
+      const x = isSideHorizontal
+        ? side === 'left'
+          ? rect.left
+          : rect.right
+        : resolvedAlign === 'start'
+          ? rect.left
+          : resolvedAlign === 'end'
+            ? rect.right
+            : rect.left + rect.width / 2
+      const y = isSideHorizontal
+        ? resolvedAlign === 'start'
+          ? rect.top
+          : resolvedAlign === 'end'
+            ? rect.bottom
+            : rect.top + rect.height / 2
+        : side === 'top'
+          ? rect.top
+          : rect.bottom
       setTooltipPosition({
         x,
-        y: rect.bottom
+        y
       })
       setIsTooltipVisible(true)
     }
-  }, [align])
+  }, [align, side])
 
   const scheduleOpen = useCallback((): void => {
     cancelScheduledClose()
@@ -184,14 +214,44 @@ export const Tooltip: FC<{
             }}
             onClick={(event): void => {
               event.stopPropagation()
+              const target = event.target as HTMLElement | null
+              if (target?.closest('[data-tooltip-close="true"]')) {
+                setIsTooltipVisible(false)
+              }
             }}
             style={{
               position: 'fixed',
               left: tooltipPosition.x,
               top: tooltipPosition.y,
-              paddingTop: 8,
-              transform: align === 'start' ? 'translateX(0)' : 'translateX(-50%)',
-              zIndex: 9999,
+              paddingTop: side === 'bottom' ? 8 : 0,
+              paddingBottom: side === 'top' ? 8 : 0,
+              paddingLeft: side === 'right' ? 8 : 0,
+              paddingRight: side === 'left' ? 8 : 0,
+              transform: (() => {
+                const resolvedAlign =
+                  align === 'start' || align === 'left' ? 'start' : align === 'right' ? 'end' : 'center'
+                const horizontalShift =
+                  resolvedAlign === 'start'
+                    ? 'translateX(0)'
+                    : resolvedAlign === 'end'
+                      ? 'translateX(-100%)'
+                      : 'translateX(-50%)'
+                const verticalShift =
+                  resolvedAlign === 'start'
+                    ? 'translateY(0)'
+                    : resolvedAlign === 'end'
+                      ? 'translateY(-100%)'
+                      : 'translateY(-50%)'
+
+                if (side === 'left') {
+                  return `translateX(-100%) ${verticalShift}`
+                }
+                if (side === 'right') {
+                  return `translateX(0) ${verticalShift}`
+                }
+                return `${horizontalShift}${side === 'top' ? ' translateY(-100%)' : ''}`
+              })(),
+              zIndex,
               pointerEvents: 'auto'
             }}
           >

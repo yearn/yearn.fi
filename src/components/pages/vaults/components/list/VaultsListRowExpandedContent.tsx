@@ -58,6 +58,7 @@ export default function VaultsListRowExpandedContent({
               currentVault={currentVault}
               className={'p-0'}
               showKindTag={showKindTag}
+              showVaultAddress={true}
               showHiddenTag={showHiddenTag}
               isHidden={isHidden}
             />

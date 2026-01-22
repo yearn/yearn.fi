@@ -82,7 +82,7 @@ function Index(): ReactElement | null {
   }
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
   const sectionScrollOffset = 275
-  const compressedHeaderHeight = 117.5
+  const compressedHeaderHeight = 126
 
   // Reset state when vault changes
   useEffect(() => {
@@ -206,16 +206,16 @@ function Index(): ReactElement | null {
         content: <VaultAboutSection currentVault={currentVault} />
       },
       {
-        key: 'risk' as const,
-        shouldRender: true,
-        ref: sectionRefs.risk,
-        content: <VaultRiskSection currentVault={currentVault} />
-      },
-      {
         key: 'strategies' as const,
         shouldRender: Number(currentVault.strategies?.length || 0) > 0,
         ref: sectionRefs.strategies,
         content: <VaultStrategiesSection currentVault={currentVault} />
+      },
+      {
+        key: 'risk' as const,
+        shouldRender: true,
+        ref: sectionRefs.risk,
+        content: <VaultRiskSection currentVault={currentVault} />
       },
       {
         key: 'info' as const,

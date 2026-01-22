@@ -8,13 +8,14 @@ import {
 } from '@pages/vaults/utils/vaultTagCopy'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { IconChevron } from '@shared/icons/IconChevron'
+import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconRewind } from '@shared/icons/IconRewind'
 import { IconScissors } from '@shared/icons/IconScissors'
 import { IconStablecoin } from '@shared/icons/IconStablecoin'
 import { IconVolatile } from '@shared/icons/IconVolatile'
 import { cl, formatPercent } from '@shared/utils'
-import { parseMarkdown } from '@shared/utils/helpers'
+import { copyToClipboard, parseMarkdown } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { type ReactElement, type ReactNode, useState } from 'react'
@@ -79,11 +80,13 @@ function ExpandableInfoItem({ label, value, children, className, icon }: TExpand
 export function VaultAboutSection({
   currentVault,
   className,
-  showKindTag = true
+  showKindTag = true,
+  showVaultAddress = false
 }: {
   currentVault: TYDaemonVault
   className?: string
   showKindTag?: boolean
+  showVaultAddress?: boolean
   showHiddenTag?: boolean
   isHidden?: boolean
 }): ReactElement {
@@ -112,7 +115,7 @@ export function VaultAboutSection({
   const vaultKindDescription = shouldShowKind ? getKindDescription(kindType, kindLabel) : null
   const managementFee = formatPercent((apr.fees.management || 0) * 100, 0, 2)
   const performanceFee = formatPercent((apr.fees.performance || 0) * 100, 0, 2)
-  const feesSummary = `${managementFee} Management | ${performanceFee} Performance`
+  const feesSummary = `${managementFee} Management Fee | ${performanceFee} Performance Fee`
   const categoryIcon =
     currentVault.category === 'Stablecoin' ? (
       <IconStablecoin className={'size-4 text-text-secondary'} />
@@ -128,6 +131,8 @@ export function VaultAboutSection({
   )
   const chainIcon = <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={16} height={16} />
   const feesIcon = <IconScissors className={'size-4 text-text-secondary'} />
+  const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
+  const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
 
   function getVaultDescription(): string | ReactElement {
     if (currentVault.description) {
@@ -176,18 +181,46 @@ export function VaultAboutSection({
 
   return (
     <div className={cl('p-8 pt-0', className)}>
-      <div className={'flex flex-col gap-4'}>
+      <div className={'flex flex-col gap-2'}>
         <div className={'px-4 text-sm text-text-secondary'}>
-          {isDescriptionString ? (
-            <div
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled description content
-              dangerouslySetInnerHTML={{
-                __html: vaultDescription as string
-              }}
-            />
-          ) : (
-            <div>{vaultDescription}</div>
-          )}
+          <div className="">
+            {isDescriptionString ? (
+              <div
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled description content
+                dangerouslySetInnerHTML={{
+                  __html: vaultDescription as string
+                }}
+              />
+            ) : (
+              <div>{vaultDescription}</div>
+            )}
+          </div>
+          {showVaultAddress ? (
+            <div className={'flex flex-wrap items-center py-3 gap-2 text-sm border-b border-border'}>
+              <span className={'text-text-secondary'} title={currentVault.address}>
+                {currentVault.address}
+              </span>
+              <button
+                type={'button'}
+                onClick={(): void => copyToClipboard(currentVault.address)}
+                className={'text-text-secondary transition-colors hover:text-text-primary'}
+                aria-label={'Copy vault address'}
+              >
+                <IconCopy className={'size-3'} />
+              </button>
+              {explorerHref ? (
+                <a
+                  href={explorerHref}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className={'text-text-secondary transition-colors hover:text-text-primary'}
+                  aria-label={'View vault on block explorer'}
+                >
+                  <IconLinkOut className={'size-3'} />
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className={'flex flex-col gap-1.5 px-4'}>

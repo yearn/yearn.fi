@@ -13,6 +13,7 @@ type TVaultsListChipProps = {
   tooltip?: string | ReactElement
   tooltipDelayMs?: number
   onClick?: () => void
+  onHoverChange?: (isHovering: boolean) => void
   ariaLabel?: string
   disabled?: boolean
 }
@@ -27,10 +28,12 @@ export function VaultsListChip({
   tooltip,
   tooltipDelayMs,
   onClick,
+  onHoverChange,
   ariaLabel,
   disabled = false
 }: TVaultsListChipProps): ReactElement {
   const isInteractive = Boolean(onClick) && !disabled
+  const canTrackHover = Boolean(onHoverChange) && !disabled
   const shouldCollapse = isCollapsed && Boolean(icon)
   const iconNode = icon ? (
     <span className={'flex size-4 items-center justify-center text-text-secondary'}>{icon}</span>
@@ -49,6 +52,8 @@ export function VaultsListChip({
       data-active={isActive}
       aria-pressed={isInteractive ? isActive : undefined}
       aria-label={ariaLabel || label}
+      onMouseEnter={canTrackHover ? (): void => onHoverChange?.(true) : undefined}
+      onMouseLeave={canTrackHover ? (): void => onHoverChange?.(false) : undefined}
       onClick={
         isInteractive
           ? (event): void => {
