@@ -272,7 +272,8 @@ export const WidgetMigrate: FC<Props> = ({
           fromAddress: vaultAddress,
           fromSymbol: vaultSymbol,
           fromChainId: chainId,
-          toAddress: migrationTarget
+          toAddress: migrationTarget,
+          toSymbol: destinationVault?.symbol || migrationTargetSymbol || 'New Vault'
         }
       }
     }
@@ -310,7 +311,8 @@ export const WidgetMigrate: FC<Props> = ({
         fromAddress: vaultAddress,
         fromSymbol: vaultSymbol,
         fromChainId: chainId,
-        toAddress: migrationTarget
+        toAddress: migrationTarget,
+        toSymbol: destinationVault?.symbol || migrationTargetSymbol || 'New Vault'
       }
     }
   }, [
@@ -326,6 +328,8 @@ export const WidgetMigrate: FC<Props> = ({
     vaultSymbol,
     vaultAddress,
     migrationTarget,
+    migrationTargetSymbol,
+    destinationVault?.symbol,
     chainId
   ])
 
