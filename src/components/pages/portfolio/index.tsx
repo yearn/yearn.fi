@@ -137,7 +137,7 @@ function PortfolioHeaderSection({
   }
 
   return (
-    <section className={'flex flex-col gap-4'}>
+    <section className={'flex flex-col gap-2'}>
       <Breadcrumbs
         className={'mt-2'}
         items={[
@@ -147,23 +147,16 @@ function PortfolioHeaderSection({
       />
       <div>
         <h1 className={'text-4xl font-black text-text-primary'}>{'Account Overview'}</h1>
-        <p className={'mt-2 text-base text-text-secondary'}>
-          {'Monitor your balances, returns, and discover new vaults.'}
-        </p>
       </div>
       {isActive ? (
         <div>
           <div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
-            <div className={'rounded-3xl border border-border bg-surface p-6'}>
+            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
               <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>{'Total balance'}</p>
-              <p className={'mt-3 text-3xl font-black text-text-primary'}>
+              <p className={'mt-1 text-3xl font-black text-text-primary'}>
                 {isSearchingBalances ? (
-                  <span
-                    className={
-                      'inline-flex h-9 w-40 items-center justify-center rounded-xl bg-surface-secondary animate-pulse'
-                    }
-                  >
-                    <IconSpinner className={'h-4 w-4 text-text-secondary'} />
+                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
+                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
                   </span>
                 ) : (
                   currencyFormatter.format(totalPortfolioValue)
@@ -171,14 +164,14 @@ function PortfolioHeaderSection({
               </p>
             </div>
 
-            <div className={'rounded-3xl border border-border bg-surface p-6'}>
+            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
               <div>
                 {renderTitleWithTooltip(
                   'Blended Current APY',
                   'Weighted by your total deposits across all Yearn vaults.'
                 )}
               </div>
-              <div className={'mt-3 text-3xl font-black text-text-primary'}>
+              <div className={'mt-1 text-3xl font-black text-text-primary'}>
                 {isHoldingsLoading ? (
                   <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
                     <IconSpinner className={'h-5 w-5 text-text-secondary'} />
@@ -191,14 +184,14 @@ function PortfolioHeaderSection({
               </div>
             </div>
 
-            <div className={'rounded-3xl border border-border bg-surface p-6'}>
+            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
               <div>
                 {renderTitleWithTooltip(
                   'Blended 30-day APY',
                   'Blended 30-day performance using your current positions.'
                 )}
               </div>
-              <div className={'mt-3 text-3xl font-black text-text-primary'}>
+              <div className={'mt-1 text-3xl font-black text-text-primary'}>
                 {isHoldingsLoading ? (
                   <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
                     <IconSpinner className={'h-5 w-5 text-text-secondary'} />
@@ -211,21 +204,17 @@ function PortfolioHeaderSection({
               </div>
             </div>
 
-            <div className={'rounded-3xl border border-border bg-surface p-6'}>
+            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
               <div>
                 {renderTitleWithTooltip(
                   'Estimated Annual Return',
                   'Projects potential returns based on your blended current APY.'
                 )}
               </div>
-              <div className={'mt-3 text-3xl font-black text-text-primary'}>
+              <div className={'mt-1 text-3xl font-black text-text-primary'}>
                 {isHoldingsLoading ? (
-                  <span
-                    className={
-                      'inline-flex h-9 w-40 items-center justify-center rounded-xl bg-surface-secondary animate-pulse'
-                    }
-                  >
-                    <IconSpinner className={'h-4 w-4 text-text-secondary'} />
+                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
+                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
                   </span>
                 ) : blendedMetrics.estimatedAnnualReturn !== null ? (
                   currencyFormatter.format(blendedMetrics.estimatedAnnualReturn)
@@ -257,13 +246,26 @@ function PortfolioHoldingsSection({
     setSortBy(newSortBy as TPossibleSortBy)
     setSortDirection(newDirection)
   }
+  const holdingsTooltip = 'Track every Yearn position you currently hold.'
 
   return (
-    <section className={'flex flex-col gap-4'}>
+    <section className={'flex flex-col gap-2'}>
       <div className={'flex flex-wrap items-center justify-between gap-4'}>
         <div>
-          <h2 className={'text-2xl font-semibold text-text-primary'}>{'Your vaults'}</h2>
-          <p className={'text-sm text-text-secondary'}>{'Track every Yearn position you currently hold.'}</p>
+          <Tooltip
+            className={'h-auto gap-0'}
+            openDelayMs={150}
+            side={'top'}
+            tooltip={
+              <div
+                className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}
+              >
+                {holdingsTooltip}
+              </div>
+            }
+          >
+            <h2 className={'text-2xl font-semibold text-text-primary'}>{'Your Vaults'}</h2>
+          </Tooltip>
         </div>
         {hasHoldings ? (
           <Link to="/vaults" className={'yearn--button text-sm'} data-variant={'light'}>
@@ -345,10 +347,20 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
   }
 
   return (
-    <section className={'flex flex-col gap-4'}>
+    <section className={'flex flex-col gap-2'}>
       <div>
-        <h2 className={'text-2xl font-semibold text-text-primary'}>{'You might like'}</h2>
-        <p className={'text-sm text-text-secondary'}>{'Vaults picked for you based on performance and popularity.'}</p>
+        <Tooltip
+          className={'h-auto gap-0'}
+          openDelayMs={150}
+          side={'top'}
+          tooltip={
+            <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
+              {'Vaults picked for you based on performance and popularity.'}
+            </div>
+          }
+        >
+          <h2 className={'text-2xl font-semibold text-text-primary'}>{'You Might Like:'}</h2>
+        </Tooltip>
       </div>
       <div className={'grid gap-4 md:grid-cols-2 xl:grid-cols-4'}>
         {suggestedRows.map((row) => (
