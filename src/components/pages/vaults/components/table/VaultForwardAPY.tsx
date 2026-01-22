@@ -26,7 +26,8 @@ export function VaultForwardAPY({
   showSubline = true,
   showSublineTooltip = false,
   displayVariant = 'default',
-  showBoostDetails = true
+  showBoostDetails = true,
+  onInteractiveHoverChange
 }: {
   currentVault: TYDaemonVault
   onMobileToggle?: (e: React.MouseEvent) => void
@@ -36,12 +37,26 @@ export function VaultForwardAPY({
   showSublineTooltip?: boolean
   displayVariant?: TVaultForwardAPYVariant
   showBoostDetails?: boolean
+  onInteractiveHoverChange?: (isHovering: boolean) => void
 }): ReactElement {
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [katanaBreakdown, setKatanaBreakdown] = useState<'est' | '30d'>('est')
   const canOpenModal = displayVariant !== 'factory-list'
-  const valueInteractiveClass = canOpenModal ? 'cursor-pointer' : undefined
+  const canShowModal =
+    canOpenModal &&
+    (data.mode === 'katana' ||
+      (data.mode === 'noForward' && data.rewardsAprSum > 0) ||
+      (data.mode === 'boosted' && data.isBoosted) ||
+      data.mode === 'rewards')
+  const valueInteractiveClass = canShowModal ? 'cursor-pointer' : undefined
+  const interactiveHandlers =
+    canShowModal && onInteractiveHoverChange
+      ? {
+          onMouseEnter: (): void => onInteractiveHoverChange(true),
+          onMouseLeave: (): void => onInteractiveHoverChange(false)
+        }
+      : undefined
   const fixedTermMarkets = getFixedTermMarkets(currentVault.address)
   const fixedTermProviders = fixedTermMarkets.filter(
     (market, index, list) => list.findIndex((item) => item.provider === market.provider) === index
@@ -184,13 +199,15 @@ export function VaultForwardAPY({
   }
   const handleValueClick = (e: React.MouseEvent): void => {
     if (onMobileToggle) {
+      e.preventDefault()
       e.stopPropagation()
       onMobileToggle(e)
       return
     }
-    if (!canOpenModal) {
+    if (!canShowModal) {
       return
     }
+    e.preventDefault()
     e.stopPropagation()
     setIsModalOpen(true)
   }
@@ -222,7 +239,11 @@ export function VaultForwardAPY({
       <Fragment>
         <div className={cl('relative flex flex-col items-end md:text-right', className)}>
           {renderValueWithTooltip(
-            <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+            <b
+              className={cl('yearn--table-data-section-item-value', valueClassName)}
+              onClick={handleValueClick}
+              {...interactiveHandlers}
+            >
               <Renderable shouldRender={true} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
                   {fixedTermIndicator}
@@ -293,7 +314,11 @@ export function VaultForwardAPY({
         <Fragment>
           <div className={cl('relative flex flex-col items-end md:text-right', className)}>
             {renderValueWithTooltip(
-              <b className={cl('yearn--table-data-section-item-value', valueClassName)} onClick={handleValueClick}>
+              <b
+                className={cl('yearn--table-data-section-item-value', valueClassName)}
+                onClick={handleValueClick}
+                {...interactiveHandlers}
+              >
                 <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                   <div className={'flex items-center gap-2'}>
                     {fixedTermIndicator}
@@ -338,6 +363,7 @@ export function VaultForwardAPY({
           <b
             className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
             onClick={handleValueClick}
+            {...interactiveHandlers}
           >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <span className={'inline-flex items-center gap-2'}>
@@ -383,6 +409,7 @@ export function VaultForwardAPY({
             <b
               className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
               onClick={handleValueClick}
+              {...interactiveHandlers}
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={cl('flex items-center gap-2', canOpenModal ? 'cursor-pointer' : undefined)}>
@@ -447,6 +474,7 @@ export function VaultForwardAPY({
             <b
               className={cl('yearn--table-data-section-item-value whitespace-nowrap', valueClassName)}
               onClick={handleValueClick}
+              {...interactiveHandlers}
             >
               <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
                 <div className={'flex items-center gap-2'}>
@@ -502,6 +530,7 @@ export function VaultForwardAPY({
           <b
             className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
             onClick={handleValueClick}
+            {...interactiveHandlers}
           >
             <Renderable shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')} fallback={'NEW'}>
               <span className={'inline-flex items-center gap-2'}>
@@ -538,6 +567,7 @@ export function VaultForwardAPY({
         <b
           className={cl('yearn--table-data-section-item-value', valueInteractiveClass, valueClassName)}
           onClick={handleValueClick}
+          {...interactiveHandlers}
         >
           <Renderable
             shouldRender={!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')}

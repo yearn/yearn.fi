@@ -94,6 +94,7 @@ export function VaultsListRow({
   const { isActive: isWalletActive } = useWeb3()
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('strategies')
+  const [interactiveHoverCount, setInteractiveHoverCount] = useState(0)
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
@@ -128,6 +129,10 @@ export function VaultsListRow({
   const showCompareToggle = Boolean(onToggleCompare)
   const vaultKey = `${currentVault.chainID}_${toAddress(currentVault.address)}`
   const isCompareSelected = compareVaultKeys?.includes(vaultKey) ?? false
+  const isHoveringInteractive = interactiveHoverCount > 0
+  const handleInteractiveHoverChange = (isHovering: boolean): void => {
+    setInteractiveHoverCount((count) => Math.max(0, count + (isHovering ? 1 : -1)))
+  }
 
   const isHiddenVault = Boolean(flags?.isHidden)
   const baseKindType: 'multi' | 'single' | undefined =
@@ -230,7 +235,8 @@ export function VaultsListRow({
         <div
           className={cl(
             'absolute inset-0',
-            'opacity-0 transition-opacity duration-300 group-hover:opacity-20 group-focus-visible:opacity-20 pointer-events-none',
+            'opacity-0 transition-opacity duration-300 pointer-events-none',
+            !isHoveringInteractive ? 'group-hover:opacity-20 group-focus-visible:opacity-20' : '',
             'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
           )}
         />
@@ -312,6 +318,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={chainDescription}
                     onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
+                    onHoverChange={onToggleChain ? handleInteractiveHoverChange : undefined}
                     ariaLabel={`Filter by ${network.name}`}
                   />
                 </div>
@@ -324,6 +331,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={categoryDescription || undefined}
                     onClick={onToggleCategory ? (): void => onToggleCategory(currentVault.category) : undefined}
+                    onHoverChange={onToggleCategory ? handleInteractiveHoverChange : undefined}
                     ariaLabel={`Filter by ${currentVault.category}`}
                   />
                 ) : null}
@@ -336,6 +344,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={productTypeDescription}
                     onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
+                    onHoverChange={onToggleVaultType ? handleInteractiveHoverChange : undefined}
                     ariaLabel={productTypeAriaLabel}
                   />
                 ) : null}
@@ -357,6 +366,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={kindDescription}
                     onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
+                    onHoverChange={kindType && onToggleType ? handleInteractiveHoverChange : undefined}
                     ariaLabel={`Filter by ${kindLabel}`}
                   />
                 ) : null}
@@ -404,6 +414,7 @@ export function VaultsListRow({
                   currentVault={currentVault}
                   valueClassName={'text-sm font-semibold'}
                   showSubline={false}
+                  onInteractiveHoverChange={handleInteractiveHoverChange}
                 />
               </div>
               <div className={'relative'}>
@@ -443,6 +454,7 @@ export function VaultsListRow({
               showSublineTooltip
               displayVariant={apyDisplayVariant}
               showBoostDetails={showBoostDetails}
+              onInteractiveHoverChange={handleInteractiveHoverChange}
             />
           </div>
           {/* TVL */}

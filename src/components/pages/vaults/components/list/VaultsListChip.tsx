@@ -13,6 +13,7 @@ type TVaultsListChipProps = {
   tooltip?: string | ReactElement
   tooltipDelayMs?: number
   onClick?: () => void
+  onHoverChange?: (isHovering: boolean) => void
   ariaLabel?: string
   disabled?: boolean
 }
@@ -27,6 +28,7 @@ export function VaultsListChip({
   tooltip,
   tooltipDelayMs,
   onClick,
+  onHoverChange,
   ariaLabel,
   disabled = false
 }: TVaultsListChipProps): ReactElement {
@@ -49,6 +51,8 @@ export function VaultsListChip({
       data-active={isActive}
       aria-pressed={isInteractive ? isActive : undefined}
       aria-label={ariaLabel || label}
+      onMouseEnter={isInteractive && onHoverChange ? (): void => onHoverChange(true) : undefined}
+      onMouseLeave={isInteractive && onHoverChange ? (): void => onHoverChange(false) : undefined}
       onClick={
         isInteractive
           ? (event): void => {
