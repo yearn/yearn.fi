@@ -324,6 +324,9 @@ function PortfolioHoldingsSection({
                   flags={vaultFlags[row.key]}
                   hrefOverride={row.hrefOverride}
                   showBoostDetails={false}
+                  activeProductType={'all'}
+                  showStrategies
+                  showAllocatorChip={false}
                 />
               ))}
             </div>

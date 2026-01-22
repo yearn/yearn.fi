@@ -68,7 +68,8 @@ export function VaultsListRow({
   activeProductType,
   onToggleVaultType,
   showStrategies = false,
-  shouldCollapseChips = false
+  shouldCollapseChips = false,
+  showAllocatorChip = true
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
@@ -86,6 +87,7 @@ export function VaultsListRow({
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
   shouldCollapseChips?: boolean
+  showAllocatorChip?: boolean
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
@@ -145,7 +147,7 @@ export function VaultsListRow({
     kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
-  const showKindChip = showStrategies && Boolean(kindType)
+  const showKindChip = showStrategies && Boolean(kindType) && (showAllocatorChip || kindType !== 'multi')
   const isKindActive = false
   const categoryIcon: ReactElement | null =
     currentVault.category === 'Stablecoin' ? (
@@ -328,7 +330,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={chainDescription}
                     onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
-                    onHoverChange={onToggleChain ? handleInteractiveHoverChange : undefined}
+                    onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={`Filter by ${network.name}`}
                   />
                 </div>
@@ -341,7 +343,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={categoryDescription || undefined}
                     onClick={onToggleCategory ? (): void => onToggleCategory(currentVault.category) : undefined}
-                    onHoverChange={onToggleCategory ? handleInteractiveHoverChange : undefined}
+                    onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={`Filter by ${currentVault.category}`}
                   />
                 ) : null}
@@ -354,7 +356,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={productTypeDescription}
                     onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
-                    onHoverChange={onToggleVaultType ? handleInteractiveHoverChange : undefined}
+                    onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={productTypeAriaLabel}
                   />
                 ) : null}
@@ -365,6 +367,7 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={'Management fee | Performance fee'}
+                    onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
                 {showKindChip && kindLabel ? (
@@ -376,7 +379,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={kindDescription}
                     onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
-                    onHoverChange={kindType && onToggleType ? handleInteractiveHoverChange : undefined}
+                    onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={`Filter by ${kindLabel}`}
                   />
                 ) : null}
@@ -387,6 +390,7 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={RETIRED_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
                 {flags?.isMigratable ? (
@@ -396,6 +400,7 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
                 {isHiddenVault ? (
@@ -405,6 +410,7 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={HIDDEN_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
               </div>
