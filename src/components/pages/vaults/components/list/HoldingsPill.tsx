@@ -81,7 +81,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
     <div className={'relative w-40'}>
       <div
         className={
-          'relative z-10 flex w-full min-w-0 items-center gap-2 rounded-lg bg-[#2a1956eb]/50 px-3 py-2 text-xs text-text-primary backdrop-blur-lg'
+          'relative z-10 flex w-full min-w-0 items-center gap-2 rounded-lg bg-[#2a1956eb]/50 px-3 py-2 text-mobile-label text-text-primary backdrop-blur-lg'
         }
       >
         <div className={'flex w-full min-w-0 flex-col gap-1'}>
@@ -97,9 +97,9 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
                 />
               </div>
             </div>
-            <div className={'truncate text-left text-sm font-semibold text-text-primary'}>{vault.name}</div>
+            <div className={'truncate text-left text-base font-semibold text-text-primary'}>{vault.name}</div>
           </div>
-          <div className={'flex flex-row items-center gap-1 text-xs text-text-primary'}> {apyContent} </div>
+          <div className={'flex flex-row items-center gap-1 text-mobile-label text-text-primary'}> {apyContent} </div>
         </div>
       </div>
     </div>

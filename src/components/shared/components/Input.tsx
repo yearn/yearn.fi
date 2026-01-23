@@ -35,7 +35,7 @@ export function Input(props: TAmountInputProps): ReactElement {
       </div>
       {(error ?? legend) && (
         <legend
-          className={`mt-1 pl-0.5 text-xs opacity-70 md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}
+          className={`mt-1 pl-0.5 text-mobile-label opacity-70 md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}
           suppressHydrationWarning
         >
           {error ?? legend}
@@ -66,7 +66,10 @@ export function FakeInput(
         </div>
       </div>
       {legend && (
-        <legend className={'mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0'} suppressHydrationWarning>
+        <legend
+          className={'mt-1 pl-0.5 text-mobile-label text-neutral-600 opacity-70 md:mr-0'}
+          suppressHydrationWarning
+        >
           {legend}
         </legend>
       )}

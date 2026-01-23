@@ -40,12 +40,16 @@ const SecurityCard: FC<{
   return (
     <Link href={href} className={'flex'}>
       <div
-        className={`${bgColor} group cursor-pointer overflow-hidden rounded-2xl transition-all duration-300 hover:brightness-90`}
+        className={`${bgColor} group cursor-pointer overflow-hidden rounded-xl transition-all duration-300 hover:brightness-90 sm:rounded-2xl`}
       >
-        <div className={'p-8'}>
-          <h3 className={'mb-4 text-3xl text-white'}>{title}</h3>
-          <p className={'mb-4 text-[18px] font-light text-white/70'}>{description}</p>
-          <div className={'flex items-center text-white/90 transition-colors duration-300 group-hover:text-white'}>
+        <div className={'p-5 sm:p-6 md:p-8'}>
+          <h3 className={'mb-3 text-2xl text-white sm:mb-4 sm:text-3xl'}>{title}</h3>
+          <p className={'mb-4 text-base font-light text-white/70 sm:text-[18px]'}>{description}</p>
+          <div
+            className={
+              'flex min-h-[48px] items-center text-base text-white/90 transition-colors duration-300 group-hover:text-white sm:min-h-0 sm:text-inherit'
+            }
+          >
             {'Learn More →'}
           </div>
         </div>
@@ -55,10 +59,10 @@ const SecurityCard: FC<{
 }
 
 export const Security: FC = () => (
-  <section className={'flex w-full justify-center bg-white/5 py-16 lg:py-32'}>
-    <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between  lg:flex-row '}>
+  <section className={'flex w-full justify-center bg-white/5 py-12 sm:py-16 lg:py-32'}>
+    <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between lg:flex-row'}>
       <div className={'w-full max-w-7xl px-4'}>
-        <div className={'px-2'}>
+        <div className={'px-1 sm:px-2'}>
           <SectionHeader
             align={'center'}
             tagline={'Audited, secure'}
@@ -66,7 +70,7 @@ export const Security: FC = () => (
             description={'Yearn prioritizes security to protect your assets.'}
           />
         </div>
-        <div className={'grid gap-6 pt-16 md:grid-cols-2'}>
+        <div className={'grid gap-4 pt-8 sm:gap-6 sm:pt-12 md:grid-cols-2 md:pt-16'}>
           <SecurityCard type={SecurityCardType.Audits} />
           <SecurityCard type={SecurityCardType.BugBounties} />
         </div>

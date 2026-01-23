@@ -33,7 +33,7 @@ export function VaultsExpandedSelector({ activeView, onViewChange, className, ri
                   key={option.id}
                   type={'button'}
                   className={cl(
-                    'flex-1 rounded-lg px-2 py-2 text-xs font-semibold tracking-wide transition-colors whitespace-nowrap',
+                    'flex-1 rounded-lg px-3 py-2 min-h-[44px] text-xs font-semibold tracking-wide transition-colors whitespace-nowrap',
                     activeView === option.id
                       ? 'bg-surface text-text-primary'
                       : 'bg-transparent text-text-secondary hover:text-text-secondary'

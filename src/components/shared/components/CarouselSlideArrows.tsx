@@ -16,22 +16,22 @@ export function CarouselSlideArrows({
   return (
     <div className={cl('flex w-full justify-between', className)}>
       <div />
-      <div className={'hidden gap-3 md:flex'}>
+      <div className={'hidden gap-2 md:flex'}>
         <button
           onClick={onScrollBack}
           className={
-            'flex h-8! items-center rounded-[4px] px-4 text-neutral-400 outline-solid outline-1! outline-neutral-200 hover:bg-neutral-200'
+            'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-neutral-400 outline-solid outline-1! outline-neutral-200 hover:bg-neutral-200'
           }
         >
-          <IconChevron className={'size-3 rotate-90 '} />
+          <IconChevron className={'size-4 rotate-90'} />
         </button>
         <button
           onClick={onScrollForward}
           className={
-            'flex h-8! items-center rounded-[4px] px-4 text-neutral-400 outline-solid outline-1! outline-neutral-200 hover:bg-neutral-200'
+            'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-neutral-400 outline-solid outline-1! outline-neutral-200 hover:bg-neutral-200'
           }
         >
-          <IconChevron className={'size-3 -rotate-90  '} />
+          <IconChevron className={'size-4 -rotate-90'} />
         </button>
       </div>
     </div>

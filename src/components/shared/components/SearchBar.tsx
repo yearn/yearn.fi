@@ -114,7 +114,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
           }}
           className={cl(
             props.iconClassName,
-            'flex h-8 w-8 shrink-0 items-center justify-center rounded text-text-tertiary transition-colors',
+            'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded text-text-tertiary transition-colors',
             localSearchValue && !props.shouldSearchByClick
               ? 'cursor-pointer hover:text-text-secondary'
               : 'cursor-default'
@@ -125,7 +125,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
               <IconEnter className={'size-3'} />
             </div>
           ) : localSearchValue && !props.shouldSearchByClick ? (
-            <IconCross className={'size-3 text-text-secondary transition-all hover:text-text-primary'} />
+            <IconCross className={'size-4 text-text-secondary transition-all hover:text-text-primary'} />
           ) : (
             <IconSearch className={'size-4 text-text-tertiary'} />
           )}

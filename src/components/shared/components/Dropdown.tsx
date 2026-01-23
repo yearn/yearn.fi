@@ -11,7 +11,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
   return (
     <ComboboxOption value={option}>
       {({ active }): ReactElement => (
-        <div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
+        <div data-active={active} className={'yearn--dropdown-menu-item w-full min-h-[44px] hover:bg-neutral-0/40'}>
           {icon && (
             <div className={'size-6 rounded-full'}>
               <ImageWithFallback alt={label} width={24} height={24} src={icon} />
@@ -112,7 +112,7 @@ export const Dropdown = ({
             <ComboboxButton
               onClick={(): void => setIsOpen((state: boolean): boolean => !state)}
               className={cl(
-                'flex h-10 w-full items-center justify-between p-2 text-base md:px-3',
+                'flex min-h-[44px] w-full items-center justify-between p-2 text-base md:px-3',
                 isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0 text-neutral-900'
               )}
             >
