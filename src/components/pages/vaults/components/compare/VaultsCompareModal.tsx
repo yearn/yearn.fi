@@ -1,5 +1,6 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { SwipeableCompareCarousel } from '@pages/vaults/components/compare/SwipeableCompareCarousel'
+import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { useMediaQuery } from '@react-hookz/web'
@@ -10,7 +11,6 @@ import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconClose } from '@shared/icons/IconClose'
 import { cl, formatPercent } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { getNetwork } from '@shared/utils/wagmi'
 import { Fragment, type ReactElement, type ReactNode } from 'react'
 
@@ -53,10 +53,6 @@ function renderPercentValue(value: number | null | undefined): ReactElement {
     return <span className={'text-text-secondary'}>{'—'}</span>
   }
   return <RenderAmount value={value} symbol={'percent'} decimals={6} />
-}
-
-function resolveThirtyDayApy(vault: TYDaemonVault): number | null {
-  return calculateVaultHistoricalAPY(vault)
 }
 
 function hasAllocatedFunds(strategy: TVaultStrategyItem): boolean {
@@ -134,7 +130,7 @@ function DesktopCompareGrid({
           <MetricLabel label={'30 Day APY'} sublabel={'Average realized APY'} />
           {vaults.map((vault) => (
             <MetricValue key={`apy-30d-${getVaultKey(vault)}`}>
-              <div className={'flex items-center gap-2'}>{renderPercentValue(resolveThirtyDayApy(vault))}</div>
+              <VaultHistoricalAPY currentVault={vault} />
             </MetricValue>
           ))}
 

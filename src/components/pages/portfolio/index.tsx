@@ -25,12 +25,7 @@ const percentFormatter = new Intl.NumberFormat('en-US', {
 
 type TPortfolioHeaderProps = Pick<
   TPortfolioModel,
-  | 'blendedMetrics'
-  | 'isActive'
-  | 'isHoldingsLoading'
-  | 'isSearchingBalances'
-  | 'totalPortfolioValue'
-  | 'hasKatanaHoldings'
+  'blendedMetrics' | 'isActive' | 'isHoldingsLoading' | 'isSearchingBalances' | 'totalPortfolioValue'
 >
 
 type TPortfolioHoldingsProps = Pick<
@@ -84,8 +79,7 @@ function PortfolioHeaderSection({
   isActive,
   isHoldingsLoading,
   isSearchingBalances,
-  totalPortfolioValue,
-  hasKatanaHoldings
+  totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
   const metrics: TMetricBlock[] = [
     {
@@ -322,7 +316,6 @@ function PortfolioPage(): ReactElement {
           isActive={model.isActive}
           isHoldingsLoading={model.isHoldingsLoading}
           isSearchingBalances={model.isSearchingBalances}
-          hasKatanaHoldings={model.hasKatanaHoldings}
           totalPortfolioValue={model.totalPortfolioValue}
         />
         <PortfolioHoldingsSection

@@ -14,7 +14,6 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
-import { Counter } from '@shared/components/Counter'
 import {
   METRIC_FOOTNOTE_CLASS,
   METRIC_VALUE_CLASS,
@@ -24,7 +23,6 @@ import {
 } from '@shared/components/MetricsCard'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { Tooltip } from '@shared/components/Tooltip'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconCirclePile } from '@shared/icons/IconCirclePile'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
@@ -41,13 +39,7 @@ import type { ReactElement } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
-function VaultOverviewCard({
-  currentVault,
-  isCompressed
-}: {
-  currentVault: TYDaemonVault
-  isCompressed: boolean
-}): ReactElement {
+function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
   const metrics: TMetricBlock[] = [
     {
@@ -456,7 +448,7 @@ export function VaultDetailsHeader({
       <div
         className={cl(isCompressed ? 'md:col-start-6 md:col-span-8 md:row-start-2' : 'md:col-span-13 md:row-start-3')}
       >
-        <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
+        <VaultOverviewCard currentVault={currentVault} />
       </div>
       <div
         className={cl(
