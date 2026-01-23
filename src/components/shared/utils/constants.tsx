@@ -62,6 +62,9 @@ export const GAUGEYBAL_TOKEN_ADDRESS = toAddress('0x5E23599eBE87A5A140f295C2fC6a
 export const BALWETH_TOKEN_ADDRESS = toAddress('0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56')
 export const VEBALPEG_QUERY_HELP_CONTRACT = toAddress('0xE39B5e3B6D74016b2F6A9673D7d7493B6DF549d5')
 
+// Vault migration router (Ethereum only)
+export const YEARN_4626_ROUTER = toAddress('0x1112dbCF805682e828606f74AB717abf4b4FD8DE')
+
 // Theses constants are used by the yVault app
 export const ZAP_ETH_WETH_CONTRACT = toAddress('0xd1791428c38e25d459d5b01fb25e942d4ad83a25')
 export const ZAP_FTM_WFTM_CONTRACT = toAddress('0xfCE6CbeF3867102da383465cc237B49fF4B9d48F')
