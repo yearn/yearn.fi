@@ -178,6 +178,7 @@ export const kongVaultSnapshotSchema = z
     symbol: z.string().optional().default('').catch(''),
     decimals: decimalsSchema.optional().catch(18),
     asset: snapshotAssetSchema.optional(),
+    totalDebt: bigNumberishSchema.optional(),
     totalAssets: bigNumberishSchema.optional().default('0').catch('0'),
     apy: snapshotApySchema,
     tvl: snapshotTvlSchema,

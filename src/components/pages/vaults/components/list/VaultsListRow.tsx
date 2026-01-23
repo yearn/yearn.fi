@@ -2,6 +2,8 @@ import Link from '@components/Link'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
+import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { maybeToastSnapshot } from '@pages/vaults/utils/snapshotToast'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
@@ -20,11 +22,13 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@shared/utils'
+import { baseFetcher } from '@shared/utils/fetchers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { mutate } from 'swr'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
 import { VaultsListChip } from './VaultsListChip'
 
@@ -46,6 +50,11 @@ type TVaultRowFlags = {
   isRetired?: boolean
   isHidden?: boolean
 }
+
+const prefetchedSnapshotEndpoints = new Set<string>()
+
+const buildSnapshotEndpoint = (chainId: number, address: string): string =>
+  `${KONG_REST_BASE}/snapshot/${chainId}/${toAddress(address)}`
 
 export function VaultsListRow({
   currentVault,
@@ -94,6 +103,7 @@ export function VaultsListRow({
   showProductTypeChipOverride?: boolean
   mobileSecondaryMetric?: 'tvl' | 'holdings'
 }): ReactElement {
+  const rowRef = useRef<HTMLDivElement | null>(null)
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
@@ -144,6 +154,33 @@ export function VaultsListRow({
     }
     setIsExpandedState(next)
   }
+
+  useEffect(() => {
+    if (!rowRef.current || typeof window === 'undefined') {
+      return
+    }
+
+    const endpoint = buildSnapshotEndpoint(currentVault.chainID, currentVault.address)
+    if (prefetchedSnapshotEndpoints.has(endpoint)) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (!entry?.isIntersecting) return
+        prefetchedSnapshotEndpoints.add(endpoint)
+        void mutate(endpoint, baseFetcher(endpoint), { revalidate: false }).then(() => {
+          maybeToastSnapshot(endpoint, currentVault.address, 'prefetch')
+        })
+        observer.disconnect()
+      },
+      { rootMargin: '200px' }
+    )
+
+    observer.observe(rowRef.current)
+    return () => observer.disconnect()
+  }, [currentVault.address, currentVault.chainID])
 
   const isHiddenVault = Boolean(flags?.isHidden)
   const baseKindType: 'multi' | 'single' | undefined =
@@ -233,7 +270,7 @@ export function VaultsListRow({
   }, [isExpanded])
 
   return (
-    <div className={cl('w-full overflow-hidden transition-colors bg-surface relative')}>
+    <div ref={rowRef} className={cl('w-full overflow-hidden transition-colors bg-surface relative')}>
       <button
         type={'button'}
         aria-label={isExpanded ? 'Collapse row' : 'Expand row'}

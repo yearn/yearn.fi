@@ -14,7 +14,6 @@ import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { mergeYBoldVault, YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
-import { useVaultStrategiesKong } from '@pages/vaults/hooks/useVaultStrategiesKong'
 import { WidgetActionType } from '@pages/vaults/types'
 import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
@@ -24,7 +23,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
 import { IconChevron } from '@shared/icons/IconChevron'
 import type { TToken } from '@shared/types'
-import { cl, isZeroAddress, toAddress, toBigInt } from '@shared/utils'
+import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
@@ -177,50 +176,15 @@ function Index(): ReactElement | null {
     address: params.address
   })
 
-  /**RG: I think we can get rid of this too and use only data from useVaultSnapshot */
-  // codex: Fetch Kong GraphQL strategy details (names/APR/etc) used to override strategy rows when needed.
-  const { strategies: kongStrategies, isLoading: isLoadingKongStrategies } = useVaultStrategiesKong({
-    chainId,
-    address: params.address
-  })
-
   // codex: Merge snapshot data into the base vault so strategies and metrics have the latest snapshot values.
   const baseMergedVault = useMemo(() => mergeVaultSnapshot(baseVault, snapshotVault), [baseVault, snapshotVault])
-  // codex: Detect whether Kong strategies include allocation data; used to avoid replacing valid base strategies.
-  const hasKongAllocations = useMemo(() => {
-    if (!kongStrategies || kongStrategies.length === 0) return false
-    return kongStrategies.some((strategy) => {
-      const debtRatio = strategy.details?.debtRatio ?? 0
-      if (debtRatio > 0) return true
-      const totalDebt = strategy.details?.totalDebt
-      if (!totalDebt) return false
-      try {
-        return toBigInt(totalDebt) > 0n
-      } catch {
-        return false
-      }
-    })
-  }, [kongStrategies])
-  // codex: Prefer Kong strategies only when they contain allocation data (or base lacks strategies).
-  const vaultWithStrategies = useMemo(() => {
-    if (!baseMergedVault) return undefined
-    const shouldUseKongStrategies =
-      kongStrategies && kongStrategies.length > 0 && (hasKongAllocations || !baseMergedVault.strategies?.length)
-    if (shouldUseKongStrategies) {
-      return {
-        ...baseMergedVault,
-        strategies: kongStrategies
-      }
-    }
-    return baseMergedVault
-  }, [baseMergedVault, kongStrategies, hasKongAllocations])
 
   // codex: yBOLD needs an additional staking vault snapshot to override strategy data.
   const isYBold = useMemo(() => {
-    if (!vaultWithStrategies?.address && !params.address) return false
-    const resolvedAddress = vaultWithStrategies?.address ?? toAddress(params.address ?? '')
+    if (!baseMergedVault?.address && !params.address) return false
+    const resolvedAddress = baseMergedVault?.address ?? toAddress(params.address ?? '')
     return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
-  }, [vaultWithStrategies?.address, params.address])
+  }, [baseMergedVault?.address, params.address])
 
   // codex: Fetch the yBOLD staking vault snapshot so we can merge it into the current vault.
   const { data: yBoldSnapshot, mutate: mutateYBoldSnapshot } = useVaultSnapshot({
@@ -234,16 +198,16 @@ function Index(): ReactElement | null {
     const baseStakingVault = vaults[toAddress(YBOLD_STAKING_ADDRESS)]
     return mergeVaultSnapshot(baseStakingVault, yBoldSnapshot)
   }, [isYBold, vaults, yBoldSnapshot])
-  // codex: Final vault payload consumed by VaultStrategiesSection (after snapshot + Kong + yBOLD merges).
+  // codex: Final vault payload consumed by VaultStrategiesSection (after snapshot + yBOLD merges).
   const currentVault = useMemo(() => {
-    if (!vaultWithStrategies) return undefined
+    if (!baseMergedVault) return undefined
     if (isYBold && yBoldStakingVault) {
-      return mergeYBoldVault(vaultWithStrategies, yBoldStakingVault)
+      return mergeYBoldVault(baseMergedVault, yBoldStakingVault)
     }
-    return vaultWithStrategies
-  }, [vaultWithStrategies, isYBold, yBoldStakingVault])
+    return baseMergedVault
+  }, [baseMergedVault, isYBold, yBoldStakingVault])
 
-  const isLoadingVault = !currentVault && (isLoadingSnapshotVault || isLoadingVaultList || isLoadingKongStrategies)
+  const isLoadingVault = !currentVault && (isLoadingSnapshotVault || isLoadingVaultList)
 
   useEffect((): void => {
     if (address && isActive) {

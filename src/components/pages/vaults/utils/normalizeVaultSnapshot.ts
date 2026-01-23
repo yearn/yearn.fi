@@ -63,11 +63,61 @@ const pickNonZeroBigNumberish = (...values: Array<string | number | null | undef
       if (toBigInt(value) > 0n) {
         return asString
       }
-    } catch {
-      continue
-    }
+    } catch {}
   }
   return fallback ?? '0'
+}
+
+const toBigIntValue = (value: string | number | bigint | null | undefined): bigint => {
+  try {
+    return toBigInt(value ?? 0)
+  } catch {
+    return 0n
+  }
+}
+
+const computeDebtRatioFromCurrentDebt = (
+  currentDebt: string | number | bigint | null | undefined,
+  totalDebt: string | number | bigint | null | undefined
+): number => {
+  const debt = toBigIntValue(currentDebt)
+  const total = toBigIntValue(totalDebt)
+  if (debt <= 0n || total <= 0n) {
+    return 0
+  }
+  return Number((debt * 10000n) / total)
+}
+
+const computeTotalDebtForRatios = (snapshot: TKongVaultSnapshot, base?: TYDaemonVault): string => {
+  const snapshotTotalDebt = toBigIntValue(snapshot.totalDebt)
+  if (snapshotTotalDebt > 0n) {
+    return snapshotTotalDebt.toString()
+  }
+
+  const debts = snapshot.debts || []
+  let summedDebt = 0n
+  for (const debt of debts) {
+    const debtAmount = pickNonZeroBigNumberish(debt.currentDebt, debt.totalDebt)
+    const normalizedDebt = toBigIntValue(debtAmount)
+    if (normalizedDebt > 0n) {
+      summedDebt += normalizedDebt
+    }
+  }
+  if (summedDebt > 0n) {
+    return summedDebt.toString()
+  }
+
+  const snapshotAssets = toBigIntValue(snapshot.totalAssets)
+  if (snapshotAssets > 0n) {
+    return snapshotAssets.toString()
+  }
+
+  const baseAssets = toBigIntValue(base?.tvl.totalAssets)
+  if (baseAssets > 0n) {
+    return baseAssets.toString()
+  }
+
+  return '0'
 }
 
 const pickNumber = (...values: Array<number | null | undefined>): number => {
@@ -124,9 +174,14 @@ const buildRiskScores = (riskScore: TSnapshotRiskScore | undefined, fallback?: n
   return scores
 }
 
-const mapSnapshotDebts = (debts: TKongVaultSnapshotDebt[] = []): TYDaemonVaultStrategy[] => {
+const mapSnapshotDebts = (
+  debts: TKongVaultSnapshotDebt[] = [],
+  totalDebtForRatios?: string
+): TYDaemonVaultStrategy[] => {
   return debts.map((debt, index) => {
-    const debtRatio = pickNonZeroNumber(debt.debtRatio, debt.targetDebtRatio, debt.maxDebtRatio, 0)
+    const debtAmount = pickNonZeroBigNumberish(debt.currentDebt, debt.totalDebt)
+    const computedDebtRatio = computeDebtRatioFromCurrentDebt(debtAmount, totalDebtForRatios)
+    const debtRatio = pickNonZeroNumber(debt.debtRatio, computedDebtRatio, 0)
     const totalDebt = pickNonZeroBigNumberish(debt.totalDebt, debt.currentDebt)
     const totalGain = debt.totalGain ?? '0'
     const totalLoss = debt.totalLoss ?? '0'
@@ -138,7 +193,7 @@ const mapSnapshotDebts = (debts: TKongVaultSnapshotDebt[] = []): TYDaemonVaultSt
       name: `Strategy ${index + 1}`,
       description: '',
       netAPR: 0,
-      status: hasAllocation ? 'active' : 'not_active',
+      status: hasAllocation ? 'active' : 'unallocated',
       details: {
         totalDebt,
         totalLoss,
@@ -153,7 +208,8 @@ const mapSnapshotDebts = (debts: TKongVaultSnapshotDebt[] = []): TYDaemonVaultSt
 
 const mergeStrategies = (
   baseStrategies: TYDaemonVault['strategies'] | null | undefined,
-  debts: TKongVaultSnapshotDebt[] | undefined
+  debts: TKongVaultSnapshotDebt[] | undefined,
+  totalDebtForRatios?: string
 ): TYDaemonVaultStrategy[] => {
   if (!debts || debts.length === 0) {
     return (baseStrategies || []) as TYDaemonVaultStrategy[]
@@ -167,20 +223,19 @@ const mergeStrategies = (
       if (!strategy.details) {
         return strategy
       }
-      const debtRatio = pickNonZeroNumber(
-        debt.debtRatio,
-        debt.targetDebtRatio,
-        debt.maxDebtRatio,
-        strategy.details?.debtRatio,
-        0
-      )
+      const debtAmount = pickNonZeroBigNumberish(debt.currentDebt, debt.totalDebt)
+      const computedDebtRatio = computeDebtRatioFromCurrentDebt(debtAmount, totalDebtForRatios)
+      const debtRatio = pickNonZeroNumber(debt.debtRatio, computedDebtRatio, 0)
       const totalDebt = pickNonZeroBigNumberish(debt.totalDebt, debt.currentDebt, strategy.details?.totalDebt)
       const totalGain = debt.totalGain ?? strategy.details?.totalGain ?? '0'
       const totalLoss = debt.totalLoss ?? strategy.details?.totalLoss ?? '0'
       const performanceFee = normalizeNumber(debt.performanceFee ?? strategy.details?.performanceFee ?? 0)
       const lastReport = normalizeNumber(debt.lastReport ?? strategy.details?.lastReport ?? 0)
+      const hasAllocation = toBigInt(totalDebt) > 0n || debtRatio > 0
+      const status = hasAllocation ? 'active' : strategy.status === 'not_active' ? 'not_active' : 'unallocated'
       return {
         ...strategy,
+        status,
         details: {
           ...strategy.details,
           totalDebt,
@@ -194,7 +249,7 @@ const mergeStrategies = (
     })
   }
 
-  return mapSnapshotDebts(debts)
+  return mapSnapshotDebts(debts, totalDebtForRatios)
 }
 
 const computePrice = (totalAssets: string, decimals: number, tvlUsd: number, fallback?: number): number => {
@@ -205,7 +260,12 @@ const computePrice = (totalAssets: string, decimals: number, tvlUsd: number, fal
   return tvlUsd / normalizedAssets
 }
 
-const buildSnapshotVault = (snapshot: TKongVaultSnapshot, base?: TYDaemonVault): TYDaemonVault => {
+const buildSnapshotVault = (
+  snapshot: TKongVaultSnapshot,
+  base?: TYDaemonVault,
+  totalDebtForRatios?: string
+): TYDaemonVault => {
+  const resolvedTotalDebtForRatios = totalDebtForRatios ?? computeTotalDebtForRatios(snapshot, base)
   const metaToken = snapshot.meta?.token
   const tokenFallback = base?.token
   const token = {
@@ -299,7 +359,7 @@ const buildSnapshotVault = (snapshot: TKongVaultSnapshot, base?: TYDaemonVault):
       }
     },
     featuringScore: base?.featuringScore ?? 0,
-    strategies: mergeStrategies(base?.strategies, snapshot.debts),
+    strategies: mergeStrategies(base?.strategies, snapshot.debts, resolvedTotalDebtForRatios),
     staking: base?.staking ?? undefined,
     migration: {
       available: snapshot.meta?.migration?.available ?? base?.migration.available ?? false,
@@ -335,7 +395,8 @@ export const mergeVaultSnapshot = (
     return buildSnapshotVault(snapshot)
   }
 
-  const merged = buildSnapshotVault(snapshot, base)
+  const totalDebtForRatios = computeTotalDebtForRatios(snapshot, base)
+  const merged = buildSnapshotVault(snapshot, base, totalDebtForRatios)
   return {
     ...base,
     ...merged,
@@ -343,7 +404,7 @@ export const mergeVaultSnapshot = (
       ...merged.token,
       ...base.token
     },
-    strategies: mergeStrategies(base.strategies, snapshot.debts),
+    strategies: mergeStrategies(base.strategies, snapshot.debts, totalDebtForRatios),
     staking: base.staking,
     info: {
       ...base.info,

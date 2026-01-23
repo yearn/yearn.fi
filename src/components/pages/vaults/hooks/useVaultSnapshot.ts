@@ -1,8 +1,9 @@
+import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { maybeToastSnapshot } from '@pages/vaults/utils/snapshotToast'
 import { useFetch } from '@shared/hooks/useFetch'
 import { toAddress } from '@shared/utils'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
-import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { useMemo } from 'react'
 
 type UseVaultSnapshotProps = {
@@ -22,7 +23,13 @@ export function useVaultSnapshot({ chainId, address }: UseVaultSnapshotProps) {
     schema: kongVaultSnapshotSchema,
     config: {
       cacheDuration: 30 * 1000,
-      keepPreviousData: false
+      keepPreviousData: false,
+      onSuccess: () => {
+        if (!endpoint || !normalizedAddress) {
+          return
+        }
+        maybeToastSnapshot(endpoint, normalizedAddress, 'hook')
+      }
     }
   })
 }

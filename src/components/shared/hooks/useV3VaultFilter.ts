@@ -242,6 +242,9 @@ export function useV3VaultFilter(
       if (!isActive && !hasHoldings) {
         return
       }
+      if (!showHiddenVaults && isHidden) {
+        return
+      }
       if (!matchesSearch(searchableText)) {
         return
       }
@@ -283,8 +286,7 @@ export function useV3VaultFilter(
       const shouldIncludeByCategory = !hasCategoryFilter || Boolean(categories?.includes(category))
       const isPinnedByUserContext = hasUserHoldings || isMigratableVault || isRetiredVault
       const isStrategy = kind === 'strategy'
-      const shouldIncludeByFeaturedGate =
-        showHiddenVaults || (!isHidden && (isStrategy || isFeatured || isPinnedByUserContext))
+      const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategy || isFeatured || isPinnedByUserContext
       const shouldIncludeByKind =
         !hasTypeFilter ||
         (Boolean(types?.includes('multi')) && kind === 'allocator') ||

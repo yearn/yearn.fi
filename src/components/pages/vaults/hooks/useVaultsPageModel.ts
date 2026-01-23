@@ -175,7 +175,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     syncUrlOnChange: true
   })
 
-  usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType === 'v3')
+  usePrefetchYearnVaults(vaultType === 'v3')
 
   useEffect(() => {
     if (sortBy !== 'featuringScore') {

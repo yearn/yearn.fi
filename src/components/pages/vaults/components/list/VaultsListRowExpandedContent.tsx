@@ -4,6 +4,8 @@ import {
   type TVaultChartTimeframe,
   VaultChartsSection
 } from '@pages/vaults/components/detail/VaultChartsSection'
+import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
+import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
 import {
   AllocationChart,
   DARK_MODE_COLORS,
@@ -48,6 +50,14 @@ export default function VaultsListRowExpandedContent({
   isHidden
 }: TVaultsListRowExpandedContentProps): ReactElement {
   const chartTimeframe: TVaultChartTimeframe = '1y'
+  const { data: snapshotVault } = useVaultSnapshot({
+    chainId: currentVault.chainID,
+    address: currentVault.address
+  })
+  const vaultForStrategies = useMemo(
+    () => mergeVaultSnapshot(currentVault, snapshotVault),
+    [currentVault, snapshotVault]
+  )
 
   return (
     <div className={'hidden md:block bg-surface'}>
@@ -93,7 +103,7 @@ export default function VaultsListRowExpandedContent({
                 chartHeightMdPx={200}
               />
             ) : (
-              <VaultStrategyAllocationPreview currentVault={currentVault} />
+              <VaultStrategyAllocationPreview currentVault={vaultForStrategies ?? currentVault} />
             )}
           </div>
         </div>

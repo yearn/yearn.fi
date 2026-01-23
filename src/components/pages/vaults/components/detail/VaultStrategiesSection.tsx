@@ -41,7 +41,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
   const vaultList = useMemo((): TYDaemonVault[] => {
     const _vaultList = []
     for (const strategy of currentVault?.strategies || []) {
-      console.dir(strategy)
+      console.dir('strategy', strategy)
       _vaultList.push({
         ...vaults[strategy.address],
         details: strategy.details,

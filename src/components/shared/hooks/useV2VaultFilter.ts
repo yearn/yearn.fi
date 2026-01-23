@@ -232,6 +232,9 @@ export function useV2VaultFilter(
       if (!isActive && !hasHoldings) {
         return
       }
+      if (!shouldShowHidden && isHidden) {
+        return
+      }
 
       if (!matchesSearch(searchableText)) {
         return
@@ -250,9 +253,6 @@ export function useV2VaultFilter(
       const isRetiredVault = Boolean(isRetired && hasHoldings)
       const hasUserHoldings = hasHoldings || isMigratableVault || isRetiredVault
 
-      if (!shouldShowHidden && isHidden && !hasUserHoldings) {
-        return
-      }
       vaultFlags[key] = {
         hasHoldings: hasUserHoldings,
         isMigratable: isMigratableVault,
