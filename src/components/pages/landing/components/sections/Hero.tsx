@@ -108,7 +108,7 @@ export function Hero(): ReactElement {
               />
               <div className={'flex flex-row items-center justify-center gap-4'}>
                 <Link href={'/vaults'}>
-                  <Button className={'!text-[18px] max-w-xs !px-4 !py-5 !rounded-full !bg-primary'} variant={'primary'}>
+                  <Button className={'!text-[18px] max-w-xs !px-4 !py-3 !rounded-full !bg-primary'} variant={'primary'}>
                     {'Explore Vaults'}
                   </Button>
                 </Link>

@@ -275,6 +275,7 @@ export function VaultsFiltersBar({
                     {'Filter Vaults'}
                   </button>
                 </Drawer.Trigger>
+                {filters.trailingControls}
                 <button
                   type={'button'}
                   className={cl(

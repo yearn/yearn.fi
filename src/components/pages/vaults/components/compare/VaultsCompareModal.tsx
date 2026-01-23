@@ -12,7 +12,7 @@ import { cl, formatPercent } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { getNetwork } from '@shared/utils/wagmi'
-import { Fragment, type ReactElement, type ReactNode, useCallback, useState } from 'react'
+import { Fragment, type ReactElement, type ReactNode } from 'react'
 
 type TVaultsCompareModalProps = {
   isOpen: boolean
@@ -237,20 +237,9 @@ function MobileCompareView({
   vaults: TYDaemonVault[]
   onRemove: (vaultKey: string) => void
 }): ReactElement {
-  const [pinnedVaultKey, setPinnedVaultKey] = useState<string | null>(null)
-
-  const handleTogglePin = useCallback((vaultKey: string) => {
-    setPinnedVaultKey((current) => (current === vaultKey ? null : vaultKey))
-  }, [])
-
   return (
     <div className={'mt-6'}>
-      <SwipeableCompareCarousel
-        vaults={vaults}
-        onRemove={onRemove}
-        pinnedVaultKey={pinnedVaultKey}
-        onTogglePin={handleTogglePin}
-      />
+      <SwipeableCompareCarousel vaults={vaults} onRemove={onRemove} />
     </div>
   )
 }
@@ -296,11 +285,11 @@ export function VaultsCompareModal({
             >
               <Dialog.Panel
                 className={cl(
-                  'w-full rounded-3xl border border-border bg-surface text-text-primary shadow-lg',
+                  'w-full overflow-hidden rounded-3xl border border-border bg-surface text-text-primary shadow-lg',
                   isMobile ? 'max-w-md p-4' : 'max-w-6xl p-6'
                 )}
               >
-                <div className={'flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'}>
+                <div className={'flex items-start justify-between gap-4'}>
                   <div>
                     <Dialog.Title className={'text-xl font-semibold text-text-primary'}>
                       {'Compare vaults'}

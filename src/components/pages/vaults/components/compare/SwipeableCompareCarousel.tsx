@@ -4,35 +4,21 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { cl } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { motion, type PanInfo, useAnimation } from 'framer-motion'
-import { type ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ReactElement, useCallback, useEffect, useState } from 'react'
 
 type TSwipeableCompareCarouselProps = {
   vaults: TYDaemonVault[]
   onRemove: (vaultKey: string) => void
-  pinnedVaultKey: string | null
-  onTogglePin: (vaultKey: string) => void
 }
 
 const SWIPE_THRESHOLD = 50
 const SWIPE_VELOCITY_THRESHOLD = 500
 
-export function SwipeableCompareCarousel({
-  vaults,
-  onRemove,
-  pinnedVaultKey,
-  onTogglePin
-}: TSwipeableCompareCarouselProps): ReactElement {
+export function SwipeableCompareCarousel({ vaults, onRemove }: TSwipeableCompareCarouselProps): ReactElement {
   const [currentIndex, setCurrentIndex] = useState(0)
   const controls = useAnimation()
 
-  const sortedVaults = useMemo(() => {
-    if (!pinnedVaultKey) return vaults
-    const pinned = vaults.find((v) => getVaultKey(v) === pinnedVaultKey)
-    const unpinned = vaults.filter((v) => getVaultKey(v) !== pinnedVaultKey)
-    return pinned ? [pinned, ...unpinned] : vaults
-  }, [vaults, pinnedVaultKey])
-
-  const maxIndex = sortedVaults.length - 1
+  const maxIndex = vaults.length - 1
 
   useEffect(() => {
     if (currentIndex > maxIndex) {
@@ -80,14 +66,14 @@ export function SwipeableCompareCarousel({
   const handleRemove = useCallback(
     (vaultKey: string) => {
       onRemove(vaultKey)
-      if (currentIndex > 0 && currentIndex >= sortedVaults.length - 1) {
+      if (currentIndex > 0 && currentIndex >= vaults.length - 1) {
         setCurrentIndex(currentIndex - 1)
       }
     },
-    [onRemove, currentIndex, sortedVaults.length]
+    [onRemove, currentIndex, vaults.length]
   )
 
-  if (sortedVaults.length === 0) {
+  if (vaults.length === 0) {
     return (
       <div className={'flex h-64 items-center justify-center rounded-2xl border border-border bg-surface-secondary/40'}>
         <p className={'text-sm text-text-secondary'}>{'No vaults to compare'}</p>
@@ -108,17 +94,12 @@ export function SwipeableCompareCarousel({
           onDragEnd={handleDragEnd}
           style={{ touchAction: 'pan-y' }}
         >
-          {sortedVaults.map((vault) => {
+          {vaults.map((vault) => {
             const vaultKey = getVaultKey(vault)
             return (
               <motion.div key={vaultKey} className={'w-full flex-shrink-0 px-1'} style={{ minWidth: '100%' }}>
                 <div className={'h-[480px]'}>
-                  <CompareVaultCard
-                    vault={vault}
-                    onRemove={handleRemove}
-                    isPinned={vaultKey === pinnedVaultKey}
-                    onTogglePin={onTogglePin}
-                  />
+                  <CompareVaultCard vault={vault} onRemove={handleRemove} />
                 </div>
               </motion.div>
             )
@@ -160,18 +141,13 @@ export function SwipeableCompareCarousel({
         ) : null}
       </div>
 
-      <CarouselIndicators
-        total={sortedVaults.length}
-        current={currentIndex}
-        onSelect={goToIndex}
-        pinnedIndex={pinnedVaultKey ? 0 : null}
-      />
+      <CarouselIndicators total={vaults.length} current={currentIndex} onSelect={goToIndex} />
 
       <div className={'text-center text-xs text-text-secondary'}>
         <span>{'Swipe or use arrows to compare'}</span>
-        {sortedVaults.length > 1 ? (
+        {vaults.length > 1 ? (
           <span className={'ml-1'}>
-            {'·'} {currentIndex + 1} {'/'} {sortedVaults.length}
+            {'·'} {currentIndex + 1} {'/'} {vaults.length}
           </span>
         ) : null}
       </div>
@@ -183,15 +159,13 @@ type TCarouselIndicatorsProps = {
   total: number
   current: number
   onSelect: (index: number) => void
-  pinnedIndex: number | null
 }
 
-function CarouselIndicators({ total, current, onSelect, pinnedIndex }: TCarouselIndicatorsProps): ReactElement {
+function CarouselIndicators({ total, current, onSelect }: TCarouselIndicatorsProps): ReactElement {
   return (
     <div className={'flex items-center justify-center gap-2'} role={'tablist'} aria-label={'Vault carousel indicators'}>
       {Array.from({ length: total }).map((_, index) => {
         const isActive = index === current
-        const isPinned = index === pinnedIndex
 
         return (
           <button
@@ -200,23 +174,13 @@ function CarouselIndicators({ total, current, onSelect, pinnedIndex }: TCarousel
             type={'button'}
             role={'tab'}
             aria-selected={isActive}
-            aria-label={`Go to vault ${index + 1}${isPinned ? ' (pinned)' : ''}`}
+            aria-label={`Go to vault ${index + 1}`}
             onClick={(): void => onSelect(index)}
             className={cl(
-              'relative h-2 rounded-full transition-all duration-200',
-              isActive ? 'w-6 bg-primary' : 'w-2 bg-border hover:bg-border-hover',
-              isPinned && !isActive ? 'ring-1 ring-primary/50' : ''
+              'h-2 rounded-full transition-all duration-200',
+              isActive ? 'w-6 bg-primary' : 'w-2 bg-border hover:bg-border-hover'
             )}
-          >
-            {isPinned ? (
-              <span
-                className={cl(
-                  'absolute -top-1 left-1/2 size-1.5 -translate-x-1/2 rounded-full',
-                  isActive ? 'bg-white' : 'bg-primary'
-                )}
-              />
-            ) : null}
-          </button>
+          />
         )
       })}
     </div>

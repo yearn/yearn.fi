@@ -122,17 +122,6 @@
   /* Mobile Typography Scale - prevents iOS zoom and ensures readability */
   --text-mobile-xs: 0.875rem; /* 14px - minimum for mobile labels */
   --text-mobile-xs--line-height: 1.25rem; /* 20px */
-  --text-mobile-sm: 0.9375rem; /* 15px - small text on mobile */
-  --text-mobile-sm--line-height: 1.375rem; /* 22px */
-  --text-mobile-base: 1rem; /* 16px - base text, prevents iOS zoom */
-  --text-mobile-base--line-height: 1.5rem; /* 24px */
-
-  /* Mobile Spacing Scale - consistent rhythm */
-  --spacing-mobile-xs: 0.25rem; /* 4px */
-  --spacing-mobile-sm: 0.5rem; /* 8px */
-  --spacing-mobile-md: 1rem; /* 16px */
-  --spacing-mobile-lg: 1.5rem; /* 24px */
-  --spacing-mobile-xl: 2rem; /* 32px */
 
   /* Layout Heights */
   --header-height: 4.25rem; /* 68px */
@@ -229,60 +218,11 @@ body {
     @apply min-h-[44px] min-w-[44px];
   }
 
-  .touch-target-inline {
-    @apply relative;
-  }
-
-  .touch-target-inline::before {
-    content: '';
-    @apply absolute -inset-2;
-  }
-
   /* Mobile Typography Utilities */
   /* Use text-mobile-label for labels that need to remain readable on mobile */
   .text-mobile-label {
     font-size: var(--text-mobile-xs);
     line-height: var(--text-mobile-xs--line-height);
-  }
-
-  /* Use text-mobile-body for body text that needs optimal mobile readability */
-  .text-mobile-body {
-    font-size: var(--text-mobile-base);
-    line-height: var(--text-mobile-base--line-height);
-  }
-
-  /* Input text size - prevents iOS zoom */
-  .text-input {
-    font-size: 16px;
-    line-height: 1.5;
-  }
-
-  /* Mobile-optimized line heights */
-  .leading-mobile {
-    line-height: 1.5;
-  }
-
-  .leading-mobile-relaxed {
-    line-height: 1.625;
-  }
-
-  /* Spacing utilities for consistent mobile layout */
-  .gap-mobile {
-    gap: var(--spacing-mobile-md);
-  }
-
-  .p-mobile {
-    padding: var(--spacing-mobile-md);
-  }
-
-  .px-mobile {
-    padding-left: var(--spacing-mobile-md);
-    padding-right: var(--spacing-mobile-md);
-  }
-
-  .py-mobile {
-    padding-top: var(--spacing-mobile-md);
-    padding-bottom: var(--spacing-mobile-md);
   }
 
   /* Safe truncation - allows wrapping for critical info on mobile */
@@ -297,12 +237,6 @@ body {
       white-space: normal;
       word-break: break-word;
     }
-  }
-
-  /* Prevent text from becoming too small on mobile */
-  .text-min-readable {
-    font-size: max(0.875rem, 14px);
-    line-height: 1.4;
   }
 }
 

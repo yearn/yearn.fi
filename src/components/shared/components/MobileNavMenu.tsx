@@ -27,6 +27,7 @@ type TMobileNavMenuProps = {
   onThemeToggle: () => void
   onAccountClick: () => void
   notificationStatus: 'pending' | 'submitted' | 'success' | 'error' | null
+  walletIdentity?: string
 }
 
 export function MobileNavMenu({
@@ -36,7 +37,8 @@ export function MobileNavMenu({
   isDarkTheme,
   onThemeToggle,
   onAccountClick,
-  notificationStatus
+  notificationStatus,
+  walletIdentity
 }: TMobileNavMenuProps): ReactElement {
   function navLinkClass(isActive: boolean): string {
     return cl(
@@ -118,7 +120,7 @@ export function MobileNavMenu({
                   }
                 >
                   <IconWallet className={'size-5'} />
-                  <span>{'Wallet'}</span>
+                  <span>{walletIdentity || 'Wallet'}</span>
                   {notificationStatus && (
                     <div className={cl('absolute right-4 size-2.5 rounded-full', notificationDotColor)} />
                   )}

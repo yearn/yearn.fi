@@ -20,7 +20,7 @@ export function Footer(): ReactElement {
           'flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-2 px-2 py-4 sm:gap-x-4 sm:gap-y-3 sm:px-4 sm:py-6 md:justify-between md:gap-0 md:px-8'
         }
       >
-        {footerLinks.flatMap((link, index) => [
+        {footerLinks.map((link) => (
           <Link
             key={link.path}
             href={link.path}
@@ -31,11 +31,8 @@ export function Footer(): ReactElement {
           >
             <span className={'text-sm sm:text-base md:text-lg'}>{link.label}</span>
             <span>{'↗'}</span>
-          </Link>,
-          index < footerLinks.length - 1 && (
-            <span key={`spacer-${link.path}`} className={'hidden size-1 rounded-full bg-white/30 md:block'} />
-          )
-        ])}
+          </Link>
+        ))}
       </div>
     </div>
   )

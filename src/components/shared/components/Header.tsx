@@ -100,10 +100,18 @@ function AppHeader(): ReactElement {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const launcherTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const { notificationStatus } = useNotifications()
+  const { isActive, openLoginModal, address, ens, clusters } = useWeb3()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
 
   const isHomePage = normalizePathname(pathname) === '/'
+
+  const walletIdentity = useMemo((): string | undefined => {
+    if (ens) return ens
+    if (clusters?.name) return clusters.name
+    if (address) return truncateHex(address, 4)
+    return undefined
+  }, [ens, clusters, address])
 
   const handleLauncherMouseEnter = (): void => {
     if (launcherTimeoutRef.current) {
@@ -181,13 +189,10 @@ function AppHeader(): ReactElement {
                   >
                     {isDarkTheme ? <IconSun className={'size-5'} /> : <IconMoon className={'size-5'} />}
                   </button>
-                  <div className={'relative'}>
-                    <WalletSelector
-                      onAccountClick={() => setIsAccountSidebarOpen(!isAccountSidebarOpen)}
-                      notificationStatus={notificationStatus}
-                    />
-                    <AccountDropdown isOpen={isAccountSidebarOpen} onClose={() => setIsAccountSidebarOpen(false)} />
-                  </div>
+                  <WalletSelector
+                    onAccountClick={() => setIsAccountSidebarOpen(!isAccountSidebarOpen)}
+                    notificationStatus={notificationStatus}
+                  />
                 </div>
                 <button
                   className={cl(
@@ -199,6 +204,7 @@ function AppHeader(): ReactElement {
                 >
                   <IconBurgerPlain className={'size-6'} />
                 </button>
+                <AccountDropdown isOpen={isAccountSidebarOpen} onClose={() => setIsAccountSidebarOpen(false)} />
               </>
             )}
           </div>
@@ -212,9 +218,14 @@ function AppHeader(): ReactElement {
         onThemeToggle={() => setThemePreference(isDarkTheme ? 'light' : 'soft-dark')}
         onAccountClick={() => {
           setIsMobileMenuOpen(false)
-          setIsAccountSidebarOpen(true)
+          if (isActive) {
+            setIsAccountSidebarOpen(true)
+          } else {
+            openLoginModal()
+          }
         }}
         notificationStatus={notificationStatus}
+        walletIdentity={walletIdentity}
       />
     </div>
   )

@@ -70,8 +70,8 @@ export function VaultMetricsGrid({ currentVault }: VaultMetricsGridProps): React
       {/* Top row: TVL, Forward APY, Historical APY */}
       <div className="grid grid-cols-3 gap-1.5 min-[375px]:gap-2">
         <StatCard label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
-        <StatCard label="Fwd APY" value={formatPercent(forwardAPY)} />
-        <StatCard label="Hist APY" value={formatPercent(historicalAPY)} />
+        <StatCard label="Fwd. APY" value={formatPercent(forwardAPY)} />
+        <StatCard label="Hist. APY" value={formatPercent(historicalAPY)} />
       </div>
     </div>
   )

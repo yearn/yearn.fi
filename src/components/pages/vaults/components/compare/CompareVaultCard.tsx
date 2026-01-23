@@ -12,8 +12,6 @@ import type { ReactElement, ReactNode } from 'react'
 type TCompareVaultCardProps = {
   vault: TYDaemonVault
   onRemove: (vaultKey: string) => void
-  isPinned?: boolean
-  onTogglePin?: (vaultKey: string) => void
 }
 
 type TVaultStrategyItem = NonNullable<TYDaemonVault['strategies']>[number]
@@ -71,7 +69,7 @@ function normalizeRiskLevel(riskLevel: number): number {
   return Math.min(Math.max(riskLevel, 0), 5)
 }
 
-export function CompareVaultCard({ vault, onRemove, isPinned, onTogglePin }: TCompareVaultCardProps): ReactElement {
+export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): ReactElement {
   const network = getNetwork(vault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${vault.chainID}/logo-32.png`
   const vaultKey = getVaultKey(vault)
@@ -84,12 +82,7 @@ export function CompareVaultCard({ vault, onRemove, isPinned, onTogglePin }: TCo
   )
 
   return (
-    <div
-      className={cl(
-        'flex h-full w-full flex-col rounded-2xl border bg-surface p-4',
-        isPinned ? 'border-primary ring-2 ring-primary/20' : 'border-border'
-      )}
-    >
+    <div className={'flex h-full w-full flex-col rounded-2xl border border-border bg-surface p-4'}>
       <div className={'flex items-start justify-between gap-3 border-b border-border pb-4'}>
         <div className={'min-w-0 flex-1'}>
           <div className={'flex items-center gap-3'}>
@@ -108,49 +101,20 @@ export function CompareVaultCard({ vault, onRemove, isPinned, onTogglePin }: TCo
             </div>
           </div>
         </div>
-        <div className={'flex items-center gap-1'}>
-          {onTogglePin ? (
-            <button
-              type={'button'}
-              onClick={(): void => onTogglePin(vaultKey)}
-              className={cl(
-                'inline-flex size-8 items-center justify-center rounded-full border text-xs font-medium transition-colors',
-                isPinned
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-transparent text-text-secondary hover:border-border hover:text-text-primary'
-              )}
-              aria-label={isPinned ? 'Unpin vault' : 'Pin vault'}
-              aria-pressed={isPinned}
-            >
-              <svg className={'size-4'} viewBox={'0 0 24 24'} fill={'none'} stroke={'currentColor'} strokeWidth={2}>
-                <path
-                  strokeLinecap={'round'}
-                  strokeLinejoin={'round'}
-                  d={
-                    isPinned
-                      ? 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z'
-                      : 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z'
-                  }
-                  fill={isPinned ? 'currentColor' : 'none'}
-                />
-              </svg>
-            </button>
-          ) : null}
-          <button
-            type={'button'}
-            onClick={(): void => onRemove(vaultKey)}
-            className={cl(
-              'inline-flex size-8 items-center justify-center rounded-full border border-transparent text-text-secondary',
-              'hover:border-border hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
-            )}
-            aria-label={`Remove ${vault.name} from comparison`}
-          >
-            <IconClose className={'size-4'} />
-          </button>
-        </div>
+        <button
+          type={'button'}
+          onClick={(): void => onRemove(vaultKey)}
+          className={cl(
+            'inline-flex size-8 items-center justify-center rounded-full border border-transparent text-text-secondary',
+            'hover:border-border hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+          )}
+          aria-label={`Remove ${vault.name} from comparison`}
+        >
+          <IconClose className={'size-4'} />
+        </button>
       </div>
 
-      <div className={'flex-1 overflow-y-auto'}>
+      <div className={'flex-1 overflow-x-hidden overflow-y-auto'}>
         <MetricRow label={'Est. APY'} sublabel={'Forward net APR'}>
           {renderPercentValue(vault.apr?.forwardAPR?.netAPR)}
         </MetricRow>
