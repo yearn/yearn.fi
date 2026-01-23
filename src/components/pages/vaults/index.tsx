@@ -232,7 +232,7 @@ export default function Index(): ReactElement {
           />
         ))}
         {mainVaults.length > 0 ? (
-          <div className={'flex flex-col gap-px bg-border'}>
+          <div className={'flex flex-col gap-0.5 md:gap-px bg-border'}>
             {mainVaults.map((vault) => {
               const key = getVaultKey(vault)
               const rowApyDisplayVariant = resolveApyDisplayVariant(vault)

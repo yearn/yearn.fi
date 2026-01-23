@@ -11,6 +11,7 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
+import { useMediaQuery } from '@react-hookz/web'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
@@ -71,6 +72,9 @@ export function VaultsListRow({
   onToggleVaultType,
   showStrategies = false,
   shouldCollapseChips = false,
+  showHoldingsChipOverride,
+  showProductTypeChipOverride,
+  mobileSecondaryMetric = 'tvl'
   showAllocatorChip = true
 }: {
   currentVault: TYDaemonVault
@@ -90,6 +94,9 @@ export function VaultsListRow({
   showStrategies?: boolean
   shouldCollapseChips?: boolean
   showAllocatorChip?: boolean
+  showHoldingsChipOverride?: boolean
+  showProductTypeChipOverride?: boolean
+  mobileSecondaryMetric?: 'tvl' | 'holdings'
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
@@ -98,6 +105,7 @@ export function VaultsListRow({
   const { isActive: isWalletActive } = useWeb3()
   const { getToken } = useWallet()
   const { getPrice } = useYearn()
+  const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('strategies')
   const [interactiveHoverCount, setInteractiveHoverCount] = useState(0)
@@ -118,11 +126,11 @@ export function VaultsListRow({
     : isLegacyVault
       ? 'Legacy vault'
       : 'Show LP token vaults'
-  const showProductTypeChip = Boolean(activeProductType) || Boolean(onToggleVaultType)
+  const showProductTypeChip = showProductTypeChipOverride ?? (Boolean(activeProductType) || Boolean(onToggleVaultType))
   const isProductTypeActive = activeProductType === productType
   const shouldCollapseProductTypeChip =
     !isLegacyVault && activeProductType !== 'all' && activeProductType === productType
-  const isChipsCompressed = Boolean(shouldCollapseChips)
+  const isChipsCompressed = Boolean(shouldCollapseChips) || isMobile
   const shouldCollapseProductType = isChipsCompressed || shouldCollapseProductTypeChip
   const showCollapsedTooltip = isChipsCompressed
   const leftColumnSpan = 'col-span-12'
@@ -195,9 +203,11 @@ export function VaultsListRow({
       <circle cx={6} cy={5} r={3} />
     </svg>
   )
-  const showHoldingsChip = Boolean(flags?.hasHoldings)
+  const hasHoldings = Boolean(flags?.hasHoldings)
+  const showHoldingsChip = showHoldingsChipOverride ?? hasHoldings
+  const showHoldingsValue = hasHoldings
   const holdingsValue = useMemo(() => {
-    if (!showHoldingsChip) {
+    if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
     }
     const vaultToken = getToken({
@@ -224,7 +234,8 @@ export function VaultsListRow({
     currentVault.staking.address,
     currentVault.staking.available,
     getToken,
-    getPrice
+    getPrice,
+    mobileSecondaryMetric
   ])
   const tvlNativeTooltip = (
     <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
@@ -272,7 +283,7 @@ export function VaultsListRow({
         href={href}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
-          'p-6 pb-4 md:p-4 md:pt-2 md:pb-4 md:pr-20',
+          'p-4 pb-4 md:p-4 md:pt-2 md:pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
         onClickCapture={(event): void => {
@@ -314,7 +325,9 @@ export function VaultsListRow({
             'flex flex-col items-start sm:pt-0 md:flex-row md:items-center md:justify-between'
           )}
         >
-          <div className={'flex flex-row w-full gap-4 overflow-visible'}>
+          <div
+            className={'flex flex-row w-full gap-4 pb-2 border-b border-border md:pb-0 md:border-none overflow-visible'}
+          >
             {showCompareToggle ? (
               // biome-ignore lint/a11y/useSemanticElements: native checkbox has double-firing issues with parent Link's onClickCapture
               <div
@@ -478,13 +491,11 @@ export function VaultsListRow({
                 {showHoldingsChip ? (
                   <span
                     className={
-                      'inline-flex items-center rounded-lg border border-primary/50 px-1 py-0.5 text-xs font-medium transition-colors bg-surface-secondary text-text-secondary gap-1 shadow-[0_0_12px_rgba(0,95,251,0.2)]'
+                      'hidden md:inline-flex items-center rounded-lg border border-primary/50 px-1 py-0.5 text-xs font-medium transition-colors bg-surface-secondary text-primary gap-1 shadow-[0_0_12px_rgba(59,130,246,0.12)]'
                     }
                     aria-label={'Holdings'}
                   >
-                    <span className={'flex size-4 items-center justify-center text-text-secondary'}>
-                      {holdingsIcon}
-                    </span>
+                    <span className={'flex size-4 items-center justify-center text-primary'}>{holdingsIcon}</span>
                     <RenderAmount
                       shouldHideTooltip
                       value={holdingsValue}
@@ -501,9 +512,9 @@ export function VaultsListRow({
               </div>
             </div>
           </div>
-          <div className={'mt-1 flex w-full flex-col gap-2 md:hidden'}>
-            <div className={'grid w-full grid-cols-2 gap-2 text-xs pl-12 text-text-primary/70'}>
-              <div className={'flex items-baseline gap-2 whitespace-nowrap'}>
+          <div className={'mt-2 flex w-full flex-col gap-2 md:hidden'}>
+            <div className={'grid w-full grid-cols-2 gap-2 text-sm text-text-secondary'}>
+              <div className={'flex items-baseline justify-center gap-2 whitespace-nowrap'}>
                 <span className={'text-text-primary/60'}>{'Est. APY:'}</span>
                 <VaultForwardAPY
                   currentVault={currentVault}
@@ -515,19 +526,38 @@ export function VaultsListRow({
                   onInteractiveHoverChange={handleInteractiveHoverChange}
                 />
               </div>
-              <div className={'flex items-baseline gap-2 whitespace-nowrap'}>
-                <span className={'text-text-primary/60'}>{'TVL:'}</span>
+              <div className={'flex items-baseline justify-center gap-2 whitespace-nowrap'}>
+                <span className={'text-text-primary/60'}>
+                  {mobileSecondaryMetric === 'holdings' ? 'Holdings:' : 'TVL:'}
+                </span>
                 <span className={'text-lg font-semibold text-text-primary font-number'}>
-                  <RenderAmount
-                    value={currentVault.tvl?.tvl}
-                    symbol={'USD'}
-                    decimals={0}
-                    options={{
-                      shouldCompactValue: true,
-                      maximumFractionDigits: 2,
-                      minimumFractionDigits: 0
-                    }}
-                  />
+                  {mobileSecondaryMetric === 'holdings' ? (
+                    showHoldingsValue ? (
+                      <RenderAmount
+                        value={holdingsValue}
+                        symbol={'USD'}
+                        decimals={0}
+                        options={{
+                          shouldCompactValue: true,
+                          maximumFractionDigits: 2,
+                          minimumFractionDigits: 2
+                        }}
+                      />
+                    ) : (
+                      '—'
+                    )
+                  ) : (
+                    <RenderAmount
+                      value={currentVault.tvl?.tvl}
+                      symbol={'USD'}
+                      decimals={0}
+                      options={{
+                        shouldCompactValue: true,
+                        maximumFractionDigits: 2,
+                        minimumFractionDigits: 0
+                      }}
+                    />
+                  )}
                 </span>
               </div>
             </div>
