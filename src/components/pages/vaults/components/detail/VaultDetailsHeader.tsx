@@ -2,7 +2,6 @@ import { useThemePreference } from '@hooks/useThemePreference'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
-import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
@@ -123,7 +122,7 @@ function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): R
         <VaultForwardAPY
           currentVault={currentVault}
           showSubline={false}
-          showSublineTooltip={currentVault.chainID === KATANA_CHAIN_ID}
+          showSublineTooltip
           className={'items-start text-left'}
           valueClassName={METRIC_VALUE_CLASS}
         />
@@ -135,6 +134,7 @@ function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): R
       value: (
         <VaultHistoricalAPY
           currentVault={currentVault}
+          showSublineTooltip
           className={'items-start text-left'}
           valueClassName={METRIC_VALUE_CLASS}
         />
