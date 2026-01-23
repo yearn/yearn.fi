@@ -37,7 +37,8 @@ type TApyDisplayProps = {
 }
 
 const UNDERLINE_CLASS =
-  'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+  'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +
+  'transition-opacity hover:decoration-neutral-600'
 
 export function ApyDisplay({
   config,
@@ -46,10 +47,10 @@ export function ApyDisplay({
   onValueClick,
   onHoverChange
 }: TApyDisplayProps): ReactElement {
-  const tooltipContent = config.tooltip?.content
-  const shouldShowTooltip = Boolean(config.tooltip && config.tooltip.mode !== 'none' && tooltipContent != null)
-  const shouldUnderline =
-    config.showUnderline ?? Boolean(config.tooltip && config.tooltip.mode !== 'none' && config.tooltip.content)
+  const tooltip = config.tooltip
+  const tooltipContent = tooltip?.content ?? null
+  const hasTooltip = Boolean(tooltip && tooltip.mode !== 'none' && tooltipContent != null)
+  const shouldUnderline = config.showUnderline ?? hasTooltip
   const valueInteractiveClass = config.isInteractive ? 'cursor-pointer' : undefined
   const underlineClass = shouldUnderline ? UNDERLINE_CLASS : undefined
   const interactiveHandlers =
@@ -86,13 +87,13 @@ export function ApyDisplay({
   )
 
   const valueWithTooltip =
-    shouldShowTooltip && config.tooltip && tooltipContent != null ? (
+    hasTooltip && tooltip && tooltipContent != null ? (
       <Tooltip
-        className={config.tooltip.className}
-        openDelayMs={config.tooltip.openDelayMs}
-        align={config.tooltip.align}
-        side={config.tooltip.side}
-        zIndex={config.tooltip.zIndex}
+        className={tooltip.className}
+        openDelayMs={tooltip.openDelayMs}
+        align={tooltip.align}
+        side={tooltip.side}
+        zIndex={tooltip.zIndex}
         tooltip={tooltipContent}
       >
         {valueNode}

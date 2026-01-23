@@ -11,12 +11,18 @@ import type { ReactElement, ReactNode } from 'react'
 import { Fragment } from 'react'
 import { APYSubline, getApySublineLines } from './APYSubline'
 import { APYTooltipContent } from './APYTooltip'
-import type { TApyDisplayConfig, TApyTooltipMode } from './ApyDisplay'
+import type { TApyDisplayConfig, TApyTooltipConfig, TApyTooltipMode } from './ApyDisplay'
 import { KatanaApyTooltipContent } from './KatanaApyTooltip'
 import type { TVaultForwardAPYVariant } from './VaultForwardAPY'
 
 const DEFAULT_TOOLTIP_CLASS = 'apy-subline-tooltip gap-0 h-auto md:justify-end'
 const DEFAULT_TOOLTIP_DELAY = 150
+const FIXED_RATE_LINK_CLASS =
+  'inline-flex items-center gap-1 font-semibold underline decoration-neutral-600/30 decoration-dotted ' +
+  'underline-offset-4 transition-opacity hover:decoration-neutral-600'
+const KATANA_TOOLTIP_CTA_CLASS =
+  'mt-2 mx-auto block font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +
+  'transition-opacity hover:decoration-neutral-600'
 
 export type TApyModalConfig = {
   title: string
@@ -43,6 +49,19 @@ type TKatanaTooltipOptions = {
   fixedTermProviderLabel: string
   showModalCTA: boolean
   onRequestModalOpen?: () => void
+}
+
+type TApySublineConfig = Parameters<typeof getApySublineLines>[0]
+
+function buildSubline(config: TApySublineConfig, shouldRender: boolean): ReactNode {
+  if (!shouldRender) {
+    return null
+  }
+  return <APYSubline {...config} />
+}
+
+function withTooltipMode(config: TApyTooltipConfig, mode: TApyTooltipMode): TApyTooltipConfig {
+  return { ...config, mode }
 }
 
 export function buildFixedTermContext(currentVault: TYDaemonVault): TFixedTermContext {
@@ -94,9 +113,7 @@ function buildStandardTooltipContent({
               href={market.marketUrl}
               target={'_blank'}
               rel={'noopener noreferrer'}
-              className={
-                'inline-flex items-center gap-1 font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-              }
+              className={FIXED_RATE_LINK_CLASS}
               onClick={(event): void => event.stopPropagation()}
             >
               {`View ${market.label} market`}
@@ -137,9 +154,7 @@ function buildKatanaTooltipContent({
         <button
           type={'button'}
           data-tooltip-close={'true'}
-          className={
-            'mt-2 mx-auto block font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-          }
+          className={KATANA_TOOLTIP_CTA_CLASS}
           onClick={(): void => onRequestModalOpen?.()}
         >
           {'Click for more information'}
@@ -184,14 +199,27 @@ export function resolveForwardApyDisplayConfig({
   const isEligibleForSpectraBoost =
     currentVault.chainID === KATANA_CHAIN_ID &&
     SPECTRA_BOOST_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
-  const sublineLines = getApySublineLines({
+  const baseSublineProps: TApySublineConfig = {
     hasPendleArbRewards: data.hasPendleArbRewards,
     hasKelpNEngenlayer: data.hasKelpNEngenlayer,
     hasKelp: data.hasKelp,
     isEligibleForSteer: data.isEligibleForSteer,
     steerPointsPerDollar: data.steerPointsPerDollar,
     isEligibleForSpectraBoost
-  })
+  }
+  const sublineLines = getApySublineLines(baseSublineProps)
+  const standardSubline = buildSubline(baseSublineProps, showSubline)
+  const katanaSubline = buildSubline(
+    {
+      ...baseSublineProps,
+      hasPendleArbRewards: false,
+      hasKelpNEngenlayer: false,
+      hasKelp: false
+    },
+    showSubline
+  )
+  const shouldRenderForward = !currentVault.apr.forwardAPR?.type.includes('new')
+  const shouldRenderHistorical = !currentVault.apr.type.includes('new')
   const fixedRateTooltipLines =
     fixedTermContext.fixedTermProviders.length > 0
       ? fixedTermContext.fixedTermProviders.map((market) => `Fixed-rate markets available on ${market.label}.`)
@@ -210,7 +238,9 @@ export function resolveForwardApyDisplayConfig({
     showFixedRateLinks: showSublineTooltip && fixedTermContext.fixedTermProviders.length > 0
   })
 
-  const isKatanaVault = currentVault.chainID === KATANA_CHAIN_ID && data.katanaExtras && data.katanaEstApr !== undefined
+  const katanaExtras = data.katanaExtras
+  const hasKatanaEstApr = typeof data.katanaEstApr === 'number'
+  const isKatanaVault = currentVault.chainID === KATANA_CHAIN_ID && katanaExtras && hasKatanaEstApr
   const katanaTooltipContent =
     showSublineTooltip && isKatanaVault
       ? buildKatanaTooltipContent({
@@ -223,16 +253,14 @@ export function resolveForwardApyDisplayConfig({
       : null
   const tooltipContent = katanaTooltipContent ?? standardTooltipContent
 
-  const baseValueConfig: Pick<TApyDisplayConfig, 'fixedRateIndicator' | 'tooltip'> = {
-    fixedRateIndicator: fixedTermContext.fixedTermIndicator,
-    tooltip: {
-      mode: 'none',
-      content: tooltipContent,
-      className: DEFAULT_TOOLTIP_CLASS,
-      openDelayMs: DEFAULT_TOOLTIP_DELAY,
-      align: 'center',
-      zIndex: 90
-    }
+  const fixedRateIndicator = fixedTermContext.fixedTermIndicator
+  const baseTooltipConfig: TApyTooltipConfig = {
+    mode: 'none',
+    content: tooltipContent,
+    className: DEFAULT_TOOLTIP_CLASS,
+    openDelayMs: DEFAULT_TOOLTIP_DELAY,
+    align: 'center',
+    zIndex: 90
   }
 
   // Katana
@@ -242,10 +270,10 @@ export function resolveForwardApyDisplayConfig({
     const katanaDetails = (
       <KatanaApyTooltipContent
         katanaNativeYield={katanaBreakdownBaseApr}
-        fixedRateKatanRewardsAPR={data.katanaExtras?.FixedRateKatanaRewards ?? 0}
-        katanaAppRewardsAPR={data.katanaExtras?.katanaAppRewardsAPR ?? data.katanaExtras?.katanaRewardsAPR ?? 0}
-        katanaBonusAPR={data.katanaExtras?.katanaBonusAPY ?? 0}
-        steerPointsPerDollar={data.katanaExtras?.steerPointsPerDollar}
+        fixedRateKatanRewardsAPR={katanaExtras?.FixedRateKatanaRewards ?? 0}
+        katanaAppRewardsAPR={katanaExtras?.katanaAppRewardsAPR ?? katanaExtras?.katanaRewardsAPR ?? 0}
+        katanaBonusAPR={katanaExtras?.katanaBonusAPY ?? 0}
+        steerPointsPerDollar={katanaExtras?.steerPointsPerDollar}
         isEligibleForSpectraBoost={isEligibleForSpectraBoost}
         currentVault={currentVault}
         maxWidth={'w-full'}
@@ -255,29 +283,18 @@ export function resolveForwardApyDisplayConfig({
     const modalContent = katanaDetails
 
     const tooltipMode = allowTooltip ? resolveTooltipMode(canOpenModal, Boolean(tooltipContent)) : 'none'
+    const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
     const katanaEstApr = data.katanaEstApr ?? 0
     const displayConfig: TApyDisplayConfig = {
-      ...baseValueConfig,
+      fixedRateIndicator,
       value: <RenderAmount value={katanaEstApr} symbol={'percent'} decimals={6} />,
       shouldRender: true,
       fallbackLabel: 'NEW',
-      tooltip: {
-        ...baseValueConfig.tooltip,
-        mode: tooltipMode
-      },
+      tooltip: tooltipConfig,
       isInteractive: tooltipMode === 'tooltip+modal' && canOpenModal,
       showUnderline: tooltipMode !== 'none',
       showAsterisk: tooltipMode === 'tooltip+modal',
-      subline: showSubline ? (
-        <APYSubline
-          hasPendleArbRewards={false}
-          hasKelpNEngenlayer={false}
-          hasKelp={false}
-          isEligibleForSteer={data.isEligibleForSteer}
-          steerPointsPerDollar={data.steerPointsPerDollar}
-          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-        />
-      ) : null
+      subline: katanaSubline
     }
 
     const modalConfig: TApyModalConfig | undefined =
@@ -310,33 +327,22 @@ export function resolveForwardApyDisplayConfig({
       )
 
       const tooltipMode = allowTooltip ? resolveTooltipMode(canOpenModal, Boolean(tooltipContent)) : 'none'
+      const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
       const displayConfig: TApyDisplayConfig = {
-        ...baseValueConfig,
+        fixedRateIndicator,
         value: (
           <>
             {'⚡️ '}
             <RenderAmount shouldHideTooltip={hasZeroBoostedAPY} value={boostedAPY} symbol={'percent'} decimals={6} />
           </>
         ),
-        shouldRender: !currentVault.apr.forwardAPR?.type.includes('new'),
+        shouldRender: shouldRenderForward,
         fallbackLabel: 'NEW',
-        tooltip: {
-          ...baseValueConfig.tooltip,
-          mode: tooltipMode
-        },
+        tooltip: tooltipConfig,
         isInteractive: tooltipMode === 'tooltip+modal' && canOpenModal,
         showUnderline: tooltipMode !== 'none',
         showAsterisk: false,
-        subline: showSubline ? (
-          <APYSubline
-            hasPendleArbRewards={data.hasPendleArbRewards}
-            hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-            hasKelp={data.hasKelp}
-            isEligibleForSteer={data.isEligibleForSteer}
-            steerPointsPerDollar={data.steerPointsPerDollar}
-            isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-          />
-        ) : null
+        subline: standardSubline
       }
 
       const modalConfig: TApyModalConfig | undefined =
@@ -352,28 +358,17 @@ export function resolveForwardApyDisplayConfig({
     }
 
     const tooltipMode = allowTooltip ? resolveTooltipMode(false, Boolean(tooltipContent)) : 'none'
+    const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
     const displayConfig: TApyDisplayConfig = {
-      ...baseValueConfig,
+      fixedRateIndicator,
       value: <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />,
-      shouldRender: !currentVault.apr.forwardAPR?.type.includes('new'),
+      shouldRender: shouldRenderForward,
       fallbackLabel: 'NEW',
-      tooltip: {
-        ...baseValueConfig.tooltip,
-        mode: tooltipMode
-      },
+      tooltip: tooltipConfig,
       isInteractive: false,
       showUnderline: tooltipMode !== 'none',
       showAsterisk: false,
-      subline: showSubline ? (
-        <APYSubline
-          hasPendleArbRewards={data.hasPendleArbRewards}
-          hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-          hasKelp={data.hasKelp}
-          isEligibleForSteer={data.isEligibleForSteer}
-          steerPointsPerDollar={data.steerPointsPerDollar}
-          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-        />
-      ) : null
+      subline: standardSubline
     }
 
     return { displayConfig }
@@ -382,30 +377,19 @@ export function resolveForwardApyDisplayConfig({
   // Boosted
   if (data.mode === 'boosted' && data.isBoosted) {
     const tooltipMode = allowTooltip ? resolveTooltipMode(false, Boolean(tooltipContent)) : 'none'
+    const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
     const displayConfig: TApyDisplayConfig = {
-      ...baseValueConfig,
+      fixedRateIndicator,
       value: (
         <RenderAmount shouldHideTooltip value={currentVault.apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
       ),
-      shouldRender: !currentVault.apr.forwardAPR?.type.includes('new'),
+      shouldRender: shouldRenderForward,
       fallbackLabel: 'NEW',
-      tooltip: {
-        ...baseValueConfig.tooltip,
-        mode: tooltipMode
-      },
+      tooltip: tooltipConfig,
       isInteractive: false,
       showUnderline: tooltipMode !== 'none',
       showAsterisk: false,
-      subline: showSubline ? (
-        <APYSubline
-          hasPendleArbRewards={data.hasPendleArbRewards}
-          hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-          hasKelp={data.hasKelp}
-          isEligibleForSteer={data.isEligibleForSteer}
-          steerPointsPerDollar={data.steerPointsPerDollar}
-          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-        />
-      ) : null
+      subline: standardSubline
     }
 
     return { displayConfig }
@@ -433,8 +417,9 @@ export function resolveForwardApyDisplayConfig({
     )
 
     const tooltipMode = allowTooltip ? resolveTooltipMode(canOpenModal, Boolean(tooltipContent)) : 'none'
+    const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
     const displayConfig: TApyDisplayConfig = {
-      ...baseValueConfig,
+      fixedRateIndicator,
       value: (
         <>
           {'⚡️ '}
@@ -449,25 +434,13 @@ export function resolveForwardApyDisplayConfig({
           )}
         </>
       ),
-      shouldRender: !currentVault.apr.forwardAPR?.type.includes('new'),
+      shouldRender: shouldRenderForward,
       fallbackLabel: 'NEW',
-      tooltip: {
-        ...baseValueConfig.tooltip,
-        mode: tooltipMode
-      },
+      tooltip: tooltipConfig,
       isInteractive: tooltipMode === 'tooltip+modal' && canOpenModal,
       showUnderline: tooltipMode !== 'none',
       showAsterisk: false,
-      subline: showSubline ? (
-        <APYSubline
-          hasPendleArbRewards={data.hasPendleArbRewards}
-          hasKelp={data.hasKelp}
-          hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-          isEligibleForSteer={data.isEligibleForSteer}
-          steerPointsPerDollar={data.steerPointsPerDollar}
-          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-        />
-      ) : null,
+      subline: standardSubline,
       valueClassName: 'whitespace-nowrap'
     }
 
@@ -486,33 +459,22 @@ export function resolveForwardApyDisplayConfig({
   // Spot forward APY
   if (data.mode === 'spot') {
     const tooltipMode = allowTooltip ? resolveTooltipMode(false, Boolean(tooltipContent)) : 'none'
+    const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
     const displayConfig: TApyDisplayConfig = {
-      ...baseValueConfig,
+      fixedRateIndicator,
       value: (
         <>
           {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
           <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
         </>
       ),
-      shouldRender: !currentVault.apr.forwardAPR?.type.includes('new'),
+      shouldRender: shouldRenderForward,
       fallbackLabel: 'NEW',
-      tooltip: {
-        ...baseValueConfig.tooltip,
-        mode: tooltipMode
-      },
+      tooltip: tooltipConfig,
       isInteractive: false,
       showUnderline: tooltipMode !== 'none',
       showAsterisk: false,
-      subline: showSubline ? (
-        <APYSubline
-          hasPendleArbRewards={data.hasPendleArbRewards}
-          hasKelp={data.hasKelp}
-          hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-          isEligibleForSteer={data.isEligibleForSteer}
-          steerPointsPerDollar={data.steerPointsPerDollar}
-          isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-        />
-      ) : null
+      subline: standardSubline
     }
 
     return { displayConfig }
@@ -521,33 +483,22 @@ export function resolveForwardApyDisplayConfig({
   // Fallback historical APY - This will always be reached for any unhandled case
   const hasZeroAPY = isZero(data.netApr) || Number((data.netApr || 0).toFixed(2)) === 0
   const tooltipMode = allowTooltip ? resolveTooltipMode(false, Boolean(tooltipContent)) : 'none'
+  const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
   const displayConfig: TApyDisplayConfig = {
-    ...baseValueConfig,
+    fixedRateIndicator,
     value: (
       <>
         {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
         <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
       </>
     ),
-    shouldRender: !currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new'),
+    shouldRender: shouldRenderForward && shouldRenderHistorical,
     fallbackLabel: 'NEW',
-    tooltip: {
-      ...baseValueConfig.tooltip,
-      mode: tooltipMode
-    },
+    tooltip: tooltipConfig,
     isInteractive: false,
     showUnderline: tooltipMode !== 'none',
     showAsterisk: false,
-    subline: showSubline ? (
-      <APYSubline
-        hasPendleArbRewards={data.hasPendleArbRewards}
-        hasKelp={data.hasKelp}
-        hasKelpNEngenlayer={data.hasKelpNEngenlayer}
-        isEligibleForSteer={data.isEligibleForSteer}
-        steerPointsPerDollar={data.steerPointsPerDollar}
-        isEligibleForSpectraBoost={isEligibleForSpectraBoost}
-      />
-    ) : null
+    subline: standardSubline
   }
 
   return { displayConfig }
@@ -575,14 +526,15 @@ export function resolveHistoricalApyDisplayConfig({
   const isEligibleForSpectraBoost =
     currentVault.chainID === KATANA_CHAIN_ID &&
     SPECTRA_BOOST_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
-  const sublineLines = getApySublineLines({
+  const baseSublineProps: TApySublineConfig = {
     hasPendleArbRewards: data.hasPendleArbRewards,
     hasKelpNEngenlayer: data.hasKelpNEngenlayer,
     hasKelp: data.hasKelp,
     isEligibleForSteer: data.isEligibleForSteer,
     steerPointsPerDollar: data.steerPointsPerDollar,
     isEligibleForSpectraBoost
-  })
+  }
+  const sublineLines = getApySublineLines(baseSublineProps)
 
   const fixedRateTooltipLines =
     fixedTermContext.fixedTermProviders.length > 0
@@ -609,17 +561,17 @@ export function resolveHistoricalApyDisplayConfig({
   const weeklyAPY = currentVault.apr.points.weekAgo
   const standardThirtyDayApr = isZero(monthlyAPY) ? weeklyAPY : monthlyAPY
   const standardShouldRender = !currentVault.apr?.type.includes('new')
-  const displayValue = shouldUseKatanaAPRs
-    ? hasKatanaApr
-      ? (katanaThirtyDayApr ?? 0)
-      : standardThirtyDayApr
-    : standardThirtyDayApr
+  let displayValue = standardThirtyDayApr
+  if (shouldUseKatanaAPRs && hasKatanaApr) {
+    displayValue = katanaThirtyDayApr ?? 0
+  }
   const shouldRenderValue = shouldUseKatanaAPRs ? hasKatanaApr || standardShouldRender : standardShouldRender
   const fallbackLabel = shouldUseKatanaAPRs ? '-' : 'NEW'
   const hasZeroAPY = isZero(displayValue || 0) || Number((displayValue || 0).toFixed(2)) === 0
   const allowTooltip = allowTooltipBase && shouldRenderValue
 
-  const hasKatanaRewards = Boolean(shouldUseKatanaAPRs && data.katanaExtras && hasKatanaApr)
+  const katanaExtras = data.katanaExtras
+  const hasKatanaRewards = Boolean(shouldUseKatanaAPRs && katanaExtras && hasKatanaApr)
   const allowModal = hasKatanaRewards && shouldRenderValue
   const katanaTooltipContent =
     showSublineTooltip && hasKatanaRewards
@@ -633,28 +585,34 @@ export function resolveHistoricalApyDisplayConfig({
       : null
   const tooltipContent = katanaTooltipContent ?? standardTooltipContent
 
-  const tooltipMode = allowTooltip
-    ? hasKatanaRewards
-      ? resolveTooltipMode(allowModal, Boolean(tooltipContent))
-      : resolveTooltipMode(false, Boolean(tooltipContent))
-    : 'none'
-  const canOpenModal = Boolean(allowModal && tooltipMode === 'tooltip+modal')
+  const fixedRateIndicator = fixedTermContext.fixedTermIndicator
+  const baseTooltipConfig: TApyTooltipConfig = {
+    mode: 'none',
+    content: tooltipContent,
+    className: DEFAULT_TOOLTIP_CLASS,
+    openDelayMs: DEFAULT_TOOLTIP_DELAY,
+    side: 'bottom'
+  }
+  let tooltipMode: TApyTooltipMode = 'none'
+  if (allowTooltip) {
+    if (hasKatanaRewards) {
+      tooltipMode = resolveTooltipMode(allowModal, Boolean(tooltipContent))
+    } else {
+      tooltipMode = resolveTooltipMode(false, Boolean(tooltipContent))
+    }
+  }
+  const canOpenModal = allowModal && tooltipMode === 'tooltip+modal'
+  const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
 
   const displayConfig: TApyDisplayConfig = {
     value: <RenderAmount shouldHideTooltip={hasZeroAPY} value={displayValue || 0} symbol={'percent'} decimals={6} />,
     shouldRender: shouldRenderValue,
     fallbackLabel,
-    tooltip: {
-      mode: tooltipMode,
-      content: tooltipContent,
-      className: DEFAULT_TOOLTIP_CLASS,
-      openDelayMs: DEFAULT_TOOLTIP_DELAY,
-      side: 'bottom'
-    },
+    tooltip: tooltipConfig,
     isInteractive: tooltipMode === 'tooltip+modal' && canOpenModal,
     showUnderline: tooltipMode !== 'none',
     showAsterisk: tooltipMode === 'tooltip+modal',
-    fixedRateIndicator: fixedTermContext.fixedTermIndicator
+    fixedRateIndicator
   }
 
   if (!canOpenModal) {
@@ -663,13 +621,13 @@ export function resolveHistoricalApyDisplayConfig({
 
   const modalTitle = shouldUseKatanaAPRs ? 'Katana 30 Day APY breakdown' : '30 Day APY breakdown'
   const modalContent =
-    shouldUseKatanaAPRs && data.katanaExtras ? (
+    shouldUseKatanaAPRs && katanaExtras ? (
       <KatanaApyTooltipContent
-        katanaNativeYield={data.katanaExtras.katanaNativeYield ?? 0}
-        fixedRateKatanRewardsAPR={data.katanaExtras.FixedRateKatanaRewards ?? 0}
-        katanaAppRewardsAPR={data.katanaExtras.katanaAppRewardsAPR ?? data.katanaExtras.katanaRewardsAPR ?? 0}
-        katanaBonusAPR={data.katanaExtras.katanaBonusAPY ?? 0}
-        steerPointsPerDollar={data.katanaExtras.steerPointsPerDollar}
+        katanaNativeYield={katanaExtras.katanaNativeYield ?? 0}
+        fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards ?? 0}
+        katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR ?? katanaExtras.katanaRewardsAPR ?? 0}
+        katanaBonusAPR={katanaExtras.katanaBonusAPY ?? 0}
+        steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
         currentVault={currentVault}
         maxWidth={'w-full'}
       />

@@ -6,34 +6,44 @@ import { APYDetailsModal } from './APYDetailsModal'
 import { ApyDisplay } from './ApyDisplay'
 import { resolveHistoricalApyDisplayConfig } from './apyDisplayConfig'
 
+type TVaultHistoricalAPYProps = {
+  currentVault: TYDaemonVault
+  className?: string
+  valueClassName?: string
+  showSublineTooltip?: boolean
+  showBoostDetails?: boolean
+}
+
 export function VaultHistoricalAPY({
   currentVault,
   className,
   valueClassName,
   showSublineTooltip = true,
   showBoostDetails = true
-}: {
-  currentVault: TYDaemonVault
-  className?: string
-  valueClassName?: string
-  showSublineTooltip?: boolean
-  showBoostDetails?: boolean
-}): ReactElement {
+}: TVaultHistoricalAPYProps): ReactElement {
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  function openModal(): void {
+    setIsModalOpen(true)
+  }
+
+  function closeModal(): void {
+    setIsModalOpen(false)
+  }
+
   const { displayConfig, modalConfig } = resolveHistoricalApyDisplayConfig({
     currentVault,
     data,
     showSublineTooltip,
     showBoostDetails,
-    onRequestModalOpen: (): void => setIsModalOpen(true)
+    onRequestModalOpen: openModal
   })
 
-  const handleValueClick = (): void => {
+  function handleValueClick(): void {
     if (!modalConfig?.canOpen) {
       return
     }
-    setIsModalOpen(true)
+    openModal()
   }
 
   return (
@@ -45,7 +55,7 @@ export function VaultHistoricalAPY({
         onValueClick={handleValueClick}
       />
       {modalConfig?.canOpen ? (
-        <APYDetailsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalConfig.title}>
+        <APYDetailsModal isOpen={isModalOpen} onClose={closeModal} title={modalConfig.title}>
           {modalConfig.content}
         </APYDetailsModal>
       ) : null}
