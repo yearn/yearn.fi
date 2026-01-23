@@ -114,6 +114,8 @@ function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): 
 
 function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
+  const listKind = deriveListKind(currentVault)
+  const isFactoryVault = listKind === 'factory'
   const metrics: TMetricBlock[] = [
     {
       key: 'est-apy',
@@ -135,6 +137,7 @@ function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): R
         <VaultHistoricalAPY
           currentVault={currentVault}
           showSublineTooltip
+          showBoostDetails={!isFactoryVault}
           className={'items-start text-left'}
           valueClassName={METRIC_VALUE_CLASS}
         />

@@ -164,8 +164,6 @@ type TForwardApyDisplayParams = {
   showSublineTooltip: boolean
   showBoostDetails: boolean
   canOpenModal: boolean
-  katanaBreakdown: 'est' | '30d'
-  onKatanaBreakdownChange: (value: 'est' | '30d') => void
   onRequestModalOpen?: () => void
 }
 
@@ -177,8 +175,6 @@ export function resolveForwardApyDisplayConfig({
   showSublineTooltip,
   showBoostDetails,
   canOpenModal,
-  katanaBreakdown,
-  onKatanaBreakdownChange,
   onRequestModalOpen
 }: TForwardApyDisplayParams): {
   displayConfig: TApyDisplayConfig
@@ -241,9 +237,8 @@ export function resolveForwardApyDisplayConfig({
 
   // Katana
   if (isKatanaVault) {
-    const katanaBreakdownTitle = katanaBreakdown === 'est' ? 'Katana Est. APY breakdown' : 'Katana 30 Day APY breakdown'
-    const katanaBreakdownBaseApr =
-      katanaBreakdown === 'est' ? data.baseForwardApr : (data.katanaExtras?.katanaNativeYield ?? 0)
+    const katanaBreakdownTitle = 'Katana Est. APY breakdown'
+    const katanaBreakdownBaseApr = data.baseForwardApr
     const katanaDetails = (
       <KatanaApyTooltipContent
         katanaNativeYield={katanaBreakdownBaseApr}
@@ -254,34 +249,10 @@ export function resolveForwardApyDisplayConfig({
         isEligibleForSpectraBoost={isEligibleForSpectraBoost}
         currentVault={currentVault}
         maxWidth={'w-full'}
+        nativeYieldLabel={'Est. Native APY'}
       />
     )
-    const katanaBreakdownOptions = [
-      { id: 'est', label: 'Katana Est. APY breakdown' },
-      { id: '30d', label: 'Katana 30 Day APY breakdown' }
-    ] as const
-
-    const modalContent = (
-      <div className={'flex flex-col gap-3'}>
-        <div className={'flex w-full flex-col gap-2 rounded-lg bg-surface-secondary p-1 shadow-inner md:flex-row'}>
-          {katanaBreakdownOptions.map((option) => (
-            <button
-              key={option.id}
-              type={'button'}
-              onClick={() => onKatanaBreakdownChange(option.id)}
-              className={
-                katanaBreakdown === option.id
-                  ? 'flex-1 rounded-sm bg-surface px-3 py-1 text-[11px] font-semibold leading-tight text-text-primary transition-all md:text-xs'
-                  : 'flex-1 rounded-sm bg-transparent px-3 py-1 text-[11px] font-semibold leading-tight text-text-secondary transition-all hover:text-text-secondary md:text-xs'
-              }
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        {katanaDetails}
-      </div>
-    )
+    const modalContent = katanaDetails
 
     const tooltipMode = allowTooltip ? resolveTooltipMode(canOpenModal, Boolean(tooltipContent)) : 'none'
     const katanaEstApr = data.katanaEstApr ?? 0
@@ -586,6 +557,7 @@ type THistoricalApyDisplayParams = {
   currentVault: TYDaemonVault
   data: TVaultApyData
   showSublineTooltip: boolean
+  showBoostDetails?: boolean
   onRequestModalOpen?: () => void
 }
 
@@ -593,6 +565,7 @@ export function resolveHistoricalApyDisplayConfig({
   currentVault,
   data,
   showSublineTooltip,
+  showBoostDetails = true,
   onRequestModalOpen
 }: THistoricalApyDisplayParams): {
   displayConfig: TApyDisplayConfig
@@ -617,7 +590,9 @@ export function resolveHistoricalApyDisplayConfig({
       : []
 
   const boostTooltipLine =
-    data.mode === 'boosted' && data.isBoosted ? `Boost ${formatAmount(data.boost || 0, 2, 2)}x` : null
+    showBoostDetails && data.mode === 'boosted' && data.isBoosted
+      ? `Boost ${formatAmount(data.boost || 0, 2, 2)}x`
+      : null
   const allowTooltipBase = showSublineTooltip || Boolean(boostTooltipLine)
   const extraTooltipLines = showSublineTooltip ? [...sublineLines, ...fixedRateTooltipLines] : []
   const standardTooltipLines = [boostTooltipLine, ...extraTooltipLines].filter((line): line is string => Boolean(line))

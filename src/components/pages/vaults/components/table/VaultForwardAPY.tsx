@@ -34,7 +34,6 @@ export function VaultForwardAPY({
 }): ReactElement {
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [katanaBreakdown, setKatanaBreakdown] = useState<'est' | '30d'>('est')
   const canOpenModal = displayVariant !== 'factory-list'
   const { displayConfig, modalConfig } = resolveForwardApyDisplayConfig({
     currentVault,
@@ -44,8 +43,6 @@ export function VaultForwardAPY({
     showSublineTooltip,
     showBoostDetails,
     canOpenModal,
-    katanaBreakdown,
-    onKatanaBreakdownChange: setKatanaBreakdown,
     onRequestModalOpen: (): void => setIsModalOpen(true)
   })
 
@@ -102,7 +99,7 @@ export function VaultForwardAPYInlineDetails({
       <div className={'w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'}>
         <div className={'flex flex-col gap-2'}>
           <div className={'flex items-center justify-between'}>
-            <p className={'text-xs text-text-primary'}>{'Katana Native APY'}</p>
+            <p className={'text-xs text-text-primary'}>{'Est. Native APY'}</p>
             <span className={'font-number'}>
               <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
             </span>

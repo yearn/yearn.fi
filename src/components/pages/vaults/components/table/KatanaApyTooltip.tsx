@@ -12,6 +12,7 @@ type TKatanaTooltipProps = {
   katanaBonusAPR: number
   steerPointsPerDollar?: number
   isEligibleForSpectraBoost?: boolean
+  nativeYieldLabel?: string
   position?: 'bottom' | 'top'
   maxWidth?: string
   className?: string
@@ -26,10 +27,12 @@ export function KatanaApyTooltipContent({
   katanaBonusAPR,
   steerPointsPerDollar,
   isEligibleForSpectraBoost,
+  nativeYieldLabel,
   maxWidth,
   currentVault
 }: Omit<TKatanaTooltipProps, 'children' | 'position' | 'className'>): ReactElement {
   const width = maxWidth || 'w-full max-w-[360px]'
+  const resolvedNativeYieldLabel = nativeYieldLabel ?? 'Katana Native 30 Day APY'
 
   return (
     <div
@@ -50,7 +53,7 @@ export function KatanaApyTooltipContent({
               width={16}
               height={16}
             />
-            <p>{'Katana Native APY '}</p>
+            <p>{`${resolvedNativeYieldLabel} `}</p>
           </div>
           <span className={'font-number text-right'}>
             <RenderAmount shouldHideTooltip value={katanaNativeYield} symbol={'percent'} decimals={6} />

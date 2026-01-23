@@ -10,12 +10,14 @@ export function VaultHistoricalAPY({
   currentVault,
   className,
   valueClassName,
-  showSublineTooltip = true
+  showSublineTooltip = true,
+  showBoostDetails = true
 }: {
   currentVault: TYDaemonVault
   className?: string
   valueClassName?: string
   showSublineTooltip?: boolean
+  showBoostDetails?: boolean
 }): ReactElement {
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -23,6 +25,7 @@ export function VaultHistoricalAPY({
     currentVault,
     data,
     showSublineTooltip,
+    showBoostDetails,
     onRequestModalOpen: (): void => setIsModalOpen(true)
   })
 
