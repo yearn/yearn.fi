@@ -22,22 +22,20 @@ type TEnsoBalanceResponse = {
 }
 
 /*******************************************************************************
- ** Enso API configuration
+ ** Enso API configuration - uses server proxy to handle auth
  ******************************************************************************/
-const ENSO_API_BASE = 'https://api.enso.finance'
 const ENSO_SUPPORTED_CHAINS = SUPPORTED_NETWORKS.map((n) => n.id)
 
 /*******************************************************************************
- ** Fetch balances from Enso API for a single chain
+ ** Fetch balances from Enso API for a single chain via server proxy
  ******************************************************************************/
 async function fetchEnsoBalancesForChain(address: TAddress, chainId: number): Promise<TEnsoBalanceResponse[]> {
   const params = new URLSearchParams({
     eoaAddress: address,
-    useEoa: 'true',
     chainId: chainId.toString()
   })
 
-  const url = `${ENSO_API_BASE}/api/v1/wallet/balances?${params}`
+  const url = `/api/enso/balances?${params}`
   const response = await fetch(url)
 
   if (!response.ok) {
@@ -55,7 +53,7 @@ async function fetchEnsoBalancesForChain(address: TAddress, chainId: number): Pr
 async function fetchEnsoBalances(
   address: TAddress,
   chainId?: number
-): Promise<{ balances: TEnsoBalanceResponse[]; duration: number }> {
+): Promise<{ balances: TEnsoBalanceResponse[]; duration: number; httpRequests: number }> {
   const startTime = performance.now()
 
   const chainsToFetch = chainId ? [chainId] : ENSO_SUPPORTED_CHAINS
@@ -66,8 +64,9 @@ async function fetchEnsoBalances(
 
   const balances = results.flat()
   const duration = performance.now() - startTime
+  const httpRequests = chainsToFetch.length
 
-  return { balances, duration }
+  return { balances, duration, httpRequests }
 }
 
 /*******************************************************************************
@@ -138,13 +137,15 @@ export function useEnsoBalances(
         return {}
       }
       try {
-        const { balances, duration } = await fetchEnsoBalances(userAddress, options?.chainId)
+        const { balances, duration, httpRequests } = await fetchEnsoBalances(userAddress, options?.chainId)
         const transformed = transformEnsoResponse(balances)
 
         const chainCount = Object.keys(transformed).length
         const tokenCount = Object.values(transformed).reduce((acc, tokens) => acc + Object.keys(tokens).length, 0)
 
-        console.log(`[Enso] Fetched ${tokenCount} tokens across ${chainCount} chains in ${duration.toFixed(0)}ms`)
+        console.log(
+          `[Enso] Total: ${tokenCount} tokens across ${chainCount} chains in ${httpRequests} HTTP request(s), ${duration.toFixed(0)}ms (0 RPC calls)`
+        )
 
         return transformed
       } catch (err) {
