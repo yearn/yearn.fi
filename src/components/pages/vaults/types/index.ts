@@ -109,5 +109,31 @@ export type UseWidgetWithdrawFlowReturn = T<
 
 export enum WidgetActionType {
   Deposit = 'deposit',
-  Withdraw = 'withdraw'
+  Withdraw = 'withdraw',
+  Migrate = 'migrate'
 }
+
+// Migrate flow types
+export type MigrateRouteType = 'permit' | 'approve'
+
+export type UseMigrateFlowReturn = T<
+  {
+    prepareApprove: UseSimulateContractReturnType
+    prepareMigrate: UseSimulateContractReturnType
+    prepareMulticall: UseSimulateContractReturnType // For permit flow: multicall(selfPermit + migrate)
+  },
+  {
+    isAllowanceSufficient: boolean
+    isCheckingPermit: boolean
+    allowance: bigint
+    balance: bigint
+    prepareApproveEnabled: boolean
+    prepareMigrateEnabled: boolean
+    prepareMulticallEnabled: boolean
+    routeType: MigrateRouteType
+    supportsPermit: boolean
+    permitDeadline: bigint
+    routerAddress: TAddress
+    error?: string
+  }
+>

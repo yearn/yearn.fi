@@ -4,6 +4,7 @@ import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { type FC, useMemo, useState } from 'react'
 import { WidgetDeposit } from './deposit'
+import { WidgetMigrate } from './migrate'
 import { WidgetWithdraw } from './withdraw'
 
 interface Props {
@@ -21,6 +22,8 @@ const getActionLabel = (action: ActionType): string => {
       return 'Deposit'
     case ActionType.Withdraw:
       return 'Withdraw'
+    case ActionType.Migrate:
+      return 'Migrate'
   }
 }
 
@@ -54,6 +57,20 @@ export const Widget: FC<Props> = ({ currentVault, vaultAddress, gaugeAddress, ac
             handleWithdrawSuccess={handleSuccess}
           />
         )
+      case ActionType.Migrate:
+        return (
+          <WidgetMigrate
+            vaultAddress={toAddress(vaultAddress)}
+            assetAddress={toAddress(assetToken)}
+            stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
+            chainId={chainId}
+            vaultSymbol={currentVault?.symbol || ''}
+            vaultVersion={currentVault?.version}
+            migrationTarget={toAddress(currentVault?.migration?.address)}
+            migrationContract={toAddress(currentVault?.migration?.contract)}
+            handleMigrateSuccess={handleSuccess}
+          />
+        )
     }
   }, [mode, vaultAddress, gaugeAddress, currentVault, assetToken, chainId, handleSuccess])
 
@@ -84,7 +101,8 @@ const TabButton: FC<{
       type="button"
       onClick={onClick}
       className={cl(
-        'flex-1 px-3 py-2 text-xs font-semibold transition-all duration-200',
+        'flex-1 px-3 py-3 md:py-2 text-sm md:text-xs font-semibold transition-all duration-200',
+        'min-h-[44px] active:scale-[0.98]',
         isActive
           ? 'bg-surface text-text-primary rounded-bl-none rounded-br-none'
           : 'bg-surface-secondary text-text-secondary hover:text-text-primary',

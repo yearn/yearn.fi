@@ -47,10 +47,10 @@ const partners: TPartner[] = [
 const PartnerLogo: FC<TPartner> = ({ image, alt, href, size = 60 }) => {
   const [isHovered, setIsHovered] = useState(false)
   return (
-    <Link href={href} className={'block flex-1'}>
+    <Link href={href} className={'block flex-1 min-w-0'}>
       <div
         className={
-          'relative flex h-20 cursor-pointer items-center justify-center rounded-lg bg-gradient-to-r from-blue-700 to-blue-800 p-4 transition-colors duration-200 hover:opacity-80 lg:h-full lg:p-6'
+          'relative flex h-[56px] min-[375px]:h-[72px] min-h-[44px] cursor-pointer items-center justify-center rounded-lg bg-gradient-to-r from-blue-700 to-blue-800 p-2 min-[375px]:p-3 transition-colors duration-200 hover:opacity-80 sm:h-20 sm:p-4 lg:h-full lg:p-6'
         }
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -74,7 +74,9 @@ const PartnerLogo: FC<TPartner> = ({ image, alt, href, size = 60 }) => {
           alt={alt}
           width={size}
           height={size}
-          className={'max-h-12 max-w-12 object-contain lg:max-h-16 lg:max-w-16'}
+          className={
+            'max-h-8 max-w-8 min-[375px]:max-h-10 min-[375px]:max-w-10 object-contain sm:max-h-12 sm:max-w-12 lg:max-h-16 lg:max-w-16'
+          }
         />
       </div>
     </Link>
@@ -82,8 +84,8 @@ const PartnerLogo: FC<TPartner> = ({ image, alt, href, size = 60 }) => {
 }
 
 export const Partners: FC = () => (
-  <section className={'flex w-full justify-center  py-16 lg:py-32'}>
-    <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between  lg:flex-row '}>
+  <section className={'flex w-full justify-center py-12 sm:py-16 lg:py-32'}>
+    <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between lg:flex-row'}>
       <div className={'flex w-full flex-col gap-4 px-4'}>
         <SectionHeader
           tagline={'Partners'}
@@ -92,8 +94,8 @@ export const Partners: FC = () => (
         />
 
         {/* Mobile */}
-        <div className={'flex flex-col gap-4 pt-8 lg:hidden'}>
-          <div className={'grid grid-cols-2 gap-2'}>
+        <div className={'flex flex-col gap-2 min-[375px]:gap-3 pt-4 min-[375px]:pt-6 sm:gap-4 sm:pt-8 lg:hidden'}>
+          <div className={'grid grid-cols-2 gap-1.5 min-[375px]:gap-2 sm:grid-cols-3 sm:gap-3'}>
             {partners.map((partner) => (
               <PartnerLogo
                 key={partner.href}

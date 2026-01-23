@@ -187,6 +187,13 @@ function Index(): ReactElement | null {
     currentVault?.staking.address
   ])
 
+  const widgetActions = useMemo(() => {
+    if (currentVault?.migration?.available) {
+      return [WidgetActionType.Migrate, WidgetActionType.Withdraw]
+    }
+    return [WidgetActionType.Deposit, WidgetActionType.Withdraw]
+  }, [currentVault?.migration?.available])
+
   const sections = useMemo(() => {
     if (!currentVault || !yDaemonBaseUri) {
       return []
@@ -197,7 +204,14 @@ function Index(): ReactElement | null {
         key: 'charts' as const,
         shouldRender: Number.isInteger(chainId),
         ref: sectionRefs.charts,
-        content: <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} chartHeightPx={230} />
+        content: (
+          <VaultChartsSection
+            chainId={chainId}
+            vaultAddress={currentVault.address}
+            chartHeightPx={180}
+            chartHeightMdPx={230}
+          />
+        )
       },
       {
         key: 'about' as const,
@@ -340,13 +354,13 @@ function Index(): ReactElement | null {
             <div className="flex-1 min-w-0">
               <h1
                 className={cl(
-                  'text-lg font-black leading-tight truncate',
+                  'text-lg font-black leading-tight truncate-safe',
                   isDarkTheme ? 'text-text-primary' : 'text-text-secondary'
                 )}
               >
                 {getVaultName(currentVault)} yVault
               </h1>
-              <p className="text-xs text-text-secondary truncate">
+              <p className="text-mobile-label text-text-secondary">
                 {currentVault.token.symbol} • v{currentVault.version}
               </p>
             </div>
@@ -360,17 +374,6 @@ function Index(): ReactElement | null {
 
           {/* User balance grid */}
           <UserBalanceGrid currentVault={currentVault} />
-
-          {/* Widget */}
-          <div>
-            <Widget
-              vaultAddress={currentVault.address}
-              currentVault={currentVault}
-              gaugeAddress={currentVault.staking.address}
-              actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
-              chainId={chainId}
-            />
-          </div>
 
           {/* Expandable details toggle button */}
           <button
@@ -386,7 +389,7 @@ function Index(): ReactElement | null {
               'hover:bg-surface-secondary active:scale-[0.99]'
             )}
           >
-            <span className="text-sm font-semibold text-text-primary">
+            <span className="text-base font-semibold text-text-primary">
               {isMobileDetailsExpanded ? 'Hide Details' : 'View More Details'}
             </span>
             <IconChevron direction={isMobileDetailsExpanded ? 'up' : 'down'} className="size-5 text-text-secondary" />
@@ -420,7 +423,9 @@ function Index(): ReactElement | null {
                     >
                       <button
                         type={'button'}
-                        className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
+                        className={
+                          'flex w-full items-center justify-between gap-3 px-4 py-4 min-h-[52px] active:bg-surface-secondary transition-colors'
+                        }
                         onClick={(): void =>
                           setOpenSections((previous) => ({
                             ...previous,
@@ -432,7 +437,7 @@ function Index(): ReactElement | null {
                           {collapsibleTitles[typedKey]}
                         </span>
                         <IconChevron
-                          className={'size-4 text-text-secondary transition-transform duration-200'}
+                          className={'size-5 text-text-secondary transition-transform duration-200'}
                           direction={isOpen ? 'up' : 'down'}
                         />
                       </button>
@@ -456,16 +461,30 @@ function Index(): ReactElement | null {
           )}
         </div>
 
-        {/* Desktop Layout - Hidden on mobile */}
-        <section className={'hidden md:grid grid-cols-1 gap-6 md:grid-cols-20 md:items-start bg-app'}>
-          <div className={'space-y-4 md:col-span-13 pb-4'}>
+        {/* Main Content Grid - Responsive layout */}
+        <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
+          <div
+            className={cl('order-1 md:order-2', 'md:col-span-7 md:col-start-14 md:sticky md:h-fit md:pt-6')}
+            style={{ top: nextSticky }}
+          >
+            <Widget
+              vaultAddress={currentVault.address}
+              currentVault={currentVault}
+              gaugeAddress={currentVault.staking.address}
+              actions={widgetActions}
+              chainId={chainId}
+            />
+          </div>
+
+          {/* Desktop sections - Hidden on mobile */}
+          <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 pb-4'}>
             {renderableSections.length > 0 ? (
               <div className={'w-full sticky z-30'} style={{ top: nextSticky }}>
                 <div className={'bg-app h-6'}></div>
                 <div
                   className={cl(
                     'flex flex-wrap gap-2 md:pb-3 md:gap-3',
-                    'bg-gradient-to-b from-app from-90% to-transparent'
+                    'bg-linear-to-b from-app from-90% to-transparent'
                   )}
                 >
                   <div
@@ -543,17 +562,6 @@ function Index(): ReactElement | null {
               )
             })}
             {renderableSections.length > 0 ? <div aria-hidden className={'h-[60vh]'} /> : null}
-          </div>
-          <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-6')} style={{ top: nextSticky }}>
-            <div>
-              <Widget
-                vaultAddress={currentVault.address}
-                currentVault={currentVault}
-                gaugeAddress={currentVault.staking.address}
-                actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
-                chainId={chainId}
-              />
-            </div>
           </div>
         </section>
       </div>

@@ -148,14 +148,16 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
       </div>
       <div className={'mt-1 flex items-end justify-between gap-4'}>
         <div>
-          <p className={'text-xs font-semibold uppercase tracking-wide text-text-secondary'}>{aprDisplay.label}</p>
+          <p className={'text-mobile-label font-semibold uppercase tracking-wide text-text-secondary'}>
+            {aprDisplay.label}
+          </p>
           <p className={'mt-1 text-2xl font-bold text-text-primary'}>
             {aprDisplay.prefix ? `${aprDisplay.prefix} ` : ''}
             {renderAprValue()}
           </p>
         </div>
         <div className={'text-right'}>
-          <p className={'text-xs font-semibold uppercase tracking-wide text-text-secondary'}>{'TVL'}</p>
+          <p className={'text-mobile-label font-semibold uppercase tracking-wide text-text-secondary'}>{'TVL'}</p>
           <p className={'mt-1 text-lg font-semibold text-text-primary'}>
             <RenderAmount
               value={vault.tvl?.tvl || 0}

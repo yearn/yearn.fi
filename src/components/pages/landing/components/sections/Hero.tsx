@@ -108,7 +108,7 @@ export function Hero(): ReactElement {
               />
               <div className={'flex flex-row items-center justify-center gap-4'}>
                 <Link href={'/vaults'}>
-                  <Button className={'!text-[18px] max-w-xs !px-4 !py-5 !rounded-full !bg-primary'} variant={'primary'}>
+                  <Button className={'!text-[18px] max-w-xs !px-4 !py-3 !rounded-full !bg-primary'} variant={'primary'}>
                     {'Explore Vaults'}
                   </Button>
                 </Link>
@@ -119,33 +119,43 @@ export function Hero(): ReactElement {
       </div>
       {/* Mobile Hero Section */}
       <div
-        className={'-mt-[var(--header-height)] flex w-full flex-col items-center bg-white/5 px-4 py-16 pt-24 md:hidden'}
+        className={
+          '-mt-[var(--header-height)] flex w-full flex-col items-center bg-white/5 px-4 py-12 pt-20 sm:py-16 sm:pt-24 md:hidden'
+        }
         style={{
           backgroundImage: "url('/landing/hero-background-mobile.png')",
           backgroundRepeat: 'no-repeat',
-          backgroundSize: '100% 100%',
+          backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
       >
-        <div className={'mt-4 flex w-full max-w-sm flex-col items-center gap-4 text-center'}>
+        <div className={'mt-4 flex w-full max-w-sm flex-col items-center gap-6 text-center sm:gap-8'}>
           <Image
             src={'/landing/yfi-top-right.png'}
             alt={'Yearn Finance Logo'}
-            width={150}
-            height={150}
-            className={'size-auto max-w-[150px] sm:max-w-[180px]'}
+            width={180}
+            height={180}
+            className={'size-auto max-w-[120px] sm:max-w-[150px]'}
             priority
           />
-          <div className={'flex flex-col gap-12'}>
+          <div className={'mb-2'}>
+            <TvlStat tvl={tvl ?? 0} />
+          </div>
+          <div className={'flex flex-col gap-8 sm:gap-10'}>
             <SectionHeader
               isH1
               align={'center'}
               title={'Earn on your Crypto'}
               description={"DeFi's most battle tested yield aggregator"}
             />
-            <div className={'flex flex-col items-center justify-center gap-4'}>
-              <Link href={'/vaults'} className={'block'}>
-                <Button className={'!text-[16px] max-w-xs !px-4 !py-5 !rounded-full !bg-primary'} variant={'primary'}>
+            <div className={'flex flex-col items-center justify-center'}>
+              <Link href={'/vaults'} className={'block w-full max-w-[280px]'}>
+                <Button
+                  className={
+                    '!text-[16px] sm:!text-[18px] w-full !px-6 !py-4 sm:!py-5 !rounded-full !bg-primary min-h-[48px]'
+                  }
+                  variant={'primary'}
+                >
                   {'Explore Vaults'}
                 </Button>
               </Link>

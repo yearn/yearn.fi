@@ -175,11 +175,11 @@ export const Vaults: FC = () => {
   }, [nextSlide, isHovering])
 
   return (
-    <section className={'flex w-full justify-center border-t border-white/10 px-4 py-16 md:px-8 lg:py-32'}>
+    <section className={'flex w-full justify-center border-t border-white/10 px-4 py-12 sm:py-16 md:px-8 lg:py-32'}>
       <div className={'w-full max-w-[1180px]'}>
         {/* Slides */}
         <div
-          className={'relative mb-8 overflow-hidden md:mb-12'}
+          className={'relative mb-6 overflow-hidden sm:mb-8 md:mb-12'}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
         >
@@ -190,8 +190,34 @@ export const Vaults: FC = () => {
             {slides.map((slide) => (
               <div
                 key={slide.title}
-                className={'flex w-full shrink-0 flex-col items-stretch justify-between gap-6 md:flex-row md:gap-8'}
+                className={
+                  'flex w-full shrink-0 flex-col items-stretch justify-between gap-4 sm:gap-6 md:flex-row md:gap-8'
+                }
               >
+                {/* Mobile Image */}
+                <div className={'relative flex h-[180px] w-full items-center justify-center sm:h-[220px] md:hidden'}>
+                  <div
+                    className={
+                      'relative flex size-full items-center justify-center overflow-hidden rounded-[16px] border border-[#ffffff]/10 sm:rounded-[20px]'
+                    }
+                    style={{
+                      backgroundImage: `url(${slide.background})`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  >
+                    <Image
+                      className={'z-10 block'}
+                      src={slide.image}
+                      width={Math.round(slide.size * 0.6)}
+                      height={Math.round(slide.size * 0.6)}
+                      alt={'vault image'}
+                    />
+                  </div>
+                </div>
+
+                {/* Desktop Image */}
                 <div className={'md:min-h-auto relative hidden min-h-[300px] w-full md:flex md:w-2/5'}>
                   <div
                     className={
@@ -214,8 +240,8 @@ export const Vaults: FC = () => {
                   </div>
                 </div>
 
-                <div className={'relative flex size-full flex-col justify-between gap-4 md:w-3/5 md:gap-4'}>
-                  <div className={'relative p-4 md:p-0'}>
+                <div className={'relative flex size-full flex-col justify-between gap-3 sm:gap-4 md:w-3/5 md:gap-4'}>
+                  <div className={'relative px-1 py-2 sm:p-4 md:p-0'}>
                     <SectionHeader
                       tagline={slide.tagline}
                       title={slide.title}
@@ -225,7 +251,7 @@ export const Vaults: FC = () => {
                   </div>
                   <div
                     className={
-                      'flex w-full flex-col gap-2 overflow-hidden md:flex-col md:rounded-[24px] md:bg-white/5 md:p-[8px]'
+                      'flex w-full flex-col gap-2 overflow-hidden rounded-[16px] bg-white/5 p-2 sm:rounded-[20px] md:rounded-[24px] md:p-[8px]'
                     }
                   >
                     {rows[activeSlide].map((row) => {
@@ -234,12 +260,14 @@ export const Vaults: FC = () => {
                         <a
                           key={row.href}
                           href={row.href}
-                          className={`${row.bgClass} flex cursor-pointer items-center justify-between rounded-[12px] p-2 transition-opacity duration-200 hover:opacity-50 md:rounded-[16px] md:p-[8px]`}
+                          className={`${row.bgClass} flex min-h-[48px] cursor-pointer items-center justify-between rounded-[12px] p-3 transition-opacity duration-200 hover:opacity-50 sm:min-h-[52px] md:rounded-[16px] md:p-[8px]`}
                         >
                           <div className={'flex items-center'}>
-                            <div className={' mr-2 rounded-2xl p-1 md:mr-3'}>
+                            <div className={'mr-3 rounded-2xl p-1'}>
                               <div
-                                className={'flex size-5 items-center justify-center rounded-2xl bg-gray-900 md:size-6'}
+                                className={
+                                  'flex size-6 items-center justify-center rounded-2xl bg-gray-900 sm:size-7 md:size-6'
+                                }
                               >
                                 <Image src={row.icon} alt={row.text} width={24} height={24} />
                               </div>
@@ -250,7 +278,7 @@ export const Vaults: FC = () => {
                                   <div className={'h-6 w-48 animate-pulse rounded-sm bg-gray-600'} />
                                 </div>
                               ) : (
-                                <span className={':text-base font-medium'}>{row.text}</span>
+                                <span className={'text-sm font-medium sm:text-base'}>{row.text}</span>
                               )}
                               {row.description && (
                                 <span className={'hidden font-light text-gray-400 md:block md:text-base'}>
@@ -259,10 +287,10 @@ export const Vaults: FC = () => {
                               )}
                             </div>
                           </div>
-                          <div className={'rounded-2xl bg-transparent p-1 md:p-2'}>
+                          <div className={'rounded-2xl bg-transparent p-2'}>
                             <svg
                               xmlns={'http://www.w3.org/2000/svg'}
-                              className={'size-4 md:size-5'}
+                              className={'size-5'}
                               fill={'none'}
                               viewBox={'0 0 24 24'}
                               stroke={'currentColor'}
@@ -287,17 +315,21 @@ export const Vaults: FC = () => {
 
         {/* Pagination */}
         <div className={'flex w-full justify-center'}>
-          <div className={'flex items-center space-x-3'}>
+          <div className={'flex items-center space-x-2 sm:space-x-3'}>
             {Array.from({ length: totalSlides }).map((_, index) => (
               <button
                 // biome-ignore lint/suspicious/noArrayIndexKey: Array.from
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`size-2 rounded-full transition-all duration-300 ${
-                  index === activeSlide ? 'scale-125 bg-white' : 'bg-gray-600'
-                }`}
+                className={`flex size-8 items-center justify-center rounded-full transition-all duration-300 sm:size-6`}
                 aria-label={`Go to slide ${index + 1}`}
-              />
+              >
+                <span
+                  className={`size-2.5 rounded-full transition-all duration-300 sm:size-2 ${
+                    index === activeSlide ? 'scale-125 bg-white' : 'bg-gray-600'
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </div>

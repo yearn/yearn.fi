@@ -1,19 +1,18 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
+import { SwipeableCompareCarousel } from '@pages/vaults/components/compare/SwipeableCompareCarousel'
+import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
+import { useMediaQuery } from '@react-hookz/web'
 import { Button } from '@shared/components/Button'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { useYearn } from '@shared/contexts/useYearn'
-import type { TKatanaAprs } from '@shared/hooks/useKatanaAprs'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconClose } from '@shared/icons/IconClose'
 import { cl, formatPercent } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { getNetwork } from '@shared/utils/wagmi'
-import type { ReactElement, ReactNode } from 'react'
-import { Fragment } from 'react'
+import { Fragment, type ReactElement, type ReactNode } from 'react'
 
 type TVaultsCompareModalProps = {
   isOpen: boolean
@@ -56,10 +55,6 @@ function renderPercentValue(value: number | null | undefined): ReactElement {
   return <RenderAmount value={value} symbol={'percent'} decimals={6} />
 }
 
-function resolveThirtyDayApy(vault: TYDaemonVault, katanaAprs: Partial<TKatanaAprs> | undefined): number | null {
-  return calculateVaultHistoricalAPY(vault, katanaAprs)
-}
-
 function hasAllocatedFunds(strategy: TVaultStrategyItem): boolean {
   const { debtRatio, totalDebt } = strategy.details ?? {}
   return Boolean(debtRatio && debtRatio > 0 && totalDebt && totalDebt !== '0')
@@ -69,6 +64,182 @@ function normalizeRiskLevel(riskLevel: number): number {
   return Math.min(Math.max(riskLevel, 0), 5)
 }
 
+function DesktopCompareGrid({
+  vaults,
+  onRemove
+}: {
+  vaults: TYDaemonVault[]
+  onRemove: (vaultKey: string) => void
+}): ReactElement {
+  const columnsCount = Math.max(vaults.length, 1)
+  const gridTemplateColumns = `minmax(160px, 220px) repeat(${columnsCount}, minmax(180px, 1fr))`
+
+  return (
+    <div className={'mt-6 overflow-x-auto'}>
+      <div className={'min-w-[640px]'}>
+        <div className={'grid gap-x-4'} style={{ gridTemplateColumns }}>
+          <div className={'border-b border-border pb-4'} />
+          {vaults.map((vault) => {
+            const network = getNetwork(vault.chainID)
+            const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${vault.chainID}/logo-32.png`
+            const vaultKey = getVaultKey(vault)
+            return (
+              <div
+                key={`header-${vaultKey}`}
+                className={'flex items-start justify-between gap-3 border-b border-border pb-4'}
+              >
+                <div className={'min-w-0'}>
+                  <div className={'flex items-center gap-3'}>
+                    <TokenLogo
+                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainID}/${vault.token.address.toLowerCase()}/logo-128.png`}
+                      tokenSymbol={vault.token.symbol || ''}
+                      width={28}
+                      height={28}
+                    />
+                    <div className={'min-w-0'}>
+                      <p className={'truncate text-sm font-semibold text-text-primary'}>{vault.name}</p>
+                      <div className={'mt-1 flex items-center gap-2 text-xs text-text-secondary'}>
+                        <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
+                        <span>{network.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type={'button'}
+                  onClick={(): void => onRemove(vaultKey)}
+                  className={cl(
+                    'inline-flex size-7 items-center justify-center rounded-full border border-transparent text-text-secondary',
+                    'hover:border-border hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+                  )}
+                  aria-label={`Remove ${vault.name} from comparison`}
+                >
+                  <IconClose className={'size-3'} />
+                </button>
+              </div>
+            )
+          })}
+
+          <MetricLabel label={'Est. APY'} sublabel={'Forward net APR'} />
+          {vaults.map((vault) => (
+            <MetricValue key={`apy-${getVaultKey(vault)}`}>
+              <div className={'flex items-center gap-2'}>{renderPercentValue(vault.apr?.forwardAPR?.netAPR)}</div>
+            </MetricValue>
+          ))}
+
+          <MetricLabel label={'30 Day APY'} sublabel={'Average realized APY'} />
+          {vaults.map((vault) => (
+            <MetricValue key={`apy-30d-${getVaultKey(vault)}`}>
+              <VaultHistoricalAPY currentVault={vault} />
+            </MetricValue>
+          ))}
+
+          <MetricLabel label={'TVL'} sublabel={'Total value locked'} />
+          {vaults.map((vault) => (
+            <MetricValue key={`tvl-${getVaultKey(vault)}`}>
+              <RenderAmount
+                value={vault.tvl?.tvl}
+                symbol={'USD'}
+                decimals={0}
+                options={{
+                  shouldCompactValue: true,
+                  maximumFractionDigits: 2,
+                  minimumFractionDigits: 0
+                }}
+              />
+            </MetricValue>
+          ))}
+
+          <MetricLabel label={'Fees'} sublabel={'Management / Performance'} />
+          {vaults.map((vault) => (
+            <MetricValue key={`fees-${getVaultKey(vault)}`} className={'text-xs'}>
+              <div className={'grid grid-cols-2 gap-x-2 gap-y-1'}>
+                <span className={'text-text-secondary'}>{'Management'}</span>
+                <span className={'text-right font-number text-text-primary'}>
+                  {formatFee(vault.apr?.fees?.management)}
+                </span>
+                <span className={'text-text-secondary'}>{'Performance'}</span>
+                <span className={'text-right font-number text-text-primary'}>
+                  {formatFee(vault.apr?.fees?.performance)}
+                </span>
+              </div>
+            </MetricValue>
+          ))}
+
+          <MetricLabel label={'Risk'} sublabel={'Security score'} />
+          {vaults.map((vault) => {
+            const riskLevel = vault.info?.riskLevel ?? -1
+            const normalizedRisk = normalizeRiskLevel(riskLevel)
+            return (
+              <MetricValue key={`risk-${getVaultKey(vault)}`}>
+                <div className={'flex items-center gap-3'}>
+                  <VaultRiskScoreTag riskLevel={riskLevel} variant={'inline'} />
+                  <span className={'text-xs text-text-secondary'}>{`Level ${normalizedRisk} / 5`}</span>
+                </div>
+              </MetricValue>
+            )
+          })}
+
+          <MetricLabel label={'Strategy type'} sublabel={'Vault structure'} />
+          {vaults.map((vault) => {
+            const listKind = deriveListKind(vault)
+            const label = listKindLabels[listKind]
+            return (
+              <MetricValue key={`strategy-${getVaultKey(vault)}`}>
+                <div className={'flex flex-col gap-1'}>
+                  <span className={'text-sm font-semibold text-text-primary'}>{label}</span>
+                  <span className={'text-xs text-text-secondary'}>{vault.kind}</span>
+                </div>
+              </MetricValue>
+            )
+          })}
+
+          <MetricLabel label={'Strategies'} sublabel={'Underlying positions'} />
+          {vaults.map((vault) => {
+            const strategies = (vault.strategies ?? []).filter(
+              (strategy) => strategy.status !== 'not_active' && hasAllocatedFunds(strategy)
+            )
+            return (
+              <MetricValue key={`strategies-${getVaultKey(vault)}`} className={'text-xs'}>
+                {strategies.length === 0 ? (
+                  <span className={'text-text-secondary'}>{'—'}</span>
+                ) : (
+                  <div className={'flex flex-col gap-2'}>
+                    {strategies.map((strategy) => {
+                      const debtRatio = strategy.details?.debtRatio
+                      const allocation = debtRatio ? formatPercent(debtRatio / 100, 0) : null
+                      return (
+                        <div key={strategy.address} className={'flex items-start justify-between gap-2'}>
+                          <span className={'text-text-primary'}>{strategy.name}</span>
+                          {allocation ? <span className={'font-number text-text-secondary'}>{allocation}</span> : null}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </MetricValue>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MobileCompareView({
+  vaults,
+  onRemove
+}: {
+  vaults: TYDaemonVault[]
+  onRemove: (vaultKey: string) => void
+}): ReactElement {
+  return (
+    <div className={'mt-6'}>
+      <SwipeableCompareCarousel vaults={vaults} onRemove={onRemove} />
+    </div>
+  )
+}
+
 export function VaultsCompareModal({
   isOpen,
   onClose,
@@ -76,10 +247,11 @@ export function VaultsCompareModal({
   onRemove,
   onClear
 }: TVaultsCompareModalProps): ReactElement {
-  const { katanaAprs } = useYearn()
-  const columnsCount = Math.max(vaults.length, 1)
-  const gridTemplateColumns = `minmax(160px, 220px) repeat(${columnsCount}, minmax(180px, 1fr))`
   const hasVaults = vaults.length > 0
+  const isMobile =
+    useMediaQuery('(max-width: 767px)', {
+      initializeWithValue: false
+    }) ?? false
 
   return (
     <Transition show={isOpen} as={Fragment}>
@@ -97,7 +269,7 @@ export function VaultsCompareModal({
         </TransitionChild>
 
         <div className={'fixed inset-0 overflow-y-auto'}>
-          <div className={'flex min-h-full items-center justify-center p-4'}>
+          <div className={cl('flex min-h-full items-center justify-center', isMobile ? 'p-2' : 'p-4')}>
             <TransitionChild
               as={Fragment}
               enter={'duration-200 ease-out'}
@@ -108,16 +280,19 @@ export function VaultsCompareModal({
               leaveTo={'opacity-0 scale-95'}
             >
               <Dialog.Panel
-                className={
-                  'w-full max-w-6xl rounded-3xl border border-border bg-surface p-6 text-text-primary shadow-lg'
-                }
+                className={cl(
+                  'w-full overflow-hidden rounded-3xl border border-border bg-surface text-text-primary shadow-lg',
+                  isMobile ? 'max-w-md p-4' : 'max-w-6xl p-6'
+                )}
               >
-                <div className={'flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'}>
+                <div className={'flex items-start justify-between gap-4'}>
                   <div>
                     <Dialog.Title className={'text-xl font-semibold text-text-primary'}>
                       {'Compare vaults'}
                     </Dialog.Title>
-                    <p className={'mt-1 text-sm text-text-secondary'}>{'Review key metrics side-by-side.'}</p>
+                    <p className={'mt-1 text-sm text-text-secondary'}>
+                      {isMobile ? 'Swipe to compare vaults.' : 'Review key metrics side-by-side.'}
+                    </p>
                   </div>
                   <div className={'flex items-center gap-2'}>
                     {hasVaults ? (
@@ -147,161 +322,10 @@ export function VaultsCompareModal({
                   <div className={'mt-8 rounded-2xl border border-border bg-surface-secondary/40 p-6 text-center'}>
                     <p className={'text-sm text-text-secondary'}>{'Select at least two vaults to compare.'}</p>
                   </div>
+                ) : isMobile ? (
+                  <MobileCompareView vaults={vaults} onRemove={onRemove} />
                 ) : (
-                  <div className={'mt-6 overflow-x-auto'}>
-                    <div className={'min-w-[640px]'}>
-                      <div className={'grid gap-x-4'} style={{ gridTemplateColumns }}>
-                        <div className={'border-b border-border pb-4'} />
-                        {vaults.map((vault) => {
-                          const network = getNetwork(vault.chainID)
-                          const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${vault.chainID}/logo-32.png`
-                          const vaultKey = getVaultKey(vault)
-                          return (
-                            <div
-                              key={`header-${vaultKey}`}
-                              className={'flex items-start justify-between gap-3 border-b border-border pb-4'}
-                            >
-                              <div className={'min-w-0'}>
-                                <div className={'flex items-center gap-3'}>
-                                  <TokenLogo
-                                    src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainID}/${vault.token.address.toLowerCase()}/logo-128.png`}
-                                    tokenSymbol={vault.token.symbol || ''}
-                                    width={28}
-                                    height={28}
-                                  />
-                                  <div className={'min-w-0'}>
-                                    <p className={'truncate text-sm font-semibold text-text-primary'}>{vault.name}</p>
-                                    <div className={'mt-1 flex items-center gap-2 text-xs text-text-secondary'}>
-                                      <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
-                                      <span>{network.name}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <button
-                                type={'button'}
-                                onClick={(): void => onRemove(vaultKey)}
-                                className={cl(
-                                  'inline-flex size-7 items-center justify-center rounded-full border border-transparent text-text-secondary',
-                                  'hover:border-border hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
-                                )}
-                                aria-label={`Remove ${vault.name} from comparison`}
-                              >
-                                <IconClose className={'size-3'} />
-                              </button>
-                            </div>
-                          )
-                        })}
-
-                        <MetricLabel label={'Est. APY'} sublabel={'Forward net APR'} />
-                        {vaults.map((vault) => (
-                          <MetricValue key={`apy-${getVaultKey(vault)}`}>
-                            <div className={'flex items-center gap-2'}>
-                              {renderPercentValue(vault.apr?.forwardAPR?.netAPR)}
-                            </div>
-                          </MetricValue>
-                        ))}
-
-                        <MetricLabel label={'30 Day APY'} sublabel={'Average realized APY'} />
-                        {vaults.map((vault) => (
-                          <MetricValue key={`apy-30d-${getVaultKey(vault)}`}>
-                            <div className={'flex items-center gap-2'}>
-                              {renderPercentValue(resolveThirtyDayApy(vault, katanaAprs))}
-                            </div>
-                          </MetricValue>
-                        ))}
-
-                        <MetricLabel label={'TVL'} sublabel={'Total value locked'} />
-                        {vaults.map((vault) => (
-                          <MetricValue key={`tvl-${getVaultKey(vault)}`}>
-                            <RenderAmount
-                              value={vault.tvl?.tvl}
-                              symbol={'USD'}
-                              decimals={0}
-                              options={{
-                                shouldCompactValue: true,
-                                maximumFractionDigits: 2,
-                                minimumFractionDigits: 0
-                              }}
-                            />
-                          </MetricValue>
-                        ))}
-
-                        <MetricLabel label={'Fees'} sublabel={'Management / Performance'} />
-                        {vaults.map((vault) => (
-                          <MetricValue key={`fees-${getVaultKey(vault)}`} className={'text-xs'}>
-                            <div className={'grid grid-cols-2 gap-x-2 gap-y-1'}>
-                              <span className={'text-text-secondary'}>{'Management'}</span>
-                              <span className={'text-right font-number text-text-primary'}>
-                                {formatFee(vault.apr?.fees?.management)}
-                              </span>
-                              <span className={'text-text-secondary'}>{'Performance'}</span>
-                              <span className={'text-right font-number text-text-primary'}>
-                                {formatFee(vault.apr?.fees?.performance)}
-                              </span>
-                            </div>
-                          </MetricValue>
-                        ))}
-
-                        <MetricLabel label={'Risk'} sublabel={'Security score'} />
-                        {vaults.map((vault) => {
-                          const riskLevel = vault.info?.riskLevel ?? -1
-                          const normalizedRisk = normalizeRiskLevel(riskLevel)
-                          return (
-                            <MetricValue key={`risk-${getVaultKey(vault)}`}>
-                              <div className={'flex items-center gap-3'}>
-                                <VaultRiskScoreTag riskLevel={riskLevel} variant={'inline'} />
-                                <span className={'text-xs text-text-secondary'}>{`Level ${normalizedRisk} / 5`}</span>
-                              </div>
-                            </MetricValue>
-                          )
-                        })}
-
-                        <MetricLabel label={'Strategy type'} sublabel={'Vault structure'} />
-                        {vaults.map((vault) => {
-                          const listKind = deriveListKind(vault)
-                          const label = listKindLabels[listKind]
-                          return (
-                            <MetricValue key={`strategy-${getVaultKey(vault)}`}>
-                              <div className={'flex flex-col gap-1'}>
-                                <span className={'text-sm font-semibold text-text-primary'}>{label}</span>
-                                <span className={'text-xs text-text-secondary'}>{vault.kind}</span>
-                              </div>
-                            </MetricValue>
-                          )
-                        })}
-
-                        <MetricLabel label={'Strategies'} sublabel={'Underlying positions'} />
-                        {vaults.map((vault) => {
-                          const strategies = (vault.strategies ?? []).filter(
-                            (strategy) => strategy.status !== 'not_active' && hasAllocatedFunds(strategy)
-                          )
-                          return (
-                            <MetricValue key={`strategies-${getVaultKey(vault)}`} className={'text-xs'}>
-                              {strategies.length === 0 ? (
-                                <span className={'text-text-secondary'}>{'—'}</span>
-                              ) : (
-                                <div className={'flex flex-col gap-2'}>
-                                  {strategies.map((strategy) => {
-                                    const debtRatio = strategy.details?.debtRatio
-                                    const allocation = debtRatio ? formatPercent(debtRatio / 100, 0) : null
-                                    return (
-                                      <div key={strategy.address} className={'flex items-start justify-between gap-2'}>
-                                        <span className={'text-text-primary'}>{strategy.name}</span>
-                                        {allocation ? (
-                                          <span className={'font-number text-text-secondary'}>{allocation}</span>
-                                        ) : null}
-                                      </div>
-                                    )
-                                  })}
-                                </div>
-                              )}
-                            </MetricValue>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
+                  <DesktopCompareGrid vaults={vaults} onRemove={onRemove} />
                 )}
               </Dialog.Panel>
             </TransitionChild>

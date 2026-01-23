@@ -92,15 +92,15 @@ function TrendingVaultMarqueeItem({ vault }: { vault: TYDaemonVault }): ReactEle
           <TokenLogo src={chainLogoSrc} tokenSymbol={chain.name} width={12} height={12} />
         </div>
       </div>
-      <span className={'max-w-[160px] truncate text-xs font-semibold text-text-primary'}>{vault.name}</span>
+      <span className={'max-w-[160px] truncate text-mobile-label font-semibold text-text-primary'}>{vault.name}</span>
       <span aria-hidden className={'text-text-tertiary'}>
         {'|'}
       </span>
-      <span className={'text-xs font-semibold tabular-nums text-text-primary'}>{apyDisplay}</span>
+      <span className={'text-mobile-label font-semibold tabular-nums text-text-primary'}>{apyDisplay}</span>
       <span aria-hidden className={'text-text-tertiary'}>
         {'|'}
       </span>
-      <span className={'text-xs font-semibold tabular-nums text-text-primary'}>
+      <span className={'text-mobile-label font-semibold tabular-nums text-text-primary'}>
         <RenderAmount
           value={vault.tvl?.tvl || 0}
           symbol={'USD'}
@@ -180,7 +180,7 @@ function TrendingVaultsSkeleton(): ReactElement {
   return (
     <div className={'w-full bg-app pb-2'}>
       <div className={'flex flex-col gap-0 rounded-xl border border-border bg-surface'}>
-        <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-'}>
+        <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-3'}>
           <div className={'flex min-w-0 flex-1 items-center gap-3'}>
             <div className={'h-4 w-32 rounded-md bg-surface-tertiary/70 animate-pulse'} />
             <div className={'hidden h-5 w-24 rounded-md bg-surface-tertiary/60 md:block animate-pulse'} />
@@ -291,7 +291,7 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
         <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-3'}>
           <div className={'flex min-w-0 flex-1 items-center gap-3 '}>
             <div className={'flex flex-col text-left'}>
-              <p className={'text-sm font-semibold tracking-wide text-text-secondary'}>{'Curated Vaults'}</p>
+              <p className={'text-base font-semibold tracking-wide text-text-secondary'}>{'Curated Vaults'}</p>
             </div>
             {!isTrendingExpanded ? <TrendingVaultsCollapsedMarquee suggestedVaults={suggestedVaults} /> : null}
           </div>

@@ -139,19 +139,27 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
 
+  const isMaxWithdraw = useMemo(() => {
+    return (
+      withdrawAmount.bn > 0n && totalBalanceInUnderlying.raw > 0n && withdrawAmount.bn === totalBalanceInUnderlying.raw
+    )
+  }, [withdrawAmount.bn, totalBalanceInUnderlying.raw])
+
   // ============================================================================
   // Required Shares Calculation
   // ============================================================================
   const requiredShares = useMemo(() => {
     if (!withdrawAmount.bn || withdrawAmount.bn === 0n) return 0n
+    if (isMaxWithdraw && totalVaultBalance.raw > 0n) return totalVaultBalance.raw
 
     if (pricePerShare > 0n) {
       const vaultDecimals = vault?.decimals ?? 18
-      return (withdrawAmount.bn * 10n ** BigInt(vaultDecimals)) / pricePerShare
+      const numerator = withdrawAmount.bn * 10n ** BigInt(vaultDecimals)
+      return (numerator + pricePerShare - 1n) / pricePerShare
     }
 
     return 0n
-  }, [withdrawAmount.bn, pricePerShare, vault?.decimals])
+  }, [withdrawAmount.bn, isMaxWithdraw, totalVaultBalance.raw, pricePerShare, vault?.decimals])
 
   // ============================================================================
   // Withdraw Flow (routing, actions, periphery)
@@ -165,6 +173,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     amount: withdrawAmount.debouncedBn,
     currentAmount: withdrawAmount.bn,
     requiredShares,
+    maxShares: totalVaultBalance.raw,
+    isMaxWithdraw,
     account,
     chainId,
     destinationChainId,

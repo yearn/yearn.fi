@@ -5,7 +5,7 @@ import { SuggestedVaultCard } from '@pages/vaults/components/SuggestedVaultCard'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
-import { Tooltip } from '@shared/components/Tooltip'
+import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from '@shared/components/MetricsCard'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
 import type { ReactElement } from 'react'
@@ -25,12 +25,7 @@ const percentFormatter = new Intl.NumberFormat('en-US', {
 
 type TPortfolioHeaderProps = Pick<
   TPortfolioModel,
-  | 'blendedMetrics'
-  | 'isActive'
-  | 'isHoldingsLoading'
-  | 'isSearchingBalances'
-  | 'totalPortfolioValue'
-  | 'hasKatanaHoldings'
+  'blendedMetrics' | 'isActive' | 'isHoldingsLoading' | 'isSearchingBalances' | 'totalPortfolioValue'
 >
 
 type TPortfolioHoldingsProps = Pick<
@@ -52,26 +47,26 @@ type TPortfolioSuggestedProps = Pick<TPortfolioModel, 'suggestedRows'>
 function PortfolioPageLayout({ children }: { children: ReactElement }): ReactElement {
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
-      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-5 px-4 pb-16'}>{children}</div>
+      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16 sm:gap-5'}>{children}</div>
     </div>
   )
 }
 
 function HoldingsEmptyState({ isActive, onConnect }: { isActive: boolean; onConnect: () => void }): ReactElement {
   return (
-    <div className={'flex flex-col items-center justify-center gap-4 px-6 py-16 text-center'}>
-      <p className={'text-lg font-semibold text-text-primary'}>
+    <div className={'flex flex-col items-center justify-center gap-4 px-4 py-12 text-center sm:px-6 sm:py-16'}>
+      <p className={'text-base font-semibold text-text-primary sm:text-lg'}>
         {isActive ? 'No vault positions yet' : 'Connect a wallet to get started'}
       </p>
       <p className={'max-w-md text-sm text-text-secondary'}>
         {isActive ? 'Deposit into a Yearn vault to see it here.' : 'Link a wallet to load your Yearn balances.'}
       </p>
       {isActive ? (
-        <Link to="/vaults" className={'yearn--button'} data-variant={'filled'}>
+        <Link to="/vaults" className={'yearn--button min-h-[44px] px-6'} data-variant={'filled'}>
           {'Browse vaults'}
         </Link>
       ) : (
-        <Button onClick={onConnect} variant={'filled'}>
+        <Button onClick={onConnect} variant={'filled'} className={'min-h-[44px] px-6'}>
           {'Connect wallet'}
         </Button>
       )}
@@ -84,148 +79,103 @@ function PortfolioHeaderSection({
   isActive,
   isHoldingsLoading,
   isSearchingBalances,
-  totalPortfolioValue,
-  hasKatanaHoldings
+  totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
-  const tooltipContent = (
-    <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
-      <p>{'*One or more vaults are receiving extra incentives.'}</p>
-      <p>{'*There may be conditions to earn this rate.'}</p>
-    </div>
-  )
-  const renderApyValue = (value: string, shouldShowAsterisk: boolean): ReactElement => {
-    if (!shouldShowAsterisk) {
-      return <span>{value}</span>
+  const metrics: TMetricBlock[] = [
+    {
+      key: 'total-balance',
+      header: <MetricHeader label={'Total Balance'} tooltip={'Total USD value of all your vault deposits.'} />,
+      value: (
+        <span className={METRIC_VALUE_CLASS}>
+          {isSearchingBalances ? (
+            <span
+              className={'inline-flex h-6 w-20 items-center justify-center rounded bg-surface-secondary animate-pulse'}
+            >
+              <IconSpinner className={'size-4 text-text-secondary'} />
+            </span>
+          ) : (
+            currencyFormatter.format(totalPortfolioValue)
+          )}
+        </span>
+      )
+    },
+    {
+      key: 'current-apy',
+      header: (
+        <MetricHeader label={'Current APY'} tooltip={'Weighted by your total deposits across all Yearn vaults.'} />
+      ),
+      value: (
+        <span className={METRIC_VALUE_CLASS}>
+          {isHoldingsLoading ? (
+            <span className={'inline-flex h-6 w-14 items-center justify-center animate-spin'}>
+              <IconSpinner className={'size-4 text-text-secondary'} />
+            </span>
+          ) : blendedMetrics.blendedCurrentAPY !== null ? (
+            `${percentFormatter.format(blendedMetrics.blendedCurrentAPY)}%`
+          ) : (
+            '—'
+          )}
+        </span>
+      )
+    },
+    {
+      key: '30-day-apy',
+      header: (
+        <MetricHeader label={'30-day APY'} tooltip={'Blended 30-day performance using your current positions.'} />
+      ),
+      value: (
+        <span className={METRIC_VALUE_CLASS}>
+          {isHoldingsLoading ? (
+            <span className={'inline-flex h-6 w-14 items-center justify-center animate-spin'}>
+              <IconSpinner className={'size-4 text-text-secondary'} />
+            </span>
+          ) : blendedMetrics.blendedHistoricalAPY !== null ? (
+            `${percentFormatter.format(blendedMetrics.blendedHistoricalAPY)}%`
+          ) : (
+            '—'
+          )}
+        </span>
+      )
+    },
+    {
+      key: 'est-annual',
+      header: (
+        <MetricHeader label={'Est. Annual'} tooltip={'Projects potential returns based on your blended current APY.'} />
+      ),
+      value: (
+        <span className={METRIC_VALUE_CLASS}>
+          {isHoldingsLoading ? (
+            <span
+              className={'inline-flex h-6 w-20 items-center justify-center rounded bg-surface-secondary animate-pulse'}
+            >
+              <IconSpinner className={'size-4 text-text-secondary'} />
+            </span>
+          ) : blendedMetrics.estimatedAnnualReturn !== null ? (
+            currencyFormatter.format(blendedMetrics.estimatedAnnualReturn)
+          ) : (
+            '—'
+          )}
+        </span>
+      )
     }
-    return (
-      <span className={'relative inline-flex items-center'}>
-        {value}
-        <Tooltip
-          className={
-            '!absolute cursor-default left-full -top-2 ml-px !h-auto !w-auto !gap-0 !justify-start md:!justify-start'
-          }
-          openDelayMs={150}
-          side={'right'}
-          tooltip={tooltipContent}
-        >
-          <span className={'text-md text-text-secondary hover:text-accent-500'}>{'*'}</span>
-        </Tooltip>
-      </span>
-    )
-  }
-
-  const renderTitleWithTooltip = (label: string, tooltip: string | null): ReactElement => {
-    const labelClasses =
-      'text-sm font-semibold uppercase tracking-wide text-text-secondary cursor-pointer underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600'
-    if (!tooltip) {
-      return <span className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>{label}</span>
-    }
-    return (
-      <Tooltip
-        className={'gap-0 h-auto justify-start md:justify-start'}
-        openDelayMs={150}
-        side={'top'}
-        tooltip={
-          <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
-            {tooltip}
-          </div>
-        }
-      >
-        <span className={labelClasses}>{label}</span>
-      </Tooltip>
-    )
-  }
+  ]
 
   return (
-    <section className={'flex flex-col gap-2'}>
+    <section className={'flex flex-col gap-3 sm:gap-4'}>
       <Breadcrumbs
-        className={'mt-2'}
+        className={'px-1'}
         items={[
           { label: 'Home', href: '/' },
           { label: 'Account Overview', isCurrent: true }
         ]}
       />
-      <div>
-        <h1 className={'text-4xl font-black text-text-primary'}>{'Account Overview'}</h1>
+      <div className={'px-1'}>
+        <h1 className={'text-lg font-black text-text-primary md:text-3xl md:leading-10'}>{'Account Overview'}</h1>
+        <p className={'mt-1.5 text-sm text-text-secondary'}>
+          {'Monitor your balances, returns, and discover new vaults.'}
+        </p>
       </div>
-      {isActive ? (
-        <div>
-          <div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
-            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
-              <p className={'text-sm font-semibold uppercase tracking-wide text-text-secondary'}>{'Total balance'}</p>
-              <p className={'mt-1 text-3xl font-black text-text-primary'}>
-                {isSearchingBalances ? (
-                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
-                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
-                  </span>
-                ) : (
-                  currencyFormatter.format(totalPortfolioValue)
-                )}
-              </p>
-            </div>
-
-            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
-              <div>
-                {renderTitleWithTooltip(
-                  'Blended Current APY',
-                  'Weighted by your total deposits across all Yearn vaults.'
-                )}
-              </div>
-              <div className={'mt-1 text-3xl font-black text-text-primary'}>
-                {isHoldingsLoading ? (
-                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
-                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
-                  </span>
-                ) : blendedMetrics.blendedCurrentAPY !== null ? (
-                  renderApyValue(`${percentFormatter.format(blendedMetrics.blendedCurrentAPY)}%`, hasKatanaHoldings)
-                ) : (
-                  '—'
-                )}
-              </div>
-            </div>
-
-            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
-              <div>
-                {renderTitleWithTooltip(
-                  'Blended 30-day APY',
-                  'Blended 30-day performance using your current positions.'
-                )}
-              </div>
-              <div className={'mt-1 text-3xl font-black text-text-primary'}>
-                {isHoldingsLoading ? (
-                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
-                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
-                  </span>
-                ) : blendedMetrics.blendedHistoricalAPY !== null ? (
-                  renderApyValue(`${percentFormatter.format(blendedMetrics.blendedHistoricalAPY)}%`, hasKatanaHoldings)
-                ) : (
-                  '—'
-                )}
-              </div>
-            </div>
-
-            <div className={'rounded-3xl border border-border bg-surface p-6 pt-5'}>
-              <div>
-                {renderTitleWithTooltip(
-                  'Estimated Annual Return',
-                  'Projects potential returns based on your blended current APY.'
-                )}
-              </div>
-              <div className={'mt-1 text-3xl font-black text-text-primary'}>
-                {isHoldingsLoading ? (
-                  <span className={'inline-flex h-9 w-20 items-center justify-center animate-spin'}>
-                    <IconSpinner className={'h-5 w-5 text-text-secondary'} />
-                  </span>
-                ) : blendedMetrics.estimatedAnnualReturn !== null ? (
-                  currencyFormatter.format(blendedMetrics.estimatedAnnualReturn)
-                ) : (
-                  '—'
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {isActive ? <MetricsCard items={metrics} /> : null}
     </section>
   )
 }
@@ -246,41 +196,28 @@ function PortfolioHoldingsSection({
     setSortBy(newSortBy as TPossibleSortBy)
     setSortDirection(newDirection)
   }
-  const holdingsTooltip = 'Track every Yearn position you currently hold.'
 
   return (
-    <section className={'flex flex-col gap-2'}>
-      <div className={'flex flex-wrap items-center justify-between gap-4'}>
+    <section className={'flex flex-col gap-3 sm:gap-4'}>
+      <div className={'flex flex-wrap items-center justify-between gap-3 sm:gap-4'}>
         <div>
-          <Tooltip
-            className={'h-auto gap-0'}
-            openDelayMs={150}
-            side={'top'}
-            tooltip={
-              <div
-                className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}
-              >
-                {holdingsTooltip}
-              </div>
-            }
-          >
-            <h2 className={'text-2xl font-semibold text-text-primary'}>{'Your Vaults'}</h2>
-          </Tooltip>
+          <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'Your vaults'}</h2>
+          <p className={'text-xs text-text-secondary sm:text-sm'}>{'Track every Yearn position you currently hold.'}</p>
         </div>
         {hasHoldings ? (
-          <Link to="/vaults" className={'yearn--button text-sm'} data-variant={'light'}>
+          <Link to="/vaults" className={'yearn--button min-h-[44px] px-4 text-sm'} data-variant={'light'}>
             {'Browse more vaults'}
           </Link>
         ) : null}
       </div>
-      <div className={'overflow-hidden rounded-3xl border border-border'}>
+      <div className={'overflow-hidden rounded-lg border border-border'}>
         <div className={'flex flex-col'}>
           <VaultsListHead
             sortBy={sortBy}
             sortDirection={sortDirection}
             onSort={handleSort}
-            wrapperClassName={'rounded-t-3xl bg-surface-secondary'}
-            containerClassName={'rounded-t-3xl bg-surface-secondary'}
+            wrapperClassName={'rounded-t-lg bg-surface-secondary'}
+            containerClassName={'rounded-t-lg bg-surface-secondary'}
             items={[
               {
                 type: 'sort',
@@ -313,12 +250,16 @@ function PortfolioHoldingsSection({
             ]}
           />
           {isHoldingsLoading ? (
-            <div className={'flex flex-col items-center justify-center gap-3 px-6 py-16 text-sm text-text-secondary'}>
-              <IconSpinner className={'h-6 w-6 text-text-secondary'} />
+            <div
+              className={
+                'flex flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16'
+              }
+            >
+              <IconSpinner className={'size-5 text-text-secondary sm:size-6'} />
               <span>{'Searching for Yearn balances...'}</span>
             </div>
           ) : hasHoldings ? (
-            <div className={'flex flex-col gap-px'}>
+            <div className={'flex flex-col gap-px bg-border'}>
               {holdingsRows.map((row) => (
                 <VaultsListRow
                   key={row.key}
@@ -329,6 +270,9 @@ function PortfolioHoldingsSection({
                   activeProductType={'all'}
                   showStrategies
                   showAllocatorChip={false}
+                  showProductTypeChipOverride={true}
+                  showHoldingsChipOverride={false}
+                  mobileSecondaryMetric={'holdings'}
                 />
               ))}
             </div>
@@ -347,22 +291,14 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
   }
 
   return (
-    <section className={'flex flex-col gap-2'}>
+    <section className={'flex flex-col gap-3 sm:gap-4'}>
       <div>
-        <Tooltip
-          className={'h-auto gap-0'}
-          openDelayMs={150}
-          side={'top'}
-          tooltip={
-            <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
-              {'Vaults picked for you based on performance and popularity.'}
-            </div>
-          }
-        >
-          <h2 className={'text-2xl font-semibold text-text-primary'}>{'You Might Like:'}</h2>
-        </Tooltip>
+        <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'You might like'}</h2>
+        <p className={'text-xs text-text-secondary sm:text-sm'}>
+          {'Vaults picked for you based on performance and popularity.'}
+        </p>
       </div>
-      <div className={'grid gap-4 md:grid-cols-2 xl:grid-cols-4'}>
+      <div className={'grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 xl:grid-cols-4'}>
         {suggestedRows.map((row) => (
           <SuggestedVaultCard key={row.key} vault={row.vault} />
         ))}
@@ -383,7 +319,6 @@ function PortfolioPage(): ReactElement {
           isActive={model.isActive}
           isHoldingsLoading={model.isHoldingsLoading}
           isSearchingBalances={model.isSearchingBalances}
-          hasKatanaHoldings={model.hasKatanaHoldings}
           totalPortfolioValue={model.totalPortfolioValue}
         />
         <PortfolioHoldingsSection
