@@ -64,8 +64,8 @@ function TrendingVaultMarqueeItem({ vault }: { vault: TYDaemonVault }): ReactEle
     if (apyData.mode === 'rewards' && vault.staking.source === 'VeYFI' && apyData.estAprRange) {
       return `${formatPercent(apyData.estAprRange[0] * 100, 2, 2)} – ${formatPercent(apyData.estAprRange[1] * 100, 2, 2)}`
     }
-    if (apyData.mode === 'katana' && apyData.katanaTotalApr !== undefined) {
-      return formatPercent(apyData.katanaTotalApr * 100, 2, 2)
+    if (apyData.mode === 'katana' && apyData.katanaEstApr !== undefined) {
+      return formatPercent(apyData.katanaEstApr * 100, 2, 2)
     }
     const boostedApr = apyData.baseForwardApr + apyData.rewardsAprSum
     if (apyData.mode === 'rewards') {

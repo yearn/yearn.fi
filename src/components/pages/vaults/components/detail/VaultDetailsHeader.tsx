@@ -1,8 +1,8 @@
-import { Dialog, Transition } from '@headlessui/react'
 import { useThemePreference } from '@hooks/useThemePreference'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
+import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
@@ -14,9 +14,9 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
-import { Counter } from '@shared/components/Counter'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { Tooltip } from '@shared/components/Tooltip'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconCirclePile } from '@shared/icons/IconCirclePile'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
@@ -30,7 +30,7 @@ import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement } from 'react'
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
 const METRIC_VALUE_CLASS = 'font-semibold text-[20px] leading-tight md:text-[22px]'
@@ -44,92 +44,29 @@ type TMetricBlock = {
   secondaryLabel?: ReactElement
 }
 
-function MetricInfoModal({
-  description,
-  isOpen,
-  onClose,
-  title
-}: {
-  description?: string
-  isOpen: boolean
-  onClose: () => void
-  title: string
-}): ReactElement | null {
-  if (!description) {
-    return null
-  }
-  return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as={'div'} className={'relative z-50'} onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter={'ease-out duration-300'}
-          enterFrom={'opacity-0'}
-          enterTo={'opacity-100'}
-          leave={'ease-in duration-200'}
-          leaveFrom={'opacity-100'}
-          leaveTo={'opacity-0'}
-        >
-          <div className={'fixed inset-0 bg-neutral-900/30'} />
-        </Transition.Child>
-
-        <div className={'fixed inset-0 overflow-y-auto'}>
-          <div className={'flex min-h-full items-center justify-center p-4 text-center'}>
-            <Transition.Child
-              as={Fragment}
-              enter={'ease-out duration-300'}
-              enterFrom={'opacity-0 scale-95'}
-              enterTo={'opacity-100 scale-100'}
-              leave={'ease-in duration-200'}
-              leaveFrom={'opacity-100 scale-100'}
-              leaveTo={'opacity-0 scale-95'}
-            >
-              <Dialog.Panel
-                className={
-                  'w-full max-w-md transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-lg transition-all'
-                }
-              >
-                <Dialog.Title as={'h3'} className={'text-lg font-semibold leading-6 text-text-primary'}>
-                  {title}
-                </Dialog.Title>
-                <p className={'mt-4 text-sm text-text-secondary'}>
-                  {description}
-                  <span className={'mt-2 block text-xs text-text-secondary'}>
-                    {'More information about this metric is coming soon.'}
-                  </span>
-                </p>
-                <div className={'mt-6'}>
-                  <button
-                    type={'button'}
-                    className={
-                      'inline-flex w-full items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-neutral-0 transition-colors hover:bg-neutral-800'
-                    }
-                    onClick={onClose}
-                  >
-                    {'Got it'}
-                  </button>
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
-  )
-}
-
-function MetricsCard({
-  hideFootnotes = false,
-  items
-}: {
-  items: TMetricBlock[]
-  hideFootnotes?: boolean
-}): ReactElement {
+function MetricsCard({ items }: { items: TMetricBlock[] }): ReactElement {
   return (
     <div className={cl('rounded-lg border border-border bg-surface text-text-primary', 'backdrop-blur-sm')}>
       <div className={'divide-y divide-neutral-300 md:flex md:divide-y-0'}>
-        {items.map(
-          (item, index): ReactElement => (
+        {items.map((item, index): ReactElement => {
+          const valueContent = item.footnote ? (
+            <Tooltip
+              className={'h-auto justify-start md:justify-start'}
+              openDelayMs={150}
+              align={'center'}
+              tooltip={
+                <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs'}>
+                  {item.footnote}
+                </div>
+              }
+            >
+              <div className={'inline-flex'}>{item.value}</div>
+            </Tooltip>
+          ) : (
+            item.value
+          )
+
+          return (
             <div
               key={item.key}
               className={cl(
@@ -138,53 +75,45 @@ function MetricsCard({
               )}
             >
               <div className={'flex items-center justify-between'}>{item.header}</div>
-              <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{item.value}</div>
-              {item.footnote && !hideFootnotes ? <div>{item.footnote}</div> : null}
+              <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{valueContent}</div>
             </div>
           )
-        )}
+        })}
       </div>
     </div>
   )
 }
 
 function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): ReactElement {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
   return (
-    <>
-      <p className={'flex items-center gap-1 text-xs font-normal uppercase tracking-wide text-text-secondary'}>
-        <span>{label}</span>
-        {tooltip ? (
-          <button
-            type={'button'}
-            onClick={(): void => setIsModalOpen(true)}
-            aria-label={`Learn more about ${label}`}
+    <p className={'flex items-center gap-1 text-xs font-normal uppercase tracking-wide text-text-secondary'}>
+      {tooltip ? (
+        <Tooltip
+          side={'top'}
+          align={'center'}
+          openDelayMs={150}
+          tooltip={
+            <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
+              {tooltip}
+            </div>
+          }
+        >
+          <span
             className={
-              'inline-flex size-4 items-center justify-center rounded-full border bg-surface border-border text-[10px] font-normal text-text-secondary transition-colors hover:border-neutral-500 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300'
+              'cursor-pointer underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600'
             }
           >
-            <span className={'leading-none'}>{'i'}</span>
-          </button>
-        ) : null}
-      </p>
-      <MetricInfoModal
-        description={tooltip}
-        isOpen={isModalOpen}
-        onClose={(): void => setIsModalOpen(false)}
-        title={label}
-      />
-    </>
+            {label}
+          </span>
+        </Tooltip>
+      ) : (
+        <span>{label}</span>
+      )}
+    </p>
   )
 }
 
-function VaultOverviewCard({
-  currentVault,
-  isCompressed
-}: {
-  currentVault: TYDaemonVault
-  isCompressed: boolean
-}): ReactElement {
+function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
   const metrics: TMetricBlock[] = [
     {
@@ -194,6 +123,7 @@ function VaultOverviewCard({
         <VaultForwardAPY
           currentVault={currentVault}
           showSubline={false}
+          showSublineTooltip={currentVault.chainID === KATANA_CHAIN_ID}
           className={'items-start text-left'}
           valueClassName={METRIC_VALUE_CLASS}
         />
@@ -229,30 +159,35 @@ function VaultOverviewCard({
       ),
       footnote: (
         <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
-          <span className={'font-number'}>
-            <Counter value={totalAssets} decimals={currentVault.decimals} decimalsToDisplay={[2, 6, 8, 10, 12]} />
-          </span>
+          <RenderAmount
+            value={Number(totalAssets)}
+            symbol={currentVault.token.symbol}
+            decimals={currentVault.decimals}
+            shouldFormatDust
+            options={{
+              shouldDisplaySymbol: false,
+              maximumFractionDigits: Number(totalAssets) > 1000 ? 2 : 4
+            }}
+          />
           <span className={'pl-1'}>{currentVault.token.symbol || 'tokens'}</span>
         </p>
       )
     }
   ]
 
-  return <MetricsCard items={metrics} hideFootnotes={isCompressed} />
+  return <MetricsCard items={metrics} />
 }
 
 function UserHoldingsCard({
   currentVault,
   availableToDeposit,
   depositedValue,
-  tokenPrice,
-  isCompressed
+  tokenPrice
 }: {
   currentVault: TYDaemonVault
   availableToDeposit: bigint
   depositedValue: bigint
   tokenPrice: number
-  isCompressed: boolean
 }): ReactElement {
   const availableAmount = toNormalizedBN(availableToDeposit, currentVault.token.decimals)
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
@@ -320,7 +255,7 @@ function UserHoldingsCard({
     }
   ]
 
-  return <MetricsCard items={sections} hideFootnotes={isCompressed} />
+  return <MetricsCard items={sections} />
 }
 
 export function VaultDetailsHeader({
@@ -580,7 +515,7 @@ export function VaultDetailsHeader({
       <div
         className={cl(isCompressed ? 'md:col-start-6 md:col-span-8 md:row-start-2' : 'md:col-span-13 md:row-start-3')}
       >
-        <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
+        <VaultOverviewCard currentVault={currentVault} />
       </div>
       <div
         className={cl(
@@ -592,7 +527,6 @@ export function VaultDetailsHeader({
           availableToDeposit={availableToDeposit}
           depositedValue={depositedValue}
           tokenPrice={tokenPrice}
-          isCompressed={isCompressed}
         />
       </div>
     </div>

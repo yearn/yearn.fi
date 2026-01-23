@@ -1,3 +1,6 @@
+import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
+import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
+import { Tooltip } from '@shared/components/Tooltip'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { cl, formatAmount } from '@shared/utils'
@@ -12,11 +15,26 @@ interface StatCardProps {
 }
 
 function StatCard({ label, value, subValue }: StatCardProps): ReactElement {
+  const valueElement = <p className={'text-base font-semibold text-text-primary'}>{value}</p>
+
   return (
     <div className={cl('rounded-lg bg-surface-secondary border border-border p-3')}>
       <p className={'text-xs text-text-secondary mb-1'}>{label}</p>
-      <p className={'text-base font-semibold text-text-primary'}>{value}</p>
-      {subValue && <p className={'text-xs text-text-secondary mt-0.5'}>{subValue}</p>}
+      {subValue ? (
+        <Tooltip
+          className={'h-auto'}
+          openDelayMs={150}
+          tooltip={
+            <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
+              {subValue}
+            </div>
+          }
+        >
+          <span className={'inline-flex'}>{valueElement}</span>
+        </Tooltip>
+      ) : (
+        valueElement
+      )}
     </div>
   )
 }
@@ -51,8 +69,15 @@ interface VaultMetricsGridProps {
 
 export function VaultMetricsGrid({ currentVault }: VaultMetricsGridProps): ReactElement {
   // Get APY data
-  const forwardAPY = currentVault.apr.forwardAPR.netAPR
-  const historicalAPY = currentVault.apr.netAPR || currentVault.apr.points?.weekAgo || 0
+  const apyData = useVaultApyData(currentVault)
+  const forwardAPY =
+    apyData.mode === 'katana' && apyData.katanaEstApr !== undefined
+      ? apyData.katanaEstApr
+      : currentVault.apr.forwardAPR.netAPR
+  const historicalAPY =
+    currentVault.chainID === KATANA_CHAIN_ID && apyData.katanaThirtyDayApr !== undefined
+      ? apyData.katanaThirtyDayApr
+      : currentVault.apr.netAPR || currentVault.apr.points?.weekAgo || 0
 
   return (
     <div className="md:hidden">

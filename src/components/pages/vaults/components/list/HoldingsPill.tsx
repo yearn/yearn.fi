@@ -10,10 +10,10 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
 
   const isVeYfi = vault.staking.source === 'VeYFI'
   const boostedApr = data.baseForwardApr + data.rewardsAprSum
-  const katanaApr = data.katanaTotalApr ?? data.baseForwardApr
+  const katanaApr = data.katanaEstApr ?? data.baseForwardApr
 
   const apyContent: ReactNode = (() => {
-    if (data.mode === 'katana' && data.katanaTotalApr !== undefined) {
+    if (data.mode === 'katana' && data.katanaEstApr !== undefined) {
       return (
         <>
           <span>{'⚔️ '}</span>

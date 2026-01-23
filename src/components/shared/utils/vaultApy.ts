@@ -6,13 +6,8 @@ export function calculateVaultEstimatedAPY(vault: TYDaemonVault, katanaAprs: Par
   if (vault.chainID === 747474) {
     const katanaAprData = katanaAprs?.[toAddress(vault.address)]?.apr?.extra
     if (katanaAprData) {
-      return (
-        (katanaAprData.katanaNativeYield || 0) +
-        (katanaAprData.FixedRateKatanaRewards || 0) +
-        (katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR ?? 0) +
-        (katanaAprData.katanaBonusAPY || 0) +
-        (katanaAprData.steerPointsPerDollar || 0)
-      )
+      const appRewardsApr = katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR ?? 0
+      return (vault.apr?.forwardAPR?.netAPR || 0) + (katanaAprData.FixedRateKatanaRewards || 0) + appRewardsApr
     }
     return 0
   }
@@ -35,4 +30,40 @@ export function calculateVaultEstimatedAPY(vault: TYDaemonVault, katanaAprs: Par
     return vault.apr?.forwardAPR?.netAPR || 0
   }
   return vault.apr?.netAPR || 0
+}
+
+export function calculateKatanaThirtyDayAPY(
+  vault: TYDaemonVault,
+  katanaAprs: Partial<TKatanaAprs> | undefined
+): number | undefined {
+  if (vault.chainID !== 747474) return undefined
+
+  const katanaAprData = katanaAprs?.[toAddress(vault.address)]?.apr?.extra
+  if (!katanaAprData) return undefined
+
+  const appRewardsApr = katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR
+  const parts = [katanaAprData.katanaNativeYield, katanaAprData.FixedRateKatanaRewards, appRewardsApr].filter(
+    (value): value is number => typeof value === 'number' && !Number.isNaN(value)
+  )
+
+  if (parts.length === 0) return undefined
+  return parts.reduce((acc, value) => acc + value, 0)
+}
+
+export function calculateVaultHistoricalAPY(
+  vault: TYDaemonVault,
+  katanaAprs: Partial<TKatanaAprs> | undefined
+): number | null {
+  const katanaAPY = calculateKatanaThirtyDayAPY(vault, katanaAprs)
+  if (vault.chainID === 747474) {
+    return typeof katanaAPY === 'number' ? katanaAPY : null
+  }
+  if (typeof katanaAPY === 'number') {
+    return katanaAPY
+  }
+
+  const monthlyAPY = vault.apr?.points?.monthAgo
+  const weeklyAPY = vault.apr?.points?.weekAgo
+  const chosenAPY = !isZero(monthlyAPY || 0) ? monthlyAPY : weeklyAPY
+  return typeof chosenAPY === 'number' ? chosenAPY : null
 }
