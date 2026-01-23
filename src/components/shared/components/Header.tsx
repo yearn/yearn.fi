@@ -147,6 +147,7 @@ function AppHeader(): ReactElement {
               <button
                 type={'button'}
                 onMouseDown={(e) => e.stopPropagation()}
+                onClick={() => setIsLauncherOpen(!isLauncherOpen)}
                 className={'flex items-center gap-1 transition-colors hover:opacity-80'}
               >
                 <TypeMarkYearn className={'h-8 w-auto'} color={isHomePage || isDarkTheme ? '#FFFFFF' : '#0657F9'} />

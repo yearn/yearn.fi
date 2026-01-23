@@ -5,7 +5,6 @@ import { SearchBar } from '@shared/components/SearchBar'
 import { useChainOptions } from '@shared/hooks/useChains'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSearch } from '@shared/icons/IconSearch'
-import type { TSortDirection } from '@shared/types'
 import { cl } from '@shared/utils'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
@@ -13,7 +12,6 @@ import { Drawer } from 'vaul'
 import { type TVaultsChainButton, VaultsChainSelector } from './VaultsChainSelector'
 import { VaultsFiltersButton } from './VaultsFiltersButton'
 import { type TFiltersConfig, type TPendingFiltersState, VaultsFiltersPanelControlled } from './VaultsFiltersPanel'
-import { VaultsMobileSortSelector } from './VaultsMobileSortSelector'
 
 export type TChainConfig = {
   supportedChainIds: number[]
@@ -48,18 +46,10 @@ export type TChainProps = {
   config: TChainConfig
 }
 
-type TMobileSortProps = {
-  sortBy: string
-  sortDirection: TSortDirection
-  onSort: (sortBy: string, sortDirection: TSortDirection) => void
-  hasHoldings?: boolean
-}
-
 type TVaultsFiltersBarProps = {
   search: TSearchProps
   filters: TFiltersProps
   chains: TChainProps
-  mobileSort?: TMobileSortProps
   mobileExtraContent?: ReactNode
   trailingControls?: ReactNode
   isStackedLayout?: boolean
@@ -69,7 +59,6 @@ export function VaultsFiltersBar({
   search,
   filters,
   chains,
-  mobileSort,
   mobileExtraContent,
   trailingControls,
   isStackedLayout: isStackedLayoutProp
@@ -305,16 +294,6 @@ export function VaultsFiltersBar({
                       <IconCross className={'size-4'} />
                     </Drawer.Close>
                   </div>
-                  {mobileSort ? (
-                    <div className={'mb-4'}>
-                      <VaultsMobileSortSelector
-                        sortBy={mobileSort.sortBy}
-                        sortDirection={mobileSort.sortDirection}
-                        onSort={mobileSort.onSort}
-                        hasHoldings={mobileSort.hasHoldings}
-                      />
-                    </div>
-                  ) : null}
                   <FilterControls
                     chainButtons={chainButtons}
                     onSelectAllChains={handleSelectAllChains}
