@@ -74,7 +74,7 @@ export function VaultsListRow({
   shouldCollapseChips = false,
   showHoldingsChipOverride,
   showProductTypeChipOverride,
-  mobileSecondaryMetric = 'tvl'
+  mobileSecondaryMetric = 'tvl',
   showAllocatorChip = true
 }: {
   currentVault: TYDaemonVault
