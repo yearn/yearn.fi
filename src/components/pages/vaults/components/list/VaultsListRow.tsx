@@ -14,7 +14,9 @@ import {
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
+import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCirclePile } from '@shared/icons/IconCirclePile'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
@@ -28,7 +30,7 @@ import { cl, formatAmount, toAddress, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
 import { VaultsListChip } from './VaultsListChip'
@@ -94,6 +96,8 @@ export function VaultsListRow({
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const { isActive: isWalletActive } = useWeb3()
+  const { getToken } = useWallet()
+  const { getPrice } = useYearn()
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('strategies')
   const [interactiveHoverCount, setInteractiveHoverCount] = useState(0)
@@ -172,6 +176,56 @@ export function VaultsListRow({
     : ''
   const migratableIcon = <IconMigratable className={'size-3.5'} />
   const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
+  const holdingsIcon = (
+    <svg
+      xmlns={'http://www.w3.org/2000/svg'}
+      viewBox={'0 0 24 24'}
+      fill={'none'}
+      stroke={'currentColor'}
+      strokeWidth={2}
+      strokeLinecap={'round'}
+      strokeLinejoin={'round'}
+      className={'size-3.5'}
+      aria-hidden={true}
+    >
+      <path d={'M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17'} />
+      <path d={'m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9'} />
+      <path d={'m2 16 6 6'} />
+      <circle cx={16} cy={9} r={2.9} />
+      <circle cx={6} cy={5} r={3} />
+    </svg>
+  )
+  const showHoldingsChip = Boolean(flags?.hasHoldings)
+  const holdingsValue = useMemo(() => {
+    if (!showHoldingsChip) {
+      return 0
+    }
+    const vaultToken = getToken({
+      chainID: currentVault.chainID,
+      address: currentVault.address
+    })
+    const price = getPrice({
+      address: currentVault.address,
+      chainID: currentVault.chainID
+    })
+    const stakingBalance = currentVault.staking.available
+      ? getToken({
+          chainID: currentVault.chainID,
+          address: currentVault.staking.address
+        }).balance.raw
+      : 0n
+    const totalRawBalance = vaultToken.balance.raw + stakingBalance
+    const total = toNormalizedBN(totalRawBalance, vaultToken.decimals)
+    return total.normalized * price.normalized
+  }, [
+    showHoldingsChip,
+    currentVault.address,
+    currentVault.chainID,
+    currentVault.staking.address,
+    currentVault.staking.available,
+    getToken,
+    getPrice
+  ])
   const tvlNativeTooltip = (
     <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       <span className={'font-number'}>
@@ -218,7 +272,7 @@ export function VaultsListRow({
         href={href}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
-          'p-4 sm:p-6 pt-2 pb-3 sm:pb-4 md:pr-20',
+          'p-6 pb-4 md:p-4 md:pt-2 md:pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
         onClickCapture={(event): void => {
@@ -253,7 +307,13 @@ export function VaultsListRow({
           />
         ) : null}
 
-        <div className={cl(leftColumnSpan, 'z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
+        <div
+          className={cl(
+            leftColumnSpan,
+            'z-10',
+            'flex flex-col items-start sm:pt-0 md:flex-row md:items-center md:justify-between'
+          )}
+        >
           <div className={'flex flex-row w-full gap-4 overflow-visible'}>
             {showCompareToggle ? (
               // biome-ignore lint/a11y/useSemanticElements: native checkbox has double-firing issues with parent Link's onClickCapture
@@ -316,7 +376,9 @@ export function VaultsListRow({
             <div className={'min-w-0 flex-1'}>
               <strong
                 title={currentVault.name}
-                className={'block truncate-safe font-black text-text-primary md:-mb-0.5 text-lg leading-tight'}
+                className={
+                  'block truncate-safe whitespace-nowrap font-black text-text-primary md:-mb-0.5 text-lg leading-tight'
+                }
               >
                 {currentVault.name}
               </strong>
@@ -413,32 +475,49 @@ export function VaultsListRow({
                     onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
+                {showHoldingsChip ? (
+                  <span
+                    className={
+                      'inline-flex items-center rounded-lg border border-primary/50 px-1 py-0.5 text-xs font-medium transition-colors bg-surface-secondary text-text-secondary gap-1 shadow-[0_0_12px_rgba(0,95,251,0.2)]'
+                    }
+                    aria-label={'Holdings'}
+                  >
+                    <span className={'flex size-4 items-center justify-center text-text-secondary'}>
+                      {holdingsIcon}
+                    </span>
+                    <RenderAmount
+                      shouldHideTooltip
+                      value={holdingsValue}
+                      symbol={'USD'}
+                      decimals={0}
+                      options={{
+                        shouldCompactValue: true,
+                        maximumFractionDigits: 2,
+                        minimumFractionDigits: 2
+                      }}
+                    />
+                  </span>
+                ) : null}
               </div>
             </div>
-            {/* Mobile Holdings + APY + TVL inline */}
-            <div className={'hidden max-md:flex items-center shrink-0 gap-2 min-[375px]:gap-3 sm:gap-4 text-right'}>
-              {/* Holdings - shown on wider mobile screens */}
-              {showHoldingsColumn ? (
-                <div className={'hidden min-[420px]:block min-w-[52px] min-[375px]:min-w-[60px]'}>
-                  <p className={'text-mobile-label text-text-primary/60'}>{'Holdings'}</p>
-                  <VaultHoldingsAmount
-                    currentVault={currentVault}
-                    valueClassName={'text-sm min-[375px]:text-base font-semibold'}
-                  />
-                </div>
-              ) : null}
-              <div className={'min-w-[44px] min-[375px]:min-w-[56px]'}>
-                <p className={'text-mobile-label text-text-primary/60'}>{'APY'}</p>
+          </div>
+          <div className={'mt-1 flex w-full flex-col gap-2 md:hidden'}>
+            <div className={'grid w-full grid-cols-2 gap-2 text-xs pl-12 text-text-primary/70'}>
+              <div className={'flex items-baseline gap-2 whitespace-nowrap'}>
+                <span className={'text-text-primary/60'}>{'Est. APY:'}</span>
                 <VaultForwardAPY
                   currentVault={currentVault}
-                  valueClassName={'text-sm min-[375px]:text-base font-semibold'}
+                  className={'flex-row items-center text-left'}
+                  valueClassName={'text-lg font-semibold'}
                   showSubline={false}
+                  displayVariant={apyDisplayVariant}
+                  showBoostDetails={showBoostDetails}
                   onInteractiveHoverChange={handleInteractiveHoverChange}
                 />
               </div>
-              <div className={'relative min-w-[40px] min-[375px]:min-w-[48px]'}>
-                <p className={'text-mobile-label text-text-primary/60'}>{'TVL'}</p>
-                <p className={'text-sm min-[375px]:text-base font-semibold text-text-primary font-number'}>
+              <div className={'flex items-baseline gap-2 whitespace-nowrap'}>
+                <span className={'text-text-primary/60'}>{'TVL:'}</span>
+                <span className={'text-lg font-semibold text-text-primary font-number'}>
                   <RenderAmount
                     value={currentVault.tvl?.tvl}
                     symbol={'USD'}
@@ -449,14 +528,7 @@ export function VaultsListRow({
                       minimumFractionDigits: 0
                     }}
                   />
-                </p>
-                {/* Holdings indicator dot - shown on narrow screens when user has holdings */}
-                {showHoldingsColumn && flags?.hasHoldings ? (
-                  <div
-                    className={'absolute -right-2 top-0 size-2 rounded-full bg-green-500 min-[420px]:hidden'}
-                    title={'You have holdings in this vault'}
-                  />
-                ) : null}
+                </span>
               </div>
             </div>
           </div>
