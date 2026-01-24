@@ -11,6 +11,7 @@ import { getVaultTypeLabel } from '@pages/vaults/utils/vaultTypeCopy'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
+import { IconGitCompare } from '@shared/icons/IconGitCompare'
 import { cl } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
@@ -171,12 +172,13 @@ export default function Index(): ReactElement {
     <button
       type={'button'}
       className={cl(
-        'flex shrink-0 items-center justify-center h-10 px-4 rounded-[4px] bg-neutral-800/20 text-sm font-medium text-text-primary transition-colors hover:bg-neutral-800/40',
+        'flex shrink-0 items-center justify-center h-10 px-4 gap-1 rounded-lg bg-surface border border-border hover:border-hover text-sm font-medium text-text-secondary transition-colors hover:text-text-primary data-[active=true]:border-primary/50 data-[active=true]:text-primary',
         isCompareMode ? 'bg-primary/50' : null
       )}
       onClick={handleToggleCompareMode}
       data-active={isCompareMode}
     >
+      <IconGitCompare className={'size-4'} />
       {'Compare'}
     </button>
   )
@@ -327,7 +329,6 @@ export default function Index(): ReactElement {
       onClose={(): void => setIsCompareOpen(false)}
       vaults={compareVaults}
       onRemove={handleRemoveCompare}
-      onClear={handleClearCompare}
     />
   )
 
