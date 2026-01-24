@@ -65,7 +65,12 @@ function SectionSelectorBar({
           <button
             key={section.key}
             type={'button'}
-            onClick={(): void => onSelectSection?.(section.key)}
+            onClick={(): void => {
+              if (!isCompressed && section.key === 'charts') {
+                return
+              }
+              onSelectSection?.(section.key)
+            }}
             className={cl(
               'flex-1 min-w-[120px] rounded-md px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
               'border border-transparent focus-visible:outline-none focus-visible:ring-0',
@@ -74,6 +79,7 @@ function SectionSelectorBar({
                 ? 'bg-surface text-text-primary !border-border'
                 : 'bg-transparent text-text-secondary hover:text-text-primary'
             )}
+            aria-disabled={!isCompressed && section.key === 'charts'}
           >
             {section.label}
           </button>
@@ -167,57 +173,52 @@ function VaultOverviewCard({
 
 function UserHoldingsCard({
   currentVault,
-  availableToDeposit,
   depositedValue,
   tokenPrice,
   isCompressed
 }: {
   currentVault: TYDaemonVault
-  availableToDeposit: bigint
   depositedValue: bigint
   tokenPrice: number
   isCompressed: boolean
 }): ReactElement {
-  const availableAmount = toNormalizedBN(availableToDeposit, currentVault.token.decimals)
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
   const depositedValueUSD = depositedAmount.normalized * tokenPrice
-  const availableValueUSD = availableAmount.normalized * tokenPrice
-
   const sections: TMetricBlock[] = [
-    {
-      key: 'available',
-      header: (
-        <MetricHeader
-          label={'Available'}
-          tooltip={'Track how much of the vault asset is already in your wallet and ready to be deposited.'}
-        />
-      ),
-      value: (
-        <span className={METRIC_VALUE_CLASS} suppressHydrationWarning>
-          {formatUSD(availableValueUSD)}
-        </span>
-      ),
-      footnote: (
-        <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
-          <RenderAmount
-            value={Number(availableAmount.normalized)}
-            symbol={currentVault.token.symbol}
-            decimals={currentVault.token.decimals}
-            shouldFormatDust
-            options={{
-              shouldDisplaySymbol: false,
-              maximumFractionDigits: Number(availableAmount.normalized) > 1000 ? 2 : 4
-            }}
-          />
-          <span className={'pl-1'}>{currentVault.token.symbol || 'tokens'}</span>
-        </p>
-      )
-    },
+    // {
+    //   key: 'available',
+    //   header: (
+    //     <MetricHeader
+    //       label={'Available'}
+    //       tooltip={'Track how much of the vault asset is already in your wallet and ready to be deposited.'}
+    //     />
+    //   ),
+    //   value: (
+    //     <span className={METRIC_VALUE_CLASS} suppressHydrationWarning>
+    //       {formatUSD(availableValueUSD)}
+    //     </span>
+    //   ),
+    //   footnote: (
+    //     <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
+    //       <RenderAmount
+    //         value={Number(availableAmount.normalized)}
+    //         symbol={currentVault.token.symbol}
+    //         decimals={currentVault.token.decimals}
+    //         shouldFormatDust
+    //         options={{
+    //           shouldDisplaySymbol: false,
+    //           maximumFractionDigits: Number(availableAmount.normalized) > 1000 ? 2 : 4
+    //         }}
+    //       />
+    //       <span className={'pl-1'}>{currentVault.token.symbol || 'tokens'}</span>
+    //     </p>
+    //   )
+    // },
     {
       key: 'deposited',
       header: (
         <MetricHeader
-          label={'Deposited'}
+          label={'Your Deposits'}
           tooltip={'Review the USD value of everything you have supplied to this vault so far.'}
         />
       ),
@@ -263,7 +264,8 @@ export function VaultDetailsHeader({
   sectionSelectorRef,
   widgetActions = [],
   widgetMode,
-  onWidgetModeChange
+  onWidgetModeChange,
+  onCompressionChange
 }: {
   currentVault: TYDaemonVault
   isCollapsibleMode?: boolean
@@ -274,14 +276,19 @@ export function VaultDetailsHeader({
   widgetActions?: WidgetActionType[]
   widgetMode?: WidgetActionType
   onWidgetModeChange?: (mode: WidgetActionType) => void
+  onCompressionChange?: (isCompressed: boolean) => void
 }): ReactElement {
   const { address } = useWeb3()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
   const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode })
 
+  useEffect(() => {
+    onCompressionChange?.(isCompressed)
+  }, [isCompressed, onCompressionChange])
+
   // Shared hook with widget - cache updates automatically when widget refetches
-  const { availableToDeposit, depositedValue } = useVaultUserData({
+  const { depositedValue } = useVaultUserData({
     vaultAddress: toAddress(currentVault.address),
     assetAddress: toAddress(currentVault.token.address),
     stakingAddress: currentVault.staking.available ? toAddress(currentVault.staking.address) : undefined,
@@ -556,7 +563,6 @@ export function VaultDetailsHeader({
       >
         <UserHoldingsCard
           currentVault={currentVault}
-          availableToDeposit={availableToDeposit}
           depositedValue={depositedValue}
           tokenPrice={tokenPrice}
           isCompressed={isCompressed}
