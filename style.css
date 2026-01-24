@@ -317,7 +317,8 @@ body {
 .tooltip .tooltiptext {
   @apply text-xs text-center invisible bg-neutral-0 text-neutral-900 absolute z-50 -right-7 opacity-0 transition-opacity;
   width: 15rem;
-  top: 130%;
+  bottom: 130%;
+  top: unset;
   margin-right: calc(-122px + 50%);
   box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
 }
@@ -334,22 +335,23 @@ body {
 .tooltip .tooltiptext::after {
   content: '';
   position: absolute;
-  bottom: 98%;
+  top: 98%;
   right: 50%;
   margin-right: -5px;
   border-width: 5px;
   border-style: solid;
   border-color: var(--color-neutral-0) transparent transparent transparent;
-  transform: rotate(180deg);
+  transform: rotate(0deg);
 }
 
-.tooltip.top .tooltiptext {
-  top: -105%;
+.tooltip.bottom .tooltiptext {
+  top: 130%;
   bottom: unset;
 }
-.tooltip.top .tooltiptext::after {
-  top: 98%;
-  transform: rotate(0deg);
+.tooltip.bottom .tooltiptext::after {
+  top: unset;
+  bottom: 98%;
+  transform: rotate(180deg);
 }
 
 /* 🔵 - Yearn Finance ******************************************************************************
