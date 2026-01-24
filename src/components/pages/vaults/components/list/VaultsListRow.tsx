@@ -13,7 +13,6 @@ import {
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import { useMediaQuery } from '@react-hookz/web'
-import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -27,7 +26,7 @@ import { IconScissors } from '@shared/icons/IconScissors'
 import { IconStablecoin } from '@shared/icons/IconStablecoin'
 import { IconStack } from '@shared/icons/IconStack'
 import { IconVolatile } from '@shared/icons/IconVolatile'
-import { cl, formatAmount, toAddress, toNormalizedBN } from '@shared/utils'
+import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
@@ -478,17 +477,7 @@ export function VaultsListRow({
                     aria-label={'Holdings'}
                   >
                     <span className={'flex size-4 items-center justify-center text-primary'}>{holdingsIcon}</span>
-                    <RenderAmount
-                      shouldHideTooltip
-                      value={holdingsValue}
-                      symbol={'USD'}
-                      decimals={0}
-                      options={{
-                        shouldCompactValue: true,
-                        maximumFractionDigits: 2,
-                        minimumFractionDigits: 2
-                      }}
-                    />
+                    {formatTvlDisplay(holdingsValue)}
                   </span>
                 ) : null}
               </div>
@@ -514,20 +503,7 @@ export function VaultsListRow({
                 </span>
                 {mobileSecondaryMetric === 'holdings' ? (
                   <span className={'text-lg font-semibold text-text-primary font-number'}>
-                    {showHoldingsValue ? (
-                      <RenderAmount
-                        value={holdingsValue}
-                        symbol={'USD'}
-                        decimals={0}
-                        options={{
-                          shouldCompactValue: true,
-                          maximumFractionDigits: 2,
-                          minimumFractionDigits: 2
-                        }}
-                      />
-                    ) : (
-                      '—'
-                    )}
+                    {showHoldingsValue ? formatTvlDisplay(holdingsValue) : '—'}
                   </span>
                 ) : (
                   <VaultTVL

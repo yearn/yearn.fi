@@ -5,12 +5,11 @@ import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { useMediaQuery } from '@react-hookz/web'
-import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconClose } from '@shared/icons/IconClose'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { cl, formatPercent, toAddress } from '@shared/utils'
+import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import { Fragment, type ReactElement, type ReactNode, useEffect, useState } from 'react'
@@ -195,16 +194,7 @@ function DesktopCompareGrid({
           <MetricLabel label={'TVL'} sublabel={'Total value locked'} onMouseEnter={(): void => setActiveColumn(null)} />
           {vaults.map((vault, index) => (
             <MetricValue key={`tvl-${getVaultKey(vault)}`} onMouseEnter={(): void => setActiveColumn(index)}>
-              <RenderAmount
-                value={vault.tvl?.tvl}
-                symbol={'USD'}
-                decimals={0}
-                options={{
-                  shouldCompactValue: true,
-                  maximumFractionDigits: 2,
-                  minimumFractionDigits: 0
-                }}
-              />
+              <span className={'font-semibold'}>{formatTvlDisplay(vault.tvl?.tvl ?? 0)}</span>
             </MetricValue>
           ))}
 
