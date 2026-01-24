@@ -2,8 +2,10 @@ import { useThemePreference } from '@hooks/useThemePreference'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
+import { WidgetTabs } from '@pages/vaults/components/widget'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import type { WidgetActionType } from '@pages/vaults/types'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
@@ -34,11 +36,60 @@ import { cl, formatUSD, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
-import type { ReactElement } from 'react'
+import type { ReactElement, Ref } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
-function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+function SectionSelectorBar({
+  activeSectionKey,
+  onSelectSection,
+  sectionSelectorRef,
+  sectionTabs,
+  isCompressed
+}: {
+  activeSectionKey?: string
+  onSelectSection?: (key: string) => void
+  sectionSelectorRef?: Ref<HTMLDivElement>
+  sectionTabs: { key: string; label: string }[]
+  isCompressed: boolean
+}): ReactElement {
+  return (
+    <div className={'flex flex-wrap gap-2 md:gap-3 w-full'} ref={sectionSelectorRef}>
+      <div
+        className={cl(
+          'flex w-full flex-wrap justify-between gap-2 rounded-b-lg border-x border-b border-border bg-surface-secondary p-1',
+          isCompressed ? 'border' : ''
+        )}
+      >
+        {sectionTabs.map((section) => (
+          <button
+            key={section.key}
+            type={'button'}
+            onClick={(): void => onSelectSection?.(section.key)}
+            className={cl(
+              'flex-1 min-w-[120px] rounded-md px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
+              'border border-transparent focus-visible:outline-none focus-visible:ring-0',
+              'min-h-[36px] active:scale-[0.98]',
+              activeSectionKey === section.key
+                ? 'bg-surface text-text-primary !border-border'
+                : 'bg-transparent text-text-secondary hover:text-text-primary'
+            )}
+          >
+            {section.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function VaultOverviewCard({
+  currentVault,
+  isCompressed
+}: {
+  currentVault: TYDaemonVault
+  isCompressed: boolean
+}): ReactElement {
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
   const listKind = deriveListKind(currentVault)
   const isFactoryVault = listKind === 'factory'
@@ -104,19 +155,28 @@ function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): R
     }
   ]
 
-  return <MetricsCard items={metrics} className={'md:rounded-b-none'} footnoteDisplay={'tooltip'} />
+  return (
+    <MetricsCard
+      items={metrics}
+      className={'md:rounded-b-none'}
+      footnoteDisplay={'tooltip'}
+      isCompressed={isCompressed}
+    />
+  )
 }
 
 function UserHoldingsCard({
   currentVault,
   availableToDeposit,
   depositedValue,
-  tokenPrice
+  tokenPrice,
+  isCompressed
 }: {
   currentVault: TYDaemonVault
   availableToDeposit: bigint
   depositedValue: bigint
   tokenPrice: number
+  isCompressed: boolean
 }): ReactElement {
   const availableAmount = toNormalizedBN(availableToDeposit, currentVault.token.decimals)
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
@@ -184,15 +244,36 @@ function UserHoldingsCard({
     }
   ]
 
-  return <MetricsCard items={sections} className={'md:rounded-b-none'} footnoteDisplay={'tooltip'} />
+  return (
+    <MetricsCard
+      items={sections}
+      className={'md:rounded-b-none'}
+      footnoteDisplay={'tooltip'}
+      isCompressed={isCompressed}
+    />
+  )
 }
 
 export function VaultDetailsHeader({
   currentVault,
-  isCollapsibleMode = true
+  isCollapsibleMode = true,
+  sectionTabs = [],
+  activeSectionKey,
+  onSelectSection,
+  sectionSelectorRef,
+  widgetActions = [],
+  widgetMode,
+  onWidgetModeChange
 }: {
   currentVault: TYDaemonVault
   isCollapsibleMode?: boolean
+  sectionTabs?: { key: string; label: string }[]
+  activeSectionKey?: string
+  onSelectSection?: (key: string) => void
+  sectionSelectorRef?: Ref<HTMLDivElement>
+  widgetActions?: WidgetActionType[]
+  widgetMode?: WidgetActionType
+  onWidgetModeChange?: (mode: WidgetActionType) => void
 }): ReactElement {
   const { address } = useWeb3()
   const themePreference = useThemePreference()
@@ -300,7 +381,7 @@ export function VaultDetailsHeader({
   }, [isCompressed])
 
   return (
-    <div className={'grid w-full grid-cols-1 gap-6 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
+    <div className={'grid w-full grid-cols-1 gap-y-0 gap-x-6 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
       <div className={'hidden md:flex items-center gap-2 text-sm text-text-secondary md:col-span-20 px-1'}>
         <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
           {'Home'}
@@ -314,7 +395,7 @@ export function VaultDetailsHeader({
       </div>
       <div
         className={cl(
-          'flex flex-col gap-1 px-1',
+          'flex flex-col gap-1 px-1 pt-4',
           isCompressed ? 'md:col-span-5 md:row-start-2 md:justify-center' : 'md:col-span-20 md:row-start-2'
         )}
       >
@@ -449,12 +530,27 @@ export function VaultDetailsHeader({
       </div>
 
       <div
-        className={cl(isCompressed ? 'md:col-start-6 md:col-span-8 md:row-start-2' : 'md:col-span-13 md:row-start-3')}
+        className={cl(
+          'pt-4',
+          isCompressed ? 'md:col-start-6 md:col-span-8 md:row-start-2' : 'md:col-span-13 md:row-start-3'
+        )}
       >
-        <VaultOverviewCard currentVault={currentVault} />
+        <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
       </div>
+      {sectionTabs.length > 0 ? (
+        <div className={cl('md:col-span-13 w-full', isCompressed ? 'md:row-start-3' : 'md:row-start-4')}>
+          <SectionSelectorBar
+            activeSectionKey={activeSectionKey}
+            onSelectSection={onSelectSection}
+            sectionSelectorRef={sectionSelectorRef}
+            sectionTabs={sectionTabs}
+            isCompressed={isCompressed}
+          />
+        </div>
+      ) : null}
       <div
         className={cl(
+          'pt-4',
           isCompressed ? 'md:col-span-7 md:col-start-14 md:row-start-2' : 'md:col-span-7 md:col-start-14 md:row-start-3'
         )}
       >
@@ -463,8 +559,14 @@ export function VaultDetailsHeader({
           availableToDeposit={availableToDeposit}
           depositedValue={depositedValue}
           tokenPrice={tokenPrice}
+          isCompressed={isCompressed}
         />
       </div>
+      {widgetActions.length > 0 && widgetMode && onWidgetModeChange ? (
+        <div className={cl('md:col-span-7 md:col-start-14 w-full', isCompressed ? 'md:row-start-3' : 'md:row-start-4')}>
+          <WidgetTabs actions={widgetActions} activeAction={widgetMode} onActionChange={onWidgetModeChange} />
+        </div>
+      ) : null}
     </div>
   )
 }

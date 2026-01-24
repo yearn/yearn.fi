@@ -101,11 +101,14 @@ function Index(): ReactElement | null {
     charts: 'Performance'
   }
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
-  const compressedHeaderHeight = 126
+  const compressedHeaderHeight = 140
   const [measuredHeaderHeight, setMeasuredHeaderHeight] = useState(compressedHeaderHeight)
   const [measuredSelectorHeight, setMeasuredSelectorHeight] = useState(0)
   const [baseHeaderOffset, setBaseHeaderOffset] = useState(resolveHeaderOffset)
   const sectionScrollOffset = Math.round(baseHeaderOffset + measuredHeaderHeight + measuredSelectorHeight)
+  const [isProgrammaticScroll, setIsProgrammaticScroll] = useState(false)
+  const scrollTargetRef = useRef<number | null>(null)
+  const scrollTimeoutRef = useRef<number | null>(null)
 
   // Reset state when vault changes
   useEffect(() => {
@@ -216,6 +219,11 @@ function Index(): ReactElement | null {
     }
     return [WidgetActionType.Deposit, WidgetActionType.Withdraw]
   }, [currentVault?.migration?.available])
+  const [widgetMode, setWidgetMode] = useState<WidgetActionType>(widgetActions[0])
+
+  useEffect(() => {
+    setWidgetMode(widgetActions[0])
+  }, [widgetActions])
 
   const sections = useMemo(() => {
     if (!currentVault || !yDaemonBaseUri) {
@@ -264,6 +272,10 @@ function Index(): ReactElement | null {
   }, [chainId, currentVault, sectionRefs, yDaemonBaseUri])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
+  const sectionTabs = renderableSections.map((section) => ({
+    key: section.key,
+    label: collapsibleTitles[section.key]
+  }))
   const scrollSpySections = useMemo(
     () =>
       renderableSections.map((section) => ({
@@ -278,7 +290,7 @@ function Index(): ReactElement | null {
     activeKey: activeSection,
     onActiveKeyChange: setActiveSection,
     offsetTop: sectionScrollOffset,
-    enabled: renderableSections.length > 0
+    enabled: renderableSections.length > 0 && !isProgrammaticScroll
   })
 
   useEffect(() => {
@@ -286,6 +298,30 @@ function Index(): ReactElement | null {
       setActiveSection(renderableSections[0].key)
     }
   }, [renderableSections, activeSection])
+
+  useEffect(() => {
+    if (!isProgrammaticScroll || typeof window === 'undefined') return
+
+    const handleScroll = (): void => {
+      const target = scrollTargetRef.current
+      if (target === null) return
+      if (Math.abs(window.scrollY - target) <= 2) {
+        scrollTargetRef.current = null
+        setIsProgrammaticScroll(false)
+        if (scrollTimeoutRef.current) {
+          window.clearTimeout(scrollTimeoutRef.current)
+          scrollTimeoutRef.current = null
+        }
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+
+    return (): void => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [isProgrammaticScroll])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -361,6 +397,17 @@ function Index(): ReactElement | null {
     const top = element.getBoundingClientRect().top + window.scrollY - scrollOffset
     const targetTop = key === 'charts' ? Math.max(top, 1) : top
 
+    setIsProgrammaticScroll(true)
+    scrollTargetRef.current = targetTop
+    if (scrollTimeoutRef.current) {
+      window.clearTimeout(scrollTimeoutRef.current)
+    }
+    scrollTimeoutRef.current = window.setTimeout(() => {
+      scrollTargetRef.current = null
+      setIsProgrammaticScroll(false)
+      scrollTimeoutRef.current = null
+    }, 1200)
+
     window.scrollTo({ top: targetTop, behavior: 'smooth' })
   }
 
@@ -404,7 +451,6 @@ function Index(): ReactElement | null {
   // Calculate sticky positions for the collapsible header (desktop only)
   // On mobile, natural scroll behavior is used
   const headerStickyTop = 'var(--header-height)'
-  const nextSticky = `calc(var(--header-height) + ${measuredHeaderHeight}px)`
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
@@ -419,7 +465,17 @@ function Index(): ReactElement | null {
           style={{ top: headerStickyTop }}
           ref={headerRef}
         >
-          <VaultDetailsHeader currentVault={currentVault} isCollapsibleMode={isCollapsibleMode} />
+          <VaultDetailsHeader
+            currentVault={currentVault}
+            isCollapsibleMode={isCollapsibleMode}
+            sectionTabs={sectionTabs}
+            activeSectionKey={activeSection}
+            onSelectSection={(key): void => handleSelectSection(key as SectionKey)}
+            sectionSelectorRef={sectionSelectorRef}
+            widgetActions={widgetActions}
+            widgetMode={widgetMode}
+            onWidgetModeChange={setWidgetMode}
+          />
         </header>
 
         {/* Mobile: Compact Header */}
@@ -548,8 +604,9 @@ function Index(): ReactElement | null {
         {/* Main Content Grid - Responsive layout */}
         <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div
-            className={cl('order-1 md:order-2', 'md:col-span-7 md:col-start-14 md:sticky md:h-fit')}
-            style={{ top: nextSticky }}
+            className={cl('order-1 md:order-2', 'md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-4')}
+            // style={{ top: nextSticky }}
+            style={{ top: '233px' }}
           >
             <Widget
               vaultAddress={currentVault.address}
@@ -557,40 +614,14 @@ function Index(): ReactElement | null {
               gaugeAddress={currentVault.staking.address}
               actions={widgetActions}
               chainId={chainId}
+              mode={widgetMode}
+              onModeChange={setWidgetMode}
+              showTabs={false}
             />
           </div>
 
           {/* Desktop sections - Hidden on mobile */}
-          <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 pb-4'}>
-            {renderableSections.length > 0 ? (
-              <div className={'w-full sticky z-30'} style={{ top: nextSticky }} ref={sectionSelectorRef}>
-                <div className={cl('flex flex-wrap gap-2 md:gap-3')}>
-                  <div
-                    className={
-                      'flex w-full flex-wrap justify-between border border-border gap-2 rounded-b-lg bg-surface-secondary p-1'
-                    }
-                  >
-                    {renderableSections.map((section) => (
-                      <button
-                        key={section.key}
-                        type={'button'}
-                        onClick={(): void => handleSelectSection(section.key)}
-                        className={cl(
-                          'flex-1 min-w-[120px] rounded-md  px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
-                          'min-h-[36px] active:scale-[0.98]',
-                          activeSection === section.key
-                            ? 'bg-surface text-text-primary border border-border'
-                            : 'bg-transparent text-text-secondary hover:text-text-primary'
-                        )}
-                      >
-                        {collapsibleTitles[section.key]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
+          <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
             {renderableSections.map((section) => {
               const isCollapsible =
                 section.key === 'about' ||
