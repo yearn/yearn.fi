@@ -2,7 +2,7 @@ import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import type { TAddress } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { type FC, useMemo, useState } from 'react'
+import { type FC, useEffect, useMemo, useState } from 'react'
 import { WidgetDeposit } from './deposit'
 import { WidgetMigrate } from './migrate'
 import { WidgetWithdraw } from './withdraw'
@@ -14,6 +14,9 @@ interface Props {
   actions: ActionType[]
   chainId: number
   handleSuccess?: () => void
+  mode?: ActionType
+  onModeChange?: (mode: ActionType) => void
+  showTabs?: boolean
 }
 
 const getActionLabel = (action: ActionType): string => {
@@ -27,12 +30,30 @@ const getActionLabel = (action: ActionType): string => {
   }
 }
 
-export const Widget: FC<Props> = ({ currentVault, vaultAddress, gaugeAddress, actions, chainId, handleSuccess }) => {
-  const [mode, setMode] = useState<ActionType>(actions[0])
+export const Widget: FC<Props> = ({
+  currentVault,
+  vaultAddress,
+  gaugeAddress,
+  actions,
+  chainId,
+  handleSuccess,
+  mode,
+  onModeChange,
+  showTabs = true
+}) => {
+  const [internalMode, setInternalMode] = useState<ActionType>(actions[0])
+  const currentMode = mode ?? internalMode
+  const setMode = onModeChange ?? setInternalMode
   const assetToken = currentVault.token.address
 
+  useEffect(() => {
+    if (mode === undefined) {
+      setInternalMode(actions[0])
+    }
+  }, [actions, mode])
+
   const SelectedComponent = useMemo(() => {
-    switch (mode) {
+    switch (currentMode) {
       case ActionType.Deposit:
         return (
           <WidgetDeposit
@@ -72,20 +93,31 @@ export const Widget: FC<Props> = ({ currentVault, vaultAddress, gaugeAddress, ac
           />
         )
     }
-  }, [mode, vaultAddress, gaugeAddress, currentVault, assetToken, chainId, handleSuccess])
+  }, [currentMode, vaultAddress, gaugeAddress, currentVault, assetToken, chainId, handleSuccess])
 
   return (
     <div className="flex flex-col gap-0 w-full h-full">
       <div className="bg-app rounded-b-lg overflow-hidden relative w-full min-w-0">
-        <div className="bg-surface-secondary border-b border-x border-border rounded-b-lg flex min-h-9 mb-4 p-1">
-          {actions.map((action) => (
-            <TabButton key={action} isActive={mode === action} onClick={() => setMode(action)}>
-              {getActionLabel(action)}
-            </TabButton>
-          ))}
-        </div>
+        {showTabs ? <WidgetTabs actions={actions} activeAction={currentMode} onActionChange={setMode} /> : null}
         <div className="bg-surface">{SelectedComponent}</div>
       </div>
+    </div>
+  )
+}
+
+export const WidgetTabs: FC<{
+  actions: ActionType[]
+  activeAction: ActionType
+  onActionChange: (action: ActionType) => void
+  className?: string
+}> = ({ actions, activeAction, onActionChange, className }) => {
+  return (
+    <div className={cl('bg-surface-secondary border border-border rounded-b-lg gap-2 flex min-h-9 p-1', className)}>
+      {actions.map((action) => (
+        <TabButton key={action} isActive={activeAction === action} onClick={() => onActionChange(action)}>
+          {getActionLabel(action)}
+        </TabButton>
+      ))}
     </div>
   )
 }
@@ -102,10 +134,11 @@ const TabButton: FC<{
       onClick={onClick}
       className={cl(
         'flex-1 px-3 py-3 md:py-2.5 text-sm min-h-9 md:text-xs font-semibold transition-all duration-200',
+        'border border-transparent focus-visible:outline-none focus-visible:ring-0',
         // 'min-h-[44px] active:scale-[0.98]',
         'rounded-md ',
         isActive
-          ? 'bg-surface text-text-primary border border-border'
+          ? 'bg-surface text-text-primary !border-border'
           : 'bg-surface-secondary text-text-secondary hover:text-text-primary',
         className
       )}

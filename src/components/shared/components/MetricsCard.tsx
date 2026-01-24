@@ -89,17 +89,20 @@ export function MetricsCard({
   footnoteDisplay = 'inline',
   hideFootnotes = false,
   items,
-  className
+  className,
+  isCompressed = false
 }: {
   items: TMetricBlock[]
   footnoteDisplay?: 'inline' | 'tooltip'
   hideFootnotes?: boolean
   className?: string
+  isCompressed?: boolean
 }): ReactElement {
   return (
     <div
       className={cl(
-        'rounded-lg border border-border border-t bg-surface text-text-primary backdrop-blur-sm',
+        'rounded-lg  bg-surface text-text-primary',
+        isCompressed ? 'border-t border-x border-border' : 'border border-border',
         className
       )}
     >
