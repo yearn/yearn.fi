@@ -168,16 +168,11 @@ body {
     'Source Code Pro Fallback', sans-serif;
   /* Mobile-optimized line height for readability */
   line-height: 1.5;
-  /* Prevent horizontal overflow on all devices */
-  overflow-x: hidden;
 }
 
 #root {
   min-height: 100vh;
   background-color: var(--color-app);
-  /* Prevent horizontal overflow on all devices */
-  overflow-x: hidden;
-  max-width: 100vw;
 }
 
 @layer utilities {
@@ -231,6 +226,15 @@ body {
   }
 
   @media (max-width: 767px) {
+    body {
+      overflow-x: hidden;
+    }
+
+    #root {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
     .truncate-safe {
       overflow: visible;
       text-overflow: clip;
@@ -807,4 +811,3 @@ input[type='number'] {
     opacity: 0.7;
   }
 }
-
