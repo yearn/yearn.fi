@@ -2,6 +2,7 @@ import { useThemePreference } from '@hooks/useThemePreference'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
+import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
@@ -129,20 +130,7 @@ function VaultOverviewCard({
     {
       key: 'tvl',
       header: <MetricHeader label={'TVL'} tooltip={'Total value currently deposited into this vault'} />,
-      value: (
-        <span className={METRIC_VALUE_CLASS}>
-          <RenderAmount
-            value={currentVault.tvl?.tvl || 0}
-            symbol={'USD'}
-            decimals={0}
-            options={{
-              shouldCompactValue: true,
-              maximumFractionDigits: 2,
-              minimumFractionDigits: 0
-            }}
-          />
-        </span>
-      ),
+      value: <VaultTVL currentVault={currentVault} valueClassName={METRIC_VALUE_CLASS} />,
       footnote: (
         <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
           <RenderAmount
