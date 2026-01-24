@@ -1,12 +1,11 @@
 import Link from '@components/Link'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
-import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconClose } from '@shared/icons/IconClose'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { cl, formatPercent, isZero, toAddress } from '@shared/utils'
+import { cl, formatApyDisplay, formatPercent, formatTvlDisplay, isZero, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement, ReactNode } from 'react'
@@ -53,7 +52,7 @@ function renderPercentValue(value: number | undefined): ReactElement {
   if (value === undefined || Number.isNaN(value)) {
     return <span className={'text-text-secondary'}>{'—'}</span>
   }
-  return <RenderAmount value={value} symbol={'percent'} decimals={6} />
+  return <span className={'font-semibold'}>{formatApyDisplay(value)}</span>
 }
 
 function resolveThirtyDayApy(vault: TYDaemonVault): number {
@@ -143,16 +142,7 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
         </MetricRow>
 
         <MetricRow label={'TVL'} sublabel={'Total value locked'}>
-          <RenderAmount
-            value={vault.tvl?.tvl}
-            symbol={'USD'}
-            decimals={0}
-            options={{
-              shouldCompactValue: true,
-              maximumFractionDigits: 2,
-              minimumFractionDigits: 0
-            }}
-          />
+          <span className={'font-semibold'}>{formatTvlDisplay(vault.tvl?.tvl ?? 0)}</span>
         </MetricRow>
 
         <MetricRow label={'Fees'} sublabel={'Mgmt / Perf'}>

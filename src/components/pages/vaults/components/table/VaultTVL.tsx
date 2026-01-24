@@ -1,6 +1,6 @@
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { Tooltip } from '@shared/components/Tooltip'
-import { cl, toNormalizedBN } from '@shared/utils'
+import { cl, formatTvlDisplay, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 
@@ -41,17 +41,8 @@ export function VaultTVL({
   )
 
   const value = (
-    <span className={cl('yearn--table-data-section-item-value', valueClassName)}>
-      <RenderAmount
-        value={tvlValue}
-        symbol={'USD'}
-        decimals={0}
-        options={{
-          shouldCompactValue: true,
-          maximumFractionDigits: 2,
-          minimumFractionDigits: 0
-        }}
-      />
+    <span className={cl('yearn--table-data-section-item-value font-semibold', valueClassName)}>
+      {formatTvlDisplay(tvlValue)}
     </span>
   )
 
