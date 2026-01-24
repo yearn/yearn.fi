@@ -1,6 +1,5 @@
-import { RenderAmount } from '@shared/components/RenderAmount'
 import { Tooltip } from '@shared/components/Tooltip'
-import { formatAmount } from '@shared/utils'
+import { formatAmount, formatApyDisplay } from '@shared/utils'
 
 import type { FC, ReactElement } from 'react'
 
@@ -33,9 +32,7 @@ export function APYTooltipContent({
           className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'}
         >
           <p>{'Base APY '}</p>
-          <span className={'font-number'}>
-            <RenderAmount shouldHideTooltip value={baseAPY} symbol={'percent'} decimals={6} />
-          </span>
+          <span className={'font-number'}>{formatApyDisplay(baseAPY)}</span>
         </div>
 
         {rewardsAPY ? (
@@ -43,9 +40,7 @@ export function APYTooltipContent({
             className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'}
           >
             <p>{'Rewards APR '}</p>
-            <span className={'font-number'}>
-              <RenderAmount shouldHideTooltip value={rewardsAPY} symbol={'percent'} decimals={6} />
-            </span>
+            <span className={'font-number'}>{formatApyDisplay(rewardsAPY)}</span>
           </div>
         ) : null}
 
@@ -67,13 +62,9 @@ export function APYTooltipContent({
           >
             <p>{'Rewards APR '}</p>
             <div>
-              <span className={'font-number'}>
-                <RenderAmount shouldHideTooltip value={range[0]} symbol={'percent'} decimals={6} />
-              </span>
+              <span className={'font-number'}>{formatApyDisplay(range[0])}</span>
               &nbsp;&rarr;&nbsp;
-              <span className={'font-number'}>
-                <RenderAmount shouldHideTooltip value={range[1]} symbol={'percent'} decimals={6} />
-              </span>
+              <span className={'font-number'}>{formatApyDisplay(range[1])}</span>
             </div>
           </div>
         ) : null}

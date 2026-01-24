@@ -1,11 +1,10 @@
 import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
 import { getFixedTermMarkets, type TFixedTermMarket } from '@pages/vaults/constants/fixedTermMarkets'
 import type { TVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import { RenderAmount } from '@shared/components/RenderAmount'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconPendle } from '@shared/icons/IconPendle'
 import { IconSpectra } from '@shared/icons/IconSpectra'
-import { formatAmount, isZero } from '@shared/utils'
+import { formatAmount, formatApyDisplay, isZero } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment } from 'react'
@@ -287,7 +286,7 @@ export function resolveForwardApyDisplayConfig({
     const katanaEstApr = data.katanaEstApr ?? 0
     const displayConfig: TApyDisplayConfig = {
       fixedRateIndicator,
-      value: <RenderAmount value={katanaEstApr} symbol={'percent'} decimals={6} />,
+      value: formatApyDisplay(katanaEstApr),
       shouldRender: true,
       fallbackLabel: 'NEW',
       tooltip: tooltipConfig,
@@ -311,9 +310,7 @@ export function resolveForwardApyDisplayConfig({
 
   // No forward APY (or Katana with no extras)
   if (data.mode === 'noForward' || currentVault.chainID === KATANA_CHAIN_ID) {
-    const hasZeroAPY = isZero(data.netApr) || Number((data.netApr || 0).toFixed(2)) === 0
     const boostedAPY = data.rewardsAprSum + data.netApr
-    const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 
     if (data.rewardsAprSum > 0) {
       const modalContent = (
@@ -333,7 +330,7 @@ export function resolveForwardApyDisplayConfig({
         value: (
           <>
             {'⚡️ '}
-            <RenderAmount shouldHideTooltip={hasZeroBoostedAPY} value={boostedAPY} symbol={'percent'} decimals={6} />
+            {formatApyDisplay(boostedAPY)}
           </>
         ),
         shouldRender: shouldRenderForward,
@@ -361,7 +358,7 @@ export function resolveForwardApyDisplayConfig({
     const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
     const displayConfig: TApyDisplayConfig = {
       fixedRateIndicator,
-      value: <RenderAmount value={data.netApr} shouldHideTooltip={hasZeroAPY} symbol={'percent'} decimals={6} />,
+      value: formatApyDisplay(data.netApr),
       shouldRender: shouldRenderForward,
       fallbackLabel: 'NEW',
       tooltip: tooltipConfig,
@@ -380,9 +377,7 @@ export function resolveForwardApyDisplayConfig({
     const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
     const displayConfig: TApyDisplayConfig = {
       fixedRateIndicator,
-      value: (
-        <RenderAmount shouldHideTooltip value={currentVault.apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
-      ),
+      value: formatApyDisplay(currentVault.apr.forwardAPR.netAPR),
       shouldRender: shouldRenderForward,
       fallbackLabel: 'NEW',
       tooltip: tooltipConfig,
@@ -403,7 +398,6 @@ export function resolveForwardApyDisplayConfig({
     const boostedAPY = isSourceVeYFI
       ? (veYFIRange?.[0] || 0) + data.baseForwardApr
       : data.rewardsAprSum + data.baseForwardApr
-    const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0
 
     const modalContent = (
       <APYTooltipContent
@@ -425,12 +419,12 @@ export function resolveForwardApyDisplayConfig({
           {'⚡️ '}
           {estAPYRange ? (
             <Fragment>
-              <RenderAmount shouldHideTooltip value={estAPYRange[0]} symbol={'percent'} decimals={6} />
+              {formatApyDisplay(estAPYRange[0])}
               &nbsp;&rarr;&nbsp;
-              <RenderAmount shouldHideTooltip value={estAPYRange[1]} symbol={'percent'} decimals={6} />
+              {formatApyDisplay(estAPYRange[1])}
             </Fragment>
           ) : (
-            <RenderAmount shouldHideTooltip={hasZeroBoostedAPY} value={boostedAPY} symbol={'percent'} decimals={6} />
+            formatApyDisplay(boostedAPY)
           )}
         </>
       ),
@@ -465,7 +459,7 @@ export function resolveForwardApyDisplayConfig({
       value: (
         <>
           {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
-          <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
+          {formatApyDisplay(data.baseForwardApr)}
         </>
       ),
       shouldRender: shouldRenderForward,
@@ -481,7 +475,6 @@ export function resolveForwardApyDisplayConfig({
   }
 
   // Fallback historical APY - This will always be reached for any unhandled case
-  const hasZeroAPY = isZero(data.netApr) || Number((data.netApr || 0).toFixed(2)) === 0
   const tooltipMode = allowTooltip ? resolveTooltipMode(false, Boolean(tooltipContent)) : 'none'
   const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
   const displayConfig: TApyDisplayConfig = {
@@ -489,7 +482,7 @@ export function resolveForwardApyDisplayConfig({
     value: (
       <>
         {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
-        <RenderAmount shouldHideTooltip={hasZeroAPY} value={data.netApr} symbol={'percent'} decimals={6} />
+        {formatApyDisplay(data.netApr)}
       </>
     ),
     shouldRender: shouldRenderForward && shouldRenderHistorical,
@@ -567,7 +560,6 @@ export function resolveHistoricalApyDisplayConfig({
   }
   const shouldRenderValue = shouldUseKatanaAPRs ? hasKatanaApr || standardShouldRender : standardShouldRender
   const fallbackLabel = shouldUseKatanaAPRs ? '-' : 'NEW'
-  const hasZeroAPY = isZero(displayValue || 0) || Number((displayValue || 0).toFixed(2)) === 0
   const allowTooltip = allowTooltipBase && shouldRenderValue
 
   const katanaExtras = data.katanaExtras
@@ -605,7 +597,7 @@ export function resolveHistoricalApyDisplayConfig({
   const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
 
   const displayConfig: TApyDisplayConfig = {
-    value: <RenderAmount shouldHideTooltip={hasZeroAPY} value={displayValue || 0} symbol={'percent'} decimals={6} />,
+    value: formatApyDisplay(displayValue || 0),
     shouldRender: shouldRenderValue,
     fallbackLabel,
     tooltip: tooltipConfig,
@@ -641,9 +633,7 @@ export function resolveHistoricalApyDisplayConfig({
           className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'}
         >
           <p>{'30 Day APY '}</p>
-          <span className={'font-number'}>
-            <RenderAmount shouldHideTooltip value={displayValue || 0} symbol={'percent'} decimals={6} />
-          </span>
+          <span className={'font-number'}>{formatApyDisplay(displayValue || 0)}</span>
         </div>
       </div>
     )

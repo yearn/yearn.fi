@@ -1,9 +1,8 @@
-import { RenderAmount } from '@shared/components/RenderAmount'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TNormalizedBN } from '@shared/types'
-import { cl, toNormalizedBN } from '@shared/utils'
+import { cl, formatTvlDisplay, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
@@ -61,25 +60,12 @@ export function VaultHoldingsAmount({
     <div className={'flex flex-col items-end pt-0 text-right'}>
       <p
         className={cl(
-          'yearn--table-data-section-item-value',
+          'yearn--table-data-section-item-value font-semibold',
           hasBalance ? 'text-text-primary' : 'text-text-tertiary',
           valueClassName
         )}
       >
-        {shouldShowDash ? (
-          '-'
-        ) : (
-          <RenderAmount
-            value={isDusty ? 0 : value}
-            symbol={'USD'}
-            decimals={0}
-            options={{
-              shouldCompactValue: true,
-              maximumFractionDigits: 2,
-              minimumFractionDigits: 2
-            }}
-          />
-        )}
+        {shouldShowDash ? '-' : formatTvlDisplay(isDusty ? 0 : value)}
       </p>
       {/* <small
         className={cl(

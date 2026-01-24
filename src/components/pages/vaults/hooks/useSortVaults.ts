@@ -1,7 +1,7 @@
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TSortDirection } from '@shared/types'
-import { toAddress, toNormalizedBN } from '@shared/utils'
+import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { getVaultName, numberSort, stringSort } from '@shared/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy, TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -64,19 +64,23 @@ export function useSortVaults(
         )
       case 'estAPY':
         return vaultList.toSorted((a, b): number =>
-          numberSort({
-            a: calculateVaultEstimatedAPY(a, katanaAprs),
-            b: calculateVaultEstimatedAPY(b, katanaAprs),
+          sortWithFallback(
+            normalizeApyDisplayValue(calculateVaultEstimatedAPY(a, katanaAprs)),
+            normalizeApyDisplayValue(calculateVaultEstimatedAPY(b, katanaAprs)),
+            calculateVaultEstimatedAPY(a, katanaAprs),
+            calculateVaultEstimatedAPY(b, katanaAprs),
             sortDirection
-          })
+          )
         )
       case 'APY':
         return vaultList.toSorted((a, b): number =>
-          numberSort({
-            a: a.apr?.netAPR || 0,
-            b: b.apr?.netAPR || 0,
+          sortWithFallback(
+            normalizeApyDisplayValue(a.apr?.netAPR || 0),
+            normalizeApyDisplayValue(b.apr?.netAPR || 0),
+            a.apr?.netAPR || 0,
+            b.apr?.netAPR || 0,
             sortDirection
-          })
+          )
         )
       case 'tvl':
         return vaultList.toSorted((a, b): number => numberSort({ a: a.tvl.tvl, b: b.tvl.tvl, sortDirection }))
@@ -135,4 +139,18 @@ export function useSortVaults(
   }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, katanaAprs, getBalance, getPrice])
 
   return sortedVaults
+}
+
+function sortWithFallback(
+  displayA: number,
+  displayB: number,
+  rawA: number,
+  rawB: number,
+  sortDirection: TSortDirection
+): number {
+  const displaySort = numberSort({ a: displayA, b: displayB, sortDirection })
+  if (displaySort !== 0) {
+    return displaySort
+  }
+  return numberSort({ a: rawA, b: rawB, sortDirection })
 }
