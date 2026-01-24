@@ -26,6 +26,25 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { useDevFlags } from '@/contexts/useDevFlags'
 
+const resolveHeaderOffset = (): number => {
+  if (typeof window === 'undefined') return 0
+  const root = document.documentElement
+  const styles = getComputedStyle(root)
+  const rawValue = styles.getPropertyValue('--header-height').trim()
+  if (!rawValue) return 0
+
+  const rootFontSize = Number.parseFloat(styles.fontSize || '16') || 16
+  let nextOffset = Number.parseFloat(rawValue)
+
+  if (rawValue.endsWith('rem')) {
+    nextOffset *= rootFontSize
+  } else if (rawValue.endsWith('vh')) {
+    nextOffset = (window.innerHeight * nextOffset) / 100
+  }
+
+  return Number.isNaN(nextOffset) ? 0 : nextOffset
+}
+
 function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
   const { headerDisplayMode } = useDevFlags()
@@ -51,6 +70,7 @@ function Index(): ReactElement | null {
   const [isMobileDetailsExpanded, setIsMobileDetailsExpanded] = useState(false)
   const detailsRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement | null>(null)
+  const sectionSelectorRef = useRef<HTMLDivElement>(null)
   const chartsRef = useRef<HTMLDivElement>(null)
   const aboutRef = useRef<HTMLDivElement>(null)
   const riskRef = useRef<HTMLDivElement>(null)
@@ -81,8 +101,11 @@ function Index(): ReactElement | null {
     charts: 'Performance'
   }
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
-  const sectionScrollOffset = 275
   const compressedHeaderHeight = 126
+  const [measuredHeaderHeight, setMeasuredHeaderHeight] = useState(compressedHeaderHeight)
+  const [measuredSelectorHeight, setMeasuredSelectorHeight] = useState(0)
+  const [baseHeaderOffset, setBaseHeaderOffset] = useState(resolveHeaderOffset)
+  const sectionScrollOffset = Math.round(baseHeaderOffset + measuredHeaderHeight + measuredSelectorHeight)
 
   // Reset state when vault changes
   useEffect(() => {
@@ -264,16 +287,77 @@ function Index(): ReactElement | null {
     }
   }, [renderableSections, activeSection])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handleResize = (): void => {
+      const nextOffset = resolveHeaderOffset()
+      if (nextOffset) {
+        setBaseHeaderOffset((prev) => (Math.abs(prev - nextOffset) > 0.5 ? nextOffset : prev))
+      }
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return (): void => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
+    const element = headerRef.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+
+    let frame = 0
+    const updateHeight = (): void => {
+      if (frame) cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const nextHeight = element.getBoundingClientRect().height
+        setMeasuredHeaderHeight((prev) => (Math.abs(prev - nextHeight) > 1 ? nextHeight : prev))
+      })
+    }
+
+    updateHeight()
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(element)
+
+    return (): void => {
+      if (frame) cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!renderableSections.length) {
+      setMeasuredSelectorHeight(0)
+      return
+    }
+
+    const element = sectionSelectorRef.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+
+    let frame = 0
+    const updateHeight = (): void => {
+      if (frame) cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const nextHeight = element.getBoundingClientRect().height
+        setMeasuredSelectorHeight((prev) => (Math.abs(prev - nextHeight) > 1 ? nextHeight : prev))
+      })
+    }
+
+    updateHeight()
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(element)
+
+    return (): void => {
+      if (frame) cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
+  }, [renderableSections.length])
+
   const handleSelectSection = (key: SectionKey): void => {
     setActiveSection(key)
     const element = sectionRefs[key]?.current
     if (!element || typeof window === 'undefined') return
 
-    const defaultOffset = sectionScrollOffset
-    const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
-    const headerExpansionOffset = Math.max(0, headerHeight - compressedHeaderHeight)
-    const dynamicOffset = defaultOffset + headerExpansionOffset
-    const scrollOffset = dynamicOffset
+    const scrollOffset = sectionScrollOffset
     const top = element.getBoundingClientRect().top + window.scrollY - scrollOffset
     const targetTop = key === 'charts' ? Math.max(top, 1) : top
 
@@ -320,7 +404,7 @@ function Index(): ReactElement | null {
   // Calculate sticky positions for the collapsible header (desktop only)
   // On mobile, natural scroll behavior is used
   const headerStickyTop = 'var(--header-height)'
-  const nextSticky = `calc(var(--header-height) + ${compressedHeaderHeight}px)`
+  const nextSticky = `calc(var(--header-height) + ${measuredHeaderHeight}px)`
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
@@ -464,7 +548,7 @@ function Index(): ReactElement | null {
         {/* Main Content Grid - Responsive layout */}
         <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div
-            className={cl('order-1 md:order-2', 'md:col-span-7 md:col-start-14 md:sticky md:h-fit md:pt-6')}
+            className={cl('order-1 md:order-2', 'md:col-span-7 md:col-start-14 md:sticky md:h-fit')}
             style={{ top: nextSticky }}
           >
             <Widget
@@ -479,8 +563,7 @@ function Index(): ReactElement | null {
           {/* Desktop sections - Hidden on mobile */}
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 pb-4'}>
             {renderableSections.length > 0 ? (
-              <div className={'w-full sticky z-30'} style={{ top: nextSticky }}>
-                <div className={'bg-app h-6'}></div>
+              <div className={'w-full sticky z-30'} style={{ top: nextSticky }} ref={sectionSelectorRef}>
                 <div
                   className={cl(
                     'flex flex-wrap gap-2 md:pb-3 md:gap-3',
@@ -489,7 +572,7 @@ function Index(): ReactElement | null {
                 >
                   <div
                     className={
-                      'flex w-full flex-wrap justify-between gap-2 rounded-lg bg-surface-secondary p-1 shadow-inner'
+                      'flex w-full flex-wrap justify-between gap-2 rounded-b-lg bg-surface-secondary p-1 shadow-inner'
                     }
                   >
                     {renderableSections.map((section) => (
@@ -498,9 +581,10 @@ function Index(): ReactElement | null {
                         type={'button'}
                         onClick={(): void => handleSelectSection(section.key)}
                         className={cl(
-                          'flex-1 min-w-[120px] rounded-lg px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
+                          'flex-1 min-w-[120px] rounded-sm px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
+                          'min-h-[36px] active:scale-[0.98]',
                           activeSection === section.key
-                            ? 'bg-surface text-text-primary shadow-sm'
+                            ? 'bg-surface text-text-primary'
                             : 'bg-transparent text-text-secondary hover:text-text-primary'
                         )}
                       >
@@ -527,7 +611,8 @@ function Index(): ReactElement | null {
                     key={section.key}
                     ref={section.ref}
                     data-scroll-spy-key={section.key}
-                    className={'border border-border rounded-lg bg-surface scroll-mt-[275px]'}
+                    className={'border border-border rounded-lg bg-surface'}
+                    style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
                   >
                     <button
                       type={'button'}
@@ -555,7 +640,8 @@ function Index(): ReactElement | null {
                   key={section.key}
                   ref={section.ref}
                   data-scroll-spy-key={section.key}
-                  className={'border border-border rounded-lg bg-surface scroll-mt-[275px]'}
+                  className={'border border-border rounded-lg bg-surface'}
+                  style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
                 >
                   {section.content}
                 </div>

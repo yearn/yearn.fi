@@ -104,7 +104,7 @@ function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): R
     }
   ]
 
-  return <MetricsCard items={metrics} />
+  return <MetricsCard items={metrics} className={'md:rounded-b-none'} />
 }
 
 function UserHoldingsCard({
