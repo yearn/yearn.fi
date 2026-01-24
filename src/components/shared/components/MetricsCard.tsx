@@ -87,13 +87,20 @@ function MetricInfoModal({
 
 export function MetricsCard({
   hideFootnotes = false,
-  items
+  items,
+  className
 }: {
   items: TMetricBlock[]
   hideFootnotes?: boolean
+  className?: string
 }): ReactElement {
   return (
-    <div className={'rounded-lg border border-border bg-surface text-text-primary backdrop-blur-sm'}>
+    <div
+      className={cl(
+        'rounded-lg border border-border border-t bg-surface text-text-primary backdrop-blur-sm',
+        className
+      )}
+    >
       <div className={'divide-y divide-neutral-300 md:flex md:divide-y-0'}>
         {items.map(
           (item, index): ReactElement => (
