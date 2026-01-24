@@ -583,7 +583,7 @@ export function resolveHistoricalApyDisplayConfig({
     content: tooltipContent,
     className: DEFAULT_TOOLTIP_CLASS,
     openDelayMs: DEFAULT_TOOLTIP_DELAY,
-    side: 'bottom'
+    side: 'top'
   }
   let tooltipMode: TApyTooltipMode = 'none'
   if (allowTooltip) {
