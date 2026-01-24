@@ -53,7 +53,7 @@ export function VaultRiskScoreTag({
           </div>
           <span
             suppressHydrationWarning
-            className={'tooltiptext top-full mt-1 !text-[10px]'}
+            className={'tooltiptext bottom-full mb-1 !text-[10px]'}
             style={{ marginRight: 'calc(-94px + 50%)' }}
           >
             <div

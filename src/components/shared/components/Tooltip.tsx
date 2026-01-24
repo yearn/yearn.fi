@@ -22,7 +22,7 @@ export const Tooltip: FC<{
   openDelayMs = 0,
   toggleOnClick = false,
   align = 'center',
-  side = 'bottom',
+  side = 'top',
   zIndex = 9999
 }) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false)
