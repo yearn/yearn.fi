@@ -13,6 +13,7 @@ import { cl, formatApyDisplay, formatPercent, formatTvlDisplay, toAddress } from
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import { Fragment, type ReactElement, type ReactNode, useEffect, useState } from 'react'
+import { VaultForwardAPY } from '../table/VaultForwardAPY'
 
 type TVaultsCompareModalProps = {
   isOpen: boolean
@@ -177,7 +178,12 @@ function DesktopCompareGrid({
           />
           {vaults.map((vault, index) => (
             <MetricValue key={`apy-${getVaultKey(vault)}`} onMouseEnter={(): void => setActiveColumn(index)}>
-              <div className={'flex items-center gap-2'}>{renderPercentValue(vault.apr?.forwardAPR?.netAPR)}</div>
+              <VaultForwardAPY
+                currentVault={vault}
+                showSubline={false}
+                showSublineTooltip={true}
+                className={'items-start text-left md:text-left'}
+              />
             </MetricValue>
           ))}
 
