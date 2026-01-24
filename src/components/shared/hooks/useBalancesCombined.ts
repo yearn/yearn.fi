@@ -76,18 +76,7 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     const hasEnsoData = ensoTokens.length > 0
     const hasMulticallData = multicallTokens.length > 0
 
-    console.log('[Combined] Computing balances', {
-      ensoTokensCount: ensoTokens.length,
-      multicallTokensCount: multicallTokens.length,
-      ensoBalancesKeys: Object.keys(ensoBalances || {}),
-      multicallBalancesKeys: Object.keys(multicallBalances || {}),
-      ensoLoading,
-      multicallLoading
-    })
-
     const result: TChainTokens = {}
-    let ensoMatchCount = 0
-    let multicallMatchCount = 0
 
     // Process Enso-supported tokens
     if (hasEnsoData && ensoBalances) {
@@ -102,7 +91,6 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
         const ensoToken = ensoBalances[chainId]?.[tokenAddress]
         if (ensoToken) {
           result[chainId][tokenAddress] = ensoToken
-          ensoMatchCount++
         }
       }
     }
@@ -120,17 +108,12 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
         const multicallToken = multicallBalances[chainId]?.[tokenAddress]
         if (multicallToken) {
           result[chainId][tokenAddress] = multicallToken
-          multicallMatchCount++
         }
       }
     }
 
-    console.log(
-      `[Combined] Matched ${ensoMatchCount} Enso + ${multicallMatchCount} Multicall = ${ensoMatchCount + multicallMatchCount} of ${tokens.length} tokens`
-    )
-
     return result
-  }, [ensoBalances, multicallBalances, ensoTokens, multicallTokens, tokens.length, ensoLoading, multicallLoading])
+  }, [ensoBalances, multicallBalances, ensoTokens, multicallTokens])
 
   // Combine loading/error/success states
   const isLoading = useMemo(() => {

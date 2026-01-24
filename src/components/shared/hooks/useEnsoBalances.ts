@@ -42,7 +42,6 @@ async function fetchEnsoBalancesForChain(address: TAddress, chainId: number): Pr
   const response = await fetch(url)
 
   if (!response.ok) {
-    console.warn(`[Enso] Chain ${chainId} failed: ${response.status}`)
     return []
   }
 
@@ -53,23 +52,10 @@ async function fetchEnsoBalancesForChain(address: TAddress, chainId: number): Pr
  ** Fetch balances from Enso API for a given address
  ** Fetches all supported chains in parallel
  ******************************************************************************/
-async function fetchEnsoBalances(
-  address: TAddress,
-  chainId?: number
-): Promise<{ balances: TEnsoBalanceResponse[]; duration: number; httpRequests: number }> {
-  const startTime = performance.now()
-
+async function fetchEnsoBalances(address: TAddress, chainId?: number): Promise<TEnsoBalanceResponse[]> {
   const chainsToFetch = chainId ? [chainId] : ENSO_SUPPORTED_CHAINS
-
-  console.log('[Enso] Fetching chains:', chainsToFetch)
-
   const results = await Promise.all(chainsToFetch.map((chain) => fetchEnsoBalancesForChain(address, chain)))
-
-  const balances = results.flat()
-  const duration = performance.now() - startTime
-  const httpRequests = chainsToFetch.length
-
-  return { balances, duration, httpRequests }
+  return results.flat()
 }
 
 /*******************************************************************************
@@ -129,32 +115,14 @@ export function useEnsoBalances(
 } {
   const enabled = Boolean(options?.enabled !== false && userAddress && !isZeroAddress(userAddress))
 
-  console.log('[Enso] Hook called', { userAddress, enabled, chainId: options?.chainId })
-
   const query = useQuery({
     queryKey: ['enso-balances', userAddress, options?.chainId ?? 'all'],
     queryFn: async () => {
-      console.log('[Enso] Query function executing...')
       if (!userAddress || isZeroAddress(userAddress)) {
-        console.log('[Enso] No user address, returning empty')
         return {}
       }
-      try {
-        const { balances, duration, httpRequests } = await fetchEnsoBalances(userAddress, options?.chainId)
-        const transformed = transformEnsoResponse(balances)
-
-        const chainCount = Object.keys(transformed).length
-        const tokenCount = Object.values(transformed).reduce((acc, tokens) => acc + Object.keys(tokens).length, 0)
-
-        console.log(
-          `[Enso] Total: ${tokenCount} tokens across ${chainCount} chains in ${httpRequests} HTTP request(s), ${duration.toFixed(0)}ms (0 RPC calls)`
-        )
-
-        return transformed
-      } catch (err) {
-        console.error('[Enso] Fetch error:', err)
-        throw err
-      }
+      const balances = await fetchEnsoBalances(userAddress, options?.chainId)
+      return transformEnsoResponse(balances)
     },
     enabled,
     staleTime: options?.staleTime ?? 5 * 60 * 1000,
@@ -210,15 +178,8 @@ export function useEnsoBalances(
  ** Standalone fetch function for use outside of React components
  ******************************************************************************/
 export async function getEnsoBalances(address: TAddress, chainId?: number): Promise<TChainTokens> {
-  const { balances, duration } = await fetchEnsoBalances(address, chainId)
-  const transformed = transformEnsoResponse(balances)
-
-  const chainCount = Object.keys(transformed).length
-  const tokenCount = Object.values(transformed).reduce((acc, tokens) => acc + Object.keys(tokens).length, 0)
-
-  console.log(`[Enso] Fetched ${tokenCount} tokens across ${chainCount} chains in ${duration.toFixed(0)}ms`)
-
-  return transformed
+  const balances = await fetchEnsoBalances(address, chainId)
+  return transformEnsoResponse(balances)
 }
 
 /*******************************************************************************
