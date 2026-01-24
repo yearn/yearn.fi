@@ -11,7 +11,7 @@ export function VaultsFiltersButton({ filtersCount, onClick }: TVaultsFiltersBut
     <button
       type={'button'}
       className={
-        'flex shrink-0 items-center justify-center gap-1 border rounded-lg h-10 w-[34px] border-border py-2 text-sm font-medium text-text-secondary bg-surface transition-colors hover:text-text-secondary data-[active=true]:border-border-hover data-[active=true]:text-text-secondary min-[1075px]:w-auto min-[1075px]:px-4'
+        'flex shrink-0 items-center justify-center gap-1 border rounded-lg h-10 w-[34px] border-border py-2 text-sm font-medium text-text-secondary bg-surface transition-colors hover:text-text-primary data-[active=true]:border-primary data-[active=true]:text-text-primary min-[1075px]:w-auto min-[1075px]:px-4'
       }
       onClick={onClick}
       aria-label={'Open filters'}
