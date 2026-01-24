@@ -1,6 +1,7 @@
 import Link from '@components/Link'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
+import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
@@ -14,7 +15,6 @@ import {
 import { useMediaQuery } from '@react-hookz/web'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { Tooltip } from '@shared/components/Tooltip'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -237,24 +237,6 @@ export function VaultsListRow({
     getPrice,
     mobileSecondaryMetric
   ])
-  const tvlNativeTooltip = (
-    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
-      <span className={'font-number'}>
-        <RenderAmount
-          value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
-          symbol={''}
-          decimals={6}
-          shouldFormatDust
-          options={{
-            shouldCompactValue: true,
-            maximumFractionDigits: 2,
-            minimumFractionDigits: 2
-          }}
-        />
-      </span>
-      <span className={'pl-1'}>{currentVault.token.symbol}</span>
-    </div>
-  )
 
   useEffect(() => {
     if (isExpanded) {
@@ -530,9 +512,9 @@ export function VaultsListRow({
                 <span className={'text-text-primary/60'}>
                   {mobileSecondaryMetric === 'holdings' ? 'Holdings:' : 'TVL:'}
                 </span>
-                <span className={'text-lg font-semibold text-text-primary font-number'}>
-                  {mobileSecondaryMetric === 'holdings' ? (
-                    showHoldingsValue ? (
+                {mobileSecondaryMetric === 'holdings' ? (
+                  <span className={'text-lg font-semibold text-text-primary font-number'}>
+                    {showHoldingsValue ? (
                       <RenderAmount
                         value={holdingsValue}
                         symbol={'USD'}
@@ -545,20 +527,14 @@ export function VaultsListRow({
                       />
                     ) : (
                       '—'
-                    )
-                  ) : (
-                    <RenderAmount
-                      value={currentVault.tvl?.tvl}
-                      symbol={'USD'}
-                      decimals={0}
-                      options={{
-                        shouldCompactValue: true,
-                        maximumFractionDigits: 2,
-                        minimumFractionDigits: 0
-                      }}
-                    />
-                  )}
-                </span>
+                    )}
+                  </span>
+                ) : (
+                  <VaultTVL
+                    currentVault={currentVault}
+                    valueClassName={'text-lg font-semibold text-text-primary font-number'}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -581,25 +557,7 @@ export function VaultsListRow({
           {/* TVL */}
           <div className={cl('yearn--table-data-section-item', tvlColumnSpan)} datatype={'number'}>
             <div className={'flex justify-end text-right'}>
-              <Tooltip
-                className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
-                openDelayMs={150}
-                toggleOnClick={false}
-                tooltip={tvlNativeTooltip}
-              >
-                <p className={'yearn--table-data-section-item-value'}>
-                  <RenderAmount
-                    value={currentVault.tvl?.tvl}
-                    symbol={'USD'}
-                    decimals={0}
-                    options={{
-                      shouldCompactValue: true,
-                      maximumFractionDigits: 2,
-                      minimumFractionDigits: 0
-                    }}
-                  />
-                </p>
-              </Tooltip>
+              <VaultTVL currentVault={currentVault} showNativeTooltip tooltipClassName={'md:justify-end'} />
             </div>
           </div>
           {!showHoldingsColumn ? <div className={'col-span-1'} /> : null}
