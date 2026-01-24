@@ -104,7 +104,7 @@ function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): R
     }
   ]
 
-  return <MetricsCard items={metrics} />
+  return <MetricsCard items={metrics} footnoteDisplay={'tooltip'} />
 }
 
 function UserHoldingsCard({
@@ -184,7 +184,7 @@ function UserHoldingsCard({
     }
   ]
 
-  return <MetricsCard items={sections} />
+  return <MetricsCard items={sections} footnoteDisplay={'tooltip'} />
 }
 
 export function VaultDetailsHeader({
