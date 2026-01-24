@@ -470,10 +470,10 @@ export function VaultsListRow({
                     onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
-                {showHoldingsChip ? (
+                {showHoldingsChip && isMobile ? (
                   <span
                     className={
-                      'hidden md:inline-flex items-center rounded-lg border border-primary/50 px-1 py-0.5 text-xs font-medium transition-colors bg-surface-secondary text-primary gap-1 shadow-[0_0_12px_rgba(59,130,246,0.12)]'
+                      'inline-flex items-center rounded-lg border border-primary/50 px-1 py-0.5 text-xs font-medium transition-colors bg-surface-secondary text-primary gap-1 shadow-[0_0_12px_rgba(59,130,246,0.12)]'
                     }
                     aria-label={'Holdings'}
                   >
