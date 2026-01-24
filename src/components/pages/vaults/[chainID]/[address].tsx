@@ -564,15 +564,10 @@ function Index(): ReactElement | null {
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 pb-4'}>
             {renderableSections.length > 0 ? (
               <div className={'w-full sticky z-30'} style={{ top: nextSticky }} ref={sectionSelectorRef}>
-                <div
-                  className={cl(
-                    'flex flex-wrap gap-2 md:pb-3 md:gap-3',
-                    'bg-linear-to-b from-app from-90% to-transparent'
-                  )}
-                >
+                <div className={cl('flex flex-wrap gap-2 md:gap-3')}>
                   <div
                     className={
-                      'flex w-full flex-wrap justify-between gap-2 rounded-b-lg bg-surface-secondary p-1 shadow-inner'
+                      'flex w-full flex-wrap justify-between border border-border gap-2 rounded-b-lg bg-surface-secondary p-1'
                     }
                   >
                     {renderableSections.map((section) => (
@@ -581,10 +576,10 @@ function Index(): ReactElement | null {
                         type={'button'}
                         onClick={(): void => handleSelectSection(section.key)}
                         className={cl(
-                          'flex-1 min-w-[120px] rounded-sm px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
+                          'flex-1 min-w-[120px] rounded-md  px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
                           'min-h-[36px] active:scale-[0.98]',
                           activeSection === section.key
-                            ? 'bg-surface text-text-primary'
+                            ? 'bg-surface text-text-primary border border-border'
                             : 'bg-transparent text-text-secondary hover:text-text-primary'
                         )}
                       >
