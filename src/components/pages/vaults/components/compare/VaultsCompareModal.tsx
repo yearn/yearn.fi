@@ -1,6 +1,6 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { SwipeableCompareCarousel } from '@pages/vaults/components/compare/SwipeableCompareCarousel'
-import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
+import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { useMediaQuery } from '@react-hookz/web'
@@ -46,13 +46,6 @@ function MetricLabel({ label, sublabel }: { label: string; sublabel?: string }):
 
 function MetricValue({ children, className }: { children: ReactNode; className?: string }): ReactElement {
   return <div className={cl('border-b border-border py-3 text-sm text-text-primary', className)}>{children}</div>
-}
-
-function renderPercentValue(value: number | null | undefined): ReactElement {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return <span className={'text-text-secondary'}>{'—'}</span>
-  }
-  return <RenderAmount value={value} symbol={'percent'} decimals={6} />
 }
 
 function hasAllocatedFunds(strategy: TVaultStrategyItem): boolean {
@@ -123,14 +116,7 @@ function DesktopCompareGrid({
           <MetricLabel label={'Est. APY'} sublabel={'Forward net APR'} />
           {vaults.map((vault) => (
             <MetricValue key={`apy-${getVaultKey(vault)}`}>
-              <div className={'flex items-center gap-2'}>{renderPercentValue(vault.apr?.forwardAPR?.netAPR)}</div>
-            </MetricValue>
-          ))}
-
-          <MetricLabel label={'30 Day APY'} sublabel={'Average realized APY'} />
-          {vaults.map((vault) => (
-            <MetricValue key={`apy-30d-${getVaultKey(vault)}`}>
-              <VaultHistoricalAPY currentVault={vault} />
+              <VaultForwardAPY currentVault={vault} showSubline={false} />
             </MetricValue>
           ))}
 
