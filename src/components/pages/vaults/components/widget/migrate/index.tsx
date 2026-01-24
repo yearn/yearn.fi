@@ -414,7 +414,7 @@ export const WidgetMigrate: FC<Props> = ({
   }
 
   return (
-    <div className="flex flex-col relative">
+    <div className="flex flex-col border border-border rounded-lg relative">
       {/* Educational Banner */}
       <div className="mx-6 mt-7 p-4 bg-surface-secondary border-l-4 border-l-orange-500 dark:border-l-yellow-500 rounded-lg">
         <div className="flex items-start gap-3">

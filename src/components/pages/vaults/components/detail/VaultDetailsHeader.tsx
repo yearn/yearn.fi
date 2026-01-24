@@ -184,7 +184,7 @@ function UserHoldingsCard({
     }
   ]
 
-  return <MetricsCard items={sections} footnoteDisplay={'tooltip'} />
+  return <MetricsCard items={sections} className={'md:rounded-b-none'} footnoteDisplay={'tooltip'} />
 }
 
 export function VaultDetailsHeader({

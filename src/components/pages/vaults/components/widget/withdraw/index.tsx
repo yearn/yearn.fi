@@ -390,7 +390,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   // Render
   // ============================================================================
   return (
-    <div className="flex flex-col relative group/widget">
+    <div className="flex flex-col relative border border-border rounded-lg group/widget">
       {/* Settings Popover */}
       <div className="flex justify-end md:opacity-0 md:group-hover/widget:opacity-100 transition-opacity duration-200 h-7">
         <SettingsPopover
