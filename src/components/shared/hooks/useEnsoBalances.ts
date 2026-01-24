@@ -24,7 +24,10 @@ type TEnsoBalanceResponse = {
 /*******************************************************************************
  ** Enso API configuration - uses server proxy to handle auth
  ******************************************************************************/
-const ENSO_SUPPORTED_CHAINS = SUPPORTED_NETWORKS.map((n) => n.id)
+export const ENSO_UNSUPPORTED_NETWORKS = [250] // Fantom not supported by Enso
+export const ENSO_SUPPORTED_CHAINS = SUPPORTED_NETWORKS.map((n) => n.id).filter(
+  (id) => !ENSO_UNSUPPORTED_NETWORKS.includes(id)
+)
 
 /*******************************************************************************
  ** Fetch balances from Enso API for a single chain via server proxy
