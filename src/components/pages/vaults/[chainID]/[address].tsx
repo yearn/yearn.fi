@@ -22,7 +22,7 @@ import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { useDevFlags } from '@/contexts/useDevFlags'
 
@@ -101,14 +101,21 @@ function Index(): ReactElement | null {
     charts: 'Performance'
   }
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
-  const compressedHeaderHeight = 140
-  const [measuredHeaderHeight, setMeasuredHeaderHeight] = useState(compressedHeaderHeight)
-  const [measuredSelectorHeight, setMeasuredSelectorHeight] = useState(0)
-  const [baseHeaderOffset, setBaseHeaderOffset] = useState(resolveHeaderOffset)
-  const sectionScrollOffset = Math.round(baseHeaderOffset + measuredHeaderHeight + measuredSelectorHeight)
+  const [sectionScrollOffset, setSectionScrollOffset] = useState(0)
+  const [isHeaderCompressed, setIsHeaderCompressed] = useState(false)
+  const scrollPadding = 16
+  const updateSectionScrollOffset = useCallback((): number => {
+    if (typeof window === 'undefined') return 0
+    const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
+    const baseOffset = resolveHeaderOffset()
+    const nextOffset = Math.round(baseOffset + headerHeight)
+    setSectionScrollOffset((prev) => (Math.abs(prev - nextOffset) > 1 ? nextOffset : prev))
+    return nextOffset
+  }, [])
   const [isProgrammaticScroll, setIsProgrammaticScroll] = useState(false)
   const scrollTargetRef = useRef<number | null>(null)
   const scrollTimeoutRef = useRef<number | null>(null)
+  const [pendingSectionKey, setPendingSectionKey] = useState<SectionKey | null>(null)
 
   // Reset state when vault changes
   useEffect(() => {
@@ -289,7 +296,7 @@ function Index(): ReactElement | null {
     sections: scrollSpySections,
     activeKey: activeSection,
     onActiveKeyChange: setActiveSection,
-    offsetTop: sectionScrollOffset,
+    offsetTop: sectionScrollOffset + scrollPadding,
     enabled: renderableSections.length > 0 && !isProgrammaticScroll
   })
 
@@ -298,6 +305,34 @@ function Index(): ReactElement | null {
       setActiveSection(renderableSections[0].key)
     }
   }, [renderableSections, activeSection])
+
+  useEffect(() => {
+    if (!pendingSectionKey || !isHeaderCompressed) return
+    const element = sectionRefs[pendingSectionKey]?.current
+    if (!element || typeof window === 'undefined') {
+      setPendingSectionKey(null)
+      setIsProgrammaticScroll(false)
+      return
+    }
+
+    const scrollOffset = updateSectionScrollOffset()
+    const top = element.getBoundingClientRect().top + window.scrollY - scrollOffset
+    const baseTarget = pendingSectionKey === 'charts' ? Math.max(top, 1) : top
+    const targetTop = Math.max(1, baseTarget - scrollPadding)
+
+    scrollTargetRef.current = targetTop
+    if (scrollTimeoutRef.current) {
+      window.clearTimeout(scrollTimeoutRef.current)
+    }
+    scrollTimeoutRef.current = window.setTimeout(() => {
+      scrollTargetRef.current = null
+      setIsProgrammaticScroll(false)
+      scrollTimeoutRef.current = null
+    }, 1200)
+
+    window.scrollTo({ top: targetTop, behavior: 'smooth' })
+    setPendingSectionKey(null)
+  }, [pendingSectionKey, isHeaderCompressed, sectionRefs, updateSectionScrollOffset])
 
   useEffect(() => {
     if (!isProgrammaticScroll || typeof window === 'undefined') return
@@ -326,16 +361,13 @@ function Index(): ReactElement | null {
   useEffect(() => {
     if (typeof window === 'undefined') return
     const handleResize = (): void => {
-      const nextOffset = resolveHeaderOffset()
-      if (nextOffset) {
-        setBaseHeaderOffset((prev) => (Math.abs(prev - nextOffset) > 0.5 ? nextOffset : prev))
-      }
+      updateSectionScrollOffset()
     }
 
     handleResize()
     window.addEventListener('resize', handleResize)
     return (): void => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [updateSectionScrollOffset])
 
   useEffect(() => {
     const element = headerRef.current
@@ -345,8 +377,7 @@ function Index(): ReactElement | null {
     const updateHeight = (): void => {
       if (frame) cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
-        const nextHeight = element.getBoundingClientRect().height
-        setMeasuredHeaderHeight((prev) => (Math.abs(prev - nextHeight) > 1 ? nextHeight : prev))
+        updateSectionScrollOffset()
       })
     }
 
@@ -358,44 +389,24 @@ function Index(): ReactElement | null {
       if (frame) cancelAnimationFrame(frame)
       observer.disconnect()
     }
-  }, [])
-
-  useEffect(() => {
-    if (!renderableSections.length) {
-      setMeasuredSelectorHeight(0)
-      return
-    }
-
-    const element = sectionSelectorRef.current
-    if (!element || typeof ResizeObserver === 'undefined') return
-
-    let frame = 0
-    const updateHeight = (): void => {
-      if (frame) cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        const nextHeight = element.getBoundingClientRect().height
-        setMeasuredSelectorHeight((prev) => (Math.abs(prev - nextHeight) > 1 ? nextHeight : prev))
-      })
-    }
-
-    updateHeight()
-    const observer = new ResizeObserver(updateHeight)
-    observer.observe(element)
-
-    return (): void => {
-      if (frame) cancelAnimationFrame(frame)
-      observer.disconnect()
-    }
-  }, [renderableSections.length])
+  }, [updateSectionScrollOffset])
 
   const handleSelectSection = (key: SectionKey): void => {
     setActiveSection(key)
     const element = sectionRefs[key]?.current
     if (!element || typeof window === 'undefined') return
 
-    const scrollOffset = sectionScrollOffset
+    if (!isHeaderCompressed) {
+      setIsProgrammaticScroll(true)
+      setPendingSectionKey(key)
+      window.scrollTo({ top: 1, behavior: 'auto' })
+      return
+    }
+
+    const scrollOffset = updateSectionScrollOffset()
     const top = element.getBoundingClientRect().top + window.scrollY - scrollOffset
-    const targetTop = key === 'charts' ? Math.max(top, 1) : top
+    const baseTarget = key === 'charts' ? Math.max(top, 1) : top
+    const targetTop = Math.max(1, baseTarget - scrollPadding)
 
     setIsProgrammaticScroll(true)
     scrollTargetRef.current = targetTop
@@ -475,6 +486,7 @@ function Index(): ReactElement | null {
             widgetActions={widgetActions}
             widgetMode={widgetMode}
             onWidgetModeChange={setWidgetMode}
+            onCompressionChange={setIsHeaderCompressed}
           />
         </header>
 
