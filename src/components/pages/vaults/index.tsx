@@ -327,7 +327,6 @@ export default function Index(): ReactElement {
       onClose={(): void => setIsCompareOpen(false)}
       vaults={compareVaults}
       onRemove={handleRemoveCompare}
-      onClear={handleClearCompare}
     />
   )
 
