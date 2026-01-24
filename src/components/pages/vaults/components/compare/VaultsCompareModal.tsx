@@ -1,25 +1,25 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
+import Link from '@components/Link'
 import { SwipeableCompareCarousel } from '@pages/vaults/components/compare/SwipeableCompareCarousel'
-import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
+import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { useMediaQuery } from '@react-hookz/web'
-import { Button } from '@shared/components/Button'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconClose } from '@shared/icons/IconClose'
-import { cl, formatPercent } from '@shared/utils'
+import { IconLinkOut } from '@shared/icons/IconLinkOut'
+import { cl, formatPercent, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
-import { Fragment, type ReactElement, type ReactNode } from 'react'
+import { Fragment, type ReactElement, type ReactNode, useEffect, useState } from 'react'
 
 type TVaultsCompareModalProps = {
   isOpen: boolean
   onClose: () => void
   vaults: TYDaemonVault[]
   onRemove: (vaultKey: string) => void
-  onClear: () => void
 }
 
 type TVaultStrategyItem = NonNullable<TYDaemonVault['strategies']>[number]
@@ -35,17 +35,43 @@ function formatFee(value: number | undefined): string {
   return formatPercent((value ?? 0) * 100, 0)
 }
 
-function MetricLabel({ label, sublabel }: { label: string; sublabel?: string }): ReactElement {
+function MetricLabel({
+  label,
+  sublabel,
+  onMouseEnter
+}: {
+  label: string
+  sublabel?: string
+  onMouseEnter?: () => void
+}): ReactElement {
   return (
-    <div className={'border-b border-border py-3 text-xs font-semibold uppercase tracking-wide text-text-secondary'}>
+    <div
+      className={'border-b border-border py-3 text-xs font-semibold uppercase tracking-wide text-text-secondary'}
+      onMouseEnter={onMouseEnter}
+    >
       <span>{label}</span>
       {sublabel ? <span className={'mt-1 block text-[11px] text-text-secondary/70'}>{sublabel}</span> : null}
     </div>
   )
 }
 
-function MetricValue({ children, className }: { children: ReactNode; className?: string }): ReactElement {
-  return <div className={cl('border-b border-border py-3 text-sm text-text-primary', className)}>{children}</div>
+function MetricValue({
+  children,
+  className,
+  onMouseEnter
+}: {
+  children: ReactNode
+  className?: string
+  onMouseEnter?: () => void
+}): ReactElement {
+  return (
+    <div
+      className={cl('border-b border-border py-3 text-left text-sm text-text-primary', className)}
+      onMouseEnter={onMouseEnter}
+    >
+      {children}
+    </div>
+  )
 }
 
 function hasAllocatedFunds(strategy: TVaultStrategyItem): boolean {
@@ -66,63 +92,103 @@ function DesktopCompareGrid({
 }): ReactElement {
   const columnsCount = Math.max(vaults.length, 1)
   const gridTemplateColumns = `minmax(160px, 220px) repeat(${columnsCount}, minmax(180px, 1fr))`
+  const [activeColumn, setActiveColumn] = useState<number | null>(null)
 
   return (
     <div className={'mt-6 overflow-x-auto'}>
       <div className={'min-w-[640px]'}>
-        <div className={'grid gap-x-4'} style={{ gridTemplateColumns }}>
-          <div className={'border-b border-border pb-4'} />
-          {vaults.map((vault) => {
+        <div
+          className={'grid gap-x-4'}
+          style={{ gridTemplateColumns }}
+          onMouseLeave={(): void => setActiveColumn(null)}
+        >
+          <div className={'border-b border-border pb-4'} onMouseEnter={(): void => setActiveColumn(null)} />
+          {vaults.map((vault, index) => {
             const network = getNetwork(vault.chainID)
             const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${vault.chainID}/logo-32.png`
             const vaultKey = getVaultKey(vault)
+            const vaultHref = `/vaults/${vault.chainID}/${toAddress(vault.address)}`
+            const isColumnActive = activeColumn === index
             return (
               <div
                 key={`header-${vaultKey}`}
-                className={'flex items-start justify-between gap-3 border-b border-border pb-4'}
+                className={'flex flex-col gap-2 border-b border-border pb-4'}
+                onMouseEnter={(): void => setActiveColumn(index)}
               >
-                <div className={'min-w-0'}>
-                  <div className={'flex items-center gap-3'}>
-                    <TokenLogo
-                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainID}/${vault.token.address.toLowerCase()}/logo-128.png`}
-                      tokenSymbol={vault.token.symbol || ''}
-                      width={28}
-                      height={28}
-                    />
-                    <div className={'min-w-0'}>
-                      <p className={'truncate text-sm font-semibold text-text-primary'}>{vault.name}</p>
-                      <div className={'mt-1 flex items-center gap-2 text-xs text-text-secondary'}>
-                        <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
-                        <span>{network.name}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
                 <button
                   type={'button'}
                   onClick={(): void => onRemove(vaultKey)}
                   className={cl(
-                    'inline-flex size-7 items-center justify-center rounded-full border border-transparent text-text-secondary',
+                    'inline-flex size-7 items-center justify-center self-end rounded-full border border-transparent text-text-secondary',
+                    'transition-opacity',
+                    isColumnActive ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
                     'hover:border-border hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
                   )}
                   aria-label={`Remove ${vault.name} from comparison`}
+                  tabIndex={isColumnActive ? 0 : -1}
                 >
                   <IconClose className={'size-3'} />
                 </button>
+                <Link
+                  href={vaultHref}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className={cl(
+                    'flex w-full items-start justify-between gap-3 rounded-2xl px-2 py-1.5',
+                    'transition-colors hover:bg-surface-secondary/60',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+                  )}
+                  aria-label={`Open ${vault.name} vault in a new tab`}
+                  onFocus={(): void => setActiveColumn(index)}
+                >
+                  <div className={'min-w-0'}>
+                    <div className={'flex items-center gap-3'}>
+                      <TokenLogo
+                        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainID}/${vault.token.address.toLowerCase()}/logo-128.png`}
+                        tokenSymbol={vault.token.symbol || ''}
+                        width={28}
+                        height={28}
+                      />
+                      <div className={'min-w-0'}>
+                        <p className={'truncate text-sm font-semibold text-text-primary'}>{vault.name}</p>
+                        <div className={'mt-1 flex items-center gap-2 text-xs text-text-secondary'}>
+                          <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
+                          <span>{network.name}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <IconLinkOut className={'mt-1 size-4 flex-shrink-0 text-text-secondary'} />
+                </Link>
               </div>
             )
           })}
 
-          <MetricLabel label={'Est. APY'} sublabel={'Forward net APR'} />
-          {vaults.map((vault) => (
-            <MetricValue key={`apy-${getVaultKey(vault)}`}>
-              <VaultForwardAPY currentVault={vault} showSubline={false} />
+          <MetricLabel
+            label={'Est. APY'}
+            sublabel={'Forward net APR'}
+            onMouseEnter={(): void => setActiveColumn(null)}
+          />
+          {vaults.map((vault, index) => (
+            <MetricValue key={`apy-${getVaultKey(vault)}`} onMouseEnter={(): void => setActiveColumn(index)}>
+              <div className={'flex items-center gap-2'}>{renderPercentValue(vault.apr?.forwardAPR?.netAPR)}</div>
             </MetricValue>
           ))}
 
-          <MetricLabel label={'TVL'} sublabel={'Total value locked'} />
-          {vaults.map((vault) => (
-            <MetricValue key={`tvl-${getVaultKey(vault)}`}>
+          <MetricLabel
+            label={'30 Day APY'}
+            sublabel={'Average realized APY'}
+            onMouseEnter={(): void => setActiveColumn(null)}
+          />
+          {vaults.map((vault, index) => (
+            <MetricValue key={`apy-30d-${getVaultKey(vault)}`} onMouseEnter={(): void => setActiveColumn(index)}>
+              <VaultHistoricalAPY currentVault={vault} className={'items-start text-left md:text-left'} />
+            </MetricValue>
+          ))}
+
+          <MetricLabel label={'TVL'} sublabel={'Total value locked'} onMouseEnter={(): void => setActiveColumn(null)} />
+          {vaults.map((vault, index) => (
+            <MetricValue key={`tvl-${getVaultKey(vault)}`} onMouseEnter={(): void => setActiveColumn(index)}>
               <RenderAmount
                 value={vault.tvl?.tvl}
                 symbol={'USD'}
@@ -136,28 +202,36 @@ function DesktopCompareGrid({
             </MetricValue>
           ))}
 
-          <MetricLabel label={'Fees'} sublabel={'Management / Performance'} />
-          {vaults.map((vault) => (
-            <MetricValue key={`fees-${getVaultKey(vault)}`} className={'text-xs'}>
-              <div className={'grid grid-cols-2 gap-x-2 gap-y-1'}>
-                <span className={'text-text-secondary'}>{'Management'}</span>
-                <span className={'text-right font-number text-text-primary'}>
-                  {formatFee(vault.apr?.fees?.management)}
+          <MetricLabel
+            label={'Fees'}
+            sublabel={'Management / Performance'}
+            onMouseEnter={(): void => setActiveColumn(null)}
+          />
+          {vaults.map((vault, index) => (
+            <MetricValue
+              key={`fees-${getVaultKey(vault)}`}
+              className={'text-xs'}
+              onMouseEnter={(): void => setActiveColumn(index)}
+            >
+              <div className={'flex flex-col gap-1'}>
+                <span>
+                  <span className={'text-text-secondary'}>{'Management:'}</span>{' '}
+                  <span className={'text-text-primary'}>{formatFee(vault.apr?.fees?.management)}</span>
                 </span>
-                <span className={'text-text-secondary'}>{'Performance'}</span>
-                <span className={'text-right font-number text-text-primary'}>
-                  {formatFee(vault.apr?.fees?.performance)}
+                <span>
+                  <span className={'text-text-secondary'}>{'Performance:'}</span>{' '}
+                  <span className={'text-text-primary'}>{formatFee(vault.apr?.fees?.performance)}</span>
                 </span>
               </div>
             </MetricValue>
           ))}
 
-          <MetricLabel label={'Risk'} sublabel={'Security score'} />
-          {vaults.map((vault) => {
+          <MetricLabel label={'Risk'} sublabel={'Security score'} onMouseEnter={(): void => setActiveColumn(null)} />
+          {vaults.map((vault, index) => {
             const riskLevel = vault.info?.riskLevel ?? -1
             const normalizedRisk = normalizeRiskLevel(riskLevel)
             return (
-              <MetricValue key={`risk-${getVaultKey(vault)}`}>
+              <MetricValue key={`risk-${getVaultKey(vault)}`} onMouseEnter={(): void => setActiveColumn(index)}>
                 <div className={'flex items-center gap-3'}>
                   <VaultRiskScoreTag riskLevel={riskLevel} variant={'inline'} />
                   <span className={'text-xs text-text-secondary'}>{`Level ${normalizedRisk} / 5`}</span>
@@ -166,12 +240,16 @@ function DesktopCompareGrid({
             )
           })}
 
-          <MetricLabel label={'Strategy type'} sublabel={'Vault structure'} />
-          {vaults.map((vault) => {
+          <MetricLabel
+            label={'Strategy type'}
+            sublabel={'Vault structure'}
+            onMouseEnter={(): void => setActiveColumn(null)}
+          />
+          {vaults.map((vault, index) => {
             const listKind = deriveListKind(vault)
             const label = listKindLabels[listKind]
             return (
-              <MetricValue key={`strategy-${getVaultKey(vault)}`}>
+              <MetricValue key={`strategy-${getVaultKey(vault)}`} onMouseEnter={(): void => setActiveColumn(index)}>
                 <div className={'flex flex-col gap-1'}>
                   <span className={'text-sm font-semibold text-text-primary'}>{label}</span>
                   <span className={'text-xs text-text-secondary'}>{vault.kind}</span>
@@ -180,13 +258,21 @@ function DesktopCompareGrid({
             )
           })}
 
-          <MetricLabel label={'Strategies'} sublabel={'Underlying positions'} />
-          {vaults.map((vault) => {
-            const strategies = (vault.strategies ?? []).filter(
-              (strategy) => strategy.status !== 'not_active' && hasAllocatedFunds(strategy)
-            )
+          <MetricLabel
+            label={'Strategies'}
+            sublabel={'Underlying positions'}
+            onMouseEnter={(): void => setActiveColumn(null)}
+          />
+          {vaults.map((vault, index) => {
+            const strategies = (vault.strategies ?? [])
+              .filter((strategy) => strategy.status !== 'not_active' && hasAllocatedFunds(strategy))
+              .sort((left, right) => (right.details?.debtRatio ?? 0) - (left.details?.debtRatio ?? 0))
             return (
-              <MetricValue key={`strategies-${getVaultKey(vault)}`} className={'text-xs'}>
+              <MetricValue
+                key={`strategies-${getVaultKey(vault)}`}
+                className={'text-xs'}
+                onMouseEnter={(): void => setActiveColumn(index)}
+              >
                 {strategies.length === 0 ? (
                   <span className={'text-text-secondary'}>{'—'}</span>
                 ) : (
@@ -195,9 +281,9 @@ function DesktopCompareGrid({
                       const debtRatio = strategy.details?.debtRatio
                       const allocation = debtRatio ? formatPercent(debtRatio / 100, 0) : null
                       return (
-                        <div key={strategy.address} className={'flex items-start justify-between gap-2'}>
+                        <div key={strategy.address} className={'flex items-start gap-2'}>
                           <span className={'text-text-primary'}>{strategy.name}</span>
-                          {allocation ? <span className={'font-number text-text-secondary'}>{allocation}</span> : null}
+                          {allocation ? <span className={'text-text-secondary'}>{allocation}</span> : null}
                         </div>
                       )
                     })}
@@ -226,18 +312,50 @@ function MobileCompareView({
   )
 }
 
-export function VaultsCompareModal({
-  isOpen,
-  onClose,
-  vaults,
-  onRemove,
-  onClear
-}: TVaultsCompareModalProps): ReactElement {
+export function VaultsCompareModal({ isOpen, onClose, vaults, onRemove }: TVaultsCompareModalProps): ReactElement {
   const hasVaults = vaults.length > 0
   const isMobile =
     useMediaQuery('(max-width: 767px)', {
       initializeWithValue: false
     }) ?? false
+
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const root = document.documentElement
+    const body = document.body
+    const previousBodyOverflow = body.style.overflow
+    const previousBodyPaddingRight = body.style.paddingRight
+    const previousRootOverflow = root.style.getPropertyValue('overflow')
+    const previousRootOverflowPriority = root.style.getPropertyPriority('overflow')
+    const previousRootPaddingRight = root.style.getPropertyValue('padding-right')
+    const previousRootPaddingRightPriority = root.style.getPropertyPriority('padding-right')
+    const scrollBarWidth = window.innerWidth - root.clientWidth
+
+    root.style.setProperty('overflow', 'hidden', 'important')
+    body.style.overflow = 'hidden'
+    if (scrollBarWidth > 0) {
+      body.style.paddingRight = `${scrollBarWidth}px`
+      root.style.setProperty('padding-right', `${scrollBarWidth}px`, 'important')
+    }
+
+    return () => {
+      body.style.overflow = previousBodyOverflow
+      body.style.paddingRight = previousBodyPaddingRight
+      if (previousRootOverflow) {
+        root.style.setProperty('overflow', previousRootOverflow, previousRootOverflowPriority)
+      } else {
+        root.style.removeProperty('overflow')
+      }
+      if (previousRootPaddingRight) {
+        root.style.setProperty('padding-right', previousRootPaddingRight, previousRootPaddingRightPriority)
+      } else {
+        root.style.removeProperty('padding-right')
+      }
+    }
+  }, [isOpen])
 
   return (
     <Transition show={isOpen} as={Fragment}>
@@ -254,7 +372,7 @@ export function VaultsCompareModal({
           <div className={'fixed inset-0 bg-black/40'} />
         </TransitionChild>
 
-        <div className={'fixed inset-0 overflow-y-auto'}>
+        <div className={'fixed inset-0 overflow-y-auto overscroll-contain'}>
           <div className={cl('flex min-h-full items-center justify-center', isMobile ? 'p-2' : 'p-4')}>
             <TransitionChild
               as={Fragment}
@@ -281,15 +399,6 @@ export function VaultsCompareModal({
                     </p>
                   </div>
                   <div className={'flex items-center gap-2'}>
-                    {hasVaults ? (
-                      <Button
-                        variant={'outlined'}
-                        onClick={onClear}
-                        classNameOverride={'yearn--button--nextgen yearn--button-smaller'}
-                      >
-                        {'Clear selection'}
-                      </Button>
-                    ) : null}
                     <button
                       type={'button'}
                       onClick={onClose}
