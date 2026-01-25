@@ -7,7 +7,7 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
-import { type FC, useCallback, useMemo, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
@@ -31,6 +31,12 @@ interface Props {
   vaultSymbol: string
   stakingSource?: string
   handleDepositSuccess?: () => void
+  prefill?: {
+    address: `0x${string}`
+    chainId: number
+    amount?: string
+  }
+  onPrefillApplied?: () => void
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -41,7 +47,9 @@ export const WidgetDeposit: FC<Props> = ({
   vaultAPR,
   vaultSymbol,
   stakingSource,
-  handleDepositSuccess: onDepositSuccess
+  handleDepositSuccess: onDepositSuccess,
+  prefill,
+  onPrefillApplied
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -59,6 +67,7 @@ export const WidgetDeposit: FC<Props> = ({
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
+  const appliedPrefillRef = useRef<string | null>(null)
 
   // ============================================================================
   // Token Data (shared with VaultDetailsHeader via cache)
@@ -100,6 +109,19 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
+
+  useEffect(() => {
+    if (!prefill) return
+    const key = `${prefill.address}-${prefill.chainId}-${prefill.amount}`
+    if (appliedPrefillRef.current === key) return
+    appliedPrefillRef.current = key
+    setSelectedToken(prefill.address)
+    setSelectedChainId(prefill.chainId)
+    if (prefill.amount !== undefined) {
+      setDepositInput(prefill.amount)
+    }
+    onPrefillApplied?.()
+  }, [prefill, setDepositInput, onPrefillApplied])
 
   // ============================================================================
   // Deposit Flow (routing, actions, periphery)

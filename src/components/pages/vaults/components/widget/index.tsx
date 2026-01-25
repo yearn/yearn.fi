@@ -1,12 +1,12 @@
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import { IconSettings } from '@shared/icons/IconSettings'
+import { IconWallet } from '@shared/icons/IconWallet'
 import type { TAddress } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { type FC, useEffect, useMemo, useState } from 'react'
 import { WidgetDeposit } from './deposit'
 import { WidgetMigrate } from './migrate'
-import { SettingsOverlay } from './SettingsOverlay'
 import { WidgetWithdraw } from './withdraw'
 
 interface Props {
@@ -19,8 +19,12 @@ interface Props {
   mode?: ActionType
   onModeChange?: (mode: ActionType) => void
   showTabs?: boolean
-  isSettingsOpen?: boolean
-  onSettingsOpenChange?: (isOpen: boolean) => void
+  depositPrefill?: {
+    address: TAddress
+    chainId: number
+    amount?: string
+  } | null
+  onDepositPrefillConsumed?: () => void
 }
 
 const getActionLabel = (action: ActionType): string => {
@@ -44,15 +48,12 @@ export const Widget: FC<Props> = ({
   mode,
   onModeChange,
   showTabs = true,
-  isSettingsOpen,
-  onSettingsOpenChange
+  depositPrefill,
+  onDepositPrefillConsumed
 }) => {
   const [internalMode, setInternalMode] = useState<ActionType>(actions[0])
   const currentMode = mode ?? internalMode
   const setMode = onModeChange ?? setInternalMode
-  const [internalSettingsOpen, setInternalSettingsOpen] = useState(false)
-  const settingsOpen = isSettingsOpen ?? internalSettingsOpen
-  const setSettingsOpen = onSettingsOpenChange ?? setInternalSettingsOpen
   const assetToken = currentVault.token.address
 
   useEffect(() => {
@@ -74,6 +75,8 @@ export const Widget: FC<Props> = ({
             vaultSymbol={currentVault?.symbol || ''}
             stakingSource={currentVault?.staking?.source}
             handleDepositSuccess={handleSuccess}
+            prefill={depositPrefill ?? undefined}
+            onPrefillApplied={onDepositPrefillConsumed}
           />
         )
       case ActionType.Withdraw:
@@ -102,22 +105,23 @@ export const Widget: FC<Props> = ({
           />
         )
     }
-  }, [currentMode, vaultAddress, gaugeAddress, currentVault, assetToken, chainId, handleSuccess])
+  }, [
+    currentMode,
+    vaultAddress,
+    gaugeAddress,
+    currentVault,
+    assetToken,
+    chainId,
+    handleSuccess,
+    depositPrefill,
+    onDepositPrefillConsumed
+  ])
 
   return (
     <div className="flex flex-col gap-0 w-full h-full flex-1">
       <div className="bg-app rounded-b-lg overflow-hidden relative w-full min-w-0 flex flex-col flex-1">
-        {showTabs ? (
-          <WidgetTabs
-            actions={actions}
-            activeAction={currentMode}
-            onActionChange={setMode}
-            onOpenSettings={() => setSettingsOpen(!settingsOpen)}
-            isSettingsOpen={settingsOpen}
-          />
-        ) : null}
+        {showTabs ? <WidgetTabs actions={actions} activeAction={currentMode} onActionChange={setMode} /> : null}
         <div className="bg-surface flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">{SelectedComponent}</div>
-        <SettingsOverlay isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
       </div>
     </div>
   )
@@ -130,7 +134,20 @@ export const WidgetTabs: FC<{
   className?: string
   onOpenSettings?: () => void
   isSettingsOpen?: boolean
-}> = ({ actions, activeAction, onActionChange, className, onOpenSettings, isSettingsOpen }) => {
+  onOpenWallet?: () => void
+  isWalletOpen?: boolean
+  onCloseOverlays?: () => void
+}> = ({
+  actions,
+  activeAction,
+  onActionChange,
+  className,
+  onOpenSettings,
+  isSettingsOpen,
+  onOpenWallet,
+  isWalletOpen,
+  onCloseOverlays
+}) => {
   return (
     <div className={cl('bg-surface-secondary border border-border rounded-b-lg gap-2 flex min-h-9 p-1', className)}>
       {actions.map((action) => (
@@ -138,9 +155,7 @@ export const WidgetTabs: FC<{
           key={action}
           isActive={activeAction === action}
           onClick={() => {
-            if (isSettingsOpen && onOpenSettings) {
-              onOpenSettings()
-            }
+            onCloseOverlays?.()
             onActionChange(action)
           }}
         >
@@ -162,6 +177,23 @@ export const WidgetTabs: FC<{
           )}
         >
           <IconSettings className="h-4 w-4" />
+        </button>
+      ) : null}
+      {onOpenWallet ? (
+        <button
+          type="button"
+          onClick={onOpenWallet}
+          aria-label="Open wallet details"
+          aria-pressed={isWalletOpen}
+          className={cl(
+            'flex items-center justify-center rounded-md border border-transparent px-2.5 py-2 text-text-secondary transition-all duration-200',
+            'min-h-9',
+            isWalletOpen
+              ? 'bg-surface text-text-primary !border-border'
+              : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+          )}
+        >
+          <IconWallet className="h-4 w-4" />
         </button>
       ) : null}
     </div>

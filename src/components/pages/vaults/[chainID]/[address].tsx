@@ -8,6 +8,8 @@ import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSecti
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
 import { Widget } from '@pages/vaults/components/widget'
+import { SettingsPanel } from '@pages/vaults/components/widget/SettingsPanel'
+import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { WidgetActionType } from '@pages/vaults/types'
 import { fetchYBoldVault } from '@pages/vaults/utils/handleYBold'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
@@ -17,7 +19,8 @@ import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
 import { useFetch } from '@shared/hooks/useFetch'
 import { useYDaemonBaseURI } from '@shared/hooks/useYDaemonBaseURI'
 import { IconChevron } from '@shared/icons/IconChevron'
-import { cl, toAddress } from '@shared/utils'
+import type { TToken } from '@shared/types'
+import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -103,12 +106,15 @@ function Index(): ReactElement | null {
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
   const [sectionScrollOffset, setSectionScrollOffset] = useState(0)
   const [isHeaderCompressed, setIsHeaderCompressed] = useState(false)
+  const initialHeaderOffsetRef = useRef<number | null>(null)
   const scrollPadding = 16
+  const widgetBottomPadding = 16
   const updateSectionScrollOffset = useCallback((): number => {
     if (typeof window === 'undefined') return 0
-    const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
     const baseOffset = resolveHeaderOffset()
+    const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
     const nextOffset = Math.round(baseOffset + headerHeight)
+    document.documentElement.style.setProperty('--vault-header-height', `${nextOffset}px`)
     setSectionScrollOffset((prev) => (Math.abs(prev - nextOffset) > 1 ? nextOffset : prev))
     return nextOffset
   }, [])
@@ -125,8 +131,36 @@ function Index(): ReactElement | null {
       setHasFetchedOverride(false)
       setIsInit(false)
       setLastVaultKey(vaultKey)
+      initialHeaderOffsetRef.current = null
+      if (typeof window !== 'undefined') {
+        document.documentElement.style.removeProperty('--vault-header-initial-offset')
+      }
     }
   }, [vaultKey, lastVaultKey])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    void vaultKey
+    let frame = 0
+    const captureInitialOffset = (): void => {
+      if (initialHeaderOffsetRef.current !== null) return
+      if (window.scrollY > 0) return
+      const baseOffset = resolveHeaderOffset()
+      const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
+      if (headerHeight <= 0) {
+        frame = requestAnimationFrame(captureInitialOffset)
+        return
+      }
+      const paddedOffset = Math.round(baseOffset + headerHeight + widgetBottomPadding)
+      initialHeaderOffsetRef.current = paddedOffset
+      document.documentElement.style.setProperty('--vault-header-initial-offset', `${paddedOffset}px`)
+    }
+
+    frame = requestAnimationFrame(captureInitialOffset)
+    return (): void => {
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [vaultKey])
 
   // Create a stable endpoint that includes the vault key to force SWR to refetch
   const endpoint = useMemo(() => {
@@ -228,10 +262,59 @@ function Index(): ReactElement | null {
   }, [currentVault?.migration?.available])
   const [widgetMode, setWidgetMode] = useState<WidgetActionType>(widgetActions[0])
   const [isWidgetSettingsOpen, setIsWidgetSettingsOpen] = useState(false)
+  const [isWidgetWalletOpen, setIsWidgetWalletOpen] = useState(false)
+  const [depositPrefill, setDepositPrefill] = useState<{
+    address: `0x${string}`
+    chainId: number
+    amount?: string
+  } | null>(null)
 
   useEffect(() => {
     setWidgetMode(widgetActions[0])
   }, [widgetActions])
+
+  const toggleWidgetSettings = (): void => {
+    setIsWidgetSettingsOpen((prev) => {
+      const next = !prev
+      if (next) {
+        setIsWidgetWalletOpen(false)
+      }
+      return next
+    })
+  }
+
+  const toggleWidgetWallet = (): void => {
+    setIsWidgetWalletOpen((prev) => {
+      const next = !prev
+      if (next) {
+        setIsWidgetSettingsOpen(false)
+      }
+      return next
+    })
+  }
+
+  const closeWidgetOverlays = (): void => {
+    setIsWidgetSettingsOpen(false)
+    setIsWidgetWalletOpen(false)
+  }
+
+  const isWidgetPanelActive = !isWidgetSettingsOpen && !isWidgetWalletOpen
+
+  const handleZapTokenSelect = useCallback(
+    (token: TToken): void => {
+      if (!widgetActions.includes(WidgetActionType.Deposit)) {
+        return
+      }
+      setIsWidgetSettingsOpen(false)
+      setIsWidgetWalletOpen(false)
+      setWidgetMode(WidgetActionType.Deposit)
+      setDepositPrefill({
+        address: toAddress(token.address),
+        chainId: token.chainID
+      })
+    },
+    [widgetActions]
+  )
 
   const sections = useMemo(() => {
     if (!currentVault || !yDaemonBaseUri) {
@@ -371,6 +454,15 @@ function Index(): ReactElement | null {
   }, [updateSectionScrollOffset])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    void isHeaderCompressed
+    const frame = requestAnimationFrame(() => {
+      updateSectionScrollOffset()
+    })
+    return (): void => cancelAnimationFrame(frame)
+  }, [isHeaderCompressed, updateSectionScrollOffset])
+
+  useEffect(() => {
     const element = headerRef.current
     if (!element || typeof ResizeObserver === 'undefined') return
 
@@ -488,7 +580,10 @@ function Index(): ReactElement | null {
             widgetMode={widgetMode}
             onWidgetModeChange={setWidgetMode}
             isWidgetSettingsOpen={isWidgetSettingsOpen}
-            onWidgetSettingsOpen={() => setIsWidgetSettingsOpen((prev) => !prev)}
+            onWidgetSettingsOpen={toggleWidgetSettings}
+            isWidgetWalletOpen={isWidgetWalletOpen}
+            onWidgetWalletOpen={toggleWidgetWallet}
+            onWidgetCloseOverlays={closeWidgetOverlays}
             onCompressionChange={setIsHeaderCompressed}
           />
         </header>
@@ -623,23 +718,40 @@ function Index(): ReactElement | null {
               'order-1 md:order-2',
               'md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-4',
               'flex flex-col',
-              'min-h-[400px]'
+              'max-h-[calc(100vh-var(--vault-header-initial-offset))]'
             )}
-            // style={{ top: nextSticky }}
-            style={{ top: '233px' }}
+            style={{ top: 'var(--vault-header-height, var(--header-height))' }}
           >
-            <Widget
-              vaultAddress={currentVault.address}
-              currentVault={currentVault}
-              gaugeAddress={currentVault.staking.address}
-              actions={widgetActions}
-              chainId={chainId}
-              mode={widgetMode}
-              onModeChange={setWidgetMode}
-              showTabs={false}
-              isSettingsOpen={isWidgetSettingsOpen}
-              onSettingsOpenChange={setIsWidgetSettingsOpen}
-            />
+            <div className="flex flex-col flex-1 min-h-0">
+              <div
+                className={cl('flex flex-col flex-1 min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
+                aria-hidden={!isWidgetPanelActive}
+              >
+                <Widget
+                  vaultAddress={currentVault.address}
+                  currentVault={currentVault}
+                  gaugeAddress={currentVault.staking.address}
+                  actions={widgetActions}
+                  chainId={chainId}
+                  mode={widgetMode}
+                  onModeChange={setWidgetMode}
+                  showTabs={false}
+                  depositPrefill={depositPrefill}
+                  onDepositPrefillConsumed={() => setDepositPrefill(null)}
+                />
+              </div>
+              <SettingsPanel isActive={isWidgetSettingsOpen} />
+              <WalletPanel
+                isActive={isWidgetWalletOpen}
+                currentVault={currentVault}
+                vaultAddress={toAddress(currentVault.address)}
+                stakingAddress={
+                  isZeroAddress(currentVault.staking.address) ? undefined : toAddress(currentVault.staking.address)
+                }
+                chainId={chainId}
+                onSelectZapToken={handleZapTokenSelect}
+              />
+            </div>
           </div>
 
           {/* Desktop sections - Hidden on mobile */}
