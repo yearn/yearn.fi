@@ -487,7 +487,9 @@ export function VaultDetailsHeader({
   widgetActions = [],
   widgetMode,
   onWidgetModeChange,
-  onCompressionChange
+  onCompressionChange,
+  onWidgetSettingsOpen,
+  isWidgetSettingsOpen
 }: {
   currentVault: TYDaemonVault
   isCollapsibleMode?: boolean
@@ -499,6 +501,8 @@ export function VaultDetailsHeader({
   widgetMode?: WidgetActionType
   onWidgetModeChange?: (mode: WidgetActionType) => void
   onCompressionChange?: (isCompressed: boolean) => void
+  onWidgetSettingsOpen?: () => void
+  isWidgetSettingsOpen?: boolean
 }): ReactElement {
   const { address } = useWeb3()
   const themePreference = useThemePreference()
@@ -609,6 +613,8 @@ export function VaultDetailsHeader({
             activeAction={widgetMode}
             onActionChange={onWidgetModeChange}
             className={isCompressed ? '-mt-px rounded-t-none border-t-0' : undefined}
+            onOpenSettings={onWidgetSettingsOpen}
+            isSettingsOpen={isWidgetSettingsOpen}
           />
         ) : null}
       </div>
