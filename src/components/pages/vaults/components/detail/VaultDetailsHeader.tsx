@@ -448,7 +448,7 @@ function UserHoldingsCard({
   return (
     <MetricsCard
       items={sections}
-      className={'rounded-tl-lg md:rounded-b-none border border-border'}
+      className={'rounded-tl-lg md:rounded-b-none border-b-0 border-border'}
       footnoteDisplay={'tooltip'}
       isCompressed={isCompressed}
     />
