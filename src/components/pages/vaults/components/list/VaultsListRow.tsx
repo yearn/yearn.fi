@@ -18,14 +18,7 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
-import { IconCirclePile } from '@shared/icons/IconCirclePile'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
-import { IconMigratable } from '@shared/icons/IconMigratable'
-import { IconRewind } from '@shared/icons/IconRewind'
-import { IconScissors } from '@shared/icons/IconScissors'
-import { IconStablecoin } from '@shared/icons/IconStablecoin'
-import { IconStack } from '@shared/icons/IconStack'
-import { IconVolatile } from '@shared/icons/IconVolatile'
 import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -113,13 +106,6 @@ export function VaultsListRow({
   const isLegacyVault = listKind === 'legacy'
   const productType = isAllocatorVault ? 'v3' : 'lp'
   const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
-  const productTypeIcon = isAllocatorVault ? (
-    <span className={'text-sm leading-none'}>{'⚙️'}</span>
-  ) : isLegacyVault ? (
-    <IconRewind className={'size-3.5'} />
-  ) : (
-    <span className={'text-sm leading-none'}>{'🏭'}</span>
-  )
   const productTypeAriaLabel = isAllocatorVault
     ? 'Show single asset vaults'
     : isLegacyVault
@@ -160,18 +146,6 @@ export function VaultsListRow({
   const activeCategoryLabels = activeCategories ?? []
   const showKindChip = showStrategies && Boolean(kindType) && (showAllocatorChip || kindType !== 'multi')
   const isKindActive = false
-  const categoryIcon: ReactElement | null =
-    currentVault.category === 'Stablecoin' ? (
-      <IconStablecoin className={'size-3.5'} />
-    ) : currentVault.category === 'Volatile' ? (
-      <IconVolatile className={'size-3.5'} />
-    ) : null
-  const kindIcon: ReactElement | null =
-    kindType === 'multi' ? (
-      <IconCirclePile className={'size-3.5'} />
-    ) : kindType === 'single' ? (
-      <IconStack className={'size-3.5'} />
-    ) : null
   const chainDescription = getChainDescription(currentVault.chainID)
   const categoryDescription = getCategoryDescription(currentVault.category)
   const productTypeDescription = getProductTypeDescription(listKind)
@@ -179,9 +153,12 @@ export function VaultsListRow({
   const fees = currentVault.apr?.fees
   const showFeesChip = Boolean(fees) && !isChipsCompressed
   const feesChipLabel = fees
-    ? `${formatAmount((fees.management || 0) * 100, 0, 2)}% | ${formatAmount((fees.performance || 0) * 100, 0, 2)}%`
+    ? `Fees: ${formatAmount((fees.management || 0) * 100, 0, 2)}% | ${formatAmount(
+        (fees.performance || 0) * 100,
+        0,
+        2
+      )}%`
     : ''
-  const migratableIcon = <IconMigratable className={'size-3.5'} />
   const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
   const holdingsIcon = (
     <svg
@@ -264,7 +241,7 @@ export function VaultsListRow({
         href={href}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
-          'p-4 pb-4 md:p-4 md:pt-2 md:pb-4 md:pr-20',
+          'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
         onClickCapture={(event): void => {
@@ -307,7 +284,7 @@ export function VaultsListRow({
           )}
         >
           <div
-            className={'flex flex-row w-full gap-4 pb-2 border-b border-border md:pb-0 md:border-none overflow-visible'}
+            className={'flex flex-row w-full gap-6 pb-2 border-b border-border md:pb-0 md:border-none overflow-visible'}
           >
             {showCompareToggle ? (
               // biome-ignore lint/a11y/useSemanticElements: native checkbox has double-firing issues with parent Link's onClickCapture
@@ -361,26 +338,27 @@ export function VaultsListRow({
               />
               <div
                 className={
-                  'absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full border border-border bg-surface md:hidden'
+                  'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'
                 }
               >
-                <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={12} height={12} />
+                <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={16} height={16} />
               </div>
             </div>
             <div className={'min-w-0 flex-1'}>
               <strong
                 title={currentVault.name}
                 className={
-                  'block truncate-safe whitespace-nowrap font-black text-text-primary md:-mb-0.5 text-lg leading-tight'
+                  'block truncate-safe whitespace-nowrap font-black text-text-primary md:mb-0 text-lg leading-tight'
                 }
               >
                 {currentVault.name}
               </strong>
-              <div className={'mt-1 flex items-center gap-1 text-xs text-text-primary/70 whitespace-nowrap'}>
+              <div className={'mt-1 flex items-center gap-2 text-xs text-text-primary/70 whitespace-nowrap'}>
                 <div className={'hidden md:block'}>
                   <VaultsListChip
                     label={network.name}
                     icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
+                    showIconInChip={false}
                     isActive={activeChainIds.includes(currentVault.chainID)}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
@@ -393,7 +371,6 @@ export function VaultsListRow({
                 {currentVault.category ? (
                   <VaultsListChip
                     label={currentVault.category}
-                    icon={categoryIcon}
                     isActive={activeCategoryLabels.includes(currentVault.category)}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
@@ -406,7 +383,6 @@ export function VaultsListRow({
                 {showProductTypeChip ? (
                   <VaultsListChip
                     label={productTypeLabel}
-                    icon={productTypeIcon}
                     isActive={isProductTypeActive}
                     isCollapsed={shouldCollapseProductType}
                     showCollapsedTooltip={showCollapsedTooltip}
@@ -419,7 +395,6 @@ export function VaultsListRow({
                 {showFeesChip ? (
                   <VaultsListChip
                     label={feesChipLabel}
-                    icon={<IconScissors className={'size-3.5'} />}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={'Management fee | Performance fee'}
@@ -429,7 +404,6 @@ export function VaultsListRow({
                 {showKindChip && kindLabel ? (
                   <VaultsListChip
                     label={kindLabel}
-                    icon={kindIcon}
                     isActive={isKindActive}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
@@ -452,7 +426,6 @@ export function VaultsListRow({
                 {flags?.isMigratable ? (
                   <VaultsListChip
                     label={'Migratable'}
-                    icon={migratableIcon}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}

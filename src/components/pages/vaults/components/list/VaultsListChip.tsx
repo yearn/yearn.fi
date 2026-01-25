@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from 'react'
 type TVaultsListChipProps = {
   label: string
   icon?: ReactNode
+  showIconInChip?: boolean
   isActive?: boolean
   isCollapsed?: boolean
   showCollapsedTooltip?: boolean
@@ -21,6 +22,7 @@ type TVaultsListChipProps = {
 export function VaultsListChip({
   label,
   icon,
+  showIconInChip = true,
   isActive = false,
   isCollapsed = false,
   showCollapsedTooltip = false,
@@ -34,7 +36,8 @@ export function VaultsListChip({
 }: TVaultsListChipProps): ReactElement {
   const isInteractive = Boolean(onClick) && !disabled
   const canTrackHover = Boolean(onHoverChange) && !disabled
-  const shouldCollapse = isCollapsed && Boolean(icon)
+  const shouldShowIconInChip = Boolean(icon) && showIconInChip
+  const shouldCollapse = isCollapsed && shouldShowIconInChip
   const iconNode = icon ? (
     <span className={'flex size-4 items-center justify-center text-text-secondary'}>{icon}</span>
   ) : null
@@ -64,7 +67,7 @@ export function VaultsListChip({
       }
       disabled={disabled}
     >
-      {iconNode}
+      {shouldShowIconInChip ? iconNode : null}
       <span className={shouldCollapse ? 'sr-only' : ''}>{label}</span>
     </button>
   )

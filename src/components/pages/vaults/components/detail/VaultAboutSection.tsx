@@ -10,10 +10,6 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { IconRewind } from '@shared/icons/IconRewind'
-import { IconScissors } from '@shared/icons/IconScissors'
-import { IconStablecoin } from '@shared/icons/IconStablecoin'
-import { IconVolatile } from '@shared/icons/IconVolatile'
 import { cl, formatPercent } from '@shared/utils'
 import { copyToClipboard, parseMarkdown } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -32,8 +28,8 @@ function InlineHeading({ label, value, icon, suffix }: TInlineHeading): ReactEle
     <div className={'flex flex-wrap items-center gap-2 text-sm'}>
       <span className={'sr-only'}>{`${label}:`}</span>
       <span className={'flex items-center gap-1 font-normal text-text-primary'}>
-        {icon ? <span className={'flex size-4 items-center justify-center'}>{icon}</span> : null}
         <span>{value}</span>
+        {icon ? <span className={'flex size-4 items-center justify-center'}>{icon}</span> : null}
         {suffix ? <span className={'flex size-3 items-center justify-center'}>{suffix}</span> : null}
       </span>
     </div>
@@ -72,7 +68,7 @@ function ExpandableInfoItem({ label, value, children, className, icon }: TExpand
           }
         />
       </summary>
-      <div className={'mt-1 pl-5 text-sm text-text-secondary'}>{children}</div>
+      <div className={'mt-1 text-sm text-text-secondary'}>{children}</div>
     </details>
   )
 }
@@ -116,21 +112,7 @@ export function VaultAboutSection({
   const managementFee = formatPercent((apr.fees.management || 0) * 100, 0, 2)
   const performanceFee = formatPercent((apr.fees.performance || 0) * 100, 0, 2)
   const feesSummary = `${managementFee} Management Fee | ${performanceFee} Performance Fee`
-  const categoryIcon =
-    currentVault.category === 'Stablecoin' ? (
-      <IconStablecoin className={'size-4 text-text-secondary'} />
-    ) : currentVault.category === 'Volatile' ? (
-      <IconVolatile className={'size-4 text-text-secondary'} />
-    ) : null
-  const productTypeIcon = isAllocatorVault ? (
-    <span className={'text-sm leading-none'}>{'⚙️'}</span>
-  ) : isLegacyVault ? (
-    <IconRewind className={'size-4 text-text-secondary'} />
-  ) : (
-    <span className={'text-sm leading-none'}>{'🏭'}</span>
-  )
   const chainIcon = <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={16} height={16} />
-  const feesIcon = <IconScissors className={'size-4 text-text-secondary'} />
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
   const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
 
@@ -244,18 +226,18 @@ export function VaultAboutSection({
             </p>
           </ExpandableInfoItem>
 
-          <ExpandableInfoItem label={'Asset Type'} value={assetTypeLabel} icon={categoryIcon}>
+          <ExpandableInfoItem label={'Asset Type'} value={assetTypeLabel}>
             <p>{assetTypeDescription}</p>
           </ExpandableInfoItem>
 
-          <ExpandableInfoItem label={'Vault Type'} value={vaultTypeLabel || productTypeLabel} icon={productTypeIcon}>
+          <ExpandableInfoItem label={'Vault Type'} value={vaultTypeLabel || productTypeLabel}>
             <div className={'space-y-1'}>
               <p>{productTypeDescription}</p>
               {vaultKindDescription ? <p>{vaultKindDescription}</p> : null}
             </div>
           </ExpandableInfoItem>
 
-          <ExpandableInfoItem label={'Fees'} value={feesSummary} icon={feesIcon}>
+          <ExpandableInfoItem label={'Fees'} value={feesSummary}>
             <div className={'space-y-3'}>
               <p>
                 {
