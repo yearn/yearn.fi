@@ -41,6 +41,240 @@ import type { ReactElement, Ref } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
+function VaultHeaderIdentity({
+  currentVault,
+  isCompressed,
+  isDarkTheme,
+  className
+}: {
+  currentVault: TYDaemonVault
+  isCompressed: boolean
+  isDarkTheme: boolean
+  className?: string
+}): ReactElement {
+  const chainName = getNetwork(currentVault.chainID).name
+  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+    currentVault.chainID
+  }/${currentVault.token.address.toLowerCase()}/logo-128.png`
+  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
+  const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
+  const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
+  const showChainChip = !isCompressed
+  const showCategoryChip = Boolean(currentVault.category)
+  const listKind = deriveListKind(currentVault)
+  const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
+  const isLegacyVault = listKind === 'legacy'
+  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
+  const productTypeIcon = ((): ReactElement => {
+    if (isAllocatorVault) return <span className={'text-sm leading-none'}>{'⚙️'}</span>
+    if (isLegacyVault) return <IconRewind className={'size-3.5'} />
+    return <span className={'text-sm leading-none'}>{'🏭'}</span>
+  })()
+
+  const categoryIcon: ReactElement | null = ((): ReactElement | null => {
+    if (currentVault.category === 'Stablecoin') return <IconStablecoin className={'size-3.5'} />
+    if (currentVault.category === 'Volatile') return <IconVolatile className={'size-3.5'} />
+    return null
+  })()
+
+  const baseKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
+    if (currentVault.kind === 'Multi Strategy') return 'multi'
+    if (currentVault.kind === 'Single Strategy') return 'single'
+    return undefined
+  })()
+
+  const fallbackKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
+    if (listKind === 'allocator') return 'multi'
+    if (listKind === 'strategy') return 'single'
+    return undefined
+  })()
+  const kindType = baseKindType ?? fallbackKindType
+
+  const kindLabel: string | undefined = ((): string | undefined => {
+    if (kindType === 'multi') return 'Allocator'
+    if (kindType === 'single') return 'Strategy'
+    return currentVault.kind
+  })()
+
+  const kindIcon: ReactElement | null = ((): ReactElement | null => {
+    if (kindType === 'multi') return <IconCirclePile className={'size-3.5'} />
+    if (kindType === 'single') return <IconStack className={'size-3.5'} />
+    return null
+  })()
+  const chainDescription = getChainDescription(currentVault.chainID)
+  const categoryDescription = getCategoryDescription(currentVault.category)
+  const productTypeDescription = getProductTypeDescription(listKind)
+  const kindDescription = getKindDescription(kindType, kindLabel)
+  const isMigratable = Boolean(currentVault.migration?.available)
+  const isRetired = Boolean(currentVault.info?.isRetired)
+  const migratableIcon = <IconMigratable className={'size-3.5'} />
+  const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
+  const showKindChip = Boolean(kindLabel)
+  const shouldShowMetadata =
+    showChainChip || showCategoryChip || showKindChip || Boolean(productTypeLabel) || isMigratable || isRetired
+  const [isTitleClipped, setIsTitleClipped] = useState(false)
+  const titleRef = useRef<HTMLSpanElement>(null)
+  const vaultName = getVaultName(currentVault)
+
+  useEffect(() => {
+    // Preload chain logo so it appears instantly when the chip mounts
+    const preload = new Image()
+    preload.src = chainLogoSrc
+  }, [chainLogoSrc])
+
+  useEffect(() => {
+    if (!isCompressed) {
+      setIsTitleClipped(false)
+      return
+    }
+
+    const measure = (): void => {
+      if (!titleRef.current) return
+      setIsTitleClipped(titleRef.current.scrollWidth > titleRef.current.clientWidth)
+    }
+
+    measure()
+    window.addEventListener('resize', measure)
+
+    return () => {
+      window.removeEventListener('resize', measure)
+    }
+  }, [isCompressed])
+
+  return (
+    <div className={cl('flex flex-col gap-1 px-1 mt-0', isCompressed ? 'md:justify-center' : '', className)}>
+      <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
+        <div
+          className={cl(
+            'relative flex items-center justify-start rounded-full bg-surface/70',
+            isCompressed ? 'size-8' : 'size-10'
+          )}
+        >
+          <TokenLogo
+            src={tokenLogoSrc}
+            tokenSymbol={currentVault.token.symbol || ''}
+            width={isCompressed ? 32 : 40}
+            height={isCompressed ? 32 : 40}
+          />
+          {isCompressed ? (
+            <div
+              className={
+                'absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full border border-border bg-surface'
+              }
+            >
+              <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={14} height={14} />
+            </div>
+          ) : null}
+        </div>
+        <div className={'flex flex-col'}>
+          <div className={cl('flex items-center gap-3', isCompressed && isTitleClipped ? 'relative group' : '')}>
+            <strong
+              ref={titleRef}
+              className={cl(
+                'text-lg font-black leading-tight md:text-3xl md:leading-10',
+                isDarkTheme ? 'text-text-primary' : 'text-text-secondary',
+                isCompressed ? 'md:text-[30px] md:leading-9 max-w-[260px] truncate whitespace-nowrap' : ''
+              )}
+            >
+              {vaultName} {' yVault'}
+            </strong>
+            {isCompressed && isTitleClipped ? (
+              <span
+                className={cl(
+                  'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight group-hover:block',
+                  isDarkTheme ? 'text-text-primary' : 'text-text-secondary'
+                )}
+              >
+                {vaultName} {' yVault'}
+              </span>
+            ) : null}
+            {!isCompressed && explorerHref ? (
+              <a
+                href={explorerHref}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={'text-text-secondary hover:text-text-primary transition-colors h-7 content-end'}
+                aria-label={'View vault on block explorer'}
+              >
+                <IconLinkOut className={'size-4 md:size-4'} />
+              </a>
+            ) : null}
+          </div>
+        </div>
+      </div>
+      {shouldShowMetadata ? (
+        <div className={'flex flex-wrap items-center gap-1 text-xs text-text-primary/70 md:text-xs mt-1'}>
+          {showChainChip ? (
+            <VaultsListChip
+              label={chainName}
+              icon={<TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={14} height={14} priority />}
+              isCollapsed={isCompressed}
+              showCollapsedTooltip={isCompressed}
+              tooltipDescription={chainDescription}
+            />
+          ) : null}
+          {showCategoryChip ? (
+            <VaultsListChip
+              label={currentVault.category || ''}
+              icon={categoryIcon}
+              isCollapsed={isCompressed}
+              showCollapsedTooltip={isCompressed}
+              tooltipDescription={categoryDescription || undefined}
+            />
+          ) : null}
+          <VaultsListChip
+            label={productTypeLabel}
+            icon={productTypeIcon}
+            isCollapsed={isCompressed}
+            showCollapsedTooltip={isCompressed}
+            tooltipDescription={productTypeDescription}
+          />
+          {showKindChip && kindLabel ? (
+            <VaultsListChip
+              label={kindLabel}
+              icon={kindIcon}
+              isCollapsed={isCompressed}
+              showCollapsedTooltip={isCompressed}
+              tooltipDescription={kindDescription}
+            />
+          ) : null}
+          {isRetired ? (
+            <VaultsListChip
+              label={'Retired'}
+              icon={retiredIcon}
+              isCollapsed={isCompressed}
+              showCollapsedTooltip={isCompressed}
+              tooltipDescription={RETIRED_TAG_DESCRIPTION}
+            />
+          ) : null}
+          {isMigratable ? (
+            <VaultsListChip
+              label={'Migratable'}
+              icon={migratableIcon}
+              isCollapsed={isCompressed}
+              showCollapsedTooltip={isCompressed}
+              tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
+            />
+          ) : null}
+          {isCompressed && explorerHref ? (
+            <a
+              href={explorerHref}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              className={
+                'inline-flex items-center justify-center px-2 py-1 text-text-secondary hover:text-text-primary transition-colors'
+              }
+              aria-label={'View vault on block explorer'}
+            >
+              <IconLinkOut className={'size-4'} />
+            </a>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function SectionSelectorBar({
   activeSectionKey,
   onSelectSection,
@@ -285,96 +519,6 @@ export function VaultDetailsHeader({
   })
   const tokenPrice = currentVault.tvl.price || 0
 
-  const chainName = getNetwork(currentVault.chainID).name
-
-  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-    currentVault.chainID
-  }/${currentVault.token.address.toLowerCase()}/logo-128.png`
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
-  const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
-  const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
-  const showChainChip = !isCompressed
-  const showCategoryChip = Boolean(currentVault.category)
-  const listKind = deriveListKind(currentVault)
-  const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
-  const isLegacyVault = listKind === 'legacy'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
-  const productTypeIcon = ((): ReactElement => {
-    if (isAllocatorVault) return <span className={'text-sm leading-none'}>{'⚙️'}</span>
-    if (isLegacyVault) return <IconRewind className={'size-3.5'} />
-    return <span className={'text-sm leading-none'}>{'🏭'}</span>
-  })()
-
-  const categoryIcon: ReactElement | null = ((): ReactElement | null => {
-    if (currentVault.category === 'Stablecoin') return <IconStablecoin className={'size-3.5'} />
-    if (currentVault.category === 'Volatile') return <IconVolatile className={'size-3.5'} />
-    return null
-  })()
-
-  const baseKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
-    if (currentVault.kind === 'Multi Strategy') return 'multi'
-    if (currentVault.kind === 'Single Strategy') return 'single'
-    return undefined
-  })()
-
-  const fallbackKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
-    if (listKind === 'allocator') return 'multi'
-    if (listKind === 'strategy') return 'single'
-    return undefined
-  })()
-  const kindType = baseKindType ?? fallbackKindType
-
-  const kindLabel: string | undefined = ((): string | undefined => {
-    if (kindType === 'multi') return 'Allocator'
-    if (kindType === 'single') return 'Strategy'
-    return currentVault.kind
-  })()
-
-  const kindIcon: ReactElement | null = ((): ReactElement | null => {
-    if (kindType === 'multi') return <IconCirclePile className={'size-3.5'} />
-    if (kindType === 'single') return <IconStack className={'size-3.5'} />
-    return null
-  })()
-  const chainDescription = getChainDescription(currentVault.chainID)
-  const categoryDescription = getCategoryDescription(currentVault.category)
-  const productTypeDescription = getProductTypeDescription(listKind)
-  const kindDescription = getKindDescription(kindType, kindLabel)
-  const isMigratable = Boolean(currentVault.migration?.available)
-  const isRetired = Boolean(currentVault.info?.isRetired)
-  const migratableIcon = <IconMigratable className={'size-3.5'} />
-  const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
-  const showKindChip = Boolean(kindLabel)
-  const shouldShowMetadata =
-    showChainChip || showCategoryChip || showKindChip || Boolean(productTypeLabel) || isMigratable || isRetired
-  const [isTitleClipped, setIsTitleClipped] = useState(false)
-  const titleRef = useRef<HTMLSpanElement>(null)
-  const vaultName = getVaultName(currentVault)
-
-  useEffect(() => {
-    // Preload chain logo so it appears instantly when the chip mounts
-    const preload = new Image()
-    preload.src = chainLogoSrc
-  }, [chainLogoSrc])
-
-  useEffect(() => {
-    if (!isCompressed) {
-      setIsTitleClipped(false)
-      return
-    }
-
-    const measure = (): void => {
-      if (!titleRef.current) return
-      setIsTitleClipped(titleRef.current.scrollWidth > titleRef.current.clientWidth)
-    }
-
-    measure()
-    window.addEventListener('resize', measure)
-
-    return () => {
-      window.removeEventListener('resize', measure)
-    }
-  }, [isCompressed])
-
   return (
     <div className={'grid w-full grid-cols-1 gap-y-0 gap-x-6 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
       <div className={'hidden md:flex items-center gap-2 text-sm text-text-secondary md:col-span-20 px-1'}>
@@ -388,164 +532,68 @@ export function VaultDetailsHeader({
         <span>{'>'}</span>
         <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)}</span>
       </div>
-      <div
-        className={cl(
-          'flex flex-col gap-1 px-1 pt-4',
-          isCompressed ? 'md:col-span-5 md:row-start-2 md:justify-center' : 'md:col-span-20 md:row-start-2'
-        )}
-      >
-        <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
+      {isCompressed ? (
+        <div className={'md:col-span-13 md:row-start-2 pt-4'}>
           <div
             className={cl(
-              'relative flex items-center justify-start rounded-full bg-surface/70',
-              isCompressed ? 'size-8' : 'size-10'
+              'rounded-lg'
+              // 'border border-border',
             )}
           >
-            <TokenLogo
-              src={tokenLogoSrc}
-              tokenSymbol={currentVault.token.symbol || ''}
-              width={isCompressed ? 32 : 40}
-              height={isCompressed ? 32 : 40}
-            />
-            {isCompressed ? (
-              <div
-                className={
-                  'absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full border border-border bg-surface'
-                }
-              >
-                <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={14} height={14} />
+            <div className={'grid grid-cols-13 gap-y-0 gap-x-6'}>
+              <VaultHeaderIdentity
+                currentVault={currentVault}
+                isCompressed={isCompressed}
+                isDarkTheme={isDarkTheme}
+                className={'col-span-5'}
+              />
+              <div className={'col-span-8'}>
+                <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
               </div>
-            ) : null}
-          </div>
-          <div className={'flex flex-col'}>
-            <div className={cl('flex items-center gap-3', isCompressed && isTitleClipped ? 'relative group' : '')}>
-              <strong
-                ref={titleRef}
-                className={cl(
-                  'text-lg font-black leading-tight md:text-3xl md:leading-10',
-                  isDarkTheme ? 'text-text-primary' : 'text-text-secondary',
-                  isCompressed ? 'md:text-[30px] md:leading-9 max-w-[260px] truncate whitespace-nowrap' : ''
-                )}
-              >
-                {vaultName} {' yVault'}
-              </strong>
-              {isCompressed && isTitleClipped ? (
-                <span
-                  className={cl(
-                    'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight group-hover:block',
-                    isDarkTheme ? 'text-text-primary' : 'text-text-secondary'
-                  )}
-                >
-                  {vaultName} {' yVault'}
-                </span>
-              ) : null}
-              {!isCompressed && explorerHref ? (
-                <a
-                  href={explorerHref}
-                  target={'_blank'}
-                  rel={'noopener noreferrer'}
-                  className={'text-text-secondary hover:text-text-primary transition-colors h-7 content-end'}
-                  aria-label={'View vault on block explorer'}
-                >
-                  <IconLinkOut className={'size-4 md:size-4'} />
-                </a>
+              {sectionTabs.length > 0 ? (
+                <div className={'col-span-13'}>
+                  <SectionSelectorBar
+                    activeSectionKey={activeSectionKey}
+                    onSelectSection={onSelectSection}
+                    sectionSelectorRef={sectionSelectorRef}
+                    sectionTabs={sectionTabs}
+                    isCompressed={isCompressed}
+                  />
+                </div>
               ) : null}
             </div>
           </div>
         </div>
-        {shouldShowMetadata ? (
-          <div className={'flex flex-wrap items-center gap-1 text-xs text-text-primary/70 md:text-xs mt-1'}>
-            {showChainChip ? (
-              <VaultsListChip
-                label={chainName}
-                icon={<TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={14} height={14} priority />}
-                isCollapsed={isCompressed}
-                showCollapsedTooltip={isCompressed}
-                tooltipDescription={chainDescription}
-              />
-            ) : null}
-            {showCategoryChip ? (
-              <VaultsListChip
-                label={currentVault.category || ''}
-                icon={categoryIcon}
-                isCollapsed={isCompressed}
-                showCollapsedTooltip={isCompressed}
-                tooltipDescription={categoryDescription || undefined}
-              />
-            ) : null}
-            <VaultsListChip
-              label={productTypeLabel}
-              icon={productTypeIcon}
-              isCollapsed={isCompressed}
-              showCollapsedTooltip={isCompressed}
-              tooltipDescription={productTypeDescription}
-            />
-            {showKindChip && kindLabel ? (
-              <VaultsListChip
-                label={kindLabel}
-                icon={kindIcon}
-                isCollapsed={isCompressed}
-                showCollapsedTooltip={isCompressed}
-                tooltipDescription={kindDescription}
-              />
-            ) : null}
-            {isRetired ? (
-              <VaultsListChip
-                label={'Retired'}
-                icon={retiredIcon}
-                isCollapsed={isCompressed}
-                showCollapsedTooltip={isCompressed}
-                tooltipDescription={RETIRED_TAG_DESCRIPTION}
-              />
-            ) : null}
-            {isMigratable ? (
-              <VaultsListChip
-                label={'Migratable'}
-                icon={migratableIcon}
-                isCollapsed={isCompressed}
-                showCollapsedTooltip={isCompressed}
-                tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
-              />
-            ) : null}
-            {isCompressed && explorerHref ? (
-              <a
-                href={explorerHref}
-                target={'_blank'}
-                rel={'noopener noreferrer'}
-                className={
-                  'inline-flex items-center justify-center px-2 py-1 text-text-secondary hover:text-text-primary transition-colors'
-                }
-                aria-label={'View vault on block explorer'}
-              >
-                <IconLinkOut className={'size-4'} />
-              </a>
-            ) : null}
+      ) : (
+        <>
+          <VaultHeaderIdentity
+            currentVault={currentVault}
+            isCompressed={isCompressed}
+            isDarkTheme={isDarkTheme}
+            className={'md:col-span-20 md:row-start-2'}
+          />
+          <div className={cl('md:col-span-13 md:row-start-3')}>
+            <div className={'flex flex-col'}>
+              <div className={'pt-4'}>
+                <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
+              </div>
+              {sectionTabs.length > 0 ? (
+                <SectionSelectorBar
+                  activeSectionKey={activeSectionKey}
+                  onSelectSection={onSelectSection}
+                  sectionSelectorRef={sectionSelectorRef}
+                  sectionTabs={sectionTabs}
+                  isCompressed={isCompressed}
+                />
+              ) : null}
+            </div>
           </div>
-        ) : null}
-      </div>
+        </>
+      )}
 
       <div
         className={cl(
-          'pt-4',
-          isCompressed ? 'md:col-start-6 md:col-span-8 md:row-start-2' : 'md:col-span-13 md:row-start-3'
-        )}
-      >
-        <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
-      </div>
-      {sectionTabs.length > 0 ? (
-        <div className={cl('md:col-span-13 w-full', isCompressed ? 'md:row-start-3' : 'md:row-start-4')}>
-          <SectionSelectorBar
-            activeSectionKey={activeSectionKey}
-            onSelectSection={onSelectSection}
-            sectionSelectorRef={sectionSelectorRef}
-            sectionTabs={sectionTabs}
-            isCompressed={isCompressed}
-          />
-        </div>
-      ) : null}
-      <div
-        className={cl(
-          'pt-4',
+          'flex flex-col pt-4',
           isCompressed ? 'md:col-span-7 md:col-start-14 md:row-start-2' : 'md:col-span-7 md:col-start-14 md:row-start-3'
         )}
       >
@@ -555,12 +603,15 @@ export function VaultDetailsHeader({
           tokenPrice={tokenPrice}
           isCompressed={isCompressed}
         />
+        {widgetActions.length > 0 && widgetMode && onWidgetModeChange ? (
+          <WidgetTabs
+            actions={widgetActions}
+            activeAction={widgetMode}
+            onActionChange={onWidgetModeChange}
+            className={isCompressed ? '-mt-px rounded-t-none border-t-0' : undefined}
+          />
+        ) : null}
       </div>
-      {widgetActions.length > 0 && widgetMode && onWidgetModeChange ? (
-        <div className={cl('md:col-span-7 md:col-start-14 w-full', isCompressed ? 'md:row-start-3' : 'md:row-start-4')}>
-          <WidgetTabs actions={widgetActions} activeAction={widgetMode} onActionChange={onWidgetModeChange} />
-        </div>
-      ) : null}
     </div>
   )
 }

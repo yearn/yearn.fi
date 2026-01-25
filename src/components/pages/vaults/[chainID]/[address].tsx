@@ -616,7 +616,12 @@ function Index(): ReactElement | null {
         {/* Main Content Grid - Responsive layout */}
         <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div
-            className={cl('order-1 md:order-2', 'md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-4')}
+            className={cl(
+              'order-1 md:order-2',
+              'md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-4',
+              'flex flex-col',
+              'min-h-[400px]'
+            )}
             // style={{ top: nextSticky }}
             style={{ top: '233px' }}
           >
