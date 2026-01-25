@@ -71,6 +71,8 @@ export function VaultsListRow({
   onToggleVaultType,
   showStrategies = false,
   shouldCollapseChips = false,
+  isExpanded: isExpandedProp,
+  onExpandedChange,
   showHoldingsChipOverride,
   showProductTypeChipOverride,
   mobileSecondaryMetric = 'tvl',
@@ -92,6 +94,8 @@ export function VaultsListRow({
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
   shouldCollapseChips?: boolean
+  isExpanded?: boolean
+  onExpandedChange?: (next: boolean) => void
   showAllocatorChip?: boolean
   showHoldingsChipOverride?: boolean
   showProductTypeChipOverride?: boolean
@@ -105,7 +109,8 @@ export function VaultsListRow({
   const { getToken } = useWallet()
   const { getPrice } = useYearn()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpandedState, setIsExpandedState] = useState(false)
+  const isExpanded = isExpandedProp ?? isExpandedState
   const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('strategies')
   const [interactiveHoverCount, setInteractiveHoverCount] = useState(0)
   const listKind = deriveListKind(currentVault)
@@ -145,6 +150,13 @@ export function VaultsListRow({
   const isHoveringInteractive = interactiveHoverCount > 0
   const handleInteractiveHoverChange = (isHovering: boolean): void => {
     setInteractiveHoverCount((count) => Math.max(0, count + (isHovering ? 1 : -1)))
+  }
+  const handleExpandedChange = (next: boolean): void => {
+    if (onExpandedChange) {
+      onExpandedChange(next)
+      return
+    }
+    setIsExpandedState(next)
   }
 
   const isHiddenVault = Boolean(flags?.isHidden)
@@ -251,7 +263,7 @@ export function VaultsListRow({
         aria-expanded={isExpanded}
         onClick={(event): void => {
           event.stopPropagation()
-          setIsExpanded((value) => !value)
+          handleExpandedChange(!isExpanded)
         }}
         className={cl(
           'absolute top-5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',

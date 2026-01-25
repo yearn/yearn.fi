@@ -6,6 +6,8 @@ import { VaultsAuxiliaryList } from '@pages/vaults/components/list/VaultsAuxilia
 import { VaultsListEmpty } from '@pages/vaults/components/list/VaultsListEmpty'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
+import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListRowSkeleton'
+import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import { toggleInArray } from '@pages/vaults/utils/constants'
 import { getVaultTypeLabel } from '@pages/vaults/utils/vaultTypeCopy'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
@@ -44,7 +46,7 @@ function VaultsListSection({
         >
           <div
             aria-hidden={true}
-            className={'pointer-events-none absolute inset-0 z-0 bg-app border-2'}
+            className={'pointer-events-none absolute inset-0 z-0 bg-app'}
             style={{ borderColor: 'var(--color-app)' }}
           />
           {listHead}
@@ -102,6 +104,7 @@ export default function Index(): ReactElement {
   const [compareVaultKeys, setCompareVaultKeys] = useState<string[]>([])
   const [isCompareOpen, setIsCompareOpen] = useState(false)
   const [isCompareMode, setIsCompareMode] = useState(false)
+  const [expandedVaultKeys, setExpandedVaultKeys] = useState<Record<string, boolean>>({})
 
   const handleToggleCompare = useCallback((vault: TYDaemonVault): void => {
     setCompareVaultKeys((prev) => toggleInArray(prev, getVaultKey(vault)))
@@ -123,6 +126,23 @@ export default function Index(): ReactElement {
         setIsCompareOpen(false)
       }
       return next
+    })
+  }, [])
+
+  const handleExpandedChange = useCallback((vaultKey: string, next: boolean): void => {
+    setExpandedVaultKeys((prev) => {
+      if (next) {
+        if (prev[vaultKey]) {
+          return prev
+        }
+        return { ...prev, [vaultKey]: true }
+      }
+      if (!prev[vaultKey]) {
+        return prev
+      }
+      const updated = { ...prev }
+      delete updated[vaultKey]
+      return updated
     })
   }, [])
 
@@ -223,15 +243,17 @@ export default function Index(): ReactElement {
   const vaultListContent = useMemo(() => {
     if (isLoading) {
       return (
-        <VaultsListEmpty
-          isLoading={isLoading}
-          currentSearch={search.value}
-          currentCategories={listCategoriesSanitized}
-          currentChains={listChains}
-          onReset={onResetFilters}
-          defaultCategories={defaultCategories}
-          potentialResultsCount={totalMatchingVaults}
-        />
+        <div className={'flex flex-col gap-px bg-border'}>
+          <VirtualizedVaultsList
+            items={[]}
+            estimateSize={81}
+            itemSpacingClassName={'pb-px'}
+            placeholderCount={10}
+            getItemKey={(vault): string => getVaultKey(vault)}
+            renderItem={(): ReactElement => <VaultsListRowSkeleton />}
+            renderPlaceholder={(): ReactElement => <VaultsListRowSkeleton />}
+          />
+        </div>
       )
     }
 
@@ -250,7 +272,7 @@ export default function Index(): ReactElement {
     }
 
     return (
-      <div className={'flex flex-col gap-px bg-border'}>
+      <div className={'flex flex-col gap-px bg-surface'}>
         {pinnedSections.map((section) => (
           <VaultsAuxiliaryList
             key={section.key}
@@ -268,16 +290,21 @@ export default function Index(): ReactElement {
             onToggleVaultType={onToggleVaultType}
             shouldCollapseChips={shouldCollapseChips}
             showStrategies={displayedShowStrategies}
+            expandedVaultKeys={expandedVaultKeys}
+            onExpandedChange={handleExpandedChange}
           />
         ))}
         {mainVaults.length > 0 ? (
-          <div className={'flex flex-col gap-0.5 md:gap-px bg-border'}>
-            {mainVaults.map((vault) => {
+          <VirtualizedVaultsList
+            items={mainVaults}
+            estimateSize={81}
+            itemSpacingClassName={'pb-0.5 md:border-b md:border-border'}
+            getItemKey={(vault): string => getVaultKey(vault)}
+            renderItem={(vault): ReactElement => {
               const key = getVaultKey(vault)
               const rowApyDisplayVariant = resolveApyDisplayVariant(vault)
               return (
                 <VaultsListRow
-                  key={key}
                   currentVault={vault}
                   flags={vaultFlags[key]}
                   apyDisplayVariant={rowApyDisplayVariant}
@@ -292,10 +319,12 @@ export default function Index(): ReactElement {
                   onToggleVaultType={onToggleVaultType}
                   shouldCollapseChips={shouldCollapseChips}
                   showStrategies={displayedShowStrategies}
+                  isExpanded={Boolean(expandedVaultKeys[key])}
+                  onExpandedChange={(next): void => handleExpandedChange(key, next)}
                 />
               )
-            })}
-          </div>
+            }}
+          />
         ) : null}
       </div>
     )
@@ -306,6 +335,8 @@ export default function Index(): ReactElement {
     compareVaultKeys,
     defaultCategories,
     displayedShowStrategies,
+    expandedVaultKeys,
+    handleExpandedChange,
     handleToggleCompare,
     isCompareMode,
     isLoading,
