@@ -166,6 +166,43 @@ export default function Index(): ReactElement {
     }
   }, [compareVaultKeys.length, isCompareOpen])
 
+  useEffect(() => {
+    const root = varsRef.current
+    const filtersNode = filtersRef.current
+
+    if (!root || !filtersNode) {
+      return
+    }
+
+    let frame = 0
+    const update = (): void => {
+      frame = 0
+      const height = filtersNode.getBoundingClientRect().height
+      root.style.setProperty('--vaults-filters-height', `${height}px`)
+    }
+
+    const schedule = (): void => {
+      if (frame) {
+        cancelAnimationFrame(frame)
+      }
+      frame = requestAnimationFrame(update)
+    }
+
+    schedule()
+
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
+    observer?.observe(filtersNode)
+    window.addEventListener('resize', schedule)
+
+    return () => {
+      if (frame) {
+        cancelAnimationFrame(frame)
+      }
+      observer?.disconnect()
+      window.removeEventListener('resize', schedule)
+    }
+  }, [filtersRef, varsRef])
+
   const filtersContent = <VaultsFiltersPanel sections={filters.sections} />
 
   const compareToggleControl = (
