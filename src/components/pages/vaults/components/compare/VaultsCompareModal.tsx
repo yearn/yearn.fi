@@ -1,7 +1,7 @@
 import Link from '@components/Link'
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { SwipeableCompareCarousel } from '@pages/vaults/components/compare/SwipeableCompareCarousel'
-import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
+import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { useMediaQuery } from '@react-hookz/web'
@@ -9,10 +9,11 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconClose } from '@shared/icons/IconClose'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { cl, formatApyDisplay, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
+import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import { Fragment, type ReactElement, type ReactNode, useEffect, useState } from 'react'
+import { VaultHistoricalAPY } from '../table/VaultHistoricalAPY'
 
 type TVaultsCompareModalProps = {
   isOpen: boolean
@@ -73,12 +74,12 @@ function MetricValue({
   )
 }
 
-function renderPercentValue(value: number | null | undefined): ReactElement {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return <span className={'text-text-secondary'}>{'—'}</span>
-  }
-  return <span className={'font-semibold'}>{formatApyDisplay(value)}</span>
-}
+// function renderPercentValue(value: number | null | undefined): ReactElement {
+//   if (value === null || value === undefined || Number.isNaN(value)) {
+//     return <span className={'text-text-secondary'}>{'—'}</span>
+//   }
+//   return <span className={'font-semibold'}>{formatApyDisplay(value)}</span>
+// }
 
 function hasAllocatedFunds(strategy: TVaultStrategyItem): boolean {
   const { debtRatio, totalDebt } = strategy.details ?? {}
@@ -177,7 +178,12 @@ function DesktopCompareGrid({
           />
           {vaults.map((vault, index) => (
             <MetricValue key={`apy-${getVaultKey(vault)}`} onMouseEnter={(): void => setActiveColumn(index)}>
-              <div className={'flex items-center gap-2'}>{renderPercentValue(vault.apr?.forwardAPR?.netAPR)}</div>
+              <VaultForwardAPY
+                currentVault={vault}
+                showSubline={false}
+                showSublineTooltip={true}
+                className={'items-start text-left md:text-left'}
+              />
             </MetricValue>
           ))}
 

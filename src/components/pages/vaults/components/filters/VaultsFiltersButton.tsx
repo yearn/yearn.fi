@@ -14,7 +14,7 @@ export function VaultsFiltersButton({ filtersCount, onClick }: TVaultsFiltersBut
     <button
       type={'button'}
       className={cl(
-        'flex shrink-0 items-center justify-center gap-1 border rounded-lg h-10 w-[34px] py-2 text-sm font-medium bg-surface transition-colors min-[1075px]:w-auto min-[1075px]:px-4',
+        'flex shrink-0 items-center justify-center gap-1 border rounded-lg h-10 min-w-[34px] w-auto py-2 text-sm font-medium bg-surface transition-colors px-4',
         isActive ? 'border-primary/50 text-primary' : 'border-border text-text-secondary hover:text-text-primary'
       )}
       onClick={onClick}
