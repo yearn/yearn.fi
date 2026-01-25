@@ -7,6 +7,7 @@ Notes on agent work sessions. Each bullet can be upvoted/downvoted with (+1) or 
 - [2026-01-24] Read AGENTS.md and AGENT_log.md per repo instructions; user greeted with "hello" and provided no task yet. (+1)
 - [2026-01-24] Updated tooltip positioning to default above: `Tooltip` component default side now `top`, APY tooltip config uses `side: 'top'`, CSS `.tooltiptext` now anchors above with arrow flipped, added `.tooltip.bottom` override for below, and VaultRiskScoreTag tooltip classes switched to `bottom-full mb-1`. Tests not run. (+1)
 - [2026-01-24] Moved vault header metric footnotes (TVL + user holdings) into tooltips by adding a `footnoteDisplay` option on `MetricsCard` and enabling it in `VaultDetailsHeader`. Avoided adding underline/cursor changes. (+1)
+- [2026-01-25] Adjusted filters button sizing to use `min-w-[34px]` + `w-auto` so the compressed filters button can expand to fit the active filter count badge. (+1)
 
 ## Gotchas
 - APY values are stored as fractions (0.40 == 40%); use `formatApyDisplay` (multiplies by 100) and `normalizeApyDisplayValue` for sort/display parity.
