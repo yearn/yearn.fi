@@ -11,7 +11,6 @@ import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
-import { SettingsPopover } from '../SettingsPopover'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { getPriorityTokens } from './constants'
@@ -34,7 +33,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
-  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled, getPrice } = useYearn()
+  const { zapSlippage, getPrice } = useYearn()
 
   // ============================================================================
   // UI State
@@ -390,18 +389,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   // Render
   // ============================================================================
   return (
-    <div className="flex flex-col relative border border-border rounded-lg group/widget h-full">
+    <div className="flex flex-col relative border border-border rounded-lg h-full">
       <div className="flex flex-col flex-1">
-        {/* Settings Popover */}
-        <div className="flex justify-end md:opacity-0 md:group-hover/widget:opacity-100 transition-opacity duration-200 h-7">
-          <SettingsPopover
-            slippage={zapSlippage}
-            setSlippage={setZapSlippage}
-            maximizeYield={isAutoStakingEnabled}
-            setMaximizeYield={setIsAutoStakingEnabled}
-          />
-        </div>
-
         {/* Withdraw From Selector */}
         {hasBothBalances && <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />}
 

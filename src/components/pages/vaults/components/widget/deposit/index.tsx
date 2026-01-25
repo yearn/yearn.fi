@@ -10,7 +10,6 @@ import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { type FC, useCallback, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
-import { SettingsPopover } from '../SettingsPopover'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
@@ -47,7 +46,7 @@ export const WidgetDeposit: FC<Props> = ({
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
-  const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled, getPrice } = useYearn()
+  const { zapSlippage, isAutoStakingEnabled, getPrice } = useYearn()
 
   // ============================================================================
   // UI State
@@ -334,18 +333,8 @@ export const WidgetDeposit: FC<Props> = ({
   // Render
   // ============================================================================
   return (
-    <div className="flex flex-col border border-border rounded-lg relative group/widget h-full">
+    <div className="flex flex-col border border-border rounded-lg relative h-full">
       <div className="flex flex-col flex-1">
-        {/* Settings Popover */}
-        <div className="flex justify-end md:opacity-0 md:group-hover/widget:opacity-100 transition-opacity duration-200 h-7">
-          <SettingsPopover
-            slippage={zapSlippage}
-            setSlippage={setZapSlippage}
-            maximizeYield={isAutoStakingEnabled}
-            setMaximizeYield={setIsAutoStakingEnabled}
-          />
-        </div>
-
         {/* Amount Section */}
         <div className="px-6 pb-6">
           <InputTokenAmount

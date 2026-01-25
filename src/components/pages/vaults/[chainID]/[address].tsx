@@ -227,6 +227,7 @@ function Index(): ReactElement | null {
     return [WidgetActionType.Deposit, WidgetActionType.Withdraw]
   }, [currentVault?.migration?.available])
   const [widgetMode, setWidgetMode] = useState<WidgetActionType>(widgetActions[0])
+  const [isWidgetSettingsOpen, setIsWidgetSettingsOpen] = useState(false)
 
   useEffect(() => {
     setWidgetMode(widgetActions[0])
@@ -486,6 +487,8 @@ function Index(): ReactElement | null {
             widgetActions={widgetActions}
             widgetMode={widgetMode}
             onWidgetModeChange={setWidgetMode}
+            isWidgetSettingsOpen={isWidgetSettingsOpen}
+            onWidgetSettingsOpen={() => setIsWidgetSettingsOpen((prev) => !prev)}
             onCompressionChange={setIsHeaderCompressed}
           />
         </header>
@@ -634,6 +637,8 @@ function Index(): ReactElement | null {
               mode={widgetMode}
               onModeChange={setWidgetMode}
               showTabs={false}
+              isSettingsOpen={isWidgetSettingsOpen}
+              onSettingsOpenChange={setIsWidgetSettingsOpen}
             />
           </div>
 
