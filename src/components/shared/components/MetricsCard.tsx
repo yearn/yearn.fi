@@ -101,7 +101,7 @@ export function MetricsCard({
   return (
     <div
       className={cl(
-        'rounded-lg  bg-surface text-text-primary',
+        'rounded-lg  bg-surface text-text-primary rounded-tl-lg',
         isCompressed ? 'border-l border-border rounded-tl-0' : 'border border-border',
         className
       )}

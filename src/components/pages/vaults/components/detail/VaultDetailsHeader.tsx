@@ -364,7 +364,7 @@ function VaultOverviewCard({
   return (
     <MetricsCard
       items={metrics}
-      className={'md:rounded-b-none'}
+      className={'md:rounded-b-none rounded-tl-none'}
       footnoteDisplay={'tooltip'}
       isCompressed={isCompressed}
     />
@@ -448,7 +448,7 @@ function UserHoldingsCard({
   return (
     <MetricsCard
       items={sections}
-      className={'rounded-lg rounded-tl-lg md:rounded-b-none border border-border'}
+      className={'rounded-tl-lg md:rounded-b-none border border-border'}
       footnoteDisplay={'tooltip'}
       isCompressed={isCompressed}
     />
