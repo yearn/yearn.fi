@@ -199,7 +199,7 @@ export const Tooltip: FC<{
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
-      className={cl('flex w-fit items-center justify-end gap-4 md:justify-center relative h-6', className)}
+      className={cl('flex w-fit items-center justify-end gap-4 md:justify-center relative', className)}
     >
       {children}
 
