@@ -14,7 +14,7 @@ import { cl, formatTAmount, formatUSD, toAddress, toNormalizedBN, truncateHex } 
 import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
-import { type FC, type ReactElement, useCallback, useMemo } from 'react'
+import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
 
 type WalletPanelProps = {
   isActive: boolean
@@ -24,6 +24,13 @@ type WalletPanelProps = {
   chainId: number
   onSelectZapToken?: (token: TToken) => void
 }
+
+const WALLET_TABS = [
+  { id: 'balances', label: 'Balances' },
+  { id: 'transactions', label: 'Transactions' }
+] as const
+
+type WalletTabKey = (typeof WALLET_TABS)[number]['id']
 
 const STATUS_STYLES: Record<TNotificationStatus, { label: string; className: string; icon: ReactElement }> = {
   success: { label: 'Success', className: 'bg-[#00796D] text-white', icon: <IconCheck className="size-3" /> },
@@ -48,6 +55,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const { cachedEntries, setShouldOpenCurtain } = useNotifications()
   const { balances } = useWallet()
   const { getPrice } = useYearn()
+  const [activeTab, setActiveTab] = useState<WalletTabKey>('balances')
   const { assetToken, vaultToken, stakingToken, depositedValue, depositedShares, pricePerShare, isLoading } =
     useVaultUserData({
       vaultAddress,
@@ -186,8 +194,28 @@ export const WalletPanel: FC<WalletPanelProps> = ({
       aria-hidden={!isPanelActive}
     >
       <div className="bg-surface border border-border rounded-lg flex flex-col flex-1 min-h-0">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
           <h3 className="text-base font-semibold text-text-primary">Wallet</h3>
+          <div className="flex items-center justify-end ml-auto">
+            <div className="flex items-center gap-0.5 md:gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
+              {WALLET_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cl(
+                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold transition-all',
+                    'min-h-[36px] md:min-h-0 active:scale-[0.98] whitespace-nowrap',
+                    activeTab === tab.id
+                      ? 'bg-surface text-text-primary'
+                      : 'bg-transparent text-text-secondary hover:text-text-primary'
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto min-h-0 p-6 pt-3">
           <div className="space-y-6">
@@ -205,132 +233,142 @@ export const WalletPanel: FC<WalletPanelProps> = ({
               </div>
             ) : (
               <>
-                <section className="space-y-3">
-                  <h4 className="text-sm font-semibold text-text-primary">Your Vault balances</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-start justify-between gap-4">
-                      <span className="text-text-secondary">Deposited value</span>
-                      <div className="text-right">
-                        <span className="text-text-primary text-base font-semibold">{depositedLabel}</span>
-                        <span className="text-xs text-text-secondary ml-1 font-medium">
-                          ({formatUSD(depositedUsd)})
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-text-secondary ">
-                        {showTotalShares ? 'Deposited shares' : hasStakedShares ? 'Staked shares' : 'Deposited shares'}
-                      </span>
-                      <span className="text-text-primary text-base font-semibold">
-                        {showTotalShares || !hasStakedShares ? vaultBalanceLabel : stakingBalanceLabel}
-                        <span className="ml-1 text-xs text-text-secondary font-medium">
-                          ({formatUSD(showTotalShares || !hasStakedShares ? vaultSharesUsd : stakedSharesUsd)})
-                        </span>
-                      </span>
-                    </div>
-                    {showTotalShares ? (
-                      <>
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-text-secondary">Staked shares</span>
-                          <span className="text-text-primary text-base font-semibold">
-                            {stakingBalanceLabel}
-                            <span className="ml-1 text-xs text-text-secondary font-medium">
-                              ({formatUSD(stakedSharesUsd)})
-                            </span>
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-text-secondary">Total shares</span>
-                          <span className="text-text-primary font-semibold">
-                            {totalSharesLabel}
-                            <span className="ml-1 text-xs text-text-secondary font-medium">
-                              ({formatUSD(totalSharesUsd)})
-                            </span>
-                          </span>
-                        </div>
-                      </>
-                    ) : null}
-                  </div>
-                </section>
-
-                <section className="space-y-3">
-                  <h4 className="text-sm font-semibold text-text-primary">Wallet balances</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-text-secondary">Available {assetSymbol}</span>
-                      <span className="text-text-primary text-base font-semibold">
-                        {availableLabel}
-                        <span className="ml-1 text-xs text-text-secondary font-medium">
-                          ({formatUSD(availableUsd)})
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="space-y-3">
-                  <h4 className="text-sm font-semibold text-text-primary">Zap-ready tokens</h4>
-                  {zapTokens.length === 0 ? (
-                    <div className="text-xs text-text-secondary">No wallet tokens available to zap.</div>
-                  ) : (
-                    <div className="space-y-2">
-                      {zapTokens.map(({ token, amountLabel, usdLabel }) => (
-                        <button
-                          key={`${token.chainID}-${token.address}`}
-                          type="button"
-                          onClick={() => onSelectZapToken?.(token)}
-                          className="group relative flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary px-3 py-2 transition-colors hover:bg-surface"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <TokenLogo
-                              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${token.chainID}/${token.address.toLowerCase()}/logo-32.png`}
-                              tokenSymbol={token.symbol}
-                              tokenName={token.name}
-                              width={20}
-                              height={20}
-                              className="rounded-full"
-                            />
-                            <div className="min-w-0 text-left">
-                              <div className="text-sm font-semibold text-text-primary">{token.symbol}</div>
-                              <div className="text-[10px] text-text-secondary truncate">{token.name}</div>
-                            </div>
-                          </div>
+                {activeTab === 'balances' ? (
+                  <>
+                    <section className="space-y-3">
+                      <h4 className="text-sm font-semibold text-text-primary">Your Vault balances</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-start justify-between gap-4">
+                          <span className="text-text-secondary">Deposited value</span>
                           <div className="text-right">
-                            <div className="text-sm font-semibold text-text-primary">{amountLabel}</div>
-                            <div className="text-[10px] text-text-secondary font-medium">({usdLabel})</div>
+                            <span className="text-text-primary text-base font-semibold">{depositedLabel}</span>
+                            <span className="text-xs text-text-secondary ml-1 font-medium">
+                              ({formatUSD(depositedUsd)})
+                            </span>
                           </div>
-                          <span className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100">
-                            deposit into {vaultName}
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="text-text-secondary ">
+                            {showTotalShares
+                              ? 'Deposited shares'
+                              : hasStakedShares
+                                ? 'Staked shares'
+                                : 'Deposited shares'}
                           </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </section>
+                          <span className="text-text-primary text-base font-semibold">
+                            {showTotalShares || !hasStakedShares ? vaultBalanceLabel : stakingBalanceLabel}
+                            <span className="ml-1 text-xs text-text-secondary font-medium">
+                              ({formatUSD(showTotalShares || !hasStakedShares ? vaultSharesUsd : stakedSharesUsd)})
+                            </span>
+                          </span>
+                        </div>
+                        {showTotalShares ? (
+                          <>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-text-secondary">Staked shares</span>
+                              <span className="text-text-primary text-base font-semibold">
+                                {stakingBalanceLabel}
+                                <span className="ml-1 text-xs text-text-secondary font-medium">
+                                  ({formatUSD(stakedSharesUsd)})
+                                </span>
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-text-secondary">Total shares</span>
+                              <span className="text-text-primary font-semibold">
+                                {totalSharesLabel}
+                                <span className="ml-1 text-xs text-text-secondary font-medium">
+                                  ({formatUSD(totalSharesUsd)})
+                                </span>
+                              </span>
+                            </div>
+                          </>
+                        ) : null}
+                      </div>
+                    </section>
 
-                <section className="space-y-3">
-                  <div className="flex items-center justify-between gap-4">
-                    <h4 className="text-sm font-semibold text-text-primary">Recent transactions</h4>
-                    <button
-                      type="button"
-                      onClick={() => setShouldOpenCurtain(true)}
-                      className="rounded-md border border-border bg-surface-secondary px-2.5 py-1 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
-                    >
-                      All activity
-                    </button>
-                  </div>
-                  {isLoading ? (
-                    <div className="text-xs text-text-secondary">Loading balances…</div>
-                  ) : recentEntries.length === 0 ? (
-                    <div className="text-xs text-text-secondary">No recent transactions.</div>
-                  ) : (
-                    <div className="space-y-2">
-                      {recentEntries.map((entry) => (
-                        <RecentTransactionRow key={entry.id ?? `${entry.type}-${entry.txHash}`} entry={entry} />
-                      ))}
+                    <section className="space-y-3">
+                      <h4 className="text-sm font-semibold text-text-primary">Wallet balances</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="text-text-secondary">Available {assetSymbol}</span>
+                          <span className="text-text-primary text-base font-semibold">
+                            {availableLabel}
+                            <span className="ml-1 text-xs text-text-secondary font-medium">
+                              ({formatUSD(availableUsd)})
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="space-y-3">
+                      <h4 className="text-sm font-semibold text-text-primary">Zap-ready tokens</h4>
+                      {zapTokens.length === 0 ? (
+                        <div className="text-xs text-text-secondary">No wallet tokens available to zap.</div>
+                      ) : (
+                        <div className="space-y-2">
+                          {zapTokens.map(({ token, amountLabel, usdLabel }) => (
+                            <button
+                              key={`${token.chainID}-${token.address}`}
+                              type="button"
+                              onClick={() => onSelectZapToken?.(token)}
+                              className="group relative flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary px-3 py-2 transition-colors hover:bg-surface"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <TokenLogo
+                                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${token.chainID}/${token.address.toLowerCase()}/logo-32.png`}
+                                  tokenSymbol={token.symbol}
+                                  tokenName={token.name}
+                                  width={20}
+                                  height={20}
+                                  className="rounded-full"
+                                />
+                                <div className="min-w-0 text-left">
+                                  <div className="text-sm font-semibold text-text-primary">{token.symbol}</div>
+                                  <div className="text-[10px] text-text-secondary truncate">{token.name}</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm font-semibold text-text-primary">{amountLabel}</div>
+                                <div className="text-[10px] text-text-secondary font-medium">({usdLabel})</div>
+                              </div>
+                              <span className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                deposit into {vaultName}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  </>
+                ) : null}
+
+                {activeTab === 'transactions' ? (
+                  <section className="space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <h4 className="text-sm font-semibold text-text-primary">Recent transactions</h4>
+                      <button
+                        type="button"
+                        onClick={() => setShouldOpenCurtain(true)}
+                        className="rounded-md border border-border bg-surface-secondary px-2.5 py-1 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
+                      >
+                        All activity
+                      </button>
                     </div>
-                  )}
-                </section>
+                    {isLoading ? (
+                      <div className="text-xs text-text-secondary">Loading balances…</div>
+                    ) : recentEntries.length === 0 ? (
+                      <div className="text-xs text-text-secondary">No recent transactions.</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {recentEntries.map((entry) => (
+                          <RecentTransactionRow key={entry.id ?? `${entry.type}-${entry.txHash}`} entry={entry} />
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                ) : null}
               </>
             )}
           </div>
