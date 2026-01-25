@@ -9,9 +9,21 @@ interface InfoOverlayProps {
   title: string
   children: ReactNode
   hideButton?: boolean
+  disableMotion?: boolean
 }
 
-export const InfoOverlay: FC<InfoOverlayProps> = ({ isOpen, onClose, title, children, hideButton }) => {
+export const InfoOverlay: FC<InfoOverlayProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  hideButton,
+  disableMotion = false
+}) => {
+  const backdropMotionClass = disableMotion ? 'transition-none' : 'transition-opacity duration-200'
+  const panelMotionClass = disableMotion ? 'transition-none' : 'transition-all duration-300 ease-out'
+  const closedPanelState = disableMotion ? 'opacity-0 translate-x-0' : 'opacity-0 translate-x-4'
+
   return (
     <div
       className="absolute z-50"
@@ -26,7 +38,8 @@ export const InfoOverlay: FC<InfoOverlayProps> = ({ isOpen, onClose, title, chil
       {/* Semi-transparent backdrop with fade animation */}
       <div
         className={cl(
-          'absolute inset-0 bg-black/5 rounded-xl transition-opacity duration-200',
+          'absolute inset-0 bg-black/5 rounded-xl',
+          backdropMotionClass,
           isOpen ? 'opacity-100' : 'opacity-0'
         )}
         onClick={onClose}
@@ -34,8 +47,9 @@ export const InfoOverlay: FC<InfoOverlayProps> = ({ isOpen, onClose, title, chil
       {/* Overlay content with slide from right animation */}
       <div
         className={cl(
-          'absolute inset-0 bg-surface rounded-xl transition-all duration-300 ease-out flex flex-col',
-          isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+          'absolute inset-0 bg-surface rounded-xl flex flex-col',
+          panelMotionClass,
+          isOpen ? 'opacity-100 translate-x-0' : closedPanelState
         )}
       >
         {/* Close button */}
