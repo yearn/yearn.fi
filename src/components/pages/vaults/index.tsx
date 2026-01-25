@@ -298,7 +298,7 @@ export default function Index(): ReactElement {
           <VirtualizedVaultsList
             items={mainVaults}
             estimateSize={81}
-            itemSpacingClassName={'pb-0.5 md:border-b md:border-border'}
+            itemSpacingClassName={'md:border-b md:border-border'}
             getItemKey={(vault): string => getVaultKey(vault)}
             renderItem={(vault): ReactElement => {
               const key = getVaultKey(vault)
