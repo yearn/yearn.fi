@@ -16,7 +16,7 @@ export const InfoOverlay: FC<InfoOverlayProps> = ({ isOpen, onClose, title, chil
     <div
       className="absolute z-50"
       style={{
-        top: '-48px',
+        top: 0,
         left: 0,
         right: 0,
         bottom: 0,

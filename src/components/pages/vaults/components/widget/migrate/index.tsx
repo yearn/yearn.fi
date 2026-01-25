@@ -414,103 +414,107 @@ export const WidgetMigrate: FC<Props> = ({
   }
 
   return (
-    <div className="flex flex-col border border-border rounded-lg relative">
-      {/* Educational Banner */}
-      <div className="mx-6 mt-7 p-4 bg-surface-secondary border-l-4 border-l-orange-500 dark:border-l-yellow-500 rounded-lg">
-        <div className="flex items-start gap-3">
-          <svg
-            className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-          <div>
-            <h4 className="text-sm font-semibold text-text-primary">Vault is retired</h4>
-            <p className="text-xs text-text-secondary mt-1">
-              This vault is retired and won't be earning yield. Please migrate your shares to the newest version.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Balance Section */}
-      <div className="px-6 pt-6">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xs text-text-secondary">Your Balance</span>
-        </div>
-        <div className="flex flex-col items-start">
-          <span className="text-xl font-semibold text-text-primary">
-            {formattedBalance} {vaultToken?.symbol || vaultSymbol}
-          </span>
-          <span className="text-sm text-text-secondary">${balanceUsd}</span>
-        </div>
-      </div>
-
-      {/* Destination Section */}
-      <div className="px-6 pt-6">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xs text-text-secondary">Destination</span>
-        </div>
-        <a
-          href={`/vaults/${chainId}/${migrationTarget}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full flex items-center justify-between p-3 bg-surface-secondary hover:bg-surface-secondary/80 rounded-lg transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <TokenLogo
-              src={
-                destinationVault?.logoURI ||
-                `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`
-              }
-              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`}
-              tokenSymbol={destinationVault?.symbol || migrationTargetSymbol}
-              tokenName={destinationVault?.name}
-              width={32}
-              height={32}
-            />
-            <div className="text-left">
-              <p className="text-sm font-medium text-text-primary">
-                {destinationVault?.name || destinationVault?.symbol || migrationTargetSymbol || 'New Vault'}
-              </p>
-              <p className="text-xs text-text-secondary font-mono">
-                {migrationTarget.slice(0, 6)}...{migrationTarget.slice(-4)}
+    <div className="flex flex-col border border-border rounded-lg relative h-full">
+      <div className="flex flex-col flex-1">
+        {/* Educational Banner */}
+        <div className="mx-6 mt-7 p-4 bg-surface-secondary border-l-4 border-l-orange-500 dark:border-l-yellow-500 rounded-lg">
+          <div className="flex items-start gap-3">
+            <svg
+              className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div>
+              <h4 className="text-sm font-semibold text-text-primary">Vault is retired</h4>
+              <p className="text-xs text-text-secondary mt-1">
+                This vault is retired and won't be earning yield. Please migrate your shares to the newest version.
               </p>
             </div>
           </div>
-          <IconLinkOut className="w-4 h-4 text-text-secondary" />
-        </a>
-      </div>
+        </div>
 
-      {/* Action Button */}
-      <div className="px-6 pt-6 pb-6">
-        {!account ? (
-          <Button
-            onClick={openLoginModal}
-            variant="filled"
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
+        {/* Balance Section */}
+        <div className="px-6 pt-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs text-text-secondary">Your Balance</span>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-xl font-semibold text-text-primary">
+              {formattedBalance} {vaultToken?.symbol || vaultSymbol}
+            </span>
+            <span className="text-sm text-text-secondary">${balanceUsd}</span>
+          </div>
+        </div>
+
+        {/* Destination Section */}
+        <div className="px-6 pt-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs text-text-secondary">Destination</span>
+          </div>
+          <a
+            href={`/vaults/${chainId}/${migrationTarget}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-between p-3 bg-surface-secondary hover:bg-surface-secondary/80 rounded-lg transition-colors cursor-pointer"
           >
-            Connect Wallet
-          </Button>
-        ) : (
-          <Button
-            onClick={() => setShowTransactionOverlay(true)}
-            variant="filled"
-            disabled={isButtonDisabled}
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            {migrateError || buttonText}
-          </Button>
-        )}
+            <div className="flex items-center gap-3">
+              <TokenLogo
+                src={
+                  destinationVault?.logoURI ||
+                  `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`
+                }
+                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`}
+                tokenSymbol={destinationVault?.symbol || migrationTargetSymbol}
+                tokenName={destinationVault?.name}
+                width={32}
+                height={32}
+              />
+              <div className="text-left">
+                <p className="text-sm font-medium text-text-primary">
+                  {destinationVault?.name || destinationVault?.symbol || migrationTargetSymbol || 'New Vault'}
+                </p>
+                <p className="text-xs text-text-secondary font-mono">
+                  {migrationTarget.slice(0, 6)}...{migrationTarget.slice(-4)}
+                </p>
+              </div>
+            </div>
+            <IconLinkOut className="w-4 h-4 text-text-secondary" />
+          </a>
+        </div>
+
+        <div className="mt-auto">
+          {/* Action Button */}
+          <div className="px-6 pt-6 pb-6">
+            {!account ? (
+              <Button
+                onClick={openLoginModal}
+                variant="filled"
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                Connect Wallet
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setShowTransactionOverlay(true)}
+                variant="filled"
+                disabled={isButtonDisabled}
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                {migrateError || buttonText}
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Transaction Overlay */}

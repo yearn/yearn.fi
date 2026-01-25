@@ -26,7 +26,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
     <div
       className="absolute z-50"
       style={{
-        top: '-48px', // Adjust to cover the tabs
+        top: 0, // Adjust to cover the tabs
         left: 0,
         right: 0,
         bottom: 0,

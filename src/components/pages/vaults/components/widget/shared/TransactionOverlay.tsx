@@ -401,7 +401,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     <div
       className="absolute z-50"
       style={{
-        top: '-48px', // Cover the tabs
+        top: 0, // Cover the tabs
         left: 0,
         right: 0,
         bottom: 0,

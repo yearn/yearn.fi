@@ -96,10 +96,10 @@ export const Widget: FC<Props> = ({
   }, [currentMode, vaultAddress, gaugeAddress, currentVault, assetToken, chainId, handleSuccess])
 
   return (
-    <div className="flex flex-col gap-0 w-full h-full">
-      <div className="bg-app rounded-b-lg overflow-hidden relative w-full min-w-0">
+    <div className="flex flex-col gap-0 w-full h-full flex-1">
+      <div className="bg-app rounded-b-lg overflow-hidden relative w-full min-w-0 flex flex-col flex-1">
         {showTabs ? <WidgetTabs actions={actions} activeAction={currentMode} onActionChange={setMode} /> : null}
-        <div className="bg-surface">{SelectedComponent}</div>
+        <div className="bg-surface flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">{SelectedComponent}</div>
       </div>
     </div>
   )
