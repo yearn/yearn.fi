@@ -147,7 +147,7 @@ export function VaultChartsSection({
           <ChartsLoader loadingState={isLoading ? 'Loading charts' : 'Preparing charts'} />
         </div>
       ) : (
-        <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx}>
+        <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx} className={'mx-4'}>
           <ChartErrorBoundary>
             <Suspense fallback={<ChartSkeleton />}>
               {activeTab === 'historical-pps' && transformed.ppsData ? (

@@ -9,7 +9,7 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconClose } from '@shared/icons/IconClose'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { cl, formatApyDisplay, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
+import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import { Fragment, type ReactElement, type ReactNode, useEffect, useState } from 'react'
@@ -72,13 +72,6 @@ function MetricValue({
       {children}
     </div>
   )
-}
-
-function renderPercentValue(value: number | null | undefined): ReactElement {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return <span className={'text-text-secondary'}>{'—'}</span>
-  }
-  return <span className={'font-semibold'}>{formatApyDisplay(value)}</span>
 }
 
 function hasAllocatedFunds(strategy: TVaultStrategyItem): boolean {
@@ -165,7 +158,7 @@ function DesktopCompareGrid({
                       </div>
                     </div>
                   </div>
-                  <IconLinkOut className={'mt-1 size-4 flex-shrink-0 text-text-secondary'} />
+                  <IconLinkOut className={'mt-1 size-4 shrink-0 text-text-secondary'} />
                 </Link>
               </div>
             )
@@ -362,7 +355,7 @@ export function VaultsCompareModal({ isOpen, onClose, vaults, onRemove }: TVault
 
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog as={'div'} className={'relative z-[70]'} onClose={onClose}>
+      <Dialog as={'div'} className={'relative z-70'} onClose={onClose}>
         <TransitionChild
           as={Fragment}
           enter={'duration-200 ease-out'}

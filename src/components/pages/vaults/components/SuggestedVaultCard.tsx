@@ -82,7 +82,7 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
   const listKind = deriveListKind(vault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
+  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
   const chainDescription = getChainDescription(vault.chainID)
   const categoryDescription = getCategoryDescription(vault.category)
   const productTypeDescription = getProductTypeDescription(listKind)

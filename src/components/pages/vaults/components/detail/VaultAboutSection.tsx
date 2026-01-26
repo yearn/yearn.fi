@@ -92,7 +92,7 @@ export function VaultAboutSection({
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
+  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
   const baseKindType: 'multi' | 'single' | undefined =
     currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
   const fallbackKindType: 'multi' | 'single' | undefined =
@@ -179,9 +179,20 @@ export function VaultAboutSection({
           </div>
           {showVaultAddress ? (
             <div className={'flex flex-wrap items-center py-3 gap-2 text-sm border-b border-border'}>
-              <span className={'text-text-secondary'} title={currentVault.address}>
-                {currentVault.address}
-              </span>
+              {explorerHref ? (
+                <a
+                  href={explorerHref}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className={
+                    ' flex flex-row gap-1 items-center text-text-primary transition-colors hover:text-text-secondary'
+                  }
+                  aria-label={'View vault on block explorer'}
+                >
+                  {currentVault.address}
+                  <IconLinkOut className={'size-3'} />
+                </a>
+              ) : null}
               <button
                 type={'button'}
                 onClick={(): void => copyToClipboard(currentVault.address)}
@@ -190,17 +201,6 @@ export function VaultAboutSection({
               >
                 <IconCopy className={'size-3'} />
               </button>
-              {explorerHref ? (
-                <a
-                  href={explorerHref}
-                  target={'_blank'}
-                  rel={'noopener noreferrer'}
-                  className={'text-text-secondary transition-colors hover:text-text-primary'}
-                  aria-label={'View vault on block explorer'}
-                >
-                  <IconLinkOut className={'size-3'} />
-                </a>
-              ) : null}
             </div>
           ) : null}
         </div>

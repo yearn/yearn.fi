@@ -58,7 +58,7 @@ function VaultHeaderIdentity({
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
+  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
 
   const baseKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
     if (currentVault.kind === 'Multi Strategy') return 'multi'
@@ -118,7 +118,7 @@ function VaultHeaderIdentity({
   }, [isCompressed])
 
   return (
-    <div className={cl('flex flex-col gap-1 px-1 mt-0', isCompressed ? 'md:justify-center' : '', className)}>
+    <div className={cl('flex flex-col gap-1 px-1 mt-0', isCompressed ? 'md:justify-center' : 'pt-4', className)}>
       <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
         <div
           className={cl(
@@ -181,7 +181,7 @@ function VaultHeaderIdentity({
       {shouldShowMetadata ? (
         <div
           className={cl(
-            'flex flex-wrap items-center gap-1 text-xs text-text-primary/70 md:text-xs',
+            'flex flex-wrap items-center gap-1 text-xs text-text-primary/70 md:text-xs pt-1',
             isCompressed ? 'hidden' : ''
           )}
         >

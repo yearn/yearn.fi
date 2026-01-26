@@ -807,7 +807,7 @@ function Index(): ReactElement | null {
                 </div>
               )
             })}
-            {renderableSections.length > 0 ? <div aria-hidden className={'h-[60vh]'} /> : null}
+            {renderableSections.length > 0 ? <div aria-hidden className={'h-[65vh]'} /> : null}
           </div>
         </section>
       </div>
