@@ -71,7 +71,7 @@ export function VaultVersionToggle({
     <div
       aria-busy={isPending || undefined}
       className={cl(
-        'flex h-10 shrink-0 items-stretch overflow-hidden rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
+        'flex h-10 shrink-0 items-stretch overflow-hidden rounded-lg border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
         className
       )}
     >

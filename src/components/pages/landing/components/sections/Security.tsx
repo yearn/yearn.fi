@@ -40,7 +40,7 @@ const SecurityCard: FC<{
   return (
     <Link href={href} className={'flex'}>
       <div
-        className={`${bgColor} group cursor-pointer overflow-hidden rounded-xl transition-all duration-300 hover:brightness-90 sm:rounded-2xl`}
+        className={`${bgColor} group cursor-pointer overflow-hidden rounded-lg transition-all duration-300 hover:brightness-90 sm:rounded-2xl`}
       >
         <div className={'p-5 sm:p-6 md:p-8'}>
           <h3 className={'mb-3 text-2xl text-white sm:mb-4 sm:text-3xl'}>{title}</h3>

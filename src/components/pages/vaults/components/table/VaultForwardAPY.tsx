@@ -11,7 +11,7 @@ import { resolveForwardApyDisplayConfig } from './apyDisplayConfig'
 export type TVaultForwardAPYVariant = 'default' | 'factory-list'
 
 const INLINE_DETAILS_CONTAINER_CLASS =
-  'w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'
+  'w-full rounded-lg border border-border bg-surface-secondary p-3 text-text-primary'
 const INLINE_DETAILS_STACK_CLASS = 'flex flex-col gap-2'
 const INLINE_DETAILS_LINK_CLASS =
   'font-bold underline sm:decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +

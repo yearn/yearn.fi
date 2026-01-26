@@ -34,7 +34,7 @@ function VaultsListSection({
   const shouldShowSubtleOverlay = isUpdatingList && !isUpdatingProductType
   const isBusy = isUpdatingList || isUpdatingProductType
   return (
-    <div aria-busy={isBusy || undefined} className={'relative w-full rounded-xl bg-surface'}>
+    <div aria-busy={isBusy || undefined} className={'relative w-full rounded-lg bg-surface'}>
       <div className={isUpdatingProductType ? 'pointer-events-none opacity-70 transition' : 'transition'}>
         <div
           className={'relative md:sticky md:z-30'}
@@ -52,12 +52,12 @@ function VaultsListSection({
         <div className={'flex flex-col border-x border-b border-border rounded-b-xl overflow-hidden'}>{children}</div>
       </div>
       {shouldShowSubtleOverlay ? (
-        <div aria-hidden={true} className={'pointer-events-none absolute inset-0 z-30 rounded-xl bg-app/30'} />
+        <div aria-hidden={true} className={'pointer-events-none absolute inset-0 z-30 rounded-lg bg-app/30'} />
       ) : null}
       {isUpdatingProductType ? (
         <output
           aria-live={'polite'}
-          className={'absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-app/30 text-text-primary'}
+          className={'absolute inset-0 z-40 flex items-center justify-center rounded-lg bg-app/30 text-text-primary'}
         >
           <span className={'flex flex-col items-center gap-2'}>
             <span className={'loader'} />

@@ -98,7 +98,7 @@ function buildStandardTooltipContent({
   }
 
   return (
-    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+    <div className={'rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       {lines.map((line, index) => (
         <div key={line} className={index === 0 ? '' : 'mt-1'}>
           {line}
@@ -133,7 +133,7 @@ function buildKatanaTooltipContent({
   onRequestModalOpen
 }: TKatanaTooltipOptions): ReactElement {
   return (
-    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+    <div className={'rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       <div className={'flex items-center gap-2'}>
         <span aria-hidden>{'⚔️'}</span>
         <div className={'flex flex-col'}>
@@ -626,7 +626,7 @@ export function resolveHistoricalApyDisplayConfig({
     ) : (
       <div
         className={
-          'w-fit rounded-xl border border-border bg-surface-secondary p-4 text-center text-sm text-text-primary'
+          'w-fit rounded-lg border border-border bg-surface-secondary p-4 text-center text-sm text-text-primary'
         }
       >
         <div

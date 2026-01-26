@@ -80,7 +80,7 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
             <IconWallet className={'mt-0.5 block size-4 text-text-secondary md:hidden'} />
             <span
               className={
-                'relative hidden h-8 cursor-pointer items-center justify-center rounded-xl border border-transparent bg-text-primary px-3 text-xs font-normal text-surface transition-all hover:opacity-90 md:flex'
+                'relative hidden h-8 cursor-pointer items-center justify-center rounded-lg border border-transparent bg-text-primary px-3 text-xs font-normal text-surface transition-all hover:opacity-90 md:flex'
               }
             >
               {'Connect wallet'}

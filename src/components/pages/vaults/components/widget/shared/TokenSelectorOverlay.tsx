@@ -36,7 +36,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
       {/* Semi-transparent backdrop with fade animation */}
       <div
         className={cl(
-          'absolute inset-0 bg-black/5 rounded-xl transition-opacity duration-200',
+          'absolute inset-0 bg-black/5 rounded-lg transition-opacity duration-200',
           isOpen ? 'opacity-100' : 'opacity-0'
         )}
         onClick={onClose}

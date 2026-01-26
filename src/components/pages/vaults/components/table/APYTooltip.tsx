@@ -25,7 +25,7 @@ export function APYTooltipContent({
 }: Omit<TAPYTooltipProps, 'children'>): ReactElement {
   return (
     <div
-      className={'w-fit rounded-xl border border-border bg-surface-secondary p-4 text-center text-sm text-text-primary'}
+      className={'w-fit rounded-lg border border-border bg-surface-secondary p-4 text-center text-sm text-text-primary'}
     >
       <div className={'flex flex-col items-start justify-start text-left'}>
         <div
