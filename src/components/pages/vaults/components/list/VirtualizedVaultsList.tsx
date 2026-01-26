@@ -18,7 +18,7 @@ type TVirtualizedVaultsListProps<TItem> = {
 export function VirtualizedVaultsList<TItem>({
   items,
   estimateSize = 81,
-  overscan = 5,
+  overscan = 10,
   getItemKey,
   renderItem,
   placeholderCount,
