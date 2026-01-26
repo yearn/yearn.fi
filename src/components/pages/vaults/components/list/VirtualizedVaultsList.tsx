@@ -54,7 +54,13 @@ export function VirtualizedVaultsList<TItem>({
     count: totalCount,
     estimateSize: () => estimateSize,
     overscan,
-    scrollMargin
+    scrollMargin,
+    getItemKey: (index) => {
+      if (index >= items.length) {
+        return `placeholder-${index}`
+      }
+      return getItemKey(items[index], index)
+    }
   })
 
   useLayoutEffect(() => {
@@ -69,20 +75,17 @@ export function VirtualizedVaultsList<TItem>({
       {virtualItems.map((virtualRow) => {
         const isPlaceholder = virtualRow.index >= items.length
         const isLast = virtualRow.index === totalCount - 1
-        let key: string
         let content: ReactElement | null
 
         if (isPlaceholder) {
-          key = `placeholder-${virtualRow.index}`
           content = renderPlaceholder?.(virtualRow.index) ?? null
         } else {
           const item = items[virtualRow.index]
-          key = getItemKey(item, virtualRow.index)
           content = renderItem(item, virtualRow.index)
         }
         return (
           <div
-            key={key}
+            key={virtualRow.key}
             ref={rowVirtualizer.measureElement}
             data-index={virtualRow.index}
             className={cl(!isLast ? itemSpacingClassName : undefined)}
