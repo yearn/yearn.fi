@@ -315,7 +315,8 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
     // Try subscript notation for very small numbers (4+ leading zeros)
     const subscriptFormatted = formatWithSubscriptZeros(amount)
     if (subscriptFormatted) {
-      const symbolSuffix = symbol && options.shouldDisplaySymbol ? ` ${symbol}` : ''
+      const displaySymbol = symbol.toUpperCase() === 'PERCENT' ? '%' : symbol
+      const symbolSuffix = symbol && options.shouldDisplaySymbol ? ` ${displaySymbol}` : ''
       return `${subscriptFormatted}${symbolSuffix}`
     }
 
@@ -370,7 +371,8 @@ export function formatTAmount(props: TAmount): string {
   const subscriptFormatted = formatWithSubscriptZeros(amount)
   if (subscriptFormatted) {
     const symbol = props.symbol || ''
-    const symbolSuffix = symbol && options.shouldDisplaySymbol ? ` ${symbol}` : ''
+    const displaySymbol = symbol.toUpperCase() === 'PERCENT' ? '%' : symbol
+    const symbolSuffix = symbol && options.shouldDisplaySymbol ? ` ${displaySymbol}` : ''
     return `${subscriptFormatted}${symbolSuffix}`
   }
 
