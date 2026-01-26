@@ -1,5 +1,5 @@
 import { Button } from '@shared/components/Button'
-import { ImageWithFallback } from '@shared/components/ImageWithFallback'
+import { TokenLogo } from '@shared/components/TokenLogo'
 import { formatAmount, formatUSD } from '@shared/utils/format'
 import type { ReactElement } from 'react'
 
@@ -26,13 +26,7 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
   return (
     <div className={`flex items-center justify-between py-2 ${borderClass}`}>
       <div className="flex items-center gap-2">
-        <ImageWithFallback
-          src={getTokenLogoUrl(chainId, tokenAddress)}
-          alt={symbol}
-          width={24}
-          height={24}
-          className="rounded-full"
-        />
+        <TokenLogo src={getTokenLogoUrl(chainId, tokenAddress)} tokenSymbol={symbol} width={24} height={24} />
         <span className="font-medium text-text-primary">{symbol}</span>
       </div>
       <div className="flex items-center gap-3">
