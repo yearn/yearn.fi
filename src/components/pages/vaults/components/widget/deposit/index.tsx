@@ -190,6 +190,11 @@ export const WidgetDeposit: FC<Props> = ({
       ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
       : 0
 
+  const willReceiveStakedShares = routeType === 'DIRECT_STAKE' || (isAutoStakingEnabled && !!stakingAddress)
+  const sharesDecimals = willReceiveStakedShares
+    ? (stakingToken?.decimals ?? vault?.decimals ?? 18)
+    : (vault?.decimals ?? 18)
+
   const vaultShareValue = useMemo(() => {
     const expectedOut = activeFlow.periphery.expectedOut
     const vaultDecimals = vault?.decimals ?? 18
@@ -379,10 +384,10 @@ export const WidgetDeposit: FC<Props> = ({
         assetTokenSymbol={assetToken?.symbol}
         assetTokenDecimals={assetToken?.decimals ?? 18}
         expectedVaultShares={activeFlow.periphery.expectedOut}
-        vaultDecimals={vault?.decimals ?? 18}
+        vaultDecimals={sharesDecimals}
         pricePerShare={pricePerShare || 0n}
         assetUsdPrice={assetTokenPrice}
-        willReceiveStakedShares={routeType === 'DIRECT_STAKE' || (isAutoStakingEnabled && !!stakingAddress)}
+        willReceiveStakedShares={willReceiveStakedShares}
         onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
         onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
         estimatedAnnualReturn={estimatedAnnualReturn}
@@ -458,7 +463,7 @@ export const WidgetDeposit: FC<Props> = ({
           activeFlow.periphery.expectedOut > 0n
             ? formatTAmount({
                 value: activeFlow.periphery.expectedOut,
-                decimals: vault?.decimals ?? 18
+                decimals: sharesDecimals
               })
             : '0'
         }
@@ -485,7 +490,7 @@ export const WidgetDeposit: FC<Props> = ({
         onClose={() => setShowVaultShareValueModal(false)}
         sharesAmount={formatTAmount({
           value: activeFlow.periphery.expectedOut,
-          decimals: vault?.decimals ?? 18,
+          decimals: sharesDecimals,
           options: { maximumFractionDigits: 4 }
         })}
         shareValue={vaultShareValue.formatted}
