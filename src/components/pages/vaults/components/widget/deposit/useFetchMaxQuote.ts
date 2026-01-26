@@ -39,9 +39,6 @@ export const useFetchMaxQuote = ({
 
     setIsFetching(true)
     try {
-      const ENSO_API_BASE = 'https://api.enso.finance/api/v1'
-      const ENSO_API_KEY = import.meta.env.VITE_ENSO_API_KEY
-
       const isCrossChain = sourceChainId !== chainId
       const params = new URLSearchParams({
         fromAddress: account,
@@ -54,12 +51,7 @@ export const useFetchMaxQuote = ({
         receiver: account
       })
 
-      const response = await fetch(`${ENSO_API_BASE}/shortcuts/route?${params}`, {
-        headers: {
-          Authorization: `Bearer ${ENSO_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await fetch(`/api/enso/route?${params}`)
 
       const data = await response.json()
       if (data.error) {

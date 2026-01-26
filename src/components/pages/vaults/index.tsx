@@ -171,9 +171,7 @@ export default function Index(): ReactElement {
     <button
       type={'button'}
       className={cl(
-        'flex shrink-0 items-center gap-2 border rounded-lg h-10 border-border px-4 text-sm font-medium text-text-secondary bg-surface transition-colors',
-        'hover:text-text-secondary',
-        'data-[active=true]:border-primary  data-[active=true]:text-text-primary',
+        'flex shrink-0 items-center justify-center h-10 px-4 rounded-[4px] bg-neutral-800/20 text-sm font-medium text-text-primary transition-colors hover:bg-neutral-800/40',
         isCompareMode ? 'bg-primary/50' : null
       )}
       onClick={handleToggleCompareMode}
@@ -234,7 +232,7 @@ export default function Index(): ReactElement {
           />
         ))}
         {mainVaults.length > 0 ? (
-          <div className={'flex flex-col gap-px bg-border'}>
+          <div className={'flex flex-col gap-0.5 md:gap-px bg-border'}>
             {mainVaults.map((vault) => {
               const key = getVaultKey(vault)
               const rowApyDisplayVariant = resolveApyDisplayVariant(vault)

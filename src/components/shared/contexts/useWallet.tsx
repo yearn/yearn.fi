@@ -1,13 +1,16 @@
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
-import { createContext, memo, useCallback, useContext, useMemo, useRef } from 'react'
+import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
+import { useBalancesCombined } from '../hooks/useBalancesCombined'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
 import { DEFAULT_ERC20, toAddress, zeroNormalizedBN } from '../utils'
 import { useWeb3 } from './useWeb3'
 import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
+
+const USE_ENSO_BALANCES = import.meta.env.VITE_BALANCE_SOURCE !== 'multicall'
 
 type TTokenAndChain = { address: TAddress; chainID: number }
 type TWalletContext = {
@@ -52,12 +55,13 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     isLoadingVaultList,
     isEnabled: Boolean(userAddress)
   })
+  const useBalancesHook = USE_ENSO_BALANCES ? useBalancesCombined : useBalancesWithQuery
   const {
     data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
     onUpdate,
     onUpdateSome,
     isLoading
-  } = useBalancesWithQuery({
+  } = useBalancesHook({
     tokens: allTokens,
     priorityChainID: 1
   })
@@ -66,6 +70,12 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 
     return _tokens as TYChainTokens
   }, [tokensRaw])
+
+  useEffect(() => {
+    if (Object.keys(balances).length > 0) {
+      console.log({ balances, source: USE_ENSO_BALANCES ? 'enso' : 'multicall' })
+    }
+  }, [balances])
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {

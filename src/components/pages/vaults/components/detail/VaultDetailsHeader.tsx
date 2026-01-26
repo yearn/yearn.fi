@@ -2,7 +2,6 @@ import { useThemePreference } from '@hooks/useThemePreference'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
-import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
@@ -14,9 +13,15 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
+import {
+  METRIC_FOOTNOTE_CLASS,
+  METRIC_VALUE_CLASS,
+  MetricHeader,
+  MetricsCard,
+  type TMetricBlock
+} from '@shared/components/MetricsCard'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { Tooltip } from '@shared/components/Tooltip'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconCirclePile } from '@shared/icons/IconCirclePile'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
@@ -33,88 +38,10 @@ import type { ReactElement } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
-const METRIC_VALUE_CLASS = 'font-semibold text-[20px] leading-tight md:text-[22px]'
-const METRIC_FOOTNOTE_CLASS = 'text-xs text-text-secondary'
-
-type TMetricBlock = {
-  key: string
-  header: ReactElement
-  value: ReactElement
-  footnote?: ReactElement
-  secondaryLabel?: ReactElement
-}
-
-function MetricsCard({ items }: { items: TMetricBlock[] }): ReactElement {
-  return (
-    <div className={cl('rounded-lg border border-border bg-surface text-text-primary', 'backdrop-blur-sm')}>
-      <div className={'divide-y divide-neutral-300 md:flex md:divide-y-0'}>
-        {items.map((item, index): ReactElement => {
-          const valueContent = item.footnote ? (
-            <Tooltip
-              className={'h-auto justify-start md:justify-start'}
-              openDelayMs={150}
-              align={'center'}
-              tooltip={
-                <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs'}>
-                  {item.footnote}
-                </div>
-              }
-            >
-              <div className={'inline-flex'}>{item.value}</div>
-            </Tooltip>
-          ) : (
-            item.value
-          )
-
-          return (
-            <div
-              key={item.key}
-              className={cl(
-                'flex flex-1 flex-col gap-1 px-5 py-3',
-                index < items.length - 1 ? 'md:border-r md:border-border' : ''
-              )}
-            >
-              <div className={'flex items-center justify-between'}>{item.header}</div>
-              <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{valueContent}</div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): ReactElement {
-  return (
-    <p className={'flex items-center gap-1 text-xs font-normal uppercase tracking-wide text-text-secondary'}>
-      {tooltip ? (
-        <Tooltip
-          side={'top'}
-          align={'center'}
-          openDelayMs={150}
-          tooltip={
-            <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
-              {tooltip}
-            </div>
-          }
-        >
-          <span
-            className={
-              'cursor-pointer underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600'
-            }
-          >
-            {label}
-          </span>
-        </Tooltip>
-      ) : (
-        <span>{label}</span>
-      )}
-    </p>
-  )
-}
-
 function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
+  const listKind = deriveListKind(currentVault)
+  const isFactoryVault = listKind === 'factory'
   const metrics: TMetricBlock[] = [
     {
       key: 'est-apy',
@@ -123,7 +50,7 @@ function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): R
         <VaultForwardAPY
           currentVault={currentVault}
           showSubline={false}
-          showSublineTooltip={currentVault.chainID === KATANA_CHAIN_ID}
+          showSublineTooltip
           className={'items-start text-left'}
           valueClassName={METRIC_VALUE_CLASS}
         />
@@ -135,6 +62,8 @@ function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): R
       value: (
         <VaultHistoricalAPY
           currentVault={currentVault}
+          showSublineTooltip
+          showBoostDetails={!isFactoryVault}
           className={'items-start text-left'}
           valueClassName={METRIC_VALUE_CLASS}
         />
@@ -294,35 +223,42 @@ export function VaultDetailsHeader({
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
   const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
-  const productTypeIcon = isAllocatorVault ? (
-    <span className={'text-sm leading-none'}>{'⚙️'}</span>
-  ) : isLegacyVault ? (
-    <IconRewind className={'size-3.5'} />
-  ) : (
-    <span className={'text-sm leading-none'}>{'🏭'}</span>
-  )
+  const productTypeIcon = ((): ReactElement => {
+    if (isAllocatorVault) return <span className={'text-sm leading-none'}>{'⚙️'}</span>
+    if (isLegacyVault) return <IconRewind className={'size-3.5'} />
+    return <span className={'text-sm leading-none'}>{'🏭'}</span>
+  })()
 
-  const categoryIcon: ReactElement | null =
-    currentVault.category === 'Stablecoin' ? (
-      <IconStablecoin className={'size-3.5'} />
-    ) : currentVault.category === 'Volatile' ? (
-      <IconVolatile className={'size-3.5'} />
-    ) : null
+  const categoryIcon: ReactElement | null = ((): ReactElement | null => {
+    if (currentVault.category === 'Stablecoin') return <IconStablecoin className={'size-3.5'} />
+    if (currentVault.category === 'Volatile') return <IconVolatile className={'size-3.5'} />
+    return null
+  })()
 
-  const baseKindType: 'multi' | 'single' | undefined =
-    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
+  const baseKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
+    if (currentVault.kind === 'Multi Strategy') return 'multi'
+    if (currentVault.kind === 'Single Strategy') return 'single'
+    return undefined
+  })()
 
-  const fallbackKindType: 'multi' | 'single' | undefined =
-    listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
+  const fallbackKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
+    if (listKind === 'allocator') return 'multi'
+    if (listKind === 'strategy') return 'single'
+    return undefined
+  })()
   const kindType = baseKindType ?? fallbackKindType
-  const kindLabel: string | undefined =
-    kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
-  const kindIcon: ReactElement | null =
-    kindType === 'multi' ? (
-      <IconCirclePile className={'size-3.5'} />
-    ) : kindType === 'single' ? (
-      <IconStack className={'size-3.5'} />
-    ) : null
+
+  const kindLabel: string | undefined = ((): string | undefined => {
+    if (kindType === 'multi') return 'Allocator'
+    if (kindType === 'single') return 'Strategy'
+    return currentVault.kind
+  })()
+
+  const kindIcon: ReactElement | null = ((): ReactElement | null => {
+    if (kindType === 'multi') return <IconCirclePile className={'size-3.5'} />
+    if (kindType === 'single') return <IconStack className={'size-3.5'} />
+    return null
+  })()
   const chainDescription = getChainDescription(currentVault.chainID)
   const categoryDescription = getCategoryDescription(currentVault.category)
   const productTypeDescription = getProductTypeDescription(listKind)
@@ -468,7 +404,7 @@ export function VaultDetailsHeader({
               showCollapsedTooltip={isCompressed}
               tooltipDescription={productTypeDescription}
             />
-            {showKindChip ? (
+            {showKindChip && kindLabel ? (
               <VaultsListChip
                 label={kindLabel}
                 icon={kindIcon}

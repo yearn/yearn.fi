@@ -6,8 +6,7 @@ import { erc20Abi } from 'viem'
 import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
 
-const ENSO_API_BASE = 'https://api.enso.finance/api/v1'
-const ENSO_API_KEY = import.meta.env.VITE_ENSO_API_KEY
+const ENSO_ROUTE_PROXY = '/api/enso/route'
 
 // Known Enso router addresses per chain for pre-fetching allowance
 const ENSO_ROUTER_ADDRESSES: Record<number, Address> = {
@@ -125,12 +124,7 @@ export const useSolverEnso = ({
         ...(receiver && { receiver })
       })
 
-      const response = await fetch(`${ENSO_API_BASE}/shortcuts/route?${params}`, {
-        headers: {
-          Authorization: `Bearer ${ENSO_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await fetch(`${ENSO_ROUTE_PROXY}?${params}`)
 
       const data: EnsoRouteResponse & EnsoError = await response.json()
 

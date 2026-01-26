@@ -92,6 +92,7 @@ type TVaultsListData = {
   listChains: number[] | null
   defaultCategories: string[]
   totalMatchingVaults: number
+  hasHoldings: boolean
 }
 
 type TVaultsListModel = {
@@ -907,7 +908,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
         listCategoriesSanitized,
         listChains,
         defaultCategories,
-        totalMatchingVaults
+        totalMatchingVaults,
+        hasHoldings: holdingsVaults.length > 0
       },
       handlers: {
         onToggleChain: handleToggleChain,

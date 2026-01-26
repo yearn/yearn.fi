@@ -161,12 +161,17 @@ export async function performCall(
   return [_data, undefined]
 }
 
+export type TBalanceFetchStats = {
+  rpcCalls: number
+  contractCalls: number
+}
+
 export async function getBalances(
   chainID: number,
   address: TAddress | undefined,
   tokens: TUseBalancesTokens[],
   shouldForceFetch = false
-): Promise<[TDict<TToken>, Error | undefined]> {
+): Promise<[TDict<TToken>, Error | undefined, TBalanceFetchStats]> {
   const ownerAddress = address
 
   const cachedResults: TDict<TToken> = {}
@@ -228,12 +233,17 @@ export async function getBalances(
     }
   }
 
+  const stats: TBalanceFetchStats = {
+    rpcCalls: calls.length > 0 ? 1 : 0,
+    contractCalls: calls.length
+  }
+
   try {
     const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress))
     const result = { ...cachedResults, ...callResult }
-    return [result, undefined]
+    return [result, undefined, stats]
   } catch (_error) {
     console.error(_error)
-    return [cachedResults, _error as Error]
+    return [cachedResults, _error as Error, stats]
   }
 }
