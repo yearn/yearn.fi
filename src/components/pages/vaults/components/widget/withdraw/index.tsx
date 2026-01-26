@@ -436,7 +436,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       <WithdrawDetails
         actionLabel={actionLabel}
         requiredShares={requiredShares}
-        sharesDecimals={isUnstake ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)}
+        sharesDecimals={withdrawalSource === 'staking' ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)}
         isLoadingQuote={activeFlow.periphery.isLoadingRoute}
         expectedOut={activeFlow.periphery.expectedOut}
         outputDecimals={outputToken?.decimals ?? 18}
@@ -520,7 +520,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
           requiredShares > 0n
             ? formatTAmount({
                 value: requiredShares,
-                decimals: vault?.decimals ?? 18
+                decimals: withdrawalSource === 'staking' ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)
               })
             : '0'
         }
