@@ -188,13 +188,6 @@ function Index(): ReactElement | null {
     currentVault?.staking.address
   ])
 
-  const widgetActions = useMemo(() => {
-    if (currentVault?.migration?.available) {
-      return [WidgetActionType.Migrate, WidgetActionType.Withdraw]
-    }
-    return [WidgetActionType.Deposit, WidgetActionType.Withdraw]
-  }, [currentVault?.migration?.available])
-
   const sections = useMemo(() => {
     if (!currentVault || !yDaemonBaseUri) {
       return []
@@ -485,19 +478,6 @@ function Index(): ReactElement | null {
 
         {/* Main Content Grid - Responsive layout */}
         <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
-          <div
-            className={cl('order-1 md:order-2', 'md:col-span-7 md:col-start-14 md:sticky md:h-fit md:pt-6')}
-            style={{ top: nextSticky }}
-          >
-            <Widget
-              vaultAddress={currentVault.address}
-              currentVault={currentVault}
-              gaugeAddress={currentVault.staking.address}
-              actions={widgetActions}
-              chainId={chainId}
-            />
-          </div>
-
           {/* Desktop sections - Hidden on mobile */}
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 pb-4'}>
             {renderableSections.length > 0 ? (
@@ -585,7 +565,14 @@ function Index(): ReactElement | null {
             })}
             {renderableSections.length > 0 ? <div aria-hidden className={'h-[60vh]'} /> : null}
           </div>
-          <div className={cl('md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-6')} style={{ top: nextSticky }}>
+          <div
+            className={cl(
+              'hidden md:block',
+              'order-1 md:order-2',
+              'md:col-span-7 md:col-start-14 md:sticky md:h-fit md:pt-6'
+            )}
+            style={{ top: nextSticky }}
+          >
             <div className="space-y-4">
               <Widget
                 vaultAddress={currentVault.address}
