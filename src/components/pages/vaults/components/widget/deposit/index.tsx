@@ -529,6 +529,10 @@ export const WidgetDeposit: FC<Props> = ({
         chainId={sourceChainId}
         value={selectedToken}
         priorityTokens={{ [chainId]: [assetAddress] }}
+        excludeTokens={stakingAddress ? [stakingAddress] : undefined}
+        assetAddress={assetAddress}
+        vaultAddress={vaultAddress}
+        stakingAddress={stakingAddress}
       />
     </div>
   )
