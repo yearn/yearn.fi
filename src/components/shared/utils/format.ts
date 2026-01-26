@@ -3,6 +3,57 @@ import type { TNormalizedBN, TNumberish } from '../types/mixed'
 import { MAX_UINT_256 } from './constants'
 import { isZero } from './tools.is'
 
+/***************************************************************************
+ ** Formats very small numbers using subscript notation for leading zeros.
+ ** Example: 0.000000000004 becomes "0.0₁₀4" (10 zeros shown as subscript)
+ ** Only applies when there are 4+ leading zeros after decimal point.
+ **************************************************************************/
+const SUBSCRIPT_DIGITS = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉']
+
+function toSubscript(num: number): string {
+  return num
+    .toString()
+    .split('')
+    .map((digit) => SUBSCRIPT_DIGITS[parseInt(digit, 10)])
+    .join('')
+}
+
+export function formatWithSubscriptZeros(amount: number, maxSignificantDigits = 4): string | null {
+  if (amount <= 0 || amount >= 0.0001) {
+    return null // Don't use subscript notation for these values
+  }
+
+  // Convert to string to count leading zeros
+  const str = amount.toFixed(20) // Use high precision
+  const decimalIndex = str.indexOf('.')
+  if (decimalIndex === -1) return null
+
+  const afterDecimal = str.slice(decimalIndex + 1)
+
+  // Count leading zeros
+  let zeroCount = 0
+  for (const char of afterDecimal) {
+    if (char === '0') {
+      zeroCount++
+    } else {
+      break
+    }
+  }
+
+  // Only use subscript if 4+ leading zeros
+  if (zeroCount < 4) {
+    return null
+  }
+
+  // Get significant digits after the zeros
+  const significantPart = afterDecimal.slice(zeroCount)
+  const significantDigits = significantPart.slice(0, maxSignificantDigits).replace(/0+$/, '') || '0'
+
+  // Format: 0.0₍zeroCount-1₎significantDigits
+  // We show one zero explicitly, then subscript for the rest
+  return `0.0${toSubscript(zeroCount - 1)}${significantDigits}`
+}
+
 export const DefaultTNormalizedBN: TNormalizedBN = { raw: 0n, normalized: 0, display: '0', decimals: 18 }
 
 export const simpleToExact = (value: number | string = 0, d = 18): bigint => {
@@ -247,7 +298,8 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
 
   /**********************************************************************************************
    ** If the amount is very small, we adjust the decimals to try to display something, up to
-   ** "decimals" number of decimals
+   ** "decimals" number of decimals. For very small numbers with 4+ leading zeros, we use
+   ** subscript notation (e.g., 0.0₁₀4 instead of 0.000000000004).
    **********************************************************************************************/
   if (amount < 0.01) {
     if (isPercent) {
@@ -259,6 +311,14 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
         symbol
       })
     }
+
+    // Try subscript notation for very small numbers (4+ leading zeros)
+    const subscriptFormatted = formatWithSubscriptZeros(amount)
+    if (subscriptFormatted) {
+      const symbolSuffix = symbol && options.shouldDisplaySymbol ? ` ${symbol}` : ''
+      return `${subscriptFormatted}${symbolSuffix}`
+    }
+
     if (amount > 0.00000001) {
       return formatCurrencyWithPrecision({
         amount,
@@ -305,6 +365,15 @@ export function formatTAmount(props: TAmount): string {
   if (!Number.isFinite(amount)) {
     return '∞'
   }
+
+  // Use subscript notation for very small numbers (4+ leading zeros)
+  const subscriptFormatted = formatWithSubscriptZeros(amount)
+  if (subscriptFormatted) {
+    const symbol = props.symbol || ''
+    const symbolSuffix = symbol && options.shouldDisplaySymbol ? ` ${symbol}` : ''
+    return `${subscriptFormatted}${symbolSuffix}`
+  }
+
   return formatLocalAmount(amount, decimals, props.symbol || '', options)
 }
 
