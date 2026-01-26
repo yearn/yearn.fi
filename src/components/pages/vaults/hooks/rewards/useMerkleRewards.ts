@@ -94,7 +94,7 @@ export function useMerkleRewards(params: UseMerkleRewardsParams): UseMerkleRewar
   const groupedRewards = useMemo((): TGroupedMerkleReward[] => {
     const grouped = rewards.reduce(
       (acc, reward) => {
-        const key = reward.token.symbol
+        const key = reward.token.address
         acc[key] = acc[key] ?? []
         acc[key].push(reward)
         return acc

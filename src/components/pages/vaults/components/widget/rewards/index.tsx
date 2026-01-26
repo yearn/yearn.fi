@@ -92,7 +92,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
           ))}
           {merkleRewards.map((groupedReward, index) => (
             <MerkleRewardRow
-              key={groupedReward.token.symbol}
+              key={groupedReward.token.address}
               groupedReward={groupedReward}
               userAddress={userAddress!}
               chainId={chainId}
