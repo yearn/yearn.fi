@@ -62,7 +62,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   step,
   isLastStep = true,
   onAllComplete,
-  topOffset = '-48px',
   contentAlign = 'center'
 }) => {
   const [overlayState, setOverlayState] = useState<OverlayState>('success')
@@ -405,7 +404,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     <div
       className="absolute z-50"
       style={{
-        top: topOffset,
+        top: 0, // Cover the tabs
         left: 0,
         right: 0,
         bottom: 0,
@@ -415,14 +414,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       {/* Semi-transparent backdrop with fade animation */}
       <div
         className={cl(
-          'absolute inset-0 bg-black/5 rounded-xl transition-opacity duration-200',
+          'absolute inset-0 bg-black/5 rounded-lg transition-opacity duration-200',
           isOpen ? 'opacity-100' : 'opacity-0'
         )}
       />
       {/* Overlay content with slide and fade animation */}
       <div
         className={cl(
-          'absolute inset-0 bg-surface rounded-xl transition-all duration-300 ease-out flex flex-col',
+          'absolute inset-0 bg-surface rounded-lg transition-all duration-300 ease-out flex flex-col',
           isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         )}
       >

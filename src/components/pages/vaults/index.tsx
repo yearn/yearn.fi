@@ -11,6 +11,7 @@ import { getVaultTypeLabel } from '@pages/vaults/utils/vaultTypeCopy'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
+import { IconGitCompare } from '@shared/icons/IconGitCompare'
 import { cl } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
@@ -33,7 +34,7 @@ function VaultsListSection({
   const shouldShowSubtleOverlay = isUpdatingList && !isUpdatingProductType
   const isBusy = isUpdatingList || isUpdatingProductType
   return (
-    <div aria-busy={isBusy || undefined} className={'relative w-full rounded-xl bg-surface'}>
+    <div aria-busy={isBusy || undefined} className={'relative w-full rounded-lg bg-surface'}>
       <div className={isUpdatingProductType ? 'pointer-events-none opacity-70 transition' : 'transition'}>
         <div
           className={'relative md:sticky md:z-30'}
@@ -51,12 +52,12 @@ function VaultsListSection({
         <div className={'flex flex-col border-x border-b border-border rounded-b-xl overflow-hidden'}>{children}</div>
       </div>
       {shouldShowSubtleOverlay ? (
-        <div aria-hidden={true} className={'pointer-events-none absolute inset-0 z-30 rounded-xl bg-app/30'} />
+        <div aria-hidden={true} className={'pointer-events-none absolute inset-0 z-30 rounded-lg bg-app/30'} />
       ) : null}
       {isUpdatingProductType ? (
         <output
           aria-live={'polite'}
-          className={'absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-app/30 text-text-primary'}
+          className={'absolute inset-0 z-40 flex items-center justify-center rounded-lg bg-app/30 text-text-primary'}
         >
           <span className={'flex flex-col items-center gap-2'}>
             <span className={'loader'} />
@@ -165,18 +166,56 @@ export default function Index(): ReactElement {
     }
   }, [compareVaultKeys.length, isCompareOpen])
 
+  useEffect(() => {
+    const root = varsRef.current
+    const filtersNode = filtersRef.current
+
+    if (!root || !filtersNode) {
+      return
+    }
+
+    let frame = 0
+    const update = (): void => {
+      frame = 0
+      const height = filtersNode.getBoundingClientRect().height
+      root.style.setProperty('--vaults-filters-height', `${height}px`)
+    }
+
+    const schedule = (): void => {
+      if (frame) {
+        cancelAnimationFrame(frame)
+      }
+      frame = requestAnimationFrame(update)
+    }
+
+    schedule()
+
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
+    observer?.observe(filtersNode)
+    window.addEventListener('resize', schedule)
+
+    return () => {
+      if (frame) {
+        cancelAnimationFrame(frame)
+      }
+      observer?.disconnect()
+      window.removeEventListener('resize', schedule)
+    }
+  }, [filtersRef, varsRef])
+
   const filtersContent = <VaultsFiltersPanel sections={filters.sections} />
 
   const compareToggleControl = (
     <button
       type={'button'}
       className={cl(
-        'flex shrink-0 items-center justify-center h-10 px-4 rounded-[4px] bg-neutral-800/20 text-sm font-medium text-text-primary transition-colors hover:bg-neutral-800/40',
+        'flex shrink-0 items-center justify-center h-10 px-4 gap-1 rounded-lg bg-surface border border-border hover:border-hover text-sm font-medium text-text-secondary transition-colors hover:text-text-primary data-[active=true]:border-primary/50 data-[active=true]:text-primary',
         isCompareMode ? 'bg-primary/50' : null
       )}
       onClick={handleToggleCompareMode}
       data-active={isCompareMode}
     >
+      <IconGitCompare className={'size-4'} />
       {'Compare'}
     </button>
   )
@@ -327,7 +366,6 @@ export default function Index(): ReactElement {
       onClose={(): void => setIsCompareOpen(false)}
       vaults={compareVaults}
       onRemove={handleRemoveCompare}
-      onClear={handleClearCompare}
     />
   )
 

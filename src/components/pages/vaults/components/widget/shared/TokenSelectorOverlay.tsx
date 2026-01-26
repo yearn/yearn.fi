@@ -26,7 +26,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
     <div
       className="absolute z-50"
       style={{
-        top: '-48px', // Adjust to cover the tabs
+        top: 0, // Adjust to cover the tabs
         left: 0,
         right: 0,
         bottom: 0,
@@ -36,7 +36,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
       {/* Semi-transparent backdrop with fade animation */}
       <div
         className={cl(
-          'absolute inset-0 bg-black/5 rounded-xl transition-opacity duration-200',
+          'absolute inset-0 bg-black/5 rounded-lg transition-opacity duration-200',
           isOpen ? 'opacity-100' : 'opacity-0'
         )}
         onClick={onClose}

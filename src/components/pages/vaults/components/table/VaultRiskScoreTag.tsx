@@ -53,7 +53,7 @@ export function VaultRiskScoreTag({
           </div>
           <span
             suppressHydrationWarning
-            className={'tooltiptext top-full mt-1 !text-[10px]'}
+            className={'tooltiptext bottom-full mb-1 !text-[10px]'}
             style={{ marginRight: 'calc(-94px + 50%)' }}
           >
             <div
@@ -82,7 +82,7 @@ export function RiskScoreInlineDetails({ riskLevel }: { riskLevel: number }): Re
   const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel
   return (
     <div
-      className={'md:hidden mt-2 w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'}
+      className={'md:hidden mt-2 w-full rounded-lg border border-border bg-surface-secondary p-3 text-text-primary'}
       onClick={(e): void => e.stopPropagation()}
     >
       <div className={'flex flex-col gap-2'}>

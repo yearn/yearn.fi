@@ -433,6 +433,87 @@ export function formatPercent(n: number, min = 2, max = 2, upperLimit = 500): st
   return `${formatAmount(safeN || 0, min, max)}%`
 }
 
+function resolveLocales(options?: { locales?: string[] }): string[] {
+  let locale = 'en-US'
+  if (typeof navigator !== 'undefined') {
+    locale = navigator.language || 'fr-FR'
+  }
+  const locales = []
+  if (options?.locales) {
+    locales.push(...options.locales)
+  }
+  locales.push('en-US')
+  locales.push(locale)
+  return locales
+}
+
+export function formatApyDisplay(value: number, options?: { locales?: string[] }): string {
+  if (value === Infinity || value === -Infinity) {
+    return '∞%'
+  }
+  const safeValue = Number.isFinite(value) ? value : 0
+  const percentValue = safeValue * 100
+  const fractionDigits = resolveApyFractionDigits(percentValue)
+  const formatter = new Intl.NumberFormat(resolveLocales(options), {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits
+  })
+  return `${formatter.format(percentValue)}%`
+}
+
+export function normalizeApyDisplayValue(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0
+  }
+  const percentValue = value * 100
+  const fractionDigits = resolveApyFractionDigits(percentValue)
+  return Number(percentValue.toFixed(fractionDigits))
+}
+
+function resolveApyFractionDigits(value: number): number {
+  const absValue = Math.abs(value)
+  const digitsBefore = absValue >= 100 ? 3 : absValue >= 10 ? 2 : 1
+  return Math.max(0, 3 - digitsBefore)
+}
+
+export function formatTvlDisplay(value: number, options?: { locales?: string[] }): string {
+  if (value === Infinity || value === -Infinity) {
+    return '$∞'
+  }
+  const safeValue = Number.isFinite(value) ? value : 0
+  const absValue = Math.abs(safeValue)
+  const locales = resolveLocales(options)
+  if (absValue >= 10000) {
+    const formatter = new Intl.NumberFormat(locales, {
+      notation: 'compact',
+      compactDisplay: 'short',
+      minimumSignificantDigits: 3,
+      maximumSignificantDigits: 3
+    })
+    return `$${formatter.format(safeValue)}`
+  }
+
+  let minimumFractionDigits = 0
+  let maximumFractionDigits = 0
+
+  if (absValue < 1) {
+    minimumFractionDigits = 2
+    maximumFractionDigits = 2
+  } else if (absValue < 10) {
+    minimumFractionDigits = 2
+    maximumFractionDigits = 2
+  } else if (absValue < 100) {
+    minimumFractionDigits = 1
+    maximumFractionDigits = 2
+  }
+
+  const formatter = new Intl.NumberFormat(locales, {
+    minimumFractionDigits,
+    maximumFractionDigits
+  })
+  return `$${formatter.format(safeValue)}`
+}
+
 export function formatCounterValue(amount: number | string, price: number): string {
   if (!amount || !price) {
     return `$${formatAmount(0, 2, 2)}`

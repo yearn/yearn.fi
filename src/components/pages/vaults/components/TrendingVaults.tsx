@@ -179,7 +179,7 @@ function TrendingVaultsSkeleton(): ReactElement {
 
   return (
     <div className={'w-full bg-app pb-2'}>
-      <div className={'flex flex-col gap-0 rounded-xl border border-border bg-surface'}>
+      <div className={'flex flex-col gap-0 rounded-lg border border-border bg-surface'}>
         <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-3'}>
           <div className={'flex min-w-0 flex-1 items-center gap-3'}>
             <div className={'h-4 w-32 rounded-md bg-surface-tertiary/70 animate-pulse'} />
@@ -287,7 +287,7 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
 
   return (
     <div className={'w-full bg-app pb-2'}>
-      <div className={'flex flex-col gap-0 rounded-xl border border-border bg-surface'}>
+      <div className={'flex flex-col gap-0 rounded-lg border border-border bg-surface'}>
         <div className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-3'}>
           <div className={'flex min-w-0 flex-1 items-center gap-3 '}>
             <div className={'flex flex-col text-left'}>

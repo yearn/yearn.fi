@@ -1,6 +1,7 @@
 import Link from '@components/Link'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
+import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
@@ -12,22 +13,13 @@ import {
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import { useMediaQuery } from '@react-hookz/web'
-import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { Tooltip } from '@shared/components/Tooltip'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
-import { IconCirclePile } from '@shared/icons/IconCirclePile'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
-import { IconMigratable } from '@shared/icons/IconMigratable'
-import { IconRewind } from '@shared/icons/IconRewind'
-import { IconScissors } from '@shared/icons/IconScissors'
-import { IconStablecoin } from '@shared/icons/IconStablecoin'
-import { IconStack } from '@shared/icons/IconStack'
-import { IconVolatile } from '@shared/icons/IconVolatile'
-import { cl, formatAmount, toAddress, toNormalizedBN } from '@shared/utils'
+import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
@@ -113,14 +105,7 @@ export function VaultsListRow({
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
   const productType = isAllocatorVault ? 'v3' : 'lp'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
-  const productTypeIcon = isAllocatorVault ? (
-    <span className={'text-sm leading-none'}>{'⚙️'}</span>
-  ) : isLegacyVault ? (
-    <IconRewind className={'size-3.5'} />
-  ) : (
-    <span className={'text-sm leading-none'}>{'🏭'}</span>
-  )
+  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
   const productTypeAriaLabel = isAllocatorVault
     ? 'Show single asset vaults'
     : isLegacyVault
@@ -161,18 +146,6 @@ export function VaultsListRow({
   const activeCategoryLabels = activeCategories ?? []
   const showKindChip = showStrategies && Boolean(kindType) && (showAllocatorChip || kindType !== 'multi')
   const isKindActive = false
-  const categoryIcon: ReactElement | null =
-    currentVault.category === 'Stablecoin' ? (
-      <IconStablecoin className={'size-3.5'} />
-    ) : currentVault.category === 'Volatile' ? (
-      <IconVolatile className={'size-3.5'} />
-    ) : null
-  const kindIcon: ReactElement | null =
-    kindType === 'multi' ? (
-      <IconCirclePile className={'size-3.5'} />
-    ) : kindType === 'single' ? (
-      <IconStack className={'size-3.5'} />
-    ) : null
   const chainDescription = getChainDescription(currentVault.chainID)
   const categoryDescription = getCategoryDescription(currentVault.category)
   const productTypeDescription = getProductTypeDescription(listKind)
@@ -180,9 +153,12 @@ export function VaultsListRow({
   const fees = currentVault.apr?.fees
   const showFeesChip = Boolean(fees) && !isChipsCompressed
   const feesChipLabel = fees
-    ? `${formatAmount((fees.management || 0) * 100, 0, 2)}% | ${formatAmount((fees.performance || 0) * 100, 0, 2)}%`
+    ? `Fees: ${formatAmount((fees.management || 0) * 100, 0, 2)}% | ${formatAmount(
+        (fees.performance || 0) * 100,
+        0,
+        2
+      )}%`
     : ''
-  const migratableIcon = <IconMigratable className={'size-3.5'} />
   const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
   const holdingsIcon = (
     <svg
@@ -237,24 +213,6 @@ export function VaultsListRow({
     getPrice,
     mobileSecondaryMetric
   ])
-  const tvlNativeTooltip = (
-    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
-      <span className={'font-number'}>
-        <RenderAmount
-          value={Number(toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals).normalized)}
-          symbol={''}
-          decimals={6}
-          shouldFormatDust
-          options={{
-            shouldCompactValue: true,
-            maximumFractionDigits: 2,
-            minimumFractionDigits: 2
-          }}
-        />
-      </span>
-      <span className={'pl-1'}>{currentVault.token.symbol}</span>
-    </div>
-  )
 
   useEffect(() => {
     if (isExpanded) {
@@ -273,7 +231,7 @@ export function VaultsListRow({
           setIsExpanded((value) => !value)
         }}
         className={cl(
-          'absolute top-5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
+          'absolute top-6.5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
           'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
         )}
       >
@@ -283,7 +241,7 @@ export function VaultsListRow({
         href={href}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
-          'p-4 pb-4 md:p-4 md:pt-2 md:pb-4 md:pr-20',
+          'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
         onClickCapture={(event): void => {
@@ -326,7 +284,7 @@ export function VaultsListRow({
           )}
         >
           <div
-            className={'flex flex-row w-full gap-4 pb-2 border-b border-border md:pb-0 md:border-none overflow-visible'}
+            className={'flex flex-row w-full gap-6 pb-2 border-b border-border md:pb-0 md:border-none overflow-visible'}
           >
             {showCompareToggle ? (
               // biome-ignore lint/a11y/useSemanticElements: native checkbox has double-firing issues with parent Link's onClickCapture
@@ -380,26 +338,27 @@ export function VaultsListRow({
               />
               <div
                 className={
-                  'absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full border border-border bg-surface md:hidden'
+                  'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'
                 }
               >
-                <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={12} height={12} />
+                <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={16} height={16} />
               </div>
             </div>
             <div className={'min-w-0 flex-1'}>
               <strong
                 title={currentVault.name}
                 className={
-                  'block truncate-safe whitespace-nowrap font-black text-text-primary md:-mb-0.5 text-lg leading-tight'
+                  'block truncate-safe whitespace-nowrap font-black text-text-primary md:mb-0 text-lg leading-tight'
                 }
               >
                 {currentVault.name}
               </strong>
-              <div className={'mt-1 flex items-center gap-1 text-xs text-text-primary/70 whitespace-nowrap'}>
+              <div className={'mt-1 flex items-center gap-2 text-xs text-text-primary/70 whitespace-nowrap'}>
                 <div className={'hidden md:block'}>
                   <VaultsListChip
                     label={network.name}
                     icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
+                    showIconInChip={false}
                     isActive={activeChainIds.includes(currentVault.chainID)}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
@@ -412,7 +371,6 @@ export function VaultsListRow({
                 {currentVault.category ? (
                   <VaultsListChip
                     label={currentVault.category}
-                    icon={categoryIcon}
                     isActive={activeCategoryLabels.includes(currentVault.category)}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
@@ -425,7 +383,6 @@ export function VaultsListRow({
                 {showProductTypeChip ? (
                   <VaultsListChip
                     label={productTypeLabel}
-                    icon={productTypeIcon}
                     isActive={isProductTypeActive}
                     isCollapsed={shouldCollapseProductType}
                     showCollapsedTooltip={showCollapsedTooltip}
@@ -438,7 +395,6 @@ export function VaultsListRow({
                 {showFeesChip ? (
                   <VaultsListChip
                     label={feesChipLabel}
-                    icon={<IconScissors className={'size-3.5'} />}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={'Management fee | Performance fee'}
@@ -448,7 +404,6 @@ export function VaultsListRow({
                 {showKindChip && kindLabel ? (
                   <VaultsListChip
                     label={kindLabel}
-                    icon={kindIcon}
                     isActive={isKindActive}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
@@ -471,7 +426,6 @@ export function VaultsListRow({
                 {flags?.isMigratable ? (
                   <VaultsListChip
                     label={'Migratable'}
-                    icon={migratableIcon}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
@@ -488,25 +442,15 @@ export function VaultsListRow({
                     onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
-                {showHoldingsChip ? (
+                {showHoldingsChip && isMobile ? (
                   <span
                     className={
-                      'hidden md:inline-flex items-center rounded-lg border border-primary/50 px-1 py-0.5 text-xs font-medium transition-colors bg-surface-secondary text-primary gap-1 shadow-[0_0_12px_rgba(59,130,246,0.12)]'
+                      'inline-flex items-center rounded-lg border border-primary/50 px-1 py-0.5 text-xs font-medium transition-colors bg-surface-secondary text-primary gap-1 shadow-[0_0_12px_rgba(59,130,246,0.12)]'
                     }
                     aria-label={'Holdings'}
                   >
                     <span className={'flex size-4 items-center justify-center text-primary'}>{holdingsIcon}</span>
-                    <RenderAmount
-                      shouldHideTooltip
-                      value={holdingsValue}
-                      symbol={'USD'}
-                      decimals={0}
-                      options={{
-                        shouldCompactValue: true,
-                        maximumFractionDigits: 2,
-                        minimumFractionDigits: 2
-                      }}
-                    />
+                    {formatTvlDisplay(holdingsValue)}
                   </span>
                 ) : null}
               </div>
@@ -530,35 +474,16 @@ export function VaultsListRow({
                 <span className={'text-text-primary/60'}>
                   {mobileSecondaryMetric === 'holdings' ? 'Holdings:' : 'TVL:'}
                 </span>
-                <span className={'text-lg font-semibold text-text-primary font-number'}>
-                  {mobileSecondaryMetric === 'holdings' ? (
-                    showHoldingsValue ? (
-                      <RenderAmount
-                        value={holdingsValue}
-                        symbol={'USD'}
-                        decimals={0}
-                        options={{
-                          shouldCompactValue: true,
-                          maximumFractionDigits: 2,
-                          minimumFractionDigits: 2
-                        }}
-                      />
-                    ) : (
-                      '—'
-                    )
-                  ) : (
-                    <RenderAmount
-                      value={currentVault.tvl?.tvl}
-                      symbol={'USD'}
-                      decimals={0}
-                      options={{
-                        shouldCompactValue: true,
-                        maximumFractionDigits: 2,
-                        minimumFractionDigits: 0
-                      }}
-                    />
-                  )}
-                </span>
+                {mobileSecondaryMetric === 'holdings' ? (
+                  <span className={'text-lg font-semibold text-text-primary font-number'}>
+                    {showHoldingsValue ? formatTvlDisplay(holdingsValue) : '—'}
+                  </span>
+                ) : (
+                  <VaultTVL
+                    currentVault={currentVault}
+                    valueClassName={'text-lg font-semibold text-text-primary font-number'}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -581,25 +506,7 @@ export function VaultsListRow({
           {/* TVL */}
           <div className={cl('yearn--table-data-section-item', tvlColumnSpan)} datatype={'number'}>
             <div className={'flex justify-end text-right'}>
-              <Tooltip
-                className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
-                openDelayMs={150}
-                toggleOnClick={false}
-                tooltip={tvlNativeTooltip}
-              >
-                <p className={'yearn--table-data-section-item-value'}>
-                  <RenderAmount
-                    value={currentVault.tvl?.tvl}
-                    symbol={'USD'}
-                    decimals={0}
-                    options={{
-                      shouldCompactValue: true,
-                      maximumFractionDigits: 2,
-                      minimumFractionDigits: 0
-                    }}
-                  />
-                </p>
-              </Tooltip>
+              <VaultTVL currentVault={currentVault} showNativeTooltip tooltipClassName={'md:justify-end'} />
             </div>
           </div>
           {!showHoldingsColumn ? <div className={'col-span-1'} /> : null}

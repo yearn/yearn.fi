@@ -9,6 +9,8 @@ import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSecti
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
 import { Widget } from '@pages/vaults/components/widget'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
+import { SettingsPanel } from '@pages/vaults/components/widget/SettingsPanel'
+import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { WidgetActionType } from '@pages/vaults/types'
 import { fetchYBoldVault } from '@pages/vaults/utils/handleYBold'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
@@ -18,14 +20,34 @@ import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
 import { useFetch } from '@shared/hooks/useFetch'
 import { useYDaemonBaseURI } from '@shared/hooks/useYDaemonBaseURI'
 import { IconChevron } from '@shared/icons/IconChevron'
-import { cl, toAddress } from '@shared/utils'
+import type { TToken } from '@shared/types'
+import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { useDevFlags } from '@/contexts/useDevFlags'
+
+const resolveHeaderOffset = (): number => {
+  if (typeof window === 'undefined') return 0
+  const root = document.documentElement
+  const styles = getComputedStyle(root)
+  const rawValue = styles.getPropertyValue('--header-height').trim()
+  if (!rawValue) return 0
+
+  const rootFontSize = Number.parseFloat(styles.fontSize || '16') || 16
+  let nextOffset = Number.parseFloat(rawValue)
+
+  if (rawValue.endsWith('rem')) {
+    nextOffset *= rootFontSize
+  } else if (rawValue.endsWith('vh')) {
+    nextOffset = (window.innerHeight * nextOffset) / 100
+  }
+
+  return Number.isNaN(nextOffset) ? 0 : nextOffset
+}
 
 function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
@@ -52,6 +74,7 @@ function Index(): ReactElement | null {
   const [isMobileDetailsExpanded, setIsMobileDetailsExpanded] = useState(false)
   const detailsRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement | null>(null)
+  const sectionSelectorRef = useRef<HTMLDivElement>(null)
   const chartsRef = useRef<HTMLDivElement>(null)
   const aboutRef = useRef<HTMLDivElement>(null)
   const riskRef = useRef<HTMLDivElement>(null)
@@ -82,8 +105,24 @@ function Index(): ReactElement | null {
     charts: 'Performance'
   }
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
-  const sectionScrollOffset = 275
-  const compressedHeaderHeight = 126
+  const [sectionScrollOffset, setSectionScrollOffset] = useState(0)
+  const [isHeaderCompressed, setIsHeaderCompressed] = useState(false)
+  const initialHeaderOffsetRef = useRef<number | null>(null)
+  const scrollPadding = 16
+  const widgetBottomPadding = 16
+  const updateSectionScrollOffset = useCallback((): number => {
+    if (typeof window === 'undefined') return 0
+    const baseOffset = resolveHeaderOffset()
+    const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
+    const nextOffset = Math.round(baseOffset + headerHeight)
+    document.documentElement.style.setProperty('--vault-header-height', `${nextOffset}px`)
+    setSectionScrollOffset((prev) => (Math.abs(prev - nextOffset) > 1 ? nextOffset : prev))
+    return nextOffset
+  }, [])
+  const [isProgrammaticScroll, setIsProgrammaticScroll] = useState(false)
+  const scrollTargetRef = useRef<number | null>(null)
+  const scrollTimeoutRef = useRef<number | null>(null)
+  const [pendingSectionKey, setPendingSectionKey] = useState<SectionKey | null>(null)
 
   // Reset state when vault changes
   useEffect(() => {
@@ -93,8 +132,36 @@ function Index(): ReactElement | null {
       setHasFetchedOverride(false)
       setIsInit(false)
       setLastVaultKey(vaultKey)
+      initialHeaderOffsetRef.current = null
+      if (typeof window !== 'undefined') {
+        document.documentElement.style.removeProperty('--vault-header-initial-offset')
+      }
     }
   }, [vaultKey, lastVaultKey])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    void vaultKey
+    let frame = 0
+    const captureInitialOffset = (): void => {
+      if (initialHeaderOffsetRef.current !== null) return
+      if (window.scrollY > 0) return
+      const baseOffset = resolveHeaderOffset()
+      const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
+      if (headerHeight <= 0) {
+        frame = requestAnimationFrame(captureInitialOffset)
+        return
+      }
+      const paddedOffset = Math.round(baseOffset + headerHeight + widgetBottomPadding)
+      initialHeaderOffsetRef.current = paddedOffset
+      document.documentElement.style.setProperty('--vault-header-initial-offset', `${paddedOffset}px`)
+    }
+
+    frame = requestAnimationFrame(captureInitialOffset)
+    return (): void => {
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [vaultKey])
 
   // Create a stable endpoint that includes the vault key to force SWR to refetch
   const endpoint = useMemo(() => {
@@ -188,6 +255,68 @@ function Index(): ReactElement | null {
     currentVault?.staking.address
   ])
 
+  const widgetActions = useMemo(() => {
+    if (currentVault?.migration?.available) {
+      return [WidgetActionType.Deposit, WidgetActionType.Migrate, WidgetActionType.Withdraw]
+    }
+    return [WidgetActionType.Deposit, WidgetActionType.Withdraw]
+  }, [currentVault?.migration?.available])
+  const [widgetMode, setWidgetMode] = useState<WidgetActionType>(widgetActions[0])
+  const [isWidgetSettingsOpen, setIsWidgetSettingsOpen] = useState(false)
+  const [isWidgetWalletOpen, setIsWidgetWalletOpen] = useState(false)
+  const [depositPrefill, setDepositPrefill] = useState<{
+    address: `0x${string}`
+    chainId: number
+    amount?: string
+  } | null>(null)
+
+  useEffect(() => {
+    setWidgetMode(widgetActions[0])
+  }, [widgetActions])
+
+  const toggleWidgetSettings = (): void => {
+    setIsWidgetSettingsOpen((prev) => {
+      const next = !prev
+      if (next) {
+        setIsWidgetWalletOpen(false)
+      }
+      return next
+    })
+  }
+
+  const toggleWidgetWallet = (): void => {
+    setIsWidgetWalletOpen((prev) => {
+      const next = !prev
+      if (next) {
+        setIsWidgetSettingsOpen(false)
+      }
+      return next
+    })
+  }
+
+  const closeWidgetOverlays = (): void => {
+    setIsWidgetSettingsOpen(false)
+    setIsWidgetWalletOpen(false)
+  }
+
+  const isWidgetPanelActive = !isWidgetSettingsOpen && !isWidgetWalletOpen
+
+  const handleZapTokenSelect = useCallback(
+    (token: TToken): void => {
+      if (!widgetActions.includes(WidgetActionType.Deposit)) {
+        return
+      }
+      setIsWidgetSettingsOpen(false)
+      setIsWidgetWalletOpen(false)
+      setWidgetMode(WidgetActionType.Deposit)
+      setDepositPrefill({
+        address: toAddress(token.address),
+        chainId: token.chainID
+      })
+    },
+    [widgetActions]
+  )
+
   const sections = useMemo(() => {
     if (!currentVault || !yDaemonBaseUri) {
       return []
@@ -235,6 +364,10 @@ function Index(): ReactElement | null {
   }, [chainId, currentVault, sectionRefs, yDaemonBaseUri])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
+  const sectionTabs = renderableSections.map((section) => ({
+    key: section.key,
+    label: collapsibleTitles[section.key]
+  }))
   const scrollSpySections = useMemo(
     () =>
       renderableSections.map((section) => ({
@@ -248,8 +381,8 @@ function Index(): ReactElement | null {
     sections: scrollSpySections,
     activeKey: activeSection,
     onActiveKeyChange: setActiveSection,
-    offsetTop: sectionScrollOffset,
-    enabled: renderableSections.length > 0
+    offsetTop: sectionScrollOffset + scrollPadding,
+    enabled: renderableSections.length > 0 && !isProgrammaticScroll
   })
 
   useEffect(() => {
@@ -258,18 +391,127 @@ function Index(): ReactElement | null {
     }
   }, [renderableSections, activeSection])
 
+  useEffect(() => {
+    if (!pendingSectionKey || !isHeaderCompressed) return
+    const element = sectionRefs[pendingSectionKey]?.current
+    if (!element || typeof window === 'undefined') {
+      setPendingSectionKey(null)
+      setIsProgrammaticScroll(false)
+      return
+    }
+
+    const scrollOffset = updateSectionScrollOffset()
+    const top = element.getBoundingClientRect().top + window.scrollY - scrollOffset
+    const baseTarget = pendingSectionKey === 'charts' ? Math.max(top, 1) : top
+    const targetTop = Math.max(1, baseTarget - scrollPadding)
+
+    scrollTargetRef.current = targetTop
+    if (scrollTimeoutRef.current) {
+      window.clearTimeout(scrollTimeoutRef.current)
+    }
+    scrollTimeoutRef.current = window.setTimeout(() => {
+      scrollTargetRef.current = null
+      setIsProgrammaticScroll(false)
+      scrollTimeoutRef.current = null
+    }, 1200)
+
+    window.scrollTo({ top: targetTop, behavior: 'smooth' })
+    setPendingSectionKey(null)
+  }, [pendingSectionKey, isHeaderCompressed, sectionRefs, updateSectionScrollOffset])
+
+  useEffect(() => {
+    if (!isProgrammaticScroll || typeof window === 'undefined') return
+
+    const handleScroll = (): void => {
+      const target = scrollTargetRef.current
+      if (target === null) return
+      if (Math.abs(window.scrollY - target) <= 2) {
+        scrollTargetRef.current = null
+        setIsProgrammaticScroll(false)
+        if (scrollTimeoutRef.current) {
+          window.clearTimeout(scrollTimeoutRef.current)
+          scrollTimeoutRef.current = null
+        }
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+
+    return (): void => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [isProgrammaticScroll])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handleResize = (): void => {
+      updateSectionScrollOffset()
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return (): void => window.removeEventListener('resize', handleResize)
+  }, [updateSectionScrollOffset])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    void isHeaderCompressed
+    const frame = requestAnimationFrame(() => {
+      updateSectionScrollOffset()
+    })
+    return (): void => cancelAnimationFrame(frame)
+  }, [isHeaderCompressed, updateSectionScrollOffset])
+
+  useEffect(() => {
+    const element = headerRef.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+
+    let frame = 0
+    const updateHeight = (): void => {
+      if (frame) cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        updateSectionScrollOffset()
+      })
+    }
+
+    updateHeight()
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(element)
+
+    return (): void => {
+      if (frame) cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
+  }, [updateSectionScrollOffset])
+
   const handleSelectSection = (key: SectionKey): void => {
     setActiveSection(key)
     const element = sectionRefs[key]?.current
     if (!element || typeof window === 'undefined') return
 
-    const defaultOffset = sectionScrollOffset
-    const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
-    const headerExpansionOffset = Math.max(0, headerHeight - compressedHeaderHeight)
-    const dynamicOffset = defaultOffset + headerExpansionOffset
-    const scrollOffset = dynamicOffset
+    if (!isHeaderCompressed) {
+      setIsProgrammaticScroll(true)
+      setPendingSectionKey(key)
+      window.scrollTo({ top: 1, behavior: 'auto' })
+      return
+    }
+
+    const scrollOffset = updateSectionScrollOffset()
     const top = element.getBoundingClientRect().top + window.scrollY - scrollOffset
-    const targetTop = key === 'charts' ? Math.max(top, 1) : top
+    const baseTarget = key === 'charts' ? Math.max(top, 1) : top
+    const targetTop = Math.max(1, baseTarget - scrollPadding)
+
+    setIsProgrammaticScroll(true)
+    scrollTargetRef.current = targetTop
+    if (scrollTimeoutRef.current) {
+      window.clearTimeout(scrollTimeoutRef.current)
+    }
+    scrollTimeoutRef.current = window.setTimeout(() => {
+      scrollTargetRef.current = null
+      setIsProgrammaticScroll(false)
+      scrollTimeoutRef.current = null
+    }, 1200)
 
     window.scrollTo({ top: targetTop, behavior: 'smooth' })
   }
@@ -314,7 +556,6 @@ function Index(): ReactElement | null {
   // Calculate sticky positions for the collapsible header (desktop only)
   // On mobile, natural scroll behavior is used
   const headerStickyTop = 'var(--header-height)'
-  const nextSticky = `calc(var(--header-height) + ${compressedHeaderHeight}px)`
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
@@ -329,7 +570,23 @@ function Index(): ReactElement | null {
           style={{ top: headerStickyTop }}
           ref={headerRef}
         >
-          <VaultDetailsHeader currentVault={currentVault} isCollapsibleMode={isCollapsibleMode} />
+          <VaultDetailsHeader
+            currentVault={currentVault}
+            isCollapsibleMode={isCollapsibleMode}
+            sectionTabs={sectionTabs}
+            activeSectionKey={activeSection}
+            onSelectSection={(key): void => handleSelectSection(key as SectionKey)}
+            sectionSelectorRef={sectionSelectorRef}
+            widgetActions={widgetActions}
+            widgetMode={widgetMode}
+            onWidgetModeChange={setWidgetMode}
+            isWidgetSettingsOpen={isWidgetSettingsOpen}
+            onWidgetSettingsOpen={toggleWidgetSettings}
+            isWidgetWalletOpen={isWidgetWalletOpen}
+            onWidgetWalletOpen={toggleWidgetWallet}
+            onWidgetCloseOverlays={closeWidgetOverlays}
+            onCompressionChange={setIsHeaderCompressed}
+          />
         </header>
 
         {/* Mobile: Compact Header */}
@@ -487,42 +744,68 @@ function Index(): ReactElement | null {
 
         {/* Main Content Grid - Responsive layout */}
         <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
-          {/* Desktop sections - Hidden on mobile */}
-          <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 pb-4'}>
-            {renderableSections.length > 0 ? (
-              <div className={'w-full sticky z-30'} style={{ top: nextSticky }}>
-                <div className={'bg-app h-6'}></div>
-                <div
-                  className={cl(
-                    'flex flex-wrap gap-2 md:pb-3 md:gap-3',
-                    'bg-linear-to-b from-app from-90% to-transparent'
-                  )}
-                >
-                  <div
-                    className={
-                      'flex w-full flex-wrap justify-between gap-2 rounded-lg bg-surface-secondary p-1 shadow-inner'
-                    }
-                  >
-                    {renderableSections.map((section) => (
-                      <button
-                        key={section.key}
-                        type={'button'}
-                        onClick={(): void => handleSelectSection(section.key)}
-                        className={cl(
-                          'flex-1 min-w-[120px] rounded-lg px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
-                          activeSection === section.key
-                            ? 'bg-surface text-text-primary shadow-sm'
-                            : 'bg-transparent text-text-secondary hover:text-text-primary'
-                        )}
-                      >
-                        {collapsibleTitles[section.key]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+          <div
+            className={cl(
+              'order-1 md:order-2',
+              'md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-4',
+              'flex flex-col',
+              'max-h-[calc(100vh-var(--vault-header-initial-offset))]'
+            )}
+            style={{ top: 'var(--vault-header-height, var(--header-height))' }}
+          >
+            <div className="flex flex-col flex-1 min-h-0">
+              <div
+                className={cl('flex flex-col flex-1 min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
+                aria-hidden={!isWidgetPanelActive}
+              >
+                <Widget
+                  vaultAddress={currentVault.address}
+                  currentVault={currentVault}
+                  gaugeAddress={currentVault.staking.address}
+                  actions={widgetActions}
+                  chainId={chainId}
+                  mode={widgetMode}
+                  onModeChange={setWidgetMode}
+                  showTabs={false}
+                  depositPrefill={depositPrefill}
+                  onDepositPrefillConsumed={() => setDepositPrefill(null)}
+                />
               </div>
-            ) : null}
+              <SettingsPanel isActive={isWidgetSettingsOpen} />
+              <WalletPanel
+                isActive={isWidgetWalletOpen}
+                currentVault={currentVault}
+                vaultAddress={toAddress(currentVault.address)}
+                stakingAddress={
+                  isZeroAddress(currentVault.staking.address) ? undefined : toAddress(currentVault.staking.address)
+                }
+                chainId={chainId}
+                onSelectZapToken={handleZapTokenSelect}
+              />
+              <WidgetRewards
+                stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
+                stakingSource={currentVault.staking.source}
+                rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
+                  address: r.address,
+                  symbol: r.symbol,
+                  decimals: r.decimals,
+                  price: r.price,
+                  isFinished: r.isFinished
+                }))}
+                chainId={chainId}
+                onClaimSuccess={() => {
+                  mutate()
+                  onRefresh([
+                    { address: currentVault.address, chainID: currentVault.chainID },
+                    { address: currentVault.token.address, chainID: currentVault.chainID }
+                  ])
+                }}
+              />
+            </div>
+          </div>
 
+          {/* Desktop sections - Hidden on mobile */}
+          <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
             {renderableSections.map((section) => {
               const isCollapsible =
                 section.key === 'about' ||
@@ -538,7 +821,8 @@ function Index(): ReactElement | null {
                     key={section.key}
                     ref={section.ref}
                     data-scroll-spy-key={section.key}
-                    className={'border border-border rounded-lg bg-surface scroll-mt-[275px]'}
+                    className={'border border-border rounded-lg bg-surface'}
+                    style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
                   >
                     <button
                       type={'button'}
@@ -566,50 +850,14 @@ function Index(): ReactElement | null {
                   key={section.key}
                   ref={section.ref}
                   data-scroll-spy-key={section.key}
-                  className={'border border-border rounded-lg bg-surface scroll-mt-[275px]'}
+                  className={'border border-border rounded-lg bg-surface'}
+                  style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
                 >
                   {section.content}
                 </div>
               )
             })}
-            {renderableSections.length > 0 ? <div aria-hidden className={'h-[60vh]'} /> : null}
-          </div>
-          <div
-            className={cl(
-              'hidden md:block',
-              'order-1 md:order-2',
-              'md:col-span-7 md:col-start-14 md:sticky md:h-fit md:pt-6'
-            )}
-            style={{ top: nextSticky }}
-          >
-            <div className="space-y-4">
-              <Widget
-                vaultAddress={currentVault.address}
-                currentVault={currentVault}
-                gaugeAddress={currentVault.staking.address}
-                actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
-                chainId={chainId}
-              />
-              <WidgetRewards
-                stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
-                stakingSource={currentVault.staking.source}
-                rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
-                  address: r.address,
-                  symbol: r.symbol,
-                  decimals: r.decimals,
-                  price: r.price,
-                  isFinished: r.isFinished
-                }))}
-                chainId={chainId}
-                onClaimSuccess={() => {
-                  mutate()
-                  onRefresh([
-                    { address: currentVault.address, chainID: currentVault.chainID },
-                    { address: currentVault.token.address, chainID: currentVault.chainID }
-                  ])
-                }}
-              />
-            </div>
+            {renderableSections.length > 0 ? <div aria-hidden className={'h-[65vh]'} /> : null}
           </div>
         </section>
       </div>

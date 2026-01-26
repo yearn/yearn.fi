@@ -9,9 +9,6 @@ import {
 } from '@pages/vaults/utils/vaultTagCopy'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { IconRewind } from '@shared/icons/IconRewind'
-import { IconStablecoin } from '@shared/icons/IconStablecoin'
-import { IconVolatile } from '@shared/icons/IconVolatile'
 import { toAddress } from '@shared/utils'
 import { formatPercent } from '@shared/utils/format'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -85,20 +82,7 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
   const listKind = deriveListKind(vault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
-  const productTypeIcon = isAllocatorVault ? (
-    <span className={'text-sm leading-none'}>{'⚙️'}</span>
-  ) : isLegacyVault ? (
-    <IconRewind className={'size-3.5'} />
-  ) : (
-    <span className={'text-sm leading-none'}>{'🏭'}</span>
-  )
-  const categoryIcon: ReactElement | null =
-    vault.category === 'Stablecoin' ? (
-      <IconStablecoin className={'size-3.5'} />
-    ) : vault.category === 'Volatile' ? (
-      <IconVolatile className={'size-3.5'} />
-    ) : null
+  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
   const chainDescription = getChainDescription(vault.chainID)
   const categoryDescription = getCategoryDescription(vault.category)
   const productTypeDescription = getProductTypeDescription(listKind)
@@ -118,8 +102,15 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
       }
     >
       <div className={'flex items-center gap-3'}>
-        <div className={'shrink-0'}>
+        <div className={'relative flex shrink-0 items-center justify-center'}>
           <TokenLogo src={tokenIcon} tokenSymbol={vault.token.symbol || ''} width={36} height={36} />
+          <div
+            className={
+              'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'
+            }
+          >
+            <TokenLogo src={chainLogoSrc} tokenSymbol={chain.name} width={16} height={16} />
+          </div>
         </div>
         <div className={'flex min-w-0 flex-col'}>
           <p className={'truncate text-base font-semibold text-text-primary'}>{vault.name}</p>
@@ -129,18 +120,14 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
         <VaultsListChip
           label={chain.name}
           icon={<TokenLogo src={chainLogoSrc} tokenSymbol={chain.name} width={14} height={14} />}
+          showIconInChip={false}
           tooltipDescription={chainDescription}
         />
         {vault.category ? (
-          <VaultsListChip
-            label={vault.category}
-            icon={categoryIcon || undefined}
-            tooltipDescription={categoryDescription || undefined}
-          />
+          <VaultsListChip label={vault.category} tooltipDescription={categoryDescription || undefined} />
         ) : null}
         <VaultsListChip
           label={productTypeLabel}
-          icon={productTypeIcon}
           tooltipDescription={productTypeDescription}
           isCollapsed
           showCollapsedTooltip

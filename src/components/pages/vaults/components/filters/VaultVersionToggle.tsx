@@ -1,6 +1,6 @@
 import { TOOLTIP_DELAY_MS } from '@pages/vaults/utils/vaultTagCopy'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
-import { getVaultTypeDescription, getVaultTypeEmoji, getVaultTypeLabel } from '@pages/vaults/utils/vaultTypeCopy'
+import { getVaultTypeDescription, getVaultTypeLabel } from '@pages/vaults/utils/vaultTypeCopy'
 import {
   getSupportedChainsForVaultType,
   normalizeVaultTypeParam,
@@ -71,7 +71,7 @@ export function VaultVersionToggle({
     <div
       aria-busy={isPending || undefined}
       className={cl(
-        'flex h-10 shrink-0 items-stretch overflow-hidden rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
+        'flex h-10 shrink-0 items-stretch overflow-hidden rounded-lg border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
         className
       )}
     >
@@ -83,21 +83,15 @@ export function VaultVersionToggle({
             key={config.type}
             type={'button'}
             className={cl(
-              'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
+              'flex h-full items-center justify-center gap-1 px-4 font-medium transition-colors',
               'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-              'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+              'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:font-semibold',
               stretch ? 'flex-1' : ''
             )}
             data-active={active}
             onClick={() => handleClick(config)}
             aria-pressed={active}
           >
-            <span
-              aria-hidden={true}
-              className={'size-5 overflow-hidden rounded-full bg-surface/80 flex items-center justify-center'}
-            >
-              {getVaultTypeEmoji(config.type)}
-            </span>
             <span className={'whitespace-nowrap'}>{getVaultTypeLabel(config.type)}</span>
           </button>
         )
@@ -118,7 +112,6 @@ export function VaultVersionToggle({
                 }
               >
                 <div className={'flex items-center gap-1 font-semibold'}>
-                  <span aria-hidden={true}>{getVaultTypeEmoji(config.type)}</span>
                   <span>{getVaultTypeLabel(config.type)}</span>
                 </div>
                 <p className={'text-text-secondary'}>{description}</p>

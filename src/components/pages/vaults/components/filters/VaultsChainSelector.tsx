@@ -47,7 +47,7 @@ export function VaultsChainSelector({
     <div
       ref={selectorRef}
       className={cl(
-        'flex h-10 items-stretch overflow-x-auto scrollbar-themed rounded-xl border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
+        'flex h-10 items-stretch overflow-x-auto scrollbar-themed rounded-lg border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
         isStacked ? 'min-w-0 shrink-0' : enableResponsiveLayout ? 'min-w-0' : 'w-full'
       )}
     >
@@ -56,7 +56,7 @@ export function VaultsChainSelector({
         className={cl(
           'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
           'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-          'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+          'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:font-semibold',
           !enableResponsiveLayout && !isStacked ? 'flex-1' : ''
         )}
         data-active={areAllChainsSelected}
@@ -77,7 +77,7 @@ export function VaultsChainSelector({
             className={cl(
               'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
               'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
-              'data-[active=true]:bg-surface data-[active=true]:text-text-primary',
+              'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:font-semibold',
               !enableResponsiveLayout && !isStacked ? 'flex-1' : ''
             )}
             data-active={chain.isSelected}
