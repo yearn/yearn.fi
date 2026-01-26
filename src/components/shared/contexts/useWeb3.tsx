@@ -3,9 +3,11 @@ import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import type { TAddress } from '@shared/types/address'
 import { fetchClusterName, getClusterImageUrl, isAddress } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { toAddress } from '@shared/utils/tools.address'
+import { usePlausible } from '@hooks/usePlausible'
 import type { ReactElement } from 'react'
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { mainnet } from 'viem/chains'
 import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi'
 
@@ -50,16 +52,42 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   const { openAccountModal } = useAccountModal()
   const { openConnectModal } = useConnectModal()
   const { openChainModal } = useChainModal()
+  const trackEvent = usePlausible()
   const [clusters, setClusters] = useState<{ name: string; avatar: string } | undefined>(undefined)
   const [hasUserRequestedConnection, setHasUserRequestedConnection] = useState(false)
   const [isUserConnecting, setIsUserConnecting] = useState(false)
   const [isFetchingClusters, setIsFetchingClusters] = useState(false)
+  const wasConnectedRef = useRef(false)
+  const previousChainIDRef = useRef<number | undefined>(undefined)
 
   const chainID = chain?.id ?? 1
 
+  useEffect(() => {
+    if (!wasConnectedRef.current && isConnected && hasUserRequestedConnection) {
+      trackEvent(PLAUSIBLE_EVENTS.CONNECT_WALLET, {
+        props: { address: address ?? '', connector: connector?.name ?? '', chainID, generation: 3 }
+      })
+    }
+    wasConnectedRef.current = isConnected
+  }, [isConnected, hasUserRequestedConnection, address, connector, chainID, trackEvent])
+
+  useEffect(() => {
+    if (isConnected && previousChainIDRef.current !== undefined && previousChainIDRef.current !== chainID) {
+      trackEvent(PLAUSIBLE_EVENTS.CHANGE_NETWORK, {
+        props: { fromChainID: previousChainIDRef.current, toChainID: chainID, generation: 3 }
+      })
+    }
+    if (isConnected) {
+      previousChainIDRef.current = chainID
+    }
+  }, [isConnected, chainID, trackEvent])
+
   const onDesactivate = useCallback((): void => {
+    trackEvent(PLAUSIBLE_EVENTS.DISCONNECT_WALLET, {
+      props: { address: address ?? '', chainID, generation: 3 }
+    })
     disconnect()
-  }, [disconnect])
+  }, [disconnect, trackEvent, address, chainID])
 
   const openLoginModal = useCallback(async (): Promise<void> => {
     if (isConnected && connector && address) {

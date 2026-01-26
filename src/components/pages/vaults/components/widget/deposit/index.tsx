@@ -7,6 +7,8 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
+import { usePlausible } from '@hooks/usePlausible'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
@@ -48,6 +50,7 @@ export const WidgetDeposit: FC<Props> = ({
   const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled, getPrice } = useYearn()
+  const trackEvent = usePlausible()
 
   // ============================================================================
   // UI State
@@ -286,6 +289,29 @@ export const WidgetDeposit: FC<Props> = ({
   // Handlers
   // ============================================================================
   const handleDepositSuccess = useCallback(() => {
+    const amountToDeposit = formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)
+    const priceUsd =
+      inputToken?.address && inputToken?.chainID
+        ? getPrice({ address: toAddress(inputToken.address), chainID: inputToken.chainID }).normalized
+        : 0
+    const valueUsd = Number(amountToDeposit) * priceUsd
+
+    trackEvent(PLAUSIBLE_EVENTS.DEPOSIT, {
+      props: {
+        chainID: chainId,
+        vaultAddress,
+        vaultSymbol,
+        amountToDeposit,
+        tokenAddress: toAddress(depositToken),
+        tokenSymbol: inputToken?.symbol || '',
+        priceUsd,
+        valueUsd,
+        isZap: routeType === 'ENSO',
+        generation: 3,
+        action: 'deposit'
+      }
+    })
+
     setDepositInput('')
     const tokensToRefresh = [
       { address: depositToken, chainID: sourceChainId },
@@ -298,12 +324,21 @@ export const WidgetDeposit: FC<Props> = ({
     refetchVaultUserData()
     onDepositSuccess?.()
   }, [
+    depositAmount.bn,
+    inputToken?.decimals,
+    inputToken?.address,
+    inputToken?.chainID,
+    inputToken?.symbol,
+    getPrice,
+    trackEvent,
+    chainId,
+    vaultAddress,
+    vaultSymbol,
+    depositToken,
+    routeType,
     setDepositInput,
     refreshWalletBalances,
-    depositToken,
     sourceChainId,
-    vaultAddress,
-    chainId,
     stakingAddress,
     refetchVaultUserData,
     onDepositSuccess

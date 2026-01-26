@@ -7,6 +7,8 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { vaultAbi } from '@shared/contracts/abi/vaultV2.abi'
 import type { TNormalizedBN } from '@shared/types'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import { usePlausible } from '@hooks/usePlausible'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
@@ -35,6 +37,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled, getPrice } = useYearn()
+  const trackEvent = usePlausible()
 
   // ============================================================================
   // UI State
@@ -351,6 +354,29 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   // Handlers
   // ============================================================================
   const handleWithdrawSuccess = useCallback(() => {
+    const sharesToWithdraw = formatUnits(withdrawAmount.bn, assetToken?.decimals ?? 18)
+    const priceUsd =
+      assetToken?.address && assetToken?.chainID
+        ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
+        : 0
+    const valueUsd = Number(sharesToWithdraw) * priceUsd
+
+    trackEvent(PLAUSIBLE_EVENTS.WITHDRAW, {
+      props: {
+        chainID: chainId,
+        vaultAddress,
+        vaultSymbol,
+        sharesToWithdraw,
+        tokenAddress: toAddress(withdrawToken),
+        tokenSymbol: outputToken?.symbol || '',
+        priceUsd,
+        valueUsd,
+        isZap: routeType === 'ENSO',
+        generation: 3,
+        action: 'withdraw'
+      }
+    })
+
     setWithdrawInput('')
     const tokensToRefresh = [
       { address: withdrawToken, chainID: destinationChainId },
@@ -364,11 +390,20 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     refetchVaultUserData()
     onWithdrawSuccess?.()
   }, [
-    setWithdrawInput,
-    withdrawToken,
-    destinationChainId,
-    vaultAddress,
+    withdrawAmount.bn,
+    assetToken?.decimals,
+    assetToken?.address,
+    assetToken?.chainID,
+    outputToken?.symbol,
+    getPrice,
+    trackEvent,
     chainId,
+    vaultAddress,
+    vaultSymbol,
+    withdrawToken,
+    routeType,
+    setWithdrawInput,
+    destinationChainId,
     stakingAddress,
     refreshWalletBalances,
     refetchVaultUserData,
