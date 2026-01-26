@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 type UseHeaderCompressionOptions = {
   enabled?: boolean
@@ -15,6 +15,19 @@ export function useHeaderCompression({ enabled = true }: UseHeaderCompressionOpt
   const isCompressedRef = useRef(isCompressed)
   const blockScrollUntilCompressedRef = useRef(true)
   const touchStartYRef = useRef<number | null>(null)
+
+  const getScrollPriorityContainer = useCallback((event: Event): HTMLElement | null => {
+    const composedPath = typeof event.composedPath === 'function' ? event.composedPath() : []
+    for (const node of composedPath) {
+      if (node instanceof HTMLElement && node.hasAttribute('data-scroll-priority')) {
+        return node
+      }
+    }
+    if (event.target instanceof HTMLElement) {
+      return event.target.closest('[data-scroll-priority]')
+    }
+    return null
+  }, [])
 
   useEffect(() => {
     isCompressedRef.current = isCompressed
@@ -45,6 +58,11 @@ export function useHeaderCompression({ enabled = true }: UseHeaderCompressionOpt
     const consumeScrollWhileExpanding = (event: WheelEvent | TouchEvent): void => {
       const direction = getDirection(event)
       if (!direction) {
+        return
+      }
+
+      const scrollPriorityContainer = getScrollPriorityContainer(event)
+      if (scrollPriorityContainer) {
         return
       }
 
@@ -83,7 +101,7 @@ export function useHeaderCompression({ enabled = true }: UseHeaderCompressionOpt
       window.removeEventListener('touchmove', consumeScrollWhileExpanding)
       window.removeEventListener('touchstart', handleTouchStart)
     }
-  }, [enabled])
+  }, [enabled, getScrollPriorityContainer])
 
   useEffect(() => {
     if (!enabled) {
@@ -127,6 +145,11 @@ export function useHeaderCompression({ enabled = true }: UseHeaderCompressionOpt
         event.key === 'Home' ||
         (event.key === ' ' && event.shiftKey)
 
+      const scrollPriorityContainer = getScrollPriorityContainer(event)
+      if (scrollPriorityContainer && (isDownKey || isUpKey)) {
+        return
+      }
+
       if (isCompressedRef.current && isUpKey) {
         blockScrollUntilCompressedRef.current = true
         setIsCompressed(false)
@@ -143,7 +166,7 @@ export function useHeaderCompression({ enabled = true }: UseHeaderCompressionOpt
 
     window.addEventListener('keydown', consumeKeyboardScrollWhileExpanding)
     return (): void => window.removeEventListener('keydown', consumeKeyboardScrollWhileExpanding)
-  }, [enabled])
+  }, [enabled, getScrollPriorityContainer])
 
   useEffect(() => {
     if (!enabled) {
