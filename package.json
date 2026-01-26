@@ -2,7 +2,9 @@
   "name": "yearnfi",
   "version": "0.3.7",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"bun run dev:server\" \"bun run dev:client\"",
+    "dev:client": "vite",
+    "dev:server": "bun --watch api/server.ts",
     "dev:ts": "tsc --watch",
     "build": "tsc && vite build",
     "preview": "vite preview",
@@ -51,6 +53,7 @@
     "@vercel/node": "5.5.5",
     "@vitejs/plugin-react": "5.1.0",
     "bump": "0.2.5",
+    "concurrently": "^9.2.1",
     "husky": "9.1.7",
     "lint-staged": "16.2.6",
     "postcss": "8.5.6",
