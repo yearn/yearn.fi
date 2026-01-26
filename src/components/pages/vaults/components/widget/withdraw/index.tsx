@@ -293,14 +293,17 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const formattedWithdrawAmount = formatTAmount({ value: withdrawAmount.bn, decimals: assetToken?.decimals ?? 18 })
   const needsApproval = showApprove && !activeFlow.periphery.isAllowanceSufficient
 
+  const approvalToken = withdrawalSource === 'staking' ? stakingToken : vault
+  const formattedApprovalAmount = formatTAmount({ value: requiredShares, decimals: approvalToken?.decimals ?? 18 })
+
   const currentStep: TransactionStep | undefined = useMemo(() => {
     if (needsApproval && activeFlow.actions.prepareApprove) {
       return {
         prepare: activeFlow.actions.prepareApprove,
         label: 'Approve',
-        confirmMessage: `Approving ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
+        confirmMessage: `Approving ${formattedApprovalAmount} ${approvalToken?.symbol || ''}`,
         successTitle: 'Approval successful',
-        successMessage: `Approved ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.\nReady to withdraw.`,
+        successMessage: `Approved ${formattedApprovalAmount} ${approvalToken?.symbol || ''}.\nReady to withdraw.`,
         notification: approveNotificationParams
       }
     }
@@ -332,7 +335,9 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     activeFlow.actions.prepareApprove,
     activeFlow.actions.prepareWithdraw,
     formattedWithdrawAmount,
+    formattedApprovalAmount,
     assetToken?.symbol,
+    approvalToken?.symbol,
     routeType,
     approveNotificationParams,
     withdrawNotificationParams,
