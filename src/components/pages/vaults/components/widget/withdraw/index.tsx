@@ -4,12 +4,11 @@ import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
-import { vaultAbi } from '@shared/contracts/abi/vaultV2.abi'
 import type { TNormalizedBN } from '@shared/types'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
-import { useAccount, useReadContract } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { SettingsPopover } from '../SettingsPopover'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
@@ -109,17 +108,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
         : vaultAddress
 
   const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
-
-  // ============================================================================
-  // Contract Reads
-  // ============================================================================
-  const { data: stakingPricePerShare = 1n * 10n ** BigInt(stakingToken?.decimals ?? 18) } = useReadContract({
-    address: stakingAddress,
-    abi: vaultAbi,
-    functionName: 'pricePerShare',
-    chainId,
-    query: { enabled: !!stakingAddress && withdrawalSource === 'staking' }
-  })
 
   // ============================================================================
   // Balance Conversions
@@ -424,18 +412,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
             onTokenSelectorClick={() => setShowTokenSelector(true)}
             onInputChange={(value: bigint) => {
               if (value === totalBalanceInUnderlying.raw) {
-                if (isUnstake) {
-                  if (totalVaultBalance.raw > 0n) {
-                    const amount =
-                      (totalVaultBalance.raw * (stakingPricePerShare as bigint)) /
-                      10n ** BigInt(stakingToken?.decimals ?? 18)
-                    const exactAmount = formatUnits(amount, stakingToken?.decimals ?? 18)
-                    withdrawInput[2](exactAmount)
-                  }
-                } else {
-                  const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken?.decimals ?? 18)
-                  withdrawInput[2](exactAmount)
-                }
+                const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken?.decimals ?? 18)
+                withdrawInput[2](exactAmount)
               }
             }}
             zapToken={zapToken}
