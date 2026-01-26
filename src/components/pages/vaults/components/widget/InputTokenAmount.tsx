@@ -286,50 +286,51 @@ export const InputTokenAmount: FC<Props> = ({
           {zapNotificationText && (
             <div className="flex items-center gap-2 px-3">
               <div className="flex-1 h-px bg-border"></div>
-              <span className="text-sm text-text-secondary">{zapNotificationText}</span>
+              <span className="text-sm text-text-secondary text-center">{zapNotificationText}</span>
               <div className="flex-1 h-px bg-border"></div>
             </div>
           )}
 
           {/* Zap token display */}
           <div className="rounded-md py-2 px-3 flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0 overflow-hidden">
                 {zapToken.isLoading ? (
                   <div className="h-8 w-24 bg-surface-secondary rounded animate-pulse" />
                 ) : (
-                  <div className="text-text-secondary text-2xl font-medium">{zapToken.expectedAmount || '0'}</div>
+                  <div className="text-text-secondary text-[16px] md:text-2xl font-medium">
+                    {zapToken.expectedAmount || '0'}
+                  </div>
                 )}
               </div>
 
-              {/* Right side - Token info */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onTokenSelectorClick}
-                  disabled={disabled}
-                  className={cl(
-                    'px-2 py-1 rounded-lg flex items-center gap-2 transition-colors',
-                    disabled ? 'bg-transparent cursor-not-allowed' : 'bg-transparent hover:bg-surface-secondary',
-                    'text-text-primary text-xl font-medium'
-                  )}
-                >
-                  {zapToken.address && zapToken.chainId && (
-                    <TokenLogo
-                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
-                      tokenSymbol={zapToken.symbol}
-                      chainId={zapToken.chainId}
-                      width={32}
-                      height={32}
-                      className="rounded-full"
-                    />
-                  )}
-                  <span>{zapToken.symbol}</span>
-                  <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </div>
+              {/* Token selector button */}
+              <button
+                type="button"
+                onClick={onTokenSelectorClick}
+                disabled={disabled}
+                className={cl(
+                  'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors shrink-0',
+                  'text-text-primary text-base md:text-xl font-medium',
+                  'min-h-[44px]',
+                  disabled ? 'bg-transparent cursor-not-allowed' : 'bg-transparent hover:bg-surface-secondary'
+                )}
+              >
+                {zapToken.address && zapToken.chainId && (
+                  <TokenLogo
+                    src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
+                    tokenSymbol={zapToken.symbol}
+                    chainId={zapToken.chainId}
+                    width={32}
+                    height={32}
+                    className="rounded-full"
+                  />
+                )}
+                <span>{zapToken.symbol}</span>
+                <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
             </div>
             <div className="flex items-center justify-between">
               <div className="text-sm text-text-secondary">${outputUsdValue}</div>

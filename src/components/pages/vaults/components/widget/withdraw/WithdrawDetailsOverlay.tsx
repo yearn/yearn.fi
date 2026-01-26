@@ -85,6 +85,12 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
                 Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> will be unstaked.
                 You'll receive <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
               </>
+            ) : isFromStaking ? (
+              <>
+                Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> staked shares will be
+                unstaked and redeemed for <span className="font-semibold text-text-primary">{vaultAssetSymbol}</span>.
+                You'll receive <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
+              </>
             ) : (
               <>
                 Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> shares will be
@@ -96,11 +102,29 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
 
         {/* How withdrawals work */}
         <div className="space-y-2">
-          <p className="font-medium text-sm text-text-primary">How withdrawals work</p>
+          <p className="font-medium text-sm text-text-primary">How it works</p>
           <p className="text-sm text-text-secondary">
-            {isFromStaking
-              ? 'Your staked shares will be unstaked and redeemed for the underlying asset plus any earned yield.'
-              : 'Your vault shares will be redeemed for the underlying asset plus any earned yield.'}
+            {isZap ? (
+              <>
+                Your vault shares are redeemed for the underlying asset, which is then swapped to your desired token
+                using Enso. The final amount may vary slightly due to market conditions.
+              </>
+            ) : isUnstake ? (
+              <>
+                Unstaking converts your staked position back to vault shares. Your vault shares continue to earn yield
+                and can be redeemed for the underlying asset anytime.
+              </>
+            ) : isFromStaking ? (
+              <>
+                Your staked shares are first unstaked to vault shares, then redeemed for the underlying asset plus any
+                earned yield. This happens in a single transaction.
+              </>
+            ) : (
+              <>
+                Your vault shares are redeemed for the underlying asset plus any earned yield. The value of your shares
+                includes all yield earned since your deposit.
+              </>
+            )}
           </p>
         </div>
 

@@ -4,12 +4,11 @@ import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
-import { vaultAbi } from '@shared/contracts/abi/vaultV2.abi'
 import type { TNormalizedBN } from '@shared/types'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
-import { useAccount, useReadContract } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { SettingsPopover } from '../SettingsPopover'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
@@ -110,16 +109,11 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
 
   const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
 
-  // ============================================================================
-  // Contract Reads
-  // ============================================================================
-  const { data: stakingPricePerShare = 1n * 10n ** BigInt(stakingToken?.decimals ?? 18) } = useReadContract({
-    address: stakingAddress,
-    abi: vaultAbi,
-    functionName: 'pricePerShare',
-    chainId,
-    query: { enabled: !!stakingAddress && withdrawalSource === 'staking' }
-  })
+  // Determine the correct decimals for the shares being withdrawn (for display)
+  const sharesDecimals =
+    withdrawalSource === 'staking' ? (stakingToken?.decimals ?? vault?.decimals ?? 18) : (vault?.decimals ?? 18)
+  // For pricePerShare calculations, always use vault decimals since PPS is in vault terms
+  const vaultDecimals = vault?.decimals ?? 18
 
   // ============================================================================
   // Balance Conversions
@@ -128,11 +122,10 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     if (pricePerShare === 0n || totalVaultBalance.raw === 0n || !assetToken) {
       return zeroNormalizedBN
     }
-    const vaultDecimals = vault?.decimals ?? 18
+    // Use vault decimals for pricePerShare calculation (PPS is always in vault terms)
     const underlyingAmount = (totalVaultBalance.raw * pricePerShare) / 10n ** BigInt(vaultDecimals)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
-  }, [totalVaultBalance.raw, pricePerShare, vault?.decimals, assetToken])
-
+  }, [totalVaultBalance.raw, pricePerShare, vaultDecimals, assetToken])
   // ============================================================================
   // Input Handling
   // ============================================================================
@@ -153,13 +146,12 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     if (isMaxWithdraw && totalVaultBalance.raw > 0n) return totalVaultBalance.raw
 
     if (pricePerShare > 0n) {
-      const vaultDecimals = vault?.decimals ?? 18
       const numerator = withdrawAmount.bn * 10n ** BigInt(vaultDecimals)
       return (numerator + pricePerShare - 1n) / pricePerShare
     }
 
     return 0n
-  }, [withdrawAmount.bn, isMaxWithdraw, totalVaultBalance.raw, pricePerShare, vault?.decimals])
+  }, [withdrawAmount.bn, isMaxWithdraw, totalVaultBalance.raw, pricePerShare, vaultDecimals])
 
   // ============================================================================
   // Withdraw Flow (routing, actions, periphery)
@@ -301,14 +293,17 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   const formattedWithdrawAmount = formatTAmount({ value: withdrawAmount.bn, decimals: assetToken?.decimals ?? 18 })
   const needsApproval = showApprove && !activeFlow.periphery.isAllowanceSufficient
 
+  const approvalToken = withdrawalSource === 'staking' ? stakingToken : vault
+  const formattedApprovalAmount = formatTAmount({ value: requiredShares, decimals: approvalToken?.decimals ?? 18 })
+
   const currentStep: TransactionStep | undefined = useMemo(() => {
     if (needsApproval && activeFlow.actions.prepareApprove) {
       return {
         prepare: activeFlow.actions.prepareApprove,
         label: 'Approve',
-        confirmMessage: `Approving ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
+        confirmMessage: `Approving ${formattedApprovalAmount} ${approvalToken?.symbol || ''}`,
         successTitle: 'Approval successful',
-        successMessage: `Approved ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.\nReady to withdraw.`,
+        successMessage: `Approved ${formattedApprovalAmount} ${approvalToken?.symbol || ''}.\nReady to withdraw.`,
         notification: approveNotificationParams
       }
     }
@@ -340,7 +335,9 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     activeFlow.actions.prepareApprove,
     activeFlow.actions.prepareWithdraw,
     formattedWithdrawAmount,
+    formattedApprovalAmount,
     assetToken?.symbol,
+    approvalToken?.symbol,
     routeType,
     approveNotificationParams,
     withdrawNotificationParams,
@@ -424,18 +421,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
             onTokenSelectorClick={() => setShowTokenSelector(true)}
             onInputChange={(value: bigint) => {
               if (value === totalBalanceInUnderlying.raw) {
-                if (isUnstake) {
-                  if (totalVaultBalance.raw > 0n) {
-                    const amount =
-                      (totalVaultBalance.raw * (stakingPricePerShare as bigint)) /
-                      10n ** BigInt(stakingToken?.decimals ?? 18)
-                    const exactAmount = formatUnits(amount, stakingToken?.decimals ?? 18)
-                    withdrawInput[2](exactAmount)
-                  }
-                } else {
-                  const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken?.decimals ?? 18)
-                  withdrawInput[2](exactAmount)
-                }
+                const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken?.decimals ?? 18)
+                withdrawInput[2](exactAmount)
               }
             }}
             zapToken={zapToken}
@@ -458,7 +445,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       <WithdrawDetails
         actionLabel={actionLabel}
         requiredShares={requiredShares}
-        sharesDecimals={isUnstake ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)}
+        sharesDecimals={sharesDecimals}
         isLoadingQuote={activeFlow.periphery.isLoadingRoute}
         expectedOut={activeFlow.periphery.expectedOut}
         outputDecimals={outputToken?.decimals ?? 18}
@@ -542,7 +529,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
           requiredShares > 0n
             ? formatTAmount({
                 value: requiredShares,
-                decimals: vault?.decimals ?? 18
+                decimals: sharesDecimals
               })
             : '0'
         }
@@ -574,6 +561,9 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
         value={selectedToken}
         excludeTokens={stakingAddress ? [stakingAddress] : undefined}
         priorityTokens={priorityTokens}
+        assetAddress={assetAddress}
+        vaultAddress={vaultAddress}
+        stakingAddress={stakingAddress}
       />
     </div>
   )
