@@ -18,15 +18,23 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useVaultsPageModel } from './hooks/useVaultsPageModel'
 
 type TVaultsListSectionProps = {
-  isSwitchingVaultType: boolean
+  isUpdatingProductType: boolean
+  isUpdatingList: boolean
   listHead: ReactElement
   children: ReactNode
 }
 
-function VaultsListSection({ isSwitchingVaultType, listHead, children }: TVaultsListSectionProps): ReactElement {
+function VaultsListSection({
+  isUpdatingProductType,
+  isUpdatingList,
+  listHead,
+  children
+}: TVaultsListSectionProps): ReactElement {
+  const shouldShowSubtleOverlay = isUpdatingList && !isUpdatingProductType
+  const isBusy = isUpdatingList || isUpdatingProductType
   return (
-    <div aria-busy={isSwitchingVaultType || undefined} className={'relative w-full rounded-xl bg-surface'}>
-      <div className={isSwitchingVaultType ? 'pointer-events-none opacity-70 transition' : 'transition'}>
+    <div aria-busy={isBusy || undefined} className={'relative w-full rounded-xl bg-surface'}>
+      <div className={isUpdatingProductType ? 'pointer-events-none opacity-70 transition' : 'transition'}>
         <div
           className={'relative md:sticky md:z-30'}
           style={{
@@ -42,7 +50,10 @@ function VaultsListSection({ isSwitchingVaultType, listHead, children }: TVaults
         </div>
         <div className={'flex flex-col border-x border-b border-border rounded-b-xl overflow-hidden'}>{children}</div>
       </div>
-      {isSwitchingVaultType ? (
+      {shouldShowSubtleOverlay ? (
+        <div aria-hidden={true} className={'pointer-events-none absolute inset-0 z-30 rounded-xl bg-app/30'} />
+      ) : null}
+      {isUpdatingProductType ? (
         <output
           aria-live={'polite'}
           className={'absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-app/30 text-text-primary'}
@@ -61,8 +72,7 @@ export default function Index(): ReactElement {
   const { refs, header, filtersBar, list } = useVaultsPageModel()
   const { varsRef, filtersRef } = refs
   const { vaultType } = header
-  const { search, filters, chains, shouldStackFilters, isSwitchingVaultType, activeVaultType, onChangeVaultType } =
-    filtersBar
+  const { search, filters, chains, shouldStackFilters, activeVaultType, onChangeVaultType } = filtersBar
   const {
     listHeadProps,
     listVaultType,
@@ -124,6 +134,31 @@ export default function Index(): ReactElement {
     return compareVaultKeys.map((key) => vaultMap.get(key)).filter((vault): vault is TYDaemonVault => Boolean(vault))
   }, [compareVaultKeys, visibleVaults])
 
+  const areArraysEquivalent = useCallback(
+    (left: Array<string | number> | null | undefined, right: Array<string | number> | null | undefined): boolean => {
+      const normalize = (value: Array<string | number> | null | undefined): Array<string | number> => {
+        if (!value || value.length === 0) {
+          return []
+        }
+        return [...new Set(value)].sort((a, b) => String(a).localeCompare(String(b)))
+      }
+      const normalizedLeft = normalize(left)
+      const normalizedRight = normalize(right)
+      if (normalizedLeft.length !== normalizedRight.length) {
+        return false
+      }
+      return normalizedLeft.every((value, index) => value === normalizedRight[index])
+    },
+    []
+  )
+
+  const listProductType = listVaultType === 'factory' ? 'lp' : listVaultType
+  const isUpdatingProductType = activeProductType !== listProductType
+  const isUpdatingList = useMemo(() => {
+    const chainsMatch = areArraysEquivalent(activeChains, listChains ?? [])
+    return !chainsMatch || isUpdatingProductType
+  }, [activeChains, listChains, isUpdatingProductType, areArraysEquivalent])
+
   useEffect(() => {
     if (isCompareOpen && compareVaultKeys.length < 2) {
       setIsCompareOpen(false)
@@ -136,9 +171,7 @@ export default function Index(): ReactElement {
     <button
       type={'button'}
       className={cl(
-        'flex shrink-0 items-center gap-2 border rounded-lg h-10 border-border px-4 text-sm font-medium text-text-secondary bg-surface transition-colors',
-        'hover:text-text-secondary',
-        'data-[active=true]:border-primary  data-[active=true]:text-text-primary',
+        'flex shrink-0 items-center justify-center h-10 px-4 rounded-[4px] bg-neutral-800/20 text-sm font-medium text-text-primary transition-colors hover:bg-neutral-800/40',
         isCompareMode ? 'bg-primary/50' : null
       )}
       onClick={handleToggleCompareMode}
@@ -199,7 +232,7 @@ export default function Index(): ReactElement {
           />
         ))}
         {mainVaults.length > 0 ? (
-          <div className={'flex flex-col gap-px bg-border'}>
+          <div className={'flex flex-col gap-0.5 md:gap-px bg-border'}>
             {mainVaults.map((vault) => {
               const key = getVaultKey(vault)
               const rowApyDisplayVariant = resolveApyDisplayVariant(vault)
@@ -334,21 +367,22 @@ export default function Index(): ReactElement {
                     stretch={true}
                     activeType={activeVaultType}
                     onTypeChange={onChangeVaultType}
-                    isPending={isSwitchingVaultType}
+                    isPending={isUpdatingProductType}
                   />
                 }
                 trailingControls={
                   <VaultVersionToggle
                     activeType={activeVaultType}
                     onTypeChange={onChangeVaultType}
-                    isPending={isSwitchingVaultType}
+                    isPending={isUpdatingProductType}
                   />
                 }
                 isStackedLayout={shouldStackFilters}
               />
             </div>
             <VaultsListSection
-              isSwitchingVaultType={isSwitchingVaultType}
+              isUpdatingProductType={isUpdatingProductType}
+              isUpdatingList={isUpdatingList}
               listHead={<VaultsListHead {...listHeadProps} />}
             >
               {vaultListContent}

@@ -38,12 +38,12 @@ export function Tabs({ items, className }: TTabsProps): ReactElement {
 
   return (
     <div className={`w-full bg-neutral-100 ${className}`}>
-      <nav className={'hidden h-14 w-full border-b-2 border-neutral-300 pl-px pr-4 text-center md:flex'}>
+      <nav className={'hidden min-h-[56px] w-full border-b-2 border-neutral-300 pl-px pr-4 text-center md:flex'}>
         {items.map(
           ({ id, label }): ReactElement => (
             <div
               key={`tab-label-${id}`}
-              className={`yearn--tab ${selectedTabId === id ? 'selected' : ''}`}
+              className={`yearn--tab min-h-[44px] px-4 ${selectedTabId === id ? 'selected' : ''}`}
               onClick={(): void => {
                 const newSearchParams = new URLSearchParams(searchParams)
                 newSearchParams.set('tab', id)
@@ -77,7 +77,7 @@ export function Tabs({ items, className }: TTabsProps): ReactElement {
             <>
               <ListboxButton
                 className={
-                  'flex h-10 w-full flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
+                  'flex min-h-[44px] w-full flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
                 }
               >
                 <div className={'relative flex flex-row items-center'}>

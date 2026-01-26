@@ -1,54 +1,64 @@
-import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
-import { RenderAmount } from '@shared/components/RenderAmount'
-import { Renderable } from '@shared/components/Renderable'
-import { cl, isZero } from '@shared/utils'
+import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
+import { Fragment, useState } from 'react'
+import { APYDetailsModal } from './APYDetailsModal'
+import { ApyDisplay } from './ApyDisplay'
+import { resolveHistoricalApyDisplayConfig } from './apyDisplayConfig'
+
+type TVaultHistoricalAPYProps = {
+  currentVault: TYDaemonVault
+  className?: string
+  valueClassName?: string
+  showSublineTooltip?: boolean
+  showBoostDetails?: boolean
+}
 
 export function VaultHistoricalAPY({
   currentVault,
   className,
-  valueClassName
-}: {
-  currentVault: TYDaemonVault
-  className?: string
-  valueClassName?: string
-}): ReactElement {
-  // TEMPORARY HACK: Force 'NEW' APY for chainID KATANA
-  const shouldUseKatanaAPRs = currentVault.chainID === KATANA_CHAIN_ID
-  const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0
-  const monthlyAPY = currentVault.apr.points.monthAgo
-  const weeklyAPY = currentVault.apr.points.weekAgo
+  valueClassName,
+  showSublineTooltip = true,
+  showBoostDetails = true
+}: TVaultHistoricalAPYProps): ReactElement {
+  const data = useVaultApyData(currentVault)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  function openModal(): void {
+    setIsModalOpen(true)
+  }
 
-  if (shouldUseKatanaAPRs) {
-    return (
-      <div className={cl('flex flex-col items-end md:text-right', className)}>
-        <b className={cl('yearn--table-data-section-item-value', valueClassName)}>
-          <Renderable shouldRender={!shouldUseKatanaAPRs} fallback={'-'}>
-            <RenderAmount
-              value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
-              shouldHideTooltip={hasZeroAPY}
-              symbol={'percent'}
-              decimals={6}
-            />
-          </Renderable>
-        </b>
-      </div>
-    )
+  function closeModal(): void {
+    setIsModalOpen(false)
+  }
+
+  const { displayConfig, modalConfig } = resolveHistoricalApyDisplayConfig({
+    currentVault,
+    data,
+    showSublineTooltip,
+    showBoostDetails,
+    onRequestModalOpen: openModal
+  })
+
+  function handleValueClick(): void {
+    if (!modalConfig?.canOpen) {
+      return
+    }
+    openModal()
   }
 
   return (
-    <div className={cl('flex flex-col items-end md:text-right', className)}>
-      <b className={cl('yearn--table-data-section-item-value', valueClassName)}>
-        <Renderable shouldRender={!currentVault.apr?.type.includes('new')} fallback={'NEW'}>
-          <RenderAmount
-            value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
-            shouldHideTooltip={hasZeroAPY}
-            symbol={'percent'}
-            decimals={6}
-          />
-        </Renderable>
-      </b>
-    </div>
+    <Fragment>
+      <ApyDisplay
+        config={displayConfig}
+        className={className}
+        valueClassName={valueClassName}
+        onValueClick={handleValueClick}
+      />
+      {modalConfig?.canOpen ? (
+        <APYDetailsModal isOpen={isModalOpen} onClose={closeModal} title={modalConfig.title}>
+          {modalConfig.content}
+        </APYDetailsModal>
+      ) : null}
+    </Fragment>
   )
 }

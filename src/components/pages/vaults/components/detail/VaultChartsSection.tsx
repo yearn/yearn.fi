@@ -1,3 +1,4 @@
+import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
 import { transformVaultChartData } from '@pages/vaults/utils/charts'
 import { cl } from '@shared/utils'
@@ -74,41 +75,57 @@ export function VaultChartsSection({
   const activeTimeframe = timeframe ?? uncontrolledTimeframe
   const setActiveTab = onChartTabChange ?? setUncontrolledTab
   const setActiveTimeframe = onTimeframeChange ?? setUncontrolledTimeframe
+  const showApyDisclaimer = shouldRenderSelectors && activeTab === 'historical-apy' && chainId === KATANA_CHAIN_ID
 
   return (
-    <div className={'space-y-4 pt-3 rounded-lg'}>
+    <div className={'space-y-3 md:space-y-4 pt-3 rounded-lg'}>
       {shouldRenderSelectors ? (
-        <div className={'flex flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between'}>
-          <div className={'flex flex-wrap gap-3'}>
-            <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner'}>
+        <div className={'flex flex-col gap-2 md:gap-3 px-3 md:px-4 md:flex-row md:items-center md:justify-between'}>
+          <div className={'flex flex-wrap gap-2 md:gap-3'}>
+            <div
+              className={
+                'flex items-center gap-0.5 md:gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner w-full md:w-auto'
+              }
+            >
               {VAULT_CHART_TABS.map((tab) => (
                 <button
                   key={tab.id}
                   type={'button'}
                   onClick={() => setActiveTab(tab.id)}
                   className={cl(
-                    'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
+                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold transition-all',
+                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
                     activeTab === tab.id
                       ? 'bg-surface text-text-primary'
-                      : 'bg-transparent text-text-secondary hover:text-text-secondary'
+                      : 'bg-transparent text-text-secondary hover:text-text-primary'
                   )}
                 >
                   {tab.label}
                 </button>
               ))}
             </div>
+            {showApyDisclaimer ? (
+              <p className={'pointer-events-none absolute left-0 top-full mt-1 text-xxs text-text-secondary'}>
+                {'*This chart does not include KAT and other incentives.'}
+              </p>
+            ) : null}
           </div>
-          <div className={'flex flex-wrap gap-3'}>
-            <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner'}>
+          <div className={'flex flex-wrap gap-2 md:gap-3'}>
+            <div
+              className={
+                'flex items-center gap-0.5 md:gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner w-full md:w-auto'
+              }
+            >
               {VAULT_CHART_TIMEFRAME_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   type={'button'}
                   className={cl(
-                    'rounded-sm px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
                     option.value === activeTimeframe
                       ? 'bg-surface text-text-primary'
-                      : 'bg-transparent text-text-secondary hover:text-text-secondary'
+                      : 'bg-transparent text-text-secondary hover:text-text-primary'
                   )}
                   onClick={() => setActiveTimeframe(option.value)}
                 >

@@ -1,4 +1,3 @@
-import { Dialog, Transition } from '@headlessui/react'
 import { useThemePreference } from '@hooks/useThemePreference'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
@@ -14,7 +13,13 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
-import { Counter } from '@shared/components/Counter'
+import {
+  METRIC_FOOTNOTE_CLASS,
+  METRIC_VALUE_CLASS,
+  MetricHeader,
+  MetricsCard,
+  type TMetricBlock
+} from '@shared/components/MetricsCard'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -30,162 +35,13 @@ import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement } from 'react'
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
-const METRIC_VALUE_CLASS = 'font-semibold text-[20px] leading-tight md:text-[22px]'
-const METRIC_FOOTNOTE_CLASS = 'text-xs text-text-secondary'
-
-type TMetricBlock = {
-  key: string
-  header: ReactElement
-  value: ReactElement
-  footnote?: ReactElement
-  secondaryLabel?: ReactElement
-}
-
-function MetricInfoModal({
-  description,
-  isOpen,
-  onClose,
-  title
-}: {
-  description?: string
-  isOpen: boolean
-  onClose: () => void
-  title: string
-}): ReactElement | null {
-  if (!description) {
-    return null
-  }
-  return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as={'div'} className={'relative z-50'} onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter={'ease-out duration-300'}
-          enterFrom={'opacity-0'}
-          enterTo={'opacity-100'}
-          leave={'ease-in duration-200'}
-          leaveFrom={'opacity-100'}
-          leaveTo={'opacity-0'}
-        >
-          <div className={'fixed inset-0 bg-neutral-900/30'} />
-        </Transition.Child>
-
-        <div className={'fixed inset-0 overflow-y-auto'}>
-          <div className={'flex min-h-full items-center justify-center p-4 text-center'}>
-            <Transition.Child
-              as={Fragment}
-              enter={'ease-out duration-300'}
-              enterFrom={'opacity-0 scale-95'}
-              enterTo={'opacity-100 scale-100'}
-              leave={'ease-in duration-200'}
-              leaveFrom={'opacity-100 scale-100'}
-              leaveTo={'opacity-0 scale-95'}
-            >
-              <Dialog.Panel
-                className={
-                  'w-full max-w-md transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-lg transition-all'
-                }
-              >
-                <Dialog.Title as={'h3'} className={'text-lg font-semibold leading-6 text-text-primary'}>
-                  {title}
-                </Dialog.Title>
-                <p className={'mt-4 text-sm text-text-secondary'}>
-                  {description}
-                  <span className={'mt-2 block text-xs text-text-secondary'}>
-                    {'More information about this metric is coming soon.'}
-                  </span>
-                </p>
-                <div className={'mt-6'}>
-                  <button
-                    type={'button'}
-                    className={
-                      'inline-flex w-full items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-neutral-0 transition-colors hover:bg-neutral-800'
-                    }
-                    onClick={onClose}
-                  >
-                    {'Got it'}
-                  </button>
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
-  )
-}
-
-function MetricsCard({
-  hideFootnotes = false,
-  items
-}: {
-  items: TMetricBlock[]
-  hideFootnotes?: boolean
-}): ReactElement {
-  return (
-    <div className={cl('rounded-lg border border-border bg-surface text-text-primary', 'backdrop-blur-sm')}>
-      <div className={'divide-y divide-neutral-300 md:flex md:divide-y-0'}>
-        {items.map(
-          (item, index): ReactElement => (
-            <div
-              key={item.key}
-              className={cl(
-                'flex flex-1 flex-col gap-1 px-5 py-3',
-                index < items.length - 1 ? 'md:border-r md:border-border' : ''
-              )}
-            >
-              <div className={'flex items-center justify-between'}>{item.header}</div>
-              <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{item.value}</div>
-              {item.footnote && !hideFootnotes ? <div>{item.footnote}</div> : null}
-            </div>
-          )
-        )}
-      </div>
-    </div>
-  )
-}
-
-function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): ReactElement {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
-  return (
-    <>
-      <p className={'flex items-center gap-1 text-xs font-normal uppercase tracking-wide text-text-secondary'}>
-        <span>{label}</span>
-        {tooltip ? (
-          <button
-            type={'button'}
-            onClick={(): void => setIsModalOpen(true)}
-            aria-label={`Learn more about ${label}`}
-            className={
-              'inline-flex size-4 items-center justify-center rounded-full border bg-surface border-border text-[10px] font-normal text-text-secondary transition-colors hover:border-neutral-500 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300'
-            }
-          >
-            <span className={'leading-none'}>{'i'}</span>
-          </button>
-        ) : null}
-      </p>
-      <MetricInfoModal
-        description={tooltip}
-        isOpen={isModalOpen}
-        onClose={(): void => setIsModalOpen(false)}
-        title={label}
-      />
-    </>
-  )
-}
-
-function VaultOverviewCard({
-  currentVault,
-  isCompressed
-}: {
-  currentVault: TYDaemonVault
-  isCompressed: boolean
-}): ReactElement {
+function VaultOverviewCard({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
+  const listKind = deriveListKind(currentVault)
+  const isFactoryVault = listKind === 'factory'
   const metrics: TMetricBlock[] = [
     {
       key: 'est-apy',
@@ -194,6 +50,7 @@ function VaultOverviewCard({
         <VaultForwardAPY
           currentVault={currentVault}
           showSubline={false}
+          showSublineTooltip
           className={'items-start text-left'}
           valueClassName={METRIC_VALUE_CLASS}
         />
@@ -205,6 +62,8 @@ function VaultOverviewCard({
       value: (
         <VaultHistoricalAPY
           currentVault={currentVault}
+          showSublineTooltip
+          showBoostDetails={!isFactoryVault}
           className={'items-start text-left'}
           valueClassName={METRIC_VALUE_CLASS}
         />
@@ -229,30 +88,35 @@ function VaultOverviewCard({
       ),
       footnote: (
         <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
-          <span className={'font-number'}>
-            <Counter value={totalAssets} decimals={currentVault.decimals} decimalsToDisplay={[2, 6, 8, 10, 12]} />
-          </span>
+          <RenderAmount
+            value={Number(totalAssets)}
+            symbol={currentVault.token.symbol}
+            decimals={currentVault.decimals}
+            shouldFormatDust
+            options={{
+              shouldDisplaySymbol: false,
+              maximumFractionDigits: Number(totalAssets) > 1000 ? 2 : 4
+            }}
+          />
           <span className={'pl-1'}>{currentVault.token.symbol || 'tokens'}</span>
         </p>
       )
     }
   ]
 
-  return <MetricsCard items={metrics} hideFootnotes={isCompressed} />
+  return <MetricsCard items={metrics} />
 }
 
 function UserHoldingsCard({
   currentVault,
   availableToDeposit,
   depositedValue,
-  tokenPrice,
-  isCompressed
+  tokenPrice
 }: {
   currentVault: TYDaemonVault
   availableToDeposit: bigint
   depositedValue: bigint
   tokenPrice: number
-  isCompressed: boolean
 }): ReactElement {
   const availableAmount = toNormalizedBN(availableToDeposit, currentVault.token.decimals)
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
@@ -320,7 +184,7 @@ function UserHoldingsCard({
     }
   ]
 
-  return <MetricsCard items={sections} hideFootnotes={isCompressed} />
+  return <MetricsCard items={sections} />
 }
 
 export function VaultDetailsHeader({
@@ -359,35 +223,42 @@ export function VaultDetailsHeader({
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
   const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
-  const productTypeIcon = isAllocatorVault ? (
-    <span className={'text-sm leading-none'}>{'⚙️'}</span>
-  ) : isLegacyVault ? (
-    <IconRewind className={'size-3.5'} />
-  ) : (
-    <span className={'text-sm leading-none'}>{'🏭'}</span>
-  )
+  const productTypeIcon = ((): ReactElement => {
+    if (isAllocatorVault) return <span className={'text-sm leading-none'}>{'⚙️'}</span>
+    if (isLegacyVault) return <IconRewind className={'size-3.5'} />
+    return <span className={'text-sm leading-none'}>{'🏭'}</span>
+  })()
 
-  const categoryIcon: ReactElement | null =
-    currentVault.category === 'Stablecoin' ? (
-      <IconStablecoin className={'size-3.5'} />
-    ) : currentVault.category === 'Volatile' ? (
-      <IconVolatile className={'size-3.5'} />
-    ) : null
+  const categoryIcon: ReactElement | null = ((): ReactElement | null => {
+    if (currentVault.category === 'Stablecoin') return <IconStablecoin className={'size-3.5'} />
+    if (currentVault.category === 'Volatile') return <IconVolatile className={'size-3.5'} />
+    return null
+  })()
 
-  const baseKindType: 'multi' | 'single' | undefined =
-    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
+  const baseKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
+    if (currentVault.kind === 'Multi Strategy') return 'multi'
+    if (currentVault.kind === 'Single Strategy') return 'single'
+    return undefined
+  })()
 
-  const fallbackKindType: 'multi' | 'single' | undefined =
-    listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
+  const fallbackKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
+    if (listKind === 'allocator') return 'multi'
+    if (listKind === 'strategy') return 'single'
+    return undefined
+  })()
   const kindType = baseKindType ?? fallbackKindType
-  const kindLabel: string | undefined =
-    kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
-  const kindIcon: ReactElement | null =
-    kindType === 'multi' ? (
-      <IconCirclePile className={'size-3.5'} />
-    ) : kindType === 'single' ? (
-      <IconStack className={'size-3.5'} />
-    ) : null
+
+  const kindLabel: string | undefined = ((): string | undefined => {
+    if (kindType === 'multi') return 'Allocator'
+    if (kindType === 'single') return 'Strategy'
+    return currentVault.kind
+  })()
+
+  const kindIcon: ReactElement | null = ((): ReactElement | null => {
+    if (kindType === 'multi') return <IconCirclePile className={'size-3.5'} />
+    if (kindType === 'single') return <IconStack className={'size-3.5'} />
+    return null
+  })()
   const chainDescription = getChainDescription(currentVault.chainID)
   const categoryDescription = getCategoryDescription(currentVault.category)
   const productTypeDescription = getProductTypeDescription(listKind)
@@ -533,7 +404,7 @@ export function VaultDetailsHeader({
               showCollapsedTooltip={isCompressed}
               tooltipDescription={productTypeDescription}
             />
-            {showKindChip ? (
+            {showKindChip && kindLabel ? (
               <VaultsListChip
                 label={kindLabel}
                 icon={kindIcon}
@@ -580,7 +451,7 @@ export function VaultDetailsHeader({
       <div
         className={cl(isCompressed ? 'md:col-start-6 md:col-span-8 md:row-start-2' : 'md:col-span-13 md:row-start-3')}
       >
-        <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
+        <VaultOverviewCard currentVault={currentVault} />
       </div>
       <div
         className={cl(
@@ -592,7 +463,6 @@ export function VaultDetailsHeader({
           availableToDeposit={availableToDeposit}
           depositedValue={depositedValue}
           tokenPrice={tokenPrice}
-          isCompressed={isCompressed}
         />
       </div>
     </div>

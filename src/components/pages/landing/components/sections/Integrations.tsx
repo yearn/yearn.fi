@@ -59,19 +59,21 @@ const IntegrationItem: FC<TIntegration & { index: number }> = ({ name, imageSrc,
   return (
     <Link href={href} className={'block cursor-pointer'}>
       <div
-        className={`flex flex-row items-center p-[12px] transition-all duration-300 ease-in-out hover:scale-[1.005] hover:bg-black/60 hover:shadow-lg md:p-[16px] ${index % 2 === 0 ? 'bg-black/50' : 'bg-black/30'}`}
+        className={`flex min-h-[56px] flex-row items-center p-3 transition-all duration-300 ease-in-out hover:scale-[1.005] hover:bg-black/60 hover:shadow-lg sm:min-h-[60px] sm:p-[14px] md:p-[16px] ${index % 2 === 0 ? 'bg-black/50' : 'bg-black/30'}`}
       >
-        <div className={'relative mr-4 shrink-0 self-center'}>
+        <div className={'relative mr-3 shrink-0 self-center sm:mr-4'}>
           <Image
             src={imageSrc}
             alt={name}
             width={40}
             height={40}
-            className={'rounded-full transition-transform duration-300 ease-in-out group-hover:scale-110'}
+            className={
+              'size-9 rounded-full transition-transform duration-300 ease-in-out group-hover:scale-110 sm:size-10'
+            }
           />
         </div>
         <div className={'flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:justify-between'}>
-          <div className={'flex items-center text-[20px] text-white '}>
+          <div className={'flex items-center text-base text-white sm:text-lg md:text-[20px]'}>
             {name}{' '}
             <span className={'ml-2 text-neutral-700 transition-all duration-300 ease-in-out hover:text-neutral-500'}>
               {'↗'}
@@ -87,15 +89,15 @@ const IntegrationItem: FC<TIntegration & { index: number }> = ({ name, imageSrc,
 }
 
 export const Integrations: FC = () => (
-  <section className={'flex w-full justify-center bg-white/5 py-16 lg:py-32'}>
-    <div className={'flex w-[1180px] flex-col items-center justify-between md:flex-row'}>
+  <section className={'flex w-full justify-center bg-white/5 py-12 sm:py-16 lg:py-32'}>
+    <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between md:flex-row'}>
       <div className={'w-full px-4'}>
         <SectionHeader
           tagline={'Partners'}
           title={'Integrations'}
           description={'External Yearn vaults available through our partners'}
         />
-        <div className={'mt-8 grid overflow-hidden rounded-lg'}>
+        <div className={'mt-6 grid overflow-hidden rounded-lg sm:mt-8'}>
           {integrations.map((integration, index) => (
             <IntegrationItem
               index={index}

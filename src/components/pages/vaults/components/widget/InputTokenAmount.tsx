@@ -129,13 +129,14 @@ export const InputTokenAmount: FC<Props> = ({
           <label className="text-sm font-medium text-text-primary">{title}</label>
 
           {/* Percentage buttons */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 md:gap-1">
             <button
               type="button"
               onClick={() => handlePercentageClick(25)}
               className={cl(
-                'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
-                disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
+                'px-2 py-1.5 md:px-1 md:py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all active:scale-95',
+                'min-h-[32px] md:min-h-0',
+                disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:bg-surface-tertiary'
               )}
               disabled={disabled}
             >
@@ -145,8 +146,9 @@ export const InputTokenAmount: FC<Props> = ({
               type="button"
               onClick={() => handlePercentageClick(50)}
               className={cl(
-                'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
-                disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
+                'px-2 py-1.5 md:px-1 md:py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all active:scale-95',
+                'min-h-[32px] md:min-h-0',
+                disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:bg-surface-tertiary'
               )}
               disabled={disabled}
             >
@@ -156,8 +158,9 @@ export const InputTokenAmount: FC<Props> = ({
               type="button"
               onClick={() => handlePercentageClick(75)}
               className={cl(
-                'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90',
-                disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:scale-100'
+                'px-2 py-1.5 md:px-1 md:py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all active:scale-95',
+                'min-h-[32px] md:min-h-0',
+                disabled ? 'text-text-tertiary cursor-not-allowed' : 'text-text-secondary hover:bg-surface-tertiary'
               )}
               disabled={disabled}
             >
@@ -167,10 +170,11 @@ export const InputTokenAmount: FC<Props> = ({
               type="button"
               onClick={() => handlePercentageClick(100)}
               className={cl(
-                'px-1 py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all scale-95 active:scale-90 flex items-center justify-center min-w-[42px]',
+                'px-2 py-1.5 md:px-1 md:py-0.5 text-xs font-medium rounded bg-surface-secondary transition-all active:scale-95 flex items-center justify-center',
+                'min-h-[32px] md:min-h-0 min-w-[42px]',
                 disabled || isMaxButtonLoading
                   ? 'text-text-tertiary cursor-not-allowed'
-                  : 'text-text-secondary hover:scale-100'
+                  : 'text-text-secondary hover:bg-surface-tertiary'
               )}
               disabled={disabled || isMaxButtonLoading}
             >
@@ -192,8 +196,13 @@ export const InputTokenAmount: FC<Props> = ({
             onChange={handleInputChange}
             onFocus={() => setActive(true)}
             onBlur={() => setActive(false)}
+            inputMode="decimal"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
             className={cl(
-              'bg-transparent outline-none text-2xl font-medium flex-1 min-w-0 transition-colors duration-200',
+              'bg-transparent outline-none text-2xl md:text-2xl font-medium flex-1 min-w-0 transition-colors duration-200',
+              'text-[16px] md:text-2xl',
               errorMessage ? 'text-red-500' : disabled ? 'text-text-secondary' : 'text-text-primary',
               'placeholder:text-text-secondary'
             )}
@@ -207,10 +216,11 @@ export const InputTokenAmount: FC<Props> = ({
               data-token-selector-button
               disabled={!showTokenSelector && disabled}
               className={cl(
-                'px-2 py-1 rounded-lg flex items-center gap-2 transition-colors',
-                'text-text-primary text-xl font-medium', // Match input text size
+                'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors',
+                'text-text-primary text-base md:text-xl font-medium',
+                'min-h-[44px]',
                 showTokenSelector
-                  ? 'bg-transparent hover:bg-surface-secondary'
+                  ? 'bg-transparent hover:bg-surface-secondary active:bg-surface-secondary'
                   : disabled
                     ? 'bg-transparent cursor-not-allowed'
                     : 'bg-transparent'

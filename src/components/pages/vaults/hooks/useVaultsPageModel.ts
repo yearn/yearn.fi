@@ -30,6 +30,7 @@ import { getSupportedChainsForVaultType } from '@pages/vaults/utils/vaultTypeUti
 import { useMediaQuery } from '@react-hookz/web'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { useWeb3 } from '@shared/contexts/useWeb3'
 import { usePrefetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import type { TSortDirection } from '@shared/types'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -49,6 +50,7 @@ import { useVaultsListModel } from './useVaultsListModel'
 import { useVaultsQueryState } from './useVaultsQueryState'
 
 const DEFAULT_VAULT_TYPES = ['multi', 'single']
+const DEFAULT_SORT_BY: TPossibleSortBy = 'tvl'
 const VAULTS_FILTERS_STORAGE_KEY = 'yearn.fi/vaults-filters@1'
 
 type TVaultsPinnedSection = {
@@ -76,7 +78,6 @@ type TVaultsFiltersBarModel = {
     config: TChainConfig
   }
   shouldStackFilters: boolean
-  isSwitchingVaultType: boolean
   activeVaultType: TVaultType
   onChangeVaultType: (value: TVaultType) => void
 }
@@ -91,6 +92,7 @@ type TVaultsListData = {
   listChains: number[] | null
   defaultCategories: string[]
   totalMatchingVaults: number
+  hasHoldings: boolean
 }
 
 type TVaultsListModel = {
@@ -128,6 +130,7 @@ export type TVaultsPageModel = {
 }
 
 export function useVaultsPageModel(): TVaultsPageModel {
+  const { isActive: isWalletActive } = useWeb3()
   const {
     vaultType,
     hasTypesParam,
@@ -162,7 +165,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     defaultTypes: DEFAULT_VAULT_TYPES,
     defaultCategories: [],
     defaultPathname: '/vaults',
-    defaultSortBy: 'featuringScore',
+    defaultSortBy: DEFAULT_SORT_BY,
     resetTypes: DEFAULT_VAULT_TYPES,
     resetCategories: [],
     persistToStorage: true,
@@ -173,6 +176,16 @@ export function useVaultsPageModel(): TVaultsPageModel {
   })
 
   usePrefetchYearnVaults(V2_SUPPORTED_CHAINS, vaultType === 'v3')
+
+  useEffect(() => {
+    if (sortBy !== 'featuringScore') {
+      return
+    }
+    onChangeSortBy(DEFAULT_SORT_BY)
+    if (sortDirection !== 'desc') {
+      onChangeSortDirection('desc')
+    }
+  }, [sortBy, sortDirection, onChangeSortBy, onChangeSortDirection])
 
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
@@ -347,6 +360,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
     return Array.from(new Set(normalized))
   }, [listUnderlyingAssets])
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
+  const effectiveSortBy = sortBy === 'featuringScore' ? DEFAULT_SORT_BY : sortBy
+  const effectiveSortDirection = sortBy === 'featuringScore' ? 'desc' : sortDirection
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
   const {
@@ -374,13 +389,11 @@ export function useVaultsPageModel(): TVaultsPageModel {
     listShowLegacyVaults,
     listShowHiddenVaults,
     searchValue,
-    sortBy,
-    sortDirection,
+    sortBy: effectiveSortBy,
+    sortDirection: effectiveSortDirection,
     isHoldingsPinned,
     isAvailablePinned
   })
-
-  const isSwitchingVaultType = Boolean(optimisticVaultType && optimisticVaultType !== vaultType)
 
   useEffect(() => {
     if (holdingsVaults.length === 0 && isHoldingsPinned) {
@@ -779,14 +792,14 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const listHeadProps: TListHead = {
     containerClassName: 'rounded-t-xl bg-surface shrink-0',
     wrapperClassName: 'relative z-10 border border-border rounded-t-xl bg-transparent',
-    sortBy,
-    sortDirection,
+    sortBy: effectiveSortBy,
+    sortDirection: effectiveSortDirection,
     onSort: (newSortBy: string, newSortDirection: TSortDirection): void => {
       let targetSortBy = newSortBy as TPossibleSortBy
       let targetSortDirection = newSortDirection as TSortDirection
 
       if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
-        targetSortBy = 'featuringScore'
+        targetSortBy = DEFAULT_SORT_BY
         targetSortDirection = 'desc'
       }
 
@@ -805,9 +818,9 @@ export function useVaultsPageModel(): TVaultsPageModel {
     items: [
       {
         type: 'sort',
-        label: 'Vault / Featuring Score',
-        value: 'featuringScore',
-        sortable: true,
+        label: 'Vault',
+        value: 'vault',
+        sortable: false,
         className: 'col-span-12'
       },
       {
@@ -815,14 +828,14 @@ export function useVaultsPageModel(): TVaultsPageModel {
         label: 'Est. APY',
         value: 'estAPY',
         sortable: true,
-        className: 'col-span-4'
+        className: isWalletActive ? 'col-span-4' : 'col-span-6'
       },
       {
         type: 'sort',
         label: 'TVL',
         value: 'tvl',
         sortable: true,
-        className: 'col-span-4'
+        className: isWalletActive ? 'col-span-4' : 'col-span-5'
       },
       // {
       //   type: 'toggle',
@@ -831,13 +844,17 @@ export function useVaultsPageModel(): TVaultsPageModel {
       //   className: 'col-span-3',
       //   disabled: availableVaults.length === 0
       // },
-      {
-        type: 'toggle',
-        label: 'Holdings',
-        value: HOLDINGS_TOGGLE_VALUE,
-        className: 'col-span-4 justify-end',
-        disabled: holdingsVaults.length === 0
-      }
+      ...(isWalletActive
+        ? ([
+            {
+              type: 'toggle',
+              label: 'Holdings',
+              value: HOLDINGS_TOGGLE_VALUE,
+              className: 'col-span-4 justify-end',
+              disabled: holdingsVaults.length === 0
+            }
+          ] satisfies TListHead['items'])
+        : [])
     ]
   }
 
@@ -869,7 +886,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
         config: chainConfig
       },
       shouldStackFilters,
-      isSwitchingVaultType,
       activeVaultType: displayedVaultType,
       onChangeVaultType: handleVaultVersionToggle
     },
@@ -892,7 +908,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
         listCategoriesSanitized,
         listChains,
         defaultCategories,
-        totalMatchingVaults
+        totalMatchingVaults,
+        hasHoldings: holdingsVaults.length > 0
       },
       handlers: {
         onToggleChain: handleToggleChain,

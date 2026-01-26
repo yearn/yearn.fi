@@ -129,7 +129,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
           <div className={'col-span-9 flex flex-col gap-6'}>
             {allocationChartData.length > 0 ? (
               <div className={'flex flex-col gap-4'}>
-                <div className={'flex flex-row items-center gap-8'}>
+                <div className={'flex flex-row items-center gap-8 px-4'}>
                   <Suspense fallback={<div className={'h-32 w-32 animate-pulse rounded-full bg-surface-secondary'} />}>
                     <AllocationChart allocationChartData={allocationChartData} />
                   </Suspense>

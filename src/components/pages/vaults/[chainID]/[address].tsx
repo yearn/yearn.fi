@@ -82,7 +82,7 @@ function Index(): ReactElement | null {
   }
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
   const sectionScrollOffset = 275
-  const compressedHeaderHeight = 117.5
+  const compressedHeaderHeight = 126
 
   // Reset state when vault changes
   useEffect(() => {
@@ -204,7 +204,14 @@ function Index(): ReactElement | null {
         key: 'charts' as const,
         shouldRender: Number.isInteger(chainId),
         ref: sectionRefs.charts,
-        content: <VaultChartsSection chainId={chainId} vaultAddress={currentVault.address} chartHeightPx={230} />
+        content: (
+          <VaultChartsSection
+            chainId={chainId}
+            vaultAddress={currentVault.address}
+            chartHeightPx={180}
+            chartHeightMdPx={230}
+          />
+        )
       },
       {
         key: 'about' as const,
@@ -213,16 +220,16 @@ function Index(): ReactElement | null {
         content: <VaultAboutSection currentVault={currentVault} />
       },
       {
-        key: 'risk' as const,
-        shouldRender: true,
-        ref: sectionRefs.risk,
-        content: <VaultRiskSection currentVault={currentVault} />
-      },
-      {
         key: 'strategies' as const,
         shouldRender: Number(currentVault.strategies?.length || 0) > 0,
         ref: sectionRefs.strategies,
         content: <VaultStrategiesSection currentVault={currentVault} />
+      },
+      {
+        key: 'risk' as const,
+        shouldRender: true,
+        ref: sectionRefs.risk,
+        content: <VaultRiskSection currentVault={currentVault} />
       },
       {
         key: 'info' as const,
@@ -347,13 +354,13 @@ function Index(): ReactElement | null {
             <div className="flex-1 min-w-0">
               <h1
                 className={cl(
-                  'text-lg font-black leading-tight truncate',
+                  'text-lg font-black leading-tight truncate-safe',
                   isDarkTheme ? 'text-text-primary' : 'text-text-secondary'
                 )}
               >
                 {getVaultName(currentVault)} yVault
               </h1>
-              <p className="text-xs text-text-secondary truncate">
+              <p className="text-mobile-label text-text-secondary">
                 {currentVault.token.symbol} • v{currentVault.version}
               </p>
             </div>
@@ -382,7 +389,7 @@ function Index(): ReactElement | null {
               'hover:bg-surface-secondary active:scale-[0.99]'
             )}
           >
-            <span className="text-sm font-semibold text-text-primary">
+            <span className="text-base font-semibold text-text-primary">
               {isMobileDetailsExpanded ? 'Hide Details' : 'View More Details'}
             </span>
             <IconChevron direction={isMobileDetailsExpanded ? 'up' : 'down'} className="size-5 text-text-secondary" />
@@ -416,7 +423,9 @@ function Index(): ReactElement | null {
                     >
                       <button
                         type={'button'}
-                        className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
+                        className={
+                          'flex w-full items-center justify-between gap-3 px-4 py-4 min-h-[52px] active:bg-surface-secondary transition-colors'
+                        }
                         onClick={(): void =>
                           setOpenSections((previous) => ({
                             ...previous,
@@ -428,7 +437,7 @@ function Index(): ReactElement | null {
                           {collapsibleTitles[typedKey]}
                         </span>
                         <IconChevron
-                          className={'size-4 text-text-secondary transition-transform duration-200'}
+                          className={'size-5 text-text-secondary transition-transform duration-200'}
                           direction={isOpen ? 'up' : 'down'}
                         />
                       </button>

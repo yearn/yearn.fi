@@ -11,10 +11,13 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
+import { useMediaQuery } from '@react-hookz/web'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
+import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCirclePile } from '@shared/icons/IconCirclePile'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
@@ -28,7 +31,7 @@ import { cl, formatAmount, toAddress, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
 import { VaultsListChip } from './VaultsListChip'
@@ -68,7 +71,11 @@ export function VaultsListRow({
   activeProductType,
   onToggleVaultType,
   showStrategies = false,
-  shouldCollapseChips = false
+  shouldCollapseChips = false,
+  showHoldingsChipOverride,
+  showProductTypeChipOverride,
+  mobileSecondaryMetric = 'tvl',
+  showAllocatorChip = true
 }: {
   currentVault: TYDaemonVault
   flags?: TVaultRowFlags
@@ -86,14 +93,22 @@ export function VaultsListRow({
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   showStrategies?: boolean
   shouldCollapseChips?: boolean
+  showAllocatorChip?: boolean
+  showHoldingsChipOverride?: boolean
+  showProductTypeChipOverride?: boolean
+  mobileSecondaryMetric?: 'tvl' | 'holdings'
 }): ReactElement {
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const { isActive: isWalletActive } = useWeb3()
+  const { getToken } = useWallet()
+  const { getPrice } = useYearn()
+  const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('strategies')
+  const [interactiveHoverCount, setInteractiveHoverCount] = useState(0)
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
@@ -111,11 +126,11 @@ export function VaultsListRow({
     : isLegacyVault
       ? 'Legacy vault'
       : 'Show LP token vaults'
-  const showProductTypeChip = Boolean(activeProductType) || Boolean(onToggleVaultType)
+  const showProductTypeChip = showProductTypeChipOverride ?? (Boolean(activeProductType) || Boolean(onToggleVaultType))
   const isProductTypeActive = activeProductType === productType
   const shouldCollapseProductTypeChip =
     !isLegacyVault && activeProductType !== 'all' && activeProductType === productType
-  const isChipsCompressed = Boolean(shouldCollapseChips)
+  const isChipsCompressed = Boolean(shouldCollapseChips) || isMobile
   const shouldCollapseProductType = isChipsCompressed || shouldCollapseProductTypeChip
   const showCollapsedTooltip = isChipsCompressed
   const leftColumnSpan = 'col-span-12'
@@ -128,6 +143,10 @@ export function VaultsListRow({
   const showCompareToggle = Boolean(onToggleCompare)
   const vaultKey = `${currentVault.chainID}_${toAddress(currentVault.address)}`
   const isCompareSelected = compareVaultKeys?.includes(vaultKey) ?? false
+  const isHoveringInteractive = interactiveHoverCount > 0
+  const handleInteractiveHoverChange = (isHovering: boolean): void => {
+    setInteractiveHoverCount((count) => Math.max(0, count + (isHovering ? 1 : -1)))
+  }
 
   const isHiddenVault = Boolean(flags?.isHidden)
   const baseKindType: 'multi' | 'single' | undefined =
@@ -140,7 +159,7 @@ export function VaultsListRow({
     kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
-  const showKindChip = showStrategies && Boolean(kindType)
+  const showKindChip = showStrategies && Boolean(kindType) && (showAllocatorChip || kindType !== 'multi')
   const isKindActive = false
   const categoryIcon: ReactElement | null =
     currentVault.category === 'Stablecoin' ? (
@@ -165,6 +184,59 @@ export function VaultsListRow({
     : ''
   const migratableIcon = <IconMigratable className={'size-3.5'} />
   const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
+  const holdingsIcon = (
+    <svg
+      xmlns={'http://www.w3.org/2000/svg'}
+      viewBox={'0 0 24 24'}
+      fill={'none'}
+      stroke={'currentColor'}
+      strokeWidth={2}
+      strokeLinecap={'round'}
+      strokeLinejoin={'round'}
+      className={'size-3.5'}
+      aria-hidden={true}
+    >
+      <path d={'M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17'} />
+      <path d={'m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9'} />
+      <path d={'m2 16 6 6'} />
+      <circle cx={16} cy={9} r={2.9} />
+      <circle cx={6} cy={5} r={3} />
+    </svg>
+  )
+  const hasHoldings = Boolean(flags?.hasHoldings)
+  const showHoldingsChip = showHoldingsChipOverride ?? hasHoldings
+  const showHoldingsValue = hasHoldings
+  const holdingsValue = useMemo(() => {
+    if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
+      return 0
+    }
+    const vaultToken = getToken({
+      chainID: currentVault.chainID,
+      address: currentVault.address
+    })
+    const price = getPrice({
+      address: currentVault.address,
+      chainID: currentVault.chainID
+    })
+    const stakingBalance = currentVault.staking.available
+      ? getToken({
+          chainID: currentVault.chainID,
+          address: currentVault.staking.address
+        }).balance.raw
+      : 0n
+    const totalRawBalance = vaultToken.balance.raw + stakingBalance
+    const total = toNormalizedBN(totalRawBalance, vaultToken.decimals)
+    return total.normalized * price.normalized
+  }, [
+    showHoldingsChip,
+    currentVault.address,
+    currentVault.chainID,
+    currentVault.staking.address,
+    currentVault.staking.available,
+    getToken,
+    getPrice,
+    mobileSecondaryMetric
+  ])
   const tvlNativeTooltip = (
     <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       <span className={'font-number'}>
@@ -211,7 +283,7 @@ export function VaultsListRow({
         href={href}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
-          'p-6 pt-2 pb-4 md:pr-20',
+          'p-4 pb-4 md:p-4 md:pt-2 md:pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
         onClickCapture={(event): void => {
@@ -230,13 +302,32 @@ export function VaultsListRow({
         <div
           className={cl(
             'absolute inset-0',
-            'opacity-0 transition-opacity duration-300 group-hover:opacity-20 group-focus-visible:opacity-20 pointer-events-none',
+            'opacity-0 transition-opacity duration-300 pointer-events-none',
+            !isHoveringInteractive ? 'group-hover:opacity-20 group-focus-visible:opacity-20' : '',
             'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
           )}
         />
+        {isExpanded ? (
+          <div
+            className={cl(
+              'absolute inset-0',
+              'opacity-0 transition-opacity duration-300 pointer-events-none',
+              !isHoveringInteractive ? 'group-hover:opacity-100 group-focus-visible:opacity-100' : '',
+              'bg-[linear-gradient(180deg,transparent,var(--color-surface))]'
+            )}
+          />
+        ) : null}
 
-        <div className={cl(leftColumnSpan, 'z-10', 'flex flex-row items-center justify-between sm:pt-0')}>
-          <div className={'flex flex-row w-full gap-4 overflow-visible'}>
+        <div
+          className={cl(
+            leftColumnSpan,
+            'z-10',
+            'flex flex-col items-start sm:pt-0 md:flex-row md:items-center md:justify-between'
+          )}
+        >
+          <div
+            className={'flex flex-row w-full gap-4 pb-2 border-b border-border md:pb-0 md:border-none overflow-visible'}
+          >
             {showCompareToggle ? (
               // biome-ignore lint/a11y/useSemanticElements: native checkbox has double-firing issues with parent Link's onClickCapture
               <div
@@ -298,7 +389,9 @@ export function VaultsListRow({
             <div className={'min-w-0 flex-1'}>
               <strong
                 title={currentVault.name}
-                className={'block truncate font-black text-text-primary md:-mb-0.5 text-lg'}
+                className={
+                  'block truncate-safe whitespace-nowrap font-black text-text-primary md:-mb-0.5 text-lg leading-tight'
+                }
               >
                 {currentVault.name}
               </strong>
@@ -312,6 +405,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={chainDescription}
                     onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
+                    onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={`Filter by ${network.name}`}
                   />
                 </div>
@@ -324,6 +418,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={categoryDescription || undefined}
                     onClick={onToggleCategory ? (): void => onToggleCategory(currentVault.category) : undefined}
+                    onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={`Filter by ${currentVault.category}`}
                   />
                 ) : null}
@@ -336,6 +431,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={productTypeDescription}
                     onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
+                    onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={productTypeAriaLabel}
                   />
                 ) : null}
@@ -346,6 +442,7 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={'Management fee | Performance fee'}
+                    onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
                 {showKindChip && kindLabel ? (
@@ -357,6 +454,7 @@ export function VaultsListRow({
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={kindDescription}
                     onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
+                    onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={`Filter by ${kindLabel}`}
                   />
                 ) : null}
@@ -367,6 +465,7 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={RETIRED_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
                 {flags?.isMigratable ? (
@@ -376,6 +475,7 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
                 {isHiddenVault ? (
@@ -385,48 +485,80 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={HIDDEN_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
                   />
+                ) : null}
+                {showHoldingsChip ? (
+                  <span
+                    className={
+                      'hidden md:inline-flex items-center rounded-lg border border-primary/50 px-1 py-0.5 text-xs font-medium transition-colors bg-surface-secondary text-primary gap-1 shadow-[0_0_12px_rgba(59,130,246,0.12)]'
+                    }
+                    aria-label={'Holdings'}
+                  >
+                    <span className={'flex size-4 items-center justify-center text-primary'}>{holdingsIcon}</span>
+                    <RenderAmount
+                      shouldHideTooltip
+                      value={holdingsValue}
+                      symbol={'USD'}
+                      decimals={0}
+                      options={{
+                        shouldCompactValue: true,
+                        maximumFractionDigits: 2,
+                        minimumFractionDigits: 2
+                      }}
+                    />
+                  </span>
                 ) : null}
               </div>
             </div>
-            {/* Mobile Holdings + APY + TVL inline */}
-            <div className={'hidden max-md:flex items-center shrink-0 gap-4 text-right'}>
-              {/* Holdings - shown on wider mobile screens */}
-              {showHoldingsColumn ? (
-                <div className={'hidden min-[420px]:block'}>
-                  <p className={'text-xs text-text-primary/60'}>{'Holdings'}</p>
-                  <VaultHoldingsAmount currentVault={currentVault} valueClassName={'text-sm font-semibold'} />
-                </div>
-              ) : null}
-              <div>
-                <p className={'text-xs text-text-primary/60'}>{'Est. APY'}</p>
+          </div>
+          <div className={'mt-2 flex w-full flex-col gap-2 md:hidden'}>
+            <div className={'grid w-full grid-cols-2 gap-2 text-sm text-text-secondary'}>
+              <div className={'flex items-baseline justify-center gap-2 whitespace-nowrap'}>
+                <span className={'text-text-primary/60'}>{'Est. APY:'}</span>
                 <VaultForwardAPY
                   currentVault={currentVault}
-                  valueClassName={'text-sm font-semibold'}
+                  className={'flex-row items-center text-left'}
+                  valueClassName={'text-lg font-semibold'}
                   showSubline={false}
+                  displayVariant={apyDisplayVariant}
+                  showBoostDetails={showBoostDetails}
+                  onInteractiveHoverChange={handleInteractiveHoverChange}
                 />
               </div>
-              <div className={'relative'}>
-                <p className={'text-xs text-text-primary/60'}>{'TVL'}</p>
-                <p className={'text-sm font-semibold text-text-primary'}>
-                  <RenderAmount
-                    value={currentVault.tvl?.tvl}
-                    symbol={'USD'}
-                    decimals={0}
-                    options={{
-                      shouldCompactValue: true,
-                      maximumFractionDigits: 2,
-                      minimumFractionDigits: 0
-                    }}
-                  />
-                </p>
-                {/* Holdings indicator dot - shown on narrow screens when user has holdings */}
-                {showHoldingsColumn && flags?.hasHoldings ? (
-                  <div
-                    className={'absolute -right-2 top-0 size-2 rounded-full bg-green-500 min-[420px]:hidden'}
-                    title={'You have holdings in this vault'}
-                  />
-                ) : null}
+              <div className={'flex items-baseline justify-center gap-2 whitespace-nowrap'}>
+                <span className={'text-text-primary/60'}>
+                  {mobileSecondaryMetric === 'holdings' ? 'Holdings:' : 'TVL:'}
+                </span>
+                <span className={'text-lg font-semibold text-text-primary font-number'}>
+                  {mobileSecondaryMetric === 'holdings' ? (
+                    showHoldingsValue ? (
+                      <RenderAmount
+                        value={holdingsValue}
+                        symbol={'USD'}
+                        decimals={0}
+                        options={{
+                          shouldCompactValue: true,
+                          maximumFractionDigits: 2,
+                          minimumFractionDigits: 2
+                        }}
+                      />
+                    ) : (
+                      '—'
+                    )
+                  ) : (
+                    <RenderAmount
+                      value={currentVault.tvl?.tvl}
+                      symbol={'USD'}
+                      decimals={0}
+                      options={{
+                        shouldCompactValue: true,
+                        maximumFractionDigits: 2,
+                        minimumFractionDigits: 0
+                      }}
+                    />
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -443,6 +575,7 @@ export function VaultsListRow({
               showSublineTooltip
               displayVariant={apyDisplayVariant}
               showBoostDetails={showBoostDetails}
+              onInteractiveHoverChange={handleInteractiveHoverChange}
             />
           </div>
           {/* TVL */}
