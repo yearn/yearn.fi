@@ -17,7 +17,8 @@ interface DepositDetailsProps {
   assetTokenDecimals: number
   // Vault/Staking shares info
   expectedVaultShares: bigint
-  vaultDecimals: number
+  vaultDecimals: number // For pricePerShare calculations (always vault's decimals)
+  sharesDisplayDecimals: number // For displaying share amounts (vault or staking decimals)
   pricePerShare: bigint
   assetUsdPrice: number
   willReceiveStakedShares: boolean
@@ -47,6 +48,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   assetTokenDecimals,
   expectedVaultShares,
   vaultDecimals,
+  sharesDisplayDecimals,
   pricePerShare,
   assetUsdPrice,
   willReceiveStakedShares,
@@ -79,7 +81,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
 
   const allowanceDisplay = formatAllowance()
 
-  // Calculate vault share value in underlying asset terms
+  // Calculate vault share value in underlying asset terms (use vault decimals for pricePerShare)
   const vaultShareValueInAsset =
     expectedVaultShares > 0n && pricePerShare > 0n
       ? (expectedVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
@@ -155,7 +157,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
               {isLoadingQuote ? (
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : depositAmountBn > 0n && expectedVaultShares > 0n ? (
-                `${formatTAmount({ value: expectedVaultShares, decimals: vaultDecimals, options: { maximumFractionDigits: 4 } })} ${sharesLabel}`
+                `${formatTAmount({ value: expectedVaultShares, decimals: sharesDisplayDecimals, options: { maximumFractionDigits: 4 } })} ${sharesLabel}`
               ) : (
                 `0 ${sharesLabel}`
               )}

@@ -163,17 +163,22 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   // Computed Values
   // ============================================================================
+  const willReceiveStakedShares = routeType === 'DIRECT_STAKE' || (isAutoStakingEnabled && !!stakingAddress)
+  const sharesDecimals = willReceiveStakedShares
+    ? (stakingToken?.decimals ?? vault?.decimals ?? 18)
+    : (vault?.decimals ?? 18)
+  const vaultDecimals = vault?.decimals ?? 18
+
   const estimatedAnnualReturn = useMemo(() => {
     if (depositAmount.debouncedBn === 0n || vaultAPR === 0) return '0'
     const annualReturn = Number(formatUnits(depositAmount.debouncedBn, inputToken?.decimals ?? 18)) * vaultAPR
     return annualReturn.toFixed(2)
   }, [depositAmount.debouncedBn, inputToken?.decimals, vaultAPR])
 
-  const expectedOutInSelectedToken = useMemo(() => {
-    if (activeFlow.periphery.expectedOut === 0n || !pricePerShare || !assetToken?.decimals || depositAmount.bn === 0n)
-      return 0n
-    return (activeFlow.periphery.expectedOut * pricePerShare) / 10n ** BigInt(assetToken.decimals)
-  }, [activeFlow.periphery.expectedOut, assetToken?.decimals, pricePerShare, depositAmount.bn])
+  const expectedOutInAsset = useMemo(() => {
+    if (activeFlow.periphery.expectedOut === 0n || !pricePerShare || depositAmount.bn === 0n) return 0n
+    return (activeFlow.periphery.expectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
+  }, [activeFlow.periphery.expectedOut, vaultDecimals, pricePerShare, depositAmount.bn])
 
   const inputTokenPrice =
     inputToken?.address && inputToken?.chainID
@@ -190,16 +195,11 @@ export const WidgetDeposit: FC<Props> = ({
       ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
       : 0
 
-  const willReceiveStakedShares = routeType === 'DIRECT_STAKE' || (isAutoStakingEnabled && !!stakingAddress)
-  const sharesDecimals = willReceiveStakedShares
-    ? (stakingToken?.decimals ?? vault?.decimals ?? 18)
-    : (vault?.decimals ?? 18)
-
   const vaultShareValue = useMemo(() => {
     const expectedOut = activeFlow.periphery.expectedOut
-    const vaultDecimals = vault?.decimals ?? 18
     const assetDecimals = assetToken?.decimals ?? 18
 
+    // Use vault decimals for pricePerShare calculation
     const valueInAsset =
       expectedOut > 0n && pricePerShare && pricePerShare > 0n
         ? (expectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
@@ -214,7 +214,7 @@ export const WidgetDeposit: FC<Props> = ({
     const usd = (Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice).toFixed(2)
 
     return { formatted, usd }
-  }, [activeFlow.periphery.expectedOut, vault?.decimals, assetToken?.decimals, pricePerShare, assetTokenPrice])
+  }, [activeFlow.periphery.expectedOut, vaultDecimals, assetToken?.decimals, pricePerShare, assetTokenPrice])
 
   // ============================================================================
   // Transaction Step Configuration
@@ -380,11 +380,12 @@ export const WidgetDeposit: FC<Props> = ({
         routeType={routeType}
         isSwap={selectedToken !== assetAddress}
         isLoadingQuote={activeFlow.periphery.isLoadingRoute}
-        expectedOutInAsset={expectedOutInSelectedToken}
+        expectedOutInAsset={expectedOutInAsset}
         assetTokenSymbol={assetToken?.symbol}
         assetTokenDecimals={assetToken?.decimals ?? 18}
         expectedVaultShares={activeFlow.periphery.expectedOut}
-        vaultDecimals={sharesDecimals}
+        vaultDecimals={vaultDecimals}
+        sharesDisplayDecimals={sharesDecimals}
         pricePerShare={pricePerShare || 0n}
         assetUsdPrice={assetTokenPrice}
         willReceiveStakedShares={willReceiveStakedShares}

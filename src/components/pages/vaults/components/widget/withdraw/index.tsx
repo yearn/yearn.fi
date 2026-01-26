@@ -109,6 +109,12 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
 
   const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
 
+  // Determine the correct decimals for the shares being withdrawn (for display)
+  const sharesDecimals =
+    withdrawalSource === 'staking' ? (stakingToken?.decimals ?? vault?.decimals ?? 18) : (vault?.decimals ?? 18)
+  // For pricePerShare calculations, always use vault decimals since PPS is in vault terms
+  const vaultDecimals = vault?.decimals ?? 18
+
   // ============================================================================
   // Balance Conversions
   // ============================================================================
@@ -116,11 +122,10 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     if (pricePerShare === 0n || totalVaultBalance.raw === 0n || !assetToken) {
       return zeroNormalizedBN
     }
-    const vaultDecimals = vault?.decimals ?? 18
+    // Use vault decimals for pricePerShare calculation (PPS is always in vault terms)
     const underlyingAmount = (totalVaultBalance.raw * pricePerShare) / 10n ** BigInt(vaultDecimals)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
-  }, [totalVaultBalance.raw, pricePerShare, vault?.decimals, assetToken])
-
+  }, [totalVaultBalance.raw, pricePerShare, vaultDecimals, assetToken])
   // ============================================================================
   // Input Handling
   // ============================================================================
@@ -141,13 +146,12 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
     if (isMaxWithdraw && totalVaultBalance.raw > 0n) return totalVaultBalance.raw
 
     if (pricePerShare > 0n) {
-      const vaultDecimals = vault?.decimals ?? 18
       const numerator = withdrawAmount.bn * 10n ** BigInt(vaultDecimals)
       return (numerator + pricePerShare - 1n) / pricePerShare
     }
 
     return 0n
-  }, [withdrawAmount.bn, isMaxWithdraw, totalVaultBalance.raw, pricePerShare, vault?.decimals])
+  }, [withdrawAmount.bn, isMaxWithdraw, totalVaultBalance.raw, pricePerShare, vaultDecimals])
 
   // ============================================================================
   // Withdraw Flow (routing, actions, periphery)
@@ -436,7 +440,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
       <WithdrawDetails
         actionLabel={actionLabel}
         requiredShares={requiredShares}
-        sharesDecimals={withdrawalSource === 'staking' ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)}
+        sharesDecimals={sharesDecimals}
         isLoadingQuote={activeFlow.periphery.isLoadingRoute}
         expectedOut={activeFlow.periphery.expectedOut}
         outputDecimals={outputToken?.decimals ?? 18}
@@ -520,7 +524,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
           requiredShares > 0n
             ? formatTAmount({
                 value: requiredShares,
-                decimals: withdrawalSource === 'staking' ? (stakingToken?.decimals ?? 18) : (vault?.decimals ?? 18)
+                decimals: sharesDecimals
               })
             : '0'
         }
