@@ -46,6 +46,7 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
           isBusy={isClaimPending}
           variant={isClaimReady ? 'filled' : 'light'}
           className="!px-3 !py-1.5 !text-xs"
+          classNameOverride="yearn--button--nextgen"
         >
           Claim
         </Button>

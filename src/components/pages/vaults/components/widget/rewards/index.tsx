@@ -73,7 +73,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   return (
     <div className="flex w-full flex-col gap-0">
       <div className="relative overflow-hidden rounded-lg border border-border bg-surface">
-        <div className="flex flex-col gap-1 bg-surface-secondary p-4">
+        <div className="flex flex-col gap-1 bg-surface p-4">
           <span className="text-xs font-medium uppercase tracking-wide text-text-secondary">Claimable Rewards</span>
           <span className="text-2xl font-bold text-text-primary">{formatUSD(totalUsd, 2, 2)}</span>
         </div>
