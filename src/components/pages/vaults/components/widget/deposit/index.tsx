@@ -372,6 +372,7 @@ export const WidgetDeposit: FC<Props> = ({
         depositAmountBn={depositAmount.bn}
         inputTokenSymbol={inputToken?.symbol}
         inputTokenDecimals={inputToken?.decimals ?? 18}
+        routeType={routeType}
         isSwap={selectedToken !== assetAddress}
         isLoadingQuote={activeFlow.periphery.isLoadingRoute}
         expectedOutInAsset={expectedOutInSelectedToken}
@@ -381,6 +382,7 @@ export const WidgetDeposit: FC<Props> = ({
         vaultDecimals={vault?.decimals ?? 18}
         pricePerShare={pricePerShare || 0n}
         assetUsdPrice={assetTokenPrice}
+        willReceiveStakedShares={routeType === 'DIRECT_STAKE' || (isAutoStakingEnabled && !!stakingAddress)}
         onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
         onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
         estimatedAnnualReturn={estimatedAnnualReturn}
@@ -463,6 +465,7 @@ export const WidgetDeposit: FC<Props> = ({
         stakingAddress={stakingAddress}
         isAutoStakingEnabled={isAutoStakingEnabled}
         isZap={routeType === 'ENSO' && selectedToken !== assetAddress}
+        routeType={routeType}
       />
 
       <AnnualReturnOverlay
