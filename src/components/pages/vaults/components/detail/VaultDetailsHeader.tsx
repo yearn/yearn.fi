@@ -384,35 +384,6 @@ function UserHoldingsCard({
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
   const depositedValueUSD = depositedAmount.normalized * tokenPrice
   const sections: TMetricBlock[] = [
-    // {
-    //   key: 'available',
-    //   header: (
-    //     <MetricHeader
-    //       label={'Available'}
-    //       tooltip={'Track how much of the vault asset is already in your wallet and ready to be deposited.'}
-    //     />
-    //   ),
-    //   value: (
-    //     <span className={METRIC_VALUE_CLASS} suppressHydrationWarning>
-    //       {formatUSD(availableValueUSD)}
-    //     </span>
-    //   ),
-    //   footnote: (
-    //     <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
-    //       <RenderAmount
-    //         value={Number(availableAmount.normalized)}
-    //         symbol={currentVault.token.symbol}
-    //         decimals={currentVault.token.decimals}
-    //         shouldFormatDust
-    //         options={{
-    //           shouldDisplaySymbol: false,
-    //           maximumFractionDigits: Number(availableAmount.normalized) > 1000 ? 2 : 4
-    //         }}
-    //       />
-    //       <span className={'pl-1'}>{currentVault.token.symbol || 'tokens'}</span>
-    //     </p>
-    //   )
-    // },
     {
       key: 'deposited',
       header: (
