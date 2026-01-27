@@ -9,5 +9,6 @@ export interface WithdrawWidgetProps {
   chainId: number
   vaultSymbol: string
   handleWithdrawSuccess?: () => void
-  hideSettings?: boolean
+  onOpenSettings?: () => void
+  isSettingsOpen?: boolean
 }

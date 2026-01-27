@@ -438,8 +438,6 @@ export function VaultDetailsHeader({
   widgetMode,
   onWidgetModeChange,
   onCompressionChange,
-  onWidgetSettingsOpen,
-  isWidgetSettingsOpen,
   onWidgetWalletOpen,
   isWidgetWalletOpen,
   onWidgetCloseOverlays
@@ -454,8 +452,6 @@ export function VaultDetailsHeader({
   widgetMode?: WidgetActionType
   onWidgetModeChange?: (mode: WidgetActionType) => void
   onCompressionChange?: (isCompressed: boolean) => void
-  onWidgetSettingsOpen?: () => void
-  isWidgetSettingsOpen?: boolean
   onWidgetWalletOpen?: () => void
   isWidgetWalletOpen?: boolean
   onWidgetCloseOverlays?: () => void
@@ -569,8 +565,6 @@ export function VaultDetailsHeader({
             activeAction={widgetMode}
             onActionChange={onWidgetModeChange}
             className={isCompressed ? '-mt-px rounded-t-none' : undefined}
-            onOpenSettings={onWidgetSettingsOpen}
-            isSettingsOpen={isWidgetSettingsOpen}
             onOpenWallet={onWidgetWalletOpen}
             isWalletOpen={isWidgetWalletOpen}
             onCloseOverlays={onWidgetCloseOverlays}

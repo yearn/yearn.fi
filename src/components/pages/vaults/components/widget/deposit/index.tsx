@@ -5,11 +5,13 @@ import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
-import { formatTAmount, toAddress } from '@shared/utils'
+import { IconSettings } from '@shared/icons/IconSettings'
+import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
+import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
@@ -31,13 +33,14 @@ interface Props {
   vaultSymbol: string
   stakingSource?: string
   handleDepositSuccess?: () => void
+  onOpenSettings?: () => void
+  isSettingsOpen?: boolean
   prefill?: {
     address: `0x${string}`
     chainId: number
     amount?: string
   }
   onPrefillApplied?: () => void
-  hideSettings?: boolean
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -49,9 +52,10 @@ export const WidgetDeposit: FC<Props> = ({
   vaultSymbol,
   stakingSource,
   handleDepositSuccess: onDepositSuccess,
+  onOpenSettings,
+  isSettingsOpen,
   prefill,
-  onPrefillApplied,
-  hideSettings: _hideSettings
+  onPrefillApplied
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -361,9 +365,14 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   // Render
   // ============================================================================
+  const isSettingsVisible = !!account && !!isSettingsOpen
+
   return (
     <div className="flex flex-col border border-border rounded-lg relative h-full">
-      <div className="flex flex-col flex-1 p-4 gap-6">
+      <div className="flex items-center justify-between gap-3 px-6 pt-4">
+        <h3 className="text-base font-semibold text-text-primary">Deposit</h3>
+      </div>
+      <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         {/* Amount Section */}
         <InputTokenAmount
           input={depositInput}
@@ -418,41 +427,66 @@ export const WidgetDeposit: FC<Props> = ({
         />
 
         {/* Action Button */}
-        {!account ? (
-          <Button
-            onClick={openLoginModal}
-            variant="filled"
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            Connect Wallet
-          </Button>
-        ) : (
-          <Button
-            onClick={() => setShowTransactionOverlay(true)}
-            variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-            isBusy={activeFlow.periphery.isLoadingRoute}
-            disabled={
-              !!depositError ||
-              depositAmount.bn === 0n ||
-              activeFlow.periphery.isLoadingRoute ||
-              depositAmount.isDebouncing ||
-              (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
-              (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled)
-            }
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            {activeFlow.periphery.isLoadingRoute
-              ? 'Fetching quote'
-              : !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
-                ? `Approve & ${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'}`
-                : routeType === 'DIRECT_STAKE'
-                  ? 'Stake'
-                  : 'Deposit'}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            {!account ? (
+              <Button
+                onClick={openLoginModal}
+                variant="filled"
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                Connect Wallet
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setShowTransactionOverlay(true)}
+                variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
+                isBusy={activeFlow.periphery.isLoadingRoute}
+                disabled={
+                  !!depositError ||
+                  depositAmount.bn === 0n ||
+                  activeFlow.periphery.isLoadingRoute ||
+                  depositAmount.isDebouncing ||
+                  (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
+                  (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled)
+                }
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                {activeFlow.periphery.isLoadingRoute
+                  ? 'Fetching quote'
+                  : !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
+                    ? `Approve & ${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'}`
+                    : routeType === 'DIRECT_STAKE'
+                      ? 'Stake'
+                      : 'Deposit'}
+              </Button>
+            )}
+          </div>
+          {account && onOpenSettings ? (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              aria-label="Open transaction settings"
+              aria-pressed={isSettingsOpen}
+              className={cl(
+                'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
+                'min-h-11',
+                isSettingsOpen
+                  ? 'bg-surface text-text-primary !border-border'
+                  : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+              )}
+            >
+              <IconSettings className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
       </div>
+
+      {onOpenSettings ? (
+        <SettingsPanel isActive={isSettingsVisible} onClose={onOpenSettings} variant="overlay" />
+      ) : null}
 
       {/* Transaction Overlay */}
       <TransactionOverlay
