@@ -104,6 +104,11 @@ export function VaultsListRow({
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
+  const isYvUsd = isYvUsdVault(currentVault)
+  const yvUsdLogoSrc = `${import.meta.env.BASE_URL}yvUSD.png`
+  const tokenLogoSrc = isYvUsd
+    ? yvUsdLogoSrc
+    : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`
   const { isActive: isWalletActive } = useWeb3()
   const { getToken } = useWallet()
   const { getPrice } = useYearn()
@@ -143,7 +148,6 @@ export function VaultsListRow({
   const handleInteractiveHoverChange = (isHovering: boolean): void => {
     setInteractiveHoverCount((count) => Math.max(0, count + (isHovering ? 1 : -1)))
   }
-  const isYvUsd = isYvUsdVault(currentVault)
   const { metrics: yvUsdMetrics } = useYvUsdVaults()
   const resolvedYvUsdMetrics = useMemo(() => {
     if (!isYvUsd) return null
@@ -375,14 +379,7 @@ export function VaultsListRow({
               </div>
             ) : null}
             <div className={'relative flex items-center justify-center self-center size-8 min-h-8 min-w-8'}>
-              <TokenLogo
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-                  currentVault.chainID
-                }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
-                tokenSymbol={currentVault.token.symbol || ''}
-                width={32}
-                height={32}
-              />
+              <TokenLogo src={tokenLogoSrc} tokenSymbol={currentVault.token.symbol || ''} width={32} height={32} />
               <div
                 className={
                   'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'

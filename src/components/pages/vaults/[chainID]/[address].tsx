@@ -608,6 +608,10 @@ function Index(): ReactElement | null {
   // Calculate sticky positions for the collapsible header (desktop only)
   // On mobile, natural scroll behavior is used
   const headerStickyTop = 'var(--header-height)'
+  const yvUsdLogoSrc = `${import.meta.env.BASE_URL}yvUSD.png`
+  const tokenLogoSrc = isYvUsd
+    ? yvUsdLogoSrc
+    : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`
 
   return (
     <div
@@ -649,14 +653,7 @@ function Index(): ReactElement | null {
         <div className="md:hidden mt-4 mb-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
-              <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-                  currentVault.chainID
-                }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
-                alt={currentVault.token.symbol || ''}
-                width={40}
-                height={40}
-              />
+              <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
             </div>
             <div className="flex-1 min-w-0">
               <h1
