@@ -6,12 +6,11 @@ import {
   YVUSD_LOCKED_COOLDOWN_DAYS,
   YVUSD_WITHDRAW_WINDOW_DAYS
 } from '@pages/vaults/utils/yvUsd'
-import { Button } from '@shared/components/Button'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { WidgetWithdraw } from '../withdraw'
 
@@ -21,29 +20,10 @@ type Props = {
   onWithdrawSuccess?: () => void
 }
 
-const DAY_MS = 86_400_000
-
-function formatDuration(ms: number): string {
-  const totalMinutes = Math.max(0, Math.floor(ms / 60000))
-  const days = Math.floor(totalMinutes / 1440)
-  const hours = Math.floor((totalMinutes % 1440) / 60)
-  const minutes = totalMinutes % 60
-  if (days > 0) return `${days}d ${hours}h`
-  if (hours > 0) return `${hours}h ${minutes}m`
-  return `${minutes}m`
-}
-
 export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Props): ReactElement {
   const { address: account } = useAccount()
   const { unlockedVault, lockedVault, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
-  const [cooldownStart, setCooldownStart] = useState<number | null>(null)
-  const [now, setNow] = useState(() => Date.now())
-
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 60_000)
-    return () => clearInterval(interval)
-  }, [])
 
   const unlockedUserData = useVaultUserData({
     vaultAddress: unlockedVault?.address ?? YVUSD_BASELINE_VAULT_ADDRESS,
@@ -69,31 +49,10 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
       setVariant('unlocked')
     } else if (hasUnlocked && hasLocked) {
       setVariant('unlocked')
+    } else {
+      setVariant('unlocked')
     }
   }, [hasLocked, hasUnlocked, variant])
-
-  const status = useMemo(() => {
-    if (!cooldownStart) return 'not-started'
-    const cooldownEnd = cooldownStart + YVUSD_LOCKED_COOLDOWN_DAYS * DAY_MS
-    const windowEnd = cooldownEnd + YVUSD_WITHDRAW_WINDOW_DAYS * DAY_MS
-    if (now < cooldownEnd) return 'cooling'
-    if (now <= windowEnd) return 'withdraw-open'
-    return 'expired'
-  }, [cooldownStart, now])
-
-  const cooldownEndsAt = useMemo(() => {
-    if (!cooldownStart) return null
-    return cooldownStart + YVUSD_LOCKED_COOLDOWN_DAYS * DAY_MS
-  }, [cooldownStart])
-
-  const windowEndsAt = useMemo(() => {
-    if (!cooldownStart) return null
-    return cooldownStart + (YVUSD_LOCKED_COOLDOWN_DAYS + YVUSD_WITHDRAW_WINDOW_DAYS) * DAY_MS
-  }, [cooldownStart])
-
-  const handleStartCooldown = useCallback(() => {
-    setCooldownStart(Date.now())
-  }, [])
 
   if (isLoading || !unlockedVault || !lockedVault) {
     return (
@@ -103,8 +62,8 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     )
   }
 
-  const selectedVault = variant === 'locked' ? lockedVault : unlockedVault
-  const disableWithdraw = variant === 'locked' && status !== 'withdraw-open'
+  const activeVariant = variant ?? 'unlocked'
+  const selectedVault = activeVariant === 'locked' ? lockedVault : unlockedVault
   const showToggle = hasUnlocked && hasLocked
 
   return (
@@ -149,74 +108,29 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
         </div>
       ) : null}
 
-      {variant === 'locked' ? (
+      {activeVariant === 'locked' ? (
         <div className="mx-6 mb-4 rounded-lg border border-border bg-surface-secondary p-4 text-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-col gap-1">
-              <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
-              <p className="text-xs text-text-secondary">
-                {`Cooldown: ${YVUSD_LOCKED_COOLDOWN_DAYS} days | Withdrawal window: ${YVUSD_WITHDRAW_WINDOW_DAYS} days`}
-              </p>
-            </div>
-            <Button
-              variant="filled"
-              classNameOverride="yearn--button--nextgen"
-              disabled={status === 'cooling'}
-              onClick={handleStartCooldown}
-            >
-              {status === 'not-started' ? 'Start cooldown' : status === 'expired' ? 'Restart cooldown' : 'Cooldown'}
-            </Button>
+          <div className="flex flex-col gap-1">
+            <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
+            <p className="text-xs text-text-secondary">
+              {`Cooldown: ${YVUSD_LOCKED_COOLDOWN_DAYS} days | Withdrawal window: ${YVUSD_WITHDRAW_WINDOW_DAYS} days`}
+            </p>
           </div>
           <div className="mt-3 flex flex-col gap-1 text-xs text-text-secondary">
-            <p>
-              {'Status: '}
-              <span className="text-text-primary">
-                {status === 'not-started'
-                  ? 'Not started'
-                  : status === 'cooling'
-                    ? 'Cooling down'
-                    : status === 'withdraw-open'
-                      ? 'Withdrawal window open'
-                      : 'Window expired'}
-              </span>
-            </p>
-            {cooldownEndsAt ? (
-              <p>
-                {'Cooldown ends in '}
-                {status === 'cooling' ? formatDuration(cooldownEndsAt - now) : '0m'}
-              </p>
-            ) : null}
-            {windowEndsAt ? (
-              <p>
-                {'Window closes in '}
-                {formatDuration(windowEndsAt - now)}
-              </p>
-            ) : null}
+            <p>{'Cooldown remaining: --'}</p>
+            <p>{'Withdrawal window remaining: --'}</p>
           </div>
         </div>
       ) : null}
 
-      {variant ? (
-        <div className={cl(disableWithdraw ? 'opacity-60 pointer-events-none' : '')}>
-          <WidgetWithdraw
-            key={selectedVault.address}
-            vaultAddress={toAddress(selectedVault.address)}
-            assetAddress={assetAddress}
-            chainId={chainId}
-            vaultSymbol={variant === 'locked' ? 'yvUSD (Locked)' : 'yvUSD (Unlocked)'}
-            handleWithdrawSuccess={onWithdrawSuccess}
-          />
-        </div>
-      ) : (
-        <div className="px-6 pb-6 text-sm text-text-secondary">
-          {'Connect a wallet with yvUSD deposits to withdraw.'}
-        </div>
-      )}
-      {variant === 'locked' && disableWithdraw ? (
-        <div className="px-6 pb-6 text-xs text-text-secondary">
-          {'Withdrawals unlock after the cooldown completes.'}
-        </div>
-      ) : null}
+      <WidgetWithdraw
+        key={selectedVault.address}
+        vaultAddress={toAddress(selectedVault.address)}
+        assetAddress={assetAddress}
+        chainId={chainId}
+        vaultSymbol={activeVariant === 'locked' ? 'yvUSD (Locked)' : 'yvUSD (Unlocked)'}
+        handleWithdrawSuccess={onWithdrawSuccess}
+      />
     </div>
   )
 }

@@ -5,7 +5,7 @@ import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { WidgetDeposit } from '../deposit'
 
 type Props = {
@@ -18,11 +18,6 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
   const { unlockedVault, lockedVault, metrics, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
 
-  const selectedVault = useMemo(() => {
-    if (!variant) return undefined
-    return variant === 'locked' ? lockedVault : unlockedVault
-  }, [variant, lockedVault, unlockedVault])
-
   if (isLoading || !unlockedVault || !lockedVault) {
     return (
       <div className="p-6 flex items-center justify-center h-[317px]">
@@ -31,99 +26,102 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
     )
   }
 
-  if (!variant || !selectedVault) {
-    return (
-      <div className="flex flex-col gap-6 px-6 pb-6 pt-4">
-        <p className="text-sm text-text-secondary text-center">
-          {'Locked deposits earn a share of unlocked yield and help manage system liquidity.'}
-        </p>
-        <p className="text-sm text-text-secondary text-center">
-          {`Locks are subject to a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS}-day withdrawal window.`}
-        </p>
-        <p className="text-sm font-semibold text-text-primary text-center">{'Please choose your deposit type:'}</p>
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            variant="filled"
-            classNameOverride="yearn--button--nextgen w-full"
-            onClick={() => setVariant('locked')}
-          >
-            <span className="inline-flex items-center gap-2">
-              <IconLock className="size-4" />
-              {'Locked Deposit'}
-            </span>
-          </Button>
-          <Button
-            variant="filled"
-            classNameOverride="yearn--button--nextgen w-full"
-            onClick={() => setVariant('unlocked')}
-          >
-            <span className="inline-flex items-center gap-2">
-              <IconLockOpen className="size-4" />
-              {'Unlocked Deposit'}
-            </span>
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
   const unlockedApr = metrics?.unlocked.apy ?? unlockedVault.apr?.forwardAPR?.netAPR ?? 0
   const lockedApr = metrics?.locked.apy ?? lockedVault.apr?.forwardAPR?.netAPR ?? 0
   const unlockedAprPercent = unlockedApr * 100
   const lockedAprPercent = lockedApr * 100
+  const selectedVault = variant === 'locked' ? lockedVault : unlockedVault
 
   return (
     <div className="flex flex-col gap-0">
-      <div className="px-6 pb-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{'Deposit Type'}</p>
-          <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
-            <button
-              type="button"
-              onClick={() => setVariant('locked')}
-              className={cl(
-                'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
-                variant === 'locked'
-                  ? 'bg-surface text-text-primary'
-                  : 'bg-transparent text-text-secondary hover:text-text-secondary'
-              )}
-            >
-              <span className="inline-flex items-center gap-1">
-                <IconLock className="size-3" />
-                {'Locked'}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setVariant('unlocked')}
-              className={cl(
-                'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
-                variant === 'unlocked'
-                  ? 'bg-surface text-text-primary'
-                  : 'bg-transparent text-text-secondary hover:text-text-secondary'
-              )}
-            >
-              <span className="inline-flex items-center gap-1">
-                <IconLockOpen className="size-3" />
-                {'Unlocked'}
-              </span>
-            </button>
+      {variant ? (
+        <div className="px-6 pb-4 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{'Deposit Type'}</p>
+            <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
+              <button
+                type="button"
+                onClick={() => setVariant('locked')}
+                className={cl(
+                  'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
+                  variant === 'locked'
+                    ? 'bg-surface text-text-primary'
+                    : 'bg-transparent text-text-secondary hover:text-text-secondary'
+                )}
+              >
+                <span className="inline-flex items-center gap-1">
+                  <IconLock className="size-3" />
+                  {'Locked'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setVariant('unlocked')}
+                className={cl(
+                  'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
+                  variant === 'unlocked'
+                    ? 'bg-surface text-text-primary'
+                    : 'bg-transparent text-text-secondary hover:text-text-secondary'
+                )}
+              >
+                <span className="inline-flex items-center gap-1">
+                  <IconLockOpen className="size-3" />
+                  {'Unlocked'}
+                </span>
+              </button>
+            </div>
           </div>
+          <p className="mt-2 text-xs text-text-secondary">
+            {variant === 'locked'
+              ? `Locked deposits earn additional yield (~${lockedAprPercent.toFixed(2)}% est. APY). Your position will be locked with a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS} day withdrawal window.`
+              : `Unlocked deposits stay liquid (~${unlockedAprPercent.toFixed(2)}% est. APY).`}
+          </p>
         </div>
-        <p className="mt-2 text-xs text-text-secondary">
-          {variant === 'locked'
-            ? `Locked deposits earn additional yield (~${lockedAprPercent.toFixed(2)}% est. APY) and require a cooldown before withdrawal.`
-            : `Unlocked deposits stay liquid (~${unlockedAprPercent.toFixed(2)}% est. APY).`}
-        </p>
-      </div>
+      ) : null}
       <WidgetDeposit
-        key={selectedVault.address}
         vaultAddress={toAddress(selectedVault.address)}
         assetAddress={assetAddress}
         chainId={chainId}
         vaultAPR={variant === 'locked' ? lockedApr : unlockedApr}
-        vaultSymbol={variant === 'locked' ? 'yvUSD (Locked)' : 'yvUSD (Unlocked)'}
+        vaultSymbol={variant === 'locked' ? 'yvUSD (Locked)' : variant === 'unlocked' ? 'yvUSD (Unlocked)' : 'yvUSD'}
         handleDepositSuccess={onDepositSuccess}
+        hideDetails={!variant}
+        hideActionButton={!variant}
+        detailsContent={
+          !variant ? (
+            <div className="flex flex-col gap-4 text-center text-sm text-text-secondary">
+              <p>
+                {'You can lock your vault position to earn additional yield. Locking helps manage system liquidity.'}
+              </p>
+              <p>
+                {`Locks are subject to a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS} day withdrawal window.`}
+              </p>
+              <p className="font-semibold text-text-primary">{'Please choose your deposit type'}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="filled"
+                  classNameOverride="yearn--button--nextgen w-full"
+                  onClick={() => setVariant('locked')}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <IconLock className="size-4" />
+                    {'Locked'}
+                  </span>
+                </Button>
+                <Button
+                  variant="filled"
+                  classNameOverride="yearn--button--nextgen w-full"
+                  onClick={() => setVariant('unlocked')}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <IconLockOpen className="size-4" />
+                    {'Unlocked'}
+                  </span>
+                </Button>
+              </div>
+            </div>
+          ) : undefined
+        }
       />
     </div>
   )

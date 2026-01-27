@@ -7,7 +7,7 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
-import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FC, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
@@ -31,6 +31,7 @@ interface Props {
   vaultSymbol: string
   stakingSource?: string
   handleDepositSuccess?: () => void
+  onAmountChange?: (value: string) => void
   prefill?: {
     address: `0x${string}`
     chainId: number
@@ -38,6 +39,9 @@ interface Props {
   }
   onPrefillApplied?: () => void
   hideSettings?: boolean
+  detailsContent?: ReactNode
+  hideDetails?: boolean
+  hideActionButton?: boolean
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -49,9 +53,13 @@ export const WidgetDeposit: FC<Props> = ({
   vaultSymbol,
   stakingSource,
   handleDepositSuccess: onDepositSuccess,
+  onAmountChange,
   prefill,
   onPrefillApplied,
-  hideSettings: _hideSettings
+  hideSettings: _hideSettings,
+  detailsContent,
+  hideDetails = false,
+  hideActionButton = false
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -111,6 +119,10 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
+
+  useEffect(() => {
+    onAmountChange?.(depositAmount.formValue)
+  }, [depositAmount.formValue, onAmountChange])
 
   useEffect(() => {
     if (!prefill) return
@@ -385,40 +397,44 @@ export const WidgetDeposit: FC<Props> = ({
         />
 
         {/* Details Section */}
-        <DepositDetails
-          depositAmountBn={depositAmount.bn}
-          inputTokenSymbol={inputToken?.symbol}
-          inputTokenDecimals={inputToken?.decimals ?? 18}
-          routeType={routeType}
-          isSwap={selectedToken !== assetAddress}
-          isLoadingQuote={activeFlow.periphery.isLoadingRoute}
-          expectedOutInAsset={expectedOutInAsset}
-          assetTokenSymbol={assetToken?.symbol}
-          assetTokenDecimals={assetToken?.decimals ?? 18}
-          expectedVaultShares={activeFlow.periphery.expectedOut}
-          vaultDecimals={vaultDecimals}
-          sharesDisplayDecimals={sharesDecimals}
-          pricePerShare={pricePerShare || 0n}
-          assetUsdPrice={assetTokenPrice}
-          willReceiveStakedShares={willReceiveStakedShares}
-          onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
-          onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
-          estimatedAnnualReturn={estimatedAnnualReturn}
-          onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
-          allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
-          allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
-          allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
-          approvalSpenderName={!isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined}
-          onAllowanceClick={
-            !isNativeToken && activeFlow.periphery.allowance > 0n
-              ? () => setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
-              : undefined
-          }
-          onShowApprovalOverlay={!isNativeToken ? () => setShowApprovalOverlay(true) : undefined}
-        />
+        {detailsContent ? (
+          detailsContent
+        ) : hideDetails ? null : (
+          <DepositDetails
+            depositAmountBn={depositAmount.bn}
+            inputTokenSymbol={inputToken?.symbol}
+            inputTokenDecimals={inputToken?.decimals ?? 18}
+            routeType={routeType}
+            isSwap={selectedToken !== assetAddress}
+            isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+            expectedOutInAsset={expectedOutInAsset}
+            assetTokenSymbol={assetToken?.symbol}
+            assetTokenDecimals={assetToken?.decimals ?? 18}
+            expectedVaultShares={activeFlow.periphery.expectedOut}
+            vaultDecimals={vaultDecimals}
+            sharesDisplayDecimals={sharesDecimals}
+            pricePerShare={pricePerShare || 0n}
+            assetUsdPrice={assetTokenPrice}
+            willReceiveStakedShares={willReceiveStakedShares}
+            onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
+            onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
+            estimatedAnnualReturn={estimatedAnnualReturn}
+            onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
+            allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
+            allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
+            allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
+            approvalSpenderName={!isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined}
+            onAllowanceClick={
+              !isNativeToken && activeFlow.periphery.allowance > 0n
+                ? () => setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
+                : undefined
+            }
+            onShowApprovalOverlay={!isNativeToken ? () => setShowApprovalOverlay(true) : undefined}
+          />
+        )}
 
         {/* Action Button */}
-        {!account ? (
+        {hideActionButton ? null : !account ? (
           <Button
             onClick={openLoginModal}
             variant="filled"
