@@ -11,7 +11,7 @@ import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSecti
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
 import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
-import { WidgetRewards, WidgetRewardsPanel } from '@pages/vaults/components/widget/rewards'
+import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { WidgetActionType } from '@pages/vaults/types'
 import { fetchYBoldVault } from '@pages/vaults/utils/handleYBold'
@@ -307,16 +307,20 @@ function Index(): ReactElement | null {
     setIsWidgetRewardsOpen(false)
   }
 
-  const isWidgetPanelActive = !isWidgetWalletOpen && !isWidgetRewardsOpen
+  const isWidgetPanelActive = !isWidgetWalletOpen
 
   const openWidgetRewards = (): void => {
     setIsWidgetRewardsOpen(true)
     setIsWidgetSettingsOpen(false)
-    setIsWidgetWalletOpen(false)
   }
 
   const closeWidgetRewards = (): void => {
     setIsWidgetRewardsOpen(false)
+  }
+
+  const toggleWidgetCollapse = (): void => {
+    setIsWidgetRewardsOpen((prev) => !prev)
+    setIsWidgetSettingsOpen(false)
   }
 
   const handleZapTokenSelect = useCallback(
@@ -587,6 +591,13 @@ function Index(): ReactElement | null {
   // Calculate sticky positions for the collapsible header (desktop only)
   // On mobile, natural scroll behavior is used
   const headerStickyTop = 'var(--header-height)'
+  const widgetModeLabel =
+    widgetMode === WidgetActionType.Deposit
+      ? 'Deposit'
+      : widgetMode === WidgetActionType.Withdraw
+        ? 'Withdraw'
+        : 'Migrate'
+  const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
 
   return (
     <div
@@ -719,30 +730,46 @@ function Index(): ReactElement | null {
             )}
             style={{ top: 'var(--vault-header-height, var(--header-height))' }}
           >
-            <div className="grid w-full min-w-0 grid-rows-[minmax(0,1fr)_auto] flex-1 min-h-0 max-h-[calc(100vh-16px-var(--vault-header-initial-offset))] overflow-hidden">
+            <div
+              className={cl(
+                'grid w-full min-w-0 flex-1 min-h-0 max-h-[calc(100vh-16px-var(--vault-header-initial-offset))] overflow-hidden',
+                isWidgetRewardsOpen ? 'grid-rows-[auto_minmax(0,1fr)]' : 'grid-rows-[minmax(0,1fr)_auto]'
+              )}
+            >
               <div className="flex w-full min-w-0 flex-col min-h-0">
-                <div
-                  className={cl('flex flex-col flex-1 min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
-                  aria-hidden={!isWidgetPanelActive}
-                >
-                  <Widget
-                    ref={widgetRef}
-                    vaultAddress={currentVault.address}
-                    currentVault={currentVault}
-                    gaugeAddress={currentVault.staking.address}
-                    actions={widgetActions}
-                    chainId={chainId}
-                    mode={widgetMode}
-                    onModeChange={setWidgetMode}
-                    showTabs={false}
-                    onOpenSettings={toggleWidgetSettings}
-                    isSettingsOpen={isWidgetSettingsOpen}
-                    depositPrefill={depositPrefill}
-                    onDepositPrefillConsumed={() => setDepositPrefill(null)}
-                  />
-                </div>
+                {isWidgetRewardsOpen ? (
+                  <button
+                    type="button"
+                    onClick={toggleWidgetCollapse}
+                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface px-6 py-4"
+                  >
+                    <span className="text-base font-semibold text-text-primary">{collapsedWidgetTitle}</span>
+                    <IconChevron className="size-4 text-text-secondary transition-transform" direction={'down'} />
+                  </button>
+                ) : (
+                  <div
+                    className={cl('flex flex-col min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
+                    aria-hidden={!isWidgetPanelActive}
+                  >
+                    <Widget
+                      ref={widgetRef}
+                      vaultAddress={currentVault.address}
+                      currentVault={currentVault}
+                      gaugeAddress={currentVault.staking.address}
+                      actions={widgetActions}
+                      chainId={chainId}
+                      mode={widgetMode}
+                      onModeChange={setWidgetMode}
+                      showTabs={false}
+                      onOpenSettings={toggleWidgetSettings}
+                      isSettingsOpen={isWidgetSettingsOpen}
+                      depositPrefill={depositPrefill}
+                      onDepositPrefillConsumed={() => setDepositPrefill(null)}
+                    />
+                  </div>
+                )}
                 <WalletPanel
-                  isActive={isWidgetWalletOpen}
+                  isActive={isWidgetWalletOpen && !isWidgetRewardsOpen}
                   currentVault={currentVault}
                   vaultAddress={toAddress(currentVault.address)}
                   stakingAddress={
@@ -751,23 +778,8 @@ function Index(): ReactElement | null {
                   chainId={chainId}
                   onSelectZapToken={handleZapTokenSelect}
                 />
-                <WidgetRewardsPanel
-                  isActive={isWidgetRewardsOpen}
-                  stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
-                  stakingSource={currentVault.staking.source}
-                  rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
-                    address: r.address,
-                    symbol: r.symbol,
-                    decimals: r.decimals,
-                    price: r.price,
-                    isFinished: r.isFinished
-                  }))}
-                  chainId={chainId}
-                  onClose={closeWidgetRewards}
-                  onClaimSuccess={handleRewardsClaimSuccess}
-                />
               </div>
-              <div className="w-full min-w-0">
+              <div className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
                 <WidgetRewards
                   stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
                   stakingSource={currentVault.staking.source}
@@ -781,6 +793,8 @@ function Index(): ReactElement | null {
                   chainId={chainId}
                   isPanelOpen={isWidgetRewardsOpen}
                   onOpenRewards={openWidgetRewards}
+                  onCloseRewards={closeWidgetRewards}
+                  onClaimSuccess={handleRewardsClaimSuccess}
                 />
               </div>
             </div>
