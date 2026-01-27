@@ -13,7 +13,7 @@ import { IconSettings } from '@shared/icons/IconSettings'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FC, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { SettingsPanel } from '../SettingsPanel'
@@ -41,6 +41,7 @@ interface Props {
   handleDepositSuccess?: () => void
   onOpenSettings?: () => void
   isSettingsOpen?: boolean
+  onAmountChange?: (value: string) => void
   prefill?: {
     address: `0x${string}`
     chainId: number
@@ -50,6 +51,9 @@ interface Props {
   hideSettings?: boolean
   disableBorderRadius?: boolean
   collapseDetails?: boolean
+  detailsContent?: ReactNode
+  hideDetails?: boolean
+  hideActionButton?: boolean
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -64,11 +68,15 @@ export const WidgetDeposit: FC<Props> = ({
   handleDepositSuccess: onDepositSuccess,
   onOpenSettings,
   isSettingsOpen,
+  onAmountChange,
   prefill,
   onPrefillApplied,
   hideSettings: _hideSettings,
   disableBorderRadius,
-  collapseDetails
+  collapseDetails,
+  detailsContent,
+  hideDetails = false,
+  hideActionButton = false
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -118,6 +126,10 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
+
+  useEffect(() => {
+    onAmountChange?.(depositAmount.formValue)
+  }, [depositAmount.formValue, onAmountChange])
 
   useEffect(() => {
     if (!prefill) return
@@ -384,7 +396,9 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   const isSettingsVisible = !!account && !!isSettingsOpen
 
-  const detailsSection = (
+  const detailsSection = detailsContent ? (
+    detailsContent
+  ) : hideDetails ? null : (
     <DepositDetails
       depositAmountBn={depositAmount.bn}
       inputTokenSymbol={inputToken?.symbol}
@@ -421,7 +435,7 @@ export const WidgetDeposit: FC<Props> = ({
   const actionRow = (
     <div className="flex items-center gap-2">
       <div className="flex-1">
-        {!account ? (
+        {hideActionButton ? null : !account ? (
           <Button
             onClick={openLoginModal}
             variant="filled"

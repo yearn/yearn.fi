@@ -16,6 +16,7 @@ import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/Mobi
 import { WidgetRewards, WidgetRewardsPanel } from '@pages/vaults/components/widget/rewards'
 import { SettingsPanel } from '@pages/vaults/components/widget/SettingsPanel'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
+import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
 import { fetchYBoldVault } from '@pages/vaults/utils/handleYBold'
@@ -576,10 +577,11 @@ function Index(): ReactElement | null {
   }
 
   useEffect(() => {
+    if (isYvUsd) return
     if (isMobileDrawerOpen && mobileWidgetRef.current) {
       mobileWidgetRef.current.setMode(mobileDrawerAction)
     }
-  }, [isMobileDrawerOpen, mobileDrawerAction])
+  }, [isMobileDrawerOpen, mobileDrawerAction, isYvUsd])
 
   const isPageLoading = isYvUsd ? isLoadingYvUsd : isLoadingVault
   const isPageInit = isYvUsd ? Boolean(yvUsdVault) : isInit
@@ -744,19 +746,29 @@ function Index(): ReactElement | null {
                 className={cl('flex flex-col flex-1 min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
                 aria-hidden={!isWidgetPanelActive}
               >
-                <Widget
-                  ref={widgetRef}
-                  vaultAddress={currentVault.address}
-                  currentVault={currentVault}
-                  gaugeAddress={currentVault.staking.address}
-                  actions={widgetActions}
-                  chainId={chainId}
-                  mode={widgetMode}
-                  onModeChange={setWidgetMode}
-                  showTabs={false}
-                  depositPrefill={depositPrefill}
-                  onDepositPrefillConsumed={() => setDepositPrefill(null)}
-                />
+                {isYvUsd ? (
+                  <YvUsdWidget
+                    currentVault={currentVault}
+                    chainId={chainId}
+                    mode={widgetMode}
+                    onModeChange={setWidgetMode}
+                    showTabs={false}
+                  />
+                ) : (
+                  <Widget
+                    ref={widgetRef}
+                    vaultAddress={currentVault.address}
+                    currentVault={currentVault}
+                    gaugeAddress={currentVault.staking.address}
+                    actions={widgetActions}
+                    chainId={chainId}
+                    mode={widgetMode}
+                    onModeChange={setWidgetMode}
+                    showTabs={false}
+                    depositPrefill={depositPrefill}
+                    onDepositPrefillConsumed={() => setDepositPrefill(null)}
+                  />
+                )}
               </div>
               <SettingsPanel isActive={isWidgetSettingsOpen} />
               <WalletPanel
@@ -896,17 +908,21 @@ function Index(): ReactElement | null {
         isOpen={isMobileDrawerOpen}
         onClose={handleMobileDrawerClose}
         title={`${mobileDrawerAction === WidgetActionType.Deposit ? 'Deposit' : 'Withdraw'} ${currentVault.name}`}
-        headerActions={<MobileDrawerSettingsButton />}
+        headerActions={isYvUsd ? undefined : <MobileDrawerSettingsButton />}
       >
-        <Widget
-          ref={mobileWidgetRef}
-          vaultAddress={currentVault.address}
-          currentVault={currentVault}
-          gaugeAddress={currentVault.staking.address}
-          actions={widgetActions}
-          chainId={chainId}
-          hideTabSelector
-        />
+        {isYvUsd ? (
+          <YvUsdWidget currentVault={currentVault} chainId={chainId} mode={mobileDrawerAction} showTabs={false} />
+        ) : (
+          <Widget
+            ref={mobileWidgetRef}
+            vaultAddress={currentVault.address}
+            currentVault={currentVault}
+            gaugeAddress={currentVault.staking.address}
+            actions={widgetActions}
+            chainId={chainId}
+            hideTabSelector
+          />
+        )}
       </BottomDrawer>
     </div>
   )
