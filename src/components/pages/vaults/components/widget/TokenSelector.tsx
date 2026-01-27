@@ -2,10 +2,12 @@ import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import type { TToken } from '@shared/types'
-import { cl, toAddress } from '@shared/utils'
+import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { isAddress } from 'viem'
 import { CloseIcon } from './shared/Icons'
+
+type TTokenType = 'asset' | 'vault' | 'staking' | undefined
 
 interface TokenSelectorProps {
   value: `0x${string}` | undefined
@@ -15,9 +17,30 @@ interface TokenSelectorProps {
   excludeTokens?: `0x${string}`[]
   priorityTokens?: Record<number, `0x${string}`[]> // chainId -> addresses to always show
   onClose?: () => void
+  assetAddress?: `0x${string}`
+  vaultAddress?: `0x${string}`
+  stakingAddress?: `0x${string}`
 }
 
-const TokenItem: FC<{ token: TToken; selected: boolean; onSelect: () => void }> = ({ token, selected, onSelect }) => {
+const TokenTypeChip: FC<{ type: TTokenType }> = ({ type }) => {
+  if (!type) return null
+
+  const config = {
+    asset: { label: 'Asset', className: 'bg-blue-500/10 text-blue-600' },
+    vault: { label: 'Vault', className: 'bg-green-500/10 text-green-600' },
+    staking: { label: 'Staking', className: 'bg-purple-500/10 text-purple-600' }
+  }
+
+  const { label, className } = config[type]
+  return <span className={cl('px-1.5 py-0.5 text-[10px] font-medium rounded', className)}>{label}</span>
+}
+
+const TokenItem: FC<{ token: TToken; selected: boolean; onSelect: () => void; tokenType?: TTokenType }> = ({
+  token,
+  selected,
+  onSelect,
+  tokenType
+}) => {
   return (
     <button
       type="button"
@@ -37,13 +60,18 @@ const TokenItem: FC<{ token: TToken; selected: boolean; onSelect: () => void }> 
           className="rounded-full"
         />
         <div className="text-left">
-          <div className="text-sm font-medium text-text-primary">{token.symbol}</div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-medium text-text-primary">{token.symbol}</span>
+            <TokenTypeChip type={tokenType} />
+          </div>
           <div className="text-xs text-text-secondary">{token.name}</div>
         </div>
       </div>
-      {token.balance && (
+      {token.balance && token.balance.raw > 0n && (
         <div className="text-right">
-          <div className="text-xs text-text-secondary">{token.balance.normalized.toFixed(4)}</div>
+          <div className="text-xs text-text-secondary">
+            {formatTAmount({ value: token.balance.raw, decimals: token.decimals ?? 18 })}
+          </div>
         </div>
       )}
     </button>
@@ -57,7 +85,10 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   limitTokens,
   excludeTokens,
   priorityTokens,
-  onClose
+  onClose,
+  assetAddress,
+  vaultAddress,
+  stakingAddress
 }) => {
   const [searchText, setSearchText] = useState('')
   const [customAddress, setCustomAddress] = useState<`0x${string}` | undefined>()
@@ -166,6 +197,18 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     },
     [onChange, onClose, selectedChainId]
   )
+
+  const getTokenType = useCallback(
+    (tokenAddress: string | undefined): TTokenType => {
+      if (!tokenAddress) return undefined
+      const addr = tokenAddress.toLowerCase()
+      if (stakingAddress && addr === stakingAddress.toLowerCase()) return 'staking'
+      if (vaultAddress && addr === vaultAddress.toLowerCase()) return 'vault'
+      if (assetAddress && addr === assetAddress.toLowerCase()) return 'asset'
+      return undefined
+    },
+    [assetAddress, vaultAddress, stakingAddress]
+  )
   return (
     <div
       className="absolute inset-0 bg-surface rounded-lg z-50 flex flex-col shadow-xl overscroll-contain"
@@ -228,6 +271,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                 token={token}
                 selected={token.address === value}
                 onSelect={() => handleSelect(token.address as `0x${string}`)}
+                tokenType={getTokenType(token.address)}
               />
             ))}
           </div>

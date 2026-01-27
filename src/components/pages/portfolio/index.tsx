@@ -12,6 +12,7 @@ import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
 import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from '@shared/components/MetricsCard'
+import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
@@ -38,6 +39,8 @@ const percentFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2
 })
 
+const headingTooltipClassName =
+  'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Positions' },
   { key: 'activity', label: 'Activity' },
@@ -53,7 +56,12 @@ type TRewardCardStatus = {
 
 type TPortfolioHeaderProps = Pick<
   TPortfolioModel,
-  'blendedMetrics' | 'isActive' | 'isHoldingsLoading' | 'isSearchingBalances' | 'totalPortfolioValue'
+  | 'blendedMetrics'
+  | 'hasKatanaHoldings'
+  | 'isActive'
+  | 'isHoldingsLoading'
+  | 'isSearchingBalances'
+  | 'totalPortfolioValue'
 >
 
 type TPortfolioHoldingsProps = Pick<
@@ -79,7 +87,7 @@ type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'holdingsRows' | 'isAct
 function PortfolioPageLayout({ children }: { children: ReactElement }): ReactElement {
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
-      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16 sm:gap-5'}>{children}</div>
+      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16 sm:gap-8'}>{children}</div>
     </div>
   )
 }
@@ -108,26 +116,51 @@ function HoldingsEmptyState({ isActive, onConnect }: { isActive: boolean; onConn
 
 function PortfolioHeaderSection({
   blendedMetrics,
+  hasKatanaHoldings,
   isActive,
   isHoldingsLoading,
   isSearchingBalances,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
+  const katanaTooltipContent = (
+    <div className={headingTooltipClassName}>
+      <p>{'*One or more vaults are receiving extra incentives.'}</p>
+      <p>{'*There may be conditions to earn this rate.'}</p>
+    </div>
+  )
+
+  const renderMetricSpinner = (): ReactElement => (
+    <span className={'inline-flex h-6 w-20 items-center justify-center animate-spin'}>
+      <IconSpinner className={'size-4 text-text-secondary'} />
+    </span>
+  )
+
+  const renderApyValue = (value: string, shouldShowAsterisk: boolean): ReactElement => {
+    if (!shouldShowAsterisk) {
+      return <span>{value}</span>
+    }
+    return (
+      <span className={'relative inline-flex items-center'}>
+        {value}
+        <Tooltip
+          className={'cursor-default ml-1 !h-auto !w-auto !gap-0 !justify-start'}
+          openDelayMs={150}
+          side={'top'}
+          tooltip={katanaTooltipContent}
+        >
+          <span className={'text-md text-text-secondary transition-colors hover:text-accent-500'}>{'*'}</span>
+        </Tooltip>
+      </span>
+    )
+  }
+
   const metrics: TMetricBlock[] = [
     {
       key: 'total-balance',
       header: <MetricHeader label={'Total Balance'} tooltip={'Total USD value of all your vault deposits.'} />,
       value: (
         <span className={METRIC_VALUE_CLASS}>
-          {isSearchingBalances ? (
-            <span
-              className={'inline-flex h-6 w-20 items-center justify-center rounded bg-surface-secondary animate-pulse'}
-            >
-              <IconSpinner className={'size-4 text-text-secondary'} />
-            </span>
-          ) : (
-            currencyFormatter.format(totalPortfolioValue)
-          )}
+          {isSearchingBalances ? renderMetricSpinner() : currencyFormatter.format(totalPortfolioValue)}
         </span>
       )
     },
@@ -138,15 +171,11 @@ function PortfolioHeaderSection({
       ),
       value: (
         <span className={METRIC_VALUE_CLASS}>
-          {isHoldingsLoading ? (
-            <span className={'inline-flex h-6 w-14 items-center justify-center animate-spin'}>
-              <IconSpinner className={'size-4 text-text-secondary'} />
-            </span>
-          ) : blendedMetrics.blendedCurrentAPY !== null ? (
-            `${percentFormatter.format(blendedMetrics.blendedCurrentAPY)}%`
-          ) : (
-            '—'
-          )}
+          {isHoldingsLoading
+            ? renderMetricSpinner()
+            : blendedMetrics.blendedCurrentAPY !== null
+              ? renderApyValue(`${percentFormatter.format(blendedMetrics.blendedCurrentAPY)}%`, hasKatanaHoldings)
+              : '—'}
         </span>
       )
     },
@@ -157,15 +186,11 @@ function PortfolioHeaderSection({
       ),
       value: (
         <span className={METRIC_VALUE_CLASS}>
-          {isHoldingsLoading ? (
-            <span className={'inline-flex h-6 w-14 items-center justify-center animate-spin'}>
-              <IconSpinner className={'size-4 text-text-secondary'} />
-            </span>
-          ) : blendedMetrics.blendedHistoricalAPY !== null ? (
-            `${percentFormatter.format(blendedMetrics.blendedHistoricalAPY)}%`
-          ) : (
-            '—'
-          )}
+          {isHoldingsLoading
+            ? renderMetricSpinner()
+            : blendedMetrics.blendedHistoricalAPY !== null
+              ? renderApyValue(`${percentFormatter.format(blendedMetrics.blendedHistoricalAPY)}%`, hasKatanaHoldings)
+              : '—'}
         </span>
       )
     },
@@ -176,17 +201,11 @@ function PortfolioHeaderSection({
       ),
       value: (
         <span className={METRIC_VALUE_CLASS}>
-          {isHoldingsLoading ? (
-            <span
-              className={'inline-flex h-6 w-20 items-center justify-center rounded bg-surface-secondary animate-pulse'}
-            >
-              <IconSpinner className={'size-4 text-text-secondary'} />
-            </span>
-          ) : blendedMetrics.estimatedAnnualReturn !== null ? (
-            currencyFormatter.format(blendedMetrics.estimatedAnnualReturn)
-          ) : (
-            '—'
-          )}
+          {isHoldingsLoading
+            ? renderMetricSpinner()
+            : blendedMetrics.estimatedAnnualReturn !== null
+              ? currencyFormatter.format(blendedMetrics.estimatedAnnualReturn)
+              : '—'}
         </span>
       )
     }
@@ -202,12 +221,18 @@ function PortfolioHeaderSection({
         ]}
       />
       <div className={'px-1'}>
-        <h1 className={'text-lg font-black text-text-primary md:text-3xl md:leading-10'}>{'Account Overview'}</h1>
-        <p className={'mt-1.5 text-sm text-text-secondary'}>
-          {'Monitor your balances, returns, and discover new vaults.'}
-        </p>
+        <Tooltip
+          className={'h-auto gap-0 justify-start md:justify-start'}
+          openDelayMs={150}
+          side={'top'}
+          tooltip={
+            <div className={headingTooltipClassName}>{'Monitor your balances, returns, and discover new vaults.'}</div>
+          }
+        >
+          <h1 className={'text-lg font-black text-text-primary md:text-3xl md:leading-10'}>{'Account Overview'}</h1>
+        </Tooltip>
       </div>
-      {isActive ? <MetricsCard items={metrics} /> : null}
+      {isActive ? <MetricsCard items={metrics} className={'rounded-lg border border-border'} /> : null}
     </section>
   )
 }
@@ -625,17 +650,18 @@ function PortfolioHoldingsSection({
   }
 
   return (
-    <section className={'flex flex-col gap-3 sm:gap-4'}>
+    <section className={'flex flex-col gap-3 sm:gap-3'}>
       <div className={'flex flex-wrap items-center justify-between gap-3 sm:gap-4'}>
         <div>
-          <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'Your vaults'}</h2>
-          <p className={'text-xs text-text-secondary sm:text-sm'}>{'Track every Yearn position you currently hold.'}</p>
+          <Tooltip
+            className={'h-auto gap-0 justify-start md:justify-start'}
+            openDelayMs={150}
+            side={'top'}
+            tooltip={<div className={headingTooltipClassName}>{'Track every Yearn position you currently hold.'}</div>}
+          >
+            <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'Your vaults'}</h2>
+          </Tooltip>
         </div>
-        {hasHoldings ? (
-          <Link to="/vaults" className={'yearn--button min-h-[44px] px-4 text-sm'} data-variant={'light'}>
-            {'Browse more vaults'}
-          </Link>
-        ) : null}
       </div>
       <div className={'overflow-hidden rounded-lg border border-border'}>
         <div className={'flex flex-col'}>
@@ -720,10 +746,18 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
   return (
     <section className={'flex flex-col gap-3 sm:gap-4'}>
       <div>
-        <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'You might like'}</h2>
-        <p className={'text-xs text-text-secondary sm:text-sm'}>
-          {'Vaults picked for you based on performance and popularity.'}
-        </p>
+        <Tooltip
+          className={'h-auto gap-0 justify-start md:justify-start'}
+          openDelayMs={150}
+          side={'top'}
+          tooltip={
+            <div className={headingTooltipClassName}>
+              {'Vaults picked for you based on performance and popularity.'}
+            </div>
+          }
+        >
+          <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'You might like'}</h2>
+        </Tooltip>
       </div>
       <div className={'grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 xl:grid-cols-4'}>
         {suggestedRows.map((row) => (
@@ -768,6 +802,7 @@ function PortfolioPage(): ReactElement {
           isActive={model.isActive}
           isHoldingsLoading={model.isHoldingsLoading}
           isSearchingBalances={model.isSearchingBalances}
+          hasKatanaHoldings={model.hasKatanaHoldings}
           totalPortfolioValue={model.totalPortfolioValue}
         />
         <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} />
