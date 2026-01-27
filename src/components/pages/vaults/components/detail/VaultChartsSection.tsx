@@ -25,17 +25,12 @@ type VaultChartsSectionProps = {
   chartHeightMdPx?: number
 }
 
-type TimeframeOption = {
-  label: string
-  value: string
-}
-
 export const VAULT_CHART_TIMEFRAME_OPTIONS = [
   { label: '30D', value: '30d' },
   { label: '90D', value: '90d' },
   { label: '1Y', value: '1y' },
   { label: 'All', value: 'all' }
-] as const satisfies ReadonlyArray<TimeframeOption>
+] as const
 
 export type TVaultChartTimeframe = (typeof VAULT_CHART_TIMEFRAME_OPTIONS)[number]['value']
 
@@ -69,7 +64,7 @@ export function VaultChartsSection({
   const hasError = Boolean(error)
 
   const [uncontrolledTab, setUncontrolledTab] = useState<TVaultChartTab>('historical-apy')
-  const [uncontrolledTimeframe, setUncontrolledTimeframe] = useState<TVaultChartTimeframe>('all')
+  const [uncontrolledTimeframe, setUncontrolledTimeframe] = useState<TVaultChartTimeframe>('1y')
 
   const activeTab = chartTab ?? uncontrolledTab
   const activeTimeframe = timeframe ?? uncontrolledTimeframe
@@ -110,7 +105,7 @@ export function VaultChartsSection({
               </p>
             ) : null}
           </div>
-          <div className={'flex flex-wrap gap-2 md:gap-3'}>
+          <div className={'hidden md:flex flex-wrap gap-2 md:gap-3'}>
             <div
               className={
                 'flex items-center gap-0.5 md:gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner w-full md:w-auto'

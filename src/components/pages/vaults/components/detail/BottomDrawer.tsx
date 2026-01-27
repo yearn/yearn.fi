@@ -62,7 +62,7 @@ export function BottomDrawer({ isOpen, onClose, children, title, headerActions }
                   </div>
                 </div>
                 <div className={'flex-1 overflow-y-auto overflow-x-hidden relative'}>
-                  <div className={'bg-surface-secondary p-4 h-full pb-[calc(2rem+env(safe-area-inset-bottom,0px))]'}>
+                  <div className={'bg-surface-secondary py-4 h-full pb-[calc(2rem+env(safe-area-inset-bottom,0px))]'}>
                     {children}
                   </div>
                 </div>
