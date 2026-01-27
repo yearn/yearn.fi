@@ -84,6 +84,9 @@ function Index(): ReactElement | null {
   const sectionSelectorRef = useRef<HTMLDivElement>(null)
   const widgetRef = useRef<TWidgetRef>(null)
   const widgetContainerRef = useRef<HTMLDivElement>(null)
+  const widgetStackRef = useRef<HTMLDivElement>(null)
+  const widgetPrimaryRef = useRef<HTMLDivElement>(null)
+  const widgetRewardsRef = useRef<HTMLDivElement>(null)
   const chartsRef = useRef<HTMLDivElement>(null)
   const aboutRef = useRef<HTMLDivElement>(null)
   const riskRef = useRef<HTMLDivElement>(null)
@@ -274,6 +277,7 @@ function Index(): ReactElement | null {
   const [isWidgetSettingsOpen, setIsWidgetSettingsOpen] = useState(false)
   const [isWidgetWalletOpen, setIsWidgetWalletOpen] = useState(false)
   const [isWidgetRewardsOpen, setIsWidgetRewardsOpen] = useState(false)
+  const [collapsedWidgetHeight, setCollapsedWidgetHeight] = useState<number | null>(null)
   const [depositPrefill, setDepositPrefill] = useState<{
     address: `0x${string}`
     chainId: number
@@ -318,6 +322,18 @@ function Index(): ReactElement | null {
     setIsWidgetRewardsOpen(false)
   }
 
+  const updateCollapsedWidgetHeight = useCallback(() => {
+    if (isWidgetRewardsOpen) {
+      return
+    }
+    const rewardsElement = widgetRewardsRef.current
+    if (!rewardsElement) {
+      return
+    }
+    const nextHeight = rewardsElement.offsetTop + rewardsElement.offsetHeight
+    setCollapsedWidgetHeight((prev) => (prev && Math.abs(prev - nextHeight) < 1 ? prev : nextHeight))
+  }, [isWidgetRewardsOpen])
+
   const toggleWidgetCollapse = (): void => {
     setIsWidgetRewardsOpen((prev) => !prev)
     setIsWidgetSettingsOpen(false)
@@ -350,6 +366,24 @@ function Index(): ReactElement | null {
       { address: currentVault.token.address, chainID: currentVault.chainID }
     ])
   }, [currentVault, mutate, onRefresh])
+
+  useEffect(() => {
+    updateCollapsedWidgetHeight()
+  }, [updateCollapsedWidgetHeight])
+
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') {
+      return
+    }
+    const observer = new ResizeObserver(() => updateCollapsedWidgetHeight())
+    if (widgetPrimaryRef.current) {
+      observer.observe(widgetPrimaryRef.current)
+    }
+    if (widgetRewardsRef.current) {
+      observer.observe(widgetRewardsRef.current)
+    }
+    return () => observer.disconnect()
+  }, [updateCollapsedWidgetHeight])
 
   const sections = useMemo(() => {
     if (!currentVault || !yDaemonBaseUri) {
@@ -731,12 +765,14 @@ function Index(): ReactElement | null {
             style={{ top: 'var(--vault-header-height, var(--header-height))' }}
           >
             <div
+              ref={widgetStackRef}
               className={cl(
-                'grid w-full min-w-0 flex-1 min-h-0 max-h-[calc(100vh-16px-var(--vault-header-initial-offset))] overflow-hidden',
+                'relative grid w-full min-w-0 flex-1 min-h-0 max-h-[calc(100vh-16px-var(--vault-header-initial-offset))] overflow-hidden',
                 isWidgetRewardsOpen ? 'grid-rows-[auto_minmax(0,1fr)]' : 'grid-rows-[minmax(0,1fr)_auto]'
               )}
+              style={isWidgetRewardsOpen && collapsedWidgetHeight ? { height: collapsedWidgetHeight } : undefined}
             >
-              <div className="flex w-full min-w-0 flex-col min-h-0">
+              <div ref={widgetPrimaryRef} className="flex w-full min-w-0 flex-col min-h-0">
                 {isWidgetRewardsOpen ? (
                   <button
                     type="button"
@@ -779,7 +815,7 @@ function Index(): ReactElement | null {
                   onSelectZapToken={handleZapTokenSelect}
                 />
               </div>
-              <div className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
+              <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
                 <WidgetRewards
                   stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
                   stakingSource={currentVault.staking.source}

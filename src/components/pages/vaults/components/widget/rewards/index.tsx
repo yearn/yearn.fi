@@ -129,10 +129,10 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
       <div
         className={cl(
           'relative overflow-hidden rounded-lg border border-border bg-surface',
-          isPanelOpen ? 'flex flex-col min-h-0' : ''
+          isPanelOpen ? 'flex flex-col min-h-0 flex-1' : ''
         )}
       >
-        <div className="flex items-start justify-between gap-3 bg-surface p-6">
+        <div className="flex items-center justify-between gap-3 bg-surface p-6">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium uppercase tracking-wide text-text-secondary">Claimable Rewards</span>
             <span className="text-2xl font-bold text-text-primary">{formatUSD(totalUsd, 2, 2)}</span>
@@ -151,7 +151,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
               onClick={handleOpenRewards}
               variant={'filled'}
               isDisabled={!onOpenRewards}
-              classNameOverride="yearn--button-nextgen min-h-[32px] px-3 rounded-xl text-md bg-primary text-white hover:bg-primary/90"
+              classNameOverride="yearn--button-nextgen min-h-[44px] px-3 rounded-xl text-md bg-primary text-white hover:bg-primary/90"
             >
               {'Claim rewards'}
             </Button>
