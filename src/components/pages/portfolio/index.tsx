@@ -217,7 +217,7 @@ function PortfolioHeaderSection({
         className={'px-1'}
         items={[
           { label: 'Home', href: '/' },
-          { label: 'Account Overview', isCurrent: true }
+          { label: 'Portfolio', isCurrent: true }
         ]}
       />
       <div className={'px-1'}>

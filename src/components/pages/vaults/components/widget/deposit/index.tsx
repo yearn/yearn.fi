@@ -41,6 +41,8 @@ interface Props {
     amount?: string
   }
   onPrefillApplied?: () => void
+  hideSettings?: boolean
+  disableBorderRadius?: boolean
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -55,16 +57,15 @@ export const WidgetDeposit: FC<Props> = ({
   onOpenSettings,
   isSettingsOpen,
   prefill,
-  onPrefillApplied
+  onPrefillApplied,
+  hideSettings: _hideSettings,
+  disableBorderRadius
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, isAutoStakingEnabled, getPrice } = useYearn()
 
-  // ============================================================================
-  // UI State
-  // ============================================================================
   const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
@@ -75,9 +76,6 @@ export const WidgetDeposit: FC<Props> = ({
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const appliedPrefillRef = useRef<string | null>(null)
 
-  // ============================================================================
-  // Token Data (shared with VaultDetailsHeader via cache)
-  // ============================================================================
   const {
     assetToken,
     vaultToken: vault,
@@ -129,9 +127,6 @@ export const WidgetDeposit: FC<Props> = ({
     onPrefillApplied?.()
   }, [prefill, setDepositInput, onPrefillApplied])
 
-  // ============================================================================
-  // Deposit Flow (routing, actions, periphery)
-  // ============================================================================
   const { routeType, activeFlow } = useDepositFlow({
     depositToken,
     assetAddress,
@@ -150,9 +145,6 @@ export const WidgetDeposit: FC<Props> = ({
     stakingSource
   })
 
-  // ============================================================================
-  // Notifications
-  // ============================================================================
   const isCrossChain = sourceChainId !== chainId
   const { approveNotificationParams, depositNotificationParams } = useDepositNotifications({
     inputToken,
@@ -171,9 +163,6 @@ export const WidgetDeposit: FC<Props> = ({
     isCrossChain
   })
 
-  // ============================================================================
-  // Error Handling
-  // ============================================================================
   const depositError = useDepositError({
     amount: depositAmount.bn,
     debouncedAmount: depositAmount.debouncedBn,
@@ -187,9 +176,6 @@ export const WidgetDeposit: FC<Props> = ({
     isAutoStakingEnabled
   })
 
-  // ============================================================================
-  // Computed Values
-  // ============================================================================
   const willReceiveStakedShares = routeType === 'DIRECT_STAKE' || (isAutoStakingEnabled && !!stakingAddress)
   const sharesDecimals = willReceiveStakedShares
     ? (stakingToken?.decimals ?? vault?.decimals ?? 18)
@@ -243,9 +229,6 @@ export const WidgetDeposit: FC<Props> = ({
     return { formatted, usd }
   }, [activeFlow.periphery.expectedOut, vaultDecimals, assetToken?.decimals, pricePerShare, assetTokenPrice])
 
-  // ============================================================================
-  // Transaction Step Configuration
-  // ============================================================================
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
 
@@ -298,9 +281,6 @@ export const WidgetDeposit: FC<Props> = ({
     isCrossChain
   ])
 
-  // ============================================================================
-  // Max Quote (for native tokens)
-  // ============================================================================
   const { fetchMaxQuote, isFetching: isFetchingMaxQuote } = useFetchMaxQuote({
     isNativeToken,
     account,
@@ -314,9 +294,6 @@ export const WidgetDeposit: FC<Props> = ({
     onResult: setDepositInput
   })
 
-  // ============================================================================
-  // Handlers
-  // ============================================================================
   const handleDepositSuccess = useCallback(() => {
     setDepositInput('')
     const tokensToRefresh = [
@@ -351,9 +328,6 @@ export const WidgetDeposit: FC<Props> = ({
     [setDepositInput]
   )
 
-  // ============================================================================
-  // Loading State
-  // ============================================================================
   if (isLoadingVaultData) {
     return (
       <div className="flex items-center justify-center h-[317px]">
@@ -368,7 +342,7 @@ export const WidgetDeposit: FC<Props> = ({
   const isSettingsVisible = !!account && !!isSettingsOpen
 
   return (
-    <div className="flex flex-col border border-border rounded-lg relative h-full">
+    <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
       <div className="flex items-center justify-between gap-3 px-6 pt-4">
         <h3 className="text-base font-semibold text-text-primary">Deposit</h3>
       </div>

@@ -162,9 +162,9 @@ export function VaultAboutSection({
   const isDescriptionString = typeof vaultDescription === 'string'
 
   return (
-    <div className={cl('p-8 pt-0', className)}>
+    <div className={cl('p-4 pt-0 md:p-6 md:pt-0', className)}>
       <div className={'flex flex-col gap-2'}>
-        <div className={'px-4 text-sm text-text-secondary'}>
+        <div className={'text-sm text-text-secondary'}>
           <div className="">
             {isDescriptionString ? (
               <div
@@ -205,7 +205,7 @@ export function VaultAboutSection({
           ) : null}
         </div>
 
-        <div className={'flex flex-col gap-1.5 px-4'}>
+        <div className={'flex flex-col gap-1.5'}>
           <ExpandableInfoItem label={'Chain'} value={chainName} icon={chainIcon}>
             <p>
               {chainDescription}

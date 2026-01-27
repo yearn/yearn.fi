@@ -1,4 +1,3 @@
-import { useThemePreference } from '@hooks/useThemePreference'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
@@ -38,12 +37,10 @@ import { Link } from 'react-router'
 function VaultHeaderIdentity({
   currentVault,
   isCompressed,
-  isDarkTheme,
   className
 }: {
   currentVault: TYDaemonVault
   isCompressed: boolean
-  isDarkTheme: boolean
   className?: string
 }): ReactElement {
   const chainName = getNetwork(currentVault.chainID).name
@@ -147,8 +144,7 @@ function VaultHeaderIdentity({
             <strong
               ref={titleRef}
               className={cl(
-                'text-lg font-black leading-tight md:text-3xl md:leading-10',
-                isDarkTheme ? 'text-text-primary' : 'text-text-secondary',
+                'text-lg font-black leading-tight md:text-3xl md:leading-10 text-text-primary',
                 isCompressed ? 'md:text-[30px] md:leading-9 max-w-[260px] truncate whitespace-nowrap' : ''
               )}
             >
@@ -156,10 +152,9 @@ function VaultHeaderIdentity({
             </strong>
             {isCompressed && isTitleClipped ? (
               <span
-                className={cl(
-                  'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight group-hover:block',
-                  isDarkTheme ? 'text-text-primary' : 'text-text-secondary'
-                )}
+                className={
+                  'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight text-text-primary group-hover:block'
+                }
               >
                 {vaultName} {' yVault'}
               </span>
@@ -285,9 +280,9 @@ function SectionSelectorBar({
               onSelectSection?.(section.key)
             }}
             className={cl(
-              'flex-1 min-w-[120px] rounded-md px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
+              'flex-1 rounded-md px-2 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5',
               'border border-transparent focus-visible:outline-none focus-visible:ring-0',
-              'min-h-[36px] active:scale-[0.98]',
+              'min-h-[36px] active:scale-[0.98] truncate',
               activeSectionKey === section.key
                 ? 'bg-surface text-text-primary !border-border'
                 : 'bg-transparent text-text-secondary hover:text-text-primary'
@@ -457,8 +452,6 @@ export function VaultDetailsHeader({
   onWidgetCloseOverlays?: () => void
 }): ReactElement {
   const { address } = useWeb3()
-  const themePreference = useThemePreference()
-  const isDarkTheme = themePreference !== 'light'
   const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode })
 
   useEffect(() => {
@@ -500,7 +493,6 @@ export function VaultDetailsHeader({
               <VaultHeaderIdentity
                 currentVault={currentVault}
                 isCompressed={isCompressed}
-                isDarkTheme={isDarkTheme}
                 className={'col-span-5 pl-6'}
               />
               <div className={'col-span-8 pl-4'}>
@@ -525,7 +517,6 @@ export function VaultDetailsHeader({
           <VaultHeaderIdentity
             currentVault={currentVault}
             isCompressed={isCompressed}
-            isDarkTheme={isDarkTheme}
             className={'md:col-span-20 md:row-start-2'}
           />
           <div className={cl('md:col-span-13 md:row-start-3')}>

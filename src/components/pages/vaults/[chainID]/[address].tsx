@@ -1,6 +1,4 @@
-import { useScrollDirection } from '@hooks/useScrollDirection'
 import { useScrollSpy } from '@hooks/useScrollSpy'
-import { useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { MobileKeyMetrics } from '@pages/vaults/components/detail/QuickStatsGrid'
 import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
@@ -11,6 +9,7 @@ import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSecti
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
 import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
+import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { WidgetActionType } from '@pages/vaults/types'
@@ -55,9 +54,6 @@ function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
-  const themePreference = useThemePreference()
-  const isDarkTheme = themePreference !== 'light'
-  const scrollDirection = useScrollDirection({ threshold: 10, topThreshold: 50 })
 
   const { address, isActive } = useWeb3()
   const params = useParams()
@@ -199,19 +195,12 @@ function Index(): ReactElement | null {
     }
   })
 
-  // Force refetch when endpoint changes
   useEffect(() => {
-    if (endpoint) {
-      mutate()
-    }
+    if (endpoint) mutate()
   }, [endpoint, mutate])
 
-  // TODO: remove this workaround when possible
-  // <WORKAROUND>
   const currentVault = useMemo(() => {
-    if (overrideVault) return overrideVault
-    if (_currentVault) return _currentVault
-    return undefined
+    return overrideVault ?? _currentVault
   }, [overrideVault, _currentVault])
 
   useEffect(() => {
@@ -224,7 +213,6 @@ function Index(): ReactElement | null {
       })
     }
   }, [yDaemonBaseUri, _currentVault, hasFetchedOverride])
-  // </WORKAROUND>
 
   useEffect((): void => {
     if (vault && (!_currentVault || vault.address !== _currentVault.address)) {
@@ -584,16 +572,13 @@ function Index(): ReactElement | null {
     window.scrollTo({ top: targetTop, behavior: 'smooth' })
   }
 
-  const handleFloatingButtonClick = (
-    action: typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw
-  ): void => {
-    setMobileDrawerAction(action)
-    setIsMobileDrawerOpen(true)
-  }
-
-  const handleMobileDrawerClose = (): void => {
-    setIsMobileDrawerOpen(false)
-  }
+  const handleFloatingButtonClick = useCallback(
+    (action: typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw): void => {
+      setMobileDrawerAction(action)
+      setIsMobileDrawerOpen(true)
+    },
+    []
+  )
 
   useEffect(() => {
     if (isMobileDrawerOpen && mobileWidgetRef.current) {
@@ -622,8 +607,6 @@ function Index(): ReactElement | null {
   }
 
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
-  // Calculate sticky positions for the collapsible header (desktop only)
-  // On mobile, natural scroll behavior is used
   const headerStickyTop = 'var(--header-height)'
   const widgetModeLabel =
     widgetMode === WidgetActionType.Deposit
@@ -667,7 +650,6 @@ function Index(): ReactElement | null {
           />
         </header>
 
-        {/* Mobile: Compact Header */}
         <div className="md:hidden mt-4 mb-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
@@ -681,12 +663,7 @@ function Index(): ReactElement | null {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h1
-                className={cl(
-                  'text-lg font-black leading-tight truncate-safe',
-                  isDarkTheme ? 'text-text-primary' : 'text-text-secondary'
-                )}
-              >
+              <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
                 {getVaultName(currentVault)} yVault
               </h1>
               <p className="text-mobile-label text-text-secondary">
@@ -696,12 +673,9 @@ function Index(): ReactElement | null {
           </div>
         </div>
 
-        {/* Mobile Layout */}
         <div className="md:hidden space-y-4">
-          {/* Key metrics above chart */}
           <MobileKeyMetrics currentVault={currentVault} />
 
-          {/* Chart section */}
           {Number.isInteger(chainId) && (
             <div className="border border-border rounded-lg bg-surface overflow-hidden">
               <VaultChartsSection
@@ -713,7 +687,6 @@ function Index(): ReactElement | null {
             </div>
           )}
 
-          {/* Details sections - collapsible on mobile */}
           <section id={mobileDetailsSectionId} ref={detailsRef} aria-label="Vault details" className="space-y-4 pb-8">
             {renderableSections
               .filter((section) => section.key !== 'charts')
@@ -751,7 +724,6 @@ function Index(): ReactElement | null {
           </section>
         </div>
 
-        {/* Main Content Grid - Responsive layout */}
         <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div
             ref={widgetContainerRef}
@@ -836,7 +808,6 @@ function Index(): ReactElement | null {
             </div>
           </div>
 
-          {/* Desktop sections - Hidden on mobile */}
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
             {renderableSections.map((section) => {
               const isCollapsible =
@@ -858,7 +829,7 @@ function Index(): ReactElement | null {
                   >
                     <button
                       type={'button'}
-                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4'}
+                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
                       onClick={(): void =>
                         setOpenSections((previous) => ({
                           ...previous,
@@ -900,9 +871,7 @@ function Index(): ReactElement | null {
           className={cl(
             'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 sm:hidden',
             'backdrop-blur-md',
-            'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]',
-            'transition-transform duration-250 ease-in-out',
-            scrollDirection === 'down' ? 'translate-y-full' : 'translate-y-0'
+            'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]'
           )}
         >
           <div className="flex gap-3 max-w-[1232px] mx-auto">
@@ -926,11 +895,11 @@ function Index(): ReactElement | null {
         </div>
       )}
 
-      {/* Mobile Bottom Drawer with Widget */}
       <BottomDrawer
         isOpen={isMobileDrawerOpen}
-        onClose={handleMobileDrawerClose}
-        title={`${mobileDrawerAction === WidgetActionType.Deposit ? 'Deposit' : 'Withdraw'} ${currentVault.name}`}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        title={currentVault.name}
+        headerActions={<MobileDrawerSettingsButton />}
       >
         <Widget
           ref={mobileWidgetRef}
@@ -942,6 +911,7 @@ function Index(): ReactElement | null {
           hideTabSelector
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
+          disableBorderRadius
         />
       </BottomDrawer>
     </div>
