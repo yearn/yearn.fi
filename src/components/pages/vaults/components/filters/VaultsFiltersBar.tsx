@@ -9,7 +9,6 @@ import { IconSearch } from '@shared/icons/IconSearch'
 import { cl } from '@shared/utils'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import { Drawer } from 'vaul'
 import { type TVaultsChainButton, VaultsChainSelector } from './VaultsChainSelector'
 import { VaultsFiltersButton } from './VaultsFiltersButton'
 import { type TFiltersConfig, type TPendingFiltersState, VaultsFiltersPanelControlled } from './VaultsFiltersPanel'
@@ -217,108 +216,81 @@ export function VaultsFiltersBar({
     <>
       <div className={'relative col-span-24 w-full md:col-span-19'}>
         <div className={'md:hidden'}>
-          <Drawer.Root
-            open={isMobileFiltersOpen}
-            onOpenChange={(isOpen): void => {
-              setIsMobileFiltersOpen(isOpen)
-            }}
-            direction={'bottom'}
-          >
-            {mobileExtraContent ? <div className={'mb-2 w-full'}>{mobileExtraContent}</div> : null}
-            {isMobileSearchExpanded ? (
-              <div className={'flex w-full items-center gap-1'}>
-                <div className={'flex-1'}>
-                  <SearchBar
-                    className={'w-full rounded-[4px] border-none bg-neutral-800/20 text-text-primary'}
-                    iconClassName={'text-text-primary'}
-                    searchPlaceholder={'Search vaults...'}
-                    searchValue={search.value}
-                    onSearch={search.onChange}
-                    shouldDebounce={search.shouldDebounce || false}
-                    highlightWhenActive={false}
-                    autoFocus={true}
-                    onKeyDown={(e): void => {
-                      if (e.key === 'Escape') {
-                        setIsMobileSearchExpanded(false)
-                      }
-                    }}
-                  />
-                </div>
-                <button
-                  type={'button'}
-                  className={
-                    'flex size-10 shrink-0 items-center justify-center rounded-[4px] bg-neutral-800/20 text-text-secondary transition-colors hover:text-text-primary'
-                  }
-                  onClick={(): void => setIsMobileSearchExpanded(false)}
-                  aria-label={'Close search'}
-                >
-                  <IconCross className={'size-3'} />
-                </button>
-              </div>
-            ) : (
-              <div className={'flex w-full items-center gap-1'}>
-                <Drawer.Trigger asChild>
-                  <button
-                    className={
-                      'h-10 flex-1 cursor-pointer rounded-[4px] bg-neutral-800/20 text-sm text-text-primary transition-colors hover:bg-neutral-800/40'
+          {mobileExtraContent ? <div className={'mb-2 w-full'}>{mobileExtraContent}</div> : null}
+          {isMobileSearchExpanded ? (
+            <div className={'flex w-full items-center gap-1'}>
+              <div className={'flex-1'}>
+                <SearchBar
+                  className={'w-full rounded-[4px] border-none bg-neutral-800/20 text-text-primary'}
+                  iconClassName={'text-text-primary'}
+                  searchPlaceholder={'Search vaults...'}
+                  searchValue={search.value}
+                  onSearch={search.onChange}
+                  shouldDebounce={search.shouldDebounce || false}
+                  highlightWhenActive={false}
+                  autoFocus={true}
+                  onKeyDown={(e): void => {
+                    if (e.key === 'Escape') {
+                      setIsMobileSearchExpanded(false)
                     }
-                  >
-                    {'Filter Vaults'}
-                  </button>
-                </Drawer.Trigger>
-                {filters.trailingControls}
-                <button
-                  type={'button'}
-                  className={cl(
-                    'flex size-10 shrink-0 items-center justify-center rounded-[4px] bg-neutral-800/20 text-text-secondary transition-colors hover:text-text-primary',
-                    search.value ? 'text-text-primary' : ''
-                  )}
-                  onClick={(): void => setIsMobileSearchExpanded(true)}
-                  aria-label={'Search vaults'}
-                >
-                  <IconSearch className={'size-4'} />
-                </button>
+                  }}
+                />
               </div>
-            )}
-            <Drawer.Portal>
-              <Drawer.Overlay className={'fixed inset-0 z-99998 bg-black/40 backdrop-blur-xs transition-opacity'} />
-              <Drawer.Content className={'fixed inset-x-0 bottom-0 z-99999 flex justify-center outline-hidden'}>
-                <div
-                  className={
-                    'w-full max-w-full rounded-t-3xl bg-surface-secondary p-6 border border-border shadow-sm max-h-[75vh] overflow-y-auto scrollbar-themed'
-                  }
-                >
-                  <div className={'mb-4 flex items-center justify-between'}>
-                    <p className={'text-base font-medium text-text-primary'}>{'Filter Vaults'}</p>
-                    <Drawer.Close
-                      className={'rounded-full p-2 text-text-primary transition-colors hover:text-text-secondary'}
-                    >
-                      <IconCross className={'size-4'} />
-                    </Drawer.Close>
-                  </div>
-                  <FilterControls
-                    chainButtons={chainButtons}
-                    onSelectAllChains={handleSelectAllChains}
-                    areAllChainsSelected={areAllChainsSelected}
-                    onSelectChain={handleChainToggle}
-                    onOpenChainModal={(): void => setIsChainModalOpen(true)}
-                    showMoreChainsButton={showMoreChainsButton}
-                    allChainsLabel={allChainsLabel}
-                    showFiltersButton={false}
-                    filtersCount={filters.count}
-                    onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
-                    showInlineSearch={false}
-                    searchValue={search.value}
-                    onSearch={search.onChange}
-                    shouldDebounce={search.shouldDebounce}
-                    searchAlertContent={search.alertContent}
-                    searchTrailingControls={search.trailingControls}
-                  />
-                  {filters.content}
-                </div>
-              </Drawer.Content>
-            </Drawer.Portal>
-          </Drawer.Root>
+              <button
+                type={'button'}
+                className={
+                  'flex size-10 shrink-0 items-center justify-center rounded-[4px] bg-neutral-800/20 text-text-secondary transition-colors hover:text-text-primary'
+                }
+                onClick={(): void => setIsMobileSearchExpanded(false)}
+                aria-label={'Close search'}
+              >
+                <IconCross className={'size-3'} />
+              </button>
+            </div>
+          ) : (
+            <div className={'flex w-full items-center gap-1'}>
+              <button
+                type={'button'}
+                className={
+                  'h-10 flex-1 cursor-pointer rounded-[4px] bg-neutral-800/20 text-sm text-text-primary transition-colors hover:bg-neutral-800/40'
+                }
+                onClick={(): void => setIsMobileFiltersOpen(true)}
+              >
+                {'Filter Vaults'}
+              </button>
+              {filters.trailingControls}
+              <button
+                type={'button'}
+                className={cl(
+                  'flex size-10 shrink-0 items-center justify-center rounded-[4px] bg-neutral-800/20 text-text-secondary transition-colors hover:text-text-primary',
+                  search.value ? 'text-text-primary' : ''
+                )}
+                onClick={(): void => setIsMobileSearchExpanded(true)}
+                aria-label={'Search vaults'}
+              >
+                <IconSearch className={'size-4'} />
+              </button>
+            </div>
+          )}
+          <MobileFiltersDrawer
+            isOpen={isMobileFiltersOpen}
+            onClose={(): void => setIsMobileFiltersOpen(false)}
+            chainButtons={chainButtons}
+            onSelectAllChains={handleSelectAllChains}
+            areAllChainsSelected={areAllChainsSelected}
+            onSelectChain={handleChainToggle}
+            onOpenChainModal={(): void => setIsChainModalOpen(true)}
+            showMoreChainsButton={showMoreChainsButton}
+            allChainsLabel={allChainsLabel}
+            filtersCount={filters.count}
+            onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
+            searchValue={search.value}
+            onSearch={search.onChange}
+            shouldDebounce={search.shouldDebounce}
+            searchAlertContent={search.alertContent}
+            searchTrailingControls={search.trailingControls}
+            filtersContent={filters.content}
+          />
         </div>
 
         <div className={'hidden md:block'}>
@@ -493,6 +465,112 @@ const EMPTY_FILTERS_STATE: TPendingFiltersState = {
   showStrategies: false,
   showLegacyVaults: false,
   showHiddenVaults: false
+}
+
+function MobileFiltersDrawer({
+  isOpen,
+  onClose,
+  chainButtons,
+  onSelectAllChains,
+  areAllChainsSelected,
+  onSelectChain,
+  onOpenChainModal,
+  showMoreChainsButton,
+  allChainsLabel,
+  filtersCount,
+  onOpenFiltersModal,
+  searchValue,
+  onSearch,
+  shouldDebounce,
+  searchAlertContent,
+  searchTrailingControls,
+  filtersContent
+}: {
+  isOpen: boolean
+  onClose: () => void
+  chainButtons: TVaultsChainButton[]
+  onSelectAllChains: () => void
+  areAllChainsSelected: boolean
+  onSelectChain: (chainId: number) => void
+  onOpenChainModal: () => void
+  showMoreChainsButton: boolean
+  allChainsLabel: string
+  filtersCount: number
+  onOpenFiltersModal: () => void
+  searchValue: string
+  onSearch: (value: string) => void
+  shouldDebounce?: boolean
+  searchAlertContent?: ReactNode
+  searchTrailingControls?: ReactNode
+  filtersContent?: ReactNode
+}): ReactElement {
+  return (
+    <Transition show={isOpen} as={Fragment}>
+      <Dialog as={'div'} className={'relative z-100'} onClose={onClose}>
+        <TransitionChild
+          as={Fragment}
+          enter={'duration-300 ease-out'}
+          enterFrom={'opacity-0'}
+          enterTo={'opacity-100'}
+          leave={'duration-200 ease-in'}
+          leaveFrom={'opacity-100'}
+          leaveTo={'opacity-0'}
+        >
+          <div className={'fixed inset-0 bg-black/40 backdrop-blur-xs'} aria-hidden={'true'} />
+        </TransitionChild>
+
+        <div className={'fixed inset-0 overflow-hidden'}>
+          <div className={'flex min-h-full items-end justify-center'}>
+            <TransitionChild
+              as={Fragment}
+              enter={'duration-300 ease-out'}
+              enterFrom={'translate-y-full'}
+              enterTo={'translate-y-0'}
+              leave={'duration-200 ease-in'}
+              leaveFrom={'translate-y-0'}
+              leaveTo={'translate-y-full'}
+            >
+              <Dialog.Panel
+                className={
+                  'w-full max-w-full rounded-t-3xl bg-surface-secondary p-6 border border-border shadow-sm max-h-[75vh] overflow-y-auto scrollbar-themed'
+                }
+              >
+                <div className={'mb-4 flex items-center justify-between'}>
+                  <p className={'text-base font-medium text-text-primary'}>{'Filter Vaults'}</p>
+                  <button
+                    type={'button'}
+                    className={'rounded-full p-2 text-text-primary transition-colors hover:text-text-secondary'}
+                    onClick={onClose}
+                  >
+                    <IconCross className={'size-4'} />
+                  </button>
+                </div>
+                <FilterControls
+                  chainButtons={chainButtons}
+                  onSelectAllChains={onSelectAllChains}
+                  areAllChainsSelected={areAllChainsSelected}
+                  onSelectChain={onSelectChain}
+                  onOpenChainModal={onOpenChainModal}
+                  showMoreChainsButton={showMoreChainsButton}
+                  allChainsLabel={allChainsLabel}
+                  showFiltersButton={false}
+                  filtersCount={filtersCount}
+                  onOpenFiltersModal={onOpenFiltersModal}
+                  showInlineSearch={false}
+                  searchValue={searchValue}
+                  onSearch={onSearch}
+                  shouldDebounce={shouldDebounce}
+                  searchAlertContent={searchAlertContent}
+                  searchTrailingControls={searchTrailingControls}
+                />
+                {filtersContent}
+              </Dialog.Panel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
+  )
 }
 
 function FiltersModal({

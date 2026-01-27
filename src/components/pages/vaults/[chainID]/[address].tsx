@@ -1,6 +1,5 @@
 import { useScrollDirection } from '@hooks/useScrollDirection'
 import { useScrollSpy } from '@hooks/useScrollSpy'
-import { useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { MobileKeyMetrics } from '@pages/vaults/components/detail/QuickStatsGrid'
 import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
@@ -57,8 +56,6 @@ function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
-  const themePreference = useThemePreference()
-  const isDarkTheme = themePreference !== 'light'
   const scrollDirection = useScrollDirection({ threshold: 10, topThreshold: 50 })
 
   const { address, isActive } = useWeb3()
@@ -645,12 +642,7 @@ function Index(): ReactElement | null {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h1
-                className={cl(
-                  'text-lg font-black leading-tight truncate-safe',
-                  isDarkTheme ? 'text-text-primary' : 'text-text-secondary'
-                )}
-              >
+              <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
                 {getVaultName(currentVault)} yVault
               </h1>
               <p className="text-mobile-label text-text-secondary">
@@ -812,7 +804,7 @@ function Index(): ReactElement | null {
                   >
                     <button
                       type={'button'}
-                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4'}
+                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
                       onClick={(): void =>
                         setOpenSections((previous) => ({
                           ...previous,
