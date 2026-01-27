@@ -55,7 +55,6 @@ function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
-  const scrollDirection = useScrollDirection({ threshold: 10, topThreshold: 50 })
 
   const { address, isActive } = useWeb3()
   const params = useParams()
