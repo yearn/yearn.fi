@@ -26,6 +26,7 @@ interface Props {
   } | null
   onDepositPrefillConsumed?: () => void
   hideTabSelector?: boolean
+  disableBorderRadius?: boolean
 }
 
 export type TWidgetRef = {
@@ -57,7 +58,8 @@ export const Widget = forwardRef<TWidgetRef, Props>(
       showTabs = true,
       depositPrefill,
       onDepositPrefillConsumed,
-      hideTabSelector
+      hideTabSelector,
+      disableBorderRadius
     },
     ref
   ) => {
@@ -96,6 +98,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               prefill={depositPrefill ?? undefined}
               onPrefillApplied={onDepositPrefillConsumed}
               hideSettings={hideTabSelector}
+              disableBorderRadius={disableBorderRadius}
             />
           )
         case ActionType.Withdraw:
@@ -108,6 +111,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               vaultSymbol={currentVault?.symbol || ''}
               handleWithdrawSuccess={handleSuccess}
               hideSettings={hideTabSelector}
+              disableBorderRadius={disableBorderRadius}
             />
           )
         case ActionType.Migrate:
@@ -135,7 +139,8 @@ export const Widget = forwardRef<TWidgetRef, Props>(
       handleSuccess,
       depositPrefill,
       onDepositPrefillConsumed,
-      hideTabSelector
+      hideTabSelector,
+      disableBorderRadius
     ])
 
     // Mobile mode: simple layout without tabs
@@ -149,8 +154,19 @@ export const Widget = forwardRef<TWidgetRef, Props>(
 
     return (
       <div className="flex flex-col gap-0 w-full h-full flex-1">
-        <div className="bg-app rounded-b-lg overflow-hidden relative w-full min-w-0 flex flex-col flex-1">
-          {showTabs ? <WidgetTabs actions={actions} activeAction={currentMode} onActionChange={setMode} /> : null}
+        <div
+          className={cl('bg-app overflow-hidden relative w-full min-w-0 flex flex-col flex-1', {
+            'rounded-b-lg': !disableBorderRadius
+          })}
+        >
+          {showTabs ? (
+            <WidgetTabs
+              actions={actions}
+              activeAction={currentMode}
+              onActionChange={setMode}
+              disableBorderRadius={disableBorderRadius}
+            />
+          ) : null}
           <div className="bg-surface flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">{SelectedComponent}</div>
         </div>
       </div>
@@ -168,6 +184,7 @@ export const WidgetTabs: FC<{
   onOpenWallet?: () => void
   isWalletOpen?: boolean
   onCloseOverlays?: () => void
+  disableBorderRadius?: boolean
 }> = ({
   actions,
   activeAction,
@@ -177,10 +194,15 @@ export const WidgetTabs: FC<{
   isSettingsOpen,
   onOpenWallet,
   isWalletOpen,
-  onCloseOverlays
+  onCloseOverlays,
+  disableBorderRadius
 }) => {
   return (
-    <div className={cl('bg-surface-secondary border border-border rounded-b-lg gap-2 flex min-h-9 p-1', className)}>
+    <div
+      className={cl('bg-surface-secondary border border-border gap-2 flex min-h-9 p-1', className, {
+        'rounded-b-lg': !disableBorderRadius
+      })}
+    >
       {actions.map((action) => (
         <TabButton
           key={action}
