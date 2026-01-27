@@ -1,5 +1,6 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
+import { getChainDescription } from '@pages/vaults/utils/vaultTagCopy'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
 import { SearchBar } from '@shared/components/SearchBar'
 import { useChainOptions } from '@shared/hooks/useChains'
@@ -151,7 +152,8 @@ export function VaultsFiltersBar({
           id,
           label: option.label,
           icon: option.icon,
-          isSelected: selectedChainSet.has(id)
+          isSelected: selectedChainSet.has(id),
+          description: getChainDescription(id)
         }
       })
       .filter(Boolean) as TVaultsChainButton[]
@@ -470,7 +472,7 @@ function FilterControls({
           <div ref={controlsRowRef} className={'flex w-full items-center gap-3 flex-wrap'}>
             {leadingControls ? <div className={'shrink-0'}>{leadingControls}</div> : null}
             <div className={'shrink min-w-0 max-w-[580px]'}>{chainSelectorElement}</div>
-            <div className={'flex flex-row items-center gap-3 flex-1 min-w-0'}>
+            <div className={'flex flex-row items-center gap-1.5 flex-1 min-w-0'}>
               {filtersButtonElement}
               {filtersTrailingControls ? <div className={'shrink-0'}>{filtersTrailingControls}</div> : null}
               {inlineSearchElement}

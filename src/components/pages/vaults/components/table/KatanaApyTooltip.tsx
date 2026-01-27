@@ -1,7 +1,6 @@
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
-import { RenderAmount } from '@shared/components/RenderAmount'
 import { Tooltip } from '@shared/components/Tooltip'
-import { cl, formatAmount } from '@shared/utils'
+import { cl, formatAmount, formatApyDisplay } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 
@@ -48,9 +47,7 @@ function KatanaApyRow({ iconSrc, label, value, muted = false }: TKatanaApyRowPro
         <ImageWithFallback src={iconSrc} alt={''} width={16} height={16} />
         <p>{label}</p>
       </div>
-      <span className={'font-number text-right'}>
-        <RenderAmount shouldHideTooltip value={value} symbol={'percent'} decimals={6} />
-      </span>
+      <span className={'font-number text-right'}>{formatApyDisplay(value)}</span>
     </div>
   )
 }
@@ -79,7 +76,7 @@ export function KatanaApyTooltipContent({
     <div
       className={cl(
         width,
-        'rounded-xl border border-border bg-surface-secondary p-4 text-center text-xs text-text-primary'
+        'rounded-lg border border-border bg-surface-secondary p-4 text-center text-xs text-text-primary'
       )}
     >
       <div className={'flex flex-col items-start justify-start text-left'}>

@@ -101,7 +101,7 @@ function renderAdvancedSection(
 
   return (
     <div className={section.className}>
-      <details className={'rounded-xl border border-border bg-surface-secondary p-4'}>
+      <details className={'rounded-lg border border-border bg-surface-secondary p-4'}>
         <summary className={'cursor-pointer text-sm font-semibold text-text-primary'}>{section.title}</summary>
         <span className={'text-sm'}>
           {' '}

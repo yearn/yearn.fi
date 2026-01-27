@@ -86,17 +86,40 @@ function MetricInfoModal({
 }
 
 export function MetricsCard({
+  footnoteDisplay = 'inline',
   hideFootnotes = false,
-  items
+  items,
+  className
 }: {
   items: TMetricBlock[]
+  footnoteDisplay?: 'inline' | 'tooltip'
   hideFootnotes?: boolean
+  className?: string
 }): ReactElement {
   return (
-    <div className={'rounded-lg border border-border bg-surface text-text-primary backdrop-blur-sm'}>
+    <div className={cl('rounded-lg bg-surface text-text-primary', className)}>
       <div className={'divide-y divide-neutral-300 md:flex md:divide-y-0'}>
-        {items.map(
-          (item, index): ReactElement => (
+        {items.map((item, index): ReactElement => {
+          const showFootnote = Boolean(item.footnote) && !hideFootnotes
+          const useTooltip = showFootnote && footnoteDisplay === 'tooltip'
+          const valueContent = useTooltip ? (
+            <Tooltip
+              className={'gap-0 h-auto'}
+              openDelayMs={150}
+              toggleOnClick
+              tooltip={
+                <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs'}>
+                  {item.footnote}
+                </div>
+              }
+            >
+              <div className={'inline-flex'}>{item.value}</div>
+            </Tooltip>
+          ) : (
+            item.value
+          )
+
+          return (
             <div
               key={item.key}
               className={cl(
@@ -105,11 +128,11 @@ export function MetricsCard({
               )}
             >
               <div className={'flex items-center justify-between'}>{item.header}</div>
-              <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{item.value}</div>
-              {item.footnote && !hideFootnotes ? <div>{item.footnote}</div> : null}
+              <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{valueContent}</div>
+              {showFootnote && footnoteDisplay === 'inline' ? <div>{item.footnote}</div> : null}
             </div>
           )
-        )}
+        })}
       </div>
     </div>
   )
@@ -150,7 +173,7 @@ export function MetricHeader({ label, tooltip }: { label: string; tooltip?: stri
             >
               <span
                 className={
-                  'hidden cursor-pointer underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600 md:inline'
+                  'hidden cursor-default underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600 md:inline'
                 }
               >
                 {label}

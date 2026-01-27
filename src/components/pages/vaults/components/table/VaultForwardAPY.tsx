@@ -1,7 +1,6 @@
 import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import { RenderAmount } from '@shared/components/RenderAmount'
-import { formatAmount } from '@shared/utils'
+import { formatAmount, formatApyDisplay } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment, useState } from 'react'
@@ -12,7 +11,7 @@ import { resolveForwardApyDisplayConfig } from './apyDisplayConfig'
 export type TVaultForwardAPYVariant = 'default' | 'factory-list'
 
 const INLINE_DETAILS_CONTAINER_CLASS =
-  'w-full rounded-xl border border-border bg-surface-secondary p-3 text-text-primary'
+  'w-full rounded-lg border border-border bg-surface-secondary p-3 text-text-primary'
 const INLINE_DETAILS_STACK_CLASS = 'flex flex-col gap-2'
 const INLINE_DETAILS_LINK_CLASS =
   'font-bold underline sm:decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +
@@ -137,36 +136,13 @@ export function VaultForwardAPYInlineDetails({
     return (
       <div className={INLINE_DETAILS_CONTAINER_CLASS}>
         <div className={INLINE_DETAILS_STACK_CLASS}>
-          <InlineDetailRow
-            label={'Est. Native APY'}
-            value={<RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />}
-          />
+          <InlineDetailRow label={'Est. Native APY'} value={formatApyDisplay(data.baseForwardApr)} />
           <InlineDetailRow
             label={'Base Rewards APR'}
-            value={
-              <RenderAmount
-                shouldHideTooltip
-                value={katanaExtras.FixedRateKatanaRewards ?? 0}
-                symbol={'percent'}
-                decimals={6}
-              />
-            }
+            value={formatApyDisplay(katanaExtras.FixedRateKatanaRewards ?? 0)}
           />
-          <InlineDetailRow
-            label={'App Rewards APR'}
-            value={<RenderAmount shouldHideTooltip value={katanaAppRewardsAPR} symbol={'percent'} decimals={6} />}
-          />
-          <InlineDetailRow
-            label={'Deposit Bonus APR'}
-            value={
-              <RenderAmount
-                shouldHideTooltip
-                value={katanaExtras.katanaBonusAPY ?? 0}
-                symbol={'percent'}
-                decimals={6}
-              />
-            }
-          />
+          <InlineDetailRow label={'App Rewards APR'} value={formatApyDisplay(katanaAppRewardsAPR)} />
+          <InlineDetailRow label={'Deposit Bonus APR'} value={formatApyDisplay(katanaExtras.katanaBonusAPY ?? 0)} />
           {hasSteerPoints ? (
             <InlineDetailRow label={'Steer Points / $'} value={steerPointsPerDollar.toFixed(2)} />
           ) : null}
@@ -226,14 +202,8 @@ export function VaultForwardAPYInlineDetails({
       return (
         <div className={INLINE_DETAILS_CONTAINER_CLASS}>
           <div className={INLINE_DETAILS_STACK_CLASS}>
-            <InlineDetailRow
-              label={'Base APY'}
-              value={<RenderAmount shouldHideTooltip value={data.netApr} symbol={'percent'} decimals={6} />}
-            />
-            <InlineDetailRow
-              label={'Rewards APR'}
-              value={<RenderAmount shouldHideTooltip value={data.rewardsAprSum} symbol={'percent'} decimals={6} />}
-            />
+            <InlineDetailRow label={'Base APY'} value={formatApyDisplay(data.netApr)} />
+            <InlineDetailRow label={'Rewards APR'} value={formatApyDisplay(data.rewardsAprSum)} />
           </div>
         </div>
       )
@@ -246,10 +216,7 @@ export function VaultForwardAPYInlineDetails({
     return showBoostDetails ? (
       <div className={INLINE_DETAILS_CONTAINER_CLASS}>
         <div className={INLINE_DETAILS_STACK_CLASS}>
-          <InlineDetailRow
-            label={'Base APY'}
-            value={<RenderAmount shouldHideTooltip value={unBoostedAPY} symbol={'percent'} decimals={6} />}
-          />
+          <InlineDetailRow label={'Base APY'} value={formatApyDisplay(unBoostedAPY)} />
           <InlineDetailRow label={'Boost'} value={`${formatAmount(data.boost || 0, 2, 2)}x`} />
         </div>
       </div>
@@ -262,26 +229,20 @@ export function VaultForwardAPYInlineDetails({
     return (
       <div className={INLINE_DETAILS_CONTAINER_CLASS}>
         <div className={INLINE_DETAILS_STACK_CLASS}>
-          <InlineDetailRow
-            label={'Base APY'}
-            value={<RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />}
-          />
+          <InlineDetailRow label={'Base APY'} value={formatApyDisplay(data.baseForwardApr)} />
           {isSourceVeYFI && veYFIRange ? (
             <InlineDetailRow
               label={'Rewards APR'}
               value={
                 <>
-                  <RenderAmount shouldHideTooltip value={veYFIRange[0]} symbol={'percent'} decimals={6} />
+                  {formatApyDisplay(veYFIRange[0])}
                   {' → '}
-                  <RenderAmount shouldHideTooltip value={veYFIRange[1]} symbol={'percent'} decimals={6} />
+                  {formatApyDisplay(veYFIRange[1])}
                 </>
               }
             />
           ) : (
-            <InlineDetailRow
-              label={'Rewards APR'}
-              value={<RenderAmount shouldHideTooltip value={data.rewardsAprSum} symbol={'percent'} decimals={6} />}
-            />
+            <InlineDetailRow label={'Rewards APR'} value={formatApyDisplay(data.rewardsAprSum)} />
           )}
         </div>
       </div>

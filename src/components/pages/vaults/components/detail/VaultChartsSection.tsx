@@ -80,8 +80,8 @@ export function VaultChartsSection({
   return (
     <div className={'space-y-3 md:space-y-4 pt-3 rounded-lg'}>
       {shouldRenderSelectors ? (
-        <div className={'flex flex-col gap-2 md:gap-3 px-3 md:px-4 md:flex-row md:items-center md:justify-between'}>
-          <div className={'flex flex-wrap gap-2 md:gap-3'}>
+        <div className={'flex flex-col gap-2 md:gap-3 px-3 md:px-4 md:flex-row md:items-start md:justify-between'}>
+          <div className={'flex flex-col'}>
             <div
               className={
                 'flex items-center gap-0.5 md:gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner w-full md:w-auto'
@@ -105,7 +105,7 @@ export function VaultChartsSection({
               ))}
             </div>
             {showApyDisclaimer ? (
-              <p className={'pointer-events-none absolute left-0 top-full mt-1 text-xxs text-text-secondary'}>
+              <p className={'pointer-events-none relative mt-1 text-xxs text-text-secondary'}>
                 {'*This chart does not include KAT and other incentives.'}
               </p>
             ) : null}
@@ -147,7 +147,7 @@ export function VaultChartsSection({
           <ChartsLoader loadingState={isLoading ? 'Loading charts' : 'Preparing charts'} />
         </div>
       ) : (
-        <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx}>
+        <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx} className={'mx-4'}>
           <ChartErrorBoundary>
             <Suspense fallback={<ChartSkeleton />}>
               {activeTab === 'historical-pps' && transformed.ppsData ? (
