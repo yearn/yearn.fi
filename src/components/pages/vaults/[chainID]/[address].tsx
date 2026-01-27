@@ -8,7 +8,7 @@ import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSecti
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
 import { Widget } from '@pages/vaults/components/widget'
-import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
+import { WidgetRewards, WidgetRewardsPanel } from '@pages/vaults/components/widget/rewards'
 import { SettingsPanel } from '@pages/vaults/components/widget/SettingsPanel'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { WidgetActionType } from '@pages/vaults/types'
@@ -264,6 +264,7 @@ function Index(): ReactElement | null {
   const [widgetMode, setWidgetMode] = useState<WidgetActionType>(widgetActions[0])
   const [isWidgetSettingsOpen, setIsWidgetSettingsOpen] = useState(false)
   const [isWidgetWalletOpen, setIsWidgetWalletOpen] = useState(false)
+  const [isWidgetRewardsOpen, setIsWidgetRewardsOpen] = useState(false)
   const [depositPrefill, setDepositPrefill] = useState<{
     address: `0x${string}`
     chainId: number
@@ -279,6 +280,7 @@ function Index(): ReactElement | null {
       const next = !prev
       if (next) {
         setIsWidgetWalletOpen(false)
+        setIsWidgetRewardsOpen(false)
       }
       return next
     })
@@ -289,6 +291,7 @@ function Index(): ReactElement | null {
       const next = !prev
       if (next) {
         setIsWidgetSettingsOpen(false)
+        setIsWidgetRewardsOpen(false)
       }
       return next
     })
@@ -297,9 +300,20 @@ function Index(): ReactElement | null {
   const closeWidgetOverlays = (): void => {
     setIsWidgetSettingsOpen(false)
     setIsWidgetWalletOpen(false)
+    setIsWidgetRewardsOpen(false)
   }
 
-  const isWidgetPanelActive = !isWidgetSettingsOpen && !isWidgetWalletOpen
+  const isWidgetPanelActive = !isWidgetSettingsOpen && !isWidgetWalletOpen && !isWidgetRewardsOpen
+
+  const openWidgetRewards = (): void => {
+    setIsWidgetRewardsOpen(true)
+    setIsWidgetSettingsOpen(false)
+    setIsWidgetWalletOpen(false)
+  }
+
+  const closeWidgetRewards = (): void => {
+    setIsWidgetRewardsOpen(false)
+  }
 
   const handleZapTokenSelect = useCallback(
     (token: TToken): void => {
@@ -308,6 +322,7 @@ function Index(): ReactElement | null {
       }
       setIsWidgetSettingsOpen(false)
       setIsWidgetWalletOpen(false)
+      setIsWidgetRewardsOpen(false)
       setWidgetMode(WidgetActionType.Deposit)
       setDepositPrefill({
         address: toAddress(token.address),
@@ -316,6 +331,17 @@ function Index(): ReactElement | null {
     },
     [widgetActions]
   )
+
+  const handleRewardsClaimSuccess = useCallback(() => {
+    if (!currentVault) {
+      return
+    }
+    mutate()
+    onRefresh([
+      { address: currentVault.address, chainID: currentVault.chainID },
+      { address: currentVault.token.address, chainID: currentVault.chainID }
+    ])
+  }, [currentVault, mutate, onRefresh])
 
   const sections = useMemo(() => {
     if (!currentVault || !yDaemonBaseUri) {
@@ -628,13 +654,31 @@ function Index(): ReactElement | null {
 
           {/* Widget */}
           <div className="space-y-4">
-            <Widget
-              vaultAddress={currentVault.address}
-              currentVault={currentVault}
-              gaugeAddress={currentVault.staking.address}
-              actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
-              chainId={chainId}
-            />
+            {isWidgetRewardsOpen ? (
+              <WidgetRewardsPanel
+                isActive={isWidgetRewardsOpen}
+                stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
+                stakingSource={currentVault.staking.source}
+                rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
+                  address: r.address,
+                  symbol: r.symbol,
+                  decimals: r.decimals,
+                  price: r.price,
+                  isFinished: r.isFinished
+                }))}
+                chainId={chainId}
+                onClose={closeWidgetRewards}
+                onClaimSuccess={handleRewardsClaimSuccess}
+              />
+            ) : (
+              <Widget
+                vaultAddress={currentVault.address}
+                currentVault={currentVault}
+                gaugeAddress={currentVault.staking.address}
+                actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
+                chainId={chainId}
+              />
+            )}
             <WidgetRewards
               stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
               stakingSource={currentVault.staking.source}
@@ -646,13 +690,8 @@ function Index(): ReactElement | null {
                 isFinished: r.isFinished
               }))}
               chainId={chainId}
-              onClaimSuccess={() => {
-                mutate()
-                onRefresh([
-                  { address: currentVault.address, chainID: currentVault.chainID },
-                  { address: currentVault.token.address, chainID: currentVault.chainID }
-                ])
-              }}
+              isPanelOpen={isWidgetRewardsOpen}
+              onOpenRewards={openWidgetRewards}
             />
           </div>
 
@@ -782,6 +821,21 @@ function Index(): ReactElement | null {
                 chainId={chainId}
                 onSelectZapToken={handleZapTokenSelect}
               />
+              <WidgetRewardsPanel
+                isActive={isWidgetRewardsOpen}
+                stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
+                stakingSource={currentVault.staking.source}
+                rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
+                  address: r.address,
+                  symbol: r.symbol,
+                  decimals: r.decimals,
+                  price: r.price,
+                  isFinished: r.isFinished
+                }))}
+                chainId={chainId}
+                onClose={closeWidgetRewards}
+                onClaimSuccess={handleRewardsClaimSuccess}
+              />
               <WidgetRewards
                 stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
                 stakingSource={currentVault.staking.source}
@@ -793,13 +847,8 @@ function Index(): ReactElement | null {
                   isFinished: r.isFinished
                 }))}
                 chainId={chainId}
-                onClaimSuccess={() => {
-                  mutate()
-                  onRefresh([
-                    { address: currentVault.address, chainID: currentVault.chainID },
-                    { address: currentVault.token.address, chainID: currentVault.chainID }
-                  ])
-                }}
+                isPanelOpen={isWidgetRewardsOpen}
+                onOpenRewards={openWidgetRewards}
               />
             </div>
           </div>
