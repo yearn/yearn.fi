@@ -70,7 +70,6 @@ const createUseInputHook =
     }, [setFormValue, decimals])
 
     // State change on formValue / decimals
-    // biome-ignore lint/correctness/useExhaustiveDependencies: <>
     const state = useMemo(() => {
       const bn = tryParseString(formValue, decimals) || 0n
       const simple = exactToSimple(bn, decimals) || 0

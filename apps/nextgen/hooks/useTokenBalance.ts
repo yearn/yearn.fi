@@ -46,7 +46,6 @@ export const useTokenBalance = ({
 
   const { balance, decimals } = data ?? { balance: 0n, decimals: 18 }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <do not worry>
   useEffect(() => {
     if (!watch) return
 

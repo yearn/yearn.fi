@@ -37,14 +37,16 @@
         "useNodejsImportProtocol": "off"
       },
       "correctness": {
-        "noUnusedVariables": "warn"
+        "noUnusedVariables": "warn",
+        "useExhaustiveDependencies": "off"
       }
     }
   },
   "css": {
     "parser": {
       "cssModules": false,
-      "allowWrongLineComments": false
+      "allowWrongLineComments": false,
+      "tailwindDirectives": true
     }
   },
   "javascript": {

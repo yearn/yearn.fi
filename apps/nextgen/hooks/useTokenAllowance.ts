@@ -28,7 +28,6 @@ export const useTokenAllowance = ({
     }
   })
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: < >
   useEffect(() => {
     if (!watch) return
     refetch()
