@@ -217,7 +217,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
             </div>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto min-h-0 p-6 pt-3">
+        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-6 pt-3" data-scroll-priority>
           <div className="space-y-6">
             {!isWalletActive || !address ? (
               <div className="flex flex-col items-center justify-center gap-3 text-center py-8">

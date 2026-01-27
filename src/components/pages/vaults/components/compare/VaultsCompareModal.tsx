@@ -1,7 +1,7 @@
 import Link from '@components/Link'
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { SwipeableCompareCarousel } from '@pages/vaults/components/compare/SwipeableCompareCarousel'
-import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
+import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { useMediaQuery } from '@react-hookz/web'
@@ -13,7 +13,7 @@ import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import { Fragment, type ReactElement, type ReactNode, useEffect, useState } from 'react'
-import { VaultHistoricalAPY } from '../table/VaultHistoricalAPY'
+import { VaultForwardAPY } from '../table/VaultForwardAPY'
 
 type TVaultsCompareModalProps = {
   isOpen: boolean
@@ -165,7 +165,7 @@ function DesktopCompareGrid({
                       </div>
                     </div>
                   </div>
-                  <IconLinkOut className={'mt-1 size-4 flex-shrink-0 text-text-secondary'} />
+                  <IconLinkOut className={'mt-1 size-4 shrink-0 text-text-secondary'} />
                 </Link>
               </div>
             )
@@ -362,7 +362,7 @@ export function VaultsCompareModal({ isOpen, onClose, vaults, onRemove }: TVault
 
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog as={'div'} className={'relative z-[70]'} onClose={onClose}>
+      <Dialog as={'div'} className={'relative z-70'} onClose={onClose}>
         <TransitionChild
           as={Fragment}
           enter={'duration-200 ease-out'}

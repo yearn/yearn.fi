@@ -38,7 +38,7 @@ export const InfoOverlay: FC<InfoOverlayProps> = ({
       {/* Semi-transparent backdrop with fade animation */}
       <div
         className={cl(
-          'absolute inset-0 bg-black/5 rounded-xl',
+          'absolute inset-0 bg-black/5 rounded-lg',
           backdropMotionClass,
           isOpen ? 'opacity-100' : 'opacity-0'
         )}
@@ -47,7 +47,7 @@ export const InfoOverlay: FC<InfoOverlayProps> = ({
       {/* Overlay content with slide from right animation */}
       <div
         className={cl(
-          'absolute inset-0 bg-surface rounded-xl flex flex-col',
+          'absolute inset-0 bg-surface rounded-lg flex flex-col',
           panelMotionClass,
           isOpen ? 'opacity-100 translate-x-0' : closedPanelState
         )}

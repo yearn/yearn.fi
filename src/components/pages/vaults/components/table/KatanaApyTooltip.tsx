@@ -76,7 +76,7 @@ export function KatanaApyTooltipContent({
     <div
       className={cl(
         width,
-        'rounded-xl border border-border bg-surface-secondary p-4 text-center text-xs text-text-primary'
+        'rounded-lg border border-border bg-surface-secondary p-4 text-center text-xs text-text-primary'
       )}
     >
       <div className={'flex flex-col items-start justify-start text-left'}>

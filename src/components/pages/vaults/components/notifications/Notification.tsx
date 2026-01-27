@@ -546,10 +546,10 @@ export const Notification = memo(function Notification({
     <div
       className={cl(
         'border border-border p-4 h-fit relative mb-4 origin-top group',
-        'bg-card rounded-xl border-border'
+        'bg-card rounded-lg border-border'
       )}
     >
-      {variant === 'v3' && <div className={cl('absolute inset-0 rounded-xl')} />}
+      {variant === 'v3' && <div className={cl('absolute inset-0 rounded-lg')} />}
 
       {/* Close button */}
       <button

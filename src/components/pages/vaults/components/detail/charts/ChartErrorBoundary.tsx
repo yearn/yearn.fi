@@ -36,7 +36,7 @@ export class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, Chart
         this.props.fallback || (
           <div
             className={
-              'flex h-64 flex-col items-center justify-center rounded-xl border border-border bg-surface text-center'
+              'flex h-64 flex-col items-center justify-center rounded-lg border border-border bg-surface text-center'
             }
           >
             <p className={'text-sm font-medium text-text-primary'}>{'Chart unavailable'}</p>

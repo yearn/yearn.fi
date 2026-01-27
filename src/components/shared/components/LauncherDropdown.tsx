@@ -29,7 +29,7 @@ function AppTile({ item, isDark }: { item: TAppTile; isDark: boolean }): ReactEl
     <Link href={item.href}>
       <div
         className={cl(
-          'flex items-center gap-3 rounded-xl p-3 transition-colors',
+          'flex items-center gap-3 rounded-lg p-3 transition-colors',
           isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'
         )}
       >

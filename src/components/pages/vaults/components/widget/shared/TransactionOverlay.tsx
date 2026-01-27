@@ -52,6 +52,8 @@ type TransactionOverlayProps = {
   step?: TransactionStep
   isLastStep?: boolean
   onAllComplete?: () => void
+  topOffset?: string
+  contentAlign?: 'center' | 'start'
 }
 
 export const TransactionOverlay: FC<TransactionOverlayProps> = ({
@@ -59,7 +61,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   onClose,
   step,
   isLastStep = true,
-  onAllComplete
+  onAllComplete,
+  contentAlign = 'center'
 }) => {
   const [overlayState, setOverlayState] = useState<OverlayState>('success')
   const [errorMessage, setErrorMessage] = useState<string>('')
@@ -411,14 +414,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       {/* Semi-transparent backdrop with fade animation */}
       <div
         className={cl(
-          'absolute inset-0 bg-black/5 rounded-xl transition-opacity duration-200',
+          'absolute inset-0 bg-black/5 rounded-lg transition-opacity duration-200',
           isOpen ? 'opacity-100' : 'opacity-0'
         )}
       />
       {/* Overlay content with slide and fade animation */}
       <div
         className={cl(
-          'absolute inset-0 bg-surface rounded-xl transition-all duration-300 ease-out flex flex-col',
+          'absolute inset-0 bg-surface rounded-lg transition-all duration-300 ease-out flex flex-col',
           isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         )}
       >
@@ -436,7 +439,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         )}
 
         {/* Content */}
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <div
+          className={cl(
+            'flex-1 flex flex-col items-center p-6 text-center',
+            contentAlign === 'center' ? 'justify-center' : 'justify-start pt-8'
+          )}
+        >
           {/* Confirming State */}
           {overlayState === 'confirming' && (
             <>

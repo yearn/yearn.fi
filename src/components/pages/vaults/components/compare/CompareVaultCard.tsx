@@ -1,12 +1,11 @@
 import Link from '@components/Link'
-import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconClose } from '@shared/icons/IconClose'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
+import { cl, formatApyDisplay, formatPercent, formatTvlDisplay, isZero, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement, ReactNode } from 'react'
@@ -49,18 +48,18 @@ function MetricRow({
   )
 }
 
-// function renderPercentValue(value: number | undefined): ReactElement {
-//   if (value === undefined || Number.isNaN(value)) {
-//     return <span className={'text-text-secondary'}>{'—'}</span>
-//   }
-//   return <span className={'font-semibold'}>{formatApyDisplay(value)}</span>
-// }
+function renderPercentValue(value: number | undefined): ReactElement {
+  if (value === undefined || Number.isNaN(value)) {
+    return <span className={'text-text-secondary'}>{'—'}</span>
+  }
+  return <span className={'font-semibold'}>{formatApyDisplay(value)}</span>
+}
 
-// function resolveThirtyDayApy(vault: TYDaemonVault): number {
-//   const monthly = vault.apr?.points?.monthAgo ?? 0
-//   const weekly = vault.apr?.points?.weekAgo ?? 0
-//   return isZero(monthly) ? weekly : monthly
-// }
+function resolveThirtyDayApy(vault: TYDaemonVault): number {
+  const monthly = vault.apr?.points?.monthAgo ?? 0
+  const weekly = vault.apr?.points?.weekAgo ?? 0
+  return isZero(monthly) ? weekly : monthly
+}
 
 function hasAllocatedFunds(strategy: TVaultStrategyItem): boolean {
   const { debtRatio, totalDebt } = strategy.details ?? {}
@@ -135,7 +134,11 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
 
       <div className={'flex-1 overflow-x-hidden overflow-y-auto'}>
         <MetricRow label={'Est. APY'} sublabel={'Forward net APR'}>
-          <VaultForwardAPY currentVault={vault} showSubline={false} />
+          {renderPercentValue(vault.apr?.forwardAPR?.netAPR)}
+        </MetricRow>
+
+        <MetricRow label={'30 Day APY'} sublabel={'Average realized'}>
+          {renderPercentValue(resolveThirtyDayApy(vault))}
         </MetricRow>
 
         <MetricRow label={'TVL'} sublabel={'Total value locked'}>

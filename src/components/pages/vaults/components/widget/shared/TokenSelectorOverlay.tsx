@@ -11,6 +11,9 @@ interface TokenSelectorOverlayProps {
   value?: Address
   excludeTokens?: Address[]
   priorityTokens?: Record<number, Address[]>
+  assetAddress?: Address
+  vaultAddress?: Address
+  stakingAddress?: Address
 }
 
 export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
@@ -20,7 +23,10 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
   chainId,
   value,
   excludeTokens,
-  priorityTokens
+  priorityTokens,
+  assetAddress,
+  vaultAddress,
+  stakingAddress
 }) => {
   return (
     <div
@@ -36,7 +42,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
       {/* Semi-transparent backdrop with fade animation */}
       <div
         className={cl(
-          'absolute inset-0 bg-black/5 rounded-xl transition-opacity duration-200',
+          'absolute inset-0 bg-black/5 rounded-lg transition-opacity duration-200',
           isOpen ? 'opacity-100' : 'opacity-0'
         )}
         onClick={onClose}
@@ -55,6 +61,9 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
           excludeTokens={excludeTokens}
           priorityTokens={priorityTokens}
           onClose={onClose}
+          assetAddress={assetAddress}
+          vaultAddress={vaultAddress}
+          stakingAddress={stakingAddress}
         />
       </div>
     </div>

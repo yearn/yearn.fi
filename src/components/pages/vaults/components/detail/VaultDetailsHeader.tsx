@@ -26,13 +26,7 @@ import {
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { IconCirclePile } from '@shared/icons/IconCirclePile'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { IconMigratable } from '@shared/icons/IconMigratable'
-import { IconRewind } from '@shared/icons/IconRewind'
-import { IconStablecoin } from '@shared/icons/IconStablecoin'
-import { IconStack } from '@shared/icons/IconStack'
-import { IconVolatile } from '@shared/icons/IconVolatile'
 import { cl, formatUSD, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -64,18 +58,7 @@ function VaultHeaderIdentity({
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset Vault' : isLegacyVault ? 'Legacy' : 'LP Token Vault'
-  const productTypeIcon = ((): ReactElement => {
-    if (isAllocatorVault) return <span className={'text-sm leading-none'}>{'⚙️'}</span>
-    if (isLegacyVault) return <IconRewind className={'size-3.5'} />
-    return <span className={'text-sm leading-none'}>{'🏭'}</span>
-  })()
-
-  const categoryIcon: ReactElement | null = ((): ReactElement | null => {
-    if (currentVault.category === 'Stablecoin') return <IconStablecoin className={'size-3.5'} />
-    if (currentVault.category === 'Volatile') return <IconVolatile className={'size-3.5'} />
-    return null
-  })()
+  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
 
   const baseKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
     if (currentVault.kind === 'Multi Strategy') return 'multi'
@@ -95,19 +78,12 @@ function VaultHeaderIdentity({
     if (kindType === 'single') return 'Strategy'
     return currentVault.kind
   })()
-
-  const kindIcon: ReactElement | null = ((): ReactElement | null => {
-    if (kindType === 'multi') return <IconCirclePile className={'size-3.5'} />
-    if (kindType === 'single') return <IconStack className={'size-3.5'} />
-    return null
-  })()
   const chainDescription = getChainDescription(currentVault.chainID)
   const categoryDescription = getCategoryDescription(currentVault.category)
   const productTypeDescription = getProductTypeDescription(listKind)
   const kindDescription = getKindDescription(kindType, kindLabel)
   const isMigratable = Boolean(currentVault.migration?.available)
   const isRetired = Boolean(currentVault.info?.isRetired)
-  const migratableIcon = <IconMigratable className={'size-3.5'} />
   const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
   const showKindChip = Boolean(kindLabel)
   const shouldShowMetadata =
@@ -142,7 +118,7 @@ function VaultHeaderIdentity({
   }, [isCompressed])
 
   return (
-    <div className={cl('flex flex-col gap-1 px-1 mt-0', isCompressed ? 'md:justify-center' : '', className)}>
+    <div className={cl('flex flex-col gap-1 px-1 mt-0', isCompressed ? 'md:justify-center' : 'pt-4', className)}>
       <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
         <div
           className={cl(
@@ -159,10 +135,10 @@ function VaultHeaderIdentity({
           {isCompressed ? (
             <div
               className={
-                'absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full border border-border bg-surface'
+                'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'
               }
             >
-              <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={14} height={14} />
+              <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={16} height={16} />
             </div>
           ) : null}
         </div>
@@ -203,11 +179,17 @@ function VaultHeaderIdentity({
         </div>
       </div>
       {shouldShowMetadata ? (
-        <div className={'flex flex-wrap items-center gap-1 text-xs text-text-primary/70 md:text-xs mt-1'}>
+        <div
+          className={cl(
+            'flex flex-wrap items-center gap-1 text-xs text-text-primary/70 md:text-xs pt-1',
+            isCompressed ? 'hidden' : ''
+          )}
+        >
           {showChainChip ? (
             <VaultsListChip
               label={chainName}
               icon={<TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={14} height={14} priority />}
+              showIconInChip={false}
               isCollapsed={isCompressed}
               showCollapsedTooltip={isCompressed}
               tooltipDescription={chainDescription}
@@ -216,7 +198,6 @@ function VaultHeaderIdentity({
           {showCategoryChip ? (
             <VaultsListChip
               label={currentVault.category || ''}
-              icon={categoryIcon}
               isCollapsed={isCompressed}
               showCollapsedTooltip={isCompressed}
               tooltipDescription={categoryDescription || undefined}
@@ -224,7 +205,6 @@ function VaultHeaderIdentity({
           ) : null}
           <VaultsListChip
             label={productTypeLabel}
-            icon={productTypeIcon}
             isCollapsed={isCompressed}
             showCollapsedTooltip={isCompressed}
             tooltipDescription={productTypeDescription}
@@ -232,7 +212,6 @@ function VaultHeaderIdentity({
           {showKindChip && kindLabel ? (
             <VaultsListChip
               label={kindLabel}
-              icon={kindIcon}
               isCollapsed={isCompressed}
               showCollapsedTooltip={isCompressed}
               tooltipDescription={kindDescription}
@@ -250,7 +229,6 @@ function VaultHeaderIdentity({
           {isMigratable ? (
             <VaultsListChip
               label={'Migratable'}
-              icon={migratableIcon}
               isCollapsed={isCompressed}
               showCollapsedTooltip={isCompressed}
               tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
@@ -292,8 +270,8 @@ function SectionSelectorBar({
     <div className={'flex flex-wrap gap-2 md:gap-3 w-full'} ref={sectionSelectorRef}>
       <div
         className={cl(
-          'flex w-full flex-wrap justify-between gap-2 rounded-b-lg border-x border-b border-border bg-surface-secondary p-1',
-          isCompressed ? 'border' : ''
+          'flex w-full flex-wrap justify-between gap-2 rounded-b-lg border-border bg-surface-secondary p-1',
+          isCompressed ? 'border-t' : 'border-x border-b'
         )}
       >
         {sectionTabs.map((section) => (
@@ -386,9 +364,8 @@ function VaultOverviewCard({
   return (
     <MetricsCard
       items={metrics}
-      className={'md:rounded-b-none'}
+      className={cl('rounded-b-none', isCompressed ? 'border-l border-border rounded-l-none' : 'border border-border')}
       footnoteDisplay={'tooltip'}
-      isCompressed={isCompressed}
     />
   )
 }
@@ -407,35 +384,6 @@ function UserHoldingsCard({
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
   const depositedValueUSD = depositedAmount.normalized * tokenPrice
   const sections: TMetricBlock[] = [
-    // {
-    //   key: 'available',
-    //   header: (
-    //     <MetricHeader
-    //       label={'Available'}
-    //       tooltip={'Track how much of the vault asset is already in your wallet and ready to be deposited.'}
-    //     />
-    //   ),
-    //   value: (
-    //     <span className={METRIC_VALUE_CLASS} suppressHydrationWarning>
-    //       {formatUSD(availableValueUSD)}
-    //     </span>
-    //   ),
-    //   footnote: (
-    //     <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
-    //       <RenderAmount
-    //         value={Number(availableAmount.normalized)}
-    //         symbol={currentVault.token.symbol}
-    //         decimals={currentVault.token.decimals}
-    //         shouldFormatDust
-    //         options={{
-    //           shouldDisplaySymbol: false,
-    //           maximumFractionDigits: Number(availableAmount.normalized) > 1000 ? 2 : 4
-    //         }}
-    //       />
-    //       <span className={'pl-1'}>{currentVault.token.symbol || 'tokens'}</span>
-    //     </p>
-    //   )
-    // },
     {
       key: 'deposited',
       header: (
@@ -470,9 +418,11 @@ function UserHoldingsCard({
   return (
     <MetricsCard
       items={sections}
-      className={'md:rounded-b-none'}
+      className={cl(
+        'rounded-b-none',
+        isCompressed ? 'rounded-tl-lg border-t border-x border-border' : 'border-t border-x border-border'
+      )}
       footnoteDisplay={'tooltip'}
-      isCompressed={isCompressed}
     />
   )
 }
@@ -546,7 +496,7 @@ export function VaultDetailsHeader({
         <div className={'md:col-span-13 md:row-start-2 pt-4'}>
           <div
             className={cl(
-              'rounded-lg'
+              'rounded-lg border border-border bg-surface'
               // 'border border-border',
             )}
           >
@@ -555,9 +505,9 @@ export function VaultDetailsHeader({
                 currentVault={currentVault}
                 isCompressed={isCompressed}
                 isDarkTheme={isDarkTheme}
-                className={'col-span-5'}
+                className={'col-span-5 pl-6'}
               />
-              <div className={'col-span-8'}>
+              <div className={'col-span-8 pl-4'}>
                 <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
               </div>
               {sectionTabs.length > 0 ? (
@@ -618,7 +568,7 @@ export function VaultDetailsHeader({
             actions={widgetActions}
             activeAction={widgetMode}
             onActionChange={onWidgetModeChange}
-            className={isCompressed ? '-mt-px rounded-t-none border-t-0' : undefined}
+            className={isCompressed ? '-mt-px rounded-t-none' : undefined}
             onOpenSettings={onWidgetSettingsOpen}
             isSettingsOpen={isWidgetSettingsOpen}
             onOpenWallet={onWidgetWalletOpen}

@@ -28,6 +28,7 @@ export async function fetchTokenBalances(
   }
 
   const [balances, error] = await getBalances(chainId, userAddress, validTokens, shouldForceFetch)
+
   if (error) {
     throw error
   }

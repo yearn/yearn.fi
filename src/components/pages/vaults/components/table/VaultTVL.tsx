@@ -22,7 +22,7 @@ export function VaultTVL({
   const tvlValue = currentVault.tvl?.tvl ?? 0
   const normalizedTVL = toNormalizedBN(currentVault.tvl?.totalAssets ?? 0, currentVault.token.decimals).normalized
   const tvlNativeTooltip = (
-    <div className={'rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+    <div className={'rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       <span className={'font-number'}>
         <RenderAmount
           value={Number(normalizedTVL)}

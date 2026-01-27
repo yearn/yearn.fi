@@ -89,23 +89,15 @@ export function MetricsCard({
   footnoteDisplay = 'inline',
   hideFootnotes = false,
   items,
-  className,
-  isCompressed = false
+  className
 }: {
   items: TMetricBlock[]
   footnoteDisplay?: 'inline' | 'tooltip'
   hideFootnotes?: boolean
   className?: string
-  isCompressed?: boolean
 }): ReactElement {
   return (
-    <div
-      className={cl(
-        'rounded-lg  bg-surface text-text-primary',
-        isCompressed ? 'border-t border-x border-border' : 'border border-border',
-        className
-      )}
-    >
+    <div className={cl('rounded-lg bg-surface text-text-primary', className)}>
       <div className={'divide-y divide-neutral-300 md:flex md:divide-y-0'}>
         {items.map((item, index): ReactElement => {
           const showFootnote = Boolean(item.footnote) && !hideFootnotes
@@ -181,7 +173,7 @@ export function MetricHeader({ label, tooltip }: { label: string; tooltip?: stri
             >
               <span
                 className={
-                  'hidden cursor-pointer underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600 md:inline'
+                  'hidden cursor-default underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600 md:inline'
                 }
               >
                 {label}

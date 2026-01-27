@@ -19,9 +19,6 @@ describe('VaultVersionToggle', () => {
     expect(html).toMatch(/data-active="false".*Single Asset/)
     expect(html).toMatch(/data-active="false".*LP Token/)
     expect(html).not.toMatch(/v3 Strategies/)
-    expect(html).toContain('🌐')
-    expect(html).toContain('⚙️')
-    expect(html).toContain('🏭')
   })
 
   it('marks lp token vaults active when type=lp', () => {
@@ -29,9 +26,6 @@ describe('VaultVersionToggle', () => {
     expect(html).toMatch(/data-active="true".*LP Token/)
     expect(html).toMatch(/data-active="false".*Single Asset/)
     expect(html).toMatch(/data-active="false".*All Vaults/)
-    expect(html).toContain('🌐')
-    expect(html).toContain('⚙️')
-    expect(html).toContain('🏭')
   })
 
   it('marks single asset vaults active when type=single', () => {

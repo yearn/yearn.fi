@@ -42,7 +42,7 @@ export function MobileNavMenu({
 }: TMobileNavMenuProps): ReactElement {
   function navLinkClass(isActive: boolean): string {
     return cl(
-      'flex min-h-[44px] w-full items-center rounded-xl px-4 text-lg font-medium transition-colors',
+      'flex min-h-[44px] w-full items-center rounded-lg px-4 text-lg font-medium transition-colors',
       isActive ? 'bg-primary/10 text-primary' : 'text-text-primary hover:bg-surface-tertiary'
     )
   }
@@ -116,7 +116,7 @@ export function MobileNavMenu({
                     onAccountClick()
                   }}
                   className={
-                    'relative flex min-h-[44px] w-full items-center gap-3 rounded-xl px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
+                    'relative flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
                   }
                 >
                   <IconWallet className={'size-5'} />
@@ -131,7 +131,7 @@ export function MobileNavMenu({
                     onThemeToggle()
                   }}
                   className={
-                    'flex min-h-[44px] w-full items-center gap-3 rounded-xl px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
+                    'flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
                   }
                 >
                   {isDarkTheme ? <IconSun className={'size-5'} /> : <IconMoon className={'size-5'} />}
@@ -148,7 +148,7 @@ export function MobileNavMenu({
                     href={link.path}
                     target={'_blank'}
                     className={
-                      'flex min-h-[44px] w-full items-center justify-between rounded-xl px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
+                      'flex min-h-[44px] w-full items-center justify-between rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
                     }
                   >
                     <span>{link.label}</span>
