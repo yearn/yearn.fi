@@ -56,7 +56,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
 
   const allowanceDisplay = formatAllowance()
   return (
-    <div className="px-6">
+    <div>
       <div className="flex flex-col gap-2">
         {/* You will unstake/redeem */}
         <div className="flex items-center justify-between h-5">

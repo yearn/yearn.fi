@@ -95,7 +95,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
     2
   )
   return (
-    <div className="px-6">
+    <div>
       <div className="flex flex-col gap-2">
         {/* You will deposit/swap/stake */}
         <div className="flex items-center justify-between h-5">
