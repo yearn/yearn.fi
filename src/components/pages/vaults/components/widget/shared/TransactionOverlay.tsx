@@ -52,6 +52,8 @@ type TransactionOverlayProps = {
   step?: TransactionStep
   isLastStep?: boolean
   onAllComplete?: () => void
+  topOffset?: string
+  contentAlign?: 'center' | 'start'
 }
 
 export const TransactionOverlay: FC<TransactionOverlayProps> = ({
@@ -59,7 +61,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   onClose,
   step,
   isLastStep = true,
-  onAllComplete
+  onAllComplete,
+  contentAlign = 'center'
 }) => {
   const [overlayState, setOverlayState] = useState<OverlayState>('success')
   const [errorMessage, setErrorMessage] = useState<string>('')
@@ -436,7 +439,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         )}
 
         {/* Content */}
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <div
+          className={cl(
+            'flex-1 flex flex-col items-center p-6 text-center',
+            contentAlign === 'center' ? 'justify-center' : 'justify-start pt-8'
+          )}
+        >
           {/* Confirming State */}
           {overlayState === 'confirming' && (
             <>
