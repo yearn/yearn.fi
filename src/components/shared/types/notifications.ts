@@ -40,10 +40,7 @@ export type TNotification = {
   status: TNotificationStatus
 }
 
-export type TCurtainStatus = { isOpen: boolean }
-
 export type TNotificationsContext = {
-  shouldOpenCurtain: boolean
   cachedEntries: TNotification[]
   notificationStatus: TNotificationStatus | null
   isLoading: boolean
@@ -52,7 +49,6 @@ export type TNotificationsContext = {
   deleteByID: (id: number) => Promise<void>
   updateEntry: (value: Partial<TNotification>, id: number) => Promise<void>
   addNotification: (value: TNotification) => Promise<number>
-  setShouldOpenCurtain: (value: boolean) => void
 }
 
 // New flat notification API types
