@@ -96,6 +96,9 @@ export const SOLVER_WIDO_RELAYER_ADDRESS = toAddress('0x7Fb69e8fb1525ceEc03783FF
 export const STAKING_REWARDS_REGISTRY_ADDRESS = toAddress('0x8ED9F6343f057870F1DeF47AaE7CD88dfAA049A8')
 export const STAKING_REWARDS_ZAP_ADDRESS = toAddress('0x498d9dCBB1708e135bdc76Ef007f08CBa4477BE2')
 
+// Merkl distributor address (same across most chains)
+export const MERKLE_DISTRIBUTOR_ADDRESS = toAddress('0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae')
+
 export const DEFAULT_SLIPPAGE = 0.5
 export const DEFAULT_MAX_LOSS = 1n
 export const YGAUGES_ZAP_ADDRESS = toAddress('0x1104215963474A0FA0Ac09f4E212EF7282F2A0bC') //Address of the zap to deposit & stake in the veYFI gauge
