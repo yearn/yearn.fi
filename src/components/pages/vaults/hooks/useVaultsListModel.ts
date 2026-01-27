@@ -1,4 +1,5 @@
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import {
   AGGRESSIVENESS_OPTIONS,
   AVAILABLE_TOGGLE_VALUE,
@@ -73,6 +74,7 @@ export function useVaultsListModel({
   const isAllVaults = listVaultType === 'all'
   const isV3View = listVaultType === 'v3' || isAllVaults
   const isV2View = listVaultType === 'factory' || isAllVaults
+  const { listVault: yvUsdVault } = useYvUsdVaults()
 
   const listV2Types = useMemo(
     () => (listShowLegacyVaults ? ['factory', 'legacy'] : ['factory']),
@@ -90,6 +92,23 @@ export function useVaultsListModel({
       allowed.has(value as TVaultAggressiveness)
     )
   }, [listAggressiveness])
+
+  const shouldShowYvUsd = useMemo(() => {
+    if (!yvUsdVault) return false
+    if (!isV3View) return false
+    const matchesChain = !listChains?.length || listChains.includes(yvUsdVault.chainID)
+    const matchesCategory =
+      listCategoriesSanitized.length === 0 || listCategoriesSanitized.includes(yvUsdVault.category)
+    const trimmedSearch = searchValue.trim().toLowerCase()
+    const matchesSearch =
+      trimmedSearch.length === 0 ||
+      `${yvUsdVault.name} ${yvUsdVault.symbol} ${yvUsdVault.token.symbol} ${yvUsdVault.token.name} ${yvUsdVault.address}`
+        .toLowerCase()
+        .includes(trimmedSearch)
+    const minTvlValue = Number.isFinite(listMinTvl) ? Math.max(0, listMinTvl || 0) : 0
+    const meetsMinTvl = (yvUsdVault.tvl?.tvl ?? 0) >= minTvlValue
+    return matchesChain && matchesCategory && matchesSearch && meetsMinTvl
+  }, [isV3View, listChains, listCategoriesSanitized, listMinTvl, searchValue, yvUsdVault])
 
   const v3FilterResult = useV3VaultFilter(
     isV3View ? listV3Types : null,
@@ -142,10 +161,22 @@ export function useVaultsListModel({
     [listVaultType, v3FilterResult.availableVaults, v2FilterResult.availableVaults]
   )
 
-  const vaultFlags = useMemo(
-    () => selectVaultsByType(listVaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags),
-    [listVaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags]
-  )
+  const vaultFlags = useMemo(() => {
+    const baseFlags = selectVaultsByType(listVaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags)
+    if (!yvUsdVault) {
+      return baseFlags
+    }
+    const yvUsdKey = getVaultKey(yvUsdVault)
+    return {
+      ...baseFlags,
+      [yvUsdKey]: {
+        hasHoldings: false,
+        isMigratable: false,
+        isRetired: false,
+        isHidden: false
+      }
+    }
+  }, [listVaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags, yvUsdVault])
 
   const isLoadingVaultList =
     listVaultType === 'all'
@@ -158,13 +189,13 @@ export function useVaultsListModel({
     const v3Total = v3FilterResult.totalMatchingVaults ?? 0
     const v2Total = v2FilterResult.filteredVaults.length
     if (listVaultType === 'v3') {
-      return v3Total
+      return v3Total + (shouldShowYvUsd ? 1 : 0)
     }
     if (listVaultType === 'factory') {
       return v2Total
     }
-    return v3Total + v2Total
-  }, [listVaultType, v3FilterResult.totalMatchingVaults, v2FilterResult.filteredVaults.length])
+    return v3Total + v2Total + (shouldShowYvUsd ? 1 : 0)
+  }, [listVaultType, v3FilterResult.totalMatchingVaults, v2FilterResult.filteredVaults.length, shouldShowYvUsd])
 
   const totalHoldingsMatching = useMemo(() => {
     const v3Total = v3FilterResult.totalHoldingsMatching ?? 0
@@ -215,6 +246,17 @@ export function useVaultsListModel({
     const sections: TVaultsPinnedSection[] = []
     const seen = new Set<string>()
 
+    if (shouldShowYvUsd && yvUsdVault) {
+      const key = getVaultKey(yvUsdVault)
+      if (!seen.has(key)) {
+        seen.add(key)
+        sections.push({
+          key: 'yvUSD',
+          vaults: [yvUsdVault]
+        })
+      }
+    }
+
     if (isAvailablePinned) {
       const availableSectionVaults = sortedAvailableVaults.filter((vault) => {
         const key = getVaultKey(vault)
@@ -252,7 +294,7 @@ export function useVaultsListModel({
     }
 
     return sections
-  }, [isAvailablePinned, sortedAvailableVaults, isHoldingsPinned, sortedHoldingsVaults])
+  }, [isAvailablePinned, sortedAvailableVaults, isHoldingsPinned, sortedHoldingsVaults, shouldShowYvUsd, yvUsdVault])
 
   const pinnedVaults = useMemo(() => pinnedSections.flatMap((section) => section.vaults), [pinnedSections])
 

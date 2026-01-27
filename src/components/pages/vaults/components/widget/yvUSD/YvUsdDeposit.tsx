@@ -1,0 +1,130 @@
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { type TYvUsdVariant, YVUSD_LOCKED_COOLDOWN_DAYS, YVUSD_WITHDRAW_WINDOW_DAYS } from '@pages/vaults/utils/yvUsd'
+import { Button } from '@shared/components/Button'
+import { IconLock } from '@shared/icons/IconLock'
+import { IconLockOpen } from '@shared/icons/IconLockOpen'
+import { cl, toAddress } from '@shared/utils'
+import type { ReactElement } from 'react'
+import { useMemo, useState } from 'react'
+import { WidgetDeposit } from '../deposit'
+
+type Props = {
+  chainId: number
+  assetAddress: `0x${string}`
+  onDepositSuccess?: () => void
+}
+
+export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props): ReactElement {
+  const { unlockedVault, lockedVault, metrics, isLoading } = useYvUsdVaults()
+  const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
+
+  const selectedVault = useMemo(() => {
+    if (!variant) return undefined
+    return variant === 'locked' ? lockedVault : unlockedVault
+  }, [variant, lockedVault, unlockedVault])
+
+  if (isLoading || !unlockedVault || !lockedVault) {
+    return (
+      <div className="p-6 flex items-center justify-center h-[317px]">
+        <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!variant || !selectedVault) {
+    return (
+      <div className="flex flex-col gap-6 px-6 pb-6 pt-4">
+        <p className="text-sm text-text-secondary text-center">
+          {'Locked deposits earn a share of unlocked yield and help manage system liquidity.'}
+        </p>
+        <p className="text-sm text-text-secondary text-center">
+          {`Locks are subject to a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS}-day withdrawal window.`}
+        </p>
+        <p className="text-sm font-semibold text-text-primary text-center">{'Please choose your deposit type:'}</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            variant="filled"
+            classNameOverride="yearn--button--nextgen w-full"
+            onClick={() => setVariant('locked')}
+          >
+            <span className="inline-flex items-center gap-2">
+              <IconLock className="size-4" />
+              {'Locked Deposit'}
+            </span>
+          </Button>
+          <Button
+            variant="filled"
+            classNameOverride="yearn--button--nextgen w-full"
+            onClick={() => setVariant('unlocked')}
+          >
+            <span className="inline-flex items-center gap-2">
+              <IconLockOpen className="size-4" />
+              {'Unlocked Deposit'}
+            </span>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const unlockedApr = metrics?.unlocked.apy ?? unlockedVault.apr?.forwardAPR?.netAPR ?? 0
+  const lockedApr = metrics?.locked.apy ?? lockedVault.apr?.forwardAPR?.netAPR ?? 0
+  const unlockedAprPercent = unlockedApr * 100
+  const lockedAprPercent = lockedApr * 100
+
+  return (
+    <div className="flex flex-col gap-0">
+      <div className="px-6 pb-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{'Deposit Type'}</p>
+          <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
+            <button
+              type="button"
+              onClick={() => setVariant('locked')}
+              className={cl(
+                'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
+                variant === 'locked'
+                  ? 'bg-surface text-text-primary'
+                  : 'bg-transparent text-text-secondary hover:text-text-secondary'
+              )}
+            >
+              <span className="inline-flex items-center gap-1">
+                <IconLock className="size-3" />
+                {'Locked'}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setVariant('unlocked')}
+              className={cl(
+                'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
+                variant === 'unlocked'
+                  ? 'bg-surface text-text-primary'
+                  : 'bg-transparent text-text-secondary hover:text-text-secondary'
+              )}
+            >
+              <span className="inline-flex items-center gap-1">
+                <IconLockOpen className="size-3" />
+                {'Unlocked'}
+              </span>
+            </button>
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-text-secondary">
+          {variant === 'locked'
+            ? `Locked deposits earn additional yield (~${lockedAprPercent.toFixed(2)}% est. APY) and require a cooldown before withdrawal.`
+            : `Unlocked deposits stay liquid (~${unlockedAprPercent.toFixed(2)}% est. APY).`}
+        </p>
+      </div>
+      <WidgetDeposit
+        key={selectedVault.address}
+        vaultAddress={toAddress(selectedVault.address)}
+        assetAddress={assetAddress}
+        chainId={chainId}
+        vaultAPR={variant === 'locked' ? lockedApr : unlockedApr}
+        vaultSymbol={variant === 'locked' ? 'yvUSD (Locked)' : 'yvUSD (Unlocked)'}
+        handleDepositSuccess={onDepositSuccess}
+      />
+    </div>
+  )
+}

@@ -1,12 +1,11 @@
-import { usePlausible } from '@hooks/usePlausible'
 import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
 import {
   type TVaultChartTab,
   type TVaultChartTimeframe,
   VaultChartsSection
 } from '@pages/vaults/components/detail/VaultChartsSection'
-import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
-import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
+import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
+import { isYvUsdVault } from '@pages/vaults/utils/yvUsd'
 import {
   AllocationChart,
   DARK_MODE_COLORS,
@@ -16,8 +15,7 @@ import {
 } from '@shared/components/AllocationChart'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
-import { formatCounterValue, toAddress, toNormalizedBN } from '@shared/utils'
-import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import { formatCounterValue, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
@@ -51,48 +49,33 @@ export default function VaultsListRowExpandedContent({
   showHiddenTag = false,
   isHidden
 }: TVaultsListRowExpandedContentProps): ReactElement {
-  const trackEvent = usePlausible()
   const chartTimeframe: TVaultChartTimeframe = '1y'
-  const { data: snapshotVault } = useVaultSnapshot({
-    chainId: currentVault.chainID,
-    address: currentVault.address
-  })
-  const mergedVault = useMemo(() => mergeVaultSnapshot(currentVault, snapshotVault), [currentVault, snapshotVault])
-
-  const handleGoToVault = (event: React.MouseEvent): void => {
-    event.stopPropagation()
-    trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW_EXPANDED, {
-      props: {
-        vaultAddress: toAddress(currentVault.address),
-        vaultSymbol: currentVault.symbol,
-        chainID: currentVault.chainID.toString()
-      }
-    })
-    onNavigateToVault()
-  }
 
   return (
-    <div className={'hidden md:block bg-surface'} data-tour="vaults-row-expanded">
+    <div className={'hidden md:block bg-surface'}>
       <div className={'px-6 pb-6 md'}>
         <div className={'grid gap-6 md:grid-cols-24'}>
           <div className={'col-span-12 border-r border-border'}>
             <VaultAboutSection
-              currentVault={mergedVault ?? currentVault}
-              className={'md:px-15'}
+              currentVault={currentVault}
+              className={'p-0'}
               showKindTag={showKindTag}
               showVaultAddress={true}
               showHiddenTag={showHiddenTag}
               isHidden={isHidden}
             />
           </div>
-          <div className={'col-span-12 flex flex-col gap-4'} data-tour="vaults-row-expanded-strategy">
+          <div className={'col-span-12 flex flex-col gap-4'}>
             <VaultsExpandedSelector
               activeView={expandedView}
               onViewChange={onExpandedViewChange}
               rightElement={
                 <button
                   type={'button'}
-                  onClick={handleGoToVault}
+                  onClick={(event): void => {
+                    event.stopPropagation()
+                    onNavigateToVault()
+                  }}
                   className={
                     'h-full rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
                   }
@@ -102,17 +85,27 @@ export default function VaultsListRowExpandedContent({
               }
             />
             {expandedView in EXPANDED_VIEW_TO_CHART_TAB ? (
-              <VaultChartsSection
-                chainId={currentVault.chainID}
-                vaultAddress={currentVault.address}
-                shouldRenderSelectors={false}
-                chartTab={EXPANDED_VIEW_TO_CHART_TAB[expandedView as keyof typeof EXPANDED_VIEW_TO_CHART_TAB]}
-                timeframe={chartTimeframe}
-                chartHeightPx={200}
-                chartHeightMdPx={200}
-              />
+              isYvUsdVault(currentVault) ? (
+                <YvUsdChartsSection
+                  shouldRenderSelectors={false}
+                  chartTab={EXPANDED_VIEW_TO_CHART_TAB[expandedView as keyof typeof EXPANDED_VIEW_TO_CHART_TAB]}
+                  timeframe={chartTimeframe}
+                  chartHeightPx={200}
+                  chartHeightMdPx={200}
+                />
+              ) : (
+                <VaultChartsSection
+                  chainId={currentVault.chainID}
+                  vaultAddress={currentVault.address}
+                  shouldRenderSelectors={false}
+                  chartTab={EXPANDED_VIEW_TO_CHART_TAB[expandedView as keyof typeof EXPANDED_VIEW_TO_CHART_TAB]}
+                  timeframe={chartTimeframe}
+                  chartHeightPx={200}
+                  chartHeightMdPx={200}
+                />
+              )
             ) : (
-              <VaultStrategyAllocationPreview currentVault={mergedVault ?? currentVault} />
+              <VaultStrategyAllocationPreview currentVault={currentVault} />
             )}
           </div>
         </div>
@@ -227,7 +220,7 @@ function VaultStrategyAllocationPreview({ currentVault }: { currentVault: TYDaem
   }
 
   return (
-    <div className={'flex flex-col h-full justify-center pl-4 gap-6'}>
+    <div className={'flex flex-col pl-4 gap-6'}>
       <div className={'flex flex-row-reverse items-center gap-6'}>
         <div className={'flex-2'}>
           <AllocationChart allocationChartData={allocationChartData} />
