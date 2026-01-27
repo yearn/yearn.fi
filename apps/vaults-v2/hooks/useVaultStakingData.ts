@@ -448,7 +448,6 @@ export function useVaultStakingData(props: { currentVault: TYDaemonVault }): {
     stakingType
   ])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetch data on block number change
   useEffect(() => {
     refetch()
   }, [blockNumber, refetch])

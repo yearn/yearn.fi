@@ -23,22 +23,22 @@
     "axios": "1.13.3",
     "cross-fetch": "4.1.0",
     "ethers": "5.7.2",
-    "framer-motion": "12.23.25",
+    "framer-motion": "12.29.2",
     "graphql": "16.12.0",
     "plausible-tracker": "0.3.9",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hot-toast": "2.6.0",
     "react-paginate": "8.3.0",
-    "react-router": "7.12.0",
+    "react-router": "7.13.0",
     "recharts": "2.15.4",
     "swr": "2.3.8",
     "use-indexeddb": "2.0.2",
     "vaul": "1.1.2",
-    "viem": "2.41.2",
+    "viem": "2.45.0",
     "wagmi": "2.18.2",
     "xxhashjs": "0.2.2",
-    "zod": "4.1.13"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.12",
@@ -56,11 +56,8 @@
     "postcss": "8.5.6",
     "tailwindcss": "4.1.18",
     "typescript": "5.9.3",
-    "vite": "7.2.7",
+    "vite": "7.3.1",
     "vite-plugin-webfont-dl": "3.11.1",
     "vitest": "1.6.1"
-  },
-  "overrides": {
-    "ox": "0.9.6"
   }
 }
